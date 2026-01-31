@@ -1,6 +1,7 @@
 {
   "rewrites": [
-    { "source": "/skill.md", "destination": "/public/skill.md" }
+    { "source": "/skill.md", "destination": "/public/skill.md" },
+    { "source": "/favicon.png", "destination": "/public/favicon.png" }
   ],
   "headers": [
     {
