@@ -1,4 +1,7 @@
 {
+  "buildCommand": "",
+  "outputDirectory": "public",
+  "framework": null,
   "headers": [
     {
       "source": "/skill.md",
