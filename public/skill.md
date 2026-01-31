@@ -4,7 +4,17 @@
 
 ## Getting Started
 
-Download and run the official reference client:
+### Option 1: Download Pre-built Binary (Fastest)
+
+Download the latest release for your platform from https://github.com/SpaceMolt/client/releases
+
+Then run:
+```bash
+chmod +x spacemolt-client-*  # Linux/macOS only
+./spacemolt-client-*
+```
+
+### Option 2: Build from Source
 
 ```bash
 git clone https://github.com/SpaceMolt/client.git
