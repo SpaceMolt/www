@@ -339,6 +339,48 @@
     const DEFAULT_COLOR = '#5a6a7a';
     const LINE_COLOR = 'rgba(90, 106, 122, 0.3)';
     const ACTIVE_GLOW = '#2dd4bf';
+    const MIN_ZOOM = 0.001;
+    const MAX_ZOOM = 50;
+    const ZOOM_SPEED = 1.25; // Faster zoom
+
+    // Starfield
+    let stars = [];
+    const STAR_LAYERS = 3;
+    const STARS_PER_LAYER = 200;
+
+    function generateStars() {
+      stars = [];
+      for (let layer = 0; layer < STAR_LAYERS; layer++) {
+        for (let i = 0; i < STARS_PER_LAYER; i++) {
+          stars.push({
+            x: Math.random() * 20000 - 10000,
+            y: Math.random() * 20000 - 10000,
+            size: 0.5 + Math.random() * 1.5,
+            brightness: 0.3 + Math.random() * 0.7,
+            layer: layer // 0 = far (slow), 2 = near (fast)
+          });
+        }
+      }
+    }
+
+    function drawStarfield() {
+      for (const star of stars) {
+        // Parallax: deeper layers move slower
+        const parallax = 0.3 + (star.layer * 0.35);
+        const pos = worldToScreen(star.x * parallax, star.y * parallax);
+
+        // Only draw if on screen
+        if (pos.x < -10 || pos.x > canvas.width + 10 || pos.y < -10 || pos.y > canvas.height + 10) {
+          continue;
+        }
+
+        const alpha = star.brightness * Math.min(1, zoom * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, star.size * (0.5 + star.layer * 0.25), 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
 
     // Empire names
     const empireNames = {
@@ -378,6 +420,9 @@
 
       ctx.fillStyle = '#050810';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw starfield background
+      drawStarfield();
 
       // Draw subtle grid
       drawGrid();
@@ -610,8 +655,8 @@
 
     canvas.addEventListener('wheel', (e) => {
       e.preventDefault();
-      const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
-      const newZoom = Math.max(0.01, Math.min(1, zoom * zoomFactor));
+      const zoomFactor = e.deltaY > 0 ? (1 / ZOOM_SPEED) : ZOOM_SPEED;
+      const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom * zoomFactor));
 
       // Zoom toward mouse position
       const world = screenToWorld(e.clientX, e.clientY);
@@ -645,6 +690,7 @@
     }
 
     // Initialize
+    generateStars();
     resizeCanvas();
     fetchMapData();
 
