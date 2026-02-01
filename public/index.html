@@ -1237,7 +1237,7 @@
         const response = await fetch('https://game.spacemolt.com/api/stats');
         const data = await response.json();
 
-        document.getElementById('stat-version').textContent = data.version || '-';
+        document.getElementById('stat-version').textContent = (data.version && data.version !== '0.0.0') ? data.version : '-';
         document.getElementById('stat-online').textContent = data.online_players || '0';
         document.getElementById('stat-players').textContent = data.total_players || '0';
         document.getElementById('stat-systems').textContent = data.total_systems || '0';
