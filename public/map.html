@@ -448,12 +448,37 @@
         ctx.arc(pos.x, pos.y, NODE_RADIUS * 0.3, 0, Math.PI * 2);
         ctx.fill();
 
-        // Player count indicator
-        if (hasPlayers && !isHovered) {
-          ctx.fillStyle = ACTIVE_GLOW;
-          ctx.font = '10px "JetBrains Mono", monospace';
+        // Player count badge
+        if (hasPlayers) {
+          const countText = system.online.toString();
+          ctx.font = 'bold 11px "JetBrains Mono", monospace';
+          const textWidth = ctx.measureText(countText).width;
+          const badgeWidth = Math.max(textWidth + 8, 18);
+          const badgeHeight = 14;
+          const badgeX = pos.x;
+          const badgeY = pos.y + NODE_RADIUS + 10;
+
+          // Badge background
+          ctx.fillStyle = 'rgba(45, 212, 191, 0.9)';
+          ctx.beginPath();
+          ctx.roundRect(badgeX - badgeWidth / 2, badgeY - badgeHeight / 2, badgeWidth, badgeHeight, 3);
+          ctx.fill();
+
+          // Badge text
+          ctx.fillStyle = '#050810';
           ctx.textAlign = 'center';
-          ctx.fillText(system.online.toString(), pos.x, pos.y + NODE_RADIUS + 12);
+          ctx.textBaseline = 'middle';
+          ctx.fillText(countText, badgeX, badgeY);
+        }
+
+        // System name label (shown when zoomed in)
+        if (zoom > 0.15 || isHovered) {
+          ctx.font = '11px "Space Grotesk", sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'top';
+          ctx.fillStyle = isHovered ? '#ffffff' : 'rgba(168, 197, 214, 0.8)';
+          const labelY = hasPlayers ? pos.y + NODE_RADIUS + 22 : pos.y + NODE_RADIUS + 8;
+          ctx.fillText(system.name, pos.x, labelY);
         }
       }
     }
@@ -493,18 +518,22 @@
     function findSystemAt(sx, sy) {
       if (!mapData) return null;
 
-      const hitRadius = NODE_RADIUS * 2 / zoom;
-      const world = screenToWorld(sx, sy);
+      // Hit detection in screen space for consistent feel
+      const hitRadius = NODE_RADIUS * 2.5;
+      let closestSystem = null;
+      let closestDist = Infinity;
 
       for (const system of mapData.systems) {
-        const dx = system.x - world.x;
-        const dy = system.y - world.y;
+        const pos = worldToScreen(system.x, system.y);
+        const dx = pos.x - sx;
+        const dy = pos.y - sy;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < hitRadius / zoom * 15) {
-          return system;
+        if (dist < hitRadius && dist < closestDist) {
+          closestSystem = system;
+          closestDist = dist;
         }
       }
-      return null;
+      return closestSystem;
     }
 
     function updateTooltip(system, mx, my) {
