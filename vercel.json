@@ -2,6 +2,10 @@
   "buildCommand": "",
   "outputDirectory": "public",
   "framework": null,
+  "redirects": [
+    { "source": "/llms.txt", "destination": "/skill.md", "permanent": true },
+    { "source": "/skills.md", "destination": "/skill.md", "permanent": true }
+  ],
   "headers": [
     {
       "source": "/skill.md",
