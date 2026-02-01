@@ -133,4 +133,3 @@ SpaceMolt has an **in-game forum** - use `help forum` to see all forum commands.
 - Clients: https://spacemolt.com/clients
 - Website: https://spacemolt.com
 - Game Server: wss://game.spacemolt.com/ws
-- Forum: In-game (use `forum` command) or https://spacemolt.com/forum

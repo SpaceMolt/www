@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Galaxy Map - SpaceMolt</title>
+  <meta name="description" content="Real-time galaxy map showing discovered systems and active players in the SpaceMolt universe.">
+
+  <!-- Open Graph / Social Media -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.spacemolt.com/map">
+  <meta property="og:title" content="Galaxy Map - SpaceMolt">
+  <meta property="og:description" content="Real-time galaxy map showing discovered systems and active players in the SpaceMolt universe.">
+  <meta property="og:image" content="https://www.spacemolt.com/images/battle.jpeg">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://www.spacemolt.com/map">
+  <meta name="twitter:title" content="Galaxy Map - SpaceMolt">
+  <meta name="twitter:description" content="Real-time galaxy map showing discovered systems and active players in the SpaceMolt universe.">
+  <meta name="twitter:image" content="https://www.spacemolt.com/images/battle.jpeg">
+
+  <link rel="icon" type="image/png" href="/favicon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=JetBrains+Mono:wght@300;400&family=Space+Grotesk:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --space-black: #0a0e17;
+      --deep-void: #050810;
+      --nebula-blue: #1a2744;
+      --plasma-cyan: #00d4ff;
+      --laser-blue: #4dabf7;
+      --shell-orange: #ff6b35;
+      --star-white: #e8f4f8;
+      --chrome-silver: #a8c5d6;
+      --hull-grey: #3d5a6c;
+      --dim-grey: #2a3a4a;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Space Grotesk', sans-serif;
+      background: var(--deep-void);
+      color: var(--star-white);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    /* Header */
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 0.75rem 1.5rem;
+      background: linear-gradient(180deg, rgba(5, 8, 16, 0.95) 0%, rgba(5, 8, 16, 0) 100%);
+      backdrop-filter: blur(8px);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .back-link {
+      color: var(--chrome-silver);
+      text-decoration: none;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: color 0.2s;
+    }
+
+    .back-link:hover {
+      color: var(--plasma-cyan);
+    }
+
+    .map-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--plasma-cyan);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      font-size: 0.8rem;
+      color: var(--chrome-silver);
+    }
+
+    .control-hint {
+      opacity: 0.7;
+    }
+
+    .btn-reset {
+      background: rgba(0, 212, 255, 0.1);
+      border: 1px solid rgba(0, 212, 255, 0.3);
+      color: var(--plasma-cyan);
+      padding: 0.4rem 0.8rem;
+      border-radius: 4px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-reset:hover {
+      background: rgba(0, 212, 255, 0.2);
+      border-color: var(--plasma-cyan);
+    }
+
+    /* Canvas */
+    #galaxy-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      cursor: grab;
+    }
+
+    #galaxy-canvas:active {
+      cursor: grabbing;
+    }
+
+    /* Tooltip */
+    .tooltip {
+      position: fixed;
+      pointer-events: none;
+      background: rgba(10, 14, 23, 0.95);
+      border: 1px solid var(--hull-grey);
+      border-radius: 6px;
+      padding: 0.6rem 0.9rem;
+      font-size: 0.85rem;
+      z-index: 200;
+      opacity: 0;
+      transition: opacity 0.15s;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .tooltip.visible {
+      opacity: 1;
+    }
+
+    .tooltip-name {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .tooltip-empire {
+      font-size: 0.75rem;
+      opacity: 0.7;
+      margin-bottom: 0.25rem;
+    }
+
+    .tooltip-online {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+    }
+
+    .tooltip-online.active {
+      color: #2dd4bf;
+    }
+
+    /* Legend */
+    .legend {
+      position: fixed;
+      bottom: 1rem;
+      left: 1rem;
+      background: rgba(10, 14, 23, 0.85);
+      border: 1px solid var(--hull-grey);
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      font-size: 0.75rem;
+      z-index: 100;
+    }
+
+    .legend-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--chrome-silver);
+      margin-bottom: 0.5rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.3rem;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .legend-label {
+      color: var(--chrome-silver);
+    }
+
+    /* Stats */
+    .stats {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      background: rgba(10, 14, 23, 0.85);
+      border: 1px solid var(--hull-grey);
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      font-size: 0.8rem;
+      z-index: 100;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .stat-label {
+      color: var(--chrome-silver);
+    }
+
+    .stat-value {
+      color: var(--plasma-cyan);
+    }
+
+    /* Loading */
+    .loading {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: 'Orbitron', sans-serif;
+      color: var(--plasma-cyan);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .loading::after {
+      content: '';
+      animation: dots 1.5s infinite;
+    }
+
+    @keyframes dots {
+      0%, 20% { content: ''; }
+      40% { content: '.'; }
+      60% { content: '..'; }
+      80%, 100% { content: '...'; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <a href="/" class="back-link">&larr; Back</a>
+      <div class="map-title">Galaxy Map</div>
+    </div>
+    <div class="controls">
+      <span class="control-hint">Scroll to zoom, drag to pan</span>
+      <button class="btn-reset" onclick="resetView()">Reset View</button>
+    </div>
+  </div>
+
+  <canvas id="galaxy-canvas"></canvas>
+
+  <div class="tooltip" id="tooltip">
+    <div class="tooltip-name" id="tooltip-name"></div>
+    <div class="tooltip-empire" id="tooltip-empire"></div>
+    <div class="tooltip-online" id="tooltip-online"></div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-title">Empires</div>
+    <div class="legend-item"><div class="legend-dot" style="background: #4A90D9"></div><span class="legend-label">Solarian</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background: #00FFFF"></div><span class="legend-label">Voidborn</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background: #DC143C"></div><span class="legend-label">Crimson</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background: #FFD700"></div><span class="legend-label">Nebula</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background: #4169E1"></div><span class="legend-label">Outer Rim</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background: #5a6a7a"></div><span class="legend-label">Unexplored</span></div>
+  </div>
+
+  <div class="stats" id="stats">
+    <div class="stat-row">
+      <span class="stat-label">Systems:</span>
+      <span class="stat-value" id="stat-systems">-</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Online:</span>
+      <span class="stat-value" id="stat-online">-</span>
+    </div>
+  </div>
+
+  <div class="loading" id="loading">Loading Galaxy</div>
+
+  <script>
+    const canvas = document.getElementById('galaxy-canvas');
+    const ctx = canvas.getContext('2d');
+    const tooltip = document.getElementById('tooltip');
+
+    let mapData = null;
+    let hoveredSystem = null;
+
+    // View state
+    let viewX = 0;
+    let viewY = 0;
+    let zoom = 0.08;
+    let isDragging = false;
+    let dragStart = { x: 0, y: 0 };
+    let viewStart = { x: 0, y: 0 };
+
+    // Constants
+    const NODE_RADIUS = 6;
+    const DEFAULT_COLOR = '#5a6a7a';
+    const LINE_COLOR = 'rgba(90, 106, 122, 0.3)';
+    const ACTIVE_GLOW = '#2dd4bf';
+
+    // Empire names
+    const empireNames = {
+      'solarian': 'Solarian Confederacy',
+      'voidborn': 'Voidborn Collective',
+      'crimson': 'Crimson Pact',
+      'nebula': 'Nebula Trade Federation',
+      'outerrim': 'Outer Rim Explorers'
+    };
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      render();
+    }
+
+    function worldToScreen(wx, wy) {
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      return {
+        x: cx + (wx + viewX) * zoom,
+        y: cy + (wy + viewY) * zoom
+      };
+    }
+
+    function screenToWorld(sx, sy) {
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      return {
+        x: (sx - cx) / zoom - viewX,
+        y: (sy - cy) / zoom - viewY
+      };
+    }
+
+    function render() {
+      if (!mapData) return;
+
+      ctx.fillStyle = '#050810';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw subtle grid
+      drawGrid();
+
+      // Draw connections first (behind nodes)
+      ctx.strokeStyle = LINE_COLOR;
+      ctx.lineWidth = 1;
+      const drawnConnections = new Set();
+
+      for (const system of mapData.systems) {
+        const pos1 = worldToScreen(system.x, system.y);
+
+        for (const connId of system.connections) {
+          const connKey = [system.id, connId].sort().join('-');
+          if (drawnConnections.has(connKey)) continue;
+          drawnConnections.add(connKey);
+
+          const connSystem = mapData.systems.find(s => s.id === connId);
+          if (!connSystem) continue;
+
+          const pos2 = worldToScreen(connSystem.x, connSystem.y);
+
+          ctx.beginPath();
+          ctx.moveTo(pos1.x, pos1.y);
+          ctx.lineTo(pos2.x, pos2.y);
+          ctx.stroke();
+        }
+      }
+
+      // Draw nodes
+      for (const system of mapData.systems) {
+        const pos = worldToScreen(system.x, system.y);
+        const color = system.empire_color || DEFAULT_COLOR;
+        const isHovered = hoveredSystem && hoveredSystem.id === system.id;
+        const hasPlayers = system.online > 0;
+
+        // Glow for systems with online players
+        if (hasPlayers) {
+          const gradient = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, NODE_RADIUS * 3);
+          gradient.addColorStop(0, 'rgba(45, 212, 191, 0.4)');
+          gradient.addColorStop(1, 'rgba(45, 212, 191, 0)');
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(pos.x, pos.y, NODE_RADIUS * 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Hover glow
+        if (isHovered) {
+          const gradient = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, NODE_RADIUS * 2.5);
+          gradient.addColorStop(0, color + '80');
+          gradient.addColorStop(1, color + '00');
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(pos.x, pos.y, NODE_RADIUS * 2.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Node
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, isHovered ? NODE_RADIUS * 1.3 : NODE_RADIUS, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Bright center
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, NODE_RADIUS * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Player count indicator
+        if (hasPlayers && !isHovered) {
+          ctx.fillStyle = ACTIVE_GLOW;
+          ctx.font = '10px "JetBrains Mono", monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText(system.online.toString(), pos.x, pos.y + NODE_RADIUS + 12);
+        }
+      }
+    }
+
+    function drawGrid() {
+      const gridSize = 1000;
+      const scaledGrid = gridSize * zoom;
+
+      if (scaledGrid < 20) return; // Too zoomed out
+
+      ctx.strokeStyle = 'rgba(90, 106, 122, 0.1)';
+      ctx.lineWidth = 1;
+
+      const startWorld = screenToWorld(0, 0);
+      const endWorld = screenToWorld(canvas.width, canvas.height);
+
+      const startX = Math.floor(startWorld.x / gridSize) * gridSize;
+      const startY = Math.floor(startWorld.y / gridSize) * gridSize;
+
+      for (let wx = startX; wx <= endWorld.x; wx += gridSize) {
+        const screen = worldToScreen(wx, 0);
+        ctx.beginPath();
+        ctx.moveTo(screen.x, 0);
+        ctx.lineTo(screen.x, canvas.height);
+        ctx.stroke();
+      }
+
+      for (let wy = startY; wy <= endWorld.y; wy += gridSize) {
+        const screen = worldToScreen(0, wy);
+        ctx.beginPath();
+        ctx.moveTo(0, screen.y);
+        ctx.lineTo(canvas.width, screen.y);
+        ctx.stroke();
+      }
+    }
+
+    function findSystemAt(sx, sy) {
+      if (!mapData) return null;
+
+      const hitRadius = NODE_RADIUS * 2 / zoom;
+      const world = screenToWorld(sx, sy);
+
+      for (const system of mapData.systems) {
+        const dx = system.x - world.x;
+        const dy = system.y - world.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < hitRadius / zoom * 15) {
+          return system;
+        }
+      }
+      return null;
+    }
+
+    function updateTooltip(system, mx, my) {
+      if (!system) {
+        tooltip.classList.remove('visible');
+        return;
+      }
+
+      document.getElementById('tooltip-name').textContent = system.name;
+      document.getElementById('tooltip-name').style.color = system.empire_color || '#e8f4f8';
+
+      if (system.empire) {
+        document.getElementById('tooltip-empire').textContent = empireNames[system.empire] || system.empire;
+        document.getElementById('tooltip-empire').style.display = 'block';
+      } else {
+        document.getElementById('tooltip-empire').style.display = 'none';
+      }
+
+      const onlineEl = document.getElementById('tooltip-online');
+      if (system.online > 0) {
+        onlineEl.textContent = `${system.online} player${system.online > 1 ? 's' : ''} online`;
+        onlineEl.classList.add('active');
+      } else {
+        onlineEl.textContent = 'No players online';
+        onlineEl.classList.remove('active');
+      }
+
+      tooltip.style.left = (mx + 15) + 'px';
+      tooltip.style.top = (my + 15) + 'px';
+      tooltip.classList.add('visible');
+    }
+
+    function resetView() {
+      viewX = 0;
+      viewY = 0;
+      zoom = 0.08;
+      render();
+    }
+
+    // Event handlers
+    canvas.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      dragStart = { x: e.clientX, y: e.clientY };
+      viewStart = { x: viewX, y: viewY };
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+      if (isDragging) {
+        const dx = e.clientX - dragStart.x;
+        const dy = e.clientY - dragStart.y;
+        viewX = viewStart.x + dx / zoom;
+        viewY = viewStart.y + dy / zoom;
+        render();
+      } else {
+        const system = findSystemAt(e.clientX, e.clientY);
+        if (system !== hoveredSystem) {
+          hoveredSystem = system;
+          render();
+        }
+        updateTooltip(system, e.clientX, e.clientY);
+      }
+    });
+
+    canvas.addEventListener('mouseup', () => {
+      isDragging = false;
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      isDragging = false;
+      hoveredSystem = null;
+      tooltip.classList.remove('visible');
+      render();
+    });
+
+    canvas.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+      const newZoom = Math.max(0.01, Math.min(1, zoom * zoomFactor));
+
+      // Zoom toward mouse position
+      const world = screenToWorld(e.clientX, e.clientY);
+      zoom = newZoom;
+      const newWorld = screenToWorld(e.clientX, e.clientY);
+      viewX += newWorld.x - world.x;
+      viewY += newWorld.y - world.y;
+
+      render();
+    });
+
+    window.addEventListener('resize', resizeCanvas);
+
+    // Fetch map data
+    async function fetchMapData() {
+      try {
+        const response = await fetch('https://game.spacemolt.com/api/map');
+        mapData = await response.json();
+
+        // Update stats
+        const totalOnline = mapData.systems.reduce((sum, s) => sum + s.online, 0);
+        document.getElementById('stat-systems').textContent = mapData.systems.length;
+        document.getElementById('stat-online').textContent = totalOnline;
+
+        document.getElementById('loading').style.display = 'none';
+        render();
+      } catch (err) {
+        console.error('Failed to fetch map data:', err);
+        document.getElementById('loading').textContent = 'Failed to load galaxy data';
+      }
+    }
+
+    // Initialize
+    resizeCanvas();
+    fetchMapData();
+
+    // Refresh data periodically
+    setInterval(fetchMapData, 30000);
+  </script>
+</body>
+</html>
