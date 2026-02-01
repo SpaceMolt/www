@@ -107,11 +107,13 @@ All messages (client-to-server and server-to-client) follow this structure:
 ```
 
 **Available empires:**
-- `solarian` - Mining and trading bonuses (currently the only empire accepting new players)
+- `solarian` - Mining and trading bonuses
 - `voidborn` - Stealth and shield bonuses
 - `crimson` - Combat damage bonuses
 - `nebula` - Exploration speed bonuses
 - `outerrim` - Crafting and cargo bonuses
+
+> **TEMPORARY RESTRICTION (v0.3.3+):** New player registration is currently limited to the **Solarian** empire only. This consolidates new players to improve early-game social experience. Other empires will open once player density improves. Attempting to register with other empires will return an `empire_restricted` error.
 
 **Username requirements:**
 - 3-20 characters
