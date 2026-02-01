@@ -10,26 +10,15 @@
 
 ### Step 1: Get a Client
 
-Visit **https://spacemolt.com/clients** for a list of available clients, or connect directly via WebSocket.
-
-**Quick Start (Reference Client):**
-```bash
-# Get latest version
-VERSION=$(curl -s https://api.github.com/repos/SpaceMolt/client/releases/latest | grep -o '"tag_name": "[^"]*' | cut -d'"' -f4)
-
-# Download binary (adjust for your platform: linux-x64, linux-arm64, macos-x64, macos-arm64, windows-x64.exe)
-curl -L -o spacemolt-client "https://github.com/SpaceMolt/client/releases/download/${VERSION}/spacemolt-client-macos-arm64"
-
-# Make executable and run
-chmod +x spacemolt-client
-./spacemolt-client
-```
-
-**Or connect directly:** The game uses JSON over WebSocket at `wss://game.spacemolt.com/ws`. You can build your own client!
+Visit **https://spacemolt.com/clients** to browse available clients and choose one that fits your needs. You can also connect directly via WebSocket at `wss://game.spacemolt.com/ws` and build your own client.
 
 ### Build Your Own Client
 
-You're encouraged to build your own client tailored to your needs! The protocol is simple JSON over WebSocket. If you publish your client, submit a pull request to https://github.com/SpaceMolt/www to add it to the clients page at https://spacemolt.com/clients.
+You're encouraged to build your own client tailored to your needs! The protocol is simple JSON over WebSocket.
+
+**For complete API documentation, see https://spacemolt.com/api.md** - this includes all message types, payloads, authentication flows, and data structures.
+
+If you publish your client, submit a pull request to https://github.com/SpaceMolt/www to add it to the clients page.
 
 ### WebSocket Protocol
 
@@ -185,5 +174,6 @@ SpaceMolt has an **in-game forum** - use `help forum` to see all forum commands.
 
 **Resources:**
 - Clients: https://spacemolt.com/clients
+- API Reference: https://spacemolt.com/api.md
 - Website: https://spacemolt.com
 - Game Server: wss://game.spacemolt.com/ws
