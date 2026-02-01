@@ -592,6 +592,114 @@
       letter-spacing: 0.05em;
     }
 
+    .gallery-item {
+      cursor: pointer;
+    }
+
+    /* Lightbox */
+    .lightbox {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(10, 14, 23, 0.95);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem;
+      backdrop-filter: blur(10px);
+      cursor: pointer;
+    }
+
+    .lightbox.active {
+      display: flex;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .lightbox-content {
+      position: relative;
+      max-width: 90vw;
+      max-height: 90vh;
+    }
+
+    .lightbox-content img {
+      max-width: 100%;
+      max-height: 85vh;
+      object-fit: contain;
+      border-radius: 12px;
+      border: 2px solid var(--plasma-cyan);
+      box-shadow: var(--glow-cyan), 0 20px 60px rgba(0, 0, 0, 0.8);
+    }
+
+    .lightbox-caption {
+      text-align: center;
+      margin-top: 1rem;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.1rem;
+      color: var(--star-white);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .lightbox-close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      font-size: 2rem;
+      color: var(--chrome-silver);
+      cursor: pointer;
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid var(--hull-grey);
+      border-radius: 50%;
+      background: var(--deep-void);
+      transition: all 0.3s ease;
+      z-index: 2001;
+    }
+
+    .lightbox-close:hover {
+      color: var(--plasma-cyan);
+      border-color: var(--plasma-cyan);
+      box-shadow: var(--glow-cyan);
+    }
+
+    .lightbox-nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 2rem;
+      color: var(--chrome-silver);
+      cursor: pointer;
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid var(--hull-grey);
+      border-radius: 50%;
+      background: var(--deep-void);
+      transition: all 0.3s ease;
+    }
+
+    .lightbox-nav:hover {
+      color: var(--plasma-cyan);
+      border-color: var(--plasma-cyan);
+      box-shadow: var(--glow-cyan);
+    }
+
+    .lightbox-prev {
+      left: 1rem;
+    }
+
+    .lightbox-next {
+      right: 1rem;
+    }
+
     /* Empires Section */
     .empires-section {
       background: linear-gradient(180deg, var(--space-black) 0%, var(--deep-void) 50%, var(--space-black) 100%);
@@ -1138,6 +1246,17 @@
     </div>
   </section>
 
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox">
+    <div class="lightbox-close" id="lightbox-close">&times;</div>
+    <div class="lightbox-nav lightbox-prev" id="lightbox-prev">&#8249;</div>
+    <div class="lightbox-nav lightbox-next" id="lightbox-next">&#8250;</div>
+    <div class="lightbox-content">
+      <img id="lightbox-img" src="" alt="">
+      <div class="lightbox-caption" id="lightbox-caption"></div>
+    </div>
+  </div>
+
   <!-- Footer -->
   <footer>
     <div class="footer-content">
@@ -1293,6 +1412,80 @@
     // Update stats on load and every 30 seconds
     updateStats();
     setInterval(updateStats, 30000);
+
+    // Lightbox functionality
+    (function() {
+      const lightbox = document.getElementById('lightbox');
+      const lightboxImg = document.getElementById('lightbox-img');
+      const lightboxCaption = document.getElementById('lightbox-caption');
+      const lightboxClose = document.getElementById('lightbox-close');
+      const lightboxPrev = document.getElementById('lightbox-prev');
+      const lightboxNext = document.getElementById('lightbox-next');
+      const galleryItems = document.querySelectorAll('.gallery-item');
+
+      let currentIndex = 0;
+      const images = Array.from(galleryItems).map(item => ({
+        src: item.querySelector('img').src,
+        caption: item.querySelector('.gallery-caption').textContent
+      }));
+
+      function openLightbox(index) {
+        currentIndex = index;
+        lightboxImg.src = images[index].src;
+        lightboxCaption.textContent = images[index].caption;
+        lightbox.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeLightbox() {
+        lightbox.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+
+      function showPrev() {
+        currentIndex = (currentIndex - 1 + images.length) % images.length;
+        lightboxImg.src = images[currentIndex].src;
+        lightboxCaption.textContent = images[currentIndex].caption;
+      }
+
+      function showNext() {
+        currentIndex = (currentIndex + 1) % images.length;
+        lightboxImg.src = images[currentIndex].src;
+        lightboxCaption.textContent = images[currentIndex].caption;
+      }
+
+      galleryItems.forEach((item, index) => {
+        item.addEventListener('click', () => openLightbox(index));
+      });
+
+      lightboxClose.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeLightbox();
+      });
+
+      lightboxPrev.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showPrev();
+      });
+
+      lightboxNext.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showNext();
+      });
+
+      lightbox.addEventListener('click', (e) => {
+        if (e.target === lightbox) {
+          closeLightbox();
+        }
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (!lightbox.classList.contains('active')) return;
+        if (e.key === 'Escape') closeLightbox();
+        if (e.key === 'ArrowLeft') showPrev();
+        if (e.key === 'ArrowRight') showNext();
+      });
+    })();
   </script>
 </body>
 </html>
