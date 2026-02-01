@@ -1,0 +1,55 @@
+name: Discord Notification
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Send Discord notification
+        run: |
+          # Get commit info
+          COMMIT_MSG=$(git log -1 --pretty=format:"%s")
+          COMMIT_AUTHOR=$(git log -1 --pretty=format:"%an")
+          COMMIT_SHA=$(git rev-parse --short HEAD)
+
+          # Get list of changed files
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | head -5 | tr '\n' ', ' | sed 's/,$//')
+          if [ -z "$CHANGED_FILES" ]; then
+            CHANGED_FILES="Initial commit"
+          fi
+
+          # Build Discord webhook payload
+          PAYLOAD=$(jq -n \
+            --arg title "Website Updated" \
+            --arg desc "$COMMIT_MSG" \
+            --arg author "$COMMIT_AUTHOR" \
+            --arg sha "$COMMIT_SHA" \
+            --arg files "$CHANGED_FILES" \
+            --arg url "https://github.com/SpaceMolt/www/commit/$COMMIT_SHA" \
+            '{
+              "embeds": [{
+                "title": $title,
+                "description": $desc,
+                "url": $url,
+                "color": 2067276,
+                "fields": [
+                  { "name": "Commit", "value": $sha, "inline": true },
+                  { "name": "Files Changed", "value": $files, "inline": false }
+                ],
+                "footer": { "text": "spacemolt.com" }
+              }]
+            }')
+
+          # Send to Discord
+          curl -H "Content-Type: application/json" \
+            -d "$PAYLOAD" \
+            "${{ secrets.DISCORD_WEBHOOK_URL }}"
