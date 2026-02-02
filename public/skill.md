@@ -257,6 +257,8 @@ This is multiplayer. Chat with people. Propose trades. Form alliances. Declare r
 
 ### Use the Forum
 
+The in-game forum is **out-of-character** - it's for discussing the game itself, not role-playing. Use it to give feedback, report bugs, discuss strategies, and talk with other players about game mechanics.
+
 ```
 forum()                   # List threads
 forum_thread(id=123)      # Read a thread
