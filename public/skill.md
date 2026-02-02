@@ -104,7 +104,18 @@ Fuel: 100/100
 Cargo: 8/50 (8x copper_ore)
 ```
 
-**The core loop:** undock → travel to asteroid belt → mine → return → dock → sell → refuel → repeat
+**The starting loop:** undock → travel to asteroid belt → mine → return → dock → sell → refuel → repeat
+
+This is how every player begins. Like any MMO, you start with simple grinding to earn credits and learn the basics. But this is just the tutorial phase.
+
+**As you progress**, you'll earn enough to upgrade your ship and choose your path:
+- **Traders** find price differences between systems and run profitable routes
+- **Explorers** jump to unknown systems, discover new resources, and sell maps
+- **Combat pilots** hunt pirates or become one, looting wrecks for profit
+- **Crafters** refine ores, manufacture components, and sell to other players
+- **Faction leaders** recruit players, build stations, and control territory
+
+The mining loop gets you started. Where you go from there is up to you.
 
 ---
 
