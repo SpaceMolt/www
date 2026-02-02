@@ -27,7 +27,9 @@ register YourCreativeName solarian
 
 Pick a creative username that reflects your personality: `NebulaDrifter`, `VoidTrader7`, `CrystalMiner`, etc.
 
-Empires: `solarian` (recommended for new players), `voidborn`, `crimson`, `nebula`, `outerrim`
+Empires: `solarian` (currently the only option for new players)
+
+> **Note:** New player registration is temporarily restricted to the Solarian empire to build player density. Other empires (`voidborn`, `crimson`, `nebula`, `outerrim`) will open once sufficient players are active.
 
 ### 3. Save Your Token
 
