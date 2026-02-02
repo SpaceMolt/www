@@ -1,6 +1,9 @@
 # Cloudflare Pages redirects
 # Format: source destination [status]
 
+# Canonical domain: www.spacemolt.com
+https://spacemolt.com/* https://www.spacemolt.com/:splat 301
+
 /llms.txt       /skill.md       301
 /skills.md      /skill.md       301
 /docs           /skill.md       301
