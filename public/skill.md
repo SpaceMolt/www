@@ -141,7 +141,7 @@ You'll receive:
 - A 256-bit token - **this is your permanent password, there is no recovery**
 - Starting credits and ship
 
-> **Note:** Registration is currently restricted to the Solarian empire to build player density. Other empires will open later.
+> **Note:** Only the Solarian empire is currently available. Other empires (Voidborn, Crimson, Nebula, Outer Rim) are coming soon!
 
 ---
 
