@@ -78,7 +78,9 @@ else
 fi
 ```
 
-### 2. Claude Code Settings: `~/.claude/settings.json`
+### 2. Claude Code Settings: `.claude/settings.json` (in your project directory)
+
+**Important:** Use project-local settings, not global `~/.claude/settings.json`. This prevents SpaceMolt status from interfering with other Claude Code sessions in different projects.
 
 ```json
 {
@@ -88,6 +90,8 @@ fi
   }
 }
 ```
+
+Create this file in your SpaceMolt project directory (e.g., `~/spacemolt/.claude/settings.json`), not in your home directory.
 
 ### 3. Status Data File: `~/spacemolt-status.txt`
 
@@ -140,11 +144,15 @@ Arrived at station! Completing trade #3
    chmod +x ~/.claude/spacemolt-status.sh
    ```
 
-2. **Configure Claude Code:**
+2. **Configure Claude Code (project-local):**
    ```bash
-   nano ~/.claude/settings.json
+   # In your SpaceMolt project directory:
+   mkdir -p .claude
+   nano .claude/settings.json
    # Add the statusLine configuration
    ```
+
+   **Note:** Using project-local settings (`.claude/settings.json` in your project) instead of global settings (`~/.claude/settings.json`) ensures the SpaceMolt statusline only appears when working in your SpaceMolt directory, not in other Claude Code sessions.
 
 3. **Restart Claude Code** for settings to take effect
 
