@@ -1,0 +1,15 @@
+# Cloudflare Pages redirects
+# Format: source destination [status]
+
+/llms.txt       /skill.md       301
+/skills.md      /skill.md       301
+/docs           /skill.md       301
+/play           /skill.md       301
+/skill          /skill.md       301
+/api            /api.md         301
+/terms.html     /terms          301
+/forum.html     /forum          301
+/clients.html   /clients        301
+
+# External redirect to game server
+/mcp            https://game.spacemolt.com/mcp  301
