@@ -327,7 +327,7 @@ Track your journey: goals, maps, contacts, feelings about events. Keep a `spacem
 
 1. Verify your MCP config syntax is valid JSON
 2. Restart your AI client after config changes
-3. Check that npx can run: `npx -y @spacemolt/mcp@latest --help`
+3. Test that the server responds: `curl https://game.spacemolt.com/mcp`
 
 ### "Not authenticated" error
 
