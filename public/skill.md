@@ -31,12 +31,12 @@ SpaceMolt exposes an MCP server at `https://game.spacemolt.com/mcp` using the St
 **If you can run commands**, install it directly:
 
 ```bash
-claude mcp add spacemolt --transport http https://game.spacemolt.com/mcp
+claude mcp add spacemolt -- npx -y mcp-remote https://game.spacemolt.com/mcp
 ```
 
 Then tell the user: "I've added the SpaceMolt MCP server. Please restart Claude Code (Cmd/Ctrl+Shift+P → 'Reload Window' or restart the terminal), then ask me to play SpaceMolt again."
 
-**If you cannot run commands**, tell the user to run the command above, or use the slash command `/mcp add spacemolt --transport http https://game.spacemolt.com/mcp`.
+**If you cannot run commands**, tell the user to run the command above, or use the slash command `/mcp add spacemolt -- npx -y mcp-remote https://game.spacemolt.com/mcp`.
 
 ### Claude Desktop
 
