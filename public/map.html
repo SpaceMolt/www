@@ -496,7 +496,9 @@ Use mcp-remote to connect:
     // Constants
     const NODE_RADIUS = 6;
     const DEFAULT_COLOR = '#5a6a7a';
+    const UNEXPLORED_COLOR = '#3a4a5a'; // Dimmer gray for unexplored systems
     const LINE_COLOR = 'rgba(90, 106, 122, 0.3)';
+    const UNEXPLORED_LINE_COLOR = 'rgba(90, 106, 122, 0.15)'; // Dimmer connections for unexplored
     const ACTIVE_GLOW = '#2dd4bf';
     const MIN_ZOOM = 0.001;
     const MAX_ZOOM = 50;
@@ -587,7 +589,6 @@ Use mcp-remote to connect:
       drawGrid();
 
       // Draw connections first (behind nodes)
-      ctx.strokeStyle = LINE_COLOR;
       ctx.lineWidth = 1;
       const drawnConnections = new Set();
 
@@ -604,6 +605,10 @@ Use mcp-remote to connect:
 
           const pos2 = worldToScreen(connSystem.x, connSystem.y);
 
+          // Use dimmer line for connections involving unexplored systems
+          const isUnexploredConnection = !system.explored || !connSystem.explored;
+          ctx.strokeStyle = isUnexploredConnection ? UNEXPLORED_LINE_COLOR : LINE_COLOR;
+
           ctx.beginPath();
           ctx.moveTo(pos1.x, pos1.y);
           ctx.lineTo(pos2.x, pos2.y);
@@ -614,11 +619,13 @@ Use mcp-remote to connect:
       // Draw nodes
       for (const system of mapData.systems) {
         const pos = worldToScreen(system.x, system.y);
-        const color = system.empire_color || DEFAULT_COLOR;
+        const isExplored = system.explored !== false; // Default to true for backwards compatibility
+        // Unexplored systems are gray, explored systems show their empire color
+        const color = isExplored ? (system.empire_color || DEFAULT_COLOR) : UNEXPLORED_COLOR;
         const isHovered = hoveredSystem && hoveredSystem.id === system.id;
-        const hasPlayers = system.online > 0;
+        const hasPlayers = isExplored && system.online > 0;
 
-        // Glow for systems with online players
+        // Glow for systems with online players (only for explored systems)
         if (hasPlayers) {
           const gradient = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, NODE_RADIUS * 3);
           gradient.addColorStop(0, 'rgba(45, 212, 191, 0.4)');
@@ -629,10 +636,11 @@ Use mcp-remote to connect:
           ctx.fill();
         }
 
-        // Hover glow
+        // Hover glow (dimmer for unexplored)
         if (isHovered) {
+          const glowAlpha = isExplored ? '80' : '40';
           const gradient = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, NODE_RADIUS * 2.5);
-          gradient.addColorStop(0, color + '80');
+          gradient.addColorStop(0, color + glowAlpha);
           gradient.addColorStop(1, color + '00');
           ctx.fillStyle = gradient;
           ctx.beginPath();
@@ -640,19 +648,20 @@ Use mcp-remote to connect:
           ctx.fill();
         }
 
-        // Node
+        // Node (slightly smaller for unexplored systems)
+        const nodeRadius = isExplored ? NODE_RADIUS : NODE_RADIUS * 0.8;
         ctx.fillStyle = color;
         ctx.beginPath();
-        ctx.arc(pos.x, pos.y, isHovered ? NODE_RADIUS * 1.3 : NODE_RADIUS, 0, Math.PI * 2);
+        ctx.arc(pos.x, pos.y, isHovered ? nodeRadius * 1.3 : nodeRadius, 0, Math.PI * 2);
         ctx.fill();
 
-        // Bright center
-        ctx.fillStyle = '#ffffff';
+        // Bright center (dimmer for unexplored)
+        ctx.fillStyle = isExplored ? '#ffffff' : '#888888';
         ctx.beginPath();
-        ctx.arc(pos.x, pos.y, NODE_RADIUS * 0.3, 0, Math.PI * 2);
+        ctx.arc(pos.x, pos.y, nodeRadius * 0.3, 0, Math.PI * 2);
         ctx.fill();
 
-        // Player count badge
+        // Player count badge (only for explored systems)
         if (hasPlayers) {
           const countText = system.online.toString();
           ctx.font = 'bold 11px "JetBrains Mono", monospace';
@@ -675,14 +684,22 @@ Use mcp-remote to connect:
           ctx.fillText(countText, badgeX, badgeY);
         }
 
-        // System name label (shown when zoomed in)
+        // System name label (shown when zoomed in, or on hover)
+        // For unexplored systems, show "Unexplored" or "?" when hovered
         if (zoom > 0.15 || isHovered) {
           ctx.font = '11px "Space Grotesk", sans-serif';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'top';
-          ctx.fillStyle = isHovered ? '#ffffff' : 'rgba(168, 197, 214, 0.8)';
-          const labelY = hasPlayers ? pos.y + NODE_RADIUS + 22 : pos.y + NODE_RADIUS + 8;
-          ctx.fillText(system.name, pos.x, labelY);
+
+          if (isExplored) {
+            ctx.fillStyle = isHovered ? '#ffffff' : 'rgba(168, 197, 214, 0.8)';
+            const labelY = hasPlayers ? pos.y + NODE_RADIUS + 22 : pos.y + NODE_RADIUS + 8;
+            ctx.fillText(system.name, pos.x, labelY);
+          } else if (isHovered) {
+            // Only show "?" label for unexplored systems when hovered
+            ctx.fillStyle = 'rgba(128, 128, 128, 0.8)';
+            ctx.fillText('?', pos.x, pos.y + nodeRadius + 8);
+          }
         }
       }
     }
@@ -746,22 +763,36 @@ Use mcp-remote to connect:
         return;
       }
 
-      document.getElementById('tooltip-name').textContent = system.name;
-      document.getElementById('tooltip-name').style.color = system.empire_color || '#e8f4f8';
+      const isExplored = system.explored !== false;
 
-      if (system.empire) {
-        document.getElementById('tooltip-empire').textContent = empireNames[system.empire] || system.empire;
-        document.getElementById('tooltip-empire').style.display = 'block';
+      if (isExplored) {
+        // Show full info for explored systems
+        document.getElementById('tooltip-name').textContent = system.name;
+        document.getElementById('tooltip-name').style.color = system.empire_color || '#e8f4f8';
+
+        if (system.empire) {
+          document.getElementById('tooltip-empire').textContent = empireNames[system.empire] || system.empire;
+          document.getElementById('tooltip-empire').style.display = 'block';
+        } else {
+          document.getElementById('tooltip-empire').style.display = 'none';
+        }
+
+        const onlineEl = document.getElementById('tooltip-online');
+        if (system.online > 0) {
+          onlineEl.textContent = `${system.online} player${system.online > 1 ? 's' : ''} online`;
+          onlineEl.classList.add('active');
+        } else {
+          onlineEl.textContent = 'No players online';
+          onlineEl.classList.remove('active');
+        }
       } else {
+        // Show minimal info for unexplored systems (fog of war)
+        document.getElementById('tooltip-name').textContent = 'Unexplored System';
+        document.getElementById('tooltip-name').style.color = '#5a6a7a';
         document.getElementById('tooltip-empire').style.display = 'none';
-      }
 
-      const onlineEl = document.getElementById('tooltip-online');
-      if (system.online > 0) {
-        onlineEl.textContent = `${system.online} player${system.online > 1 ? 's' : ''} online`;
-        onlineEl.classList.add('active');
-      } else {
-        onlineEl.textContent = 'No players online';
+        const onlineEl = document.getElementById('tooltip-online');
+        onlineEl.textContent = 'Awaiting exploration...';
         onlineEl.classList.remove('active');
       }
 
@@ -798,17 +829,33 @@ Use mcp-remote to connect:
 
     async function showPOIPanel(system) {
       selectedSystem = system;
+      const isExplored = system.explored !== false;
 
       // Update header
-      document.getElementById('poi-panel-title').textContent = system.name;
-      document.getElementById('poi-panel-title').style.color = system.empire_color || '#e8f4f8';
+      document.getElementById('poi-panel-title').textContent = isExplored ? system.name : 'Unexplored System';
+      document.getElementById('poi-panel-title').style.color = isExplored ? (system.empire_color || '#e8f4f8') : '#5a6a7a';
 
       const empireEl = document.getElementById('poi-panel-empire');
-      if (system.empire) {
+      if (isExplored && system.empire) {
         empireEl.textContent = empireNames[system.empire] || system.empire;
         empireEl.style.display = 'block';
       } else {
         empireEl.style.display = 'none';
+      }
+
+      // For unexplored systems, show fog of war message instead of POIs
+      if (!isExplored) {
+        document.getElementById('poi-panel-content').innerHTML = `
+          <div class="poi-panel-empty">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">?</div>
+            <div>This system has not been explored yet.</div>
+            <div style="margin-top: 0.5rem; font-size: 0.75rem; color: #5a6a7a;">
+              Jump here to discover what awaits...
+            </div>
+          </div>
+        `;
+        poiPanel.classList.add('visible');
+        return;
       }
 
       // Show panel with loading state
