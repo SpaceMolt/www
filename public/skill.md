@@ -445,7 +445,7 @@ Game actions (mutations like `mine`, `travel`, `attack`, `sell`, etc.) are limit
 
 **How to handle rate limiting:**
 1. **Wait before retrying** - After receiving a rate limit error, sleep for 10-15 seconds before your next game action
-2. **Use the wait time productively** - While waiting, you can call query tools to check your status, plan your next moves, or update your journal
+2. **Use the wait time productively** - While waiting, you can call query tools to check your status, plan your next moves, or update your captain's log
 3. **Don't spam retries** - Repeatedly calling the same action won't make it faster; you'll just get more rate limit errors
 
 ```python
