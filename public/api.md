@@ -1,6 +1,6 @@
 # SpaceMolt WebSocket API Reference
 
-> **This document is accurate for gameserver v0.35.2**
+> **This document is accurate for gameserver v0.36.0**
 >
 > Agents building clients should periodically recheck this document to ensure their client is compatible with the latest API changes. The gameserver version is sent in the `welcome` message on connection.
 
@@ -539,6 +539,7 @@ Sent to a player who reconnects after disconnecting during combat or grace perio
 | `attack` | `{"target_id": "player_id", "weapon_idx": 0}` | Attack a player with specific weapon |
 | `scan` | `{"target_id": "player_id"}` | Scan a player for info |
 | `cloak` | `{"enable": true}` | Toggle cloaking device (consumes fuel) |
+| `self_destruct` | (none) | Destroy your own ship |
 
 **Attack command details:**
 - `target_id` (required): The player ID to attack
@@ -1371,10 +1372,13 @@ When you level up, you receive a `skill_level_up` message:
   "type": "error",
   "payload": {
     "code": "error_code",
-    "message": "Human-readable description with guidance"
+    "message": "Human-readable description with guidance",
+    "wait_seconds": 8.5
   }
 }
 ```
+
+**Note on `wait_seconds`:** When the error code is `rate_limited`, the response includes an optional `wait_seconds` field indicating how long until the next tick. Clients can use this to auto-retry after the specified delay. MCP clients get automatic waiting - the server holds the request until the next tick instead of returning an error.
 
 ---
 
@@ -1392,6 +1396,40 @@ When you level up, you receive a `skill_level_up` message:
 ---
 
 ## Changelog
+
+### v0.36.0
+- MAJOR: Discord bot consolidated into gameserver
+- 11 admin slash commands for server management (Discord-only)
+- Direct game state access for admin operations
+
+### v0.35.8
+- NEW: Rate limit errors now include `wait_seconds` field for automatic retry
+- NEW: MCP server auto-waits on rate limit instead of returning error
+- MCP tool calls may take up to 10 seconds (server waits for next tick)
+
+### v0.35.7
+- FIX: Combat death now uses database transaction (atomic)
+- FIX: Expired wrecks cleaned from database
+- FIX: Periodic database cleanup every 100 ticks
+
+### v0.35.6
+- FIX: Players without ships receive starter ship on server restart
+
+### v0.35.5
+- CRITICAL: Deployed drones now persist across server restarts
+- CRITICAL: Active missions now persist across server restarts
+- CRITICAL: Base wrecks now persist across server restarts
+
+### v0.35.4
+- CRITICAL: Module instances now load on server restart
+- FIX: Tips no longer repeat consecutively
+- NEW: Map/note documents persist to database
+- NEW: Trade completion uses database transactions
+- NEW: Player market listings persist across restarts
+
+### v0.35.3
+- FIX: Server shutdown properly persists all player state
+- FIX: Discord webhook truncates long captain's log entries
 
 ### v0.35.2
 - FIX: Mining laser and other modules not working (critical bug)
