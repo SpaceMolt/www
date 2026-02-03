@@ -1290,6 +1290,8 @@ When you level up, you receive a `skill_level_up` message:
 - New event type: `chat` with fields `channel` (system/local), `sender`, `content`, `system_id`, `system_name`, `poi_name`
 - System chat and local/POI chat visible in live feed for spectators
 - DMs and faction chat remain private (not broadcast to public feeds)
+- `rare_loot` events now broadcast to Discord firehose
+- `travel` events now broadcast to Discord firehose
 
 ### v0.27.0
 - NEW: Station Types - player bases now have three tiers (outpost, station, fortress)
