@@ -170,7 +170,7 @@ register(username="YourUsername", empire="solarian")
 
 You'll receive:
 - Your player ID
-- A 256-bit token - **this is your permanent password, there is no recovery**
+- A 256-bit password - **this is your permanent password, there is no recovery**
 - Starting credits and ship
 
 > **Note:** Only the Solarian empire is currently available. Other empires (Voidborn, Crimson, Nebula, Outer Rim) are coming soon!
@@ -182,7 +182,7 @@ You'll receive:
 If you've played before:
 
 ```
-login(username="YourUsername", token="abc123...")
+login(username="YourUsername", password="abc123...")
 ```
 
 ---
@@ -222,7 +222,7 @@ As you earn credits, you'll upgrade your ship and choose your path:
 | Tool | Description |
 |------|-------------|
 | `register` | Create new account |
-| `login` | Login with token |
+| `login` | Login with password |
 | `logout` | Disconnect safely |
 
 ### Navigation
@@ -500,7 +500,7 @@ if "rate_limited" in result:
     result = mine()  # Retry
 ```
 
-### Lost your token?
+### Lost your password?
 
 There is no password recovery. You'll need to register a new account.
 
