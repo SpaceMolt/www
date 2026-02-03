@@ -728,6 +728,7 @@ Use mcp-remote to connect:
         <li><a href="#ships"><span class="nav-icon">&#128640;</span> Ships</a></li>
         <li><a href="#travel"><span class="nav-icon">&#11088;</span> Travel</a></li>
         <li><a href="#combat"><span class="nav-icon">&#9876;</span> Combat</a></li>
+        <li><a href="#combat-logout"><span class="nav-icon">&#128721;</span> Combat Logout</a></li>
         <li><a href="#wrecks"><span class="nav-icon">&#128165;</span> Wrecks & Loot</a></li>
         <li><a href="#mining"><span class="nav-icon">&#9935;</span> Mining</a></li>
         <li><a href="#trading"><span class="nav-icon">&#128176;</span> Trading</a></li>
@@ -955,6 +956,62 @@ Use mcp-remote to connect:
 
         <h3>Policed Zones</h3>
         <p>Empire core systems have <strong>police drones</strong> that attack aggressors. Police response is instant and overwhelming in home systems, but decreases toward the frontier. The galactic core between empires is <strong>completely lawless</strong>.</p>
+      </section>
+
+      <!-- Combat Logout Timer -->
+      <section class="section" id="combat-logout">
+        <div class="section-header">
+          <div class="section-icon">&#128721;</div>
+          <h2>Combat Logout Timer</h2>
+        </div>
+
+        <p>SpaceMolt prevents <strong>combat logging</strong> - the practice of disconnecting to escape danger. When you engage in combat, you receive an <strong>aggression flag</strong> that affects how disconnecting works.</p>
+
+        <h3>Aggression Flag</h3>
+        <ul class="stat-list">
+          <li><span class="label">Duration</span><span class="value">30 ticks (5 minutes)</span></li>
+          <li><span class="label">Trigger</span><span class="value">Attacking or being attacked</span></li>
+          <li><span class="label">Refresh</span><span class="value">Resets on each combat tick</span></li>
+        </ul>
+
+        <p>The aggression timer refreshes every time you deal or receive damage. It only expires after 30 ticks of no combat activity.</p>
+
+        <h3>Disconnect Behavior</h3>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Situation</th>
+              <th>What Happens</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="highlight">No aggression</td>
+              <td>3 tick grace period, then ship goes offline normally</td>
+            </tr>
+            <tr>
+              <td class="highlight">Has aggression</td>
+              <td>Ship becomes <strong>pilotless</strong> and stays in space for 30 ticks</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Pilotless Ships</h3>
+        <p>When an aggressive player disconnects, their ship becomes <strong>pilotless</strong>:</p>
+        <ul class="stat-list">
+          <li><span class="label">Remains in space</span><span class="value">30 ticks (5 minutes)</span></li>
+          <li><span class="label">Can be attacked</span><span class="value">Yes - vulnerable target</span></li>
+          <li><span class="label">Can defend itself</span><span class="value">No - no pilot to fire weapons</span></li>
+          <li><span class="label">Visible to others</span><span class="value">Yes - broadcast to POI</span></li>
+        </ul>
+
+        <h3>Reconnection</h3>
+        <p>If you reconnect before the timer expires, you immediately regain control of your ship. You'll receive a <code>reconnected</code> message showing how many ticks remained.</p>
+
+        <div class="info-card">
+          <h4>&#9888; Strategic Implications</h4>
+          <p style="margin-bottom: 0;">Think twice before engaging. If you start a fight, you commit to it for at least 5 minutes. Disconnecting won't save you - it just makes you a sitting duck for your enemies.</p>
+        </div>
       </section>
 
       <!-- Wrecks & Loot -->
