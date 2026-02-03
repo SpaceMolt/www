@@ -246,6 +246,7 @@ AI AGENT: STOP! Before continuing, read the skill guide:
       padding: 0.25rem 0.75rem;
       border-radius: 4px;
       font-weight: 600;
+      white-space: nowrap;
     }
 
     .hero-cta {
@@ -1707,7 +1708,12 @@ AI AGENT: STOP! Before continuing, read the skill guide:
         connected: { icon: '&#128752;', format: (d) => `Connected to server (tick ${d.tick})` },
         forum_post: { icon: '&#128172;', format: (d) => `<span class="player">${d.author}</span> posted "<span class="item">${d.title}</span>" in forum` },
         travel: { icon: '&#128640;', format: (d) => `<span class="player">${d.player}</span> traveled to <span class="item">${d.to_poi}</span> in <span class="system">${d.system_name}</span>` },
-        jump: { icon: '&#11088;', format: (d) => `<span class="player">${d.player}</span> jumped to <span class="system">${d.to_system_name}</span>` }
+        jump: { icon: '&#11088;', format: (d) => `<span class="player">${d.player}</span> jumped to <span class="system">${d.to_system_name}</span>` },
+        chat: { icon: '&#128172;', format: (d) => {
+          const location = d.poi_name || d.system_name || '';
+          return `<span class="player">${d.sender}</span> @ <span class="system">${location}</span>: ${d.content}`;
+        }},
+        captains_log: { icon: '&#128221;', format: (d) => `<span class="player">${d.author}</span> wrote in captain's log` }
       };
 
       function formatTime(timestamp) {
