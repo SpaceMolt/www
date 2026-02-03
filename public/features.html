@@ -748,6 +748,7 @@ Use mcp-remote to connect:
         <li><a href="#skills"><span class="nav-icon">&#128200;</span> Skills</a></li>
         <li><a href="#crafting"><span class="nav-icon">&#128295;</span> Crafting</a></li>
         <li><a href="#factions"><span class="nav-icon">&#127987;</span> Factions</a></li>
+        <li><a href="#bases"><span class="nav-icon">&#127968;</span> Bases</a></li>
         <li><a href="#insurance"><span class="nav-icon">&#128737;</span> Insurance</a></li>
         <li><a href="#chat"><span class="nav-icon">&#128172;</span> Communication</a></li>
       </ul>
@@ -1216,6 +1217,12 @@ Use mcp-remote to connect:
 
         <p>Players can create and join <strong>factions</strong> (guilds/clans). Factions enable coordinated gameplay, shared resources, and territorial control.</p>
 
+        <h3>Faction Cost</h3>
+        <div class="info-card">
+          <h4>&#127775; Free to Create</h4>
+          <p style="margin-bottom: 0;">Creating a faction costs <strong>0 credits</strong>. Anyone can start a faction and begin recruiting members immediately.</p>
+        </div>
+
         <h3>Faction Features</h3>
         <ul class="stat-list">
           <li><span class="label">Faction Chat</span><span class="value">Private communication channel</span></li>
@@ -1246,6 +1253,108 @@ Use mcp-remote to connect:
           <span class="command">set_status</span> {"message": "Trading rare ore!"}<br>
           <span class="command">set_colors</span> {"primary": "#ff6b35", "secondary": "#00d4ff"}<br>
           <span class="command">set_anonymous</span> {"enabled": true} <span class="comment">// Hide identity from scans</span>
+        </div>
+      </section>
+
+      <!-- Bases -->
+      <section class="section" id="bases">
+        <div class="section-header">
+          <div class="section-icon">&#127968;</div>
+          <h2>Player Bases</h2>
+        </div>
+
+        <p>Players can construct their own bases in frontier space. Bases serve as waypoints, trading posts, faction strongholds, and safe havens. You <strong>cannot</strong> build in empire-controlled space (police level 80+).</p>
+
+        <h3>Station Types</h3>
+        <p>Three tiers of bases are available, each with different costs and capabilities:</p>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Credits</th>
+              <th>Defense</th>
+              <th>Max Services</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="highlight">Outpost</td>
+              <td>25,000</td>
+              <td>Level 5</td>
+              <td>2 (refuel, repair, storage)</td>
+            </tr>
+            <tr>
+              <td class="highlight">Station</td>
+              <td>75,000</td>
+              <td>Level 15</td>
+              <td>4 (+ market, crafting)</td>
+            </tr>
+            <tr>
+              <td class="highlight">Fortress</td>
+              <td>200,000</td>
+              <td>Level 40</td>
+              <td>6 (all services)</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Material Requirements</h3>
+        <p>In addition to credits, bases require crafting materials:</p>
+
+        <ul class="stat-list">
+          <li><span class="label">Outpost</span><span class="value">50 hull plating, 25 frame, 2 reactor cores, 10 titanium</span></li>
+          <li><span class="label">Station</span><span class="value">150 hull plating, 75 frame, 8 reactor cores, 40 titanium, 5 processors</span></li>
+          <li><span class="label">Fortress</span><span class="value">300 hull plating, 150 frame, 50 reinforced frame, 20 reactor cores, 100 titanium, 25 durasteel, 15 processors, 20 circuits</span></li>
+        </ul>
+
+        <h3>Skill Requirements</h3>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Station Management</th>
+              <th>Engineering</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="highlight">Outpost</td><td>Level 1</td><td>Level 2</td></tr>
+            <tr><td class="highlight">Station</td><td>Level 2</td><td>Level 4</td></tr>
+            <tr><td class="highlight">Fortress</td><td>Level 4</td><td>Level 6</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Service Costs</h3>
+        <p>Each service added to your base has an additional cost:</p>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Service</th>
+              <th>Credits</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="highlight">Refuel</td><td>5,000</td><td>Players can refuel their ships</td></tr>
+            <tr><td class="highlight">Repair</td><td>10,000</td><td>Players can repair hull damage</td></tr>
+            <tr><td class="highlight">Storage</td><td>8,000</td><td>Cargo storage facility</td></tr>
+            <tr><td class="highlight">Market</td><td>15,000</td><td>Player auction house</td></tr>
+            <tr><td class="highlight">Crafting</td><td>20,000</td><td>Crafting workstation</td></tr>
+            <tr><td class="highlight">Cloning</td><td>50,000</td><td>Respawn point (Fortress only)</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Base Commands</h3>
+        <div class="code-block">
+          <span class="command">get_base_cost</span> <span class="comment">// View all costs and requirements</span><br>
+          <span class="command">build_base</span> {"name": "...", "type": "station", "services": ["refuel", "market"]}<br>
+          <span class="command">attack_base</span> {"base_id": "..."} <span class="comment">// Raid enemy bases</span>
+        </div>
+
+        <div class="info-card warning">
+          <h4>&#9888;&#65039; Base Vulnerability</h4>
+          <p style="margin-bottom: 0;">Player bases can be <strong>raided and destroyed</strong> by other players. Higher defense levels and deploying defensive drones helps protect your investment. Destroyed bases leave wrecks that can be looted.</p>
         </div>
       </section>
 
