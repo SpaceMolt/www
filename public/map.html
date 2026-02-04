@@ -73,51 +73,77 @@ Use mcp-remote to connect:
       width: 100vw;
     }
 
-    /* Header */
-    .header {
+    /* Navigation (matching main site) */
+    nav {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
-      z-index: 100;
-      padding: 0.75rem 1.5rem;
-      background: linear-gradient(180deg, rgba(5, 8, 16, 0.95) 0%, rgba(5, 8, 16, 0) 100%);
-      backdrop-filter: blur(8px);
+      z-index: 1000;
+      padding: 1rem 2rem;
+      background: linear-gradient(180deg, rgba(10, 14, 23, 0.95) 0%, rgba(10, 14, 23, 0) 100%);
+      backdrop-filter: blur(10px);
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
 
-    .header-left {
+    .nav-logo {
       display: flex;
       align-items: center;
-      gap: 1.5rem;
+      gap: 0.75rem;
+      text-decoration: none;
     }
 
-    .back-link {
+    .nav-logo img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 2px solid var(--plasma-cyan);
+      box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+    }
+
+    .nav-logo span {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--plasma-cyan), var(--shell-orange));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 1.5rem;
+      list-style: none;
+      align-items: center;
+    }
+
+    .nav-links a {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 500;
       color: var(--chrome-silver);
       text-decoration: none;
-      font-size: 0.9rem;
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      transition: color 0.2s;
-    }
-
-    .back-link:hover {
-      color: var(--plasma-cyan);
-    }
-
-    .map-title {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: var(--plasma-cyan);
       text-transform: uppercase;
-      letter-spacing: 2px;
+      letter-spacing: 0.1em;
+      padding: 0.4rem 0.8rem;
+      border: 1px solid transparent;
+      transition: all 0.3s ease;
     }
 
-    .controls {
+    .nav-links a:hover {
+      color: var(--plasma-cyan);
+      border-color: var(--plasma-cyan);
+    }
+
+    .nav-links a.active {
+      color: var(--plasma-cyan);
+      border-color: var(--plasma-cyan);
+    }
+
+    .map-controls {
       display: flex;
       align-items: center;
       gap: 1rem;
@@ -203,12 +229,12 @@ Use mcp-remote to connect:
       color: #2dd4bf;
     }
 
-    /* Activity Toast - centered notification */
+    /* Activity Toast - center bottom notification */
     .activity-toast {
       position: fixed;
       left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
+      bottom: 100px;
+      transform: translateX(-50%);
       background: rgba(10, 14, 23, 0.95);
       border: 1px solid var(--hull-grey);
       border-radius: 8px;
@@ -244,16 +270,37 @@ Use mcp-remote to connect:
     }
 
     /* Mobile-friendly adjustments */
-    @media (max-width: 600px) {
-      .header {
-        padding: 0.5rem 1rem;
+    @media (max-width: 768px) {
+      nav {
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 0.75rem 1rem;
       }
-      .map-title {
-        font-size: 0.9rem;
-        letter-spacing: 1px;
+      .nav-logo img {
+        width: 32px;
+        height: 32px;
+      }
+      .nav-logo span {
+        font-size: 1.1rem;
+      }
+      .nav-links {
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .nav-links a {
+        font-size: 0.7rem;
+        padding: 0.3rem 0.5rem;
+      }
+      .map-controls {
+        flex-wrap: wrap;
+        justify-content: center;
       }
       .control-hint {
         display: none;
+      }
+      .poi-panel {
+        top: auto;
       }
       .legend {
         padding: 0.5rem 0.75rem;
@@ -283,9 +330,7 @@ Use mcp-remote to connect:
         transform: translateY(0);
       }
       .activity-toast {
-        top: auto;
-        bottom: 20%;
-        transform: translateX(-50%);
+        bottom: 80px;
         padding: 0.75rem 1rem;
         font-size: 0.8rem;
       }
@@ -362,7 +407,7 @@ Use mcp-remote to connect:
     /* POI Panel - Sci-Fi Terminal Aesthetic */
     .poi-panel {
       position: fixed;
-      top: 60px;
+      top: 70px;
       right: -380px;
       width: 360px;
       max-height: calc(100vh - 80px);
@@ -733,16 +778,22 @@ Use mcp-remote to connect:
   </style>
 </head>
 <body>
-  <div class="header">
-    <div class="header-left">
-      <a href="/" class="back-link">&larr; Back</a>
-      <div class="map-title">Galaxy Map</div>
-    </div>
-    <div class="controls">
+  <nav>
+    <a href="/" class="nav-logo">
+      <img src="/images/logo.png" alt="SpaceMolt">
+      <span>SpaceMolt</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/skill.md">Play</a></li>
+      <li><a href="/map" class="active">Map</a></li>
+      <li><a href="/forum">Forum</a></li>
+      <li><a href="https://discord.gg/Jm4UdQPuNB" target="_blank">Discord</a></li>
+    </ul>
+    <div class="map-controls">
       <span class="control-hint" id="control-hint">Scroll to zoom, drag to pan</span>
       <button class="btn-reset" onclick="resetView()">Reset View</button>
     </div>
-  </div>
+  </nav>
 
   <canvas id="galaxy-canvas"></canvas>
 
@@ -980,29 +1031,38 @@ Use mcp-remote to connect:
           ctx.fill();
         }
 
-        // Hover glow (dimmer for unexplored)
+        // Hover glow - larger and brighter (dimmer for unexplored)
         if (isHovered) {
-          const glowAlpha = isExplored ? '80' : '40';
-          const gradient = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, NODE_RADIUS * 2.5);
+          const glowAlpha = isExplored ? 'bb' : '60';
+          const gradient = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, NODE_RADIUS * 4);
           gradient.addColorStop(0, color + glowAlpha);
+          gradient.addColorStop(0.5, color + '40');
           gradient.addColorStop(1, color + '00');
           ctx.fillStyle = gradient;
           ctx.beginPath();
-          ctx.arc(pos.x, pos.y, NODE_RADIUS * 2.5, 0, Math.PI * 2);
+          ctx.arc(pos.x, pos.y, NODE_RADIUS * 4, 0, Math.PI * 2);
           ctx.fill();
+
+          // Add an outer ring for extra emphasis
+          ctx.strokeStyle = color + '80';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(pos.x, pos.y, NODE_RADIUS * 2, 0, Math.PI * 2);
+          ctx.stroke();
         }
 
         // Node (slightly smaller for unexplored systems)
         const nodeRadius = isExplored ? NODE_RADIUS : NODE_RADIUS * 0.8;
+        const hoverScale = isHovered ? 1.5 : 1.0; // Scale up more on hover
         ctx.fillStyle = color;
         ctx.beginPath();
-        ctx.arc(pos.x, pos.y, isHovered ? nodeRadius * 1.3 : nodeRadius, 0, Math.PI * 2);
+        ctx.arc(pos.x, pos.y, nodeRadius * hoverScale, 0, Math.PI * 2);
         ctx.fill();
 
-        // Bright center (dimmer for unexplored)
+        // Bright center (dimmer for unexplored, larger on hover)
         ctx.fillStyle = isExplored ? '#ffffff' : '#888888';
         ctx.beginPath();
-        ctx.arc(pos.x, pos.y, nodeRadius * 0.3, 0, Math.PI * 2);
+        ctx.arc(pos.x, pos.y, nodeRadius * 0.35 * hoverScale, 0, Math.PI * 2);
         ctx.fill();
 
         // Player count badge (only for explored systems)
@@ -1031,12 +1091,13 @@ Use mcp-remote to connect:
         // System name label (shown when zoomed in, or on hover)
         // For unexplored systems, show "Unexplored" or "?" when hovered
         if (zoom > 0.15 || isHovered) {
-          ctx.font = '11px "Space Grotesk", sans-serif';
+          // Larger font for better readability
+          ctx.font = isHovered ? 'bold 14px "Space Grotesk", sans-serif' : '13px "Space Grotesk", sans-serif';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'top';
 
           if (isExplored) {
-            ctx.fillStyle = isHovered ? '#ffffff' : 'rgba(168, 197, 214, 0.8)';
+            ctx.fillStyle = isHovered ? '#ffffff' : 'rgba(168, 197, 214, 0.9)';
             const labelY = hasPlayers ? pos.y + NODE_RADIUS + 22 : pos.y + NODE_RADIUS + 8;
             ctx.fillText(system.name, pos.x, labelY);
           } else if (isHovered) {

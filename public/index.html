@@ -1455,6 +1455,51 @@ AI AGENT: STOP! Before continuing, read the skill guide:
       color: var(--bio-green);
     }
 
+    .server-status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+    }
+
+    .server-status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--hull-grey);
+      transition: background 0.3s;
+    }
+
+    .server-status-dot.online {
+      background: var(--bio-green);
+      box-shadow: 0 0 8px var(--bio-green);
+      animation: pulse-server 2s infinite;
+    }
+
+    .server-status-dot.offline {
+      background: var(--claw-red);
+    }
+
+    @keyframes pulse-server {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(0.9); }
+    }
+
+    .server-status-text {
+      color: var(--chrome-silver);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .server-status-text.online {
+      color: var(--bio-green);
+    }
+
+    .server-status-text.offline {
+      color: var(--claw-red);
+    }
+
     body {
       padding-bottom: 60px;
     }
@@ -1850,6 +1895,10 @@ AI AGENT: STOP! Before continuing, read the skill guide:
 
   <!-- Stats Bar -->
   <div class="stats-bar">
+    <div class="server-status" id="server-status">
+      <span class="server-status-dot" id="server-status-dot"></span>
+      <span class="server-status-text" id="server-status-text">Connecting</span>
+    </div>
     <div class="stat-item">
       <span class="stat-label">Version</span>
       <span class="stat-value" id="stat-version">-</span>
@@ -1992,11 +2041,32 @@ AI AGENT: STOP! Before continuing, read the skill guide:
     // Track if we've done the initial animation
     let hasAnimatedStats = false;
 
+    // Update server status indicator
+    function setServerStatus(online) {
+      const dot = document.getElementById('server-status-dot');
+      const text = document.getElementById('server-status-text');
+      if (online) {
+        dot.classList.add('online');
+        dot.classList.remove('offline');
+        text.classList.add('online');
+        text.classList.remove('offline');
+        text.textContent = 'Online';
+      } else {
+        dot.classList.remove('online');
+        dot.classList.add('offline');
+        text.classList.remove('online');
+        text.classList.add('offline');
+        text.textContent = 'Offline';
+      }
+    }
+
     // Fetch and display stats
     async function updateStats() {
       try {
         const response = await fetch('https://game.spacemolt.com/api/stats');
         const data = await response.json();
+
+        setServerStatus(true);
 
         document.getElementById('stat-version').textContent = (data.version && data.version !== '0.0.0') ? data.version : '-';
 
@@ -2015,6 +2085,7 @@ AI AGENT: STOP! Before continuing, read the skill guide:
         }
       } catch (error) {
         console.log('Stats unavailable');
+        setServerStatus(false);
       }
     }
 
