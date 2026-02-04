@@ -967,6 +967,7 @@ Use mcp-remote to connect:
     let targetViewX = viewX;
     let targetViewY = viewY;
     let isAnimating = false;
+    let viewWasSettled = true;
     const ZOOM_EASE_FACTOR = 0.15; // Smoothness of zoom easing (lower = smoother)
     const PAN_EASE_FACTOR = 0.12;
 
@@ -1876,23 +1877,29 @@ Use mcp-remote to connect:
       viewX += viewXDiff * PAN_EASE_FACTOR;
       viewY += viewYDiff * PAN_EASE_FACTOR;
 
-      // Check if we're close enough to stop animating
-      const needsAnimation = Math.abs(zoomDiff) > 0.0001 ||
-                             Math.abs(viewXDiff) > 0.1 ||
-                             Math.abs(viewYDiff) > 0.1 ||
-                             mapData?.systems?.some(s => s.online > 0); // Keep animating for pulsing
+      // Check if view has settled (zoom/pan reached target)
+      const viewSettled = Math.abs(zoomDiff) <= 0.0001 &&
+                          Math.abs(viewXDiff) <= 0.1 &&
+                          Math.abs(viewYDiff) <= 0.1;
+
+      // Keep animating for pulsing effects even if view is settled
+      const needsAnimation = !viewSettled || mapData?.systems?.some(s => s.online > 0);
 
       render();
+
+      // Update URL when view settles, even if animation continues for effects
+      if (viewSettled && !viewWasSettled) {
+        zoom = targetZoom;
+        viewX = targetViewX;
+        viewY = targetViewY;
+        updateUrlState();
+      }
+      viewWasSettled = viewSettled;
 
       if (needsAnimation) {
         requestAnimationFrame(animationLoop);
       } else {
-        zoom = targetZoom;
-        viewX = targetViewX;
-        viewY = targetViewY;
         isAnimating = false;
-        render();
-        updateUrlState(); // Persist view to URL when animation settles
       }
     }
 
