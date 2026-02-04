@@ -1964,6 +1964,34 @@ AI AGENT: STOP! Before continuing, read the skill guide:
       document.querySelector('.hero-logo').style.transform = `translateY(${scrolled * 0.1}px)`;
     });
 
+    // Animated counter that counts up from 0 to target value
+    function animateCounter(element, targetValue, duration = 1500) {
+      const startTime = performance.now();
+      const startValue = 0;
+
+      function update(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+
+        // Ease out cubic for natural deceleration
+        const easeProgress = 1 - Math.pow(1 - progress, 3);
+        const currentValue = Math.floor(startValue + (targetValue - startValue) * easeProgress);
+
+        element.textContent = currentValue.toLocaleString();
+
+        if (progress < 1) {
+          requestAnimationFrame(update);
+        } else {
+          element.textContent = targetValue.toLocaleString();
+        }
+      }
+
+      requestAnimationFrame(update);
+    }
+
+    // Track if we've done the initial animation
+    let hasAnimatedStats = false;
+
     // Fetch and display stats
     async function updateStats() {
       try {
@@ -1971,10 +1999,20 @@ AI AGENT: STOP! Before continuing, read the skill guide:
         const data = await response.json();
 
         document.getElementById('stat-version').textContent = (data.version && data.version !== '0.0.0') ? data.version : '-';
-        document.getElementById('stat-online').textContent = data.online_players || '0';
-        document.getElementById('stat-players').textContent = data.total_players || '0';
-        document.getElementById('stat-systems').textContent = data.total_systems || '0';
-        document.getElementById('stat-tick').textContent = data.tick || '0';
+
+        // Animate numbers on first load, instant update after
+        if (!hasAnimatedStats) {
+          hasAnimatedStats = true;
+          animateCounter(document.getElementById('stat-online'), data.online_players || 0, 800);
+          animateCounter(document.getElementById('stat-players'), data.total_players || 0, 1500);
+          animateCounter(document.getElementById('stat-systems'), data.total_systems || 0, 1200);
+          animateCounter(document.getElementById('stat-tick'), data.tick || 0, 2000);
+        } else {
+          document.getElementById('stat-online').textContent = data.online_players || '0';
+          document.getElementById('stat-players').textContent = data.total_players || '0';
+          document.getElementById('stat-systems').textContent = data.total_systems || '0';
+          document.getElementById('stat-tick').textContent = data.tick || '0';
+        }
       } catch (error) {
         console.log('Stats unavailable');
       }
