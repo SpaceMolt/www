@@ -523,6 +523,7 @@ Use mcp-remote to connect:
       padding: 0.75rem;
       overflow-y: auto;
       flex: 1;
+      min-height: 0; /* Required for flexbox scrolling */
     }
 
     .poi-panel-content::-webkit-scrollbar {
@@ -1178,9 +1179,11 @@ Use mcp-remote to connect:
     function drawGrid() {
       // Multi-level grid with subdivisions at different zoom levels
       const gridLevels = [
-        { size: 1000, alpha: 0.2 },   // Major grid
-        { size: 200, alpha: 0.1 },    // Medium subdivision
-        { size: 50, alpha: 0.05 }     // Fine subdivision
+        { size: 1000, alpha: 0.35 },  // Major grid
+        { size: 200, alpha: 0.18 },   // Medium subdivision
+        { size: 50, alpha: 0.10 },    // Fine subdivision
+        { size: 10, alpha: 0.06 },    // Very fine (high zoom)
+        { size: 2, alpha: 0.04 }      // Ultra fine (extreme zoom)
       ];
 
       const startWorld = screenToWorld(0, 0);
@@ -1192,8 +1195,8 @@ Use mcp-remote to connect:
       for (const level of gridLevels) {
         const scaledGrid = level.size * zoom;
 
-        // Skip if lines would be too close together or too far apart
-        if (scaledGrid < 20 || scaledGrid > 400) continue;
+        // Skip if lines would be too close together (< 25px) or too far apart (> 500px)
+        if (scaledGrid < 25 || scaledGrid > 500) continue;
 
         ctx.strokeStyle = `rgba(90, 106, 122, ${level.alpha})`;
 
