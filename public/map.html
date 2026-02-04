@@ -404,6 +404,30 @@ Use mcp-remote to connect:
       color: var(--plasma-cyan);
     }
 
+    .stat-status-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: #2dd4bf;
+      border-radius: 50%;
+      margin-right: 0.4rem;
+      animation: pulse-server 2s infinite;
+      box-shadow: 0 0 6px #2dd4bf;
+    }
+
+    @keyframes pulse-server {
+      0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+        box-shadow: 0 0 6px #2dd4bf;
+      }
+      50% {
+        opacity: 0.6;
+        transform: scale(0.85);
+        box-shadow: 0 0 3px #2dd4bf;
+      }
+    }
+
     /* POI Panel - Sci-Fi Terminal Aesthetic */
     .poi-panel {
       position: fixed;
@@ -422,6 +446,8 @@ Use mcp-remote to connect:
       box-shadow:
         0 0 40px rgba(0, 212, 255, 0.08),
         inset 0 1px 0 rgba(255, 255, 255, 0.03);
+      user-select: none;
+      -webkit-user-select: none;
     }
 
     .poi-panel::before {
@@ -752,6 +778,44 @@ Use mcp-remote to connect:
       color: var(--hull-grey);
     }
 
+    /* System-wide player summary */
+    .system-players-summary {
+      padding: 0.75rem 1rem;
+      background: rgba(45, 212, 191, 0.08);
+      border-bottom: 1px solid rgba(45, 212, 191, 0.15);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .system-players-summary-icon {
+      width: 8px;
+      height: 8px;
+      background: #2dd4bf;
+      border-radius: 50%;
+      animation: pulse-dot 2s infinite;
+    }
+
+    .system-players-summary-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: #2dd4bf;
+    }
+
+    .system-players-summary.empty {
+      background: transparent;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .system-players-summary.empty .system-players-summary-icon {
+      background: var(--hull-grey);
+      animation: none;
+    }
+
+    .system-players-summary.empty .system-players-summary-text {
+      color: var(--hull-grey);
+    }
+
     /* Loading */
     .loading {
       position: fixed;
@@ -815,7 +879,7 @@ Use mcp-remote to connect:
 
   <div class="stats" id="stats">
     <div class="stat-row">
-      <span class="stat-label">Systems:</span>
+      <span class="stat-label"><span class="stat-status-dot" id="stat-status-dot"></span>Systems:</span>
       <span class="stat-value" id="stat-systems">-</span>
     </div>
     <div class="stat-row">
@@ -893,21 +957,24 @@ Use mcp-remote to connect:
     let recentActivities = [];
     let activityToastTimeout = null;
 
-    // Starfield
+    // Starfield - lots of twinkling stars
     let stars = [];
-    const STAR_LAYERS = 3;
-    const STARS_PER_LAYER = 200;
+    const STAR_LAYERS = 4;
+    const STARS_PER_LAYER = 400; // More stars!
 
     function generateStars() {
       stars = [];
       for (let layer = 0; layer < STAR_LAYERS; layer++) {
         for (let i = 0; i < STARS_PER_LAYER; i++) {
           stars.push({
-            x: Math.random() * 20000 - 10000,
-            y: Math.random() * 20000 - 10000,
-            size: 0.5 + Math.random() * 1.5,
-            brightness: 0.3 + Math.random() * 0.7,
-            layer: layer // 0 = far (slow), 2 = near (fast)
+            x: Math.random() * 30000 - 15000,
+            y: Math.random() * 30000 - 15000,
+            size: 0.3 + Math.random() * 1.8,
+            brightness: 0.2 + Math.random() * 0.8,
+            layer: layer, // 0 = far (slow), 3 = near (fast)
+            twinkleSpeed: 0.5 + Math.random() * 2, // Random twinkle speed
+            twinkleOffset: Math.random() * Math.PI * 2, // Random phase offset
+            color: Math.random() > 0.9 ? (Math.random() > 0.5 ? '#aaddff' : '#ffddaa') : '#ffffff' // Some colored stars
           });
         }
       }
@@ -916,7 +983,7 @@ Use mcp-remote to connect:
     function drawStarfield() {
       for (const star of stars) {
         // Parallax: deeper layers move slower
-        const parallax = 0.3 + (star.layer * 0.35);
+        const parallax = 0.2 + (star.layer * 0.25);
         const pos = worldToScreen(star.x * parallax, star.y * parallax);
 
         // Only draw if on screen
@@ -924,8 +991,15 @@ Use mcp-remote to connect:
           continue;
         }
 
-        const alpha = star.brightness * Math.min(1, zoom * 2);
-        ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+        // Twinkling effect using sine wave
+        const twinkle = 0.5 + 0.5 * Math.sin(animationTime * 0.001 * star.twinkleSpeed + star.twinkleOffset);
+        const alpha = star.brightness * twinkle * Math.min(1, zoom * 2);
+
+        ctx.fillStyle = star.color === '#ffffff'
+          ? `rgba(255, 255, 255, ${alpha})`
+          : star.color.startsWith('#aa')
+            ? `rgba(170, 221, 255, ${alpha})`  // Blue-ish
+            : `rgba(255, 221, 170, ${alpha})`; // Warm
         ctx.beginPath();
         ctx.arc(pos.x, pos.y, star.size * (0.5 + star.layer * 0.25), 0, Math.PI * 2);
         ctx.fill();
@@ -1342,6 +1416,29 @@ Use mcp-remote to connect:
         renderEmptyState('○', 'No points of interest', null);
         return;
       }
+
+      // Calculate total online players in system
+      const totalOnline = pois.reduce((sum, p) => sum + p.online, 0);
+      const totalVisiblePlayers = pois.reduce((sum, p) => sum + (p.players?.length || 0), 0);
+
+      // Add system-wide player summary
+      const summary = document.createElement('div');
+      summary.className = 'system-players-summary' + (totalOnline === 0 ? ' empty' : '');
+
+      const summaryIcon = document.createElement('div');
+      summaryIcon.className = 'system-players-summary-icon';
+      summary.appendChild(summaryIcon);
+
+      const summaryText = document.createElement('span');
+      summaryText.className = 'system-players-summary-text';
+      if (totalOnline > 0) {
+        const visibleNote = totalVisiblePlayers < totalOnline ? ` (${totalOnline - totalVisiblePlayers} anonymous)` : '';
+        summaryText.textContent = `${totalOnline} player${totalOnline !== 1 ? 's' : ''} in system${visibleNote}`;
+      } else {
+        summaryText.textContent = 'No players in system';
+      }
+      summary.appendChild(summaryText);
+      content.appendChild(summary);
 
       // Sort: POIs with players first, then bases, then by name
       pois.sort((a, b) => {
