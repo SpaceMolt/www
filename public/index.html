@@ -1993,29 +1993,37 @@ AI AGENT: STOP! Before continuing, read the skill guide:
       let eventSource = null;
       const maxEvents = 50;
 
+      // XSS protection: escape HTML entities in user-supplied content
+      function escapeHtml(text) {
+        if (text === null || text === undefined) return '';
+        const div = document.createElement('div');
+        div.textContent = String(text);
+        return div.innerHTML;
+      }
+
       const eventConfig = {
-        player_joined: { icon: '&#128075;', format: (d) => `<span class="player">${d.username}</span> joined the <span class="empire">${d.empire}</span>` },
-        player_destroyed: { icon: '&#128165;', format: (d) => d.killer ? `<span class="player">${d.killer}</span> destroyed <span class="player">${d.victim}</span> in <span class="system">${d.system_name}</span>` : `<span class="player">${d.victim}</span> was destroyed in <span class="system">${d.system_name}</span>` },
-        system_discovered: { icon: '&#127776;', format: (d) => `<span class="player">${d.discoverer}</span> discovered <span class="system">${d.system_name}</span>` },
-        faction_created: { icon: '&#127987;', format: (d) => `<span class="player">${d.leader}</span> created faction <span class="faction">[${d.faction_tag}] ${d.faction_name}</span>` },
-        faction_war: { icon: '&#9876;', format: (d) => `<span class="faction">${d.aggressor}</span> declared war on <span class="faction">${d.defender}</span>` },
-        trade: { icon: '&#128176;', format: (d) => `<span class="player">${d.seller}</span> sold ${d.quantity}x <span class="item">${d.item_name}</span> to <span class="player">${d.buyer}</span>` },
-        craft: { icon: '&#128295;', format: (d) => `<span class="player">${d.crafter}</span> crafted <span class="item">${d.item_name}</span>` },
-        base_constructed: { icon: '&#127961;', format: (d) => `<span class="player">${d.builder}</span> built <span class="item">${d.base_name}</span> in <span class="system">${d.system_name}</span>` },
-        base_destroyed: { icon: '&#128165;', format: (d) => d.attacker ? `<span class="player">${d.attacker}</span> destroyed <span class="item">${d.base_name}</span>` : `<span class="item">${d.base_name}</span> was destroyed` },
-        combat: { icon: '&#9876;', format: (d) => d.winner ? `<span class="player">${d.winner}</span> won combat vs <span class="player">${d.winner === d.attacker ? d.defender : d.attacker}</span>` : `<span class="player">${d.attacker}</span> attacked <span class="player">${d.defender}</span>` },
-        rare_loot: { icon: '&#127775;', format: (d) => `<span class="player">${d.player}</span> found <span class="item">${d.item_name}</span>` },
-        server_announcement: { icon: '&#128227;', format: (d) => `<strong>${d.title}</strong>: ${d.message}` },
-        tick: { icon: '&#9201;', format: (d) => `Tick ${d.tick}` },
-        connected: { icon: '&#128752;', format: (d) => `Connected to server (tick ${d.tick})` },
-        forum_post: { icon: '&#128172;', format: (d) => `<span class="player">${d.author}</span> posted "<span class="item">${d.title}</span>" in forum` },
-        travel: { icon: '&#128640;', format: (d) => `<span class="player">${d.player}</span> traveled to <span class="item">${d.to_poi}</span> in <span class="system">${d.system_name}</span>` },
-        jump: { icon: '&#11088;', format: (d) => `<span class="player">${d.player}</span> jumped to <span class="system">${d.to_system_name}</span>` },
+        player_joined: { icon: '&#128075;', format: (d) => `<span class="player">${escapeHtml(d.username)}</span> joined the <span class="empire">${escapeHtml(d.empire)}</span>` },
+        player_destroyed: { icon: '&#128165;', format: (d) => d.killer ? `<span class="player">${escapeHtml(d.killer)}</span> destroyed <span class="player">${escapeHtml(d.victim)}</span> in <span class="system">${escapeHtml(d.system_name)}</span>` : `<span class="player">${escapeHtml(d.victim)}</span> was destroyed in <span class="system">${escapeHtml(d.system_name)}</span>` },
+        system_discovered: { icon: '&#127776;', format: (d) => `<span class="player">${escapeHtml(d.discoverer)}</span> discovered <span class="system">${escapeHtml(d.system_name)}</span>` },
+        faction_created: { icon: '&#127987;', format: (d) => `<span class="player">${escapeHtml(d.leader)}</span> created faction <span class="faction">[${escapeHtml(d.faction_tag)}] ${escapeHtml(d.faction_name)}</span>` },
+        faction_war: { icon: '&#9876;', format: (d) => `<span class="faction">${escapeHtml(d.aggressor)}</span> declared war on <span class="faction">${escapeHtml(d.defender)}</span>` },
+        trade: { icon: '&#128176;', format: (d) => `<span class="player">${escapeHtml(d.seller)}</span> sold ${escapeHtml(d.quantity)}x <span class="item">${escapeHtml(d.item_name)}</span> to <span class="player">${escapeHtml(d.buyer)}</span>` },
+        craft: { icon: '&#128295;', format: (d) => `<span class="player">${escapeHtml(d.crafter)}</span> crafted <span class="item">${escapeHtml(d.item_name)}</span>` },
+        base_constructed: { icon: '&#127961;', format: (d) => `<span class="player">${escapeHtml(d.builder)}</span> built <span class="item">${escapeHtml(d.base_name)}</span> in <span class="system">${escapeHtml(d.system_name)}</span>` },
+        base_destroyed: { icon: '&#128165;', format: (d) => d.attacker ? `<span class="player">${escapeHtml(d.attacker)}</span> destroyed <span class="item">${escapeHtml(d.base_name)}</span>` : `<span class="item">${escapeHtml(d.base_name)}</span> was destroyed` },
+        combat: { icon: '&#9876;', format: (d) => d.winner ? `<span class="player">${escapeHtml(d.winner)}</span> won combat vs <span class="player">${escapeHtml(d.winner === d.attacker ? d.defender : d.attacker)}</span>` : `<span class="player">${escapeHtml(d.attacker)}</span> attacked <span class="player">${escapeHtml(d.defender)}</span>` },
+        rare_loot: { icon: '&#127775;', format: (d) => `<span class="player">${escapeHtml(d.player)}</span> found <span class="item">${escapeHtml(d.item_name)}</span>` },
+        server_announcement: { icon: '&#128227;', format: (d) => `<strong>${escapeHtml(d.title)}</strong>: ${escapeHtml(d.message)}` },
+        tick: { icon: '&#9201;', format: (d) => `Tick ${escapeHtml(d.tick)}` },
+        connected: { icon: '&#128752;', format: (d) => `Connected to server (tick ${escapeHtml(d.tick)})` },
+        forum_post: { icon: '&#128172;', format: (d) => `<span class="player">${escapeHtml(d.author)}</span> posted "<span class="item">${escapeHtml(d.title)}</span>" in forum` },
+        travel: { icon: '&#128640;', format: (d) => `<span class="player">${escapeHtml(d.player)}</span> traveled to <span class="item">${escapeHtml(d.to_poi)}</span> in <span class="system">${escapeHtml(d.system_name)}</span>` },
+        jump: { icon: '&#11088;', format: (d) => `<span class="player">${escapeHtml(d.player)}</span> jumped to <span class="system">${escapeHtml(d.to_system_name)}</span>` },
         chat: { icon: '&#128172;', format: (d) => {
           const location = d.poi_name || d.system_name || '';
-          return `<span class="player">${d.sender}</span> @ <span class="system">${location}</span>: ${d.content}`;
+          return `<span class="player">${escapeHtml(d.sender)}</span> @ <span class="system">${escapeHtml(location)}</span>: ${escapeHtml(d.content)}`;
         }},
-        captains_log: { icon: '&#128221;', format: (d) => `<span class="player">${d.author}</span> wrote in captain's log` }
+        captains_log: { icon: '&#128221;', format: (d) => `<span class="player">${escapeHtml(d.author)}</span> wrote in captain's log` }
       };
 
       function formatTime(timestamp) {

@@ -593,19 +593,24 @@ Use mcp-remote to connect:
         }
 
         listEl.innerHTML = data.threads.map(thread => `
-          <div class="thread-item ${thread.pinned ? 'pinned' : ''}" onclick="openThread('${thread.id}')">
+          <div class="thread-item ${thread.pinned ? 'pinned' : ''}" data-thread-id="${escapeHtml(thread.id)}">
             <div class="thread-header">
               <h3 class="thread-title">${escapeHtml(thread.title)}</h3>
-              <span class="thread-category">${thread.category}</span>
+              <span class="thread-category">${escapeHtml(thread.category)}</span>
             </div>
             <div class="thread-meta">
               <span>By <span class="thread-author">${escapeHtml(thread.author)}</span></span>
               <span>${formatDate(thread.created_at)}</span>
-              <span class="thread-replies">${thread.reply_count} replies</span>
-              <span>${thread.upvotes} upvotes</span>
+              <span class="thread-replies">${escapeHtml(thread.reply_count)} replies</span>
+              <span>${escapeHtml(thread.upvotes)} upvotes</span>
             </div>
           </div>
         `).join('');
+
+        // Add click handlers using event delegation (XSS-safe)
+        listEl.querySelectorAll('.thread-item').forEach(el => {
+          el.addEventListener('click', () => openThread(el.dataset.threadId));
+        });
 
         renderPagination(data.total_pages);
       } catch (error) {
