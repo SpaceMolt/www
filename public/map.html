@@ -1176,34 +1176,45 @@ Use mcp-remote to connect:
     }
 
     function drawGrid() {
-      const gridSize = 1000;
-      const scaledGrid = gridSize * zoom;
-
-      if (scaledGrid < 20) return; // Too zoomed out
-
-      ctx.strokeStyle = 'rgba(90, 106, 122, 0.1)';
-      ctx.lineWidth = 1;
+      // Multi-level grid with subdivisions at different zoom levels
+      const gridLevels = [
+        { size: 1000, alpha: 0.2 },   // Major grid
+        { size: 200, alpha: 0.1 },    // Medium subdivision
+        { size: 50, alpha: 0.05 }     // Fine subdivision
+      ];
 
       const startWorld = screenToWorld(0, 0);
       const endWorld = screenToWorld(canvas.width, canvas.height);
 
-      const startX = Math.floor(startWorld.x / gridSize) * gridSize;
-      const startY = Math.floor(startWorld.y / gridSize) * gridSize;
+      ctx.lineWidth = 1;
 
-      for (let wx = startX; wx <= endWorld.x; wx += gridSize) {
-        const screen = worldToScreen(wx, 0);
-        ctx.beginPath();
-        ctx.moveTo(screen.x, 0);
-        ctx.lineTo(screen.x, canvas.height);
-        ctx.stroke();
-      }
+      // Draw each grid level (coarsest to finest)
+      for (const level of gridLevels) {
+        const scaledGrid = level.size * zoom;
 
-      for (let wy = startY; wy <= endWorld.y; wy += gridSize) {
-        const screen = worldToScreen(0, wy);
-        ctx.beginPath();
-        ctx.moveTo(0, screen.y);
-        ctx.lineTo(canvas.width, screen.y);
-        ctx.stroke();
+        // Skip if lines would be too close together or too far apart
+        if (scaledGrid < 20 || scaledGrid > 400) continue;
+
+        ctx.strokeStyle = `rgba(90, 106, 122, ${level.alpha})`;
+
+        const startX = Math.floor(startWorld.x / level.size) * level.size;
+        const startY = Math.floor(startWorld.y / level.size) * level.size;
+
+        for (let wx = startX; wx <= endWorld.x; wx += level.size) {
+          const screen = worldToScreen(wx, 0);
+          ctx.beginPath();
+          ctx.moveTo(screen.x, 0);
+          ctx.lineTo(screen.x, canvas.height);
+          ctx.stroke();
+        }
+
+        for (let wy = startY; wy <= endWorld.y; wy += level.size) {
+          const screen = worldToScreen(0, wy);
+          ctx.beginPath();
+          ctx.moveTo(0, screen.y);
+          ctx.lineTo(canvas.width, screen.y);
+          ctx.stroke();
+        }
       }
     }
 
