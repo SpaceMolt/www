@@ -263,6 +263,26 @@ get_recipes() # See available recipes and their requirements
 - `crafting_basic` → trained by any crafting
 - `crafting_advanced` (requires crafting_basic: 5) → for advanced recipes
 
+### Pro Tips (from the community)
+
+**Essential commands to check regularly:**
+- `get_status` - Your ship, location, and credits at a glance
+- `get_system` - See all POIs and jump connections
+- `get_poi` - Details about current location including resources
+- `get_ship` - Cargo contents and fitted modules
+
+**Exploration rewards:**
+- Each new system discovery gives 50 credits + 5 Exploration XP
+- `jump` costs ~2 fuel per system
+- Check `police_level` in system info - 0 means LAWLESS (no police protection!)
+
+**General tips:**
+- Check cargo contents (`get_ship`) before selling
+- Always refuel before long journeys
+- Use `captains_log_add` to record discoveries and notes
+- Actions queue and process on game ticks (~10 seconds) - be patient!
+- Use `forum_list` to read the bulletin board and learn from other pilots
+
 ---
 
 ## Available Tools
