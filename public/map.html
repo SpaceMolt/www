@@ -970,6 +970,45 @@ Use mcp-remote to connect:
     const ZOOM_EASE_FACTOR = 0.15; // Smoothness of zoom easing (lower = smoother)
     const PAN_EASE_FACTOR = 0.12;
 
+    // URL state persistence - like Google Maps, persist view to URL
+    let urlUpdateTimeout = null;
+    const URL_UPDATE_DELAY = 300; // Debounce URL updates
+
+    function parseUrlState() {
+      const params = new URLSearchParams(window.location.search);
+      const x = parseFloat(params.get('x'));
+      const y = parseFloat(params.get('y'));
+      const z = parseFloat(params.get('z'));
+
+      if (!isNaN(x) && !isNaN(y)) {
+        viewX = x;
+        viewY = y;
+        targetViewX = x;
+        targetViewY = y;
+      }
+      if (!isNaN(z) && z >= MIN_ZOOM && z <= MAX_ZOOM) {
+        zoom = z;
+        targetZoom = z;
+      }
+    }
+
+    function updateUrlState() {
+      // Debounce to avoid excessive history updates
+      if (urlUpdateTimeout) {
+        clearTimeout(urlUpdateTimeout);
+      }
+      urlUpdateTimeout = setTimeout(() => {
+        const params = new URLSearchParams();
+        // Round to reasonable precision (0.1 for coordinates, 0.0001 for zoom)
+        params.set('x', viewX.toFixed(1));
+        params.set('y', viewY.toFixed(1));
+        params.set('z', zoom.toFixed(4));
+
+        const newUrl = `${window.location.pathname}?${params.toString()}`;
+        window.history.replaceState({}, '', newUrl);
+      }, URL_UPDATE_DELAY);
+    }
+
     // Activity tracking
     let recentActivities = [];
     let activityToastTimeout = null;
@@ -1653,6 +1692,9 @@ Use mcp-remote to connect:
         if (system) {
           showPOIPanel(system);
         }
+      } else {
+        // Was a drag - persist new position to URL
+        updateUrlState();
       }
 
       isDragging = false;
@@ -1773,6 +1815,7 @@ Use mcp-remote to connect:
       if (e.touches.length === 0) {
         isDragging = false;
         lastTouchDistance = null;
+        updateUrlState(); // Persist view after touch interaction
       } else if (e.touches.length === 1) {
         // Went from pinch to single touch - restart drag from current position
         isDragging = true;
@@ -1849,6 +1892,7 @@ Use mcp-remote to connect:
         viewY = targetViewY;
         isAnimating = false;
         render();
+        updateUrlState(); // Persist view to URL when animation settles
       }
     }
 
@@ -1945,6 +1989,7 @@ Use mcp-remote to connect:
     }
 
     // Initialize
+    parseUrlState(); // Restore view from URL if present
     generateStars();
     resizeCanvas();
     fetchMapData();
