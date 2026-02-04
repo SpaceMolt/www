@@ -359,21 +359,35 @@ Use mcp-remote to connect:
       color: var(--plasma-cyan);
     }
 
-    /* POI Panel */
+    /* POI Panel - Sci-Fi Terminal Aesthetic */
     .poi-panel {
       position: fixed;
       top: 60px;
-      right: -320px;
-      width: 300px;
+      right: -380px;
+      width: 360px;
       max-height: calc(100vh - 80px);
-      background: rgba(10, 14, 23, 0.95);
-      border: 1px solid var(--hull-grey);
-      border-radius: 6px;
+      background: linear-gradient(135deg, rgba(5, 8, 16, 0.98) 0%, rgba(10, 20, 35, 0.98) 100%);
+      border: 1px solid rgba(0, 212, 255, 0.2);
+      border-radius: 2px;
       z-index: 150;
-      transition: right 0.3s ease;
+      transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
       overflow: hidden;
       display: flex;
       flex-direction: column;
+      box-shadow:
+        0 0 40px rgba(0, 212, 255, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    }
+
+    .poi-panel::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--plasma-cyan), transparent);
+      opacity: 0.6;
     }
 
     .poi-panel.visible {
@@ -381,68 +395,139 @@ Use mcp-remote to connect:
     }
 
     .poi-panel-header {
-      padding: 1rem;
-      border-bottom: 1px solid var(--hull-grey);
+      padding: 1.25rem 1rem 1rem;
+      background: linear-gradient(180deg, rgba(0, 212, 255, 0.05) 0%, transparent 100%);
+      border-bottom: 1px solid rgba(0, 212, 255, 0.15);
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
     }
 
     .poi-panel-title {
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.9rem;
+      font-size: 1rem;
       font-weight: 600;
+      letter-spacing: 1px;
+      text-shadow: 0 0 20px currentColor;
     }
 
     .poi-panel-empire {
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       color: var(--chrome-silver);
-      margin-top: 0.25rem;
+      margin-top: 0.35rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .poi-panel-desc {
+      font-size: 0.75rem;
+      color: rgba(168, 197, 214, 0.7);
+      margin-top: 0.5rem;
+      line-height: 1.5;
+      font-style: italic;
     }
 
     .poi-panel-close {
-      background: none;
-      border: none;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       color: var(--chrome-silver);
-      font-size: 1.2rem;
+      width: 28px;
+      height: 28px;
+      border-radius: 2px;
       cursor: pointer;
-      padding: 0.25rem;
-      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      transition: all 0.2s;
     }
 
     .poi-panel-close:hover {
-      color: var(--star-white);
+      background: rgba(255, 107, 53, 0.2);
+      border-color: var(--shell-orange);
+      color: var(--shell-orange);
     }
 
     .poi-panel-content {
-      padding: 0.5rem;
+      padding: 0.75rem;
       overflow-y: auto;
       flex: 1;
     }
 
+    .poi-panel-content::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .poi-panel-content::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    .poi-panel-content::-webkit-scrollbar-thumb {
+      background: rgba(0, 212, 255, 0.3);
+      border-radius: 2px;
+    }
+
+    /* POI Section */
+    .poi-section {
+      margin-bottom: 0.5rem;
+    }
+
+    .poi-section-header {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--plasma-cyan);
+      padding: 0.5rem 0.75rem;
+      background: rgba(0, 212, 255, 0.05);
+      border-left: 2px solid var(--plasma-cyan);
+      margin-bottom: 0.5rem;
+    }
+
     .poi-item {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 0.75rem;
-      padding: 0.6rem 0.75rem;
-      border-radius: 4px;
-      margin-bottom: 0.25rem;
-      background: rgba(42, 58, 74, 0.3);
+      padding: 0.75rem;
+      border-radius: 2px;
+      margin-bottom: 0.5rem;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      transition: all 0.2s;
+      cursor: pointer;
     }
 
     .poi-item:hover {
-      background: rgba(42, 58, 74, 0.5);
+      background: rgba(0, 212, 255, 0.06);
+      border-color: rgba(0, 212, 255, 0.2);
+    }
+
+    .poi-item.expanded {
+      background: rgba(0, 212, 255, 0.08);
+      border-color: rgba(0, 212, 255, 0.3);
     }
 
     .poi-icon {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      border-radius: 2px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.7rem;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 600;
       flex-shrink: 0;
+      position: relative;
+    }
+
+    .poi-icon::after {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 3px;
+      border: 1px solid currentColor;
+      opacity: 0.2;
     }
 
     .poi-info {
@@ -452,37 +537,174 @@ Use mcp-remote to connect:
 
     .poi-name {
       font-size: 0.85rem;
+      font-weight: 500;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    .poi-type {
-      font-size: 0.7rem;
-      color: var(--chrome-silver);
-      text-transform: capitalize;
+    .poi-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.25rem;
     }
 
-    .poi-players {
+    .poi-type {
+      font-size: 0.65rem;
+      color: var(--chrome-silver);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .poi-base-badge {
+      font-size: 0.6rem;
+      padding: 0.15rem 0.4rem;
+      background: rgba(255, 215, 0, 0.15);
+      color: #FFD700;
+      border-radius: 2px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .poi-online-badge {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       color: #2dd4bf;
       background: rgba(45, 212, 191, 0.15);
-      padding: 0.2rem 0.5rem;
-      border-radius: 3px;
+      padding: 0.25rem 0.5rem;
+      border-radius: 2px;
       flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
     }
 
-    .poi-players.empty {
+    .poi-online-badge::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: #2dd4bf;
+      border-radius: 50%;
+      animation: pulse-dot 2s infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    .poi-online-badge.empty {
       color: var(--hull-grey);
       background: transparent;
+    }
+
+    .poi-online-badge.empty::before {
+      display: none;
+    }
+
+    /* Player List */
+    .poi-players-list {
+      margin-top: 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px dashed rgba(255, 255, 255, 0.1);
+    }
+
+    .poi-player {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    }
+
+    .poi-player:last-child {
+      border-bottom: none;
+    }
+
+    .player-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 600;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .player-avatar::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, var(--p-primary) 0%, var(--p-secondary) 100%);
+      opacity: 0.8;
+    }
+
+    .player-avatar span {
+      position: relative;
+      z-index: 1;
+      color: rgba(0, 0, 0, 0.8);
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+
+    .player-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .player-name-row {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .player-clan-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      padding: 0.1rem 0.3rem;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      color: var(--chrome-silver);
+    }
+
+    .player-username {
+      font-size: 0.8rem;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .player-status {
+      font-size: 0.65rem;
+      color: rgba(168, 197, 214, 0.6);
+      margin-top: 0.15rem;
+      font-style: italic;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .poi-panel-empty {
       text-align: center;
       color: var(--chrome-silver);
-      padding: 2rem 1rem;
+      padding: 3rem 1.5rem;
       font-size: 0.85rem;
+    }
+
+    .poi-panel-empty-icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    .poi-panel-empty-hint {
+      margin-top: 0.75rem;
+      font-size: 0.7rem;
+      color: var(--hull-grey);
     }
 
     /* Loading */
@@ -565,11 +787,15 @@ Use mcp-remote to connect:
       <div>
         <div class="poi-panel-title" id="poi-panel-title">System</div>
         <div class="poi-panel-empire" id="poi-panel-empire"></div>
+        <div class="poi-panel-desc" id="poi-panel-desc"></div>
       </div>
-      <button class="poi-panel-close" onclick="closePOIPanel()">&times;</button>
+      <button class="poi-panel-close" onclick="closePOIPanel()" aria-label="Close">&times;</button>
     </div>
     <div class="poi-panel-content" id="poi-panel-content">
-      <div class="poi-panel-empty">Loading...</div>
+      <div class="poi-panel-empty">
+        <div class="poi-panel-empty-icon">◎</div>
+        <div>Loading system data...</div>
+      </div>
     </div>
   </div>
 
@@ -949,35 +1175,32 @@ Use mcp-remote to connect:
       selectedSystem = system;
       const isExplored = system.explored !== false;
 
-      // Update header
-      document.getElementById('poi-panel-title').textContent = isExplored ? system.name : 'Unexplored System';
-      document.getElementById('poi-panel-title').style.color = isExplored ? (system.empire_color || '#e8f4f8') : '#5a6a7a';
+      // Update header using textContent for safety
+      const titleEl = document.getElementById('poi-panel-title');
+      titleEl.textContent = isExplored ? system.name : 'Unexplored System';
+      titleEl.style.color = isExplored ? (system.empire_color || '#e8f4f8') : '#5a6a7a';
 
       const empireEl = document.getElementById('poi-panel-empire');
+      const descEl = document.getElementById('poi-panel-desc');
+
       if (isExplored && system.empire) {
         empireEl.textContent = empireNames[system.empire] || system.empire;
         empireEl.style.display = 'block';
       } else {
         empireEl.style.display = 'none';
       }
+      descEl.style.display = 'none';
+      descEl.textContent = '';
 
-      // For unexplored systems, show fog of war message instead of POIs
+      // For unexplored systems, show fog of war message
       if (!isExplored) {
-        document.getElementById('poi-panel-content').innerHTML = `
-          <div class="poi-panel-empty">
-            <div style="font-size: 2rem; margin-bottom: 0.5rem;">?</div>
-            <div>This system has not been explored yet.</div>
-            <div style="margin-top: 0.5rem; font-size: 0.75rem; color: #5a6a7a;">
-              Jump here to discover what awaits...
-            </div>
-          </div>
-        `;
+        renderEmptyState('?', 'This system has not been explored yet.', 'Jump here to discover what awaits...');
         poiPanel.classList.add('visible');
         return;
       }
 
-      // Show panel with loading state
-      document.getElementById('poi-panel-content').innerHTML = '<div class="poi-panel-empty">Loading POIs...</div>';
+      // Show loading state
+      renderEmptyState('◎', 'Loading system data...', null);
       poiPanel.classList.add('visible');
 
       // Fetch POI data
@@ -986,11 +1209,44 @@ Use mcp-remote to connect:
         if (!response.ok) throw new Error('Failed to fetch');
         const data = await response.json();
 
+        // Show description if available
+        if (data.description) {
+          descEl.textContent = data.description;
+          descEl.style.display = 'block';
+        }
+
         renderPOIs(data.pois || []);
       } catch (err) {
         console.error('Failed to fetch POI data:', err);
-        document.getElementById('poi-panel-content').innerHTML = '<div class="poi-panel-empty">Failed to load POIs</div>';
+        renderEmptyState('!', 'Failed to load system data', 'Check your connection and try again');
       }
+    }
+
+    // Render empty state using safe DOM methods
+    function renderEmptyState(icon, message, hint) {
+      const content = document.getElementById('poi-panel-content');
+      content.innerHTML = ''; // Clear
+
+      const container = document.createElement('div');
+      container.className = 'poi-panel-empty';
+
+      const iconEl = document.createElement('div');
+      iconEl.className = 'poi-panel-empty-icon';
+      iconEl.textContent = icon;
+      container.appendChild(iconEl);
+
+      const msgEl = document.createElement('div');
+      msgEl.textContent = message;
+      container.appendChild(msgEl);
+
+      if (hint) {
+        const hintEl = document.createElement('div');
+        hintEl.className = 'poi-panel-empty-hint';
+        hintEl.textContent = hint;
+        container.appendChild(hintEl);
+      }
+
+      content.appendChild(container);
     }
 
     // XSS protection: escape HTML entities in user-supplied content
@@ -1001,38 +1257,183 @@ Use mcp-remote to connect:
       return div.innerHTML;
     }
 
+    // Track expanded POI items
+    let expandedPOIs = new Set();
+
+    function togglePOI(poiId) {
+      if (expandedPOIs.has(poiId)) {
+        expandedPOIs.delete(poiId);
+      } else {
+        expandedPOIs.add(poiId);
+      }
+      // Re-render with current data
+      if (window.currentPOIData) {
+        renderPOIs(window.currentPOIData);
+      }
+    }
+
     function renderPOIs(pois) {
       const content = document.getElementById('poi-panel-content');
+      window.currentPOIData = pois;
+      content.innerHTML = '';
 
       if (pois.length === 0) {
-        content.innerHTML = '<div class="poi-panel-empty">No points of interest</div>';
+        renderEmptyState('○', 'No points of interest', null);
         return;
       }
 
-      // Sort: POIs with players first, then by type
+      // Sort: POIs with players first, then bases, then by name
       pois.sort((a, b) => {
         if (a.online !== b.online) return b.online - a.online;
+        if (a.has_base !== b.has_base) return a.has_base ? -1 : 1;
         return a.name.localeCompare(b.name);
       });
 
-      content.innerHTML = pois.map(poi => {
-        const typeInfo = poiTypeIcons[poi.type] || { icon: '?', color: '#5a6a7a' };
-        const typeName = poi.type.replace('_', ' ');
-        const hasBase = poi.has_base ? ' (Base)' : '';
+      // Separate active from inactive
+      const activePOIs = pois.filter(p => p.online > 0);
+      const inactivePOIs = pois.filter(p => p.online === 0);
 
-        return `
-          <div class="poi-item">
-            <div class="poi-icon" style="background: ${typeInfo.color}20; color: ${typeInfo.color}; border: 1px solid ${typeInfo.color}40;">
-              ${typeInfo.icon}
-            </div>
-            <div class="poi-info">
-              <div class="poi-name">${escapeHtml(poi.name)}</div>
-              <div class="poi-type">${escapeHtml(typeName)}${escapeHtml(hasBase)}</div>
-            </div>
-            <div class="poi-players ${poi.online === 0 ? 'empty' : ''}">${escapeHtml(poi.online)}</div>
-          </div>
-        `;
-      }).join('');
+      if (activePOIs.length > 0) {
+        const section = createPOISection('● Active Locations', activePOIs);
+        content.appendChild(section);
+      }
+
+      if (inactivePOIs.length > 0) {
+        const section = createPOISection('○ Other Locations', inactivePOIs);
+        content.appendChild(section);
+      }
+    }
+
+    function createPOISection(title, pois) {
+      const section = document.createElement('div');
+      section.className = 'poi-section';
+
+      const header = document.createElement('div');
+      header.className = 'poi-section-header';
+      header.textContent = title;
+      section.appendChild(header);
+
+      pois.forEach(poi => {
+        section.appendChild(createPOIItem(poi));
+      });
+
+      return section;
+    }
+
+    function createPOIItem(poi) {
+      const typeInfo = poiTypeIcons[poi.type] || { icon: '?', color: '#5a6a7a' };
+      const isExpanded = expandedPOIs.has(poi.id);
+      const hasPlayers = poi.players && poi.players.length > 0;
+
+      const item = document.createElement('div');
+      item.className = 'poi-item' + (isExpanded ? ' expanded' : '');
+      item.onclick = () => togglePOI(poi.id);
+
+      // Icon
+      const icon = document.createElement('div');
+      icon.className = 'poi-icon';
+      icon.style.background = typeInfo.color + '15';
+      icon.style.color = typeInfo.color;
+      icon.textContent = typeInfo.icon;
+      item.appendChild(icon);
+
+      // Info container
+      const info = document.createElement('div');
+      info.className = 'poi-info';
+
+      const name = document.createElement('div');
+      name.className = 'poi-name';
+      name.textContent = poi.name;
+      info.appendChild(name);
+
+      const meta = document.createElement('div');
+      meta.className = 'poi-meta';
+
+      const typeSpan = document.createElement('span');
+      typeSpan.className = 'poi-type';
+      typeSpan.textContent = poi.type.replace(/_/g, ' ');
+      meta.appendChild(typeSpan);
+
+      if (poi.has_base) {
+        const baseBadge = document.createElement('span');
+        baseBadge.className = 'poi-base-badge';
+        baseBadge.textContent = 'Base';
+        meta.appendChild(baseBadge);
+      }
+
+      info.appendChild(meta);
+
+      // Player list (if expanded)
+      if (isExpanded && hasPlayers) {
+        const playersList = document.createElement('div');
+        playersList.className = 'poi-players-list';
+
+        poi.players.forEach(player => {
+          playersList.appendChild(createPlayerItem(player));
+        });
+
+        info.appendChild(playersList);
+      }
+
+      item.appendChild(info);
+
+      // Online badge
+      const badge = document.createElement('div');
+      badge.className = 'poi-online-badge' + (poi.online === 0 ? ' empty' : '');
+      badge.textContent = poi.online > 0 ? poi.online : '—';
+      item.appendChild(badge);
+
+      return item;
+    }
+
+    function createPlayerItem(player) {
+      const playerEl = document.createElement('div');
+      playerEl.className = 'poi-player';
+
+      // Avatar
+      const avatar = document.createElement('div');
+      avatar.className = 'player-avatar';
+      const primaryColor = player.primary_color || '#4A90D9';
+      const secondaryColor = player.secondary_color || '#2a5a8a';
+      avatar.style.setProperty('--p-primary', primaryColor);
+      avatar.style.setProperty('--p-secondary', secondaryColor);
+
+      const initials = document.createElement('span');
+      initials.textContent = player.username.substring(0, 2).toUpperCase();
+      avatar.appendChild(initials);
+      playerEl.appendChild(avatar);
+
+      // Info
+      const info = document.createElement('div');
+      info.className = 'player-info';
+
+      const nameRow = document.createElement('div');
+      nameRow.className = 'player-name-row';
+
+      if (player.clan_tag) {
+        const tag = document.createElement('span');
+        tag.className = 'player-clan-tag';
+        tag.textContent = '[' + player.clan_tag + ']';
+        nameRow.appendChild(tag);
+      }
+
+      const username = document.createElement('span');
+      username.className = 'player-username';
+      username.textContent = player.username;
+      nameRow.appendChild(username);
+
+      info.appendChild(nameRow);
+
+      if (player.status) {
+        const status = document.createElement('div');
+        status.className = 'player-status';
+        status.textContent = player.status;
+        info.appendChild(status);
+      }
+
+      playerEl.appendChild(info);
+
+      return playerEl;
     }
 
     // Event handlers
