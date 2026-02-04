@@ -953,8 +953,8 @@ Use mcp-remote to connect:
     const NODE_RADIUS = 6;
     const DEFAULT_COLOR = '#5a6a7a';
     const UNEXPLORED_COLOR = '#3a4a5a'; // Dimmer gray for unexplored systems
-    const LINE_COLOR = 'rgba(90, 106, 122, 0.3)';
-    const UNEXPLORED_LINE_COLOR = 'rgba(90, 106, 122, 0.15)'; // Dimmer connections for unexplored
+    const LINE_COLOR = 'rgba(140, 170, 200, 0.6)'; // Brighter paths between discovered systems
+    const UNEXPLORED_LINE_COLOR = 'rgba(90, 106, 122, 0.25)'; // Dimmer but still visible for unexplored
     const ACTIVE_GLOW = '#2dd4bf';
     const MIN_ZOOM = 0.001;
     const MAX_ZOOM = 50;
@@ -1101,7 +1101,6 @@ Use mcp-remote to connect:
       drawGrid();
 
       // Draw connections first (behind nodes)
-      ctx.lineWidth = 1;
       const drawnConnections = new Set();
 
       for (const system of mapData.systems) {
@@ -1117,9 +1116,10 @@ Use mcp-remote to connect:
 
           const pos2 = worldToScreen(connSystem.x, connSystem.y);
 
-          // Use dimmer line for connections involving unexplored systems
+          // Use thicker, brighter lines for connections between discovered systems
           const isUnexploredConnection = !system.explored || !connSystem.explored;
           ctx.strokeStyle = isUnexploredConnection ? UNEXPLORED_LINE_COLOR : LINE_COLOR;
+          ctx.lineWidth = isUnexploredConnection ? 1 : 1.5; // Thicker for discovered paths
 
           ctx.beginPath();
           ctx.moveTo(pos1.x, pos1.y);
