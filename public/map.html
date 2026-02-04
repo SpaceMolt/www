@@ -404,27 +404,39 @@ Use mcp-remote to connect:
       color: var(--plasma-cyan);
     }
 
+    .stats-header {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding-bottom: 0.4rem;
+      margin-bottom: 0.4rem;
+      border-bottom: 1px solid rgba(45, 212, 191, 0.2);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #2dd4bf;
+    }
+
     .stat-status-dot {
-      display: inline-block;
-      width: 8px;
-      height: 8px;
+      width: 6px;
+      height: 6px;
       background: #2dd4bf;
       border-radius: 50%;
-      margin-right: 0.4rem;
       animation: pulse-server 2s infinite;
-      box-shadow: 0 0 6px #2dd4bf;
+      box-shadow: 0 0 4px #2dd4bf;
     }
 
     @keyframes pulse-server {
       0%, 100% {
         opacity: 1;
         transform: scale(1);
-        box-shadow: 0 0 6px #2dd4bf;
+        box-shadow: 0 0 4px #2dd4bf;
       }
       50% {
-        opacity: 0.6;
-        transform: scale(0.85);
-        box-shadow: 0 0 3px #2dd4bf;
+        opacity: 0.5;
+        transform: scale(0.8);
+        box-shadow: 0 0 2px #2dd4bf;
       }
     }
 
@@ -879,8 +891,12 @@ Use mcp-remote to connect:
   </div>
 
   <div class="stats" id="stats">
+    <div class="stats-header">
+      <span class="stat-status-dot" id="stat-status-dot"></span>
+      <span>Live</span>
+    </div>
     <div class="stat-row">
-      <span class="stat-label"><span class="stat-status-dot" id="stat-status-dot"></span>Systems:</span>
+      <span class="stat-label">Systems:</span>
       <span class="stat-value" id="stat-systems">-</span>
     </div>
     <div class="stat-row">
