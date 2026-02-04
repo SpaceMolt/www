@@ -203,6 +203,94 @@ Use mcp-remote to connect:
       color: #2dd4bf;
     }
 
+    /* Activity Toast - centered notification */
+    .activity-toast {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(10, 14, 23, 0.95);
+      border: 1px solid var(--hull-grey);
+      border-radius: 8px;
+      padding: 1rem 1.5rem;
+      font-size: 0.9rem;
+      z-index: 150;
+      opacity: 0;
+      transition: opacity 0.4s ease-out;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.6);
+      max-width: 90vw;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .activity-toast.visible {
+      opacity: 1;
+    }
+
+    .activity-toast-icon {
+      font-size: 1.2rem;
+      margin-right: 0.5rem;
+    }
+
+    .activity-toast-text {
+      color: var(--star-white);
+    }
+
+    .activity-toast-time {
+      font-size: 0.75rem;
+      color: var(--chrome-silver);
+      margin-top: 0.3rem;
+      opacity: 0.7;
+    }
+
+    /* Mobile-friendly adjustments */
+    @media (max-width: 600px) {
+      .header {
+        padding: 0.5rem 1rem;
+      }
+      .map-title {
+        font-size: 0.9rem;
+        letter-spacing: 1px;
+      }
+      .control-hint {
+        display: none;
+      }
+      .legend {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.65rem;
+      }
+      .legend-title {
+        font-size: 0.6rem;
+      }
+      .legend-dot {
+        width: 8px;
+        height: 8px;
+      }
+      .stats {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.75rem;
+      }
+      .poi-panel {
+        width: 100%;
+        max-width: none;
+        border-radius: 12px 12px 0 0;
+        bottom: 0;
+        right: 0;
+        transform: translateY(100%);
+        max-height: 50vh;
+      }
+      .poi-panel.open {
+        transform: translateY(0);
+      }
+      .activity-toast {
+        top: auto;
+        bottom: 20%;
+        transform: translateX(-50%);
+        padding: 0.75rem 1rem;
+        font-size: 0.8rem;
+      }
+    }
+
     /* Legend */
     .legend {
       position: fixed;
@@ -465,6 +553,13 @@ Use mcp-remote to connect:
 
   <div class="loading" id="loading">Loading Galaxy</div>
 
+  <!-- Activity Toast -->
+  <div class="activity-toast" id="activity-toast">
+    <span class="activity-toast-icon" id="toast-icon"></span>
+    <span class="activity-toast-text" id="toast-text"></span>
+    <div class="activity-toast-time" id="toast-time"></div>
+  </div>
+
   <div class="poi-panel" id="poi-panel">
     <div class="poi-panel-header">
       <div>
@@ -506,6 +601,20 @@ Use mcp-remote to connect:
     const MIN_ZOOM = 0.001;
     const MAX_ZOOM = 50;
     const ZOOM_SPEED = 1.25; // Faster zoom
+
+    // Animation state
+    let animationTime = 0;
+    let lastFrameTime = performance.now();
+    let targetZoom = zoom;
+    let targetViewX = viewX;
+    let targetViewY = viewY;
+    let isAnimating = false;
+    const ZOOM_EASE_FACTOR = 0.15; // Smoothness of zoom easing (lower = smoother)
+    const PAN_EASE_FACTOR = 0.12;
+
+    // Activity tracking
+    let recentActivities = [];
+    let activityToastTimeout = null;
 
     // Starfield
     let stars = [];
@@ -628,14 +737,20 @@ Use mcp-remote to connect:
         const isHovered = hoveredSystem && hoveredSystem.id === system.id;
         const hasPlayers = isExplored && system.online > 0;
 
-        // Glow for systems with online players (only for explored systems)
+        // Pulsing glow for systems with online players (only for explored systems)
         if (hasPlayers) {
-          const gradient = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, NODE_RADIUS * 3);
-          gradient.addColorStop(0, 'rgba(45, 212, 191, 0.4)');
+          // Pulsing effect based on animation time
+          const pulsePhase = (animationTime * 0.002 + system.x * 0.001) % (Math.PI * 2);
+          const pulseScale = 1 + Math.sin(pulsePhase) * 0.3; // Pulse between 0.7x and 1.3x
+          const pulseAlpha = 0.3 + Math.sin(pulsePhase) * 0.15; // Pulse alpha between 0.15 and 0.45
+
+          const glowRadius = NODE_RADIUS * 3 * pulseScale;
+          const gradient = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, glowRadius);
+          gradient.addColorStop(0, `rgba(45, 212, 191, ${pulseAlpha})`);
           gradient.addColorStop(1, 'rgba(45, 212, 191, 0)');
           ctx.fillStyle = gradient;
           ctx.beginPath();
-          ctx.arc(pos.x, pos.y, NODE_RADIUS * 3, 0, Math.PI * 2);
+          ctx.arc(pos.x, pos.y, glowRadius, 0, Math.PI * 2);
           ctx.fill();
         }
 
@@ -933,6 +1048,8 @@ Use mcp-remote to connect:
         const dy = e.clientY - dragStart.y;
         viewX = viewStart.x + dx / zoom;
         viewY = viewStart.y + dy / zoom;
+        targetViewX = viewX;
+        targetViewY = viewY;
         render();
       } else {
         const system = findSystemAt(e.clientX, e.clientY);
@@ -970,16 +1087,18 @@ Use mcp-remote to connect:
     canvas.addEventListener('wheel', (e) => {
       e.preventDefault();
       const zoomFactor = e.deltaY > 0 ? (1 / ZOOM_SPEED) : ZOOM_SPEED;
-      const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom * zoomFactor));
+      targetZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, targetZoom * zoomFactor));
 
-      // Zoom toward mouse position
+      // Zoom toward mouse position - calculate target view position
       const world = screenToWorld(e.clientX, e.clientY);
-      zoom = newZoom;
+      const tempZoom = zoom;
+      zoom = targetZoom;
       const newWorld = screenToWorld(e.clientX, e.clientY);
-      viewX += newWorld.x - world.x;
-      viewY += newWorld.y - world.y;
+      zoom = tempZoom;
+      targetViewX = viewX + (newWorld.x - world.x);
+      targetViewY = viewY + (newWorld.y - world.y);
 
-      render();
+      startAnimationLoop();
     });
 
     // Touch event handling for mobile
@@ -1025,6 +1144,8 @@ Use mcp-remote to connect:
         const dy = e.touches[0].clientY - dragStart.y;
         viewX = viewStart.x + dx / zoom;
         viewY = viewStart.y + dy / zoom;
+        targetViewX = viewX;
+        targetViewY = viewY;
         render();
       } else if (e.touches.length === 2 && lastTouchDistance !== null) {
         // Pinch to zoom
@@ -1110,11 +1231,145 @@ Use mcp-remote to connect:
       }
     }
 
+    // Animation loop for smooth transitions
+    function startAnimationLoop() {
+      if (isAnimating) return;
+      isAnimating = true;
+      requestAnimationFrame(animationLoop);
+    }
+
+    function animationLoop(timestamp) {
+      const deltaTime = timestamp - lastFrameTime;
+      lastFrameTime = timestamp;
+      animationTime += deltaTime;
+
+      // Ease zoom and pan
+      const zoomDiff = targetZoom - zoom;
+      const viewXDiff = targetViewX - viewX;
+      const viewYDiff = targetViewY - viewY;
+
+      zoom += zoomDiff * ZOOM_EASE_FACTOR;
+      viewX += viewXDiff * PAN_EASE_FACTOR;
+      viewY += viewYDiff * PAN_EASE_FACTOR;
+
+      // Check if we're close enough to stop animating
+      const needsAnimation = Math.abs(zoomDiff) > 0.0001 ||
+                             Math.abs(viewXDiff) > 0.1 ||
+                             Math.abs(viewYDiff) > 0.1 ||
+                             mapData?.systems?.some(s => s.online > 0); // Keep animating for pulsing
+
+      render();
+
+      if (needsAnimation) {
+        requestAnimationFrame(animationLoop);
+      } else {
+        zoom = targetZoom;
+        viewX = targetViewX;
+        viewY = targetViewY;
+        isAnimating = false;
+        render();
+      }
+    }
+
+    // Activity toast functions
+    function showActivityToast(icon, text, time) {
+      const toast = document.getElementById('activity-toast');
+      const toastIcon = document.getElementById('toast-icon');
+      const toastText = document.getElementById('toast-text');
+      const toastTime = document.getElementById('toast-time');
+
+      toastIcon.textContent = icon;
+      toastText.textContent = text;
+      toastTime.textContent = time || '';
+
+      toast.classList.add('visible');
+
+      if (activityToastTimeout) {
+        clearTimeout(activityToastTimeout);
+      }
+
+      activityToastTimeout = setTimeout(() => {
+        toast.classList.remove('visible');
+      }, 4000);
+    }
+
+    // Connect to live activity feed
+    function connectActivityFeed() {
+      try {
+        const eventSource = new EventSource('https://game.spacemolt.com/events');
+
+        eventSource.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            handleActivityEvent(data);
+          } catch (e) {
+            console.log('Activity event:', event.data);
+          }
+        };
+
+        eventSource.onerror = () => {
+          console.log('Activity feed disconnected, reconnecting in 5s...');
+          eventSource.close();
+          setTimeout(connectActivityFeed, 5000);
+        };
+      } catch (e) {
+        console.log('SSE not supported');
+      }
+    }
+
+    function handleActivityEvent(event) {
+      const iconMap = {
+        'player_joined': '👤',
+        'system_discovered': '🔭',
+        'player_destroyed': '💀',
+        'combat': '⚔️',
+        'travel': '🚀',
+        'trade': '💰',
+        'faction_created': '🏴',
+        'craft': '🔨',
+        'jump': '🌌'
+      };
+
+      const icon = iconMap[event.type] || '📡';
+      let text = '';
+
+      switch (event.type) {
+        case 'player_joined':
+          text = `${event.data?.username || 'A pilot'} joined the game`;
+          break;
+        case 'system_discovered':
+          text = `${event.data?.discoverer || 'Someone'} discovered ${event.data?.system_name || 'a new system'}`;
+          break;
+        case 'player_destroyed':
+          text = `${event.data?.victim || 'A pilot'} was destroyed`;
+          if (event.data?.killer) text += ` by ${event.data.killer}`;
+          break;
+        case 'travel':
+          text = `${event.data?.player || 'A pilot'} traveled to ${event.data?.to_poi || 'a new location'}`;
+          break;
+        case 'jump':
+          if (event.data?.first_discovery) {
+            text = `${event.data?.player || 'A pilot'} made first jump to ${event.data?.to_system_name || 'unknown'}`;
+          }
+          break;
+        default:
+          return; // Don't show toast for unhandled events
+      }
+
+      if (text) {
+        const now = new Date();
+        const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        showActivityToast(icon, text, time);
+      }
+    }
+
     // Initialize
     generateStars();
     resizeCanvas();
     fetchMapData();
     updateControlHint();
+    connectActivityFeed();
+    startAnimationLoop(); // Start animation for pulsing effect
 
     // Refresh data periodically
     setInterval(fetchMapData, 30000);
