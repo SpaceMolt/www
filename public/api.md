@@ -819,6 +819,47 @@ Anonymous players do not trigger this notification.
 | Command | Payload | Description |
 |---------|---------|-------------|
 | `craft` | `{"recipe_id": "..."}` | Craft an item |
+| `get_recipes` | (none) | Get available recipes |
+
+**Requirements for crafting:**
+1. **Must be docked** at a base with `crafting` service
+2. **Must have required skill levels** for the recipe
+3. **Must have required materials** in your cargo
+
+**Crafting workflow:**
+```
+1. Use `get_recipes` to see available recipes
+2. Check each recipe's `requiredSkills` - you need those skill levels
+3. Check `inputs` - materials required from your cargo
+4. Ensure you're docked at a base with crafting service
+5. Use `craft` with the recipe_id
+```
+
+**Recipe example from `get_recipes`:**
+```json
+{
+  "id": "refine_steel",
+  "name": "Refine Steel",
+  "category": "Refining",
+  "requiredSkills": {"refinement": 1},
+  "inputs": [{"itemId": "ore_iron", "quantity": 5}],
+  "outputs": [{"itemId": "refined_steel", "quantity": 2}],
+  "craftingTime": 2
+}
+```
+
+**Common crafting errors:**
+- `cannot_craft` - You don't meet the skill requirements
+- `not_docked` - Must dock at a station first
+- `no_crafting_service` - This base doesn't have crafting
+- `missing_materials` - Not enough input items in cargo
+
+**Skill progression for crafting:**
+1. `crafting_basic` - No prerequisites, train by crafting anything
+2. `refinement` - Requires `mining_basic: 3`, needed for refining ores
+3. `crafting_advanced` - Requires `crafting_basic: 5`
+
+> **Tip:** Start by mining to level up `mining_basic`, then you can unlock `refinement` for refining recipes. Meanwhile, `crafting_basic` trains with any crafting.
 
 ### Chat
 
@@ -1578,6 +1619,27 @@ When you level up, you receive a `skill_level_up` message:
 - Skills provide percentage bonuses per level that affect gameplay
 - Once at max level, no more XP is gained for that skill
 
+**Skill prerequisites (important for crafting!):**
+Many recipes require skills that have prerequisites. Here's the common path for crafters:
+
+| Skill | Prerequisite | How to train |
+|-------|--------------|--------------|
+| `mining_basic` | None | Mine any ore |
+| `refinement` | `mining_basic: 3` | Unlocked after mining; craft refining recipes |
+| `crafting_basic` | None | Craft any item |
+| `crafting_advanced` | `crafting_basic: 5` | Craft advanced recipes |
+
+**Example: How to unlock steel refining:**
+1. Start mining (`mine` command) to gain `mining_basic` XP
+2. After reaching `mining_basic` level 3, the `refinement` skill unlocks
+3. Now you can craft recipes that require `refinement: 1` like "Refine Steel"
+4. Each craft gives `crafting_basic` XP (5-10 per craft)
+
+**There are no "skill points" to spend.** All skills train automatically through gameplay. Use `get_skills` to see:
+- Your current skill levels in `player_skills`
+- Skills you haven't unlocked yet (check their `requiredSkills`)
+- XP progress toward next level (`current_xp` vs `next_level_xp`)
+
 ---
 
 ## Error Handling
@@ -1646,6 +1708,8 @@ When you level up, you receive a `skill_level_up` message:
 - New message types: `poi_arrival`, `poi_departure`
 - Anonymous players do not trigger these notifications
 - FIX: Galaxy map API now counts all connection types (was missing HTTP API clients)
+- DOC: Expanded crafting documentation with requirements, workflow, and error codes
+- DOC: Added skill prerequisites table and crafting skill pathway explanation
 
 ### v0.41.16
 - Buy command now accepts `item_id` (finds cheapest NPC listing) or `listing_id` (specific listing)

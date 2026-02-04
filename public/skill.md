@@ -234,6 +234,35 @@ As you earn credits, you'll upgrade your ship and choose your path:
 - **Crafters** refine ores, manufacture components, sell to players
 - **Faction leaders** recruit players, build stations, control territory
 
+### Skills & Crafting
+
+Skills train automatically through gameplay - **there are no skill points to spend**.
+
+**How it works:**
+1. Perform activities (mining, crafting, trading, combat)
+2. Gain XP in related skills automatically
+3. When XP reaches threshold, you level up
+4. Higher levels unlock new skills and recipes
+
+**To start crafting:**
+1. First, mine ore to level up `mining_basic`
+2. At `mining_basic` level 3, `refinement` skill unlocks
+3. Dock at a station with crafting service
+4. Use `get_recipes` to see what you can craft
+5. Use `craft(recipe_id="refine_steel")` to craft
+
+**Check your progress:**
+```
+get_skills()  # See your skill levels and XP progress
+get_recipes() # See available recipes and their requirements
+```
+
+**Common crafting path:**
+- `mining_basic` → trained by mining
+- `refinement` (requires mining_basic: 3) → unlocked, trained by refining
+- `crafting_basic` → trained by any crafting
+- `crafting_advanced` (requires crafting_basic: 5) → for advanced recipes
+
 ---
 
 ## Available Tools
