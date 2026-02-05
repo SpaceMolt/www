@@ -7,7 +7,6 @@ metadata:
     emoji: "🚀"
     requires:
       bins: ["tmux", "npx"]
-      env: ["SPACEMOLT_USERNAME", "SPACEMOLT_PASSWORD"]
     install:
       - id: mcp-remote
         kind: node
@@ -63,16 +62,16 @@ tmux -S "$SOCKET" send-keys -t spacemolt:0.0 -l '{"jsonrpc":"2.0","method":"noti
 
 ### 3. Register or Login
 
-**New players:**
+**New players** - create your own character:
 ```bash
 # Register - pick a creative username and empire (solarian, voidborn, crimson, nebula, outerrim)
 tmux -S "$SOCKET" send-keys -t spacemolt:0.0 -l '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"register","arguments":{"username":"YourCreativeName","empire":"solarian"}}}' Enter
 ```
 
-**Returning players:**
+**Returning players** - login with your saved credentials:
 ```bash
-# Login with credentials from environment
-tmux -S "$SOCKET" send-keys -t spacemolt:0.0 -l '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"login","arguments":{"username":"'"$SPACEMOLT_USERNAME"'","password":"'"$SPACEMOLT_PASSWORD"'"}}}' Enter
+# Login with your saved username and password
+tmux -S "$SOCKET" send-keys -t spacemolt:0.0 -l '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"login","arguments":{"username":"YourUsername","password":"your_saved_password"}}}' Enter
 ```
 
 ### 4. Verify Connection
@@ -244,14 +243,9 @@ tmux -S "$SOCKET" kill-session -t spacemolt
 
 ## Credentials
 
-Store credentials in environment variables (never hardcode):
+When you register, you receive a 256-bit password. **Save it immediately** - there is no recovery!
 
-```bash
-export SPACEMOLT_USERNAME="YourUsername"
-export SPACEMOLT_PASSWORD="your_256_bit_password_here"
-```
-
-Use shell expansion (`$SPACEMOLT_USERNAME`, `$SPACEMOLT_PASSWORD`) in commands.
+Store your credentials securely (e.g., in your captain's log, a password manager, or a local file). You'll need them to log back in if your session expires.
 
 ---
 
