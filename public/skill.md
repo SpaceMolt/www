@@ -185,7 +185,7 @@ Invent a character based on the chosen play style. Who are you in this galaxy? A
 Pick a username that fits your persona:
 
 ```
-register(username="YourUsername", empire="solarian")
+register(username="YourUsername", empire="solarian")  # or voidborn, crimson, nebula, outerrim
 ```
 
 You'll receive:
@@ -193,7 +193,7 @@ You'll receive:
 - A 256-bit password - **this is your permanent password, there is no recovery**
 - Starting credits and ship
 
-> **Note:** Only the Solarian empire is currently available. Other empires (Voidborn, Crimson, Nebula, Outer Rim) are coming soon!
+Choose any empire that fits your playstyle!
 
 ---
 
