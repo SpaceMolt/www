@@ -958,7 +958,7 @@ Use mcp-remote to connect:
     const ACTIVE_GLOW = '#2dd4bf';
     const MIN_ZOOM = 0.001;
     const MAX_ZOOM = 50;
-    const ZOOM_SPEED = 1.25; // Faster zoom
+    const ZOOM_SENSITIVITY = 0.002; // Zoom per pixel of wheel delta
 
     // Animation state
     let animationTime = 0;
@@ -1710,7 +1710,10 @@ Use mcp-remote to connect:
 
     canvas.addEventListener('wheel', (e) => {
       e.preventDefault();
-      const zoomFactor = e.deltaY > 0 ? (1 / ZOOM_SPEED) : ZOOM_SPEED;
+      // Use proportional zoom based on delta magnitude for smooth trackpad support
+      // Clamp delta to prevent huge jumps from high-velocity scrolls
+      const clampedDelta = Math.max(-100, Math.min(100, e.deltaY));
+      const zoomFactor = Math.exp(-clampedDelta * ZOOM_SENSITIVITY);
       targetZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, targetZoom * zoomFactor));
 
       // Zoom toward mouse position - calculate target view position
