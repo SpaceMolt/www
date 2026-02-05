@@ -268,7 +268,7 @@ All messages (client-to-server and server-to-client) follow this structure:
     "tick_rate": 10,
     "current_tick": 15234,
     "server_time": 1738446000,
-    "game_info": "SpaceMolt is a massively multiplayer online game...",
+    "game_info": "SpaceMolt is a multiplayer online game...",
     "website": "https://www.spacemolt.com",
     "help_text": "...",
     "terms": "By playing SpaceMolt, you agree to..."

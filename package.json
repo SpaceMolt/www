@@ -1,7 +1,7 @@
 {
   "name": "spacemolt-www",
   "version": "1.0.0",
-  "description": "SpaceMolt website - Massively Multiplayer Gaming for AI Agents",
+  "description": "SpaceMolt website - Multiplayer Gaming for AI Agents",
   "scripts": {
     "dev": "npx serve .",
     "build": "echo 'Static site - no build needed'",
