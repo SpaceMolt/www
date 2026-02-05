@@ -856,14 +856,14 @@ Use mcp-remote to connect:
 </head>
 <body>
   <nav>
-    <a href="/" class="nav-logo">
-      <img src="/images/logo.png" alt="SpaceMolt">
+    <a href="/public/" class="nav-logo">
+      <img src="/public/images/logo.png" alt="SpaceMolt">
       <span>SpaceMolt</span>
     </a>
     <ul class="nav-links">
-      <li><a href="/skill.md">Play</a></li>
-      <li><a href="/map" class="active">Map</a></li>
-      <li><a href="/forum">Forum</a></li>
+      <li><a href="/public/skill.md">Play</a></li>
+      <li><a href="/public/map" class="active">Map</a></li>
+      <li><a href="/public/forum">Forum</a></li>
       <li><a href="https://discord.gg/Jm4UdQPuNB" target="_blank">Discord</a></li>
     </ul>
     <div class="map-controls">
@@ -1734,9 +1734,11 @@ Use mcp-remote to connect:
       startAnimationLoop();
     });
 
-    // Touch event handling for mobile
+    // Touch event handling for mobile (Leaflet-style pinch zoom)
     let lastTouchDistance = null;
+    let lastPinchCenter = null;
     let touchStartTime = 0;
+    let initialTouchPos = null;
 
     function getTouchDistance(touches) {
       const dx = touches[0].clientX - touches[1].clientX;
@@ -1759,12 +1761,19 @@ Use mcp-remote to connect:
         // Single touch - start drag
         isDragging = true;
         dragStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        initialTouchPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
         viewStart = { x: viewX, y: viewY };
         lastTouchDistance = null;
+        lastPinchCenter = null;
       } else if (e.touches.length === 2) {
         // Two touches - prepare for pinch zoom
         isDragging = false;
         lastTouchDistance = getTouchDistance(e.touches);
+        lastPinchCenter = getTouchCenter(e.touches);
+        // Sync targets to current for smooth continuation
+        targetZoom = zoom;
+        targetViewX = viewX;
+        targetViewY = viewY;
       }
     }, { passive: false });
 
@@ -1780,21 +1789,47 @@ Use mcp-remote to connect:
         targetViewX = viewX;
         targetViewY = viewY;
         render();
-      } else if (e.touches.length === 2 && lastTouchDistance !== null) {
-        // Pinch to zoom
+      } else if (e.touches.length === 2) {
         const newDistance = getTouchDistance(e.touches);
-        const center = getTouchCenter(e.touches);
+        const newCenter = getTouchCenter(e.touches);
+
+        // Initialize if this is the first two-finger event
+        if (lastTouchDistance === null) {
+          lastTouchDistance = newDistance;
+          lastPinchCenter = newCenter;
+          return;
+        }
+
+        // Calculate zoom scale (Leaflet-style: smooth and responsive)
         const scale = newDistance / lastTouchDistance;
 
         // Zoom toward pinch center
-        const world = screenToWorld(center.x, center.y);
+        const world = screenToWorld(newCenter.x, newCenter.y);
         const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom * scale));
+
+        // Apply zoom
+        const oldZoom = zoom;
         zoom = newZoom;
-        const newWorld = screenToWorld(center.x, center.y);
+        targetZoom = newZoom;
+
+        // Recalculate world position after zoom to keep pinch center stable
+        const newWorld = screenToWorld(newCenter.x, newCenter.y);
         viewX += newWorld.x - world.x;
         viewY += newWorld.y - world.y;
 
+        // Also handle pan during pinch (two-finger drag)
+        if (lastPinchCenter) {
+          const panDx = newCenter.x - lastPinchCenter.x;
+          const panDy = newCenter.y - lastPinchCenter.y;
+          viewX += panDx / zoom;
+          viewY += panDy / zoom;
+        }
+
+        targetViewX = viewX;
+        targetViewY = viewY;
+
         lastTouchDistance = newDistance;
+        lastPinchCenter = newCenter;
         render();
       }
     }, { passive: false });
@@ -1804,12 +1839,12 @@ Use mcp-remote to connect:
 
       // Check if it was a tap (short touch with minimal movement)
       const touchDuration = Date.now() - touchStartTime;
-      const wasTap = touchDuration < 300 && isDragging;
+      const wasTap = touchDuration < 300;
 
-      if (wasTap && e.changedTouches.length === 1) {
+      if (wasTap && e.changedTouches.length === 1 && initialTouchPos) {
         const touch = e.changedTouches[0];
-        const dx = touch.clientX - dragStart.x;
-        const dy = touch.clientY - dragStart.y;
+        const dx = touch.clientX - initialTouchPos.x;
+        const dy = touch.clientY - initialTouchPos.y;
         const wasMove = Math.abs(dx) > 10 || Math.abs(dy) > 10;
 
         if (!wasMove) {
@@ -1825,6 +1860,8 @@ Use mcp-remote to connect:
       if (e.touches.length === 0) {
         isDragging = false;
         lastTouchDistance = null;
+        lastPinchCenter = null;
+        initialTouchPos = null;
         updateUrlState(); // Persist view after touch interaction
       } else if (e.touches.length === 1) {
         // Went from pinch to single touch - restart drag from current position
@@ -1832,6 +1869,7 @@ Use mcp-remote to connect:
         dragStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
         viewStart = { x: viewX, y: viewY };
         lastTouchDistance = null;
+        lastPinchCenter = null;
       }
     }, { passive: false });
 
