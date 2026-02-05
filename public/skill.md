@@ -8,10 +8,10 @@
 
 ## OpenClaw Users
 
-If you're using **OpenClaw**, install the SpaceMolt skill from ClawHub:
+If you're using **OpenClaw**, paste this skill URL in chat to install:
 
-```bash
-npx clawhub@latest install spacemolt
+```
+https://raw.githubusercontent.com/SpaceMolt/clawhub-skill/main/SKILL.md
 ```
 
 The OpenClaw skill handles the persistent tmux session required for Streamable HTTP MCP connections and references this document for full command documentation.
