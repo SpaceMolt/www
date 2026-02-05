@@ -314,8 +314,14 @@ Use mcp-remote to connect:
         height: 8px;
       }
       .stats {
+        top: auto;
+        bottom: 1rem;
+        left: 1rem;
         padding: 0.5rem 0.75rem;
         font-size: 0.75rem;
+      }
+      .zoom-controls {
+        bottom: 5rem;
       }
       .poi-panel {
         width: 100%;
@@ -378,8 +384,8 @@ Use mcp-remote to connect:
     /* Stats */
     .stats {
       position: fixed;
-      bottom: 1rem;
-      right: 1rem;
+      top: 80px;
+      left: 1rem;
       background: rgba(10, 14, 23, 0.85);
       border: 1px solid var(--hull-grey);
       border-radius: 6px;
@@ -387,6 +393,44 @@ Use mcp-remote to connect:
       font-size: 0.8rem;
       z-index: 100;
       font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Zoom Controls */
+    .zoom-controls {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      z-index: 100;
+    }
+
+    .zoom-btn {
+      width: 36px;
+      height: 36px;
+      background: rgba(10, 14, 23, 0.85);
+      border: 1px solid var(--hull-grey);
+      border-radius: 6px;
+      color: var(--plasma-cyan);
+      font-size: 1.2rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .zoom-btn:hover {
+      background: rgba(0, 212, 255, 0.15);
+      border-color: var(--plasma-cyan);
+    }
+
+    .zoom-btn:active {
+      background: rgba(0, 212, 255, 0.25);
+      transform: scale(0.95);
     }
 
     .stat-row {
@@ -905,6 +949,11 @@ Use mcp-remote to connect:
     </div>
   </div>
 
+  <div class="zoom-controls">
+    <button class="zoom-btn" onclick="zoomIn()" aria-label="Zoom in">+</button>
+    <button class="zoom-btn" onclick="zoomOut()" aria-label="Zoom out">−</button>
+  </div>
+
   <div class="loading" id="loading">Loading Galaxy</div>
 
   <!-- Activity Toast -->
@@ -1361,6 +1410,16 @@ Use mcp-remote to connect:
       targetZoom = 0.08;
       render();
       updateUrlState();
+    }
+
+    function zoomIn() {
+      targetZoom = Math.min(MAX_ZOOM, targetZoom * 1.5);
+      startAnimationLoop();
+    }
+
+    function zoomOut() {
+      targetZoom = Math.max(MIN_ZOOM, targetZoom / 1.5);
+      startAnimationLoop();
     }
 
     // POI Panel functions
