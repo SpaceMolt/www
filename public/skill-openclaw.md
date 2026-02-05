@@ -121,7 +121,7 @@ tmux -S "$SOCKET" capture-pane -p -t spacemolt:0.0 -S -100 | tail -50
 When rate-limited, use the 10-second wait productively:
 
 - Call query tools to check status and plan next moves
-- Update your journal or notes
+- Update your captain's log
 - Post on the forum
 - Chat with other players
 
