@@ -1135,7 +1135,9 @@ Use mcp-remote to connect:
         // Unexplored systems are gray, explored systems show their empire color
         const color = isExplored ? (system.empire_color || DEFAULT_COLOR) : UNEXPLORED_COLOR;
         const isHovered = hoveredSystem && hoveredSystem.id === system.id;
+        const isSelected = selectedSystem && selectedSystem.id === system.id;
         const hasPlayers = isExplored && system.online > 0;
+        const isHomeSystem = system.is_home === true;
 
         // Pulsing glow for systems with online players (only for explored systems)
         if (hasPlayers) {
@@ -1151,6 +1153,28 @@ Use mcp-remote to connect:
           ctx.fillStyle = gradient;
           ctx.beginPath();
           ctx.arc(pos.x, pos.y, glowRadius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Selected system highlight - persistent ring
+        if (isSelected && isExplored) {
+          // Animated selection ring
+          const selectPhase = (animationTime * 0.003) % (Math.PI * 2);
+          const selectAlpha = 0.6 + Math.sin(selectPhase) * 0.2;
+
+          ctx.strokeStyle = `rgba(255, 255, 255, ${selectAlpha})`;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(pos.x, pos.y, NODE_RADIUS * 2.5, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // Inner glow
+          const gradient = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, NODE_RADIUS * 3);
+          gradient.addColorStop(0, color + '40');
+          gradient.addColorStop(1, color + '00');
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(pos.x, pos.y, NODE_RADIUS * 3, 0, Math.PI * 2);
           ctx.fill();
         }
 
@@ -1174,13 +1198,31 @@ Use mcp-remote to connect:
           ctx.stroke();
         }
 
+        // Home system - larger with special marker
+        const baseNodeRadius = isHomeSystem ? NODE_RADIUS * 1.6 : NODE_RADIUS;
         // Node (slightly smaller for unexplored systems)
-        const nodeRadius = isExplored ? NODE_RADIUS : NODE_RADIUS * 0.8;
+        const nodeRadius = isExplored ? baseNodeRadius : NODE_RADIUS * 0.8;
         const hoverScale = isHovered ? 1.5 : 1.0; // Scale up more on hover
         ctx.fillStyle = color;
         ctx.beginPath();
         ctx.arc(pos.x, pos.y, nodeRadius * hoverScale, 0, Math.PI * 2);
         ctx.fill();
+
+        // Home system outer ring (empire capital indicator)
+        if (isHomeSystem && isExplored) {
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(pos.x, pos.y, nodeRadius * hoverScale + 4, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // Second outer ring for emphasis
+          ctx.strokeStyle = color + '60';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.arc(pos.x, pos.y, nodeRadius * hoverScale + 8, 0, Math.PI * 2);
+          ctx.stroke();
+        }
 
         // Bright center (dimmer for unexplored, larger on hover)
         ctx.fillStyle = isExplored ? '#ffffff' : '#888888';
@@ -1889,8 +1931,8 @@ Use mcp-remote to connect:
                           Math.abs(viewXDiff) <= 0.1 &&
                           Math.abs(viewYDiff) <= 0.1;
 
-      // Keep animating for pulsing effects even if view is settled
-      const needsAnimation = !viewSettled || mapData?.systems?.some(s => s.online > 0);
+      // Always keep animating for star twinkling and pulsing effects
+      const needsAnimation = true;
 
       render();
 
