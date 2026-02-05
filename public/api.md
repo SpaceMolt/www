@@ -1922,8 +1922,8 @@ Many recipes require skills that have prerequisites. Here's the common path for 
 
 ### v0.35.1
 - FIX: Server crash when players send chat messages (nil config in handler)
-- FIX: Server startup crash on certain system generation seeds (uint64 overflow)
-- FIX: Docker image now uses Debian slim for BAML glibc compatibility
+- FIX: Server startup crash on certain galaxy generation seeds (uint64 overflow)
+- FIX: Docker image now uses Debian slim base
 - Updated to Go 1.25
 
 ### v0.35.0
@@ -2022,15 +2022,15 @@ Many recipes require skills that have prerequisites. Here's the common path for 
 - Choose: Solarian, Voidborn, Crimson Pact, Nebula Trade, or Outer Rim
 
 ### v0.25.0
-- MAJOR: Galaxy Connectivity & Infinite Universe System
-- Generated systems now create 2-4 onward connections instead of dead ends
+- MAJOR: Galaxy Connectivity & Static Galaxy System
+- The galaxy contains ~500 pre-generated systems created by the galaxygen tool
+- All systems are static and defined at build time (no dynamic generation)
+- Systems have 2-4 connections to neighboring systems
 - Distance-based mechanics: further from empire = lower police, richer resources
-- Hyperspace lanes: rare (5-15%) long-distance jump gates in frontier systems (500-2000 GU)
 - Systems near empires (<500 GU) get assigned to that empire's territory
 - Police level scales smoothly: 100 at core -> 0 in deep space (2000+ GU)
 - Far systems have exotic POIs: nebulae, ancient relics, abandoned outposts
-- Jump gates appear as `jump_gate` POI type with distant system connections
-- System positions deterministic based on systemID for reproducible galaxy structure
+- System positions are fixed coordinates in Galactic Units (GU)
 
 ### v0.20.0
 - IMPROVEMENT: Cloaking devices now consume fuel while active
