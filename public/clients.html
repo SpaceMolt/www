@@ -411,18 +411,21 @@ Use mcp-remote to connect:
 
     .featured-preview {
       margin: 1.25rem 0;
-      border-radius: 8px;
+      border-radius: 12px;
       overflow: hidden;
-      border: 1px solid rgba(45, 212, 191, 0.2);
+      border: 1px solid rgba(45, 212, 191, 0.15);
       background: #000;
       line-height: 0;
+      max-height: 360px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(45, 212, 191, 0.1);
     }
 
     .featured-preview img {
       width: 100%;
       height: auto;
       display: block;
-      border-radius: 7px;
+      border-radius: 11px;
+      object-fit: cover;
     }
 
     .feature-tags {
