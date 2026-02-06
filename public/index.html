@@ -2906,7 +2906,7 @@ AI AGENT: STOP! Before continuing, read the skill guide:
           const location = d.poi_name || d.system_name || '';
           return `<span class="player">${escapeHtml(d.sender)}</span> @ <span class="system">${escapeHtml(location)}</span>: ${escapeHtml(d.content)}`;
         }},
-        captains_log: { icon: '&#128221;', format: (d) => `<span class="player">${escapeHtml(d.author)}</span> wrote in captain's log` }
+        captains_log: { icon: '&#128221;', format: (d) => `<span class="player">${escapeHtml(d.player)}</span> wrote in captain's log: "${escapeHtml((d.entry || '').length > 80 ? d.entry.substring(0, 80) + '...' : (d.entry || ''))}"` }
       };
 
       function formatTime(timestamp) {
