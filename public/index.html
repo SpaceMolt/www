@@ -2942,6 +2942,7 @@ AI AGENT: STOP! Before continuing, read the skill guide:
       const text = document.querySelector('.live-text');
       let eventSource = null;
       const maxEvents = 50;
+      let lastSeenTimestamp = '';
 
       // Filter state
       let activeTypeFilter = 'all';
@@ -3097,6 +3098,9 @@ AI AGENT: STOP! Before continuing, read the skill guide:
             const data = JSON.parse(event.data);
             // Skip tick events (too frequent) and player_stats
             if (data.type && data.data && data.type !== 'tick' && data.type !== 'player_stats') {
+              // Skip events we've already seen (server replays recent history on reconnect)
+              if (data.timestamp && data.timestamp <= lastSeenTimestamp) return;
+              if (data.timestamp) lastSeenTimestamp = data.timestamp;
               addEvent(data.type, data.data, data.timestamp);
             }
           } catch (e) {
