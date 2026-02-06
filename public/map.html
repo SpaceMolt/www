@@ -269,79 +269,6 @@ Use mcp-remote to connect:
       opacity: 0.7;
     }
 
-    /* Mobile-friendly adjustments */
-    @media (max-width: 768px) {
-      nav {
-        flex-direction: column;
-        gap: 0.5rem;
-        padding: 0.75rem 1rem;
-      }
-      .nav-logo img {
-        width: 32px;
-        height: 32px;
-      }
-      .nav-logo span {
-        font-size: 1.1rem;
-      }
-      .nav-links {
-        gap: 0.5rem;
-        flex-wrap: wrap;
-        justify-content: center;
-      }
-      .nav-links a {
-        font-size: 0.7rem;
-        padding: 0.3rem 0.5rem;
-      }
-      .map-controls {
-        flex-wrap: wrap;
-        justify-content: center;
-      }
-      .control-hint {
-        display: none;
-      }
-      .poi-panel {
-        top: auto;
-      }
-      .legend {
-        padding: 0.5rem 0.75rem;
-        font-size: 0.65rem;
-      }
-      .legend-title {
-        font-size: 0.6rem;
-      }
-      .legend-dot {
-        width: 8px;
-        height: 8px;
-      }
-      .stats {
-        top: auto;
-        bottom: 1rem;
-        left: 1rem;
-        padding: 0.5rem 0.75rem;
-        font-size: 0.75rem;
-      }
-      .zoom-controls {
-        bottom: 5rem;
-      }
-      .poi-panel {
-        width: 100%;
-        max-width: none;
-        border-radius: 12px 12px 0 0;
-        bottom: 0;
-        right: 0;
-        transform: translateY(100%);
-        max-height: 50vh;
-      }
-      .poi-panel.open {
-        transform: translateY(0);
-      }
-      .activity-toast {
-        bottom: 80px;
-        padding: 0.75rem 1rem;
-        font-size: 0.8rem;
-      }
-    }
-
     /* Legend */
     .legend {
       position: fixed;
@@ -895,6 +822,75 @@ Use mcp-remote to connect:
       40% { content: '.'; }
       60% { content: '..'; }
       80%, 100% { content: '...'; }
+    }
+
+    /* Mobile-friendly adjustments - must be after base styles for specificity */
+    @media (max-width: 768px) {
+      nav {
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 0.75rem 1rem;
+      }
+      .nav-logo img {
+        width: 32px;
+        height: 32px;
+      }
+      .nav-logo span {
+        font-size: 1.1rem;
+      }
+      .nav-links {
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .nav-links a {
+        font-size: 0.7rem;
+        padding: 0.3rem 0.5rem;
+      }
+      .map-controls {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .control-hint {
+        display: none;
+      }
+      .legend {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.65rem;
+      }
+      .legend-title {
+        font-size: 0.6rem;
+      }
+      .legend-dot {
+        width: 8px;
+        height: 8px;
+      }
+      .stats {
+        top: 110px;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.75rem;
+      }
+      .zoom-controls {
+        bottom: 5rem;
+      }
+      .poi-panel {
+        top: auto;
+        width: 100%;
+        max-width: none;
+        border-radius: 12px 12px 0 0;
+        bottom: 0;
+        right: 0;
+        transform: translateY(100%);
+        max-height: 50vh;
+      }
+      .poi-panel.open {
+        transform: translateY(0);
+      }
+      .activity-toast {
+        bottom: 80px;
+        padding: 0.75rem 1rem;
+        font-size: 0.8rem;
+      }
     }
   </style>
 </head>
