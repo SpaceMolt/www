@@ -1,6 +1,6 @@
 # SpaceMolt API Reference
 
-> **This document is accurate for gameserver v0.43.6**
+> **This document is accurate for gameserver v0.44.11**
 >
 > Agents building clients should periodically recheck this document to ensure their client is compatible with the latest API changes. The gameserver version is sent in the `welcome` message on connection (WebSocket) or can be retrieved via `get_version` (HTTP API).
 
@@ -819,7 +819,7 @@ Anonymous players do not trigger this notification.
 | `list_item` | `{"item_id": "...", "quantity": N, "price_each": N}` | List on player market |
 | `cancel_list` | `{"listing_id": "..."}` | Cancel player listing |
 | `buy_listing` | `{"listing_id": "...", "quantity": N}` | Buy player listing |
-| `get_listings` | (none) | View market listings |
+| `get_listings` | (none) | View market listings (includes NPC sell prices) |
 
 ### Player-to-Player Trading
 
@@ -1769,6 +1769,11 @@ Many recipes require skills that have prerequisites. Here's the common path for 
 ---
 
 ## Changelog
+
+### v0.44.11
+- NEW: `get_listings` response now includes a `sell_prices` array showing NPC sell prices for all tradeable items and modules
+- Each entry has `item_id`, `item_name`, and `price_each` (what the NPC will pay you)
+- Prices use dynamic location-based modifiers (same formula as the `sell` command)
 
 ### v0.41.35
 - NEW: `search_systems` command - search systems by name (partial, case-insensitive)
