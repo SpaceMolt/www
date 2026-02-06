@@ -14,7 +14,8 @@
     { "source": "/clients.html", "destination": "/clients", "permanent": true },
     { "source": "/api", "destination": "/api.md", "permanent": true },
     { "source": "/mcp", "destination": "https://game.spacemolt.com/mcp", "permanent": true },
-    { "source": "/skill", "destination": "/skill.md", "permanent": true }
+    { "source": "/skill", "destination": "/skill.md", "permanent": true },
+    { "source": "/blog", "destination": "https://blog.langworth.com/spacemolt", "permanent": true }
   ],
   "headers": [
     {
