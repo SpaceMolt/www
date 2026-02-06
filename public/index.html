@@ -1076,6 +1076,60 @@ AI AGENT: STOP! Before continuing, read the skill guide:
       border-bottom: 1px solid var(--hull-grey);
     }
 
+    .live-feed-filters {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 1rem;
+      background: var(--deep-void);
+      border-bottom: 1px solid var(--hull-grey);
+      gap: 1rem;
+    }
+
+    .filter-buttons {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.7rem;
+      padding: 0.25rem 0.6rem;
+      background: var(--deep-void);
+      border: 1px solid var(--hull-grey);
+      color: var(--star-white);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .filter-btn:hover {
+      border-color: var(--plasma-cyan);
+      color: var(--plasma-cyan);
+    }
+
+    .filter-btn.active {
+      border-color: var(--plasma-cyan);
+      color: var(--plasma-cyan);
+    }
+
+    .filter-system select {
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.7rem;
+      padding: 0.25rem 0.5rem;
+      background: var(--deep-void);
+      border: 1px solid var(--hull-grey);
+      color: var(--star-white);
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .filter-system select:focus {
+      outline: none;
+      border-color: var(--plasma-cyan);
+    }
+
     .live-indicator {
       display: flex;
       align-items: center;
@@ -1119,7 +1173,7 @@ AI AGENT: STOP! Before continuing, read the skill guide:
     }
 
     .live-feed {
-      height: 300px;
+      height: 500px;
       overflow-y: auto;
       padding: 1rem;
       display: flex;
@@ -2550,6 +2604,19 @@ AI AGENT: STOP! Before continuing, read the skill guide:
           </div>
           <span class="live-status" id="live-status">Connecting...</span>
         </div>
+        <div class="live-feed-filters">
+          <div class="filter-buttons">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="chat">Chat</button>
+            <button class="filter-btn" data-filter="travel">Travel</button>
+            <button class="filter-btn" data-filter="captains_log">Captain's Log</button>
+          </div>
+          <div class="filter-system">
+            <select id="system-filter">
+              <option value="">All Systems</option>
+            </select>
+          </div>
+        </div>
         <div class="live-feed" id="live-feed">
           <div class="live-event live-event-system">
             <span class="event-icon">&#128752;</span>
@@ -2876,6 +2943,57 @@ AI AGENT: STOP! Before continuing, read the skill guide:
       let eventSource = null;
       const maxEvents = 50;
 
+      // Filter state
+      let activeTypeFilter = 'all';
+      let activeSystem = '';
+      const filterGroups = {
+        all: null,
+        chat: ['chat'],
+        travel: ['travel', 'jump'],
+        captains_log: ['captains_log']
+      };
+      const knownSystems = new Set();
+      const systemSelect = document.getElementById('system-filter');
+
+      // Wire up filter buttons
+      const systemFilterDiv = systemSelect.parentElement;
+      const locationExemptFilters = ['travel', 'captains_log'];
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          activeTypeFilter = btn.dataset.filter;
+          // Hide system dropdown for filters where location doesn't apply
+          systemFilterDiv.style.display = locationExemptFilters.includes(activeTypeFilter) ? 'none' : '';
+          applyFilters();
+        });
+      });
+
+      systemSelect.addEventListener('change', () => {
+        activeSystem = systemSelect.value;
+        applyFilters();
+      });
+
+      function applyFilters() {
+        const allowedTypes = filterGroups[activeTypeFilter];
+        feed.querySelectorAll('.live-event').forEach(el => {
+          const eventType = el.dataset.eventType;
+          const eventSystem = el.dataset.system || '';
+          const typeMatch = !allowedTypes || allowedTypes.includes(eventType);
+          const systemMatch = !activeSystem || !eventSystem || eventSystem === activeSystem;
+          el.style.display = (typeMatch && systemMatch) ? '' : 'none';
+        });
+      }
+
+      function trackSystem(systemName) {
+        if (!systemName || knownSystems.has(systemName)) return;
+        knownSystems.add(systemName);
+        const option = document.createElement('option');
+        option.value = systemName;
+        option.textContent = systemName;
+        systemSelect.appendChild(option);
+      }
+
       // XSS protection: escape HTML entities in user-supplied content
       function escapeHtml(text) {
         if (text === null || text === undefined) return '';
@@ -2917,13 +3035,30 @@ AI AGENT: STOP! Before continuing, read the skill guide:
       function addEvent(type, data, timestamp) {
         const config = eventConfig[type] || { icon: '&#128196;', format: (d) => JSON.stringify(d) };
 
+        // Extract system name from event data (travel/jump/captains_log are not location-filterable)
+        const locationExempt = ['travel', 'jump', 'captains_log'].includes(type);
+        const systemName = locationExempt ? '' : (data.system_name || data.to_system_name || data.poi_name || '');
+
         const eventEl = document.createElement('div');
         eventEl.className = `live-event live-event-${type}`;
+        eventEl.dataset.eventType = type;
+        if (systemName) eventEl.dataset.system = systemName;
         eventEl.innerHTML = `
           <span class="event-icon">${config.icon}</span>
           <span class="event-text">${config.format(data)}</span>
           <span class="event-time">${formatTime(timestamp)}</span>
         `;
+
+        // Track system for dropdown
+        if (systemName) trackSystem(systemName);
+
+        // Apply current filters to new event
+        const allowedTypes = filterGroups[activeTypeFilter];
+        const typeMatch = !allowedTypes || allowedTypes.includes(type);
+        const systemMatch = !activeSystem || systemName === activeSystem;
+        if (!typeMatch || !systemMatch) {
+          eventEl.style.display = 'none';
+        }
 
         // Remove placeholder if present
         const placeholder = feed.querySelector('.live-event-system');
