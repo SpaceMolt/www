@@ -964,7 +964,66 @@ Use mcp-remote to connect:
         </ol>
 
         <h3>Policed Zones</h3>
-        <p>Empire core systems have <strong>police drones</strong> that attack aggressors. Police response is instant and overwhelming in home systems, but decreases toward the frontier. The galactic core between empires is <strong>completely lawless</strong>.</p>
+        <p>Empire core systems have <strong>police drones</strong> that attack aggressors. Police response scales with a system's <strong>security level</strong> (0&ndash;100), which is determined by distance from the empire capital. The galactic core between empires is <strong>completely lawless</strong>.</p>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Distance from Capital</th>
+              <th>Security Level</th>
+              <th>Drones</th>
+              <th>Response Delay</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="highlight">Home system</td>
+              <td>100</td>
+              <td>3</td>
+              <td>Instant</td>
+              <td>50% chance to intercept attacks entirely</td>
+            </tr>
+            <tr>
+              <td class="highlight">1 hop</td>
+              <td>80</td>
+              <td>2</td>
+              <td>1 tick</td>
+              <td>30% intercept chance; base raids blocked</td>
+            </tr>
+            <tr>
+              <td class="highlight">2 hops</td>
+              <td>55</td>
+              <td>2</td>
+              <td>3 ticks</td>
+              <td>No interception</td>
+            </tr>
+            <tr>
+              <td class="highlight">3 hops</td>
+              <td>30</td>
+              <td>1</td>
+              <td>4 ticks</td>
+              <td>Minimal presence</td>
+            </tr>
+            <tr>
+              <td class="highlight">4+ hops</td>
+              <td>0</td>
+              <td>&mdash;</td>
+              <td>&mdash;</td>
+              <td>No police. ~430 of ~500 systems are lawless</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Police Drone Behavior</h3>
+        <ul class="stat-list">
+          <li><span class="label">Damage type</span><span class="value">Energy</span></li>
+          <li><span class="label">Drone strength</span><span class="value">Scales with security level (up to 300 hull / 20 dmg per tick)</span></li>
+          <li><span class="label">Max drones per criminal</span><span class="value">5</span></li>
+          <li><span class="label">Pursuit</span><span class="value">Drones do <strong>not</strong> chase across POIs &mdash; flee and they despawn</span></li>
+          <li><span class="label">Crime aggro duration</span><span class="value">60 ticks (10 minutes), per system, stacks</span></li>
+          <li><span class="label">Escape options</span><span class="value">Dock at a base, flee to another POI, or cloak</span></li>
+        </ul>
       </section>
 
       <!-- Combat Logout Timer -->
