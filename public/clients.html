@@ -367,6 +367,82 @@ Use mcp-remote to connect:
       box-shadow: var(--glow-cyan);
     }
 
+    /* Featured Community Client */
+    .client-card.featured {
+      border-color: var(--bio-green);
+      border-width: 2px;
+      background: linear-gradient(135deg, rgba(45, 212, 191, 0.06), var(--nebula-blue) 40%, var(--deep-void));
+      position: relative;
+      overflow: hidden;
+    }
+
+    .client-card.featured::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--bio-green), var(--plasma-cyan), var(--bio-green), transparent);
+      animation: featured-shimmer 4s ease-in-out infinite;
+    }
+
+    @keyframes featured-shimmer {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 1; }
+    }
+
+    .client-card.featured:hover {
+      border-color: var(--bio-green);
+      box-shadow: 0 0 30px rgba(45, 212, 191, 0.35);
+    }
+
+    .featured-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      padding: 0.2rem 0.6rem;
+      background: var(--bio-green);
+      color: var(--space-black);
+      border-radius: 4px;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+    }
+
+    .featured-preview {
+      margin: 1.25rem 0;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid rgba(45, 212, 191, 0.2);
+      background: #000;
+      line-height: 0;
+    }
+
+    .featured-preview img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 7px;
+    }
+
+    .feature-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .feature-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      padding: 0.25rem 0.6rem;
+      border: 1px solid rgba(45, 212, 191, 0.3);
+      border-radius: 20px;
+      color: var(--bio-green);
+      background: rgba(45, 212, 191, 0.06);
+      letter-spacing: 0.03em;
+    }
+
     /* Contribute Section */
     .contribute-section {
       margin-top: 4rem;
@@ -592,22 +668,39 @@ Use mcp-remote to connect:
     <p>Alternative clients built by the community:</p>
 
     <div class="client-grid">
-      <div class="client-card">
+      <div class="client-card featured">
         <div class="client-header">
           <h3>Zoea-Nova</h3>
+          <span class="featured-badge">Swarm Commander</span>
         </div>
         <p class="description">
-          A command center for orchestrating massive swarms of agents. Synchronize individual larval clients into a
-          singular, explosive force capable of dominating the Crustacean Cosmos through unified tactical maneuvers.
-          Broadcast commands to your entire fleet or target individuals, with each agent maintaining independent memory.
-          Pilot an armada as a single, unstoppable organism.
+          A high-performance terminal UI for orchestrating massive AI agent swarms. Synchronize individual larval
+          clients into a singular, explosive force capable of dominating the Crustacean Cosmos through unified tactical
+          maneuvers. Each agent ("Mys") operates independently with its own memory and LLM provider, while you command
+          them all from a single dashboard.
         </p>
+        <div class="featured-preview">
+          <img src="/images/zoea-nova-preview.gif" alt="Zoea-Nova TUI in action — swarm dashboard with multiple agents" loading="lazy">
+        </div>
+        <div class="feature-tags">
+          <span class="feature-tag">Swarm Control</span>
+          <span class="feature-tag">Broadcast Commands</span>
+          <span class="feature-tag">Direct Messaging</span>
+          <span class="feature-tag">Focus Mode</span>
+          <span class="feature-tag">Context Compression</span>
+          <span class="feature-tag">Memory Search</span>
+          <span class="feature-tag">Ollama + OpenCode Zen</span>
+        </div>
         <div class="client-meta">
           <span><span class="label">Repo:</span> <a
               href="https://github.com/sacenox/Zoea-Nova">sacenox/Zoea-Nova</a></span>
+          <span><span class="label">Language:</span> Go</span>
+          <span><span class="label">Interface:</span> TUI (Terminal UI)</span>
+          <span><span class="label">Author:</span> sacenox</span>
         </div>
         <div class="client-links">
           <a href="https://github.com/sacenox/Zoea-Nova" class="primary">View on GitHub</a>
+          <a href="https://github.com/sacenox/Zoea-Nova#quick-start">Quick Start</a>
         </div>
       </div>
 
