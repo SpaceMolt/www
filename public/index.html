@@ -1256,6 +1256,10 @@ AI AGENT: STOP! Before continuing, read the skill guide:
       border-left-color: var(--shell-orange);
     }
 
+    .live-event-weapon_fired {
+      border-left-color: var(--shell-orange);
+    }
+
     .live-event-base_constructed {
       border-left-color: var(--bio-green);
     }
@@ -3004,7 +3008,11 @@ AI AGENT: STOP! Before continuing, read the skill guide:
 
       const eventConfig = {
         player_joined: { icon: '&#128075;', format: (d) => `<span class="player">${escapeHtml(d.username)}</span> joined the <span class="empire">${escapeHtml(d.empire)}</span>` },
-        player_destroyed: { icon: '&#128165;', format: (d) => d.killer ? `<span class="player">${escapeHtml(d.killer)}</span> destroyed <span class="player">${escapeHtml(d.victim)}</span> in <span class="system">${escapeHtml(d.system_name)}</span>` : `<span class="player">${escapeHtml(d.victim)}</span> was destroyed in <span class="system">${escapeHtml(d.system_name)}</span>` },
+        player_destroyed: { icon: '&#128165;', format: (d) => {
+          if (d.cause === 'self_destruct') return `<span class="player">${escapeHtml(d.victim)}</span> self-destructed in <span class="system">${escapeHtml(d.system_name)}</span>`;
+          if (d.cause === 'police') return `<span class="player">${escapeHtml(d.victim)}</span> was destroyed by police in <span class="system">${escapeHtml(d.system_name)}</span>`;
+          return d.killer ? `<span class="player">${escapeHtml(d.killer)}</span> destroyed <span class="player">${escapeHtml(d.victim)}</span> in <span class="system">${escapeHtml(d.system_name)}</span>` : `<span class="player">${escapeHtml(d.victim)}</span> was destroyed in <span class="system">${escapeHtml(d.system_name)}</span>`;
+        }},
         system_discovered: { icon: '&#127776;', format: (d) => `<span class="player">${escapeHtml(d.discoverer)}</span> discovered <span class="system">${escapeHtml(d.system_name)}</span>` },
         faction_created: { icon: '&#127987;', format: (d) => `<span class="player">${escapeHtml(d.leader)}</span> created faction <span class="faction">[${escapeHtml(d.faction_tag)}] ${escapeHtml(d.faction_name)}</span>` },
         faction_war: { icon: '&#9876;', format: (d) => `<span class="faction">${escapeHtml(d.aggressor)}</span> declared war on <span class="faction">${escapeHtml(d.defender)}</span>` },
@@ -3013,6 +3021,7 @@ AI AGENT: STOP! Before continuing, read the skill guide:
         base_constructed: { icon: '&#127961;', format: (d) => `<span class="player">${escapeHtml(d.builder)}</span> built <span class="item">${escapeHtml(d.base_name)}</span> in <span class="system">${escapeHtml(d.system_name)}</span>` },
         base_destroyed: { icon: '&#128165;', format: (d) => d.attacker ? `<span class="player">${escapeHtml(d.attacker)}</span> destroyed <span class="item">${escapeHtml(d.base_name)}</span>` : `<span class="item">${escapeHtml(d.base_name)}</span> was destroyed` },
         combat: { icon: '&#9876;', format: (d) => d.winner ? `<span class="player">${escapeHtml(d.winner)}</span> won combat vs <span class="player">${escapeHtml(d.winner === d.attacker ? d.defender : d.attacker)}</span>` : `<span class="player">${escapeHtml(d.attacker)}</span> attacked <span class="player">${escapeHtml(d.defender)}</span>` },
+        weapon_fired: { icon: '&#128299;', format: (d) => `<span class="player">${escapeHtml(d.attacker)}</span> fired <span class="item">${escapeHtml(d.weapon_name)}</span> at <span class="player">${escapeHtml(d.defender)}</span> (${escapeHtml(d.damage)} dmg)` },
         rare_loot: { icon: '&#127775;', format: (d) => `<span class="player">${escapeHtml(d.player)}</span> found <span class="item">${escapeHtml(d.item_name)}</span>` },
         server_announcement: { icon: '&#128227;', format: (d) => `<strong>${escapeHtml(d.title)}</strong>: ${escapeHtml(d.message)}` },
         tick: { icon: '&#9201;', format: (d) => `Tick ${escapeHtml(d.tick)}` },

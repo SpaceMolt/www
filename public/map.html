@@ -2057,6 +2057,7 @@ Use mcp-remote to connect:
         'system_discovered': '🔭',
         'player_destroyed': '💀',
         'combat': '⚔️',
+        'weapon_fired': '🔫',
         'travel': '🚀',
         'trade': '💰',
         'faction_created': '🏴',
@@ -2075,8 +2076,17 @@ Use mcp-remote to connect:
           text = `${event.data?.discoverer || 'Someone'} discovered ${event.data?.system_name || 'a new system'}`;
           break;
         case 'player_destroyed':
-          text = `${event.data?.victim || 'A pilot'} was destroyed`;
-          if (event.data?.killer) text += ` by ${event.data.killer}`;
+          if (event.data?.cause === 'self_destruct') {
+            text = `${event.data?.victim || 'A pilot'} self-destructed`;
+          } else if (event.data?.cause === 'police') {
+            text = `${event.data?.victim || 'A pilot'} was destroyed by police`;
+          } else {
+            text = `${event.data?.victim || 'A pilot'} was destroyed`;
+            if (event.data?.killer) text += ` by ${event.data.killer}`;
+          }
+          break;
+        case 'weapon_fired':
+          text = `${event.data?.attacker || 'A pilot'} fired ${event.data?.weapon_name || 'a weapon'} at ${event.data?.defender || 'a target'}`;
           break;
         case 'travel':
           text = `${event.data?.player || 'A pilot'} traveled to ${event.data?.to_poi || 'a new location'}`;
