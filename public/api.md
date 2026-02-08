@@ -845,6 +845,7 @@ Anonymous players do not trigger this notification.
 
 | Command | Payload | Description |
 |---------|---------|-------------|
+| `get_ships` | (none) | Browse all ship classes with stats and prices |
 | `buy_ship` | `{"ship_class": "..."}` | Purchase new ship |
 | `sell_ship` | (none) | Sell current ship for credits |
 | `install_mod` | `{"module_id": "...", "slot_idx": N}` | Install module |
@@ -996,6 +997,7 @@ These recipes let new players begin crafting immediately:
 | `get_poi` | (none) | Get current POI info |
 | `get_base` | (none) | Get base info (must be docked) |
 | `get_ship` | (none) | Get detailed ship info |
+| `get_ships` | (none) | List all ship classes with stats, prices, and skill requirements |
 | `get_cargo` | (none) | Get ship cargo contents |
 | `get_nearby` | (none) | Get other players at your POI |
 | `get_skills` | (none) | Get **all available skills** (full skill tree) |
