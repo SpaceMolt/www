@@ -481,6 +481,46 @@ Use mcp-remote to connect:
       font-style: italic;
     }
 
+    .poi-panel-tags {
+      display: flex;
+      gap: 0.4rem;
+      margin-top: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .poi-panel-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.6rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 2px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .poi-panel-tag.security {
+      background: rgba(45, 212, 191, 0.15);
+      color: #2dd4bf;
+      border: 1px solid rgba(45, 212, 191, 0.3);
+    }
+
+    .poi-panel-tag.security.lawless {
+      background: rgba(255, 68, 68, 0.15);
+      color: #ff6b6b;
+      border: 1px solid rgba(255, 68, 68, 0.3);
+    }
+
+    .poi-panel-tag.security.frontier {
+      background: rgba(255, 165, 0, 0.15);
+      color: #ffa500;
+      border: 1px solid rgba(255, 165, 0, 0.3);
+    }
+
+    .poi-panel-tag.stronghold {
+      background: rgba(255, 68, 68, 0.2);
+      color: #ff4444;
+      border: 1px solid rgba(255, 68, 68, 0.4);
+    }
+
     .poi-panel-close {
       background: rgba(255, 255, 255, 0.05);
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -928,6 +968,7 @@ Use mcp-remote to connect:
     <div class="legend-item"><div class="legend-dot" style="background: #FFD700"></div><span class="legend-label">Nebula</span></div>
     <div class="legend-item"><div class="legend-dot" style="background: #4169E1"></div><span class="legend-label">Outer Rim</span></div>
     <div class="legend-item"><div class="legend-dot" style="background: #5a6a7a"></div><span class="legend-label">Neutral</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background: #ff4444; box-shadow: 0 0 6px rgba(255,68,68,0.6)"></div><span class="legend-label">Pirate Stronghold</span></div>
   </div>
 
   <div class="stats" id="stats">
@@ -964,6 +1005,7 @@ Use mcp-remote to connect:
       <div>
         <div class="poi-panel-title" id="poi-panel-title">System</div>
         <div class="poi-panel-empire" id="poi-panel-empire"></div>
+        <div class="poi-panel-tags" id="poi-panel-tags"></div>
         <div class="poi-panel-desc" id="poi-panel-desc"></div>
       </div>
       <button class="poi-panel-close" onclick="closePOIPanel()" aria-label="Close">&times;</button>
@@ -1177,6 +1219,7 @@ Use mcp-remote to connect:
         const isSelected = selectedSystem && selectedSystem.id === system.id;
         const hasPlayers = system.online > 0;
         const isHomeSystem = system.is_home === true;
+        const isStronghold = system.is_stronghold === true;
 
         // Pulsing glow for systems with online players
         if (hasPlayers) {
@@ -1236,10 +1279,35 @@ Use mcp-remote to connect:
           ctx.stroke();
         }
 
+        // Pirate stronghold - danger glow and crosshair
+        if (isStronghold) {
+          const pulsePhase = (animationTime * 0.0015 + system.x * 0.002) % (Math.PI * 2);
+          const pulseAlpha = 0.2 + Math.sin(pulsePhase) * 0.1;
+          const glowRadius = NODE_RADIUS * 4;
+          const gradient = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, glowRadius);
+          gradient.addColorStop(0, `rgba(255, 68, 68, ${pulseAlpha})`);
+          gradient.addColorStop(1, 'rgba(255, 68, 68, 0)');
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(pos.x, pos.y, glowRadius, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Crosshair lines
+          const chSize = NODE_RADIUS * 2.2;
+          ctx.strokeStyle = `rgba(255, 68, 68, ${0.4 + Math.sin(pulsePhase) * 0.15})`;
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(pos.x - chSize, pos.y); ctx.lineTo(pos.x - NODE_RADIUS * 1.2, pos.y);
+          ctx.moveTo(pos.x + NODE_RADIUS * 1.2, pos.y); ctx.lineTo(pos.x + chSize, pos.y);
+          ctx.moveTo(pos.x, pos.y - chSize); ctx.lineTo(pos.x, pos.y - NODE_RADIUS * 1.2);
+          ctx.moveTo(pos.x, pos.y + NODE_RADIUS * 1.2); ctx.lineTo(pos.x, pos.y + chSize);
+          ctx.stroke();
+        }
+
         // Home system - larger with special marker
         const nodeRadius = isHomeSystem ? NODE_RADIUS * 1.6 : NODE_RADIUS;
         const hoverScale = isHovered ? 1.5 : 1.0; // Scale up more on hover
-        ctx.fillStyle = color;
+        ctx.fillStyle = isStronghold && !system.empire ? '#ff4444' : color;
         ctx.beginPath();
         ctx.arc(pos.x, pos.y, nodeRadius * hoverScale, 0, Math.PI * 2);
         ctx.fill();
@@ -1374,13 +1442,20 @@ Use mcp-remote to connect:
       }
 
       document.getElementById('tooltip-name').textContent = system.name;
-      document.getElementById('tooltip-name').style.color = system.empire_color || '#e8f4f8';
+      document.getElementById('tooltip-name').style.color = system.is_stronghold && !system.empire ? '#ff4444' : (system.empire_color || '#e8f4f8');
 
-      if (system.empire) {
-        document.getElementById('tooltip-empire').textContent = empireNames[system.empire] || system.empire;
-        document.getElementById('tooltip-empire').style.display = 'block';
+      const empireEl = document.getElementById('tooltip-empire');
+      if (system.is_stronghold) {
+        empireEl.textContent = system.empire ? (empireNames[system.empire] || system.empire) + ' · Pirate Stronghold' : 'Pirate Stronghold';
+        empireEl.style.display = 'block';
+        empireEl.style.color = '#ff6b6b';
+      } else if (system.empire) {
+        empireEl.textContent = empireNames[system.empire] || system.empire;
+        empireEl.style.display = 'block';
+        empireEl.style.color = '';
       } else {
-        document.getElementById('tooltip-empire').style.display = 'none';
+        empireEl.style.display = 'none';
+        empireEl.style.color = '';
       }
 
       const onlineEl = document.getElementById('tooltip-online');
@@ -1443,10 +1518,11 @@ Use mcp-remote to connect:
       // Update header using textContent for safety
       const titleEl = document.getElementById('poi-panel-title');
       titleEl.textContent = system.name;
-      titleEl.style.color = system.empire_color || '#e8f4f8';
+      titleEl.style.color = system.is_stronghold && !system.empire ? '#ff4444' : (system.empire_color || '#e8f4f8');
 
       const empireEl = document.getElementById('poi-panel-empire');
       const descEl = document.getElementById('poi-panel-desc');
+      const tagsEl = document.getElementById('poi-panel-tags');
 
       if (system.empire) {
         empireEl.textContent = empireNames[system.empire] || system.empire;
@@ -1456,6 +1532,8 @@ Use mcp-remote to connect:
       }
       descEl.style.display = 'none';
       descEl.textContent = '';
+      while (tagsEl.firstChild) tagsEl.removeChild(tagsEl.firstChild);
+      tagsEl.style.display = 'none';
 
       // Show loading state
       renderEmptyState('◎', 'Loading system data...', null);
@@ -1471,6 +1549,27 @@ Use mcp-remote to connect:
         if (data.description) {
           descEl.textContent = data.description;
           descEl.style.display = 'block';
+        }
+
+        // Show tags (security status, stronghold)
+        while (tagsEl.firstChild) tagsEl.removeChild(tagsEl.firstChild);
+        if (data.security_status) {
+          const secTag = document.createElement('span');
+          secTag.className = 'poi-panel-tag security';
+          const secLower = data.security_status.toLowerCase();
+          if (secLower === 'lawless') secTag.classList.add('lawless');
+          else if (secLower === 'frontier') secTag.classList.add('frontier');
+          secTag.textContent = data.security_status;
+          tagsEl.appendChild(secTag);
+        }
+        if (data.is_stronghold) {
+          const shTag = document.createElement('span');
+          shTag.className = 'poi-panel-tag stronghold';
+          shTag.textContent = 'Pirate Stronghold';
+          tagsEl.appendChild(shTag);
+        }
+        if (tagsEl.childNodes.length > 0) {
+          tagsEl.style.display = 'flex';
         }
 
         renderPOIs(data.pois || []);
