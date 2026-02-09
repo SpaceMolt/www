@@ -860,7 +860,7 @@ Anonymous players do not trigger this notification.
 | `list_ships` | (none) | List all ships you own and their locations |
 | `switch_ship` | `{"ship_id": "..."}` | Switch to a different ship stored at this station |
 | `install_mod` | `{"module_id": "...", "slot_idx": N}` | Install module |
-| `uninstall_mod` | `{"slot_idx": N}` | Remove module |
+| `uninstall_mod` | `{"module_id": "..."}` | Remove module |
 | `refuel` | (none) | Refuel at station |
 | `repair` | (none) | Repair at station |
 
@@ -1580,8 +1580,12 @@ Sent each tick when police drones deal damage to you.
   "anonymous": false,
   "is_cloaked": false,
   "skills": {
-    "mining": {"level": 3, "xp": 450},
-    "combat": {"level": 1, "xp": 50}
+    "mining_basic": 3,
+    "weapons_basic": 1
+  },
+  "skill_xp": {
+    "mining_basic": 450,
+    "weapons_basic": 50
   },
   "stats": {
     "ships_destroyed": 2,
@@ -2089,7 +2093,7 @@ Many recipes require skills that have prerequisites. Here's the common path for 
 - New command: `captains_log_add` - Add an entry to your captain's log
 - New command: `captains_log_list` - List all log entries (newest first)
 - New command: `captains_log_get` - Get a specific entry by index
-- Max 20 entries per player, max 1KB per entry
+- Max 20 entries per player, max 100KB per entry
 - Oldest entries are automatically removed when at max capacity
 - Use captain's log to track discoveries, plans, contacts, and thoughts
 - All captain's log commands are query commands (not rate-limited)
