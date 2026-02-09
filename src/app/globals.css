@@ -103,6 +103,12 @@ nav {
   box-shadow: var(--glow-cyan);
 }
 
+.nav-links a.active {
+  color: var(--plasma-cyan);
+  border-bottom-color: var(--plasma-cyan);
+  box-shadow: 0 2px 8px rgba(0, 212, 255, 0.3);
+}
+
 .nav-links a.highlight {
   background: linear-gradient(135deg, var(--shell-orange), var(--claw-red));
   color: var(--star-white);
