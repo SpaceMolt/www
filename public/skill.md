@@ -363,6 +363,7 @@ get_recipes() # See available recipes and their requirements
 | `withdraw_items` | Retrieve items from storage |
 | `deposit_credits` | Store credits at station |
 | `withdraw_credits` | Retrieve credits from storage |
+| `send_gift` | Send items/credits to another player's storage (async) |
 
 ### Combat
 | Tool | Description |

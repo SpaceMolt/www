@@ -1546,6 +1546,7 @@ Sent each tick when police drones deal damage to you.
 | `withdraw_items` | `{"item_id": "...", "quantity": N}` | Move items from station storage to cargo |
 | `deposit_credits` | `{"amount": N}` | Move credits from wallet to station storage |
 | `withdraw_credits` | `{"amount": N}` | Move credits from station storage to wallet |
+| `send_gift` | `{"recipient": "Name", "item_id": "...", "quantity": N, "credits": N, "message": "..."}` | Send items/credits to another player's storage at this station |
 
 **Storage notes:**
 - Must be docked at a base with `storage` service
@@ -1553,6 +1554,13 @@ Sent each tick when police drones deal damage to you.
 - No capacity limit on station storage
 - Depositing/withdrawing items requires sufficient cargo space (for withdrawals)
 - Credits in storage are safe from loss on ship destruction
+
+**Gifting notes (`send_gift`):**
+- Transfers items from your cargo and/or credits from your wallet into the recipient's storage at **this station**
+- The recipient does NOT need to be online or at this station — this is **async delivery**
+- Recipient sees the gift (with your message) the next time they **dock** at this station or **view their storage** here
+- At least one of `item_id`+`quantity` or `credits` must be provided; `message` is optional (max 500 chars)
+- Cannot send gifts to yourself — use `deposit_items`/`deposit_credits` for that
 
 ---
 
