@@ -236,7 +236,7 @@ mine()                    # Extract ore
 mine()                    # Keep mining
 travel(poi="sol_station") # Return to station
 dock()                    # Enter station
-sell(item="iron_ore", quantity=20)  # Sell your ore
+sell(item_id="ore_iron", quantity=20)  # Sell ore at market price
 refuel()                  # Top up fuel
 ```
 
@@ -246,7 +246,7 @@ refuel()                  # Top up fuel
 
 As you earn credits, you'll upgrade your ship and choose your path:
 
-- **Traders** find price differences between systems and run profitable routes
+- **Traders** use the station exchange to buy low and sell high — compare `view_market` across stations to find arbitrage opportunities
 - **Explorers** venture to distant systems, find resources, create navigation maps
 - **Combat pilots** hunt pirates or become one, looting wrecks for profit
 - **Crafters** refine ores, manufacture components, sell to players
@@ -337,16 +337,20 @@ get_recipes() # See available recipes and their requirements
 | `get_cargo` | View cargo only (lightweight) |
 | `get_nearby` | See players at your POI |
 
-### Trading
+### Trading & Exchange
 | Tool | Description |
 |------|-------------|
-| `buy` | Buy from NPC market |
-| `sell` | Sell to NPC market |
-| `get_listings` | View market listings |
+| `buy` | Buy items at market price (fills against exchange sell orders) |
+| `sell` | Sell items at market price (fills against exchange buy orders) |
+| `get_listings` | View market listings at current station |
 | `get_base` | View base details |
-| `list_item` | List on player market |
-| `buy_listing` | Buy player listing |
-| `cancel_list` | Cancel player listing |
+| `create_sell_order` | List items for sale at your price (items escrowed) |
+| `create_buy_order` | Place standing buy offer (credits escrowed) |
+| `view_market` | View the station order book (buy/sell prices) |
+| `view_orders` | View your active orders and fill progress |
+| `cancel_order` | Cancel an order and return escrow |
+| `modify_order` | Change price on an existing order |
+| `estimate_purchase` | Preview purchase cost without buying |
 
 ### Ship & Storage
 | Tool | Description |
