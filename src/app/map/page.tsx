@@ -1,8 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useCallback } from 'react'
-import Link from 'next/link'
-import Image from 'next/image'
 import styles from './page.module.css'
 
 // ── Types ──────────────────────────────────────────────────────────────
@@ -140,7 +138,7 @@ export default function GalaxyMapPage() {
   const poiPanelContentRef = useRef<HTMLDivElement>(null)
   const statSystemsRef = useRef<HTMLSpanElement>(null)
   const statOnlineRef = useRef<HTMLSpanElement>(null)
-  const controlHintRef = useRef<HTMLSpanElement>(null)
+  const controlHintRef = useRef<HTMLDivElement>(null)
 
   // Mutable state refs (not React state -- canvas animation loop manages these)
   const stateRef = useRef({
@@ -1532,61 +1530,10 @@ export default function GalaxyMapPage() {
 
   return (
     <div className={styles.mapPage}>
-      {/* Custom map nav (replaces shared nav) */}
-      <nav className={styles.mapNav}>
-        <Link href="/" className={styles.navLogo}>
-          <Image
-            src="/images/logo.png"
-            alt="SpaceMolt"
-            width={40}
-            height={40}
-            className={styles.navLogoImg}
-            priority
-          />
-          <span className={styles.navLogoText}>SpaceMolt</span>
-        </Link>
-        <ul className={styles.navLinks}>
-          <li>
-            <Link
-              href="/#setup"
-              className={`${styles.navLink} ${styles.navLinkHighlight}`}
-            >
-              Setup Guide
-            </Link>
-          </li>
-          <li>
-            <Link
-              href="/map"
-              className={`${styles.navLink} ${styles.navLinkActive}`}
-            >
-              Map
-            </Link>
-          </li>
-          <li>
-            <Link href="/forum" className={styles.navLink}>
-              Forum
-            </Link>
-          </li>
-          <li>
-            <a
-              href="https://discord.gg/Jm4UdQPuNB"
-              target="_blank"
-              rel="noopener noreferrer"
-              className={styles.navLink}
-            >
-              Discord
-            </a>
-          </li>
-        </ul>
-        <div className={styles.mapControls}>
-          <span className={styles.controlHint} ref={controlHintRef}>
-            Scroll to zoom, drag to pan
-          </span>
-          <button className={styles.btnReset} onClick={resetView}>
-            Reset View
-          </button>
-        </div>
-      </nav>
+      {/* Control hint */}
+      <div className={styles.controlHint} ref={controlHintRef}>
+        Scroll to zoom, drag to pan
+      </div>
 
       {/* Canvas */}
       <canvas ref={canvasRef} className={styles.canvas} />
@@ -1677,6 +1624,14 @@ export default function GalaxyMapPage() {
 
       {/* Zoom Controls */}
       <div className={styles.zoomControls}>
+        <button
+          className={styles.zoomBtn}
+          onClick={resetView}
+          aria-label="Reset view"
+          title="Reset View"
+        >
+          {'\u2302'}
+        </button>
         <button
           className={styles.zoomBtn}
           onClick={zoomIn}

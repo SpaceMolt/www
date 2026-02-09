@@ -35,34 +35,18 @@
   cursor: grabbing;
 }
 
-/* Map Controls (in nav area) */
-.mapControls {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  font-size: 0.8rem;
-  color: var(--chrome-silver);
-}
-
+/* Control Hint (floating) */
 .controlHint {
-  opacity: 0.7;
-}
-
-.btnReset {
-  background: rgba(0, 212, 255, 0.1);
-  border: 1px solid rgba(0, 212, 255, 0.3);
-  color: var(--plasma-cyan);
-  padding: 0.4rem 0.8rem;
-  border-radius: 4px;
-  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
-  font-size: 0.8rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btnReset:hover {
-  background: rgba(0, 212, 255, 0.2);
-  border-color: var(--plasma-cyan);
+  position: fixed;
+  top: 5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--chrome-silver);
+  opacity: 0.5;
+  z-index: 100;
+  pointer-events: none;
 }
 
 /* Tooltip */
@@ -207,6 +191,10 @@
   flex-direction: column;
   gap: 0.25rem;
   z-index: 100;
+}
+
+.zoomControls button:first-child {
+  margin-bottom: 0.25rem;
 }
 
 .zoomBtn {
@@ -741,121 +729,8 @@
   80%, 100% { content: '...'; }
 }
 
-/* Custom nav for map page */
-.mapNav {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-  padding: 1rem 2rem;
-  background: linear-gradient(180deg, rgba(10, 14, 23, 0.95) 0%, rgba(10, 14, 23, 0) 100%);
-  backdrop-filter: blur(10px);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.navLogo {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  text-decoration: none;
-}
-
-.navLogoImg {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 2px solid var(--plasma-cyan);
-  box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
-}
-
-.navLogoText {
-  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
-  font-size: 1.3rem;
-  font-weight: 700;
-  background: linear-gradient(135deg, var(--plasma-cyan), var(--shell-orange));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.navLinks {
-  display: flex;
-  gap: 1.5rem;
-  list-style: none;
-  align-items: center;
-}
-
-.navLink {
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--chrome-silver);
-  text-decoration: none;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  padding: 0.4rem 0.8rem;
-  border: 1px solid transparent;
-  transition: all 0.3s ease;
-}
-
-.navLink:hover {
-  color: var(--plasma-cyan);
-  border-color: var(--plasma-cyan);
-}
-
-.navLinkActive {
-  color: var(--plasma-cyan);
-  border-color: var(--plasma-cyan);
-}
-
-.navLinkHighlight {
-  background: linear-gradient(135deg, var(--shell-orange), #e63946);
-  color: var(--star-white);
-  border-radius: 4px;
-}
-
-.navLinkHighlight:hover {
-  box-shadow: 0 0 30px rgba(255, 107, 53, 0.5);
-  border-color: var(--shell-orange);
-  color: var(--star-white);
-}
-
 /* Mobile */
 @media (max-width: 768px) {
-  .mapNav {
-    flex-direction: column;
-    gap: 0.5rem;
-    padding: 0.75rem 1rem;
-  }
-
-  .navLogoImg {
-    width: 32px;
-    height: 32px;
-  }
-
-  .navLogoText {
-    font-size: 1.1rem;
-  }
-
-  .navLinks {
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .navLink {
-    font-size: 0.7rem;
-    padding: 0.3rem 0.5rem;
-  }
-
-  .mapControls {
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
   .controlHint {
     display: none;
   }

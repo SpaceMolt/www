@@ -472,10 +472,6 @@ body.map-page {
   padding-bottom: 0 !important;
 }
 
-body.map-page > nav {
-  display: none !important;
-}
-
 body.map-page > footer {
   display: none !important;
 }
