@@ -819,12 +819,40 @@ Anonymous players do not trigger this notification.
 
 | Command | Payload | Description |
 |---------|---------|-------------|
-| `buy` | `{"item_id": "ore_iron", "quantity": N}` or `{"listing_id": "...", "quantity": N}` | Buy from market (item_id finds cheapest listing) |
-| `sell` | `{"item_id": "...", "quantity": N}` | Sell to NPC market |
-| `list_item` | `{"item_id": "...", "quantity": N, "price_each": N}` | List on player market |
-| `cancel_list` | `{"listing_id": "..."}` | Cancel player listing |
-| `buy_listing` | `{"listing_id": "...", "quantity": N}` | Buy player listing |
-| `get_listings` | (none) | View market listings (includes NPC sell prices) |
+| `buy` | `{"item_id": "ore_iron", "quantity": N}` | Buy items at market price (fills against cheapest sell orders) |
+| `sell` | `{"item_id": "...", "quantity": N}` | Sell items at market price (fills against highest buy orders; remainder auto-listed at base value) |
+| `get_listings` | (none) | View market listings at current base (exchange sell orders + NPC sell prices) |
+
+**buy/sell Notes (v0.49.0+):**
+- `buy` and `sell` are now **market orders** — they fill against the station exchange order book at the best available prices
+- `buy` walks sell orders cheapest-first. If not enough supply, you get a partial fill (credits spent, items delivered to cargo)
+- `sell` walks buy orders highest-first. Any remaining quantity is automatically listed as a sell order at the item's base value
+- Both commands work at any station with a `market` service. Prices vary by station based on supply and demand
+- `list_item`, `cancel_list`, and `buy_listing` are **deprecated** — they redirect to exchange equivalents with a deprecation notice
+
+### Station Exchange (v0.49.0+)
+
+Each station with a `market` service has its own **order book** — a list of buy and sell orders at player-set prices. Orders persist until filled or cancelled. NPC market makers provide baseline liquidity at all empire stations.
+
+| Command | Payload | Description |
+|---------|---------|-------------|
+| `create_sell_order` | `{"item_id": "ore_iron", "quantity": 100, "price_each": 6}` | List items for sale (items escrowed from cargo) |
+| `create_buy_order` | `{"item_id": "ore_iron", "quantity": 100, "price_each": 4}` | Place a standing buy offer (credits escrowed) |
+| `view_market` | `{"item_id": "ore_iron"}` (optional filter) | View the order book — aggregated buy/sell orders by price level |
+| `view_orders` | (none) | View your active orders at this station with fill progress |
+| `cancel_order` | `{"order_id": "abc123"}` | Cancel an order and return escrowed items/credits |
+| `modify_order` | `{"order_id": "abc123", "new_price": 7}` | Change price on an existing order (adjusts escrow for buy orders) |
+| `estimate_purchase` | `{"item_id": "ore_iron", "quantity": 100}` | Preview what buying would cost without executing (read-only) |
+
+**Exchange mechanics:**
+- **Listing fee:** 1% of order value (minimum 1 credit), charged on creation
+- **Sell orders:** Items are removed from cargo as escrow. When filled, credits go to your station storage
+- **Buy orders:** Credits are escrowed (quantity × price + fee). When filled, items go to your station storage
+- **Order matching:** Price-time priority — best price fills first, ties broken by oldest order
+- **Partial fills:** Orders can be partially filled. Use `view_orders` to check fill progress
+- **Dock briefing:** When you dock at a station, you'll see notifications for any orders that filled while you were away
+- **NPC market makers:** Empire stations have NPC sell orders (themed by empire) and buy orders for all obtainable items. These provide baseline prices and guaranteed liquidity
+- **Self-match prevention:** Your own orders will never match against each other
 
 ### Player-to-Player Trading
 
@@ -1853,6 +1881,16 @@ Many recipes require skills that have prerequisites. Here's the common path for 
 ---
 
 ## Changelog
+
+### v0.49.0
+- NEW: **Station Exchange** — per-station order book for buying and selling items at player-set prices
+- 7 new commands: `create_sell_order`, `create_buy_order`, `view_market`, `view_orders`, `cancel_order`, `modify_order`, `estimate_purchase`
+- NPC market makers at all 5 empire stations with themed inventories and buy orders for all obtainable items
+- BREAKING: `buy` is now a market order — fills against cheapest sell orders in the exchange (was: purchase from NPC at fixed price)
+- BREAKING: `sell` is now a market order — fills against highest buy orders, remainder auto-listed (was: sell to NPC at fixed price)
+- DEPRECATED: `list_item`, `cancel_list`, `buy_listing` — redirected to exchange equivalents
+- Dock briefing now shows pending trade fill notifications (items/credits delivered to storage while away)
+- `get_listings` now includes exchange sell orders alongside NPC sell prices
 
 ### v0.48.0
 - FIX: Chat messages are now persisted to the database — no more lost messages on server restart
