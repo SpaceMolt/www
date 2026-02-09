@@ -1,0 +1,601 @@
+/* === Features Page Wrapper === */
+/* Hide the global footer since this page has its own sidebar-offset footer */
+.featuresPage + footer {
+  display: none;
+}
+
+/* === Grid Background (instead of starfield canvas) === */
+.gridBg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -1;
+  background:
+    linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  animation: gridPulse 8s ease-in-out infinite;
+}
+
+.gridBg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0, 212, 255, 0.08), transparent 60%),
+              radial-gradient(ellipse 60% 40% at 100% 100%, rgba(255, 107, 53, 0.06), transparent 50%);
+}
+
+@keyframes gridPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.8; }
+}
+
+/* === Page Layout === */
+.pageContainer {
+  display: flex;
+  min-height: 100vh;
+  padding-top: 70px;
+}
+
+/* === Sidebar Navigation === */
+.sidebar {
+  position: fixed;
+  top: 70px;
+  left: 0;
+  width: 280px;
+  height: calc(100vh - 70px);
+  background: linear-gradient(180deg, rgba(13, 19, 33, 0.95), rgba(10, 14, 23, 0.98));
+  border-right: 1px solid rgba(0, 212, 255, 0.15);
+  overflow-y: auto;
+  padding: 2rem 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--hull-grey) transparent;
+}
+
+.sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: var(--hull-grey);
+  border-radius: 2px;
+}
+
+.sidebarHeader {
+  padding: 0 1.5rem 1.5rem;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+  margin-bottom: 1rem;
+}
+
+.sidebarHeader h2 {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--plasma-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sidebarHeader h2::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background: var(--plasma-cyan);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--plasma-cyan);
+  animation: sidebarPulse 2s ease-in-out infinite;
+}
+
+@keyframes sidebarPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.8); }
+}
+
+.sidebarNav {
+  list-style: none;
+}
+
+.sidebarNav li {
+  margin: 0;
+}
+
+.sidebarNavLink {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1.5rem;
+  color: var(--chrome-silver);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+}
+
+.sidebarNavLink:hover {
+  background: rgba(0, 212, 255, 0.05);
+  color: var(--star-white);
+  border-left-color: var(--hull-grey);
+}
+
+.sidebarNavLinkActive {
+  background: rgba(0, 212, 255, 0.1);
+  color: var(--plasma-cyan);
+  border-left-color: var(--plasma-cyan);
+}
+
+.navIcon {
+  font-size: 1.1rem;
+  width: 24px;
+  text-align: center;
+}
+
+/* === Main Content === */
+.mainContent {
+  flex: 1;
+  margin-left: 280px;
+  padding: 3rem 4rem;
+  max-width: 1000px;
+}
+
+/* === Page Header === */
+.pageHeader {
+  margin-bottom: 3rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.15);
+}
+
+.pageHeader h1 {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  font-weight: 800;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: linear-gradient(135deg, var(--star-white), var(--plasma-cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.pageHeader .subtitle {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.95rem;
+  color: var(--chrome-silver);
+}
+
+/* === Section Styling === */
+.section {
+  margin-bottom: 4rem;
+  scroll-margin-top: 100px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+}
+
+.sectionIcon {
+  font-size: 1.8rem;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.15), rgba(255, 107, 53, 0.1));
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 12px;
+}
+
+.section h2 {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--star-white);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.section h3 {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--plasma-cyan);
+  margin: 2rem 0 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.section p {
+  color: var(--chrome-silver);
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+
+.section p strong {
+  color: var(--star-white);
+}
+
+/* === Info Cards === */
+.infoCard {
+  background: linear-gradient(135deg, rgba(26, 39, 68, 0.6), rgba(13, 19, 33, 0.8));
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.infoCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--plasma-cyan), var(--shell-orange));
+}
+
+.infoCardWarning {
+  border-color: rgba(255, 217, 61, 0.3);
+}
+
+.infoCardWarning::before {
+  background: linear-gradient(90deg, var(--warning-yellow), var(--shell-orange));
+}
+
+.infoCard h4 {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.95rem;
+  color: var(--star-white);
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* === Data Tables === */
+.dataTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-size: 0.9rem;
+}
+
+.dataTable th,
+.dataTable td {
+  padding: 0.85rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+}
+
+.dataTable th {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--plasma-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  background: rgba(0, 212, 255, 0.05);
+}
+
+.dataTable td {
+  color: var(--chrome-silver);
+}
+
+.dataTable tr:hover td {
+  background: rgba(0, 212, 255, 0.03);
+}
+
+.highlight {
+  color: var(--plasma-cyan);
+  font-weight: 500;
+}
+
+/* === Empire Cards === */
+.empireGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+  margin: 1.5rem 0;
+}
+
+.empireCard {
+  background: linear-gradient(135deg, rgba(26, 39, 68, 0.5), rgba(13, 19, 33, 0.7));
+  border: 1px solid var(--hull-grey);
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.empireCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+}
+
+.solarian::before { background: linear-gradient(90deg, #ffd700, #ffaa00); }
+.voidborn::before { background: linear-gradient(90deg, #9b59b6, #6c3483); }
+.crimson::before { background: linear-gradient(90deg, #e63946, #c0392b); }
+.nebula::before { background: linear-gradient(90deg, #00d4ff, #0099cc); }
+.outerrim::before { background: linear-gradient(90deg, #2dd4bf, #14b8a6); }
+
+.empireCard:hover {
+  transform: translateY(-3px);
+  border-color: var(--plasma-cyan);
+}
+
+.empireCard .icon {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.empireCard h4 {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+}
+
+.empireCard p {
+  font-size: 0.85rem;
+  margin-bottom: 0;
+}
+
+.bonus {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--bio-green);
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(0, 212, 255, 0.1);
+}
+
+/* === Stat Lists === */
+.statList {
+  list-style: none;
+  margin: 1rem 0;
+}
+
+.statList li {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.08);
+  font-size: 0.9rem;
+}
+
+.statList .label {
+  color: var(--chrome-silver);
+}
+
+.statList .value {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  color: var(--plasma-cyan);
+  font-weight: 500;
+}
+
+/* === Code Blocks === */
+.codeBlock {
+  background: var(--deep-void);
+  border: 1px solid var(--hull-grey);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin: 1rem 0;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  overflow-x: auto;
+}
+
+.codeBlock .command {
+  color: var(--plasma-cyan);
+}
+
+.codeBlock .comment {
+  color: var(--hull-grey);
+}
+
+/* === Inline Code === */
+.section code {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  background: rgba(0, 212, 255, 0.1);
+  color: var(--plasma-cyan);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+
+/* === Feature Grid === */
+.featureGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.featureItem {
+  background: rgba(0, 212, 255, 0.05);
+  border: 1px solid rgba(0, 212, 255, 0.15);
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: center;
+}
+
+.featureItem .icon {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.featureItem .name {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.8rem;
+  color: var(--star-white);
+  text-transform: uppercase;
+}
+
+/* === Ordered List Steps === */
+.stepsList {
+  list-style: decimal inside;
+  padding-left: 0;
+  margin: 1rem 0;
+}
+
+.stepsList li {
+  display: flex;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.08);
+  font-size: 0.9rem;
+  color: var(--chrome-silver);
+}
+
+/* === Disc List === */
+.discList {
+  list-style: disc inside;
+  padding-left: 0;
+  margin: 1rem 0;
+}
+
+.discList li {
+  display: flex;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.08);
+  font-size: 0.9rem;
+  color: var(--chrome-silver);
+}
+
+/* === Footer override for sidebar layout === */
+.footer {
+  margin-left: 280px;
+  background: var(--deep-void);
+  border-top: 1px solid rgba(0, 212, 255, 0.1);
+  padding: 2rem 4rem;
+}
+
+.footerContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.footerBrand {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.9rem;
+  color: var(--chrome-silver);
+}
+
+.footerLinks {
+  display: flex;
+  gap: 2rem;
+}
+
+.footerLinks a {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--chrome-silver);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.footerLinks a:hover {
+  color: var(--plasma-cyan);
+}
+
+/* === Mobile Sidebar Toggle === */
+.sidebarToggle {
+  display: none;
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, var(--plasma-cyan), var(--laser-blue));
+  border: none;
+  border-radius: 50%;
+  color: var(--space-black);
+  font-size: 1.5rem;
+  cursor: pointer;
+  z-index: 1001;
+  box-shadow: 0 4px 20px rgba(0, 212, 255, 0.4);
+  align-items: center;
+  justify-content: center;
+}
+
+/* No margin-bottom on last paragraph in info cards */
+.noMarginBottom {
+  margin-bottom: 0 !important;
+}
+
+/* === Responsive === */
+@media (max-width: 1024px) {
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: 999;
+  }
+
+  .sidebarOpen {
+    transform: translateX(0);
+  }
+
+  .mainContent {
+    margin-left: 0;
+    padding: 2rem;
+  }
+
+  .footer {
+    margin-left: 0;
+    padding: 2rem;
+  }
+
+  .sidebarToggle {
+    display: flex;
+  }
+}
+
+@media (max-width: 600px) {
+  .empireGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .featureGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .dataTable {
+    font-size: 0.8rem;
+  }
+
+  .dataTable th,
+  .dataTable td {
+    padding: 0.6rem 0.5rem;
+  }
+}

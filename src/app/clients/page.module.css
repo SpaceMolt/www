@@ -1,0 +1,323 @@
+/* === Clients Page === */
+
+.content {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 8rem 2rem 4rem;
+}
+
+.pageHeader {
+  text-align: center;
+  margin-bottom: 3rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--hull-grey);
+}
+
+.pageHeader h1 {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  font-weight: 700;
+  color: var(--plasma-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.pageHeader p {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 1rem;
+  color: var(--chrome-silver);
+}
+
+.sectionTitle {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--shell-orange);
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.content p {
+  margin-bottom: 1rem;
+  color: var(--chrome-silver);
+  line-height: 1.8;
+}
+
+.content a {
+  color: var(--plasma-cyan);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.content a:hover {
+  color: var(--shell-orange);
+}
+
+.content code {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  color: var(--plasma-cyan);
+}
+
+/* === Client Cards === */
+.clientGrid {
+  display: grid;
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.clientCard {
+  background: linear-gradient(135deg, var(--nebula-blue), var(--deep-void));
+  border: 1px solid var(--hull-grey);
+  border-radius: 12px;
+  padding: 2rem;
+  transition: all 0.3s ease;
+}
+
+.clientCard:hover {
+  border-color: var(--plasma-cyan);
+  box-shadow: var(--glow-cyan);
+  transform: translateY(-3px);
+}
+
+.official {
+  border-color: var(--shell-orange);
+}
+
+.official:hover {
+  box-shadow: var(--glow-orange);
+}
+
+.clientHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.clientBadge {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  padding: 0.25rem 0.5rem;
+  background: var(--shell-orange);
+  color: var(--space-black);
+  border-radius: 4px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.clientBadgeGreen {
+  composes: clientBadge;
+  background: var(--bio-green);
+}
+
+.clientCard h3 {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1.3rem;
+  color: var(--star-white);
+}
+
+.description {
+  color: var(--chrome-silver);
+  margin-bottom: 1.5rem;
+}
+
+.descriptionHighlight {
+  composes: description;
+  color: var(--star-white);
+  font-size: 1.1rem;
+}
+
+.clientMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+}
+
+.clientMeta span {
+  color: var(--chrome-silver);
+}
+
+.label {
+  color: var(--plasma-cyan);
+}
+
+.clientLinks {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.clientLinks a {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--plasma-cyan);
+  border-radius: 4px;
+  color: var(--plasma-cyan);
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.clientLinks a:hover {
+  background: rgba(0, 212, 255, 0.1);
+  box-shadow: var(--glow-cyan);
+}
+
+.primaryLink {
+  background: linear-gradient(135deg, var(--plasma-cyan), var(--laser-blue));
+  border-color: var(--plasma-cyan) !important;
+  color: var(--space-black) !important;
+}
+
+.primaryLink:hover {
+  box-shadow: var(--glow-cyan);
+}
+
+/* === Featured Community Client === */
+.featured {
+  border-color: var(--bio-green);
+  border-width: 2px;
+  background: linear-gradient(135deg, rgba(45, 212, 191, 0.06), var(--nebula-blue) 40%, var(--deep-void));
+  position: relative;
+  overflow: hidden;
+}
+
+.featured::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--bio-green), var(--plasma-cyan), var(--bio-green), transparent);
+  animation: featuredShimmer 4s ease-in-out infinite;
+}
+
+@keyframes featuredShimmer {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+.featured:hover {
+  border-color: var(--bio-green);
+  box-shadow: 0 0 30px rgba(45, 212, 191, 0.35);
+}
+
+.featuredBadge {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  padding: 0.2rem 0.6rem;
+  background: var(--bio-green);
+  color: var(--space-black);
+  border-radius: 4px;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.featuredPreview {
+  margin: 1.25rem 0;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(45, 212, 191, 0.15);
+  background: transparent;
+  line-height: 0;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(45, 212, 191, 0.1);
+  display: flex;
+  justify-content: center;
+}
+
+.featuredPreviewImg {
+  max-height: 360px;
+  height: auto;
+  width: auto;
+  display: block;
+  border-radius: 11px;
+}
+
+.featureTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.featureTag {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid rgba(45, 212, 191, 0.3);
+  border-radius: 20px;
+  color: var(--bio-green);
+  background: rgba(45, 212, 191, 0.06);
+  letter-spacing: 0.03em;
+}
+
+/* === Contribute Section === */
+.contributeSection {
+  margin-top: 4rem;
+  padding: 2rem;
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.1), rgba(26, 39, 68, 0.5));
+  border: 1px solid var(--shell-orange);
+  border-radius: 12px;
+}
+
+.contributeSection h2 {
+  margin-top: 0;
+  color: var(--shell-orange);
+}
+
+.contributeSection p {
+  color: var(--star-white);
+}
+
+.contributeLinks {
+  composes: clientLinks;
+  margin-top: 1.5rem;
+}
+
+/* === Code Block === */
+.codeBlock {
+  background: rgba(0, 0, 0, 0.4);
+  padding: 1rem;
+  border-radius: 8px;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--plasma-cyan);
+  overflow-x: auto;
+  white-space: pre;
+}
+
+/* === Spacing Helpers === */
+.marginBottom2 {
+  margin-bottom: 2rem;
+}
+
+.marginTop1 {
+  margin-top: 1rem;
+}
+
+.marginTop1_5 {
+  margin-top: 1.5rem;
+}
+
+.borderWidth2 {
+  border-width: 2px;
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+  .clientHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

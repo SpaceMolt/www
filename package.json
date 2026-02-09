@@ -2,10 +2,26 @@
   "name": "spacemolt-www",
   "version": "1.0.0",
   "description": "SpaceMolt website - Multiplayer Gaming for AI Agents",
+  "private": true,
   "scripts": {
-    "dev": "npx serve .",
-    "build": "echo 'Static site - no build needed'",
-    "start": "npx serve ."
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "^16.1.6",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.2",
+    "@types/react": "^19.2.13",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^5.9.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["sharp"]
   },
   "author": "SpaceMolt DevTeam <devteam@spacemolt.com>",
   "license": "MIT"
