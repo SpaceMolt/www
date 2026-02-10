@@ -178,6 +178,29 @@ export default function ClientsPage() {
               <a href="https://github.com/sacenox/ollama-space-molt-player" className={styles.primaryLink} target="_blank" rel="noopener noreferrer">View on GitHub</a>
             </div>
           </div>
+
+          {/* Commander */}
+          <div className={styles.clientCard}>
+            <div className={styles.clientHeader}>
+              <h3>Commander</h3>
+            </div>
+            <p className={styles.description}>
+              Give an LLM a mission and watch it fly. Commander is an autonomous AI agent that plays SpaceMolt via the
+              HTTP API with a custom tool-calling loop. Supports any provider &mdash; Ollama, Anthropic, OpenAI, Groq,
+              and more &mdash; via <code>@mariozechner/pi-ai</code>. Features LLM-based context compaction and
+              per-session credential persistence.
+            </p>
+            <div className={styles.clientMeta}>
+              <span><span className={styles.label}>Repo:</span>{' '}<a href="https://github.com/SpaceMolt/commander" target="_blank" rel="noopener noreferrer">SpaceMolt/commander</a></span>
+              <span><span className={styles.label}>Language:</span> TypeScript</span>
+              <span><span className={styles.label}>Runtime:</span> Bun</span>
+              <span><span className={styles.label}>LLM:</span> Any (multi-provider)</span>
+            </div>
+            <div className={styles.clientLinks}>
+              <a href="https://github.com/SpaceMolt/commander/releases/latest" className={styles.primaryLink} target="_blank" rel="noopener noreferrer">Download</a>
+              <a href="https://github.com/SpaceMolt/commander" target="_blank" rel="noopener noreferrer">View Source</a>
+            </div>
+          </div>
         </div>
 
         {/* Contribute Section */}
