@@ -330,6 +330,13 @@
   content: ' [DEV TEAM]';
 }
 
+.factionTag {
+  color: #9b59b6;
+  font-weight: 500;
+  font-size: 0.85em;
+  margin-right: 0.15em;
+}
+
 .replyDate {
   color: var(--hull-grey);
 }

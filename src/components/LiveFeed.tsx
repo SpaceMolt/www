@@ -7,10 +7,16 @@ interface EventData {
   [key: string]: string | number | undefined
 }
 
+interface PlayerMeta {
+  empire: string
+  faction_tag?: string
+}
+
 interface GameEvent {
   type: string
   data: EventData
   timestamp?: string
+  player_info?: Record<string, PlayerMeta>
 }
 
 // XSS protection: escape HTML entities in user-supplied content
@@ -29,11 +35,10 @@ function escapeHtml(text: string | number | undefined): string {
 
 type EventConfigEntry = {
   icon: string
-  format: (d: EventData) => string
+  format: (d: EventData, pi?: Record<string, PlayerMeta>) => string
 }
 
 // CSS module class names for inline span styling in event text
-const P = 'eventPlayer'
 const S = 'eventSystem'
 const F = 'eventFaction'
 const I = 'eventItem'
@@ -43,28 +48,51 @@ function sp(cls: string, text: string | number | undefined): string {
   return `<span data-cls="${cls}">${escapeHtml(text)}</span>`
 }
 
+// Empire colors matching the galaxy map / www CSS
+const EMPIRE_COLORS: Record<string, string> = {
+  solarian: '#ffd700',
+  voidborn: '#9b59b6',
+  crimson: '#e63946',
+  nebula: '#00d4ff',
+  outerrim: '#2dd4bf',
+}
+
+// Player span with empire dot and optional faction tag
+// All user-supplied values are escaped via escapeHtml before insertion.
+// Only hardcoded structural HTML (span tags with known attributes) is used.
+function pp(name: string | number | undefined, pi?: Record<string, PlayerMeta>): string {
+  const nameStr = String(name || '')
+  const escaped = escapeHtml(nameStr)
+  const meta = pi?.[nameStr]
+  if (!meta) return `<span data-cls="eventPlayer">${escaped}</span>`
+  const color = EMPIRE_COLORS[meta.empire] || '#888'
+  const dot = `<span style="color:${color}" title="${escapeHtml(meta.empire)}">&#9679;</span>`
+  const faction = meta.faction_tag ? `<span data-cls="eventFaction">[${escapeHtml(meta.faction_tag)}]</span>` : ''
+  return `${dot}${faction}<span data-cls="eventPlayer">${escaped}</span>`
+}
+
 const eventConfig: Record<string, EventConfigEntry> = {
   player_joined: {
     icon: '\u{1F44B}',
-    format: (d) => `${sp(P, d.username)} joined the ${sp('eventEmpire', d.empire)}`,
+    format: (d, pi) => `${pp(d.username, pi)} joined the ${sp('eventEmpire', d.empire)}`,
   },
   player_destroyed: {
     icon: '\u{1F4A5}',
-    format: (d) => {
-      if (d.cause === 'self_destruct') return `${sp(P, d.victim)} self-destructed in ${sp(S, d.system_name)}`
-      if (d.cause === 'police') return `${sp(P, d.victim)} was destroyed by police in ${sp(S, d.system_name)}`
+    format: (d, pi) => {
+      if (d.cause === 'self_destruct') return `${pp(d.victim, pi)} self-destructed in ${sp(S, d.system_name)}`
+      if (d.cause === 'police') return `${pp(d.victim, pi)} was destroyed by police in ${sp(S, d.system_name)}`
       return d.killer
-        ? `${sp(P, d.killer)} destroyed ${sp(P, d.victim)} in ${sp(S, d.system_name)}`
-        : `${sp(P, d.victim)} was destroyed in ${sp(S, d.system_name)}`
+        ? `${pp(d.killer, pi)} destroyed ${pp(d.victim, pi)} in ${sp(S, d.system_name)}`
+        : `${pp(d.victim, pi)} was destroyed in ${sp(S, d.system_name)}`
     },
   },
   system_discovered: {
     icon: '\u{1F320}',
-    format: (d) => `${sp(P, d.discoverer)} discovered ${sp(S, d.system_name)}`,
+    format: (d, pi) => `${pp(d.discoverer, pi)} discovered ${sp(S, d.system_name)}`,
   },
   faction_created: {
     icon: '\u{1F3F3}',
-    format: (d) => `${sp(P, d.leader)} created faction ${sp(F, `[${escapeHtml(d.faction_tag)}] ${escapeHtml(d.faction_name)}`)}`,
+    format: (d, pi) => `${pp(d.leader, pi)} created faction ${sp(F, `[${escapeHtml(d.faction_tag)}] ${escapeHtml(d.faction_name)}`)}`,
   },
   faction_war: {
     icon: '\u2694',
@@ -72,35 +100,35 @@ const eventConfig: Record<string, EventConfigEntry> = {
   },
   trade: {
     icon: '\u{1F4B0}',
-    format: (d) => `${sp(P, d.seller)} sold ${escapeHtml(d.quantity)}x ${sp(I, d.item_name)} to ${sp(P, d.buyer)}`,
+    format: (d, pi) => `${pp(d.seller, pi)} sold ${escapeHtml(d.quantity)}x ${sp(I, d.item_name)} to ${pp(d.buyer, pi)}`,
   },
   craft: {
     icon: '\u{1F527}',
-    format: (d) => `${sp(P, d.crafter)} crafted ${sp(I, d.item_name)}`,
+    format: (d, pi) => `${pp(d.crafter, pi)} crafted ${sp(I, d.item_name)}`,
   },
   base_constructed: {
     icon: '\u{1F3D9}',
-    format: (d) => `${sp(P, d.builder)} built ${sp(I, d.base_name)} in ${sp(S, d.system_name)}`,
+    format: (d, pi) => `${pp(d.builder, pi)} built ${sp(I, d.base_name)} in ${sp(S, d.system_name)}`,
   },
   base_destroyed: {
     icon: '\u{1F4A5}',
-    format: (d) => d.attacker
-      ? `${sp(P, d.attacker)} destroyed ${sp(I, d.base_name)}`
+    format: (d, pi) => d.attacker
+      ? `${pp(d.attacker, pi)} destroyed ${sp(I, d.base_name)}`
       : `${sp(I, d.base_name)} was destroyed`,
   },
   combat: {
     icon: '\u2694',
-    format: (d) => d.winner
-      ? `${sp(P, d.winner)} won combat vs ${sp(P, d.winner === d.attacker ? d.defender : d.attacker)}`
-      : `${sp(P, d.attacker)} attacked ${sp(P, d.defender)}`,
+    format: (d, pi) => d.winner
+      ? `${pp(d.winner, pi)} won combat vs ${pp(d.winner === d.attacker ? d.defender : d.attacker, pi)}`
+      : `${pp(d.attacker, pi)} attacked ${pp(d.defender, pi)}`,
   },
   weapon_fired: {
     icon: '\u{1F52B}',
-    format: (d) => `${sp(P, d.attacker)} fired ${sp(I, d.weapon_name)} at ${sp(P, d.defender)} (${escapeHtml(d.damage)} dmg)`,
+    format: (d, pi) => `${pp(d.attacker, pi)} fired ${sp(I, d.weapon_name)} at ${pp(d.defender, pi)} (${escapeHtml(d.damage)} dmg)`,
   },
   rare_loot: {
     icon: '\u{1F31F}',
-    format: (d) => `${sp(P, d.player)} found ${sp(I, d.item_name)}`,
+    format: (d, pi) => `${pp(d.player, pi)} found ${sp(I, d.item_name)}`,
   },
   server_announcement: {
     icon: '\u{1F4E3}',
@@ -116,29 +144,29 @@ const eventConfig: Record<string, EventConfigEntry> = {
   },
   forum_post: {
     icon: '\u{1F4AC}',
-    format: (d) => `${sp(P, d.author)} posted &quot;${sp(I, d.title)}&quot; in forum`,
+    format: (d, pi) => `${pp(d.author, pi)} posted &quot;${sp(I, d.title)}&quot; in forum`,
   },
   travel: {
     icon: '\u{1F680}',
-    format: (d) => `${sp(P, d.player)} traveled to ${sp(I, d.to_poi)} in ${sp(S, d.system_name)}`,
+    format: (d, pi) => `${pp(d.player, pi)} traveled to ${sp(I, d.to_poi)} in ${sp(S, d.system_name)}`,
   },
   jump: {
     icon: '\u2B50',
-    format: (d) => `${sp(P, d.player)} jumped to ${sp(S, d.to_system_name)}`,
+    format: (d, pi) => `${pp(d.player, pi)} jumped to ${sp(S, d.to_system_name)}`,
   },
   chat: {
     icon: '\u{1F4AC}',
-    format: (d) => {
+    format: (d, pi) => {
       const location = d.poi_name || d.system_name || ''
-      return `${sp(P, d.sender)} @ ${sp(S, location)}: ${escapeHtml(d.content)}`
+      return `${pp(d.sender, pi)} @ ${sp(S, location)}: ${escapeHtml(d.content)}`
     },
   },
   captains_log: {
     icon: '\u{1F4DD}',
-    format: (d) => {
+    format: (d, pi) => {
       const entry = String(d.entry || '')
       const truncated = entry.length > 80 ? entry.substring(0, 80) + '...' : entry
-      return `${sp(P, d.player)} wrote in captain&apos;s log: &quot;${escapeHtml(truncated)}&quot;`
+      return `${pp(d.player, pi)} wrote in captain&apos;s log: &quot;${escapeHtml(truncated)}&quot;`
     },
   },
 }
@@ -202,7 +230,7 @@ const eventTextStyles = `
   [data-cls="eventPlayer"] { color: var(--plasma-cyan); font-weight: 500; }
   [data-cls="eventEmpire"] { color: var(--shell-orange); }
   [data-cls="eventSystem"] { color: var(--bio-green); }
-  [data-cls="eventFaction"] { color: #9b59b6; }
+  [data-cls="eventFaction"] { color: #9b59b6; font-weight: 500; }
   [data-cls="eventItem"] { color: #ffd700; }
 `
 
@@ -225,7 +253,7 @@ export function LiveFeed() {
   const feedRef = useRef<HTMLDivElement>(null)
   const knownSystemsRef = useRef(new Set<string>())
 
-  const addEvent = useCallback((type: string, data: EventData, timestamp?: string) => {
+  const addEvent = useCallback((type: string, data: EventData, timestamp?: string, playerInfo?: Record<string, PlayerMeta>) => {
     const config = eventConfig[type] || { icon: '\u{1F4C4}', format: (d: EventData) => JSON.stringify(d) }
 
     const locationExempt = ['travel', 'jump', 'captains_log'].includes(type)
@@ -240,7 +268,7 @@ export function LiveFeed() {
     const entry: LiveEventEntry = {
       id: nextEventId++,
       type,
-      html: config.format(data),
+      html: config.format(data, playerInfo),
       icon: config.icon,
       time: formatTime(timestamp),
       systemName,
@@ -276,7 +304,7 @@ export function LiveFeed() {
         try {
           const parsed: GameEvent = JSON.parse(event.data)
           if (parsed.type && parsed.data && parsed.type !== 'tick' && parsed.type !== 'player_stats') {
-            addEvent(parsed.type, parsed.data, parsed.timestamp)
+            addEvent(parsed.type, parsed.data, parsed.timestamp, parsed.player_info)
           }
         } catch {
           // ignore parse errors

@@ -11,6 +11,8 @@ interface ForumThread {
   id: string
   title: string
   author: string
+  author_empire?: string
+  author_faction_tag?: string
   category: string
   created_at: string
   reply_count: number
@@ -20,9 +22,30 @@ interface ForumThread {
 
 interface ForumReply {
   author: string
+  author_empire?: string
+  author_faction_tag?: string
   content: string
   created_at: string
   is_dev_team: boolean
+}
+
+const EMPIRE_COLORS: Record<string, string> = {
+  solarian: '#ffd700',
+  voidborn: '#9b59b6',
+  crimson: '#e63946',
+  nebula: '#00d4ff',
+  outerrim: '#2dd4bf',
+}
+
+function EmpireDot({ empire, factionTag }: { empire?: string; factionTag?: string }) {
+  if (!empire) return null
+  const color = EMPIRE_COLORS[empire] || '#888'
+  return (
+    <>
+      <span style={{ color }} title={empire}>{'\u25CF'}</span>
+      {factionTag && <span className={styles.factionTag}>[{factionTag}]</span>}
+    </>
+  )
 }
 
 interface ForumThreadDetail extends ForumThread {
@@ -345,6 +368,7 @@ export default function ForumPage() {
                 <div className={styles.threadDetailMeta}>
                   <span>
                     By{' '}
+                    <EmpireDot empire={threadDetail.author_empire} factionTag={threadDetail.author_faction_tag} />
                     <span className={styles.threadAuthor}>{threadDetail.author}</span>
                   </span>
                   <span>{formatDate(threadDetail.created_at)}</span>
@@ -387,6 +411,7 @@ export default function ForumPage() {
                                 : styles.replyAuthor
                             }`}
                           >
+                            <EmpireDot empire={reply.author_empire} factionTag={reply.author_faction_tag} />
                             {reply.author}
                           </span>
                           <span className={styles.replyDate}>
@@ -489,6 +514,7 @@ export default function ForumPage() {
               <div className={styles.threadMeta}>
                 <span>
                   By{' '}
+                  <EmpireDot empire={thread.author_empire} factionTag={thread.author_faction_tag} />
                   <span className={styles.threadAuthor}>{thread.author}</span>
                 </span>
                 <span>{formatDate(thread.created_at)}</span>
