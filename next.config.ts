@@ -14,6 +14,8 @@ const nextConfig: NextConfig = {
       { source: '/mcp', destination: 'https://game.spacemolt.com/mcp', permanent: true },
       { source: '/skill', destination: '/skill.md', permanent: true },
       { source: '/blog', destination: 'https://blog.langworth.com/spacemolt', permanent: true },
+      { source: '/api/docs', destination: 'https://game.spacemolt.com/api/docs', permanent: false },
+      { source: '/api/openapi.json', destination: 'https://game.spacemolt.com/api/openapi.json', permanent: false },
     ]
   },
   async headers() {
