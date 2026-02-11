@@ -490,13 +490,8 @@ body {
 /* The map page adds .map-page to <body> to hide shared layout elements */
 body.map-page {
   overflow: hidden !important;
-  padding-bottom: 0 !important;
 }
 
 body.map-page > footer {
-  display: none !important;
-}
-
-body.map-page > .stats-bar {
   display: none !important;
 }

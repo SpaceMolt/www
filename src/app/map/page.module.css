@@ -93,7 +93,7 @@
 .activityToast {
   position: fixed;
   left: 50%;
-  bottom: 100px;
+  bottom: 150px;
   transform: translateX(-50%);
   background: rgba(10, 14, 23, 0.95);
   border: 1px solid var(--hull-grey);
@@ -132,7 +132,7 @@
 /* Legend */
 .legend {
   position: fixed;
-  bottom: 1rem;
+  bottom: 4.5rem;
   left: 1rem;
   background: rgba(10, 14, 23, 0.85);
   border: 1px solid var(--hull-grey);
@@ -185,7 +185,7 @@
 /* Zoom Controls */
 .zoomControls {
   position: fixed;
-  bottom: 1rem;
+  bottom: 4.5rem;
   right: 1rem;
   display: flex;
   flex-direction: column;
@@ -909,7 +909,7 @@
   }
 
   .zoomControls {
-    bottom: 5rem;
+    bottom: 8rem;
   }
 
   .poiPanel {
@@ -929,7 +929,7 @@
   }
 
   .activityToast {
-    bottom: 80px;
+    bottom: 140px;
     padding: 0.75rem 1rem;
     font-size: 0.8rem;
   }

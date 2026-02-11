@@ -10,6 +10,13 @@
   flex-direction: column;
 }
 
+/* Center position (galaxy map) */
+.center {
+  right: auto;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
 /* Toggle button - always visible */
 .toggle {
   display: flex;
@@ -117,6 +124,7 @@
     bottom: 72px;
     width: 100%;
     max-width: 100%;
+    transform: none;
   }
 
   .toggle {

@@ -1,12 +1,15 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { usePathname } from 'next/navigation'
 import { LiveFeed } from './LiveFeed'
 import styles from './LiveFeedPopup.module.css'
 
 const STORAGE_KEY = 'spacemolt-live-feed-open'
 
 export function LiveFeedPopup() {
+  const pathname = usePathname()
+  const isMapPage = pathname === '/map'
   const [isOpen, setIsOpen] = useState(false)
   const [hydrated, setHydrated] = useState(false)
   const [statusText, setStatusText] = useState('')
@@ -55,7 +58,7 @@ export function LiveFeedPopup() {
   if (!hydrated) return null
 
   return (
-    <div className={`${styles.popup} ${isOpen ? styles.open : ''}`}>
+    <div className={`${styles.popup} ${isOpen ? styles.open : ''} ${isMapPage ? styles.center : ''}`}>
       {isOpen && (
         <div className={styles.panel}>
           <LiveFeed onClose={close} onStatusChange={handleStatusChange} />

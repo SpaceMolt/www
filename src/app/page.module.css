@@ -332,9 +332,9 @@
 
 .setupTab {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.85rem;
+  font-size: 1rem;
   font-weight: 500;
-  padding: 0.6rem 0.9rem;
+  padding: 0.7rem 1.1rem;
   background: var(--nebula-blue);
   border: 1px solid var(--hull-grey);
   border-bottom: none;
@@ -413,7 +413,7 @@
 
 .setupHeader h3 {
   font-family: var(--font-orbitron), 'Orbitron', sans-serif;
-  font-size: 1rem;
+  font-size: 1.15rem;
   font-weight: 600;
   color: var(--star-white);
   margin: 0;
@@ -421,7 +421,7 @@
 
 .setupHeaderText p {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
+  font-size: 0.85rem;
   color: var(--chrome-silver);
 }
 
@@ -463,14 +463,14 @@
 
 .instructionStep h4 {
   font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
-  font-size: 1rem;
+  font-size: 1.15rem;
   font-weight: 600;
   color: var(--star-white);
   margin-bottom: 0.35rem;
 }
 
 .instructionStep p {
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: var(--chrome-silver);
   line-height: 1.5;
   margin-bottom: 0.5rem;
@@ -486,7 +486,7 @@
   border-radius: 4px;
   padding: 0.6rem 0.75rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   color: var(--plasma-cyan);
   overflow-x: auto;
   margin: 0.5rem 0;
@@ -513,7 +513,7 @@
   border-radius: 4px;
   padding: 0.5rem 0.75rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   color: var(--shell-orange);
   margin: 0.5rem 0;
 }
@@ -528,7 +528,7 @@
   border-left: 2px solid var(--plasma-cyan);
   padding: 0.5rem 0.75rem;
   margin: 0.5rem 0;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   color: var(--chrome-silver);
 }
 
@@ -549,7 +549,7 @@
 
 .setupFooterTip {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
+  font-size: 0.85rem;
   color: var(--chrome-silver);
 }
 
@@ -560,7 +560,7 @@
 
 .setupLink {
   font-family: var(--font-orbitron), 'Orbitron', sans-serif;
-  font-size: 0.7rem;
+  font-size: 0.85rem;
   font-weight: 600;
   color: var(--plasma-cyan);
   text-decoration: none;
@@ -583,7 +583,7 @@
   border-radius: 4px;
   padding: 0.4rem 0.6rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   color: var(--plasma-cyan);
   user-select: all;
   cursor: text;
@@ -1253,8 +1253,8 @@
   .setupTab {
     flex: 1 1 calc(33% - 0.2rem);
     min-width: 90px;
-    font-size: 0.55rem;
-    padding: 0.4rem 0.5rem;
+    font-size: 0.7rem;
+    padding: 0.5rem 0.6rem;
     justify-content: center;
   }
 
@@ -1277,20 +1277,20 @@
   }
 
   .instructionStep h4 {
-    font-size: 0.8rem;
+    font-size: 0.95rem;
   }
 
   .instructionStep p {
-    font-size: 0.75rem;
+    font-size: 0.85rem;
   }
 
   .setupCode {
-    font-size: 0.6rem;
+    font-size: 0.75rem;
     padding: 0.5rem;
   }
 
   .setupPrompt {
-    font-size: 0.65rem;
+    font-size: 0.8rem;
     padding: 0.4rem 0.6rem;
   }
 
@@ -1299,7 +1299,7 @@
   }
 
   .setupHeader h3 {
-    font-size: 0.9rem;
+    font-size: 1rem;
   }
 
   .setupFooter {
