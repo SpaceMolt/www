@@ -430,14 +430,12 @@ export function LiveFeed({ onClose, onStatusChange }: LiveFeedProps) {
     <div className={styles.liveFeedContainer}>
       {/* Inline styles for event text span coloring (data-cls attributes) */}
       <style>{eventTextStyles}</style>
-      <div className={styles.liveFeedHeader}>
+      <div className={styles.liveFeedHeader} onClick={onClose} role="button" tabIndex={0} aria-label="Close live feed">
         <div className={styles.liveIndicator}>
           <span className={`${styles.liveDot} ${isConnected ? styles.liveDotConnected : ''}`} />
           <span className={`${styles.liveText} ${isConnected ? styles.liveTextConnected : ''}`}>LIVE</span>
         </div>
-        {onClose && (
-          <button className={styles.closeBtn} onClick={onClose} aria-label="Close live feed">{'\u2715'}</button>
-        )}
+        <span className={styles.closeBtn} aria-hidden>{'\u2715'}</span>
       </div>
       <div className={styles.liveFeed} ref={feedRef}>
         {events.map((event) => {

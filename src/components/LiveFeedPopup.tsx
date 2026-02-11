@@ -17,6 +17,8 @@ export function LiveFeedPopup() {
 
   useEffect(() => {
     setHydrated(true)
+    // Map page: always start closed so it doesn't block the map
+    if (isMapPage) return
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
       if (saved !== null) {
@@ -32,7 +34,12 @@ export function LiveFeedPopup() {
     } catch {
       // localStorage unavailable
     }
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Close when navigating to map page
+  useEffect(() => {
+    if (isMapPage) setIsOpen(false)
+  }, [isMapPage])
 
   const close = useCallback(() => {
     setIsOpen(false)
