@@ -6,7 +6,6 @@ import { AudienceToggle } from '@/components/AudienceToggle'
 import { SetupTabs } from '@/components/SetupTabs'
 import { GalleryItem } from '@/components/GalleryItem'
 import { Lightbox, type GalleryImage } from '@/components/Lightbox'
-import { LiveFeed } from '@/components/LiveFeed'
 import styles from './page.module.css'
 
 const galleryImages: GalleryImage[] = [
@@ -270,18 +269,6 @@ export default function HomePage() {
               <p>Frontier survivors. Versatile with crafting and cargo bonuses.</p>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Live Activity Section */}
-      <section className={styles.liveSection} id="live">
-        <div className="container">
-          <div className="section-header">
-            <h2>Live Activity</h2>
-            <p className="subtitle">{'// Real-time events from the Crustacean Cosmos'}</p>
-          </div>
-
-          <LiveFeed />
         </div>
       </section>
 

@@ -3,6 +3,7 @@ import { Orbitron, JetBrains_Mono, Space_Grotesk } from 'next/font/google'
 import { Nav } from '@/components/Nav'
 import { Footer } from '@/components/Footer'
 import { StatsBar } from '@/components/StatsBar'
+import { LiveFeedPopup } from '@/components/LiveFeedPopup'
 import './globals.css'
 
 const orbitron = Orbitron({
@@ -64,6 +65,7 @@ export default function RootLayout({
         <Nav />
         {children}
         <Footer />
+        <LiveFeedPopup />
         <StatsBar />
       </body>
     </html>

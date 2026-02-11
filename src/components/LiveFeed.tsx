@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import styles from '@/app/page.module.css'
+import styles from './LiveFeed.module.css'
 
 interface EventData {
   [key: string]: string | number | undefined
@@ -173,7 +173,8 @@ const eventConfig: Record<string, EventConfigEntry> = {
     icon: '\u{1F4AC}',
     format: (d, pi) => {
       const location = d.poi_name || d.system_name || ''
-      return `${pp(d.sender, pi)} @ ${sp(S, location)}: ${escapeHtml(d.content)}`
+      const loc = location ? ` @ ${sp(S, location)}` : ''
+      return `${pp(d.sender, pi)}${loc}: ${escapeHtml(d.content)}`
     },
   },
   captains_log: {
@@ -191,6 +192,15 @@ const eventConfig: Record<string, EventConfigEntry> = {
       if (!resources || resources.length === 0) return ''
       const parts = resources.map(r => `${escapeHtml(r.quantity)}x ${sp(I, r.resource_name)}`)
       return `${escapeHtml(d.miner_count)} miners extracted ${parts.join(', ')}`
+    },
+  },
+  crafting_summary: {
+    icon: '\u{1F527}',
+    format: (d) => {
+      const items = d.items as Array<{item_name: string; count: number}> | undefined
+      if (!items || items.length === 0) return ''
+      const parts = items.map(i => `${escapeHtml(i.count)}x ${sp(I, i.item_name)}`)
+      return `${escapeHtml(d.crafter_count)} crafters produced ${parts.join(', ')}`
     },
   },
   faction_peace: {
@@ -224,6 +234,32 @@ const eventConfig: Record<string, EventConfigEntry> = {
     icon: '\u{1F4CA}',
     format: (d, pi) => `${pp(d.seller, pi)} sold ${escapeHtml(d.quantity)}x ${sp(I, d.item_name)} to ${pp(d.buyer, pi)} for ${escapeHtml(d.total)} credits at ${sp(S, d.station_name)}`,
   },
+  travel: {
+    icon: '\u{1F680}',
+    format: (d, pi) => {
+      if (d.from_poi_name && d.to_poi_name) {
+        return `${pp(d.player, pi)} traveling from ${sp(I, d.from_poi_name)} to ${sp(I, d.to_poi_name)}`
+      }
+      if (d.to_poi_name) {
+        return `${pp(d.player, pi)} traveling to ${sp(I, d.to_poi_name)}`
+      }
+      return `${pp(d.player, pi)} is traveling in ${sp(S, d.system_name)}`
+    },
+  },
+  mining: {
+    icon: '\u26CF',
+    format: (d, pi) => `${pp(d.player, pi)} mined ${escapeHtml(d.quantity)}x ${sp(I, d.resource_name)}`,
+  },
+}
+
+// Fallback formatter for unknown event types
+function formatFallback(type: string, d: EventData, pi?: Record<string, PlayerMeta>): string {
+  const playerField = d.player || d.username || d.sender || d.killer || d.attacker || d.builder || ''
+  const playerStr = playerField ? `${pp(playerField, pi)} ` : ''
+  const label = escapeHtml(type.replace(/_/g, ' '))
+  const location = d.system_name || d.poi_name || ''
+  const locationStr = location ? ` in ${sp(S, location)}` : ''
+  return `${playerStr}${label}${locationStr}`
 }
 
 const eventTypeToStyleClass: Record<string, string> = {
@@ -255,6 +291,9 @@ const eventTypeToStyleClass: Record<string, string> = {
   ship_sale: styles.liveEventShipSale,
   forum_reply: styles.liveEventForumPost,
   exchange_fill: styles.liveEventExchangeFill,
+  travel: styles.liveEventTravel,
+  mining: styles.liveEventMining,
+  crafting_summary: styles.liveEventCraft,
 }
 
 const filterGroups: Record<string, string[] | null> = {
@@ -318,9 +357,8 @@ export function LiveFeed() {
 
   const addEvent = useCallback((type: string, data: EventData, timestamp?: string, playerInfo?: Record<string, PlayerMeta>) => {
     const config = eventConfig[type]
-    if (!config) return // skip unknown event types
 
-    const locationExempt = ['system_activity', 'jump', 'captains_log'].includes(type)
+    const locationExempt = ['system_activity', 'jump', 'captains_log', 'travel'].includes(type)
     const systemName = locationExempt ? '' : String(data.system_name || data.to_system_name || data.poi_name || '')
 
     // Track system
@@ -332,8 +370,8 @@ export function LiveFeed() {
     const entry: LiveEventEntry = {
       id: nextEventId++,
       type,
-      html: config.format(data, playerInfo),
-      icon: config.icon,
+      html: config ? config.format(data, playerInfo) : formatFallback(type, data, playerInfo),
+      icon: config ? config.icon : '\u{1F4E1}',
       time: formatTime(timestamp),
       systemName,
     }
