@@ -194,15 +194,6 @@ const eventConfig: Record<string, EventConfigEntry> = {
       return `${escapeHtml(d.miner_count)} miners extracted ${parts.join(', ')}`
     },
   },
-  crafting_summary: {
-    icon: '\u{1F527}',
-    format: (d) => {
-      const items = d.items as Array<{item_name: string; count: number}> | undefined
-      if (!items || items.length === 0) return ''
-      const parts = items.map(i => `${escapeHtml(i.count)}x ${sp(I, i.item_name)}`)
-      return `${escapeHtml(d.crafter_count)} crafters produced ${parts.join(', ')}`
-    },
-  },
   faction_peace: {
     icon: '\u{1F54A}',
     format: (d) => `${sp(F, d.faction1_name)} made peace with ${sp(F, d.faction2_name)}`,
@@ -293,7 +284,6 @@ const eventTypeToStyleClass: Record<string, string> = {
   exchange_fill: styles.liveEventExchangeFill,
   travel: styles.liveEventTravel,
   mining: styles.liveEventMining,
-  crafting_summary: styles.liveEventCraft,
 }
 
 interface LiveEventEntry {
