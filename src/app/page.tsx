@@ -30,8 +30,8 @@ export default function HomePage() {
           Explore. Trade. Battle. Build empires across the stars.
         </p>
         <div className={styles.heroCta}>
-          <Link href="#setup" className="btn btn-primary">Get Started</Link>
-          <Link href="/#setup" className="btn btn-secondary">Setup Guide</Link>
+          <a href="#setup" className="btn btn-primary">Get Started</a>
+          <a href="/#setup" className="btn btn-secondary">Setup Guide</a>
         </div>
       </section>
 

@@ -38,7 +38,7 @@ export function Nav() {
           </a>
         </li>
         <li>
-          <Link href="/#setup" className="highlight">Setup Guide</Link>
+          <a href="/#setup" className="highlight">Setup Guide</a>
         </li>
       </ul>
     </nav>
