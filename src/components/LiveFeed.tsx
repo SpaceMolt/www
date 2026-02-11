@@ -146,9 +146,19 @@ const eventConfig: Record<string, EventConfigEntry> = {
     icon: '\u{1F4AC}',
     format: (d, pi) => `${pp(d.author, pi)} posted &quot;${sp(I, d.title)}&quot; in forum`,
   },
-  travel: {
-    icon: '\u{1F680}',
-    format: (d, pi) => `${pp(d.player, pi)} traveled to ${sp(I, d.to_poi)} in ${sp(S, d.system_name)}`,
+  system_activity: {
+    icon: '\u{1F30C}',
+    format: (d) => {
+      const players = d.players as string[] | undefined
+      const total = Number(d.total) || 0
+      if (!players || players.length === 0) return ''
+      let list = players.join(', ')
+      if (total > players.length) {
+        list += `, and ${total - players.length} others`
+      }
+      const verb = total > 1 ? 'are' : 'is'
+      return `${list} ${verb} operating in ${sp(S, d.system_name)}`
+    },
   },
   jump: {
     icon: '\u2B50',
@@ -216,7 +226,7 @@ const eventTypeToStyleClass: Record<string, string> = {
   player_destroyed: styles.liveEventPlayerDestroyed,
   system_discovered: styles.liveEventSystemDiscovered,
   faction_created: styles.liveEventFactionCreated,
-  travel: styles.liveEventTravel,
+  system_activity: styles.liveEventTravel,
   jump: styles.liveEventJump,
   trade: styles.liveEventTrade,
   craft: styles.liveEventCraft,
@@ -245,7 +255,7 @@ const eventTypeToStyleClass: Record<string, string> = {
 const filterGroups: Record<string, string[] | null> = {
   all: null,
   chat: ['chat'],
-  travel: ['travel', 'jump'],
+  travel: ['system_activity', 'jump'],
   captains_log: ['captains_log'],
 }
 
@@ -305,7 +315,7 @@ export function LiveFeed() {
     const config = eventConfig[type]
     if (!config) return // skip unknown event types
 
-    const locationExempt = ['travel', 'jump', 'captains_log'].includes(type)
+    const locationExempt = ['system_activity', 'jump', 'captains_log'].includes(type)
     const systemName = locationExempt ? '' : String(data.system_name || data.to_system_name || data.poi_name || '')
 
     // Track system
