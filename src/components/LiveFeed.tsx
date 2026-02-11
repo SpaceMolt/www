@@ -169,6 +169,37 @@ const eventConfig: Record<string, EventConfigEntry> = {
       return `${pp(d.player, pi)} wrote in captain&apos;s log: &quot;${escapeHtml(truncated)}&quot;`
     },
   },
+  mining: {
+    icon: '\u26CF',
+    format: (d, pi) => `${pp(d.player, pi)} mined ${escapeHtml(d.quantity)}x ${sp(I, d.resource_name)} at ${sp(I, d.poi_name)} in ${sp(S, d.system_name)}`,
+  },
+  faction_peace: {
+    icon: '\u{1F54A}',
+    format: (d) => `${sp(F, d.faction1_name)} made peace with ${sp(F, d.faction2_name)}`,
+  },
+  pirate_destroyed: {
+    icon: '\u2620',
+    format: (d, pi) => {
+      const tier = d.is_boss ? `boss ${escapeHtml(d.pirate_tier)}` : escapeHtml(d.pirate_tier)
+      return `${pp(d.killer, pi)} destroyed ${sp(I, d.pirate_name)} (${tier}) in ${sp(S, d.system_name)}`
+    },
+  },
+  player_profile_update: {
+    icon: '\u{1F464}',
+    format: (d, pi) => `${pp(d.username, pi)} updated their profile`,
+  },
+  ship_purchase: {
+    icon: '\u{1F6F8}',
+    format: (d, pi) => `${pp(d.player, pi)} purchased a ${sp(I, d.ship_class)} for ${escapeHtml(d.price)} credits`,
+  },
+  ship_sale: {
+    icon: '\u{1F4B8}',
+    format: (d, pi) => `${pp(d.player, pi)} sold their ${sp(I, d.ship_class)} for ${escapeHtml(d.credits_earned)} credits`,
+  },
+  forum_reply: {
+    icon: '\u{1F4AC}',
+    format: (d, pi) => `${pp(d.author, pi)} replied to &quot;${sp(I, d.thread_title)}&quot; in forum`,
+  },
 }
 
 const eventTypeToStyleClass: Record<string, string> = {
@@ -192,6 +223,13 @@ const eventTypeToStyleClass: Record<string, string> = {
   forum_post: styles.liveEventForumPost,
   chat: styles.liveEventChat,
   captains_log: styles.liveEventCaptainsLog,
+  mining: styles.liveEventMining,
+  faction_peace: styles.liveEventFactionCreated,
+  pirate_destroyed: styles.liveEventPirateDestroyed,
+  player_profile_update: styles.liveEventPlayerJoined,
+  ship_purchase: styles.liveEventShipPurchase,
+  ship_sale: styles.liveEventShipSale,
+  forum_reply: styles.liveEventForumPost,
 }
 
 const filterGroups: Record<string, string[] | null> = {
@@ -254,7 +292,8 @@ export function LiveFeed() {
   const knownSystemsRef = useRef(new Set<string>())
 
   const addEvent = useCallback((type: string, data: EventData, timestamp?: string, playerInfo?: Record<string, PlayerMeta>) => {
-    const config = eventConfig[type] || { icon: '\u{1F4C4}', format: (d: EventData) => JSON.stringify(d) }
+    const config = eventConfig[type]
+    if (!config) return // skip unknown event types
 
     const locationExempt = ['travel', 'jump', 'captains_log'].includes(type)
     const systemName = locationExempt ? '' : String(data.system_name || data.to_system_name || data.poi_name || '')
