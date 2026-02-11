@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useState } from 'react'
 import styles from './page.module.css'
 
 // ── Types ──────────────────────────────────────────────────────────────
@@ -75,6 +75,17 @@ const PAN_EASE_FACTOR = 0.12
 const URL_UPDATE_DELAY = 300
 const DEFAULT_ZOOM = 0.08
 
+const TRAVEL_PATH_COLORS = [
+  '#ff6b6b', // red
+  '#4ecdc4', // teal
+  '#ffe66d', // yellow
+  '#a855f7', // purple
+  '#fb923c', // orange
+  '#38bdf8', // sky blue
+  '#f472b6', // pink
+  '#22d3ee', // cyan
+]
+
 const EMPIRE_NAMES: Record<string, string> = {
   solarian: 'Solarian Confederacy',
   voidborn: 'Voidborn Collective',
@@ -139,6 +150,7 @@ export default function GalaxyMapPage() {
   const statSystemsRef = useRef<HTMLSpanElement>(null)
   const statOnlineRef = useRef<HTMLSpanElement>(null)
   const controlHintRef = useRef<HTMLDivElement>(null)
+  const travelTrackerRef = useRef<HTMLDivElement>(null)
 
   // Mutable state refs (not React state -- canvas animation loop manages these)
   const stateRef = useRef({
@@ -167,7 +179,16 @@ export default function GalaxyMapPage() {
     lastPinchCenter: null as { x: number; y: number } | null,
     touchStartTime: 0,
     initialTouchPos: null as { x: number; y: number } | null,
+    travelHistory: new Map<string, string[]>(),
+    selectedTravelPlayers: new Set<string>(),
+    travelPings: [] as { wx: number; wy: number; startTime: number; color: string }[],
   })
+
+  // ── Travel Tracker State ──────────────────────────────────────────
+  const [travelDropdownOpen, setTravelDropdownOpen] = useState(false)
+  const [travelFilter, setTravelFilter] = useState('')
+  const [selectedPlayers, setSelectedPlayers] = useState<Set<string>>(new Set())
+  const [travelPlayerList, setTravelPlayerList] = useState<string[]>([])
 
   // ── Helpers ────────────────────────────────────────────────────────
 
@@ -357,6 +378,157 @@ export default function GalaxyMapPage() {
     [screenToWorld, worldToScreen],
   )
 
+  const drawTravelPaths = useCallback(
+    (ctx: CanvasRenderingContext2D) => {
+      const s = stateRef.current
+      if (!s.mapData || s.selectedTravelPlayers.size === 0) return
+
+      // Build name→system lookup
+      const systemByName = new Map<string, SystemData>()
+      for (const sys of s.mapData.systems) {
+        systemByName.set(sys.name, sys)
+      }
+
+      let colorIndex = 0
+      for (const playerName of s.selectedTravelPlayers) {
+        const history = s.travelHistory.get(playerName)
+        if (!history || history.length < 2) {
+          colorIndex++
+          continue
+        }
+
+        const color = TRAVEL_PATH_COLORS[colorIndex % TRAVEL_PATH_COLORS.length]
+        colorIndex++
+
+        // Resolve screen positions
+        const points: { x: number; y: number }[] = []
+        for (const sysName of history) {
+          const sys = systemByName.get(sysName)
+          if (sys) {
+            points.push(worldToScreen(sys.x, sys.y))
+          }
+        }
+
+        if (points.length < 2) continue
+
+        ctx.save()
+
+        // Draw dashed path with glow
+        ctx.strokeStyle = color
+        ctx.lineWidth = 2.5
+        ctx.shadowColor = color
+        ctx.shadowBlur = 8
+        ctx.setLineDash([8, 6])
+        ctx.beginPath()
+        ctx.moveTo(points[0].x, points[0].y)
+        for (let i = 1; i < points.length; i++) {
+          ctx.lineTo(points[i].x, points[i].y)
+        }
+        ctx.stroke()
+
+        // Draw arrowhead on the last segment
+        if (points.length >= 2) {
+          const from = points[points.length - 2]
+          const to = points[points.length - 1]
+          const angle = Math.atan2(to.y - from.y, to.x - from.x)
+          const arrowLen = 12
+          ctx.setLineDash([])
+          ctx.fillStyle = color
+          ctx.beginPath()
+          ctx.moveTo(to.x, to.y)
+          ctx.lineTo(
+            to.x - arrowLen * Math.cos(angle - Math.PI / 6),
+            to.y - arrowLen * Math.sin(angle - Math.PI / 6),
+          )
+          ctx.lineTo(
+            to.x - arrowLen * Math.cos(angle + Math.PI / 6),
+            to.y - arrowLen * Math.sin(angle + Math.PI / 6),
+          )
+          ctx.closePath()
+          ctx.fill()
+        }
+
+        // Draw numbered waypoint dots
+        ctx.shadowBlur = 0
+        ctx.setLineDash([])
+        for (let i = 0; i < points.length; i++) {
+          const p = points[i]
+          ctx.fillStyle = color
+          ctx.beginPath()
+          ctx.arc(p.x, p.y, 8, 0, Math.PI * 2)
+          ctx.fill()
+
+          ctx.fillStyle = '#050810'
+          ctx.font = 'bold 10px "JetBrains Mono", monospace'
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'middle'
+          ctx.fillText(String(i + 1), p.x, p.y)
+        }
+
+        ctx.restore()
+      }
+    },
+    [worldToScreen],
+  )
+
+  const PING_DURATION = 2000 // ms
+  const PING_MAX_RADIUS = 80
+
+  const drawTravelPings = useCallback(
+    (ctx: CanvasRenderingContext2D) => {
+      const s = stateRef.current
+      if (s.travelPings.length === 0) return
+
+      // Remove expired pings
+      s.travelPings = s.travelPings.filter(
+        (p) => s.animationTime - p.startTime < PING_DURATION,
+      )
+
+      ctx.save()
+      for (const ping of s.travelPings) {
+        const elapsed = s.animationTime - ping.startTime
+        const t = elapsed / PING_DURATION // 0→1
+
+        const pos = worldToScreen(ping.wx, ping.wy)
+
+        // Draw 3 expanding rings staggered in time
+        for (let ring = 0; ring < 3; ring++) {
+          const ringT = Math.max(0, t - ring * 0.15)
+          if (ringT <= 0 || ringT >= 1) continue
+
+          const ease = 1 - Math.pow(1 - ringT, 3) // ease-out cubic
+          const radius = ease * PING_MAX_RADIUS
+          const alpha = (1 - ringT) * 0.7
+
+          ctx.beginPath()
+          ctx.arc(pos.x, pos.y, radius, 0, Math.PI * 2)
+          ctx.strokeStyle = ping.color
+          ctx.lineWidth = 3 - ringT * 2
+          ctx.globalAlpha = alpha
+          ctx.shadowColor = ping.color
+          ctx.shadowBlur = 15
+          ctx.stroke()
+        }
+
+        // Draw a bright center flash that fades
+        if (t < 0.5) {
+          const flashAlpha = 1 - t * 2
+          ctx.globalAlpha = flashAlpha * 0.6
+          ctx.fillStyle = ping.color
+          ctx.shadowColor = ping.color
+          ctx.shadowBlur = 30
+          ctx.beginPath()
+          ctx.arc(pos.x, pos.y, 6 + (1 - flashAlpha) * 10, 0, Math.PI * 2)
+          ctx.fill()
+        }
+      }
+      ctx.globalAlpha = 1
+      ctx.shadowBlur = 0
+      ctx.restore()
+    },
+    [worldToScreen],
+  )
+
   const render = useCallback(
     (ctx?: CanvasRenderingContext2D | null) => {
       const canvas = canvasRef.current
@@ -395,6 +567,9 @@ export default function GalaxyMapPage() {
           ctx.stroke()
         }
       }
+
+      // Draw travel paths (above connections, below nodes)
+      drawTravelPaths(ctx)
 
       // Draw nodes
       for (const system of s.mapData.systems) {
@@ -627,8 +802,11 @@ export default function GalaxyMapPage() {
           ctx.fillText(system.name, pos.x, labelY)
         }
       }
+
+      // Draw travel pings (on top of everything)
+      drawTravelPings(ctx)
     },
-    [drawStarfield, drawGrid, worldToScreen],
+    [drawStarfield, drawGrid, drawTravelPaths, drawTravelPings, worldToScreen],
   )
 
   // ── Tooltip ────────────────────────────────────────────────────────
@@ -1131,6 +1309,19 @@ export default function GalaxyMapPage() {
     s.targetZoom = Math.max(MIN_ZOOM, s.targetZoom / 1.5)
   }, [])
 
+  const toggleTravelPlayer = useCallback((player: string) => {
+    setSelectedPlayers((prev) => {
+      const next = new Set(prev)
+      if (next.has(player)) {
+        next.delete(player)
+      } else {
+        next.add(player)
+      }
+      stateRef.current.selectedTravelPlayers = next
+      return next
+    })
+  }, [])
+
   // ── Body class for hiding shared layout elements ─────────────────
 
   useEffect(() => {
@@ -1139,6 +1330,19 @@ export default function GalaxyMapPage() {
       document.body.classList.remove('map-page')
     }
   }, [])
+
+  // ── Close travel dropdown on outside click ────────────────────────
+  useEffect(() => {
+    if (!travelDropdownOpen) return
+    function handleClick(e: MouseEvent) {
+      if (travelTrackerRef.current && !travelTrackerRef.current.contains(e.target as Node)) {
+        setTravelDropdownOpen(false)
+        setTravelFilter('')
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [travelDropdownOpen])
 
   // ── Main Effect ────────────────────────────────────────────────────
 
@@ -1247,6 +1451,28 @@ export default function GalaxyMapPage() {
     // ── SSE Activity Feed ────────────────────────────────────────
     let eventSource: EventSource | null = null
     let sseReconnectTimeout: ReturnType<typeof setTimeout> | null = null
+    const playerLastSystem = new Map<string, string>()
+
+    function trackPlayerSystem(player: string, systemName: string) {
+      const lastSystem = playerLastSystem.get(player)
+      if (lastSystem === systemName) return
+      playerLastSystem.set(player, systemName)
+      const history = s.travelHistory.get(player) || []
+      const isMove = history.length > 0 && history[history.length - 1] !== systemName
+      history.push(systemName)
+      if (history.length > 5) history.shift()
+      s.travelHistory.set(player, history)
+
+      // Trigger ping animation if this player is being tracked
+      if (isMove && s.selectedTravelPlayers.has(player) && s.mapData) {
+        const sys = s.mapData.systems.find((ss) => ss.name === systemName)
+        if (sys) {
+          const idx = Array.from(s.selectedTravelPlayers).indexOf(player)
+          const color = TRAVEL_PATH_COLORS[idx % TRAVEL_PATH_COLORS.length]
+          s.travelPings.push({ wx: sys.x, wy: sys.y, startTime: s.animationTime, color })
+        }
+      }
+    }
 
     function connectActivityFeed() {
       try {
@@ -1256,6 +1482,17 @@ export default function GalaxyMapPage() {
         eventSource.onmessage = (event) => {
           try {
             const data = JSON.parse(event.data) as ActivityEvent
+
+            // Track player system changes for travel paths
+            const player = data.data?.player
+            if (player) {
+              const sysName = data.type === 'jump'
+                ? data.data?.to_system_name
+                : data.data?.system_name
+              if (sysName) {
+                trackPlayerSystem(String(player), String(sysName))
+              }
+            }
             handleActivityEvent(data)
           } catch {
             // ignore parse errors
@@ -1271,6 +1508,16 @@ export default function GalaxyMapPage() {
     }
 
     connectActivityFeed()
+
+    // ── Travel History Sync ───────────────────────────────────────
+    let lastTravelKeys = ''
+    const travelSyncInterval = setInterval(() => {
+      const keys = Array.from(s.travelHistory.keys()).sort().join(',')
+      if (keys !== lastTravelKeys) {
+        lastTravelKeys = keys
+        setTravelPlayerList(keys ? keys.split(',') : [])
+      }
+    }, 2000)
 
     // ── Mouse Events ─────────────────────────────────────────────
     function onMouseDown(e: MouseEvent) {
@@ -1518,6 +1765,7 @@ export default function GalaxyMapPage() {
       window.removeEventListener('resize', resizeCanvas)
       cancelAnimationFrame(animFrameId)
       clearInterval(fetchInterval)
+      clearInterval(travelSyncInterval)
       if (eventSource) eventSource.close()
       if (sseReconnectTimeout) clearTimeout(sseReconnectTimeout)
       if (s.urlUpdateTimeout) clearTimeout(s.urlUpdateTimeout)
@@ -1620,6 +1868,80 @@ export default function GalaxyMapPage() {
             -
           </span>
         </div>
+      </div>
+
+      {/* Travel Tracker */}
+      <div className={styles.travelTracker} ref={travelTrackerRef}>
+        <button
+          className={`${styles.travelTrackerBtn}${travelDropdownOpen ? ` ${styles.travelTrackerBtnActive}` : ''}`}
+          onClick={() => setTravelDropdownOpen((o) => !o)}
+        >
+          <span className={styles.travelTrackerIcon}>{'\u{1F30C}'}</span>
+          <span>Travel Tracker</span>
+          {selectedPlayers.size > 0 && (
+            <span className={styles.travelTrackerBadge}>
+              {selectedPlayers.size}
+            </span>
+          )}
+        </button>
+        {travelDropdownOpen && (
+          <div className={styles.travelDropdown}>
+            {travelPlayerList.length === 0 ? (
+              <div className={styles.travelDropdownEmpty}>
+                No player activity recorded yet. Waiting for SSE events...
+              </div>
+            ) : (
+              <>
+              <input
+                type="text"
+                className={styles.travelFilterInput}
+                placeholder="Filter players…"
+                value={travelFilter}
+                onChange={(e) => setTravelFilter(e.target.value)}
+                autoFocus
+              />
+              <div className={styles.travelDropdownList}>
+                {travelPlayerList.filter((player) => {
+                  if (!travelFilter) return true
+                  const query = travelFilter.toLowerCase()
+                  const name = player.toLowerCase()
+                  let qi = 0
+                  for (let ni = 0; ni < name.length && qi < query.length; ni++) {
+                    if (name[ni] === query[qi]) qi++
+                  }
+                  return qi === query.length
+                }).map((player, i) => {
+                  const isSelected = selectedPlayers.has(player)
+                  const color = TRAVEL_PATH_COLORS[
+                    Array.from(selectedPlayers).indexOf(player) % TRAVEL_PATH_COLORS.length
+                  ]
+                  const jumpCount = stateRef.current.travelHistory.get(player)?.length || 0
+                  return (
+                    <label key={player} className={styles.travelPlayerRow}>
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleTravelPlayer(player)}
+                        className={styles.travelCheckbox}
+                      />
+                      {isSelected && (
+                        <span
+                          className={styles.travelColorDot}
+                          style={{ background: color }}
+                        />
+                      )}
+                      <span className={styles.travelPlayerName}>{player}</span>
+                      <span className={styles.travelJumpCount}>
+                        {jumpCount} system{jumpCount !== 1 ? 's' : ''}
+                      </span>
+                    </label>
+                  )
+                })}
+              </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Zoom Controls */}
