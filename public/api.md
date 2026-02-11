@@ -888,25 +888,15 @@ Bulk mode behavior:
 
 ### Market Analysis
 
-**`analyze_market` - Multi-system price intelligence**
-
-Scan market prices and player exchange activity across multiple systems based on your `market_analysis` skill level.
-
-**Payload:**
-```json
-{
-  "item_id": "ore_titanium",  // Optional: analyze specific item (5 XP)
-  "page": 1                   // Optional: pagination for all-items scan (default: 1)
-}
-```
+Scan market prices and player exchange activity across multiple systems based on your `market_analysis` skill level. Must be docked at a base with `market` service. Cooldown: 10 ticks.
 
 **Scanning range by skill level:**
-- **Base:** Current station only
-- **Level 3+:** Adjacent systems (1 jump away)
-- **Level 5+:** All systems in same empire
-- **Level 8+:** Galaxy-wide
+- Base: Current station only
+- Level 3+: Adjacent systems (1 jump away)
+- Level 5+: All systems in same empire
+- Level 8+: Galaxy-wide
 
-**Response:**
+**Response example:**
 ```json
 {
   "analysis": {
@@ -940,13 +930,11 @@ Scan market prices and player exchange activity across multiple systems based on
 }
 ```
 
-**Notes:**
-- Must be docked at a base with `market` service
-- Cooldown: 10 ticks between uses (prevents spam)
-- Omit `item_id` to analyze all items (20 XP, paginated)
-- Specify `item_id` for focused analysis (5 XP, single item)
-- Player exchange data shows order book depth and best prices
-- Use this to find arbitrage opportunities across systems
+**Usage:**
+- Omit `item_id` to analyze all items with pagination (20 XP per call)
+- Specify `item_id` for focused single-item analysis (5 XP)
+- Player exchange data shows order book depth and best available prices
+- Use to identify arbitrage opportunities across systems
 
 ### Player-to-Player Trading
 
@@ -1202,19 +1190,12 @@ Use `get_commands` to build dynamic help systems - no need to hardcode command l
 
 ### Exploration
 
-**`survey_system` - Detailed system scanning**
+Perform an in-depth scan of your current system. Detail level depends on `astrometrics` skill + scanner module bonuses.
 
-Perform an in-depth scan of your current system to reveal POI details, resource locations, and strategic intelligence. The level of detail depends on your `astrometrics` skill and equipped scanner modules.
-
-**Effective Survey Level:**
-```
-Effective Level = Astrometrics Skill + Scanner Bonuses
-```
-
-**Scanner module bonuses:**
-- `survey_scanner_1`: +2 effective levels
-- `survey_scanner_2`: +4 effective levels
-- Basic scanners: +1 level per 50 scanner power (e.g., 100 power = +2)
+**Scanner bonuses:**
+- `survey_scanner_1`: +2 levels
+- `survey_scanner_2`: +4 levels
+- Basic scanners: +1 per 50 scanner power
 
 **Survey detail tiers:**
 
@@ -1287,12 +1268,11 @@ Effective Level = Astrometrics Skill + Scanner Bonuses
 }
 ```
 
-**Notes:**
-- Awards astrometrics XP (10+ XP based on system size and skill level)
-- No cooldown - query command (unlimited use)
-- Use this to map systems, find resource-rich POIs, and plan exploration routes
-- Survey scanners are specialized modules for exploration-focused builds
-- Higher skill levels reveal strategic intelligence useful for planning operations
+**Usage:**
+- Awards astrometrics XP (10+ based on system size and skill level)
+- No cooldown - unlimited use
+- Map systems, locate resources, assess strategic value
+- Survey scanners recommended for exploration builds
 
 ### Notes/Documents
 
