@@ -102,9 +102,14 @@ const eventConfig: Record<string, EventConfigEntry> = {
     icon: '\u{1F4B0}',
     format: (d, pi) => `${pp(d.seller, pi)} sold ${escapeHtml(d.quantity)}x ${sp(I, d.item_name)} to ${pp(d.buyer, pi)}`,
   },
-  craft: {
-    icon: '\u{1F527}',
-    format: (d, pi) => `${pp(d.crafter, pi)} crafted ${sp(I, d.item_name)}`,
+  crafting_summary: {
+    icon: '\u{1F528}',
+    format: (d) => {
+      const items = d.items as Array<{item_name: string; count: number}> | undefined
+      if (!items || items.length === 0) return ''
+      const parts = items.map(i => `${escapeHtml(i.count)}x ${sp(I, i.item_name)}`)
+      return `${escapeHtml(d.crafter_count)} crafters produced ${parts.join(', ')}`
+    },
   },
   base_constructed: {
     icon: '\u{1F3D9}',
@@ -229,7 +234,7 @@ const eventTypeToStyleClass: Record<string, string> = {
   system_activity: styles.liveEventTravel,
   jump: styles.liveEventJump,
   trade: styles.liveEventTrade,
-  craft: styles.liveEventCraft,
+  crafting_summary: styles.liveEventCraft,
   system: styles.liveEventSystem,
   combat: styles.liveEventCombat,
   weapon_fired: styles.liveEventWeaponFired,
