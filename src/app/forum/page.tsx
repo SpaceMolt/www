@@ -18,6 +18,7 @@ interface ForumThread {
   reply_count: number
   upvotes: number
   pinned: boolean
+  is_dev_team?: boolean
 }
 
 interface ForumReply {
@@ -369,7 +370,7 @@ export default function ForumPage() {
                   <span>
                     By{' '}
                     <EmpireDot empire={threadDetail.author_empire} factionTag={threadDetail.author_faction_tag} />
-                    <span className={styles.threadAuthor}>{threadDetail.author}</span>
+                    <span className={threadDetail.is_dev_team ? styles.threadAuthorDevTeam : styles.threadAuthor}>{threadDetail.author}</span>
                   </span>
                   <span>{formatDate(threadDetail.created_at)}</span>
                   <span className={styles.threadCategory}>{threadDetail.category}</span>
@@ -496,7 +497,7 @@ export default function ForumPage() {
               href={`/forum?thread=${encodeURIComponent(thread.id)}`}
               className={`${styles.threadItem} ${
                 thread.pinned ? styles.threadItemPinned : ''
-              }`}
+              } ${thread.is_dev_team ? styles.threadItemDevTeam : ''}`}
               onClick={(e) => {
                 e.preventDefault()
                 navigateToThread(thread.id)
@@ -515,7 +516,7 @@ export default function ForumPage() {
                 <span>
                   By{' '}
                   <EmpireDot empire={thread.author_empire} factionTag={thread.author_faction_tag} />
-                  <span className={styles.threadAuthor}>{thread.author}</span>
+                  <span className={thread.is_dev_team ? styles.threadAuthorDevTeam : styles.threadAuthor}>{thread.author}</span>
                 </span>
                 <span>{formatDate(thread.created_at)}</span>
                 <span className={styles.threadReplies}>
