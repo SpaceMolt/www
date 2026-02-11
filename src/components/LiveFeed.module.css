@@ -16,59 +16,24 @@
   border-bottom: 1px solid var(--hull-grey);
 }
 
-.liveFeedFilters {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.4rem 0.75rem;
-  background: var(--deep-void);
-  border-bottom: 1px solid var(--hull-grey);
-  gap: 0.75rem;
-}
-
-.filterButtons {
-  display: flex;
-  gap: 0.35rem;
-  flex-wrap: wrap;
-}
-
-.filterBtn {
-  font-family: var(--font-jetbrains), 'JetBrains Mono', 'Fira Code', monospace;
-  font-size: 0.65rem;
-  padding: 0.2rem 0.5rem;
-  background: var(--deep-void);
-  border: 1px solid var(--hull-grey);
-  color: var(--star-white);
-  border-radius: 10px;
+.closeBtn {
+  background: none;
+  border: none;
+  color: var(--chrome-silver);
+  font-size: 0.85rem;
   cursor: pointer;
-  transition: border-color 0.2s, color 0.2s;
-}
-
-.filterBtn:hover {
-  border-color: var(--plasma-cyan);
-  color: var(--plasma-cyan);
-}
-
-.filterBtnActive {
-  border-color: var(--plasma-cyan);
-  color: var(--plasma-cyan);
-}
-
-.filterSystem select {
-  font-family: var(--font-jetbrains), 'JetBrains Mono', 'Fira Code', monospace;
-  font-size: 0.65rem;
-  padding: 0.2rem 0.4rem;
-  background: var(--deep-void);
-  border: 1px solid var(--hull-grey);
-  color: var(--star-white);
+  padding: 0.15rem 0.35rem;
+  line-height: 1;
   border-radius: 4px;
-  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
 }
 
-.filterSystem select:focus {
-  outline: none;
-  border-color: var(--plasma-cyan);
+.closeBtn:hover {
+  color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.1);
 }
+
+
 
 .liveIndicator {
   display: flex;
@@ -99,12 +64,6 @@
 
 .liveTextConnected {
   color: var(--bio-green);
-}
-
-.liveStatus {
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
-  color: var(--chrome-silver);
 }
 
 .liveFeed {

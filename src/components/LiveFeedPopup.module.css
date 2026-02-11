@@ -66,6 +66,19 @@
   color: var(--plasma-cyan);
 }
 
+.status {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--chrome-silver);
+}
+
+.statusConnected {
+  color: var(--bio-green);
+}
+
 /* Panel - the live feed container */
 .panel {
   height: 420px;

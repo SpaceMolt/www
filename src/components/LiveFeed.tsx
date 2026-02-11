@@ -296,32 +296,27 @@ const eventTypeToStyleClass: Record<string, string> = {
   crafting_summary: styles.liveEventCraft,
 }
 
-const filterGroups: Record<string, string[] | null> = {
-  all: null,
-  chat: ['chat'],
-  travel: ['system_activity', 'jump'],
-  captains_log: ['captains_log'],
-}
-
-const locationExemptFilters = ['travel', 'captains_log']
-
 interface LiveEventEntry {
   id: number
   type: string
   html: string
   icon: string
-  time: string
-  systemName: string
+  time: number
 }
 
 function formatTime(timestamp?: string) {
   const date = timestamp ? new Date(timestamp) : new Date()
-  return date.toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  })
+  return date.getTime()
+}
+
+function relativeTime(ts: number): string {
+  const seconds = Math.floor((Date.now() - ts) / 1000)
+  if (seconds < 10) return 'just now'
+  if (seconds < 60) return `${seconds}s ago`
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.floor(minutes / 60)
+  return `${hours}h ago`
 }
 
 let nextEventId = 0
@@ -336,36 +331,34 @@ const eventTextStyles = `
   [data-cls="eventItem"] { color: #ffd700; }
 `
 
-export function LiveFeed() {
+interface LiveFeedProps {
+  onClose?: () => void
+  onStatusChange?: (connected: boolean, status: string) => void
+}
+
+export function LiveFeed({ onClose, onStatusChange }: LiveFeedProps) {
   const [events, setEvents] = useState<LiveEventEntry[]>([
     {
       id: -1,
       type: 'system',
       html: 'Waiting for events...',
       icon: '\u{1F6F0}',
-      time: '',
-      systemName: '',
+      time: 0,
     },
   ])
   const [isConnected, setIsConnected] = useState(false)
   const [statusText, setStatusText] = useState('Connecting...')
-  const [activeTypeFilter, setActiveTypeFilter] = useState('all')
-  const [activeSystem, setActiveSystem] = useState('')
-  const [knownSystems, setKnownSystems] = useState<string[]>([])
+  const [, setTick] = useState(0)
   const feedRef = useRef<HTMLDivElement>(null)
-  const knownSystemsRef = useRef(new Set<string>())
+
+  // Re-render every 10s to update relative timestamps
+  useEffect(() => {
+    const id = setInterval(() => setTick(t => t + 1), 10000)
+    return () => clearInterval(id)
+  }, [])
 
   const addEvent = useCallback((type: string, data: EventData, timestamp?: string, playerInfo?: Record<string, PlayerMeta>) => {
     const config = eventConfig[type]
-
-    const locationExempt = ['system_activity', 'jump', 'captains_log', 'travel'].includes(type)
-    const systemName = locationExempt ? '' : String(data.system_name || data.to_system_name || data.poi_name || '')
-
-    // Track system
-    if (systemName && !knownSystemsRef.current.has(systemName)) {
-      knownSystemsRef.current.add(systemName)
-      setKnownSystems(Array.from(knownSystemsRef.current).sort())
-    }
 
     const entry: LiveEventEntry = {
       id: nextEventId++,
@@ -373,7 +366,6 @@ export function LiveFeed() {
       html: config ? config.format(data, playerInfo) : formatFallback(type, data, playerInfo),
       icon: config ? config.icon : '\u{1F4E1}',
       time: formatTime(timestamp),
-      systemName,
     }
 
     setEvents((prev) => {
@@ -394,12 +386,14 @@ export function LiveFeed() {
 
       setStatusText('Connecting...')
       setIsConnected(false)
+      onStatusChange?.(false, 'Connecting...')
 
       eventSource = new EventSource('https://game.spacemolt.com/events')
 
       eventSource.onopen = () => {
         setStatusText('Connected')
         setIsConnected(true)
+        onStatusChange?.(true, 'Connected')
       }
 
       eventSource.onmessage = (event) => {
@@ -416,6 +410,7 @@ export function LiveFeed() {
       eventSource.onerror = () => {
         setStatusText('Reconnecting...')
         setIsConnected(false)
+        onStatusChange?.(false, 'Reconnecting...')
 
         setTimeout(() => {
           if (eventSource && eventSource.readyState === EventSource.CLOSED) {
@@ -434,15 +429,6 @@ export function LiveFeed() {
     }
   }, [addEvent])
 
-  const isEventVisible = (event: LiveEventEntry) => {
-    const allowedTypes = filterGroups[activeTypeFilter]
-    const typeMatch = !allowedTypes || allowedTypes.includes(event.type)
-    const systemMatch = !activeSystem || !event.systemName || event.systemName === activeSystem
-    return typeMatch && systemMatch
-  }
-
-  const hideSystemFilter = locationExemptFilters.includes(activeTypeFilter)
-
   return (
     <div className={styles.liveFeedContainer}>
       {/* Inline styles for event text span coloring (data-cls attributes) */}
@@ -452,41 +438,17 @@ export function LiveFeed() {
           <span className={`${styles.liveDot} ${isConnected ? styles.liveDotConnected : ''}`} />
           <span className={`${styles.liveText} ${isConnected ? styles.liveTextConnected : ''}`}>LIVE</span>
         </div>
-        <span className={styles.liveStatus}>{statusText}</span>
-      </div>
-      <div className={styles.liveFeedFilters}>
-        <div className={styles.filterButtons}>
-          {Object.keys(filterGroups).map((filter) => (
-            <button
-              key={filter}
-              className={`${styles.filterBtn} ${activeTypeFilter === filter ? styles.filterBtnActive : ''}`}
-              onClick={() => setActiveTypeFilter(filter)}
-            >
-              {filter === 'all' ? 'All' : filter === 'chat' ? 'Chat' : filter === 'travel' ? 'Travel' : "Captain's Log"}
-            </button>
-          ))}
-        </div>
-        <div className={styles.filterSystem} style={{ display: hideSystemFilter ? 'none' : undefined }}>
-          <select
-            value={activeSystem}
-            onChange={(e) => setActiveSystem(e.target.value)}
-          >
-            <option value="">All Systems</option>
-            {knownSystems.map((sys) => (
-              <option key={sys} value={sys}>{sys}</option>
-            ))}
-          </select>
-        </div>
+        {onClose && (
+          <button className={styles.closeBtn} onClick={onClose} aria-label="Close live feed">{'\u2715'}</button>
+        )}
       </div>
       <div className={styles.liveFeed} ref={feedRef}>
         {events.map((event) => {
-          const visible = isEventVisible(event)
           const typeClass = eventTypeToStyleClass[event.type] || ''
           return (
             <div
               key={event.id}
               className={`${styles.liveEvent} ${typeClass}`}
-              style={{ display: visible ? undefined : 'none' }}
             >
               <span className={styles.eventIcon}>{event.icon}</span>
               {/* Event HTML contains only hardcoded span tags with escaped user data */}
@@ -494,7 +456,7 @@ export function LiveFeed() {
                 className={styles.eventText}
                 dangerouslySetInnerHTML={{ __html: event.html }}
               />
-              {event.time && <span className={styles.eventTime}>{event.time}</span>}
+              {event.time > 0 && <span className={styles.eventTime}>{relativeTime(event.time)}</span>}
             </div>
           )
         })}
