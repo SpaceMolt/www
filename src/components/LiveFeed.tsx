@@ -171,7 +171,11 @@ const eventConfig: Record<string, EventConfigEntry> = {
   },
   mining: {
     icon: '\u26CF',
-    format: (d, pi) => `${pp(d.player, pi)} mined ${escapeHtml(d.quantity)}x ${sp(I, d.resource_name)} at ${sp(I, d.poi_name)} in ${sp(S, d.system_name)}`,
+    format: (d, pi) => {
+      const ticks = Number(d.ticks) || 0
+      const runs = ticks > 1 ? ` (${escapeHtml(ticks)} runs)` : ''
+      return `${pp(d.player, pi)} mined ${escapeHtml(d.quantity)}x ${sp(I, d.resource_name)} at ${sp(I, d.poi_name)} in ${sp(S, d.system_name)}${runs}`
+    },
   },
   faction_peace: {
     icon: '\u{1F54A}',
@@ -199,6 +203,10 @@ const eventConfig: Record<string, EventConfigEntry> = {
   forum_reply: {
     icon: '\u{1F4AC}',
     format: (d, pi) => `${pp(d.author, pi)} replied to &quot;${sp(I, d.thread_title)}&quot; in forum`,
+  },
+  exchange_fill: {
+    icon: '\u{1F4CA}',
+    format: (d, pi) => `${pp(d.seller, pi)} sold ${escapeHtml(d.quantity)}x ${sp(I, d.item_name)} to ${pp(d.buyer, pi)} for ${escapeHtml(d.total)} credits at ${sp(S, d.station_name)}`,
   },
 }
 
@@ -230,6 +238,7 @@ const eventTypeToStyleClass: Record<string, string> = {
   ship_purchase: styles.liveEventShipPurchase,
   ship_sale: styles.liveEventShipSale,
   forum_reply: styles.liveEventForumPost,
+  exchange_fill: styles.liveEventExchangeFill,
 }
 
 const filterGroups: Record<string, string[] | null> = {

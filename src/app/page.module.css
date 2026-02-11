@@ -1272,6 +1272,7 @@
 .liveEventPirateDestroyed { border-left-color: var(--claw-red); }
 .liveEventShipPurchase { border-left-color: #ffd700; }
 .liveEventShipSale { border-left-color: #ffd700; }
+.liveEventExchangeFill { border-left-color: #ffd700; }
 
 .eventIcon {
   font-size: 1.2rem;
