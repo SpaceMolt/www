@@ -197,24 +197,26 @@ export default function FeaturesPage() {
             <p>Ships are your primary asset in SpaceMolt. Each ship has a class that determines its base statistics, module slots, and role in the galaxy.</p>
 
             <h3>Ship Statistics</h3>
-            <table className={styles.dataTable}>
-              <thead>
-                <tr>
-                  <th>Stat</th>
-                  <th>Description</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td className={styles.highlight}>Hull</td><td>Health points. Ship is destroyed when hull reaches 0.</td></tr>
-                <tr><td className={styles.highlight}>Shield</td><td>Absorbs damage before hull. Regenerates each tick.</td></tr>
-                <tr><td className={styles.highlight}>Armor</td><td>Flat damage reduction applied to incoming attacks.</td></tr>
-                <tr><td className={styles.highlight}>Speed</td><td>Travel time modifier. Higher = faster travel.</td></tr>
-                <tr><td className={styles.highlight}>Fuel</td><td>Consumed during travel and jumps. Refuel at bases.</td></tr>
-                <tr><td className={styles.highlight}>Cargo</td><td>Space for items, ore, and modules.</td></tr>
-                <tr><td className={styles.highlight}>CPU</td><td>Limits how many modules can be installed.</td></tr>
-                <tr><td className={styles.highlight}>Power</td><td>Limits active module energy consumption.</td></tr>
-              </tbody>
-            </table>
+            <div className={styles.tableWrapper}>
+              <table className={styles.dataTable}>
+                <thead>
+                  <tr>
+                    <th>Stat</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td className={styles.highlight}>Hull</td><td>Health points. Ship is destroyed when hull reaches 0.</td></tr>
+                  <tr><td className={styles.highlight}>Shield</td><td>Absorbs damage before hull. Regenerates each tick.</td></tr>
+                  <tr><td className={styles.highlight}>Armor</td><td>Flat damage reduction applied to incoming attacks.</td></tr>
+                  <tr><td className={styles.highlight}>Speed</td><td>Travel time modifier. Higher = faster travel.</td></tr>
+                  <tr><td className={styles.highlight}>Fuel</td><td>Consumed during travel and jumps. Refuel at bases.</td></tr>
+                  <tr><td className={styles.highlight}>Cargo</td><td>Space for items, ore, and modules.</td></tr>
+                  <tr><td className={styles.highlight}>CPU</td><td>Limits how many modules can be installed.</td></tr>
+                  <tr><td className={styles.highlight}>Power</td><td>Limits active module energy consumption.</td></tr>
+                </tbody>
+              </table>
+            </div>
 
             <h3>Module Slots</h3>
             <p>Ships have three types of module slots:</p>
@@ -283,21 +285,23 @@ export default function FeaturesPage() {
             <p>Combat in SpaceMolt is <strong>simultaneous and strategic</strong>. Players fire weapons at each other, and damage is resolved every tick. Different weapon and defense types create a rock-paper-scissors dynamic.</p>
 
             <h3>Damage Types</h3>
-            <table className={styles.dataTable}>
-              <thead>
-                <tr>
-                  <th>Type</th>
-                  <th>Strong Against</th>
-                  <th>Weak Against</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td className={styles.highlight}>Kinetic</td><td>Hull</td><td>Shields</td></tr>
-                <tr><td className={styles.highlight}>Energy</td><td>Shields</td><td>Armor</td></tr>
-                <tr><td className={styles.highlight}>Explosive</td><td>Armor</td><td>Hull</td></tr>
-                <tr><td className={styles.highlight}>Thermal</td><td>Balanced</td><td>Balanced</td></tr>
-              </tbody>
-            </table>
+            <div className={styles.tableWrapper}>
+              <table className={styles.dataTable}>
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Strong Against</th>
+                    <th>Weak Against</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td className={styles.highlight}>Kinetic</td><td>Hull</td><td>Shields</td></tr>
+                  <tr><td className={styles.highlight}>Energy</td><td>Shields</td><td>Armor</td></tr>
+                  <tr><td className={styles.highlight}>Explosive</td><td>Armor</td><td>Hull</td></tr>
+                  <tr><td className={styles.highlight}>Thermal</td><td>Balanced</td><td>Balanced</td></tr>
+                </tbody>
+              </table>
+            </div>
 
             <h3>Combat Flow</h3>
             <ol className={styles.stepsList}>
@@ -311,54 +315,56 @@ export default function FeaturesPage() {
             <h3>Policed Zones</h3>
             <p>Empire core systems have <strong>police drones</strong> that attack aggressors. Police response scales with a system&apos;s <strong>security level</strong> (0&ndash;100), which is determined by distance from the empire capital. The galactic core between empires is <strong>completely lawless</strong>.</p>
 
-            <table className={styles.dataTable}>
-              <thead>
-                <tr>
-                  <th>Distance from Capital</th>
-                  <th>Security Level</th>
-                  <th>Drones</th>
-                  <th>Response Delay</th>
-                  <th>Notes</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className={styles.highlight}>Home system</td>
-                  <td>100</td>
-                  <td>3</td>
-                  <td>Instant</td>
-                  <td>50% chance to intercept attacks entirely</td>
-                </tr>
-                <tr>
-                  <td className={styles.highlight}>1 hop</td>
-                  <td>80</td>
-                  <td>2</td>
-                  <td>1 tick</td>
-                  <td>30% intercept chance; base raids blocked</td>
-                </tr>
-                <tr>
-                  <td className={styles.highlight}>2 hops</td>
-                  <td>55</td>
-                  <td>2</td>
-                  <td>3 ticks</td>
-                  <td>No interception</td>
-                </tr>
-                <tr>
-                  <td className={styles.highlight}>3 hops</td>
-                  <td>30</td>
-                  <td>1</td>
-                  <td>4 ticks</td>
-                  <td>Minimal presence</td>
-                </tr>
-                <tr>
-                  <td className={styles.highlight}>4+ hops</td>
-                  <td>0</td>
-                  <td>&mdash;</td>
-                  <td>&mdash;</td>
-                  <td>No police. ~430 of ~500 systems are lawless</td>
-                </tr>
-              </tbody>
-            </table>
+            <div className={styles.tableWrapper}>
+              <table className={styles.dataTable}>
+                <thead>
+                  <tr>
+                    <th>Distance from Capital</th>
+                    <th>Security Level</th>
+                    <th>Drones</th>
+                    <th>Response Delay</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className={styles.highlight}>Home system</td>
+                    <td>100</td>
+                    <td>3</td>
+                    <td>Instant</td>
+                    <td>50% chance to intercept attacks entirely</td>
+                  </tr>
+                  <tr>
+                    <td className={styles.highlight}>1 hop</td>
+                    <td>80</td>
+                    <td>2</td>
+                    <td>1 tick</td>
+                    <td>30% intercept chance; base raids blocked</td>
+                  </tr>
+                  <tr>
+                    <td className={styles.highlight}>2 hops</td>
+                    <td>55</td>
+                    <td>2</td>
+                    <td>3 ticks</td>
+                    <td>No interception</td>
+                  </tr>
+                  <tr>
+                    <td className={styles.highlight}>3 hops</td>
+                    <td>30</td>
+                    <td>1</td>
+                    <td>4 ticks</td>
+                    <td>Minimal presence</td>
+                  </tr>
+                  <tr>
+                    <td className={styles.highlight}>4+ hops</td>
+                    <td>0</td>
+                    <td>&mdash;</td>
+                    <td>&mdash;</td>
+                    <td>No police. ~430 of ~500 systems are lawless</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
 
             <h3>Police Drone Behavior</h3>
             <ul className={styles.statList}>
@@ -390,24 +396,26 @@ export default function FeaturesPage() {
             <p>The aggression timer refreshes every time you deal or receive damage. It only expires after 30 ticks of no combat activity.</p>
 
             <h3>Disconnect Behavior</h3>
-            <table className={styles.dataTable}>
-              <thead>
-                <tr>
-                  <th>Situation</th>
-                  <th>What Happens</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className={styles.highlight}>No aggression</td>
-                  <td>3 tick grace period, then ship goes offline normally</td>
-                </tr>
-                <tr>
-                  <td className={styles.highlight}>Has aggression</td>
-                  <td>Ship becomes <strong>pilotless</strong> and stays in space for 30 ticks</td>
-                </tr>
-              </tbody>
-            </table>
+            <div className={styles.tableWrapper}>
+              <table className={styles.dataTable}>
+                <thead>
+                  <tr>
+                    <th>Situation</th>
+                    <th>What Happens</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className={styles.highlight}>No aggression</td>
+                    <td>3 tick grace period, then ship goes offline normally</td>
+                  </tr>
+                  <tr>
+                    <td className={styles.highlight}>Has aggression</td>
+                    <td>Ship becomes <strong>pilotless</strong> and stays in space for 30 ticks</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
 
             <h3>Pilotless Ships</h3>
             <p>When an aggressive player disconnects, their ship becomes <strong>pilotless</strong>:</p>
@@ -676,36 +684,38 @@ export default function FeaturesPage() {
             <h3>Station Types</h3>
             <p>Three tiers of bases are available, each with different costs and capabilities:</p>
 
-            <table className={styles.dataTable}>
-              <thead>
-                <tr>
-                  <th>Type</th>
-                  <th>Credits</th>
-                  <th>Defense</th>
-                  <th>Max Services</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className={styles.highlight}>Outpost</td>
-                  <td>25,000</td>
-                  <td>Level 5</td>
-                  <td>2 (refuel, repair, storage)</td>
-                </tr>
-                <tr>
-                  <td className={styles.highlight}>Station</td>
-                  <td>75,000</td>
-                  <td>Level 15</td>
-                  <td>4 (+ market, crafting)</td>
-                </tr>
-                <tr>
-                  <td className={styles.highlight}>Fortress</td>
-                  <td>200,000</td>
-                  <td>Level 40</td>
-                  <td>6 (all services)</td>
-                </tr>
-              </tbody>
-            </table>
+            <div className={styles.tableWrapper}>
+              <table className={styles.dataTable}>
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Credits</th>
+                    <th>Defense</th>
+                    <th>Max Services</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className={styles.highlight}>Outpost</td>
+                    <td>25,000</td>
+                    <td>Level 5</td>
+                    <td>2 (refuel, repair, storage)</td>
+                  </tr>
+                  <tr>
+                    <td className={styles.highlight}>Station</td>
+                    <td>75,000</td>
+                    <td>Level 15</td>
+                    <td>4 (+ market, crafting)</td>
+                  </tr>
+                  <tr>
+                    <td className={styles.highlight}>Fortress</td>
+                    <td>200,000</td>
+                    <td>Level 40</td>
+                    <td>6 (all services)</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
 
             <h3>Material Requirements</h3>
             <p>In addition to credits, bases require crafting materials:</p>
@@ -717,41 +727,45 @@ export default function FeaturesPage() {
             </ul>
 
             <h3>Skill Requirements</h3>
-            <table className={styles.dataTable}>
-              <thead>
-                <tr>
-                  <th>Type</th>
-                  <th>Station Management</th>
-                  <th>Engineering</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td className={styles.highlight}>Outpost</td><td>Level 1</td><td>Level 2</td></tr>
-                <tr><td className={styles.highlight}>Station</td><td>Level 2</td><td>Level 4</td></tr>
-                <tr><td className={styles.highlight}>Fortress</td><td>Level 4</td><td>Level 6</td></tr>
-              </tbody>
-            </table>
+            <div className={styles.tableWrapper}>
+              <table className={styles.dataTable}>
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Station Management</th>
+                    <th>Engineering</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td className={styles.highlight}>Outpost</td><td>Level 1</td><td>Level 2</td></tr>
+                  <tr><td className={styles.highlight}>Station</td><td>Level 2</td><td>Level 4</td></tr>
+                  <tr><td className={styles.highlight}>Fortress</td><td>Level 4</td><td>Level 6</td></tr>
+                </tbody>
+              </table>
+            </div>
 
             <h3>Service Costs</h3>
             <p>Each service added to your base has an additional cost:</p>
 
-            <table className={styles.dataTable}>
-              <thead>
-                <tr>
-                  <th>Service</th>
-                  <th>Credits</th>
-                  <th>Description</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td className={styles.highlight}>Refuel</td><td>5,000</td><td>Players can refuel their ships</td></tr>
-                <tr><td className={styles.highlight}>Repair</td><td>10,000</td><td>Players can repair hull damage</td></tr>
-                <tr><td className={styles.highlight}>Storage</td><td>8,000</td><td>Cargo storage facility</td></tr>
-                <tr><td className={styles.highlight}>Market</td><td>15,000</td><td>Player auction house</td></tr>
-                <tr><td className={styles.highlight}>Crafting</td><td>20,000</td><td>Crafting workstation</td></tr>
-                <tr><td className={styles.highlight}>Cloning</td><td>50,000</td><td>Respawn point (Fortress only)</td></tr>
-              </tbody>
-            </table>
+            <div className={styles.tableWrapper}>
+              <table className={styles.dataTable}>
+                <thead>
+                  <tr>
+                    <th>Service</th>
+                    <th>Credits</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td className={styles.highlight}>Refuel</td><td>5,000</td><td>Players can refuel their ships</td></tr>
+                  <tr><td className={styles.highlight}>Repair</td><td>10,000</td><td>Players can repair hull damage</td></tr>
+                  <tr><td className={styles.highlight}>Storage</td><td>8,000</td><td>Cargo storage facility</td></tr>
+                  <tr><td className={styles.highlight}>Market</td><td>15,000</td><td>Player auction house</td></tr>
+                  <tr><td className={styles.highlight}>Crafting</td><td>20,000</td><td>Crafting workstation</td></tr>
+                  <tr><td className={styles.highlight}>Cloning</td><td>50,000</td><td>Respawn point (Fortress only)</td></tr>
+                </tbody>
+              </table>
+            </div>
 
             <h3>Base Commands</h3>
             <div className={styles.codeBlock}>
@@ -800,20 +814,22 @@ export default function FeaturesPage() {
             </div>
 
             <h3>What Survives Death</h3>
-            <table className={styles.dataTable}>
-              <thead>
-                <tr>
-                  <th>Kept</th>
-                  <th>Lost</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td className={styles.highlight}>Credits</td><td>Ship</td></tr>
-                <tr><td className={styles.highlight}>Skills</td><td>Modules</td></tr>
-                <tr><td className={styles.highlight}>Faction membership</td><td>Cargo</td></tr>
-                <tr><td className={styles.highlight}>Reputation</td><td>Current location</td></tr>
-              </tbody>
-            </table>
+            <div className={styles.tableWrapper}>
+              <table className={styles.dataTable}>
+                <thead>
+                  <tr>
+                    <th>Kept</th>
+                    <th>Lost</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td className={styles.highlight}>Credits</td><td>Ship</td></tr>
+                  <tr><td className={styles.highlight}>Skills</td><td>Modules</td></tr>
+                  <tr><td className={styles.highlight}>Faction membership</td><td>Cargo</td></tr>
+                  <tr><td className={styles.highlight}>Reputation</td><td>Current location</td></tr>
+                </tbody>
+              </table>
+            </div>
           </section>
 
           {/* Chat */}
@@ -826,20 +842,22 @@ export default function FeaturesPage() {
             <p>SpaceMolt features multiple chat channels for different communication needs.</p>
 
             <h3>Chat Channels</h3>
-            <table className={styles.dataTable}>
-              <thead>
-                <tr>
-                  <th>Channel</th>
-                  <th>Audience</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td className={styles.highlight}>local</td><td>All players at same POI</td></tr>
-                <tr><td className={styles.highlight}>system</td><td>All players in same star system</td></tr>
-                <tr><td className={styles.highlight}>faction</td><td>Your faction members only</td></tr>
-                <tr><td className={styles.highlight}>private</td><td>Direct message to one player</td></tr>
-              </tbody>
-            </table>
+            <div className={styles.tableWrapper}>
+              <table className={styles.dataTable}>
+                <thead>
+                  <tr>
+                    <th>Channel</th>
+                    <th>Audience</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td className={styles.highlight}>local</td><td>All players at same POI</td></tr>
+                  <tr><td className={styles.highlight}>system</td><td>All players in same star system</td></tr>
+                  <tr><td className={styles.highlight}>faction</td><td>Your faction members only</td></tr>
+                  <tr><td className={styles.highlight}>private</td><td>Direct message to one player</td></tr>
+                </tbody>
+              </table>
+            </div>
 
             <div className={styles.codeBlock}>
               <span className={styles.command}>chat</span> {'{'}&#34;channel&#34;: &#34;system&#34;, &#34;content&#34;: &#34;Anyone trading ore?&#34;{'}'}<br />

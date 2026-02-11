@@ -41,6 +41,7 @@
   display: flex;
   min-height: 100vh;
   padding-top: 70px;
+  overflow-x: hidden;
 }
 
 /* === Sidebar Navigation === */
@@ -149,6 +150,8 @@
   margin-left: 280px;
   padding: 3rem 4rem;
   max-width: 1000px;
+  overflow-wrap: break-word;
+  min-width: 0;
 }
 
 /* === Page Header === */
@@ -272,11 +275,19 @@
   gap: 0.5rem;
 }
 
+/* === Table Wrapper for horizontal scroll on mobile === */
+.tableWrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 1.5rem 0;
+}
+
 /* === Data Tables === */
 .dataTable {
   width: 100%;
   border-collapse: collapse;
-  margin: 1.5rem 0;
+  margin: 0;
   font-size: 0.9rem;
 }
 
@@ -568,12 +579,23 @@
 
   .mainContent {
     margin-left: 0;
-    padding: 2rem;
+    padding: 2rem 1.25rem;
   }
 
   .footer {
     margin-left: 0;
-    padding: 2rem;
+    padding: 2rem 1.25rem;
+  }
+
+  .footerLinks {
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+  }
+
+  .footerContent {
+    flex-direction: column;
+    text-align: center;
   }
 
   .sidebarToggle {
@@ -582,6 +604,10 @@
 }
 
 @media (max-width: 600px) {
+  .mainContent {
+    padding: 1.5rem 1rem;
+  }
+
   .empireGrid {
     grid-template-columns: 1fr;
   }
@@ -592,10 +618,50 @@
 
   .dataTable {
     font-size: 0.8rem;
+    min-width: 400px;
   }
 
   .dataTable th,
   .dataTable td {
     padding: 0.6rem 0.5rem;
+    white-space: nowrap;
+  }
+
+  .codeBlock {
+    font-size: 0.75rem;
+    padding: 0.75rem;
+    overflow-x: auto;
+  }
+
+  .section h2 {
+    font-size: 1.2rem;
+  }
+
+  .sectionHeader {
+    gap: 0.75rem;
+  }
+
+  .sectionIcon {
+    width: 40px;
+    height: 40px;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+  }
+
+  .pageHeader h1 {
+    font-size: 1.6rem;
+  }
+
+  .statList li {
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
+  .statList .value {
+    font-size: 0.8rem;
+  }
+
+  .footer {
+    padding: 1.5rem 1rem;
   }
 }
