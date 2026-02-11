@@ -799,6 +799,28 @@
   line-height: 1.5;
 }
 
+.travelFilterInput {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background: rgba(0, 0, 0, 0.4);
+  border: none;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+  color: #e8f4f8;
+  font-size: 0.8rem;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.travelFilterInput::placeholder {
+  color: var(--hull-grey);
+}
+
+.travelFilterInput:focus {
+  border-bottom-color: var(--plasma-cyan);
+  background: rgba(0, 0, 0, 0.6);
+}
+
 .travelDropdownList {
   max-height: 240px;
   overflow-y: auto;

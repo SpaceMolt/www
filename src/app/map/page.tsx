@@ -181,11 +181,12 @@ export default function GalaxyMapPage() {
     initialTouchPos: null as { x: number; y: number } | null,
     travelHistory: new Map<string, string[]>(),
     selectedTravelPlayers: new Set<string>(),
-    playerLastSystem: new Map<string, string>(),
+    travelPings: [] as { wx: number; wy: number; startTime: number; color: string }[],
   })
 
   // ── Travel Tracker State ──────────────────────────────────────────
   const [travelDropdownOpen, setTravelDropdownOpen] = useState(false)
+  const [travelFilter, setTravelFilter] = useState('')
   const [selectedPlayers, setSelectedPlayers] = useState<Set<string>>(new Set())
   const [travelPlayerList, setTravelPlayerList] = useState<string[]>([])
 
@@ -470,6 +471,64 @@ export default function GalaxyMapPage() {
     [worldToScreen],
   )
 
+  const PING_DURATION = 2000 // ms
+  const PING_MAX_RADIUS = 80
+
+  const drawTravelPings = useCallback(
+    (ctx: CanvasRenderingContext2D) => {
+      const s = stateRef.current
+      if (s.travelPings.length === 0) return
+
+      // Remove expired pings
+      s.travelPings = s.travelPings.filter(
+        (p) => s.animationTime - p.startTime < PING_DURATION,
+      )
+
+      ctx.save()
+      for (const ping of s.travelPings) {
+        const elapsed = s.animationTime - ping.startTime
+        const t = elapsed / PING_DURATION // 0→1
+
+        const pos = worldToScreen(ping.wx, ping.wy)
+
+        // Draw 3 expanding rings staggered in time
+        for (let ring = 0; ring < 3; ring++) {
+          const ringT = Math.max(0, t - ring * 0.15)
+          if (ringT <= 0 || ringT >= 1) continue
+
+          const ease = 1 - Math.pow(1 - ringT, 3) // ease-out cubic
+          const radius = ease * PING_MAX_RADIUS
+          const alpha = (1 - ringT) * 0.7
+
+          ctx.beginPath()
+          ctx.arc(pos.x, pos.y, radius, 0, Math.PI * 2)
+          ctx.strokeStyle = ping.color
+          ctx.lineWidth = 3 - ringT * 2
+          ctx.globalAlpha = alpha
+          ctx.shadowColor = ping.color
+          ctx.shadowBlur = 15
+          ctx.stroke()
+        }
+
+        // Draw a bright center flash that fades
+        if (t < 0.5) {
+          const flashAlpha = 1 - t * 2
+          ctx.globalAlpha = flashAlpha * 0.6
+          ctx.fillStyle = ping.color
+          ctx.shadowColor = ping.color
+          ctx.shadowBlur = 30
+          ctx.beginPath()
+          ctx.arc(pos.x, pos.y, 6 + (1 - flashAlpha) * 10, 0, Math.PI * 2)
+          ctx.fill()
+        }
+      }
+      ctx.globalAlpha = 1
+      ctx.shadowBlur = 0
+      ctx.restore()
+    },
+    [worldToScreen],
+  )
+
   const render = useCallback(
     (ctx?: CanvasRenderingContext2D | null) => {
       const canvas = canvasRef.current
@@ -743,8 +802,11 @@ export default function GalaxyMapPage() {
           ctx.fillText(system.name, pos.x, labelY)
         }
       }
+
+      // Draw travel pings (on top of everything)
+      drawTravelPings(ctx)
     },
-    [drawStarfield, drawGrid, drawTravelPaths, worldToScreen],
+    [drawStarfield, drawGrid, drawTravelPaths, drawTravelPings, worldToScreen],
   )
 
   // ── Tooltip ────────────────────────────────────────────────────────
@@ -1174,35 +1236,8 @@ export default function GalaxyMapPage() {
     [],
   )
 
-  const trackPlayerSystem = useCallback(
-    (player: string | undefined, systemName: string | undefined) => {
-      if (!player || !systemName) return
-      const p = String(player)
-      const sys = String(systemName)
-      if (!p || !sys) return
-      const s = stateRef.current
-      const lastSystem = s.playerLastSystem.get(p)
-      if (lastSystem === sys) return
-      s.playerLastSystem.set(p, sys)
-      // Only record in travel history if we had a previous known system
-      // (avoids recording the first sighting as a "travel")
-      if (lastSystem) {
-        const history = s.travelHistory.get(p) || []
-        history.push(sys)
-        if (history.length > 5) history.shift()
-        s.travelHistory.set(p, history)
-      }
-    },
-    [],
-  )
-
   const handleActivityEvent = useCallback(
     (event: ActivityEvent) => {
-      // Track player location from any event with player + system_name
-      const evtPlayer = event.data?.player as string | undefined
-      const evtSystem = event.data?.system_name as string | undefined
-      trackPlayerSystem(evtPlayer, evtSystem)
-
       const icon = ICON_MAP[event.type] || '\u{1F4E1}'
       let text = ''
 
@@ -1229,17 +1264,11 @@ export default function GalaxyMapPage() {
         case 'travel':
           text = `${event.data?.player || 'A pilot'} traveled to ${event.data?.to_poi || 'a new location'}`
           break
-        case 'jump': {
-          // Jump events use to_system_name instead of system_name
-          trackPlayerSystem(
-            event.data?.player as string | undefined,
-            event.data?.to_system_name as string | undefined,
-          )
+        case 'jump':
           if (event.data?.first_discovery) {
             text = `${event.data?.player || 'A pilot'} made first jump to ${event.data?.to_system_name || 'unknown'}`
           }
           break
-        }
         default:
           return
       }
@@ -1253,7 +1282,7 @@ export default function GalaxyMapPage() {
         showActivityToast(icon, text, time)
       }
     },
-    [showActivityToast, trackPlayerSystem],
+    [showActivityToast],
   )
 
   // ── View Controls ──────────────────────────────────────────────────
@@ -1308,6 +1337,7 @@ export default function GalaxyMapPage() {
     function handleClick(e: MouseEvent) {
       if (travelTrackerRef.current && !travelTrackerRef.current.contains(e.target as Node)) {
         setTravelDropdownOpen(false)
+        setTravelFilter('')
       }
     }
     document.addEventListener('mousedown', handleClick)
@@ -1421,6 +1451,28 @@ export default function GalaxyMapPage() {
     // ── SSE Activity Feed ────────────────────────────────────────
     let eventSource: EventSource | null = null
     let sseReconnectTimeout: ReturnType<typeof setTimeout> | null = null
+    const playerLastSystem = new Map<string, string>()
+
+    function trackPlayerSystem(player: string, systemName: string) {
+      const lastSystem = playerLastSystem.get(player)
+      if (lastSystem === systemName) return
+      playerLastSystem.set(player, systemName)
+      const history = s.travelHistory.get(player) || []
+      const isMove = history.length > 0 && history[history.length - 1] !== systemName
+      history.push(systemName)
+      if (history.length > 5) history.shift()
+      s.travelHistory.set(player, history)
+
+      // Trigger ping animation if this player is being tracked
+      if (isMove && s.selectedTravelPlayers.has(player) && s.mapData) {
+        const sys = s.mapData.systems.find((ss) => ss.name === systemName)
+        if (sys) {
+          const idx = Array.from(s.selectedTravelPlayers).indexOf(player)
+          const color = TRAVEL_PATH_COLORS[idx % TRAVEL_PATH_COLORS.length]
+          s.travelPings.push({ wx: sys.x, wy: sys.y, startTime: s.animationTime, color })
+        }
+      }
+    }
 
     function connectActivityFeed() {
       try {
@@ -1430,6 +1482,17 @@ export default function GalaxyMapPage() {
         eventSource.onmessage = (event) => {
           try {
             const data = JSON.parse(event.data) as ActivityEvent
+
+            // Track player system changes for travel paths
+            const player = data.data?.player
+            if (player) {
+              const sysName = data.type === 'jump'
+                ? data.data?.to_system_name
+                : data.data?.system_name
+              if (sysName) {
+                trackPlayerSystem(String(player), String(sysName))
+              }
+            }
             handleActivityEvent(data)
           } catch {
             // ignore parse errors
@@ -1825,11 +1888,29 @@ export default function GalaxyMapPage() {
           <div className={styles.travelDropdown}>
             {travelPlayerList.length === 0 ? (
               <div className={styles.travelDropdownEmpty}>
-                No player jumps recorded yet. Waiting for SSE jump events...
+                No player activity recorded yet. Waiting for SSE events...
               </div>
             ) : (
+              <>
+              <input
+                type="text"
+                className={styles.travelFilterInput}
+                placeholder="Filter players…"
+                value={travelFilter}
+                onChange={(e) => setTravelFilter(e.target.value)}
+                autoFocus
+              />
               <div className={styles.travelDropdownList}>
-                {travelPlayerList.map((player, i) => {
+                {travelPlayerList.filter((player) => {
+                  if (!travelFilter) return true
+                  const query = travelFilter.toLowerCase()
+                  const name = player.toLowerCase()
+                  let qi = 0
+                  for (let ni = 0; ni < name.length && qi < query.length; ni++) {
+                    if (name[ni] === query[qi]) qi++
+                  }
+                  return qi === query.length
+                }).map((player, i) => {
                   const isSelected = selectedPlayers.has(player)
                   const color = TRAVEL_PATH_COLORS[
                     Array.from(selectedPlayers).indexOf(player) % TRAVEL_PATH_COLORS.length
@@ -1851,12 +1932,13 @@ export default function GalaxyMapPage() {
                       )}
                       <span className={styles.travelPlayerName}>{player}</span>
                       <span className={styles.travelJumpCount}>
-                        {jumpCount} jump{jumpCount !== 1 ? 's' : ''}
+                        {jumpCount} system{jumpCount !== 1 ? 's' : ''}
                       </span>
                     </label>
                   )
                 })}
               </div>
+              </>
             )}
           </div>
         )}
