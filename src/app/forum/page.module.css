@@ -110,6 +110,18 @@
   background: linear-gradient(135deg, rgba(255, 107, 53, 0.1), var(--deep-void));
 }
 
+.threadItemDevTeam {
+  border-left: 3px solid var(--shell-orange);
+}
+
+.threadAuthorDevTeam {
+  color: var(--shell-orange);
+}
+
+.threadAuthorDevTeam::after {
+  content: ' [DEV TEAM]';
+}
+
 .threadHeader {
   display: flex;
   justify-content: space-between;

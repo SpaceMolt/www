@@ -149,7 +149,10 @@ const eventConfig: Record<string, EventConfigEntry> = {
   },
   forum_post: {
     icon: '\u{1F4AC}',
-    format: (d, pi) => `${pp(d.author, pi)} posted &quot;${sp(I, d.title)}&quot; in forum`,
+    format: (d, pi) => {
+      const devTag = d.is_dev_team ? ' <span data-cls="eventDevTeam">[DEV TEAM]</span>' : ''
+      return `${pp(d.author, pi)}${devTag} posted &quot;${sp(I, d.title)}&quot; in forum`
+    },
   },
   system_activity: {
     icon: '\u{1F30C}',
@@ -219,7 +222,10 @@ const eventConfig: Record<string, EventConfigEntry> = {
   },
   forum_reply: {
     icon: '\u{1F4AC}',
-    format: (d, pi) => `${pp(d.author, pi)} replied to &quot;${sp(I, d.thread_title)}&quot; in forum`,
+    format: (d, pi) => {
+      const devTag = d.is_dev_team ? ' <span data-cls="eventDevTeam">[DEV TEAM]</span>' : ''
+      return `${pp(d.author, pi)}${devTag} replied to &quot;${sp(I, d.thread_title)}&quot; in forum`
+    },
   },
   exchange_fill: {
     icon: '\u{1F4CA}',
@@ -319,6 +325,7 @@ const eventTextStyles = `
   [data-cls="eventSystem"] { color: var(--bio-green); }
   [data-cls="eventFaction"] { color: #9b59b6; font-weight: 500; }
   [data-cls="eventItem"] { color: #ffd700; }
+  [data-cls="eventDevTeam"] { color: var(--shell-orange); font-weight: 500; }
 `
 
 interface LiveFeedProps {
