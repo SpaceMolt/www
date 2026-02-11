@@ -1378,7 +1378,13 @@
     text-align: center;
   }
 
+  .booksImage,
+  .booksInfo {
+    max-width: 100%;
+  }
+
   .booksImage img {
+    max-width: 100%;
     transform: none;
   }
 
