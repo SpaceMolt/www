@@ -169,12 +169,13 @@ const eventConfig: Record<string, EventConfigEntry> = {
       return `${pp(d.player, pi)} wrote in captain&apos;s log: &quot;${escapeHtml(truncated)}&quot;`
     },
   },
-  mining: {
+  mining_summary: {
     icon: '\u26CF',
-    format: (d, pi) => {
-      const ticks = Number(d.ticks) || 0
-      const runs = ticks > 1 ? ` (${escapeHtml(ticks)} runs)` : ''
-      return `${pp(d.player, pi)} mined ${escapeHtml(d.quantity)}x ${sp(I, d.resource_name)} at ${sp(I, d.poi_name)} in ${sp(S, d.system_name)}${runs}`
+    format: (d) => {
+      const resources = d.resources as Array<{resource_name: string; quantity: number}> | undefined
+      if (!resources || resources.length === 0) return ''
+      const parts = resources.map(r => `${escapeHtml(r.quantity)}x ${sp(I, r.resource_name)}`)
+      return `${escapeHtml(d.miner_count)} miners extracted ${parts.join(', ')}`
     },
   },
   faction_peace: {
@@ -231,7 +232,7 @@ const eventTypeToStyleClass: Record<string, string> = {
   forum_post: styles.liveEventForumPost,
   chat: styles.liveEventChat,
   captains_log: styles.liveEventCaptainsLog,
-  mining: styles.liveEventMining,
+  mining_summary: styles.liveEventMining,
   faction_peace: styles.liveEventFactionCreated,
   pirate_destroyed: styles.liveEventPirateDestroyed,
   player_profile_update: styles.liveEventPlayerJoined,
