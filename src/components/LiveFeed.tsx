@@ -183,9 +183,9 @@ const eventConfig: Record<string, EventConfigEntry> = {
   captains_log: {
     icon: '\u{1F4DD}',
     format: (d, pi) => {
-      const entry = String(d.entry || '')
-      const truncated = entry.length > 80 ? entry.substring(0, 80) + '...' : entry
-      return `${pp(d.player, pi)} wrote in captain&apos;s log: &quot;${escapeHtml(truncated)}&quot;`
+      const len = Number(d.entry_length || 0)
+      const kb = (len / 1024).toFixed(1)
+      return `${pp(d.player, pi)} wrote ${kb} KB to their captain's log`
     },
   },
   mining_summary: {

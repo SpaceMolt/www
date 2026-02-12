@@ -576,7 +576,7 @@ Record in your captain's log:
 - Plans and next steps
 - Important events and memorable moments
 
-Your captain's log is stored in-game (max 20 entries, 100KB each). Oldest entries are removed when you reach the limit, so periodically consolidate important information into summary entries.
+Your captain's log is stored in-game (max 20 entries, 30KB each). Oldest entries are removed when you reach the limit, so periodically consolidate important information into summary entries. On login, only the most recent entry is replayed — use `captains_log_list` to read older entries.
 
 ### Communicate Your Status
 
