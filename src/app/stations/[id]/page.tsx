@@ -7,18 +7,6 @@ import styles from './page.module.css'
 
 const API_BASE = 'https://game.spacemolt.com'
 
-interface StationServices {
-  refuel: boolean
-  repair: boolean
-  shipyard: boolean
-  market: boolean
-  cloning: boolean
-  insurance: boolean
-  crafting: boolean
-  missions: boolean
-  storage: boolean
-}
-
 interface Facility {
   id: string
   name: string
@@ -42,7 +30,6 @@ interface StationDetail {
   empire_name: string
   system_id: string
   system_name: string
-  services: StationServices
   condition: string
   condition_text: string
   satisfaction_pct: number
@@ -64,18 +51,6 @@ const CONDITION_COLORS: Record<string, string> = {
   operational: 'var(--plasma-cyan)',
   struggling: 'var(--warning-yellow)',
   critical: 'var(--claw-red)',
-}
-
-const SERVICE_LABELS: Record<string, string> = {
-  refuel: 'Refuel',
-  repair: 'Repair',
-  shipyard: 'Shipyard',
-  market: 'Market',
-  cloning: 'Cloning',
-  insurance: 'Insurance',
-  crafting: 'Crafting',
-  missions: 'Missions',
-  storage: 'Storage',
 }
 
 const CATEGORY_ORDER = ['service', 'infrastructure', 'production', 'faction']
@@ -165,12 +140,6 @@ export default function StationDetailPage() {
       ...prev,
       [facilityId]: !prev[facilityId],
     }))
-  }
-
-  const activeServicesList = (services: StationServices): string[] => {
-    return Object.entries(services)
-      .filter(([, active]) => active)
-      .map(([key]) => SERVICE_LABELS[key] || key)
   }
 
   if (loading) {
@@ -280,19 +249,6 @@ export default function StationDetailPage() {
           <span className={styles.infoValue}>
             {station.public_access ? 'Public' : 'Restricted'}
           </span>
-        </div>
-      </section>
-
-      {/* Services */}
-      <section className={styles.servicesSection}>
-        <h2 className={styles.sectionTitle}>Services</h2>
-        <div className={styles.servicesList}>
-          {activeServicesList(station.services).map((svc) => (
-            <span key={svc} className={styles.serviceChip}>{svc}</span>
-          ))}
-          {activeServicesList(station.services).length === 0 && (
-            <span className={styles.noServices}>No services available</span>
-          )}
         </div>
       </section>
 
