@@ -1,0 +1,432 @@
+/* === Station Detail Page === */
+
+.main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 6rem 2rem 2rem;
+}
+
+/* === Back Link === */
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--plasma-cyan);
+  text-decoration: none;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  margin-bottom: 1.5rem;
+  transition: opacity 0.2s;
+}
+
+.backLink:hover {
+  opacity: 0.8;
+}
+
+/* === Hero Section === */
+.hero {
+  background: linear-gradient(135deg, rgba(26, 39, 68, 0.6), rgba(13, 19, 33, 0.8));
+  border: 1px solid var(--hull-grey);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+
+.heroAccent {
+  height: 4px;
+  background: var(--empire-color, var(--hull-grey));
+}
+
+.heroContent {
+  padding: 2rem;
+}
+
+.heroHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.heroTitle {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  font-weight: 700;
+  color: var(--star-white);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin: 0;
+}
+
+.heroBadges {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.empireBadge {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+}
+
+.empireDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.conditionBadge {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+}
+
+.heroDescription {
+  font-size: 1rem;
+  color: var(--star-white);
+  line-height: 1.7;
+  margin-bottom: 0.75rem;
+}
+
+.conditionText {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--chrome-silver);
+  font-style: italic;
+  opacity: 0.8;
+}
+
+/* === Info Bar === */
+.infoBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  background: linear-gradient(135deg, rgba(26, 39, 68, 0.4), rgba(13, 19, 33, 0.6));
+  border: 1px solid var(--hull-grey);
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.infoItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 100px;
+}
+
+.infoLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--hull-grey);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.infoValue {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.9rem;
+  color: var(--plasma-cyan);
+  font-weight: 500;
+}
+
+.infoValueLink {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.9rem;
+  color: var(--plasma-cyan);
+  font-weight: 500;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.infoValueLink:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+/* === Services Section === */
+.servicesSection {
+  margin-bottom: 2rem;
+}
+
+.sectionTitle {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--star-white);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 1rem;
+}
+
+.servicesList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.serviceChip {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  padding: 0.35rem 0.75rem;
+  background: rgba(0, 212, 255, 0.08);
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  border-radius: 4px;
+  color: var(--plasma-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.noServices {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--hull-grey);
+}
+
+/* === Facilities Section === */
+.facilitiesSection {
+  margin-bottom: 2rem;
+}
+
+.facilityGroup {
+  margin-bottom: 2rem;
+}
+
+.categoryHeader {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--plasma-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+}
+
+.facilityGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1rem;
+}
+
+/* === Facility Card === */
+.facilityCard {
+  background: linear-gradient(135deg, rgba(26, 39, 68, 0.5), rgba(13, 19, 33, 0.7));
+  border: 1px solid var(--hull-grey);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.3s ease;
+}
+
+.facilityCard:hover {
+  border-color: rgba(0, 212, 255, 0.4);
+}
+
+.facilityAccent {
+  height: 2px;
+  background: var(--empire-color, var(--hull-grey));
+}
+
+.facilityBody {
+  padding: 1.1rem;
+}
+
+.facilityHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.facilityName {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--star-white);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.uniqueBadge {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  padding: 0.1rem 0.35rem;
+  background: rgba(255, 107, 53, 0.15);
+  border: 1px solid var(--shell-orange);
+  border-radius: 3px;
+  color: var(--shell-orange);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+}
+
+.maintenanceStatus {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.maintenanceStatus:has(+ *) {
+  /* fallback handled below */
+}
+
+/* Green check for satisfied, amber warning for needed */
+.facilityHeader .maintenanceStatus {
+  cursor: help;
+}
+
+/* === Facility Meta === */
+.facilityMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.6rem;
+}
+
+.categoryBadge {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  padding: 0.15rem 0.4rem;
+  background: var(--hull-grey);
+  border-radius: 3px;
+  text-transform: uppercase;
+  color: var(--chrome-silver);
+  letter-spacing: 0.05em;
+}
+
+.facilityLevel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--chrome-silver);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.levelIndicator {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.levelSegmentFilled {
+  width: 6px;
+  height: 10px;
+  background: var(--plasma-cyan);
+  border-radius: 1px;
+}
+
+.levelSegmentEmpty {
+  width: 6px;
+  height: 10px;
+  background: var(--hull-grey);
+  border-radius: 1px;
+  opacity: 0.4;
+}
+
+.facilityDescription {
+  font-size: 0.82rem;
+  color: var(--chrome-silver);
+  line-height: 1.6;
+  margin-bottom: 0;
+}
+
+/* === Lore Section === */
+.loreSection {
+  margin-top: 0.6rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(0, 212, 255, 0.08);
+}
+
+.loreToggle {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--hull-grey);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.loreToggle:hover {
+  color: var(--plasma-cyan);
+}
+
+.loreText {
+  font-size: 0.78rem;
+  color: var(--chrome-silver);
+  line-height: 1.6;
+  margin-top: 0.4rem;
+  font-style: italic;
+  opacity: 0.75;
+}
+
+/* === Loading === */
+.loading {
+  text-align: center;
+  padding: 4rem;
+  color: var(--chrome-silver);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+}
+
+/* === Empty State === */
+.emptyState {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--chrome-silver);
+}
+
+.emptyStateTitle {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  color: var(--star-white);
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+  .main {
+    padding: 8rem 1rem 2rem;
+  }
+
+  .heroHeader {
+    flex-direction: column;
+  }
+
+  .heroTitle {
+    font-size: 1.4rem;
+  }
+
+  .infoBar {
+    gap: 1rem;
+  }
+
+  .infoItem {
+    min-width: 80px;
+  }
+
+  .facilityGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .heroBadges {
+    flex-wrap: wrap;
+  }
+}

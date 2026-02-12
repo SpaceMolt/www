@@ -29,6 +29,11 @@ interface POIData {
   has_base: boolean
   online: number
   players?: PlayerData[]
+  base_id?: string
+  station_name?: string
+  station_empire?: string
+  station_condition?: string
+  station_services?: string[]
 }
 
 interface PlayerData {
@@ -1008,7 +1013,43 @@ export default function GalaxyMapPage() {
         meta.appendChild(baseBadge)
       }
 
+      if (poi.station_condition) {
+        const condBadge = document.createElement('span')
+        condBadge.className = styles.poiStationCondition
+        const condColors: Record<string, string> = {
+          thriving: 'var(--bio-green)',
+          operational: 'var(--laser-blue)',
+          struggling: 'var(--warning-yellow)',
+          critical: 'var(--claw-red)',
+        }
+        condBadge.style.color = condColors[poi.station_condition] || 'var(--chrome-silver)'
+        condBadge.textContent = poi.station_condition
+        meta.appendChild(condBadge)
+      }
+
       info.appendChild(meta)
+
+      // Station details (services + link)
+      if (poi.has_base && poi.base_id && isExpanded) {
+        if (poi.station_services && poi.station_services.length > 0) {
+          const servicesRow = document.createElement('div')
+          servicesRow.className = styles.poiStationServices
+          poi.station_services.forEach((svc) => {
+            const tag = document.createElement('span')
+            tag.className = styles.poiServiceTag
+            tag.textContent = svc
+            servicesRow.appendChild(tag)
+          })
+          info.appendChild(servicesRow)
+        }
+
+        const stationLink = document.createElement('a')
+        stationLink.className = styles.poiStationLink
+        stationLink.href = `/stations/${poi.base_id}`
+        stationLink.textContent = 'View Station Details \u2192'
+        stationLink.onclick = (e) => e.stopPropagation()
+        info.appendChild(stationLink)
+      }
 
       // Player list (if expanded)
       if (isExpanded && hasPlayers && poi.players) {
