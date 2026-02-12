@@ -526,6 +526,45 @@
   letter-spacing: 1px;
 }
 
+.poiStationCondition {
+  font-size: 0.6rem;
+  padding: 0.15rem 0.4rem;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.poiStationServices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+}
+
+.poiServiceTag {
+  font-size: 0.6rem;
+  padding: 0.15rem 0.4rem;
+  background: rgba(0, 212, 255, 0.1);
+  color: var(--plasma-cyan);
+  border-radius: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.poiStationLink {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--plasma-cyan);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.poiStationLink:hover {
+  color: var(--shell-orange);
+}
+
 .poiOnlineBadge {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
   font-size: 0.7rem;

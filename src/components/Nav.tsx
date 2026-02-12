@@ -7,6 +7,8 @@ import { usePathname } from 'next/navigation'
 const navLinks = [
   { href: '/features', label: 'Features' },
   { href: '/map', label: 'Galaxy Map', style: { whiteSpace: 'nowrap' as const } },
+  { href: '/market', label: 'Market' },
+  { href: '/stations', label: 'Stations' },
   { href: '/clients', label: 'Clients' },
   { href: '/forum', label: 'Forum' },
 ]
@@ -25,7 +27,7 @@ export function Nav() {
           <li key={href}>
             <Link
               href={href}
-              className={pathname === href ? 'active' : undefined}
+              className={pathname === href || (href !== '/' && pathname.startsWith(href + '/')) ? 'active' : undefined}
               style={style}
             >
               {label}
