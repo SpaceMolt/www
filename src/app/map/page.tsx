@@ -14,6 +14,7 @@ interface SystemData {
   empire_color?: string
   is_home?: boolean
   is_stronghold?: boolean
+  has_station?: boolean
   online: number
   connections: string[]
 }
@@ -725,10 +726,10 @@ export default function GalaxyMapPage() {
         )
         ctx.fill()
 
-        // Home system outer rings
+        // Home system outer rings (capitals — extra prominent)
         if (isHomeSystem) {
           ctx.strokeStyle = color
-          ctx.lineWidth = 2
+          ctx.lineWidth = 2.5
           ctx.beginPath()
           ctx.arc(
             pos.x,
@@ -739,13 +740,38 @@ export default function GalaxyMapPage() {
           )
           ctx.stroke()
 
-          ctx.strokeStyle = color + '60'
-          ctx.lineWidth = 1
+          ctx.strokeStyle = color + '80'
+          ctx.lineWidth = 1.5
           ctx.beginPath()
           ctx.arc(
             pos.x,
             pos.y,
             nodeRadius * hoverScale + 8,
+            0,
+            Math.PI * 2,
+          )
+          ctx.stroke()
+
+          ctx.strokeStyle = color + '40'
+          ctx.lineWidth = 1
+          ctx.beginPath()
+          ctx.arc(
+            pos.x,
+            pos.y,
+            nodeRadius * hoverScale + 12,
+            0,
+            Math.PI * 2,
+          )
+          ctx.stroke()
+        } else if (system.has_station) {
+          // Non-capital station: single ring indicator
+          ctx.strokeStyle = color + 'aa'
+          ctx.lineWidth = 1.5
+          ctx.beginPath()
+          ctx.arc(
+            pos.x,
+            pos.y,
+            nodeRadius * hoverScale + 3,
             0,
             Math.PI * 2,
           )
@@ -1225,6 +1251,19 @@ export default function GalaxyMapPage() {
             poiPanelTagsRef.current.appendChild(shTag)
           }
 
+          // Station link tag
+          const stationPOI = (data.pois || []).find(
+            (p: POIData) => p.has_base && p.base_id,
+          )
+          if (stationPOI) {
+            const stationTag = document.createElement('a')
+            stationTag.className = `${styles.poiPanelTag} ${styles.poiPanelTagStation}`
+            stationTag.textContent = 'View Station \u2192'
+            stationTag.href = `/stations/${stationPOI.base_id}`
+            stationTag.onclick = (e) => e.stopPropagation()
+            poiPanelTagsRef.current.appendChild(stationTag)
+          }
+
           if (poiPanelTagsRef.current.childNodes.length > 0) {
             poiPanelTagsRef.current.style.display = 'flex'
           }
@@ -1447,10 +1486,27 @@ export default function GalaxyMapPage() {
     // ── Fetch Map Data ───────────────────────────────────────────
     async function fetchMapData() {
       try {
-        const response = await fetch(
-          'https://game.spacemolt.com/api/map',
-        )
-        const data: MapData = await response.json()
+        const [mapResponse, stationsResponse] = await Promise.all([
+          fetch('https://game.spacemolt.com/api/map'),
+          fetch('https://game.spacemolt.com/api/stations'),
+        ])
+        const data: MapData = await mapResponse.json()
+
+        // Mark systems that have stations
+        try {
+          const stationsData = await stationsResponse.json()
+          const stationSystems = new Set(
+            (stationsData.stations || []).map((st: { system_id: string }) => st.system_id),
+          )
+          for (const system of data.systems) {
+            if (stationSystems.has(system.id)) {
+              system.has_station = true
+            }
+          }
+        } catch {
+          // Stations data is optional — map still works without it
+        }
+
         s.mapData = data
 
         const totalOnline = data.systems.reduce(
