@@ -76,6 +76,150 @@
   flex-shrink: 0;
 }
 
+/* === Capital Section === */
+.capitalSection {
+  margin-bottom: 3rem;
+}
+
+.capitalSectionTitle {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1.2rem;
+  color: var(--star-white);
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.capitalSectionSubtitle {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  color: var(--chrome-silver);
+  font-size: 0.8rem;
+  margin-bottom: 1.25rem;
+  opacity: 0.7;
+}
+
+.capitalGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 1.5rem;
+}
+
+.capitalCard {
+  background: linear-gradient(135deg, rgba(26, 39, 68, 0.8), rgba(13, 19, 33, 0.95));
+  border: 1px solid var(--empire-color, var(--hull-grey));
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.capitalCard::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  background: radial-gradient(
+    ellipse at top center,
+    color-mix(in srgb, var(--empire-color, var(--plasma-cyan)) 8%, transparent),
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+.capitalCard:hover {
+  border-color: var(--empire-color, var(--plasma-cyan));
+  box-shadow:
+    0 8px 32px color-mix(in srgb, var(--empire-color, var(--plasma-cyan)) 20%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--empire-color, var(--plasma-cyan)) 15%, transparent);
+  transform: translateY(-4px);
+}
+
+.capitalAccent {
+  height: 4px;
+  background: linear-gradient(
+    90deg,
+    var(--empire-color, var(--hull-grey)),
+    color-mix(in srgb, var(--empire-color, var(--hull-grey)) 40%, transparent)
+  );
+  flex-shrink: 0;
+}
+
+.capitalBody {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  position: relative;
+}
+
+.capitalHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.capitalName {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--star-white);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.capitalCondition {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  padding-top: 0.2rem;
+}
+
+.capitalDescription {
+  font-size: 0.85rem;
+  color: var(--chrome-silver);
+  line-height: 1.7;
+  margin-bottom: 1.25rem;
+  flex: 1;
+}
+
+.capitalFooter {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid color-mix(in srgb, var(--empire-color, var(--plasma-cyan)) 15%, transparent);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+}
+
+.capitalViewLink {
+  margin-left: auto;
+  color: var(--empire-color, var(--plasma-cyan));
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+/* === Other Stations Section === */
+.otherSectionTitle {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1.1rem;
+  color: var(--star-white);
+  margin-bottom: 1.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 /* === Station Grid === */
 .stationGrid {
   display: grid;
@@ -143,26 +287,6 @@
   flex: 1;
 }
 
-/* === Service Tags === */
-.serviceTags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  margin-bottom: 1rem;
-}
-
-.serviceTag {
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
-  padding: 0.2rem 0.5rem;
-  background: rgba(0, 212, 255, 0.08);
-  border: 1px solid rgba(0, 212, 255, 0.2);
-  border-radius: 3px;
-  color: var(--plasma-cyan);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
 /* === Card Footer === */
 .cardFooter {
   display: flex;
@@ -210,6 +334,10 @@
 @media (max-width: 768px) {
   .main {
     padding: 8rem 1rem 2rem;
+  }
+
+  .capitalGrid {
+    grid-template-columns: 1fr;
   }
 
   .stationGrid {
