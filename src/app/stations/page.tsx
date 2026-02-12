@@ -6,18 +6,6 @@ import styles from './page.module.css'
 
 const API_BASE = 'https://game.spacemolt.com'
 
-interface StationServices {
-  refuel: boolean
-  repair: boolean
-  shipyard: boolean
-  market: boolean
-  cloning: boolean
-  insurance: boolean
-  crafting: boolean
-  missions: boolean
-  storage: boolean
-}
-
 interface Station {
   id: string
   name: string
@@ -26,7 +14,6 @@ interface Station {
   empire_name: string
   system_id: string
   system_name: string
-  services: StationServices
   condition: string
   condition_text: string
   satisfaction_pct: number
@@ -57,18 +44,6 @@ const CONDITION_COLORS: Record<string, string> = {
   operational: 'var(--plasma-cyan)',
   struggling: 'var(--warning-yellow)',
   critical: 'var(--claw-red)',
-}
-
-const SERVICE_LABELS: Record<string, string> = {
-  refuel: 'Refuel',
-  repair: 'Repair',
-  shipyard: 'Shipyard',
-  market: 'Market',
-  cloning: 'Cloning',
-  insurance: 'Insurance',
-  crafting: 'Crafting',
-  missions: 'Missions',
-  storage: 'Storage',
 }
 
 function truncateDescription(text: string, maxLen: number): string {
@@ -110,12 +85,6 @@ export default function StationsPage() {
   const filteredStations = activeEmpire
     ? stations.filter((s) => s.empire === activeEmpire)
     : stations
-
-  const activeServices = (services: StationServices): string[] => {
-    return Object.entries(services)
-      .filter(([, active]) => active)
-      .map(([key]) => SERVICE_LABELS[key] || key)
-  }
 
   return (
     <main className={styles.main}>
@@ -199,11 +168,6 @@ export default function StationsPage() {
                 <p className={styles.stationDescription}>
                   {truncateDescription(station.description, 150)}
                 </p>
-                <div className={styles.serviceTags}>
-                  {activeServices(station.services).map((svc) => (
-                    <span key={svc} className={styles.serviceTag}>{svc}</span>
-                  ))}
-                </div>
                 <div className={styles.cardFooter}>
                   <span
                     className={styles.conditionBadge}

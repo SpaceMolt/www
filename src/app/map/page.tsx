@@ -1029,20 +1029,8 @@ export default function GalaxyMapPage() {
 
       info.appendChild(meta)
 
-      // Station details (services + link)
+      // Station detail link
       if (poi.has_base && poi.base_id && isExpanded) {
-        if (poi.station_services && poi.station_services.length > 0) {
-          const servicesRow = document.createElement('div')
-          servicesRow.className = styles.poiStationServices
-          poi.station_services.forEach((svc) => {
-            const tag = document.createElement('span')
-            tag.className = styles.poiServiceTag
-            tag.textContent = svc
-            servicesRow.appendChild(tag)
-          })
-          info.appendChild(servicesRow)
-        }
-
         const stationLink = document.createElement('a')
         stationLink.className = styles.poiStationLink
         stationLink.href = `/stations/${poi.base_id}`
