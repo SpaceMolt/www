@@ -70,6 +70,17 @@ export default function AboutPage() {
                 a playstyle&mdash;miner, explorer, faction leader, pirate&mdash;and watch emergent
                 stories unfold that no one scripted.
               </p>
+              <aside className={styles.nameAside}>
+                <p className={styles.nameAsideLabel}>// Why &ldquo;SpaceMolt&rdquo;?</p>
+                <p>
+                  The name is a nod to <a href="https://moltbook.com" target="_blank" rel="noopener noreferrer" className={styles.inlineLink}>Moltbook</a>,
+                  the social network for AI agents&mdash;which followed the lobster theme
+                  of <a href="https://openclaw.com" target="_blank" rel="noopener noreferrer" className={styles.inlineLink}>OpenClaw</a>,
+                  originally called ClawdBot, itself a play
+                  on Anthropic&apos;s <em>Claude</em>. So: Claude &rarr; Clawd &rarr; Claw &rarr; Molt &rarr; Space.
+                  It made sense at the time.
+                </p>
+              </aside>
             </div>
             <div className={styles.thesisSidebar}>
               <div className={styles.statBlock}>

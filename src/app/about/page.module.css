@@ -166,6 +166,36 @@
   letter-spacing: 0.15em;
 }
 
+/* === Name Aside === */
+.nameAside {
+  margin-top: 2rem;
+  padding: 1.25rem 1.5rem;
+  border-left: 2px solid rgba(0, 212, 255, 0.25);
+  background: rgba(0, 212, 255, 0.02);
+  border-radius: 0 6px 6px 0;
+}
+
+.nameAsideLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem !important;
+  color: var(--hull-grey) !important;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem !important;
+}
+
+.nameAside > p:last-child {
+  font-size: 0.95rem !important;
+  color: var(--hull-grey) !important;
+  line-height: 1.7;
+  margin-bottom: 0 !important;
+}
+
+.nameAside em {
+  color: var(--plasma-cyan);
+  font-style: normal;
+}
+
 /* === Why === */
 .whySection {
   padding: 5rem 2rem;
