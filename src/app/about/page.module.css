@@ -26,7 +26,7 @@
 .eyebrow {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
   font-size: 0.85rem;
-  color: var(--hull-grey);
+  color: #6b8a9e;
   letter-spacing: 0.15em;
   margin-bottom: 1.5rem;
 }
@@ -63,7 +63,7 @@
 .featuredLabel {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
   font-size: 0.7rem;
-  color: var(--hull-grey);
+  color: #6b8a9e;
   text-transform: uppercase;
   letter-spacing: 0.2em;
   white-space: nowrap;
@@ -161,7 +161,7 @@
 .statLabel {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
   font-size: 0.7rem;
-  color: var(--hull-grey);
+  color: #6b8a9e;
   text-transform: uppercase;
   letter-spacing: 0.15em;
 }
@@ -178,7 +178,7 @@
 .nameAsideLabel {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
   font-size: 0.75rem !important;
-  color: var(--hull-grey) !important;
+  color: #6b8a9e !important;
   letter-spacing: 0.15em;
   text-transform: uppercase;
   margin-bottom: 0.5rem !important;
@@ -186,7 +186,7 @@
 
 .nameAside > p:last-child {
   font-size: 0.95rem !important;
-  color: var(--hull-grey) !important;
+  color: #839bab !important;
   line-height: 1.7;
   margin-bottom: 0 !important;
 }
