@@ -1,7 +1,11 @@
 'use client'
 
-import { useEffect, useRef, useCallback, useState } from 'react'
+import { useEffect, useRef, useCallback, useState, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
+import {
+  UserCircle, Search, Skull, Swords, Crosshair, Rocket, Coins, Flag, Hammer,
+  Sparkles, Satellite, Compass,
+} from 'lucide-react'
 import styles from './GalaxyMap.module.css'
 
 // ── Types ──────────────────────────────────────────────────────────────
@@ -114,17 +118,19 @@ const POI_TYPE_ICONS: Record<string, { icon: string; color: string }> = {
   jump_gate: { icon: 'J', color: '#E74C3C' },
 }
 
-const ICON_MAP: Record<string, string> = {
-  player_joined: '\u{1F464}',
-  system_discovered: '\u{1F52D}',
-  player_destroyed: '\u{1F480}',
-  combat: '\u2694\uFE0F',
-  weapon_fired: '\u{1F52B}',
-  travel: '\u{1F680}',
-  trade: '\u{1F4B0}',
-  faction_created: '\u{1F3F4}',
-  craft: '\u{1F528}',
-  jump: '\u{1F30C}',
+const TOAST_SZ = 16
+
+const ICON_MAP: Record<string, ReactNode> = {
+  player_joined: <UserCircle size={TOAST_SZ} />,
+  system_discovered: <Search size={TOAST_SZ} />,
+  player_destroyed: <Skull size={TOAST_SZ} />,
+  combat: <Swords size={TOAST_SZ} />,
+  weapon_fired: <Crosshair size={TOAST_SZ} />,
+  travel: <Rocket size={TOAST_SZ} />,
+  trade: <Coins size={TOAST_SZ} />,
+  faction_created: <Flag size={TOAST_SZ} />,
+  craft: <Hammer size={TOAST_SZ} />,
+  jump: <Sparkles size={TOAST_SZ} />,
 }
 
 // ── Helper: clear all children from an element (safe alternative to innerHTML = '') ──
@@ -151,9 +157,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
   const tooltipOnlineRef = useRef<HTMLDivElement>(null)
   const loadingRef = useRef<HTMLDivElement>(null)
   const toastRef = useRef<HTMLDivElement>(null)
-  const toastIconRef = useRef<HTMLSpanElement>(null)
-  const toastTextRef = useRef<HTMLSpanElement>(null)
-  const toastTimeRef = useRef<HTMLDivElement>(null)
+  const [toastData, setToastData] = useState<{ icon: ReactNode; text: string; time: string } | null>(null)
   const poiPanelRef = useRef<HTMLDivElement>(null)
   const poiPanelTitleRef = useRef<HTMLDivElement>(null)
   const poiPanelEmpireRef = useRef<HTMLDivElement>(null)
@@ -1303,11 +1307,9 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
   // ── Activity Toast ─────────────────────────────────────────────────
 
   const showActivityToast = useCallback(
-    (icon: string, text: string, time: string) => {
+    (icon: ReactNode, text: string, time: string) => {
       const s = stateRef.current
-      if (toastIconRef.current) toastIconRef.current.textContent = icon
-      if (toastTextRef.current) toastTextRef.current.textContent = text
-      if (toastTimeRef.current) toastTimeRef.current.textContent = time || ''
+      setToastData({ icon, text, time: time || '' })
       if (toastRef.current) {
         toastRef.current.className = `${styles.activityToast} ${styles.activityToastVisible}`
       }
@@ -1324,7 +1326,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
 
   const handleActivityEvent = useCallback(
     (event: ActivityEvent) => {
-      const icon = ICON_MAP[event.type] || '\u{1F4E1}'
+      const icon = ICON_MAP[event.type] || <Satellite size={TOAST_SZ} />
       let text = ''
 
       switch (event.type) {
@@ -2047,7 +2049,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
           className={`${styles.travelTrackerBtn}${travelDropdownOpen ? ` ${styles.travelTrackerBtnActive}` : ''}`}
           onClick={() => setTravelDropdownOpen((o) => !o)}
         >
-          <span className={styles.travelTrackerIcon}>{'\u{1F30C}'}</span>
+          <span className={styles.travelTrackerIcon}><Compass size={16} /></span>
           <span>Travel Tracker</span>
           {selectedPlayers.size > 0 && (
             <span className={styles.travelTrackerBadge}>
@@ -2148,18 +2150,9 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
 
       {/* Activity Toast */}
       <div ref={toastRef} className={styles.activityToast}>
-        <span
-          ref={toastIconRef}
-          className={styles.activityToastIcon}
-        />
-        <span
-          ref={toastTextRef}
-          className={styles.activityToastText}
-        />
-        <div
-          ref={toastTimeRef}
-          className={styles.activityToastTime}
-        />
+        <span className={styles.activityToastIcon}>{toastData?.icon}</span>
+        <span className={styles.activityToastText}>{toastData?.text}</span>
+        <div className={styles.activityToastTime}>{toastData?.time}</div>
       </div>
 
       {/* POI Panel (fullPage only) */}

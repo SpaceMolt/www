@@ -102,11 +102,12 @@
 }
 
 .liveEvent {
+  --event-color: var(--hull-grey);
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
   font-size: 0.75rem;
   padding: 0.5rem 0.6rem;
   background: rgba(26, 39, 68, 0.5);
-  border-left: 3px solid var(--hull-grey);
+  border-left: 3px solid var(--event-color);
   border-radius: 0 4px 4px 0;
   display: flex;
   align-items: center;
@@ -114,43 +115,45 @@
   animation: slideIn 0.3s ease;
 }
 
-/* Event type colors */
-.liveEventPlayerJoined { border-left-color: var(--bio-green); }
-.liveEventPlayerDestroyed { border-left-color: var(--claw-red); }
-.liveEventSystemDiscovered { border-left-color: var(--plasma-cyan); }
-.liveEventFactionCreated { border-left-color: #9b59b6; }
-.liveEventTravel { border-left-color: var(--chrome-silver); }
-.liveEventJump { border-left-color: var(--plasma-cyan); }
-.liveEventTrade { border-left-color: #ffd700; }
-.liveEventCraft { border-left-color: var(--shell-orange); }
-.liveEventSystem { border-left-color: var(--hull-grey); }
-.liveEventCombat { border-left-color: var(--shell-orange); }
-.liveEventWeaponFired { border-left-color: var(--shell-orange); }
-.liveEventBaseConstructed { border-left-color: var(--bio-green); }
-.liveEventBaseDestroyed { border-left-color: var(--claw-red); }
-.liveEventRareLoot { border-left-color: #ffd700; }
+/* Event type colors (icon + border) */
+.liveEventPlayerJoined { --event-color: var(--bio-green); }
+.liveEventPlayerDestroyed { --event-color: var(--claw-red); }
+.liveEventSystemDiscovered { --event-color: var(--plasma-cyan); }
+.liveEventFactionCreated { --event-color: #9b59b6; }
+.liveEventTravel { --event-color: var(--chrome-silver); }
+.liveEventJump { --event-color: var(--plasma-cyan); }
+.liveEventTrade { --event-color: #ffd700; }
+.liveEventCraft { --event-color: var(--shell-orange); }
+.liveEventSystem { --event-color: var(--hull-grey); }
+.liveEventCombat { --event-color: var(--shell-orange); }
+.liveEventWeaponFired { --event-color: var(--shell-orange); }
+.liveEventBaseConstructed { --event-color: var(--bio-green); }
+.liveEventBaseDestroyed { --event-color: var(--claw-red); }
+.liveEventRareLoot { --event-color: #ffd700; }
 .liveEventServerAnnouncement {
-  border-left-color: var(--plasma-cyan);
+  --event-color: var(--plasma-cyan);
   background: rgba(0, 212, 255, 0.1);
 }
-.liveEventConnected { border-left-color: var(--bio-green); }
+.liveEventConnected { --event-color: var(--bio-green); }
 .liveEventTick {
-  border-left-color: var(--hull-grey);
+  --event-color: var(--hull-grey);
   opacity: 0.6;
 }
-.liveEventForumPost { border-left-color: var(--laser-blue); }
-.liveEventChat { border-left-color: var(--laser-blue); }
-.liveEventCaptainsLog { border-left-color: var(--laser-blue); }
-.liveEventMining { border-left-color: var(--shell-orange); }
-.liveEventPirateDestroyed { border-left-color: var(--claw-red); }
-.liveEventShipPurchase { border-left-color: #ffd700; }
-.liveEventShipSale { border-left-color: #ffd700; }
-.liveEventExchangeFill { border-left-color: #ffd700; }
-.liveEventFallback { border-left-color: var(--hull-grey); }
+.liveEventForumPost { --event-color: var(--laser-blue); }
+.liveEventChat { --event-color: var(--laser-blue); }
+.liveEventCaptainsLog { --event-color: var(--laser-blue); }
+.liveEventMining { --event-color: var(--shell-orange); }
+.liveEventPirateDestroyed { --event-color: var(--claw-red); }
+.liveEventShipPurchase { --event-color: #ffd700; }
+.liveEventShipSale { --event-color: #ffd700; }
+.liveEventExchangeFill { --event-color: #ffd700; }
+.liveEventFallback { --event-color: var(--hull-grey); }
 
 .eventIcon {
-  font-size: 1rem;
+  color: var(--event-color);
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
 }
 
 .eventText {

@@ -1,6 +1,11 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback, type ReactNode } from 'react'
+import {
+  Hand, Bomb, Star, Flag, Swords, Coins, Hammer, Building2, Crosshair,
+  Sparkles, Megaphone, Timer, Satellite, MessageSquare, Compass, Rocket,
+  Pickaxe, Handshake, Skull, UserCircle, ShoppingCart, Receipt, BarChart3, BookOpen,
+} from 'lucide-react'
 import styles from './LiveFeed.module.css'
 
 interface EventData {
@@ -34,7 +39,7 @@ function escapeHtml(text: string | number | undefined): string {
 }
 
 type EventConfigEntry = {
-  icon: string
+  icon: ReactNode
   format: (d: EventData, pi?: Record<string, PlayerMeta>) => string
 }
 
@@ -71,13 +76,15 @@ function pp(name: string | number | undefined, pi?: Record<string, PlayerMeta>):
   return `${dot}${faction}<span data-cls="eventPlayer">${escaped}</span>`
 }
 
+const SZ = 14
+
 const eventConfig: Record<string, EventConfigEntry> = {
   player_joined: {
-    icon: '\u{1F44B}',
+    icon: <Hand size={SZ} />,
     format: (d, pi) => `${pp(d.username, pi)} joined the ${sp('eventEmpire', d.empire)}`,
   },
   player_destroyed: {
-    icon: '\u{1F4A5}',
+    icon: <Bomb size={SZ} />,
     format: (d, pi) => {
       if (d.cause === 'self_destruct') return `${pp(d.victim, pi)} self-destructed in ${sp(S, d.system_name)}`
       if (d.cause === 'police') return `${pp(d.victim, pi)} was destroyed by police in ${sp(S, d.system_name)}`
@@ -87,23 +94,23 @@ const eventConfig: Record<string, EventConfigEntry> = {
     },
   },
   system_discovered: {
-    icon: '\u{1F320}',
+    icon: <Star size={SZ} />,
     format: (d, pi) => `${pp(d.discoverer, pi)} discovered ${sp(S, d.system_name)}`,
   },
   faction_created: {
-    icon: '\u{1F3F3}',
+    icon: <Flag size={SZ} />,
     format: (d, pi) => `${pp(d.leader, pi)} created faction ${sp(F, `[${escapeHtml(d.faction_tag)}] ${escapeHtml(d.faction_name)}`)}`,
   },
   faction_war: {
-    icon: '\u2694',
+    icon: <Swords size={SZ} />,
     format: (d) => `${sp(F, d.aggressor)} declared war on ${sp(F, d.defender)}`,
   },
   trade: {
-    icon: '\u{1F4B0}',
+    icon: <Coins size={SZ} />,
     format: (d, pi) => `${pp(d.seller, pi)} sold ${escapeHtml(d.quantity)}x ${sp(I, d.item_name)} to ${pp(d.buyer, pi)}`,
   },
   crafting_summary: {
-    icon: '\u{1F528}',
+    icon: <Hammer size={SZ} />,
     format: (d) => {
       const items = d.items as Array<{item_name: string; count: number}> | undefined
       if (!items || items.length === 0) return ''
@@ -112,50 +119,50 @@ const eventConfig: Record<string, EventConfigEntry> = {
     },
   },
   base_constructed: {
-    icon: '\u{1F3D9}',
+    icon: <Building2 size={SZ} />,
     format: (d, pi) => `${pp(d.builder, pi)} built ${sp(I, d.base_name)} in ${sp(S, d.system_name)}`,
   },
   base_destroyed: {
-    icon: '\u{1F4A5}',
+    icon: <Bomb size={SZ} />,
     format: (d, pi) => d.attacker
       ? `${pp(d.attacker, pi)} destroyed ${sp(I, d.base_name)}`
       : `${sp(I, d.base_name)} was destroyed`,
   },
   combat: {
-    icon: '\u2694',
+    icon: <Swords size={SZ} />,
     format: (d, pi) => d.winner
       ? `${pp(d.winner, pi)} won combat vs ${pp(d.winner === d.attacker ? d.defender : d.attacker, pi)}`
       : `${pp(d.attacker, pi)} attacked ${pp(d.defender, pi)}`,
   },
   weapon_fired: {
-    icon: '\u{1F52B}',
+    icon: <Crosshair size={SZ} />,
     format: (d, pi) => `${pp(d.attacker, pi)} fired ${sp(I, d.weapon_name)} at ${pp(d.defender, pi)} (${escapeHtml(d.damage)} dmg)`,
   },
   rare_loot: {
-    icon: '\u{1F31F}',
+    icon: <Sparkles size={SZ} />,
     format: (d, pi) => `${pp(d.player, pi)} found ${sp(I, d.item_name)}`,
   },
   server_announcement: {
-    icon: '\u{1F4E3}',
+    icon: <Megaphone size={SZ} />,
     format: (d) => `<strong>${escapeHtml(d.title)}</strong>: ${escapeHtml(d.message)}`,
   },
   tick: {
-    icon: '\u23F1',
+    icon: <Timer size={SZ} />,
     format: (d) => `Tick ${escapeHtml(d.tick)}`,
   },
   connected: {
-    icon: '\u{1F6F0}',
+    icon: <Satellite size={SZ} />,
     format: (d) => `Connected to server (tick ${escapeHtml(d.tick)})`,
   },
   forum_post: {
-    icon: '\u{1F4AC}',
+    icon: <MessageSquare size={SZ} />,
     format: (d, pi) => {
       const devTag = d.is_dev_team ? ' <span data-cls="eventDevTeam">[DEV TEAM]</span>' : ''
       return `${pp(d.author, pi)}${devTag} posted &quot;${sp(I, d.title)}&quot; in forum`
     },
   },
   system_activity: {
-    icon: '\u{1F30C}',
+    icon: <Compass size={SZ} />,
     format: (d) => {
       const players = d.players as string[] | undefined
       const total = Number(d.total) || 0
@@ -169,11 +176,11 @@ const eventConfig: Record<string, EventConfigEntry> = {
     },
   },
   jump: {
-    icon: '\u2B50',
+    icon: <Star size={SZ} />,
     format: (d, pi) => `${pp(d.player, pi)} jumped to ${sp(S, d.to_system_name)}`,
   },
   chat: {
-    icon: '\u{1F4AC}',
+    icon: <MessageSquare size={SZ} />,
     format: (d, pi) => {
       const location = d.poi_name || d.system_name || ''
       const loc = location ? ` @ ${sp(S, location)}` : ''
@@ -181,7 +188,7 @@ const eventConfig: Record<string, EventConfigEntry> = {
     },
   },
   captains_log: {
-    icon: '\u{1F4DD}',
+    icon: <BookOpen size={SZ} />,
     format: (d, pi) => {
       const len = Number(d.entry_length || 0)
       const kb = (len / 1024).toFixed(1)
@@ -189,7 +196,7 @@ const eventConfig: Record<string, EventConfigEntry> = {
     },
   },
   mining_summary: {
-    icon: '\u26CF',
+    icon: <Pickaxe size={SZ} />,
     format: (d) => {
       const resources = d.resources as Array<{resource_name: string; quantity: number}> | undefined
       if (!resources || resources.length === 0) return ''
@@ -198,41 +205,41 @@ const eventConfig: Record<string, EventConfigEntry> = {
     },
   },
   faction_peace: {
-    icon: '\u{1F54A}',
+    icon: <Handshake size={SZ} />,
     format: (d) => `${sp(F, d.faction1_name)} made peace with ${sp(F, d.faction2_name)}`,
   },
   pirate_destroyed: {
-    icon: '\u2620',
+    icon: <Skull size={SZ} />,
     format: (d, pi) => {
       const tier = d.is_boss ? `boss ${escapeHtml(d.pirate_tier)}` : escapeHtml(d.pirate_tier)
       return `${pp(d.killer, pi)} destroyed ${sp(I, d.pirate_name)} (${tier}) in ${sp(S, d.system_name)}`
     },
   },
   player_profile_update: {
-    icon: '\u{1F464}',
+    icon: <UserCircle size={SZ} />,
     format: (d, pi) => `${pp(d.username, pi)} updated their profile`,
   },
   ship_purchase: {
-    icon: '\u{1F6F8}',
+    icon: <ShoppingCart size={SZ} />,
     format: (d, pi) => `${pp(d.player, pi)} purchased a ${sp(I, d.ship_class)} for ${escapeHtml(d.price)} credits`,
   },
   ship_sale: {
-    icon: '\u{1F4B8}',
+    icon: <Receipt size={SZ} />,
     format: (d, pi) => `${pp(d.player, pi)} sold their ${sp(I, d.ship_class)} for ${escapeHtml(d.credits_earned)} credits`,
   },
   forum_reply: {
-    icon: '\u{1F4AC}',
+    icon: <MessageSquare size={SZ} />,
     format: (d, pi) => {
       const devTag = d.is_dev_team ? ' <span data-cls="eventDevTeam">[DEV TEAM]</span>' : ''
       return `${pp(d.author, pi)}${devTag} replied to &quot;${sp(I, d.thread_title)}&quot; in forum`
     },
   },
   exchange_fill: {
-    icon: '\u{1F4CA}',
+    icon: <BarChart3 size={SZ} />,
     format: (d, pi) => `${pp(d.seller, pi)} sold ${escapeHtml(d.quantity)}x ${sp(I, d.item_name)} to ${pp(d.buyer, pi)} for ${escapeHtml(d.total)} credits at ${sp(S, d.station_name)}`,
   },
   travel: {
-    icon: '\u{1F680}',
+    icon: <Rocket size={SZ} />,
     format: (d, pi) => {
       if (d.from_poi_name && d.to_poi_name) {
         return `${pp(d.player, pi)} traveling from ${sp(I, d.from_poi_name)} to ${sp(I, d.to_poi_name)}`
@@ -244,7 +251,7 @@ const eventConfig: Record<string, EventConfigEntry> = {
     },
   },
   mining: {
-    icon: '\u26CF',
+    icon: <Pickaxe size={SZ} />,
     format: (d, pi) => `${pp(d.player, pi)} mined ${escapeHtml(d.quantity)}x ${sp(I, d.resource_name)}`,
   },
 }
@@ -296,7 +303,7 @@ interface LiveEventEntry {
   id: number
   type: string
   html: string
-  icon: string
+  icon: ReactNode
   time: number
 }
 
@@ -339,7 +346,7 @@ export function LiveFeed({ onClose, onStatusChange }: LiveFeedProps) {
       id: -1,
       type: 'system',
       html: 'Waiting for events...',
-      icon: '\u{1F6F0}',
+      icon: <Satellite size={SZ} />,
       time: 0,
     },
   ])
@@ -361,7 +368,7 @@ export function LiveFeed({ onClose, onStatusChange }: LiveFeedProps) {
       id: nextEventId++,
       type,
       html: config ? config.format(data, playerInfo) : formatFallback(type, data, playerInfo),
-      icon: config ? config.icon : '\u{1F4E1}',
+      icon: config ? config.icon : <Satellite size={SZ} />,
       time: formatTime(timestamp),
     }
 

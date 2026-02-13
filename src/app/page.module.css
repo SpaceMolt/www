@@ -100,6 +100,149 @@
   margin-bottom: 1.5rem;
 }
 
+/* === Pillars Section === */
+.pillarsSection {
+  background:
+    linear-gradient(180deg,
+      var(--space-black) 0%,
+      rgba(30, 20, 10, 0.4) 30%,
+      rgba(40, 25, 10, 0.3) 50%,
+      rgba(30, 20, 10, 0.4) 70%,
+      var(--space-black) 100%);
+  position: relative;
+  overflow: hidden;
+  padding: 6rem 2rem;
+}
+
+.pillarsSection::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 30% 50%, rgba(255, 180, 0, 0.08), transparent),
+    radial-gradient(ellipse 60% 40% at 70% 30%, rgba(255, 140, 0, 0.06), transparent),
+    radial-gradient(ellipse 50% 50% at 50% 70%, rgba(255, 107, 53, 0.05), transparent);
+  pointer-events: none;
+  animation: pillarsAmbient 8s ease-in-out infinite alternate;
+}
+
+.pillarsAccentLine {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255, 215, 0, 0.3) 20%,
+    rgba(255, 165, 0, 0.8) 50%,
+    rgba(255, 215, 0, 0.3) 80%,
+    transparent 100%);
+  box-shadow: 0 0 20px rgba(255, 165, 0, 0.4);
+}
+
+.pillarsHeader {
+  text-align: center;
+  margin-bottom: 3rem;
+  position: relative;
+  z-index: 1;
+}
+
+.pillarsTitle {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: linear-gradient(135deg, var(--star-white) 0%, rgba(255, 200, 100, 1) 50%, var(--shell-orange) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.5rem;
+}
+
+.pillarsSubtitle {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: clamp(0.85rem, 2vw, 1rem);
+  color: var(--hull-grey);
+}
+
+.pillarsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.pillarCard {
+  background: linear-gradient(135deg, rgba(40, 28, 12, 0.6), rgba(13, 19, 33, 0.8));
+  border: 1px solid rgba(255, 165, 0, 0.15);
+  border-radius: 12px;
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.pillarCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255, 165, 0, 0.6), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.pillarCard:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 165, 0, 0.4);
+  box-shadow: 0 8px 32px rgba(255, 107, 53, 0.15);
+}
+
+.pillarCard:hover::before {
+  opacity: 1;
+}
+
+.pillarIcon {
+  color: var(--shell-orange);
+  margin-bottom: 1rem;
+}
+
+.pillarCard h3 {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1.05rem;
+  margin-bottom: 0.75rem;
+  color: var(--shell-orange);
+}
+
+.pillarCard p {
+  color: var(--chrome-silver);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.pillarLink {
+  color: var(--shell-orange);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.pillarLink:hover {
+  color: rgba(255, 200, 100, 1);
+}
+
+@keyframes pillarsAmbient {
+  0% { opacity: 0.6; }
+  100% { opacity: 1; }
+}
+
 /* === Discord Section === */
 .discordSection {
   background: linear-gradient(180deg, var(--space-black) 0%, var(--deep-void) 100%);
@@ -188,6 +331,10 @@
 
 /* === Responsive === */
 @media (max-width: 900px) {
+  .pillarsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
   .discordContent {
     flex-direction: column;
     text-align: center;
@@ -199,6 +346,12 @@
 
   .discordFeatures li::before {
     display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .pillarsGrid {
+    grid-template-columns: 1fr;
   }
 }
 
