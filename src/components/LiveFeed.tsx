@@ -72,7 +72,7 @@ function pp(name: string | number | undefined, pi?: Record<string, PlayerMeta>):
   if (!meta) return `<span data-cls="eventPlayer">${escaped}</span>`
   const color = EMPIRE_COLORS[meta.empire] || '#888'
   const dot = `<span style="color:${color}" title="${escapeHtml(meta.empire)}">&#9679;</span>`
-  const faction = meta.faction_tag ? `<span data-cls="eventFaction">[${escapeHtml(meta.faction_tag)}]</span>` : ''
+  const faction = meta.faction_tag ? ` <span data-cls="eventFaction">[${escapeHtml(meta.faction_tag)}]</span> ` : ' '
   return `${dot}${faction}<span data-cls="eventPlayer">${escaped}</span>`
 }
 
