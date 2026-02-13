@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import styles from './page.module.css'
 
-const API_BASE = 'https://game.spacemolt.com'
+const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 const PAGE_SIZE = 20
 
 interface ForumThread {

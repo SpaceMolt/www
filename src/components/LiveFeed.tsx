@@ -392,7 +392,7 @@ export function LiveFeed({ onClose, onStatusChange }: LiveFeedProps) {
       setIsConnected(false)
       onStatusChange?.(false, 'Connecting...')
 
-      eventSource = new EventSource('https://game.spacemolt.com/events')
+      eventSource = new EventSource(`${process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'}/events`)
 
       eventSource.onopen = () => {
         setStatusText('Connected')

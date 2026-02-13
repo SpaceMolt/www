@@ -1240,7 +1240,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
 
       try {
         const response = await fetch(
-          `https://game.spacemolt.com/api/map/system/${system.id}`,
+          `${process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'}/api/map/system/${system.id}`,
         )
         if (!response.ok) throw new Error('Failed to fetch')
         const data: SystemDetailData = await response.json()
@@ -1518,8 +1518,8 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
     async function fetchMapData() {
       try {
         const [mapResponse, stationsResponse] = await Promise.all([
-          fetch('https://game.spacemolt.com/api/map'),
-          fetch('https://game.spacemolt.com/api/stations'),
+          fetch(`${process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'}/api/map`),
+          fetch(`${process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'}/api/stations`),
         ])
         const data: MapData = await mapResponse.json()
 
@@ -1609,7 +1609,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
     function connectActivityFeed() {
       try {
         eventSource = new EventSource(
-          'https://game.spacemolt.com/events',
+          `${process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'}/events`,
         )
         eventSource.onmessage = (event) => {
           try {

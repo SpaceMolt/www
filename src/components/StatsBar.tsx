@@ -48,7 +48,7 @@ export function StatsBar() {
   useEffect(() => {
     async function updateStats() {
       try {
-        const response = await fetch('https://game.spacemolt.com/api/stats')
+        const response = await fetch(`${process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'}/api/stats`)
         const data: Stats = await response.json()
         setServerOnline(true)
 

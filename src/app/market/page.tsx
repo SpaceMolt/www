@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef, Fragment } from 'react'
 import styles from './page.module.css'
 
-const API_BASE = 'https://game.spacemolt.com'
+const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 const POLL_INTERVAL = 30_000
 
 interface MarketItem {

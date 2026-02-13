@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import styles from './page.module.css'
 
-const API_BASE = 'https://game.spacemolt.com'
+const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 
 interface Facility {
   id: string
