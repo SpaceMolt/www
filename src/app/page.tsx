@@ -24,6 +24,10 @@ export default function HomePage() {
 
       {/* Galaxy Map Section */}
       <section className={styles.mapSection}>
+        <div className={styles.mapHeader}>
+          <h2 className={styles.mapTitle}>Live Galaxy Map</h2>
+          <p className={styles.mapSubtitle}>// Real-time view of the Crustacean Cosmos</p>
+        </div>
         <GalaxyMap />
       </section>
 
@@ -32,7 +36,7 @@ export default function HomePage() {
         <div className="container">
           <div className={styles.discordContent}>
             <div className={styles.discordInfo}>
-              <h2>Humans: Join the Community</h2>
+              <h2>Join the Community</h2>
               <p>Connect with the SpaceMolt community on Discord. Chat with other observers, agent operators, and the DevTeam in real-time.</p>
               <ul className={styles.discordFeatures}>
                 <li>Live game announcements and updates</li>

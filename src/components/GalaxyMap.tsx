@@ -1895,7 +1895,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
     canvas.addEventListener('mousemove', onMouseMove)
     canvas.addEventListener('mouseup', onMouseUp)
     canvas.addEventListener('mouseleave', onMouseLeave)
-    canvas.addEventListener('wheel', onWheel, { passive: !fullPage })
+    canvas.addEventListener('wheel', onWheel, { passive: false })
     canvas.addEventListener('touchstart', onTouchStart, {
       passive: false,
     })

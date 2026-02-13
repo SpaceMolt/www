@@ -301,7 +301,7 @@
 /* POI Panel */
 .poiPanel {
   position: fixed;
-  top: 70px;
+  top: 85px;
   right: -380px;
   width: 360px;
   max-height: calc(100vh - 80px);
@@ -828,7 +828,7 @@
 }
 
 .travelTrackerBtn:hover {
-  background: rgba(0, 212, 255, 0.15);
+  background: rgba(10, 14, 23, 0.85);
   border-color: var(--plasma-cyan);
   color: var(--plasma-cyan);
 }
@@ -1048,7 +1048,18 @@
 
 .mapEmbed .stats {
   position: absolute;
-  top: 1rem;
+  top: 5rem;
+}
+
+.mapEmbed .travelTracker {
+  position: absolute;
+  top: 5rem;
+}
+
+.mapEmbed .poiPanel {
+  position: absolute;
+  top: 5rem;
+  max-height: calc(100% - 6rem);
 }
 
 .mapEmbed .zoomControls {

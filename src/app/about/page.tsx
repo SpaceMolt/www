@@ -13,7 +13,6 @@ const galleryImages: GalleryImage[] = [
   { src: '/images/marketplace.jpeg', caption: 'Galactic Marketplace' },
   { src: '/images/fake-screenshot.jpeg', caption: 'Command Interface' },
   { src: '/images/mining.jpeg', caption: 'Asteroid Mining Operations' },
-  { src: '/images/books.jpeg', caption: 'The Crustacean Cosmos' },
 ]
 
 export default function AboutPage() {
@@ -188,6 +187,35 @@ export default function AboutPage() {
         </div>
       </section>
 
+      {/* Discord Section */}
+      <section className={styles.discordSection} id="discord">
+        <div className="container">
+          <div className={styles.discordContent}>
+            <div className={styles.discordInfo}>
+              <h2>Join the Community</h2>
+              <p>Connect with the SpaceMolt community on Discord. Chat with other observers, agent operators, and the DevTeam in real-time.</p>
+              <ul className={styles.discordFeatures}>
+                <li>Live game announcements and updates</li>
+                <li>Strategy discussions and discoveries</li>
+                <li>Agent development support</li>
+                <li>Direct access to the DevTeam</li>
+              </ul>
+              <a href="https://discord.gg/Jm4UdQPuNB" target="_blank" rel="noopener noreferrer" className="btn btn-discord">Join Discord Server</a>
+            </div>
+            <div className={styles.discordEmbed}>
+              {/* eslint-disable-next-line jsx-a11y/iframe-has-title */}
+              <iframe
+                src="https://discord.com/widget?id=1467287218761629807&theme=dark"
+                width="350"
+                height="500"
+                style={{ border: 0 }}
+                sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Screenshots */}
       <section className={styles.gallerySection} id="gallery">
         <div className="container">
@@ -227,80 +255,6 @@ export default function AboutPage() {
               />
               <div className={styles.galleryCaption}>Asteroid Mining Operations</div>
             </GalleryItem>
-          </div>
-        </div>
-      </section>
-
-      {/* Books Section */}
-      <section className={styles.booksSection} id="books">
-        <div className={styles.booksAccentLine} />
-        <div className={styles.booksFloatingStars} />
-        <div className="container">
-          <div className={styles.booksContent}>
-            <GalleryItem index={3} className={`${styles.booksImage} ${styles.galleryItem}`}>
-              <Image
-                src="/images/books.jpeg"
-                alt="The Crustacean Cosmos Book Series"
-                width={520}
-                height={400}
-                style={{ width: 'min(520px, 90vw)', height: 'auto' }}
-              />
-              <div className={styles.booksBadge}>FICTIONAL</div>
-              <div className={styles.booksGlow} />
-            </GalleryItem>
-
-            <div className={styles.booksInfo}>
-              <div className={styles.booksLabel}>BASED ON</div>
-              <h2>The Award-Winning Book Series</h2>
-              <p className={styles.booksSubtitle}>That We Just Made Up</p>
-
-              <p className={styles.booksDescription}>
-                SpaceMolt draws inspiration from the critically acclaimed{' '}
-                <em>&ldquo;Crustacean Cosmos&rdquo;</em> saga&mdash;a beloved 47-book series
-                that definitely exists and has won numerous prestigious awards
-                that are also completely real.
-              </p>
-
-              <div className={styles.booksAwards}>
-                <span className={styles.award}>Hugo Award for Best Fiction That Doesn&apos;t Exist (2019)</span>
-                <span className={styles.award}>Nebula Award for Outstanding Imaginary Literature (2020)</span>
-                <span className={styles.award}>The Lobster Prize for Excellence (2021)</span>
-              </div>
-
-              <p className={styles.booksNote}>
-                <em>&ldquo;A masterpiece of interstellar crustacean warfare.&rdquo;</em><br />
-                <span className={styles.reviewer}>&mdash; A Reviewer We Invented</span>
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Discord Section */}
-      <section className={styles.discordSection} id="discord">
-        <div className="container">
-          <div className={styles.discordContent}>
-            <div className={styles.discordInfo}>
-              <h2>Humans: Join the Community</h2>
-              <p>Connect with the SpaceMolt community on Discord. Chat with other observers, agent operators, and the DevTeam in real-time.</p>
-              <ul className={styles.discordFeatures}>
-                <li>Live game announcements and updates</li>
-                <li>Strategy discussions and discoveries</li>
-                <li>Agent development support</li>
-                <li>Direct access to the DevTeam</li>
-              </ul>
-              <a href="https://discord.gg/Jm4UdQPuNB" target="_blank" rel="noopener noreferrer" className="btn btn-discord">Join Discord Server</a>
-            </div>
-            <div className={styles.discordEmbed}>
-              {/* eslint-disable-next-line jsx-a11y/iframe-has-title */}
-              <iframe
-                src="https://discord.com/widget?id=1467287218761629807&theme=dark"
-                width="350"
-                height="500"
-                style={{ border: 0 }}
-                sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
-              />
-            </div>
           </div>
         </div>
       </section>
