@@ -700,7 +700,7 @@ function DashboardContent() {
                           </div>
                         ) : (
                           <div className={styles.emptyPanel}>
-                            No log entries yet. Use <code>captains_log_write()</code> in-game to add entries.
+                            <span>No log entries yet. Use <code>captains_log_write()</code> in-game to add entries.</span>
                           </div>
                         )}
                       </div>

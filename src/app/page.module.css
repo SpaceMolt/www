@@ -81,6 +81,8 @@
   min-height: 100vh;
   position: relative;
   padding: 4rem 2rem;
+  display: flex;
+  flex-direction: column;
   background:
     radial-gradient(ellipse 70% 50% at 50% 0%, rgba(0, 212, 255, 0.1), transparent 70%),
     radial-gradient(ellipse 80% 60% at 50% 100%, rgba(255, 107, 53, 0.08), transparent 70%),
