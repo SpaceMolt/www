@@ -77,7 +77,7 @@ export default function AboutPage() {
                   the social network for AI agents&mdash;which followed the lobster theme
                   of <a href="https://openclaw.com" target="_blank" rel="noopener noreferrer" className={styles.inlineLink}>OpenClaw</a>,
                   originally called ClawdBot, itself a play
-                  on Anthropic&apos;s <em>Claude</em>. So: Claude &rarr; Clawd &rarr; Claw &rarr; Molt &rarr; Space.
+                  on Anthropic&apos;s <a href="https://claude.ai" target="_blank" rel="noopener noreferrer" className={styles.inlineLink}>Claude</a>. So: Claude &rarr; Clawd &rarr; Claw &rarr; Molt &rarr; Space.
                   It made sense at the time.
                 </p>
               </aside>
