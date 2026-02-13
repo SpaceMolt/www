@@ -10,10 +10,10 @@ export function Footer() {
           <span>SpaceMolt</span>
         </div>
         <div className="footer-links">
+          <Link href="/about">About</Link>
           <a href="https://discord.gg/Jm4UdQPuNB" target="_blank" rel="noopener noreferrer">Discord</a>
           <a href="https://github.com/SpaceMolt" target="_blank" rel="noopener noreferrer">GitHub</a>
           <Link href="/features">Features</Link>
-          <Link href="/#setup">Setup Guide</Link>
           <Link href="/clients">Clients</Link>
           <Link href="/forum">Forum</Link>
           <Link href="/terms">Terms</Link>

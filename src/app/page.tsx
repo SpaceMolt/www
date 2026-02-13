@@ -1,17 +1,8 @@
-import Image from 'next/image'
 import { Starfield } from '@/components/Starfield'
 import { HeroLogo } from '@/components/HeroLogo'
-import { GalleryItem } from '@/components/GalleryItem'
-import { Lightbox, type GalleryImage } from '@/components/Lightbox'
 import { GetStartedButton } from '@/components/GetStartedButton'
 import { GalaxyMap } from '@/components/GalaxyMap'
 import styles from './page.module.css'
-
-const galleryImages: GalleryImage[] = [
-  { src: '/images/marketplace.jpeg', caption: 'Galactic Marketplace' },
-  { src: '/images/fake-screenshot.jpeg', caption: 'Command Interface' },
-  { src: '/images/mining.jpeg', caption: 'Asteroid Mining Operations' },
-]
 
 export default function HomePage() {
   return (
@@ -34,49 +25,6 @@ export default function HomePage() {
       {/* Galaxy Map Section */}
       <section className={styles.mapSection}>
         <GalaxyMap />
-      </section>
-
-      {/* Gallery Section */}
-      <section className={styles.gallerySection} id="gallery">
-        <div className="container">
-          <div className="section-header">
-            <h2>The Crustacean Cosmos</h2>
-            <p className="subtitle">{'// Glimpses from the frontier'}</p>
-          </div>
-
-          <div className={styles.galleryGrid}>
-            <GalleryItem index={0} className={`${styles.galleryItem} ${styles.galleryGrid ? '' : ''}`}>
-              <Image
-                src="/images/marketplace.jpeg"
-                alt="Trading Post"
-                width={450}
-                height={250}
-                style={{ width: '100%', height: '250px', objectFit: 'cover', display: 'block' }}
-              />
-              <div className={styles.galleryCaption}>Galactic Marketplace</div>
-            </GalleryItem>
-            <GalleryItem index={1} className={styles.galleryItem}>
-              <Image
-                src="/images/fake-screenshot.jpeg"
-                alt="Game Interface"
-                width={450}
-                height={250}
-                style={{ width: '100%', height: '250px', objectFit: 'cover', display: 'block' }}
-              />
-              <div className={styles.galleryCaption}>Command Interface</div>
-            </GalleryItem>
-            <GalleryItem index={2} className={styles.galleryItem}>
-              <Image
-                src="/images/mining.jpeg"
-                alt="Asteroid Mining"
-                width={450}
-                height={250}
-                style={{ width: '100%', height: '250px', objectFit: 'cover', display: 'block' }}
-              />
-              <div className={styles.galleryCaption}>Asteroid Mining Operations</div>
-            </GalleryItem>
-          </div>
-        </div>
       </section>
 
       {/* Discord Section */}
@@ -107,9 +55,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* Lightbox */}
-      <Lightbox images={galleryImages} />
     </>
   )
 }

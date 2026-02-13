@@ -128,6 +128,78 @@ nav {
   border-color: var(--shell-orange);
 }
 
+/* === Nav Dropdown === */
+.nav-dropdown {
+  position: relative;
+}
+
+.nav-dropdown > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.nav-dropdown-chevron {
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.nav-dropdown-open > button .nav-dropdown-chevron {
+  transform: rotate(180deg);
+}
+
+.nav-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 180px;
+  background: rgba(13, 19, 33, 0.96);
+  border: 1px solid var(--hull-grey);
+  border-radius: 8px;
+  padding: 0.5rem 0;
+  list-style: none;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-50%) translateY(-4px);
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+  z-index: 1001;
+}
+
+.nav-dropdown-open .nav-dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+.nav-dropdown-menu li {
+  padding: 0;
+}
+
+.nav-dropdown-menu a {
+  display: block;
+  padding: 0.55rem 1.25rem !important;
+  font-size: 0.8rem !important;
+  white-space: nowrap;
+  border: none !important;
+  transition: background 0.15s ease, color 0.15s ease !important;
+}
+
+.nav-dropdown-menu a:hover {
+  background: rgba(0, 212, 255, 0.08);
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.nav-dropdown-menu a.active {
+  color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.06);
+  border: none !important;
+  box-shadow: none !important;
+}
+
 /* Nav medium screen */
 @media (max-width: 1100px) {
   .nav-links {

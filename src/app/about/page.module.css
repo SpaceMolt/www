@@ -1,0 +1,592 @@
+/* === About Page === */
+.about {
+  padding-top: 5rem;
+}
+
+/* === Hero === */
+.heroSection {
+  padding: 8rem 2rem 5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.heroGlow {
+  position: absolute;
+  top: -20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120%;
+  height: 100%;
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 0%, rgba(0, 212, 255, 0.12), transparent 70%),
+    radial-gradient(ellipse 40% 40% at 30% 30%, rgba(255, 107, 53, 0.08), transparent 60%);
+  pointer-events: none;
+}
+
+.eyebrow {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--hull-grey);
+  letter-spacing: 0.15em;
+  margin-bottom: 1.5rem;
+}
+
+.title {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: clamp(2.4rem, 6vw, 4rem);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 1.25rem;
+  background: linear-gradient(135deg, var(--star-white) 0%, var(--plasma-cyan) 60%, var(--shell-orange) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.subtitle {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+  color: var(--chrome-silver);
+  max-width: 560px;
+  line-height: 1.7;
+}
+
+/* === Section Title === */
+.sectionTitle {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: clamp(1.6rem, 4vw, 2.2rem);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 2.5rem;
+  background: linear-gradient(135deg, var(--star-white), var(--plasma-cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* === Thesis === */
+.thesisSection {
+  padding: 5rem 2rem;
+  background: linear-gradient(180deg, transparent, rgba(0, 212, 255, 0.03) 50%, transparent);
+}
+
+.thesisGrid {
+  display: grid;
+  grid-template-columns: 1fr 240px;
+  gap: 4rem;
+  align-items: start;
+}
+
+.thesisMain p {
+  font-size: 1.05rem;
+  color: var(--chrome-silver);
+  line-height: 1.8;
+  margin-bottom: 1.25rem;
+}
+
+.thesisMain em {
+  color: var(--plasma-cyan);
+  font-style: italic;
+}
+
+.leadText {
+  font-size: 1.25rem !important;
+  color: var(--star-white) !important;
+  margin-bottom: 2rem !important;
+  line-height: 1.7 !important;
+}
+
+.thesisSidebar {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.statBlock {
+  background: rgba(0, 212, 255, 0.04);
+  border: 1px solid rgba(0, 212, 255, 0.12);
+  border-radius: 8px;
+  padding: 1.25rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.statValue {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--plasma-cyan);
+}
+
+.statLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--hull-grey);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+}
+
+/* === Why === */
+.whySection {
+  padding: 5rem 2rem;
+}
+
+.whyGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+.whyCard {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--hull-grey);
+  border-radius: 10px;
+  padding: 2.5rem 2rem;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.whyCard:hover {
+  border-color: var(--plasma-cyan);
+  box-shadow: 0 0 24px rgba(0, 212, 255, 0.1);
+}
+
+.whyIcon {
+  font-size: 2rem;
+  margin-bottom: 1.25rem;
+}
+
+.whyCard h3 {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 1rem;
+  color: var(--star-white);
+}
+
+.whyCard p {
+  font-size: 0.95rem;
+  color: var(--chrome-silver);
+  line-height: 1.7;
+}
+
+/* === How It Works === */
+.howSection {
+  padding: 5rem 2rem;
+  background: linear-gradient(180deg, transparent, rgba(255, 107, 53, 0.03) 50%, transparent);
+}
+
+.howTimeline {
+  max-width: 680px;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+.howStep {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.howStepNumber {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 2rem;
+  font-weight: 800;
+  color: rgba(255, 107, 53, 0.25);
+  flex-shrink: 0;
+  width: 60px;
+  line-height: 1;
+  padding-top: 0.2rem;
+}
+
+.howStepContent h3 {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--shell-orange);
+  margin-bottom: 0.75rem;
+}
+
+.howStepContent p {
+  font-size: 1rem;
+  color: var(--chrome-silver);
+  line-height: 1.7;
+}
+
+/* === Gallery === */
+.gallerySection {
+  background: var(--deep-void);
+}
+
+.galleryGrid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.5rem;
+}
+
+.galleryGrid .galleryItem {
+  flex: 0 1 350px;
+  max-width: 450px;
+}
+
+.galleryItem {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid var(--hull-grey);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.galleryItem:hover {
+  border-color: var(--plasma-cyan);
+  transform: scale(1.02);
+  box-shadow: var(--glow-cyan);
+}
+
+.galleryItem img {
+  width: 100%;
+  height: 250px;
+  object-fit: cover;
+  display: block;
+}
+
+.galleryCaption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 1rem;
+  background: linear-gradient(transparent, rgba(10, 14, 23, 0.95));
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* === Books Section === */
+.booksSection {
+  background:
+    linear-gradient(180deg,
+      var(--space-black) 0%,
+      rgba(30, 20, 10, 0.4) 30%,
+      rgba(40, 25, 10, 0.3) 50%,
+      rgba(30, 20, 10, 0.4) 70%,
+      var(--space-black) 100%);
+  position: relative;
+  overflow: hidden;
+  padding: 10rem 2rem;
+}
+
+.booksSection::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 30% 50%, rgba(255, 180, 0, 0.08), transparent),
+    radial-gradient(ellipse 60% 40% at 70% 30%, rgba(255, 140, 0, 0.06), transparent),
+    radial-gradient(ellipse 50% 50% at 50% 70%, rgba(255, 107, 53, 0.05), transparent);
+  pointer-events: none;
+  animation: booksAmbient 8s ease-in-out infinite alternate;
+}
+
+.booksAccentLine {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255, 215, 0, 0.3) 20%,
+    rgba(255, 165, 0, 0.8) 50%,
+    rgba(255, 215, 0, 0.3) 80%,
+    transparent 100%);
+  box-shadow: 0 0 30px rgba(255, 165, 0, 0.5);
+}
+
+.booksFloatingStars {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    radial-gradient(2px 2px at 15% 20%, rgba(255, 215, 0, 0.6), transparent),
+    radial-gradient(2px 2px at 85% 30%, rgba(255, 215, 0, 0.4), transparent),
+    radial-gradient(1px 1px at 45% 70%, rgba(255, 180, 0, 0.5), transparent),
+    radial-gradient(1px 1px at 70% 80%, rgba(255, 215, 0, 0.3), transparent),
+    radial-gradient(2px 2px at 25% 60%, rgba(255, 200, 0, 0.4), transparent);
+  background-size: 300px 200px;
+  animation: twinkleGold 4s ease-in-out infinite alternate;
+}
+
+.booksContent {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5rem;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
+}
+
+.booksImage {
+  position: relative;
+  max-width: 100%;
+}
+
+.booksImage img {
+  width: min(520px, 90vw);
+  height: auto !important;
+  border-radius: 12px;
+  border: 4px solid rgba(255, 215, 0, 0.5);
+  box-shadow:
+    0 0 100px rgba(255, 180, 0, 0.35),
+    0 0 60px rgba(255, 140, 0, 0.25),
+    0 30px 80px rgba(0, 0, 0, 0.7),
+    inset 0 0 40px rgba(255, 215, 0, 0.08);
+  transform: perspective(1000px) rotateY(-4deg) rotateX(1deg);
+  transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.booksImage:hover img {
+  transform: perspective(1000px) rotateY(0deg) rotateX(0deg) scale(1.03);
+  border-color: rgba(255, 215, 0, 0.8);
+}
+
+.booksGlow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 150%;
+  height: 150%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(ellipse at center, rgba(255, 180, 0, 0.15) 0%, transparent 60%);
+  animation: booksPulse 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.booksBadge {
+  position: absolute;
+  top: -16px;
+  right: -16px;
+  background: linear-gradient(135deg, #ff8c00, var(--claw-red));
+  color: var(--star-white);
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  box-shadow:
+    0 6px 25px rgba(255, 107, 53, 0.6),
+    0 0 15px rgba(255, 140, 0, 0.4);
+  transform: rotate(12deg);
+  animation: badgeBounce 2s ease-in-out infinite;
+  z-index: 2;
+}
+
+.booksInfo {
+  max-width: 500px;
+}
+
+.booksLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--hull-grey);
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  margin-bottom: 0.5rem;
+}
+
+.booksInfo h2 {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: clamp(1.6rem, 4vw, 2.2rem);
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: linear-gradient(135deg, #ffd700 0%, #ffb347 50%, #ff6b35 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.booksSubtitle {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 1.1rem;
+  color: var(--chrome-silver);
+  margin-bottom: 1.5rem;
+  font-style: italic;
+}
+
+.booksDescription {
+  color: var(--chrome-silver);
+  font-size: 1rem;
+  line-height: 1.7;
+  margin-bottom: 1.5rem;
+}
+
+.booksDescription em {
+  color: var(--shell-orange);
+  font-style: normal;
+  font-weight: 500;
+}
+
+.booksAwards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.award {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: rgba(255, 215, 0, 0.7);
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 215, 0, 0.05);
+  border-left: 2px solid rgba(255, 215, 0, 0.4);
+  border-radius: 0 4px 4px 0;
+}
+
+.booksNote {
+  font-size: 0.95rem;
+  color: var(--star-white);
+  line-height: 1.6;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.booksNote em {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.reviewer {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--hull-grey);
+}
+
+/* === Disclaimer === */
+.disclaimerSection {
+  padding: 5rem 2rem;
+}
+
+.disclaimer {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 2.5rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--hull-grey);
+  border-radius: 10px;
+  text-align: center;
+}
+
+.disclaimerTitle {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--star-white);
+  margin-bottom: 1.5rem;
+}
+
+.disclaimer p {
+  font-size: 0.95rem;
+  color: var(--chrome-silver);
+  line-height: 1.7;
+  margin-bottom: 1rem;
+}
+
+.disclaimer p:last-child {
+  margin-bottom: 0;
+}
+
+.disclaimer strong {
+  color: var(--star-white);
+}
+
+/* === Animations === */
+@keyframes booksAmbient {
+  0% { opacity: 0.6; }
+  100% { opacity: 1; }
+}
+
+@keyframes twinkleGold {
+  0% { opacity: 0.3; }
+  100% { opacity: 0.8; }
+}
+
+@keyframes booksPulse {
+  0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.05); }
+}
+
+@keyframes badgeBounce {
+  0%, 100% { transform: rotate(12deg) scale(1); }
+  50% { transform: rotate(12deg) scale(1.08); }
+}
+
+/* === Responsive === */
+@media (max-width: 900px) {
+  .thesisGrid {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+
+  .thesisSidebar {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .whyGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .booksContent {
+    flex-direction: column;
+    text-align: center;
+    gap: 3rem;
+  }
+
+  .booksInfo {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .thesisSidebar {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .howStep {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .howStepNumber {
+    width: auto;
+  }
+
+  .booksSection {
+    padding: 6rem 2rem;
+  }
+}
