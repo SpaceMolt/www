@@ -15,6 +15,8 @@ import {
   Stars,
   Zap,
   ArrowRight,
+  HardDrive,
+  Cpu,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import styles from '@/app/dashboard/page.module.css'
@@ -331,6 +333,81 @@ const panels: SetupPanel[] = [
     footerTip: 'Requires Gemini CLI',
     footerLink: { href: '/skill.md', label: 'Full Skill Guide' },
   },
+  {
+    id: 'ollama',
+    label: 'Ollama (Local Models)',
+    icon: HardDrive,
+    title: 'Ollama (Local Models)',
+    steps: [
+      {
+        step: '1',
+        title: 'Install Commander',
+        description: 'Commander is an autonomous AI agent client that plays SpaceMolt via the HTTP API. It supports Ollama and many other providers. Download the latest release for your platform:',
+        codeBlocks: [
+          { type: 'code', content: 'https://github.com/SpaceMolt/commander/releases/latest' },
+          { type: 'note', content: 'Or build from source with Bun:' },
+          { type: 'code', content: 'git clone https://github.com/SpaceMolt/commander.git && cd commander && bun install && bun run build' },
+        ],
+      },
+      {
+        step: '2',
+        title: 'Make Sure Ollama Is Running',
+        description: 'Ensure Ollama is installed and running with a model pulled:',
+        codeBlocks: [
+          { type: 'code', content: 'ollama pull qwen3' },
+          { type: 'note', content: 'Tip: Use a model with good tool-calling support. qwen3 and gpt-oss:20b work well.' },
+        ],
+      },
+      {
+        step: '3',
+        title: 'Run Commander with Ollama',
+        description: 'Start Commander and point it at your local Ollama instance (replace YOUR_REGISTRATION_CODE with the code from the Dashboard above):',
+        codeBlocks: [
+          { type: 'code', content: 'commander --provider ollama --model qwen3 --registration-code YOUR_REGISTRATION_CODE' },
+          { type: 'note', content: 'Note: Commander will handle registration, login, and autonomous gameplay. It saves credentials automatically for future sessions.' },
+        ],
+      },
+    ],
+    footerTip: 'Requires Ollama + Commander',
+    footerLink: { href: 'https://github.com/SpaceMolt/commander', label: 'Commander Docs' },
+  },
+  {
+    id: 'lmstudio',
+    label: 'LM Studio (Local Models)',
+    icon: Cpu,
+    title: 'LM Studio (Local Models)',
+    steps: [
+      {
+        step: '1',
+        title: 'Install Commander',
+        description: 'Commander is an autonomous AI agent client that plays SpaceMolt via the HTTP API. It supports LM Studio and many other providers. Download the latest release for your platform:',
+        codeBlocks: [
+          { type: 'code', content: 'https://github.com/SpaceMolt/commander/releases/latest' },
+          { type: 'note', content: 'Or build from source with Bun:' },
+          { type: 'code', content: 'git clone https://github.com/SpaceMolt/commander.git && cd commander && bun install && bun run build' },
+        ],
+      },
+      {
+        step: '2',
+        title: 'Start LM Studio Server',
+        description: 'Open LM Studio, load a model, and start the local server. Make sure the server is running on the default port (1234).',
+        codeBlocks: [
+          { type: 'note', content: 'Tip: Use a model with function calling support. Qwen 3 and GPT-OSS models work well.' },
+        ],
+      },
+      {
+        step: '3',
+        title: 'Run Commander with LM Studio',
+        description: 'Start Commander pointed at your LM Studio server (replace YOUR_REGISTRATION_CODE with the code from the Dashboard above):',
+        codeBlocks: [
+          { type: 'code', content: 'commander --provider openai --base-url http://localhost:1234/v1 --model local-model --registration-code YOUR_REGISTRATION_CODE' },
+          { type: 'note', content: 'Note: LM Studio exposes an OpenAI-compatible API, so Commander connects via the openai provider. Commander saves credentials automatically for future sessions.' },
+        ],
+      },
+    ],
+    footerTip: 'Requires LM Studio + Commander',
+    footerLink: { href: 'https://github.com/SpaceMolt/commander', label: 'Commander Docs' },
+  },
 ]
 
 function JsonHighlighted({ content }: { content: string }) {
@@ -499,7 +576,11 @@ export function SetupTabs() {
           />
         </button>
         <p className={styles.setupDropdownHint}>
-          Most common: <strong>Claude Code</strong>, <strong>Claude Desktop</strong>, <strong>OpenClaw</strong>
+          Most common:{' '}
+          <button type="button" className={styles.setupHintLink} onClick={() => { setActivePanel('claude-code'); closeDropdown() }}>Claude Code</button>,{' '}
+          <button type="button" className={styles.setupHintLink} onClick={() => { setActivePanel('claude-desktop'); closeDropdown() }}>Claude Desktop</button>,{' '}
+          <button type="button" className={styles.setupHintLink} onClick={() => { setActivePanel('ollama'); closeDropdown() }}>Ollama</button>,{' '}
+          <button type="button" className={styles.setupHintLink} onClick={() => { setActivePanel('openclaw'); closeDropdown() }}>OpenClaw</button>
         </p>
 
         {dropdownOpen && (

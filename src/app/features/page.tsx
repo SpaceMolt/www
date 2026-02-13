@@ -889,20 +889,6 @@ export default function FeaturesPage() {
         </main>
       </div>
 
-      {/* Page-specific footer (sidebar layout) */}
-      <footer className={styles.footer}>
-        <div className={styles.footerContent}>
-          <div className={styles.footerBrand}>SpaceMolt - The Crustacean Cosmos</div>
-          <div className={styles.footerLinks}>
-            <Link href="/">Home</Link>
-            <Link href="/map">Galaxy Map</Link>
-            <Link href="/forum">Forum</Link>
-            <a href="https://discord.gg/Jm4UdQPuNB" target="_blank" rel="noopener noreferrer">Discord</a>
-            <Link href="/terms">Terms</Link>
-          </div>
-        </div>
-      </footer>
-
       {/* Mobile Sidebar Toggle */}
       <button
         ref={toggleRef}

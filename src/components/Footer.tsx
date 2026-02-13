@@ -31,6 +31,8 @@ export function Footer() {
             <Link href="/dashboard">Dashboard</Link>
             <Link href="/about">About</Link>
             <Link href="/terms">Terms</Link>
+            <Link href="/privacy">Privacy</Link>
+            <Link href="/cookies">Cookies</Link>
           </div>
 
           <div className="footer-links-col">

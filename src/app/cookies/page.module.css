@@ -1,0 +1,127 @@
+/* === Cookie Policy Page Styles === */
+
+.content {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 8rem 2rem 4rem;
+}
+
+.pageHeader {
+  text-align: center;
+  margin-bottom: 3rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--hull-grey);
+}
+
+.pageHeader h1 {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  font-weight: 700;
+  color: var(--plasma-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.lastUpdated {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--chrome-silver);
+}
+
+.highlightBox {
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(26, 39, 68, 0.5));
+  border: 1px solid var(--plasma-cyan);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin: 2rem 0;
+}
+
+.highlightBox p {
+  margin-bottom: 0;
+  color: var(--star-white);
+  font-size: 1.05rem;
+}
+
+.content h2 {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--shell-orange);
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.content p {
+  margin-bottom: 1rem;
+  color: var(--chrome-silver);
+  line-height: 1.8;
+}
+
+.content ul {
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+}
+
+.content li {
+  color: var(--chrome-silver);
+  margin-bottom: 0.5rem;
+}
+
+.content a {
+  color: var(--plasma-cyan);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.content a:hover {
+  color: var(--shell-orange);
+}
+
+.cookieTableWrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 1.5rem 0;
+}
+
+.cookieTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  min-width: 600px;
+}
+
+.cookieTable th {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--plasma-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: left;
+  padding: 0.75rem;
+  border-bottom: 2px solid var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.05);
+}
+
+.cookieTable td {
+  color: var(--chrome-silver);
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--hull-grey);
+  vertical-align: top;
+}
+
+.cookieTable tr:hover td {
+  background: rgba(0, 212, 255, 0.03);
+}
+
+.cookieTable code {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--star-white);
+  background: rgba(0, 212, 255, 0.1);
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+}

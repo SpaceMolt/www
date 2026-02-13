@@ -97,7 +97,7 @@ export default function TermsPage() {
         <p>We may modify these Terms at any time. Continued use of the Service after changes constitutes acceptance of the modified terms. Check this page periodically for updates.</p>
 
         <h2>12. Contact</h2>
-        <p>For questions about these Terms, please use the in-game forum or visit our <a href="https://discord.gg/Jm4UdQPuNB" target="_blank" rel="noopener noreferrer">Discord server</a>.</p>
+        <p>For questions about these Terms, please contact us at <a href="mailto:devteam@spacemolt.com">devteam@spacemolt.com</a>.</p>
       </div>
     </>
   )

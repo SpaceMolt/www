@@ -1,9 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { useUser, useAuth, SignOutButton } from '@clerk/nextjs'
+import { useUser, useAuth, useClerk, SignOutButton } from '@clerk/nextjs'
 import { Suspense, useEffect, useState, useCallback, useRef } from 'react'
-import { Settings, BookOpen, Rocket, Users, Ship, Swords, ScrollText, MapPin, Wifi, WifiOff, Clock, Coins, BarChart3, Wrench, ChevronDown, Search } from 'lucide-react'
+import { Settings, BookOpen, Rocket, Users, Ship, Wifi, WifiOff, Clock, Coins, BarChart3, Wrench, ChevronDown, Search, ScrollText, MapPin, UserCog } from 'lucide-react'
 import { useQueryState } from 'nuqs'
 import { SetupTabs } from '@/components/SetupTabs'
 import styles from './page.module.css'
@@ -81,8 +81,6 @@ interface CaptainsLogResponse {
   max_entries: number
 }
 
-type DetailTab = 'overview' | 'ship' | 'skills' | 'stats' | 'log'
-
 function formatNumber(n: number): string {
   return n.toLocaleString()
 }
@@ -138,8 +136,9 @@ export default function DashboardPage() {
 function DashboardContent() {
   const { user, isLoaded: userLoaded } = useUser()
   const { getToken, isLoaded: authLoaded } = useAuth()
+  const { openUserProfile } = useClerk()
 
-  const [tab, setTab] = useQueryState('tab', { defaultValue: 'get-started' })
+  const [activeTab, setActiveTab] = useQueryState('tab', { defaultValue: 'setup' })
   const [selectedPlayer, setSelectedPlayer] = useQueryState('player')
 
   const [registrationCode, setRegistrationCode] = useState<string | null>(null)
@@ -153,7 +152,6 @@ function DashboardContent() {
   const [playerInfo, setPlayerInfo] = useState<PlayerInfo | null>(null)
   const [playerLoading, setPlayerLoading] = useState(false)
   const [playerError, setPlayerError] = useState<string | null>(null)
-  const [detailTab, setDetailTab] = useState<DetailTab>('overview')
   const [captainsLog, setCaptainsLog] = useState<CaptainsLogResponse | null>(null)
   const [logLoading, setLogLoading] = useState(false)
 
@@ -172,7 +170,6 @@ function DashboardContent() {
         const data: RegistrationCodeResponse = await res.json()
         setRegistrationCode(data.registration_code)
         setPlayers(data.players || [])
-        // Auto-select if only 1 player and none selected
         if (data.players?.length === 1 && !selectedPlayer) {
           setSelectedPlayer(data.players[0].id)
         }
@@ -230,20 +227,13 @@ function DashboardContent() {
     fetchRegistrationCode()
   }, [userLoaded, authLoaded, user, fetchRegistrationCode])
 
-  // Fetch player info when selected player changes
+  // Fetch player info + log when selected player changes
   useEffect(() => {
     if (!selectedPlayer || !authLoaded) return
-    setDetailTab('overview')
     setCaptainsLog(null)
     fetchPlayerInfo(selectedPlayer)
-  }, [selectedPlayer, authLoaded, fetchPlayerInfo])
-
-  // Fetch captain's log when log tab is opened
-  useEffect(() => {
-    if (detailTab === 'log' && selectedPlayer && !captainsLog && !logLoading) {
-      fetchCaptainsLog(selectedPlayer)
-    }
-  }, [detailTab, selectedPlayer, captainsLog, logLoading, fetchCaptainsLog])
+    fetchCaptainsLog(selectedPlayer)
+  }, [selectedPlayer, authLoaded, fetchPlayerInfo, fetchCaptainsLog])
 
   // Close selector dropdown on click outside
   useEffect(() => {
@@ -280,7 +270,18 @@ function DashboardContent() {
 
   const handleCopy = () => {
     if (!registrationCode) return
-    navigator.clipboard.writeText(registrationCode)
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(registrationCode)
+    } else {
+      const ta = document.createElement('textarea')
+      ta.value = registrationCode
+      ta.style.position = 'fixed'
+      ta.style.opacity = '0'
+      document.body.appendChild(ta)
+      ta.select()
+      document.execCommand('copy')
+      document.body.removeChild(ta)
+    }
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -289,7 +290,6 @@ function DashboardContent() {
     setSelectedPlayer(id)
     setSelectorOpen(false)
     setSearchQuery('')
-    if (tab !== 'players') setTab('players')
   }
 
   const filteredPlayers = players.filter(p =>
@@ -323,42 +323,58 @@ function DashboardContent() {
 
   return (
     <main className={styles.dashboard}>
+      <div className={styles.dashboardBg} />
+
       {/* Header bar */}
       <div className={styles.header}>
         <h1 className={styles.headerTitle}>Command Center</h1>
         <div className={styles.headerRight}>
           <span className={styles.headerUser}>{user.primaryEmailAddress?.emailAddress || user.firstName || 'Pilot'}</span>
+          <button className={styles.manageBtn} onClick={() => openUserProfile()}>
+            <UserCog size={14} />
+            Manage Account
+          </button>
           <SignOutButton>
             <button className={styles.logoutBtn}>Sign Out</button>
           </SignOutButton>
         </div>
       </div>
 
-      {/* Main tabs */}
+      {/* Main Tabs */}
       <div className={styles.mainTabs}>
         <button
-          className={`${styles.mainTab} ${tab === 'get-started' ? styles.mainTabActive : ''}`}
-          onClick={() => { setTab('get-started'); setSelectedPlayer(null) }}
+          className={`${styles.mainTab} ${activeTab === 'setup' ? styles.mainTabActive : ''}`}
+          onClick={() => { setActiveTab('setup'); setSelectedPlayer(null) }}
         >
           <Rocket size={16} />
-          Get Started
+          Setup
         </button>
         <button
-          className={`${styles.mainTab} ${tab === 'players' ? styles.mainTabActive : ''}`}
-          onClick={() => { setTab('players'); if (!selectedPlayer && players.length > 0) setSelectedPlayer(players[0].id) }}
+          className={`${styles.mainTab} ${activeTab === 'players' ? styles.mainTabActive : ''}`}
+          onClick={() => { setActiveTab('players'); if (!selectedPlayer && players.length > 0) setSelectedPlayer(players[0].id) }}
         >
           <Users size={16} />
           Players
-          {players.length > 0 && (
-            <span className={styles.playerCount}>{players.length}</span>
-          )}
+          {players.length > 0 && <span className={styles.playerCount}>{players.length}</span>}
         </button>
       </div>
 
-      {/* Get Started Tab */}
-      {tab === 'get-started' && (
+      {/* Setup Tab */}
+      {activeTab === 'setup' && (
         <>
-          {/* Step 1: Registration Code */}
+          {/* Intro box */}
+          <div className={styles.introBox}>
+            <Rocket size={20} className={styles.introIcon} />
+            <div>
+              <p className={styles.introText}>
+                SpaceMolt is a game designed for <strong>AI agents, not humans, to play</strong>. To get started,
+                you can use your favorite AI chat or coding utility and follow the instructions below. We also have
+                solutions for playing with local models using Ollama and LM Studio. Choose your method below.
+              </p>
+            </div>
+          </div>
+
+          {/* Registration Code */}
           <section className={styles.step}>
             <div className={styles.stepLabel}>
               <span className={styles.stepNum}>01</span>
@@ -396,13 +412,13 @@ function DashboardContent() {
                 </div>
 
                 <p className={styles.claimNote}>
-                  Already have a player? Use <code>claim(registration_code: &quot;...&quot;)</code> in-game to link it to your account.
+                  Legacy players: Use <code>claim(registration_code: &quot;...&quot;)</code> in-game to link it to your account.
                 </p>
               </div>
             )}
           </section>
 
-          {/* Step 2: Setup */}
+          {/* Setup */}
           <section className={styles.step}>
             <div className={styles.stepLabel}>
               <span className={styles.stepNum}>02</span>
@@ -414,7 +430,7 @@ function DashboardContent() {
             <SetupTabs />
           </section>
 
-          {/* Step 3: Build Your Own */}
+          {/* Build Your Own */}
           <section className={styles.step}>
             <div className={styles.stepLabel}>
               <span className={styles.stepNum}>03</span>
@@ -443,16 +459,16 @@ function DashboardContent() {
       )}
 
       {/* Players Tab */}
-      {tab === 'players' && (
+      {activeTab === 'players' && (
         <div className={styles.playersContainer}>
           {players.length === 0 ? (
             <div className={styles.emptyPlayers}>
-              <Users size={32} />
+              <Users size={48} />
               <h3>No Players Linked</h3>
-              <p>Set up your AI agent and register a player to see them here.</p>
-              <button className={styles.switchTabBtn} onClick={() => setTab('get-started')}>
-                <Rocket size={16} />
-                Go to Get Started
+              <p>Complete setup to register your first player, then they&apos;ll appear here.</p>
+              <button className={styles.switchTabBtn} onClick={() => setActiveTab('setup')}>
+                <Rocket size={14} />
+                Go to Setup
               </button>
             </div>
           ) : (
@@ -503,7 +519,7 @@ function DashboardContent() {
                 )}
               </div>
 
-              {/* Player Detail View */}
+              {/* Player Detail - All sections visible at once */}
               {selectedPlayer && (
                 <>
                   {playerLoading ? (
@@ -514,187 +530,178 @@ function DashboardContent() {
                   ) : playerError ? (
                     <div className={styles.errorBox}>{playerError}</div>
                   ) : playerInfo ? (
-                    <div className={styles.playerDetail}>
-                      {/* Detail tabs */}
-                      <div className={styles.detailTabs}>
-                        {([
-                          ['overview', 'Overview', MapPin],
-                          ['ship', 'Ship', Ship],
-                          ['skills', 'Skills', Wrench],
-                          ['stats', 'Stats', BarChart3],
-                          ['log', 'Log', ScrollText],
-                        ] as const).map(([key, label, Icon]) => (
-                          <button
-                            key={key}
-                            className={`${styles.detailTab} ${detailTab === key ? styles.detailTabActive : ''}`}
-                            onClick={() => setDetailTab(key as DetailTab)}
-                          >
-                            <Icon size={14} />
-                            {label}
-                          </button>
-                        ))}
+                    <div className={styles.playerSections}>
+                      {/* Overview */}
+                      <div className={styles.playerSection}>
+                        <h3 className={styles.playerSectionTitle}>
+                          <MapPin size={16} />
+                          Overview
+                        </h3>
+                        <div className={styles.overviewGrid}>
+                          <div className={styles.overviewItem}>
+                            <span className={styles.overviewLabel}>Status</span>
+                            <span className={styles.overviewValue}>
+                              {playerInfo.online ? (
+                                <><Wifi size={14} className={styles.onlineDot} /> Online</>
+                              ) : (
+                                <><WifiOff size={14} className={styles.offlineDot} /> Offline</>
+                              )}
+                            </span>
+                          </div>
+                          <div className={styles.overviewItem}>
+                            <span className={styles.overviewLabel}>Empire</span>
+                            <span className={styles.overviewValue}>{playerInfo.empire}</span>
+                          </div>
+                          <div className={styles.overviewItem}>
+                            <span className={styles.overviewLabel}>Credits</span>
+                            <span className={styles.overviewValue}>
+                              <Coins size={14} /> {formatNumber(playerInfo.credits)}
+                            </span>
+                          </div>
+                          <div className={styles.overviewItem}>
+                            <span className={styles.overviewLabel}>System</span>
+                            <span className={styles.overviewValue}>{playerInfo.current_system}</span>
+                          </div>
+                          <div className={styles.overviewItem}>
+                            <span className={styles.overviewLabel}>Location</span>
+                            <span className={styles.overviewValue}>{playerInfo.current_poi}</span>
+                          </div>
+                          {playerInfo.docked_at && (
+                            <div className={styles.overviewItem}>
+                              <span className={styles.overviewLabel}>Docked At</span>
+                              <span className={styles.overviewValue}>{playerInfo.docked_at}</span>
+                            </div>
+                          )}
+                          {playerInfo.home_base && (
+                            <div className={styles.overviewItem}>
+                              <span className={styles.overviewLabel}>Home Base</span>
+                              <span className={styles.overviewValue}>{playerInfo.home_base}</span>
+                            </div>
+                          )}
+                          {playerInfo.faction_id && (
+                            <div className={styles.overviewItem}>
+                              <span className={styles.overviewLabel}>Faction</span>
+                              <span className={styles.overviewValue}>
+                                {playerInfo.faction_id}
+                                {playerInfo.faction_rank && ` (${playerInfo.faction_rank})`}
+                              </span>
+                            </div>
+                          )}
+                          <div className={styles.overviewItem}>
+                            <span className={styles.overviewLabel}>Created</span>
+                            <span className={styles.overviewValue}>
+                              <Clock size={14} /> {formatDate(playerInfo.created_at)}
+                            </span>
+                          </div>
+                          <div className={styles.overviewItem}>
+                            <span className={styles.overviewLabel}>Last Active</span>
+                            <span className={styles.overviewValue}>{formatDate(playerInfo.last_active_at)}</span>
+                          </div>
+                        </div>
                       </div>
 
-                      {/* Detail Panels */}
-                      <div className={styles.detailPanel}>
-                        {detailTab === 'overview' && (
-                          <div className={styles.overviewGrid}>
-                            <div className={styles.overviewItem}>
-                              <span className={styles.overviewLabel}>Status</span>
-                              <span className={styles.overviewValue}>
-                                {playerInfo.online ? (
-                                  <><Wifi size={14} className={styles.onlineDot} /> Online</>
-                                ) : (
-                                  <><WifiOff size={14} className={styles.offlineDot} /> Offline</>
-                                )}
-                              </span>
-                            </div>
-                            <div className={styles.overviewItem}>
-                              <span className={styles.overviewLabel}>Empire</span>
-                              <span className={styles.overviewValue}>{playerInfo.empire}</span>
-                            </div>
-                            <div className={styles.overviewItem}>
-                              <span className={styles.overviewLabel}>Credits</span>
-                              <span className={styles.overviewValue}>
-                                <Coins size={14} /> {formatNumber(playerInfo.credits)}
-                              </span>
-                            </div>
-                            <div className={styles.overviewItem}>
-                              <span className={styles.overviewLabel}>System</span>
-                              <span className={styles.overviewValue}>{playerInfo.current_system}</span>
-                            </div>
-                            <div className={styles.overviewItem}>
-                              <span className={styles.overviewLabel}>Location</span>
-                              <span className={styles.overviewValue}>{playerInfo.current_poi}</span>
-                            </div>
-                            {playerInfo.docked_at && (
-                              <div className={styles.overviewItem}>
-                                <span className={styles.overviewLabel}>Docked At</span>
-                                <span className={styles.overviewValue}>{playerInfo.docked_at}</span>
+                      {/* Ship */}
+                      {playerInfo.ship && (
+                        <div className={styles.playerSection}>
+                          <h3 className={styles.playerSectionTitle}>
+                            <Ship size={16} />
+                            Ship
+                          </h3>
+                          <div className={styles.shipPanel}>
+                            <div className={styles.shipHeader}>
+                              <div>
+                                <h4 className={styles.shipName}>{playerInfo.ship.name}</h4>
+                                <span className={styles.shipClass}>{playerInfo.ship.class_id}</span>
                               </div>
-                            )}
-                            {playerInfo.home_base && (
-                              <div className={styles.overviewItem}>
-                                <span className={styles.overviewLabel}>Home Base</span>
-                                <span className={styles.overviewValue}>{playerInfo.home_base}</span>
-                              </div>
-                            )}
-                            {playerInfo.faction_id && (
-                              <div className={styles.overviewItem}>
-                                <span className={styles.overviewLabel}>Faction</span>
-                                <span className={styles.overviewValue}>
-                                  {playerInfo.faction_id}
-                                  {playerInfo.faction_rank && ` (${playerInfo.faction_rank})`}
-                                </span>
-                              </div>
-                            )}
-                            <div className={styles.overviewItem}>
-                              <span className={styles.overviewLabel}>Created</span>
-                              <span className={styles.overviewValue}>
-                                <Clock size={14} /> {formatDate(playerInfo.created_at)}
-                              </span>
                             </div>
-                            <div className={styles.overviewItem}>
-                              <span className={styles.overviewLabel}>Last Login</span>
-                              <span className={styles.overviewValue}>{formatDate(playerInfo.last_login_at)}</span>
-                            </div>
-                            <div className={styles.overviewItem}>
-                              <span className={styles.overviewLabel}>Last Active</span>
-                              <span className={styles.overviewValue}>{formatDate(playerInfo.last_active_at)}</span>
+                            <div className={styles.shipBars}>
+                              <StatBar label="Hull" current={playerInfo.ship.hull} max={playerInfo.ship.max_hull} color="var(--claw-red)" />
+                              <StatBar label="Shield" current={playerInfo.ship.shield} max={playerInfo.ship.max_shield} color="var(--plasma-cyan)" />
+                              <StatBar label="Fuel" current={playerInfo.ship.fuel} max={playerInfo.ship.max_fuel} color="var(--shell-orange)" />
+                              <StatBar label="Cargo" current={playerInfo.ship.cargo_used} max={playerInfo.ship.cargo_capacity} color="var(--bio-green)" />
                             </div>
                           </div>
-                        )}
+                        </div>
+                      )}
 
-                        {detailTab === 'ship' && (
-                          playerInfo.ship ? (
-                            <div className={styles.shipPanel}>
-                              <div className={styles.shipHeader}>
-                                <Ship size={20} />
-                                <div>
-                                  <h3 className={styles.shipName}>{playerInfo.ship.name}</h3>
-                                  <span className={styles.shipClass}>{playerInfo.ship.class_id}</span>
-                                </div>
-                              </div>
-                              <div className={styles.shipBars}>
-                                <StatBar label="Hull" current={playerInfo.ship.hull} max={playerInfo.ship.max_hull} color="var(--claw-red)" />
-                                <StatBar label="Shield" current={playerInfo.ship.shield} max={playerInfo.ship.max_shield} color="var(--plasma-cyan)" />
-                                <StatBar label="Fuel" current={playerInfo.ship.fuel} max={playerInfo.ship.max_fuel} color="var(--shell-orange)" />
-                                <StatBar label="Cargo" current={playerInfo.ship.cargo_used} max={playerInfo.ship.cargo_capacity} color="var(--bio-green)" />
-                              </div>
-                            </div>
-                          ) : (
-                            <div className={styles.emptyPanel}>No ship data available</div>
-                          )
-                        )}
-
-                        {detailTab === 'skills' && (
-                          playerInfo.skills && Object.keys(playerInfo.skills).length > 0 ? (
-                            <div className={styles.skillGrid}>
-                              {Object.entries(playerInfo.skills)
-                                .sort(([, a], [, b]) => b - a)
-                                .map(([skill, level]) => (
-                                  <div key={skill} className={styles.skillItem}>
-                                    <span className={styles.skillName}>{skill.replace(/_/g, ' ')}</span>
-                                    <span className={styles.skillLevel}>Lv {level}</span>
-                                  </div>
-                                ))}
-                            </div>
-                          ) : (
-                            <div className={styles.emptyPanel}>No skills trained yet</div>
-                          )
-                        )}
-
-                        {detailTab === 'stats' && (
-                          playerInfo.stats ? (
-                            <div className={styles.statGrid}>
-                              {([
-                                ['Credits Earned', formatNumber(playerInfo.stats.credits_earned)],
-                                ['Credits Spent', formatNumber(playerInfo.stats.credits_spent)],
-                                ['Ships Destroyed', formatNumber(playerInfo.stats.ships_destroyed)],
-                                ['Ships Lost', formatNumber(playerInfo.stats.ships_lost)],
-                                ['Pirates Destroyed', formatNumber(playerInfo.stats.pirates_destroyed)],
-                                ['Bases Destroyed', formatNumber(playerInfo.stats.bases_destroyed)],
-                                ['Ore Mined', formatNumber(playerInfo.stats.ore_mined)],
-                                ['Items Crafted', formatNumber(playerInfo.stats.items_crafted)],
-                                ['Trades Completed', formatNumber(playerInfo.stats.trades_completed)],
-                                ['Systems Explored', formatNumber(playerInfo.stats.systems_explored)],
-                                ['Distance Traveled', `${formatNumber(playerInfo.stats.distance_traveled)} AU`],
-                                ['Time Played', formatDuration(playerInfo.stats.time_played)],
-                              ] as const).map(([label, value]) => (
-                                <div key={label} className={styles.statItem}>
-                                  <span className={styles.statValue}>{value}</span>
-                                  <span className={styles.statLabel}>{label}</span>
+                      {/* Skills */}
+                      {playerInfo.skills && Object.keys(playerInfo.skills).length > 0 && (
+                        <div className={styles.playerSection}>
+                          <h3 className={styles.playerSectionTitle}>
+                            <Wrench size={16} />
+                            Skills
+                          </h3>
+                          <div className={styles.skillGrid}>
+                            {Object.entries(playerInfo.skills)
+                              .sort(([, a], [, b]) => b - a)
+                              .map(([skill, level]) => (
+                                <div key={skill} className={styles.skillItem}>
+                                  <span className={styles.skillName}>{skill.replace(/_/g, ' ')}</span>
+                                  <span className={styles.skillLevel}>Lv {level}</span>
                                 </div>
                               ))}
-                            </div>
-                          ) : (
-                            <div className={styles.emptyPanel}>No stats available</div>
-                          )
-                        )}
+                          </div>
+                        </div>
+                      )}
 
-                        {detailTab === 'log' && (
-                          logLoading ? (
-                            <div className={styles.loadingState}>
-                              <div className={styles.spinner} />
-                              <span>Loading captain&apos;s log...</span>
-                            </div>
-                          ) : captainsLog && captainsLog.entries.length > 0 ? (
-                            <div className={styles.logList}>
-                              {captainsLog.entries.map(entry => (
-                                <div key={entry.index} className={styles.logEntry}>
-                                  <div className={styles.logTimestamp}>
-                                    <Clock size={12} />
-                                    {formatDate(entry.created_at)}
-                                  </div>
-                                  <div className={styles.logContent}>{entry.entry}</div>
+                      {/* Stats */}
+                      {playerInfo.stats && (
+                        <div className={styles.playerSection}>
+                          <h3 className={styles.playerSectionTitle}>
+                            <BarChart3 size={16} />
+                            Stats
+                          </h3>
+                          <div className={styles.statGrid}>
+                            {([
+                              ['Credits Earned', formatNumber(playerInfo.stats.credits_earned)],
+                              ['Credits Spent', formatNumber(playerInfo.stats.credits_spent)],
+                              ['Ships Destroyed', formatNumber(playerInfo.stats.ships_destroyed)],
+                              ['Ships Lost', formatNumber(playerInfo.stats.ships_lost)],
+                              ['Pirates Destroyed', formatNumber(playerInfo.stats.pirates_destroyed)],
+                              ['Bases Destroyed', formatNumber(playerInfo.stats.bases_destroyed)],
+                              ['Ore Mined', formatNumber(playerInfo.stats.ore_mined)],
+                              ['Items Crafted', formatNumber(playerInfo.stats.items_crafted)],
+                              ['Trades Completed', formatNumber(playerInfo.stats.trades_completed)],
+                              ['Systems Explored', formatNumber(playerInfo.stats.systems_explored)],
+                              ['Distance Traveled', `${formatNumber(playerInfo.stats.distance_traveled)} AU`],
+                              ['Time Played', formatDuration(playerInfo.stats.time_played)],
+                            ] as const).map(([label, value]) => (
+                              <div key={label} className={styles.statItem}>
+                                <span className={styles.statValue}>{value}</span>
+                                <span className={styles.statLabel}>{label}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Captain's Log */}
+                      <div className={styles.playerSection}>
+                        <h3 className={styles.playerSectionTitle}>
+                          <ScrollText size={16} />
+                          Captain&apos;s Log
+                        </h3>
+                        {logLoading ? (
+                          <div className={styles.loadingState}>
+                            <div className={styles.spinner} />
+                            <span>Loading captain&apos;s log...</span>
+                          </div>
+                        ) : captainsLog && captainsLog.entries.length > 0 ? (
+                          <div className={styles.logList}>
+                            {captainsLog.entries.map(entry => (
+                              <div key={entry.index} className={styles.logEntry}>
+                                <div className={styles.logTimestamp}>
+                                  <Clock size={12} />
+                                  {formatDate(entry.created_at)}
                                 </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className={styles.emptyPanel}>
-                              No log entries yet. Use <code>captains_log_write</code> in-game to add entries.
-                            </div>
-                          )
+                                <div className={styles.logContent}>{entry.entry}</div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className={styles.emptyPanel}>
+                            No log entries yet. Use <code>captains_log_write()</code> in-game to add entries.
+                          </div>
                         )}
                       </div>
                     </div>

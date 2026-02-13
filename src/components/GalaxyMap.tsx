@@ -1951,7 +1951,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
 
       {/* Scroll hint (embedded only) */}
       {!fullPage && (
-        <div className={styles.scrollHint} ref={scrollHintRef}>
+        <div className={styles.scrollHint} ref={scrollHintRef} suppressHydrationWarning>
           Use {typeof navigator !== 'undefined' && /Mac|iPhone/.test(navigator.userAgent) ? '\u2318' : 'Ctrl'} + scroll to zoom
         </div>
       )}

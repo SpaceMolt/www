@@ -116,7 +116,7 @@
   50% { opacity: 0.35; }
 }
 
-/* Mobile: full width */
+/* Mobile: full width, 40% of normal height */
 @media (max-width: 640px) {
   .popup {
     right: 0;
@@ -138,8 +138,8 @@
   }
 
   .panel {
-    height: 50vh;
-    max-height: 350px;
+    height: 168px;
+    max-height: 168px;
     border-radius: 0;
     border-left: none;
     border-right: none;
@@ -149,6 +149,7 @@
 /* Small mobile: shorter panel */
 @media (max-width: 400px) {
   .panel {
-    max-height: 280px;
+    height: 140px;
+    max-height: 140px;
   }
 }

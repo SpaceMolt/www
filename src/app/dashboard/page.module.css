@@ -7,6 +7,22 @@
   max-width: 960px;
   margin: 0 auto;
   gap: 2.5rem;
+  position: relative;
+}
+
+.dashboardBg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 0%, rgba(0, 212, 255, 0.06), transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(255, 107, 53, 0.05), transparent 60%),
+    radial-gradient(ellipse 50% 60% at 50% 50%, rgba(26, 39, 68, 0.3), transparent 70%),
+    linear-gradient(180deg, #080c14 0%, #0c1220 30%, #0e1528 60%, #0a0e17 100%);
+  pointer-events: none;
+  z-index: -1;
 }
 
 /* === Header === */
@@ -61,6 +77,131 @@
 .logoutBtn:hover {
   color: var(--claw-red);
   border-color: var(--claw-red);
+}
+
+/* === Manage Account Button === */
+.manageBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--plasma-cyan);
+  background: transparent;
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 4px;
+  padding: 0.4rem 1rem;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  transition: all 0.2s ease;
+}
+
+.manageBtn:hover {
+  background: rgba(0, 212, 255, 0.08);
+  border-color: var(--plasma-cyan);
+  box-shadow: 0 0 12px rgba(0, 212, 255, 0.1);
+}
+
+/* === Intro Box === */
+.introBox {
+  width: 100%;
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.08), rgba(26, 39, 68, 0.4));
+  border: 1px solid rgba(255, 107, 53, 0.25);
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+}
+
+.introIcon {
+  color: var(--shell-orange);
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.introText {
+  color: var(--chrome-silver);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.introText strong {
+  color: var(--star-white);
+}
+
+/* === Section Divider === */
+.sectionDivider {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.sectionDivider::before,
+.sectionDivider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--hull-grey), transparent);
+}
+
+.sectionDividerLabel {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--plasma-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+
+/* === Player Sections (flat layout, no tabs) === */
+.playerSections {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.playerSection {
+  width: 100%;
+  background: linear-gradient(180deg, rgba(26, 39, 68, 0.35), rgba(13, 19, 33, 0.55));
+  border: 1px solid var(--hull-grey);
+  border-radius: 10px;
+  padding: 1.5rem;
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+.playerSectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--plasma-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.15);
+}
+
+.playerSectionTitle svg {
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+.playerSectionRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
 }
 
 /* === Steps === */
@@ -479,6 +620,25 @@
 .setupDropdownHint strong {
   color: var(--chrome-silver);
   font-weight: 500;
+}
+
+.setupHintLink {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--chrome-silver);
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: rgba(160, 180, 200, 0.3);
+  text-underline-offset: 2px;
+  transition: color 0.15s ease, text-decoration-color 0.15s ease;
+}
+
+.setupHintLink:hover {
+  color: var(--plasma-cyan);
+  text-decoration-color: var(--plasma-cyan);
 }
 
 .setupDropdownList {
@@ -1373,7 +1533,7 @@
 /* === Stats Grid === */
 .statGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 1px;
   background: var(--hull-grey);
   border: 1px solid var(--hull-grey);
@@ -1462,6 +1622,12 @@
 }
 
 /* === Responsive === */
+@media (max-width: 900px) {
+  .statGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
   .dashboard {
     padding: 5rem 1rem 2rem;
@@ -1601,5 +1767,36 @@
 
   .shipName {
     font-size: 0.95rem;
+  }
+
+  .playerSectionRow {
+    grid-template-columns: 1fr;
+  }
+
+  .introBox {
+    padding: 1rem 1.1rem;
+  }
+
+  .introText {
+    font-size: 0.88rem;
+  }
+
+  .manageBtn {
+    font-size: 0.7rem;
+    padding: 0.35rem 0.75rem;
+  }
+
+  .sectionDividerLabel {
+    font-size: 0.75rem;
+  }
+
+  .playerSection {
+    padding: 1.1rem;
+  }
+
+  .playerSectionTitle {
+    font-size: 0.78rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.6rem;
   }
 }

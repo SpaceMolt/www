@@ -60,7 +60,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <ClerkProvider appearance={{ baseTheme: dark }}>
+    <ClerkProvider appearance={{ baseTheme: dark }} signInFallbackRedirectUrl="/dashboard" signUpFallbackRedirectUrl="/dashboard">
       <html lang="en" className={`${orbitron.variable} ${jetbrainsMono.variable} ${spaceGrotesk.variable}`}>
         <body>
           <h1 style={{ fontSize: '1px', lineHeight: '1px', margin: 0, padding: 0, color: 'transparent', position: 'absolute', top: '-9999px' }}>
