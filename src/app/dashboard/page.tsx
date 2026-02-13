@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useUser, useAuth, useClerk, SignOutButton } from '@clerk/nextjs'
 import { Suspense, useEffect, useState, useCallback, useRef } from 'react'
-import { Settings, BookOpen, Rocket, Users, Ship, Wifi, WifiOff, Clock, Coins, BarChart3, Wrench, ChevronDown, Search, ScrollText, MapPin, UserCog } from 'lucide-react'
+import { Settings, BookOpen, Rocket, Users, Ship, Wifi, WifiOff, Clock, Coins, BarChart3, Wrench, ChevronDown, Search, ScrollText, MapPin, UserCog, KeyRound, Eye, EyeOff, Copy, Check, RefreshCw } from 'lucide-react'
 import { useQueryState } from 'nuqs'
 import { SetupTabs } from '@/components/SetupTabs'
 import styles from './page.module.css'
@@ -155,6 +155,12 @@ function DashboardContent() {
   const [captainsLog, setCaptainsLog] = useState<CaptainsLogResponse | null>(null)
   const [logLoading, setLogLoading] = useState(false)
 
+  // Password reset state
+  const [passwordVisible, setPasswordVisible] = useState(false)
+  const [playerPassword, setPlayerPassword] = useState<string | null>(null)
+  const [resettingPassword, setResettingPassword] = useState(false)
+  const [passwordCopied, setPasswordCopied] = useState(false)
+
   // Player selector state
   const [selectorOpen, setSelectorOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -231,6 +237,8 @@ function DashboardContent() {
   useEffect(() => {
     if (!selectedPlayer || !authLoaded) return
     setCaptainsLog(null)
+    setPlayerPassword(null)
+    setPasswordVisible(false)
     fetchPlayerInfo(selectedPlayer)
     fetchCaptainsLog(selectedPlayer)
   }, [selectedPlayer, authLoaded, fetchPlayerInfo, fetchCaptainsLog])
@@ -290,6 +298,53 @@ function DashboardContent() {
     setSelectedPlayer(id)
     setSelectorOpen(false)
     setSearchQuery('')
+    setPlayerPassword(null)
+    setPasswordVisible(false)
+  }
+
+  const handleResetPassword = async () => {
+    if (!selectedPlayer || resettingPassword) return
+    if (!confirm('This will generate a new password for this player. The old password will stop working immediately. Your agent will need the new password to log in. Continue?')) return
+
+    setResettingPassword(true)
+    try {
+      const token = await getToken()
+      const res = await fetch(`${GAME_SERVER}/api/player/${selectedPlayer}/reset-password`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setPlayerPassword(data.password)
+        setPasswordVisible(true)
+      } else {
+        const data = await res.json().catch(() => null)
+        alert(data?.error || 'Failed to reset password')
+      }
+    } catch {
+      alert('Could not reach game server')
+    } finally {
+      setResettingPassword(false)
+    }
+  }
+
+  const handleCopyPassword = () => {
+    if (!playerPassword) return
+    const pw = playerPassword
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(pw)
+    } else {
+      const ta = document.createElement('textarea')
+      ta.value = pw
+      ta.style.position = 'fixed'
+      ta.style.opacity = '0'
+      document.body.appendChild(ta)
+      ta.select()
+      document.execCommand('copy')
+      document.body.removeChild(ta)
+    }
+    setPasswordCopied(true)
+    setTimeout(() => setPasswordCopied(false), 2000)
   }
 
   const filteredPlayers = players.filter(p =>
@@ -703,6 +758,63 @@ function DashboardContent() {
                             <span>No log entries yet. Use <code>captains_log_write()</code> in-game to add entries.</span>
                           </div>
                         )}
+                      </div>
+
+                      {/* Credentials */}
+                      <div className={styles.playerSection}>
+                        <h3 className={styles.playerSectionTitle}>
+                          <KeyRound size={16} />
+                          Credentials
+                        </h3>
+                        <div className={styles.credentialsBlock}>
+                          <div className={styles.credentialRow}>
+                            <span className={styles.credentialLabel}>Username</span>
+                            <span className={styles.credentialUsername}>{playerInfo.username}</span>
+                          </div>
+                          <div className={styles.credentialRow}>
+                            <span className={styles.credentialLabel}>Password</span>
+                            {playerPassword ? (
+                              <div className={styles.passwordField}>
+                                <code className={styles.passwordValue}>
+                                  {passwordVisible ? playerPassword : '\u2022'.repeat(32)}
+                                </code>
+                                <button
+                                  className={styles.passwordToggle}
+                                  onClick={() => setPasswordVisible(!passwordVisible)}
+                                  title={passwordVisible ? 'Hide password' : 'Reveal password'}
+                                >
+                                  {passwordVisible ? <EyeOff size={14} /> : <Eye size={14} />}
+                                </button>
+                                <button
+                                  className={styles.passwordCopy}
+                                  onClick={handleCopyPassword}
+                                  title="Copy password"
+                                >
+                                  {passwordCopied ? <Check size={14} /> : <Copy size={14} />}
+                                </button>
+                              </div>
+                            ) : (
+                              <div className={styles.passwordField}>
+                                <span className={styles.passwordHidden}>
+                                  Password is hashed and cannot be displayed. Reset to reveal a new one.
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                          <div className={styles.credentialActions}>
+                            <button
+                              className={styles.resetPasswordBtn}
+                              onClick={handleResetPassword}
+                              disabled={resettingPassword}
+                            >
+                              <RefreshCw size={14} className={resettingPassword ? styles.spinning : ''} />
+                              {resettingPassword ? 'Resetting...' : 'Reset Password'}
+                            </button>
+                            <span className={styles.resetPasswordHint}>
+                              Generates a new password. The old one will stop working.
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ) : null}
