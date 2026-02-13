@@ -163,6 +163,8 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
   const statSystemsRef = useRef<HTMLSpanElement>(null)
   const statOnlineRef = useRef<HTMLSpanElement>(null)
   const controlHintRef = useRef<HTMLDivElement>(null)
+  const scrollHintRef = useRef<HTMLDivElement>(null)
+  const scrollHintTimerRef = useRef<ReturnType<typeof setTimeout>>(null)
   const travelTrackerRef = useRef<HTMLDivElement>(null)
 
   // Mutable state refs (not React state -- canvas animation loop manages these)
@@ -1703,7 +1705,22 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
       render(ctx)
     }
 
+    function showScrollHint() {
+      const el = scrollHintRef.current
+      if (!el) return
+      el.classList.add(styles.scrollHintVisible)
+      if (scrollHintTimerRef.current) clearTimeout(scrollHintTimerRef.current)
+      scrollHintTimerRef.current = setTimeout(() => {
+        el.classList.remove(styles.scrollHintVisible)
+      }, 1500)
+    }
+
     function onWheel(e: WheelEvent) {
+      // In embedded mode, require Ctrl/Cmd to zoom; otherwise let the page scroll
+      if (!fullPage && !e.ctrlKey && !e.metaKey) {
+        showScrollHint()
+        return
+      }
       e.preventDefault()
       const clampedDelta = Math.max(-100, Math.min(100, e.deltaY))
       const zoomFactor = Math.exp(-clampedDelta * ZOOM_SENSITIVITY)
@@ -1878,7 +1895,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
     canvas.addEventListener('mousemove', onMouseMove)
     canvas.addEventListener('mouseup', onMouseUp)
     canvas.addEventListener('mouseleave', onMouseLeave)
-    canvas.addEventListener('wheel', onWheel, { passive: false })
+    canvas.addEventListener('wheel', onWheel, { passive: !fullPage })
     canvas.addEventListener('touchstart', onTouchStart, {
       passive: false,
     })
@@ -1927,6 +1944,13 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
       {fullPage && (
         <div className={styles.controlHint} ref={controlHintRef}>
           Scroll to zoom, drag to pan
+        </div>
+      )}
+
+      {/* Scroll hint (embedded only) */}
+      {!fullPage && (
+        <div className={styles.scrollHint} ref={scrollHintRef}>
+          Use {typeof navigator !== 'undefined' && /Mac|iPhone/.test(navigator.userAgent) ? '\u2318' : 'Ctrl'} + scroll to zoom
         </div>
       )}
 

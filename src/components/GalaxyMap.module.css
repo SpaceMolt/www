@@ -49,6 +49,29 @@
   pointer-events: none;
 }
 
+/* Scroll hint (embedded mode) */
+.scrollHint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.875rem;
+  color: var(--chrome-silver);
+  background: rgba(10, 14, 23, 0.85);
+  border: 1px solid var(--hull-grey);
+  border-radius: 8px;
+  padding: 0.75rem 1.25rem;
+  z-index: 200;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.scrollHintVisible {
+  opacity: 1;
+}
+
 /* Tooltip */
 .tooltip {
   position: fixed;
