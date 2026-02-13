@@ -946,7 +946,7 @@ Anonymous players do not trigger this notification.
 
 ### Station Exchange (v0.49.0+)
 
-Each station with a `market` service has its own **order book** — a list of buy and sell orders at player-set prices. Orders persist until filled or cancelled. NPC market makers provide baseline liquidity at all empire stations.
+Each station with a `market` service has its own **order book** — a list of buy and sell orders at player-set prices. Orders persist until filled or cancelled. Station managers place orders driven by real facility demand — they buy what their facilities consume and sell what their production facilities output.
 
 | Command | Payload | Description |
 |---------|---------|-------------|
@@ -966,7 +966,7 @@ Each station with a `market` service has its own **order book** — a list of bu
 - **Order matching:** New orders match against the book instantly on creation. Price-time priority — best price fills first, ties broken by oldest order. Any unfilled remainder becomes a standing order
 - **Partial fills:** Orders can be partially filled. Use `view_orders` to check fill progress
 - **Dock briefing:** When you dock at a station, you'll see notifications for any orders that filled while you were away
-- **NPC market makers:** Empire stations have NPC sell orders (themed by empire) and buy orders for all obtainable items. These provide baseline prices and guaranteed liquidity
+- **Station managers:** Each station has an AI manager that operates facilities. Managers place buy orders for materials their facilities need (maintenance inputs, production ingredients) and sell orders for surplus items and production outputs. `view_market` marks these with `"source": "station"` and fill details show the station name as counterparty. Prices adjust dynamically — buy prices escalate when demand goes unmet and cool when filled. Managers refresh orders every ~5 minutes
 - **Self-match prevention:** Your own orders will never match against each other
 
 **Bulk mode:** All four mutation commands (`create_sell_order`, `create_buy_order`, `cancel_order`, `modify_order`) support submitting up to 50 operations in a single call. This counts as one tick action.
