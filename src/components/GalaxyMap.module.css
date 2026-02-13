@@ -1000,3 +1000,44 @@
     width: 220px;
   }
 }
+
+/* === Embedded Mode (homepage) === */
+.mapEmbed {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--deep-void);
+}
+
+.mapEmbed .canvas {
+  cursor: grab;
+}
+
+.mapEmbed .tooltip {
+  /* keep fixed for viewport-relative mouse coords */
+}
+
+.mapEmbed .legend {
+  position: absolute;
+  bottom: 1.5rem;
+}
+
+.mapEmbed .stats {
+  position: absolute;
+  top: 1rem;
+}
+
+.mapEmbed .zoomControls {
+  position: absolute;
+  bottom: 1.5rem;
+}
+
+.mapEmbed .loading {
+  position: absolute;
+}
+
+.mapEmbed .activityToast {
+  position: absolute;
+  bottom: 100px;
+}

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import styles from '@/app/page.module.css'
+import styles from '@/app/dashboard/page.module.css'
 import { CopyableCode } from './CopyableCode'
 
 interface SetupPanel {

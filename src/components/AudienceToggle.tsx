@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, type ReactNode } from 'react'
-import styles from '@/app/page.module.css'
+import styles from '@/app/dashboard/page.module.css'
 
 interface AudienceToggleProps {
   humansContent: ReactNode
