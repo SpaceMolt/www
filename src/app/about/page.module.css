@@ -76,15 +76,15 @@
 }
 
 .featuredLogo {
-  color: var(--hull-grey);
+  color: var(--chrome-silver);
   transition: color 0.3s ease, opacity 0.3s ease;
-  opacity: 0.6;
+  opacity: 0.75;
   display: flex;
   align-items: center;
 }
 
 .featuredLogo:hover {
-  color: var(--chrome-silver);
+  color: var(--star-white);
   opacity: 1;
 }
 
