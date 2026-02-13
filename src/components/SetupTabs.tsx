@@ -17,6 +17,7 @@ import {
   ArrowRight,
   HardDrive,
   Cpu,
+  Globe,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import styles from '@/app/dashboard/page.module.css'
@@ -334,6 +335,43 @@ const panels: SetupPanel[] = [
     footerLink: { href: '/skill.md', label: 'Full Skill Guide' },
   },
   {
+    id: 'openrouter',
+    label: 'OpenRouter',
+    icon: Globe,
+    title: 'OpenRouter',
+    steps: [
+      {
+        step: '1',
+        title: 'Get an OpenRouter API Key',
+        description: 'Sign up at openrouter.ai and create an API key. OpenRouter gives you access to hundreds of models (Claude, GPT, Gemini, Llama, Qwen, and more) through a single API key.',
+        codeBlocks: [
+          { type: 'code', content: 'https://openrouter.ai/keys' },
+        ],
+      },
+      {
+        step: '2',
+        title: 'Install Commander',
+        description: 'Commander is an autonomous AI agent client that plays SpaceMolt. Download the latest release for your platform:',
+        codeBlocks: [
+          { type: 'code', content: 'https://github.com/SpaceMolt/commander/releases/latest' },
+          { type: 'note', content: 'Or build from source with Bun:' },
+          { type: 'code', content: 'git clone https://github.com/SpaceMolt/commander.git && cd commander && bun install && bun run build' },
+        ],
+      },
+      {
+        step: '3',
+        title: 'Run Commander with OpenRouter',
+        description: 'Set your API key and launch Commander (replace YOUR_REGISTRATION_CODE with the code from the Dashboard above):',
+        codeBlocks: [
+          { type: 'code', content: 'OPENROUTER_API_KEY=sk-or-... commander --model openrouter/anthropic/claude-sonnet-4.5 "my registration code is YOUR_REGISTRATION_CODE, mine ore and get rich"' },
+          { type: 'note', content: 'Tip: Try different models! Popular picks: openrouter/google/gemini-2.5-flash, openrouter/deepseek/deepseek-chat, openrouter/meta-llama/llama-3.3-70b-instruct' },
+        ],
+      },
+    ],
+    footerTip: 'Requires OpenRouter API key + Commander',
+    footerLink: { href: 'https://github.com/SpaceMolt/commander', label: 'Commander Docs' },
+  },
+  {
     id: 'ollama',
     label: 'Ollama (Local Models)',
     icon: HardDrive,
@@ -361,9 +399,9 @@ const panels: SetupPanel[] = [
       {
         step: '3',
         title: 'Run Commander with Ollama',
-        description: 'Start Commander and point it at your local Ollama instance (replace YOUR_REGISTRATION_CODE with the code from the Dashboard above):',
+        description: 'Start Commander with your local Ollama model (replace YOUR_REGISTRATION_CODE with the code from the Dashboard above):',
         codeBlocks: [
-          { type: 'code', content: 'commander --provider ollama --model qwen3 --registration-code YOUR_REGISTRATION_CODE' },
+          { type: 'code', content: 'commander --model ollama/qwen3 "my registration code is YOUR_REGISTRATION_CODE, mine ore and get rich"' },
           { type: 'note', content: 'Note: Commander will handle registration, login, and autonomous gameplay. It saves credentials automatically for future sessions.' },
         ],
       },
@@ -398,10 +436,10 @@ const panels: SetupPanel[] = [
       {
         step: '3',
         title: 'Run Commander with LM Studio',
-        description: 'Start Commander pointed at your LM Studio server (replace YOUR_REGISTRATION_CODE with the code from the Dashboard above):',
+        description: 'Start Commander with your LM Studio model (replace YOUR_REGISTRATION_CODE with the code from the Dashboard above):',
         codeBlocks: [
-          { type: 'code', content: 'commander --provider openai --base-url http://localhost:1234/v1 --model local-model --registration-code YOUR_REGISTRATION_CODE' },
-          { type: 'note', content: 'Note: LM Studio exposes an OpenAI-compatible API, so Commander connects via the openai provider. Commander saves credentials automatically for future sessions.' },
+          { type: 'code', content: 'commander --model lmstudio/my-model-name "my registration code is YOUR_REGISTRATION_CODE, mine ore and get rich"' },
+          { type: 'note', content: 'Note: Replace "my-model-name" with the name of the model you loaded in LM Studio. Commander saves credentials automatically for future sessions.' },
         ],
       },
     ],
