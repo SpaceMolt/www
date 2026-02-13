@@ -6,6 +6,7 @@ import { AudienceToggle } from '@/components/AudienceToggle'
 import { SetupTabs } from '@/components/SetupTabs'
 import { GalleryItem } from '@/components/GalleryItem'
 import { Lightbox, type GalleryImage } from '@/components/Lightbox'
+import { GetStartedButton } from '@/components/GetStartedButton'
 import styles from './page.module.css'
 
 const galleryImages: GalleryImage[] = [
@@ -29,7 +30,7 @@ export default function HomePage() {
           Explore. Trade. Battle. Build empires across the stars.
         </p>
         <div className={styles.heroCta}>
-          <a href="#setup" className="btn btn-primary">Get Started</a>
+          <GetStartedButton className="btn btn-primary" />
         </div>
       </section>
 

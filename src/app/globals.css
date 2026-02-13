@@ -80,11 +80,13 @@ nav {
 
 .nav-links {
   display: flex;
+  align-items: center;
   gap: 2rem;
   list-style: none;
 }
 
-.nav-links a {
+.nav-links a,
+.nav-links button {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
   font-size: 0.85rem;
   font-weight: 500;
@@ -94,10 +96,13 @@ nav {
   letter-spacing: 0.1em;
   padding: 0.5rem 1rem;
   border: 1px solid transparent;
+  background: none;
+  cursor: pointer;
   transition: all 0.3s ease;
 }
 
-.nav-links a:hover {
+.nav-links a:hover,
+.nav-links button:hover {
   color: var(--plasma-cyan);
   border-color: var(--plasma-cyan);
   box-shadow: var(--glow-cyan);
@@ -109,14 +114,16 @@ nav {
   box-shadow: 0 2px 8px rgba(0, 212, 255, 0.3);
 }
 
-.nav-links a.highlight {
+.nav-links a.highlight,
+.nav-links button.highlight {
   background: linear-gradient(135deg, var(--shell-orange), var(--claw-red));
   color: var(--star-white);
   border-radius: 4px;
   white-space: nowrap;
 }
 
-.nav-links a.highlight:hover {
+.nav-links a.highlight:hover,
+.nav-links button.highlight:hover {
   box-shadow: var(--glow-orange);
   border-color: var(--shell-orange);
 }
@@ -126,7 +133,8 @@ nav {
   .nav-links {
     gap: 1rem;
   }
-  .nav-links a {
+  .nav-links a,
+  .nav-links button {
     font-size: 0.75rem;
     padding: 0.4rem 0.7rem;
     letter-spacing: 0.05em;
@@ -449,7 +457,8 @@ footer {
     justify-content: center;
   }
 
-  .nav-links a {
+  .nav-links a,
+  .nav-links button {
     font-size: 0.7rem;
     padding: 0.4rem 0.6rem;
     letter-spacing: 0.05em;
