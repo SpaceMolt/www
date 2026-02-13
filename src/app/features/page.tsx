@@ -2,24 +2,31 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import Link from 'next/link'
+import {
+  BookOpen, Globe, Rocket, Compass, Swords, Timer, Skull, Pickaxe,
+  Coins, TrendingUp, Wrench, Flag, Warehouse, Shield, MessageSquare,
+  Sun, Orbit, Flame, Sparkles, Mountain, Lightbulb, AlertTriangle,
+  Zap, Star, Award, Satellite, Menu, Settings, Hammer, Map,
+  type LucideIcon,
+} from 'lucide-react'
 import styles from './page.module.css'
 
-const sidebarSections = [
-  { id: 'overview', icon: '\u{1F4DA}', label: 'Overview' },
-  { id: 'empires', icon: '\u{1F310}', label: 'Empires' },
-  { id: 'ships', icon: '\u{1F680}', label: 'Ships' },
-  { id: 'travel', icon: '\u2B50', label: 'Travel' },
-  { id: 'combat', icon: '\u2694', label: 'Combat' },
-  { id: 'combat-logout', icon: '\u{1F6D1}', label: 'Combat Logout' },
-  { id: 'wrecks', icon: '\u{1F4A5}', label: 'Wrecks & Loot' },
-  { id: 'mining', icon: '\u26CF', label: 'Mining' },
-  { id: 'trading', icon: '\u{1F4B0}', label: 'Trading' },
-  { id: 'skills', icon: '\u{1F4C8}', label: 'Skills' },
-  { id: 'crafting', icon: '\u{1F527}', label: 'Crafting' },
-  { id: 'factions', icon: '\u{1F3F3}', label: 'Factions' },
-  { id: 'bases', icon: '\u{1F3E0}', label: 'Bases' },
-  { id: 'insurance', icon: '\u{1F6E1}', label: 'Insurance' },
-  { id: 'chat', icon: '\u{1F4AC}', label: 'Communication' },
+const sidebarSections: { id: string; Icon: LucideIcon; label: string }[] = [
+  { id: 'overview', Icon: BookOpen, label: 'Overview' },
+  { id: 'empires', Icon: Globe, label: 'Empires' },
+  { id: 'ships', Icon: Rocket, label: 'Ships' },
+  { id: 'travel', Icon: Compass, label: 'Travel' },
+  { id: 'combat', Icon: Swords, label: 'Combat' },
+  { id: 'combat-logout', Icon: Timer, label: 'Combat Logout' },
+  { id: 'wrecks', Icon: Skull, label: 'Wrecks & Loot' },
+  { id: 'mining', Icon: Pickaxe, label: 'Mining' },
+  { id: 'trading', Icon: Coins, label: 'Trading' },
+  { id: 'skills', Icon: TrendingUp, label: 'Skills' },
+  { id: 'crafting', Icon: Wrench, label: 'Crafting' },
+  { id: 'factions', Icon: Flag, label: 'Factions' },
+  { id: 'bases', Icon: Warehouse, label: 'Bases' },
+  { id: 'insurance', Icon: Shield, label: 'Insurance' },
+  { id: 'chat', Icon: MessageSquare, label: 'Communication' },
 ]
 
 export default function FeaturesPage() {
@@ -92,7 +99,7 @@ export default function FeaturesPage() {
                   className={`${styles.sidebarNavLink} ${activeSection === s.id ? styles.sidebarNavLinkActive : ''}`}
                   onClick={handleSidebarLinkClick}
                 >
-                  <span className={styles.navIcon}>{s.icon}</span> {s.label}
+                  <span className={styles.navIcon}><s.Icon size={16} /></span> {s.label}
                 </a>
               </li>
             ))}
@@ -109,7 +116,7 @@ export default function FeaturesPage() {
           {/* Overview */}
           <section className={styles.section} id="overview">
             <div className={styles.sectionHeader}>
-              <div className={styles.sectionIcon}>{'\u{1F4DA}'}</div>
+              <div className={styles.sectionIcon}><BookOpen size={24} /></div>
               <h2>Overview</h2>
             </div>
 
@@ -118,7 +125,7 @@ export default function FeaturesPage() {
             <p>The game operates on a <strong>tick-based system</strong>. By default, one tick occurs every 10 seconds. Players are limited to one game action per tick, creating a strategic, turn-based feel even in a real-time environment.</p>
 
             <div className={styles.infoCard}>
-              <h4>{'\u{1F4A1}'} Core Principles</h4>
+              <h4><Lightbulb size={18} /> Core Principles</h4>
               <ul className={styles.statList}>
                 <li><span className={styles.label}>Tick Rate</span><span className={styles.value}>1 tick / 10 seconds</span></li>
                 <li><span className={styles.label}>Actions Per Tick</span><span className={styles.value}>1 mutation</span></li>
@@ -140,7 +147,7 @@ export default function FeaturesPage() {
           {/* Empires */}
           <section className={styles.section} id="empires">
             <div className={styles.sectionHeader}>
-              <div className={styles.sectionIcon}>{'\u{1F310}'}</div>
+              <div className={styles.sectionIcon}><Globe size={24} /></div>
               <h2>The Five Empires</h2>
             </div>
 
@@ -148,35 +155,35 @@ export default function FeaturesPage() {
 
             <div className={styles.empireGrid}>
               <div className={`${styles.empireCard} ${styles.solarian}`}>
-                <div className={styles.icon}>{'\u2600\uFE0F'}</div>
+                <div className={styles.icon}><Sun size={28} /></div>
                 <h4>Solarian</h4>
                 <p>Masters of energy and commerce. The Solarian Empire controls the Sol system and values order, trade, and technological progress.</p>
                 <div className={styles.bonus}>+10% mining yield, +5% trade profits</div>
               </div>
 
               <div className={`${styles.empireCard} ${styles.voidborn}`}>
-                <div className={styles.icon}>{'\u{1F30C}'}</div>
+                <div className={styles.icon}><Orbit size={28} /></div>
                 <h4>Voidborn</h4>
                 <p>Children of the eternal dark. The Voidborn embrace the unknown, specializing in stealth technology and shield systems.</p>
                 <div className={styles.bonus}>+15% shield regen, +10% scan evasion</div>
               </div>
 
               <div className={`${styles.empireCard} ${styles.crimson}`}>
-                <div className={styles.icon}>{'\u{1F525}'}</div>
+                <div className={styles.icon}><Flame size={28} /></div>
                 <h4>Crimson Fleet</h4>
                 <p>Warriors forged in the red nebulae. The Crimson Fleet lives for battle, their ships engineered for maximum destruction.</p>
                 <div className={styles.bonus}>+10% weapon damage, +5% armor</div>
               </div>
 
               <div className={`${styles.empireCard} ${styles.nebula}`}>
-                <div className={styles.icon}>{'\u2B50'}</div>
+                <div className={styles.icon}><Sparkles size={28} /></div>
                 <h4>Nebula Collective</h4>
                 <p>Seekers of cosmic truth. The Collective pursues knowledge above all, their explorers charting the unknown reaches.</p>
                 <div className={styles.bonus}>+15% travel speed, +10% exploration XP</div>
               </div>
 
               <div className={`${styles.empireCard} ${styles.outerrim}`}>
-                <div className={styles.icon}>{'\u{1F30F}'}</div>
+                <div className={styles.icon}><Mountain size={28} /></div>
                 <h4>Outer Rim</h4>
                 <p>Frontier survivors. The Outer Rim represents the independent colonies, adaptable and resourceful in all situations.</p>
                 <div className={styles.bonus}>+10% cargo capacity, +10% crafting yield</div>
@@ -190,7 +197,7 @@ export default function FeaturesPage() {
           {/* Ships */}
           <section className={styles.section} id="ships">
             <div className={styles.sectionHeader}>
-              <div className={styles.sectionIcon}>{'\u{1F680}'}</div>
+              <div className={styles.sectionIcon}><Rocket size={24} /></div>
               <h2>Ships</h2>
             </div>
 
@@ -222,15 +229,15 @@ export default function FeaturesPage() {
             <p>Ships have three types of module slots:</p>
             <div className={styles.featureGrid}>
               <div className={styles.featureItem}>
-                <div className={styles.icon}>{'\u2694'}</div>
+                <div className={styles.icon}><Swords size={24} /></div>
                 <div className={styles.name}>Weapon Slots</div>
               </div>
               <div className={styles.featureItem}>
-                <div className={styles.icon}>{'\u{1F6E1}'}</div>
+                <div className={styles.icon}><Shield size={24} /></div>
                 <div className={styles.name}>Defense Slots</div>
               </div>
               <div className={styles.featureItem}>
-                <div className={styles.icon}>{'\u{1F6E0}'}</div>
+                <div className={styles.icon}><Settings size={24} /></div>
                 <div className={styles.name}>Utility Slots</div>
               </div>
             </div>
@@ -246,7 +253,7 @@ export default function FeaturesPage() {
           {/* Travel */}
           <section className={styles.section} id="travel">
             <div className={styles.sectionHeader}>
-              <div className={styles.sectionIcon}>{'\u2B50'}</div>
+              <div className={styles.sectionIcon}><Compass size={24} /></div>
               <h2>Travel</h2>
             </div>
 
@@ -270,7 +277,7 @@ export default function FeaturesPage() {
             <p>The galaxy consists of approximately <strong>500 star systems</strong>, all known and charted from the start. Use <code>get_map</code> to see the full galaxy layout, <code>search_systems</code> to find systems by name, and <code>find_route</code> to plan your journey.</p>
 
             <div className={styles.infoCard}>
-              <h4>{'\u{1F30E}'} Navigation</h4>
+              <h4><Map size={18} /> Navigation</h4>
               <p className={styles.noMarginBottom}>All systems are visible on the galaxy map. Plan routes to distant regions, find rare resources in frontier space, and explore the vast expanse between empire territories.</p>
             </div>
           </section>
@@ -278,7 +285,7 @@ export default function FeaturesPage() {
           {/* Combat */}
           <section className={styles.section} id="combat">
             <div className={styles.sectionHeader}>
-              <div className={styles.sectionIcon}>{'\u2694'}</div>
+              <div className={styles.sectionIcon}><Swords size={24} /></div>
               <h2>Combat</h2>
             </div>
 
@@ -380,7 +387,7 @@ export default function FeaturesPage() {
           {/* Combat Logout Timer */}
           <section className={styles.section} id="combat-logout">
             <div className={styles.sectionHeader}>
-              <div className={styles.sectionIcon}>{'\u{1F6D1}'}</div>
+              <div className={styles.sectionIcon}><Timer size={24} /></div>
               <h2>Combat Logout Timer</h2>
             </div>
 
@@ -430,7 +437,7 @@ export default function FeaturesPage() {
             <p>If you reconnect before the timer expires, you immediately regain control of your ship. You&apos;ll receive a <code>reconnected</code> message showing how many ticks remained.</p>
 
             <div className={styles.infoCard}>
-              <h4>{'\u26A0'} Strategic Implications</h4>
+              <h4><AlertTriangle size={18} /> Strategic Implications</h4>
               <p className={styles.noMarginBottom}>Think twice before engaging. If you start a fight, you commit to it for at least 5 minutes. Disconnecting won&apos;t save you &ndash; it just makes you a sitting duck for your enemies.</p>
             </div>
           </section>
@@ -438,7 +445,7 @@ export default function FeaturesPage() {
           {/* Wrecks & Loot */}
           <section className={styles.section} id="wrecks">
             <div className={styles.sectionHeader}>
-              <div className={styles.sectionIcon}>{'\u{1F4A5}'}</div>
+              <div className={styles.sectionIcon}><Skull size={24} /></div>
               <h2>Wrecks &amp; Loot</h2>
             </div>
 
@@ -460,7 +467,7 @@ export default function FeaturesPage() {
             </div>
 
             <div className={styles.infoCard}>
-              <h4>{'\u{1F4AB}'} Strategic Implications</h4>
+              <h4><Zap size={18} /> Strategic Implications</h4>
               <p className={styles.noMarginBottom}>Combat becomes profitable. Pirates can hunt for cargo, vultures can salvage battlefields, and high-value transports become juicy targets. Defend your wreck or race to loot it!</p>
             </div>
           </section>
@@ -468,7 +475,7 @@ export default function FeaturesPage() {
           {/* Mining */}
           <section className={styles.section} id="mining">
             <div className={styles.sectionHeader}>
-              <div className={styles.sectionIcon}>{'\u26CF'}</div>
+              <div className={styles.sectionIcon}><Pickaxe size={24} /></div>
               <h2>Mining</h2>
             </div>
 
@@ -505,7 +512,7 @@ export default function FeaturesPage() {
           {/* Trading */}
           <section className={styles.section} id="trading">
             <div className={styles.sectionHeader}>
-              <div className={styles.sectionIcon}>{'\u{1F4B0}'}</div>
+              <div className={styles.sectionIcon}><Coins size={24} /></div>
               <h2>Trading</h2>
             </div>
 
@@ -541,7 +548,7 @@ export default function FeaturesPage() {
           {/* Skills */}
           <section className={styles.section} id="skills">
             <div className={styles.sectionHeader}>
-              <div className={styles.sectionIcon}>{'\u{1F4C8}'}</div>
+              <div className={styles.sectionIcon}><TrendingUp size={24} /></div>
               <h2>Skills</h2>
             </div>
 
@@ -550,35 +557,35 @@ export default function FeaturesPage() {
             <h3>Skill Categories</h3>
             <div className={styles.featureGrid}>
               <div className={styles.featureItem}>
-                <div className={styles.icon}>{'\u26CF'}</div>
+                <div className={styles.icon}><Pickaxe size={24} /></div>
                 <div className={styles.name}>Mining</div>
               </div>
               <div className={styles.featureItem}>
-                <div className={styles.icon}>{'\u2694'}</div>
+                <div className={styles.icon}><Swords size={24} /></div>
                 <div className={styles.name}>Combat</div>
               </div>
               <div className={styles.featureItem}>
-                <div className={styles.icon}>{'\u{1F6E0}'}</div>
+                <div className={styles.icon}><Settings size={24} /></div>
                 <div className={styles.name}>Engineering</div>
               </div>
               <div className={styles.featureItem}>
-                <div className={styles.icon}>{'\u{1F4B0}'}</div>
+                <div className={styles.icon}><Coins size={24} /></div>
                 <div className={styles.name}>Trading</div>
               </div>
               <div className={styles.featureItem}>
-                <div className={styles.icon}>{'\u{1F30E}'}</div>
+                <div className={styles.icon}><Compass size={24} /></div>
                 <div className={styles.name}>Exploration</div>
               </div>
               <div className={styles.featureItem}>
-                <div className={styles.icon}>{'\u{1F527}'}</div>
+                <div className={styles.icon}><Hammer size={24} /></div>
                 <div className={styles.name}>Crafting</div>
               </div>
               <div className={styles.featureItem}>
-                <div className={styles.icon}>{'\u{1F6E1}'}</div>
+                <div className={styles.icon}><Shield size={24} /></div>
                 <div className={styles.name}>Defense</div>
               </div>
               <div className={styles.featureItem}>
-                <div className={styles.icon}>{'\u{1F6F0}'}</div>
+                <div className={styles.icon}><Satellite size={24} /></div>
                 <div className={styles.name}>Salvaging</div>
               </div>
             </div>
@@ -596,7 +603,7 @@ export default function FeaturesPage() {
           {/* Crafting */}
           <section className={styles.section} id="crafting">
             <div className={styles.sectionHeader}>
-              <div className={styles.sectionIcon}>{'\u{1F527}'}</div>
+              <div className={styles.sectionIcon}><Wrench size={24} /></div>
               <h2>Crafting</h2>
             </div>
 
@@ -619,7 +626,7 @@ export default function FeaturesPage() {
             </ul>
 
             <div className={styles.infoCard}>
-              <h4>{'\u2B50'} Masterwork Items</h4>
+              <h4><Award size={18} /> Masterwork Items</h4>
               <p className={styles.noMarginBottom}>Items crafted at 90%+ quality are considered <strong>Masterwork</strong>. These are highly valuable and can be sold at premium prices or used for a significant combat advantage.</p>
             </div>
           </section>
@@ -627,7 +634,7 @@ export default function FeaturesPage() {
           {/* Factions */}
           <section className={styles.section} id="factions">
             <div className={styles.sectionHeader}>
-              <div className={styles.sectionIcon}>{'\u{1F3F3}'}</div>
+              <div className={styles.sectionIcon}><Flag size={24} /></div>
               <h2>Factions</h2>
             </div>
 
@@ -635,7 +642,7 @@ export default function FeaturesPage() {
 
             <h3>Faction Cost</h3>
             <div className={styles.infoCard}>
-              <h4>{'\u{1F31F}'} Free to Create</h4>
+              <h4><Star size={18} /> Free to Create</h4>
               <p className={styles.noMarginBottom}>Creating a faction costs <strong>0 credits</strong>. Anyone can start a faction and begin recruiting members immediately.</p>
             </div>
 
@@ -675,7 +682,7 @@ export default function FeaturesPage() {
           {/* Bases */}
           <section className={styles.section} id="bases">
             <div className={styles.sectionHeader}>
-              <div className={styles.sectionIcon}>{'\u{1F3E0}'}</div>
+              <div className={styles.sectionIcon}><Warehouse size={24} /></div>
               <h2>Player Bases</h2>
             </div>
 
@@ -775,7 +782,7 @@ export default function FeaturesPage() {
             </div>
 
             <div className={`${styles.infoCard} ${styles.infoCardWarning}`}>
-              <h4>{'\u26A0\uFE0F'} Base Vulnerability</h4>
+              <h4><AlertTriangle size={18} /> Base Vulnerability</h4>
               <p className={styles.noMarginBottom}>Player bases can be <strong>raided and destroyed</strong> by other players. Higher defense levels and deploying defensive drones helps protect your investment. Destroyed bases leave wrecks that can be looted.</p>
             </div>
           </section>
@@ -783,7 +790,7 @@ export default function FeaturesPage() {
           {/* Insurance */}
           <section className={styles.section} id="insurance">
             <div className={styles.sectionHeader}>
-              <div className={styles.sectionIcon}>{'\u{1F6E1}'}</div>
+              <div className={styles.sectionIcon}><Shield size={24} /></div>
               <h2>Insurance &amp; Cloning</h2>
             </div>
 
@@ -835,7 +842,7 @@ export default function FeaturesPage() {
           {/* Chat */}
           <section className={styles.section} id="chat">
             <div className={styles.sectionHeader}>
-              <div className={styles.sectionIcon}>{'\u{1F4AC}'}</div>
+              <div className={styles.sectionIcon}><MessageSquare size={24} /></div>
               <h2>Communication</h2>
             </div>
 
@@ -903,7 +910,7 @@ export default function FeaturesPage() {
         onClick={() => setSidebarOpen(!sidebarOpen)}
         aria-label="Toggle sidebar navigation"
       >
-        {'\u2630'}
+        <Menu size={24} />
       </button>
     </>
   )

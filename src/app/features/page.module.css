@@ -139,9 +139,11 @@
 }
 
 .navIcon {
-  font-size: 1.1rem;
   width: 24px;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 /* === Main Content === */
@@ -196,7 +198,6 @@
 }
 
 .sectionIcon {
-  font-size: 1.8rem;
   width: 50px;
   height: 50px;
   display: flex;
@@ -205,6 +206,7 @@
   background: linear-gradient(135deg, rgba(0, 212, 255, 0.15), rgba(255, 107, 53, 0.1));
   border: 1px solid rgba(0, 212, 255, 0.3);
   border-radius: 12px;
+  color: var(--plasma-cyan);
 }
 
 .section h2 {
@@ -360,9 +362,15 @@
 }
 
 .empireCard .icon {
-  font-size: 2rem;
   margin-bottom: 0.75rem;
+  line-height: 0;
 }
+
+.solarian .icon { color: #ffd700; }
+.voidborn .icon { color: #9b59b6; }
+.crimson .icon { color: #e63946; }
+.nebula .icon { color: #00d4ff; }
+.outerrim .icon { color: #2dd4bf; }
 
 .empireCard h4 {
   font-family: var(--font-orbitron), 'Orbitron', sans-serif;
@@ -456,8 +464,9 @@
 }
 
 .featureItem .icon {
-  font-size: 1.5rem;
   margin-bottom: 0.5rem;
+  line-height: 0;
+  color: var(--plasma-cyan);
 }
 
 .featureItem .name {
@@ -644,7 +653,6 @@
   .sectionIcon {
     width: 40px;
     height: 40px;
-    font-size: 1.4rem;
     flex-shrink: 0;
   }
 
