@@ -221,6 +221,17 @@
   line-height: 1.7;
 }
 
+.inlineLink {
+  color: var(--plasma-cyan);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.3);
+  transition: border-color 0.2s ease;
+}
+
+.inlineLink:hover {
+  border-color: var(--plasma-cyan);
+}
+
 /* === Gallery === */
 .gallerySection {
   background: var(--deep-void);
@@ -525,6 +536,150 @@
   color: var(--star-white);
 }
 
+/* === Press === */
+.pressSection {
+  padding: 5rem 2rem;
+  background: linear-gradient(180deg, transparent, rgba(0, 212, 255, 0.02) 50%, transparent);
+}
+
+.pressGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.pressCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--hull-grey);
+  border-radius: 10px;
+  text-decoration: none;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+}
+
+.pressCard:hover {
+  border-color: var(--plasma-cyan);
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.08);
+  transform: translateY(-2px);
+}
+
+.pressOutlet {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--hull-grey);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+}
+
+.pressTitle {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 1rem;
+  color: var(--star-white);
+  line-height: 1.5;
+  flex: 1;
+}
+
+.pressArrow {
+  font-size: 1.1rem;
+  color: var(--hull-grey);
+  transition: color 0.2s ease, transform 0.2s ease;
+  align-self: flex-end;
+}
+
+.pressCard:hover .pressArrow {
+  color: var(--plasma-cyan);
+  transform: translateX(4px);
+}
+
+/* === Discord Section === */
+.discordSection {
+  background: linear-gradient(180deg, var(--space-black) 0%, var(--deep-void) 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.discordSection::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(ellipse 50% 80% at 80% 50%, rgba(88, 101, 242, 0.15), transparent),
+    radial-gradient(ellipse 40% 60% at 20% 80%, rgba(0, 212, 255, 0.1), transparent);
+  pointer-events: none;
+}
+
+.discordContent {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4rem;
+  flex-wrap: wrap;
+}
+
+.discordInfo {
+  max-width: 500px;
+}
+
+.discordInfo h2 {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: linear-gradient(135deg, #5865F2, var(--plasma-cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.discordInfo p {
+  font-size: 1.1rem;
+  color: var(--chrome-silver);
+  margin-bottom: 1.5rem;
+  line-height: 1.7;
+}
+
+.discordFeatures {
+  list-style: none;
+  margin-bottom: 2rem;
+  padding: 0;
+}
+
+.discordFeatures li {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.9rem;
+  color: var(--star-white);
+  padding: 0.5rem 0;
+  padding-left: 1.5rem;
+  position: relative;
+}
+
+.discordFeatures li::before {
+  content: '>';
+  position: absolute;
+  left: 0;
+  color: #5865F2;
+  font-weight: bold;
+}
+
+.discordEmbed {
+  border: 2px solid #5865F2;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 0 40px rgba(88, 101, 242, 0.3);
+}
+
+.discordEmbed iframe {
+  display: block;
+}
+
 /* === Animations === */
 @keyframes booksAmbient {
   0% { opacity: 0.6; }
@@ -561,6 +716,10 @@
     grid-template-columns: 1fr;
   }
 
+  .pressGrid {
+    grid-template-columns: 1fr;
+  }
+
   .booksContent {
     flex-direction: column;
     text-align: center;
@@ -569,6 +728,19 @@
 
   .booksInfo {
     max-width: 100%;
+  }
+
+  .discordContent {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .discordFeatures li {
+    padding-left: 0;
+  }
+
+  .discordFeatures li::before {
+    display: none;
   }
 }
 

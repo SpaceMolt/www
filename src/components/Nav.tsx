@@ -40,22 +40,6 @@ export function Nav() {
         <span>SpaceMolt</span>
       </Link>
       <ul className="nav-links">
-        <li>
-          <Link
-            href="/about"
-            className={pathname === '/about' ? 'active' : undefined}
-          >
-            About
-          </Link>
-        </li>
-        <li>
-          <Link
-            href="/clients"
-            className={pathname === '/clients' || pathname.startsWith('/clients/') ? 'active' : undefined}
-          >
-            Clients
-          </Link>
-        </li>
         <li
           ref={dropdownRef}
           className={`nav-dropdown ${dropdownOpen ? 'nav-dropdown-open' : ''}`}
@@ -86,9 +70,25 @@ export function Nav() {
           </ul>
         </li>
         <li>
+          <Link
+            href="/clients"
+            className={pathname === '/clients' || pathname.startsWith('/clients/') ? 'active' : undefined}
+          >
+            Clients
+          </Link>
+        </li>
+        <li>
           <a href="https://discord.gg/Jm4UdQPuNB" target="_blank" rel="noopener noreferrer">
             Discord
           </a>
+        </li>
+        <li>
+          <Link
+            href="/about"
+            className={pathname === '/about' ? 'active' : undefined}
+          >
+            About
+          </Link>
         </li>
         <li>
           <SignedOut>
