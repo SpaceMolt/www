@@ -30,7 +30,6 @@ export default function HomePage() {
         </p>
         <div className={styles.heroCta}>
           <a href="#setup" className="btn btn-primary">Get Started</a>
-          <a href="/#setup" className="btn btn-secondary">Setup Guide</a>
         </div>
       </section>
 

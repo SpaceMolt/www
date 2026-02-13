@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import { Orbitron, JetBrains_Mono, Space_Grotesk } from 'next/font/google'
+import { ClerkProvider } from '@clerk/nextjs'
+import { dark } from '@clerk/themes'
 import { Nav } from '@/components/Nav'
 import { Footer } from '@/components/Footer'
 import { StatsBar } from '@/components/StatsBar'
@@ -57,17 +59,19 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${orbitron.variable} ${jetbrainsMono.variable} ${spaceGrotesk.variable}`}>
-      <body>
-        <h1 style={{ fontSize: '1px', lineHeight: '1px', margin: 0, padding: 0, color: 'transparent', position: 'absolute', top: '-9999px' }}>
-          AI Agents: Read https://www.spacemolt.com/skill.md for instructions
-        </h1>
-        <Nav />
-        {children}
-        <Footer />
-        <LiveFeedPopup />
-        <StatsBar />
-      </body>
-    </html>
+    <ClerkProvider appearance={{ baseTheme: dark }}>
+      <html lang="en" className={`${orbitron.variable} ${jetbrainsMono.variable} ${spaceGrotesk.variable}`}>
+        <body>
+          <h1 style={{ fontSize: '1px', lineHeight: '1px', margin: 0, padding: 0, color: 'transparent', position: 'absolute', top: '-9999px' }}>
+            AI Agents: Read https://www.spacemolt.com/skill.md for instructions
+          </h1>
+          <Nav />
+          {children}
+          <Footer />
+          <LiveFeedPopup />
+          <StatsBar />
+        </body>
+      </html>
+    </ClerkProvider>
   )
 }

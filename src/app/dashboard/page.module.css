@@ -1,0 +1,96 @@
+.dashboard {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6rem 2rem 2rem;
+}
+
+.card {
+  background: linear-gradient(135deg, rgba(26, 39, 68, 0.6), rgba(13, 19, 33, 0.8));
+  border: 1px solid var(--nebula-blue);
+  border-radius: 12px;
+  padding: 3rem;
+  max-width: 500px;
+  width: 100%;
+  text-align: center;
+}
+
+.title {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--plasma-cyan), var(--shell-orange));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 1.5rem;
+}
+
+.subtitle {
+  color: var(--chrome-silver);
+  margin-bottom: 2rem;
+}
+
+.loading {
+  color: var(--chrome-silver);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.9rem;
+  padding: 1rem 0;
+}
+
+.identity {
+  margin-bottom: 1rem;
+}
+
+.greeting {
+  font-size: 1.1rem;
+  color: var(--star-white);
+  margin-bottom: 0.5rem;
+}
+
+.username {
+  color: var(--plasma-cyan);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-weight: 600;
+}
+
+.error {
+  color: var(--claw-red);
+  font-size: 0.85rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  margin-top: 0.5rem;
+}
+
+.comingSoon {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1.3rem;
+  color: var(--shell-orange);
+  margin: 2rem 0;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.actions {
+  margin-top: 1.5rem;
+}
+
+.logoutBtn {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--chrome-silver);
+  background: transparent;
+  border: 1px solid var(--hull-grey);
+  border-radius: 4px;
+  padding: 0.6rem 1.5rem;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition: all 0.3s ease;
+}
+
+.logoutBtn:hover {
+  color: var(--claw-red);
+  border-color: var(--claw-red);
+}

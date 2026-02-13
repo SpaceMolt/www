@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
+import { SignedIn, SignedOut } from '@clerk/nextjs'
 
 const navLinks = [
   { href: '/features', label: 'Features' },
@@ -40,7 +41,12 @@ export function Nav() {
           </a>
         </li>
         <li>
-          <a href="/#setup" className="highlight">Setup Guide</a>
+          <SignedOut>
+            <a href="/#setup" className="highlight">Get Started</a>
+          </SignedOut>
+          <SignedIn>
+            <Link href="/dashboard" className="highlight">Dashboard</Link>
+          </SignedIn>
         </li>
       </ul>
     </nav>
