@@ -788,6 +788,679 @@
   background: rgba(0, 212, 255, 0.1);
 }
 
+/* === Main Tabs === */
+.mainTabs {
+  width: 100%;
+  display: flex;
+  gap: 2px;
+  background: var(--space-black);
+  border: 1px solid var(--hull-grey);
+  border-radius: 8px;
+  padding: 3px;
+  position: relative;
+}
+
+.mainTab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.25rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--chrome-silver);
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mainTab:hover {
+  color: var(--star-white);
+  background: rgba(26, 39, 68, 0.4);
+}
+
+.mainTab svg {
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.mainTab:hover svg {
+  opacity: 0.9;
+}
+
+.mainTabActive {
+  color: var(--plasma-cyan);
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.08), rgba(0, 212, 255, 0.03));
+  border-color: rgba(0, 212, 255, 0.25);
+  box-shadow:
+    0 0 12px rgba(0, 212, 255, 0.06),
+    inset 0 1px 0 rgba(0, 212, 255, 0.1);
+}
+
+.mainTabActive svg {
+  opacity: 1;
+}
+
+.playerCount {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--space-black);
+  background: var(--plasma-cyan);
+  min-width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.35rem;
+  line-height: 1;
+}
+
+/* === Players Container === */
+.playersContainer {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.emptyPlayers {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 4rem 2rem;
+  text-align: center;
+  color: var(--chrome-silver);
+  background: linear-gradient(135deg, rgba(26, 39, 68, 0.3), rgba(13, 19, 33, 0.5));
+  border: 1px dashed var(--hull-grey);
+  border-radius: 10px;
+}
+
+.emptyPlayers svg {
+  color: var(--hull-grey);
+  opacity: 0.5;
+}
+
+.emptyPlayers h3 {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--star-white);
+  margin: 0;
+}
+
+.emptyPlayers p {
+  font-size: 0.9rem;
+  color: var(--hull-grey);
+  margin: 0;
+  max-width: 320px;
+}
+
+.switchTabBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.08);
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  border-radius: 6px;
+  padding: 0.5rem 1.1rem;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transition: all 0.2s ease;
+  margin-top: 0.5rem;
+}
+
+.switchTabBtn:hover {
+  background: rgba(0, 212, 255, 0.15);
+  border-color: var(--plasma-cyan);
+  box-shadow: 0 0 16px rgba(0, 212, 255, 0.12);
+}
+
+/* === Player Selector === */
+.playerSelector {
+  position: relative;
+  z-index: 20;
+}
+
+.playerSelectorTrigger {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, rgba(26, 39, 68, 0.5), rgba(13, 19, 33, 0.7));
+  border: 1px solid var(--hull-grey);
+  border-radius: 8px;
+  color: var(--star-white);
+  cursor: pointer;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+
+.playerSelectorTrigger:hover {
+  border-color: var(--plasma-cyan);
+  box-shadow: 0 0 12px rgba(0, 212, 255, 0.08);
+}
+
+.playerSelectorTrigger svg:first-child {
+  color: var(--plasma-cyan);
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+.playerSelectorLabel {
+  flex: 1;
+  text-align: left;
+}
+
+.playerSelectorHint {
+  font-size: 0.7rem;
+  color: var(--hull-grey);
+  flex-shrink: 0;
+}
+
+.playerSelectorChevron {
+  flex-shrink: 0;
+  color: var(--chrome-silver);
+  opacity: 0.5;
+  transition: transform 0.2s ease, opacity 0.15s ease;
+}
+
+.playerSelectorChevronOpen {
+  transform: rotate(180deg);
+  opacity: 0.9;
+  color: var(--plasma-cyan);
+}
+
+.playerSelectorDropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--deep-void);
+  border: 1.5px solid var(--plasma-cyan);
+  border-radius: 8px;
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.5),
+    0 0 24px rgba(0, 212, 255, 0.1);
+  overflow: hidden;
+  animation: dropdownSlide 0.15s ease;
+}
+
+.playerSelectorSearchWrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.85rem;
+  border-bottom: 1px solid var(--hull-grey);
+  color: var(--hull-grey);
+}
+
+.playerSelectorSearch {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--star-white);
+}
+
+.playerSelectorSearch::placeholder {
+  color: var(--hull-grey);
+}
+
+.playerSelectorOption {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.6rem 0.85rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--chrome-silver);
+  text-align: left;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+
+.playerSelectorOption:hover {
+  background: rgba(0, 212, 255, 0.06);
+  color: var(--star-white);
+}
+
+.playerSelectorOptionActive {
+  color: var(--plasma-cyan);
+  font-weight: 600;
+  background: rgba(0, 212, 255, 0.04);
+}
+
+.playerSelectorEmpty {
+  padding: 1rem;
+  text-align: center;
+  color: var(--hull-grey);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+}
+
+/* === Player Link Button (in linked players list) === */
+.playerLinkBtn {
+  background: none;
+  border: none;
+  color: var(--star-white);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s ease;
+}
+
+.playerLinkBtn:hover {
+  color: var(--plasma-cyan);
+}
+
+/* === Player Detail === */
+.playerDetail {
+  width: 100%;
+  background: linear-gradient(180deg, rgba(26, 39, 68, 0.35), rgba(13, 19, 33, 0.55));
+  border: 1px solid var(--hull-grey);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+/* === Detail Sub-Tabs === */
+.detailTabs {
+  display: flex;
+  border-bottom: 1px solid var(--hull-grey);
+  background: rgba(0, 0, 0, 0.2);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.detailTabs::-webkit-scrollbar {
+  display: none;
+}
+
+.detailTab {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.65rem 1rem;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--chrome-silver);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.detailTab:hover {
+  color: var(--star-white);
+  background: rgba(0, 212, 255, 0.04);
+}
+
+.detailTab svg {
+  opacity: 0.5;
+  transition: opacity 0.15s ease;
+}
+
+.detailTab:hover svg {
+  opacity: 0.8;
+}
+
+.detailTabActive {
+  color: var(--plasma-cyan);
+  border-bottom-color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.04);
+}
+
+.detailTabActive svg {
+  opacity: 1;
+}
+
+/* === Detail Panel === */
+.detailPanel {
+  padding: 1.5rem;
+  min-height: 200px;
+  animation: panelFadeIn 0.2s ease;
+}
+
+@keyframes panelFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.emptyPanel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 160px;
+  color: var(--hull-grey);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.emptyPanel code {
+  color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.08);
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  font-size: 0.8rem;
+}
+
+/* === Overview Grid === */
+.overviewGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1px;
+  background: var(--hull-grey);
+  border: 1px solid var(--hull-grey);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.overviewItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.85rem 1rem;
+  background: var(--deep-void);
+}
+
+.overviewLabel {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--hull-grey);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.overviewValue {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--star-white);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.overviewValue svg {
+  flex-shrink: 0;
+}
+
+.onlineDot {
+  color: var(--bio-green);
+  filter: drop-shadow(0 0 4px var(--bio-green));
+}
+
+.offlineDot {
+  color: var(--hull-grey);
+}
+
+/* === Ship Panel === */
+.shipPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.shipHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--hull-grey);
+}
+
+.shipHeader > svg {
+  color: var(--plasma-cyan);
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+.shipName {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--star-white);
+  margin: 0;
+}
+
+.shipClass {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--chrome-silver);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.shipBars {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* === Stat Bars (gauge readouts) === */
+.statBar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.statBarLabel {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+}
+
+.statBarLabel span:first-child {
+  color: var(--chrome-silver);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 500;
+}
+
+.statBarLabel span:last-child {
+  color: var(--hull-grey);
+  font-size: 0.7rem;
+}
+
+.statBarTrack {
+  height: 8px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(61, 90, 108, 0.4);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.statBarTrack::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 3px,
+    rgba(0, 0, 0, 0.15) 3px,
+    rgba(0, 0, 0, 0.15) 4px
+  );
+  pointer-events: none;
+}
+
+.statBarFill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+  box-shadow: 0 0 8px currentColor;
+}
+
+/* === Skills Grid === */
+.skillGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1px;
+  background: var(--hull-grey);
+  border: 1px solid var(--hull-grey);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.skillItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.85rem;
+  background: var(--deep-void);
+}
+
+.skillName {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.8rem;
+  color: var(--chrome-silver);
+  text-transform: capitalize;
+}
+
+.skillLevel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.08);
+  padding: 0.15rem 0.5rem;
+  border-radius: 3px;
+  border: 1px solid rgba(0, 212, 255, 0.15);
+}
+
+/* === Stats Grid === */
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1px;
+  background: var(--hull-grey);
+  border: 1px solid var(--hull-grey);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.85rem 1rem;
+  background: var(--deep-void);
+  text-align: center;
+}
+
+.statValue {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--star-white);
+}
+
+.statLabel {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.55rem;
+  font-weight: 600;
+  color: var(--hull-grey);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* === Captain's Log === */
+.logList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 500px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--hull-grey) transparent;
+}
+
+.logList::-webkit-scrollbar {
+  width: 4px;
+}
+
+.logList::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.logList::-webkit-scrollbar-thumb {
+  background: var(--hull-grey);
+  border-radius: 2px;
+}
+
+.logEntry {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(61, 90, 108, 0.3);
+  border-radius: 6px;
+  padding: 0.85rem 1rem;
+  border-left: 2px solid var(--plasma-cyan);
+}
+
+.logTimestamp {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--hull-grey);
+  margin-bottom: 0.5rem;
+}
+
+.logTimestamp svg {
+  opacity: 0.5;
+}
+
+.logContent {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.85rem;
+  color: var(--chrome-silver);
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 /* === Responsive === */
 @media (max-width: 768px) {
   .dashboard {
@@ -887,5 +1560,46 @@
 
   .setupFooter {
     padding: 0.6rem 1rem;
+  }
+
+  .mainTab {
+    font-size: 0.7rem;
+    padding: 0.6rem 0.75rem;
+    gap: 0.35rem;
+  }
+
+  .playerSelectorTrigger {
+    font-size: 0.8rem;
+    padding: 0.65rem 0.85rem;
+  }
+
+  .detailTabs {
+    gap: 0;
+  }
+
+  .detailTab {
+    font-size: 0.65rem;
+    padding: 0.55rem 0.65rem;
+    gap: 0.25rem;
+  }
+
+  .detailPanel {
+    padding: 1rem;
+  }
+
+  .overviewGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .skillGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .statGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .shipName {
+    font-size: 0.95rem;
   }
 }

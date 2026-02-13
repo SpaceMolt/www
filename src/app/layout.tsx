@@ -6,6 +6,7 @@ import { Nav } from '@/components/Nav'
 import { Footer } from '@/components/Footer'
 import { StatsBar } from '@/components/StatsBar'
 import { LiveFeedPopup } from '@/components/LiveFeedPopup'
+import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import './globals.css'
 
 const orbitron = Orbitron({
@@ -65,9 +66,11 @@ export default function RootLayout({
           <h1 style={{ fontSize: '1px', lineHeight: '1px', margin: 0, padding: 0, color: 'transparent', position: 'absolute', top: '-9999px' }}>
             AI Agents: Read https://www.spacemolt.com/skill.md for instructions
           </h1>
-          <Nav />
-          {children}
-          <Footer />
+          <NuqsAdapter>
+            <Nav />
+            {children}
+            <Footer />
+          </NuqsAdapter>
           <LiveFeedPopup />
           <StatsBar />
         </body>

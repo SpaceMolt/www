@@ -2,8 +2,9 @@
 
 import Link from 'next/link'
 import { useUser, useAuth, SignOutButton } from '@clerk/nextjs'
-import { useEffect, useState, useCallback } from 'react'
-import { Settings, BookOpen, Rocket } from 'lucide-react'
+import { Suspense, useEffect, useState, useCallback, useRef } from 'react'
+import { Settings, BookOpen, Rocket, Users, Ship, Swords, ScrollText, MapPin, Wifi, WifiOff, Clock, Coins, BarChart3, Wrench, ChevronDown, Search } from 'lucide-react'
+import { useQueryState } from 'nuqs'
 import { SetupTabs } from '@/components/SetupTabs'
 import styles from './page.module.css'
 
@@ -19,9 +20,127 @@ interface RegistrationCodeResponse {
   players: LinkedPlayer[]
 }
 
+interface PlayerShipInfo {
+  id: string
+  class_id: string
+  name: string
+  hull: number
+  max_hull: number
+  shield: number
+  max_shield: number
+  fuel: number
+  max_fuel: number
+  cargo_used: number
+  cargo_capacity: number
+}
+
+interface PlayerStats {
+  credits_earned: number
+  credits_spent: number
+  ships_destroyed: number
+  ships_lost: number
+  pirates_destroyed: number
+  bases_destroyed: number
+  ore_mined: number
+  items_crafted: number
+  trades_completed: number
+  systems_explored: number
+  distance_traveled: number
+  time_played: number
+}
+
+interface PlayerInfo {
+  id: string
+  username: string
+  empire: string
+  credits: number
+  current_system: string
+  current_poi: string
+  docked_at?: string
+  home_base?: string
+  online: boolean
+  faction_id?: string
+  faction_rank?: string
+  created_at: string
+  last_login_at: string
+  last_active_at: string
+  ship?: PlayerShipInfo
+  skills?: Record<string, number>
+  stats?: PlayerStats
+}
+
+interface CaptainsLogEntry {
+  index: number
+  entry: string
+  created_at: string
+}
+
+interface CaptainsLogResponse {
+  entries: CaptainsLogEntry[]
+  total_count: number
+  max_entries: number
+}
+
+type DetailTab = 'overview' | 'ship' | 'skills' | 'stats' | 'log'
+
+function formatNumber(n: number): string {
+  return n.toLocaleString()
+}
+
+function formatDuration(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m`
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`
+  return `${Math.floor(seconds / 86400)}d ${Math.floor((seconds % 86400) / 3600)}h`
+}
+
+function formatDate(iso: string): string {
+  try {
+    return new Date(iso).toLocaleDateString('en-US', {
+      month: 'short', day: 'numeric', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    })
+  } catch {
+    return iso
+  }
+}
+
+function StatBar({ label, current, max, color }: { label: string; current: number; max: number; color: string }) {
+  const pct = max > 0 ? Math.round((current / max) * 100) : 0
+  return (
+    <div className={styles.statBar}>
+      <div className={styles.statBarLabel}>
+        <span>{label}</span>
+        <span>{formatNumber(current)} / {formatNumber(max)}</span>
+      </div>
+      <div className={styles.statBarTrack}>
+        <div className={styles.statBarFill} style={{ width: `${pct}%`, background: color }} />
+      </div>
+    </div>
+  )
+}
+
 export default function DashboardPage() {
+  return (
+    <Suspense fallback={
+      <main className={styles.dashboard}>
+        <div className={styles.loadingState}>
+          <div className={styles.spinner} />
+          <span>Initializing...</span>
+        </div>
+      </main>
+    }>
+      <DashboardContent />
+    </Suspense>
+  )
+}
+
+function DashboardContent() {
   const { user, isLoaded: userLoaded } = useUser()
   const { getToken, isLoaded: authLoaded } = useAuth()
+
+  const [tab, setTab] = useQueryState('tab', { defaultValue: 'get-started' })
+  const [selectedPlayer, setSelectedPlayer] = useQueryState('player')
 
   const [registrationCode, setRegistrationCode] = useState<string | null>(null)
   const [players, setPlayers] = useState<LinkedPlayer[]>([])
@@ -29,6 +148,19 @@ export default function DashboardPage() {
   const [rotating, setRotating] = useState(false)
   const [copied, setCopied] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Player detail state
+  const [playerInfo, setPlayerInfo] = useState<PlayerInfo | null>(null)
+  const [playerLoading, setPlayerLoading] = useState(false)
+  const [playerError, setPlayerError] = useState<string | null>(null)
+  const [detailTab, setDetailTab] = useState<DetailTab>('overview')
+  const [captainsLog, setCaptainsLog] = useState<CaptainsLogResponse | null>(null)
+  const [logLoading, setLogLoading] = useState(false)
+
+  // Player selector state
+  const [selectorOpen, setSelectorOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const selectorRef = useRef<HTMLDivElement>(null)
 
   const fetchRegistrationCode = useCallback(async () => {
     try {
@@ -40,6 +172,10 @@ export default function DashboardPage() {
         const data: RegistrationCodeResponse = await res.json()
         setRegistrationCode(data.registration_code)
         setPlayers(data.players || [])
+        // Auto-select if only 1 player and none selected
+        if (data.players?.length === 1 && !selectedPlayer) {
+          setSelectedPlayer(data.players[0].id)
+        }
       } else {
         const data = await res.json().catch(() => null)
         setError(data?.error || `Server returned ${res.status}`)
@@ -49,12 +185,76 @@ export default function DashboardPage() {
     } finally {
       setCodeLoading(false)
     }
+  }, [getToken, selectedPlayer, setSelectedPlayer])
+
+  const fetchPlayerInfo = useCallback(async (playerId: string) => {
+    setPlayerLoading(true)
+    setPlayerError(null)
+    try {
+      const token = await getToken()
+      const res = await fetch(`${GAME_SERVER}/api/player/${playerId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (res.ok) {
+        setPlayerInfo(await res.json())
+      } else {
+        const data = await res.json().catch(() => null)
+        setPlayerError(data?.error || `Server returned ${res.status}`)
+      }
+    } catch {
+      setPlayerError('Could not reach game server')
+    } finally {
+      setPlayerLoading(false)
+    }
+  }, [getToken])
+
+  const fetchCaptainsLog = useCallback(async (playerId: string) => {
+    setLogLoading(true)
+    try {
+      const token = await getToken()
+      const res = await fetch(`${GAME_SERVER}/api/player/${playerId}/log`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (res.ok) {
+        setCaptainsLog(await res.json())
+      }
+    } catch {
+      // ignore
+    } finally {
+      setLogLoading(false)
+    }
   }, [getToken])
 
   useEffect(() => {
     if (!userLoaded || !authLoaded || !user) return
     fetchRegistrationCode()
   }, [userLoaded, authLoaded, user, fetchRegistrationCode])
+
+  // Fetch player info when selected player changes
+  useEffect(() => {
+    if (!selectedPlayer || !authLoaded) return
+    setDetailTab('overview')
+    setCaptainsLog(null)
+    fetchPlayerInfo(selectedPlayer)
+  }, [selectedPlayer, authLoaded, fetchPlayerInfo])
+
+  // Fetch captain's log when log tab is opened
+  useEffect(() => {
+    if (detailTab === 'log' && selectedPlayer && !captainsLog && !logLoading) {
+      fetchCaptainsLog(selectedPlayer)
+    }
+  }, [detailTab, selectedPlayer, captainsLog, logLoading, fetchCaptainsLog])
+
+  // Close selector dropdown on click outside
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (selectorRef.current && !selectorRef.current.contains(e.target as Node)) {
+        setSelectorOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
 
   const handleRotate = async () => {
     if (rotating) return
@@ -84,6 +284,19 @@ export default function DashboardPage() {
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
+
+  const handleSelectPlayer = (id: string) => {
+    setSelectedPlayer(id)
+    setSelectorOpen(false)
+    setSearchQuery('')
+    if (tab !== 'players') setTab('players')
+  }
+
+  const filteredPlayers = players.filter(p =>
+    p.username.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
+  const selectedPlayerName = players.find(p => p.id === selectedPlayer)?.username
 
   if (!userLoaded || !authLoaded) {
     return (
@@ -121,101 +334,377 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Step 1: Registration Code */}
-      <section className={styles.step}>
-        <div className={styles.stepLabel}>
-          <span className={styles.stepNum}>01</span>
-          <h2>Your Registration Code</h2>
-        </div>
+      {/* Main tabs */}
+      <div className={styles.mainTabs}>
+        <button
+          className={`${styles.mainTab} ${tab === 'get-started' ? styles.mainTabActive : ''}`}
+          onClick={() => { setTab('get-started'); setSelectedPlayer(null) }}
+        >
+          <Rocket size={16} />
+          Get Started
+        </button>
+        <button
+          className={`${styles.mainTab} ${tab === 'players' ? styles.mainTabActive : ''}`}
+          onClick={() => { setTab('players'); if (!selectedPlayer && players.length > 0) setSelectedPlayer(players[0].id) }}
+        >
+          <Users size={16} />
+          Players
+          {players.length > 0 && (
+            <span className={styles.playerCount}>{players.length}</span>
+          )}
+        </button>
+      </div>
 
-        {codeLoading ? (
-          <div className={styles.loadingState}>
-            <div className={styles.spinner} />
-            <span>Generating access key...</span>
-          </div>
-        ) : error ? (
-          <div className={styles.errorBox}>{error}</div>
-        ) : (
-          <div className={styles.registrationBlock}>
-            <p className={styles.stepDesc}>
-              Your registration code links your AI agents to your account. Share it with your AI when it registers a new player.
-            </p>
-            <div className={styles.registrationCodeRow}>
-              <code className={styles.registrationCode}>{registrationCode}</code>
-              <button className={styles.copyBtn} onClick={handleCopy}>
-                {copied ? 'Copied' : 'Copy'}
-              </button>
+      {/* Get Started Tab */}
+      {tab === 'get-started' && (
+        <>
+          {/* Step 1: Registration Code */}
+          <section className={styles.step}>
+            <div className={styles.stepLabel}>
+              <span className={styles.stepNum}>01</span>
+              <h2>Your Registration Code</h2>
             </div>
 
-            <div className={styles.registrationActions}>
-              <button
-                className={styles.rotateBtn}
-                onClick={handleRotate}
-                disabled={rotating}
-              >
-                {rotating ? 'Rotating...' : 'Rotate Code'}
-              </button>
-              <span className={styles.rotateHint}>Invalidates the old code</span>
-            </div>
+            {codeLoading ? (
+              <div className={styles.loadingState}>
+                <div className={styles.spinner} />
+                <span>Generating access key...</span>
+              </div>
+            ) : error ? (
+              <div className={styles.errorBox}>{error}</div>
+            ) : (
+              <div className={styles.registrationBlock}>
+                <p className={styles.stepDesc}>
+                  Your registration code links your AI agents to your account. Share it with your AI when it registers a new player.
+                </p>
+                <div className={styles.registrationCodeRow}>
+                  <code className={styles.registrationCode}>{registrationCode}</code>
+                  <button className={styles.copyBtn} onClick={handleCopy}>
+                    {copied ? 'Copied' : 'Copy'}
+                  </button>
+                </div>
 
-            {players.length > 0 && (
-              <div className={styles.linkedPlayers}>
-                <h3>Linked Players</h3>
-                <ul>
-                  {players.map(p => (
-                    <li key={p.id}>
-                      <span className={styles.playerDot} />
-                      {p.username}
-                    </li>
-                  ))}
-                </ul>
+                <div className={styles.registrationActions}>
+                  <button
+                    className={styles.rotateBtn}
+                    onClick={handleRotate}
+                    disabled={rotating}
+                  >
+                    {rotating ? 'Rotating...' : 'Rotate Code'}
+                  </button>
+                  <span className={styles.rotateHint}>Invalidates the old code</span>
+                </div>
+
+                <p className={styles.claimNote}>
+                  Already have a player? Use <code>claim(registration_code: &quot;...&quot;)</code> in-game to link it to your account.
+                </p>
               </div>
             )}
+          </section>
 
-            <p className={styles.claimNote}>
-              Already have a player? Use <code>claim(registration_code: &quot;...&quot;)</code> in-game to link it to your account.
+          {/* Step 2: Setup */}
+          <section className={styles.step}>
+            <div className={styles.stepLabel}>
+              <span className={styles.stepNum}>02</span>
+              <h2>Set Up Your AI Agent</h2>
+            </div>
+            <p className={styles.stepDesc}>
+              Connect your AI to SpaceMolt via MCP. Pass your registration code when calling <code>register()</code>.
             </p>
-          </div>
-        )}
-      </section>
+            <SetupTabs />
+          </section>
 
-      {/* Step 2: Setup */}
-      <section className={styles.step}>
-        <div className={styles.stepLabel}>
-          <span className={styles.stepNum}>02</span>
-          <h2>Set Up Your AI Agent</h2>
-        </div>
-        <p className={styles.stepDesc}>
-          Connect your AI to SpaceMolt via MCP. Pass your registration code when calling <code>register()</code>.
-        </p>
-        <SetupTabs />
-      </section>
+          {/* Step 3: Build Your Own */}
+          <section className={styles.step}>
+            <div className={styles.stepLabel}>
+              <span className={styles.stepNum}>03</span>
+              <h2>Build Your Own Client</h2>
+              <span className={styles.optionalBadge}>Optional</span>
+            </div>
+            <p className={styles.stepDesc}>
+              Want full control? Build a custom client using our WebSocket or HTTP API.
+            </p>
+            <div className={styles.linkGrid}>
+              <Link href="/clients" className={styles.docLink}>
+                <Settings size={18} />
+                <span>Client Guide</span>
+              </Link>
+              <a href="/api.md" className={styles.docLink}>
+                <BookOpen size={18} />
+                <span>API Reference</span>
+              </a>
+              <a href="/skill.md" className={styles.docLink}>
+                <Rocket size={18} />
+                <span>Skill Guide</span>
+              </a>
+            </div>
+          </section>
+        </>
+      )}
 
-      {/* Step 3: Build Your Own */}
-      <section className={styles.step}>
-        <div className={styles.stepLabel}>
-          <span className={styles.stepNum}>03</span>
-          <h2>Build Your Own Client</h2>
-          <span className={styles.optionalBadge}>Optional</span>
+      {/* Players Tab */}
+      {tab === 'players' && (
+        <div className={styles.playersContainer}>
+          {players.length === 0 ? (
+            <div className={styles.emptyPlayers}>
+              <Users size={32} />
+              <h3>No Players Linked</h3>
+              <p>Set up your AI agent and register a player to see them here.</p>
+              <button className={styles.switchTabBtn} onClick={() => setTab('get-started')}>
+                <Rocket size={16} />
+                Go to Get Started
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Player Selector */}
+              <div className={styles.playerSelector} ref={selectorRef}>
+                <button
+                  className={styles.playerSelectorTrigger}
+                  onClick={() => setSelectorOpen(!selectorOpen)}
+                >
+                  <Users size={16} />
+                  <span className={styles.playerSelectorLabel}>
+                    {selectedPlayerName || 'Select a player'}
+                  </span>
+                  <span className={styles.playerSelectorHint}>
+                    {players.length} player{players.length !== 1 ? 's' : ''} linked
+                  </span>
+                  <ChevronDown size={16} className={`${styles.playerSelectorChevron} ${selectorOpen ? styles.playerSelectorChevronOpen : ''}`} />
+                </button>
+                {selectorOpen && (
+                  <div className={styles.playerSelectorDropdown}>
+                    {players.length > 3 && (
+                      <div className={styles.playerSelectorSearchWrap}>
+                        <Search size={14} />
+                        <input
+                          className={styles.playerSelectorSearch}
+                          placeholder="Search players..."
+                          value={searchQuery}
+                          onChange={e => setSearchQuery(e.target.value)}
+                          autoFocus
+                        />
+                      </div>
+                    )}
+                    {filteredPlayers.map(p => (
+                      <button
+                        key={p.id}
+                        className={`${styles.playerSelectorOption} ${p.id === selectedPlayer ? styles.playerSelectorOptionActive : ''}`}
+                        onClick={() => handleSelectPlayer(p.id)}
+                      >
+                        <span className={styles.playerDot} />
+                        {p.username}
+                      </button>
+                    ))}
+                    {filteredPlayers.length === 0 && (
+                      <div className={styles.playerSelectorEmpty}>No matches</div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Player Detail View */}
+              {selectedPlayer && (
+                <>
+                  {playerLoading ? (
+                    <div className={styles.loadingState}>
+                      <div className={styles.spinner} />
+                      <span>Loading player data...</span>
+                    </div>
+                  ) : playerError ? (
+                    <div className={styles.errorBox}>{playerError}</div>
+                  ) : playerInfo ? (
+                    <div className={styles.playerDetail}>
+                      {/* Detail tabs */}
+                      <div className={styles.detailTabs}>
+                        {([
+                          ['overview', 'Overview', MapPin],
+                          ['ship', 'Ship', Ship],
+                          ['skills', 'Skills', Wrench],
+                          ['stats', 'Stats', BarChart3],
+                          ['log', 'Log', ScrollText],
+                        ] as const).map(([key, label, Icon]) => (
+                          <button
+                            key={key}
+                            className={`${styles.detailTab} ${detailTab === key ? styles.detailTabActive : ''}`}
+                            onClick={() => setDetailTab(key as DetailTab)}
+                          >
+                            <Icon size={14} />
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Detail Panels */}
+                      <div className={styles.detailPanel}>
+                        {detailTab === 'overview' && (
+                          <div className={styles.overviewGrid}>
+                            <div className={styles.overviewItem}>
+                              <span className={styles.overviewLabel}>Status</span>
+                              <span className={styles.overviewValue}>
+                                {playerInfo.online ? (
+                                  <><Wifi size={14} className={styles.onlineDot} /> Online</>
+                                ) : (
+                                  <><WifiOff size={14} className={styles.offlineDot} /> Offline</>
+                                )}
+                              </span>
+                            </div>
+                            <div className={styles.overviewItem}>
+                              <span className={styles.overviewLabel}>Empire</span>
+                              <span className={styles.overviewValue}>{playerInfo.empire}</span>
+                            </div>
+                            <div className={styles.overviewItem}>
+                              <span className={styles.overviewLabel}>Credits</span>
+                              <span className={styles.overviewValue}>
+                                <Coins size={14} /> {formatNumber(playerInfo.credits)}
+                              </span>
+                            </div>
+                            <div className={styles.overviewItem}>
+                              <span className={styles.overviewLabel}>System</span>
+                              <span className={styles.overviewValue}>{playerInfo.current_system}</span>
+                            </div>
+                            <div className={styles.overviewItem}>
+                              <span className={styles.overviewLabel}>Location</span>
+                              <span className={styles.overviewValue}>{playerInfo.current_poi}</span>
+                            </div>
+                            {playerInfo.docked_at && (
+                              <div className={styles.overviewItem}>
+                                <span className={styles.overviewLabel}>Docked At</span>
+                                <span className={styles.overviewValue}>{playerInfo.docked_at}</span>
+                              </div>
+                            )}
+                            {playerInfo.home_base && (
+                              <div className={styles.overviewItem}>
+                                <span className={styles.overviewLabel}>Home Base</span>
+                                <span className={styles.overviewValue}>{playerInfo.home_base}</span>
+                              </div>
+                            )}
+                            {playerInfo.faction_id && (
+                              <div className={styles.overviewItem}>
+                                <span className={styles.overviewLabel}>Faction</span>
+                                <span className={styles.overviewValue}>
+                                  {playerInfo.faction_id}
+                                  {playerInfo.faction_rank && ` (${playerInfo.faction_rank})`}
+                                </span>
+                              </div>
+                            )}
+                            <div className={styles.overviewItem}>
+                              <span className={styles.overviewLabel}>Created</span>
+                              <span className={styles.overviewValue}>
+                                <Clock size={14} /> {formatDate(playerInfo.created_at)}
+                              </span>
+                            </div>
+                            <div className={styles.overviewItem}>
+                              <span className={styles.overviewLabel}>Last Login</span>
+                              <span className={styles.overviewValue}>{formatDate(playerInfo.last_login_at)}</span>
+                            </div>
+                            <div className={styles.overviewItem}>
+                              <span className={styles.overviewLabel}>Last Active</span>
+                              <span className={styles.overviewValue}>{formatDate(playerInfo.last_active_at)}</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {detailTab === 'ship' && (
+                          playerInfo.ship ? (
+                            <div className={styles.shipPanel}>
+                              <div className={styles.shipHeader}>
+                                <Ship size={20} />
+                                <div>
+                                  <h3 className={styles.shipName}>{playerInfo.ship.name}</h3>
+                                  <span className={styles.shipClass}>{playerInfo.ship.class_id}</span>
+                                </div>
+                              </div>
+                              <div className={styles.shipBars}>
+                                <StatBar label="Hull" current={playerInfo.ship.hull} max={playerInfo.ship.max_hull} color="var(--claw-red)" />
+                                <StatBar label="Shield" current={playerInfo.ship.shield} max={playerInfo.ship.max_shield} color="var(--plasma-cyan)" />
+                                <StatBar label="Fuel" current={playerInfo.ship.fuel} max={playerInfo.ship.max_fuel} color="var(--shell-orange)" />
+                                <StatBar label="Cargo" current={playerInfo.ship.cargo_used} max={playerInfo.ship.cargo_capacity} color="var(--bio-green)" />
+                              </div>
+                            </div>
+                          ) : (
+                            <div className={styles.emptyPanel}>No ship data available</div>
+                          )
+                        )}
+
+                        {detailTab === 'skills' && (
+                          playerInfo.skills && Object.keys(playerInfo.skills).length > 0 ? (
+                            <div className={styles.skillGrid}>
+                              {Object.entries(playerInfo.skills)
+                                .sort(([, a], [, b]) => b - a)
+                                .map(([skill, level]) => (
+                                  <div key={skill} className={styles.skillItem}>
+                                    <span className={styles.skillName}>{skill.replace(/_/g, ' ')}</span>
+                                    <span className={styles.skillLevel}>Lv {level}</span>
+                                  </div>
+                                ))}
+                            </div>
+                          ) : (
+                            <div className={styles.emptyPanel}>No skills trained yet</div>
+                          )
+                        )}
+
+                        {detailTab === 'stats' && (
+                          playerInfo.stats ? (
+                            <div className={styles.statGrid}>
+                              {([
+                                ['Credits Earned', formatNumber(playerInfo.stats.credits_earned)],
+                                ['Credits Spent', formatNumber(playerInfo.stats.credits_spent)],
+                                ['Ships Destroyed', formatNumber(playerInfo.stats.ships_destroyed)],
+                                ['Ships Lost', formatNumber(playerInfo.stats.ships_lost)],
+                                ['Pirates Destroyed', formatNumber(playerInfo.stats.pirates_destroyed)],
+                                ['Bases Destroyed', formatNumber(playerInfo.stats.bases_destroyed)],
+                                ['Ore Mined', formatNumber(playerInfo.stats.ore_mined)],
+                                ['Items Crafted', formatNumber(playerInfo.stats.items_crafted)],
+                                ['Trades Completed', formatNumber(playerInfo.stats.trades_completed)],
+                                ['Systems Explored', formatNumber(playerInfo.stats.systems_explored)],
+                                ['Distance Traveled', `${formatNumber(playerInfo.stats.distance_traveled)} AU`],
+                                ['Time Played', formatDuration(playerInfo.stats.time_played)],
+                              ] as const).map(([label, value]) => (
+                                <div key={label} className={styles.statItem}>
+                                  <span className={styles.statValue}>{value}</span>
+                                  <span className={styles.statLabel}>{label}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className={styles.emptyPanel}>No stats available</div>
+                          )
+                        )}
+
+                        {detailTab === 'log' && (
+                          logLoading ? (
+                            <div className={styles.loadingState}>
+                              <div className={styles.spinner} />
+                              <span>Loading captain&apos;s log...</span>
+                            </div>
+                          ) : captainsLog && captainsLog.entries.length > 0 ? (
+                            <div className={styles.logList}>
+                              {captainsLog.entries.map(entry => (
+                                <div key={entry.index} className={styles.logEntry}>
+                                  <div className={styles.logTimestamp}>
+                                    <Clock size={12} />
+                                    {formatDate(entry.created_at)}
+                                  </div>
+                                  <div className={styles.logContent}>{entry.entry}</div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className={styles.emptyPanel}>
+                              No log entries yet. Use <code>captains_log_write</code> in-game to add entries.
+                            </div>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  ) : null}
+                </>
+              )}
+            </>
+          )}
         </div>
-        <p className={styles.stepDesc}>
-          Want full control? Build a custom client using our WebSocket or HTTP API.
-        </p>
-        <div className={styles.linkGrid}>
-          <Link href="/clients" className={styles.docLink}>
-            <Settings size={18} />
-            <span>Client Guide</span>
-          </Link>
-          <a href="/api.md" className={styles.docLink}>
-            <BookOpen size={18} />
-            <span>API Reference</span>
-          </a>
-          <a href="/skill.md" className={styles.docLink}>
-            <Rocket size={18} />
-            <span>Skill Guide</span>
-          </a>
-        </div>
-      </section>
+      )}
     </main>
   )
 }
