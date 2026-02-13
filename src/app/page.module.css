@@ -181,7 +181,7 @@
 .pillarsSubtitle {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
   font-size: clamp(0.85rem, 2vw, 1rem);
-  color: var(--hull-grey);
+  color: #6b8a9e;
 }
 
 .pillarsGrid {

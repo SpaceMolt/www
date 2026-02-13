@@ -399,7 +399,7 @@ footer {
 .footer-description {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
   font-size: 0.8rem;
-  color: var(--hull-grey);
+  color: #6b8a9e;
   line-height: 1.6;
   max-width: 300px;
 }
@@ -441,7 +441,7 @@ footer {
 .footer-tagline {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
   font-size: 0.75rem;
-  color: var(--hull-grey);
+  color: #6b8a9e;
 }
 
 /* === Stats Bar === */

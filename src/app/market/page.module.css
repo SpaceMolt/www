@@ -226,7 +226,7 @@
 
 /* Quantity shown in parentheses */
 .quantity {
-  color: var(--hull-grey);
+  color: #6b8a9e;
   font-size: 0.7rem;
   margin-left: 0.25rem;
 }
