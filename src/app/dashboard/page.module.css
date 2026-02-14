@@ -1621,6 +1621,841 @@
   word-break: break-word;
 }
 
+/* === Tab Badge (count indicators on sub-tabs) === */
+.tabBadge {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--space-black);
+  background: var(--plasma-cyan);
+  min-width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.3rem;
+  line-height: 1;
+}
+
+.liveDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--bio-green);
+  box-shadow: 0 0 6px var(--bio-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* === Overview Sub-sections (within detail panel) === */
+.overviewShipSection {
+  margin-top: 1.5rem;
+}
+
+.overviewSubsection {
+  margin-top: 1.5rem;
+}
+
+.overviewSubheading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--chrome-silver);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.85rem;
+}
+
+.overviewSubheading svg {
+  opacity: 0.6;
+}
+
+/* === Fleet Grid === */
+.fleetGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.shipCard {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--hull-grey);
+  border-radius: 8px;
+  padding: 1.25rem;
+  transition: border-color 0.2s ease;
+}
+
+.shipCard:hover {
+  border-color: rgba(0, 212, 255, 0.3);
+}
+
+.shipCardActive {
+  border-color: var(--plasma-cyan);
+  box-shadow: 0 0 12px rgba(0, 212, 255, 0.08);
+}
+
+.shipCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.shipCardName {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--star-white);
+  margin: 0;
+}
+
+.shipCardClass {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--chrome-silver);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.activeBadge {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--space-black);
+  background: var(--bio-green);
+  padding: 0.15rem 0.5rem;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.dockedAt {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--chrome-silver);
+  margin-bottom: 0.75rem;
+  padding: 0.4rem 0.6rem;
+  background: rgba(0, 212, 255, 0.04);
+  border-radius: 4px;
+}
+
+.dockedAt svg {
+  opacity: 0.6;
+  color: var(--plasma-cyan);
+}
+
+.shipCardBars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+}
+
+.shipCardSlots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--hull-grey);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.5rem;
+}
+
+.shipCardSlots span {
+  padding: 0.15rem 0.4rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(61, 90, 108, 0.3);
+  border-radius: 3px;
+}
+
+.expandToggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  padding: 0.5rem 0;
+  background: transparent;
+  border: none;
+  border-top: 1px solid rgba(61, 90, 108, 0.2);
+  color: var(--chrome-silver);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.expandToggle:hover {
+  color: var(--plasma-cyan);
+}
+
+.expandToggle svg {
+  transition: transform 0.2s ease;
+}
+
+.expandedIcon {
+  transform: rotate(90deg);
+}
+
+.shipExpandedDetails {
+  padding-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  animation: panelFadeIn 0.2s ease;
+}
+
+.detailSubheading {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--hull-grey);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin: 0 0 0.5rem;
+}
+
+.cargoList,
+.moduleList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cargoItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.35rem 0.6rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.cargoItemName {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--chrome-silver);
+}
+
+.cargoItemQty {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--hull-grey);
+  font-weight: 600;
+}
+
+.moduleItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.35rem 0.6rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.moduleName {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--chrome-silver);
+  flex: 1;
+}
+
+.moduleQuality {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--bio-green);
+  font-weight: 600;
+}
+
+.moduleWear {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--hull-grey);
+}
+
+/* === Storage === */
+.storageSummary {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--hull-grey);
+  border-radius: 8px;
+}
+
+.summaryItem {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  text-align: center;
+}
+
+.summaryValue {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--star-white);
+}
+
+.summaryLabel {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.55rem;
+  font-weight: 600;
+  color: var(--hull-grey);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.storageGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.stationCard {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--hull-grey);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.stationHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.65rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(61, 90, 108, 0.2);
+}
+
+.stationName {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--star-white);
+  margin: 0;
+}
+
+.stationCredits {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--shell-orange);
+}
+
+.stationCredits svg {
+  opacity: 0.7;
+}
+
+.pendingRow {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.65rem;
+}
+
+.pendingBadge {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--shell-orange);
+  background: rgba(255, 107, 53, 0.1);
+  border: 1px solid rgba(255, 107, 53, 0.25);
+  border-radius: 3px;
+  padding: 0.15rem 0.45rem;
+}
+
+.stationItems {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stationEmpty {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--hull-grey);
+  font-style: italic;
+}
+
+/* === Orders === */
+.buyValue {
+  color: var(--plasma-cyan);
+}
+
+.sellValue {
+  color: var(--shell-orange);
+}
+
+.ordersList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.orderRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.85rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  border-left: 3px solid transparent;
+}
+
+.orderBuy {
+  border-left-color: var(--plasma-cyan);
+}
+
+.orderSell {
+  border-left-color: var(--shell-orange);
+}
+
+.orderTypeBadge {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.15rem 0.45rem;
+  border-radius: 3px;
+  min-width: 2.5rem;
+  text-align: center;
+}
+
+.orderBuy .orderTypeBadge {
+  color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.1);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+}
+
+.orderSell .orderTypeBadge {
+  color: var(--shell-orange);
+  background: rgba(255, 107, 53, 0.1);
+  border: 1px solid rgba(255, 107, 53, 0.2);
+}
+
+.orderItem {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--star-white);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.orderQty {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--chrome-silver);
+  white-space: nowrap;
+}
+
+.orderPrice {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--chrome-silver);
+  white-space: nowrap;
+}
+
+.orderStation {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--hull-grey);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
+.orderTime {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--hull-grey);
+  white-space: nowrap;
+}
+
+/* === Missions === */
+.missionGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.missionCard {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--hull-grey);
+  border-radius: 8px;
+  padding: 1.25rem;
+}
+
+.missionHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.missionTitle {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--star-white);
+  margin: 0 0 0.3rem;
+}
+
+.missionDesc {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.8rem;
+  color: var(--chrome-silver);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.missionMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+.typeBadge {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.08);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  border-radius: 3px;
+  padding: 0.15rem 0.45rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.difficultyStars {
+  font-size: 0.75rem;
+  color: var(--shell-orange);
+  letter-spacing: 0.05em;
+}
+
+.missionInfo {
+  display: flex;
+  gap: 1.25rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--chrome-silver);
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid rgba(61, 90, 108, 0.2);
+}
+
+.missionInfo span {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.missionInfo svg {
+  opacity: 0.5;
+}
+
+.objectiveList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 0.85rem;
+}
+
+.objectiveItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.objectiveHeader {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.78rem;
+  color: var(--chrome-silver);
+}
+
+.objectiveComplete {
+  color: var(--bio-green);
+  text-decoration: line-through;
+  text-decoration-color: rgba(0, 255, 136, 0.4);
+}
+
+.objectiveProgress {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--hull-grey);
+  font-weight: 600;
+}
+
+.objectiveBarTrack {
+  height: 4px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.objectiveBarFill {
+  height: 100%;
+  background: var(--plasma-cyan);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.rewardPreview {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid rgba(61, 90, 108, 0.2);
+}
+
+.rewardLabel {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.55rem;
+  font-weight: 600;
+  color: var(--hull-grey);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.rewardItem {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--bio-green);
+  background: rgba(0, 255, 136, 0.06);
+  border: 1px solid rgba(0, 255, 136, 0.15);
+  border-radius: 3px;
+  padding: 0.15rem 0.4rem;
+}
+
+.rewardItem svg {
+  opacity: 0.7;
+}
+
+.completedSection {
+  margin-top: 1.25rem;
+  border-top: 1px solid var(--hull-grey);
+  padding-top: 0.75rem;
+}
+
+.completedHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: transparent;
+  border: none;
+  color: var(--chrome-silver);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0.4rem 0;
+  transition: color 0.15s ease;
+}
+
+.completedHeader:hover {
+  color: var(--plasma-cyan);
+}
+
+.completedHeader svg {
+  transition: transform 0.2s ease;
+}
+
+.completedList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 0.5rem;
+  animation: panelFadeIn 0.2s ease;
+}
+
+.completedItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.35rem 0.6rem;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--chrome-silver);
+}
+
+.completedDate {
+  font-size: 0.65rem;
+  color: var(--hull-grey);
+}
+
+/* === Activity Feed === */
+.connectionStatus {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.85rem;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--hull-grey);
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--chrome-silver);
+}
+
+.connectedDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--bio-green);
+  box-shadow: 0 0 6px var(--bio-green);
+  flex-shrink: 0;
+}
+
+.disconnectedDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--hull-grey);
+  flex-shrink: 0;
+}
+
+.reconnectBtn {
+  margin-left: auto;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--plasma-cyan);
+  background: transparent;
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 4px;
+  padding: 0.25rem 0.65rem;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transition: all 0.15s ease;
+}
+
+.reconnectBtn:hover {
+  background: rgba(0, 212, 255, 0.08);
+  border-color: var(--plasma-cyan);
+}
+
+.activityFeed {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 600px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--hull-grey) transparent;
+}
+
+.activityFeed::-webkit-scrollbar {
+  width: 4px;
+}
+
+.activityFeed::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.activityFeed::-webkit-scrollbar-thumb {
+  background: var(--hull-grey);
+  border-radius: 2px;
+}
+
+.activityEvent {
+  padding: 0.6rem 0.85rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  border-left: 3px solid var(--hull-grey);
+}
+
+.eventCombat {
+  border-left-color: var(--claw-red);
+}
+
+.eventTrade {
+  border-left-color: var(--shell-orange);
+}
+
+.eventTravel {
+  border-left-color: var(--plasma-cyan);
+}
+
+.eventMining {
+  border-left-color: var(--bio-green);
+}
+
+.eventGeneral {
+  border-left-color: var(--hull-grey);
+}
+
+.eventHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+}
+
+.eventTypeBadge {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--chrome-silver);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.eventTime {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--hull-grey);
+  margin-left: auto;
+}
+
+.eventTick {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  color: var(--hull-grey);
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.1rem 0.3rem;
+  border-radius: 2px;
+}
+
+.eventMessage {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.8rem;
+  color: var(--chrome-silver);
+  line-height: 1.4;
+}
+
 /* === Responsive === */
 @media (max-width: 900px) {
   .statGrid {
@@ -1798,5 +2633,71 @@
     font-size: 0.78rem;
     margin-bottom: 1rem;
     padding-bottom: 0.6rem;
+  }
+
+  /* Fleet responsive */
+  .shipCardHeader {
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .shipCardSlots {
+    font-size: 0.6rem;
+  }
+
+  /* Orders responsive */
+  .orderRow {
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .orderStation {
+    max-width: none;
+    flex-basis: 100%;
+  }
+
+  .orderTime {
+    flex-basis: 100%;
+  }
+
+  /* Storage summary responsive */
+  .storageSummary {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .summaryItem {
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 0.35rem 0;
+  }
+
+  /* Missions responsive */
+  .missionHeader {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .missionMeta {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .missionInfo {
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  /* Activity responsive */
+  .connectionStatus {
+    flex-wrap: wrap;
+    font-size: 0.75rem;
+  }
+
+  .reconnectBtn {
+    width: 100%;
+    margin-top: 0.35rem;
+    text-align: center;
+    justify-content: center;
   }
 }
