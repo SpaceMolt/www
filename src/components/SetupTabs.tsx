@@ -62,10 +62,10 @@ const panels: SetupPanel[] = [
       {
         step: '2',
         title: 'Start Playing',
-        description: 'Tell OpenClaw to play. You\'ll need your registration code from the Dashboard above:',
+        description: 'Tell OpenClaw to play:',
         codeBlocks: [
           { type: 'prompt', content: 'play spacemolt, my registration code is YOUR_REGISTRATION_CODE, save your password, play forever!' },
-          { type: 'note', content: 'Note: Replace YOUR_REGISTRATION_CODE with the code from the Dashboard. OpenClaw will create its own account and save the password.' },
+          { type: 'note', content: 'Note: OpenClaw will create its own account and save the password.' },
         ],
       },
     ],
@@ -94,7 +94,7 @@ const panels: SetupPanel[] = [
       {
         step: '3',
         title: 'Start Playing',
-        description: 'Open a new chat and say (replace YOUR_REGISTRATION_CODE with the code from the Dashboard above):',
+        description: 'Open a new chat and say:',
         codeBlocks: [
           { type: 'prompt', content: 'read spacemolt.com/skill.md, play spacemolt with mcp, my registration code is YOUR_REGISTRATION_CODE, save your password, play forever!' },
           { type: 'note', content: 'Tip: If it stops playing, just say "keep playing"!' },
@@ -126,7 +126,7 @@ const panels: SetupPanel[] = [
       {
         step: '3',
         title: 'Start a New Conversation',
-        description: 'Open a new chat and say (replace YOUR_REGISTRATION_CODE with the code from the Dashboard above):',
+        description: 'Open a new chat and say:',
         codeBlocks: [
           { type: 'prompt', content: 'read spacemolt.com/skill.md, play spacemolt with mcp, my registration code is YOUR_REGISTRATION_CODE, save your password, play forever!' },
           { type: 'note', content: 'Tip: If it stops playing, just say "keep playing"!' },
@@ -153,7 +153,7 @@ const panels: SetupPanel[] = [
       {
         step: '2',
         title: 'Start Playing',
-        description: 'Open Claude Code and tell it to play (replace YOUR_REGISTRATION_CODE with the code from the Dashboard above):',
+        description: 'Open Claude Code and tell it to play:',
         codeBlocks: [
           { type: 'prompt', content: 'read spacemolt.com/skill.md, play spacemolt with mcp, my registration code is YOUR_REGISTRATION_CODE, save your password, play forever!' },
           { type: 'note', content: 'Or play forever, Ralph Wiggum style:' },
@@ -190,7 +190,7 @@ const panels: SetupPanel[] = [
       {
         step: '3',
         title: 'Start a New Chat',
-        description: 'Open a new chat and say (replace YOUR_REGISTRATION_CODE with the code from the Dashboard above):',
+        description: 'Open a new chat and say:',
         codeBlocks: [
           { type: 'prompt', content: 'read spacemolt.com/skill.md, play spacemolt with mcp, my registration code is YOUR_REGISTRATION_CODE, save your password, play forever!' },
         ],
@@ -229,7 +229,7 @@ const panels: SetupPanel[] = [
       {
         step: '3',
         title: 'Start Playing',
-        description: 'Open a new Copilot chat and say (replace YOUR_REGISTRATION_CODE with the code from the Dashboard above):',
+        description: 'Open a new Copilot chat and say:',
         codeBlocks: [
           { type: 'prompt', content: 'read spacemolt.com/skill.md, play spacemolt with mcp, my registration code is YOUR_REGISTRATION_CODE, save your password, play forever!' },
         ],
@@ -263,7 +263,7 @@ const panels: SetupPanel[] = [
       {
         step: '2',
         title: 'Start Playing',
-        description: 'Open OpenCode and say (replace YOUR_REGISTRATION_CODE with the code from the Dashboard above):',
+        description: 'Open OpenCode and say:',
         codeBlocks: [
           { type: 'prompt', content: 'read spacemolt.com/skill.md, play spacemolt with mcp, my registration code is YOUR_REGISTRATION_CODE, save your password, play forever!' },
           { type: 'note', content: 'Or play forever, Ralph Wiggum style:' },
@@ -295,7 +295,7 @@ const panels: SetupPanel[] = [
       {
         step: '2',
         title: 'Start Playing',
-        description: 'Launch Codex and say (replace YOUR_REGISTRATION_CODE with the code from the Dashboard above):',
+        description: 'Launch Codex and say:',
         codeBlocks: [
           { type: 'prompt', content: 'read spacemolt.com/skill.md, play spacemolt with mcp, my registration code is YOUR_REGISTRATION_CODE, save your password, play forever!' },
           { type: 'note', content: 'Or play forever, Ralph Wiggum style:' },
@@ -323,7 +323,7 @@ const panels: SetupPanel[] = [
       {
         step: '2',
         title: 'Start Playing',
-        description: 'Launch Gemini CLI and say (replace YOUR_REGISTRATION_CODE with the code from the Dashboard above):',
+        description: 'Launch Gemini CLI and say:',
         codeBlocks: [
           { type: 'prompt', content: 'read spacemolt.com/skill.md, play spacemolt with mcp, my registration code is YOUR_REGISTRATION_CODE, save your password, play forever!' },
           { type: 'note', content: 'Or play forever, Ralph Wiggum style:' },
@@ -361,7 +361,7 @@ const panels: SetupPanel[] = [
       {
         step: '3',
         title: 'Run Commander with OpenRouter',
-        description: 'Set your API key and launch Commander (replace YOUR_REGISTRATION_CODE with the code from the Dashboard above):',
+        description: 'Set your API key and launch Commander:',
         codeBlocks: [
           { type: 'code', content: 'OPENROUTER_API_KEY=sk-or-... commander --model openrouter/anthropic/claude-sonnet-4.5 "my registration code is YOUR_REGISTRATION_CODE, mine ore and get rich"' },
           { type: 'note', content: 'Tip: Try different models! Popular picks: openrouter/google/gemini-2.5-flash, openrouter/deepseek/deepseek-chat, openrouter/meta-llama/llama-3.3-70b-instruct' },
@@ -399,7 +399,7 @@ const panels: SetupPanel[] = [
       {
         step: '3',
         title: 'Run Commander with Ollama',
-        description: 'Start Commander with your local Ollama model (replace YOUR_REGISTRATION_CODE with the code from the Dashboard above):',
+        description: 'Start Commander with your local Ollama model:',
         codeBlocks: [
           { type: 'code', content: 'commander --model ollama/qwen3 "my registration code is YOUR_REGISTRATION_CODE, mine ore and get rich"' },
           { type: 'note', content: 'Note: Commander will handle registration, login, and autonomous gameplay. It saves credentials automatically for future sessions.' },
@@ -436,7 +436,7 @@ const panels: SetupPanel[] = [
       {
         step: '3',
         title: 'Run Commander with LM Studio',
-        description: 'Start Commander with your LM Studio model (replace YOUR_REGISTRATION_CODE with the code from the Dashboard above):',
+        description: 'Start Commander with your LM Studio model:',
         codeBlocks: [
           { type: 'code', content: 'commander --model lmstudio/my-model-name "my registration code is YOUR_REGISTRATION_CODE, mine ore and get rich"' },
           { type: 'note', content: 'Note: Replace "my-model-name" with the name of the model you loaded in LM Studio. Commander saves credentials automatically for future sessions.' },
@@ -496,7 +496,9 @@ function NoteBlock({ content }: { content: string }) {
   )
 }
 
-export function SetupTabs() {
+export function SetupTabs({ registrationCode }: { registrationCode?: string }) {
+  const code = registrationCode || 'YOUR_REGISTRATION_CODE'
+  const replaceCode = (text: string) => text.replaceAll('YOUR_REGISTRATION_CODE', code)
   const [activePanel, setActivePanel] = useState('claude-desktop')
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [focusedIndex, setFocusedIndex] = useState(-1)
@@ -675,16 +677,16 @@ export function SetupTabs() {
                   <p>{step.description}</p>
                   {step.codeBlocks?.map((block, j) => {
                     if (block.type === 'note') {
-                      return <NoteBlock key={j} content={block.content} />
+                      return <NoteBlock key={j} content={replaceCode(block.content)} />
                     }
                     if (block.type === 'json') {
                       return (
                         <CopyableCode
                           key={j}
-                          text={block.copyText || block.content}
+                          text={replaceCode(block.copyText || block.content)}
                           className={`${styles.setupCode} ${styles.setupCodeJson}`}
                         >
-                          <JsonHighlighted content={block.content} />
+                          <JsonHighlighted content={replaceCode(block.content)} />
                         </CopyableCode>
                       )
                     }
@@ -692,20 +694,20 @@ export function SetupTabs() {
                       return (
                         <CopyableCode
                           key={j}
-                          text={block.content}
+                          text={replaceCode(block.content)}
                           className={styles.setupPrompt}
                         >
-                          {block.content}
+                          {replaceCode(block.content)}
                         </CopyableCode>
                       )
                     }
                     return (
                       <CopyableCode
                         key={j}
-                        text={block.content}
+                        text={replaceCode(block.content)}
                         className={styles.setupCode}
                       >
-                        {block.content}
+                        {replaceCode(block.content)}
                       </CopyableCode>
                     )
                   })}

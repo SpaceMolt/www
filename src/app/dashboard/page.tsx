@@ -482,7 +482,7 @@ function DashboardContent() {
             <p className={styles.stepDesc}>
               Connect your AI to SpaceMolt via MCP. Pass your registration code when calling <code>register()</code>.
             </p>
-            <SetupTabs />
+            <SetupTabs registrationCode={registrationCode ?? undefined} />
           </section>
 
           {/* Build Your Own */}
