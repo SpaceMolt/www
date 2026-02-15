@@ -1,0 +1,230 @@
+/* === ChatPanel Component === */
+.container {
+  display: flex;
+  flex-direction: column;
+  background: rgba(10, 14, 23, 0.95);
+  border-left: 1px solid var(--hull-grey);
+  height: 100%;
+  width: 260px;
+  flex-shrink: 0;
+}
+
+/* Channel Tabs */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid rgba(61, 90, 108, 0.4);
+  flex-shrink: 0;
+}
+
+.tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.45rem 0.25rem;
+  border: none;
+  background: transparent;
+  color: var(--hull-grey);
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+  font-size: 0;
+}
+
+.tab:hover {
+  color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.05);
+}
+
+.tabActive {
+  color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.08);
+  box-shadow: inset 0 -2px 0 var(--plasma-cyan);
+}
+
+.tabLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Messages Area */
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-height: 0;
+}
+
+.messages::-webkit-scrollbar {
+  width: 4px;
+}
+
+.messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.messages::-webkit-scrollbar-thumb {
+  background: var(--hull-grey);
+  border-radius: 2px;
+}
+
+.messages::-webkit-scrollbar-thumb:hover {
+  background: var(--plasma-cyan);
+}
+
+.emptyMessages {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--hull-grey);
+  text-align: center;
+  padding: 1rem 0.5rem;
+}
+
+.message {
+  padding: 0.2rem 0.3rem;
+  border-radius: 3px;
+  transition: background 0.15s;
+}
+
+.message:hover {
+  background: rgba(61, 90, 108, 0.1);
+}
+
+.messageMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-bottom: 0.1rem;
+}
+
+.sender {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--plasma-cyan);
+}
+
+.whisperIcon {
+  color: var(--void-purple);
+  flex-shrink: 0;
+}
+
+.whisperTarget {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--void-purple);
+}
+
+.timestamp {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  color: var(--hull-grey);
+  margin-left: auto;
+}
+
+.messageContent {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--chrome-silver);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+/* Input Area */
+.inputArea {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.4rem;
+  border-top: 1px solid rgba(61, 90, 108, 0.4);
+  flex-shrink: 0;
+}
+
+.targetInput {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  padding: 0.3rem 0.5rem;
+  background: rgba(26, 39, 68, 0.5);
+  border: 1px solid var(--hull-grey);
+  border-radius: 3px;
+  color: var(--star-white);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.targetInput::placeholder {
+  color: var(--hull-grey);
+}
+
+.targetInput:focus {
+  border-color: var(--void-purple);
+}
+
+.inputRow {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.chatInput {
+  flex: 1;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  padding: 0.4rem 0.5rem;
+  background: rgba(26, 39, 68, 0.5);
+  border: 1px solid var(--hull-grey);
+  border-radius: 3px;
+  color: var(--star-white);
+  outline: none;
+  transition: border-color 0.2s;
+  min-width: 0;
+}
+
+.chatInput::placeholder {
+  color: var(--hull-grey);
+}
+
+.chatInput:focus {
+  border-color: var(--plasma-cyan);
+}
+
+.sendButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--hull-grey);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--hull-grey);
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+  flex-shrink: 0;
+}
+
+.sendButton:hover:not(:disabled) {
+  color: var(--plasma-cyan);
+  border-color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.08);
+}
+
+.sendButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .container {
+    width: 100%;
+    height: 200px;
+    border-left: none;
+    border-top: 1px solid var(--hull-grey);
+  }
+}

@@ -1,0 +1,85 @@
+/* === ShipStatus Component === */
+.container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(13, 19, 33, 0.8);
+  border-bottom: 1px solid var(--hull-grey);
+  min-height: 48px;
+}
+
+.noShip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--hull-grey);
+}
+
+.noShipIcon {
+  color: var(--hull-grey);
+}
+
+.shipName {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+  min-width: 100px;
+}
+
+.shipIcon {
+  color: var(--plasma-cyan);
+  flex-shrink: 0;
+}
+
+.shipClass {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--star-white);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
+.bars {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.barItem {
+  flex: 1;
+  min-width: 80px;
+}
+
+@media (max-width: 768px) {
+  .container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    padding: 0.4rem 0.5rem;
+  }
+
+  .shipName {
+    min-width: unset;
+  }
+
+  .bars {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .barItem {
+    min-width: 60px;
+    flex-basis: calc(50% - 0.25rem);
+  }
+}

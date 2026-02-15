@@ -65,7 +65,7 @@ export function LiveFeedPopup() {
   if (!hydrated) return null
 
   return (
-    <div className={`${styles.popup} ${isOpen ? styles.open : ''} ${isMapPage ? styles.center : ''}`}>
+    <div className={`live-feed-popup ${styles.popup} ${isOpen ? styles.open : ''} ${isMapPage ? styles.center : ''}`}>
       {isOpen && (
         <div className={styles.panel}>
           <LiveFeed onClose={close} onStatusChange={handleStatusChange} />

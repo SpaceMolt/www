@@ -1,0 +1,160 @@
+/* === PlayerInfo Component === */
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(13, 19, 33, 0.8);
+  border-bottom: 1px solid var(--hull-grey);
+  min-height: 48px;
+}
+
+.connectionRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.connectionStatus {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.connectedIcon {
+  color: var(--bio-green);
+}
+
+.disconnectedIcon {
+  color: var(--claw-red);
+}
+
+.connectedDot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--bio-green);
+  box-shadow: 0 0 6px var(--bio-green);
+  animation: pulseGreen 2s infinite;
+}
+
+.disconnectedDot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--claw-red);
+  box-shadow: 0 0 6px var(--claw-red);
+}
+
+.tickDisplay {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.tickIcon {
+  color: var(--hull-grey);
+}
+
+.tickValue {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--chrome-silver);
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.username {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--star-white);
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.detailItem {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.creditsIcon {
+  color: var(--warning-yellow);
+}
+
+.creditsValue {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--warning-yellow);
+}
+
+.empireIcon {
+  color: var(--void-purple);
+}
+
+.systemIcon {
+  color: var(--plasma-cyan);
+}
+
+.poiIcon {
+  color: var(--chrome-silver);
+}
+
+.detailValue {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--chrome-silver);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
+}
+
+.detailValueSmall {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--hull-grey);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
+}
+
+.noPlayer {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--hull-grey);
+}
+
+@keyframes pulseGreen {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0.4rem 0.5rem;
+  }
+
+  .details {
+    gap: 0.35rem;
+  }
+}

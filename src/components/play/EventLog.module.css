@@ -1,0 +1,162 @@
+/* === EventLog Component === */
+.container {
+  display: flex;
+  flex-direction: column;
+  background: rgba(10, 14, 23, 0.95);
+  border-top: 1px solid var(--hull-grey);
+  max-height: 180px;
+  min-height: 60px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.3rem 0.75rem;
+  border-bottom: 1px solid rgba(61, 90, 108, 0.3);
+  flex-shrink: 0;
+}
+
+.headerTitle {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--chrome-silver);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.eventCount {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--hull-grey);
+}
+
+.events {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0.25rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.events::-webkit-scrollbar {
+  width: 4px;
+}
+
+.events::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.events::-webkit-scrollbar-thumb {
+  background: var(--hull-grey);
+  border-radius: 2px;
+}
+
+.events::-webkit-scrollbar-thumb:hover {
+  background: var(--plasma-cyan);
+}
+
+.emptyMessage {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--hull-grey);
+  text-align: center;
+  padding: 0.5rem;
+}
+
+.event {
+  --event-color: var(--chrome-silver);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0.35rem;
+  border-radius: 3px;
+  animation: eventSlideIn 0.2s ease;
+  min-height: 22px;
+}
+
+.event:hover {
+  background: rgba(61, 90, 108, 0.15);
+}
+
+.eventIcon {
+  color: var(--event-color);
+  flex-shrink: 0;
+}
+
+.eventMessage {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--chrome-silver);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eventTime {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  color: var(--hull-grey);
+  flex-shrink: 0;
+  min-width: 24px;
+  text-align: right;
+}
+
+/* Event type color variants */
+.eventError {
+  --event-color: var(--claw-red);
+}
+
+.eventCombat {
+  --event-color: var(--shell-orange);
+}
+
+.eventTrade {
+  --event-color: var(--warning-yellow);
+}
+
+.eventMining {
+  --event-color: var(--bio-green);
+}
+
+.eventTravel {
+  --event-color: var(--plasma-cyan);
+}
+
+.eventInfo {
+  --event-color: var(--chrome-silver);
+}
+
+.eventWarning {
+  --event-color: var(--warning-yellow);
+}
+
+.eventSystem {
+  --event-color: var(--void-purple);
+}
+
+@keyframes eventSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    max-height: 120px;
+  }
+
+  .eventMessage {
+    font-size: 0.65rem;
+  }
+}

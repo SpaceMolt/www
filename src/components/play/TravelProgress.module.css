@@ -1,0 +1,164 @@
+/* === TravelProgress Component === */
+.container {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 212, 255, 0.08) 0%,
+    rgba(13, 19, 33, 0.95) 50%,
+    rgba(0, 212, 255, 0.08) 100%
+  );
+  border-bottom: 1px solid rgba(0, 212, 255, 0.3);
+  border-top: 1px solid rgba(0, 212, 255, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.pulse {
+  animation: travelPulse 2s ease-in-out infinite;
+}
+
+.content {
+  padding: 0.5rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.typeTag {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+.travelIcon {
+  color: var(--plasma-cyan);
+}
+
+.jumpIcon {
+  color: var(--warning-yellow);
+}
+
+.typeLabel {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--plasma-cyan);
+}
+
+.destination {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.destLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--hull-grey);
+}
+
+.destName {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--star-white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.eta {
+  display: flex;
+  align-items: baseline;
+  gap: 0.2rem;
+  flex-shrink: 0;
+}
+
+.etaValue {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--plasma-cyan);
+}
+
+.etaLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--chrome-silver);
+}
+
+.barTrack {
+  width: 100%;
+  height: 3px;
+  background: rgba(61, 90, 108, 0.3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.5s ease;
+  position: relative;
+}
+
+.barFillTravel {
+  background: var(--plasma-cyan);
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.5);
+}
+
+.barFillJump {
+  background: var(--warning-yellow);
+  box-shadow: 0 0 8px rgba(255, 217, 61, 0.5);
+}
+
+.barFill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 100%
+  );
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes travelPulse {
+  0%, 100% {
+    background-color: rgba(0, 212, 255, 0.03);
+  }
+  50% {
+    background-color: rgba(0, 212, 255, 0.08);
+  }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@media (max-width: 768px) {
+  .content {
+    padding: 0.4rem 0.5rem;
+  }
+
+  .header {
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+}

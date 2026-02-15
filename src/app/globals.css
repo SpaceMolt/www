@@ -805,3 +805,17 @@ body.map-page {
 body.map-page > footer {
   display: none !important;
 }
+
+/* === Play Page Overrides === */
+/* The play page adds .play-page to <body> to hide shared layout elements */
+body.play-page {
+  overflow: hidden !important;
+  padding-bottom: 0 !important;
+}
+
+body.play-page nav,
+body.play-page > footer,
+body.play-page .stats-bar,
+body.play-page .live-feed-popup {
+  display: none !important;
+}

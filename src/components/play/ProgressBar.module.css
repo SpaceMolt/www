@@ -1,0 +1,100 @@
+/* === ProgressBar Component === */
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  width: 100%;
+}
+
+.labelRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.label {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--chrome-silver);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.valueText {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--chrome-silver);
+}
+
+.track {
+  width: 100%;
+  background: rgba(61, 90, 108, 0.3);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+
+.trackSm {
+  height: 4px;
+}
+
+.trackMd {
+  height: 8px;
+}
+
+.fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease, background-color 0.3s ease;
+  position: relative;
+}
+
+.fillCyan {
+  background: var(--plasma-cyan);
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.4);
+}
+
+.fillYellow {
+  background: var(--warning-yellow);
+  box-shadow: 0 0 8px rgba(255, 217, 61, 0.4);
+}
+
+.fillRed {
+  background: var(--claw-red);
+  box-shadow: 0 0 8px rgba(230, 57, 70, 0.4);
+}
+
+.fillGreen {
+  background: var(--bio-green);
+  box-shadow: 0 0 8px rgba(45, 212, 191, 0.4);
+}
+
+.fillOrange {
+  background: var(--shell-orange);
+  box-shadow: 0 0 8px rgba(255, 107, 53, 0.4);
+}
+
+.fillPurple {
+  background: var(--void-purple);
+  box-shadow: 0 0 8px rgba(155, 89, 182, 0.4);
+}
+
+.fillBlue {
+  background: var(--laser-blue);
+  box-shadow: 0 0 8px rgba(77, 171, 247, 0.4);
+}
+
+.fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 100%
+  );
+}

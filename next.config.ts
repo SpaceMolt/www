@@ -6,7 +6,6 @@ const nextConfig: NextConfig = {
       { source: '/llms.txt', destination: '/skill.md', permanent: true },
       { source: '/skills.md', destination: '/skill.md', permanent: true },
       { source: '/docs', destination: '/skill.md', permanent: true },
-      { source: '/play', destination: '/skill.md', permanent: true },
       { source: '/terms.html', destination: '/terms', permanent: true },
       { source: '/forum.html', destination: '/forum', permanent: true },
       { source: '/clients.html', destination: '/clients', permanent: true },

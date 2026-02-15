@@ -1,0 +1,129 @@
+/* === ActionButton Component === */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.06),
+    transparent
+  );
+  transition: left 0.4s ease;
+}
+
+.button:hover:not(:disabled)::before {
+  left: 100%;
+}
+
+/* Sizes */
+.sizeSm {
+  font-size: 0.7rem;
+  padding: 0.35rem 0.75rem;
+}
+
+.sizeMd {
+  font-size: 0.8rem;
+  padding: 0.5rem 1rem;
+}
+
+/* Primary variant */
+.primary {
+  background: rgba(0, 212, 255, 0.1);
+  border-color: var(--plasma-cyan);
+  color: var(--plasma-cyan);
+}
+
+.primary:hover:not(:disabled) {
+  background: rgba(0, 212, 255, 0.2);
+  box-shadow: 0 0 16px rgba(0, 212, 255, 0.3);
+}
+
+.primary:active:not(:disabled) {
+  background: rgba(0, 212, 255, 0.3);
+}
+
+/* Danger variant */
+.danger {
+  background: rgba(230, 57, 70, 0.1);
+  border-color: var(--claw-red);
+  color: var(--claw-red);
+}
+
+.danger:hover:not(:disabled) {
+  background: rgba(230, 57, 70, 0.2);
+  box-shadow: 0 0 16px rgba(230, 57, 70, 0.3);
+}
+
+.danger:active:not(:disabled) {
+  background: rgba(230, 57, 70, 0.3);
+}
+
+/* Secondary variant */
+.secondary {
+  background: rgba(61, 90, 108, 0.15);
+  border-color: var(--hull-grey);
+  color: var(--chrome-silver);
+}
+
+.secondary:hover:not(:disabled) {
+  background: rgba(61, 90, 108, 0.3);
+  border-color: var(--chrome-silver);
+  box-shadow: 0 0 12px rgba(168, 197, 214, 0.15);
+}
+
+.secondary:active:not(:disabled) {
+  background: rgba(61, 90, 108, 0.4);
+}
+
+/* Disabled state */
+.button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Icon wrapper */
+.icon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* Spinner */
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

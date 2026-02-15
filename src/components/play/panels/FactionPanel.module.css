@@ -1,0 +1,373 @@
+/* === FactionPanel === */
+.panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--deep-void);
+  border: 1px solid var(--dim-grey);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--dim-grey);
+  background: rgba(0, 212, 255, 0.03);
+  flex-shrink: 0;
+}
+
+.title {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--plasma-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.titleIcon {
+  display: flex;
+  align-items: center;
+  color: var(--plasma-cyan);
+  opacity: 0.8;
+}
+
+.refreshBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid var(--hull-grey);
+  border-radius: 4px;
+  color: var(--chrome-silver);
+  cursor: pointer;
+  padding: 0.3rem;
+  transition: all 0.2s ease;
+}
+
+.refreshBtn:hover {
+  border-color: var(--plasma-cyan);
+  color: var(--plasma-cyan);
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.2);
+}
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.content::-webkit-scrollbar-thumb {
+  background: var(--hull-grey);
+  border-radius: 2px;
+}
+
+/* Section heading */
+.sectionTitle {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--chrome-silver);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.sectionIcon {
+  display: flex;
+  align-items: center;
+  color: var(--hull-grey);
+}
+
+.divider {
+  height: 1px;
+  background: var(--dim-grey);
+  margin: 0.25rem 0;
+}
+
+/* Faction info card */
+.factionCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.6rem 0.75rem;
+  background: rgba(0, 212, 255, 0.04);
+  border: 1px solid rgba(0, 212, 255, 0.1);
+  border-radius: 4px;
+}
+
+.factionName {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--star-white);
+}
+
+.factionTag {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.1);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  border-radius: 3px;
+  padding: 0.1rem 0.35rem;
+  display: inline-block;
+  width: fit-content;
+}
+
+.factionMeta {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.metaTag {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--chrome-silver);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.metaValue {
+  color: var(--plasma-cyan);
+}
+
+/* Member list */
+.memberList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.memberItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.4rem 0.55rem;
+  background: rgba(61, 90, 108, 0.1);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  transition: background 0.15s ease;
+}
+
+.memberItem:hover {
+  background: rgba(61, 90, 108, 0.2);
+}
+
+.memberLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.memberIcon {
+  display: flex;
+  align-items: center;
+  color: var(--chrome-silver);
+  flex-shrink: 0;
+}
+
+.memberName {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.78rem;
+  color: var(--star-white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.memberRole {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--hull-grey);
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+/* Create faction form */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.label {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--chrome-silver);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.input {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  color: var(--star-white);
+  background: rgba(10, 14, 23, 0.8);
+  border: 1px solid var(--hull-grey);
+  border-radius: 4px;
+  padding: 0.4rem 0.55rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input::placeholder {
+  color: var(--hull-grey);
+}
+
+.input:focus {
+  border-color: var(--plasma-cyan);
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.15);
+}
+
+.formActions {
+  display: flex;
+  gap: 0.35rem;
+}
+
+/* Invite row */
+.inviteRow {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.inviteInput {
+  flex: 1;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--star-white);
+  background: rgba(10, 14, 23, 0.8);
+  border: 1px solid var(--hull-grey);
+  border-radius: 4px;
+  padding: 0.35rem 0.5rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.inviteInput::placeholder {
+  color: var(--hull-grey);
+}
+
+.inviteInput:focus {
+  border-color: var(--plasma-cyan);
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.15);
+}
+
+/* Diplomacy */
+.diplomacyRow {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+/* Faction browser list */
+.factionList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.factionListItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.4rem 0.55rem;
+  background: rgba(61, 90, 108, 0.1);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.factionListItem:hover {
+  background: rgba(0, 212, 255, 0.06);
+  border-color: rgba(0, 212, 255, 0.15);
+}
+
+.factionListName {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.78rem;
+  color: var(--star-white);
+}
+
+.factionListTag {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--plasma-cyan);
+}
+
+.factionListMembers {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--hull-grey);
+  flex-shrink: 0;
+}
+
+/* Loading / Empty */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--hull-grey);
+}
+
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--hull-grey);
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.emptyState {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.78rem;
+  color: var(--hull-grey);
+  text-align: center;
+  padding: 1.5rem 0.5rem;
+}

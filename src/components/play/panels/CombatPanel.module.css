@@ -1,0 +1,353 @@
+/* === CombatPanel === */
+.panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--deep-void);
+  border: 1px solid var(--dim-grey);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--dim-grey);
+  background: rgba(230, 57, 70, 0.03);
+  flex-shrink: 0;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.title {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--claw-red);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.titleIcon {
+  display: flex;
+  align-items: center;
+  color: var(--claw-red);
+  opacity: 0.8;
+}
+
+.combatBadge {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--claw-red);
+  background: rgba(230, 57, 70, 0.15);
+  border: 1px solid rgba(230, 57, 70, 0.4);
+  border-radius: 3px;
+  padding: 0.15rem 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  animation: combatPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes combatPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.refreshBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid var(--hull-grey);
+  border-radius: 4px;
+  color: var(--chrome-silver);
+  cursor: pointer;
+  padding: 0.3rem;
+  transition: all 0.2s ease;
+}
+
+.refreshBtn:hover {
+  border-color: var(--claw-red);
+  color: var(--claw-red);
+  box-shadow: 0 0 8px rgba(230, 57, 70, 0.2);
+}
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.content::-webkit-scrollbar-thumb {
+  background: var(--hull-grey);
+  border-radius: 2px;
+}
+
+/* Controls row */
+.controlsRow {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+/* Section title */
+.sectionTitle {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--chrome-silver);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.25rem;
+}
+
+/* Nearby players list */
+.playerList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.playerCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.45rem 0.6rem;
+  background: rgba(61, 90, 108, 0.1);
+  border: 1px solid rgba(61, 90, 108, 0.2);
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.playerCard:hover {
+  background: rgba(61, 90, 108, 0.18);
+  border-color: rgba(61, 90, 108, 0.35);
+}
+
+.playerInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.playerNameRow {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.playerName {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--star-white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.clanTag {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--void-purple);
+  background: rgba(155, 89, 182, 0.12);
+  border-radius: 2px;
+  padding: 0.05rem 0.3rem;
+  flex-shrink: 0;
+}
+
+.npcTag {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--warning-yellow);
+  background: rgba(255, 217, 61, 0.12);
+  border-radius: 2px;
+  padding: 0.05rem 0.3rem;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.playerShip {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--hull-grey);
+  text-transform: uppercase;
+}
+
+.anonymousName {
+  font-style: italic;
+  color: var(--hull-grey);
+}
+
+.playerActions {
+  display: flex;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.iconBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 14, 23, 0.6);
+  border: 1px solid var(--hull-grey);
+  border-radius: 4px;
+  color: var(--chrome-silver);
+  cursor: pointer;
+  padding: 0.3rem;
+  transition: all 0.2s ease;
+}
+
+.iconBtn:hover {
+  border-color: var(--plasma-cyan);
+  color: var(--plasma-cyan);
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.2);
+}
+
+.attackBtn {
+  composes: iconBtn;
+}
+
+.attackBtn:hover {
+  border-color: var(--claw-red);
+  color: var(--claw-red);
+  box-shadow: 0 0 8px rgba(230, 57, 70, 0.25);
+}
+
+.scanBtn {
+  composes: iconBtn;
+}
+
+/* Cloak toggle */
+.cloakBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(155, 89, 182, 0.08);
+  border: 1px solid var(--void-purple);
+  border-radius: 4px;
+  color: var(--void-purple);
+  cursor: pointer;
+  padding: 0.35rem 0.65rem;
+  transition: all 0.2s ease;
+}
+
+.cloakBtn:hover {
+  background: rgba(155, 89, 182, 0.18);
+  box-shadow: 0 0 12px rgba(155, 89, 182, 0.25);
+}
+
+.cloakActive {
+  background: rgba(155, 89, 182, 0.2);
+  border-color: var(--void-purple);
+  box-shadow: 0 0 12px rgba(155, 89, 182, 0.3);
+}
+
+/* Self-destruct */
+.selfDestructBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(230, 57, 70, 0.08);
+  border: 1px solid var(--claw-red);
+  border-radius: 4px;
+  color: var(--claw-red);
+  cursor: pointer;
+  padding: 0.35rem 0.65rem;
+  transition: all 0.2s ease;
+}
+
+.selfDestructBtn:hover {
+  background: rgba(230, 57, 70, 0.2);
+  box-shadow: 0 0 16px rgba(230, 57, 70, 0.35);
+}
+
+/* Confirm dialog */
+.confirmOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(10, 14, 23, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.confirmDialog {
+  background: var(--deep-void);
+  border: 1px solid var(--claw-red);
+  border-radius: 8px;
+  padding: 1.5rem;
+  max-width: 320px;
+  text-align: center;
+  box-shadow: 0 0 40px rgba(230, 57, 70, 0.2);
+}
+
+.confirmTitle {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--claw-red);
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.confirmText {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.8rem;
+  color: var(--chrome-silver);
+  margin-bottom: 1rem;
+  line-height: 1.4;
+}
+
+.confirmActions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+/* Empty state */
+.emptyState {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.78rem;
+  color: var(--hull-grey);
+  text-align: center;
+  padding: 1.5rem 0.5rem;
+}

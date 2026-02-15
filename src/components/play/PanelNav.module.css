@@ -1,0 +1,124 @@
+/* === PanelNav Component === */
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0;
+  background: rgba(10, 14, 23, 0.95);
+  border-right: 1px solid var(--hull-grey);
+  width: 52px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.container::-webkit-scrollbar {
+  width: 0;
+}
+
+.tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--hull-grey);
+  cursor: pointer;
+  transition: color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  flex-shrink: 0;
+}
+
+.tab:hover {
+  color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.08);
+}
+
+.tabActive {
+  color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.12);
+  box-shadow: inset 3px 0 0 var(--plasma-cyan), 0 0 12px rgba(0, 212, 255, 0.15);
+}
+
+.tabIcon {
+  flex-shrink: 0;
+}
+
+.badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--claw-red);
+  color: var(--star-white);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  box-shadow: 0 0 6px rgba(230, 57, 70, 0.5);
+}
+
+.tooltip {
+  display: none;
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 0.3rem 0.6rem;
+  background: rgba(10, 14, 23, 0.95);
+  border: 1px solid var(--hull-grey);
+  border-radius: 4px;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--star-white);
+  white-space: nowrap;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.tab:hover .tooltip {
+  display: block;
+}
+
+/* Mobile: horizontal bottom bar */
+@media (max-width: 768px) {
+  .container {
+    flex-direction: row;
+    width: 100%;
+    height: 52px;
+    padding: 0 0.25rem;
+    border-right: none;
+    border-top: 1px solid var(--hull-grey);
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 0.15rem;
+    justify-content: space-around;
+  }
+
+  .tab {
+    width: 36px;
+    height: 36px;
+  }
+
+  .tabActive {
+    box-shadow: inset 0 -3px 0 var(--plasma-cyan), 0 0 12px rgba(0, 212, 255, 0.15);
+  }
+
+  .tooltip {
+    left: 50%;
+    top: auto;
+    bottom: calc(100% + 8px);
+    transform: translateX(-50%);
+  }
+}
