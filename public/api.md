@@ -1112,7 +1112,7 @@ Bulk mode behavior:
 - `cannot_craft` - You don't meet the skill requirements
 - `not_docked` - Must dock at a station first
 - `no_crafting_service` - This base doesn't have crafting
-- `missing_materials` - Not enough input items in cargo
+- `missing_materials` - Not enough input items in cargo or station storage
 
 **Starter recipes (no skill requirements):**
 These recipes let new players begin crafting immediately:

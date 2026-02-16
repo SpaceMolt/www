@@ -1,7 +1,9 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef, Fragment } from 'react'
+import { useState, useEffect, useCallback, useRef, Fragment, lazy, Suspense } from 'react'
 import styles from './page.module.css'
+
+const DepthChart = lazy(() => import('@/components/DepthChart'))
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 const POLL_INTERVAL = 30_000
@@ -38,6 +40,54 @@ interface PivotRow {
   category: string
   base_value: number
   empires: Record<string, { bid: number; ask: number; bidQty: number; askQty: number } | undefined>
+}
+
+/** Station info from /api/stations */
+interface StationInfo {
+  id: string
+  name: string
+  empire: string
+  empire_name: string
+  services: { market: boolean }
+}
+
+/** Per-station market entry from /api/market/station/{baseID} */
+interface StationMarketItem {
+  item_id: string
+  item_name: string
+  category: string
+  base_value: number
+  best_bid: number
+  best_ask: number
+  bid_quantity: number
+  ask_quantity: number
+  spread: number
+  spread_pct: number
+}
+
+interface StationMarketResponse {
+  base_id: string
+  base_name: string
+  empire: string
+  empire_name: string
+  items: StationMarketItem[]
+  categories: string[]
+}
+
+/** Depth chart data from /api/market/depth/{baseID}/{itemID} */
+interface DepthLevel {
+  price: number
+  quantity: number
+  cumulative: number
+}
+
+interface DepthResponse {
+  base_id: string
+  base_name: string
+  item_id: string
+  item_name: string
+  bids: DepthLevel[]
+  asks: DepthLevel[]
 }
 
 /** Item catalog types from /api/items */
@@ -157,6 +207,20 @@ function pivotItems(items: MarketItem[]): PivotRow[] {
     if (catCmp !== 0) return catCmp
     return a.item_name.localeCompare(b.item_name)
   })
+}
+
+/** Convert station market items into pivot row overrides for a specific empire column */
+function stationItemsToPivot(items: StationMarketItem[]): Map<string, PivotRow['empires'][string]> {
+  const map = new Map<string, PivotRow['empires'][string]>()
+  for (const item of items) {
+    map.set(item.item_id, {
+      bid: item.best_bid,
+      ask: item.best_ask,
+      bidQty: item.bid_quantity,
+      askQty: item.ask_quantity,
+    })
+  }
+  return map
 }
 
 /** Render the non-zero stats for a module in a readable grid */
@@ -322,6 +386,17 @@ export default function MarketPage() {
   const [catalog, setCatalog] = useState<Record<string, CatalogItem>>({})
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null)
 
+  // Station drill-down state
+  const [stationsByEmpire, setStationsByEmpire] = useState<Record<string, StationInfo[]>>({})
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null)
+  const [selectedStations, setSelectedStations] = useState<Record<string, string>>({})
+  const [stationDataCache, setStationDataCache] = useState<Record<string, Map<string, PivotRow['empires'][string]>>>({})
+
+  // Depth chart state
+  const [depthCell, setDepthCell] = useState<{ empireId: string; itemId: string; baseId: string } | null>(null)
+  const [depthData, setDepthData] = useState<DepthResponse | null>(null)
+  const [depthLoading, setDepthLoading] = useState(false)
+
   const fetchMarket = useCallback(async (isInitial: boolean) => {
     if (isInitial) {
       setLoading(true)
@@ -375,9 +450,132 @@ export default function MarketPage() {
       })
   }, [])
 
+  // Fetch stations list once on mount, group by empire
+  useEffect(() => {
+    fetch(`${API_BASE}/api/stations`)
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        return res.json()
+      })
+      .then((data: { stations: StationInfo[] }) => {
+        const grouped: Record<string, StationInfo[]> = {}
+        for (const station of data.stations || []) {
+          if (station.services?.market && station.empire) {
+            if (!grouped[station.empire]) grouped[station.empire] = []
+            grouped[station.empire].push(station)
+          }
+        }
+        // Sort stations within each empire by name
+        for (const empire of Object.keys(grouped)) {
+          grouped[empire].sort((a, b) => a.name.localeCompare(b.name))
+        }
+        setStationsByEmpire(grouped)
+      })
+      .catch(() => {
+        // Stations supplementary; empire-level data still works
+      })
+  }, [])
+
+  // Fetch station market data when a station is selected
+  const selectStation = useCallback(async (empireId: string, baseId: string) => {
+    setSelectedStations((prev) => ({ ...prev, [empireId]: baseId }))
+    setOpenDropdown(null)
+
+    // Clear depth chart if it was for this empire
+    if (depthCell?.empireId === empireId) {
+      setDepthCell(null)
+      setDepthData(null)
+    }
+
+    // Check cache
+    if (stationDataCache[baseId]) return
+
+    try {
+      const res = await fetch(`${API_BASE}/api/market/station/${baseId}`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data: StationMarketResponse = await res.json()
+      const pivot = stationItemsToPivot(data.items || [])
+      setStationDataCache((prev) => ({ ...prev, [baseId]: pivot }))
+    } catch {
+      // If fetch fails, clear the selection
+      setSelectedStations((prev) => {
+        const next = { ...prev }
+        delete next[empireId]
+        return next
+      })
+    }
+  }, [stationDataCache, depthCell])
+
+  // Reset an empire column to aggregate view
+  const resetStation = useCallback((empireId: string) => {
+    setSelectedStations((prev) => {
+      const next = { ...prev }
+      delete next[empireId]
+      return next
+    })
+    setOpenDropdown(null)
+    if (depthCell?.empireId === empireId) {
+      setDepthCell(null)
+      setDepthData(null)
+    }
+  }, [depthCell])
+
+  // Fetch depth data for a cell click
+  const handleCellClick = useCallback(async (empireId: string, itemId: string, e: React.MouseEvent) => {
+    e.stopPropagation() // Don't trigger item row expand
+
+    const baseId = selectedStations[empireId]
+    if (!baseId) return // No station selected, can't show depth for aggregate
+
+    // Toggle off if clicking same cell
+    if (depthCell?.empireId === empireId && depthCell?.itemId === itemId) {
+      setDepthCell(null)
+      setDepthData(null)
+      return
+    }
+
+    setDepthCell({ empireId, itemId, baseId })
+    setDepthData(null)
+    setDepthLoading(true)
+
+    try {
+      const res = await fetch(`${API_BASE}/api/market/depth/${baseId}/${itemId}`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data: DepthResponse = await res.json()
+      setDepthData(data)
+    } catch {
+      setDepthData(null)
+    } finally {
+      setDepthLoading(false)
+    }
+  }, [selectedStations, depthCell])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    if (!openDropdown) return
+    const handler = () => setOpenDropdown(null)
+    document.addEventListener('click', handler)
+    return () => document.removeEventListener('click', handler)
+  }, [openDropdown])
+
+  // Build effective rows: override empire columns where a station is selected
+  const effectiveRows = rows.map((row) => {
+    let modified = false
+    const newEmpires = { ...row.empires }
+    for (const [empireId, baseId] of Object.entries(selectedStations)) {
+      const cache = stationDataCache[baseId]
+      if (cache) {
+        modified = true
+        newEmpires[empireId] = cache.get(row.item_id) ?? undefined
+      }
+    }
+    if (!modified) return row
+    return { ...row, empires: newEmpires }
+  })
+
   const filteredRows = activeCategory
-    ? rows.filter((r) => r.category === activeCategory)
-    : rows
+    ? effectiveRows.filter((r) => r.category === activeCategory)
+    : effectiveRows
 
   const hasAnyOrders = rows.some((r) =>
     Object.values(r.empires).some(
@@ -392,6 +590,8 @@ export default function MarketPage() {
     setExpandedItemId((prev) => (prev === itemId ? null : itemId))
   }
 
+  const hasStations = Object.keys(stationsByEmpire).length > 0
+
   return (
     <main className={styles.main}>
       <div className={styles.pageHeader}>
@@ -403,6 +603,7 @@ export default function MarketPage() {
           Real-time bid and ask prices from player exchange order books at each
           empire station. Prices update every 30 seconds. Click any item to
           see details.
+          {hasStations && ' Click an empire name to drill into a specific station.'}
         </p>
       </div>
 
@@ -458,15 +659,54 @@ export default function MarketPage() {
                   <th className={styles.colItem} rowSpan={2}>Item</th>
                   <th className={styles.colCategory} rowSpan={2}>Category</th>
                   <th className={styles.colBaseValue} rowSpan={2}>Base Value</th>
-                  {empires.map((emp) => (
-                    <th
-                      key={emp.id}
-                      colSpan={2}
-                      className={`${EMPIRE_COLORS[emp.id] || ''} ${styles.empireColStart}`}
-                    >
-                      {emp.name}
-                    </th>
-                  ))}
+                  {empires.map((emp) => {
+                    const empStations = stationsByEmpire[emp.id] || []
+                    const selectedBaseId = selectedStations[emp.id]
+                    const selectedStation = empStations.find((s) => s.id === selectedBaseId)
+                    const isDropdownOpen = openDropdown === emp.id
+
+                    return (
+                      <th
+                        key={emp.id}
+                        colSpan={2}
+                        className={`${EMPIRE_COLORS[emp.id] || ''} ${styles.empireColStart} ${
+                          hasStations ? styles.empireHeaderClickable : ''
+                        }`}
+                        onClick={(e) => {
+                          if (!hasStations) return
+                          e.stopPropagation()
+                          setOpenDropdown(isDropdownOpen ? null : emp.id)
+                        }}
+                      >
+                        <div className={styles.empireHeaderContent}>
+                          <span>{emp.name}</span>
+                          {hasStations && <span className={styles.dropdownCaret}>{isDropdownOpen ? '\u25B2' : '\u25BC'}</span>}
+                          {selectedStation && (
+                            <span className={styles.stationLabel}>{selectedStation.name}</span>
+                          )}
+                        </div>
+                        {isDropdownOpen && (
+                          <div className={styles.empireDropdown} onClick={(e) => e.stopPropagation()}>
+                            <button
+                              className={`${styles.dropdownItem} ${!selectedBaseId ? styles.dropdownItemActive : ''}`}
+                              onClick={() => resetStation(emp.id)}
+                            >
+                              All Stations (aggregate)
+                            </button>
+                            {empStations.map((station) => (
+                              <button
+                                key={station.id}
+                                className={`${styles.dropdownItem} ${selectedBaseId === station.id ? styles.dropdownItemActive : ''}`}
+                                onClick={() => selectStation(emp.id, station.id)}
+                              >
+                                {station.name}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </th>
+                    )
+                  })}
                 </tr>
                 {/* Bid/Ask sub-header row */}
                 <tr className={styles.subHeaderRow}>
@@ -483,6 +723,7 @@ export default function MarketPage() {
                   const isExpanded = expandedItemId === row.item_id
                   const catalogItem = catalog[row.item_id]
                   const hasCatalog = Object.keys(catalog).length > 0
+                  const isDepthRow = depthCell?.itemId === row.item_id
 
                   return (
                     <Fragment key={row.item_id}>
@@ -509,12 +750,17 @@ export default function MarketPage() {
                           const data = row.empires[emp.id]
                           const hasBid = data && data.bid > 0
                           const hasAsk = data && data.ask > 0
+                          const hasStation = !!selectedStations[emp.id]
+                          const isActiveDepth = depthCell?.empireId === emp.id && depthCell?.itemId === row.item_id
                           return (
                             <Fragment key={emp.id}>
                               <td
                                 className={`${styles.empireColStart} ${
                                   hasBid ? styles.cellBid : styles.cellDash
+                                } ${hasStation ? styles.cellClickable : ''} ${
+                                  isActiveDepth ? styles.cellDepthActive : ''
                                 }`}
+                                onClick={hasStation && hasBid ? (e) => handleCellClick(emp.id, row.item_id, e) : undefined}
                               >
                                 {hasBid ? (
                                   <>
@@ -528,7 +774,10 @@ export default function MarketPage() {
                                 )}
                               </td>
                               <td
-                                className={hasAsk ? styles.cellAsk : styles.cellDash}
+                                className={`${hasAsk ? styles.cellAsk : styles.cellDash} ${
+                                  hasStation ? styles.cellClickable : ''
+                                } ${isActiveDepth ? styles.cellDepthActive : ''}`}
+                                onClick={hasStation && hasAsk ? (e) => handleCellClick(emp.id, row.item_id, e) : undefined}
                               >
                                 {hasAsk ? (
                                   <>
@@ -547,6 +796,30 @@ export default function MarketPage() {
                       </tr>
                       {isExpanded && catalogItem && (
                         <ItemDetail item={catalogItem} totalCols={totalCols} />
+                      )}
+                      {isDepthRow && (
+                        <tr className={styles.detailRow}>
+                          <td colSpan={totalCols} className={styles.detailCell}>
+                            <div className={styles.depthChartWrapper}>
+                              {depthLoading && (
+                                <div className={styles.depthLoading}>Loading depth data...</div>
+                              )}
+                              {!depthLoading && depthData && (
+                                <Suspense fallback={<div className={styles.depthLoading}>Loading chart...</div>}>
+                                  <DepthChart
+                                    bids={depthData.bids || []}
+                                    asks={depthData.asks || []}
+                                    itemName={depthData.item_name}
+                                    onClose={() => { setDepthCell(null); setDepthData(null) }}
+                                  />
+                                </Suspense>
+                              )}
+                              {!depthLoading && !depthData && (
+                                <div className={styles.depthLoading}>No depth data available.</div>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
                       )}
                     </Fragment>
                   )
