@@ -7,7 +7,6 @@ import {
   XAxis,
   YAxis,
   Tooltip,
-  ReferenceLine,
   ResponsiveContainer,
 } from 'recharts'
 import styles from './DepthChart.module.css'
@@ -25,69 +24,67 @@ interface DepthChartProps {
   onClose: () => void
 }
 
-interface ChartPoint {
+interface HalfPoint {
   price: number
-  bidCumulative: number | null
-  askCumulative: number | null
+  cumulative: number
 }
 
 const BID_COLOR = '#2dd4bf'
 const ASK_COLOR = '#e63946'
 
+const AXIS_STYLE = {
+  tick: { fill: '#a8c5d6', fontSize: 11 },
+  tickLine: { stroke: '#3d5a6c' },
+  axisLine: { stroke: '#3d5a6c' },
+}
+
+const TOOLTIP_STYLE = {
+  background: '#0d1321',
+  border: '1px solid #3d5a6c',
+  borderRadius: 4,
+  fontFamily: 'JetBrains Mono, monospace',
+  fontSize: '0.75rem',
+}
+
+function formatQty(val: number): string {
+  if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`
+  if (val >= 1000) return `${(val / 1000).toFixed(0)}k`
+  return String(val)
+}
+
 export default function DepthChart({ bids, asks, itemName, onClose }: DepthChartProps) {
-  const { data, spreadMid } = useMemo(() => {
-    const bidPoints: ChartPoint[] = []
-    const askPoints: ChartPoint[] = []
-
-    const bestBidPrice = bids.length > 0 ? bids[0].price : 0
-    const bestAskPrice = asks.length > 0 ? asks[0].price : 0
-
-    // Bids: API gives price DESC (best bid first). Reverse to price ASC for x-axis.
-    // Cumulative builds from spread outward: best bid (rightmost) has smallest cum,
-    // worst bid (leftmost) has largest cum.
+  const { bidData, askData } = useMemo(() => {
+    // Bids: API gives price DESC (best bid first). Reverse to price ASC.
+    // Cumulative builds from spread outward: lowest price has highest cumulative.
     const reversedBids = [...bids].reverse()
     const totalBidQty = bids.reduce((sum, b) => sum + b.quantity, 0)
+    const bidPts: HalfPoint[] = []
     let bidCum = totalBidQty
     for (const level of reversedBids) {
-      bidPoints.push({
-        price: level.price,
-        bidCumulative: bidCum,
-        askCumulative: null,
-      })
+      bidPts.push({ price: level.price, cumulative: bidCum })
       bidCum -= level.quantity
     }
-    // Add anchor point at the spread edge so the step drops to zero
+    // Drop to zero at the spread edge
     if (bids.length > 0) {
-      bidPoints.push({
-        price: bestBidPrice + 1,
-        bidCumulative: 0,
-        askCumulative: null,
-      })
+      bidPts.push({ price: bids[0].price, cumulative: 0 })
     }
 
     // Asks: API gives price ASC (best ask first). Cumulative builds outward.
+    const askPts: HalfPoint[] = []
     if (asks.length > 0) {
-      // Add anchor point at the spread edge
-      askPoints.push({
-        price: bestAskPrice - 1,
-        bidCumulative: null,
-        askCumulative: 0,
-      })
+      askPts.push({ price: asks[0].price, cumulative: 0 })
     }
     for (const level of asks) {
-      askPoints.push({
-        price: level.price,
-        bidCumulative: null,
-        askCumulative: level.cumulative,
-      })
+      askPts.push({ price: level.price, cumulative: level.cumulative })
     }
 
-    const mid = bestBidPrice > 0 && bestAskPrice > 0 ? (bestBidPrice + bestAskPrice) / 2 : 0
-
-    return { data: [...bidPoints, ...askPoints], spreadMid: mid }
+    return { bidData: bidPts, askData: askPts }
   }, [bids, asks])
 
-  if (data.length === 0) {
+  const hasBids = bidData.length > 0
+  const hasAsks = askData.length > 0
+
+  if (!hasBids && !hasAsks) {
     return (
       <div className={styles.container}>
         <div className={styles.header}>
@@ -102,6 +99,11 @@ export default function DepthChart({ bids, asks, itemName, onClose }: DepthChart
   const bestBid = bids.length > 0 ? bids[0].price : null
   const bestAsk = asks.length > 0 ? asks[0].price : null
   const spread = bestBid !== null && bestAsk !== null ? bestAsk - bestBid : null
+
+  // Shared Y domain so both halves use the same scale
+  const maxBidCum = bidData.length > 0 ? Math.max(...bidData.map((d) => d.cumulative)) : 0
+  const maxAskCum = askData.length > 0 ? Math.max(...askData.map((d) => d.cumulative)) : 0
+  const yMax = Math.max(maxBidCum, maxAskCum)
 
   return (
     <div className={styles.container}>
@@ -120,79 +122,97 @@ export default function DepthChart({ bids, asks, itemName, onClose }: DepthChart
         </div>
         <button className={styles.closeBtn} onClick={onClose}>{'\u2715'}</button>
       </div>
-      <div className={styles.chartWrapper}>
-        <ResponsiveContainer width="100%" height={300}>
-          <AreaChart data={data} margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
-            <defs>
-              <linearGradient id="bidGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={BID_COLOR} stopOpacity={0.4} />
-                <stop offset="95%" stopColor={BID_COLOR} stopOpacity={0.05} />
-              </linearGradient>
-              <linearGradient id="askGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={ASK_COLOR} stopOpacity={0.4} />
-                <stop offset="95%" stopColor={ASK_COLOR} stopOpacity={0.05} />
-              </linearGradient>
-            </defs>
-            <XAxis
-              dataKey="price"
-              type="number"
-              domain={['dataMin', 'dataMax']}
-              tick={{ fill: '#a8c5d6', fontSize: 11 }}
-              tickLine={{ stroke: '#3d5a6c' }}
-              axisLine={{ stroke: '#3d5a6c' }}
-              label={{ value: 'Price', position: 'insideBottom', offset: -2, fill: '#a8c5d6', fontSize: 11 }}
-            />
-            <YAxis
-              tick={{ fill: '#a8c5d6', fontSize: 11 }}
-              tickLine={{ stroke: '#3d5a6c' }}
-              axisLine={{ stroke: '#3d5a6c' }}
-              label={{ value: 'Cumulative Quantity', angle: -90, position: 'insideLeft', offset: 5, fill: '#a8c5d6', fontSize: 11 }}
-              tickFormatter={(val) => val >= 1000 ? `${(val / 1000).toFixed(0)}k` : String(val)}
-            />
-            <Tooltip
-              contentStyle={{
-                background: '#0d1321',
-                border: '1px solid #3d5a6c',
-                borderRadius: 4,
-                fontFamily: 'JetBrains Mono, monospace',
-                fontSize: '0.75rem',
-              }}
-              labelFormatter={(val) => `Price: ${Number(val).toLocaleString()}`}
-              formatter={(value, name) => {
-                const label = name === 'bidCumulative' ? 'Bid Depth' : 'Ask Depth'
-                return [typeof value === 'number' ? value.toLocaleString() : '-', label]
-              }}
-            />
-            {spreadMid > 0 && (
-              <ReferenceLine
-                x={spreadMid}
-                stroke="#3d5a6c"
-                strokeDasharray="3 3"
-                strokeWidth={1}
-              />
-            )}
-            <Area
-              type="stepAfter"
-              dataKey="bidCumulative"
-              stroke={BID_COLOR}
-              strokeWidth={2}
-              fill="url(#bidGradient)"
-              fillOpacity={1}
-              connectNulls={false}
-              isAnimationActive={false}
-            />
-            <Area
-              type="stepBefore"
-              dataKey="askCumulative"
-              stroke={ASK_COLOR}
-              strokeWidth={2}
-              fill="url(#askGradient)"
-              fillOpacity={1}
-              connectNulls={false}
-              isAnimationActive={false}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
+      <div className={styles.splitChart}>
+        {/* Bid side — own x-axis range */}
+        <div className={hasBids && hasAsks ? styles.halfChart : styles.fullChart}>
+          {hasBids ? (
+            <ResponsiveContainer width="100%" height={250}>
+              <AreaChart data={bidData} margin={{ top: 10, right: 0, left: 10, bottom: 5 }}>
+                <defs>
+                  <linearGradient id="bidGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={BID_COLOR} stopOpacity={0.4} />
+                    <stop offset="95%" stopColor={BID_COLOR} stopOpacity={0.05} />
+                  </linearGradient>
+                </defs>
+                <XAxis
+                  dataKey="price"
+                  type="number"
+                  domain={['dataMin', 'dataMax']}
+                  reversed
+                  {...AXIS_STYLE}
+                />
+                <YAxis
+                  domain={[0, yMax]}
+                  tickFormatter={formatQty}
+                  {...AXIS_STYLE}
+                />
+                <Tooltip
+                  contentStyle={TOOLTIP_STYLE}
+                  labelFormatter={(val) => `Price: ${Number(val).toLocaleString()}`}
+                  formatter={(value) => [typeof value === 'number' ? value.toLocaleString() : '-', 'Bid Depth']}
+                />
+                <Area
+                  type="stepAfter"
+                  dataKey="cumulative"
+                  stroke={BID_COLOR}
+                  strokeWidth={2}
+                  fill="url(#bidGrad)"
+                  fillOpacity={1}
+                  isAnimationActive={false}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className={styles.noData}>No bids</div>
+          )}
+        </div>
+
+        {/* Spread divider */}
+        {hasBids && hasAsks && <div className={styles.spreadDivider} />}
+
+        {/* Ask side — own x-axis range */}
+        <div className={hasBids && hasAsks ? styles.halfChart : styles.fullChart}>
+          {hasAsks ? (
+            <ResponsiveContainer width="100%" height={250}>
+              <AreaChart data={askData} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
+                <defs>
+                  <linearGradient id="askGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={ASK_COLOR} stopOpacity={0.4} />
+                    <stop offset="95%" stopColor={ASK_COLOR} stopOpacity={0.05} />
+                  </linearGradient>
+                </defs>
+                <XAxis
+                  dataKey="price"
+                  type="number"
+                  domain={['dataMin', 'dataMax']}
+                  {...AXIS_STYLE}
+                />
+                <YAxis
+                  domain={[0, yMax]}
+                  tickFormatter={formatQty}
+                  orientation="right"
+                  {...AXIS_STYLE}
+                />
+                <Tooltip
+                  contentStyle={TOOLTIP_STYLE}
+                  labelFormatter={(val) => `Price: ${Number(val).toLocaleString()}`}
+                  formatter={(value) => [typeof value === 'number' ? value.toLocaleString() : '-', 'Ask Depth']}
+                />
+                <Area
+                  type="stepAfter"
+                  dataKey="cumulative"
+                  stroke={ASK_COLOR}
+                  strokeWidth={2}
+                  fill="url(#askGrad)"
+                  fillOpacity={1}
+                  isAnimationActive={false}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className={styles.noData}>No asks</div>
+          )}
+        </div>
       </div>
     </div>
   )
