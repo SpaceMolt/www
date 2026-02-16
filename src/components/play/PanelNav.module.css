@@ -1,22 +1,21 @@
-/* === PanelNav Component === */
+/* === PanelNav — Horizontal Tab Bar === */
 .container {
-  position: static;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.5rem 0;
   background: rgba(10, 14, 23, 0.95);
-  border-right: 1px solid var(--hull-grey);
-  width: 52px;
+  border-bottom: 1px solid rgba(61, 90, 108, 0.4);
   flex-shrink: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  order: -1;
 }
 
-.container::-webkit-scrollbar {
-  width: 0;
+/* Desktop: horizontal scrollable row */
+.tabRow {
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.tabRow::-webkit-scrollbar {
+  display: none;
 }
 
 .tab {
@@ -24,31 +23,40 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  padding: 0;
+  gap: 0.35rem;
+  padding: 0.5rem 0.75rem;
   border: none;
-  border-radius: 6px;
+  border-bottom: 2px solid transparent;
   background: transparent;
   color: var(--hull-grey);
   cursor: pointer;
-  transition: color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
   flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .tab:hover {
   color: var(--plasma-cyan);
-  background: rgba(0, 212, 255, 0.08);
+  background: rgba(0, 212, 255, 0.05);
 }
 
 .tabActive {
   color: var(--plasma-cyan);
-  background: rgba(0, 212, 255, 0.12);
-  box-shadow: inset 3px 0 0 var(--plasma-cyan), 0 0 12px rgba(0, 212, 255, 0.15);
+  background: rgba(0, 212, 255, 0.08);
+  border-bottom-color: var(--plasma-cyan);
+  box-shadow: 0 2px 8px rgba(0, 212, 255, 0.1);
 }
 
 .tabIcon {
   flex-shrink: 0;
+}
+
+.tabLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 500;
 }
 
 .badge {
@@ -71,75 +79,110 @@
   box-shadow: 0 0 6px rgba(230, 57, 70, 0.5);
 }
 
-.tooltip {
+/* Mobile dropdown — hidden on desktop */
+.mobileDropdown {
   display: none;
-  position: absolute;
-  left: calc(100% + 8px);
-  top: 50%;
-  transform: translateY(-50%);
-  padding: 0.3rem 0.6rem;
-  background: rgba(10, 14, 23, 0.95);
-  border: 1px solid var(--hull-grey);
-  border-radius: 4px;
+  position: relative;
+}
+
+.mobileButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: none;
+  background: transparent;
+  color: var(--plasma-cyan);
+  cursor: pointer;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.mobileMenuIcon {
+  color: var(--hull-grey);
+}
+
+.mobileLabel {
+  flex: 1;
+  text-align: left;
+}
+
+.chevron {
+  color: var(--hull-grey);
+  transition: transform 0.2s ease;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.mobileMenu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: rgba(10, 14, 23, 0.98);
+  border: 1px solid rgba(61, 90, 108, 0.4);
+  border-top: none;
+  z-index: 60;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.mobileItem {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border: none;
+  background: transparent;
+  color: var(--hull-grey);
+  cursor: pointer;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  transition: color 0.15s, background 0.15s;
+}
+
+.mobileItem:hover {
+  color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.05);
+}
+
+.mobileItemActive {
+  color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.1);
+  border-left: 3px solid var(--plasma-cyan);
+}
+
+.mobileBadge {
+  margin-left: auto;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--claw-red);
   color: var(--star-white);
-  white-space: nowrap;
-  z-index: 100;
-  pointer-events: none;
+  font-size: 0.6rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 6px rgba(230, 57, 70, 0.5);
 }
 
-.tab:hover .tooltip {
-  display: block;
-}
-
-/* Tablet/Mobile: fixed bottom tab bar */
-@media (max-width: 900px) {
-  .container {
-    position: fixed;
-    top: auto;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    flex-direction: row;
-    width: 100%;
-    height: 48px;
-    padding: 0 0.25rem;
-    border-right: none;
-    border-top: 1px solid var(--hull-grey);
-    overflow-x: auto;
-    overflow-y: hidden;
-    gap: 0.15rem;
-    justify-content: space-around;
-    z-index: 50;
-    order: 0;
+/* Responsive: switch to mobile dropdown */
+@media (max-width: 768px) {
+  .tabRow {
+    display: none;
   }
 
-  .tab {
-    width: 36px;
-    height: 36px;
-  }
-
-  .tabActive {
-    box-shadow: inset 0 -3px 0 var(--plasma-cyan), 0 0 12px rgba(0, 212, 255, 0.15);
-  }
-
-  .tooltip {
-    left: 50%;
-    top: auto;
-    bottom: calc(100% + 8px);
-    transform: translateX(-50%);
-  }
-}
-
-@media (max-width: 480px) {
-  .container {
-    height: 44px;
-    gap: 0;
-  }
-
-  .tab {
-    width: 32px;
-    height: 32px;
+  .mobileDropdown {
+    display: block;
   }
 }

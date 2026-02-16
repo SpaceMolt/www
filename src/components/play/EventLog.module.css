@@ -2,10 +2,8 @@
 .container {
   display: flex;
   flex-direction: column;
-  background: rgba(10, 14, 23, 0.95);
-  border-top: 1px solid var(--hull-grey);
-  max-height: 180px;
-  min-height: 60px;
+  flex: 1;
+  min-height: 0;
 }
 
 .header {
@@ -40,6 +38,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
+  min-height: 0;
 }
 
 .events::-webkit-scrollbar {
@@ -93,9 +92,7 @@
   color: var(--chrome-silver);
   flex: 1;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  word-break: break-word;
 }
 
 .eventTime {
@@ -148,30 +145,5 @@
   to {
     opacity: 1;
     transform: translateX(0);
-  }
-}
-
-@media (max-width: 900px) {
-  .container {
-    max-height: 100px;
-  }
-
-  .eventMessage {
-    font-size: 0.65rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .container {
-    max-height: 80px;
-    min-height: 40px;
-  }
-
-  .header {
-    padding: 0.2rem 0.5rem;
-  }
-
-  .events {
-    padding: 0.15rem 0.35rem 0.5rem;
   }
 }

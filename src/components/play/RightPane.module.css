@@ -1,0 +1,118 @@
+/* === RightPane — Events + Chat Sidebar === */
+.container {
+  display: flex;
+  flex-direction: column;
+  background: rgba(10, 14, 23, 0.95);
+  border-left: 1px solid rgba(61, 90, 108, 0.4);
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Sub-tab bar */
+.tabBar {
+  display: flex;
+  border-bottom: 1px solid rgba(61, 90, 108, 0.3);
+  flex-shrink: 0;
+}
+
+.tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0.45rem 0.5rem;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--hull-grey);
+  cursor: pointer;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transition: color 0.2s, background 0.2s, border-color 0.2s;
+}
+
+.tab:hover {
+  color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.05);
+}
+
+.tabActive {
+  color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.08);
+  border-bottom-color: var(--plasma-cyan);
+}
+
+.countBadge {
+  font-size: 0.5rem;
+  font-weight: 700;
+  color: var(--hull-grey);
+  background: rgba(61, 90, 108, 0.3);
+  padding: 0.05rem 0.3rem;
+  border-radius: 6px;
+  line-height: 1;
+}
+
+.unreadDot {
+  width: 6px;
+  height: 6px;
+  background: var(--plasma-cyan);
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(0, 212, 255, 0.5);
+  flex-shrink: 0;
+}
+
+/* Content area */
+.content {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Mobile toggle — hidden on desktop */
+.mobileToggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--hull-grey);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.mobileToggle:hover {
+  color: var(--plasma-cyan);
+}
+
+.toggleChevron {
+  transition: transform 0.2s ease;
+}
+
+.toggleChevronOpen {
+  transform: rotate(180deg);
+}
+
+/* Responsive: becomes bottom panel on mobile */
+@media (max-width: 768px) {
+  .container {
+    border-left: none;
+    border-top: 1px solid rgba(61, 90, 108, 0.4);
+    max-height: 40px; /* collapsed: just tab bar */
+    transition: max-height 0.3s ease;
+  }
+
+  .containerExpanded {
+    max-height: 50vh;
+  }
+
+  .mobileToggle {
+    display: flex;
+  }
+}

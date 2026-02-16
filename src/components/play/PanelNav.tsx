@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useRef, useEffect } from 'react'
 import {
   Compass,
   Swords,
@@ -11,6 +12,8 @@ import {
   Building2,
   Info,
   Settings,
+  ChevronDown,
+  Menu,
 } from 'lucide-react'
 import styles from './PanelNav.module.css'
 
@@ -34,30 +37,92 @@ const PANELS = [
 ] as const
 
 export function PanelNav({ activePanel, onPanelChange, badges }: PanelNavProps) {
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  const activeConfig = PANELS.find((p) => p.id === activePanel) || PANELS[0]
+  const ActiveIcon = activeConfig.icon
+
+  useEffect(() => {
+    if (!mobileOpen) return
+    function handleClick(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setMobileOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [mobileOpen])
+
   return (
     <nav className={styles.container}>
-      {PANELS.map(({ id, icon: Icon, label }) => {
-        const isActive = activePanel === id
-        const badgeCount = badges?.[id]
-        return (
-          <button
-            key={id}
-            className={`${styles.tab} ${isActive ? styles.tabActive : ''}`}
-            onClick={() => onPanelChange(id)}
-            title={label}
-            aria-label={label}
-            aria-current={isActive ? 'page' : undefined}
-          >
-            <Icon size={20} className={styles.tabIcon} />
-            {badgeCount !== undefined && badgeCount > 0 && (
-              <span className={styles.badge}>
-                {badgeCount > 99 ? '99+' : badgeCount}
-              </span>
-            )}
-            <span className={styles.tooltip}>{label}</span>
-          </button>
-        )
-      })}
+      {/* Desktop: horizontal scrollable tabs */}
+      <div className={styles.tabRow}>
+        {PANELS.map(({ id, icon: Icon, label }) => {
+          const isActive = activePanel === id
+          const badgeCount = badges?.[id]
+          return (
+            <button
+              key={id}
+              className={`${styles.tab} ${isActive ? styles.tabActive : ''}`}
+              onClick={() => onPanelChange(id)}
+              aria-label={label}
+              aria-current={isActive ? 'page' : undefined}
+            >
+              <Icon size={14} className={styles.tabIcon} />
+              <span className={styles.tabLabel}>{label}</span>
+              {badgeCount !== undefined && badgeCount > 0 && (
+                <span className={styles.badge}>
+                  {badgeCount > 99 ? '99+' : badgeCount}
+                </span>
+              )}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Mobile: dropdown selector */}
+      <div className={styles.mobileDropdown} ref={dropdownRef}>
+        <button
+          className={styles.mobileButton}
+          onClick={() => setMobileOpen(!mobileOpen)}
+          aria-expanded={mobileOpen}
+          aria-haspopup="listbox"
+        >
+          <Menu size={16} className={styles.mobileMenuIcon} />
+          <ActiveIcon size={14} />
+          <span className={styles.mobileLabel}>{activeConfig.label}</span>
+          <ChevronDown size={14} className={`${styles.chevron} ${mobileOpen ? styles.chevronOpen : ''}`} />
+        </button>
+        {mobileOpen && (
+          <div className={styles.mobileMenu} role="listbox">
+            {PANELS.map(({ id, icon: Icon, label }) => {
+              const isActive = activePanel === id
+              const badgeCount = badges?.[id]
+              return (
+                <button
+                  key={id}
+                  className={`${styles.mobileItem} ${isActive ? styles.mobileItemActive : ''}`}
+                  onClick={() => {
+                    onPanelChange(id)
+                    setMobileOpen(false)
+                  }}
+                  role="option"
+                  aria-selected={isActive}
+                >
+                  <Icon size={16} />
+                  <span>{label}</span>
+                  {badgeCount !== undefined && badgeCount > 0 && (
+                    <span className={styles.mobileBadge}>
+                      {badgeCount > 99 ? '99+' : badgeCount}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        )}
+      </div>
     </nav>
   )
 }
