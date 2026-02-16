@@ -813,9 +813,11 @@ body.play-page {
   padding-bottom: 0 !important;
 }
 
-body.play-page nav,
+body.play-page > nav,
 body.play-page > footer,
-body.play-page .stats-bar,
-body.play-page .live-feed-popup {
+body.play-page > .mobile-overlay,
+body.play-page > .mobile-menu,
+body.play-page > .stats-bar,
+body.play-page > .live-feed-popup {
   display: none !important;
 }

@@ -1,0 +1,130 @@
+/* === TickCooldown Component === */
+.container {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  width: 100%;
+  position: relative;
+}
+
+.indicator {
+  flex-shrink: 0;
+  z-index: 2;
+}
+
+.tickBadge {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0 0.4rem;
+  height: 100%;
+  transition: color 0.3s ease;
+}
+
+.tickIcon {
+  color: var(--hull-grey);
+  transition: color 0.3s ease;
+}
+
+.tickNum {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--hull-grey);
+  letter-spacing: 0.05em;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.3s ease;
+}
+
+.tickBadgeFlash .tickIcon,
+.tickBadgeFlash .tickNum {
+  color: var(--plasma-cyan);
+  text-shadow: 0 0 8px rgba(0, 212, 255, 0.6);
+}
+
+/* Track */
+.track {
+  flex: 1;
+  height: 3px;
+  background: rgba(61, 90, 108, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 212, 255, 0.4) 0%,
+    rgba(0, 212, 255, 0.7) 80%,
+    rgba(0, 212, 255, 0.9) 100%
+  );
+  transition: none;
+  will-change: width;
+}
+
+.fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 20px;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4)
+  );
+  filter: blur(1px);
+}
+
+/* Flash state when tick arrives */
+.fillFlash {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 212, 255, 0.8) 0%,
+    rgba(255, 255, 255, 0.9) 100%
+  );
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.6);
+}
+
+/* Burst effect on tick arrival */
+.burst {
+  position: absolute;
+  top: -4px;
+  left: 0;
+  right: 0;
+  bottom: -4px;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 212, 255, 0.6) 0%,
+    rgba(0, 212, 255, 0.2) 30%,
+    transparent 100%
+  );
+  animation: tickBurst 0.7s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes tickBurst {
+  0% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scaleY(0.5);
+  }
+}
+
+@media (max-width: 600px) {
+  .tickBadge {
+    padding: 0 0.25rem;
+  }
+
+  .tickNum {
+    font-size: 0.55rem;
+  }
+}

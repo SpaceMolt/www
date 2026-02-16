@@ -9,6 +9,7 @@ import { TravelProgress } from './TravelProgress'
 import { PanelNav } from './PanelNav'
 import { ChatPanel } from './ChatPanel'
 import { EventLog } from './EventLog'
+import { TickCooldown } from './TickCooldown'
 import { NavigationPanel } from './panels/NavigationPanel'
 import { CombatPanel } from './panels/CombatPanel'
 import { MiningPanel } from './panels/MiningPanel'
@@ -54,15 +55,11 @@ export function HUD() {
         <PlayerInfo />
       </div>
 
+      {/* Tick Cooldown Bar */}
+      <TickCooldown />
+
       {/* Main Content */}
       <div className={styles.main}>
-        {/* Left Sidebar - Panel Navigation */}
-        <PanelNav
-          activePanel={activePanel}
-          onPanelChange={setActivePanel}
-          badges={badges}
-        />
-
         {/* Center - Active Panel */}
         <div className={styles.center}>
           <TravelProgress />
@@ -70,6 +67,13 @@ export function HUD() {
             <ActivePanelComponent />
           </div>
         </div>
+
+        {/* Left Sidebar on desktop, bottom bar on mobile */}
+        <PanelNav
+          activePanel={activePanel}
+          onPanelChange={setActivePanel}
+          badges={badges}
+        />
 
         {/* Right Sidebar - Chat (desktop) */}
         <div className={`${styles.chatSidebar} ${chatOpen ? styles.chatSidebarOpen : ''}`}>

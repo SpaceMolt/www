@@ -1,7 +1,7 @@
 'use client'
 
 import { useGame } from './GameProvider'
-import { Coins, Globe, MapPin, Wifi, WifiOff, Clock } from 'lucide-react'
+import { Coins, Globe, MapPin, Wifi, WifiOff } from 'lucide-react'
 import styles from './PlayerInfo.module.css'
 
 export function PlayerInfo() {
@@ -19,10 +19,6 @@ export function PlayerInfo() {
             <WifiOff size={12} className={styles.disconnectedIcon} />
           )}
           <span className={connected ? styles.connectedDot : styles.disconnectedDot} />
-        </div>
-        <div className={styles.tickDisplay}>
-          <Clock size={11} className={styles.tickIcon} />
-          <span className={styles.tickValue}>{state.currentTick}</span>
         </div>
       </div>
 

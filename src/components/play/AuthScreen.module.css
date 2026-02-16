@@ -8,6 +8,8 @@
   justify-content: center;
   background: var(--space-black);
   z-index: 100;
+  overflow-y: auto;
+  padding: 2rem 1rem;
 }
 
 .backdrop::before {
@@ -485,6 +487,42 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Sign-in hint */
+.signInHint {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--chrome-silver);
+  line-height: 1.4;
+  padding: 0.4rem 0.5rem;
+  background: rgba(0, 212, 255, 0.04);
+  border: 1px solid rgba(0, 212, 255, 0.1);
+  border-radius: 4px;
+}
+
+.signInHint svg {
+  flex-shrink: 0;
+  color: var(--plasma-cyan);
+  margin-top: 1px;
+}
+
+.signInLink {
+  background: none;
+  border: none;
+  color: var(--plasma-cyan);
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.signInLink:hover {
+  color: var(--star-white);
 }
 
 /* Responsive */

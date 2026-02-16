@@ -152,7 +152,7 @@
   100% { transform: translateX(100%); }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .content {
     padding: 0.4rem 0.5rem;
   }

@@ -61,12 +61,12 @@
   min-width: 80px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .container {
-    flex-direction: column;
-    align-items: stretch;
     gap: 0.5rem;
-    padding: 0.4rem 0.5rem;
+    padding: 0.25rem 0.5rem;
+    border-bottom: none;
+    min-height: unset;
   }
 
   .shipName {
@@ -74,12 +74,29 @@
   }
 
   .bars {
-    flex-wrap: wrap;
     gap: 0.5rem;
   }
 
   .barItem {
     min-width: 60px;
-    flex-basis: calc(50% - 0.25rem);
+  }
+}
+
+@media (max-width: 600px) {
+  .container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.35rem;
+    padding: 0.25rem 0.4rem;
+  }
+
+  .bars {
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .barItem {
+    min-width: 50px;
+    flex-basis: calc(50% - 0.175rem);
   }
 }

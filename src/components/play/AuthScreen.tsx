@@ -13,12 +13,14 @@ import {
   Check,
   Rocket,
   Ticket,
+  Info,
 } from 'lucide-react'
 import { useGame } from './GameProvider'
 import styles from './AuthScreen.module.css'
 
 interface AuthScreenProps {
   registrationCode?: string
+  isSignedIn?: boolean
   onRegistered: (username: string, password: string) => void
   onLoggedIn: () => void
 }
@@ -38,7 +40,7 @@ const EMPIRES: EmpireInfo[] = [
   { id: 'outerrim', name: 'Outer Rim Explorers', description: 'Crafting and cargo bonuses', color: '#4169E1' },
 ]
 
-export function AuthScreen({ registrationCode: registrationCodeProp, onRegistered, onLoggedIn }: AuthScreenProps) {
+export function AuthScreen({ registrationCode: registrationCodeProp, isSignedIn, onRegistered, onLoggedIn }: AuthScreenProps) {
   const { state, sendCommand } = useGame()
 
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login')
@@ -424,6 +426,18 @@ export function AuthScreen({ registrationCode: registrationCodeProp, onRegistere
                 <span className={styles.labelIcon}><Ticket size={12} /></span>
                 Registration Code
               </label>
+              {!isSignedIn && !registrationCodeProp && (
+                <div className={styles.signInHint}>
+                  <Info size={12} />
+                  <span>
+                    Get your code at{' '}
+                    <a href="/dashboard" target="_blank" rel="noopener" className={styles.signInLink}>
+                      spacemolt.com/dashboard
+                    </a>
+                    , or enter it manually below.
+                  </span>
+                </div>
+              )}
               <input
                 id="reg-code"
                 className={styles.input}

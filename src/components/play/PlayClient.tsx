@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useCallback, useState } from 'react'
-import { useUser, useAuth, SignInButton } from '@clerk/nextjs'
-import { Loader2, RefreshCw, WifiOff, LogIn } from 'lucide-react'
+import { useUser, useAuth } from '@clerk/nextjs'
+import { Loader2, RefreshCw, WifiOff } from 'lucide-react'
 import { GameProvider, useGame } from './GameProvider'
 import { AuthScreen } from './AuthScreen'
 import { HUD } from './HUD'
@@ -12,7 +12,7 @@ const GAME_SERVER = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spac
 const LS_USERNAME = 'spacemolt_username'
 const LS_PASSWORD = 'spacemolt_password'
 
-function PlayClientInner({ registrationCode }: { registrationCode: string }) {
+function PlayClientInner({ registrationCode, isSignedIn }: { registrationCode: string; isSignedIn: boolean }) {
   const { state, sendCommand, connect } = useGame()
   const [phase, setPhase] = useState<'connecting' | 'auth' | 'playing'>('connecting')
   const autoLoginAttempted = useRef(false)
@@ -44,16 +44,17 @@ function PlayClientInner({ registrationCode }: { registrationCode: string }) {
     }
 
     if (state.connected && state.welcome && !state.authenticated) {
-      // Try auto-login from localStorage
+      // Try auto-login from localStorage (once)
       if (!autoLoginAttempted.current) {
         autoLoginAttempted.current = true
         const username = localStorage.getItem(LS_USERNAME)
         const password = localStorage.getItem(LS_PASSWORD)
         if (username && password) {
           sendCommand('login', { username, password })
-          return
         }
       }
+      // Always show auth screen — if auto-login succeeds, state.authenticated
+      // will trigger the 'playing' phase above on the next render
       setPhase('auth')
     }
 
@@ -98,6 +99,7 @@ function PlayClientInner({ registrationCode }: { registrationCode: string }) {
     return (
       <AuthScreen
         registrationCode={registrationCode}
+        isSignedIn={isSignedIn}
         onRegistered={handleRegistered}
         onLoggedIn={handleLoggedIn}
       />
@@ -125,11 +127,16 @@ export function PlayClient() {
   const { user, isLoaded: userLoaded } = useUser()
   const { getToken, isLoaded: authLoaded } = useAuth()
   const [registrationCode, setRegistrationCode] = useState('')
-  const [codeLoaded, setCodeLoaded] = useState(false)
+  const [ready, setReady] = useState(false)
 
-  // Fetch registration code from game server using Clerk token
+  // Fetch registration code from game server if signed into Clerk
   useEffect(() => {
-    if (!user || !authLoaded) return
+    if (!authLoaded) return
+    if (!user) {
+      // Not signed in — skip code fetch, proceed immediately
+      setReady(true)
+      return
+    }
     let cancelled = false
 
     async function fetchCode() {
@@ -145,7 +152,7 @@ export function PlayClient() {
       } catch {
         // Non-critical - user can still play without pre-filled code
       } finally {
-        if (!cancelled) setCodeLoaded(true)
+        if (!cancelled) setReady(true)
       }
     }
 
@@ -153,7 +160,7 @@ export function PlayClient() {
     return () => { cancelled = true }
   }, [user, authLoaded, getToken])
 
-  // Add play-page class even while loading/unauthenticated
+  // Add play-page class even while loading
   useEffect(() => {
     document.body.classList.add('play-page')
     return () => {
@@ -161,7 +168,7 @@ export function PlayClient() {
     }
   }, [])
 
-  if (!userLoaded || !authLoaded) {
+  if (!userLoaded || !authLoaded || !ready) {
     return (
       <div className={styles.loadingScreen}>
         <div className={styles.loadingContent}>
@@ -173,38 +180,9 @@ export function PlayClient() {
     )
   }
 
-  if (!user) {
-    return (
-      <div className={styles.loadingScreen}>
-        <div className={styles.loadingContent}>
-          <div className={styles.loadingTitle}>SpaceMolt</div>
-          <div className={styles.loadingText}>Sign in to play</div>
-          <SignInButton mode="modal">
-            <button className={styles.signInBtn}>
-              <LogIn size={16} />
-              Sign In
-            </button>
-          </SignInButton>
-        </div>
-      </div>
-    )
-  }
-
-  if (!codeLoaded) {
-    return (
-      <div className={styles.loadingScreen}>
-        <div className={styles.loadingContent}>
-          <Loader2 size={32} className={styles.spinner} />
-          <div className={styles.loadingTitle}>SpaceMolt</div>
-          <div className={styles.loadingText}>Preparing session...</div>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <GameProvider>
-      <PlayClientInner registrationCode={registrationCode} />
+      <PlayClientInner registrationCode={registrationCode} isSignedIn={!!user} />
     </GameProvider>
   )
 }

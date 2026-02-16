@@ -151,12 +151,27 @@
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .container {
-    max-height: 120px;
+    max-height: 100px;
   }
 
   .eventMessage {
     font-size: 0.65rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    max-height: 80px;
+    min-height: 40px;
+  }
+
+  .header {
+    padding: 0.2rem 0.5rem;
+  }
+
+  .events {
+    padding: 0.15rem 0.35rem;
   }
 }

@@ -1,5 +1,6 @@
 /* === PanelNav Component === */
 .container {
+  position: static;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -11,6 +12,7 @@
   flex-shrink: 0;
   overflow-y: auto;
   overflow-x: hidden;
+  order: -1;
 }
 
 .container::-webkit-scrollbar {
@@ -91,12 +93,17 @@
   display: block;
 }
 
-/* Mobile: horizontal bottom bar */
-@media (max-width: 768px) {
+/* Tablet/Mobile: fixed bottom tab bar */
+@media (max-width: 900px) {
   .container {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
     flex-direction: row;
     width: 100%;
-    height: 52px;
+    height: 48px;
     padding: 0 0.25rem;
     border-right: none;
     border-top: 1px solid var(--hull-grey);
@@ -104,6 +111,8 @@
     overflow-y: hidden;
     gap: 0.15rem;
     justify-content: space-around;
+    z-index: 50;
+    order: 0;
   }
 
   .tab {
@@ -120,5 +129,17 @@
     top: auto;
     bottom: calc(100% + 8px);
     transform: translateX(-50%);
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    height: 44px;
+    gap: 0;
+  }
+
+  .tab {
+    width: 32px;
+    height: 32px;
   }
 }

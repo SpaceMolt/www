@@ -31,27 +31,42 @@ export function useWebSocket({ onMessage, onConnect, onDisconnect }: UseWebSocke
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const reconnectAttemptRef = useRef(0)
-  const intentionalCloseRef = useRef(false)
   const [readyState, setReadyState] = useState<number>(WebSocket.CLOSED)
 
   const connect = useCallback(() => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) return
 
-    intentionalCloseRef.current = false
+    // Detach handlers from any existing WebSocket to prevent stale callbacks
+    if (wsRef.current) {
+      wsRef.current.onopen = null
+      wsRef.current.onmessage = null
+      wsRef.current.onclose = null
+      wsRef.current.onerror = null
+      if (wsRef.current.readyState !== WebSocket.CLOSED) {
+        wsRef.current.close()
+      }
+      wsRef.current = null
+    }
+
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current)
+      reconnectTimeoutRef.current = null
+    }
 
     try {
       const ws = new WebSocket(WS_URL)
       wsRef.current = ws
 
       ws.onopen = () => {
+        if (wsRef.current !== ws) return
         reconnectAttemptRef.current = 0
         setReadyState(WebSocket.OPEN)
         onConnect()
       }
 
       ws.onmessage = (event) => {
+        if (wsRef.current !== ws) return
         const raw = String(event.data)
-        // Server may send multiple newline-delimited JSON messages in one frame
         const lines = raw.split('\n').filter(l => l.trim())
         for (const line of lines) {
           try {
@@ -64,17 +79,16 @@ export function useWebSocket({ onMessage, onConnect, onDisconnect }: UseWebSocke
       }
 
       ws.onclose = () => {
+        if (wsRef.current !== ws) return
         setReadyState(WebSocket.CLOSED)
         onDisconnect()
 
-        if (!intentionalCloseRef.current) {
-          const delay = Math.min(
-            RECONNECT_BASE_DELAY * Math.pow(2, reconnectAttemptRef.current),
-            RECONNECT_MAX_DELAY
-          )
-          reconnectAttemptRef.current++
-          reconnectTimeoutRef.current = setTimeout(connect, delay)
-        }
+        const delay = Math.min(
+          RECONNECT_BASE_DELAY * Math.pow(2, reconnectAttemptRef.current),
+          RECONNECT_MAX_DELAY
+        )
+        reconnectAttemptRef.current++
+        reconnectTimeoutRef.current = setTimeout(connect, delay)
       }
 
       ws.onerror = () => {
@@ -91,12 +105,15 @@ export function useWebSocket({ onMessage, onConnect, onDisconnect }: UseWebSocke
   }, [onMessage, onConnect, onDisconnect])
 
   const disconnect = useCallback(() => {
-    intentionalCloseRef.current = true
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current)
       reconnectTimeoutRef.current = null
     }
     if (wsRef.current) {
+      wsRef.current.onopen = null
+      wsRef.current.onmessage = null
+      wsRef.current.onclose = null
+      wsRef.current.onerror = null
       wsRef.current.close()
       wsRef.current = null
     }
@@ -109,12 +126,18 @@ export function useWebSocket({ onMessage, onConnect, onDisconnect }: UseWebSocke
     }
   }, [])
 
-  // Cleanup on unmount
+  // Cleanup on unmount — detach handlers so stale callbacks never fire
   useEffect(() => {
     return () => {
-      intentionalCloseRef.current = true
       if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current)
-      if (wsRef.current) wsRef.current.close()
+      if (wsRef.current) {
+        wsRef.current.onopen = null
+        wsRef.current.onmessage = null
+        wsRef.current.onclose = null
+        wsRef.current.onerror = null
+        wsRef.current.close()
+        wsRef.current = null
+      }
     }
   }, [])
 
