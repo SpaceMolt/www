@@ -59,8 +59,38 @@
   color: var(--claw-red);
 }
 
-.chartWrapper {
+.splitChart {
+  display: flex;
+  align-items: stretch;
   padding: 0.5rem 0.25rem 0;
+}
+
+.halfChart {
+  flex: 1;
+  min-width: 0;
+}
+
+.fullChart {
+  flex: 1;
+  min-width: 0;
+}
+
+.spreadDivider {
+  width: 1px;
+  background: var(--hull-grey);
+  opacity: 0.5;
+  margin: 10px 0 5px;
+}
+
+.noData {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 250px;
+  color: var(--hull-grey);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  font-style: italic;
 }
 
 .empty {
