@@ -5,6 +5,7 @@
   gap: 0;
   width: 100%;
   position: relative;
+  flex-shrink: 0;
 }
 
 .indicator {
