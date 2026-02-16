@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef, Fragment } from 'react'
 import Link from 'next/link'
 import styles from './page.module.css'
+import { ItemDetail, type CatalogItem, type CatalogResponse } from '@/components/ItemDetail'
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 const POLL_INTERVAL = 30_000
@@ -50,75 +51,6 @@ interface StationInfo {
   services: { market: boolean }
 }
 
-/** Item catalog types from /api/items */
-interface CatalogRecipeItem {
-  item_id: string
-  item_name: string
-  quantity: number
-}
-
-interface CatalogFacility {
-  id: string
-  name: string
-  level: number
-  recipe_multiplier?: number
-}
-
-interface CatalogRecipe {
-  recipe_id: string
-  recipe_name: string
-  recipe_category: string
-  crafting_time: number
-  required_skills?: Record<string, number>
-  inputs: CatalogRecipeItem[]
-  outputs: CatalogRecipeItem[]
-  facilities?: CatalogFacility[]
-}
-
-interface CatalogModuleStats {
-  type: string
-  cpu_usage: number
-  power_usage: number
-  damage?: number
-  damage_type?: string
-  range?: number
-  cooldown?: number
-  shield_bonus?: number
-  armor_bonus?: number
-  hull_bonus?: number
-  mining_power?: number
-  mining_range?: number
-  harvest_power?: number
-  harvest_range?: number
-  special?: string
-  speed_bonus?: number
-  cargo_bonus?: number
-  scanner_power?: number
-  cloak_strength?: number
-  fuel_efficiency?: number
-  drone_capacity?: number
-  drone_bandwidth?: number
-}
-
-interface CatalogItem {
-  id: string
-  name: string
-  description: string
-  category: string
-  size: number
-  base_value: number
-  rarity?: string
-  stackable: boolean
-  tradeable: boolean
-  produced_by?: CatalogRecipe[]
-  consumed_by?: CatalogRecipe[]
-  module?: CatalogModuleStats
-}
-
-interface CatalogResponse {
-  items: Record<string, CatalogItem>
-}
-
 const EMPIRE_COLORS: Record<string, string> = {
   solarian: styles.empireSolarian,
   voidborn: styles.empireVoidborn,
@@ -133,13 +65,6 @@ const EMPIRE_LINK_COLORS: Record<string, string> = {
   crimson: '#e63946',
   nebula: '#00d4ff',
   outerrim: '#2dd4bf',
-}
-
-const RARITY_CLASSES: Record<string, string> = {
-  common: styles.rarityCommon,
-  uncommon: styles.rarityUncommon,
-  rare: styles.rarityRare,
-  exotic: styles.rarityExotic,
 }
 
 function formatNumber(n: number): string {
@@ -175,155 +100,6 @@ function pivotItems(items: MarketItem[]): PivotRow[] {
     if (catCmp !== 0) return catCmp
     return a.item_name.localeCompare(b.item_name)
   })
-}
-
-/** Render the non-zero stats for a module in a readable grid */
-function ModuleStatsDisplay({ mod }: { mod: CatalogModuleStats }) {
-  const stats: { label: string; value: string }[] = []
-
-  stats.push({ label: 'Type', value: mod.type })
-  stats.push({ label: 'CPU', value: String(mod.cpu_usage) })
-  stats.push({ label: 'Power', value: String(mod.power_usage) })
-
-  if (mod.damage) stats.push({ label: 'Damage', value: String(mod.damage) })
-  if (mod.damage_type) stats.push({ label: 'Dmg Type', value: mod.damage_type })
-  if (mod.range) stats.push({ label: 'Range', value: String(mod.range) })
-  if (mod.cooldown) stats.push({ label: 'Cooldown', value: `${mod.cooldown} tick${mod.cooldown !== 1 ? 's' : ''}` })
-  if (mod.shield_bonus) stats.push({ label: 'Shield', value: `+${mod.shield_bonus}` })
-  if (mod.armor_bonus) stats.push({ label: 'Armor', value: `+${mod.armor_bonus}` })
-  if (mod.hull_bonus) stats.push({ label: 'Hull', value: `+${mod.hull_bonus}` })
-  if (mod.mining_power) stats.push({ label: 'Mining', value: String(mod.mining_power) })
-  if (mod.mining_range) stats.push({ label: 'Mine Range', value: String(mod.mining_range) })
-  if (mod.harvest_power) stats.push({ label: 'Harvest', value: String(mod.harvest_power) })
-  if (mod.harvest_range) stats.push({ label: 'Harv Range', value: String(mod.harvest_range) })
-  if (mod.special) stats.push({ label: 'Special', value: mod.special })
-  if (mod.speed_bonus) stats.push({ label: 'Speed', value: `+${mod.speed_bonus}` })
-  if (mod.cargo_bonus) stats.push({ label: 'Cargo', value: `+${mod.cargo_bonus}` })
-  if (mod.scanner_power) stats.push({ label: 'Scanner', value: String(mod.scanner_power) })
-  if (mod.cloak_strength) stats.push({ label: 'Cloak', value: String(mod.cloak_strength) })
-  if (mod.fuel_efficiency) stats.push({ label: 'Fuel Eff', value: `${mod.fuel_efficiency}%` })
-  if (mod.drone_capacity) stats.push({ label: 'Drone Cap', value: String(mod.drone_capacity) })
-  if (mod.drone_bandwidth) stats.push({ label: 'Drone BW', value: String(mod.drone_bandwidth) })
-
-  return (
-    <div className={styles.moduleSection}>
-      <h4 className={styles.detailSectionTitle}>Module Stats</h4>
-      <div className={styles.moduleGrid}>
-        {stats.map((s) => (
-          <div key={s.label} className={styles.moduleStat}>
-            <span className={styles.moduleStatLabel}>{s.label}</span>
-            <span className={styles.moduleStatValue}>{s.value}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-/** Render a recipe card with inputs, outputs, and facilities */
-function RecipeCard({ recipe }: { recipe: CatalogRecipe }) {
-  return (
-    <div className={styles.recipeCard}>
-      <div className={styles.recipeHeader}>
-        <span className={styles.recipeName}>{recipe.recipe_name}</span>
-        <span className={styles.recipeCategory}>{recipe.recipe_category}</span>
-      </div>
-      <div className={styles.recipeFlow}>
-        <div className={styles.recipeInputs}>
-          {recipe.inputs.map((input) => (
-            <span key={input.item_id} className={styles.recipeItem}>
-              {input.quantity}x {input.item_name}
-            </span>
-          ))}
-        </div>
-        <span className={styles.recipeArrow}>{'\u2192'}</span>
-        <div className={styles.recipeOutputs}>
-          {recipe.outputs.map((output) => (
-            <span key={output.item_id} className={styles.recipeItem}>
-              {output.quantity}x {output.item_name}
-            </span>
-          ))}
-        </div>
-      </div>
-      {recipe.required_skills && Object.keys(recipe.required_skills).length > 0 && (
-        <div className={styles.recipeSkills}>
-          Skills: {Object.entries(recipe.required_skills).map(([skill, level]) =>
-            `${skill} ${level}`
-          ).join(', ')}
-        </div>
-      )}
-      {recipe.facilities && recipe.facilities.length > 0 && (
-        <div className={styles.recipeFacilities}>
-          {recipe.facilities.map((f) => (
-            <span key={f.id} className={styles.facilityTag}>
-              {f.name} (L{f.level})
-            </span>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-/** Render the expanded item detail section */
-function ItemDetail({ item, totalCols }: { item: CatalogItem; totalCols: number }) {
-  const hasProducedBy = item.produced_by && item.produced_by.length > 0
-  const hasConsumedBy = item.consumed_by && item.consumed_by.length > 0
-  const hasRecipes = hasProducedBy || hasConsumedBy
-
-  return (
-    <tr className={styles.detailRow}>
-      <td colSpan={totalCols} className={styles.detailCell}>
-        <div className={styles.detailContent}>
-          {/* Header: description + metadata */}
-          <div className={styles.detailHeader}>
-            <p className={styles.detailDescription}>{item.description}</p>
-            <div className={styles.detailMeta}>
-              {item.rarity && (
-                <span className={`${styles.rarityBadge} ${RARITY_CLASSES[item.rarity] || ''}`}>
-                  {item.rarity}
-                </span>
-              )}
-              <span className={styles.metaTag}>Size: {item.size}</span>
-              {item.stackable && <span className={styles.metaTag}>Stackable</span>}
-            </div>
-          </div>
-
-          {/* Recipe sections */}
-          {hasRecipes && (
-            <div className={styles.recipeSections}>
-              {hasProducedBy && (
-                <div className={styles.recipeSection}>
-                  <h4 className={styles.detailSectionTitle}>Produced By</h4>
-                  {item.produced_by!.map((recipe) => (
-                    <RecipeCard key={recipe.recipe_id} recipe={recipe} />
-                  ))}
-                </div>
-              )}
-              {hasConsumedBy && (
-                <div className={styles.recipeSection}>
-                  <h4 className={styles.detailSectionTitle}>Used In</h4>
-                  {item.consumed_by!.map((recipe) => (
-                    <RecipeCard key={recipe.recipe_id} recipe={recipe} />
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Module stats */}
-          {item.module && <ModuleStatsDisplay mod={item.module} />}
-
-          {/* Empty state if no extra data */}
-          {!hasRecipes && !item.module && (
-            <p className={styles.detailEmpty}>
-              No crafting recipes or module data available for this item.
-            </p>
-          )}
-        </div>
-      </td>
-    </tr>
-  )
 }
 
 export default function MarketPage() {
