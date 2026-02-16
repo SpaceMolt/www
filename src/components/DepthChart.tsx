@@ -7,6 +7,7 @@ import {
   XAxis,
   YAxis,
   Tooltip,
+  ReferenceLine,
   ResponsiveContainer,
 } from 'recharts'
 import styles from './DepthChart.module.css'
@@ -26,42 +27,52 @@ interface DepthChartProps {
 
 interface ChartPoint {
   price: number
-  bidCumulative: number | null
-  askCumulative: number | null
+  bidCumulative: number | undefined
+  askCumulative: number | undefined
 }
 
 const BID_COLOR = '#2dd4bf'
 const ASK_COLOR = '#e63946'
 
 export default function DepthChart({ bids, asks, itemName, onClose }: DepthChartProps) {
-  const data = useMemo(() => {
+  const { data, spreadMid } = useMemo(() => {
     const points: ChartPoint[] = []
 
-    // Bids come in price DESC from the API (best bid first).
-    // Reverse so they go low→high price for the x-axis.
-    // Cumulative should build from the spread outward (right to left on chart),
-    // so we need to recalculate: the rightmost bid (highest price) has the smallest
-    // cumulative, and the leftmost (lowest price) has the largest.
+    // Bids come price DESC from API (best bid first = highest price first).
+    // For the butterfly chart, bids go on the left side.
+    // We want: lowest price at far left, highest price (best bid) near the spread.
+    // Cumulative should build from spread outward: best bid has smallest cumulative,
+    // worst bid has largest cumulative (more volume available at lower prices).
+    // The API gives cumulative building from best outward, so we reverse for the chart.
     const reversedBids = [...bids].reverse()
-    const totalBidQty = bids.length > 0 ? bids[bids.length - 1].cumulative : 0
+    // Recalculate cumulative from the spread outward (right to left on chart)
+    const totalBidQty = bids.reduce((sum, b) => sum + b.quantity, 0)
+    let bidCum = totalBidQty
     for (const level of reversedBids) {
       points.push({
         price: level.price,
-        bidCumulative: totalBidQty - level.cumulative + level.quantity,
-        askCumulative: null,
+        bidCumulative: bidCum,
+        askCumulative: undefined,
       })
+      bidCum -= level.quantity
     }
 
-    // Asks come in price ASC (best ask first). Cumulative already builds outward.
+    // Asks come price ASC from API (best ask first = lowest price first).
+    // Asks go on the right side. Cumulative already builds outward from best ask.
     for (const level of asks) {
       points.push({
         price: level.price,
-        bidCumulative: null,
+        bidCumulative: undefined,
         askCumulative: level.cumulative,
       })
     }
 
-    return points
+    // Calculate spread midpoint for the reference line
+    const bestBid = bids.length > 0 ? bids[0].price : 0
+    const bestAsk = asks.length > 0 ? asks[0].price : 0
+    const mid = bestBid > 0 && bestAsk > 0 ? (bestBid + bestAsk) / 2 : 0
+
+    return { data: points, spreadMid: mid }
   }, [bids, asks])
 
   if (data.length === 0) {
@@ -76,14 +87,29 @@ export default function DepthChart({ bids, asks, itemName, onClose }: DepthChart
     )
   }
 
+  const bestBid = bids.length > 0 ? bids[0].price : null
+  const bestAsk = asks.length > 0 ? asks[0].price : null
+  const spread = bestBid !== null && bestAsk !== null ? bestAsk - bestBid : null
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
         <span className={styles.title}>{itemName} — Order Book Depth</span>
+        <div className={styles.headerStats}>
+          {bestBid !== null && (
+            <span className={styles.statBid}>Bid: {bestBid.toLocaleString()}</span>
+          )}
+          {bestAsk !== null && (
+            <span className={styles.statAsk}>Ask: {bestAsk.toLocaleString()}</span>
+          )}
+          {spread !== null && (
+            <span className={styles.statSpread}>Spread: {spread.toLocaleString()}</span>
+          )}
+        </div>
         <button className={styles.closeBtn} onClick={onClose}>{'\u2715'}</button>
       </div>
       <div className={styles.chartWrapper}>
-        <ResponsiveContainer width="100%" height={280}>
+        <ResponsiveContainer width="100%" height={300}>
           <AreaChart data={data} margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
             <defs>
               <linearGradient id="bidGradient" x1="0" y1="0" x2="0" y2="1">
@@ -108,7 +134,8 @@ export default function DepthChart({ bids, asks, itemName, onClose }: DepthChart
               tick={{ fill: '#a8c5d6', fontSize: 11 }}
               tickLine={{ stroke: '#3d5a6c' }}
               axisLine={{ stroke: '#3d5a6c' }}
-              label={{ value: 'Quantity', angle: -90, position: 'insideLeft', offset: 5, fill: '#a8c5d6', fontSize: 11 }}
+              label={{ value: 'Cumulative Quantity', angle: -90, position: 'insideLeft', offset: 5, fill: '#a8c5d6', fontSize: 11 }}
+              tickFormatter={(val) => val >= 1000 ? `${(val / 1000).toFixed(0)}k` : String(val)}
             />
             <Tooltip
               contentStyle={{
@@ -124,19 +151,29 @@ export default function DepthChart({ bids, asks, itemName, onClose }: DepthChart
                 return [typeof value === 'number' ? value.toLocaleString() : '-', label]
               }}
             />
+            {spreadMid > 0 && (
+              <ReferenceLine
+                x={spreadMid}
+                stroke="#3d5a6c"
+                strokeDasharray="3 3"
+                strokeWidth={1}
+              />
+            )}
             <Area
               type="stepAfter"
               dataKey="bidCumulative"
               stroke={BID_COLOR}
+              strokeWidth={2}
               fill="url(#bidGradient)"
               fillOpacity={1}
               connectNulls={false}
               isAnimationActive={false}
             />
             <Area
-              type="stepAfter"
+              type="stepBefore"
               dataKey="askCumulative"
               stroke={ASK_COLOR}
+              strokeWidth={2}
               fill="url(#askGradient)"
               fillOpacity={1}
               connectNulls={false}

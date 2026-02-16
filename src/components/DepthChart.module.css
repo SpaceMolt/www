@@ -23,6 +23,26 @@
   color: var(--plasma-cyan);
 }
 
+.headerStats {
+  display: flex;
+  gap: 1rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+}
+
+.statBid {
+  color: #2dd4bf;
+}
+
+.statAsk {
+  color: #e63946;
+}
+
+.statSpread {
+  color: var(--chrome-silver);
+  opacity: 0.8;
+}
+
 .closeBtn {
   background: none;
   border: 1px solid var(--hull-grey);
