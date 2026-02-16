@@ -87,7 +87,25 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const p = action.payload
       const actionName = p.action as string | undefined
       if (actionName === 'arrived') {
-        return addEvent(state, 'travel', `Arrived at ${p.poi || 'destination'}`)
+        // Update current POI when arriving at a new POI
+        const newPoi = p.poi_data as POI | undefined
+        const newState = newPoi ? { ...state, poi: newPoi } : state
+        return addEvent(newState, 'travel', `Arrived at ${p.poi || 'destination'}`)
+      }
+      if (actionName === 'get_system') {
+        // Update system and POI state from get_system response
+        const sys = p.system as SystemInfo | undefined
+        const poiData = p.poi as POI | undefined
+        return {
+          ...state,
+          system: sys || state.system,
+          poi: poiData || state.poi,
+        }
+      }
+      if (actionName === 'jumped') {
+        // Jumped to a new system - system name is in response, but we need
+        // the full system data. Mark that we need a refresh.
+        return addEvent(state, 'travel', `Arrived in ${p.system || 'system'}`)
       }
       if (actionName === 'mine') {
         return addEvent(state, 'mining', p.message as string || 'Mining started')

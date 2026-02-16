@@ -31,6 +31,7 @@ export function GameProvider({ children }: GameProviderProps) {
   const [state, dispatch] = useGameState()
   const dispatchRef = useRef(dispatch)
   dispatchRef.current = dispatch
+  const sendRef = useRef<(msg: WSMessage) => void>(() => {})
 
   const onMessage = useCallback((msg: WSMessage) => {
     const d = dispatchRef.current
@@ -60,6 +61,10 @@ export function GameProvider({ children }: GameProviderProps) {
         break
       case 'ok':
         d({ type: 'OK', payload: p })
+        // Auto-refresh system data after jumping to a new system
+        if ((p as Record<string, unknown>).action === 'jumped') {
+          sendRef.current({ type: 'get_system' })
+        }
         break
       case 'error':
         d({ type: 'ERROR', payload: p as { code: string; message: string } })
@@ -152,6 +157,7 @@ export function GameProvider({ children }: GameProviderProps) {
     onConnect,
     onDisconnect,
   })
+  sendRef.current = send
 
   const sendCommand = useCallback((type: string, payload?: Record<string, unknown>) => {
     const msg: WSMessage = { type }
