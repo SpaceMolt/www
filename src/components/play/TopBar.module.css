@@ -86,6 +86,24 @@
   white-space: nowrap;
 }
 
+.logoutBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  color: var(--hull-grey);
+  cursor: pointer;
+  padding: 0.15rem;
+  transition: all 0.15s ease;
+}
+
+.logoutBtn:hover {
+  color: var(--claw-red);
+  border-color: rgba(230, 57, 70, 0.4);
+}
+
 /* Separator between sections */
 .sep {
   width: 1px;

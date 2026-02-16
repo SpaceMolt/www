@@ -124,8 +124,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return state
     }
 
-    case 'ERROR':
-      return addEvent(state, 'error', action.payload.message)
+    case 'ERROR': {
+      const errMsg = action.payload.message
+      // Server says we're already logged in — treat as authenticated
+      if (action.payload.code === 'already_logged_in' || errMsg.toLowerCase().includes('already logged in')) {
+        return addEvent({ ...state, authenticated: true }, 'system', 'Resuming session...')
+      }
+      return addEvent(state, 'error', errMsg)
+    }
 
     case 'COMBAT_UPDATE': {
       const p = action.payload

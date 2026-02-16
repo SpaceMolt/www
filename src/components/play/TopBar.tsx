@@ -16,7 +16,7 @@ import { ProgressBar } from './ProgressBar'
 import styles from './TopBar.module.css'
 
 export function TopBar() {
-  const { state, sendCommand } = useGame()
+  const { state, sendCommand, dispatch } = useGame()
   const player = state.player
   const ship = state.ship
   const connected = state.connected
@@ -24,6 +24,18 @@ export function TopBar() {
   const handleUndock = useCallback(() => {
     sendCommand('undock')
   }, [sendCommand])
+
+  const handleLogout = useCallback(() => {
+    sendCommand('logout')
+    dispatch({ type: 'RESET' })
+    try {
+      localStorage.removeItem('spacemolt_username')
+      localStorage.removeItem('spacemolt_password')
+      localStorage.removeItem('spacemolt_token')
+    } catch {
+      // localStorage may not be available
+    }
+  }, [sendCommand, dispatch])
 
   const hullPct = ship && ship.max_hull > 0 ? ship.hull / ship.max_hull : 1
   const hullColor = hullPct < 0.25 ? 'red' : hullPct < 0.5 ? 'orange' : 'green'
@@ -52,6 +64,14 @@ export function TopBar() {
             {player.empire && (
               <span className={styles.empire}>{player.empire}</span>
             )}
+            <button
+              className={styles.logoutBtn}
+              onClick={handleLogout}
+              title="Log out"
+              type="button"
+            >
+              <LogOut size={11} />
+            </button>
           </>
         ) : (
           <span className={styles.noPlayer}>Not logged in</span>

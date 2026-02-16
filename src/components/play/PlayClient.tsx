@@ -17,6 +17,8 @@ function PlayClientInner({ registrationCode, isSignedIn }: { registrationCode: s
   const [phase, setPhase] = useState<'connecting' | 'auth' | 'playing'>('connecting')
   const autoLoginAttempted = useRef(false)
   const hasConnected = useRef(false)
+  // Track active registration so we don't skip the password reveal screen
+  const pendingRegistration = useRef(false)
 
   // Connect on mount
   useEffect(() => {
@@ -38,7 +40,14 @@ function PlayClientInner({ registrationCode, isSignedIn }: { registrationCode: s
       hasConnected.current = true
     }
 
-    if (state.authenticated && phase !== 'auth') {
+    // When authenticated, go straight to playing (unless mid-registration —
+    // the user needs to see and copy their password first)
+    if (state.authenticated && !pendingRegistration.current) {
+      if (phase !== 'playing') {
+        // Request full state in case we resumed via "already logged in"
+        sendCommand('get_status')
+        sendCommand('get_system')
+      }
       setPhase('playing')
       return
     }
@@ -58,6 +67,12 @@ function PlayClientInner({ registrationCode, isSignedIn }: { registrationCode: s
       setPhase('auth')
     }
 
+    // Logged out while playing — go back to auth
+    if (phase === 'playing' && !state.authenticated) {
+      autoLoginAttempted.current = false
+      setPhase('auth')
+    }
+
     if (!state.connected && hasConnected.current) {
       // Lost connection - show reconnecting state
       autoLoginAttempted.current = false
@@ -65,6 +80,7 @@ function PlayClientInner({ registrationCode, isSignedIn }: { registrationCode: s
   }, [state.connected, state.authenticated, state.welcome, sendCommand])
 
   const handleRegistered = useCallback((username: string, password: string) => {
+    pendingRegistration.current = true
     localStorage.setItem(LS_USERNAME, username)
     localStorage.setItem(LS_PASSWORD, password)
   }, [])
@@ -77,6 +93,7 @@ function PlayClientInner({ registrationCode, isSignedIn }: { registrationCode: s
   }, [state.authenticated, state.player?.username])
 
   const handleLoggedIn = useCallback(() => {
+    pendingRegistration.current = false
     setPhase('playing')
   }, [])
 
