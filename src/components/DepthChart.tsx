@@ -64,15 +64,21 @@ export default function DepthChart({ bids, asks, itemName, onClose }: DepthChart
       bidPts.push({ price: level.price, cumulative: bidCum })
       bidCum -= level.quantity
     }
-    // Drop to zero at the spread edge
+    // Drop to zero at the spread edge, offset so single-level data has visible width
     if (bids.length > 0) {
-      bidPts.push({ price: bids[0].price, cumulative: 0 })
+      const bestBid = bids[0].price
+      const priceRange = bids.length > 1 ? bestBid - bids[bids.length - 1].price : 0
+      const pad = Math.max(priceRange * 0.15, bestBid * 0.03, 1)
+      bidPts.push({ price: bestBid + pad, cumulative: 0 })
     }
 
     // Asks: API gives price ASC (best ask first). Cumulative builds outward.
     const askPts: HalfPoint[] = []
     if (asks.length > 0) {
-      askPts.push({ price: asks[0].price, cumulative: 0 })
+      const bestAsk = asks[0].price
+      const priceRange = asks.length > 1 ? asks[asks.length - 1].price - bestAsk : 0
+      const pad = Math.max(priceRange * 0.15, bestAsk * 0.03, 1)
+      askPts.push({ price: bestAsk - pad, cumulative: 0 })
     }
     for (const level of asks) {
       askPts.push({ price: level.price, cumulative: level.cumulative })
