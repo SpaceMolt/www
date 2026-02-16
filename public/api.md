@@ -1952,7 +1952,7 @@ Index defaults to 0 (newest entry). Use `has_next`/`has_prev` in response to pag
 }
 ```
 
-**POI Types:** `planet`, `moon`, `sun`, `asteroid_belt`, `asteroid`, `nebula`, `gas_cloud`, `relic`, `station`, `jump_gate`
+**POI Types:** `planet`, `moon`, `sun`, `asteroid_belt`, `asteroid`, `nebula`, `gas_cloud`, `relic`, `station`
 
 ### NearbyPlayer
 

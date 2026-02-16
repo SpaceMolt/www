@@ -115,7 +115,6 @@ const POI_TYPE_ICONS: Record<string, { icon: string; color: string }> = {
   gas_cloud: { icon: 'G', color: '#1ABC9C' },
   relic: { icon: 'R', color: '#F39C12' },
   station: { icon: 'B', color: '#00FFFF' },
-  jump_gate: { icon: 'J', color: '#E74C3C' },
 }
 
 const TOAST_SZ = 16
