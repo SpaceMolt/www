@@ -39,7 +39,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const poi = (p.poi || null) as POI | null
       const pendingTrades = (p.pending_trades || []) as TradeOffer[]
       const recentChat = (p.recent_chat || []) as ChatMessage[]
-      const isDocked = player ? !!(player as unknown as Record<string, unknown>).is_docked : false
+      const isDocked = player ? !!(player as unknown as Record<string, unknown>).docked_at_base : false
 
       let newState = {
         ...state,
@@ -70,7 +70,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         travelDestination: su.travel_destination ?? null,
         travelType: su.travel_type ?? null,
         travelArrivalTick: su.travel_arrival_tick ?? null,
-        isDocked: su.player ? !!(su.player as unknown as Record<string, unknown>).is_docked : state.isDocked,
+        isDocked: su.player ? !!(su.player as unknown as Record<string, unknown>).docked_at_base : state.isDocked,
       }
       // If server sends player data but we're not authenticated yet,
       // the registered/logged_in messages were likely lost — treat as authenticated
@@ -111,7 +111,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         return addEvent(state, 'mining', p.message as string || 'Mining started')
       }
       if (actionName === 'dock') {
-        return addEvent({ ...state, isDocked: true }, 'travel', `Docked at ${p.base_name || 'base'}`)
+        return addEvent({ ...state, isDocked: true }, 'travel', `Docked at ${p.base || 'base'}`)
       }
       if (actionName === 'undock') {
         return addEvent({ ...state, isDocked: false }, 'travel', 'Undocked from station')
