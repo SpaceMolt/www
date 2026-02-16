@@ -45,7 +45,24 @@ export function TickCooldown() {
     return () => cancelAnimationFrame(rafRef.current)
   }, [animate])
 
-  if (!state.authenticated || state.currentTick === 0) return null
+  if (!state.authenticated) return null
+
+  // Waiting for first tick - show pulsing state
+  if (state.currentTick === 0) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.indicator}>
+          <div className={styles.tickBadge}>
+            <Timer size={10} className={styles.tickIcon} />
+            <span className={styles.tickNum}>--</span>
+          </div>
+        </div>
+        <div className={styles.track}>
+          <div className={styles.fillWaiting} />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className={styles.container}>

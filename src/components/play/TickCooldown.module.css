@@ -81,6 +81,30 @@
   filter: blur(1px);
 }
 
+/* Waiting state before first tick */
+.fillWaiting {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 212, 255, 0.3) 30%,
+    rgba(0, 212, 255, 0.5) 50%,
+    rgba(0, 212, 255, 0.3) 70%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: tickPulse 2s ease-in-out infinite;
+}
+
+@keyframes tickPulse {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
 /* Flash state when tick arrives */
 .fillFlash {
   background: linear-gradient(

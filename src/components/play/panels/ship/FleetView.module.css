@@ -1,0 +1,311 @@
+/* === FleetView === */
+.panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--deep-void);
+  border: 1px solid var(--dim-grey);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--dim-grey);
+  background: rgba(168, 197, 214, 0.03);
+  flex-shrink: 0;
+}
+
+.title {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--chrome-silver);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.titleIcon {
+  display: flex;
+  align-items: center;
+  color: var(--chrome-silver);
+  opacity: 0.8;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.refreshBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  color: var(--hull-grey);
+  cursor: pointer;
+  padding: 0.25rem;
+  transition: all 0.15s ease;
+}
+
+.refreshBtn:hover {
+  border-color: var(--chrome-silver);
+  color: var(--chrome-silver);
+  background: rgba(168, 197, 214, 0.1);
+}
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.content::-webkit-scrollbar-thumb {
+  background: var(--hull-grey);
+  border-radius: 2px;
+}
+
+/* Summary */
+.summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.65rem;
+  background: rgba(168, 197, 214, 0.04);
+  border: 1px solid rgba(168, 197, 214, 0.1);
+  border-radius: 4px;
+}
+
+.summaryLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--chrome-silver);
+  text-transform: uppercase;
+}
+
+.summaryValue {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  color: var(--plasma-cyan);
+  font-weight: 600;
+  margin-left: auto;
+}
+
+.summaryActiveShip {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  color: var(--hull-grey);
+}
+
+/* Fleet ship list */
+.fleetList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.fleetCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.55rem 0.65rem;
+  background: rgba(61, 90, 108, 0.08);
+  border: 1px solid rgba(61, 90, 108, 0.18);
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.fleetCard:hover {
+  background: rgba(61, 90, 108, 0.14);
+  border-color: rgba(61, 90, 108, 0.3);
+}
+
+.fleetCardActive {
+  composes: fleetCard;
+  border-color: rgba(0, 212, 255, 0.3);
+  background: rgba(0, 212, 255, 0.04);
+}
+
+.fleetCardActive:hover {
+  border-color: rgba(0, 212, 255, 0.4);
+  background: rgba(0, 212, 255, 0.08);
+}
+
+.fleetCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.fleetCardInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.fleetCardName {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--star-white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.activeIndicator {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.12);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 3px;
+  padding: 0.08rem 0.3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
+}
+
+.fleetCardActions {
+  display: flex;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+/* Fleet card meta row */
+.fleetCardMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.65rem;
+}
+
+.fleetMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.fleetMetaIcon {
+  display: flex;
+  align-items: center;
+  color: var(--hull-grey);
+}
+
+.fleetMetaLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  color: var(--chrome-silver);
+  text-transform: uppercase;
+}
+
+.fleetMetaValue {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  color: var(--plasma-cyan);
+  font-weight: 600;
+}
+
+.fleetLocation {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--hull-grey);
+}
+
+.fleetLocationIcon {
+  display: flex;
+  align-items: center;
+  color: var(--hull-grey);
+}
+
+/* Action buttons */
+.switchBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(0, 212, 255, 0.08);
+  border: 1px solid var(--plasma-cyan);
+  border-radius: 4px;
+  color: var(--plasma-cyan);
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.switchBtn:hover:not(:disabled) {
+  background: rgba(0, 212, 255, 0.18);
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.25);
+}
+
+.switchBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.sellBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(230, 57, 70, 0.08);
+  border: 1px solid var(--claw-red);
+  border-radius: 4px;
+  color: var(--claw-red);
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.sellBtn:hover:not(:disabled) {
+  background: rgba(230, 57, 70, 0.18);
+  box-shadow: 0 0 10px rgba(230, 57, 70, 0.25);
+}
+
+.sellBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Empty state */
+.emptyState {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.78rem;
+  color: var(--hull-grey);
+  text-align: center;
+  padding: 1.5rem 0.5rem;
+}

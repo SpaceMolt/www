@@ -1,0 +1,388 @@
+/* === OrdersView === */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.toolbarActions {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.sectionLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--chrome-silver);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.refreshBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid var(--hull-grey);
+  border-radius: 4px;
+  color: var(--chrome-silver);
+  cursor: pointer;
+  padding: 0.25rem;
+  transition: all 0.2s ease;
+}
+
+.refreshBtn:hover {
+  border-color: var(--bio-green);
+  color: var(--bio-green);
+  box-shadow: 0 0 8px rgba(45, 212, 191, 0.2);
+}
+
+.newOrderBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(0, 212, 255, 0.08);
+  border: 1px solid var(--plasma-cyan);
+  border-radius: 4px;
+  color: var(--plasma-cyan);
+  cursor: pointer;
+  padding: 0.25rem 0.45rem;
+  transition: all 0.2s ease;
+}
+
+.newOrderBtn:hover {
+  background: rgba(0, 212, 255, 0.18);
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.25);
+}
+
+.dockedOnly {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.78rem;
+  color: var(--hull-grey);
+  text-align: center;
+  padding: 1.5rem 0.5rem;
+  background: rgba(61, 90, 108, 0.06);
+  border: 1px dashed var(--dim-grey);
+  border-radius: 4px;
+}
+
+.loading {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.75rem;
+  color: var(--hull-grey);
+  text-align: center;
+  padding: 1rem 0.5rem;
+}
+
+.emptyState {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.78rem;
+  color: var(--hull-grey);
+  text-align: center;
+  padding: 1rem 0.5rem;
+}
+
+/* New order form */
+.formContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.6rem;
+  background: rgba(61, 90, 108, 0.06);
+  border: 1px solid rgba(61, 90, 108, 0.2);
+  border-radius: 4px;
+}
+
+.formTitle {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--chrome-silver);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.typeToggle {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--hull-grey);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.typeBtn {
+  flex: 1;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: transparent;
+  border: none;
+  color: var(--hull-grey);
+  cursor: pointer;
+  padding: 0.35rem 0.5rem;
+  transition: all 0.15s ease;
+}
+
+.typeBtn:hover {
+  color: var(--chrome-silver);
+  background: rgba(61, 90, 108, 0.1);
+}
+
+.typeBtnActiveSell {
+  background: rgba(255, 107, 53, 0.15);
+  color: var(--shell-orange);
+}
+
+.typeBtnActiveBuy {
+  background: rgba(0, 212, 255, 0.12);
+  color: var(--plasma-cyan);
+}
+
+.formFields {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.formInput {
+  flex: 1;
+  background: rgba(10, 14, 23, 0.8);
+  border: 1px solid var(--hull-grey);
+  border-radius: 4px;
+  padding: 0.35rem 0.5rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--star-white);
+  outline: none;
+  transition: border-color 0.2s ease;
+  min-width: 0;
+}
+
+.formInput::placeholder {
+  color: var(--hull-grey);
+}
+
+.formInput:focus {
+  border-color: var(--plasma-cyan);
+  box-shadow: 0 0 6px rgba(0, 212, 255, 0.12);
+}
+
+.formActions {
+  display: flex;
+  gap: 0.3rem;
+  justify-content: flex-end;
+}
+
+.cancelFormBtn {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.63rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  background: transparent;
+  border: 1px solid var(--hull-grey);
+  border-radius: 4px;
+  color: var(--hull-grey);
+  cursor: pointer;
+  padding: 0.3rem 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.cancelFormBtn:hover {
+  border-color: var(--chrome-silver);
+  color: var(--chrome-silver);
+}
+
+.submitSellBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.63rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(255, 107, 53, 0.08);
+  border: 1px solid var(--shell-orange);
+  border-radius: 4px;
+  color: var(--shell-orange);
+  cursor: pointer;
+  padding: 0.3rem 0.6rem;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.submitSellBtn:hover:not(:disabled) {
+  background: rgba(255, 107, 53, 0.18);
+  box-shadow: 0 0 10px rgba(255, 107, 53, 0.25);
+}
+
+.submitSellBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.submitBuyBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.63rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(0, 212, 255, 0.08);
+  border: 1px solid var(--plasma-cyan);
+  border-radius: 4px;
+  color: var(--plasma-cyan);
+  cursor: pointer;
+  padding: 0.3rem 0.6rem;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.submitBuyBtn:hover:not(:disabled) {
+  background: rgba(0, 212, 255, 0.18);
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.25);
+}
+
+.submitBuyBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Order list */
+.orderList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.orderCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.45rem 0.55rem;
+  background: rgba(61, 90, 108, 0.08);
+  border: 1px solid rgba(61, 90, 108, 0.18);
+  border-radius: 4px;
+  transition: border-color 0.15s ease;
+}
+
+.orderCard:hover {
+  border-color: rgba(61, 90, 108, 0.35);
+}
+
+.factionCard {
+  border-left: 2px solid var(--void-purple);
+}
+
+.orderTop {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.orderTypeBadge {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.52rem;
+  font-weight: 700;
+  border-radius: 3px;
+  padding: 0.1rem 0.3rem;
+  letter-spacing: 0.06em;
+}
+
+.badgeSell {
+  color: var(--shell-orange);
+  background: rgba(255, 107, 53, 0.15);
+  border: 1px solid rgba(255, 107, 53, 0.3);
+}
+
+.badgeBuy {
+  color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.1);
+  border: 1px solid rgba(0, 212, 255, 0.25);
+}
+
+.orderItemName {
+  flex: 1;
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--star-white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.createdBy {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  color: var(--hull-grey);
+  flex-shrink: 0;
+}
+
+.cancelBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(230, 57, 70, 0.06);
+  border: 1px solid rgba(230, 57, 70, 0.3);
+  border-radius: 3px;
+  color: var(--claw-red);
+  cursor: pointer;
+  padding: 0.2rem;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.cancelBtn:hover {
+  background: rgba(230, 57, 70, 0.18);
+  box-shadow: 0 0 8px rgba(230, 57, 70, 0.25);
+}
+
+.orderDetails {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.orderDetail {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--chrome-silver);
+}
+
+.orderDetailDim {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--hull-grey);
+}
+
+.orderMeta {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  color: var(--hull-grey);
+}
+
+.divider {
+  height: 1px;
+  background: var(--dim-grey);
+  margin: 0.25rem 0;
+}

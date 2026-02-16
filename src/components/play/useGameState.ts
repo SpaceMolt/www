@@ -4,6 +4,7 @@ import { useReducer } from 'react'
 import type {
   GameState, GameAction, StateUpdate, ChatMessage,
   Player, Ship, SystemInfo, POI, TradeOffer,
+  MarketData, OrdersData, ShipCatalogData, FleetData, StorageData,
   initialGameState as _init,
 } from './types'
 
@@ -114,7 +115,45 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         return addEvent({ ...state, isDocked: true }, 'travel', `Docked at ${p.base || 'base'}`)
       }
       if (actionName === 'undock') {
-        return addEvent({ ...state, isDocked: false }, 'travel', 'Undocked from station')
+        return addEvent({
+          ...state,
+          isDocked: false,
+          marketData: null,
+          ordersData: null,
+          storageData: null,
+          shipCatalog: null,
+        }, 'travel', 'Undocked from station')
+      }
+      if (actionName === 'view_market') {
+        return { ...state, marketData: p as unknown as MarketData }
+      }
+      if (actionName === 'view_orders') {
+        return { ...state, ordersData: p as unknown as OrdersData }
+      }
+      if (actionName === 'view_storage') {
+        return { ...state, storageData: p as unknown as StorageData }
+      }
+      if (actionName === 'create_sell_order' || actionName === 'create_buy_order') {
+        return addEvent({ ...state, marketData: null, ordersData: null }, 'trade', p.message as string || 'Order placed')
+      }
+      if (actionName === 'cancel_order') {
+        return addEvent({ ...state, marketData: null, ordersData: null }, 'trade', p.message as string || 'Order cancelled')
+      }
+      if (actionName === 'modify_order') {
+        return addEvent({ ...state, marketData: null, ordersData: null }, 'trade', p.message as string || 'Order modified')
+      }
+      if (actionName === 'buy_ship') {
+        return addEvent({ ...state, fleetData: null, shipCatalog: null }, 'trade', p.message as string || 'Ship purchased')
+      }
+      if (actionName === 'sell_ship') {
+        return addEvent({ ...state, fleetData: null, storageData: null }, 'trade', p.message as string || 'Ship sold')
+      }
+      if (actionName === 'switch_ship') {
+        return addEvent({ ...state, fleetData: null, storageData: null }, 'trade', p.message as string || 'Switched ship')
+      }
+      if (actionName === 'deposit_items' || actionName === 'withdraw_items' ||
+          actionName === 'deposit_credits' || actionName === 'withdraw_credits') {
+        return addEvent({ ...state, storageData: null }, 'trade', p.message as string || 'Storage updated')
       }
       if (actionName === 'travel') {
         return addEvent(state, 'travel', `Traveling to ${p.destination || 'destination'}...`)
@@ -208,6 +247,21 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'ADD_EVENT':
       return { ...state, eventLog: [action.entry, ...state.eventLog].slice(0, MAX_EVENTS) }
 
+    case 'SET_MARKET_DATA':
+      return { ...state, marketData: action.payload }
+
+    case 'SET_ORDERS_DATA':
+      return { ...state, ordersData: action.payload }
+
+    case 'SET_SHIP_CATALOG':
+      return { ...state, shipCatalog: action.payload }
+
+    case 'SET_FLEET_DATA':
+      return { ...state, fleetData: action.payload }
+
+    case 'SET_STORAGE_DATA':
+      return { ...state, storageData: action.payload }
+
     case 'RESET':
       return { ..._initState, connected: state.connected, welcome: state.welcome }
 
@@ -236,6 +290,11 @@ const _initState: GameState = {
   eventLog: [],
   pendingTrades: [],
   recentChat: [],
+  marketData: null,
+  ordersData: null,
+  shipCatalog: null,
+  fleetData: null,
+  storageData: null,
 }
 
 export function useGameState() {

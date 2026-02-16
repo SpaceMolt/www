@@ -1,0 +1,384 @@
+/* === MarketView === */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.baseName {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--chrome-silver);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.refreshBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid var(--hull-grey);
+  border-radius: 4px;
+  color: var(--chrome-silver);
+  cursor: pointer;
+  padding: 0.25rem;
+  transition: all 0.2s ease;
+}
+
+.refreshBtn:hover {
+  border-color: var(--bio-green);
+  color: var(--bio-green);
+  box-shadow: 0 0 8px rgba(45, 212, 191, 0.2);
+}
+
+.dockedOnly {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.78rem;
+  color: var(--hull-grey);
+  text-align: center;
+  padding: 1.5rem 0.5rem;
+  background: rgba(61, 90, 108, 0.06);
+  border: 1px dashed var(--dim-grey);
+  border-radius: 4px;
+}
+
+.loading {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.75rem;
+  color: var(--hull-grey);
+  text-align: center;
+  padding: 1rem 0.5rem;
+}
+
+.emptyState {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.78rem;
+  color: var(--hull-grey);
+  text-align: center;
+  padding: 1rem 0.5rem;
+}
+
+/* Table header */
+.tableHeader {
+  display: flex;
+  align-items: center;
+  padding: 0.3rem 0.5rem;
+  border-bottom: 1px solid var(--dim-grey);
+}
+
+.tableHeader .colItem,
+.tableHeader .colPrice {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: var(--hull-grey);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.colItem {
+  flex: 1.5;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.colPrice {
+  flex: 1;
+  text-align: right;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+}
+
+/* Item list */
+.itemList {
+  display: flex;
+  flex-direction: column;
+}
+
+.itemBlock {
+  border-bottom: 1px solid rgba(42, 58, 74, 0.5);
+}
+
+.itemRow {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  text-align: left;
+}
+
+.itemRow:hover {
+  background: rgba(61, 90, 108, 0.1);
+}
+
+.itemRowExpanded {
+  background: rgba(61, 90, 108, 0.08);
+  border-bottom: 1px solid rgba(61, 90, 108, 0.15);
+}
+
+.itemName {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--star-white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.buyPrice {
+  color: var(--bio-green);
+}
+
+.sellPrice {
+  color: var(--shell-orange);
+}
+
+.spreadPositive {
+  color: var(--plasma-cyan);
+}
+
+.noPrice {
+  color: var(--hull-grey);
+  opacity: 0.6;
+}
+
+/* Expanded panel */
+.expandedPanel {
+  padding: 0.5rem 0.6rem;
+  background: rgba(10, 14, 23, 0.4);
+  border-top: 1px solid rgba(61, 90, 108, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Order book */
+.orderBookRow {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.orderBookSide {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.orderBookLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: var(--chrome-silver);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-bottom: 0.2rem;
+  border-bottom: 1px solid rgba(42, 58, 74, 0.4);
+}
+
+.orderList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.orderEntry {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.3rem;
+  border-radius: 3px;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+}
+
+.orderSell {
+  background: rgba(255, 107, 53, 0.06);
+}
+
+.orderBuy {
+  background: rgba(45, 212, 191, 0.06);
+}
+
+.orderPrice {
+  font-weight: 600;
+  color: var(--star-white);
+}
+
+.orderSell .orderPrice {
+  color: var(--shell-orange);
+}
+
+.orderBuy .orderPrice {
+  color: var(--bio-green);
+}
+
+.orderQty {
+  color: var(--chrome-silver);
+}
+
+.npcTag {
+  font-size: 0.5rem;
+  font-weight: 700;
+  color: var(--warning-yellow);
+  background: rgba(255, 217, 61, 0.12);
+  border-radius: 2px;
+  padding: 0.05rem 0.25rem;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.noOrders {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.65rem;
+  color: var(--hull-grey);
+  padding: 0.3rem 0;
+}
+
+/* Quick trade forms */
+.quickTradeForms {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.quickForm {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.4rem;
+  background: rgba(61, 90, 108, 0.06);
+  border: 1px solid rgba(61, 90, 108, 0.15);
+  border-radius: 4px;
+}
+
+.quickLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--chrome-silver);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.cargoHint {
+  font-weight: 400;
+  color: var(--hull-grey);
+  text-transform: none;
+  font-size: 0.58rem;
+}
+
+.quickRow {
+  display: flex;
+  gap: 0.3rem;
+  align-items: stretch;
+}
+
+.quickInput {
+  flex: 1;
+  background: rgba(10, 14, 23, 0.8);
+  border: 1px solid var(--hull-grey);
+  border-radius: 4px;
+  padding: 0.3rem 0.4rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--star-white);
+  outline: none;
+  transition: border-color 0.2s ease;
+  min-width: 0;
+  max-width: 5rem;
+}
+
+.quickInput::placeholder {
+  color: var(--hull-grey);
+}
+
+.quickInput:focus {
+  border-color: var(--plasma-cyan);
+  box-shadow: 0 0 6px rgba(0, 212, 255, 0.12);
+}
+
+.quickBuyBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.63rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(0, 212, 255, 0.08);
+  border: 1px solid var(--plasma-cyan);
+  border-radius: 4px;
+  color: var(--plasma-cyan);
+  cursor: pointer;
+  padding: 0.3rem 0.5rem;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.quickBuyBtn:hover:not(:disabled) {
+  background: rgba(0, 212, 255, 0.18);
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.25);
+}
+
+.quickBuyBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.quickSellBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.63rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(255, 107, 53, 0.08);
+  border: 1px solid var(--shell-orange);
+  border-radius: 4px;
+  color: var(--shell-orange);
+  cursor: pointer;
+  padding: 0.3rem 0.5rem;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.quickSellBtn:hover:not(:disabled) {
+  background: rgba(255, 107, 53, 0.18);
+  box-shadow: 0 0 10px rgba(255, 107, 53, 0.25);
+}
+
+.quickSellBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}

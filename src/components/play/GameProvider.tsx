@@ -3,7 +3,10 @@
 import { createContext, useContext, useCallback, useRef, type ReactNode } from 'react'
 import { useWebSocket } from './useWebSocket'
 import { useGameState } from './useGameState'
-import type { GameState, WSMessage, GameAction, WelcomePayload, StateUpdate, ChatMessage, TradeOffer } from './types'
+import type {
+  GameState, WSMessage, GameAction, WelcomePayload, StateUpdate, ChatMessage, TradeOffer,
+  ShipCatalogData, FleetData, StorageData, MarketData, OrdersData,
+} from './types'
 
 interface GameContextValue {
   state: GameState
@@ -59,13 +62,30 @@ export function GameProvider({ children }: GameProviderProps) {
       case 'tick':
         d({ type: 'TICK', tick: (p.tick as number) || 0 })
         break
-      case 'ok':
+      case 'ok': {
         d({ type: 'OK', payload: p })
+        const action = (p as Record<string, unknown>).action as string | undefined
         // Auto-refresh system data after jumping to a new system
-        if ((p as Record<string, unknown>).action === 'jumped') {
+        if (action === 'jumped') {
           sendRef.current({ type: 'get_system' })
         }
+        // Classify responses without action field by structure
+        if (!action) {
+          // get_ships: has ships array + count + message (ship catalog)
+          if (Array.isArray(p.ships) && 'count' in p && 'message' in p && !('active_ship_id' in p)) {
+            d({ type: 'SET_SHIP_CATALOG', payload: p as unknown as ShipCatalogData })
+          }
+          // list_ships: has ships array + count + active_ship_id (player fleet)
+          else if (Array.isArray(p.ships) && 'count' in p && ('active_ship_id' in p || !('message' in p))) {
+            d({ type: 'SET_FLEET_DATA', payload: p as unknown as FleetData })
+          }
+          // view_storage: has base_id + credits + items
+          else if ('base_id' in p && 'credits' in p && Array.isArray(p.items)) {
+            d({ type: 'SET_STORAGE_DATA', payload: p as unknown as StorageData })
+          }
+        }
         break
+      }
       case 'error':
         d({ type: 'ERROR', payload: p as { code: string; message: string } })
         break

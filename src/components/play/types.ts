@@ -280,6 +280,126 @@ export interface EventLogEntry {
   data?: Record<string, unknown>
 }
 
+// === Response Data Types ===
+
+export interface MarketItem {
+  item_id: string
+  item_name: string
+  sell_orders: { price_each: number; quantity: number; source?: string }[]
+  buy_orders: { price_each: number; quantity: number; source?: string }[]
+  best_sell: number
+  best_buy: number
+  spread?: number
+}
+
+export interface MarketData {
+  action: string
+  base: string
+  items: MarketItem[]
+  message?: string
+}
+
+export interface OrderEntry {
+  order_id: string
+  order_type: string
+  item_id: string
+  item_name: string
+  quantity: number
+  remaining: number
+  price_each: number
+  listing_fee: number
+  created_at: string
+  faction_order?: boolean
+  created_by?: string
+}
+
+export interface OrdersData {
+  action: string
+  base: string
+  orders: OrderEntry[]
+  faction_orders: OrderEntry[]
+}
+
+export interface ShipClassInfo {
+  id: string
+  name: string
+  description: string
+  class: string
+  price: number
+  base_hull: number
+  base_shield: number
+  base_shield_recharge?: number
+  base_armor?: number
+  base_speed: number
+  base_fuel: number
+  cargo_capacity: number
+  cpu_capacity: number
+  power_capacity: number
+  weapon_slots: number
+  defense_slots: number
+  utility_slots: number
+  default_modules?: string[]
+  required_skills?: Record<string, number>
+  required_items?: { item_id: string; quantity: number }[]
+}
+
+export interface ShipCatalogData {
+  ships: ShipClassInfo[]
+  count: number
+  message: string
+}
+
+export interface FleetShip {
+  ship_id: string
+  class_id: string
+  class_name?: string
+  is_active: boolean
+  modules: number
+  cargo_used: number
+  hull: string
+  fuel: string
+  location: string
+  location_base_id?: string
+}
+
+export interface FleetData {
+  ships: FleetShip[]
+  count: number
+  active_ship_id?: string
+  active_ship_class?: string
+}
+
+export interface StorageItem {
+  item_id: string
+  name: string
+  quantity: number
+}
+
+export interface StorageShip {
+  ship_id: string
+  class_id: string
+  class_name?: string
+  modules: number
+  cargo_used: number
+}
+
+export interface StorageGift {
+  sender: string
+  sender_id: string
+  timestamp: string
+  items?: StorageItem[]
+  credits?: number
+  message?: string
+}
+
+export interface StorageData {
+  base_id: string
+  credits: number
+  items: StorageItem[]
+  ships: StorageShip[]
+  gifts?: StorageGift[]
+}
+
 // === Game State ===
 
 export interface GameState {
@@ -302,6 +422,11 @@ export interface GameState {
   eventLog: EventLogEntry[]
   pendingTrades: TradeOffer[]
   recentChat: ChatMessage[]
+  marketData: MarketData | null
+  ordersData: OrdersData | null
+  shipCatalog: ShipCatalogData | null
+  fleetData: FleetData | null
+  storageData: StorageData | null
 }
 
 export const initialGameState: GameState = {
@@ -324,6 +449,11 @@ export const initialGameState: GameState = {
   eventLog: [],
   pendingTrades: [],
   recentChat: [],
+  marketData: null,
+  ordersData: null,
+  shipCatalog: null,
+  fleetData: null,
+  storageData: null,
 }
 
 // === WebSocket Message Types ===
@@ -355,4 +485,9 @@ export type GameAction =
   | { type: 'SKILL_LEVEL_UP'; payload: Record<string, unknown> }
   | { type: 'POLICE_WARNING'; payload: Record<string, unknown> }
   | { type: 'ADD_EVENT'; entry: EventLogEntry }
+  | { type: 'SET_MARKET_DATA'; payload: MarketData }
+  | { type: 'SET_ORDERS_DATA'; payload: OrdersData }
+  | { type: 'SET_SHIP_CATALOG'; payload: ShipCatalogData }
+  | { type: 'SET_FLEET_DATA'; payload: FleetData }
+  | { type: 'SET_STORAGE_DATA'; payload: StorageData }
   | { type: 'RESET' }

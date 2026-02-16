@@ -1,0 +1,438 @@
+/* === StorageView === */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sectionLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--chrome-silver);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.refreshBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid var(--hull-grey);
+  border-radius: 4px;
+  color: var(--chrome-silver);
+  cursor: pointer;
+  padding: 0.25rem;
+  transition: all 0.2s ease;
+}
+
+.refreshBtn:hover {
+  border-color: var(--void-purple);
+  color: var(--void-purple);
+  box-shadow: 0 0 8px rgba(155, 89, 182, 0.2);
+}
+
+.dockedOnly {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.78rem;
+  color: var(--hull-grey);
+  text-align: center;
+  padding: 1.5rem 0.5rem;
+  background: rgba(61, 90, 108, 0.06);
+  border: 1px dashed var(--dim-grey);
+  border-radius: 4px;
+}
+
+.loading {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.75rem;
+  color: var(--hull-grey);
+  text-align: center;
+  padding: 1rem 0.5rem;
+}
+
+.emptyState {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.72rem;
+  color: var(--hull-grey);
+  text-align: center;
+  padding: 0.6rem 0.5rem;
+}
+
+/* Gifts */
+.giftsSection {
+  background: rgba(155, 89, 182, 0.06);
+  border: 1px solid rgba(155, 89, 182, 0.2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.giftToggle {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+  padding: 0.45rem 0.55rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--void-purple);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  transition: background 0.15s ease;
+}
+
+.giftToggle:hover {
+  background: rgba(155, 89, 182, 0.08);
+}
+
+.giftBadge {
+  font-size: 0.55rem;
+  font-weight: 700;
+  background: rgba(155, 89, 182, 0.25);
+  color: var(--void-purple);
+  border-radius: 8px;
+  padding: 0.05rem 0.35rem;
+  min-width: 1rem;
+  text-align: center;
+}
+
+.giftList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0 0.55rem 0.45rem;
+}
+
+.giftCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.4rem 0.5rem;
+  background: rgba(10, 14, 23, 0.4);
+  border: 1px solid rgba(155, 89, 182, 0.12);
+  border-radius: 4px;
+}
+
+.giftHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.giftSender {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--star-white);
+}
+
+.giftTime {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  color: var(--hull-grey);
+}
+
+.giftMessage {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.7rem;
+  color: var(--chrome-silver);
+  font-style: italic;
+  padding: 0.15rem 0;
+}
+
+.giftContents {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.giftItems {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.63rem;
+  color: var(--plasma-cyan);
+}
+
+.giftCredits {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.63rem;
+  color: var(--warning-yellow);
+}
+
+/* Sections */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.5rem;
+  background: rgba(61, 90, 108, 0.04);
+  border: 1px solid rgba(61, 90, 108, 0.12);
+  border-radius: 4px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.63rem;
+  font-weight: 700;
+  color: var(--chrome-silver);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid rgba(42, 58, 74, 0.4);
+}
+
+/* Credits */
+.creditsDisplay {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.creditRow {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.3rem 0.4rem;
+  background: rgba(10, 14, 23, 0.4);
+  border-radius: 3px;
+}
+
+.creditLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  font-weight: 600;
+  color: var(--hull-grey);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.creditValue {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--warning-yellow);
+}
+
+.creditActions {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.creditForm {
+  flex: 1;
+  display: flex;
+  gap: 0.25rem;
+}
+
+.creditInput {
+  flex: 1;
+  background: rgba(10, 14, 23, 0.8);
+  border: 1px solid var(--hull-grey);
+  border-radius: 4px;
+  padding: 0.3rem 0.4rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--star-white);
+  outline: none;
+  transition: border-color 0.2s ease;
+  min-width: 0;
+}
+
+.creditInput::placeholder {
+  color: var(--hull-grey);
+}
+
+.creditInput:focus {
+  border-color: var(--plasma-cyan);
+  box-shadow: 0 0 6px rgba(0, 212, 255, 0.12);
+}
+
+/* Action buttons */
+.depositBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(45, 212, 191, 0.08);
+  border: 1px solid var(--bio-green);
+  border-radius: 4px;
+  color: var(--bio-green);
+  cursor: pointer;
+  padding: 0.25rem 0.45rem;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.depositBtn:hover:not(:disabled) {
+  background: rgba(45, 212, 191, 0.18);
+  box-shadow: 0 0 8px rgba(45, 212, 191, 0.25);
+}
+
+.depositBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.withdrawBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(155, 89, 182, 0.08);
+  border: 1px solid var(--void-purple);
+  border-radius: 4px;
+  color: var(--void-purple);
+  cursor: pointer;
+  padding: 0.25rem 0.45rem;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.withdrawBtn:hover:not(:disabled) {
+  background: rgba(155, 89, 182, 0.18);
+  box-shadow: 0 0 8px rgba(155, 89, 182, 0.25);
+}
+
+.withdrawBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Item list */
+.itemList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.itemRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.3rem 0.4rem;
+  background: rgba(10, 14, 23, 0.3);
+  border: 1px solid rgba(42, 58, 74, 0.3);
+  border-radius: 3px;
+  transition: border-color 0.15s ease;
+}
+
+.itemRow:hover {
+  border-color: rgba(61, 90, 108, 0.4);
+}
+
+.itemInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.itemName {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--star-white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.itemQty {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.63rem;
+  color: var(--chrome-silver);
+  flex-shrink: 0;
+}
+
+.itemAction {
+  display: flex;
+  gap: 0.2rem;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.qtyInput {
+  width: 3.5rem;
+  background: rgba(10, 14, 23, 0.8);
+  border: 1px solid var(--hull-grey);
+  border-radius: 3px;
+  padding: 0.2rem 0.3rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.63rem;
+  color: var(--star-white);
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.qtyInput::placeholder {
+  color: var(--hull-grey);
+}
+
+.qtyInput:focus {
+  border-color: var(--plasma-cyan);
+}
+
+/* Ship list */
+.shipList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.shipCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.35rem 0.45rem;
+  background: rgba(10, 14, 23, 0.3);
+  border: 1px solid rgba(42, 58, 74, 0.3);
+  border-radius: 3px;
+}
+
+.shipName {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--star-white);
+}
+
+.shipMeta {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.shipStat {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  color: var(--hull-grey);
+}

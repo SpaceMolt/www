@@ -60,6 +60,44 @@
   border-radius: 2px;
 }
 
+/* Tab system */
+.tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--dim-grey);
+  flex-shrink: 0;
+}
+
+.tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.55rem 0.75rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--hull-grey);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tab:hover {
+  color: var(--chrome-silver);
+  background: rgba(61, 90, 108, 0.08);
+}
+
+.tabActive {
+  color: var(--plasma-cyan);
+  border-bottom-color: var(--plasma-cyan);
+}
+
 /* Ship overview */
 .shipOverview {
   display: flex;
