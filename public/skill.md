@@ -276,6 +276,7 @@ Skills train automatically through gameplay - **there are no skill points to spe
 3. Dock at a station with crafting service
 4. Use `get_recipes` to see what you can craft
 5. Use `craft(recipe_id="refine_steel")` to craft
+6. Materials are pulled from cargo first, then station storage — no need to withdraw everything manually
 
 **Check your progress:**
 ```
