@@ -27,8 +27,8 @@ interface DepthChartProps {
 
 interface ChartPoint {
   price: number
-  bidCumulative: number | undefined
-  askCumulative: number | undefined
+  bidCumulative: number | null
+  askCumulative: number | null
 }
 
 const BID_COLOR = '#2dd4bf'
@@ -36,43 +36,55 @@ const ASK_COLOR = '#e63946'
 
 export default function DepthChart({ bids, asks, itemName, onClose }: DepthChartProps) {
   const { data, spreadMid } = useMemo(() => {
-    const points: ChartPoint[] = []
+    const bidPoints: ChartPoint[] = []
+    const askPoints: ChartPoint[] = []
 
-    // Bids come price DESC from API (best bid first = highest price first).
-    // For the butterfly chart, bids go on the left side.
-    // We want: lowest price at far left, highest price (best bid) near the spread.
-    // Cumulative should build from spread outward: best bid has smallest cumulative,
-    // worst bid has largest cumulative (more volume available at lower prices).
-    // The API gives cumulative building from best outward, so we reverse for the chart.
+    const bestBidPrice = bids.length > 0 ? bids[0].price : 0
+    const bestAskPrice = asks.length > 0 ? asks[0].price : 0
+
+    // Bids: API gives price DESC (best bid first). Reverse to price ASC for x-axis.
+    // Cumulative builds from spread outward: best bid (rightmost) has smallest cum,
+    // worst bid (leftmost) has largest cum.
     const reversedBids = [...bids].reverse()
-    // Recalculate cumulative from the spread outward (right to left on chart)
     const totalBidQty = bids.reduce((sum, b) => sum + b.quantity, 0)
     let bidCum = totalBidQty
     for (const level of reversedBids) {
-      points.push({
+      bidPoints.push({
         price: level.price,
         bidCumulative: bidCum,
-        askCumulative: undefined,
+        askCumulative: null,
       })
       bidCum -= level.quantity
     }
+    // Add anchor point at the spread edge so the step drops to zero
+    if (bids.length > 0) {
+      bidPoints.push({
+        price: bestBidPrice + 1,
+        bidCumulative: 0,
+        askCumulative: null,
+      })
+    }
 
-    // Asks come price ASC from API (best ask first = lowest price first).
-    // Asks go on the right side. Cumulative already builds outward from best ask.
+    // Asks: API gives price ASC (best ask first). Cumulative builds outward.
+    if (asks.length > 0) {
+      // Add anchor point at the spread edge
+      askPoints.push({
+        price: bestAskPrice - 1,
+        bidCumulative: null,
+        askCumulative: 0,
+      })
+    }
     for (const level of asks) {
-      points.push({
+      askPoints.push({
         price: level.price,
-        bidCumulative: undefined,
+        bidCumulative: null,
         askCumulative: level.cumulative,
       })
     }
 
-    // Calculate spread midpoint for the reference line
-    const bestBid = bids.length > 0 ? bids[0].price : 0
-    const bestAsk = asks.length > 0 ? asks[0].price : 0
-    const mid = bestBid > 0 && bestAsk > 0 ? (bestBid + bestAsk) / 2 : 0
+    const mid = bestBidPrice > 0 && bestAskPrice > 0 ? (bestBidPrice + bestAskPrice) / 2 : 0
 
-    return { data: points, spreadMid: mid }
+    return { data: [...bidPoints, ...askPoints], spreadMid: mid }
   }, [bids, asks])
 
   if (data.length === 0) {
