@@ -527,6 +527,117 @@
   color: var(--hull-grey);
 }
 
+/* === Empire Header Dropdown === */
+
+.empireHeaderClickable {
+  cursor: pointer;
+  position: relative;
+}
+
+.empireHeaderClickable:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.empireHeaderContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.dropdownCaret {
+  font-size: 0.5rem;
+  opacity: 0.6;
+}
+
+.stationLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  opacity: 0.7;
+  color: var(--chrome-silver);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.empireDropdown {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  background: var(--deep-void);
+  border: 1px solid var(--hull-grey);
+  border-radius: 4px;
+  min-width: 200px;
+  max-height: 300px;
+  overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.dropdownItem {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(61, 90, 108, 0.2);
+  color: var(--chrome-silver);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.dropdownItem:hover {
+  background: rgba(0, 212, 255, 0.1);
+  color: var(--star-white);
+}
+
+.dropdownItem:last-child {
+  border-bottom: none;
+}
+
+.dropdownItemActive {
+  color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.06);
+}
+
+/* === Clickable Cells (station drill-down) === */
+
+.cellClickable {
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.cellClickable:hover {
+  background: rgba(0, 212, 255, 0.1) !important;
+}
+
+.cellDepthActive {
+  background: rgba(0, 212, 255, 0.15) !important;
+  box-shadow: inset 0 0 0 1px rgba(0, 212, 255, 0.3);
+}
+
+/* === Depth Chart Expansion === */
+
+.depthChartWrapper {
+  padding: 1rem 1.5rem;
+}
+
+.depthLoading {
+  text-align: center;
+  padding: 2rem;
+  color: var(--chrome-silver);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+}
+
 /* === Responsive === */
 @media (max-width: 768px) {
   .main {
