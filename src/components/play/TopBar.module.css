@@ -1,0 +1,265 @@
+/* === Unified Top Bar === */
+.topBar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.4rem 0.75rem;
+  background: linear-gradient(180deg, rgba(10, 14, 23, 0.98) 0%, rgba(10, 14, 23, 0.9) 100%);
+  border-bottom: 1px solid rgba(0, 212, 255, 0.15);
+  min-height: 44px;
+  flex-wrap: wrap;
+}
+
+/* Section 1: Player identity */
+.playerSection {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.connectionStatus {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.connectedIcon {
+  color: var(--bio-green);
+}
+
+.disconnectedIcon {
+  color: var(--claw-red);
+}
+
+.connectedDot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--bio-green);
+  box-shadow: 0 0 6px var(--bio-green);
+  animation: pulseGreen 2s infinite;
+}
+
+.disconnectedDot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--claw-red);
+  box-shadow: 0 0 6px var(--claw-red);
+}
+
+.username {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--star-white);
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.credits {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.creditsIcon {
+  color: var(--warning-yellow);
+}
+
+.creditsValue {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--warning-yellow);
+  white-space: nowrap;
+}
+
+.empire {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--void-purple);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Separator between sections */
+.sep {
+  width: 1px;
+  height: 20px;
+  background: var(--hull-grey);
+  flex-shrink: 0;
+}
+
+/* Section 2: Location */
+.locationSection {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.locationIcon {
+  color: var(--plasma-cyan);
+  flex-shrink: 0;
+}
+
+.systemName {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--plasma-cyan);
+  white-space: nowrap;
+}
+
+.poiName {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--chrome-silver);
+  white-space: nowrap;
+}
+
+.poiSep {
+  color: var(--hull-grey);
+  font-size: 0.6rem;
+}
+
+/* Section 3: Ship + docking */
+.shipSection {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.shipIcon {
+  color: var(--plasma-cyan);
+  flex-shrink: 0;
+}
+
+.shipClass {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--star-white);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.dockedBadge {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--bio-green);
+  background: rgba(45, 212, 191, 0.12);
+  border: 1px solid rgba(45, 212, 191, 0.3);
+  border-radius: 3px;
+  padding: 0.1rem 0.35rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.undockBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: rgba(230, 57, 70, 0.1);
+  border: 1px solid rgba(230, 57, 70, 0.4);
+  border-radius: 3px;
+  color: var(--claw-red);
+  cursor: pointer;
+  padding: 0.15rem 0.4rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.undockBtn:hover {
+  background: rgba(230, 57, 70, 0.2);
+  border-color: var(--claw-red);
+  box-shadow: 0 0 8px rgba(230, 57, 70, 0.2);
+}
+
+/* Section 4: Status bars */
+.barsSection {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.barItem {
+  flex: 1;
+  min-width: 70px;
+}
+
+.noPlayer {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--hull-grey);
+}
+
+@keyframes pulseGreen {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Tablet */
+@media (max-width: 900px) {
+  .topBar {
+    gap: 0.5rem;
+    padding: 0.35rem 0.5rem;
+    min-height: unset;
+  }
+
+  .sep {
+    display: none;
+  }
+
+  .barsSection {
+    flex-basis: 100%;
+    gap: 0.5rem;
+  }
+
+  .barItem {
+    min-width: 60px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .topBar {
+    gap: 0.35rem;
+    padding: 0.25rem 0.4rem;
+  }
+
+  .barsSection {
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .barItem {
+    min-width: 45%;
+    flex-basis: calc(50% - 0.175rem);
+  }
+
+  .username {
+    font-size: 0.65rem;
+  }
+
+  .creditsValue {
+    font-size: 0.6rem;
+  }
+
+  .empire {
+    display: none;
+  }
+}

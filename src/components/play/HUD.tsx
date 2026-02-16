@@ -3,8 +3,8 @@
 import { useState } from 'react'
 import { MessageSquare, X } from 'lucide-react'
 import { useGame } from './GameProvider'
-import { ShipStatus } from './ShipStatus'
-import { PlayerInfo } from './PlayerInfo'
+import { TopBar } from './TopBar'
+import { ToastContainer } from './ToastContainer'
 import { TravelProgress } from './TravelProgress'
 import { PanelNav } from './PanelNav'
 import { ChatPanel } from './ChatPanel'
@@ -50,10 +50,10 @@ export function HUD() {
   return (
     <div className={styles.hud}>
       {/* Top Bar */}
-      <div className={styles.topBar}>
-        <ShipStatus />
-        <PlayerInfo />
-      </div>
+      <TopBar />
+
+      {/* Action Toasts */}
+      <ToastContainer />
 
       {/* Tick Cooldown Bar */}
       <TickCooldown />

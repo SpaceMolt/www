@@ -9,19 +9,6 @@
   z-index: 1;
 }
 
-/* === Top Bar === */
-.topBar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.5rem 1rem;
-  background: linear-gradient(180deg, rgba(10, 14, 23, 0.98) 0%, rgba(10, 14, 23, 0.9) 100%);
-  border-bottom: 1px solid rgba(0, 212, 255, 0.15);
-  gap: 1rem;
-  min-height: 52px;
-  z-index: 10;
-}
-
 /* === Main Content === */
 .main {
   display: grid;
@@ -204,12 +191,6 @@
 }
 
 @media (max-width: 600px) {
-  .topBar {
-    padding: 0.4rem 0.5rem;
-    gap: 0.4rem;
-    min-height: unset;
-  }
-
   .bottomBar {
     max-height: 80px;
   }

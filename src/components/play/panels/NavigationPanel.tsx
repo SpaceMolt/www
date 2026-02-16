@@ -183,7 +183,7 @@ export function NavigationPanel() {
                       <span className={styles.poiName}>{p.name}</span>
                       <span className={styles.poiType}>{p.type}</span>
                     </div>
-                    <div className={styles.poiLeft}>
+                    <div className={styles.poiRight}>
                       {p.online > 0 && (
                         <span className={styles.poiOnline}>
                           {p.online} online

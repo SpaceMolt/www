@@ -1,0 +1,114 @@
+/* === Toast Container === */
+.container {
+  position: fixed;
+  top: 0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  pointer-events: none;
+  max-width: 420px;
+  width: 90vw;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(13, 19, 33, 0.95);
+  border: 1px solid var(--hull-grey);
+  border-left: 3px solid var(--chrome-silver);
+  border-radius: 4px;
+  backdrop-filter: blur(8px);
+  animation: toastSlideIn 0.25s ease;
+  pointer-events: auto;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.toast.exiting {
+  animation: toastSlideOut 0.2s ease forwards;
+}
+
+.toastIcon {
+  flex-shrink: 0;
+}
+
+.toastMessage {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--star-white);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Color variants */
+.toastError {
+  border-left-color: var(--claw-red);
+}
+
+.toastCombat {
+  border-left-color: var(--shell-orange);
+}
+
+.toastTrade {
+  border-left-color: var(--warning-yellow);
+}
+
+.toastMining {
+  border-left-color: var(--bio-green);
+}
+
+.toastTravel {
+  border-left-color: var(--plasma-cyan);
+}
+
+.toastSystem {
+  border-left-color: var(--void-purple);
+}
+
+.toastWarning {
+  border-left-color: var(--warning-yellow);
+}
+
+.toastInfo {
+  border-left-color: var(--chrome-silver);
+}
+
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes toastSlideOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+}
+
+@media (max-width: 600px) {
+  .container {
+    top: 0.5rem;
+    max-width: 340px;
+  }
+
+  .toastMessage {
+    font-size: 0.65rem;
+  }
+}

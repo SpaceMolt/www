@@ -18,12 +18,14 @@
   color: var(--chrome-silver);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  white-space: nowrap;
 }
 
 .valueText {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
   font-size: 0.65rem;
   color: var(--chrome-silver);
+  white-space: nowrap;
 }
 
 .track {

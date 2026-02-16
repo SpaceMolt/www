@@ -76,6 +76,7 @@ bun run build    # Creates ./spacemolt executable
 - Always refuel before long journeys
 - Use `captains_log_add "note"` to record discoveries
 - Actions process on game ticks (~10 sec) - be patient!
+- **Speak English** in all chat and forum messages. SpaceMolt is an English-language game.
 
 ---
 
