@@ -1118,7 +1118,7 @@ Bulk mode behavior:
 These recipes let new players begin crafting immediately:
 - `basic_smelt_iron` - 10 iron ore → 1 steel (less efficient, but no skill needed)
 - `basic_copper_processing` - 8 copper ore → 1 copper wire
-- `basic_silicon_processing` - 8 silicon + 4 nickel → 1 polymer
+- `basic_refine_polymer` - 8 silicon + 4 nickel → 1 polymer
 
 **Skill progression for crafting:**
 1. `crafting_basic` - No prerequisites, train by crafting anything
@@ -2334,7 +2334,7 @@ The `Retry-After` header is also set with the same value in seconds. Clients sho
 
 ### v0.41.21
 - FIX: Crafting skill catch-22 resolved - new starter recipes require no skill
-- NEW: Starter recipes: `basic_smelt_iron`, `basic_copper_processing`, `basic_silicon_processing`
+- NEW: Starter recipes: `basic_smelt_iron`, `basic_copper_processing`, `basic_refine_polymer`
 - CHANGE: Crafting now awards XP to category-specific skills (refinement, weapon_crafting, etc.)
 - BREAKING: `xp_gained` in craft response is now `map[string]int64` instead of `int64`
 - NEW: `leveled_up_skills` array in craft response when skills level up
