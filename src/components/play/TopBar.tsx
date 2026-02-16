@@ -5,7 +5,6 @@ import {
   Wifi,
   WifiOff,
   Coins,
-  Globe,
   MapPin,
   Rocket,
   Anchor,
@@ -20,10 +19,6 @@ export function TopBar() {
   const player = state.player
   const ship = state.ship
   const connected = state.connected
-
-  const handleUndock = useCallback(() => {
-    sendCommand('undock')
-  }, [sendCommand])
 
   const handleLogout = useCallback(() => {
     sendCommand('logout')
@@ -93,31 +88,22 @@ export function TopBar() {
             {state.poi && (
               <span className={styles.poiName}>{state.poi.name}</span>
             )}
+            {state.isDocked && (
+              <span className={styles.dockedBadge}>
+                <Anchor size={10} /> Docked
+              </span>
+            )}
           </div>
         </>
       )}
 
-      {/* Section 3: Ship + docking */}
+      {/* Section 3: Ship */}
       {ship && (
         <>
           <span className={styles.sep} />
           <div className={styles.shipSection}>
             <Rocket size={12} className={styles.shipIcon} />
             <span className={styles.shipClass}>{ship.class}</span>
-            {state.isDocked && (
-              <>
-                <span className={styles.dockedBadge}>
-                  <Anchor size={10} /> Docked
-                </span>
-                <button
-                  className={styles.undockBtn}
-                  onClick={handleUndock}
-                  type="button"
-                >
-                  <LogOut size={10} /> Undock
-                </button>
-              </>
-            )}
           </div>
         </>
       )}

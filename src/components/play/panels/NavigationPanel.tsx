@@ -134,23 +134,22 @@ export function NavigationPanel() {
         {/* Dock / Undock */}
         {poi && poi.has_base && (
           <div className={styles.dockRow}>
-            {state.isDocked ? (
-              <button
-                className={styles.searchBtn}
-                onClick={handleUndock}
-                type="button"
-              >
-                <Anchor size={13} /> Undock
-              </button>
-            ) : (
-              <button
-                className={styles.searchBtn}
-                onClick={handleDock}
-                type="button"
-              >
-                <Anchor size={13} /> Dock
-              </button>
-            )}
+            <button
+              className={styles.searchBtn}
+              onClick={handleDock}
+              disabled={state.isDocked}
+              type="button"
+            >
+              <Anchor size={13} /> Dock
+            </button>
+            <button
+              className={styles.searchBtn}
+              onClick={handleUndock}
+              disabled={!state.isDocked}
+              type="button"
+            >
+              <ArrowRight size={13} /> Undock
+            </button>
           </div>
         )}
 
