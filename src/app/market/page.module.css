@@ -2,7 +2,7 @@
 
 /* Main Content */
 .main {
-  max-width: 1400px;
+  max-width: 1600px;
   margin: 0 auto;
   padding: 6rem 2rem 2rem;
 }
@@ -527,115 +527,74 @@
   color: var(--hull-grey);
 }
 
-/* === Empire Header Dropdown === */
+/* === Station Market Links === */
 
-.empireHeaderClickable {
-  cursor: pointer;
-  position: relative;
-}
-
-.empireHeaderClickable:hover {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.empireHeaderContent {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.15rem;
-}
-
-.dropdownCaret {
-  font-size: 0.5rem;
-  opacity: 0.6;
-}
-
-.stationLabel {
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.55rem;
-  font-weight: 400;
-  text-transform: none;
-  letter-spacing: 0;
-  opacity: 0.7;
-  color: var(--chrome-silver);
-  max-width: 120px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.empireDropdown {
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10;
-  background: var(--deep-void);
+.stationLinks {
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.04), rgba(13, 19, 33, 0.6));
   border: 1px solid var(--hull-grey);
-  border-radius: 4px;
-  min-width: 200px;
-  max-height: 300px;
-  overflow-y: auto;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  border-radius: 8px;
 }
 
-.dropdownItem {
-  display: block;
-  width: 100%;
-  padding: 0.5rem 0.75rem;
-  background: none;
-  border: none;
-  border-bottom: 1px solid rgba(61, 90, 108, 0.2);
-  color: var(--chrome-silver);
+.stationLinksTitle {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.85rem;
+  color: var(--star-white);
+  margin: 0 0 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stationLinksSubtitle {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
   font-size: 0.7rem;
-  text-align: left;
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-
-.dropdownItem:hover {
-  background: rgba(0, 212, 255, 0.1);
-  color: var(--star-white);
-}
-
-.dropdownItem:last-child {
-  border-bottom: none;
-}
-
-.dropdownItemActive {
-  color: var(--plasma-cyan);
-  background: rgba(0, 212, 255, 0.06);
-}
-
-/* === Clickable Cells (station drill-down) === */
-
-.cellClickable {
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-
-.cellClickable:hover {
-  background: rgba(0, 212, 255, 0.1) !important;
-}
-
-.cellDepthActive {
-  background: rgba(0, 212, 255, 0.15) !important;
-  box-shadow: inset 0 0 0 1px rgba(0, 212, 255, 0.3);
-}
-
-/* === Depth Chart Expansion === */
-
-.depthChartWrapper {
-  padding: 1rem 1.5rem;
-}
-
-.depthLoading {
-  text-align: center;
-  padding: 2rem;
   color: var(--chrome-silver);
+  margin: 0 0 0.75rem;
+  opacity: 0.8;
+}
+
+.stationGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1rem;
+}
+
+.stationGroup {
+  min-width: 0;
+}
+
+.stationGroupTitle {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 0.4rem;
+}
+
+.stationGroupList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.stationLink {
+  display: block;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
+  color: var(--chrome-silver);
+  text-decoration: none;
+  padding: 0.3rem 0.5rem;
+  border-left: 2px solid;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stationLink:hover {
+  color: var(--star-white);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 /* === Responsive === */
@@ -686,5 +645,9 @@
 
   .moduleGrid {
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
+
+  .stationGrid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
