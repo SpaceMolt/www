@@ -1,0 +1,136 @@
+.ticker {
+  display: flex;
+  align-items: center;
+  height: 42px;
+  background: linear-gradient(180deg, rgba(13, 19, 33, 0.98), rgba(10, 14, 23, 0.95));
+  border-bottom: 1px solid var(--hull-grey);
+  overflow: hidden;
+  font-family: var(--font-jetbrains);
+  font-size: 0.8rem;
+  color: var(--chrome-silver);
+  user-select: none;
+}
+
+.label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0 1rem;
+  font-family: var(--font-orbitron);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--plasma-cyan);
+  white-space: nowrap;
+  border-right: 1px solid var(--hull-grey);
+  flex-shrink: 0;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--hull-grey);
+  flex-shrink: 0;
+}
+
+.dotConnected {
+  background: var(--bio-green);
+  box-shadow: 0 0 6px var(--bio-green);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.track {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.waiting {
+  padding: 0 1rem;
+  color: var(--hull-grey);
+  font-style: italic;
+}
+
+.scroll {
+  display: flex;
+  animation: tickerScroll var(--ticker-duration, 60s) linear infinite;
+  white-space: nowrap;
+}
+
+.scroll:hover {
+  animation-play-state: paused;
+}
+
+.scrollCopy {
+  display: flex;
+  align-items: center;
+  padding-right: 3rem;
+}
+
+@keyframes tickerScroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.trade {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0 0.5rem;
+}
+
+.itemName {
+  color: #ffd700;
+  font-weight: 500;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+}
+
+.qty {
+  color: var(--star-white);
+}
+
+.at {
+  color: var(--hull-grey);
+}
+
+.price {
+  color: var(--bio-green);
+  font-weight: 600;
+}
+
+.credits {
+  color: var(--hull-grey);
+  font-size: 0.7rem;
+}
+
+.arrow {
+  color: var(--hull-grey);
+  margin: 0 0.15rem;
+}
+
+.station {
+  color: var(--plasma-cyan);
+  font-size: 0.75rem;
+}
+
+.divider {
+  color: rgba(61, 90, 108, 0.4);
+  margin: 0 0.3rem;
+}
+
+@media (max-width: 480px) {
+  .ticker {
+    display: none;
+  }
+}

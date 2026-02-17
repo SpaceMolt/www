@@ -228,6 +228,9 @@ export default function MarketPage() {
           empire station. Prices update every 30 seconds. Click any item to
           see details.
         </p>
+        <Link href="/ticker" className={styles.activityLink}>
+          View Live Market Activity &rarr;
+        </Link>
       </div>
 
       {loading && (

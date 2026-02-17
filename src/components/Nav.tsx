@@ -10,6 +10,7 @@ const exploreLinks = [
   { href: '/features', label: 'Features' },
   { href: '/map', label: 'Galaxy Map' },
   { href: '/market', label: 'Market' },
+  { href: '/ticker', label: 'Ticker' },
   { href: '/stations', label: 'Stations' },
   { href: '/forum', label: 'Forum' },
   { href: '/clients', label: 'Clients' },

@@ -34,6 +34,25 @@
   opacity: 0.8;
 }
 
+.activityLink {
+  display: inline-block;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--plasma-cyan);
+  text-decoration: none;
+  margin-top: 0.75rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.activityLink:hover {
+  border-color: var(--plasma-cyan);
+  color: var(--star-white);
+  background: rgba(0, 212, 255, 0.08);
+}
+
 /* Category Filter Bar */
 .categories {
   display: flex;
