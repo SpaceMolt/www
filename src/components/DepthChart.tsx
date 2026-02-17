@@ -64,11 +64,13 @@ export default function DepthChart({ bids, asks, itemName, onClose }: DepthChart
       bidPts.push({ price: level.price, cumulative: bidCum })
       bidCum -= level.quantity
     }
-    // Drop to zero at the spread edge, offset so single-level data has visible width
+    // Pad both edges: far side extends the outermost level, spread side drops to zero
     if (bids.length > 0) {
       const bestBid = bids[0].price
-      const priceRange = bids.length > 1 ? bestBid - bids[bids.length - 1].price : 0
+      const worstBid = bids[bids.length - 1].price
+      const priceRange = bids.length > 1 ? bestBid - worstBid : 0
       const pad = Math.max(priceRange * 0.15, bestBid * 0.03, 1)
+      bidPts.unshift({ price: worstBid - pad, cumulative: totalBidQty })
       bidPts.push({ price: bestBid + pad, cumulative: 0 })
     }
 
@@ -76,12 +78,19 @@ export default function DepthChart({ bids, asks, itemName, onClose }: DepthChart
     const askPts: HalfPoint[] = []
     if (asks.length > 0) {
       const bestAsk = asks[0].price
-      const priceRange = asks.length > 1 ? asks[asks.length - 1].price - bestAsk : 0
+      const worstAsk = asks[asks.length - 1].price
+      const priceRange = asks.length > 1 ? worstAsk - bestAsk : 0
       const pad = Math.max(priceRange * 0.15, bestAsk * 0.03, 1)
       askPts.push({ price: bestAsk - pad, cumulative: 0 })
     }
     for (const level of asks) {
       askPts.push({ price: level.price, cumulative: level.cumulative })
+    }
+    if (asks.length > 0) {
+      const worstAsk = asks[asks.length - 1]
+      const priceRange = asks.length > 1 ? worstAsk.price - asks[0].price : 0
+      const pad = Math.max(priceRange * 0.15, asks[0].price * 0.03, 1)
+      askPts.push({ price: worstAsk.price + pad, cumulative: worstAsk.cumulative })
     }
 
     return { bidData: bidPts, askData: askPts }
@@ -144,7 +153,6 @@ export default function DepthChart({ bids, asks, itemName, onClose }: DepthChart
                   dataKey="price"
                   type="number"
                   domain={['dataMin', 'dataMax']}
-                  reversed
                   {...AXIS_STYLE}
                 />
                 <YAxis
