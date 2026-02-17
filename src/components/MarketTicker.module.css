@@ -66,7 +66,7 @@
 
 .scroll {
   display: flex;
-  animation: tickerScroll var(--ticker-duration, 60s) linear infinite;
+  animation: tickerScroll var(--ticker-duration, 20s) linear infinite;
   white-space: nowrap;
 }
 
