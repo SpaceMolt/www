@@ -1,4 +1,7 @@
 .ticker {
+  position: sticky;
+  top: 3.5rem;
+  z-index: 900;
   display: flex;
   align-items: center;
   height: 42px;

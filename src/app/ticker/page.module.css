@@ -1,5 +1,10 @@
+.tickerWrap {
+  margin-top: 3.5rem;
+}
+
 .tickerPlaceholder {
   height: 42px;
+  margin-top: 3.5rem;
   background: var(--deep-void);
   border-bottom: 1px solid var(--hull-grey);
 }
@@ -7,7 +12,7 @@
 .main {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 6rem 2rem 4rem;
+  padding: 1.5rem 2rem 4rem;
 }
 
 .backLink {
@@ -25,7 +30,7 @@
 }
 
 .pageHeader {
-  margin-bottom: 2rem;
+  margin-bottom: 1.25rem;
 }
 
 .pageHeaderTitle {
@@ -46,7 +51,7 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
-  margin-bottom: 2.5rem;
+  margin-bottom: 1.5rem;
 }
 
 .statCard {
@@ -97,7 +102,7 @@
 
 /* Top Items */
 .topSection {
-  margin-bottom: 2.5rem;
+  margin-bottom: 1.5rem;
 }
 
 .topItems {
@@ -213,7 +218,6 @@
   border-collapse: collapse;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
   font-size: 0.8rem;
-  white-space: nowrap;
 }
 
 .table thead th {
@@ -263,39 +267,28 @@
 /* Column styles */
 .colTime {
   text-align: left !important;
-  min-width: 70px;
 }
 
 .colItem {
   text-align: left !important;
-  min-width: 140px;
 }
 
-.colQty {
-  min-width: 60px;
-}
+.colQty {}
 
-.colPrice {
-  min-width: 70px;
-}
+.colPrice {}
 
-.colTotal {
-  min-width: 80px;
-}
+.colTotal {}
 
 .colBuyer {
   text-align: left !important;
-  min-width: 120px;
 }
 
 .colSeller {
   text-align: left !important;
-  min-width: 120px;
 }
 
 .colStation {
   text-align: left !important;
-  min-width: 120px;
 }
 
 /* Cell styles */

@@ -47,6 +47,11 @@ function formatNumber(n: number): string {
   return n.toLocaleString('en-US')
 }
 
+function shortenName(name: string): string {
+  const match = name.match(/^\[Station Manager: (.+)\]$/)
+  return match ? 'Station Mgr' : name
+}
+
 function formatCredits(n: number): string {
   if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1)}B`
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
@@ -184,9 +189,11 @@ export default function TickerPage() {
 
   return (
     <>
-      <Suspense fallback={<div className={styles.tickerPlaceholder} />}>
-        <MarketTicker />
-      </Suspense>
+      <div className={styles.tickerWrap}>
+        <Suspense fallback={<div className={styles.tickerPlaceholder} />}>
+          <MarketTicker />
+        </Suspense>
+      </div>
 
       <main className={styles.main}>
         <Link href="/market" className={styles.backLink}>&larr; Galactic Exchange</Link>
@@ -304,8 +311,8 @@ export default function TickerPage() {
                           <td className={styles.cellQty}>{formatNumber(fill.quantity)}</td>
                           <td className={styles.cellPrice}>{formatNumber(fill.price_each)}</td>
                           <td className={styles.cellTotal}>{formatNumber(fill.total)}</td>
-                          <td className={styles.cellBuyer}>{fill.buyer_name}</td>
-                          <td className={styles.cellSeller}>{fill.seller_name}</td>
+                          <td className={styles.cellBuyer}>{shortenName(fill.buyer_name)}</td>
+                          <td className={styles.cellSeller}>{shortenName(fill.seller_name)}</td>
                           <td className={styles.cellStation}>{fill.station_name}</td>
                         </tr>
                       ))}
