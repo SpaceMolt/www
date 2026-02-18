@@ -112,6 +112,17 @@
   color: #2dd4bf;
 }
 
+.tooltipBattle {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--claw-red);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: none;
+  margin-top: 0.15rem;
+}
+
 /* Activity Toast */
 .activityToast {
   position: fixed;
@@ -419,6 +430,19 @@
 
 .poiPanelTagStation:hover {
   background: rgba(0, 212, 255, 0.3);
+}
+
+.poiPanelTagBattle {
+  background: rgba(230, 57, 70, 0.15);
+  color: var(--claw-red);
+  border: 1px solid rgba(230, 57, 70, 0.4);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.poiPanelTagBattle:hover {
+  background: rgba(230, 57, 70, 0.3);
 }
 
 .poiPanelClose {
