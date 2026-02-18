@@ -1,11 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import { useUser, useAuth, useClerk, SignOutButton } from '@clerk/nextjs'
+import { SignOutButton } from '@clerk/nextjs'
 import { Suspense, useEffect, useState, useCallback, useRef } from 'react'
-import { Settings, BookOpen, Rocket, Users, Ship, Wifi, WifiOff, Clock, Coins, BarChart3, Wrench, ChevronDown, Search, ScrollText, MapPin, UserCog, KeyRound, Eye, EyeOff, Copy, Check, RefreshCw } from 'lucide-react'
+import { Settings, BookOpen, Rocket, Users, Ship, Wifi, WifiOff, Clock, Coins, BarChart3, Wrench, ScrollText, MapPin, UserCog, KeyRound, Eye, EyeOff, Copy, Check, RefreshCw, MessageSquare } from 'lucide-react'
 import { useQueryState } from 'nuqs'
 import { SetupTabs } from '@/components/SetupTabs'
+import { DashboardChat } from '@/components/DashboardChat'
+import { useGameAuth, DEV_MODE } from '@/lib/useGameAuth'
 import styles from './page.module.css'
 
 const GAME_SERVER = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
@@ -60,10 +62,14 @@ interface PlayerInfo {
   home_base?: string
   online: boolean
   faction_id?: string
+  faction_name?: string
   faction_rank?: string
   created_at: string
   last_login_at: string
   last_active_at: string
+  chat_private_count: number
+  chat_local_count: number
+  chat_faction_count: number
   ship?: PlayerShipInfo
   skills?: Record<string, number>
   stats?: PlayerStats
@@ -118,6 +124,74 @@ function StatBar({ label, current, max, color }: { label: string; current: numbe
   )
 }
 
+const EMPIRE_COLORS: Record<string, string> = {
+  solarian: '#ffd700',
+  voidborn: '#9b59b6',
+  crimson: '#e63946',
+  nebula: '#00d4ff',
+  outerrim: '#2dd4bf',
+}
+
+function MiniBar({ value, max, color }: { value: number; max: number; color: string }) {
+  const pct = max > 0 ? Math.round((value / max) * 100) : 0
+  return (
+    <div className={styles.miniBarTrack}>
+      <div className={styles.miniBarFill} style={{ height: `${pct}%`, background: color }} />
+    </div>
+  )
+}
+
+function PlayerCard({ player, info, isSelected, onSelect }: {
+  player: LinkedPlayer
+  info: PlayerInfo | undefined
+  isSelected: boolean
+  onSelect: () => void
+}) {
+  const empireColor = EMPIRE_COLORS[info?.empire || ''] || 'var(--chrome-silver)'
+  return (
+    <button
+      className={`${styles.playerCard} ${isSelected ? styles.playerCardActive : ''}`}
+      onClick={onSelect}
+      style={{ '--empire-color': empireColor } as React.CSSProperties}
+    >
+      <div className={styles.playerCardHeader}>
+        <span className={styles.playerCardName} style={{ color: empireColor }}>
+          {player.username}
+        </span>
+        {info ? (
+          info.online
+            ? <Wifi size={10} className={styles.onlineDot} />
+            : <WifiOff size={10} className={styles.offlineDot} />
+        ) : null}
+      </div>
+      <div className={styles.playerCardBody}>
+        <div>
+          {info && (info.chat_private_count > 0 || info.chat_local_count > 0 || info.chat_faction_count > 0) && (
+            <div className={styles.playerCardChat}>
+              <MessageSquare size={9} />
+              {info.chat_private_count + info.chat_local_count + info.chat_faction_count}
+            </div>
+          )}
+          {info && (
+            <div className={styles.playerCardCredits}>
+              <Coins size={9} />
+              {formatNumber(info.credits)}
+            </div>
+          )}
+        </div>
+        {info?.ship ? (
+          <div className={styles.playerCardBars}>
+            <MiniBar value={info.ship.hull} max={info.ship.max_hull} color="var(--claw-red)" />
+            <MiniBar value={info.ship.shield} max={info.ship.max_shield} color="var(--plasma-cyan)" />
+            <MiniBar value={info.ship.fuel} max={info.ship.max_fuel} color="var(--shell-orange)" />
+            <MiniBar value={info.ship.cargo_used} max={info.ship.cargo_capacity} color="var(--bio-green)" />
+          </div>
+        ) : null}
+      </div>
+    </button>
+  )
+}
+
 export default function DashboardPage() {
   return (
     <Suspense fallback={
@@ -134,9 +208,9 @@ export default function DashboardPage() {
 }
 
 function DashboardContent() {
-  const { user, isLoaded: userLoaded } = useUser()
-  const { getToken, isLoaded: authLoaded } = useAuth()
-  const { openUserProfile } = useClerk()
+  const { user, isLoaded, getToken, authHeaders, openUserProfile } = useGameAuth()
+  const userLoaded = isLoaded
+  const authLoaded = isLoaded
 
   const [activeTab, setActiveTab] = useQueryState('tab', { defaultValue: 'setup' })
   const [selectedPlayer, setSelectedPlayer] = useQueryState('player')
@@ -161,16 +235,20 @@ function DashboardContent() {
   const [resettingPassword, setResettingPassword] = useState(false)
   const [passwordCopied, setPasswordCopied] = useState(false)
 
-  // Player selector state
-  const [selectorOpen, setSelectorOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const selectorRef = useRef<HTMLDivElement>(null)
+  // Chat tab state
+  const [allPlayerInfo, setAllPlayerInfo] = useState<PlayerInfo[]>([])
+  const [chatPlayersLoading, setChatPlayersLoading] = useState(false)
+
+  // Chat refresh ref
+  const chatRefreshRef = useRef<(() => void) | null>(null)
+
+  // Player selector uses allPlayerInfo for compact summaries
 
   const fetchRegistrationCode = useCallback(async () => {
     try {
-      const token = await getToken()
+      const headers = await authHeaders()
       const res = await fetch(`${GAME_SERVER}/api/registration-code`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers,
       })
       if (res.ok) {
         const data: RegistrationCodeResponse = await res.json()
@@ -188,15 +266,15 @@ function DashboardContent() {
     } finally {
       setCodeLoading(false)
     }
-  }, [getToken, selectedPlayer, setSelectedPlayer])
+  }, [authHeaders, selectedPlayer, setSelectedPlayer])
 
   const fetchPlayerInfo = useCallback(async (playerId: string) => {
     setPlayerLoading(true)
     setPlayerError(null)
     try {
-      const token = await getToken()
+      const headers = await authHeaders()
       const res = await fetch(`${GAME_SERVER}/api/player/${playerId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers,
       })
       if (res.ok) {
         setPlayerInfo(await res.json())
@@ -209,14 +287,14 @@ function DashboardContent() {
     } finally {
       setPlayerLoading(false)
     }
-  }, [getToken])
+  }, [authHeaders])
 
   const fetchCaptainsLog = useCallback(async (playerId: string) => {
     setLogLoading(true)
     try {
-      const token = await getToken()
+      const headers = await authHeaders()
       const res = await fetch(`${GAME_SERVER}/api/player/${playerId}/log`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers,
       })
       if (res.ok) {
         setCaptainsLog(await res.json())
@@ -226,12 +304,41 @@ function DashboardContent() {
     } finally {
       setLogLoading(false)
     }
-  }, [getToken])
+  }, [authHeaders])
+
+  const fetchAllPlayerInfo = useCallback(async () => {
+    if (players.length === 0) return
+    setChatPlayersLoading(true)
+    try {
+      const headers = await authHeaders()
+      const results = await Promise.all(
+        players.map(async (p) => {
+          try {
+            const res = await fetch(`${GAME_SERVER}/api/player/${p.id}`, {
+              headers,
+            })
+            if (res.ok) return await res.json() as PlayerInfo
+          } catch { /* ignore */ }
+          return null
+        })
+      )
+      setAllPlayerInfo(results.filter((r): r is PlayerInfo => r !== null))
+    } finally {
+      setChatPlayersLoading(false)
+    }
+  }, [authHeaders, players])
 
   useEffect(() => {
     if (!userLoaded || !authLoaded || !user) return
     fetchRegistrationCode()
   }, [userLoaded, authLoaded, user, fetchRegistrationCode])
+
+  // Fetch all player info when switching to players tab (needed for chat subsection)
+  useEffect(() => {
+    if (activeTab === 'players' && authLoaded && players.length > 0 && allPlayerInfo.length === 0) {
+      fetchAllPlayerInfo()
+    }
+  }, [activeTab, authLoaded, players.length, allPlayerInfo.length, fetchAllPlayerInfo])
 
   // Fetch player info + log when selected player changes
   useEffect(() => {
@@ -243,16 +350,6 @@ function DashboardContent() {
     fetchCaptainsLog(selectedPlayer)
   }, [selectedPlayer, authLoaded, fetchPlayerInfo, fetchCaptainsLog])
 
-  // Close selector dropdown on click outside
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (selectorRef.current && !selectorRef.current.contains(e.target as Node)) {
-        setSelectorOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [])
 
   const handleRotate = async () => {
     if (rotating) return
@@ -260,10 +357,10 @@ function DashboardContent() {
 
     setRotating(true)
     try {
-      const token = await getToken()
+      const headers = await authHeaders()
       const res = await fetch(`${GAME_SERVER}/api/registration-code/rotate`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        headers,
       })
       if (res.ok) {
         const data = await res.json()
@@ -296,8 +393,6 @@ function DashboardContent() {
 
   const handleSelectPlayer = (id: string) => {
     setSelectedPlayer(id)
-    setSelectorOpen(false)
-    setSearchQuery('')
     setPlayerPassword(null)
     setPasswordVisible(false)
   }
@@ -308,10 +403,10 @@ function DashboardContent() {
 
     setResettingPassword(true)
     try {
-      const token = await getToken()
+      const headers = await authHeaders()
       const res = await fetch(`${GAME_SERVER}/api/player/${selectedPlayer}/reset-password`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        headers,
       })
       if (res.ok) {
         const data = await res.json()
@@ -347,11 +442,6 @@ function DashboardContent() {
     setTimeout(() => setPasswordCopied(false), 2000)
   }
 
-  const filteredPlayers = players.filter(p =>
-    p.username.toLowerCase().includes(searchQuery.toLowerCase())
-  )
-
-  const selectedPlayerName = players.find(p => p.id === selectedPlayer)?.username
 
   if (!userLoaded || !authLoaded) {
     return (
@@ -389,9 +479,13 @@ function DashboardContent() {
             <UserCog size={14} />
             Manage Account
           </button>
-          <SignOutButton>
-            <button className={styles.logoutBtn}>Sign Out</button>
-          </SignOutButton>
+          {DEV_MODE ? (
+            <span className={styles.logoutBtn} style={{ opacity: 0.5 }}>Dev Mode</span>
+          ) : (
+            <SignOutButton>
+              <button className={styles.logoutBtn}>Sign Out</button>
+            </SignOutButton>
+          )}
         </div>
       </div>
 
@@ -528,50 +622,17 @@ function DashboardContent() {
             </div>
           ) : (
             <>
-              {/* Player Selector */}
-              <div className={styles.playerSelector} ref={selectorRef}>
-                <button
-                  className={styles.playerSelectorTrigger}
-                  onClick={() => setSelectorOpen(!selectorOpen)}
-                >
-                  <Users size={16} />
-                  <span className={styles.playerSelectorLabel}>
-                    {selectedPlayerName || 'Select a player'}
-                  </span>
-                  <span className={styles.playerSelectorHint}>
-                    {players.length} player{players.length !== 1 ? 's' : ''} linked
-                  </span>
-                  <ChevronDown size={16} className={`${styles.playerSelectorChevron} ${selectorOpen ? styles.playerSelectorChevronOpen : ''}`} />
-                </button>
-                {selectorOpen && (
-                  <div className={styles.playerSelectorDropdown}>
-                    {players.length > 3 && (
-                      <div className={styles.playerSelectorSearchWrap}>
-                        <Search size={14} />
-                        <input
-                          className={styles.playerSelectorSearch}
-                          placeholder="Search players..."
-                          value={searchQuery}
-                          onChange={e => setSearchQuery(e.target.value)}
-                          autoFocus
-                        />
-                      </div>
-                    )}
-                    {filteredPlayers.map(p => (
-                      <button
-                        key={p.id}
-                        className={`${styles.playerSelectorOption} ${p.id === selectedPlayer ? styles.playerSelectorOptionActive : ''}`}
-                        onClick={() => handleSelectPlayer(p.id)}
-                      >
-                        <span className={styles.playerDot} />
-                        {p.username}
-                      </button>
-                    ))}
-                    {filteredPlayers.length === 0 && (
-                      <div className={styles.playerSelectorEmpty}>No matches</div>
-                    )}
-                  </div>
-                )}
+              {/* Player Tabs */}
+              <div className={styles.playerTabs}>
+                {players.map(p => (
+                  <PlayerCard
+                    key={p.id}
+                    player={p}
+                    info={allPlayerInfo.find(i => i.id === p.id)}
+                    isSelected={p.id === selectedPlayer}
+                    onSelect={() => handleSelectPlayer(p.id)}
+                  />
+                ))}
               </div>
 
               {/* Player Detail - All sections visible at once */}
@@ -586,96 +647,122 @@ function DashboardContent() {
                     <div className={styles.errorBox}>{playerError}</div>
                   ) : playerInfo ? (
                     <div className={styles.playerSections}>
-                      {/* Overview */}
-                      <div className={styles.playerSection}>
-                        <h3 className={styles.playerSectionTitle}>
-                          <MapPin size={16} />
-                          Overview
-                        </h3>
-                        <div className={styles.overviewGrid}>
-                          <div className={styles.overviewItem}>
-                            <span className={styles.overviewLabel}>Status</span>
-                            <span className={styles.overviewValue}>
-                              {playerInfo.online ? (
-                                <><Wifi size={14} className={styles.onlineDot} /> Online</>
-                              ) : (
-                                <><WifiOff size={14} className={styles.offlineDot} /> Offline</>
-                              )}
-                            </span>
-                          </div>
-                          <div className={styles.overviewItem}>
-                            <span className={styles.overviewLabel}>Empire</span>
-                            <span className={styles.overviewValue}>{playerInfo.empire}</span>
-                          </div>
-                          <div className={styles.overviewItem}>
-                            <span className={styles.overviewLabel}>Credits</span>
-                            <span className={styles.overviewValue}>
-                              <Coins size={14} /> {formatNumber(playerInfo.credits)}
-                            </span>
-                          </div>
-                          <div className={styles.overviewItem}>
-                            <span className={styles.overviewLabel}>System</span>
-                            <span className={styles.overviewValue}>{playerInfo.current_system}</span>
-                          </div>
-                          <div className={styles.overviewItem}>
-                            <span className={styles.overviewLabel}>Location</span>
-                            <span className={styles.overviewValue}>{playerInfo.current_poi}</span>
-                          </div>
-                          {playerInfo.docked_at && (
-                            <div className={styles.overviewItem}>
-                              <span className={styles.overviewLabel}>Docked At</span>
-                              <span className={styles.overviewValue}>{playerInfo.docked_at}</span>
-                            </div>
-                          )}
-                          {playerInfo.home_base && (
-                            <div className={styles.overviewItem}>
-                              <span className={styles.overviewLabel}>Home Base</span>
-                              <span className={styles.overviewValue}>{playerInfo.home_base}</span>
-                            </div>
-                          )}
-                          {playerInfo.faction_id && (
-                            <div className={styles.overviewItem}>
-                              <span className={styles.overviewLabel}>Faction</span>
-                              <span className={styles.overviewValue}>
-                                {playerInfo.faction_id}
-                                {playerInfo.faction_rank && ` (${playerInfo.faction_rank})`}
-                              </span>
-                            </div>
-                          )}
-                          <div className={styles.overviewItem}>
-                            <span className={styles.overviewLabel}>Created</span>
-                            <span className={styles.overviewValue}>
-                              <Clock size={14} /> {formatDate(playerInfo.created_at)}
-                            </span>
-                          </div>
-                          <div className={styles.overviewItem}>
-                            <span className={styles.overviewLabel}>Last Active</span>
-                            <span className={styles.overviewValue}>{formatDate(playerInfo.last_active_at)}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Ship */}
-                      {playerInfo.ship && (
+                      {/* Overview + Ship row */}
+                      <div className={styles.overviewShipRow}>
                         <div className={styles.playerSection}>
                           <h3 className={styles.playerSectionTitle}>
-                            <Ship size={16} />
-                            Ship
+                            <MapPin size={16} />
+                            Overview
                           </h3>
-                          <div className={styles.shipPanel}>
-                            <div className={styles.shipHeader}>
-                              <div>
-                                <h4 className={styles.shipName}>{playerInfo.ship.name}</h4>
-                                <span className={styles.shipClass}>{playerInfo.ship.class_id}</span>
-                              </div>
+                          <div className={styles.overviewGrid}>
+                            <div className={styles.overviewItem}>
+                              <span className={styles.overviewLabel}>Status</span>
+                              <span className={styles.overviewValue}>
+                                {playerInfo.online ? (
+                                  <><Wifi size={14} className={styles.onlineDot} /> Online</>
+                                ) : (
+                                  <><WifiOff size={14} className={styles.offlineDot} /> Offline</>
+                                )}
+                              </span>
                             </div>
-                            <div className={styles.shipBars}>
-                              <StatBar label="Hull" current={playerInfo.ship.hull} max={playerInfo.ship.max_hull} color="var(--claw-red)" />
-                              <StatBar label="Shield" current={playerInfo.ship.shield} max={playerInfo.ship.max_shield} color="var(--plasma-cyan)" />
-                              <StatBar label="Fuel" current={playerInfo.ship.fuel} max={playerInfo.ship.max_fuel} color="var(--shell-orange)" />
-                              <StatBar label="Cargo" current={playerInfo.ship.cargo_used} max={playerInfo.ship.cargo_capacity} color="var(--bio-green)" />
+                            <div className={styles.overviewItem}>
+                              <span className={styles.overviewLabel}>Empire</span>
+                              <span className={styles.overviewValue}>{playerInfo.empire}</span>
+                            </div>
+                            <div className={styles.overviewItem}>
+                              <span className={styles.overviewLabel}>Credits</span>
+                              <span className={styles.overviewValue}>
+                                <Coins size={14} /> {formatNumber(playerInfo.credits)}
+                              </span>
+                            </div>
+                            <div className={styles.overviewItem}>
+                              <span className={styles.overviewLabel}>System</span>
+                              <span className={styles.overviewValue}>{playerInfo.current_system}</span>
+                            </div>
+                            <div className={styles.overviewItem}>
+                              <span className={styles.overviewLabel}>Location</span>
+                              <span className={styles.overviewValue}>{playerInfo.current_poi}</span>
+                            </div>
+                            {playerInfo.docked_at && (
+                              <div className={styles.overviewItem}>
+                                <span className={styles.overviewLabel}>Docked At</span>
+                                <span className={styles.overviewValue}>{playerInfo.docked_at}</span>
+                              </div>
+                            )}
+                            {playerInfo.home_base && (
+                              <div className={styles.overviewItem}>
+                                <span className={styles.overviewLabel}>Home Base</span>
+                                <span className={styles.overviewValue}>{playerInfo.home_base}</span>
+                              </div>
+                            )}
+                            {playerInfo.faction_id && (
+                              <div className={styles.overviewItem}>
+                                <span className={styles.overviewLabel}>Faction</span>
+                                <span className={styles.overviewValue}>
+                                  {playerInfo.faction_id}
+                                  {playerInfo.faction_rank && ` (${playerInfo.faction_rank})`}
+                                </span>
+                              </div>
+                            )}
+                            <div className={styles.overviewItem}>
+                              <span className={styles.overviewLabel}>Created</span>
+                              <span className={styles.overviewValue}>
+                                <Clock size={14} /> {formatDate(playerInfo.created_at)}
+                              </span>
+                            </div>
+                            <div className={styles.overviewItem}>
+                              <span className={styles.overviewLabel}>Last Active</span>
+                              <span className={styles.overviewValue}>{formatDate(playerInfo.last_active_at)}</span>
                             </div>
                           </div>
+                        </div>
+
+                        {playerInfo.ship && (
+                          <div className={styles.playerSection}>
+                            <h3 className={styles.playerSectionTitle}>
+                              <Ship size={16} />
+                              Ship
+                            </h3>
+                            <div className={styles.shipPanel}>
+                              <div className={styles.shipHeader}>
+                                <div>
+                                  <h4 className={styles.shipName}>{playerInfo.ship.name}</h4>
+                                  <span className={styles.shipClass}>{playerInfo.ship.class_id}</span>
+                                </div>
+                              </div>
+                              <div className={styles.shipBars}>
+                                <StatBar label="Hull" current={playerInfo.ship.hull} max={playerInfo.ship.max_hull} color="var(--claw-red)" />
+                                <StatBar label="Shield" current={playerInfo.ship.shield} max={playerInfo.ship.max_shield} color="var(--plasma-cyan)" />
+                                <StatBar label="Fuel" current={playerInfo.ship.fuel} max={playerInfo.ship.max_fuel} color="var(--shell-orange)" />
+                                <StatBar label="Cargo" current={playerInfo.ship.cargo_used} max={playerInfo.ship.cargo_capacity} color="var(--bio-green)" />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Chat */}
+                      {players.length > 0 && (
+                        <div className={styles.playerSection}>
+                          <div className={styles.playerSectionTitleRow}>
+                            <h3 className={styles.playerSectionTitle}>
+                              <MessageSquare size={16} />
+                              Chat
+                            </h3>
+                            <button
+                              className={styles.sectionRefreshBtn}
+                              onClick={() => chatRefreshRef.current?.()}
+                              title="Refresh chat"
+                            >
+                              <RefreshCw size={14} />
+                            </button>
+                          </div>
+                          <DashboardChat
+                            players={allPlayerInfo}
+                            selectedPlayer={selectedPlayer}
+                            authHeaders={authHeaders}
+                            onRefreshRef={chatRefreshRef}
+                          />
                         </div>
                       )}
 
@@ -820,10 +907,20 @@ function DashboardContent() {
                   ) : null}
                 </>
               )}
+
+              {/* Chat Section (outside playerSections, renders even without playerInfo) */}
+              {players.length > 0 && (
+                <DashboardChat
+                  players={allPlayerInfo}
+                  selectedPlayer={selectedPlayer}
+                  authHeaders={authHeaders}
+                />
+              )}
             </>
           )}
         </div>
       )}
+
     </main>
   )
 }
