@@ -2,6 +2,8 @@ import fs from 'fs'
 import path from 'path'
 import matter from 'gray-matter'
 
+export type AiDisclosure = 'none' | 'ai-assisted' | 'ai-generated' | 'autonomous'
+
 export interface BlogPost {
   slug: string
   title: string
@@ -9,6 +11,7 @@ export interface BlogPost {
   author: string
   excerpt: string
   image?: string
+  aiDisclosure?: AiDisclosure
   content: string
 }
 
@@ -32,6 +35,7 @@ export function getAllPosts(): BlogPost[] {
       author: data.author || 'SpaceMolt Dev Team',
       excerpt: data.excerpt || '',
       image: data.image || undefined,
+      aiDisclosure: data.aiDisclosure || undefined,
       content,
     }
   })
