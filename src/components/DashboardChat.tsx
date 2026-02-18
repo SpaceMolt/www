@@ -39,6 +39,7 @@ interface DashboardChatProps {
   players: PlayerInfo[]
   selectedPlayer: string | null
   authHeaders: () => Promise<Record<string, string>>
+  onRefreshRef?: React.MutableRefObject<(() => void) | null>
 }
 
 // Sidebar selection: a channel (faction/local) or a DM contact
@@ -62,7 +63,7 @@ function formatChatTime(iso: string): string {
   }
 }
 
-export function DashboardChat({ players, selectedPlayer, authHeaders }: DashboardChatProps) {
+export function DashboardChat({ players, selectedPlayer, authHeaders, onRefreshRef }: DashboardChatProps) {
   const [selection, setSelection] = useState<Selection>({ type: 'channel', channel: 'faction' })
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [loading, setLoading] = useState(false)
@@ -171,6 +172,21 @@ export function DashboardChat({ players, selectedPlayer, authHeaders }: Dashboar
       fetchChannelMessages(selection.channel)
     }
   }, [selection, selectedPlayer, fetchChannelMessages])
+
+  const handleRefresh = useCallback(() => {
+    setDmLoaded(false)
+    setDmContacts([])
+    setAllDmMessages([])
+    if (selection.type === 'channel') {
+      fetchChannelMessages(selection.channel)
+    }
+  }, [selection, fetchChannelMessages])
+
+  // Expose refresh to parent
+  useEffect(() => {
+    if (onRefreshRef) onRefreshRef.current = handleRefresh
+    return () => { if (onRefreshRef) onRefreshRef.current = null }
+  }, [onRefreshRef, handleRefresh])
 
   // Derive displayed messages
   const displayMessages = selection.type === 'dm'

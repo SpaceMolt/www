@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { SignOutButton } from '@clerk/nextjs'
-import { Suspense, useEffect, useState, useCallback } from 'react'
+import { Suspense, useEffect, useState, useCallback, useRef } from 'react'
 import { Settings, BookOpen, Rocket, Users, Ship, Wifi, WifiOff, Clock, Coins, BarChart3, Wrench, ScrollText, MapPin, UserCog, KeyRound, Eye, EyeOff, Copy, Check, RefreshCw, MessageSquare } from 'lucide-react'
 import { useQueryState } from 'nuqs'
 import { SetupTabs } from '@/components/SetupTabs'
@@ -238,6 +238,9 @@ function DashboardContent() {
   // Chat tab state
   const [allPlayerInfo, setAllPlayerInfo] = useState<PlayerInfo[]>([])
   const [chatPlayersLoading, setChatPlayersLoading] = useState(false)
+
+  // Chat refresh ref
+  const chatRefreshRef = useRef<(() => void) | null>(null)
 
   // Player selector uses allPlayerInfo for compact summaries
 
@@ -741,14 +744,24 @@ function DashboardContent() {
                       {/* Chat */}
                       {players.length > 0 && (
                         <div className={styles.playerSection}>
-                          <h3 className={styles.playerSectionTitle}>
-                            <MessageSquare size={16} />
-                            Chat
-                          </h3>
+                          <div className={styles.playerSectionTitleRow}>
+                            <h3 className={styles.playerSectionTitle}>
+                              <MessageSquare size={16} />
+                              Chat
+                            </h3>
+                            <button
+                              className={styles.sectionRefreshBtn}
+                              onClick={() => chatRefreshRef.current?.()}
+                              title="Refresh chat"
+                            >
+                              <RefreshCw size={14} />
+                            </button>
+                          </div>
                           <DashboardChat
                             players={allPlayerInfo}
                             selectedPlayer={selectedPlayer}
                             authHeaders={authHeaders}
+                            onRefreshRef={chatRefreshRef}
                           />
                         </div>
                       )}
