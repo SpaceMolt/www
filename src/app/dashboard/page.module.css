@@ -1089,135 +1089,118 @@
   box-shadow: 0 0 16px rgba(0, 212, 255, 0.12);
 }
 
-/* === Player Selector === */
-.playerSelector {
-  position: relative;
-  z-index: 20;
+/* === Player Tabs (card row) === */
+.playerTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px;
+  background: var(--hull-grey);
+  border: 1px solid var(--hull-grey);
+  border-radius: 6px;
+  overflow: hidden;
+  width: fit-content;
 }
 
-.playerSelectorTrigger {
+.playerCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.5rem 0.75rem;
+  min-width: 120px;
+  max-width: 180px;
+  flex: 1;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--empire-color, transparent) 6%, transparent), transparent),
+    var(--deep-void);
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.playerCard:hover {
+  background: #162040;
+}
+
+.playerCardActive {
+  background: #1a2744;
+}
+
+.playerCardHeader {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
-  width: 100%;
-  padding: 0.75rem 1rem;
-  background: linear-gradient(135deg, rgba(26, 39, 68, 0.5), rgba(13, 19, 33, 0.7));
-  border: 1px solid var(--hull-grey);
-  border-radius: 8px;
-  color: var(--star-white);
-  cursor: pointer;
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: all 0.15s ease;
+  justify-content: space-between;
+  gap: 0.4rem;
 }
 
-.playerSelectorTrigger:hover {
-  border-color: var(--plasma-cyan);
-  box-shadow: 0 0 12px rgba(0, 212, 255, 0.08);
+.playerCardHeader .onlineDot {
+  filter: drop-shadow(0 0 6px var(--bio-green)) drop-shadow(0 0 2px var(--bio-green));
 }
 
-.playerSelectorTrigger svg:first-child {
-  color: var(--plasma-cyan);
-  opacity: 0.7;
-  flex-shrink: 0;
-}
-
-.playerSelectorLabel {
-  flex: 1;
-  text-align: left;
-}
-
-.playerSelectorHint {
-  font-size: 0.7rem;
-  color: var(--hull-grey);
-  flex-shrink: 0;
-}
-
-.playerSelectorChevron {
-  flex-shrink: 0;
+.playerCardHeader .offlineDot {
   color: var(--chrome-silver);
   opacity: 0.5;
-  transition: transform 0.2s ease, opacity 0.15s ease;
 }
 
-.playerSelectorChevronOpen {
-  transform: rotate(180deg);
-  opacity: 0.9;
-  color: var(--plasma-cyan);
-}
-
-.playerSelectorDropdown {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
-  background: var(--deep-void);
-  border: 1.5px solid var(--plasma-cyan);
-  border-radius: 8px;
-  box-shadow:
-    0 12px 32px rgba(0, 0, 0, 0.5),
-    0 0 24px rgba(0, 212, 255, 0.1);
-  overflow: hidden;
-  animation: dropdownSlide 0.15s ease;
-}
-
-.playerSelectorSearchWrap {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.6rem 0.85rem;
-  border-bottom: 1px solid var(--hull-grey);
-  color: var(--hull-grey);
-}
-
-.playerSelectorSearch {
-  flex: 1;
-  background: transparent;
-  border: none;
-  outline: none;
+.playerCardName {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.8rem;
-  color: var(--star-white);
-}
-
-.playerSelectorSearch::placeholder {
-  color: var(--hull-grey);
-}
-
-.playerSelectorOption {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  width: 100%;
-  padding: 0.6rem 0.85rem;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.85rem;
-  color: var(--chrome-silver);
-  text-align: left;
-  transition: background 0.1s ease, color 0.1s ease;
-}
-
-.playerSelectorOption:hover {
-  background: rgba(0, 212, 255, 0.06);
-  color: var(--star-white);
-}
-
-.playerSelectorOptionActive {
-  color: var(--plasma-cyan);
+  font-size: 0.7rem;
   font-weight: 600;
-  background: rgba(0, 212, 255, 0.04);
+  color: var(--chrome-silver);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.playerSelectorEmpty {
-  padding: 1rem;
-  text-align: center;
-  color: var(--hull-grey);
+.playerCardBody {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.playerCardBars {
+  display: flex;
+  gap: 5px;
+  height: 48px;
+  align-items: flex-end;
+}
+
+.playerCardChat {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.8rem;
+  font-size: 0.6rem;
+  color: var(--chrome-silver);
+  opacity: 0.7;
+}
+
+.miniBarTrack {
+  width: 8px;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 2px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.miniBarFill {
+  width: 100%;
+  border-radius: 2px;
+  transition: height 0.3s ease;
+}
+
+.playerCardCredits {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--chrome-silver);
 }
 
 /* === Player Link Button (in linked players list) === */
@@ -1857,9 +1840,9 @@
     gap: 0.35rem;
   }
 
-  .playerSelectorTrigger {
-    font-size: 0.8rem;
-    padding: 0.65rem 0.85rem;
+  .playerCard {
+    padding: 0.4rem 0.5rem;
+    min-width: 70px;
   }
 
   .detailTabs {

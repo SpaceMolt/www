@@ -2,8 +2,8 @@
 
 import Link from 'next/link'
 import { SignOutButton } from '@clerk/nextjs'
-import { Suspense, useEffect, useState, useCallback, useRef } from 'react'
-import { Settings, BookOpen, Rocket, Users, Ship, Wifi, WifiOff, Clock, Coins, BarChart3, Wrench, ChevronDown, Search, ScrollText, MapPin, UserCog, KeyRound, Eye, EyeOff, Copy, Check, RefreshCw, MessageSquare } from 'lucide-react'
+import { Suspense, useEffect, useState, useCallback } from 'react'
+import { Settings, BookOpen, Rocket, Users, Ship, Wifi, WifiOff, Clock, Coins, BarChart3, Wrench, ScrollText, MapPin, UserCog, KeyRound, Eye, EyeOff, Copy, Check, RefreshCw, MessageSquare } from 'lucide-react'
 import { useQueryState } from 'nuqs'
 import { SetupTabs } from '@/components/SetupTabs'
 import { DashboardChat } from '@/components/DashboardChat'
@@ -67,6 +67,9 @@ interface PlayerInfo {
   created_at: string
   last_login_at: string
   last_active_at: string
+  chat_private_count: number
+  chat_local_count: number
+  chat_faction_count: number
   ship?: PlayerShipInfo
   skills?: Record<string, number>
   stats?: PlayerStats
@@ -121,6 +124,74 @@ function StatBar({ label, current, max, color }: { label: string; current: numbe
   )
 }
 
+const EMPIRE_COLORS: Record<string, string> = {
+  solarian: '#ffd700',
+  voidborn: '#9b59b6',
+  crimson: '#e63946',
+  nebula: '#00d4ff',
+  outerrim: '#2dd4bf',
+}
+
+function MiniBar({ value, max, color }: { value: number; max: number; color: string }) {
+  const pct = max > 0 ? Math.round((value / max) * 100) : 0
+  return (
+    <div className={styles.miniBarTrack}>
+      <div className={styles.miniBarFill} style={{ height: `${pct}%`, background: color }} />
+    </div>
+  )
+}
+
+function PlayerCard({ player, info, isSelected, onSelect }: {
+  player: LinkedPlayer
+  info: PlayerInfo | undefined
+  isSelected: boolean
+  onSelect: () => void
+}) {
+  const empireColor = EMPIRE_COLORS[info?.empire || ''] || 'var(--chrome-silver)'
+  return (
+    <button
+      className={`${styles.playerCard} ${isSelected ? styles.playerCardActive : ''}`}
+      onClick={onSelect}
+      style={{ '--empire-color': empireColor } as React.CSSProperties}
+    >
+      <div className={styles.playerCardHeader}>
+        <span className={styles.playerCardName} style={{ color: empireColor }}>
+          {player.username}
+        </span>
+        {info ? (
+          info.online
+            ? <Wifi size={10} className={styles.onlineDot} />
+            : <WifiOff size={10} className={styles.offlineDot} />
+        ) : null}
+      </div>
+      <div className={styles.playerCardBody}>
+        <div>
+          {info && (info.chat_private_count > 0 || info.chat_local_count > 0 || info.chat_faction_count > 0) && (
+            <div className={styles.playerCardChat}>
+              <MessageSquare size={9} />
+              {info.chat_private_count + info.chat_local_count + info.chat_faction_count}
+            </div>
+          )}
+          {info && (
+            <div className={styles.playerCardCredits}>
+              <Coins size={9} />
+              {formatNumber(info.credits)}
+            </div>
+          )}
+        </div>
+        {info?.ship ? (
+          <div className={styles.playerCardBars}>
+            <MiniBar value={info.ship.hull} max={info.ship.max_hull} color="var(--claw-red)" />
+            <MiniBar value={info.ship.shield} max={info.ship.max_shield} color="var(--plasma-cyan)" />
+            <MiniBar value={info.ship.fuel} max={info.ship.max_fuel} color="var(--shell-orange)" />
+            <MiniBar value={info.ship.cargo_used} max={info.ship.cargo_capacity} color="var(--bio-green)" />
+          </div>
+        ) : null}
+      </div>
+    </button>
+  )
+}
+
 export default function DashboardPage() {
   return (
     <Suspense fallback={
@@ -168,10 +239,7 @@ function DashboardContent() {
   const [allPlayerInfo, setAllPlayerInfo] = useState<PlayerInfo[]>([])
   const [chatPlayersLoading, setChatPlayersLoading] = useState(false)
 
-  // Player selector state
-  const [selectorOpen, setSelectorOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const selectorRef = useRef<HTMLDivElement>(null)
+  // Player selector uses allPlayerInfo for compact summaries
 
   const fetchRegistrationCode = useCallback(async () => {
     try {
@@ -279,16 +347,6 @@ function DashboardContent() {
     fetchCaptainsLog(selectedPlayer)
   }, [selectedPlayer, authLoaded, fetchPlayerInfo, fetchCaptainsLog])
 
-  // Close selector dropdown on click outside
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (selectorRef.current && !selectorRef.current.contains(e.target as Node)) {
-        setSelectorOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [])
 
   const handleRotate = async () => {
     if (rotating) return
@@ -332,8 +390,6 @@ function DashboardContent() {
 
   const handleSelectPlayer = (id: string) => {
     setSelectedPlayer(id)
-    setSelectorOpen(false)
-    setSearchQuery('')
     setPlayerPassword(null)
     setPasswordVisible(false)
   }
@@ -383,11 +439,6 @@ function DashboardContent() {
     setTimeout(() => setPasswordCopied(false), 2000)
   }
 
-  const filteredPlayers = players.filter(p =>
-    p.username.toLowerCase().includes(searchQuery.toLowerCase())
-  )
-
-  const selectedPlayerName = players.find(p => p.id === selectedPlayer)?.username
 
   if (!userLoaded || !authLoaded) {
     return (
@@ -568,50 +619,17 @@ function DashboardContent() {
             </div>
           ) : (
             <>
-              {/* Player Selector */}
-              <div className={styles.playerSelector} ref={selectorRef}>
-                <button
-                  className={styles.playerSelectorTrigger}
-                  onClick={() => setSelectorOpen(!selectorOpen)}
-                >
-                  <Users size={16} />
-                  <span className={styles.playerSelectorLabel}>
-                    {selectedPlayerName || 'Select a player'}
-                  </span>
-                  <span className={styles.playerSelectorHint}>
-                    {players.length} player{players.length !== 1 ? 's' : ''} linked
-                  </span>
-                  <ChevronDown size={16} className={`${styles.playerSelectorChevron} ${selectorOpen ? styles.playerSelectorChevronOpen : ''}`} />
-                </button>
-                {selectorOpen && (
-                  <div className={styles.playerSelectorDropdown}>
-                    {players.length > 3 && (
-                      <div className={styles.playerSelectorSearchWrap}>
-                        <Search size={14} />
-                        <input
-                          className={styles.playerSelectorSearch}
-                          placeholder="Search players..."
-                          value={searchQuery}
-                          onChange={e => setSearchQuery(e.target.value)}
-                          autoFocus
-                        />
-                      </div>
-                    )}
-                    {filteredPlayers.map(p => (
-                      <button
-                        key={p.id}
-                        className={`${styles.playerSelectorOption} ${p.id === selectedPlayer ? styles.playerSelectorOptionActive : ''}`}
-                        onClick={() => handleSelectPlayer(p.id)}
-                      >
-                        <span className={styles.playerDot} />
-                        {p.username}
-                      </button>
-                    ))}
-                    {filteredPlayers.length === 0 && (
-                      <div className={styles.playerSelectorEmpty}>No matches</div>
-                    )}
-                  </div>
-                )}
+              {/* Player Tabs */}
+              <div className={styles.playerTabs}>
+                {players.map(p => (
+                  <PlayerCard
+                    key={p.id}
+                    player={p}
+                    info={allPlayerInfo.find(i => i.id === p.id)}
+                    isSelected={p.id === selectedPlayer}
+                    onSelect={() => handleSelectPlayer(p.id)}
+                  />
+                ))}
               </div>
 
               {/* Player Detail - All sections visible at once */}
