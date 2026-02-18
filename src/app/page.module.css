@@ -58,6 +58,45 @@
   color: var(--plasma-cyan);
 }
 
+/* === Featured In === */
+.featuredIn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.featuredLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: #6b8a9e;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  white-space: nowrap;
+}
+
+.featuredLogos {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.25rem 2rem;
+}
+
+.featuredLogo {
+  color: var(--chrome-silver);
+  transition: color 0.3s ease, opacity 0.3s ease;
+  opacity: 0.6;
+  display: flex;
+  align-items: center;
+}
+
+.featuredLogo:hover {
+  color: var(--star-white);
+  opacity: 1;
+}
+
 .heroHelp {
   font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
   font-size: clamp(0.85rem, 2vw, 1.05rem);
