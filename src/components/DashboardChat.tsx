@@ -38,9 +38,16 @@ interface DashboardChatProps {
   authHeaders: () => Promise<Record<string, string>>
 }
 
-type TabSelection =
-  | { type: 'player'; playerId: string; channel: 'private' | 'local' }
-  | { type: 'faction'; factionId: string; playerId: string }
+// Sidebar selection: a channel (faction/local) or a DM contact
+type Selection =
+  | { type: 'channel'; channel: 'faction' | 'local' }
+  | { type: 'dm'; contactId: string }
+
+interface DMContact {
+  id: string
+  name: string
+  lastMessage: string
+}
 
 function formatChatTime(iso: string): string {
   try {
@@ -52,44 +59,33 @@ function formatChatTime(iso: string): string {
 }
 
 export function DashboardChat({ players, selectedPlayer, authHeaders }: DashboardChatProps) {
-  const [tab, setTab] = useState<TabSelection | null>(null)
+  const [selection, setSelection] = useState<Selection>({ type: 'channel', channel: 'faction' })
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [loading, setLoading] = useState(false)
-  const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
   const messageListRef = useRef<HTMLDivElement>(null)
 
-  // Deduplicate factions
-  const factions: { id: string; name: string; playerId: string }[] = []
-  const seenFactions = new Set<string>()
-  for (const p of players) {
-    if (p.faction_id && !seenFactions.has(p.faction_id)) {
-      seenFactions.add(p.faction_id)
-      factions.push({ id: p.faction_id, name: p.faction_name || p.faction_id, playerId: p.id })
-    }
-  }
+  // DM state — all DMs fetched once, filtered client-side
+  const [dmContacts, setDmContacts] = useState<DMContact[]>([])
+  const [allDmMessages, setAllDmMessages] = useState<ChatMessage[]>([])
+  const [dmLoaded, setDmLoaded] = useState(false)
 
-  // Initialize tab to selected player or first available
-  useEffect(() => {
-    if (tab) return
-    const target = selectedPlayer || players[0]?.id
-    if (target) {
-      setTab({ type: 'player', playerId: target, channel: 'private' })
-    }
-  }, [tab, selectedPlayer, players])
+  const activePlayer = players.find(p => p.id === selectedPlayer)
+  const hasFaction = !!activePlayer?.faction_id
 
-  // When selectedPlayer changes from the parent selector, switch to that player's tab
+  // Reset when selected player changes
   useEffect(() => {
-    if (selectedPlayer && tab?.type === 'player' && tab.playerId !== selectedPlayer) {
-      setTab({ type: 'player', playerId: selectedPlayer, channel: tab.channel })
-    }
+    setSelection(hasFaction ? { type: 'channel', channel: 'faction' } : { type: 'channel', channel: 'local' })
+    setMessages([])
+    setDmContacts([])
+    setAllDmMessages([])
+    setDmLoaded(false)
   }, [selectedPlayer]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const activePlayerId = tab?.type === 'faction' ? tab.playerId : tab?.type === 'player' ? tab.playerId : null
-  const activeChannel = tab?.type === 'faction' ? 'faction' : tab?.type === 'player' ? tab.channel : null
-
-  const fetchMessages = useCallback(async (before?: string) => {
-    if (!activePlayerId || !activeChannel) return
+  // Fetch channel messages (faction/local)
+  const fetchChannelMessages = useCallback(async (channel: 'faction' | 'local', before?: string) => {
+    if (!selectedPlayer) return
 
     const isLoadMore = !!before
     if (isLoadMore) {
@@ -101,13 +97,10 @@ export function DashboardChat({ players, selectedPlayer, authHeaders }: Dashboar
 
     try {
       const headers = await authHeaders()
-      const params = new URLSearchParams({ channel: activeChannel, limit: '50' })
+      const params = new URLSearchParams({ channel, limit: '50' })
       if (before) params.set('before', before)
 
-      const res = await fetch(`${GAME_SERVER}/api/player/${activePlayerId}/chat?${params}`, {
-        headers,
-      })
-
+      const res = await fetch(`${GAME_SERVER}/api/player/${selectedPlayer}/chat?${params}`, { headers })
       if (res.ok) {
         const data: ChatResponse = await res.json()
         if (isLoadMore) {
@@ -123,104 +116,166 @@ export function DashboardChat({ players, selectedPlayer, authHeaders }: Dashboar
       setLoading(false)
       setLoadingMore(false)
     }
-  }, [activePlayerId, activeChannel, authHeaders])
+  }, [selectedPlayer, authHeaders])
 
+  // Fetch all DMs once (for contact list + client-side filtering)
+  const fetchAllDms = useCallback(async () => {
+    if (!selectedPlayer || dmLoaded) return
+    setLoading(true)
+
+    try {
+      const headers = await authHeaders()
+      const params = new URLSearchParams({ channel: 'private', limit: '100' })
+      const res = await fetch(`${GAME_SERVER}/api/player/${selectedPlayer}/chat?${params}`, { headers })
+
+      if (res.ok) {
+        const data: ChatResponse = await res.json()
+        setAllDmMessages(data.messages)
+
+        const contactMap = new Map<string, DMContact>()
+        for (const msg of data.messages) {
+          const isOutgoing = msg.sender_id === selectedPlayer
+          const otherId = isOutgoing ? (msg.target_id || '') : msg.sender_id
+          const otherName = isOutgoing ? (msg.target_name || msg.target_id || '') : msg.sender
+          if (!otherId) continue
+          if (!contactMap.has(otherId)) {
+            contactMap.set(otherId, { id: otherId, name: otherName, lastMessage: msg.content })
+          }
+        }
+        setDmContacts(Array.from(contactMap.values()))
+        setDmLoaded(true)
+      }
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false)
+    }
+  }, [selectedPlayer, authHeaders, dmLoaded])
+
+  // Fetch data when selection changes
   useEffect(() => {
-    if (tab) fetchMessages()
-  }, [fetchMessages, tab])
+    if (!selectedPlayer) return
+    if (selection.type === 'channel') {
+      fetchChannelMessages(selection.channel)
+    } else {
+      fetchAllDms()
+    }
+  }, [selection, selectedPlayer, fetchChannelMessages, fetchAllDms])
+
+  // Derive displayed messages
+  const displayMessages = selection.type === 'dm'
+    ? allDmMessages.filter(msg =>
+        msg.sender_id === selection.contactId || msg.target_id === selection.contactId
+      )
+    : messages
 
   const handleLoadMore = () => {
-    if (messages.length === 0 || loadingMore) return
+    if (selection.type !== 'channel' || messages.length === 0 || loadingMore) return
     const oldest = messages[messages.length - 1]
-    fetchMessages(oldest.timestamp)
+    fetchChannelMessages(selection.channel, oldest.timestamp)
   }
 
-  if (players.length === 0) {
+  if (players.length === 0 || !selectedPlayer) {
     return (
       <div className={styles.emptyChat}>
         <MessageSquare size={32} />
-        <p>No players linked yet.</p>
+        <p>No player selected.</p>
       </div>
     )
   }
 
   return (
     <div className={styles.chatContainer}>
-      {/* Tabs: one per player + faction tabs */}
-      <div className={styles.channelTabs}>
-        {players.map(p => (
-          <button
-            key={`player-${p.id}`}
-            className={`${styles.channelTab} ${tab?.type === 'player' && tab.playerId === p.id ? styles.channelTabActive : ''}`}
-            onClick={() => setTab({ type: 'player', playerId: p.id, channel: (tab?.type === 'player' ? tab.channel : 'private') })}
-          >
-            {p.username}
-          </button>
-        ))}
-        {factions.map(f => (
-          <button
-            key={`faction-${f.id}`}
-            className={`${styles.channelTab} ${styles.channelTabFaction} ${tab?.type === 'faction' && tab.factionId === f.id ? styles.channelTabActive : ''}`}
-            onClick={() => setTab({ type: 'faction', factionId: f.id, playerId: f.playerId })}
-          >
-            {f.name}
-          </button>
-        ))}
-      </div>
+      <div className={styles.dmLayout}>
+        {/* Sidebar */}
+        <div className={styles.dmSidebar}>
+          {/* Chatrooms header */}
+          <div className={styles.dmSeparator}>Chatrooms</div>
 
-      {/* Sub-tabs for private/local when a player tab is active */}
-      {tab?.type === 'player' && (
-        <div className={styles.subTabs}>
-          <button
-            className={`${styles.subTab} ${tab.channel === 'private' ? styles.subTabActive : ''}`}
-            onClick={() => setTab({ ...tab, channel: 'private' })}
-          >
-            Private
-          </button>
-          <button
-            className={`${styles.subTab} ${tab.channel === 'local' ? styles.subTabActive : ''}`}
-            onClick={() => setTab({ ...tab, channel: 'local' })}
-          >
-            Local
-          </button>
-        </div>
-      )}
-
-      {/* Messages */}
-      {loading ? (
-        <div className={styles.inlineSpinner}>
-          <div className={styles.spinner} />
-          <span>Loading messages...</span>
-        </div>
-      ) : messages.length === 0 ? (
-        <div className={styles.emptyChat}>
-          <MessageSquare size={32} />
-          <p>No messages in this channel yet.</p>
-        </div>
-      ) : (
-        <>
-          {hasMore && (
-            <div className={styles.loadMore}>
-              <button
-                className={styles.loadMoreBtn}
-                onClick={handleLoadMore}
-                disabled={loadingMore}
-              >
-                {loadingMore ? 'Loading...' : 'Load older messages'}
-              </button>
-            </div>
+          {/* Channel entries */}
+          {hasFaction && (
+            <button
+              className={`${styles.dmContact} ${styles.dmContactChannel} ${selection.type === 'channel' && selection.channel === 'faction' ? styles.dmContactActive : ''}`}
+              onClick={() => setSelection({ type: 'channel', channel: 'faction' })}
+            >
+              <span className={styles.dmContactChannelName}>
+                {activePlayer?.faction_name || 'Faction'}
+              </span>
+            </button>
           )}
-          <div className={styles.messageList} ref={messageListRef}>
-            {[...messages].reverse().map(msg => (
-              <div key={msg.id} className={styles.message}>
-                <span className={styles.messageSender}>{msg.sender}</span>
-                <span className={styles.messageContent}>{msg.content}</span>
-                <span className={styles.messageTime}>{formatChatTime(msg.timestamp)}</span>
+          <button
+            className={`${styles.dmContact} ${styles.dmContactChannel} ${selection.type === 'channel' && selection.channel === 'local' ? styles.dmContactActive : ''}`}
+            onClick={() => setSelection({ type: 'channel', channel: 'local' })}
+          >
+            <span className={styles.dmContactChannelName}>Local</span>
+          </button>
+
+          {/* DM separator */}
+          {dmContacts.length > 0 && (
+            <div className={styles.dmSeparator}>DMs</div>
+          )}
+
+          {/* DM contacts */}
+          {dmContacts.map(c => (
+            <button
+              key={c.id}
+              className={`${styles.dmContact} ${selection.type === 'dm' && selection.contactId === c.id ? styles.dmContactActive : ''}`}
+              onClick={() => setSelection({ type: 'dm', contactId: c.id })}
+            >
+              <span className={styles.dmContactName}>{c.name}</span>
+              <span className={styles.dmContactPreview}>{c.lastMessage}</span>
+            </button>
+          ))}
+
+          {/* Load DM contacts if not yet loaded */}
+          {!dmLoaded && (
+            <button
+              className={`${styles.dmContact} ${styles.dmContactChannel}`}
+              onClick={fetchAllDms}
+            >
+              <span className={styles.dmContactChannelName}>Load DMs...</span>
+            </button>
+          )}
+        </div>
+
+        {/* Messages pane */}
+        <div className={styles.dmMessages}>
+          {loading ? (
+            <div className={styles.inlineSpinner}>
+              <div className={styles.spinner} />
+              <span>Loading...</span>
+            </div>
+          ) : displayMessages.length === 0 ? (
+            <div className={styles.emptyChat}>
+              <MessageSquare size={32} />
+              <p>No messages yet.</p>
+            </div>
+          ) : (
+            <>
+              {hasMore && selection.type === 'channel' && (
+                <div className={styles.loadMore}>
+                  <button
+                    className={styles.loadMoreBtn}
+                    onClick={handleLoadMore}
+                    disabled={loadingMore}
+                  >
+                    {loadingMore ? 'Loading...' : 'Load older messages'}
+                  </button>
+                </div>
+              )}
+              <div className={styles.messageList} ref={messageListRef}>
+                {[...displayMessages].reverse().map(msg => (
+                  <div key={msg.id} className={styles.message}>
+                    <span className={styles.messageSender}>{msg.sender}</span>
+                    <span className={styles.messageContent}>{msg.content}</span>
+                    <span className={styles.messageTime}>{formatChatTime(msg.timestamp)}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </>
-      )}
+            </>
+          )}
+        </div>
+      </div>
 
       {/* Footer */}
       <div className={styles.chatFooter}>
