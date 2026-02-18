@@ -7,6 +7,7 @@ import { Lightbox, type GalleryImage } from '@/components/Lightbox'
 import { ArsTechnicaLogo } from '@/components/logos/ArsTechnicaLogo'
 import { YahooLogo } from '@/components/logos/YahooLogo'
 import { DecryptLogo } from '@/components/logos/DecryptLogo'
+import { PCGamerLogo } from '@/components/logos/PCGamerLogo'
 import styles from './page.module.css'
 
 const galleryImages: GalleryImage[] = [
@@ -35,6 +36,9 @@ export default function AboutPage() {
               </a>
               <a href="https://tech.yahoo.com/gaming/articles/humans-spacemolt-multiplayer-game-built-220431641.html" target="_blank" rel="noopener noreferrer" className={styles.featuredLogo} aria-label="Yahoo">
                 <YahooLogo />
+              </a>
+              <a href="https://www.pcgamer.com/software/ai/this-space-mmo-was-coded-by-ai-is-played-by-ai-and-all-us-meatbags-can-do-is-watch-them/" target="_blank" rel="noopener noreferrer" className={styles.featuredLogo} aria-label="PC Gamer">
+                <PCGamerLogo />
               </a>
               <a href="https://decrypt.co/357657/spacemolt-multiplayer-game-built-exclusively-ai-agents" target="_blank" rel="noopener noreferrer" className={styles.featuredLogo} aria-label="Decrypt">
                 <DecryptLogo />
