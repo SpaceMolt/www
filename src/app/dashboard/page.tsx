@@ -1,12 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import { useUser, useAuth, useClerk, SignOutButton } from '@clerk/nextjs'
+import { SignOutButton } from '@clerk/nextjs'
 import { Suspense, useEffect, useState, useCallback, useRef } from 'react'
 import { Settings, BookOpen, Rocket, Users, Ship, Wifi, WifiOff, Clock, Coins, BarChart3, Wrench, ChevronDown, Search, ScrollText, MapPin, UserCog, KeyRound, Eye, EyeOff, Copy, Check, RefreshCw, MessageSquare } from 'lucide-react'
 import { useQueryState } from 'nuqs'
 import { SetupTabs } from '@/components/SetupTabs'
 import { DashboardChat } from '@/components/DashboardChat'
+import { useGameAuth, DEV_MODE } from '@/lib/useGameAuth'
 import styles from './page.module.css'
 
 const GAME_SERVER = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
@@ -136,9 +137,9 @@ export default function DashboardPage() {
 }
 
 function DashboardContent() {
-  const { user, isLoaded: userLoaded } = useUser()
-  const { getToken, isLoaded: authLoaded } = useAuth()
-  const { openUserProfile } = useClerk()
+  const { user, isLoaded, getToken, authHeaders, openUserProfile } = useGameAuth()
+  const userLoaded = isLoaded
+  const authLoaded = isLoaded
 
   const [activeTab, setActiveTab] = useQueryState('tab', { defaultValue: 'setup' })
   const [selectedPlayer, setSelectedPlayer] = useQueryState('player')
@@ -174,9 +175,9 @@ function DashboardContent() {
 
   const fetchRegistrationCode = useCallback(async () => {
     try {
-      const token = await getToken()
+      const headers = await authHeaders()
       const res = await fetch(`${GAME_SERVER}/api/registration-code`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers,
       })
       if (res.ok) {
         const data: RegistrationCodeResponse = await res.json()
@@ -194,15 +195,15 @@ function DashboardContent() {
     } finally {
       setCodeLoading(false)
     }
-  }, [getToken, selectedPlayer, setSelectedPlayer])
+  }, [authHeaders, selectedPlayer, setSelectedPlayer])
 
   const fetchPlayerInfo = useCallback(async (playerId: string) => {
     setPlayerLoading(true)
     setPlayerError(null)
     try {
-      const token = await getToken()
+      const headers = await authHeaders()
       const res = await fetch(`${GAME_SERVER}/api/player/${playerId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers,
       })
       if (res.ok) {
         setPlayerInfo(await res.json())
@@ -215,14 +216,14 @@ function DashboardContent() {
     } finally {
       setPlayerLoading(false)
     }
-  }, [getToken])
+  }, [authHeaders])
 
   const fetchCaptainsLog = useCallback(async (playerId: string) => {
     setLogLoading(true)
     try {
-      const token = await getToken()
+      const headers = await authHeaders()
       const res = await fetch(`${GAME_SERVER}/api/player/${playerId}/log`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers,
       })
       if (res.ok) {
         setCaptainsLog(await res.json())
@@ -232,18 +233,18 @@ function DashboardContent() {
     } finally {
       setLogLoading(false)
     }
-  }, [getToken])
+  }, [authHeaders])
 
   const fetchAllPlayerInfo = useCallback(async () => {
     if (players.length === 0) return
     setChatPlayersLoading(true)
     try {
-      const token = await getToken()
+      const headers = await authHeaders()
       const results = await Promise.all(
         players.map(async (p) => {
           try {
             const res = await fetch(`${GAME_SERVER}/api/player/${p.id}`, {
-              headers: { Authorization: `Bearer ${token}` },
+              headers,
             })
             if (res.ok) return await res.json() as PlayerInfo
           } catch { /* ignore */ }
@@ -254,16 +255,16 @@ function DashboardContent() {
     } finally {
       setChatPlayersLoading(false)
     }
-  }, [getToken, players])
+  }, [authHeaders, players])
 
   useEffect(() => {
     if (!userLoaded || !authLoaded || !user) return
     fetchRegistrationCode()
   }, [userLoaded, authLoaded, user, fetchRegistrationCode])
 
-  // Fetch all player info when switching to chat tab
+  // Fetch all player info when switching to players tab (needed for chat subsection)
   useEffect(() => {
-    if (activeTab === 'chat' && authLoaded && players.length > 0 && allPlayerInfo.length === 0) {
+    if (activeTab === 'players' && authLoaded && players.length > 0 && allPlayerInfo.length === 0) {
       fetchAllPlayerInfo()
     }
   }, [activeTab, authLoaded, players.length, allPlayerInfo.length, fetchAllPlayerInfo])
@@ -295,10 +296,10 @@ function DashboardContent() {
 
     setRotating(true)
     try {
-      const token = await getToken()
+      const headers = await authHeaders()
       const res = await fetch(`${GAME_SERVER}/api/registration-code/rotate`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        headers,
       })
       if (res.ok) {
         const data = await res.json()
@@ -343,10 +344,10 @@ function DashboardContent() {
 
     setResettingPassword(true)
     try {
-      const token = await getToken()
+      const headers = await authHeaders()
       const res = await fetch(`${GAME_SERVER}/api/player/${selectedPlayer}/reset-password`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        headers,
       })
       if (res.ok) {
         const data = await res.json()
@@ -424,9 +425,13 @@ function DashboardContent() {
             <UserCog size={14} />
             Manage Account
           </button>
-          <SignOutButton>
-            <button className={styles.logoutBtn}>Sign Out</button>
-          </SignOutButton>
+          {DEV_MODE ? (
+            <span className={styles.logoutBtn} style={{ opacity: 0.5 }}>Dev Mode</span>
+          ) : (
+            <SignOutButton>
+              <button className={styles.logoutBtn}>Sign Out</button>
+            </SignOutButton>
+          )}
         </div>
       </div>
 
@@ -446,13 +451,6 @@ function DashboardContent() {
           <Users size={16} />
           Players
           {players.length > 0 && <span className={styles.playerCount}>{players.length}</span>}
-        </button>
-        <button
-          className={`${styles.mainTab} ${activeTab === 'chat' ? styles.mainTabActive : ''}`}
-          onClick={() => { setActiveTab('chat'); if (!selectedPlayer && players.length > 0) setSelectedPlayer(players[0].id) }}
-        >
-          <MessageSquare size={16} />
-          Chat
         </button>
       </div>
 
@@ -862,86 +860,26 @@ function DashboardContent() {
                   ) : null}
                 </>
               )}
+
+              {/* Chat Section */}
+              {players.length > 0 && (
+                <div className={styles.playerSection}>
+                  <h3 className={styles.playerSectionTitle}>
+                    <MessageSquare size={16} />
+                    Chat
+                  </h3>
+                  <DashboardChat
+                    players={allPlayerInfo}
+                    selectedPlayer={selectedPlayer}
+                    authHeaders={authHeaders}
+                  />
+                </div>
+              )}
             </>
           )}
         </div>
       )}
 
-      {/* Chat Tab */}
-      {activeTab === 'chat' && (
-        <div className={styles.playersContainer}>
-          {players.length === 0 ? (
-            <div className={styles.emptyPlayers}>
-              <MessageSquare size={48} />
-              <h3>No Players Linked</h3>
-              <p>Complete setup to register your first player, then their chat will appear here.</p>
-              <button className={styles.switchTabBtn} onClick={() => setActiveTab('setup')}>
-                <Rocket size={14} />
-                Go to Setup
-              </button>
-            </div>
-          ) : chatPlayersLoading ? (
-            <div className={styles.loadingState}>
-              <div className={styles.spinner} />
-              <span>Loading player data...</span>
-            </div>
-          ) : (
-            <>
-              {/* Player Selector for private/local channel context */}
-              <div className={styles.playerSelector} ref={selectorRef}>
-                <button
-                  className={styles.playerSelectorTrigger}
-                  onClick={() => setSelectorOpen(!selectorOpen)}
-                >
-                  <Users size={16} />
-                  <span className={styles.playerSelectorLabel}>
-                    {selectedPlayerName || 'Select a player'}
-                  </span>
-                  <span className={styles.playerSelectorHint}>
-                    {players.length} player{players.length !== 1 ? 's' : ''} linked
-                  </span>
-                  <ChevronDown size={16} className={`${styles.playerSelectorChevron} ${selectorOpen ? styles.playerSelectorChevronOpen : ''}`} />
-                </button>
-                {selectorOpen && (
-                  <div className={styles.playerSelectorDropdown}>
-                    {players.length > 3 && (
-                      <div className={styles.playerSelectorSearchWrap}>
-                        <Search size={14} />
-                        <input
-                          className={styles.playerSelectorSearch}
-                          placeholder="Search players..."
-                          value={searchQuery}
-                          onChange={e => setSearchQuery(e.target.value)}
-                          autoFocus
-                        />
-                      </div>
-                    )}
-                    {filteredPlayers.map(p => (
-                      <button
-                        key={p.id}
-                        className={`${styles.playerSelectorOption} ${p.id === selectedPlayer ? styles.playerSelectorOptionActive : ''}`}
-                        onClick={() => handleSelectPlayer(p.id)}
-                      >
-                        <span className={styles.playerDot} />
-                        {p.username}
-                      </button>
-                    ))}
-                    {filteredPlayers.length === 0 && (
-                      <div className={styles.playerSelectorEmpty}>No matches</div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <DashboardChat
-                players={allPlayerInfo}
-                selectedPlayer={selectedPlayer}
-                getToken={getToken}
-              />
-            </>
-          )}
-        </div>
-      )}
     </main>
   )
 }

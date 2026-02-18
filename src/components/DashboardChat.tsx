@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { MessageSquare, Clock } from 'lucide-react'
+import { MessageSquare } from 'lucide-react'
 import styles from './DashboardChat.module.css'
 
 const GAME_SERVER = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
@@ -32,16 +32,15 @@ interface PlayerInfo {
   current_poi?: string
 }
 
-interface FactionTab {
-  id: string
-  name: string
-}
-
 interface DashboardChatProps {
   players: PlayerInfo[]
   selectedPlayer: string | null
-  getToken: () => Promise<string | null>
+  authHeaders: () => Promise<Record<string, string>>
 }
+
+type TabSelection =
+  | { type: 'player'; playerId: string; channel: 'private' | 'local' }
+  | { type: 'faction'; factionId: string; playerId: string }
 
 function formatChatTime(iso: string): string {
   try {
@@ -52,37 +51,45 @@ function formatChatTime(iso: string): string {
   }
 }
 
-export function DashboardChat({ players, selectedPlayer, getToken }: DashboardChatProps) {
-  const [activeChannel, setActiveChannel] = useState<string>('faction')
-  const [activeFactionId, setActiveFactionId] = useState<string | null>(null)
+export function DashboardChat({ players, selectedPlayer, authHeaders }: DashboardChatProps) {
+  const [tab, setTab] = useState<TabSelection | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [loading, setLoading] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(false)
-  const [factionName, setFactionName] = useState<string>('')
   const messageListRef = useRef<HTMLDivElement>(null)
 
-  // Deduplicate faction tabs from all players
-  const factionTabs: FactionTab[] = []
+  // Deduplicate factions
+  const factions: { id: string; name: string; playerId: string }[] = []
   const seenFactions = new Set<string>()
   for (const p of players) {
     if (p.faction_id && !seenFactions.has(p.faction_id)) {
       seenFactions.add(p.faction_id)
-      factionTabs.push({ id: p.faction_id, name: p.faction_name || p.faction_id })
+      factions.push({ id: p.faction_id, name: p.faction_name || p.faction_id, playerId: p.id })
     }
   }
 
-  // Find a player in this faction to use for the API call
-  const playerForFaction = (factionId: string) =>
-    players.find(p => p.faction_id === factionId)?.id
+  // Initialize tab to selected player or first available
+  useEffect(() => {
+    if (tab) return
+    const target = selectedPlayer || players[0]?.id
+    if (target) {
+      setTab({ type: 'player', playerId: target, channel: 'private' })
+    }
+  }, [tab, selectedPlayer, players])
 
-  // Determine which player ID to use for the current request
-  const activePlayerId = activeChannel === 'faction' && activeFactionId
-    ? playerForFaction(activeFactionId)
-    : selectedPlayer
+  // When selectedPlayer changes from the parent selector, switch to that player's tab
+  useEffect(() => {
+    if (selectedPlayer && tab?.type === 'player' && tab.playerId !== selectedPlayer) {
+      setTab({ type: 'player', playerId: selectedPlayer, channel: tab.channel })
+    }
+  }, [selectedPlayer]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const activePlayerId = tab?.type === 'faction' ? tab.playerId : tab?.type === 'player' ? tab.playerId : null
+  const activeChannel = tab?.type === 'faction' ? 'faction' : tab?.type === 'player' ? tab.channel : null
 
   const fetchMessages = useCallback(async (before?: string) => {
-    if (!activePlayerId) return
+    if (!activePlayerId || !activeChannel) return
 
     const isLoadMore = !!before
     if (isLoadMore) {
@@ -93,12 +100,12 @@ export function DashboardChat({ players, selectedPlayer, getToken }: DashboardCh
     }
 
     try {
-      const token = await getToken()
+      const headers = await authHeaders()
       const params = new URLSearchParams({ channel: activeChannel, limit: '50' })
       if (before) params.set('before', before)
 
       const res = await fetch(`${GAME_SERVER}/api/player/${activePlayerId}/chat?${params}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers,
       })
 
       if (res.ok) {
@@ -109,7 +116,6 @@ export function DashboardChat({ players, selectedPlayer, getToken }: DashboardCh
           setMessages(data.messages)
         }
         setHasMore(data.has_more)
-        if (data.faction_name) setFactionName(data.faction_name)
       }
     } catch {
       // ignore
@@ -117,20 +123,11 @@ export function DashboardChat({ players, selectedPlayer, getToken }: DashboardCh
       setLoading(false)
       setLoadingMore(false)
     }
-  }, [activePlayerId, activeChannel, getToken])
+  }, [activePlayerId, activeChannel, authHeaders])
 
-  // Set initial active faction
   useEffect(() => {
-    if (factionTabs.length > 0 && !activeFactionId) {
-      setActiveFactionId(factionTabs[0].id)
-    }
-  }, [factionTabs.length, activeFactionId])
-
-  // Fetch messages when channel/player changes
-  useEffect(() => {
-    if (activeChannel === 'faction' && !activeFactionId && factionTabs.length > 0) return // wait for faction to be set
-    fetchMessages()
-  }, [fetchMessages])
+    if (tab) fetchMessages()
+  }, [fetchMessages, tab])
 
   const handleLoadMore = () => {
     if (messages.length === 0 || loadingMore) return
@@ -138,20 +135,10 @@ export function DashboardChat({ players, selectedPlayer, getToken }: DashboardCh
     fetchMessages(oldest.timestamp)
   }
 
-  const handleFactionTab = (factionId: string) => {
-    setActiveFactionId(factionId)
-    setActiveChannel('faction')
-  }
-
-  const handleChannelTab = (channel: string) => {
-    setActiveChannel(channel)
-  }
-
-  // No players at all
   if (players.length === 0) {
     return (
       <div className={styles.emptyChat}>
-        <MessageSquare size={48} />
+        <MessageSquare size={32} />
         <p>No players linked yet.</p>
       </div>
     )
@@ -159,30 +146,45 @@ export function DashboardChat({ players, selectedPlayer, getToken }: DashboardCh
 
   return (
     <div className={styles.chatContainer}>
-      {/* Channel Tabs */}
+      {/* Tabs: one per player + faction tabs */}
       <div className={styles.channelTabs}>
-        {factionTabs.map(f => (
+        {players.map(p => (
+          <button
+            key={`player-${p.id}`}
+            className={`${styles.channelTab} ${tab?.type === 'player' && tab.playerId === p.id ? styles.channelTabActive : ''}`}
+            onClick={() => setTab({ type: 'player', playerId: p.id, channel: (tab?.type === 'player' ? tab.channel : 'private') })}
+          >
+            {p.username}
+          </button>
+        ))}
+        {factions.map(f => (
           <button
             key={`faction-${f.id}`}
-            className={`${styles.channelTab} ${styles.channelTabFaction} ${activeChannel === 'faction' && activeFactionId === f.id ? styles.channelTabActive : ''}`}
-            onClick={() => handleFactionTab(f.id)}
+            className={`${styles.channelTab} ${styles.channelTabFaction} ${tab?.type === 'faction' && tab.factionId === f.id ? styles.channelTabActive : ''}`}
+            onClick={() => setTab({ type: 'faction', factionId: f.id, playerId: f.playerId })}
           >
             {f.name}
           </button>
         ))}
-        <button
-          className={`${styles.channelTab} ${activeChannel === 'private' ? styles.channelTabActive : ''}`}
-          onClick={() => handleChannelTab('private')}
-        >
-          Private
-        </button>
-        <button
-          className={`${styles.channelTab} ${activeChannel === 'local' ? styles.channelTabActive : ''}`}
-          onClick={() => handleChannelTab('local')}
-        >
-          Local
-        </button>
       </div>
+
+      {/* Sub-tabs for private/local when a player tab is active */}
+      {tab?.type === 'player' && (
+        <div className={styles.subTabs}>
+          <button
+            className={`${styles.subTab} ${tab.channel === 'private' ? styles.subTabActive : ''}`}
+            onClick={() => setTab({ ...tab, channel: 'private' })}
+          >
+            Private
+          </button>
+          <button
+            className={`${styles.subTab} ${tab.channel === 'local' ? styles.subTabActive : ''}`}
+            onClick={() => setTab({ ...tab, channel: 'local' })}
+          >
+            Local
+          </button>
+        </div>
+      )}
 
       {/* Messages */}
       {loading ? (

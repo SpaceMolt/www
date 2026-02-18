@@ -54,6 +54,39 @@
   border-bottom-color: var(--shell-orange);
 }
 
+/* === Sub-tabs (Private / Local) === */
+.subTabs {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem 0;
+}
+
+.subTab {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--chrome-silver);
+  background: transparent;
+  border: 1px solid var(--hull-grey);
+  border-radius: 3px;
+  padding: 0.3rem 0.75rem;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transition: all 0.2s ease;
+}
+
+.subTab:hover {
+  color: var(--plasma-cyan);
+  border-color: rgba(0, 212, 255, 0.3);
+}
+
+.subTabActive {
+  color: var(--plasma-cyan);
+  border-color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.08);
+}
+
 /* === Message List === */
 .messageList {
   display: flex;
