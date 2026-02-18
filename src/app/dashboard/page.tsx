@@ -644,98 +644,99 @@ function DashboardContent() {
                     <div className={styles.errorBox}>{playerError}</div>
                   ) : playerInfo ? (
                     <div className={styles.playerSections}>
-                      {/* Overview */}
-                      <div className={styles.playerSection}>
-                        <h3 className={styles.playerSectionTitle}>
-                          <MapPin size={16} />
-                          Overview
-                        </h3>
-                        <div className={styles.overviewGrid}>
-                          <div className={styles.overviewItem}>
-                            <span className={styles.overviewLabel}>Status</span>
-                            <span className={styles.overviewValue}>
-                              {playerInfo.online ? (
-                                <><Wifi size={14} className={styles.onlineDot} /> Online</>
-                              ) : (
-                                <><WifiOff size={14} className={styles.offlineDot} /> Offline</>
-                              )}
-                            </span>
-                          </div>
-                          <div className={styles.overviewItem}>
-                            <span className={styles.overviewLabel}>Empire</span>
-                            <span className={styles.overviewValue}>{playerInfo.empire}</span>
-                          </div>
-                          <div className={styles.overviewItem}>
-                            <span className={styles.overviewLabel}>Credits</span>
-                            <span className={styles.overviewValue}>
-                              <Coins size={14} /> {formatNumber(playerInfo.credits)}
-                            </span>
-                          </div>
-                          <div className={styles.overviewItem}>
-                            <span className={styles.overviewLabel}>System</span>
-                            <span className={styles.overviewValue}>{playerInfo.current_system}</span>
-                          </div>
-                          <div className={styles.overviewItem}>
-                            <span className={styles.overviewLabel}>Location</span>
-                            <span className={styles.overviewValue}>{playerInfo.current_poi}</span>
-                          </div>
-                          {playerInfo.docked_at && (
-                            <div className={styles.overviewItem}>
-                              <span className={styles.overviewLabel}>Docked At</span>
-                              <span className={styles.overviewValue}>{playerInfo.docked_at}</span>
-                            </div>
-                          )}
-                          {playerInfo.home_base && (
-                            <div className={styles.overviewItem}>
-                              <span className={styles.overviewLabel}>Home Base</span>
-                              <span className={styles.overviewValue}>{playerInfo.home_base}</span>
-                            </div>
-                          )}
-                          {playerInfo.faction_id && (
-                            <div className={styles.overviewItem}>
-                              <span className={styles.overviewLabel}>Faction</span>
-                              <span className={styles.overviewValue}>
-                                {playerInfo.faction_id}
-                                {playerInfo.faction_rank && ` (${playerInfo.faction_rank})`}
-                              </span>
-                            </div>
-                          )}
-                          <div className={styles.overviewItem}>
-                            <span className={styles.overviewLabel}>Created</span>
-                            <span className={styles.overviewValue}>
-                              <Clock size={14} /> {formatDate(playerInfo.created_at)}
-                            </span>
-                          </div>
-                          <div className={styles.overviewItem}>
-                            <span className={styles.overviewLabel}>Last Active</span>
-                            <span className={styles.overviewValue}>{formatDate(playerInfo.last_active_at)}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Ship */}
-                      {playerInfo.ship && (
+                      {/* Overview + Ship row */}
+                      <div className={styles.overviewShipRow}>
                         <div className={styles.playerSection}>
                           <h3 className={styles.playerSectionTitle}>
-                            <Ship size={16} />
-                            Ship
+                            <MapPin size={16} />
+                            Overview
                           </h3>
-                          <div className={styles.shipPanel}>
-                            <div className={styles.shipHeader}>
-                              <div>
-                                <h4 className={styles.shipName}>{playerInfo.ship.name}</h4>
-                                <span className={styles.shipClass}>{playerInfo.ship.class_id}</span>
-                              </div>
+                          <div className={styles.overviewGrid}>
+                            <div className={styles.overviewItem}>
+                              <span className={styles.overviewLabel}>Status</span>
+                              <span className={styles.overviewValue}>
+                                {playerInfo.online ? (
+                                  <><Wifi size={14} className={styles.onlineDot} /> Online</>
+                                ) : (
+                                  <><WifiOff size={14} className={styles.offlineDot} /> Offline</>
+                                )}
+                              </span>
                             </div>
-                            <div className={styles.shipBars}>
-                              <StatBar label="Hull" current={playerInfo.ship.hull} max={playerInfo.ship.max_hull} color="var(--claw-red)" />
-                              <StatBar label="Shield" current={playerInfo.ship.shield} max={playerInfo.ship.max_shield} color="var(--plasma-cyan)" />
-                              <StatBar label="Fuel" current={playerInfo.ship.fuel} max={playerInfo.ship.max_fuel} color="var(--shell-orange)" />
-                              <StatBar label="Cargo" current={playerInfo.ship.cargo_used} max={playerInfo.ship.cargo_capacity} color="var(--bio-green)" />
+                            <div className={styles.overviewItem}>
+                              <span className={styles.overviewLabel}>Empire</span>
+                              <span className={styles.overviewValue}>{playerInfo.empire}</span>
+                            </div>
+                            <div className={styles.overviewItem}>
+                              <span className={styles.overviewLabel}>Credits</span>
+                              <span className={styles.overviewValue}>
+                                <Coins size={14} /> {formatNumber(playerInfo.credits)}
+                              </span>
+                            </div>
+                            <div className={styles.overviewItem}>
+                              <span className={styles.overviewLabel}>System</span>
+                              <span className={styles.overviewValue}>{playerInfo.current_system}</span>
+                            </div>
+                            <div className={styles.overviewItem}>
+                              <span className={styles.overviewLabel}>Location</span>
+                              <span className={styles.overviewValue}>{playerInfo.current_poi}</span>
+                            </div>
+                            {playerInfo.docked_at && (
+                              <div className={styles.overviewItem}>
+                                <span className={styles.overviewLabel}>Docked At</span>
+                                <span className={styles.overviewValue}>{playerInfo.docked_at}</span>
+                              </div>
+                            )}
+                            {playerInfo.home_base && (
+                              <div className={styles.overviewItem}>
+                                <span className={styles.overviewLabel}>Home Base</span>
+                                <span className={styles.overviewValue}>{playerInfo.home_base}</span>
+                              </div>
+                            )}
+                            {playerInfo.faction_id && (
+                              <div className={styles.overviewItem}>
+                                <span className={styles.overviewLabel}>Faction</span>
+                                <span className={styles.overviewValue}>
+                                  {playerInfo.faction_id}
+                                  {playerInfo.faction_rank && ` (${playerInfo.faction_rank})`}
+                                </span>
+                              </div>
+                            )}
+                            <div className={styles.overviewItem}>
+                              <span className={styles.overviewLabel}>Created</span>
+                              <span className={styles.overviewValue}>
+                                <Clock size={14} /> {formatDate(playerInfo.created_at)}
+                              </span>
+                            </div>
+                            <div className={styles.overviewItem}>
+                              <span className={styles.overviewLabel}>Last Active</span>
+                              <span className={styles.overviewValue}>{formatDate(playerInfo.last_active_at)}</span>
                             </div>
                           </div>
                         </div>
-                      )}
+
+                        {playerInfo.ship && (
+                          <div className={styles.playerSection}>
+                            <h3 className={styles.playerSectionTitle}>
+                              <Ship size={16} />
+                              Ship
+                            </h3>
+                            <div className={styles.shipPanel}>
+                              <div className={styles.shipHeader}>
+                                <div>
+                                  <h4 className={styles.shipName}>{playerInfo.ship.name}</h4>
+                                  <span className={styles.shipClass}>{playerInfo.ship.class_id}</span>
+                                </div>
+                              </div>
+                              <div className={styles.shipBars}>
+                                <StatBar label="Hull" current={playerInfo.ship.hull} max={playerInfo.ship.max_hull} color="var(--claw-red)" />
+                                <StatBar label="Shield" current={playerInfo.ship.shield} max={playerInfo.ship.max_shield} color="var(--plasma-cyan)" />
+                                <StatBar label="Fuel" current={playerInfo.ship.fuel} max={playerInfo.ship.max_fuel} color="var(--shell-orange)" />
+                                <StatBar label="Cargo" current={playerInfo.ship.cargo_used} max={playerInfo.ship.cargo_capacity} color="var(--bio-green)" />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
 
                       {/* Chat */}
                       {players.length > 0 && (

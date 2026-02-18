@@ -167,6 +167,16 @@
   gap: 1.5rem;
 }
 
+.overviewShipRow {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.overviewShipRow > .playerSection {
+  flex: 1;
+  min-width: 0;
+}
+
 .playerSection {
   width: 100%;
   background: linear-gradient(180deg, rgba(26, 39, 68, 0.35), rgba(13, 19, 33, 0.55));
@@ -1328,7 +1338,7 @@
 /* === Overview Grid === */
 .overviewGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   gap: 1px;
   background: var(--hull-grey);
   border: 1px solid var(--hull-grey);
@@ -1857,6 +1867,10 @@
 
   .detailPanel {
     padding: 1rem;
+  }
+
+  .overviewShipRow {
+    flex-direction: column;
   }
 
   .overviewGrid {

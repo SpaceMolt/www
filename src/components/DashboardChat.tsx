@@ -30,6 +30,9 @@ interface PlayerInfo {
   faction_id?: string
   faction_name?: string
   current_poi?: string
+  chat_private_count?: number
+  chat_local_count?: number
+  chat_faction_count?: number
 }
 
 interface DashboardChatProps {
@@ -47,6 +50,7 @@ interface DMContact {
   id: string
   name: string
   lastMessage: string
+  count: number
 }
 
 function formatChatTime(iso: string): string {
@@ -138,8 +142,11 @@ export function DashboardChat({ players, selectedPlayer, authHeaders }: Dashboar
           const otherId = isOutgoing ? (msg.target_id || '') : msg.sender_id
           const otherName = isOutgoing ? (msg.target_name || msg.target_id || '') : msg.sender
           if (!otherId) continue
-          if (!contactMap.has(otherId)) {
-            contactMap.set(otherId, { id: otherId, name: otherName, lastMessage: msg.content })
+          const existing = contactMap.get(otherId)
+          if (existing) {
+            existing.count++
+          } else {
+            contactMap.set(otherId, { id: otherId, name: otherName, lastMessage: msg.content, count: 1 })
           }
         }
         setDmContacts(Array.from(contactMap.values()))
@@ -152,15 +159,18 @@ export function DashboardChat({ players, selectedPlayer, authHeaders }: Dashboar
     }
   }, [selectedPlayer, authHeaders, dmLoaded])
 
+  // Auto-load DMs on mount
+  useEffect(() => {
+    if (selectedPlayer && !dmLoaded) fetchAllDms()
+  }, [selectedPlayer, dmLoaded, fetchAllDms])
+
   // Fetch data when selection changes
   useEffect(() => {
     if (!selectedPlayer) return
     if (selection.type === 'channel') {
       fetchChannelMessages(selection.channel)
-    } else {
-      fetchAllDms()
     }
-  }, [selection, selectedPlayer, fetchChannelMessages, fetchAllDms])
+  }, [selection, selectedPlayer, fetchChannelMessages])
 
   // Derive displayed messages
   const displayMessages = selection.type === 'dm'
@@ -198,16 +208,26 @@ export function DashboardChat({ players, selectedPlayer, authHeaders }: Dashboar
               className={`${styles.dmContact} ${styles.dmContactChannel} ${selection.type === 'channel' && selection.channel === 'faction' ? styles.dmContactActive : ''}`}
               onClick={() => setSelection({ type: 'channel', channel: 'faction' })}
             >
-              <span className={styles.dmContactChannelName}>
-                {activePlayer?.faction_name || 'Faction'}
-              </span>
+              <div className={styles.dmContactChannelRow}>
+                <span className={styles.dmContactChannelName}>
+                  {activePlayer?.faction_name || 'Faction'}
+                </span>
+                {(activePlayer?.chat_faction_count ?? 0) > 0 && (
+                  <span className={styles.dmContactCount}>{activePlayer?.chat_faction_count}</span>
+                )}
+              </div>
             </button>
           )}
           <button
             className={`${styles.dmContact} ${styles.dmContactChannel} ${selection.type === 'channel' && selection.channel === 'local' ? styles.dmContactActive : ''}`}
             onClick={() => setSelection({ type: 'channel', channel: 'local' })}
           >
-            <span className={styles.dmContactChannelName}>Local</span>
+            <div className={styles.dmContactChannelRow}>
+              <span className={styles.dmContactChannelName}>Local</span>
+              {(activePlayer?.chat_local_count ?? 0) > 0 && (
+                <span className={styles.dmContactCount}>{activePlayer?.chat_local_count}</span>
+              )}
+            </div>
           </button>
 
           {/* DM separator */}
@@ -222,20 +242,14 @@ export function DashboardChat({ players, selectedPlayer, authHeaders }: Dashboar
               className={`${styles.dmContact} ${selection.type === 'dm' && selection.contactId === c.id ? styles.dmContactActive : ''}`}
               onClick={() => setSelection({ type: 'dm', contactId: c.id })}
             >
-              <span className={styles.dmContactName}>{c.name}</span>
+              <div className={styles.dmContactChannelRow}>
+                <span className={styles.dmContactName}>{c.name}</span>
+                <span className={styles.dmContactCount}>{c.count}</span>
+              </div>
               <span className={styles.dmContactPreview}>{c.lastMessage}</span>
             </button>
           ))}
 
-          {/* Load DM contacts if not yet loaded */}
-          {!dmLoaded && (
-            <button
-              className={`${styles.dmContact} ${styles.dmContactChannel}`}
-              onClick={fetchAllDms}
-            >
-              <span className={styles.dmContactChannelName}>Load DMs...</span>
-            </button>
-          )}
         </div>
 
         {/* Messages pane */}
@@ -277,10 +291,6 @@ export function DashboardChat({ players, selectedPlayer, authHeaders }: Dashboar
         </div>
       </div>
 
-      {/* Footer */}
-      <div className={styles.chatFooter}>
-        Read-only view. Use in-game chat to send messages.
-      </div>
     </div>
   )
 }

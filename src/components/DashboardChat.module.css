@@ -207,11 +207,21 @@
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
   font-size: 0.7rem;
   font-weight: 600;
-  color: var(--shell-orange);
+  color: var(--plasma-cyan);
 }
 
-.dmContactChannel.dmContactActive .dmContactChannelName {
-  color: var(--shell-orange);
+.dmContactChannelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.dmContactCount {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--chrome-silver);
+  opacity: 0.5;
 }
 
 .dmSeparator {
