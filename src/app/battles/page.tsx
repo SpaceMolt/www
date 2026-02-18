@@ -36,14 +36,6 @@ interface BattlesResponse {
   has_more: boolean
 }
 
-const EMPIRE_COLORS: Record<string, string> = {
-  solarian: '#ffd700',
-  voidborn: '#9b59b6',
-  crimson: '#e63946',
-  nebula: '#00d4ff',
-  outerrim: '#2dd4bf',
-}
-
 const SIDE_COLORS = ['#00d4ff', '#e63946', '#2dd4bf', '#ffd93d', '#9b59b6', '#ff6b35']
 
 function formatDuration(ticks: number): string {
@@ -123,7 +115,6 @@ export default function BattlesPage() {
   }, [fetchBattles])
 
   const activeBattles = battles.filter(b => b.status === 'active')
-  const completedBattles = battles.filter(b => b.status === 'completed')
 
   return (
     <main className={styles.main}>
