@@ -3,9 +3,10 @@
 import Link from 'next/link'
 import { useUser, useAuth, useClerk, SignOutButton } from '@clerk/nextjs'
 import { Suspense, useEffect, useState, useCallback, useRef } from 'react'
-import { Settings, BookOpen, Rocket, Users, Ship, Wifi, WifiOff, Clock, Coins, BarChart3, Wrench, ChevronDown, Search, ScrollText, MapPin, UserCog, KeyRound, Eye, EyeOff, Copy, Check, RefreshCw } from 'lucide-react'
+import { Settings, BookOpen, Rocket, Users, Ship, Wifi, WifiOff, Clock, Coins, BarChart3, Wrench, ChevronDown, Search, ScrollText, MapPin, UserCog, KeyRound, Eye, EyeOff, Copy, Check, RefreshCw, MessageSquare } from 'lucide-react'
 import { useQueryState } from 'nuqs'
 import { SetupTabs } from '@/components/SetupTabs'
+import { DashboardChat } from '@/components/DashboardChat'
 import styles from './page.module.css'
 
 const GAME_SERVER = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
@@ -60,6 +61,7 @@ interface PlayerInfo {
   home_base?: string
   online: boolean
   faction_id?: string
+  faction_name?: string
   faction_rank?: string
   created_at: string
   last_login_at: string
@@ -161,6 +163,10 @@ function DashboardContent() {
   const [resettingPassword, setResettingPassword] = useState(false)
   const [passwordCopied, setPasswordCopied] = useState(false)
 
+  // Chat tab state
+  const [allPlayerInfo, setAllPlayerInfo] = useState<PlayerInfo[]>([])
+  const [chatPlayersLoading, setChatPlayersLoading] = useState(false)
+
   // Player selector state
   const [selectorOpen, setSelectorOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -228,10 +234,39 @@ function DashboardContent() {
     }
   }, [getToken])
 
+  const fetchAllPlayerInfo = useCallback(async () => {
+    if (players.length === 0) return
+    setChatPlayersLoading(true)
+    try {
+      const token = await getToken()
+      const results = await Promise.all(
+        players.map(async (p) => {
+          try {
+            const res = await fetch(`${GAME_SERVER}/api/player/${p.id}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            })
+            if (res.ok) return await res.json() as PlayerInfo
+          } catch { /* ignore */ }
+          return null
+        })
+      )
+      setAllPlayerInfo(results.filter((r): r is PlayerInfo => r !== null))
+    } finally {
+      setChatPlayersLoading(false)
+    }
+  }, [getToken, players])
+
   useEffect(() => {
     if (!userLoaded || !authLoaded || !user) return
     fetchRegistrationCode()
   }, [userLoaded, authLoaded, user, fetchRegistrationCode])
+
+  // Fetch all player info when switching to chat tab
+  useEffect(() => {
+    if (activeTab === 'chat' && authLoaded && players.length > 0 && allPlayerInfo.length === 0) {
+      fetchAllPlayerInfo()
+    }
+  }, [activeTab, authLoaded, players.length, allPlayerInfo.length, fetchAllPlayerInfo])
 
   // Fetch player info + log when selected player changes
   useEffect(() => {
@@ -411,6 +446,13 @@ function DashboardContent() {
           <Users size={16} />
           Players
           {players.length > 0 && <span className={styles.playerCount}>{players.length}</span>}
+        </button>
+        <button
+          className={`${styles.mainTab} ${activeTab === 'chat' ? styles.mainTabActive : ''}`}
+          onClick={() => { setActiveTab('chat'); if (!selectedPlayer && players.length > 0) setSelectedPlayer(players[0].id) }}
+        >
+          <MessageSquare size={16} />
+          Chat
         </button>
       </div>
 
@@ -820,6 +862,82 @@ function DashboardContent() {
                   ) : null}
                 </>
               )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Chat Tab */}
+      {activeTab === 'chat' && (
+        <div className={styles.playersContainer}>
+          {players.length === 0 ? (
+            <div className={styles.emptyPlayers}>
+              <MessageSquare size={48} />
+              <h3>No Players Linked</h3>
+              <p>Complete setup to register your first player, then their chat will appear here.</p>
+              <button className={styles.switchTabBtn} onClick={() => setActiveTab('setup')}>
+                <Rocket size={14} />
+                Go to Setup
+              </button>
+            </div>
+          ) : chatPlayersLoading ? (
+            <div className={styles.loadingState}>
+              <div className={styles.spinner} />
+              <span>Loading player data...</span>
+            </div>
+          ) : (
+            <>
+              {/* Player Selector for private/local channel context */}
+              <div className={styles.playerSelector} ref={selectorRef}>
+                <button
+                  className={styles.playerSelectorTrigger}
+                  onClick={() => setSelectorOpen(!selectorOpen)}
+                >
+                  <Users size={16} />
+                  <span className={styles.playerSelectorLabel}>
+                    {selectedPlayerName || 'Select a player'}
+                  </span>
+                  <span className={styles.playerSelectorHint}>
+                    {players.length} player{players.length !== 1 ? 's' : ''} linked
+                  </span>
+                  <ChevronDown size={16} className={`${styles.playerSelectorChevron} ${selectorOpen ? styles.playerSelectorChevronOpen : ''}`} />
+                </button>
+                {selectorOpen && (
+                  <div className={styles.playerSelectorDropdown}>
+                    {players.length > 3 && (
+                      <div className={styles.playerSelectorSearchWrap}>
+                        <Search size={14} />
+                        <input
+                          className={styles.playerSelectorSearch}
+                          placeholder="Search players..."
+                          value={searchQuery}
+                          onChange={e => setSearchQuery(e.target.value)}
+                          autoFocus
+                        />
+                      </div>
+                    )}
+                    {filteredPlayers.map(p => (
+                      <button
+                        key={p.id}
+                        className={`${styles.playerSelectorOption} ${p.id === selectedPlayer ? styles.playerSelectorOptionActive : ''}`}
+                        onClick={() => handleSelectPlayer(p.id)}
+                      >
+                        <span className={styles.playerDot} />
+                        {p.username}
+                      </button>
+                    ))}
+                    {filteredPlayers.length === 0 && (
+                      <div className={styles.playerSelectorEmpty}>No matches</div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <DashboardChat
+                players={allPlayerInfo}
+                selectedPlayer={selectedPlayer}
+                getToken={getToken}
+              />
             </>
           )}
         </div>
