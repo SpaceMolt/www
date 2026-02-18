@@ -737,6 +737,21 @@ function DashboardContent() {
                         </div>
                       )}
 
+                      {/* Chat */}
+                      {players.length > 0 && (
+                        <div className={styles.playerSection}>
+                          <h3 className={styles.playerSectionTitle}>
+                            <MessageSquare size={16} />
+                            Chat
+                          </h3>
+                          <DashboardChat
+                            players={allPlayerInfo}
+                            selectedPlayer={selectedPlayer}
+                            authHeaders={authHeaders}
+                          />
+                        </div>
+                      )}
+
                       {/* Skills */}
                       {playerInfo.skills && Object.keys(playerInfo.skills).length > 0 && (
                         <div className={styles.playerSection}>
@@ -879,19 +894,13 @@ function DashboardContent() {
                 </>
               )}
 
-              {/* Chat Section */}
+              {/* Chat Section (outside playerSections, renders even without playerInfo) */}
               {players.length > 0 && (
-                <div className={styles.playerSection}>
-                  <h3 className={styles.playerSectionTitle}>
-                    <MessageSquare size={16} />
-                    Chat
-                  </h3>
-                  <DashboardChat
-                    players={allPlayerInfo}
-                    selectedPlayer={selectedPlayer}
-                    authHeaders={authHeaders}
-                  />
-                </div>
+                <DashboardChat
+                  players={allPlayerInfo}
+                  selectedPlayer={selectedPlayer}
+                  authHeaders={authHeaders}
+                />
               )}
             </>
           )}
