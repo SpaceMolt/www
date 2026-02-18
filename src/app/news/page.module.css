@@ -1,0 +1,225 @@
+/* === Grid Background === */
+.gridBg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  background:
+    linear-gradient(rgba(0, 212, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 212, 255, 0.02) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+/* === Hero === */
+.hero {
+  padding: 10rem 2rem 4rem;
+  text-align: center;
+  position: relative;
+}
+
+.heroLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--plasma-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  margin-bottom: 1rem;
+  opacity: 0.7;
+}
+
+.heroTitle {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: clamp(2.5rem, 6vw, 4rem);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: linear-gradient(135deg, var(--star-white) 0%, var(--plasma-cyan) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 1rem;
+}
+
+.heroSubtitle {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 1.1rem;
+  color: var(--chrome-silver);
+  max-width: 560px;
+  margin: 0 auto;
+  line-height: 1.7;
+}
+
+.rssLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--chrome-silver);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid rgba(168, 197, 214, 0.35);
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.rssLink:hover {
+  color: var(--shell-orange);
+  border-color: var(--shell-orange);
+}
+
+/* === Posts Section === */
+.postsSection {
+  padding: 0 2rem 8rem;
+}
+
+.postsContainer {
+  max-width: 860px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+/* === Post Card === */
+.postCard {
+  display: flex;
+  align-items: stretch;
+  text-decoration: none;
+  color: inherit;
+  background: rgba(13, 19, 33, 0.6);
+  border: 1px solid rgba(61, 90, 108, 0.2);
+  border-radius: 6px;
+  overflow: hidden;
+  transition: all 0.25s ease;
+  position: relative;
+}
+
+.postCard::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--hull-grey);
+  transition: background 0.25s ease, box-shadow 0.25s ease;
+}
+
+.postCard:hover {
+  background: rgba(13, 19, 33, 0.9);
+  border-color: rgba(0, 212, 255, 0.2);
+  transform: translateX(4px);
+}
+
+.postCard:hover::before {
+  background: var(--plasma-cyan);
+  box-shadow: 0 0 12px rgba(0, 212, 255, 0.4);
+}
+
+.postIndex {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  flex-shrink: 0;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--hull-grey);
+  letter-spacing: 0.1em;
+  border-right: 1px solid rgba(61, 90, 108, 0.15);
+}
+
+.postCard:hover .postIndex {
+  color: var(--plasma-cyan);
+}
+
+.postContent {
+  flex: 1;
+  padding: 1.5rem 1.75rem;
+  min-width: 0;
+}
+
+.postTitle {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--star-white);
+  margin-bottom: 0.6rem;
+  letter-spacing: 0.02em;
+}
+
+.postCard:hover .postTitle {
+  color: var(--plasma-cyan);
+}
+
+.postExcerpt {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 0.9rem;
+  color: var(--chrome-silver);
+  line-height: 1.6;
+  margin-bottom: 1rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.postMeta {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.postMetaItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--hull-grey);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.postArrow {
+  display: flex;
+  align-items: center;
+  padding: 0 1.25rem;
+  color: var(--hull-grey);
+  transition: color 0.25s ease, transform 0.25s ease;
+}
+
+.postCard:hover .postArrow {
+  color: var(--plasma-cyan);
+  transform: translateX(4px);
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+  .hero {
+    padding: 8rem 1.5rem 3rem;
+  }
+
+  .postIndex {
+    display: none;
+  }
+
+  .postContent {
+    padding: 1.25rem;
+  }
+
+  .postTitle {
+    font-size: 1rem;
+  }
+
+  .postArrow {
+    padding: 0 0.75rem;
+  }
+}

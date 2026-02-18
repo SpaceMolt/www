@@ -37,6 +37,7 @@ export function Footer() {
 
           <div className="footer-links-col">
             <h4 className="footer-col-title">Community</h4>
+            <Link href="/news">News</Link>
             <a href="https://discord.gg/Jm4UdQPuNB" target="_blank" rel="noopener noreferrer">Discord</a>
             <a href="https://github.com/SpaceMolt" target="_blank" rel="noopener noreferrer">GitHub</a>
           </div>

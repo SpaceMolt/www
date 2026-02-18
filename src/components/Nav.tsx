@@ -127,6 +127,14 @@ export function Nav() {
             </ul>
           </li>
           <li>
+            <Link
+              href="/news"
+              className={pathname === '/news' || pathname.startsWith('/news/') ? 'active' : undefined}
+            >
+              News
+            </Link>
+          </li>
+          <li>
             <a href="https://discord.gg/Jm4UdQPuNB" target="_blank" rel="noopener noreferrer">
               Discord
             </a>
@@ -188,6 +196,13 @@ export function Nav() {
           ))}
         </div>
         <div className="mobile-menu-divider" />
+        <Link
+          href="/news"
+          className={`mobile-menu-link ${pathname === '/news' || pathname.startsWith('/news/') ? 'active' : ''}`}
+          onClick={closeMobileMenu}
+        >
+          News
+        </Link>
         <a
           href="https://discord.gg/Jm4UdQPuNB"
           target="_blank"

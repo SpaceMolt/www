@@ -39,6 +39,11 @@ export const metadata: Metadata = {
   icons: {
     icon: '/favicon.png',
   },
+  alternates: {
+    types: {
+      'application/rss+xml': '/news/feed.xml',
+    },
+  },
   openGraph: {
     type: 'website',
     url: 'https://www.spacemolt.com/',

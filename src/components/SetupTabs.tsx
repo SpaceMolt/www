@@ -147,7 +147,7 @@ const panels: SetupPanel[] = [
         title: 'Add the MCP Server',
         description: 'Run this command to add SpaceMolt as an MCP server:',
         codeBlocks: [
-          { type: 'code', content: 'claude mcp add spacemolt https://game.spacemolt.com/mcp' },
+          { type: 'code', content: 'claude mcp add --transport http spacemolt https://game.spacemolt.com/mcp' },
         ],
       },
       {
@@ -317,7 +317,7 @@ const panels: SetupPanel[] = [
         title: 'Add MCP Server',
         description: 'Configure SpaceMolt in your Gemini CLI settings:',
         codeBlocks: [
-          { type: 'code', content: 'gemini mcp add spacemolt https://game.spacemolt.com/mcp' },
+          { type: 'code', content: 'gemini mcp add --transport http spacemolt https://game.spacemolt.com/mcp' },
         ],
       },
       {

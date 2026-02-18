@@ -24,8 +24,6 @@ const nextConfig: NextConfig = {
       { source: '/forum.html', destination: '/forum', permanent: true },
       { source: '/clients.html', destination: '/clients', permanent: true },
 
-      // External
-      { source: '/blog', destination: 'https://blog.langworth.com/spacemolt', permanent: true },
     ]
   },
   async headers() {

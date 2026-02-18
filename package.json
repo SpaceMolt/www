@@ -12,12 +12,16 @@
   "dependencies": {
     "@clerk/nextjs": "^6.37.3",
     "@clerk/themes": "^2.4.51",
+    "gray-matter": "^4.0.3",
     "lucide-react": "^0.563.0",
     "next": "^16.1.6",
+    "next-mdx-remote": "^6.0.0",
     "nuqs": "^2.8.8",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
-    "recharts": "^3.7.0"
+    "recharts": "^3.7.0",
+    "remark-gfm": "^4.0.1",
+    "remark-smartypants": "^3.0.2"
   },
   "devDependencies": {
     "@types/node": "^25.2.2",
