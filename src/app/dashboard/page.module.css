@@ -909,7 +909,7 @@
 .copyable {
   position: relative;
   cursor: pointer;
-  padding-right: 2.5rem !important;
+  padding-right: 3.5rem !important;
 }
 
 .copyable::after {

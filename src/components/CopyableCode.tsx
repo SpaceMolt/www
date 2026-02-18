@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, type ReactNode } from 'react'
-import styles from '@/app/page.module.css'
+import styles from '@/app/dashboard/page.module.css'
 
 interface CopyableCodeProps {
   text: string
