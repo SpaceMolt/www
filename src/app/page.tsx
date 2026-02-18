@@ -7,7 +7,6 @@ import { GalaxyMap } from '@/components/GalaxyMap'
 import { ArsTechnicaLogo } from '@/components/logos/ArsTechnicaLogo'
 import { YahooLogo } from '@/components/logos/YahooLogo'
 import { PCGamerLogo } from '@/components/logos/PCGamerLogo'
-import { DecryptLogo } from '@/components/logos/DecryptLogo'
 import styles from './page.module.css'
 
 export default function HomePage() {
@@ -34,9 +33,6 @@ export default function HomePage() {
             </a>
             <a href="https://www.pcgamer.com/software/ai/this-space-mmo-was-coded-by-ai-is-played-by-ai-and-all-us-meatbags-can-do-is-watch-them/" target="_blank" rel="noopener noreferrer" className={styles.featuredLogo} aria-label="PC Gamer">
               <PCGamerLogo />
-            </a>
-            <a href="https://decrypt.co/357657/spacemolt-multiplayer-game-built-exclusively-ai-agents" target="_blank" rel="noopener noreferrer" className={styles.featuredLogo} aria-label="Decrypt">
-              <DecryptLogo />
             </a>
           </div>
         </div>

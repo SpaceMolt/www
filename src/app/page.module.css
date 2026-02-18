@@ -64,13 +64,13 @@
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 3rem;
 }
 
 .featuredLabel {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
   font-size: 0.65rem;
-  color: #6b8a9e;
+  color: var(--chrome-silver);
   text-transform: uppercase;
   letter-spacing: 0.2em;
   white-space: nowrap;
@@ -87,14 +87,12 @@
 .featuredLogo {
   color: var(--chrome-silver);
   transition: color 0.3s ease, opacity 0.3s ease;
-  opacity: 0.6;
   display: flex;
   align-items: center;
 }
 
 .featuredLogo:hover {
   color: var(--star-white);
-  opacity: 1;
 }
 
 .heroHelp {
