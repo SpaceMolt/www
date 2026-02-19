@@ -20,6 +20,8 @@ interface SystemData {
   is_home?: boolean
   is_stronghold?: boolean
   has_station?: boolean
+  has_battle?: boolean
+  battle_id?: string
   online: number
   connections: string[]
 }
@@ -154,6 +156,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
   const tooltipNameRef = useRef<HTMLDivElement>(null)
   const tooltipEmpireRef = useRef<HTMLDivElement>(null)
   const tooltipOnlineRef = useRef<HTMLDivElement>(null)
+  const tooltipBattleRef = useRef<HTMLDivElement>(null)
   const loadingRef = useRef<HTMLDivElement>(null)
   const toastRef = useRef<HTMLDivElement>(null)
   const [toastData, setToastData] = useState<{ icon: ReactNode; text: string; time: string } | null>(null)
@@ -732,6 +735,46 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
           ctx.stroke()
         }
 
+        // Active battle indicator
+        if (system.has_battle) {
+          const battlePhase =
+            ((s.animationTime * 0.003 + system.y * 0.001) %
+              (Math.PI * 2))
+          const battleAlpha = 0.35 + Math.sin(battlePhase) * 0.2
+          const battleRadius = NODE_RADIUS * 3.5 + Math.sin(battlePhase) * NODE_RADIUS * 0.5
+
+          // Pulsing orange/red glow
+          const gradient = ctx.createRadialGradient(
+            pos.x,
+            pos.y,
+            NODE_RADIUS,
+            pos.x,
+            pos.y,
+            battleRadius,
+          )
+          gradient.addColorStop(
+            0,
+            `rgba(230, 57, 70, ${battleAlpha})`,
+          )
+          gradient.addColorStop(0.6, `rgba(255, 165, 0, ${battleAlpha * 0.4})`)
+          gradient.addColorStop(1, 'rgba(255, 165, 0, 0)')
+          ctx.fillStyle = gradient
+          ctx.beginPath()
+          ctx.arc(pos.x, pos.y, battleRadius, 0, Math.PI * 2)
+          ctx.fill()
+
+          // Rotating ring
+          const ringAlpha = 0.5 + Math.sin(battlePhase * 2) * 0.2
+          ctx.strokeStyle = `rgba(230, 57, 70, ${ringAlpha})`
+          ctx.lineWidth = 1.5
+          ctx.beginPath()
+          ctx.arc(pos.x, pos.y, NODE_RADIUS * 2.8, battlePhase, battlePhase + Math.PI * 1.2)
+          ctx.stroke()
+          ctx.beginPath()
+          ctx.arc(pos.x, pos.y, NODE_RADIUS * 2.8, battlePhase + Math.PI, battlePhase + Math.PI * 2.2)
+          ctx.stroke()
+        }
+
         // Node
         const nodeRadius = isHomeSystem ? NODE_RADIUS * 1.6 : NODE_RADIUS
         const hoverScale = isHovered ? 1.5 : 1.0
@@ -907,6 +950,15 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
         } else {
           tooltipOnlineRef.current.textContent = 'No players online'
           tooltipOnlineRef.current.className = styles.tooltipOnline
+        }
+      }
+
+      if (tooltipBattleRef.current) {
+        if (system.has_battle) {
+          tooltipBattleRef.current.textContent = 'Battle in progress'
+          tooltipBattleRef.current.style.display = 'block'
+        } else {
+          tooltipBattleRef.current.style.display = 'none'
         }
       }
 
@@ -1283,6 +1335,16 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
             stationTag.href = `/stations/${stationPOI.base_id}`
             stationTag.onclick = (e) => e.stopPropagation()
             poiPanelTagsRef.current.appendChild(stationTag)
+          }
+
+          // Battle link tag
+          if (system.has_battle && system.battle_id) {
+            const battleTag = document.createElement('a')
+            battleTag.className = `${styles.poiPanelTag} ${styles.poiPanelTagBattle}`
+            battleTag.textContent = 'View Battle \u2192'
+            battleTag.href = `/battles/${system.battle_id}`
+            battleTag.onclick = (e) => e.stopPropagation()
+            poiPanelTagsRef.current.appendChild(battleTag)
           }
 
           if (poiPanelTagsRef.current.childNodes.length > 0) {
@@ -1963,6 +2025,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
         <div ref={tooltipNameRef} className={styles.tooltipName} />
         <div ref={tooltipEmpireRef} className={styles.tooltipEmpire} />
         <div ref={tooltipOnlineRef} className={styles.tooltipOnline} />
+        <div ref={tooltipBattleRef} className={styles.tooltipBattle} />
       </div>
 
       {/* Legend */}

@@ -9,6 +9,7 @@ import { SignedIn, SignedOut, SignUpButton } from '@clerk/nextjs'
 const exploreLinks = [
   { href: '/features', label: 'Features' },
   { href: '/map', label: 'Galaxy Map' },
+  { href: '/battles', label: 'Battles' },
   { href: '/market', label: 'Market' },
   { href: '/ticker', label: 'Ticker' },
   { href: '/stations', label: 'Stations' },
