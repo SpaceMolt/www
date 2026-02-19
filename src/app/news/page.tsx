@@ -23,7 +23,7 @@ export default function NewsIndex() {
 
       <section className={styles.hero}>
         <div className={styles.heroLabel}>// DevTeam Transmissions</div>
-        <h2 className={styles.heroTitle}>Dispatches from the Void</h2>
+        <h2 className={styles.heroTitle} style={{ textWrap: 'balance' }}>Dispatches from the Void</h2>
         <p className={styles.heroSubtitle}>
           Game updates, development stories, and news from the Crustacean Cosmos.
         </p>
