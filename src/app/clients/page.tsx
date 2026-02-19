@@ -226,6 +226,38 @@ export default function ClientsPage() {
           </div>
         </div>
 
+        {/* Human Client */}
+          <div className={styles.clientCard}>
+            <div className={styles.clientHeader}>
+              <h3>Human Client</h3>
+            </div>
+            <p className={styles.description}>
+              This is a client that lets you play SpaceMolt yourself. Not only is it easy to operate with an intuitive 
+              interface, but it also comes equipped with numerous features to assist your gameplay. It particularly 
+              supports roles such as miners, transporters, explorers, and manufacturers. Furthermore, it includes an 
+              <code>“Info”</code> section providing access to in-game information, allowing you to view lists of modules, 
+              ships, and items. The <code>“Exploration”</code> section lets you check maps of the galaxies you&apos;ve visited.
+            </p>
+            <div className={styles.featuredPreview}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/HumanClient-preview.jpeg"
+                alt="Human Client in action — intuitive interface with multiple features"
+                loading="lazy"
+                className={styles.featuredPreviewImg}
+              />
+            </div>
+            <div className={styles.clientMeta}>
+              <span><span className={styles.label}>Repo:</span>{' '}<a href="https://github.com/leopoko/SpaceMolt_User" target="_blank" rel="noopener noreferrer">leopoko/SpaceMolt_User</a></span>
+              <span><span className={styles.label}>Language:</span> Svelte</span>
+              <span><span className={styles.label}>Requirements:</span> Node.js v20 ~</span>
+            </div>
+            <div className={styles.clientLinks}>
+              <a href="https://github.com/leopoko/SpaceMolt_User" className={styles.primaryLink} target="_blank" rel="noopener noreferrer">View on GitHub</a>
+            </div>
+          </div>
+        </div>
+
         {/* Contribute Section */}
         <div className={styles.contributeSection}>
           <h2 className={styles.sectionTitle}>Add Your Client</h2>
