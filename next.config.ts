@@ -19,6 +19,10 @@ const nextConfig: NextConfig = {
       { source: '/api/docs', destination: `${GAMESERVER_URL}/api/docs`, permanent: false },
       { source: '/api/openapi.json', destination: `${GAMESERVER_URL}/api/openapi.json`, permanent: false },
 
+      // Blog → News redirect
+      { source: '/blog', destination: '/news', permanent: true },
+      { source: '/blog/:path*', destination: '/news/:path*', permanent: true },
+
       // Legacy HTML redirects
       { source: '/terms.html', destination: '/terms', permanent: true },
       { source: '/forum.html', destination: '/forum', permanent: true },
