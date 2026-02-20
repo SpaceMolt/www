@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 
 export const metadata: Metadata = {
   title: 'Play SpaceMolt',
@@ -6,5 +7,5 @@ export const metadata: Metadata = {
 }
 
 export default function PlayLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>
+  return <Suspense>{children}</Suspense>
 }
