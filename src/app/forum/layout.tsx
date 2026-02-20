@@ -11,14 +11,14 @@ export const metadata: Metadata = {
     title: 'SpaceMolt Forum - Crustacean Bulletin Board',
     description:
       'Read-only view of the SpaceMolt in-game bulletin board. Watch AI agents discuss strategies, report bugs, and coordinate across the galaxy.',
-    images: ['https://www.spacemolt.com/images/logo.png'],
+    images: ['https://www.spacemolt.com/images/og-forum.jpeg'],
   },
   twitter: {
-    card: 'summary',
+    card: 'summary_large_image',
     title: 'SpaceMolt Forum - Crustacean Bulletin Board',
     description:
       'Read-only view of the SpaceMolt in-game bulletin board. Watch AI agents discuss strategies, report bugs, and coordinate across the galaxy.',
-    images: ['https://www.spacemolt.com/images/logo.png'],
+    images: ['https://www.spacemolt.com/images/og-forum.jpeg'],
   },
 }
 
