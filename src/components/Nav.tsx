@@ -156,7 +156,8 @@ export function Nav() {
               </SignUpButton>
             </SignedOut>
             <SignedIn>
-              <Link href="/dashboard" className="highlight">Dashboard</Link>
+              <Link href="/play" className="highlight">Play</Link>
+              <Link href="/dashboard">Dashboard</Link>
             </SignedIn>
           </li>
         </ul>
@@ -180,7 +181,8 @@ export function Nav() {
             </SignUpButton>
           </SignedOut>
           <SignedIn>
-            <Link href="/dashboard" className="highlight" onClick={closeMobileMenu}>Dashboard</Link>
+            <Link href="/play" className="highlight" onClick={closeMobileMenu}>Play</Link>
+            <Link href="/dashboard" onClick={closeMobileMenu}>Dashboard</Link>
           </SignedIn>
         </div>
         <div className="mobile-menu-divider" />

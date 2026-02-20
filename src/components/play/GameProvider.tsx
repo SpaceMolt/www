@@ -46,12 +46,6 @@ export function GameProvider({ children }: GameProviderProps) {
         break
       case 'registered':
         d({ type: 'REGISTERED', payload: p as { password: string; player_id: string } })
-        // Dispatch CustomEvent so AuthScreen can capture the password
-        if (typeof document !== 'undefined') {
-          document.dispatchEvent(new CustomEvent('spacemolt:registered', {
-            detail: { password: (p as { password?: string }).password },
-          }))
-        }
         break
       case 'logged_in':
         d({ type: 'LOGGED_IN', payload: p })

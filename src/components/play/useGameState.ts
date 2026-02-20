@@ -27,7 +27,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return { ...state, connected: action.connected }
 
     case 'WELCOME':
-      return { ...state, welcome: action.payload }
+      // A welcome means a fresh WS connection — clear stale auth so we re-authenticate
+      return { ...state, welcome: action.payload, authenticated: false }
 
     case 'REGISTERED':
       return addEvent({ ...state, authenticated: true }, 'system', 'Registration successful! Credentials saved.')
