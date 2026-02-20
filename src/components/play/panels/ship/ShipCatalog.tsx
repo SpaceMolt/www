@@ -9,45 +9,42 @@ import {
   Shield,
   Gauge,
   Package,
-  Cpu,
-  Zap,
-  Crosshair,
-  CircuitBoard,
   ShoppingCart,
   Lock,
+  Info,
 } from 'lucide-react'
 import { useGame } from '../../GameProvider'
-import type { ShipClassInfo } from '../../types'
+import type { ShowroomShip } from '../../types'
 import styles from './ShipCatalog.module.css'
 
 export function ShipCatalog() {
   const { state, sendCommand } = useGame()
   const isDocked = state.isDocked
   const credits = state.player?.credits ?? 0
-  const catalog = state.shipCatalog
+  const showroom = state.showroomData
 
-  // Auto-fetch when docked and catalog is null
+  // Auto-fetch when docked and showroom is null
   useEffect(() => {
-    if (isDocked && !catalog) {
-      sendCommand('get_ships')
+    if (isDocked && !showroom) {
+      sendCommand('shipyard_showroom')
     }
-  }, [isDocked, catalog, sendCommand])
+  }, [isDocked, showroom, sendCommand])
 
   const handleRefresh = useCallback(() => {
-    sendCommand('get_ships')
+    sendCommand('shipyard_showroom')
   }, [sendCommand])
 
   const handleBuy = useCallback(
-    (shipClassId: string) => {
-      sendCommand('buy_ship', { ship_class: shipClassId })
+    (shipId: string) => {
+      sendCommand('buy_ship', { ship_id: shipId })
     },
     [sendCommand]
   )
 
   const sortedShips = useMemo(() => {
-    if (!catalog?.ships) return []
-    return [...catalog.ships].sort((a, b) => a.price - b.price)
-  }, [catalog])
+    if (!showroom?.ships) return []
+    return [...showroom.ships].sort((a, b) => a.showroom_price - b.showroom_price)
+  }, [showroom])
 
   if (!isDocked) {
     return (
@@ -79,12 +76,15 @@ export function ShipCatalog() {
             <Layers size={16} />
           </span>
           Shipyard
+          {showroom && (
+            <span className={styles.shipyardLevel}>Lv{showroom.shipyard_level}</span>
+          )}
         </div>
         <div className={styles.headerActions}>
           <button
             className={styles.refreshBtn}
             onClick={handleRefresh}
-            title="Refresh ship catalog"
+            title="Refresh showroom"
             type="button"
           >
             <RefreshCw size={14} />
@@ -104,19 +104,23 @@ export function ShipCatalog() {
           </span>
         </div>
 
-        {!catalog ? (
-          <div className={styles.emptyState}>Loading ship catalog...</div>
+        {!showroom ? (
+          <div className={styles.emptyState}>Loading showroom...</div>
         ) : sortedShips.length === 0 ? (
-          <div className={styles.emptyState}>No ships available at this shipyard</div>
+          <div className={styles.emptyState}>
+            <Info size={14} style={{ marginBottom: '0.25rem', opacity: 0.6 }} />
+            <br />
+            {showroom.tip || 'No ships in stock at this shipyard'}
+          </div>
         ) : (
           <>
             <span className={styles.countLabel}>
-              {catalog.count} ship{catalog.count !== 1 ? 's' : ''} available
+              {showroom.count} ship{showroom.count !== 1 ? 's' : ''} in stock
             </span>
             <div className={styles.shipList}>
               {sortedShips.map((ship) => (
-                <ShipCard
-                  key={ship.id}
+                <ShowroomCard
+                  key={ship.ship_id}
                   ship={ship}
                   credits={credits}
                   isDocked={isDocked}
@@ -131,124 +135,62 @@ export function ShipCatalog() {
   )
 }
 
-interface ShipCardProps {
-  ship: ShipClassInfo
+interface ShowroomCardProps {
+  ship: ShowroomShip
   credits: number
   isDocked: boolean
-  onBuy: (classId: string) => void
+  onBuy: (shipId: string) => void
 }
 
-function ShipCard({ ship, credits, isDocked, onBuy }: ShipCardProps) {
-  const canAfford = credits >= ship.price
-  const hasSkillReqs = ship.required_skills && Object.keys(ship.required_skills).length > 0
-  const hasItemReqs = ship.required_items && ship.required_items.length > 0
+function ShowroomCard({ ship, credits, isDocked, onBuy }: ShowroomCardProps) {
+  const canAfford = credits >= ship.showroom_price
 
   return (
     <div className={styles.shipCard}>
       <div className={styles.shipCardTop}>
         <div className={styles.shipCardInfo}>
           <span className={styles.shipCardName}>{ship.name}</span>
-          <span className={styles.shipCardClass}>{ship.class}</span>
+          <span className={styles.shipCardClass}>{ship.category}</span>
         </div>
         <span className={canAfford ? styles.shipCardPrice : styles.shipCardPriceUnaffordable}>
-          {ship.price.toLocaleString()} cr
+          {ship.showroom_price.toLocaleString()} cr
         </span>
       </div>
-
-      {ship.description && (
-        <div className={styles.shipCardDesc}>{ship.description}</div>
-      )}
 
       {/* Key stats */}
       <div className={styles.shipStatsRow}>
         <div className={styles.shipStat}>
           <span className={styles.shipStatIcon}><Heart size={10} /></span>
           <span className={styles.shipStatLabel}>Hull</span>
-          <span className={styles.shipStatValue}>{ship.base_hull}</span>
+          <span className={styles.shipStatValue}>{ship.hull}</span>
         </div>
         <div className={styles.shipStat}>
           <span className={styles.shipStatIcon}><Shield size={10} /></span>
           <span className={styles.shipStatLabel}>Shld</span>
-          <span className={styles.shipStatValue}>{ship.base_shield}</span>
+          <span className={styles.shipStatValue}>{ship.shield}</span>
         </div>
         <div className={styles.shipStat}>
           <span className={styles.shipStatIcon}><Gauge size={10} /></span>
           <span className={styles.shipStatLabel}>Spd</span>
-          <span className={styles.shipStatValue}>{ship.base_speed}</span>
+          <span className={styles.shipStatValue}>{ship.speed}</span>
         </div>
         <div className={styles.shipStat}>
           <span className={styles.shipStatIcon}><Package size={10} /></span>
           <span className={styles.shipStatLabel}>Cargo</span>
-          <span className={styles.shipStatValue}>{ship.cargo_capacity}</span>
-        </div>
-        <div className={styles.shipStat}>
-          <span className={styles.shipStatIcon}><Cpu size={10} /></span>
-          <span className={styles.shipStatLabel}>CPU</span>
-          <span className={styles.shipStatValue}>{ship.cpu_capacity}</span>
-        </div>
-        <div className={styles.shipStat}>
-          <span className={styles.shipStatIcon}><Zap size={10} /></span>
-          <span className={styles.shipStatLabel}>Pwr</span>
-          <span className={styles.shipStatValue}>{ship.power_capacity}</span>
+          <span className={styles.shipStatValue}>{ship.cargo}</span>
         </div>
       </div>
-
-      {/* Slot counts */}
-      <div className={styles.slotsRow}>
-        <span className={styles.slotBadge}>
-          <span className={styles.slotBadgeIcon}><Crosshair size={10} /></span>
-          Wpn: <span className={styles.slotBadgeValue}>{ship.weapon_slots}</span>
-        </span>
-        <span className={styles.slotBadge}>
-          <span className={styles.slotBadgeIcon}><Shield size={10} /></span>
-          Def: <span className={styles.slotBadgeValue}>{ship.defense_slots}</span>
-        </span>
-        <span className={styles.slotBadge}>
-          <span className={styles.slotBadgeIcon}><CircuitBoard size={10} /></span>
-          Util: <span className={styles.slotBadgeValue}>{ship.utility_slots}</span>
-        </span>
-      </div>
-
-      {/* Requirements */}
-      {(hasSkillReqs || hasItemReqs) && (
-        <div className={styles.requirementsSection}>
-          {hasSkillReqs && (
-            <>
-              <span className={styles.requirementLabel}>Required Skills</span>
-              <div className={styles.requirementsList}>
-                {Object.entries(ship.required_skills!).map(([skill, level]) => (
-                  <span key={skill} className={styles.requirementTag}>
-                    {skill} Lv{level}
-                  </span>
-                ))}
-              </div>
-            </>
-          )}
-          {hasItemReqs && (
-            <>
-              <span className={styles.requirementLabel}>Required Items</span>
-              <div className={styles.requirementsList}>
-                {ship.required_items!.map((item) => (
-                  <span key={item.item_id} className={styles.requirementItemTag}>
-                    {item.item_id} x{item.quantity}
-                  </span>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-      )}
 
       <button
         className={styles.buyBtn}
-        onClick={() => onBuy(ship.id)}
+        onClick={() => onBuy(ship.ship_id)}
         disabled={!isDocked || !canAfford}
         title={
           !isDocked
             ? 'Dock to purchase'
             : !canAfford
-              ? `Need ${(ship.price - credits).toLocaleString()} more credits`
-              : `Buy ${ship.name} for ${ship.price.toLocaleString()} credits`
+              ? `Need ${(ship.showroom_price - credits).toLocaleString()} more credits`
+              : `Buy ${ship.name} for ${ship.showroom_price.toLocaleString()} credits`
         }
         type="button"
       >

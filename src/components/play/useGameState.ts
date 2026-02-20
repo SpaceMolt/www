@@ -257,6 +257,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'SET_SHIP_CATALOG':
       return { ...state, shipCatalog: action.payload }
 
+    case 'SET_SHOWROOM_DATA':
+      return { ...state, showroomData: action.payload }
+
     case 'SET_FLEET_DATA':
       return { ...state, fleetData: action.payload }
 

@@ -5,7 +5,7 @@ import { useWebSocket } from './useWebSocket'
 import { useGameState } from './useGameState'
 import type {
   GameState, WSMessage, GameAction, WelcomePayload, StateUpdate, ChatMessage, TradeOffer,
-  ShipCatalogData, FleetData, StorageData, MarketData, OrdersData,
+  ShipCatalogData, ShowroomData, FleetData, StorageData, MarketData, OrdersData,
   RecipesData, SkillsData,
 } from './types'
 
@@ -69,8 +69,12 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
         }
         // Classify responses without action field by structure
         if (!action) {
+          // shipyard_showroom: has base_id + shipyard_level + ships array
+          if ('shipyard_level' in p && Array.isArray(p.ships) && 'base_id' in p) {
+            d({ type: 'SET_SHOWROOM_DATA', payload: p as unknown as ShowroomData })
+          }
           // get_ships: has ships array + count + message (ship catalog)
-          if (Array.isArray(p.ships) && 'count' in p && 'message' in p && !('active_ship_id' in p)) {
+          else if (Array.isArray(p.ships) && 'count' in p && 'message' in p && !('active_ship_id' in p)) {
             d({ type: 'SET_SHIP_CATALOG', payload: p as unknown as ShipCatalogData })
           }
           // list_ships: has ships array + count + active_ship_id (player fleet)

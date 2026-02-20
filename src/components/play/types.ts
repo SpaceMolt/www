@@ -355,10 +355,35 @@ export interface ShipClassInfo {
   required_items?: { item_id: string; quantity: number }[]
 }
 
+export interface ShowroomShip {
+  ship_id: string
+  class_id: string
+  name: string
+  category: string
+  scale: number
+  tier: number
+  showroom_price: number
+  material_cost: number
+  labor_cost: number
+  hull: number
+  shield: number
+  cargo: number
+  speed: number
+}
+
 export interface ShipCatalogData {
   ships: ShipClassInfo[]
   count: number
   message: string
+}
+
+export interface ShowroomData {
+  base_id: string
+  base_name: string
+  shipyard_level: number
+  ships: ShowroomShip[]
+  count: number
+  tip: string
 }
 
 export interface FleetShip {
@@ -437,6 +462,7 @@ export interface GameState {
   marketData: MarketData | null
   ordersData: OrdersData | null
   shipCatalog: ShipCatalogData | null
+  showroomData: ShowroomData | null
   fleetData: FleetData | null
   storageData: StorageData | null
   recipesData: RecipesData | null
@@ -466,6 +492,7 @@ export const initialGameState: GameState = {
   marketData: null,
   ordersData: null,
   shipCatalog: null,
+  showroomData: null,
   fleetData: null,
   storageData: null,
   recipesData: null,
@@ -504,6 +531,7 @@ export type GameAction =
   | { type: 'SET_MARKET_DATA'; payload: MarketData }
   | { type: 'SET_ORDERS_DATA'; payload: OrdersData }
   | { type: 'SET_SHIP_CATALOG'; payload: ShipCatalogData }
+  | { type: 'SET_SHOWROOM_DATA'; payload: ShowroomData }
   | { type: 'SET_FLEET_DATA'; payload: FleetData }
   | { type: 'SET_STORAGE_DATA'; payload: StorageData }
   | { type: 'SET_RECIPES_DATA'; payload: RecipesData }
