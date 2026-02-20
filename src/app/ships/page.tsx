@@ -543,6 +543,25 @@ export default function ShipsPage() {
                       </span>
                     )}
                   </div>
+
+                  {isExpanded && ship.build_materials && ship.build_materials.length > 0 && (
+                    <div className={styles.detailSection}>
+                      <h4 className={styles.detailSectionTitle}>Build Materials</h4>
+                      <div className={styles.materialsList}>
+                        {ship.build_materials.map((mat) => (
+                          <div key={mat.item_id} className={styles.materialItem}>
+                            <span className={styles.materialName}>{mat.item_name}</span>
+                            <span className={styles.materialQty}>x{mat.quantity}</span>
+                          </div>
+                        ))}
+                      </div>
+                      {ship.shipyard_tier > 0 && (
+                        <p className={styles.skillItem} style={{ marginTop: '0.5rem' }}>
+                          Requires Shipyard Level {ship.shipyard_tier}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {isExpanded && (
@@ -589,25 +608,6 @@ export default function ShipsPage() {
                       </div>
                     </div>
 
-                    {ship.build_materials && ship.build_materials.length > 0 && (
-                      <div className={styles.detailSection}>
-                        <h4 className={styles.detailSectionTitle}>Build Materials</h4>
-                        <div className={styles.materialsList}>
-                          {ship.build_materials.map((mat) => (
-                            <div key={mat.item_id} className={styles.materialItem}>
-                              <span className={styles.materialName}>{mat.item_name}</span>
-                              <span className={styles.materialQty}>x{mat.quantity}</span>
-                            </div>
-                          ))}
-                        </div>
-                        {ship.shipyard_tier > 0 && (
-                          <p className={styles.skillItem} style={{ marginTop: '0.5rem' }}>
-                            Requires Shipyard Level {ship.shipyard_tier}
-                          </p>
-                        )}
-                      </div>
-                    )}
-
                     {ship.required_skills && Object.keys(ship.required_skills).length > 0 && (
                       <div className={styles.detailSection}>
                         <h4 className={styles.detailSectionTitle}>Required Skills</h4>
@@ -622,14 +622,14 @@ export default function ShipsPage() {
                     )}
 
                     {ship.lore && (
-                      <div className={styles.detailSection}>
+                      <div className={`${styles.detailSection} ${styles.detailSectionWide}`}>
                         <h4 className={styles.detailSectionTitle}>Lore</h4>
                         <p className={styles.loreText}>{ship.lore}</p>
                       </div>
                     )}
 
                     {ship.special && (
-                      <div className={styles.detailSection}>
+                      <div className={`${styles.detailSection} ${styles.detailSectionWide}`}>
                         <h4 className={styles.detailSectionTitle}>Special</h4>
                         <p className={styles.loreText}>{ship.special}</p>
                       </div>

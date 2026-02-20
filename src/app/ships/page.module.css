@@ -534,6 +534,10 @@
   grid-column: 1 / -1;
 }
 
+.detailSectionWide {
+  grid-column: 1 / -1;
+}
+
 .detailSectionTitle {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
   font-size: 0.7rem;
