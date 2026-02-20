@@ -33,37 +33,33 @@ interface PlayerSelectorProps {
 
 export function PlayerSelector({ players, onSelect, loading, authHeaders }: PlayerSelectorProps) {
   const [playerInfo, setPlayerInfo] = useState<Record<string, PlayerInfo>>({})
-  const [infoLoading, setInfoLoading] = useState(false)
   const [search, setSearch] = useState('')
 
   const GAME_SERVER = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 
-  // Fetch player details for enriched cards
+  // Fetch player details sequentially to avoid bursting the shared per-IP
+  // rate limit (publicAPI bucket) that MCP connections also use.
   useEffect(() => {
     if (players.length === 0) return
     let cancelled = false
 
-    async function fetchAll() {
-      setInfoLoading(true)
+    async function fetchSequentially() {
       const headers = await authHeaders()
-      const results: Record<string, PlayerInfo> = {}
-      await Promise.all(players.map(async (p) => {
+      for (const p of players) {
+        if (cancelled) break
         try {
           const res = await fetch(`${GAME_SERVER}/api/player/${p.id}`, { headers })
           if (res.ok && !cancelled) {
-            results[p.id] = await res.json()
+            const info = await res.json()
+            setPlayerInfo(prev => ({ ...prev, [p.id]: info }))
           }
         } catch {
           // Non-critical
         }
-      }))
-      if (!cancelled) {
-        setPlayerInfo(results)
-        setInfoLoading(false)
       }
     }
 
-    fetchAll()
+    fetchSequentially()
     return () => { cancelled = true }
   }, [players, authHeaders, GAME_SERVER])
 
@@ -137,7 +133,7 @@ export function PlayerSelector({ players, onSelect, loading, authHeaders }: Play
               key={p.id}
               className={styles.playerCard}
               onClick={() => onSelect(p.id)}
-              disabled={infoLoading}
+              disabled={loading}
               style={{ '--empire-color': empireColor } as React.CSSProperties}
             >
               <div className={styles.playerName} style={{ color: empireColor }}>

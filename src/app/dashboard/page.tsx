@@ -327,18 +327,20 @@ function DashboardContent() {
     setChatPlayersLoading(true)
     try {
       const headers = await authHeaders()
-      const results = await Promise.all(
-        players.map(async (p) => {
-          try {
-            const res = await fetch(`${GAME_SERVER}/api/player/${p.id}`, {
-              headers,
-            })
-            if (res.ok) return await res.json() as PlayerInfo
-          } catch { /* ignore */ }
-          return null
-        })
-      )
-      setAllPlayerInfo(results.filter((r): r is PlayerInfo => r !== null))
+      const results: PlayerInfo[] = []
+      // Fetch sequentially to avoid bursting the shared per-IP rate limit
+      for (const p of players) {
+        try {
+          const res = await fetch(`${GAME_SERVER}/api/player/${p.id}`, {
+            headers,
+          })
+          if (res.ok) {
+            const info = await res.json() as PlayerInfo
+            results.push(info)
+          }
+        } catch { /* ignore */ }
+      }
+      setAllPlayerInfo(results)
     } finally {
       setChatPlayersLoading(false)
     }
