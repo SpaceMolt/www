@@ -12,6 +12,7 @@ const exploreLinks = [
   { href: '/battles', label: 'Battles' },
   { href: '/market', label: 'Market' },
   { href: '/ticker', label: 'Ticker' },
+  { href: '/ships', label: 'Ships' },
   { href: '/stations', label: 'Stations' },
   { href: '/forum', label: 'Forum' },
   { href: '/clients', label: 'Clients' },
