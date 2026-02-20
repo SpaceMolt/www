@@ -11,8 +11,22 @@ import {
   LogOut,
 } from 'lucide-react'
 import { useGame } from './GameProvider'
-import { ProgressBar } from './ProgressBar'
 import styles from './TopBar.module.css'
+
+function MiniBar({ value, max, color, label }: { value: number; max: number; color: string; label: string }) {
+  const pct = max > 0 ? Math.min(value / max, 1) * 100 : 0
+  return (
+    <div className={styles.miniBar} title={`${label}: ${value.toLocaleString()} / ${max.toLocaleString()}`}>
+      <span className={styles.miniLabel}>{label}</span>
+      <div className={styles.miniTrack}>
+        <div
+          className={`${styles.miniFill} ${styles[`fill_${color}`]}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  )
+}
 
 export function TopBar() {
   const { state, sendCommand, dispatch, onSwitchPlayer } = useGame()
@@ -31,120 +45,65 @@ export function TopBar() {
 
   return (
     <div className={styles.topBar}>
-      {/* Section 1: Player identity */}
+      {/* Connection + Player */}
       <div className={styles.playerSection}>
-        <div className={styles.connectionStatus}>
-          {connected ? (
-            <Wifi size={12} className={styles.connectedIcon} />
-          ) : (
-            <WifiOff size={12} className={styles.disconnectedIcon} />
-          )}
-          <span className={connected ? styles.connectedDot : styles.disconnectedDot} />
-        </div>
+        {connected ? (
+          <Wifi size={11} className={styles.connectedIcon} />
+        ) : (
+          <WifiOff size={11} className={styles.disconnectedIcon} />
+        )}
         {player ? (
           <>
             <span className={styles.username}>{player.username}</span>
             <span className={styles.credits}>
-              <Coins size={11} className={styles.creditsIcon} />
-              <span className={styles.creditsValue}>
-                {player.credits.toLocaleString()}
-              </span>
+              <Coins size={10} className={styles.creditsIcon} />
+              {player.credits.toLocaleString()}
             </span>
-            {player.empire && (
-              <span className={styles.empire}>{player.empire}</span>
-            )}
-            <button
-              className={styles.logoutBtn}
-              onClick={handleLogout}
-              title="Log out"
-              type="button"
-            >
-              <LogOut size={11} />
-            </button>
           </>
         ) : (
-          <span className={styles.noPlayer}>Not logged in</span>
+          <span className={styles.noPlayer}>---</span>
         )}
       </div>
 
-      {/* Section 2: Location */}
+      {/* Location */}
       {(state.system || state.poi) && (
-        <>
-          <span className={styles.sep} />
-          <div className={styles.locationSection}>
-            <MapPin size={12} className={styles.locationIcon} />
-            {state.system && (
-              <span className={styles.systemName}>{state.system.name}</span>
-            )}
-            {state.system && state.poi && (
-              <span className={styles.poiSep}>/</span>
-            )}
-            {state.poi && (
-              <span className={styles.poiName}>{state.poi.name}</span>
-            )}
-            {state.isDocked && (
-              <span className={styles.dockedBadge}>
-                <Anchor size={10} /> Docked
-              </span>
-            )}
-          </div>
-        </>
+        <div className={styles.locationSection}>
+          <MapPin size={11} className={styles.locationIcon} />
+          {state.system && <span className={styles.systemName}>{state.system.name}</span>}
+          {state.system && state.poi && <span className={styles.poiSep}>/</span>}
+          {state.poi && <span className={styles.poiName}>{state.poi.name}</span>}
+          {state.isDocked && (
+            <span className={styles.dockedBadge}>
+              <Anchor size={9} /> Docked
+            </span>
+          )}
+        </div>
       )}
 
-      {/* Section 3: Ship */}
+      {/* Ship + Bars */}
       {ship && (
-        <>
-          <span className={styles.sep} />
-          <div className={styles.shipSection}>
-            <Rocket size={12} className={styles.shipIcon} />
-            <span className={styles.shipClass}>{ship.class}</span>
+        <div className={styles.shipSection}>
+          <Rocket size={11} className={styles.shipIcon} />
+          <span className={styles.shipClass}>{ship.class}</span>
+          <div className={styles.barsRow}>
+            <MiniBar value={ship.hull} max={ship.max_hull} color={hullColor} label="H" />
+            <MiniBar value={ship.shield} max={ship.max_shield} color="blue" label="S" />
+            <MiniBar value={ship.fuel} max={ship.max_fuel} color="yellow" label="F" />
+            <MiniBar value={ship.cargo_used} max={ship.cargo_capacity} color="cyan" label="C" />
           </div>
-        </>
+        </div>
       )}
 
-      {/* Section 4: Status bars */}
-      {ship && (
-        <>
-          <span className={styles.sep} />
-          <div className={styles.barsSection}>
-            <div className={styles.barItem}>
-              <ProgressBar
-                value={ship.hull}
-                max={ship.max_hull}
-                color={hullColor}
-                label="Hull"
-                size="sm"
-              />
-            </div>
-            <div className={styles.barItem}>
-              <ProgressBar
-                value={ship.shield}
-                max={ship.max_shield}
-                color="blue"
-                label="Shield"
-                size="sm"
-              />
-            </div>
-            <div className={styles.barItem}>
-              <ProgressBar
-                value={ship.fuel}
-                max={ship.max_fuel}
-                color="yellow"
-                label="Fuel"
-                size="sm"
-              />
-            </div>
-            <div className={styles.barItem}>
-              <ProgressBar
-                value={ship.cargo_used}
-                max={ship.cargo_capacity}
-                color="cyan"
-                label="Cargo"
-                size="sm"
-              />
-            </div>
-          </div>
-        </>
+      {/* Logout */}
+      {player && (
+        <button
+          className={styles.logoutBtn}
+          onClick={handleLogout}
+          title="Log out"
+          type="button"
+        >
+          <LogOut size={11} />
+        </button>
       )}
     </div>
   )
