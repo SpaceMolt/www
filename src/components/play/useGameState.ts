@@ -263,6 +263,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'SET_STORAGE_DATA':
       return { ...state, storageData: action.payload }
 
+    case 'SET_RECIPES_DATA':
+      return { ...state, recipesData: action.payload }
+
+    case 'SET_SKILLS_DATA':
+      return { ...state, skillsData: action.payload }
+
     case 'RESET':
       return { ..._initState, connected: state.connected, welcome: state.welcome }
 
@@ -296,6 +302,8 @@ const _initState: GameState = {
   shipCatalog: null,
   fleetData: null,
   storageData: null,
+  recipesData: null,
+  skillsData: null,
 }
 
 export function useGameState() {

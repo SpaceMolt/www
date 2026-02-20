@@ -1,43 +1,21 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { Hammer, BookOpen, FlaskConical, Star, RefreshCw, AlertTriangle } from 'lucide-react'
 import { useGame } from '../GameProvider'
 import { ActionButton } from '../ActionButton'
-import type { Recipe, Skill } from '../types'
 import styles from './CraftingPanel.module.css'
 
 export function CraftingPanel() {
   const { state, sendCommand } = useGame()
-  const [recipes, setRecipes] = useState<Recipe[]>([])
-  const [skills, setSkills] = useState<Skill[]>([])
-  const [recipesLoaded, setRecipesLoaded] = useState(false)
-  const [skillsLoaded, setSkillsLoaded] = useState(false)
-  const [loadingRecipes, setLoadingRecipes] = useState(false)
-  const [loadingSkills, setLoadingSkills] = useState(false)
   const [craftingId, setCraftingId] = useState<string | null>(null)
 
   const loadRecipes = useCallback(() => {
-    setLoadingRecipes(true)
     sendCommand('get_recipes')
-    // Listen for response via a temporary handler pattern
-    const timeout = setTimeout(() => {
-      setLoadingRecipes(false)
-      setRecipesLoaded(true)
-    }, 3000)
-    // We rely on the OK response from the game state to populate
-    // For now, mark as loaded after a short delay
-    return () => clearTimeout(timeout)
   }, [sendCommand])
 
   const loadSkills = useCallback(() => {
-    setLoadingSkills(true)
     sendCommand('get_skills')
-    const timeout = setTimeout(() => {
-      setLoadingSkills(false)
-      setSkillsLoaded(true)
-    }, 3000)
-    return () => clearTimeout(timeout)
   }, [sendCommand])
 
   const handleCraft = useCallback((recipeId: string) => {
@@ -45,6 +23,19 @@ export function CraftingPanel() {
     sendCommand('craft', { recipe_id: recipeId })
     setTimeout(() => setCraftingId(null), 2000)
   }, [sendCommand])
+
+  const recipes = useMemo(() => {
+    if (!state.recipesData?.recipes) return []
+    return Object.values(state.recipesData.recipes)
+  }, [state.recipesData])
+
+  const skills = useMemo(() => {
+    if (!state.skillsData?.skills) return []
+    return Object.entries(state.skillsData.skills).map(([id, s]) => ({
+      id,
+      ...s,
+    }))
+  }, [state.skillsData])
 
   const isDocked = state.isDocked
 
@@ -59,8 +50,7 @@ export function CraftingPanel() {
           <button
             className={styles.refreshBtn}
             onClick={loadRecipes}
-            title="Load recipes"
-            disabled={loadingRecipes}
+            title="Refresh recipes"
           >
             <RefreshCw size={14} />
           </button>
@@ -83,7 +73,7 @@ export function CraftingPanel() {
             <span className={styles.sectionIcon}><BookOpen size={12} /></span>
             Recipes
           </div>
-          {!recipesLoaded && !loadingRecipes && (
+          {!state.recipesData && (
             <ActionButton
               label="Get Recipes"
               icon={<BookOpen size={14} />}
@@ -91,15 +81,9 @@ export function CraftingPanel() {
               size="sm"
             />
           )}
-          {loadingRecipes && (
-            <div className={styles.loading}>
-              <span className={styles.spinner} />
-              Loading recipes...
-            </div>
-          )}
-          {recipesLoaded && recipes.length === 0 && (
+          {state.recipesData && recipes.length === 0 && (
             <div className={styles.emptyState}>
-              No recipes available. Send &quot;get_recipes&quot; to discover recipes.
+              No recipes available.
             </div>
           )}
           {recipes.length > 0 && (
@@ -114,20 +98,20 @@ export function CraftingPanel() {
                     <div className={styles.recipeRow}>
                       <span className={styles.recipeLabel}>In:</span>
                       <span className={styles.recipeInputs}>
-                        {recipe.inputs.map((i) => `${i.itemId} x${i.quantity}`).join(', ')}
+                        {recipe.inputs.map((i) => `${i.item_id} x${i.quantity}`).join(', ')}
                       </span>
                     </div>
                     <div className={styles.recipeRow}>
                       <span className={styles.recipeLabel}>Out:</span>
                       <span className={styles.recipeOutputs}>
-                        {recipe.outputs.map((o) => `${o.itemId} x${o.quantity}`).join(', ')}
+                        {recipe.outputs.map((o) => `${o.item_id} x${o.quantity}`).join(', ')}
                       </span>
                     </div>
-                    {Object.keys(recipe.requiredSkills).length > 0 && (
+                    {recipe.required_skills && Object.keys(recipe.required_skills).length > 0 && (
                       <div className={styles.recipeRow}>
                         <span className={styles.recipeLabel}>Skills:</span>
                         <span className={styles.recipeSkills}>
-                          {Object.entries(recipe.requiredSkills)
+                          {Object.entries(recipe.required_skills)
                             .map(([skill, level]) => `${skill} Lv${level}`)
                             .join(', ')}
                         </span>
@@ -158,7 +142,7 @@ export function CraftingPanel() {
             <span className={styles.sectionIcon}><Star size={12} /></span>
             Skills
           </div>
-          {!skillsLoaded && !loadingSkills && (
+          {!state.skillsData && (
             <ActionButton
               label="Load Skills"
               icon={<FlaskConical size={14} />}
@@ -166,15 +150,9 @@ export function CraftingPanel() {
               size="sm"
             />
           )}
-          {loadingSkills && (
-            <div className={styles.loading}>
-              <span className={styles.spinner} />
-              Loading skills...
-            </div>
-          )}
-          {skillsLoaded && skills.length === 0 && (
+          {state.skillsData && skills.length === 0 && (
             <div className={styles.emptyState}>
-              No skills data loaded yet.
+              No skills trained yet.
             </div>
           )}
           {skills.length > 0 && (
@@ -182,16 +160,15 @@ export function CraftingPanel() {
               {skills.map((skill) => (
                 <div key={skill.id} className={styles.skillItem}>
                   <div className={styles.skillInfo}>
-                    <span className={styles.skillName}>{skill.name}</span>
-                    <span className={styles.skillCategory}>{skill.category}</span>
+                    <span className={styles.skillName}>{skill.id}</span>
                   </div>
                   <div className={styles.skillLevel}>
                     <span className={styles.skillLevelText}>
-                      Lv {skill.current_level ?? 0} / {skill.max_level}
+                      Lv {skill.level}
                     </span>
-                    {skill.xp_to_next != null && (
+                    {skill.next_level_xp > 0 && (
                       <span className={styles.skillXp}>
-                        {skill.current_xp ?? 0} / {skill.xp_to_next} XP
+                        {skill.xp} / {skill.next_level_xp} XP
                       </span>
                     )}
                   </div>

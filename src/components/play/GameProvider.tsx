@@ -6,6 +6,7 @@ import { useGameState } from './useGameState'
 import type {
   GameState, WSMessage, GameAction, WelcomePayload, StateUpdate, ChatMessage, TradeOffer,
   ShipCatalogData, FleetData, StorageData, MarketData, OrdersData,
+  RecipesData, SkillsData,
 } from './types'
 
 interface GameContextValue {
@@ -79,6 +80,14 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
           // view_storage: has base_id + credits + items
           else if ('base_id' in p && 'credits' in p && Array.isArray(p.items)) {
             d({ type: 'SET_STORAGE_DATA', payload: p as unknown as StorageData })
+          }
+          // get_recipes: has recipes object (map of recipe_id -> recipe)
+          else if ('recipes' in p && typeof p.recipes === 'object' && !Array.isArray(p.recipes)) {
+            d({ type: 'SET_RECIPES_DATA', payload: p as unknown as RecipesData })
+          }
+          // get_skills: has skills object + message
+          else if ('skills' in p && typeof p.skills === 'object' && 'message' in p) {
+            d({ type: 'SET_SKILLS_DATA', payload: p as unknown as SkillsData })
           }
         }
         break

@@ -191,11 +191,23 @@ export interface Skill {
 export interface Recipe {
   id: string
   name: string
+  description?: string
   category: string
-  requiredSkills: Record<string, number>
-  inputs: { itemId: string; quantity: number }[]
-  outputs: { itemId: string; quantity: number }[]
-  craftingTime: number
+  required_skills: Record<string, number>
+  inputs: { item_id: string; quantity: number }[]
+  outputs: { item_id: string; quantity: number; quality_mod?: boolean }[]
+  crafting_time: number
+  base_quality?: number
+  skill_quality_mod?: number
+}
+
+export interface RecipesData {
+  recipes: Record<string, Recipe>
+}
+
+export interface SkillsData {
+  skills: Record<string, { level: number; xp: number; next_level_xp: number }>
+  message?: string
 }
 
 export interface Faction {
@@ -427,6 +439,8 @@ export interface GameState {
   shipCatalog: ShipCatalogData | null
   fleetData: FleetData | null
   storageData: StorageData | null
+  recipesData: RecipesData | null
+  skillsData: SkillsData | null
 }
 
 export const initialGameState: GameState = {
@@ -454,6 +468,8 @@ export const initialGameState: GameState = {
   shipCatalog: null,
   fleetData: null,
   storageData: null,
+  recipesData: null,
+  skillsData: null,
 }
 
 // === WebSocket Message Types ===
@@ -490,4 +506,6 @@ export type GameAction =
   | { type: 'SET_SHIP_CATALOG'; payload: ShipCatalogData }
   | { type: 'SET_FLEET_DATA'; payload: FleetData }
   | { type: 'SET_STORAGE_DATA'; payload: StorageData }
+  | { type: 'SET_RECIPES_DATA'; payload: RecipesData }
+  | { type: 'SET_SKILLS_DATA'; payload: SkillsData }
   | { type: 'RESET' }
