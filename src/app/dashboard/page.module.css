@@ -1188,6 +1188,34 @@
 }
 
 /* === Player Tabs (card row) === */
+.playerTabsHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.showHiddenBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: none;
+  border: 1px solid var(--hull-grey);
+  border-radius: 4px;
+  color: var(--chrome-silver);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.showHiddenBtn:hover {
+  opacity: 1;
+  color: var(--plasma-cyan);
+}
+
 .playerTabs {
   display: flex;
   flex-wrap: wrap;
@@ -1197,6 +1225,14 @@
   border-radius: 6px;
   overflow: hidden;
   width: fit-content;
+}
+
+.playerCardHidden {
+  opacity: 0.5;
+}
+
+.hideActive {
+  color: var(--plasma-cyan);
 }
 
 .playerCard {

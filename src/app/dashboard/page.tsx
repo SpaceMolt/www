@@ -15,6 +15,7 @@ const GAME_SERVER = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spac
 interface LinkedPlayer {
   id: string
   username: string
+  hidden: boolean
 }
 
 interface RegistrationCodeResponse {
@@ -150,12 +151,13 @@ function PlayerCard({ player, info, isSelected, onSelect }: {
   const empireColor = EMPIRE_COLORS[info?.empire || ''] || 'var(--chrome-silver)'
   return (
     <button
-      className={`${styles.playerCard} ${isSelected ? styles.playerCardActive : ''}`}
+      className={`${styles.playerCard} ${isSelected ? styles.playerCardActive : ''} ${player.hidden ? styles.playerCardHidden : ''}`}
       onClick={onSelect}
       style={{ '--empire-color': empireColor } as React.CSSProperties}
     >
       <div className={styles.playerCardHeader}>
         <span className={styles.playerCardName} style={{ color: empireColor }}>
+          {player.hidden && <EyeOff size={9} style={{ marginRight: 4, opacity: 0.5 }} />}
           {player.username}
         </span>
         <div className={styles.playerCardHeaderRight}>
@@ -248,6 +250,9 @@ function DashboardContent() {
   // Chat tab state
   const [allPlayerInfo, setAllPlayerInfo] = useState<PlayerInfo[]>([])
   const [chatPlayersLoading, setChatPlayersLoading] = useState(false)
+
+  // Player visibility state
+  const [showHidden, setShowHidden] = useState(false)
 
   // Chat refresh ref
   const chatRefreshRef = useRef<(() => void) | null>(null)
@@ -453,6 +458,28 @@ function DashboardContent() {
   }
 
 
+  const handleToggleHide = async (playerId: string) => {
+    const player = players.find(p => p.id === playerId)
+    if (!player) return
+    const newHidden = !player.hidden
+    try {
+      const headers = await authHeaders()
+      const res = await fetch(`${GAME_SERVER}/api/player/${playerId}/hide`, {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hidden: newHidden }),
+      })
+      if (res.ok) {
+        setPlayers(prev => prev.map(p => p.id === playerId ? { ...p, hidden: newHidden } : p))
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  const visiblePlayers = showHidden ? players : players.filter(p => !p.hidden)
+  const hiddenCount = players.filter(p => p.hidden).length
+
   if (!userLoaded || !authLoaded) {
     return (
       <main className={styles.dashboard}>
@@ -633,16 +660,27 @@ function DashboardContent() {
           ) : (
             <>
               {/* Player Tabs */}
-              <div className={styles.playerTabs}>
-                {players.map(p => (
-                  <PlayerCard
-                    key={p.id}
-                    player={p}
-                    info={allPlayerInfo.find(i => i.id === p.id)}
-                    isSelected={p.id === selectedPlayer}
-                    onSelect={() => handleSelectPlayer(p.id)}
-                  />
-                ))}
+              <div className={styles.playerTabsHeader}>
+                <div className={styles.playerTabs}>
+                  {visiblePlayers.map(p => (
+                    <PlayerCard
+                      key={p.id}
+                      player={p}
+                      info={allPlayerInfo.find(i => i.id === p.id)}
+                      isSelected={p.id === selectedPlayer}
+                      onSelect={() => handleSelectPlayer(p.id)}
+                    />
+                  ))}
+                </div>
+                {hiddenCount > 0 && (
+                  <button
+                    className={styles.showHiddenBtn}
+                    onClick={() => setShowHidden(!showHidden)}
+                  >
+                    {showHidden ? <Eye size={12} /> : <EyeOff size={12} />}
+                    {showHidden ? 'Hide hidden' : `Show hidden (${hiddenCount})`}
+                  </button>
+                )}
               </div>
 
               {/* Player Detail - All sections visible at once */}
@@ -909,6 +947,20 @@ function DashboardContent() {
                             </button>
                             <span className={styles.resetPasswordHint}>
                               Generates a new password. The old one will stop working.
+                            </span>
+                          </div>
+                          <div className={styles.credentialActions}>
+                            <button
+                              className={`${styles.resetPasswordBtn} ${players.find(p => p.id === selectedPlayer)?.hidden ? styles.hideActive : ''}`}
+                              onClick={() => selectedPlayer && handleToggleHide(selectedPlayer)}
+                            >
+                              {players.find(p => p.id === selectedPlayer)?.hidden
+                                ? <><Eye size={14} /> Unhide Player</>
+                                : <><EyeOff size={14} /> Hide Player</>
+                              }
+                            </button>
+                            <span className={styles.resetPasswordHint}>
+                              Hidden players are not shown in the player list by default.
                             </span>
                           </div>
                         </div>
