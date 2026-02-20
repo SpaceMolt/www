@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { Loader2, Users, ExternalLink, Coins, Wifi, WifiOff } from 'lucide-react'
+import { useEffect, useState, useMemo } from 'react'
+import { Loader2, Users, ExternalLink, Coins, Wifi, WifiOff, Search } from 'lucide-react'
 import styles from './PlayerSelector.module.css'
 
 const EMPIRE_COLORS: Record<string, string> = {
@@ -34,6 +34,7 @@ interface PlayerSelectorProps {
 export function PlayerSelector({ players, onSelect, loading, authHeaders }: PlayerSelectorProps) {
   const [playerInfo, setPlayerInfo] = useState<Record<string, PlayerInfo>>({})
   const [infoLoading, setInfoLoading] = useState(false)
+  const [search, setSearch] = useState('')
 
   const GAME_SERVER = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 
@@ -65,6 +66,16 @@ export function PlayerSelector({ players, onSelect, loading, authHeaders }: Play
     fetchAll()
     return () => { cancelled = true }
   }, [players, authHeaders, GAME_SERVER])
+
+  const filtered = useMemo(() => {
+    if (!search) return players
+    const q = search.toLowerCase()
+    return players.filter(p => {
+      const info = playerInfo[p.id]
+      return p.username.toLowerCase().includes(q) ||
+        (info?.empire && info.empire.toLowerCase().includes(q))
+    })
+  }, [players, playerInfo, search])
 
   if (loading) {
     return (
@@ -98,42 +109,57 @@ export function PlayerSelector({ players, onSelect, loading, authHeaders }: Play
 
   return (
     <div className={styles.container}>
-      <div className={styles.content}>
+      <div className={styles.header}>
         <div className={styles.title}>SpaceMolt</div>
         <div className={styles.subtitle}>Select a player to launch</div>
-        <div className={styles.playerList}>
-          {players.map(p => {
-            const info = playerInfo[p.id]
-            const empireColor = EMPIRE_COLORS[info?.empire || ''] || 'var(--chrome-silver)'
-            return (
-              <button
-                key={p.id}
-                className={styles.playerCard}
-                onClick={() => onSelect(p.id)}
-                disabled={infoLoading}
-                style={{ '--empire-color': empireColor } as React.CSSProperties}
-              >
-                <div className={styles.playerName} style={{ color: empireColor }}>
-                  {p.username}
-                </div>
-                {info && (
-                  <div className={styles.playerMeta}>
-                    {info.online
-                      ? <Wifi size={10} className={styles.onlineDot} />
-                      : <WifiOff size={10} className={styles.offlineDot} />}
-                    {info.empire && <span className={styles.empire}>{info.empire}</span>}
-                    {info.credits !== undefined && (
-                      <span className={styles.credits}>
-                        <Coins size={10} />
-                        {info.credits.toLocaleString()}
-                      </span>
-                    )}
-                  </div>
-                )}
-              </button>
-            )
-          })}
+      </div>
+      {players.length > 5 && (
+        <div className={styles.searchRow}>
+          <Search size={14} style={{ color: 'var(--chrome-silver)', flexShrink: 0 }} />
+          <input
+            className={styles.searchInput}
+            placeholder="Filter players..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            autoFocus
+          />
+          <span className={styles.playerCount}>
+            {filtered.length}/{players.length}
+          </span>
         </div>
+      )}
+      <div className={styles.playerList}>
+        {filtered.map(p => {
+          const info = playerInfo[p.id]
+          const empireColor = EMPIRE_COLORS[info?.empire || ''] || 'var(--chrome-silver)'
+          return (
+            <button
+              key={p.id}
+              className={styles.playerCard}
+              onClick={() => onSelect(p.id)}
+              disabled={infoLoading}
+              style={{ '--empire-color': empireColor } as React.CSSProperties}
+            >
+              <div className={styles.playerName} style={{ color: empireColor }}>
+                {p.username}
+              </div>
+              {info && (
+                <div className={styles.playerMeta}>
+                  {info.online
+                    ? <Wifi size={9} className={styles.onlineDot} />
+                    : <WifiOff size={9} className={styles.offlineDot} />}
+                  {info.empire && <span className={styles.empire}>{info.empire}</span>}
+                  {info.credits !== undefined && (
+                    <span className={styles.credits}>
+                      <Coins size={9} />
+                      {info.credits.toLocaleString()}
+                    </span>
+                  )}
+                </div>
+              )}
+            </button>
+          )
+        })}
       </div>
     </div>
   )

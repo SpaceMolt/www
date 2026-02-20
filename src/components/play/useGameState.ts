@@ -303,6 +303,7 @@ const _initState: GameState = {
   marketData: null,
   ordersData: null,
   shipCatalog: null,
+  showroomData: null,
   fleetData: null,
   storageData: null,
   recipesData: null,
