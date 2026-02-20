@@ -1219,9 +1219,8 @@
 .playerTabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 1px;
-  background: var(--hull-grey);
-  border: 1px solid var(--hull-grey);
+  border-top: 1px solid var(--hull-grey);
+  border-left: 1px solid var(--hull-grey);
   border-radius: 6px;
   overflow: hidden;
   width: fit-content;
@@ -1243,20 +1242,20 @@
   min-width: 120px;
   max-width: 180px;
   flex: 1;
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--empire-color, transparent) 6%, transparent), transparent),
-    var(--deep-void);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--empire-color, transparent) 6%, transparent), transparent);
   border: none;
+  border-right: 1px solid var(--hull-grey);
+  border-bottom: 1px solid var(--hull-grey);
   cursor: pointer;
   transition: background 0.15s ease;
 }
 
 .playerCard:hover {
-  background: #162040;
+  background: rgba(22, 32, 64, 0.5);
 }
 
 .playerCardActive {
-  background: #1a2744;
+  background: rgba(26, 39, 68, 0.5);
 }
 
 .playerCardHeader {
@@ -1487,9 +1486,8 @@
 .overviewGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-  gap: 1px;
-  background: var(--hull-grey);
-  border: 1px solid var(--hull-grey);
+  border-top: 1px solid var(--hull-grey);
+  border-left: 1px solid var(--hull-grey);
   border-radius: 6px;
   overflow: hidden;
 }
@@ -1499,7 +1497,8 @@
   flex-direction: column;
   gap: 0.3rem;
   padding: 0.85rem 1rem;
-  background: var(--deep-void);
+  border-right: 1px solid var(--hull-grey);
+  border-bottom: 1px solid var(--hull-grey);
 }
 
 .overviewLabel {
@@ -1638,9 +1637,8 @@
 .skillGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1px;
-  background: var(--hull-grey);
-  border: 1px solid var(--hull-grey);
+  border-top: 1px solid var(--hull-grey);
+  border-left: 1px solid var(--hull-grey);
   border-radius: 6px;
   overflow: hidden;
 }
@@ -1650,7 +1648,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.6rem 0.85rem;
-  background: var(--deep-void);
+  border-right: 1px solid var(--hull-grey);
+  border-bottom: 1px solid var(--hull-grey);
 }
 
 .skillName {
@@ -1675,9 +1674,8 @@
 .statGrid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 1px;
-  background: var(--hull-grey);
-  border: 1px solid var(--hull-grey);
+  border-top: 1px solid var(--hull-grey);
+  border-left: 1px solid var(--hull-grey);
   border-radius: 6px;
   overflow: hidden;
 }
@@ -1687,7 +1685,8 @@
   flex-direction: column;
   gap: 0.25rem;
   padding: 0.85rem 1rem;
-  background: var(--deep-void);
+  border-right: 1px solid var(--hull-grey);
+  border-bottom: 1px solid var(--hull-grey);
   text-align: center;
 }
 

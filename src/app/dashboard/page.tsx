@@ -253,6 +253,7 @@ function DashboardContent() {
 
   // Player visibility state
   const [showHidden, setShowHidden] = useState(false)
+  const [hidingPlayer, setHidingPlayer] = useState(false)
 
   // Chat refresh ref
   const chatRefreshRef = useRef<(() => void) | null>(null)
@@ -460,8 +461,9 @@ function DashboardContent() {
 
   const handleToggleHide = async (playerId: string) => {
     const player = players.find(p => p.id === playerId)
-    if (!player) return
+    if (!player || hidingPlayer) return
     const newHidden = !player.hidden
+    setHidingPlayer(true)
     try {
       const headers = await authHeaders()
       const res = await fetch(`${GAME_SERVER}/api/player/${playerId}/hide`, {
@@ -471,9 +473,18 @@ function DashboardContent() {
       })
       if (res.ok) {
         setPlayers(prev => prev.map(p => p.id === playerId ? { ...p, hidden: newHidden } : p))
+        // If hiding and showHidden is off, keep player selected so unhide button stays visible
+        if (newHidden && !showHidden) {
+          setShowHidden(true)
+        }
+      } else {
+        const data = await res.json().catch(() => null)
+        alert(data?.error || `Failed to ${newHidden ? 'hide' : 'unhide'} player`)
       }
     } catch {
-      // ignore
+      alert('Could not reach game server')
+    } finally {
+      setHidingPlayer(false)
     }
   }
 
@@ -678,7 +689,7 @@ function DashboardContent() {
                     onClick={() => setShowHidden(!showHidden)}
                   >
                     {showHidden ? <Eye size={12} /> : <EyeOff size={12} />}
-                    {showHidden ? 'Hide hidden' : `Show hidden (${hiddenCount})`}
+                    {showHidden ? 'Show all' : `Show all (${hiddenCount} hidden)`}
                   </button>
                 )}
               </div>
@@ -953,10 +964,13 @@ function DashboardContent() {
                             <button
                               className={`${styles.resetPasswordBtn} ${players.find(p => p.id === selectedPlayer)?.hidden ? styles.hideActive : ''}`}
                               onClick={() => selectedPlayer && handleToggleHide(selectedPlayer)}
+                              disabled={hidingPlayer}
                             >
-                              {players.find(p => p.id === selectedPlayer)?.hidden
-                                ? <><Eye size={14} /> Unhide Player</>
-                                : <><EyeOff size={14} /> Hide Player</>
+                              {hidingPlayer
+                                ? <><RefreshCw size={14} className={styles.spinning} /> Updating...</>
+                                : players.find(p => p.id === selectedPlayer)?.hidden
+                                  ? <><Eye size={14} /> Unhide Player</>
+                                  : <><EyeOff size={14} /> Hide Player</>
                               }
                             </button>
                             <span className={styles.resetPasswordHint}>
