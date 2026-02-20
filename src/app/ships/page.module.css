@@ -355,6 +355,18 @@
 .shipCardExpanded {
   border-color: var(--empire-color, var(--plasma-cyan));
   box-shadow: 0 5px 25px color-mix(in srgb, var(--empire-color, var(--plasma-cyan)) 15%, transparent);
+  grid-column: 1 / -1;
+  flex-direction: row;
+}
+
+.shipCardExpanded .cardAccent {
+  width: 3px;
+  height: auto;
+}
+
+.shipCardExpanded .cardBody {
+  flex: 0 0 320px;
+  border-right: 1px solid rgba(0, 212, 255, 0.08);
 }
 
 .cardAccent {
@@ -504,12 +516,22 @@
 
 /* === Expanded Detail === */
 .expandedDetail {
-  padding: 0 1.25rem 1.25rem;
-  border-top: 1px solid rgba(0, 212, 255, 0.08);
+  padding: 1.25rem;
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0 1.5rem;
+  align-content: start;
 }
 
 .detailSection {
-  margin-top: 1rem;
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.detailSection:first-child {
+  grid-column: 1 / -1;
 }
 
 .detailSectionTitle {
@@ -607,6 +629,7 @@
   flex-wrap: wrap;
   gap: 0.35rem;
   margin-top: 0.75rem;
+  grid-column: 1 / -1;
 }
 
 .flavorTag {
@@ -677,6 +700,25 @@
   }
 
   .guideColumns {
+    grid-template-columns: 1fr;
+  }
+
+  .shipCardExpanded {
+    flex-direction: column;
+  }
+
+  .shipCardExpanded .cardAccent {
+    width: auto;
+    height: 3px;
+  }
+
+  .shipCardExpanded .cardBody {
+    flex: none;
+    border-right: none;
+    border-bottom: 1px solid rgba(0, 212, 255, 0.08);
+  }
+
+  .expandedDetail {
     grid-template-columns: 1fr;
   }
 }
