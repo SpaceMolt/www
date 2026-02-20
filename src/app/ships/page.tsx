@@ -246,7 +246,8 @@ export default function ShipsPage() {
   const [activeClasses, setActiveClasses] = useState<Set<string>>(new Set())
   const [activeTier, setActiveTier] = useState<number>(0)
   const [search, setSearch] = useState('')
-  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+  const [allExpanded, setAllExpanded] = useState(false)
   const [classDropdownOpen, setClassDropdownOpen] = useState(false)
   const classDropdownRef = useRef<HTMLDivElement>(null)
 
@@ -323,7 +324,26 @@ export default function ShipsPage() {
   }, [ships, activeEmpire, activeClasses, activeTier, search])
 
   const toggleExpand = (id: string) => {
-    setExpandedId((prev) => (prev === id ? null : id))
+    setAllExpanded(false)
+    setExpandedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
+
+  const toggleExpandAll = () => {
+    if (allExpanded) {
+      setAllExpanded(false)
+      setExpandedIds(new Set())
+    } else {
+      setAllExpanded(true)
+      setExpandedIds(new Set(filteredShips.map((s) => s.id)))
+    }
   }
 
   return (
@@ -374,6 +394,12 @@ export default function ShipsPage() {
                 {empire.name}
               </button>
             ))}
+            <button
+              className={`${styles.filterBtn} ${styles.expandAllBtn} ${allExpanded ? styles.filterBtnActive : ''}`}
+              onClick={toggleExpandAll}
+            >
+              {allExpanded ? 'Collapse All' : 'Expand All'}
+            </button>
           </div>
 
           <div className={styles.filterRow}>
@@ -467,7 +493,7 @@ export default function ShipsPage() {
       {!loading && !error && filteredShips.length > 0 && (
         <div className={styles.shipGrid}>
           {filteredShips.map((ship) => {
-            const isExpanded = expandedId === ship.id
+            const isExpanded = expandedIds.has(ship.id)
             const empireColor = EMPIRE_COLORS[ship.empire] || '#888'
 
             return (

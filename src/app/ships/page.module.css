@@ -220,6 +220,10 @@
   flex-shrink: 0;
 }
 
+.expandAllBtn {
+  margin-left: auto;
+}
+
 /* === Class Dropdown === */
 .classDropdown {
   position: relative;
@@ -315,7 +319,8 @@
   border-radius: 4px;
   outline: none;
   transition: border-color 0.3s ease;
-  width: 220px;
+  width: 320px;
+  margin-left: auto;
 }
 
 .searchInput::placeholder {
