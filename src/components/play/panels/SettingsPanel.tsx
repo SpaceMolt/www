@@ -7,7 +7,7 @@ import { ActionButton } from '../ActionButton'
 import styles from './SettingsPanel.module.css'
 
 export function SettingsPanel() {
-  const { state, sendCommand } = useGame()
+  const { state, sendCommand, onSwitchPlayer } = useGame()
   const player = state.player
 
   const [statusMsg, setStatusMsg] = useState(player?.status_message ?? '')
@@ -55,12 +55,8 @@ export function SettingsPanel() {
 
   const handleLogout = useCallback(() => {
     sendCommand('logout')
-    try {
-      localStorage.removeItem('spacemolt_token')
-    } catch {
-      // localStorage may not be available
-    }
-  }, [sendCommand])
+    if (onSwitchPlayer) onSwitchPlayer()
+  }, [sendCommand, onSwitchPlayer])
 
   return (
     <div className={styles.panel}>

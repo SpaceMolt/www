@@ -24,11 +24,12 @@ interface LinkedPlayer {
  * Authentication uses short-lived tokens from the gameserver's ws-token
  * endpoint, obtained via Clerk JWT. No passwords are stored or transmitted.
  */
-function PlayClientInner({ playerId, authHeaders }: {
+function PlayClientInner({ playerId, authHeaders, onSwitchPlayer }: {
   playerId: string
   authHeaders: () => Promise<Record<string, string>>
+  onSwitchPlayer: () => void
 }) {
-  const { state, send, sendCommand, connect } = useGame()
+  const { state, send, sendCommand, connect, disconnect } = useGame()
   const [phase, setPhase] = useState<'connecting' | 'authenticating' | 'playing'>('connecting')
   const hasConnected = useRef(false)
   const authAttempted = useRef(false)
@@ -224,10 +225,14 @@ export function PlayClient() {
     )
   }
 
+  const handleSwitchPlayer = useCallback(() => {
+    setSelectedPlayerId(null)
+  }, [])
+
   // Player selected — launch game
   return (
-    <GameProvider>
-      <PlayClientInner playerId={selectedPlayerId} authHeaders={authHeaders} />
+    <GameProvider onSwitchPlayer={handleSwitchPlayer}>
+      <PlayClientInner playerId={selectedPlayerId} authHeaders={authHeaders} onSwitchPlayer={handleSwitchPlayer} />
     </GameProvider>
   )
 }

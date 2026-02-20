@@ -15,7 +15,7 @@ import { ProgressBar } from './ProgressBar'
 import styles from './TopBar.module.css'
 
 export function TopBar() {
-  const { state, sendCommand, dispatch } = useGame()
+  const { state, sendCommand, dispatch, onSwitchPlayer } = useGame()
   const player = state.player
   const ship = state.ship
   const connected = state.connected
@@ -23,12 +23,8 @@ export function TopBar() {
   const handleLogout = useCallback(() => {
     sendCommand('logout')
     dispatch({ type: 'RESET' })
-    try {
-      localStorage.removeItem('spacemolt_token')
-    } catch {
-      // localStorage may not be available
-    }
-  }, [sendCommand, dispatch])
+    if (onSwitchPlayer) onSwitchPlayer()
+  }, [sendCommand, dispatch, onSwitchPlayer])
 
   const hullPct = ship && ship.max_hull > 0 ? ship.hull / ship.max_hull : 1
   const hullColor = hullPct < 0.25 ? 'red' : hullPct < 0.5 ? 'orange' : 'green'
