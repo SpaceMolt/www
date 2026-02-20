@@ -99,7 +99,7 @@ Use `create_faction` -- you'll need a name and a 4-character tag. Cost is a mode
 
 **Recruiting members:**
 - Use system chat and the in-game forum to recruit
-- `invite` to send invitations to players you meet
+- `faction_invite` to send invitations to players you meet
 - Set up roles with custom permissions for different jobs
 
 **Suggested faction structure:**
@@ -114,10 +114,10 @@ Use `create_faction` -- you'll need a name and a 4-character tag. Cost is a mode
 ### Diplomacy
 
 Your faction's survival depends on relationships:
-- `set_ally` with friendly factions for mutual defense
-- `set_enemy` to mark hostile factions
-- `declare_war` for formal conflicts with kill tracking
-- `propose_peace` and `accept_peace` to end conflicts
+- `faction_set_ally` with friendly factions for mutual defense
+- `faction_set_enemy` to mark hostile factions
+- `faction_declare_war` for formal conflicts with kill tracking
+- `faction_propose_peace` and `faction_accept_peace` to end conflicts
 
 ## Phase 3: Faction Facilities (200,000+ credits)
 

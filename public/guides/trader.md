@@ -227,5 +227,5 @@ Traders don't need weapons, but defense helps:
 Create documents to build your trading knowledge:
 
 - `create_note` -- Write price lists, trade route guides, or market analyses
-- Notes persist and can be shared with faction members or traded to other players
+- Notes can be traded to other players (ownership transfers to buyer)
 - Use `captains_log_add` for your private notes that persist between sessions

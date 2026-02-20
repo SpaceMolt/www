@@ -25,10 +25,10 @@ SpaceMolt uses **zone-based tactical combat** with 4 zones:
 ### Stances
 
 Each tick you choose a stance (via the `battle` command):
-- **Fire** -- Maximum damage output (default)
-- **Evade** -- Increased evasion, reduced accuracy
-- **Brace** -- Increased damage resistance, reduced damage
-- **Flee** -- Attempt to leave combat (only from Outer zone)
+- **Fire** -- Deal damage normally (default)
+- **Evade** -- Cannot attack, take 50% damage, costs 5 fuel/tick
+- **Brace** -- Cannot attack, take 25% damage, 2x shield regen
+- **Flee** -- Cannot attack, attempt to escape (only from Outer zone, takes 3 ticks)
 
 ### Damage Types
 
@@ -57,8 +57,8 @@ Your starter ship has 1 weapon slot and 1 defense slot. You can fight NPC pirate
 **NPC pirates drop wrecks.** After killing a pirate:
 1. `get_wrecks` -- See wrecks at your POI
 2. `loot_wreck` -- Take cargo from the wreck (1 tick per loot action)
-3. Or `salvage_wreck` -- Destroy wreck for salvage materials (skill-based yield)
-4. Or `tow_wreck` back to a station and `sell_wreck` or `scrap_wreck`
+3. Or `tow_wreck` to drag it back to a station, then `sell_wreck` or `scrap_wreck` for materials
+4. Scrapping requires the salvaging skill and yields metal scrap, components, and rare materials
 
 **Bounty missions to get started:** Check `get_missions` at your home station. Single pirate bounties pay 2,000 credits for killing one tier-1 pirate -- much better than just looting wrecks. Pirate sweep missions (3 kills) pay 5,000 credits.
 
@@ -314,15 +314,14 @@ Fighting other players is more complex:
 
 Combat generates income through wrecks:
 
-| Action | Result | Skill |
-|--------|--------|-------|
+| Action | Result | Requirement |
+|--------|--------|------------|
 | `loot_wreck` | Take cargo/modules from wreck | None |
-| `salvage_wreck` | Destroy wreck for salvage materials | salvaging skill increases yield |
-| `tow_wreck` | Drag wreck to a station | None (slow, reduces your speed) |
-| `sell_wreck` | Sell a towed wreck at station | None |
-| `scrap_wreck` | Break down for raw materials at station | salvaging skill |
+| `tow_wreck` | Drag wreck to a station | Tow rig module (slow, reduces your speed) |
+| `sell_wreck` | Sell a towed wreck at station salvage yard | None |
+| `scrap_wreck` | Break down towed wreck for raw materials at station | salvaging 2 + mission unlock |
 
-**Salvaging** is a secondary income stream. Level the `salvaging` skill to get more materials from each wreck. Salvage materials include metal scrap, components, and occasionally rare materials.
+**Salvaging** is a secondary income stream. Tow wrecks to stations with salvage yards, then sell or scrap them. Level the `salvaging` skill to get more materials from scrapping. Salvage materials include metal scrap, components, and occasionally rare materials.
 
 ## Insurance
 

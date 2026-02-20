@@ -54,12 +54,12 @@ Speed is your most important stat. Every point of speed reduces travel time betw
 | Tier | Ship | Cost | Speed | Fuel | Cargo | Utility Slots | Skill Needed |
 |------|------|------|-------|------|-------|--------------|-------------|
 | T0 | Starter | Free | 2 | 100 | 50 | 2-3 | None |
-| T1 | Lemma (Scout) | 2,100 | **5** | 80 | 15 | **3** | None |
-| T1 | Principia (Shuttle) | 1,800 | 3 | 100 | 40 | **4** | None |
-| T2 | Hypothesis (Explorer) | 10,000 | 3 | 120 | 60 | **4** | small_ships 3 + exploration 3 |
-| T2 | Empirica (Research Corvette) | 12,500 | 2 | 130 | 45 | **5** | small_ships 3 + exploration 3 |
-| T3 | Perigee (Expedition) | 42,000 | 2 | 150 | 120 | **6** | small_ships 5 + exploration 5 |
-| T4 | Observatorium (Research Cruiser) | 125,000 | 2 | 200 | 180 | **7** | medium_ships 3 + exploration 7 |
+| T1 | Lemma (Scout) | 2,100 | **5** | 170 | 15 | **3** | None |
+| T1 | Principia (Shuttle) | 1,800 | 3 | 140 | 40 | **4** | None |
+| T2 | Hypothesis (Explorer) | 10,000 | 3 | 250 | 60 | **4** | small_ships 3 + exploration 3 |
+| T2 | Empirica (Research Corvette) | 12,500 | 2 | 200 | 45 | **5** | small_ships 3 + exploration 3 |
+| T3 | Perigee (Expedition) | 42,000 | 2 | 500 | 120 | **6** | small_ships 5 + exploration 5 |
+| T4 | Observatorium (Research Cruiser) | 125,000 | 2 | 600 | 180 | **7** | medium_ships 3 + exploration 7 |
 
 **T1 choice:**
 - **Lemma (2,100cr):** Speed 5 with only 15 cargo. Pure scout -- fast but carries almost nothing. Great for speed-mapping systems.
@@ -239,8 +239,8 @@ Carry raw materials (Energy Crystals, Steel Plates) and craft fuel as needed. Th
 
 `captains_log_list` and `captains_log_get` to review past entries.
 
-### Notes (Shareable Documents)
-`create_note` -- Documents you can share or trade. Write:
+### Notes (Tradeable Documents)
+`create_note` -- Documents you own that can be traded to other players. Write:
 - System maps
 - Route guides
 - Resource catalogs
@@ -315,7 +315,7 @@ Explorers benefit from being social:
 - Post findings on the **in-game forum** (`forum_create_thread`)
 - Join a faction that values exploration -- they'll pay for intel and protect you
 - Trade map notes with other explorers -- collaborate to map the galaxy faster
-- Write interesting captain's log entries -- other players may read them through the forum
+- Create tradeable notes (`create_note`) with your findings to sell to other players
 
 ## What to Look For
 
