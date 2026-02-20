@@ -13,17 +13,18 @@ import {
 import { useGame } from './GameProvider'
 import styles from './TopBar.module.css'
 
-function MiniBar({ value, max, color, label }: { value: number; max: number; color: string; label: string }) {
+function StatusBar({ value, max, color, label }: { value: number; max: number; color: string; label: string }) {
   const pct = max > 0 ? Math.min(value / max, 1) * 100 : 0
   return (
-    <div className={styles.miniBar} title={`${label}: ${value.toLocaleString()} / ${max.toLocaleString()}`}>
-      <span className={styles.miniLabel}>{label}</span>
-      <div className={styles.miniTrack}>
+    <div className={styles.statusBar}>
+      <span className={styles.statusLabel}>{label}</span>
+      <div className={styles.statusTrack}>
         <div
-          className={`${styles.miniFill} ${styles[`fill_${color}`]}`}
+          className={`${styles.statusFill} ${styles[`fill_${color}`]}`}
           style={{ width: `${pct}%` }}
         />
       </div>
+      <span className={styles.statusValue}>{Math.round(pct)}%</span>
     </div>
   )
 }
@@ -45,65 +46,76 @@ export function TopBar() {
 
   return (
     <div className={styles.topBar}>
-      {/* Connection + Player */}
-      <div className={styles.playerSection}>
-        {connected ? (
-          <Wifi size={11} className={styles.connectedIcon} />
-        ) : (
-          <WifiOff size={11} className={styles.disconnectedIcon} />
-        )}
-        {player ? (
+      {/* Row 1: Player, Location, Ship */}
+      <div className={styles.infoRow}>
+        <div className={styles.playerSection}>
+          {connected ? (
+            <Wifi size={12} className={styles.connectedIcon} />
+          ) : (
+            <WifiOff size={12} className={styles.disconnectedIcon} />
+          )}
+          {player ? (
+            <>
+              <span className={styles.username}>{player.username}</span>
+              <span className={styles.credits}>
+                <Coins size={11} className={styles.creditsIcon} />
+                {player.credits.toLocaleString()}
+              </span>
+            </>
+          ) : (
+            <span className={styles.noPlayer}>Not logged in</span>
+          )}
+        </div>
+
+        {(state.system || state.poi) && (
           <>
-            <span className={styles.username}>{player.username}</span>
-            <span className={styles.credits}>
-              <Coins size={10} className={styles.creditsIcon} />
-              {player.credits.toLocaleString()}
-            </span>
+            <span className={styles.sep} />
+            <div className={styles.locationSection}>
+              <MapPin size={12} className={styles.locationIcon} />
+              {state.system && <span className={styles.systemName}>{state.system.name}</span>}
+              {state.system && state.poi && <span className={styles.poiSep}>/</span>}
+              {state.poi && <span className={styles.poiName}>{state.poi.name}</span>}
+              {state.isDocked && (
+                <span className={styles.dockedBadge}>
+                  <Anchor size={10} /> Docked
+                </span>
+              )}
+            </div>
           </>
-        ) : (
-          <span className={styles.noPlayer}>---</span>
+        )}
+
+        {ship && (
+          <>
+            <span className={styles.sep} />
+            <div className={styles.shipSection}>
+              <Rocket size={12} className={styles.shipIcon} />
+              <span className={styles.shipClass}>{ship.class}</span>
+            </div>
+          </>
+        )}
+
+        <div className={styles.spacer} />
+
+        {player && (
+          <button
+            className={styles.logoutBtn}
+            onClick={handleLogout}
+            title="Log out"
+            type="button"
+          >
+            <LogOut size={12} />
+          </button>
         )}
       </div>
 
-      {/* Location */}
-      {(state.system || state.poi) && (
-        <div className={styles.locationSection}>
-          <MapPin size={11} className={styles.locationIcon} />
-          {state.system && <span className={styles.systemName}>{state.system.name}</span>}
-          {state.system && state.poi && <span className={styles.poiSep}>/</span>}
-          {state.poi && <span className={styles.poiName}>{state.poi.name}</span>}
-          {state.isDocked && (
-            <span className={styles.dockedBadge}>
-              <Anchor size={9} /> Docked
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* Ship + Bars */}
+      {/* Row 2: Ship status bars */}
       {ship && (
-        <div className={styles.shipSection}>
-          <Rocket size={11} className={styles.shipIcon} />
-          <span className={styles.shipClass}>{ship.class}</span>
-          <div className={styles.barsRow}>
-            <MiniBar value={ship.hull} max={ship.max_hull} color={hullColor} label="H" />
-            <MiniBar value={ship.shield} max={ship.max_shield} color="blue" label="S" />
-            <MiniBar value={ship.fuel} max={ship.max_fuel} color="yellow" label="F" />
-            <MiniBar value={ship.cargo_used} max={ship.cargo_capacity} color="cyan" label="C" />
-          </div>
+        <div className={styles.barsRow}>
+          <StatusBar value={ship.hull} max={ship.max_hull} color={hullColor} label="Hull" />
+          <StatusBar value={ship.shield} max={ship.max_shield} color="blue" label="Shield" />
+          <StatusBar value={ship.fuel} max={ship.max_fuel} color="yellow" label="Fuel" />
+          <StatusBar value={ship.cargo_used} max={ship.cargo_capacity} color="cyan" label="Cargo" />
         </div>
-      )}
-
-      {/* Logout */}
-      {player && (
-        <button
-          className={styles.logoutBtn}
-          onClick={handleLogout}
-          title="Log out"
-          type="button"
-        >
-          <LogOut size={11} />
-        </button>
       )}
     </div>
   )

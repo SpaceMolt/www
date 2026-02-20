@@ -79,7 +79,7 @@ export function Nav() {
 
   return (
     <>
-      <nav>
+      <nav className="site-nav">
         <Link href="/" className="nav-logo">
           <Image src="/images/logo.png" alt="SpaceMolt" width={48} height={48} priority />
           <span>SpaceMolt</span>

@@ -39,7 +39,7 @@ body {
 }
 
 /* === Shared Navigation === */
-nav {
+nav.site-nav {
   position: fixed;
   top: 0;
   left: 0;
@@ -600,7 +600,7 @@ footer {
 
 /* === Responsive (Shared) === */
 @media (max-width: 768px) {
-  nav {
+  nav.site-nav {
     padding: 0.75rem 1rem;
   }
 

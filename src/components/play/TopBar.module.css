@@ -1,21 +1,25 @@
-/* === Compact Top Bar — single row === */
+/* === Top Bar — two compact rows === */
 .topBar {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  background: rgba(10, 14, 23, 0.98);
+  border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+}
+
+/* Row 1: player / location / ship info */
+.infoRow {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.3rem 0.6rem;
-  background: rgba(10, 14, 23, 0.98);
-  border-bottom: 1px solid rgba(0, 212, 255, 0.12);
-  height: 32px;
-  flex-shrink: 0;
-  overflow: hidden;
+  padding: 0.35rem 0.75rem;
+  min-height: 32px;
 }
 
-/* Player section */
 .playerSection {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.4rem;
   flex-shrink: 0;
 }
 
@@ -24,19 +28,19 @@
 
 .username {
   font-family: var(--font-orbitron), 'Orbitron', sans-serif;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--star-white);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.03em;
   white-space: nowrap;
 }
 
 .credits {
   display: flex;
   align-items: center;
-  gap: 0.15rem;
+  gap: 0.2rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.7rem;
   font-weight: 600;
   color: var(--warning-yellow);
   white-space: nowrap;
@@ -46,37 +50,43 @@
 
 .noPlayer {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
 }
 
-/* Location section */
+.sep {
+  width: 1px;
+  height: 16px;
+  background: var(--hull-grey);
+  flex-shrink: 0;
+  opacity: 0.5;
+}
+
 .locationSection {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.35rem;
   flex-shrink: 1;
   min-width: 0;
-  overflow: hidden;
 }
 
 .locationIcon { color: var(--plasma-cyan); flex-shrink: 0; }
 
 .systemName {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.7rem;
   color: var(--plasma-cyan);
   white-space: nowrap;
 }
 
 .poiSep {
   color: var(--hull-grey);
-  font-size: 0.55rem;
+  font-size: 0.6rem;
 }
 
 .poiName {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.65rem;
   color: var(--chrome-silver);
   white-space: nowrap;
   overflow: hidden;
@@ -88,90 +98,38 @@
   align-items: center;
   gap: 0.15rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.5rem;
+  font-size: 0.55rem;
   font-weight: 700;
   color: var(--bio-green);
-  background: rgba(45, 212, 191, 0.1);
-  border: 1px solid rgba(45, 212, 191, 0.25);
-  border-radius: 2px;
-  padding: 0 0.25rem;
+  background: rgba(45, 212, 191, 0.12);
+  border: 1px solid rgba(45, 212, 191, 0.3);
+  border-radius: 3px;
+  padding: 0.1rem 0.3rem;
   text-transform: uppercase;
   white-space: nowrap;
-  line-height: 1.4;
 }
 
-/* Ship section with inline bars */
 .shipSection {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  flex: 1;
-  min-width: 0;
+  gap: 0.35rem;
+  flex-shrink: 0;
 }
 
 .shipIcon { color: var(--plasma-cyan); flex-shrink: 0; }
 
 .shipClass {
   font-family: var(--font-orbitron), 'Orbitron', sans-serif;
-  font-size: 0.55rem;
+  font-size: 0.65rem;
   font-weight: 600;
   color: var(--star-white);
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
   white-space: nowrap;
-  flex-shrink: 0;
 }
 
-.barsRow {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex: 1;
-  min-width: 0;
-}
+.spacer { flex: 1; }
 
-/* Mini progress bars */
-.miniBar {
-  display: flex;
-  align-items: center;
-  gap: 0.2rem;
-  flex: 1;
-  min-width: 0;
-}
-
-.miniLabel {
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.5rem;
-  font-weight: 700;
-  color: var(--hull-grey);
-  width: 0.6rem;
-  text-align: right;
-  flex-shrink: 0;
-}
-
-.miniTrack {
-  flex: 1;
-  height: 3px;
-  background: rgba(61, 90, 108, 0.25);
-  border-radius: 1px;
-  overflow: hidden;
-  min-width: 20px;
-}
-
-.miniFill {
-  height: 100%;
-  border-radius: 1px;
-  transition: width 0.4s ease;
-}
-
-.fill_green { background: var(--bio-green); }
-.fill_orange { background: var(--shell-orange); }
-.fill_red { background: var(--claw-red); }
-.fill_blue { background: var(--laser-blue); }
-.fill_yellow { background: var(--warning-yellow); }
-.fill_cyan { background: var(--plasma-cyan); }
-
-/* Logout */
 .logoutBtn {
   display: flex;
   align-items: center;
@@ -181,7 +139,7 @@
   border-radius: 3px;
   color: var(--hull-grey);
   cursor: pointer;
-  padding: 0.15rem;
+  padding: 0.2rem;
   flex-shrink: 0;
   transition: color 0.15s, border-color 0.15s;
 }
@@ -191,31 +149,105 @@
   border-color: rgba(230, 57, 70, 0.4);
 }
 
+/* Row 2: status bars */
+.barsRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.25rem 0.75rem 0.35rem;
+}
+
+.statusBar {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.statusLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--chrome-silver);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  width: 3rem;
+  flex-shrink: 0;
+}
+
+.statusTrack {
+  flex: 1;
+  height: 6px;
+  background: rgba(61, 90, 108, 0.3);
+  border-radius: 3px;
+  overflow: hidden;
+  min-width: 40px;
+}
+
+.statusFill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+.statusValue {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--chrome-silver);
+  width: 2rem;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.fill_green { background: var(--bio-green); box-shadow: 0 0 4px rgba(45, 212, 191, 0.4); }
+.fill_orange { background: var(--shell-orange); box-shadow: 0 0 4px rgba(255, 107, 53, 0.4); }
+.fill_red { background: var(--claw-red); box-shadow: 0 0 4px rgba(230, 57, 70, 0.4); }
+.fill_blue { background: var(--laser-blue); box-shadow: 0 0 4px rgba(77, 171, 247, 0.4); }
+.fill_yellow { background: var(--warning-yellow); box-shadow: 0 0 4px rgba(255, 217, 61, 0.4); }
+.fill_cyan { background: var(--plasma-cyan); box-shadow: 0 0 4px rgba(0, 212, 255, 0.4); }
+
 /* Tablet */
 @media (max-width: 900px) {
-  .topBar {
+  .infoRow {
     gap: 0.5rem;
-    padding: 0.25rem 0.4rem;
+    padding: 0.3rem 0.5rem;
   }
 
+  .sep { display: none; }
+
   .barsRow {
-    gap: 0.35rem;
+    gap: 0.5rem;
+    padding: 0.2rem 0.5rem 0.3rem;
   }
+
+  .statusLabel { width: 2.2rem; font-size: 0.55rem; }
+  .statusValue { display: none; }
 }
 
 /* Mobile */
 @media (max-width: 600px) {
-  .topBar {
+  .infoRow {
     gap: 0.35rem;
-    padding: 0.2rem 0.35rem;
-    height: 28px;
+    padding: 0.25rem 0.4rem;
+    min-height: 28px;
   }
 
-  .username { font-size: 0.6rem; }
-  .credits { font-size: 0.55rem; }
-  .systemName { font-size: 0.55rem; }
+  .username { font-size: 0.65rem; }
+  .credits { font-size: 0.6rem; }
   .poiName { display: none; }
   .poiSep { display: none; }
-  .shipClass { font-size: 0.5rem; }
-  .miniLabel { display: none; }
+
+  .barsRow {
+    flex-wrap: wrap;
+    gap: 0.25rem 0.75rem;
+    padding: 0.15rem 0.4rem 0.25rem;
+  }
+
+  .statusBar {
+    flex-basis: calc(50% - 0.375rem);
+  }
+
+  .statusLabel { width: 2rem; font-size: 0.5rem; }
 }
