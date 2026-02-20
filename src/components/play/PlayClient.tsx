@@ -143,6 +143,10 @@ export function PlayClient() {
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null)
   const [loadingPlayers, setLoadingPlayers] = useState(true)
 
+  const handleSwitchPlayer = useCallback(() => {
+    setSelectedPlayerId(null)
+  }, [])
+
   // Add play-page class even while loading
   useEffect(() => {
     document.body.classList.add('play-page')
@@ -224,10 +228,6 @@ export function PlayClient() {
       />
     )
   }
-
-  const handleSwitchPlayer = useCallback(() => {
-    setSelectedPlayerId(null)
-  }, [])
 
   // Player selected — launch game
   return (
