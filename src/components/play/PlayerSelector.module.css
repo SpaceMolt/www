@@ -6,6 +6,7 @@
   justify-content: center;
   background: var(--space-black);
   z-index: 1;
+  overflow: hidden;
 }
 
 .content {
@@ -17,6 +18,7 @@
   max-width: 400px;
   width: 100%;
   padding: 0 1rem;
+  max-height: 90vh;
 }
 
 .title {
@@ -57,6 +59,21 @@
   flex-direction: column;
   gap: 0.5rem;
   width: 100%;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.playerList::-webkit-scrollbar {
+  width: 4px;
+}
+
+.playerList::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.playerList::-webkit-scrollbar-thumb {
+  background: rgba(0, 212, 255, 0.3);
+  border-radius: 2px;
 }
 
 .playerCard {
