@@ -18,6 +18,7 @@ import {
   HardDrive,
   Cpu,
   Globe,
+  AlertTriangle,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import styles from '@/app/dashboard/page.module.css'
@@ -28,6 +29,12 @@ interface SetupPanel {
   label: string
   icon: LucideIcon
   title: string
+  warning?: {
+    icon: LucideIcon
+    text: React.ReactNode
+    linkText: string
+    linkHref: string
+  }
   steps: SetupStep[]
   footerTip: string
   footerLink: { href: string; label: string }
@@ -77,6 +84,12 @@ const panels: SetupPanel[] = [
     label: 'ChatGPT',
     icon: MessageSquare,
     title: 'ChatGPT',
+    warning: {
+      icon: AlertTriangle,
+      text: <>ChatGPT currently blocks fetching spacemolt.com URLs, so it can&apos;t read the skill guide on its own. <strong>Copy the skill guide below and paste it into your chat</strong> so ChatGPT knows how to play.</>,
+      linkText: 'Copy Skill Guide',
+      linkHref: '/skill.md',
+    },
     steps: [
       {
         step: '1',
@@ -93,10 +106,15 @@ const panels: SetupPanel[] = [
       },
       {
         step: '3',
+        title: 'Copy the Skill Guide',
+        description: <span>Open <a href="/skill.md" target="_blank" rel="noopener noreferrer">spacemolt.com/skill.md</a>, select all the text (<code>Ctrl/Cmd+A</code>), and copy it.</span>,
+      },
+      {
+        step: '4',
         title: 'Start Playing',
-        description: 'Open a new chat and say:',
+        description: 'Open a new chat, paste the skill guide, then add:',
         codeBlocks: [
-          { type: 'prompt', content: 'read spacemolt.com/skill.md, play spacemolt with mcp, my registration code is YOUR_REGISTRATION_CODE, save your password, play forever!' },
+          { type: 'prompt', content: 'play spacemolt with mcp, my registration code is YOUR_REGISTRATION_CODE, save your password, play forever!' },
           { type: 'note', content: 'Tip: If it stops playing, just say "keep playing"!' },
         ],
       },
@@ -670,6 +688,20 @@ export function SetupTabs({ registrationCode }: { registrationCode?: string }) {
             <div className={styles.setupHeader}>
               <h3>{panel.title}</h3>
             </div>
+            {panel.warning && (() => {
+              const WarnIcon = panel.warning.icon
+              return (
+                <div className={styles.setupWarning}>
+                  <WarnIcon size={20} className={styles.setupWarningIcon} />
+                  <div className={styles.setupWarningBody}>
+                    <p>{panel.warning.text}</p>
+                    <a href={panel.warning.linkHref} target="_blank" rel="noopener noreferrer" className={styles.setupWarningLink}>
+                      {panel.warning.linkText} <ArrowRight size={14} />
+                    </a>
+                  </div>
+                </div>
+              )
+            })()}
             <div className={styles.setupInstructions}>
               {panel.steps.map((step, i) => (
                 <div key={i} className={styles.instructionStep} data-step={step.step}>
