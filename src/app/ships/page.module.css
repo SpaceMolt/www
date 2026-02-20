@@ -1,0 +1,606 @@
+/* === Ship Catalog Page === */
+
+.main {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 6rem 2rem 2rem;
+}
+
+/* === Page Header === */
+.pageHeader {
+  margin-bottom: 2rem;
+}
+
+.pageHeaderTitle {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, var(--plasma-cyan), var(--shell-orange));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.pageHeaderSubtitle {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  color: var(--chrome-silver);
+  font-size: 0.9rem;
+}
+
+.pageHeaderDescription {
+  font-size: 0.85rem;
+  color: var(--chrome-silver);
+  margin-top: 0.5rem;
+  opacity: 0.8;
+  max-width: 700px;
+}
+
+.shipCount {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--chrome-silver);
+  margin-top: 0.75rem;
+  opacity: 0.6;
+}
+
+/* === Guide Section === */
+.guideSection {
+  margin-bottom: 2rem;
+}
+
+.guideSectionHeader {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.guideSectionTitle {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1rem;
+  color: var(--star-white);
+  margin: 0;
+}
+
+.guideSectionHint {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--chrome-silver);
+  opacity: 0.4;
+}
+
+.guidePanels {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.75rem;
+}
+
+.guidePanel {
+  background: linear-gradient(135deg, rgba(26, 39, 68, 0.4), rgba(13, 19, 33, 0.6));
+  border: 1px solid var(--hull-grey);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: border-color 0.3s ease;
+}
+
+.guidePanel:hover {
+  border-color: rgba(0, 212, 255, 0.3);
+}
+
+.guidePanelOpen {
+  border-color: rgba(0, 212, 255, 0.2);
+  grid-column: 1 / -1;
+}
+
+.guidePanelToggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--star-white);
+  text-align: left;
+}
+
+.guidePanelTitle {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.guidePanelChevron {
+  color: var(--chrome-silver);
+  opacity: 0.5;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.guidePanelOpen .guidePanelChevron {
+  transform: rotate(180deg);
+}
+
+.guidePanelContent {
+  padding: 0 1rem 1rem;
+  font-size: 0.82rem;
+  color: var(--chrome-silver);
+  line-height: 1.7;
+}
+
+.guidePanelContent p {
+  margin: 0 0 0.6rem;
+}
+
+.guidePanelContent p:last-child {
+  margin-bottom: 0;
+}
+
+.guideColumns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin: 0.6rem 0;
+}
+
+.guideColumn {
+  padding: 0.75rem;
+  background: rgba(0, 212, 255, 0.04);
+  border-radius: 6px;
+  border: 1px solid rgba(0, 212, 255, 0.08);
+}
+
+.guideColumn p {
+  margin: 0;
+}
+
+.guideColumnTitle {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--plasma-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 0.4rem;
+}
+
+/* === Filter Bar === */
+.filterSection {
+  margin-bottom: 2rem;
+}
+
+.filterRow {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+  align-items: center;
+}
+
+.filterLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--chrome-silver);
+  opacity: 0.6;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  min-width: 60px;
+}
+
+.filterBtn {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  padding: 0.4rem 0.8rem;
+  background: var(--nebula-blue);
+  border: 1px solid var(--hull-grey);
+  color: var(--chrome-silver);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.filterBtn:hover,
+.filterBtnActive {
+  border-color: var(--plasma-cyan);
+  color: var(--plasma-cyan);
+}
+
+.filterBtnActive {
+  background: rgba(0, 212, 255, 0.1);
+}
+
+.empireDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.searchInput {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  padding: 0.4rem 0.8rem;
+  background: var(--nebula-blue);
+  border: 1px solid var(--hull-grey);
+  color: var(--star-white);
+  border-radius: 4px;
+  outline: none;
+  transition: border-color 0.3s ease;
+  width: 220px;
+}
+
+.searchInput::placeholder {
+  color: var(--chrome-silver);
+  opacity: 0.5;
+}
+
+.searchInput:focus {
+  border-color: var(--plasma-cyan);
+}
+
+/* === Ship Grid === */
+.shipGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.25rem;
+}
+
+/* === Ship Card === */
+.shipCard {
+  background: linear-gradient(135deg, rgba(26, 39, 68, 0.6), rgba(13, 19, 33, 0.8));
+  border: 1px solid var(--hull-grey);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+}
+
+.shipCard:hover {
+  border-color: var(--empire-color, var(--plasma-cyan));
+  box-shadow: 0 5px 25px color-mix(in srgb, var(--empire-color, var(--plasma-cyan)) 20%, transparent);
+  transform: translateY(-3px);
+}
+
+.shipCardExpanded {
+  border-color: var(--empire-color, var(--plasma-cyan));
+  box-shadow: 0 5px 25px color-mix(in srgb, var(--empire-color, var(--plasma-cyan)) 15%, transparent);
+}
+
+.cardAccent {
+  height: 3px;
+  background: var(--empire-color, var(--hull-grey));
+  flex-shrink: 0;
+}
+
+.cardBody {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.shipName {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--star-white);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.tierBadge {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 3px;
+  background: rgba(0, 212, 255, 0.1);
+  color: var(--plasma-cyan);
+  white-space: nowrap;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+.cardTags {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.empireBadge {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+}
+
+.classBadge {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--chrome-silver);
+  opacity: 0.7;
+}
+
+.priceBadge {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--shell-orange);
+  margin-left: auto;
+}
+
+.shipDescription {
+  font-size: 0.85rem;
+  color: var(--chrome-silver);
+  line-height: 1.6;
+  margin-bottom: 0.75rem;
+}
+
+/* === Stats Row === */
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.statLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--chrome-silver);
+  opacity: 0.6;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.statValue {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--star-white);
+  font-weight: 600;
+}
+
+/* === Slots Row === */
+.slotsRow {
+  display: flex;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(0, 212, 255, 0.1);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--chrome-silver);
+}
+
+.slotItem {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.slotIcon {
+  font-size: 0.75rem;
+}
+
+.weaponSlot {
+  color: var(--claw-red);
+}
+
+.defenseSlot {
+  color: var(--plasma-cyan);
+}
+
+.utilitySlot {
+  color: var(--bio-green);
+}
+
+/* === Expanded Detail === */
+.expandedDetail {
+  padding: 0 1.25rem 1.25rem;
+  border-top: 1px solid rgba(0, 212, 255, 0.08);
+}
+
+.detailSection {
+  margin-top: 1rem;
+}
+
+.detailSectionTitle {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--plasma-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.loreText {
+  font-size: 0.85rem;
+  color: var(--chrome-silver);
+  line-height: 1.7;
+  opacity: 0.9;
+}
+
+/* === Full Stats Grid === */
+.fullStatsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.fullStatItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.35rem 0.5rem;
+  background: rgba(0, 212, 255, 0.04);
+  border-radius: 4px;
+}
+
+.fullStatLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--chrome-silver);
+}
+
+.fullStatValue {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--star-white);
+  font-weight: 600;
+}
+
+/* === Materials List === */
+.materialsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.materialItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.3rem 0.5rem;
+  background: rgba(255, 107, 53, 0.05);
+  border-radius: 4px;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+}
+
+.materialName {
+  color: var(--chrome-silver);
+}
+
+.materialQty {
+  color: var(--shell-orange);
+  font-weight: 600;
+}
+
+/* === Skills List === */
+.skillsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.skillItem {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  background: rgba(0, 212, 255, 0.06);
+  border: 1px solid rgba(0, 212, 255, 0.15);
+  border-radius: 3px;
+  color: var(--chrome-silver);
+}
+
+/* === Flavor Tags === */
+.flavorTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+}
+
+.flavorTag {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  padding: 0.15rem 0.4rem;
+  background: rgba(168, 197, 214, 0.08);
+  border-radius: 3px;
+  color: var(--chrome-silver);
+  opacity: 0.7;
+}
+
+/* === Loading === */
+.loading {
+  text-align: center;
+  padding: 4rem;
+  color: var(--chrome-silver);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+}
+
+/* === Empty State === */
+.emptyState {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--chrome-silver);
+}
+
+.emptyStateTitle {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  color: var(--star-white);
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+  .main {
+    padding: 8rem 1rem 2rem;
+  }
+
+  .shipGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .pageHeaderTitle {
+    font-size: 1.6rem;
+  }
+
+  .statsRow {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .fullStatsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .searchInput {
+    width: 100%;
+  }
+
+  .filterRow {
+    gap: 0.35rem;
+  }
+
+  .filterBtn {
+    font-size: 0.7rem;
+    padding: 0.35rem 0.6rem;
+  }
+
+  .guidePanels {
+    grid-template-columns: 1fr;
+  }
+
+  .guidePanelOpen {
+    grid-column: auto;
+  }
+
+  .guideColumns {
+    grid-template-columns: 1fr;
+  }
+}
