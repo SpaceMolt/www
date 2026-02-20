@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import styles from './page.module.css'
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
@@ -243,10 +243,34 @@ export default function ShipsPage() {
   const [error, setError] = useState(false)
 
   const [activeEmpire, setActiveEmpire] = useState<string>('')
-  const [activeClass, setActiveClass] = useState<string>('')
+  const [activeClasses, setActiveClasses] = useState<Set<string>>(new Set())
   const [activeTier, setActiveTier] = useState<number>(0)
   const [search, setSearch] = useState('')
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [classDropdownOpen, setClassDropdownOpen] = useState(false)
+  const classDropdownRef = useRef<HTMLDivElement>(null)
+
+  const toggleClass = useCallback((cls: string) => {
+    setActiveClasses((prev) => {
+      const next = new Set(prev)
+      if (next.has(cls)) {
+        next.delete(cls)
+      } else {
+        next.add(cls)
+      }
+      return next
+    })
+  }, [])
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (classDropdownRef.current && !classDropdownRef.current.contains(e.target as Node)) {
+        setClassDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [])
 
   useEffect(() => {
     async function fetchShips() {
@@ -279,8 +303,8 @@ export default function ShipsPage() {
     if (activeEmpire) {
       result = result.filter((s) => s.empire === activeEmpire)
     }
-    if (activeClass) {
-      result = result.filter((s) => s.class === activeClass)
+    if (activeClasses.size > 0) {
+      result = result.filter((s) => activeClasses.has(s.class))
     }
     if (activeTier > 0) {
       result = result.filter((s) => s.tier === activeTier)
@@ -296,7 +320,7 @@ export default function ShipsPage() {
       )
     }
     return result
-  }, [ships, activeEmpire, activeClass, activeTier, search])
+  }, [ships, activeEmpire, activeClasses, activeTier, search])
 
   const toggleExpand = (id: string) => {
     setExpandedId((prev) => (prev === id ? null : id))
@@ -353,31 +377,53 @@ export default function ShipsPage() {
           </div>
 
           <div className={styles.filterRow}>
-            <span className={styles.filterLabel}>Class</span>
-            <button
-              className={`${styles.filterBtn} ${activeClass === '' ? styles.filterBtnActive : ''}`}
-              onClick={() => setActiveClass('')}
-            >
-              All
-            </button>
-            {classes.map((cls) => (
+            <div className={styles.classDropdown} ref={classDropdownRef}>
               <button
-                key={cls}
-                className={`${styles.filterBtn} ${activeClass === cls ? styles.filterBtnActive : ''}`}
-                onClick={() => setActiveClass(cls)}
+                className={`${styles.filterBtn} ${styles.classDropdownToggle} ${activeClasses.size > 0 ? styles.filterBtnActive : ''}`}
+                onClick={() => setClassDropdownOpen((v) => !v)}
+                aria-expanded={classDropdownOpen}
+                aria-haspopup="true"
               >
-                {cls}
+                {activeClasses.size === 0
+                  ? 'All Classes'
+                  : activeClasses.size === 1
+                    ? [...activeClasses][0]
+                    : `${activeClasses.size} classes`}
+                <svg className={styles.classDropdownChevron} width="10" height="6" viewBox="0 0 10 6" fill="none">
+                  <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </button>
-            ))}
-          </div>
+              {classDropdownOpen && (
+                <div className={styles.classDropdownMenu}>
+                  <button
+                    className={styles.classDropdownClear}
+                    onClick={() => setActiveClasses(new Set())}
+                    disabled={activeClasses.size === 0}
+                  >
+                    Clear all
+                  </button>
+                  <div className={styles.classDropdownList}>
+                    {classes.map((cls) => (
+                      <label key={cls} className={styles.classDropdownItem}>
+                        <input
+                          type="checkbox"
+                          checked={activeClasses.has(cls)}
+                          onChange={() => toggleClass(cls)}
+                          className={styles.classCheckbox}
+                        />
+                        <span className={styles.classDropdownLabel}>{cls}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
 
-          <div className={styles.filterRow}>
-            <span className={styles.filterLabel}>Tier</span>
             <button
               className={`${styles.filterBtn} ${activeTier === 0 ? styles.filterBtnActive : ''}`}
               onClick={() => setActiveTier(0)}
             >
-              All
+              All Tiers
             </button>
             {tiers.map((tier) => (
               <button
@@ -388,10 +434,7 @@ export default function ShipsPage() {
                 T{tier}
               </button>
             ))}
-          </div>
 
-          <div className={styles.filterRow}>
-            <span className={styles.filterLabel}>Search</span>
             <input
               type="text"
               className={styles.searchInput}
