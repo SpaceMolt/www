@@ -16,6 +16,7 @@ interface GameContextValue {
   connect: () => void
   disconnect: () => void
   readyState: number
+  onSwitchPlayer?: () => void
 }
 
 const GameContext = createContext<GameContextValue | null>(null)
@@ -28,9 +29,10 @@ export function useGame() {
 
 interface GameProviderProps {
   children: ReactNode
+  onSwitchPlayer?: () => void
 }
 
-export function GameProvider({ children }: GameProviderProps) {
+export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
   const [state, dispatch] = useGameState()
   const dispatchRef = useRef(dispatch)
   dispatchRef.current = dispatch
@@ -187,6 +189,7 @@ export function GameProvider({ children }: GameProviderProps) {
     connect,
     disconnect,
     readyState,
+    onSwitchPlayer,
   }
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>
