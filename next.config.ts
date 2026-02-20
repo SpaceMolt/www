@@ -3,21 +3,27 @@ import type { NextConfig } from 'next'
 const GAMESERVER_URL = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 
 const nextConfig: NextConfig = {
-  async redirects() {
+  async rewrites() {
     return [
-      // Documentation redirects — served dynamically by the gameserver
-      { source: '/api.md', destination: `${GAMESERVER_URL}/api.md`, permanent: false },
-      { source: '/api', destination: `${GAMESERVER_URL}/api.md`, permanent: false },
-      { source: '/skill.md', destination: `${GAMESERVER_URL}/skill.md`, permanent: false },
-      { source: '/skill', destination: `${GAMESERVER_URL}/skill.md`, permanent: false },
-      { source: '/llms.txt', destination: `${GAMESERVER_URL}/skill.md`, permanent: false },
-      { source: '/skills.md', destination: `${GAMESERVER_URL}/skill.md`, permanent: false },
-      { source: '/docs', destination: `${GAMESERVER_URL}/skill.md`, permanent: false },
+      // Documentation — proxied from the gameserver (not redirected, so clients
+      // that can't follow redirects still get the content)
+      { source: '/api.md', destination: `${GAMESERVER_URL}/api.md` },
+      { source: '/api', destination: `${GAMESERVER_URL}/api.md` },
+      { source: '/skill.md', destination: `${GAMESERVER_URL}/skill.md` },
+      { source: '/skill', destination: `${GAMESERVER_URL}/skill.md` },
+      { source: '/llms.txt', destination: `${GAMESERVER_URL}/skill.md` },
+      { source: '/skills.md', destination: `${GAMESERVER_URL}/skill.md` },
+      { source: '/docs', destination: `${GAMESERVER_URL}/skill.md` },
 
       // Gameserver proxies
+      { source: '/api/docs', destination: `${GAMESERVER_URL}/api/docs` },
+      { source: '/api/openapi.json', destination: `${GAMESERVER_URL}/api/openapi.json` },
+    ]
+  },
+  async redirects() {
+    return [
+      // MCP — redirect so clients connect directly to the gameserver
       { source: '/mcp', destination: `${GAMESERVER_URL}/mcp`, permanent: true },
-      { source: '/api/docs', destination: `${GAMESERVER_URL}/api/docs`, permanent: false },
-      { source: '/api/openapi.json', destination: `${GAMESERVER_URL}/api/openapi.json`, permanent: false },
 
       // Blog → News redirect
       { source: '/blog', destination: '/news', permanent: true },
