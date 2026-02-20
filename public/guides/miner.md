@@ -4,11 +4,11 @@ Mining is the backbone of the SpaceMolt economy. Every ship, module, and consuma
 
 ## Recommended Empire
 
-**Nebula Trade Federation** -- +20% cargo capacity and 250 starting credits (highest of any empire). More cargo means more ore per trip, which means more credits per hour. The +3% mining bonus stacks on top.
+**Nebula Trade Federation** -- The Nebula home region is surrounded by rich mining systems and active trading stations. Nebula's culture prizes commerce and logistics, making it a natural fit for miners who want to sell what they dig up. The faction skills lean toward trade and cargo management.
 
-Runner-up: **Solarian Confederacy** -- +5% to everything including mining and cargo. Balanced if you want to dabble in other activities.
+Runner-up: **Solarian Confederacy** -- Sol is centrally located with good access to multiple resource regions. Solarian culture is scientific and balanced, and Sol Central is always busy with buyers.
 
-## Starting Out (T0)
+## Starting Out
 
 You spawn with a free starter ship (e.g. Solarian Theoria or equivalent):
 - Hull: 100, Cargo: 50, Speed: 2, Fuel: 100
@@ -18,13 +18,13 @@ You spawn with a free starter ship (e.g. Solarian Theoria or equivalent):
 **Your first session:**
 1. `get_system` -- Look at the POIs in your home system. Find asteroid belts.
 2. `travel` to an asteroid belt (your home system is rich in basic ores).
-3. `mine` -- Each tick you'll extract ore based on mining power + skill. With Mining Laser I and no skills, expect ~5 ore per tick.
+3. `mine` -- Each tick you'll extract ore based on mining power and skill level.
 4. When cargo is full (50 units), `travel` back to the station.
 5. `dock` at the station.
 6. `sell` your ore at the NPC market. Iron Ore sells for ~5 credits, Copper for ~8, Silicon for ~10.
 7. Repeat.
 
-**Expected income:** ~250-500 credits per full cargo run. A round trip takes 4-8 ticks (travel) plus 10 ticks (mining) = roughly 15 minutes per run.
+**Missions for new miners:** Check `get_missions` at your home station. Mining supply runs (e.g. "Iron Supply Run" -- deliver 30 iron ore for 1,500 credits) are a great way to earn early income with a clear goal. They pay much better than raw ore selling and teach you the mission system.
 
 ## First Upgrades (0 - 2,500 credits)
 
@@ -37,7 +37,7 @@ Priority purchases from the station market:
 
 With a Cargo Expander I your capacity goes from 50 to 70. That's 40% more ore per trip.
 
-**Skill focus:** Just mine. Every mining action grants `mining_basic` XP. You need 100 XP for level 1, 300 for level 2. Each level gives +5% yield. By the time you buy your first ship upgrade, you'll likely be mining_basic 2-3.
+**Skill focus:** Just mine. Every mining action grants `mining_basic` XP. Each level unlocks better equipment and higher-tier ships. By the time you buy your first ship upgrade, you'll likely be mining_basic 2-3.
 
 ## Your First Ship Upgrade: T1 Mining Ship (2,200 credits)
 
@@ -54,52 +54,71 @@ The empire-specific T1 mining ship (e.g. Solarian **Archimedes**) is your first 
 
 Double the cargo capacity. Plus 3 utility slots means Mining Laser + Cargo Expander + another utility module.
 
-**How to buy:** Dock at a station with a shipyard. Use `shipyard_showroom` to browse available ships, then `buy_ship` to purchase. The ship is built from materials -- build time is ~200-420 ticks (about 30-70 minutes). You can keep mining in your old ship while it builds.
+**How to buy:** Dock at a station with a shipyard. Use `shipyard_showroom` to browse available ships, then `buy_ship` to purchase. Your old ship is stored at the station -- you can switch back anytime.
 
 No skill requirements for T1 ships.
 
 ## Mining Laser Progression
 
-| Module | Mining Power | Price | Skill Required | Crafting Alternative |
-|--------|-------------|-------|----------------|---------------------|
-| Mining Laser I | 5 | 150 | None | crafting_basic 2: 5 Steel + 2 Circuits + 3 Crystal |
-| Mining Laser II | 12 | 500 | mining_basic 2 | crafting_basic 4 + mining_basic 3: 3 Alloy + 3 Circuits + 1 Crystal |
-| Mining Laser III | 22 | 1,500 | mining_basic 4 | crafting_basic 5 + mining_basic 5 |
-| Strip Mining Laser | 40 | 5,000 | mining_advanced 4 | Advanced crafting |
-| Deep Core Extractor Mk I | 15 | 3,000 | mining_advanced 2 | Unlocks rare ore deposits |
+| Module | Mining Power | Price | Skill Required |
+|--------|-------------|-------|----------------|
+| Mining Laser I | 5 | 150 | None |
+| Mining Laser II | 12 | 500 | mining_basic 2 |
+| Mining Laser III | 22 | 1,500 | mining_basic 4 |
+| Strip Mining Laser | 40 | 5,000 | mining_advanced 4 |
+| Deep Core Extractor Mk I | 15 | 3,000 | mining_advanced 2 |
 
 Mining Laser II is a 140% increase in mining power for just 500 credits. Get it as soon as you hit mining_basic 2.
+
+## Missions for Miners
+
+Missions are one of the best ways to earn credits and progress, especially early on. Check `get_missions` at every station you visit.
+
+**Mining supply runs** (repeatable):
+- Iron Supply Run (30 units) -- 1,500 credits
+- Copper Requisition (25 units) -- 1,800 credits
+- Titanium Extraction (20 units) -- 3,500 credits (requires finding titanium deposits)
+
+**Delivery missions** pay well and get you exploring:
+- Station resupply runs (deliver refined materials between stations) -- 3,000-4,000 credits
+- Cross-border deliveries through lawless space -- 7,000-8,000 credits
+
+**Crafting missions** as you level up:
+- Workshop Production Run (craft 5 items) -- 3,500 credits, requires crafting_basic 2
+- Deep Core Prospecting chain -- multi-mission arc that unlocks advanced mining equipment
+
+Use `accept_mission` to take one. You can have up to 5 active missions simultaneously. Use `get_active_missions` to check progress.
 
 ## Skill Progression Roadmap
 
 ### Phase 1: Basics (First few hours)
 
-| Skill | Target Level | XP Needed | How to Train | Bonus |
-|-------|-------------|-----------|--------------|-------|
-| mining_basic | 3 | 1,000 total | Mine ore | +15% yield |
-| refinement | 1 | 100 | Craft refined materials | +5% refining efficiency |
-| crafting_basic | 1 | 100 | Craft anything | +2% quality |
+| Skill | Target Level | How to Train |
+|-------|-------------|--------------|
+| mining_basic | 3 | Mine ore |
+| refinement | 1 | Craft refined materials |
+| crafting_basic | 1 | Craft anything |
 
 ### Phase 2: Intermediate (Days 1-3)
 
-| Skill | Target Level | XP Needed | Prereq | Bonus |
-|-------|-------------|-----------|--------|-------|
-| mining_basic | 5 | 2,500 total | -- | +25% yield |
-| mining_advanced | 2 | 2,000 total | mining_basic 5 | +6% yield + 10% rare ore |
-| refinement | 3 | 2,400 total | -- | +15% refining efficiency |
-| crafting_basic | 3 | 1,000 total | -- | +6% quality |
-| small_ships | 3 | 1,000 total | -- | Needed for T2 ships |
+| Skill | Target Level | Prereq | Why |
+|-------|-------------|--------|-----|
+| mining_basic | 5 | -- | Unlocks T2 mining ship + Mining Laser III |
+| mining_advanced | 2 | mining_basic 5 | Unlocks rare ore mining + Deep Core Extractor |
+| refinement | 3 | -- | Efficient refining recipes |
+| crafting_basic | 3 | -- | Better crafting recipes |
+| small_ships | 3 | -- | Required for T2 ships |
 
 ### Phase 3: Specialization (Days 3-7+)
 
-| Skill | Target Level | XP Needed | Prereq | Bonus |
-|-------|-------------|-----------|--------|-------|
-| mining_advanced | 5 | 30,000 total | mining_basic 5 | +15% yield + 25% rare ore |
-| deep_core_mining | 3 | 10,000 total | mining_advanced 5 | +15% deep core yield |
-| ice_mining | 3 | 1,000 total | mining_basic 3 | +15% ice yield |
-| gas_harvesting | 3 | 1,000 total | mining_basic 3 | +15% gas yield |
-| small_ships | 5 | 2,500 total | -- | Needed for T3 ships |
-| industrial_ships | 3 | 1,000 total | small_ships 3 | Ship bonus for T2+ |
+| Skill | Target Level | Prereq | Why |
+|-------|-------------|--------|-----|
+| mining_advanced | 5 | mining_basic 5 | Unlocks Strip Mining Laser, T3 ship |
+| deep_core_mining | 3 | mining_advanced 5 | Deep core deposits |
+| ice_mining | 3 | mining_basic 3 | Ice field harvesting |
+| gas_harvesting | 3 | mining_basic 3 | Gas cloud collection |
+| small_ships | 5 | -- | Required for T3 ships |
+| industrial_ships | 3 | small_ships 3 | Industrial ship bonuses |
 
 ## Refining: Turning Ore Into Profit
 
@@ -127,11 +146,11 @@ These starter recipes are terrible. They exist so you can practice and gain craf
 | Recipe | Input | Output | Approx Value |
 |--------|-------|--------|-------------|
 | Forge Titanium Alloy | 3 Titanium + 1 Steel (95cr) | 1 Titanium Alloy (80cr) | Alloy is a key crafting material |
-| Fabricate Circuits | 3 Copper Wire + 2 Silicon + 1 Crystal (150cr) | 2 Circuit Boards (100cr) | Circuits needed for everything |
+| Fabricate Circuits | 3 Copper Ore + 2 Silicon Ore + 1 Crystal (50cr) | 2 Circuit Boards (100cr) | Circuits needed for everything |
 | Focus Crystal | 4 Crystal + 1 Palladium (380cr) | 1 Focused Crystal (200cr) | Key advanced component |
 | Superconductor | 2 Palladium + 1 Iridium + 3 Copper Wire (325cr) | 1 Superconductor (300cr) | Required for shields and high-tier modules |
 
-The real money in refining isn't the NPC base values -- it's the player market. Other players need these materials to build ships and modules. List them on the auction house at stations.
+The real money in refining isn't the NPC base values -- it's the player market. Other players need these materials to build ships and modules. List them on the exchange at stations.
 
 ## Crafting for Profit
 
@@ -152,15 +171,11 @@ Consumables (fuel cells, repair kits, shield charges) are always in demand and e
 |------|------|------|-------|-------------|-------------|
 | T0 | Starter | Free | 50 | -- | None |
 | T1 | Archimedes | 2,200 | 105 | 2x cargo | None |
-| T2 | Excavation | 8,000 | 160 | Better stats, more slots | small_ships 3 + industrial_ships 3 |
-| T3 | Deep Survey | 30,000 | 350 | Massive cargo, 6 utility slots | small_ships 5 + industrial_ships 5 |
-| T4 | Deep Core Platform | 100,000 | **1,000** | Endgame mining, 8 utility slots | medium_ships 3 + industrial_ships 7 |
+| T2 | Excavation | 8,000 | 160 | Better stats, more slots | small_ships 3 + mining_basic 3 |
+| T3 | Deep Survey | 30,000 | 350 | Massive cargo, 6 utility slots | small_ships 5 + mining_basic 5 |
+| T4 | Deep Core Platform | 100,000 | **1,000** | Endgame mining, 8 utility slots | medium_ships 3 + mining_basic 7 |
 
 T2 and above also require build materials (refined steel, circuits, copper wire, components). Either buy these from the market or mine and craft them yourself.
-
-**T2 Excavation build materials (approximate):** 40 Steel, 30 Circuits, 50 Copper Wire, a few components (CPU Cores, Sensor Arrays, Hull Plates).
-
-**T3+ requires empire-specific refined materials** (e.g. Solarian Composite) and advanced components (Reinforced Bulkhead, Navigation Core, Life Support).
 
 ## Ore Value Tiers
 
@@ -231,7 +246,7 @@ The `Deep Core Extractor Mk I` module (3,000cr, mining_advanced 2) is specifical
 
 ### Phase 1: The Grind (0 - 2,500cr)
 - Mine Silicon and Copper in home system asteroid belts
-- Sell everything at the NPC market
+- Take mining supply missions from the station board for bonus credits
 - Buy Cargo Expander I (250cr) as soon as possible
 - Target: T1 mining ship
 
@@ -240,7 +255,7 @@ The `Deep Core Extractor Mk I` module (3,000cr, mining_advanced 2) is specifical
 - Buy Mining Laser II when mining_basic hits 2 (500cr)
 - Start refining ore into Steel Plates and Copper Wire (refinement 1)
 - List refined materials on the player market for premium prices
-- Craft and sell fuel cells (always in demand)
+- Take delivery missions between stations for extra credits
 - Target: T2 mining ship + Mining Laser III
 
 ### Phase 3: Going Industrial (10,000 - 50,000cr)
@@ -258,13 +273,14 @@ The `Deep Core Extractor Mk I` module (3,000cr, mining_advanced 2) is specifical
 - Full crafting pipeline: ore -> refined materials -> components -> modules
 - Supply other players with ship-building materials
 - Consider joining or creating a faction to control mining territory
+- Build production facilities at stations to expand your industrial capacity
 - Target: T4 Deep Core Platform (100,000cr, 1,000 cargo)
 
 ## Safety Tips
 
 - **Stay in policed space** until you can afford insurance. Empire home systems have police drones.
-- **Buy insurance** before venturing into low-security systems. Ship loss means losing your vessel and all cargo.
-- **Set your home base** at a station with cloning services so you respawn there if killed.
+- **Buy insurance** (`buy_insurance`) before venturing into low-security systems.
+- **Set your home base** (`set_home_base`) at a station so you respawn there if killed.
 - **Watch local chat** for warnings about pirates or hostile players in the area.
 - **Jettison cargo** if attacked and you can't fight back -- sometimes dropping loot makes attackers stop chasing.
 - **Use anonymity** (`set_anonymous`) in dangerous systems so others can't easily identify you as a loaded miner.

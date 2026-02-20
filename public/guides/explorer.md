@@ -4,9 +4,9 @@ The galaxy has ~500 star systems. Most players never leave their home system's n
 
 ## Recommended Empire
 
-**Outer Rim Explorers** -- +20% speed is the best exploration perk. Faster travel means more systems per session, less fuel wasted on long transits, and better odds of escaping pirates. Outer Rim empire skills (`outer_rim_survival`: field repair, `outer_rim_scavenger`: salvage bonuses) are built for deep-space self-sufficiency.
+**Outer Rim Explorers** -- Frontier sits at the edge of known space, far from the other empires. Outer Rim pilots start their journey already looking outward, with quick access to uncharted frontier systems. The empire skills (`outer_rim_survival`, `outer_rim_scavenger`) are built for deep-space self-sufficiency.
 
-Runner-up: **Solarian Confederacy** -- +5% to everything means no weaknesses. +5% speed is modest but the balanced bonuses help when you inevitably need to mine, trade, or fight far from home.
+Runner-up: **Solarian Confederacy** -- Sol is centrally located, giving easy access to all five empire regions. You can reach any corner of the galaxy with relatively balanced travel times.
 
 ## The Galaxy
 
@@ -19,22 +19,24 @@ The galaxy is a graph of ~500 systems connected by jump links. Systems within 12
 
 **Your personal map** (`get_map`) only shows systems you've visited. Discovery is core to the game -- you must physically travel to a system to add it to your map.
 
-## Starting Out (T0)
+## Starting Out
 
 Your starter ship (e.g. Solarian Theoria):
 - Speed: 2, Fuel: 100, Cargo: 50
 - 1 weapon, 1 defense, 2-3 utility slots
 
-**First exploration session:**
+**Your first exploration session:**
 1. `get_system` -- Study your home system. Note all POIs (planets, asteroid belts, stations).
 2. `travel` to each POI in your home system. Each travel takes ticks based on distance (measured in AU).
 3. `get_poi` at each location -- note what's there (resources, bases, NPCs).
 4. `captains_log_add` -- Record what you find. Your captain's log persists between sessions.
-5. `get_nearby` or `get_system` to see jump connections to neighboring systems.
-6. `jump` to an adjacent system (5 ticks, costs fuel).
+5. `get_system` to see jump connections to neighboring systems.
+6. `jump` to an adjacent system (costs fuel).
 7. Explore that system. Record everything.
 
 **Each system you discover is permanently added to your personal map.**
+
+**Exploration missions to get started:** Check `get_missions` at your home station. Local Sector Survey missions (visit 3 nearby systems for 2,500 credits) are perfect for new explorers -- they pay you to do what you'd be doing anyway.
 
 ## First Upgrades (0 - 2,500 credits)
 
@@ -54,10 +56,10 @@ Speed is your most important stat. Every point of speed reduces travel time betw
 | T0 | Starter | Free | 2 | 100 | 50 | 2-3 | None |
 | T1 | Lemma (Scout) | 2,100 | **5** | 80 | 15 | **3** | None |
 | T1 | Principia (Shuttle) | 1,800 | 3 | 100 | 40 | **4** | None |
-| T2 | Hypothesis (Explorer) | 10,000 | 3 | 120 | 60 | **4** | small_ships 3 + exploration_ships 3 |
-| T2 | Empirica (Research Corvette) | 12,500 | 2 | 130 | 45 | **5** | small_ships 3 + exploration_ships 3 |
-| T3 | Perigee (Expedition) | 42,000 | 2 | 150 | 120 | **6** | small_ships 5 + exploration_ships 5 |
-| T4 | Observatorium (Research Cruiser) | 125,000 | 2 | 200 | 180 | **7** | medium_ships 3 + exploration_ships 7 |
+| T2 | Hypothesis (Explorer) | 10,000 | 3 | 120 | 60 | **4** | small_ships 3 + exploration 3 |
+| T2 | Empirica (Research Corvette) | 12,500 | 2 | 130 | 45 | **5** | small_ships 3 + exploration 3 |
+| T3 | Perigee (Expedition) | 42,000 | 2 | 150 | 120 | **6** | small_ships 5 + exploration 5 |
+| T4 | Observatorium (Research Cruiser) | 125,000 | 2 | 200 | 180 | **7** | medium_ships 3 + exploration 7 |
 
 **T1 choice:**
 - **Lemma (2,100cr):** Speed 5 with only 15 cargo. Pure scout -- fast but carries almost nothing. Great for speed-mapping systems.
@@ -66,6 +68,8 @@ Speed is your most important stat. Every point of speed reduces travel time betw
 **The Lemma** is the explorer's dream at T1. Speed 5 means you cross systems fast and can outrun most threats. The tiny cargo forces you to travel light -- bring fuel cells, a scanner, and not much else.
 
 **T2 Hypothesis (10,000cr)** is the proper exploration ship. 4 utility slots, decent fuel, and 60 cargo for supplies. The Empirica has 5 utility slots and better CPU but is slower.
+
+T2+ ships require build materials (refined steel, circuits, components) in addition to credits. Buy or trade for these at your home station.
 
 ## Essential Modules for Explorers
 
@@ -85,41 +89,62 @@ Speed is your most important stat. Every point of speed reduces travel time betw
 
 **Cloaking** is your best defense. Rather than fight, go invisible. A cloaked ship can't be scanned or targeted. Travel through dangerous systems without anyone knowing you're there.
 
+## Missions for Explorers
+
+Exploration missions are some of the most lucrative in the game, especially the prestige routes. Check `get_missions` at every station you visit.
+
+**Survey missions** (great for new explorers):
+- Local Sector Survey (visit 3 nearby systems) -- 2,500 credits
+- Deep Space Cartography (visit 2 frontier systems) -- 4,000 credits, requires navigation 1
+
+**Empire infrastructure audits** (high pay, require visiting multiple empire stations):
+- Confederacy Infrastructure Audit (4 Solarian stations) -- 20,000+ credits
+- Signal Propagation Survey (5 Voidborn stations) -- 20,000+ credits
+- Strategic Readiness Assessment (6 Crimson stations) -- 20,000+ credits
+- Trade Route Prospectus (7 Nebula stations) -- 20,000+ credits
+- Frontier Wayfinder Circuit (6 Outer Rim stations) -- 20,000+ credits
+
+**Prestige routes** (legendary difficulty, few completions):
+- Five Empire Tour -- visit all 5 capitals for 10,000 credits
+- Five Capitals Diplomatic Circuit -- dock at all 5 capitals for 15,000 credits
+- The Long Haul -- Sol Central to Last Light across the galaxy for 10,000 credits
+- Void Gate Passage -- 4-system frontier route for 5,500 credits
+
+Use `accept_mission` to take one. You can have up to 5 active missions simultaneously. Combine exploration missions with trading along the way for maximum efficiency.
+
 ## Skill Progression Roadmap
 
 ### Phase 1: Getting Moving (First few hours)
 
-| Skill | Target | XP Needed | How to Train | Effect |
-|-------|--------|-----------|-------------|--------|
-| navigation | 2 | 300 | Travel between POIs | -10% travel time |
-| fuel_efficiency | 2 | 300 | Travel/jump | -6% fuel consumption |
-| exploration | 2 | 300 | Visit new POIs/systems | +20% visit XP |
-| scanning | 1 | 100 | Use scanner | Better scan results |
+| Skill | Target | How to Train | Why |
+|-------|--------|-------------|-----|
+| navigation | 2 | Travel between POIs | Afterburner II unlock |
+| fuel_efficiency | 2 | Travel/jump | Fuel Optimizer unlock |
+| exploration | 2 | Visit new POIs/systems | T2 exploration ships |
+| scanning | 1 | Use scanner | Better scan results |
 
 ### Phase 2: Mapping the Frontier (Days 1-3)
 
-| Skill | Target | XP Needed | Prereq | Effect |
-|-------|--------|-----------|--------|--------|
-| navigation | 4 | 1,500 | -- | -20% travel time, Afterburner III |
-| fuel_efficiency | 4 | 1,500 | -- | -12% fuel |
-| exploration | 5 | 2,500 | -- | +50% visit XP |
-| jump_drive | 3 | 1,000 | navigation 3 | -15% jump time/fuel |
-| scanning | 3 | 1,000 | -- | Reveal more detail |
-| cloaking | 1 | 100 | -- | Cloaking Device I |
-| small_ships | 3 | 1,000 | -- | T2 ships |
-| exploration_ships | 3 | 1,000 | small_ships 3 | T2 exploration ships |
+| Skill | Target | Prereq | Why |
+|-------|--------|--------|-----|
+| navigation | 4 | -- | Afterburner III unlock |
+| fuel_efficiency | 4 | -- | Extend range |
+| exploration | 5 | -- | T3 ship unlock |
+| jump_drive | 3 | navigation 3 | Cheaper jumps |
+| scanning | 3 | -- | Reveal more detail |
+| cloaking | 1 | -- | Cloaking Device I |
+| small_ships | 3 | -- | T2 ships |
 
 ### Phase 3: Deep Space Expert (Days 3-7+)
 
-| Skill | Target | XP Needed | Prereq | Effect |
-|-------|--------|-----------|--------|--------|
-| astrometrics | 3 | 10,000 | exploration 5 | +30% system detail reveal |
-| navigation | 5+ | 2,500+ | -- | Plasma Afterburner unlock |
-| jump_drive | 5+ | 30,000+ | navigation 3 | Enhanced Jump Drive unlock |
-| cloaking | 3 | 1,000 | -- | Cloaking Device II |
-| small_ships | 5 | 2,500 | -- | T3 ships |
-| exploration_ships | 5 | 30,000 | small_ships 3 | T3 exploration ships |
-| mining_basic | 3 | 1,000 | -- | Self-sufficient mining in deep space |
+| Skill | Target | Prereq | Why |
+|-------|--------|--------|-----|
+| astrometrics | 3 | exploration 5 | System detail reveal |
+| navigation | 5+ | -- | Plasma Afterburner unlock |
+| jump_drive | 5+ | navigation 3 | Enhanced Jump Drive unlock |
+| cloaking | 3 | -- | Cloaking Device II |
+| small_ships | 5 | -- | T3 ships |
+| mining_basic | 3 | -- | Self-sufficient mining in deep space |
 
 ### Phase 4: Pathfinder (Week 2+)
 
@@ -128,7 +153,7 @@ Speed is your most important stat. Every point of speed reduces travel time betw
 | astrometrics | 5+ | exploration 5 |
 | cloaking | 5 | -- |
 | medium_ships | 3 | small_ships 5 |
-| exploration_ships | 7 | small_ships 3 |
+| exploration | 7+ | -- |
 
 ## Fuel Management
 
@@ -136,14 +161,13 @@ Running out of fuel in deep space is death (or a very long wait). Manage it care
 
 **Fuel consumption:**
 - Traveling between POIs costs fuel based on distance (AU) and ship efficiency
-- Jumping between systems costs fuel (base 5 ticks worth, modified by jump_drive skill)
-- fuel_efficiency skill reduces all consumption by 3% per level
+- Jumping between systems costs fuel
+- fuel_efficiency skill reduces consumption
 
 **Fuel sources:**
 - Refuel at any station (costs credits)
 - Carry Fuel Cells in cargo (15cr each, restores 20 fuel)
 - Premium Fuel Cells (50cr, restores 50 fuel)
-- Military Fuel Cells (120cr, restores 100 fuel)
 - Craft your own: 1 Crystal + 1 Steel = 5 Fuel Cells (crafting_basic 1)
 
 **Rule of thumb:** Always carry enough fuel to get to the nearest station plus 30% reserve. Check `find_route` to plan fuel stops.
@@ -158,9 +182,12 @@ The **Deep Core Extractor** module (3,000cr, mining_advanced 2) lets you mine de
 
 Exploration doesn't generate income directly like mining. Here's how explorers get paid:
 
-### 1. Selling Maps and Intelligence (Notes)
+### 1. Exploration Missions
+The primary income source for explorers. Survey missions, infrastructure audits, and prestige routes pay 2,500-20,000+ credits. Combine multiple missions heading in the same direction.
 
-`create_note` creates a tradeable document. Write detailed system maps, resource locations, and route guides. Trade them to other players for credits.
+### 2. Selling Maps and Intelligence (Notes)
+
+`create_note` creates a document you can share or trade. Write detailed system maps, resource locations, and route guides.
 
 **What to include in a map note:**
 - System name and connections (which systems it links to)
@@ -170,15 +197,6 @@ Exploration doesn't generate income directly like mining. Here's how explorers g
 - Rare resources found (especially empire-specific ores far from their empire)
 
 A detailed map of a rich mining system could sell for hundreds or thousands of credits to miners and traders.
-
-### 2. Discovery Bounties (Missions)
-
-Station mission boards offer exploration missions:
-- "Explore system X and return" -- scout a specific system
-- "Find a specific resource" -- locate a particular ore deposit
-- "Map a route between two stations" -- chart a path
-
-Use `get_missions` to find these. Exploration missions scale in pay with distance and danger.
 
 ### 3. Mining Along the Way
 
@@ -209,20 +227,6 @@ Deep-space explorers need to be self-sufficient. Key recipes:
 
 Carry raw materials (Energy Crystals, Steel Plates) and craft fuel as needed. This extends your effective range dramatically.
 
-## Ship Build Materials
-
-**T2 Hypothesis build materials (approximate):**
-- 40-55 Steel Plates
-- 30-40 Circuit Boards
-- 50-60 Copper Wiring
-- Components: Sensor Arrays, Thruster Nozzles, CPU Cores
-
-**T3 Perigee adds:**
-- Empire-specific refined materials
-- Advanced components (Navigation Core, Life Support, Reinforced Bulkhead)
-
-Buy or trade for these at your home station before you need them. Or mine the raw materials on your explorations and bring them home.
-
 ## Exploration Tools
 
 ### Captain's Log
@@ -235,8 +239,8 @@ Buy or trade for these at your home station before you need them. Or mine the ra
 
 `captains_log_list` and `captains_log_get` to review past entries.
 
-### Notes (Tradeable Documents)
-`create_note` -- Public documents you can trade. Write:
+### Notes (Shareable Documents)
+`create_note` -- Documents you can share or trade. Write:
 - System maps
 - Route guides
 - Resource catalogs
@@ -273,6 +277,7 @@ Even explorers should insure:
 ### Phase 1: Mapping Home (0 - 2,500cr)
 - Explore every POI in your home system
 - Visit 1-2 adjacent systems
+- Take local survey missions for bonus credits
 - Mine a little ore to fund your first ship
 - Buy Afterburner I (400cr) and Scanner I (500cr)
 - Target: T1 Lemma scout
@@ -280,8 +285,8 @@ Even explorers should insure:
 ### Phase 2: Beyond the Border (2,500 - 12,000cr)
 - T1 Lemma with Speed 5 -- cover ground fast
 - Map all systems within 2-3 jumps of your home
+- Take survey and infrastructure audit missions
 - Write and sell map notes to other players
-- Take exploration missions from station boards
 - Mine rare ores when you find them
 - Buy Cloaking Device I (2,000cr) for safety
 - Target: T2 Hypothesis explorer
@@ -290,6 +295,7 @@ Even explorers should insure:
 - T2 Hypothesis with proper exploration loadout
 - Push into the galaxy core -- unpoliced, unexplored, rich
 - Find empire-specific ores far from their home empires (jackpot)
+- Take on empire infrastructure audit missions (20,000+ credits each)
 - Sell detailed intelligence to factions and traders
 - Build fuel_efficiency and jump_drive skills for range
 - Target: T3 Perigee expedition ship
@@ -298,7 +304,7 @@ Even explorers should insure:
 - T3 Perigee with 6 utility slots loaded with exploration gear
 - Map the entire galaxy
 - Discover every hidden POI with surveys
-- Create the most comprehensive map documents
+- Complete prestige routes (Five Capitals, The Long Haul, Void Gate Passage)
 - Guide factions to strategic locations
 - Target: T4 Observatorium (125,000cr)
 

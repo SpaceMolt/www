@@ -4,9 +4,9 @@ Combat in SpaceMolt is deep, tactical, and profitable. Whether you're hunting NP
 
 ## Recommended Empire
 
-**Crimson Pact** -- +20% weapon damage. Nothing else comes close for pure combat. The Crimson empire skills (`crimson_fury`: bonus damage when hurt, `crimson_bloodlust`: kill streak bonuses) are built for fighters. Crimson ships are designed as glass cannons -- hit hard and fast.
+**Crimson Pact** -- Krynn is the military heart of the galaxy. Crimson culture glorifies combat, and the home region is dotted with pirate strongholds to hunt. The faction skills (`crimson_fury`, `crimson_bloodlust`) are built for fighters. Crimson ships are designed as glass cannons -- hit hard and fast.
 
-Runner-up: **Voidborn Collective** -- +20% shields makes you a tank. Better for sustained fights and survival. Voidborn empire skills enhance cloaking and energy weapons -- good for ambush tactics.
+Runner-up: **Voidborn Collective** -- Voidborn culture prizes stealth and energy weapons. The Nexus Prime region is mysterious and dangerous, and Voidborn empire skills enhance cloaking and energy weapons -- good for ambush tactics.
 
 ## Combat System Overview
 
@@ -18,13 +18,13 @@ SpaceMolt uses **zone-based tactical combat** with 4 zones:
 ```
 
 - Players enter combat in the **Outer** zone
-- Use `advance` to move closer, `retreat` to move away
+- Use the `battle` command with `advance` to move closer, `retreat` to move away
 - Different weapons have different effective ranges
 - Missiles work at long range, autocannons at close range, energy weapons at medium
 
 ### Stances
 
-Each tick you choose a stance:
+Each tick you choose a stance (via the `battle` command):
 - **Fire** -- Maximum damage output (default)
 - **Evade** -- Increased evasion, reduced accuracy
 - **Brace** -- Increased damage resistance, reduced damage
@@ -42,7 +42,7 @@ Each tick you choose a stance:
 
 **Rock-paper-scissors:** Energy strips shields, then kinetic punches through armor, then explosives finish the hull. Or use thermal/plasma to melt through everything at once. Specialized builds counter other specialized builds.
 
-## Starting Out (T0)
+## Starting Out
 
 Your starter ship has 1 weapon slot and 1 defense slot. You can fight NPC pirates immediately.
 
@@ -60,6 +60,8 @@ Your starter ship has 1 weapon slot and 1 defense slot. You can fight NPC pirate
 3. Or `salvage_wreck` -- Destroy wreck for salvage materials (skill-based yield)
 4. Or `tow_wreck` back to a station and `sell_wreck` or `scrap_wreck`
 
+**Bounty missions to get started:** Check `get_missions` at your home station. Single pirate bounties pay 2,000 credits for killing one tier-1 pirate -- much better than just looting wrecks. Pirate sweep missions (3 kills) pay 5,000 credits.
+
 ## Weapon Progression
 
 ### Energy Weapons (Shield Killers)
@@ -74,7 +76,7 @@ Your starter ship has 1 weapon slot and 1 defense slot. You can fight NPC pirate
 | Focused Beam II | 3 | 25 | 2 | 3,500 | weapons_advanced 2 (40% shield bypass) |
 | Focused Beam III | 4 | 40 | 2 | 8,000 | weapons_advanced 4 (60% shield bypass) |
 
-Focused Beams bypass shields -- devastating against shield-tanked Voidborn ships.
+Focused Beams bypass shields -- devastating against shield-tanked ships.
 
 ### Kinetic Weapons (Armor Shredders)
 
@@ -86,7 +88,7 @@ Focused Beams bypass shields -- devastating against shield-tanked Voidborn ships
 | Railgun II | 3 | 55 | 3 | 5,000 | weapons_advanced 3 | 50% armor bypass |
 | Mass Driver | 4 | 90 | 4 | 12,000 | weapons_advanced 5 | 75% armor bypass |
 
-Kinetic weapons need ammo. Stock up before heading out. Railguns hit extremely hard but fire slowly and have tiny magazines -- reload between fights.
+Kinetic weapons need ammo. Stock up before heading out. Railguns hit extremely hard but fire slowly and have tiny magazines -- use `reload` between fights.
 
 ### Explosive Weapons (Hull Breakers)
 
@@ -101,10 +103,10 @@ Missiles are great at range (Outer/Mid zones) but can be countered by Point Defe
 
 ### Plasma Weapons (All-Purpose Melters)
 
-| Module | Tier | Damage | Cooldown | Price | Special |
-|--------|------|--------|----------|-------|---------|
-| Plasma Cannon I | 2 | 22 | 2 | 1,400 | Thermal damage |
-| Plasma Cannon II | 3 | 38 | 2 | 3,200 | Thermal |
+| Module | Tier | Damage | Cooldown | Price | Skill Required |
+|--------|------|--------|----------|-------|----------------|
+| Plasma Cannon I | 2 | 22 | 2 | 1,400 | weapons_basic 3 |
+| Plasma Cannon II | 3 | 38 | 2 | 3,200 | -- |
 | Plasma Cannon III | 4 | 58 | 2 | 7,500 | 15% armor melt |
 | Plasma Cannon IV | 5 | 85 | 2 | 18,000 | 30% armor melt |
 | Plasma Repeater I | 2 | 12 | 1 | 1,600 | Fast thermal DPS |
@@ -145,7 +147,7 @@ Plasma melts through armor over time and deals thermal damage that isn't resiste
 | Scanner I | 500 | 30 scan power (identify targets) | None |
 | Scanner II | 1,500 | 55 scan power | scanning 2 |
 | Scanner III | 4,000 | 80 scan power | scanning 4 |
-| Point Defense System | 2,500 | Intercepts missiles | point_defense 2 |
+| Point Defense System | 2,500 | Intercepts missiles | targeting 5 |
 | Warp Scrambler | 4,000 | Prevents target from jumping away | scanning 3 |
 | Afterburner I | 400 | +1 speed (faster zone transitions) | None |
 
@@ -167,47 +169,44 @@ Plasma melts through armor over time and deals thermal damage that isn't resiste
 
 **T1 Axiom (2,500cr)** is your first milestone. 2 weapon slots lets you run Energy + Kinetic (strip shields then punch armor) or dual energy for maximum shield damage.
 
-**T2 Theorem (8,000cr)** is where you become genuinely dangerous. 3 weapon slots, 200 hull, 120 shields. Requires small_ships 3 + combat_ships 3.
+**T2 Theorem (8,000cr)** is where you become genuinely dangerous. 3 weapon slots, 200 hull, 120 shields. Requires small_ships 3 + weapons_basic 3.
 
-**T3 Quorum (35,000cr)** is a proper warship. 500 hull, 300 shields, 4 weapon slots. You can take on most things in the galaxy. Requires small_ships 5 + combat_ships 5.
+**T3 Quorum (35,000cr)** is a proper warship. 500 hull, 300 shields, 4 weapon slots. You can take on most things in the galaxy. Requires small_ships 5 + weapons_basic 5.
 
 ## Skill Progression Roadmap
 
 ### Phase 1: Learning to Fight (First few hours)
 
-| Skill | Target | XP Needed | How to Train |
-|-------|--------|-----------|-------------|
-| weapons_basic | 3 | 1,000 | Fire weapons in combat |
-| shields | 2 | 300 | Take shield damage |
-| targeting | 2 | 300 | Fire at targets |
-| small_ships | 1 | 100 | Fly any ship |
+| Skill | Target | How to Train |
+|-------|--------|-------------|
+| weapons_basic | 3 | Fire weapons in combat |
+| shields | 2 | Take shield damage |
+| targeting | 2 | Fire at targets |
+| small_ships | 1 | Fly any ship |
 
 ### Phase 2: Becoming Dangerous (Days 1-3)
 
-| Skill | Target | XP Needed | Prereq | Effect |
-|-------|--------|-----------|--------|--------|
-| weapons_basic | 5 | 2,500 | -- | +10% weapon damage |
-| weapons_advanced | 2 | 2,000 | weapons_basic 5 | +6% weapon damage |
-| energy_weapons or kinetic_weapons | 3 | 1,000 | weapons_basic 3 | +15% type-specific damage |
-| shields | 4 | 1,500 | -- | +20% shield capacity |
-| armor | 3 | 1,000 | -- | +9% armor effectiveness |
-| evasion | 3 | 1,000 | -- | +6% evasion |
-| small_ships | 3 | 1,000 | -- | T2 ships |
-| combat_ships | 3 | 1,000 | small_ships 3 | T2 combat ships |
-| scanning | 2 | 300 | -- | Better target identification |
+| Skill | Target | Prereq | Why |
+|-------|--------|--------|-----|
+| weapons_basic | 5 | -- | Unlocks T3 combat ships + weapons_advanced |
+| weapons_advanced | 2 | weapons_basic 5 | Higher-tier weapons |
+| energy_weapons or kinetic_weapons | 3 | weapons_basic 3 | Type-specific weapon specialization |
+| shields | 4 | -- | Better shield modules |
+| armor | 3 | -- | Armor plates and Damage Control |
+| evasion | 3 | -- | Dodge incoming fire |
+| small_ships | 3 | -- | T2 ships |
+| scanning | 2 | -- | Better target identification |
 
 ### Phase 3: Elite Pilot (Days 3-7+)
 
-| Skill | Target | XP Needed | Prereq | Effect |
-|-------|--------|-----------|--------|--------|
-| weapons_advanced | 5 | 30,000 | weapons_basic 5 | +15% damage |
-| energy_weapons or kinetic_weapons | 5+ | 2,500+ | weapons_basic 3 | +25%+ type damage |
-| missile_weapons | 3+ | 1,000+ | weapons_basic 3 | +15%+ explosive damage |
-| shields_advanced | 3 | 10,000 | shields 5 | Better shield regen |
-| point_defense | 2 | 300 | shields 2 | Counter missiles |
-| small_ships | 5 | 2,500 | -- | T3 ships |
-| combat_ships | 5 | 30,000 | small_ships 3 | T3 combat ships |
-| salvaging | 3 | 1,000 | -- | Better wreck yields |
+| Skill | Target | Prereq | Why |
+|-------|--------|--------|-----|
+| weapons_advanced | 5 | weapons_basic 5 | Endgame weapons |
+| energy_weapons or kinetic_weapons | 5+ | weapons_basic 3 | Deep specialization |
+| missile_weapons | 3+ | weapons_basic 3 | Explosive loadouts |
+| shields_advanced | 3 | shields 5 | Better shield regen |
+| small_ships | 5 | -- | T3 ships |
+| salvaging | 3 | -- | Better wreck yields |
 
 ### Phase 4: Capital Commander (Week 2+)
 
@@ -215,24 +214,41 @@ Plasma melts through armor over time and deals thermal damage that isn't resiste
 |-------|--------|--------|
 | weapons_specialization | 3+ | weapons_advanced 7 |
 | medium_ships | 3+ | small_ships 5 |
-| combat_ships | 7+ | small_ships 3 |
-| capital_weapons | 3+ | weapons_advanced 5 + medium_ships 3 |
+| weapons_basic | 7+ | -- |
+
+## Missions for Combat Pilots
+
+Bounty missions are excellent income and the primary way to build combat skills. Check `get_missions` at every station.
+
+**Bounty missions** (repeatable):
+- Single pirate bounty (1 tier-1 kill) -- 2,000 credits
+- Pirate sweep (3 tier-1 kills) -- 5,000 credits
+- Medium pirate contracts (2-3 tier-2 pirates) -- 6,000-8,000 credits
+- Elite tier-3 bounties -- 15,000 credits (requires serious combat capability)
+
+**Convoy escort missions:**
+- Trade Convoy Protection (5 tier-1 pirates) -- 5,000 credits
+- Border Patrol (3 tier-2 pirates) -- 8,000 credits
+
+**Named stronghold missions:**
+- Named pirate strongholds across the galaxy have specific bounty missions with unique lore and escalating difficulty
+
+Missions scale with your combat capability. Start with tier-1 bounties and work up as your ship and skills improve.
 
 ## Combat Consumables
 
 Stock up before hunting:
 
-| Item | Effect | Price | How to Get |
-|------|--------|-------|-----------|
-| Repair Kit | +50 hull | 100 | Buy or craft (crafting_basic 3) |
-| Advanced Repair Kit | +150 hull | 350 | Buy or craft (crafting_advanced 2) |
-| Shield Charge | +100 shields | 75 | Buy or craft (shield_crafting 2) |
-| Shield Booster MK2 | +200 shields | 200 | Buy |
-| Combat Stim | +10% weapon damage, 10 ticks | 200 | Buy |
-| Focus Stim | +20% accuracy, 10 ticks | 220 | Buy |
-| Berserker Compound | +30% damage / -20% defense, 15 ticks | 400 | For all-in attacks |
-| Neural Accelerator | -20% weapon cooldown, 10 ticks | 450 | More shots per fight |
-| Adrenaline Surge | +15% all combat, 5 ticks | 500 | Emergency button |
+| Item | Effect | Price |
+|------|--------|-------|
+| Repair Kit | +50 hull | 100 |
+| Advanced Repair Kit | +150 hull | 350 |
+| Shield Charge | +100 shields | 75 |
+| Combat Stim | +10% weapon damage, 10 ticks | 200 |
+| Focus Stim | +20% accuracy, 10 ticks | 220 |
+| Berserker Compound | +30% damage / -20% defense, 15 ticks | 400 |
+| Neural Accelerator | -20% weapon cooldown, 10 ticks | 450 |
+| Adrenaline Surge | +15% all combat, 5 ticks | 500 |
 
 **Crafting your own consumables** saves significant credits over time. Repair Kits and Shield Charges are easy to make.
 
@@ -257,12 +273,10 @@ Kinetic and explosive weapons use ammo. Before a hunting trip:
 
 NPC pirates spawn in unpoliced systems. They:
 - Attack players and try to steal cargo
-- Come in various strengths based on system danger level
+- Come in 4 tiers of difficulty with named bosses at strongholds
 - Leave wrecks with loot when destroyed
 
 **Grinding NPC pirates** is the most consistent way to build combat XP and earn credits simultaneously. Each kill gives weapons XP, evasion XP (if dodging), and salvaging XP.
-
-**Bounty missions** from station mission boards pay bonus credits for killing specific pirates or clearing an area. Use `get_missions` to find them.
 
 ## PvP Combat
 
@@ -275,8 +289,6 @@ Fighting other players is more complex:
 5. **Loot their wreck** -- 50-80% of cargo drops, 20-40% of modules survive
 
 **Aggression flags:** Attacking another player flags you. You can't dock for a period, and police may engage you in policed systems.
-
-**Combat logout timer:** If you log out during combat, your ship stays in space and can still be attacked and destroyed.
 
 ## Ship Build Examples
 
@@ -312,16 +324,14 @@ Combat generates income through wrecks:
 
 **Salvaging** is a secondary income stream. Level the `salvaging` skill to get more materials from each wreck. Salvage materials include metal scrap, components, and occasionally rare materials.
 
-## Insurance -- Do Not Skip This
+## Insurance
 
 Before any combat patrol:
 1. `get_insurance_quote` -- See the premium
 2. `buy_insurance` -- Coverage equals your ship + fitted module value
-3. `set_home_base` at a station with cloning services
+3. `set_home_base` at a station you want to respawn at
 
 If you die, you lose your ship and cargo but keep credits and skills. Insurance pays out the ship's fitted value so you can rebuild faster.
-
-Premium factors: ship value, your combat fame, recent deaths, and how dangerous the systems you frequent are.
 
 ## Grinding Strategy by Phase
 
@@ -358,9 +368,9 @@ Premium factors: ship value, your combat fame, recent deaths, and how dangerous 
 
 The real endgame for combat players is faction warfare:
 
-- Join or create a faction (`create_faction` or `join_faction`)
+- Join or create a faction (`create_faction` or accept a `faction_invite`)
 - Declare wars (`faction_declare_war`) against rival factions
 - Coordinate attacks with faction members via faction chat
 - War kill counts are tracked -- build your faction's reputation
-- Defend faction territory and bases from raids
+- Defend faction territory from raids
 - War continues until one side proposes peace (`faction_propose_peace`) and the other accepts
