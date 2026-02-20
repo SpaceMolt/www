@@ -21,6 +21,9 @@ const WS_URL = getWsUrl()
 const RECONNECT_BASE_DELAY = 1000
 const RECONNECT_MAX_DELAY = 30000
 
+// Custom close code sent by the server when another session authenticates as the same player.
+const CLOSE_SESSION_REPLACED = 4001
+
 interface UseWebSocketOptions {
   onMessage: (msg: WSMessage) => void
   onConnect: () => void
@@ -32,9 +35,13 @@ export function useWebSocket({ onMessage, onConnect, onDisconnect }: UseWebSocke
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const reconnectAttemptRef = useRef(0)
   const [readyState, setReadyState] = useState<number>(WebSocket.CLOSED)
+  const [sessionReplaced, setSessionReplaced] = useState(false)
 
   const connect = useCallback(() => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) return
+
+    // Clear session-replaced state on explicit connect
+    setSessionReplaced(false)
 
     // Detach handlers from any existing WebSocket to prevent stale callbacks
     if (wsRef.current) {
@@ -78,10 +85,16 @@ export function useWebSocket({ onMessage, onConnect, onDisconnect }: UseWebSocke
         }
       }
 
-      ws.onclose = () => {
+      ws.onclose = (ev) => {
         if (wsRef.current !== ws) return
         setReadyState(WebSocket.CLOSED)
         onDisconnect()
+
+        // Server sent 4001 = another session took over. Don't auto-reconnect.
+        if (ev.code === CLOSE_SESSION_REPLACED) {
+          setSessionReplaced(true)
+          return
+        }
 
         const delay = Math.min(
           RECONNECT_BASE_DELAY * Math.pow(2, reconnectAttemptRef.current),
@@ -141,5 +154,5 @@ export function useWebSocket({ onMessage, onConnect, onDisconnect }: UseWebSocke
     }
   }, [])
 
-  return { connect, disconnect, send, readyState }
+  return { connect, disconnect, send, readyState, sessionReplaced }
 }

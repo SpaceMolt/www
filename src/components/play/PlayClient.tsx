@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Loader2, RefreshCw, WifiOff, LogIn } from 'lucide-react'
+import { Loader2, RefreshCw, WifiOff, LogIn, MonitorSmartphone } from 'lucide-react'
 import { SignInButton } from '@clerk/nextjs'
 import { GameProvider, useGame } from './GameProvider'
 import { PlayerSelector } from './PlayerSelector'
@@ -29,7 +29,7 @@ function PlayClientInner({ playerId, authHeaders, onSwitchPlayer }: {
   authHeaders: () => Promise<Record<string, string>>
   onSwitchPlayer: () => void
 }) {
-  const { state, send, sendCommand, connect, disconnect } = useGame()
+  const { state, send, sendCommand, connect, disconnect, sessionReplaced } = useGame()
   const [phase, setPhase] = useState<'connecting' | 'authenticating' | 'playing'>('connecting')
   const hasConnected = useRef(false)
   const authAttempted = useRef(false)
@@ -54,14 +54,11 @@ function PlayClientInner({ playerId, authHeaders, onSwitchPlayer }: {
         method: 'POST',
         headers,
       })
-      if (!res.ok) {
-        console.error('[PlayClient] Failed to get ws-token:', res.status)
-        return
-      }
+      if (!res.ok) return
       const data = await res.json()
       send({ type: 'login_token', payload: { token: data.token } })
-    } catch (err) {
-      console.error('[PlayClient] Token auth error:', err)
+    } catch {
+      // Auth error — will retry on next reconnect
     }
   }, [authHeaders, playerId, send])
 
@@ -103,7 +100,23 @@ function PlayClientInner({ playerId, authHeaders, onSwitchPlayer }: {
   }, [state.connected, state.authenticated, state.welcome, sendCommand, authenticateWithToken, phase])
 
   // Reconnect overlay
-  const showReconnecting = !state.connected && hasConnected.current && phase === 'playing'
+  const showReconnecting = !state.connected && hasConnected.current && phase === 'playing' && !sessionReplaced
+
+  // Session replaced — another tab/client connected as this player
+  if (sessionReplaced) {
+    return (
+      <div className={styles.loadingScreen}>
+        <div className={styles.loadingContent}>
+          <MonitorSmartphone size={32} />
+          <div className={styles.loadingTitle}>Session Replaced</div>
+          <div className={styles.loadingText}>Another session connected as this player.</div>
+          <button className={styles.signInBtn} onClick={() => connect()}>
+            Reconnect Here
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   if (phase === 'connecting' || phase === 'authenticating' || (!state.connected && !hasConnected.current)) {
     return (

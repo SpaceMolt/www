@@ -16,6 +16,7 @@ interface GameContextValue {
   connect: () => void
   disconnect: () => void
   readyState: number
+  sessionReplaced: boolean
   onSwitchPlayer?: () => void
 }
 
@@ -168,7 +169,7 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
     dispatchRef.current({ type: 'SET_CONNECTED', connected: false })
   }, [])
 
-  const { connect, disconnect, send, readyState } = useWebSocket({
+  const { connect, disconnect, send, readyState, sessionReplaced } = useWebSocket({
     onMessage,
     onConnect,
     onDisconnect,
@@ -189,6 +190,7 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
     connect,
     disconnect,
     readyState,
+    sessionReplaced,
     onSwitchPlayer,
   }
 
