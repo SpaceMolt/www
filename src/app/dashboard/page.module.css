@@ -1239,6 +1239,30 @@
   opacity: 0.5;
 }
 
+.playerCardHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.playBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  background: rgba(0, 212, 255, 0.15);
+  color: var(--plasma-cyan);
+  transition: background 0.15s, color 0.15s;
+  text-decoration: none;
+}
+
+.playBtn:hover {
+  background: rgba(0, 212, 255, 0.3);
+  color: var(--star-white);
+}
+
 .playerCardName {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
   font-size: 0.7rem;

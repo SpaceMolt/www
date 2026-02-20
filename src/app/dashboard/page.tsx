@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { SignOutButton } from '@clerk/nextjs'
 import { Suspense, useEffect, useState, useCallback, useRef } from 'react'
-import { Settings, BookOpen, Rocket, Users, Ship, Wifi, WifiOff, Clock, Coins, BarChart3, Wrench, ScrollText, MapPin, UserCog, KeyRound, Eye, EyeOff, Copy, Check, RefreshCw, MessageSquare } from 'lucide-react'
+import { Settings, BookOpen, Rocket, Users, Ship, Wifi, WifiOff, Clock, Coins, BarChart3, Wrench, ScrollText, MapPin, UserCog, KeyRound, Eye, EyeOff, Copy, Check, RefreshCw, MessageSquare, Play } from 'lucide-react'
 import { useQueryState } from 'nuqs'
 import { SetupTabs } from '@/components/SetupTabs'
 import { DashboardChat } from '@/components/DashboardChat'
@@ -158,11 +158,21 @@ function PlayerCard({ player, info, isSelected, onSelect }: {
         <span className={styles.playerCardName} style={{ color: empireColor }}>
           {player.username}
         </span>
-        {info ? (
-          info.online
-            ? <Wifi size={10} className={styles.onlineDot} />
-            : <WifiOff size={10} className={styles.offlineDot} />
-        ) : null}
+        <div className={styles.playerCardHeaderRight}>
+          <Link
+            href={`/play?player=${player.id}`}
+            className={styles.playBtn}
+            onClick={(e) => e.stopPropagation()}
+            title={`Play as ${player.username}`}
+          >
+            <Play size={10} />
+          </Link>
+          {info ? (
+            info.online
+              ? <Wifi size={10} className={styles.onlineDot} />
+              : <WifiOff size={10} className={styles.offlineDot} />
+          ) : null}
+        </div>
       </div>
       <div className={styles.playerCardBody}>
         <div>

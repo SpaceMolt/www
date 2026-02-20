@@ -24,8 +24,6 @@ export function TopBar() {
     sendCommand('logout')
     dispatch({ type: 'RESET' })
     try {
-      localStorage.removeItem('spacemolt_username')
-      localStorage.removeItem('spacemolt_password')
       localStorage.removeItem('spacemolt_token')
     } catch {
       // localStorage may not be available
