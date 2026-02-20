@@ -847,6 +847,16 @@
   margin-bottom: 0;
 }
 
+.instructionStep a {
+  color: var(--plasma-cyan);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.instructionStep a:hover {
+  color: var(--star-white);
+}
+
 .setupCode {
   background: var(--space-black);
   border: 1px solid var(--hull-grey);
