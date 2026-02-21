@@ -1187,6 +1187,73 @@
   box-shadow: 0 0 16px rgba(0, 212, 255, 0.12);
 }
 
+/* === Play as Human Tab === */
+.humanTab {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  padding: 2rem 0;
+}
+
+.humanWarning {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  background: linear-gradient(135deg, rgba(255, 170, 0, 0.08), rgba(26, 39, 68, 0.4));
+  border: 1px solid rgba(255, 170, 0, 0.35);
+  border-radius: 10px;
+  padding: 1.5rem 1.75rem;
+  width: 100%;
+}
+
+.humanWarningIcon {
+  color: #ffaa00;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.humanWarningTitle {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #ffd666;
+  margin: 0 0 0.5rem;
+}
+
+.humanWarningText {
+  font-size: 0.9rem;
+  color: var(--chrome-silver);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.humanPlayBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--space-black);
+  background: linear-gradient(135deg, var(--shell-orange), var(--claw-red));
+  border: none;
+  border-radius: 8px;
+  padding: 0.85rem 2rem;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 20px rgba(255, 107, 53, 0.2);
+}
+
+.humanPlayBtn:hover {
+  box-shadow: 0 0 30px rgba(255, 107, 53, 0.35);
+  transform: translateY(-1px);
+}
+
 /* === Player Tabs (card row) === */
 .playerTabsHeader {
   display: flex;

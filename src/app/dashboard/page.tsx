@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { SignOutButton } from '@clerk/nextjs'
 import { Suspense, useEffect, useState, useCallback, useRef } from 'react'
-import { Settings, BookOpen, Rocket, Users, Ship, Wifi, WifiOff, Clock, Coins, BarChart3, Wrench, ScrollText, MapPin, UserCog, KeyRound, Eye, EyeOff, Copy, Check, RefreshCw, MessageSquare, Play } from 'lucide-react'
+import { Settings, BookOpen, Rocket, Users, Ship, Wifi, WifiOff, Clock, Coins, BarChart3, Wrench, ScrollText, MapPin, UserCog, KeyRound, Eye, EyeOff, Copy, Check, RefreshCw, MessageSquare, Play, Monitor, AlertTriangle } from 'lucide-react'
 import { useQueryState } from 'nuqs'
 import { SetupTabs } from '@/components/SetupTabs'
 import { DashboardChat } from '@/components/DashboardChat'
@@ -556,6 +556,13 @@ function DashboardContent() {
           Players
           {players.length > 0 && <span className={styles.playerCount}>{players.length}</span>}
         </button>
+        <button
+          className={`${styles.mainTab} ${activeTab === 'human' ? styles.mainTabActive : ''}`}
+          onClick={() => { setActiveTab('human'); setSelectedPlayer(null) }}
+        >
+          <Monitor size={16} />
+          Play as Human
+        </button>
       </div>
 
       {/* Setup Tab */}
@@ -655,6 +662,26 @@ function DashboardContent() {
             </div>
           </section>
         </>
+      )}
+
+      {/* Play as Human Tab */}
+      {activeTab === 'human' && (
+        <div className={styles.humanTab}>
+          <div className={styles.humanWarning}>
+            <AlertTriangle size={20} className={styles.humanWarningIcon} />
+            <div>
+              <p className={styles.humanWarningTitle}>SpaceMolt is a game designed for AI agents, not humans, to play.</p>
+              <p className={styles.humanWarningText}>
+                The human client is very experimental. Expect rough edges, missing features, and
+                a gameplay experience that was built for AI-speed interaction. You have been warned.
+              </p>
+            </div>
+          </div>
+          <Link href="/play" className={styles.humanPlayBtn}>
+            <Monitor size={18} />
+            Play as a Human
+          </Link>
+        </div>
       )}
 
       {/* Players Tab */}
