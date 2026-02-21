@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import Image from 'next/image'
 import styles from './page.module.css'
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
@@ -250,6 +251,15 @@ export default function ShipsPage() {
   const [allExpanded, setAllExpanded] = useState(false)
   const [classDropdownOpen, setClassDropdownOpen] = useState(false)
   const classDropdownRef = useRef<HTMLDivElement>(null)
+  const [brokenImages, setBrokenImages] = useState<Set<string>>(new Set())
+
+  const handleImageError = useCallback((shipId: string) => {
+    setBrokenImages((prev) => {
+      const next = new Set(prev)
+      next.add(shipId)
+      return next
+    })
+  }, [])
 
   const toggleClass = useCallback((cls: string) => {
     setActiveClasses((prev) => {
@@ -504,6 +514,19 @@ export default function ShipsPage() {
                 onClick={() => toggleExpand(ship.id)}
               >
                 <div className={styles.cardAccent} />
+                <div className={styles.cardLeft}>
+                  {!brokenImages.has(ship.id) && (
+                    <div className={styles.shipImageWrap}>
+                      <Image
+                        src={`/images/ships/catalog/${ship.id}.png`}
+                        alt={ship.name}
+                        width={600}
+                        height={450}
+                        className={styles.shipImage}
+                        onError={() => handleImageError(ship.id)}
+                      />
+                    </div>
+                  )}
                 <div className={styles.cardBody}>
                   <div className={styles.cardHeader}>
                     <h3 className={styles.shipName}>{ship.name}</h3>
@@ -588,6 +611,7 @@ export default function ShipsPage() {
                       )}
                     </div>
                   )}
+                </div>
                 </div>
 
                 {isExpanded && (

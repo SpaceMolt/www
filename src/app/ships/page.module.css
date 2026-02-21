@@ -369,8 +369,13 @@
   height: auto;
 }
 
-.shipCardExpanded .cardBody {
-  flex: 0 0 320px;
+.cardLeft {
+  display: flex;
+  flex-direction: column;
+}
+
+.shipCardExpanded .cardLeft {
+  flex: 0 0 360px;
   border-right: 1px solid rgba(0, 212, 255, 0.08);
 }
 
@@ -378,6 +383,23 @@
   height: 3px;
   background: var(--empire-color, var(--hull-grey));
   flex-shrink: 0;
+}
+
+.shipImageWrap {
+  overflow: hidden;
+  background: rgba(13, 19, 33, 0.8);
+}
+
+.shipImage {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.shipCard:hover .shipImage {
+  transform: scale(1.03);
 }
 
 .cardBody {
@@ -721,7 +743,7 @@
     height: 3px;
   }
 
-  .shipCardExpanded .cardBody {
+  .shipCardExpanded .cardLeft {
     flex: none;
     border-right: none;
     border-bottom: 1px solid rgba(0, 212, 255, 0.08);
