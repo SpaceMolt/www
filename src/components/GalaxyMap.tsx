@@ -2034,35 +2034,35 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
         <div className={styles.legendItem}>
           <div
             className={styles.legendDot}
-            style={{ background: '#4A90D9' }}
+            style={{ background: '#ffd700' }}
           />
           <span className={styles.legendLabel}>Solarian</span>
         </div>
         <div className={styles.legendItem}>
           <div
             className={styles.legendDot}
-            style={{ background: '#00FFFF' }}
+            style={{ background: '#9b59b6' }}
           />
           <span className={styles.legendLabel}>Voidborn</span>
         </div>
         <div className={styles.legendItem}>
           <div
             className={styles.legendDot}
-            style={{ background: '#DC143C' }}
+            style={{ background: '#e63946' }}
           />
           <span className={styles.legendLabel}>Crimson</span>
         </div>
         <div className={styles.legendItem}>
           <div
             className={styles.legendDot}
-            style={{ background: '#FFD700' }}
+            style={{ background: '#00d4ff' }}
           />
           <span className={styles.legendLabel}>Nebula</span>
         </div>
         <div className={styles.legendItem}>
           <div
             className={styles.legendDot}
-            style={{ background: '#4169E1' }}
+            style={{ background: '#2dd4bf' }}
           />
           <span className={styles.legendLabel}>Outer Rim</span>
         </div>
