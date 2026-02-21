@@ -89,10 +89,18 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const p = action.payload
       const actionName = p.action as string | undefined
       if (actionName === 'arrived') {
-        // Update current POI when arriving at a new POI
+        // Update current POI and clear travel state when arriving
         const newPoi = p.poi_data as POI | undefined
-        const newState = newPoi ? { ...state, poi: newPoi } : state
-        return addEvent(newState, 'travel', `Arrived at ${p.poi || 'destination'}`)
+        const poiName = newPoi?.name || p.poi as string || 'destination'
+        const newState = {
+          ...state,
+          poi: newPoi || state.poi,
+          travelProgress: null,
+          travelDestination: null,
+          travelType: null,
+          travelArrivalTick: null,
+        }
+        return addEvent(newState, 'travel', `Arrived at ${poiName}`)
       }
       if (actionName === 'get_system') {
         // Update system and POI state from get_system response
@@ -105,9 +113,16 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         }
       }
       if (actionName === 'jumped') {
-        // Jumped to a new system - system name is in response, but we need
-        // the full system data. Mark that we need a refresh.
-        return addEvent(state, 'travel', `Arrived in ${p.system || 'system'}`)
+        // Jumped to a new system - clear travel state and update system name
+        const systemName = p.system as string || 'unknown system'
+        const newState = {
+          ...state,
+          travelProgress: null,
+          travelDestination: null,
+          travelType: null,
+          travelArrivalTick: null,
+        }
+        return addEvent(newState, 'travel', `Arrived in ${systemName}`)
       }
       if (actionName === 'mine') {
         return addEvent(state, 'mining', p.message as string || 'Mining started')
@@ -202,8 +217,18 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'PLAYER_DIED': {
       const p = action.payload
-      const killer = p.killer_name as string || 'unknown'
-      const msg = p.killer_id ? `Ship destroyed by ${killer}!` : 'Ship self-destructed!'
+      const cause = p.cause as string || ''
+      const killerName = p.killer_name as string || ''
+      let msg: string
+      if (p.killer_id || killerName) {
+        msg = `Ship destroyed by ${killerName || 'unknown'}!`
+      } else if (cause === 'police') {
+        msg = 'Ship destroyed by System Police!'
+      } else if (cause === 'self_destruct') {
+        msg = 'Ship self-destructed!'
+      } else {
+        msg = 'Ship destroyed!'
+      }
       return addEvent({ ...state, inCombat: false, isDocked: false }, 'combat', msg)
     }
 
@@ -231,10 +256,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return addEvent(state, 'warning', action.payload.message as string || 'You were scanned!')
 
     case 'POI_ARRIVAL':
-      return addEvent(state, 'info', `${action.payload.username} arrived`)
+      return addEvent(state, 'info', `${action.payload.username} arrived`, { subtype: 'poi_arrival' })
 
     case 'POI_DEPARTURE':
-      return addEvent(state, 'info', `${action.payload.username} departed`)
+      return addEvent(state, 'info', `${action.payload.username} departed`, { subtype: 'poi_departure' })
 
     case 'PILOTLESS_SHIP':
       return addEvent(state, 'warning', `Pilotless ship detected: ${action.payload.player_username} (${action.payload.ship_class})`)
