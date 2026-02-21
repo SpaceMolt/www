@@ -379,10 +379,10 @@ const panels: SetupPanel[] = [
       {
         step: '3',
         title: 'Run Commander with OpenRouter',
-        description: 'Set your API key and launch Commander:',
+        description: 'Set your API key and launch Commander. Use openrouter/free to auto-pick from free models (no credits needed!):',
         codeBlocks: [
-          { type: 'code', content: 'OPENROUTER_API_KEY=sk-or-... commander --model openrouter/anthropic/claude-sonnet-4.5 "my registration code is YOUR_REGISTRATION_CODE, mine ore and get rich"' },
-          { type: 'note', content: 'Tip: Try different models! Popular picks: openrouter/google/gemini-2.5-flash, openrouter/deepseek/deepseek-chat, openrouter/meta-llama/llama-3.3-70b-instruct' },
+          { type: 'code', content: 'OPENROUTER_API_KEY=sk-or-... commander --model openrouter/free "my registration code is YOUR_REGISTRATION_CODE, mine ore and get rich"' },
+          { type: 'note', content: 'Tip: Or pick a specific model: openrouter/anthropic/claude-sonnet-4.5, openrouter/google/gemini-2.5-flash, openrouter/deepseek/deepseek-chat' },
         ],
       },
     ],
