@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import styles from './page.module.css'
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
@@ -71,7 +73,28 @@ const CATEGORIES = [
   { label: 'Features', value: 'features' },
   { label: 'Trading', value: 'trading' },
   { label: 'Factions', value: 'factions' },
+  { label: 'Help Wanted', value: 'help-wanted' },
+  { label: 'Custom Tools', value: 'custom-tools' },
+  { label: 'Lore', value: 'lore' },
+  { label: 'Creative', value: 'creative' },
+  { label: 'Missions', value: 'missions' },
+  { label: 'Combat', value: 'combat' },
+  { label: 'Economy', value: 'economy' },
 ]
+
+function formatCategoryLabel(category: string): string {
+  const found = CATEGORIES.find((c) => c.value === category)
+  if (found) return found.label
+  return category.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
+function MarkdownContent({ content, className }: { content: string; className?: string }) {
+  return (
+    <div className={`${styles.markdownContent} ${className ?? ''}`}>
+      <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+    </div>
+  )
+}
 
 function formatDate(dateStr: string): string {
   const date = new Date(dateStr)
@@ -94,6 +117,7 @@ export default function ForumPage() {
   const urlCategory = searchParams.get('category') || ''
   const [currentPage, setCurrentPage] = useState(urlPage)
   const [currentCategory, setCurrentCategory] = useState(urlCategory)
+  const [searchQuery, setSearchQuery] = useState('')
   const [threads, setThreads] = useState<ForumThread[]>([])
   const [totalPages, setTotalPages] = useState(0)
   const [threadDetail, setThreadDetail] = useState<ForumThreadDetail | null>(null)
@@ -373,12 +397,12 @@ export default function ForumPage() {
                     <span className={threadDetail.is_dev_team ? styles.threadAuthorDevTeam : styles.threadAuthor}>{threadDetail.author}</span>
                   </span>
                   <span>{formatDate(threadDetail.created_at)}</span>
-                  <span className={styles.threadCategory}>{threadDetail.category}</span>
+                  <span className={styles.threadCategory}>{formatCategoryLabel(threadDetail.category)}</span>
                   <span>{threadDetail.upvotes} upvotes</span>
                 </div>
               </div>
               <div className={styles.threadDetailBody}>
-                <div className={styles.threadContent}>{threadDetail.content}</div>
+                <MarkdownContent content={threadDetail.content} className={styles.threadContent} />
                 <div className={styles.permalinkSection}>
                   <button
                     className={styles.permalink}
@@ -419,7 +443,7 @@ export default function ForumPage() {
                             {formatDate(reply.created_at)}
                           </span>
                         </div>
-                        <div className={styles.replyContent}>{reply.content}</div>
+                        <MarkdownContent content={reply.content} className={styles.replyContent} />
                         <button
                           className={styles.replyPermalink}
                           onClick={(e) => handleReplyPermalinkClick(e, replyId)}
@@ -469,6 +493,16 @@ export default function ForumPage() {
         ))}
       </div>
 
+      <div className={styles.searchRow}>
+        <input
+          type="text"
+          className={styles.searchBox}
+          placeholder="Search threads..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+      </div>
+
       <div className={styles.threadList}>
         {listLoading && <div className={styles.loading}>Loading threads...</div>}
 
@@ -489,9 +523,26 @@ export default function ForumPage() {
           </div>
         )}
 
+        {!listLoading && !listError && threads.length > 0 && searchQuery &&
+          threads.filter((t) =>
+            t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            t.author.toLowerCase().includes(searchQuery.toLowerCase())
+          ).length === 0 && (
+          <div className={styles.emptyState}>
+            <h3 className={styles.emptyStateTitle}>No Results</h3>
+            <p>No threads match &ldquo;{searchQuery}&rdquo; on this page.</p>
+          </div>
+        )}
+
         {!listLoading &&
           !listError &&
-          threads.map((thread) => (
+          (searchQuery
+            ? threads.filter((t) =>
+                t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                t.author.toLowerCase().includes(searchQuery.toLowerCase())
+              )
+            : threads
+          ).map((thread) => (
             <a
               key={thread.id}
               href={`/forum?thread=${encodeURIComponent(thread.id)}`}
@@ -510,7 +561,7 @@ export default function ForumPage() {
                   )}
                   {thread.title}
                 </h3>
-                <span className={styles.threadCategory}>{thread.category}</span>
+                <span className={styles.threadCategory}>{formatCategoryLabel(thread.category)}</span>
               </div>
               <div className={styles.threadMeta}>
                 <span>
