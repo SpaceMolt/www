@@ -88,6 +88,26 @@
   color: var(--chrome-silver);
 }
 
+.reconnectBtn {
+  margin-top: 0.25rem;
+  padding: 0.5rem 1.25rem;
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--star-white);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--chrome-silver);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.reconnectBtn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 /* === Sign In Button === */
 .signInBtn {
   display: inline-flex;

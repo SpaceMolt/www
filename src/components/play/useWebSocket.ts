@@ -20,6 +20,10 @@ const WS_URL = getWsUrl()
 
 const RECONNECT_BASE_DELAY = 1000
 const RECONNECT_MAX_DELAY = 30000
+// Only reset backoff after staying connected for this long.
+// Prevents rapid connect-drop-reconnect cycles from resetting the backoff
+// counter, which would cause a reconnect storm and exhaust rate limits.
+const BACKOFF_RESET_THRESHOLD = 30000
 
 // Custom close code sent by the server when another session authenticates as the same player.
 const CLOSE_SESSION_REPLACED = 4001
@@ -27,13 +31,14 @@ const CLOSE_SESSION_REPLACED = 4001
 interface UseWebSocketOptions {
   onMessage: (msg: WSMessage) => void
   onConnect: () => void
-  onDisconnect: () => void
+  onDisconnect: (reason?: 'session_replaced' | 'error') => void
 }
 
 export function useWebSocket({ onMessage, onConnect, onDisconnect }: UseWebSocketOptions) {
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const reconnectAttemptRef = useRef(0)
+  const connectedAtRef = useRef(0)
   const [readyState, setReadyState] = useState<number>(WebSocket.CLOSED)
   const [sessionReplaced, setSessionReplaced] = useState(false)
 
@@ -66,7 +71,7 @@ export function useWebSocket({ onMessage, onConnect, onDisconnect }: UseWebSocke
 
       ws.onopen = () => {
         if (wsRef.current !== ws) return
-        reconnectAttemptRef.current = 0
+        connectedAtRef.current = Date.now()
         setReadyState(WebSocket.OPEN)
         onConnect()
       }
@@ -88,12 +93,21 @@ export function useWebSocket({ onMessage, onConnect, onDisconnect }: UseWebSocke
       ws.onclose = (ev) => {
         if (wsRef.current !== ws) return
         setReadyState(WebSocket.CLOSED)
-        onDisconnect()
 
-        // Server sent 4001 = another session took over. Don't auto-reconnect.
+        // Session replaced by another tab — don't auto-reconnect
         if (ev.code === CLOSE_SESSION_REPLACED) {
           setSessionReplaced(true)
+          onDisconnect('session_replaced')
           return
+        }
+
+        onDisconnect('error')
+
+        // Only reset backoff if we were connected long enough to be stable.
+        // This prevents rapid connect-drop-reconnect cycles from resetting
+        // the backoff counter, which would cause a reconnect storm.
+        if (connectedAtRef.current > 0 && Date.now() - connectedAtRef.current >= BACKOFF_RESET_THRESHOLD) {
+          reconnectAttemptRef.current = 0
         }
 
         const delay = Math.min(
