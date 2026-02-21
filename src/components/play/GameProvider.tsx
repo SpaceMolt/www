@@ -63,8 +63,8 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
       case 'ok': {
         d({ type: 'OK', payload: p })
         const action = (p as Record<string, unknown>).action as string | undefined
-        // Auto-refresh system data after jumping to a new system
-        if (action === 'jumped') {
+        // Auto-refresh system data after arriving at a POI or jumping to a new system
+        if (action === 'arrived' || action === 'jumped') {
           sendRef.current({ type: 'get_system' })
         }
         // Classify responses without action field by structure
