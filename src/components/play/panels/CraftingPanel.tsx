@@ -98,13 +98,13 @@ export function CraftingPanel() {
                     <div className={styles.recipeRow}>
                       <span className={styles.recipeLabel}>In:</span>
                       <span className={styles.recipeInputs}>
-                        {recipe.inputs.map((i) => `${i.item_id} x${i.quantity}`).join(', ')}
+                        {(recipe.inputs ?? []).map((i: { item_id: string; quantity: number }) => `${i.item_id} x${i.quantity}`).join(', ') || 'None'}
                       </span>
                     </div>
                     <div className={styles.recipeRow}>
                       <span className={styles.recipeLabel}>Out:</span>
                       <span className={styles.recipeOutputs}>
-                        {recipe.outputs.map((o) => `${o.item_id} x${o.quantity}`).join(', ')}
+                        {(recipe.outputs ?? []).map((o: { item_id: string; quantity: number }) => `${o.item_id} x${o.quantity}`).join(', ') || 'None'}
                       </span>
                     </div>
                     {recipe.required_skills && Object.keys(recipe.required_skills).length > 0 && (
