@@ -388,6 +388,7 @@
 .shipImageWrap {
   overflow: hidden;
   background: rgba(13, 19, 33, 0.8);
+  position: relative;
 }
 
 .shipImage {
@@ -400,6 +401,34 @@
 
 .shipCard:hover .shipImage {
   transform: scale(1.03);
+}
+
+.zoomBtn {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(13, 19, 33, 0.75);
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  border-radius: 4px;
+  color: var(--chrome-silver);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.shipImageWrap:hover .zoomBtn {
+  opacity: 1;
+}
+
+.zoomBtn:hover {
+  background: rgba(0, 212, 255, 0.15);
+  color: var(--plasma-cyan);
+  border-color: var(--plasma-cyan);
 }
 
 .cardBody {
@@ -693,6 +722,85 @@
   font-size: 1.5rem;
   margin-bottom: 1rem;
   color: var(--star-white);
+}
+
+/* === Image Zoom Modal === */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(5, 8, 20, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  cursor: zoom-out;
+}
+
+.modalClose {
+  position: fixed;
+  top: 1.25rem;
+  right: 1.25rem;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(26, 39, 68, 0.8);
+  border: 1px solid var(--hull-grey);
+  border-radius: 6px;
+  color: var(--chrome-silver);
+  cursor: pointer;
+  z-index: 1001;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.modalClose:hover {
+  color: var(--star-white);
+  border-color: var(--plasma-cyan);
+}
+
+.modalContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: min(1200px, 90vw);
+  cursor: default;
+}
+
+.modalImage {
+  width: 100%;
+  height: auto;
+  max-height: 78vh;
+  object-fit: contain;
+  border-radius: 8px;
+  display: block;
+}
+
+.modalCaption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 1rem;
+  text-align: center;
+  max-width: 700px;
+}
+
+.modalShipName {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--star-white);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.modalShipDesc {
+  font-size: 0.85rem;
+  color: var(--chrome-silver);
+  line-height: 1.6;
+  opacity: 0.8;
 }
 
 /* === Responsive === */

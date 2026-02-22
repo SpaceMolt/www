@@ -252,6 +252,7 @@ export default function ShipsPage() {
   const [classDropdownOpen, setClassDropdownOpen] = useState(false)
   const classDropdownRef = useRef<HTMLDivElement>(null)
   const [brokenImages, setBrokenImages] = useState<Set<string>>(new Set())
+  const [zoomedShip, setZoomedShip] = useState<Ship | null>(null)
 
   const handleImageError = useCallback((shipId: string) => {
     setBrokenImages((prev) => {
@@ -309,8 +310,17 @@ export default function ShipsPage() {
     document.title = 'Ship Catalog - SpaceMolt'
   }, [])
 
+  useEffect(() => {
+    if (!zoomedShip) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setZoomedShip(null)
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [zoomedShip])
+
   const filteredShips = useMemo(() => {
-    let result = ships
+    let result = ships.filter((s) => s.empire !== '')
     if (activeEmpire) {
       result = result.filter((s) => s.empire === activeEmpire)
     }
@@ -525,6 +535,15 @@ export default function ShipsPage() {
                         className={styles.shipImage}
                         onError={() => handleImageError(ship.id)}
                       />
+                      <button
+                        className={styles.zoomBtn}
+                        onClick={(e) => { e.stopPropagation(); setZoomedShip(ship) }}
+                        aria-label={`View ${ship.name} full size`}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                          <path d="M1 5V1H5M9 1H13V5M13 9V13H9M5 13H1V9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </button>
                     </div>
                   )}
                 <div className={styles.cardBody}>
@@ -699,6 +718,28 @@ export default function ShipsPage() {
               </div>
             )
           })}
+        </div>
+      )}
+      {zoomedShip && (
+        <div className={styles.modalOverlay} onClick={() => setZoomedShip(null)}>
+          <button className={styles.modalClose} onClick={() => setZoomedShip(null)} aria-label="Close">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path d="M2 2L16 16M16 2L2 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </button>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <Image
+              src={`/images/ships/catalog/${zoomedShip.id}.png`}
+              alt={zoomedShip.name}
+              width={1200}
+              height={900}
+              className={styles.modalImage}
+            />
+            <div className={styles.modalCaption}>
+              <span className={styles.modalShipName}>{zoomedShip.name}</span>
+              <span className={styles.modalShipDesc}>{zoomedShip.description}</span>
+            </div>
+          </div>
         </div>
       )}
     </main>
