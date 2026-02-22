@@ -528,7 +528,7 @@ export default function ShipsPage() {
                   {!brokenImages.has(ship.id) && (
                     <div className={styles.shipImageWrap}>
                       <Image
-                        src={`/images/ships/catalog/${ship.id}.png`}
+                        src={`/images/ships/catalog/${ship.id}.webp`}
                         alt={ship.name}
                         width={600}
                         height={450}
@@ -729,7 +729,7 @@ export default function ShipsPage() {
           </button>
           <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <Image
-              src={`/images/ships/catalog/${zoomedShip.id}.png`}
+              src={`/images/ships/catalog/${zoomedShip.id}.webp`}
               alt={zoomedShip.name}
               width={1200}
               height={900}
