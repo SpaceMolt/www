@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useMemo } from 'react'
 import { useGame } from './GameProvider'
 import {
   AlertTriangle,
@@ -11,7 +11,9 @@ import {
   Info,
   Bell,
   Cpu,
+  Users,
 } from 'lucide-react'
+import type { EventLogEntry } from './types'
 import styles from './EventLog.module.css'
 
 const EVENT_CONFIG: Record<string, { icon: typeof Info; className: string }> = {
@@ -38,6 +40,56 @@ function relativeTime(timestamp: number): string {
   return `${hours}h`
 }
 
+function isTrafficEvent(e: EventLogEntry): boolean {
+  const st = e.data?.subtype
+  return st === 'poi_arrival' || st === 'poi_departure'
+}
+
+type DisplayItem =
+  | { kind: 'single'; entry: EventLogEntry }
+  | { kind: 'group'; key: string; arrivals: number; departures: number; timestamp: number }
+
+function groupEvents(events: EventLogEntry[]): DisplayItem[] {
+  const result: DisplayItem[] = []
+  let i = 0
+  while (i < events.length) {
+    if (isTrafficEvent(events[i])) {
+      let j = i + 1
+      while (j < events.length && isTrafficEvent(events[j])) j++
+      const count = j - i
+      if (count > 2) {
+        let arrivals = 0
+        let departures = 0
+        for (let k = i; k < j; k++) {
+          if (events[k].data?.subtype === 'poi_arrival') arrivals++
+          else departures++
+        }
+        result.push({
+          kind: 'group',
+          key: events[i].id,
+          arrivals,
+          departures,
+          timestamp: events[j - 1].timestamp,
+        })
+      } else {
+        for (let k = i; k < j; k++) result.push({ kind: 'single', entry: events[k] })
+      }
+      i = j
+    } else {
+      result.push({ kind: 'single', entry: events[i] })
+      i++
+    }
+  }
+  return result
+}
+
+function trafficSummary(arrivals: number, departures: number): string {
+  const parts: string[] = []
+  if (arrivals > 0) parts.push(`${arrivals} player${arrivals > 1 ? 's' : ''} arrived`)
+  if (departures > 0) parts.push(`${departures} player${departures > 1 ? 's' : ''} departed`)
+  return parts.join(', ')
+}
+
 export function EventLog() {
   const { state } = useGame()
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -59,7 +111,10 @@ export function EventLog() {
     isAutoScrollRef.current = distFromBottom < 30
   }
 
-  const events = [...state.eventLog].reverse()
+  const displayItems = useMemo(() => {
+    const events = [...state.eventLog].reverse()
+    return groupEvents(events)
+  }, [state.eventLog])
 
   return (
     <div className={styles.container}>
@@ -72,19 +127,33 @@ export function EventLog() {
         className={styles.events}
         onScroll={handleScroll}
       >
-        {events.length === 0 ? (
+        {displayItems.length === 0 ? (
           <div className={styles.emptyMessage}>No events yet</div>
         ) : (
-          events.map((entry) => {
-            const config = EVENT_CONFIG[entry.type] || EVENT_CONFIG.info
+          displayItems.map((item) => {
+            if (item.kind === 'group') {
+              const eventClass = styles.eventInfo || ''
+              return (
+                <div key={item.key} className={`${styles.event} ${eventClass}`}>
+                  <Users size={13} className={styles.eventIcon} />
+                  <span className={styles.eventMessage}>
+                    {trafficSummary(item.arrivals, item.departures)}
+                  </span>
+                  <span className={styles.eventTime}>
+                    {relativeTime(item.timestamp)}
+                  </span>
+                </div>
+              )
+            }
+            const config = EVENT_CONFIG[item.entry.type] || EVENT_CONFIG.info
             const Icon = config.icon
             const eventClass = styles[config.className] || ''
             return (
-              <div key={entry.id} className={`${styles.event} ${eventClass}`}>
+              <div key={item.entry.id} className={`${styles.event} ${eventClass}`}>
                 <Icon size={13} className={styles.eventIcon} />
-                <span className={styles.eventMessage}>{entry.message}</span>
+                <span className={styles.eventMessage}>{item.entry.message}</span>
                 <span className={styles.eventTime}>
-                  {relativeTime(entry.timestamp)}
+                  {relativeTime(item.entry.timestamp)}
                 </span>
               </div>
             )

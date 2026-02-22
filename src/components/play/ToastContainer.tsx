@@ -69,6 +69,9 @@ export function ToastContainer() {
     if (latest.id === lastEventIdRef.current) return
     lastEventIdRef.current = latest.id
 
+    // Only show toasts for errors
+    if (latest.type !== 'error') return
+
     const toastId = `toast-${latest.id}`
     setToasts((prev) => {
       const next = [{ id: toastId, entry: latest, exiting: false }, ...prev]
