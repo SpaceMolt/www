@@ -25,5 +25,5 @@ jobs:
 
       - run: pnpm build
         env:
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_ZnJlZS1taXRlLTYuY2xlcmsuYWNjb3VudHMuZGV2JA' }}
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
