@@ -167,7 +167,7 @@ const eventConfig: Record<string, EventConfigEntry> = {
       const players = d.players as string[] | undefined
       const total = Number(d.total) || 0
       if (!players || players.length === 0) return ''
-      let list = players.join(', ')
+      let list = players.map(escapeHtml).join(', ')
       if (total > players.length) {
         list += `, and ${total - players.length} others`
       }
