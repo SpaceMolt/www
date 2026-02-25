@@ -67,6 +67,12 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
         if (action === 'arrived' || action === 'jumped') {
           sendRef.current({ type: 'get_system' })
         }
+        // catalog response: convert items array to recipes map
+        if (action === 'catalog' && (p.type as string) === 'recipes' && Array.isArray(p.items)) {
+          const recipes: Record<string, unknown> = {}
+          for (const item of p.items as Array<{ id: string }>) { recipes[item.id] = item }
+          d({ type: 'SET_RECIPES_DATA', payload: { recipes } as unknown as RecipesData })
+        }
         // Classify responses without action field by structure
         if (!action) {
           // shipyard_showroom: has base_id + shipyard_level + ships array
@@ -88,6 +94,12 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
           // get_recipes: has recipes object (map of recipe_id -> recipe)
           else if ('recipes' in p && typeof p.recipes === 'object' && !Array.isArray(p.recipes)) {
             d({ type: 'SET_RECIPES_DATA', payload: p as unknown as RecipesData })
+          }
+          // catalog recipes (no action field): has type='recipes' + items array
+          else if ((p.type as string) === 'recipes' && Array.isArray(p.items) && 'total' in p) {
+            const recipes: Record<string, unknown> = {}
+            for (const item of p.items as Array<{ id: string }>) { recipes[item.id] = item }
+            d({ type: 'SET_RECIPES_DATA', payload: { recipes } as unknown as RecipesData })
           }
           // get_skills: has skills object + message
           else if ('skills' in p && typeof p.skills === 'object' && 'message' in p) {
