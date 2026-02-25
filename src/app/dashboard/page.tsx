@@ -26,6 +26,7 @@ interface RegistrationCodeResponse {
 interface PlayerShipInfo {
   id: string
   class_id: string
+  class_name?: string
   name: string
   hull: number
   max_hull: number
@@ -56,11 +57,15 @@ interface PlayerInfo {
   id: string
   username: string
   empire: string
+  empire_name?: string
   credits: number
   current_system: string
+  current_system_name?: string
   current_poi: string
   docked_at?: string
+  docked_at_name?: string
   home_base?: string
+  home_base_name?: string
   online: boolean
   faction_id?: string
   faction_name?: string
@@ -131,6 +136,14 @@ const EMPIRE_COLORS: Record<string, string> = {
   crimson: '#e63946',
   nebula: '#00d4ff',
   outerrim: '#2dd4bf',
+}
+
+const EMPIRE_NAMES: Record<string, string> = {
+  solarian: 'Solarian',
+  voidborn: 'Voidborn',
+  crimson: 'Crimson',
+  nebula: 'Nebula',
+  outerrim: 'Outer Rim',
 }
 
 function MiniBar({ value, max, color }: { value: number; max: number; color: string }) {
@@ -789,7 +802,9 @@ function DashboardContent() {
                             </div>
                             <div className={styles.overviewItem}>
                               <span className={styles.overviewLabel}>Empire</span>
-                              <span className={styles.overviewValue}>{playerInfo.empire}</span>
+                              <span className={styles.overviewValue}>
+                                {playerInfo.empire_name || EMPIRE_NAMES[playerInfo.empire] || playerInfo.empire}
+                              </span>
                             </div>
                             <div className={styles.overviewItem}>
                               <span className={styles.overviewLabel}>Credits</span>
@@ -799,7 +814,9 @@ function DashboardContent() {
                             </div>
                             <div className={styles.overviewItem}>
                               <span className={styles.overviewLabel}>System</span>
-                              <span className={styles.overviewValue}>{playerInfo.current_system}</span>
+                              <span className={styles.overviewValue}>
+                                {playerInfo.current_system_name || playerInfo.current_system}
+                              </span>
                             </div>
                             <div className={styles.overviewItem}>
                               <span className={styles.overviewLabel}>Location</span>
@@ -808,20 +825,28 @@ function DashboardContent() {
                             {playerInfo.docked_at && (
                               <div className={styles.overviewItem}>
                                 <span className={styles.overviewLabel}>Docked At</span>
-                                <span className={styles.overviewValue}>{playerInfo.docked_at}</span>
+                                <span className={styles.overviewValue}>
+                                  {playerInfo.docked_at_name
+                                    ? `${playerInfo.docked_at_name} (${playerInfo.docked_at})`
+                                    : playerInfo.docked_at}
+                                </span>
                               </div>
                             )}
                             {playerInfo.home_base && (
                               <div className={styles.overviewItem}>
                                 <span className={styles.overviewLabel}>Home Base</span>
-                                <span className={styles.overviewValue}>{playerInfo.home_base}</span>
+                                <span className={styles.overviewValue}>
+                                  {playerInfo.home_base_name
+                                    ? `${playerInfo.home_base_name} (${playerInfo.home_base})`
+                                    : playerInfo.home_base}
+                                </span>
                               </div>
                             )}
                             {playerInfo.faction_id && (
                               <div className={styles.overviewItem}>
                                 <span className={styles.overviewLabel}>Faction</span>
                                 <span className={styles.overviewValue}>
-                                  {playerInfo.faction_id}
+                                  {playerInfo.faction_name || playerInfo.faction_id}
                                   {playerInfo.faction_rank && ` (${playerInfo.faction_rank})`}
                                 </span>
                               </div>
@@ -849,7 +874,7 @@ function DashboardContent() {
                               <div className={styles.shipHeader}>
                                 <div>
                                   <h4 className={styles.shipName}>{playerInfo.ship.name}</h4>
-                                  <span className={styles.shipClass}>{playerInfo.ship.class_id}</span>
+                                  <span className={styles.shipClass}>{playerInfo.ship.class_name || playerInfo.ship.class_id}</span>
                                 </div>
                               </div>
                               <div className={styles.shipBars}>
