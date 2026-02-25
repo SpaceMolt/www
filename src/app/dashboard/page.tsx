@@ -1047,14 +1047,7 @@ function DashboardContent() {
                 </>
               )}
 
-              {/* Chat Section (outside playerSections, renders even without playerInfo) */}
-              {players.length > 0 && (
-                <DashboardChat
-                  players={allPlayerInfo}
-                  selectedPlayer={selectedPlayer}
-                  authHeaders={authHeaders}
-                />
-              )}
+
             </>
           )}
         </div>
