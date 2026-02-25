@@ -71,7 +71,7 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
         if (action === 'catalog' && (p.type as string) === 'recipes' && Array.isArray(p.items)) {
           const recipes: Record<string, unknown> = {}
           for (const item of p.items as Array<{ id: string }>) { recipes[item.id] = item }
-          d({ type: 'SET_RECIPES_DATA', payload: { recipes } as unknown as RecipesData })
+          d({ type: 'MERGE_RECIPES_DATA', payload: { recipes, total: p.total as number, page: p.page as number } as unknown as RecipesData })
         }
         // Classify responses without action field by structure
         if (!action) {
@@ -99,7 +99,7 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
           else if ((p.type as string) === 'recipes' && Array.isArray(p.items) && 'total' in p) {
             const recipes: Record<string, unknown> = {}
             for (const item of p.items as Array<{ id: string }>) { recipes[item.id] = item }
-            d({ type: 'SET_RECIPES_DATA', payload: { recipes } as unknown as RecipesData })
+            d({ type: 'MERGE_RECIPES_DATA', payload: { recipes, total: p.total as number, page: p.page as number } as unknown as RecipesData })
           }
           // get_skills: has skills object + message
           else if ('skills' in p && typeof p.skills === 'object' && 'message' in p) {

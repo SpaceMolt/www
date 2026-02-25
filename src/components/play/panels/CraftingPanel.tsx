@@ -11,8 +11,13 @@ export function CraftingPanel() {
   const [craftingId, setCraftingId] = useState<string | null>(null)
 
   const loadRecipes = useCallback(() => {
-    sendCommand('catalog', { type: 'recipes', page_size: 50 })
+    sendCommand('catalog', { type: 'recipes', page_size: 50, page: 1 })
   }, [sendCommand])
+
+  const loadMoreRecipes = useCallback(() => {
+    const nextPage = (state.recipesData?.page ?? 1) + 1
+    sendCommand('catalog', { type: 'recipes', page_size: 50, page: nextPage })
+  }, [sendCommand, state.recipesData?.page])
 
   const loadSkills = useCallback(() => {
     sendCommand('get_skills')
@@ -38,6 +43,8 @@ export function CraftingPanel() {
   }, [state.skillsData])
 
   const isDocked = state.isDocked
+  const totalRecipes = state.recipesData?.total ?? 0
+  const hasMore = totalRecipes > 0 && recipes.length < totalRecipes
 
   return (
     <div className={styles.panel}>
@@ -86,6 +93,11 @@ export function CraftingPanel() {
               No recipes available.
             </div>
           )}
+          {recipes.length > 0 && totalRecipes > 0 && (
+            <div className={styles.recipeCount}>
+              {recipes.length} of {totalRecipes} recipes
+            </div>
+          )}
           {recipes.length > 0 && (
             <div className={styles.recipeList}>
               {recipes.map((recipe) => (
@@ -131,6 +143,15 @@ export function CraftingPanel() {
                 </div>
               ))}
             </div>
+          )}
+          {hasMore && (
+            <ActionButton
+              label={`Load more (${recipes.length} of ${totalRecipes})`}
+              icon={<BookOpen size={14} />}
+              onClick={loadMoreRecipes}
+              variant="secondary"
+              size="sm"
+            />
           )}
         </div>
 

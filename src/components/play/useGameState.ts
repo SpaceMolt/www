@@ -294,6 +294,16 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'SET_RECIPES_DATA':
       return { ...state, recipesData: action.payload }
 
+    case 'MERGE_RECIPES_DATA':
+      return {
+        ...state,
+        recipesData: {
+          recipes: { ...state.recipesData?.recipes, ...action.payload.recipes },
+          total: action.payload.total,
+          page: action.payload.page,
+        },
+      }
+
     case 'SET_SKILLS_DATA':
       return { ...state, skillsData: action.payload }
 

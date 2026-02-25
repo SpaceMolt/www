@@ -203,6 +203,8 @@ export interface Recipe {
 
 export interface RecipesData {
   recipes: Record<string, Recipe>
+  total?: number
+  page?: number
 }
 
 export interface SkillsData {
@@ -535,5 +537,6 @@ export type GameAction =
   | { type: 'SET_FLEET_DATA'; payload: FleetData }
   | { type: 'SET_STORAGE_DATA'; payload: StorageData }
   | { type: 'SET_RECIPES_DATA'; payload: RecipesData }
+  | { type: 'MERGE_RECIPES_DATA'; payload: RecipesData }
   | { type: 'SET_SKILLS_DATA'; payload: SkillsData }
   | { type: 'RESET' }

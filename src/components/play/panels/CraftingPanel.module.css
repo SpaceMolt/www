@@ -133,6 +133,14 @@
   margin: 0.25rem 0;
 }
 
+/* Recipe count label */
+.recipeCount {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--hull-grey);
+  text-align: right;
+}
+
 /* Recipe list */
 .recipeList {
   display: flex;
