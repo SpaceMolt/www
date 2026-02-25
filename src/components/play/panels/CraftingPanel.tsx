@@ -11,7 +11,7 @@ export function CraftingPanel() {
   const [craftingId, setCraftingId] = useState<string | null>(null)
 
   const loadRecipes = useCallback(() => {
-    sendCommand('get_recipes')
+    sendCommand('catalog', { type: 'recipes', page_size: 50 })
   }, [sendCommand])
 
   const loadSkills = useCallback(() => {
