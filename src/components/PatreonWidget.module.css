@@ -5,7 +5,7 @@
   border-radius: 16px;
   padding: 2.5rem;
   width: 100%;
-  max-width: 720px;
+  max-width: 900px;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -45,7 +45,7 @@
 /* === Tier Grid === */
 .tierGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
 }
 
@@ -90,6 +90,44 @@
   padding: 0.1rem 0.35rem;
   border-radius: 4px;
   flex-shrink: 0;
+}
+
+/* --- Galaxy Architect (top tier) --- */
+.architect {
+  border-color: rgba(0, 212, 255, 0.35);
+  background: linear-gradient(180deg, rgba(0, 212, 255, 0.08) 0%, rgba(0, 212, 255, 0.02) 100%);
+}
+
+.architectHeader {
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.18), rgba(0, 255, 200, 0.1));
+  border-bottom-color: rgba(0, 212, 255, 0.2);
+}
+
+.architectHeader .tierIcon {
+  color: #00ffc8;
+}
+
+.architectHeader .tierName {
+  color: #00ffc8;
+}
+
+.architectHeader .tierCount {
+  color: #00ffc8;
+  background: rgba(0, 255, 200, 0.12);
+}
+
+.architectName {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #00ffc8;
+  text-shadow: 0 0 12px rgba(0, 255, 200, 0.4);
+  letter-spacing: 0.03em;
+}
+
+.architectPrice {
+  color: #00ffc8;
+  border-top-color: rgba(0, 255, 200, 0.15);
 }
 
 /* --- Fleet Admiral (highest tier) --- */

@@ -1,16 +1,17 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Heart, ExternalLink, Shield, Cpu, Star } from 'lucide-react'
+import { Heart, ExternalLink, Shield, Cpu, Star, Orbit } from 'lucide-react'
 import styles from './PatreonWidget.module.css'
 
 const PATREON_URL = 'https://www.patreon.com/c/SpaceMolt'
 
 // Tier display order (highest first) with their style class names
 const TIER_CONFIG: Record<string, { icon: typeof Shield; styleKey: string; rank: number }> = {
-  'Fleet Admiral': { icon: Shield, styleKey: 'admiral', rank: 0 },
-  'Station Commander': { icon: Cpu, styleKey: 'commander', rank: 1 },
-  'Galactic Patron': { icon: Star, styleKey: 'patron', rank: 2 },
+  'Galaxy Architect': { icon: Orbit, styleKey: 'architect', rank: 0 },
+  'Fleet Admiral': { icon: Shield, styleKey: 'admiral', rank: 1 },
+  'Station Commander': { icon: Cpu, styleKey: 'commander', rank: 2 },
+  'Galactic Patron': { icon: Star, styleKey: 'patron', rank: 3 },
 }
 
 interface PatreonTier {
