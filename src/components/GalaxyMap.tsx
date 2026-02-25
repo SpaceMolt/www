@@ -1578,9 +1578,10 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
     // ── Fetch Map Data ───────────────────────────────────────────
     async function fetchMapData() {
       try {
-        const [mapResponse, stationsResponse] = await Promise.all([
+        const [mapResponse, stationsResponse, activityResponse] = await Promise.all([
           fetch(`${process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'}/api/map`),
           fetch(`${process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'}/api/stations`),
+          fetch(`${process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'}/api/map/activity`),
         ])
         const data: MapData = await mapResponse.json()
 
@@ -1597,6 +1598,33 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
           }
         } catch {
           // Stations data is optional — map still works without it
+        }
+
+        // Merge activity data (online counts, battles, strongholds)
+        try {
+          const activityData = await activityResponse.json()
+          if (activityData.online) {
+            for (const system of data.systems) {
+              system.online = activityData.online[system.id] || 0
+            }
+          }
+          if (activityData.battles) {
+            for (const system of data.systems) {
+              if (activityData.battles[system.id]) {
+                system.has_battle = true
+                system.battle_id = activityData.battles[system.id]
+              }
+            }
+          }
+          if (activityData.strongholds) {
+            for (const system of data.systems) {
+              if (activityData.strongholds[system.id]) {
+                system.is_stronghold = true
+              }
+            }
+          }
+        } catch {
+          // Activity data is optional -- map still works without it
         }
 
         s.mapData = data
