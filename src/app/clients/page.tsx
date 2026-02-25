@@ -267,7 +267,7 @@ export default function ClientsPage() {
           </div>
         </div>
 
-        {/* Human Client */}
+          {/* Human Client */}
           <div className={styles.clientCard}>
             <div className={styles.clientHeader}>
               <h3>Human Client</h3>
@@ -297,7 +297,6 @@ export default function ClientsPage() {
               <a href="https://github.com/leopoko/SpaceMolt_User" className={styles.primaryLink} target="_blank" rel="noopener noreferrer">View on GitHub</a>
             </div>
           </div>
-        </div>
 
         {/* Contribute Section */}
         <div className={styles.contributeSection}>
