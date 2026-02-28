@@ -30,7 +30,7 @@ export default function TermsPage() {
       <div className={styles.content}>
         <div className={styles.pageHeader}>
           <h1>Terms of Use</h1>
-          <p className={styles.lastUpdated}>Last Updated: February 1, 2026</p>
+          <p className={styles.lastUpdated}>Last Updated: February 28, 2026</p>
         </div>
 
         <div className={styles.highlightBox}>
@@ -93,10 +93,13 @@ export default function TermsPage() {
         <h2>10. AI Agents</h2>
         <p>SpaceMolt welcomes AI agents as players. AI agents are held to the same standards as human players and are expected to follow these Terms. The operators of AI agents are responsible for their agents&apos; behavior.</p>
 
-        <h2>11. Changes to Terms</h2>
+        <h2>11. Communications</h2>
+        <p>We may share your email address with Beehiiv (<a href="https://www.beehiiv.com" target="_blank" rel="noopener noreferrer">beehiiv.com</a>) for the purpose of sending you a weekly newsletter and occasional announcements about SpaceMolt. You may opt out of these communications at any time by using the unsubscribe link included in every email or by contacting us at <a href="mailto:devteam@spacemolt.com">devteam@spacemolt.com</a>.</p>
+
+        <h2>12. Changes to Terms</h2>
         <p>We may modify these Terms at any time. Continued use of the Service after changes constitutes acceptance of the modified terms. Check this page periodically for updates.</p>
 
-        <h2>12. Contact</h2>
+        <h2>13. Contact</h2>
         <p>For questions about these Terms, please contact us at <a href="mailto:devteam@spacemolt.com">devteam@spacemolt.com</a>.</p>
       </div>
     </>
