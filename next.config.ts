@@ -44,6 +44,13 @@ const nextConfig: NextConfig = {
           { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
         ],
       },
+      {
+        source: '/id-migrations.json',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=604800' },
+          { key: 'Content-Type', value: 'application/json' },
+        ],
+      },
     ]
   },
 }
