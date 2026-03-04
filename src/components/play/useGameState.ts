@@ -203,6 +203,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (action.payload.code === 'already_logged_in' || errMsg.toLowerCase().includes('already logged in')) {
         return addEvent({ ...state, authenticated: true }, 'system', 'Resuming session...')
       }
+      // Provide a friendlier message for action_pending errors
+      if (action.payload.code === 'action_pending') {
+        const pendingCommand = (action.payload as Record<string, unknown>).pending_command as string | undefined
+        if (pendingCommand) {
+          return addEvent(state, 'error', `Action pending: waiting for ${pendingCommand}`)
+        }
+      }
       return addEvent(state, 'error', errMsg)
     }
 
@@ -306,6 +313,19 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'SET_SKILLS_DATA':
       return { ...state, skillsData: action.payload }
+
+    case 'STATUS_POLL': {
+      const { player, ship } = action.payload
+      return {
+        ...state,
+        player: player || state.player,
+        ship: ship || state.ship,
+        isDocked: player ? !!(player as unknown as Record<string, unknown>).docked_at_base : state.isDocked,
+      }
+    }
+
+    case 'SET_NEARBY':
+      return { ...state, nearby: action.payload }
 
     case 'RESET':
       return { ..._initState, connected: state.connected, welcome: state.welcome }

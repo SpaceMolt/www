@@ -361,3 +361,104 @@
   text-align: center;
   padding: 1.5rem 0.5rem;
 }
+
+/* Route Finding */
+.routeSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.routeResult {
+  padding: 0.5rem 0.65rem;
+  background: rgba(0, 212, 255, 0.04);
+  border: 1px solid rgba(0, 212, 255, 0.1);
+  border-radius: 4px;
+}
+
+.routeMessage {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--bio-green);
+  margin-bottom: 0.35rem;
+}
+
+.routeNotFound {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--hull-grey);
+}
+
+.routeList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.routeStep {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.4rem;
+  background: rgba(61, 90, 108, 0.1);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.routeStepActive {
+  border-color: var(--bio-green);
+  background: rgba(45, 212, 191, 0.08);
+}
+
+.routeStepClickable {
+  cursor: pointer;
+}
+
+.routeStepClickable:hover {
+  background: rgba(155, 89, 182, 0.08);
+  border-color: rgba(155, 89, 182, 0.25);
+}
+
+.routeStepNumber {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--hull-grey);
+  min-width: 1.2rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.routeStepName {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.75rem;
+  color: var(--star-white);
+  flex: 1;
+}
+
+.routeStepJump {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  color: var(--void-purple);
+  text-transform: uppercase;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  flex-shrink: 0;
+}
+
+.routeStepClickable:hover .routeStepJump {
+  opacity: 1;
+}
+
+/* Survey System */
+.surveySection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}

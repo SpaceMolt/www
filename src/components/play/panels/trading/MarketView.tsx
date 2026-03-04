@@ -9,10 +9,54 @@ import {
   TrendingUp,
   TrendingDown,
   Building2,
+  BarChart3,
+  Calculator,
 } from 'lucide-react'
 import { useGame } from '../../GameProvider'
 import type { MarketItem } from '../../types'
 import styles from './MarketView.module.css'
+
+interface MarketInsight {
+  category: string
+  item: string
+  item_id: string
+  message: string
+  priority: number
+}
+
+interface AnalysisData {
+  insights: MarketInsight[]
+  skill_level: number
+  station: string
+  message: string
+}
+
+interface EstimateFill {
+  price_each: number
+  quantity: number
+  source: string
+}
+
+interface EstimateData {
+  item: string
+  quantity_requested: number
+  available: number
+  total_cost: number
+  fills: EstimateFill[]
+  unfilled: number
+  message: string
+}
+
+const CATEGORY_COLORS: Record<string, { color: string; bg: string; border: string }> = {
+  sell_here: { color: 'var(--bio-green)', bg: 'rgba(45, 212, 191, 0.12)', border: 'rgba(45, 212, 191, 0.3)' },
+  opportunity: { color: 'var(--bio-green)', bg: 'rgba(45, 212, 191, 0.12)', border: 'rgba(45, 212, 191, 0.3)' },
+  order_warning: { color: 'var(--claw-red)', bg: 'rgba(230, 57, 70, 0.12)', border: 'rgba(230, 57, 70, 0.3)' },
+  demand: { color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.12)', border: 'rgba(96, 165, 250, 0.3)' },
+  trend: { color: 'var(--void-purple)', bg: 'rgba(167, 139, 250, 0.12)', border: 'rgba(167, 139, 250, 0.3)' },
+  supply_imbalance: { color: 'var(--shell-orange)', bg: 'rgba(255, 107, 53, 0.12)', border: 'rgba(255, 107, 53, 0.3)' },
+  arbitrage: { color: 'var(--plasma-cyan)', bg: 'rgba(0, 212, 255, 0.12)', border: 'rgba(0, 212, 255, 0.3)' },
+  depth_warning: { color: 'var(--warning-yellow)', bg: 'rgba(255, 217, 61, 0.12)', border: 'rgba(255, 217, 61, 0.3)' },
+}
 
 export function MarketView() {
   const { state, sendCommand } = useGame()
@@ -23,6 +67,10 @@ export function MarketView() {
   const [expandedItem, setExpandedItem] = useState<string | null>(null)
   const [buyQty, setBuyQty] = useState('1')
   const [sellQty, setSellQty] = useState('1')
+  const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null)
+  const [analysisOpen, setAnalysisOpen] = useState(true)
+  const [estimateData, setEstimateData] = useState<Record<string, EstimateData>>({})
+  const [estimatingItem, setEstimatingItem] = useState<string | null>(null)
 
   // Auto-fetch market data when docked and data is null
   useEffect(() => {
@@ -61,6 +109,32 @@ export function MarketView() {
     [sendCommand, sellQty]
   )
 
+  const handleAnalyzeMarket = useCallback(() => {
+    sendCommand('analyze_market').then((resp: unknown) => {
+      const data = resp as AnalysisData | undefined
+      if (data?.insights) {
+        setAnalysisData(data)
+        setAnalysisOpen(true)
+      }
+    })
+  }, [sendCommand])
+
+  const handleEstimatePurchase = useCallback(
+    (itemId: string) => {
+      const quantity = parseInt(buyQty, 10)
+      if (isNaN(quantity) || quantity < 1) return
+      setEstimatingItem(itemId)
+      sendCommand('estimate_purchase', { item_id: itemId, quantity }).then((resp: unknown) => {
+        const data = resp as EstimateData | undefined
+        if (data?.fills) {
+          setEstimateData((prev) => ({ ...prev, [itemId]: data }))
+        }
+        setEstimatingItem(null)
+      })
+    },
+    [sendCommand, buyQty]
+  )
+
   if (!isDocked) {
     return (
       <div className={styles.dockedOnly}>
@@ -78,15 +152,65 @@ export function MarketView() {
           <Building2 size={12} />
           {marketData?.base || 'Market'}
         </span>
-        <button
-          className={styles.refreshBtn}
-          onClick={handleRefresh}
-          title="Refresh market data"
-          type="button"
-        >
-          <RefreshCw size={13} />
-        </button>
+        <div className={styles.toolbarActions}>
+          <button
+            className={styles.analyzeBtn}
+            onClick={handleAnalyzeMarket}
+            title="Analyze market"
+            type="button"
+          >
+            <BarChart3 size={13} />
+          </button>
+          <button
+            className={styles.refreshBtn}
+            onClick={handleRefresh}
+            title="Refresh market data"
+            type="button"
+          >
+            <RefreshCw size={13} />
+          </button>
+        </div>
       </div>
+
+      {/* Market Analysis Insights */}
+      {analysisData && analysisData.insights.length > 0 && (
+        <div className={styles.insightsSection}>
+          <button
+            className={styles.insightsToggle}
+            onClick={() => setAnalysisOpen(!analysisOpen)}
+            type="button"
+          >
+            {analysisOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+            <BarChart3 size={11} />
+            <span>Analysis ({analysisData.insights.length})</span>
+          </button>
+          {analysisOpen && (
+            <div className={styles.insightsList}>
+              {[...analysisData.insights]
+                .sort((a, b) => b.priority - a.priority)
+                .map((insight, i) => {
+                  const catStyle = CATEGORY_COLORS[insight.category] || CATEGORY_COLORS.demand
+                  return (
+                    <div key={i} className={styles.insightItem}>
+                      <span
+                        className={styles.insightBadge}
+                        style={{
+                          color: catStyle.color,
+                          background: catStyle.bg,
+                          borderColor: catStyle.border,
+                        }}
+                      >
+                        {insight.category.replace(/_/g, ' ')}
+                      </span>
+                      <span className={styles.insightItemName}>{insight.item}</span>
+                      <span className={styles.insightMessage}>{insight.message}</span>
+                    </div>
+                  )
+                })}
+            </div>
+          )}
+        </div>
+      )}
 
       {!marketData ? (
         <div className={styles.loading}>Loading market data...</div>
@@ -223,6 +347,16 @@ export function MarketView() {
                               onChange={(e) => setBuyQty(e.target.value)}
                             />
                             <button
+                              className={styles.estimateBtn}
+                              onClick={() => handleEstimatePurchase(item.item_id)}
+                              disabled={!buyQty || parseInt(buyQty, 10) < 1 || estimatingItem === item.item_id}
+                              title="Estimate purchase cost"
+                              type="button"
+                            >
+                              <Calculator size={11} />
+                              Est.
+                            </button>
+                            <button
                               className={styles.quickBuyBtn}
                               onClick={() => handleBuyAtMarket(item.item_id)}
                               disabled={!buyQty || parseInt(buyQty, 10) < 1}
@@ -232,6 +366,34 @@ export function MarketView() {
                               Buy
                             </button>
                           </div>
+                          {/* Estimate Breakdown */}
+                          {estimateData[item.item_id] && (
+                            <div className={styles.estimateBreakdown}>
+                              <div className={styles.estimateTotal}>
+                                Total: {estimateData[item.item_id].total_cost.toLocaleString()} cr
+                                {estimateData[item.item_id].unfilled > 0 && (
+                                  <span className={styles.estimateUnfilled}>
+                                    ({estimateData[item.item_id].unfilled} unfilled)
+                                  </span>
+                                )}
+                              </div>
+                              {estimateData[item.item_id].fills.length > 0 && (
+                                <div className={styles.estimateFills}>
+                                  {estimateData[item.item_id].fills.map((fill, fi) => (
+                                    <div key={fi} className={styles.estimateFill}>
+                                      <span className={styles.estimateFillQty}>x{fill.quantity}</span>
+                                      <span className={styles.estimateFillPrice}>
+                                        @ {fill.price_each.toLocaleString()} cr
+                                      </span>
+                                      {fill.source === 'npc' && (
+                                        <span className={styles.npcTag}>NPC</span>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
 
                         {/* Quick Sell */}

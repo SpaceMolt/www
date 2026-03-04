@@ -7,6 +7,8 @@ import {
   X,
   Plus,
   Users,
+  Pencil,
+  Check,
 } from 'lucide-react'
 import { useGame } from '../../GameProvider'
 import type { OrderEntry } from '../../types'
@@ -23,6 +25,11 @@ export function OrdersView() {
   const [orderQty, setOrderQty] = useState('')
   const [orderPrice, setOrderPrice] = useState('')
   const [showForm, setShowForm] = useState(false)
+
+  // Modify order state
+  const [editingOrderId, setEditingOrderId] = useState<string | null>(null)
+  const [editPrice, setEditPrice] = useState('')
+  const [modifyResult, setModifyResult] = useState<Record<string, { message: string; listing_fee?: number }>>({})
 
   // Auto-fetch orders when docked and data is null
   useEffect(() => {
@@ -58,6 +65,42 @@ export function OrdersView() {
     setOrderPrice('')
     setShowForm(false)
   }, [sendCommand, orderType, orderItemId, orderQty, orderPrice])
+
+  const handleStartModify = useCallback((orderId: string, currentPrice: number) => {
+    setEditingOrderId(orderId)
+    setEditPrice(currentPrice.toString())
+    setModifyResult((prev) => {
+      const next = { ...prev }
+      delete next[orderId]
+      return next
+    })
+  }, [])
+
+  const handleCancelModify = useCallback(() => {
+    setEditingOrderId(null)
+    setEditPrice('')
+  }, [])
+
+  const handleSubmitModify = useCallback(
+    (orderId: string) => {
+      const newPrice = parseInt(editPrice, 10)
+      if (isNaN(newPrice) || newPrice < 1) return
+      sendCommand('modify_order', { order_id: orderId, new_price: newPrice }).then(
+        (resp: unknown) => {
+          const data = resp as { order_id: string; old_price: number; new_price: number; listing_fee?: number; message: string } | undefined
+          if (data?.message) {
+            setModifyResult((prev) => ({
+              ...prev,
+              [orderId]: { message: data.message, listing_fee: data.listing_fee },
+            }))
+          }
+          setEditingOrderId(null)
+          setEditPrice('')
+        }
+      )
+    },
+    [sendCommand, editPrice]
+  )
 
   if (!isDocked) {
     return (
@@ -187,44 +230,101 @@ export function OrdersView() {
         <div className={styles.emptyState}>No active orders</div>
       ) : (
         <div className={styles.orderList}>
-          {personalOrders.map((order: OrderEntry) => (
-            <div key={order.order_id} className={styles.orderCard}>
-              <div className={styles.orderTop}>
-                <span
-                  className={`${styles.orderTypeBadge} ${
-                    order.order_type === 'sell' ? styles.badgeSell : styles.badgeBuy
-                  }`}
-                >
-                  {order.order_type.toUpperCase()}
-                </span>
-                <span className={styles.orderItemName}>{order.item_name}</span>
-                <button
-                  className={styles.cancelBtn}
-                  onClick={() => handleCancelOrder(order.order_id)}
-                  title="Cancel order"
-                  type="button"
-                >
-                  <X size={12} />
-                </button>
-              </div>
-              <div className={styles.orderDetails}>
-                <span className={styles.orderDetail}>
-                  Qty: {order.remaining}/{order.quantity}
-                </span>
-                <span className={styles.orderDetail}>
-                  Price: {order.price_each.toLocaleString()} cr
-                </span>
-                {order.listing_fee > 0 && (
-                  <span className={styles.orderDetailDim}>
-                    Fee: {order.listing_fee.toLocaleString()} cr
+          {personalOrders.map((order: OrderEntry) => {
+            const isEditing = editingOrderId === order.order_id
+            const result = modifyResult[order.order_id]
+            return (
+              <div key={order.order_id} className={styles.orderCard}>
+                <div className={styles.orderTop}>
+                  <span
+                    className={`${styles.orderTypeBadge} ${
+                      order.order_type === 'sell' ? styles.badgeSell : styles.badgeBuy
+                    }`}
+                  >
+                    {order.order_type.toUpperCase()}
                   </span>
+                  <span className={styles.orderItemName}>{order.item_name}</span>
+                  <button
+                    className={styles.modifyBtn}
+                    onClick={() => handleStartModify(order.order_id, order.price_each)}
+                    title="Modify price"
+                    type="button"
+                  >
+                    <Pencil size={11} />
+                  </button>
+                  <button
+                    className={styles.cancelBtn}
+                    onClick={() => handleCancelOrder(order.order_id)}
+                    title="Cancel order"
+                    type="button"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+                <div className={styles.orderDetails}>
+                  <span className={styles.orderDetail}>
+                    Qty: {order.remaining}/{order.quantity}
+                  </span>
+                  {isEditing ? (
+                    <span className={styles.modifyInline}>
+                      <span className={styles.modifyLabel}>Price:</span>
+                      <input
+                        className={styles.modifyInput}
+                        type="number"
+                        min={1}
+                        value={editPrice}
+                        onChange={(e) => setEditPrice(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleSubmitModify(order.order_id)
+                          if (e.key === 'Escape') handleCancelModify()
+                        }}
+                        autoFocus
+                      />
+                      <button
+                        className={styles.modifySaveBtn}
+                        onClick={() => handleSubmitModify(order.order_id)}
+                        disabled={!editPrice || parseInt(editPrice, 10) < 1}
+                        title="Save new price"
+                        type="button"
+                      >
+                        <Check size={11} />
+                      </button>
+                      <button
+                        className={styles.modifyCancelBtn}
+                        onClick={handleCancelModify}
+                        title="Cancel editing"
+                        type="button"
+                      >
+                        <X size={11} />
+                      </button>
+                    </span>
+                  ) : (
+                    <span className={styles.orderDetail}>
+                      Price: {order.price_each.toLocaleString()} cr
+                    </span>
+                  )}
+                  {order.listing_fee > 0 && (
+                    <span className={styles.orderDetailDim}>
+                      Fee: {order.listing_fee.toLocaleString()} cr
+                    </span>
+                  )}
+                </div>
+                {result && (
+                  <div className={styles.modifyResult}>
+                    <span className={styles.modifyMessage}>{result.message}</span>
+                    {result.listing_fee != null && result.listing_fee > 0 && (
+                      <span className={styles.modifyFeeWarning}>
+                        Listing fee: {result.listing_fee.toLocaleString()} cr
+                      </span>
+                    )}
+                  </div>
                 )}
+                <div className={styles.orderMeta}>
+                  {formatDate(order.created_at)}
+                </div>
               </div>
-              <div className={styles.orderMeta}>
-                {formatDate(order.created_at)}
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 

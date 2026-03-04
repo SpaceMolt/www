@@ -217,6 +217,25 @@
   flex-shrink: 0;
 }
 
+.useBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  color: var(--hull-grey);
+  cursor: pointer;
+  padding: 0.2rem;
+  transition: all 0.15s ease;
+}
+
+.useBtn:hover {
+  border-color: var(--plasma-cyan);
+  color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.1);
+}
+
 .jettisonBtn {
   display: flex;
   align-items: center;

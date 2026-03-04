@@ -1,19 +1,19 @@
 'use client'
 
-import { createContext, useContext, useCallback, useRef, type ReactNode } from 'react'
+import { createContext, useContext, useCallback, useEffect, useRef, type ReactNode } from 'react'
 import { useWebSocket } from './useWebSocket'
 import { useGameState } from './useGameState'
 import type {
   GameState, WSMessage, GameAction, WelcomePayload, StateUpdate, ChatMessage, TradeOffer,
   ShipCatalogData, ShowroomData, FleetData, StorageData, MarketData, OrdersData,
-  RecipesData, SkillsData,
+  RecipesData, SkillsData, Player, Ship, NearbyPlayer,
 } from './types'
 
 interface GameContextValue {
   state: GameState
   dispatch: React.Dispatch<GameAction>
   send: (msg: WSMessage) => void
-  sendCommand: (type: string, payload?: Record<string, unknown>) => void
+  sendCommand: (type: string, payload?: Record<string, unknown>) => Promise<Record<string, unknown>>
   connect: () => void
   disconnect: () => void
   readyState: number
@@ -39,6 +39,7 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
   const dispatchRef = useRef(dispatch)
   dispatchRef.current = dispatch
   const sendRef = useRef<(msg: WSMessage) => void>(() => {})
+  const pendingCallbacksRef = useRef<Map<string, (payload: Record<string, unknown>) => void>>(new Map())
 
   const onMessage = useCallback((msg: WSMessage) => {
     const d = dispatchRef.current
@@ -63,9 +64,31 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
       case 'ok': {
         d({ type: 'OK', payload: p })
         const action = (p as Record<string, unknown>).action as string | undefined
+        // Resolve pending sendCommand promise if any
+        if (action) {
+          const cb = pendingCallbacksRef.current.get(action)
+          if (cb) {
+            pendingCallbacksRef.current.delete(action)
+            cb(p as Record<string, unknown>)
+          }
+        }
         // Auto-refresh system data after arriving at a POI or jumping to a new system
         if (action === 'arrived' || action === 'jumped') {
           sendRef.current({ type: 'get_system' })
+        }
+        // Route get_status responses to STATUS_POLL
+        if (action === 'get_status') {
+          const player = (p as Record<string, unknown>).player as Player | undefined
+          const ship = (p as Record<string, unknown>).ship as Ship | undefined
+          if (player && ship) {
+            d({ type: 'STATUS_POLL', payload: { player, ship } })
+          }
+        }
+        // Route get_nearby responses to SET_NEARBY
+        if (action === 'get_nearby') {
+          const players = ((p as Record<string, unknown>).players || []) as NearbyPlayer[]
+          const pirates = ((p as Record<string, unknown>).pirates || []) as NearbyPlayer[]
+          d({ type: 'SET_NEARBY', payload: [...players, ...pirates] })
         }
         // catalog response: convert items array to recipes map
         if (action === 'catalog' && (p.type as string) === 'recipes' && Array.isArray(p.items)) {
@@ -201,10 +224,41 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
   })
   sendRef.current = send
 
-  const sendCommand = useCallback((type: string, payload?: Record<string, unknown>) => {
-    const msg: WSMessage = { type }
-    if (payload) msg.payload = payload
-    send(msg)
+  // Keep refs for polling to avoid stale closures in setInterval
+  const readyStateRef = useRef(readyState)
+  readyStateRef.current = readyState
+  const stateRef = useRef(state)
+  stateRef.current = state
+
+  // Poll get_status every 5 seconds when authenticated and WS is open
+  useEffect(() => {
+    if (!state.authenticated) return
+    const interval = setInterval(() => {
+      if (readyStateRef.current === WebSocket.OPEN && stateRef.current.authenticated) {
+        sendRef.current({ type: 'get_status' })
+      }
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [state.authenticated])
+
+  // Poll get_nearby every 10 seconds when authenticated, connected, and not docked
+  useEffect(() => {
+    if (!state.authenticated || state.isDocked) return
+    const interval = setInterval(() => {
+      if (readyStateRef.current === WebSocket.OPEN && stateRef.current.authenticated && !stateRef.current.isDocked) {
+        sendRef.current({ type: 'get_nearby' })
+      }
+    }, 10000)
+    return () => clearInterval(interval)
+  }, [state.authenticated, state.isDocked])
+
+  const sendCommand = useCallback((type: string, payload?: Record<string, unknown>): Promise<Record<string, unknown>> => {
+    return new Promise((resolve) => {
+      pendingCallbacksRef.current.set(type, resolve)
+      const msg: WSMessage = { type }
+      if (payload) msg.payload = payload
+      send(msg)
+    })
   }, [send])
 
   const value: GameContextValue = {

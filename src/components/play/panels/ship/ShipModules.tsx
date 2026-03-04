@@ -79,6 +79,12 @@ export function ShipModules() {
                       <span className={styles.moduleType}>
                         {mod.slot_type} / {mod.type}
                       </span>
+                      {(() => {
+                        const size = (mod as unknown as Record<string, unknown>).size as number | undefined
+                        return size !== undefined && size > 0 ? (
+                          <span className={styles.moduleType}>S{size}</span>
+                        ) : null
+                      })()}
                       {mod.quality !== undefined && (
                         <span className={styles.moduleQuality}>
                           Q{mod.quality}%

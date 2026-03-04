@@ -381,6 +381,113 @@
   color: var(--hull-grey);
 }
 
+/* Modify order */
+.modifyBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 212, 255, 0.06);
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  border-radius: 3px;
+  color: var(--plasma-cyan);
+  cursor: pointer;
+  padding: 0.2rem;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.modifyBtn:hover {
+  background: rgba(0, 212, 255, 0.18);
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.25);
+}
+
+.modifyInline {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.modifyLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--chrome-silver);
+}
+
+.modifyInput {
+  background: rgba(10, 14, 23, 0.8);
+  border: 1px solid var(--plasma-cyan);
+  border-radius: 3px;
+  padding: 0.2rem 0.35rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--star-white);
+  outline: none;
+  width: 5rem;
+  box-shadow: 0 0 6px rgba(0, 212, 255, 0.12);
+}
+
+.modifySaveBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(45, 212, 191, 0.08);
+  border: 1px solid var(--bio-green);
+  border-radius: 3px;
+  color: var(--bio-green);
+  cursor: pointer;
+  padding: 0.2rem;
+  transition: all 0.2s ease;
+}
+
+.modifySaveBtn:hover:not(:disabled) {
+  background: rgba(45, 212, 191, 0.2);
+  box-shadow: 0 0 8px rgba(45, 212, 191, 0.25);
+}
+
+.modifySaveBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.modifyCancelBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(230, 57, 70, 0.06);
+  border: 1px solid rgba(230, 57, 70, 0.25);
+  border-radius: 3px;
+  color: var(--claw-red);
+  cursor: pointer;
+  padding: 0.2rem;
+  transition: all 0.2s ease;
+}
+
+.modifyCancelBtn:hover {
+  background: rgba(230, 57, 70, 0.18);
+}
+
+.modifyResult {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0.3rem;
+  background: rgba(10, 14, 23, 0.3);
+  border-radius: 3px;
+}
+
+.modifyMessage {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.62rem;
+  color: var(--chrome-silver);
+}
+
+.modifyFeeWarning {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  font-weight: 600;
+  color: var(--warning-yellow);
+}
+
 .divider {
   height: 1px;
   background: var(--dim-grey);

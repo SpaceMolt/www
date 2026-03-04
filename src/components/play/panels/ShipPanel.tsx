@@ -6,15 +6,19 @@ import {
   Gauge,
   Layers,
   Ship,
+  Hammer,
+  Store,
 } from 'lucide-react'
 import { useGame } from '../GameProvider'
 import { ShipStatus } from './ship/ShipStatus'
 import { ShipModules } from './ship/ShipModules'
 import { ShipCatalog } from './ship/ShipCatalog'
 import { FleetView } from './ship/FleetView'
+import { CommissionsView } from './ship/CommissionsView'
+import { MarketplaceView } from './ship/MarketplaceView'
 import styles from './ShipPanel.module.css'
 
-type TabId = 'status' | 'catalog' | 'fleet'
+type TabId = 'status' | 'catalog' | 'fleet' | 'commissions' | 'marketplace'
 
 export function ShipPanel() {
   const { state } = useGame()
@@ -74,6 +78,22 @@ export function ShipPanel() {
           <Ship size={13} />
           Fleet
         </button>
+        <button
+          className={`${styles.tab} ${activeTab === 'commissions' ? styles.tabActive : ''}`}
+          onClick={() => setActiveTab('commissions')}
+          type="button"
+        >
+          <Hammer size={13} />
+          Commissions
+        </button>
+        <button
+          className={`${styles.tab} ${activeTab === 'marketplace' ? styles.tabActive : ''}`}
+          onClick={() => setActiveTab('marketplace')}
+          type="button"
+        >
+          <Store size={13} />
+          Marketplace
+        </button>
       </div>
 
       <div className={styles.content}>
@@ -85,6 +105,8 @@ export function ShipPanel() {
         )}
         {activeTab === 'catalog' && <ShipCatalog />}
         {activeTab === 'fleet' && <FleetView />}
+        {activeTab === 'commissions' && <CommissionsView />}
+        {activeTab === 'marketplace' && <MarketplaceView />}
       </div>
     </div>
   )

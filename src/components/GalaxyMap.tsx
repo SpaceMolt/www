@@ -1576,7 +1576,52 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
     animFrameId = requestAnimationFrame(animationLoop)
 
     // ── Fetch Map Data ───────────────────────────────────────────
-    async function fetchMapData() {
+    // Static data (galaxy topology + stations) is fetched once on mount.
+    // Only activity data (online counts, battles, strongholds) is polled.
+
+    // Cached station system IDs -- populated once, reused by activity merges
+    let stationSystemIds: Set<string> = new Set()
+
+    function mergeActivityInto(data: MapData, activityData: Record<string, unknown>) {
+      if (activityData.online) {
+        const online = activityData.online as Record<string, number>
+        for (const system of data.systems) {
+          system.online = online[system.id] || 0
+        }
+      }
+      if (activityData.battles) {
+        const battles = activityData.battles as Record<string, string>
+        for (const system of data.systems) {
+          if (battles[system.id]) {
+            system.has_battle = true
+            system.battle_id = battles[system.id]
+          } else {
+            system.has_battle = false
+            system.battle_id = undefined
+          }
+        }
+      }
+      if (activityData.strongholds) {
+        const strongholds = activityData.strongholds as Record<string, boolean>
+        for (const system of data.systems) {
+          system.is_stronghold = !!strongholds[system.id]
+        }
+      }
+    }
+
+    function updateStats(data: MapData) {
+      const totalOnline = data.systems.reduce(
+        (sum, sys) => sum + sys.online,
+        0,
+      )
+      if (statSystemsRef.current)
+        statSystemsRef.current.textContent = String(data.systems.length)
+      if (statOnlineRef.current)
+        statOnlineRef.current.textContent = String(totalOnline)
+    }
+
+    // Fetch static galaxy data and stations once on mount
+    async function fetchStaticData() {
       try {
         const [mapResponse, stationsResponse, activityResponse] = await Promise.all([
           fetch(`${process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'}/api/map`),
@@ -1588,57 +1633,29 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
         // Mark systems that have stations
         try {
           const stationsData = await stationsResponse.json()
-          const stationSystems = new Set(
+          stationSystemIds = new Set(
             (stationsData.stations || []).map((st: { system_id: string }) => st.system_id),
           )
           for (const system of data.systems) {
-            if (stationSystems.has(system.id)) {
+            if (stationSystemIds.has(system.id)) {
               system.has_station = true
             }
           }
         } catch {
-          // Stations data is optional — map still works without it
+          // Stations data is optional -- map still works without it
         }
 
-        // Merge activity data (online counts, battles, strongholds)
+        // Merge initial activity data (online counts, battles, strongholds)
         try {
           const activityData = await activityResponse.json()
-          if (activityData.online) {
-            for (const system of data.systems) {
-              system.online = activityData.online[system.id] || 0
-            }
-          }
-          if (activityData.battles) {
-            for (const system of data.systems) {
-              if (activityData.battles[system.id]) {
-                system.has_battle = true
-                system.battle_id = activityData.battles[system.id]
-              }
-            }
-          }
-          if (activityData.strongholds) {
-            for (const system of data.systems) {
-              if (activityData.strongholds[system.id]) {
-                system.is_stronghold = true
-              }
-            }
-          }
+          mergeActivityInto(data, activityData)
         } catch {
           // Activity data is optional -- map still works without it
         }
 
         s.mapData = data
 
-        const totalOnline = data.systems.reduce(
-          (sum, sys) => sum + sys.online,
-          0,
-        )
-        if (statSystemsRef.current)
-          statSystemsRef.current.textContent = String(
-            data.systems.length,
-          )
-        if (statOnlineRef.current)
-          statOnlineRef.current.textContent = String(totalOnline)
+        updateStats(data)
         if (loadingRef.current)
           loadingRef.current.style.display = 'none'
 
@@ -1666,8 +1683,24 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
       }
     }
 
-    fetchMapData()
-    const fetchInterval = setInterval(fetchMapData, 30000)
+    // Poll only activity data every 15 seconds (matches max-age=15 cache header)
+    async function fetchActivityData() {
+      if (!s.mapData) return
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'}/api/map/activity`,
+        )
+        const activityData = await response.json()
+        mergeActivityInto(s.mapData, activityData)
+        updateStats(s.mapData)
+        render(ctx)
+      } catch {
+        // Activity poll failure is non-fatal
+      }
+    }
+
+    fetchStaticData()
+    const activityPollInterval = setInterval(fetchActivityData, 15000)
 
     // ── SSE Activity Feed ────────────────────────────────────────
     let eventSource: EventSource | null = null
@@ -2017,7 +2050,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
       }
       if (resizeObserver) resizeObserver.disconnect()
       cancelAnimationFrame(animFrameId)
-      clearInterval(fetchInterval)
+      clearInterval(activityPollInterval)
       clearInterval(travelSyncInterval)
       if (eventSource) eventSource.close()
       if (sseReconnectTimeout) clearTimeout(sseReconnectTimeout)

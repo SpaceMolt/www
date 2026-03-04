@@ -9,6 +9,8 @@ import {
   Target,
   HelpCircle,
   ExternalLink,
+  ScrollText,
+  Award,
 } from 'lucide-react'
 import { useGame } from '../GameProvider'
 import { ActionButton } from '../ActionButton'
@@ -25,6 +27,56 @@ interface LogEntry {
   id: string
   message: string
   timestamp: string
+}
+
+interface ActionLogEntry {
+  id: string
+  category: string
+  event_type: string
+  summary: string
+  created_at: string
+  data?: Record<string, unknown>
+}
+
+interface CompletedMission {
+  template_id: string
+  title: string
+  type: string
+  difficulty: string
+  completion_time: string
+  giver: { name: string; title: string }
+}
+
+interface CompletedMissionDetail {
+  template_id: string
+  title: string
+  type: string
+  description: string
+  difficulty: string
+  completion_time: string
+  objectives: { type: string; description: string }[]
+  rewards: { credits: number; items?: { item_id: string; quantity: number }[]; skill_xp?: Record<string, number> }
+  dialog: { offer: string; accept: string; decline: string; complete: string }
+  giver: { name: string; title: string }
+}
+
+const ACTION_LOG_CATEGORIES = [
+  'all', 'combat', 'trading', 'crafting', 'ship', 'faction', 'mission', 'skill', 'salvage', 'mining',
+] as const
+
+function formatRelativeTime(isoStr: string): string {
+  const date = new Date(isoStr)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffSec = Math.floor(diffMs / 1000)
+  if (diffSec < 60) return `${diffSec}s ago`
+  const diffMin = Math.floor(diffSec / 60)
+  if (diffMin < 60) return `${diffMin}m ago`
+  const diffHrs = Math.floor(diffMin / 60)
+  if (diffHrs < 24) return `${diffHrs}h ago`
+  const diffDays = Math.floor(diffHrs / 24)
+  if (diffDays < 7) return `${diffDays}d ago`
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
 export function InfoPanel() {
@@ -44,6 +96,21 @@ export function InfoPanel() {
   const [noteContent, setNoteContent] = useState('')
   const [creatingNote, setCreatingNote] = useState(false)
   const [showNoteForm, setShowNoteForm] = useState(false)
+
+  // Action Log state
+  const [actionLogCategory, setActionLogCategory] = useState<string>('all')
+  const [actionLogEntries, setActionLogEntries] = useState<ActionLogEntry[]>([])
+  const [actionLogHasMore, setActionLogHasMore] = useState(false)
+  const [loadingActionLog, setLoadingActionLog] = useState(false)
+  const [loadingMoreActionLog, setLoadingMoreActionLog] = useState(false)
+
+  // Completed Missions state
+  const [completedMissions, setCompletedMissions] = useState<CompletedMission[]>([])
+  const [completedMissionsTotal, setCompletedMissionsTotal] = useState(0)
+  const [loadingCompletedMissions, setLoadingCompletedMissions] = useState(false)
+  const [completedMissionsLoaded, setCompletedMissionsLoaded] = useState(false)
+  const [selectedCompletedMission, setSelectedCompletedMission] = useState<CompletedMissionDetail | null>(null)
+  const [loadingMissionDetail, setLoadingMissionDetail] = useState(false)
 
   const handleHelp = useCallback(() => {
     sendCommand('help')
@@ -90,6 +157,51 @@ export function InfoPanel() {
     setTimeout(() => {
       setLoadingLog(false)
       setLogLoaded(true)
+    }, 3000)
+  }, [sendCommand])
+
+  // Action Log handlers
+  const handleLoadActionLog = useCallback(() => {
+    setLoadingActionLog(true)
+    const params: Record<string, unknown> = { limit: 20 }
+    if (actionLogCategory !== 'all') {
+      params.category = actionLogCategory
+    }
+    sendCommand('get_action_log', params)
+    setTimeout(() => {
+      setLoadingActionLog(false)
+    }, 3000)
+  }, [sendCommand, actionLogCategory])
+
+  const handleLoadMoreActionLog = useCallback(() => {
+    if (actionLogEntries.length === 0) return
+    setLoadingMoreActionLog(true)
+    const lastEntry = actionLogEntries[actionLogEntries.length - 1]
+    const params: Record<string, unknown> = { limit: 20, before: lastEntry.created_at }
+    if (actionLogCategory !== 'all') {
+      params.category = actionLogCategory
+    }
+    sendCommand('get_action_log', params)
+    setTimeout(() => {
+      setLoadingMoreActionLog(false)
+    }, 3000)
+  }, [sendCommand, actionLogCategory, actionLogEntries])
+
+  // Completed Missions handlers
+  const handleLoadCompletedMissions = useCallback(() => {
+    setLoadingCompletedMissions(true)
+    sendCommand('completed_missions')
+    setTimeout(() => {
+      setLoadingCompletedMissions(false)
+      setCompletedMissionsLoaded(true)
+    }, 3000)
+  }, [sendCommand])
+
+  const handleViewCompletedMission = useCallback((templateId: string) => {
+    setLoadingMissionDetail(true)
+    sendCommand('view_completed_mission', { template_id: templateId })
+    setTimeout(() => {
+      setLoadingMissionDetail(false)
     }, 3000)
   }, [sendCommand])
 
@@ -144,6 +256,68 @@ export function InfoPanel() {
             </div>
           </div>
         )}
+
+        <div className={styles.divider} />
+
+        {/* Action Log */}
+        <div className={styles.actionLogSection}>
+          <div className={styles.sectionTitle}>
+            <span className={styles.sectionIcon}><ScrollText size={12} /></span>
+            Action Log
+          </div>
+          <div className={styles.filterRow}>
+            <select
+              className={styles.filterSelect}
+              value={actionLogCategory}
+              onChange={(e) => setActionLogCategory(e.target.value)}
+            >
+              {ACTION_LOG_CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                </option>
+              ))}
+            </select>
+            <ActionButton
+              label="Load"
+              icon={<ScrollText size={14} />}
+              onClick={handleLoadActionLog}
+              variant="secondary"
+              size="sm"
+              loading={loadingActionLog}
+            />
+          </div>
+          {actionLogEntries.length > 0 && (
+            <div className={styles.logList}>
+              {actionLogEntries.map((entry) => (
+                <div key={entry.id} className={styles.logEntry}>
+                  <div className={styles.logEntryHeader}>
+                    <span className={styles.logCategory}>{entry.category}</span>
+                    <span className={styles.logTimestamp}>
+                      {formatRelativeTime(entry.created_at)}
+                    </span>
+                  </div>
+                  <div className={styles.logEntrySummary}>{entry.summary}</div>
+                </div>
+              ))}
+              {actionLogHasMore && (
+                <ActionButton
+                  label="Load More"
+                  icon={<ScrollText size={14} />}
+                  onClick={handleLoadMoreActionLog}
+                  variant="secondary"
+                  size="sm"
+                  loading={loadingMoreActionLog}
+                />
+              )}
+            </div>
+          )}
+          {loadingActionLog && actionLogEntries.length === 0 && (
+            <div className={styles.loading}>
+              <span className={styles.spinner} />
+              Loading action log...
+            </div>
+          )}
+        </div>
 
         <div className={styles.divider} />
 
@@ -283,6 +457,14 @@ export function InfoPanel() {
                 onClick={handleLoadActiveMissions}
                 size="sm"
               />
+              <ActionButton
+                label="Completed"
+                icon={<Award size={14} />}
+                onClick={handleLoadCompletedMissions}
+                variant="secondary"
+                size="sm"
+                loading={loadingCompletedMissions}
+              />
             </div>
           )}
           {loadingMissions && (
@@ -311,6 +493,125 @@ export function InfoPanel() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Completed Missions */}
+          {loadingCompletedMissions && (
+            <div className={styles.loading}>
+              <span className={styles.spinner} />
+              Loading completed missions...
+            </div>
+          )}
+          {completedMissionsLoaded && completedMissions.length === 0 && !loadingCompletedMissions && (
+            <div className={styles.emptyState}>
+              No completed missions yet.
+            </div>
+          )}
+          {completedMissions.length > 0 && !selectedCompletedMission && (
+            <div className={styles.missionList}>
+              <div className={styles.sectionTitle}>
+                <span className={styles.sectionIcon}><Award size={12} /></span>
+                Completed ({completedMissionsTotal})
+              </div>
+              {completedMissions.map((m) => (
+                <div
+                  key={m.template_id}
+                  className={styles.completedMissionItem}
+                  onClick={() => handleViewCompletedMission(m.template_id)}
+                >
+                  <div className={styles.missionHeader}>
+                    <span className={styles.missionTitle}>{m.title}</span>
+                    <span className={styles.missionDifficulty}>{m.difficulty}</span>
+                  </div>
+                  <div className={styles.missionDesc}>
+                    {m.giver.name} -- {m.giver.title}
+                  </div>
+                  <div className={styles.logTimestamp}>
+                    Completed {formatRelativeTime(m.completion_time)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Completed Mission Detail */}
+          {loadingMissionDetail && (
+            <div className={styles.loading}>
+              <span className={styles.spinner} />
+              Loading mission details...
+            </div>
+          )}
+          {selectedCompletedMission && !loadingMissionDetail && (
+            <div className={styles.missionDetail}>
+              <button
+                className={styles.linkBtn}
+                onClick={() => setSelectedCompletedMission(null)}
+                type="button"
+              >
+                Back to list
+              </button>
+              <div className={styles.missionHeader}>
+                <span className={styles.missionTitle}>{selectedCompletedMission.title}</span>
+                <span className={styles.missionDifficulty}>{selectedCompletedMission.difficulty}</span>
+              </div>
+              <div className={styles.missionDesc}>
+                {selectedCompletedMission.description}
+              </div>
+              <div className={styles.missionDesc}>
+                Given by: {selectedCompletedMission.giver.name} -- {selectedCompletedMission.giver.title}
+              </div>
+              <div className={styles.logTimestamp}>
+                Completed {formatRelativeTime(selectedCompletedMission.completion_time)}
+              </div>
+
+              {selectedCompletedMission.objectives.length > 0 && (
+                <div className={styles.missionDetailSection}>
+                  <div className={styles.missionDetailLabel}>Objectives</div>
+                  {selectedCompletedMission.objectives.map((obj, i) => (
+                    <div key={i} className={styles.missionDesc}>
+                      - {obj.description}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className={styles.missionDetailSection}>
+                <div className={styles.missionDetailLabel}>Rewards</div>
+                <div className={styles.missionReward}>
+                  {selectedCompletedMission.rewards.credits.toLocaleString()} credits
+                </div>
+                {selectedCompletedMission.rewards.items && selectedCompletedMission.rewards.items.length > 0 && (
+                  <div className={styles.missionDesc}>
+                    Items: {selectedCompletedMission.rewards.items.map(
+                      (item) => `${item.item_id} x${item.quantity}`
+                    ).join(', ')}
+                  </div>
+                )}
+                {selectedCompletedMission.rewards.skill_xp && Object.keys(selectedCompletedMission.rewards.skill_xp).length > 0 && (
+                  <div className={styles.missionDesc}>
+                    Skill XP: {Object.entries(selectedCompletedMission.rewards.skill_xp).map(
+                      ([skill, xp]) => `${skill.replace(/_/g, ' ')} +${xp}`
+                    ).join(', ')}
+                  </div>
+                )}
+              </div>
+
+              {selectedCompletedMission.dialog && (
+                <div className={styles.missionDetailSection}>
+                  <div className={styles.missionDetailLabel}>Dialog</div>
+                  {selectedCompletedMission.dialog.offer && (
+                    <div className={styles.missionDesc}>
+                      <strong>Offer:</strong> {selectedCompletedMission.dialog.offer}
+                    </div>
+                  )}
+                  {selectedCompletedMission.dialog.complete && (
+                    <div className={styles.missionDesc}>
+                      <strong>Complete:</strong> {selectedCompletedMission.dialog.complete}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -4,6 +4,7 @@ import { useState, useCallback, useMemo } from 'react'
 import { Hammer, BookOpen, FlaskConical, Star, RefreshCw, AlertTriangle } from 'lucide-react'
 import { useGame } from '../GameProvider'
 import { ActionButton } from '../ActionButton'
+import { ProgressBar } from '../ProgressBar'
 import styles from './CraftingPanel.module.css'
 
 export function CraftingPanel() {
@@ -187,12 +188,15 @@ export function CraftingPanel() {
                     <span className={styles.skillLevelText}>
                       Lv {skill.level}
                     </span>
-                    {skill.next_level_xp > 0 && (
+                  </div>
+                  {skill.next_level_xp > 0 && (
+                    <div className={styles.skillProgress}>
+                      <ProgressBar value={skill.xp} max={skill.next_level_xp} color="purple" size="sm" />
                       <span className={styles.skillXp}>
                         {skill.xp} / {skill.next_level_xp} XP
                       </span>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

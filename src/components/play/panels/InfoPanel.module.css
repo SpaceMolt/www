@@ -346,6 +346,136 @@
   line-height: 1.3;
 }
 
+/* Action Log section */
+.actionLogSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.filterRow {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.filterSelect {
+  flex: 1;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--star-white);
+  background: rgba(10, 14, 23, 0.8);
+  border: 1px solid var(--hull-grey);
+  border-radius: 4px;
+  padding: 0.35rem 0.5rem;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+  appearance: auto;
+}
+
+.filterSelect:focus {
+  border-color: var(--plasma-cyan);
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.15);
+}
+
+.filterSelect option {
+  background: var(--deep-void);
+  color: var(--star-white);
+}
+
+.logEntry {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.35rem 0.45rem;
+  background: rgba(61, 90, 108, 0.08);
+  border-radius: 3px;
+  border-left: 2px solid var(--hull-grey);
+}
+
+.logEntryHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.logCategory {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--plasma-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.1rem 0.35rem;
+  background: rgba(0, 212, 255, 0.08);
+  border: 1px solid rgba(0, 212, 255, 0.15);
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.logTimestamp {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  color: var(--hull-grey);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.logEntrySummary {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--chrome-silver);
+  line-height: 1.3;
+}
+
+/* Completed Mission item */
+.completedMissionItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.45rem 0.55rem;
+  background: rgba(255, 217, 61, 0.04);
+  border: 1px solid rgba(255, 217, 61, 0.1);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.completedMissionItem:hover {
+  background: rgba(255, 217, 61, 0.08);
+  border-color: rgba(255, 217, 61, 0.2);
+}
+
+/* Mission detail view */
+.missionDetail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.5rem 0.55rem;
+  background: rgba(255, 217, 61, 0.04);
+  border: 1px solid rgba(255, 217, 61, 0.1);
+  border-radius: 4px;
+}
+
+.missionDetailSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding-top: 0.3rem;
+  border-top: 1px solid rgba(255, 217, 61, 0.08);
+}
+
+.missionDetailLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--warning-yellow);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 /* Loading / Empty */
 .loading {
   display: flex;

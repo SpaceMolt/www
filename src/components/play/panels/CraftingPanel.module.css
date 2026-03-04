@@ -239,12 +239,14 @@
 
 .skillItem {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   padding: 0.4rem 0.55rem;
   background: rgba(155, 89, 182, 0.06);
   border: 1px solid rgba(155, 89, 182, 0.12);
   border-radius: 4px;
+  gap: 0.25rem;
 }
 
 .skillInfo {
@@ -283,6 +285,13 @@
   font-size: 0.7rem;
   font-weight: 600;
   color: var(--plasma-cyan);
+}
+
+.skillProgress {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
 }
 
 .skillXp {

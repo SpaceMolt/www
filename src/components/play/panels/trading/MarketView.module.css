@@ -24,6 +24,11 @@
   letter-spacing: 0.04em;
 }
 
+.toolbarActions {
+  display: flex;
+  gap: 0.3rem;
+}
+
 .refreshBtn {
   display: flex;
   align-items: center;
@@ -41,6 +46,25 @@
   border-color: var(--bio-green);
   color: var(--bio-green);
   box-shadow: 0 0 8px rgba(45, 212, 191, 0.2);
+}
+
+.analyzeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid var(--hull-grey);
+  border-radius: 4px;
+  color: var(--chrome-silver);
+  cursor: pointer;
+  padding: 0.25rem;
+  transition: all 0.2s ease;
+}
+
+.analyzeBtn:hover {
+  border-color: var(--plasma-cyan);
+  color: var(--plasma-cyan);
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.2);
 }
 
 .dockedOnly {
@@ -381,4 +405,162 @@
 .quickSellBtn:disabled {
   opacity: 0.35;
   cursor: not-allowed;
+}
+
+/* Estimate button */
+.estimateBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(167, 139, 250, 0.08);
+  border: 1px solid var(--void-purple);
+  border-radius: 4px;
+  color: var(--void-purple);
+  cursor: pointer;
+  padding: 0.3rem 0.4rem;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.estimateBtn:hover:not(:disabled) {
+  background: rgba(167, 139, 250, 0.18);
+  box-shadow: 0 0 10px rgba(167, 139, 250, 0.25);
+}
+
+.estimateBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Estimate breakdown */
+.estimateBreakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-top: 0.25rem;
+  padding: 0.35rem 0.4rem;
+  background: rgba(10, 14, 23, 0.5);
+  border: 1px solid rgba(167, 139, 250, 0.2);
+  border-radius: 4px;
+}
+
+.estimateTotal {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--star-white);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.estimateUnfilled {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--shell-orange);
+}
+
+.estimateFills {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.estimateFill {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+}
+
+.estimateFillQty {
+  color: var(--chrome-silver);
+  font-weight: 600;
+}
+
+.estimateFillPrice {
+  color: var(--hull-grey);
+}
+
+/* Market Analysis Insights */
+.insightsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.4rem;
+  background: rgba(61, 90, 108, 0.06);
+  border: 1px solid rgba(61, 90, 108, 0.18);
+  border-radius: 4px;
+}
+
+.insightsToggle {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--chrome-silver);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0;
+  transition: color 0.15s ease;
+}
+
+.insightsToggle:hover {
+  color: var(--plasma-cyan);
+}
+
+.insightsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.insightItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  padding: 0.25rem 0.3rem;
+  background: rgba(10, 14, 23, 0.3);
+  border-radius: 3px;
+  flex-wrap: wrap;
+}
+
+.insightBadge {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.48rem;
+  font-weight: 700;
+  border-radius: 2px;
+  padding: 0.08rem 0.25rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border: 1px solid;
+  flex-shrink: 0;
+}
+
+.insightItemName {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--star-white);
+  flex-shrink: 0;
+}
+
+.insightMessage {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.65rem;
+  color: var(--chrome-silver);
+  line-height: 1.3;
 }

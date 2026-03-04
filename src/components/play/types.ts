@@ -539,4 +539,6 @@ export type GameAction =
   | { type: 'SET_RECIPES_DATA'; payload: RecipesData }
   | { type: 'MERGE_RECIPES_DATA'; payload: RecipesData }
   | { type: 'SET_SKILLS_DATA'; payload: SkillsData }
+  | { type: 'STATUS_POLL'; payload: { player: Player; ship: Ship } }
+  | { type: 'SET_NEARBY'; payload: NearbyPlayer[] }
   | { type: 'RESET' }

@@ -121,6 +121,9 @@
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 /* Nearby players list */
@@ -351,4 +354,327 @@
   color: var(--hull-grey);
   text-align: center;
   padding: 1.5rem 0.5rem;
+}
+
+/* === Battle Status Section === */
+.battleSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: rgba(230, 57, 70, 0.04);
+  border: 1px solid rgba(230, 57, 70, 0.15);
+  border-radius: 4px;
+}
+
+.battleInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Sides */
+.sidesRow {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.sideCard {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.35rem 0.5rem;
+  background: rgba(61, 90, 108, 0.1);
+  border: 1px solid rgba(61, 90, 108, 0.2);
+  border-radius: 4px;
+}
+
+.sideName {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--star-white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sideCount {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--hull-grey);
+  text-transform: uppercase;
+}
+
+/* Participants */
+.participantList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.participantCard {
+  padding: 0.35rem 0.5rem;
+  background: rgba(10, 14, 23, 0.4);
+  border: 1px solid rgba(61, 90, 108, 0.15);
+  border-radius: 4px;
+}
+
+.participantHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+.participantName {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--star-white);
+}
+
+.participantShip {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  color: var(--hull-grey);
+  text-transform: uppercase;
+}
+
+/* Health bars */
+.barGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.barRow {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.barLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.5rem;
+  font-weight: 700;
+  color: var(--hull-grey);
+  width: 1.8rem;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.barTrack {
+  flex: 1;
+  height: 4px;
+  background: rgba(61, 90, 108, 0.2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.barFillShield {
+  height: 100%;
+  background: var(--plasma-cyan);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.barFillHull {
+  height: 100%;
+  background: var(--claw-red);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.barValue {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.5rem;
+  color: var(--chrome-silver);
+  width: 2rem;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* === Tactical Controls === */
+.tacticalSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.25rem;
+}
+
+.stanceRow {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.stanceBtn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(0, 212, 255, 0.05);
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  border-radius: 4px;
+  color: var(--plasma-cyan);
+  cursor: pointer;
+  padding: 0.3rem 0.4rem;
+  transition: all 0.2s ease;
+}
+
+.stanceBtn:hover {
+  background: rgba(0, 212, 255, 0.15);
+  border-color: var(--plasma-cyan);
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
+}
+
+.tacticalRow {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.tacticalBtn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(61, 90, 108, 0.08);
+  border: 1px solid rgba(61, 90, 108, 0.3);
+  border-radius: 4px;
+  color: var(--chrome-silver);
+  cursor: pointer;
+  padding: 0.3rem 0.4rem;
+  transition: all 0.2s ease;
+}
+
+.tacticalBtn:hover {
+  background: rgba(61, 90, 108, 0.2);
+  border-color: var(--chrome-silver);
+  box-shadow: 0 0 8px rgba(61, 90, 108, 0.2);
+}
+
+.engageBtn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(230, 57, 70, 0.08);
+  border: 1px solid rgba(230, 57, 70, 0.4);
+  border-radius: 4px;
+  color: var(--claw-red);
+  cursor: pointer;
+  padding: 0.3rem 0.4rem;
+  transition: all 0.2s ease;
+}
+
+.engageBtn:hover {
+  background: rgba(230, 57, 70, 0.2);
+  border-color: var(--claw-red);
+  box-shadow: 0 0 12px rgba(230, 57, 70, 0.3);
+}
+
+/* === Reload Section === */
+.reloadList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.reloadCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.4rem 0.5rem;
+  background: rgba(61, 90, 108, 0.1);
+  border: 1px solid rgba(61, 90, 108, 0.2);
+  border-radius: 4px;
+}
+
+.reloadWeaponName {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--star-white);
+}
+
+.reloadControls {
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+.ammoSelect {
+  flex: 1;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  background: rgba(10, 14, 23, 0.6);
+  border: 1px solid var(--hull-grey);
+  border-radius: 3px;
+  color: var(--chrome-silver);
+  padding: 0.25rem 0.35rem;
+  min-width: 0;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.ammoSelect:hover,
+.ammoSelect:focus {
+  border-color: var(--plasma-cyan);
+  outline: none;
+}
+
+.ammoSelect option {
+  background: var(--deep-void);
+  color: var(--chrome-silver);
+}
+
+.reloadBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(0, 212, 255, 0.05);
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  border-radius: 4px;
+  color: var(--plasma-cyan);
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.reloadBtn:hover:not(:disabled) {
+  background: rgba(0, 212, 255, 0.15);
+  border-color: var(--plasma-cyan);
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
+}
+
+.reloadBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }

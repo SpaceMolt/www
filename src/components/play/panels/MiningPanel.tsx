@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { Pickaxe, Package, Trash2, X, Check } from 'lucide-react'
+import { Pickaxe, Package, Trash2, X, Check, Zap } from 'lucide-react'
 import { useGame } from '../GameProvider'
 import { ProgressBar } from '../ProgressBar'
 import styles from './MiningPanel.module.css'
@@ -109,6 +109,16 @@ export function MiningPanel() {
                   </div>
                   <div className={styles.cargoRight}>
                     <span className={styles.cargoQty}>x{item.quantity}</span>
+                    <button
+                      className={styles.useBtn}
+                      onClick={() =>
+                        sendCommand('use_item', { item_id: item.item_id })
+                      }
+                      title={`Use ${item.name}`}
+                      type="button"
+                    >
+                      <Zap size={13} />
+                    </button>
                     <button
                       className={styles.jettisonBtn}
                       onClick={() =>
