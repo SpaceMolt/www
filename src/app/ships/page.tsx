@@ -21,6 +21,7 @@ interface Ship {
   empire: string
   empire_name: string
   tier: number
+  starter_ship?: boolean
   scale: number
   price: number
   lore: string
@@ -66,6 +67,7 @@ const EMPIRE_COLORS: Record<string, string> = {
 }
 
 const TIER_LABELS: Record<number, string> = {
+  0: 'T0 - Starter',
   1: 'T1 - Entry',
   2: 'T2 - Mid',
   3: 'T3 - Advanced',
@@ -566,7 +568,7 @@ export default function ShipsPage() {
                     </span>
                     <span className={styles.classBadge}>{ship.class}</span>
                     <span className={styles.priceBadge}>
-                      {formatNumber(ship.price)} cr
+                      {ship.starter_ship ? 'Free' : `${formatNumber(ship.price)} cr`}
                     </span>
                   </div>
 
