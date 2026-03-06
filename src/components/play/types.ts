@@ -18,6 +18,7 @@ export interface Player {
   systems_visited?: string[]
   stats?: Record<string, number>
   skill_xp?: Record<string, number>
+  trading_restricted_until?: string
 }
 
 export interface Ship {
@@ -61,6 +62,7 @@ export interface Module {
   wear?: number
   cpu_cost: number
   power_cost: number
+  size?: number
 }
 
 export interface SystemInfo {
@@ -273,6 +275,12 @@ export interface MissionObjective {
   current: number
   target: number
   completed: boolean
+  system_id?: string
+  system_name?: string
+  target_base_id?: string
+  target_base_name?: string
+  item_id?: string
+  quantity?: number
 }
 
 export interface Drone {
@@ -412,6 +420,7 @@ export interface StorageItem {
   item_id: string
   name: string
   quantity: number
+  size?: number
 }
 
 export interface StorageShip {
@@ -429,6 +438,7 @@ export interface StorageGift {
   items?: StorageItem[]
   credits?: number
   message?: string
+  ships?: { ship_id: string; class_id: string; class_name: string }[]
 }
 
 export interface StorageData {
