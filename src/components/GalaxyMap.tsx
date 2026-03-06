@@ -172,6 +172,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
   const scrollHintRef = useRef<HTMLDivElement>(null)
   const scrollHintTimerRef = useRef<ReturnType<typeof setTimeout>>(null)
   const travelTrackerRef = useRef<HTMLDivElement>(null)
+  const searchContainerRef = useRef<HTMLDivElement>(null)
 
   // Mutable state refs (not React state -- canvas animation loop manages these)
   const stateRef = useRef({
@@ -211,6 +212,10 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
   const [travelFilter, setTravelFilter] = useState('')
   const [selectedPlayers, setSelectedPlayers] = useState<Set<string>>(new Set())
   const [travelPlayerList, setTravelPlayerList] = useState<string[]>([])
+
+  // ── Search State ───────────────────────────────────────────────────
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
 
   // ── Helpers ────────────────────────────────────────────────────────
 
@@ -1385,6 +1390,25 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
     [],
   )
 
+  const handleSearchSelect = useCallback(
+    (system: SystemData) => {
+      const s = stateRef.current
+      // Animate to the system
+      s.targetViewX = -system.x
+      s.targetViewY = -system.y
+      s.targetZoom = 0.5
+      s.isAnimating = true
+
+      // Show POI panel
+      showPOIPanel(system)
+
+      // Close search
+      setSearchOpen(false)
+      setSearchQuery('')
+    },
+    [showPOIPanel],
+  )
+
   const handleActivityEvent = useCallback(
     (event: ActivityEvent) => {
       const icon = ICON_MAP[event.type] || <Satellite size={TOAST_SZ} />
@@ -1493,6 +1517,19 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [travelDropdownOpen])
+
+  // ── Close search dropdown on outside click ──────────────────────────
+  useEffect(() => {
+    if (!searchOpen) return
+    function handleClick(e: MouseEvent) {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setSearchOpen(false)
+        setSearchQuery('')
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [searchOpen])
 
   // ── Main Effect ────────────────────────────────────────────────────
 
@@ -2165,6 +2202,73 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
           </span>
         </div>
       </div>
+
+      {/* Search Bar (fullPage only) */}
+      {fullPage && (
+        <div className={styles.searchContainer} ref={searchContainerRef}>
+          <button
+            className={`${styles.searchBtn}${searchOpen ? ` ${styles.searchBtnActive}` : ''}`}
+            onClick={() => setSearchOpen((o) => !o)}
+            title="Search systems"
+          >
+            <Search size={16} />
+          </button>
+          {searchOpen && (
+            <div className={styles.searchDropdown}>
+              <input
+                type="text"
+                className={styles.searchInput}
+                placeholder="Search systems…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                autoFocus
+              />
+              {searchQuery && stateRef.current.mapData && (
+                <div className={styles.searchResults}>
+                  {stateRef.current.mapData.systems
+                    .filter((system) => {
+                      const query = searchQuery.toLowerCase()
+                      const name = system.name.toLowerCase()
+                      let qi = 0
+                      for (let ni = 0; ni < name.length && qi < query.length; ni++) {
+                        if (name[ni] === query[qi]) qi++
+                      }
+                      return qi === query.length
+                    })
+                    .slice(0, 10)
+                    .map((system) => (
+                      <button
+                        key={system.id}
+                        className={styles.searchResult}
+                        onClick={() => handleSearchSelect(system)}
+                      >
+                        <span className={styles.searchResultName}>{system.name}</span>
+                        {system.online > 0 && (
+                          <span className={styles.searchResultOnline}>
+                            {system.online} online
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  {stateRef.current.mapData.systems.filter((s) => {
+                    const query = searchQuery.toLowerCase()
+                    const name = s.name.toLowerCase()
+                    let qi = 0
+                    for (let ni = 0; ni < name.length && qi < query.length; ni++) {
+                      if (name[ni] === query[qi]) qi++
+                    }
+                    return qi === query.length
+                  }).length === 0 && (
+                    <div className={styles.searchResultsEmpty}>
+                      No systems found
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Travel Tracker (fullPage only) */}
       {fullPage && <div className={styles.travelTracker} ref={travelTrackerRef}>
