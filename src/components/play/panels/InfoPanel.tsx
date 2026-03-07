@@ -9,6 +9,7 @@ import {
   HelpCircle,
   ExternalLink,
   ScrollText,
+  Shield,
 } from 'lucide-react'
 import { useGame } from '../GameProvider'
 import { ActionButton } from '../ActionButton'
@@ -81,13 +82,16 @@ export function InfoPanel() {
     sendCommand('help')
   }, [sendCommand])
 
-  const handleLoadNotes = useCallback(() => {
+  const handleLoadNotes = useCallback(async () => {
     setLoadingNotes(true)
-    sendCommand('get_notes')
-    setTimeout(() => {
-      setLoadingNotes(false)
+    try {
+      const resp = await sendCommand('get_notes')
+      const loadedNotes = (resp.notes || []) as Note[]
+      setNotes(loadedNotes)
       setNotesLoaded(true)
-    }, 3000)
+    } finally {
+      setLoadingNotes(false)
+    }
   }, [sendCommand])
 
   const handleCreateNote = useCallback(() => {
@@ -103,40 +107,47 @@ export function InfoPanel() {
     setTimeout(() => setCreatingNote(false), 2000)
   }, [sendCommand, noteTitle, noteContent])
 
-  const handleLoadLog = useCallback(() => {
+  const handleLoadLog = useCallback(async () => {
     setLoadingLog(true)
-    sendCommand('captains_log_list')
-    setTimeout(() => {
-      setLoadingLog(false)
+    try {
+      const resp = await sendCommand('captains_log_list')
+      const entries = (resp.entries || []) as LogEntry[]
+      setLogEntries(entries)
       setLogLoaded(true)
-    }, 3000)
+    } finally {
+      setLoadingLog(false)
+    }
   }, [sendCommand])
 
   // Action Log handlers
-  const handleLoadActionLog = useCallback(() => {
+  const handleLoadActionLog = useCallback(async () => {
     setLoadingActionLog(true)
-    const params: Record<string, unknown> = { limit: 20 }
-    if (actionLogCategory !== 'all') {
-      params.category = actionLogCategory
-    }
-    sendCommand('get_action_log', params)
-    setTimeout(() => {
+    try {
+      const params: Record<string, unknown> = { limit: 20 }
+      if (actionLogCategory !== 'all') params.category = actionLogCategory
+      const resp = await sendCommand('get_action_log', params)
+      const entries = (resp.entries || []) as ActionLogEntry[]
+      setActionLogEntries(entries)
+      setActionLogHasMore(entries.length >= 20)
+    } finally {
       setLoadingActionLog(false)
-    }, 3000)
+    }
   }, [sendCommand, actionLogCategory])
 
-  const handleLoadMoreActionLog = useCallback(() => {
+  const handleLoadMoreActionLog = useCallback(async () => {
     if (actionLogEntries.length === 0) return
     setLoadingMoreActionLog(true)
-    const lastEntry = actionLogEntries[actionLogEntries.length - 1]
-    const params: Record<string, unknown> = { limit: 20, before: lastEntry.created_at }
-    if (actionLogCategory !== 'all') {
-      params.category = actionLogCategory
-    }
-    sendCommand('get_action_log', params)
-    setTimeout(() => {
+    try {
+      const lastEntry = actionLogEntries[actionLogEntries.length - 1]
+      const params: Record<string, unknown> = { limit: 20, before: lastEntry.created_at }
+      if (actionLogCategory !== 'all') params.category = actionLogCategory
+      const resp = await sendCommand('get_action_log', params)
+      const entries = (resp.entries || []) as ActionLogEntry[]
+      setActionLogEntries(prev => [...prev, ...entries])
+      setActionLogHasMore(entries.length >= 20)
+    } finally {
       setLoadingMoreActionLog(false)
-    }, 3000)
+    }
   }, [sendCommand, actionLogCategory, actionLogEntries])
 
   const player = state.player
@@ -205,6 +216,47 @@ export function InfoPanel() {
                   <span className={styles.statValue}>
                     {typeof value === 'number' ? value.toLocaleString() : value}
                   </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Empire Reputation */}
+        {player?.empire_rep && Object.keys(player.empire_rep).length > 0 && (
+          <div>
+            <div className={styles.sectionTitle}>
+              <span className={styles.sectionIcon}><Shield size={12} /></span>
+              Empire Reputation
+            </div>
+            <div className={styles.statsGrid}>
+              {Object.entries(player.empire_rep).map(([empire, rep]) => (
+                <div key={empire} className={styles.statItem} style={{
+                  borderLeft: `2px solid ${empire === player.empire ? 'var(--plasma-cyan)' : 'var(--hull-grey)'}`,
+                }}>
+                  <span className={styles.statLabel} style={{
+                    color: empire === player.empire ? 'var(--plasma-cyan)' : undefined,
+                  }}>
+                    {empire.replace(/_/g, ' ')}
+                  </span>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <span style={{
+                      fontFamily: "var(--font-jetbrains), 'JetBrains Mono', monospace",
+                      fontSize: '0.68rem',
+                      fontWeight: 600,
+                      color: rep.fame > 0 ? 'var(--plasma-cyan)' : 'var(--hull-grey)',
+                    }}>
+                      Fame: {rep.fame.toLocaleString()}
+                    </span>
+                    <span style={{
+                      fontFamily: "var(--font-jetbrains), 'JetBrains Mono', monospace",
+                      fontSize: '0.68rem',
+                      fontWeight: 600,
+                      color: rep.criminal > 0 ? 'var(--alert-red, #ff4444)' : 'var(--hull-grey)',
+                    }}>
+                      Crim: {rep.criminal.toLocaleString()}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>

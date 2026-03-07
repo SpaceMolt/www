@@ -194,6 +194,14 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
         }
         break
       }
+      case 'rate_limited': {
+        const retryAfter = p.retry_after as number | undefined
+        const rlMsg = retryAfter
+          ? `Rate limited. Retry after tick ${retryAfter}.`
+          : (p.message as string) || 'Rate limited. Wait for next tick.'
+        d({ type: 'ERROR', payload: { code: 'rate_limited', message: rlMsg } })
+        break
+      }
       case 'error':
         d({ type: 'ERROR', payload: p as { code: string; message: string } })
         break

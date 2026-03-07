@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { Pickaxe, Package, Trash2, X, Check, Zap } from 'lucide-react'
+import { Pickaxe, Package, Trash2, X, Check, Zap, AlertTriangle } from 'lucide-react'
 import { useGame } from '../GameProvider'
 import { ProgressBar } from '../ProgressBar'
 import styles from './MiningPanel.module.css'
@@ -105,7 +105,14 @@ export function MiningPanel() {
                     <span className={styles.cargoIcon}>
                       <Package size={13} />
                     </span>
-                    <span className={styles.cargoName}>{item.name}</span>
+                    <span className={styles.cargoName}>
+                      {item.name}
+                      {item.hazardous && (
+                        <span style={{ color: 'var(--shell-orange)', marginLeft: '0.25rem', display: 'inline-flex' }}>
+                          <AlertTriangle size={10} />
+                        </span>
+                      )}
+                    </span>
                   </div>
                   <div className={styles.cargoRight}>
                     <span className={styles.cargoQty}>x{item.quantity}</span>

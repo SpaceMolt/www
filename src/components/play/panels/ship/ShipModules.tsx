@@ -8,6 +8,7 @@ import {
   Wrench,
   X,
   ArrowDownToLine,
+  Hammer,
 } from 'lucide-react'
 import { useGame } from '../../GameProvider'
 import styles from '../ShipPanel.module.css'
@@ -28,6 +29,13 @@ export function ShipModules() {
     async (moduleId: string, moduleTypeId: string) => {
       await sendCommand('uninstall_mod', { module_id: moduleId })
       sendCommand('deposit_items', { item_id: moduleTypeId, quantity: 1 })
+    },
+    [sendCommand]
+  )
+
+  const handleRepairModule = useCallback(
+    (moduleId: string) => {
+      sendCommand('repair_module', { module_id: moduleId })
     },
     [sendCommand]
   )
@@ -99,6 +107,11 @@ export function ShipModules() {
                           Q{mod.quality}%
                         </span>
                       )}
+                      {mod.power_bonus !== undefined && mod.power_bonus > 0 && (
+                        <span className={styles.moduleType}>
+                          +{mod.power_bonus} pwr
+                        </span>
+                      )}
                       {mod.wear !== undefined && mod.wear > 0 && (
                         <span className={styles.moduleWear}>
                           W{mod.wear}%
@@ -111,6 +124,16 @@ export function ShipModules() {
                     </div>
                   </div>
                   <div className={styles.moduleActions}>
+                    {mod.instance_id && isDocked && mod.wear !== undefined && mod.wear > 0 && (
+                      <button
+                        className={styles.repairModBtn}
+                        onClick={() => handleRepairModule(mod.instance_id!)}
+                        title={`Repair module (${mod.wear}% wear) - requires repair_kit`}
+                        type="button"
+                      >
+                        <Hammer size={12} />
+                      </button>
+                    )}
                     {mod.instance_id && isDocked && (
                       <>
                         <button

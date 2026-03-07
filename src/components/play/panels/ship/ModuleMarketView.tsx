@@ -1,32 +1,21 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import {
   CircuitBoard,
   RefreshCw,
   ShoppingCart,
   ChevronDown,
   ChevronRight,
-  Cpu,
-  Zap,
+  AlertCircle,
+  Wrench,
 } from 'lucide-react'
 import { useGame } from '../../GameProvider'
+import type { MarketItem } from '../../types'
 import styles from './ModuleMarketView.module.css'
 
-interface ModuleForSale {
-  module_id: string
-  name: string
-  type: string
-  slot_type: string
-  price: number
-  cpu_cost: number
-  power_cost: number
-  description?: string
-  stats?: Record<string, unknown>
-}
-
 interface ModuleMarketData {
-  modules: ModuleForSale[]
+  items: MarketItem[]
   base?: string
   message?: string
 }
@@ -37,34 +26,54 @@ export function ModuleMarketView() {
   const [marketData, setMarketData] = useState<ModuleMarketData | null>(null)
   const [loading, setLoading] = useState(false)
   const [expandedModule, setExpandedModule] = useState<string | null>(null)
+  const [busyItem, setBusyItem] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const handleLoad = useCallback(() => {
     setLoading(true)
-    sendCommand('view_module_market').then((resp: unknown) => {
-      const data = resp as ModuleMarketData | undefined
-      if (data?.modules) {
-        setMarketData(data)
-      }
-      setLoading(false)
-    }).catch(() => setLoading(false))
+    setError(null)
+    sendCommand('view_market', { category: 'module' })
+      .then((resp: unknown) => {
+        const data = resp as { items?: MarketItem[]; base?: string; message?: string } | undefined
+        if (data?.items) {
+          setMarketData({ items: data.items, base: data.base, message: data.message })
+        } else {
+          setMarketData({ items: [], message: data?.message || 'No modules available.' })
+        }
+        setLoading(false)
+      })
+      .catch(() => {
+        setError('Failed to load module market.')
+        setLoading(false)
+      })
   }, [sendCommand])
 
-  // Auto-load when docked
-  useEffect(() => {
-    if (isDocked && !marketData) {
-      handleLoad()
-    }
-  }, [isDocked, marketData, handleLoad])
+  const handleBuy = useCallback(
+    (itemId: string) => {
+      setBusyItem(itemId)
+      sendCommand('buy', { item_id: itemId, quantity: 1 })
+        .then(() => {
+          handleLoad()
+        })
+        .finally(() => setBusyItem(null))
+    },
+    [sendCommand, handleLoad]
+  )
 
-  const handleBuy = useCallback((moduleId: string) => {
-    sendCommand('buy_module', { module_id: moduleId }).then(() => {
-      handleLoad() // Refresh after purchase
-    })
-  }, [sendCommand, handleLoad])
-
-  const handleInstall = useCallback((moduleId: string) => {
-    sendCommand('install_module', { module_id: moduleId })
-  }, [sendCommand])
+  const handleBuyAndInstall = useCallback(
+    (itemId: string) => {
+      setBusyItem(itemId)
+      sendCommand('buy', { item_id: itemId, quantity: 1 })
+        .then(() => {
+          return sendCommand('install_mod', { module_id: itemId })
+        })
+        .then(() => {
+          handleLoad()
+        })
+        .finally(() => setBusyItem(null))
+    },
+    [sendCommand, handleLoad]
+  )
 
   if (!isDocked) {
     return (
@@ -91,71 +100,100 @@ export function ModuleMarketView() {
         </button>
       </div>
 
+      {error && (
+        <div className={styles.emptyState}>
+          <AlertCircle size={12} /> {error}
+        </div>
+      )}
+
       {loading && !marketData && (
         <div className={styles.loading}>Loading modules...</div>
       )}
 
-      {marketData && marketData.modules.length === 0 && (
+      {!loading && !marketData && !error && (
+        <div className={styles.emptyState}>
+          Click refresh to load available modules.
+        </div>
+      )}
+
+      {marketData && marketData.items.length === 0 && (
         <div className={styles.emptyState}>
           {marketData.message || 'No modules available at this base.'}
         </div>
       )}
 
-      {marketData && marketData.modules.length > 0 && (
+      {marketData && marketData.items.length > 0 && (
         <div className={styles.moduleList}>
-          {marketData.modules.map((mod) => {
-            const isExpanded = expandedModule === mod.module_id
+          {marketData.items.map((item) => {
+            const isExpanded = expandedModule === item.item_id
+            const price = item.best_sell
+            const hasStock = price > 0
+            const totalQty = item.sell_orders.reduce((sum, o) => sum + o.quantity, 0)
+            const isBusy = busyItem === item.item_id
+
             return (
-              <div key={mod.module_id} className={styles.moduleBlock}>
+              <div key={item.item_id} className={styles.moduleBlock}>
                 <button
                   className={`${styles.moduleRow} ${isExpanded ? styles.moduleRowExpanded : ''}`}
-                  onClick={() => setExpandedModule(isExpanded ? null : mod.module_id)}
+                  onClick={() => setExpandedModule(isExpanded ? null : item.item_id)}
                   type="button"
                 >
                   <span className={styles.moduleInfo}>
                     {isExpanded ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
-                    <span className={styles.moduleName}>{mod.name}</span>
-                    <span className={styles.moduleType}>{mod.slot_type}</span>
+                    <span className={styles.moduleName}>{item.item_name}</span>
+                    {totalQty > 0 && (
+                      <span className={styles.moduleType}>x{totalQty}</span>
+                    )}
                   </span>
                   <span className={styles.modulePrice}>
-                    {mod.price.toLocaleString()} cr
+                    {hasStock ? `${price.toLocaleString()} cr` : 'Out of stock'}
                   </span>
                 </button>
 
                 {isExpanded && (
                   <div className={styles.expandedPanel}>
-                    {mod.description && (
-                      <div className={styles.moduleDesc}>{mod.description}</div>
+                    {/* Sell order details */}
+                    {item.sell_orders.length > 0 && (
+                      <div className={styles.moduleMeta}>
+                        {[...item.sell_orders]
+                          .sort((a, b) => a.price_each - b.price_each)
+                          .map((order, i) => (
+                            <span key={i} className={styles.metaItem}>
+                              {order.quantity}x @ {order.price_each.toLocaleString()} cr
+                              {order.source === 'npc' ? ' (NPC)' : ''}
+                            </span>
+                          ))}
+                      </div>
                     )}
-                    <div className={styles.moduleMeta}>
-                      <span className={styles.metaItem}>
-                        <Cpu size={10} /> CPU: {mod.cpu_cost}
-                      </span>
-                      <span className={styles.metaItem}>
-                        <Zap size={10} /> Power: {mod.power_cost}
-                      </span>
-                      <span className={styles.metaItem}>
-                        Type: {mod.type}
-                      </span>
-                    </div>
-                    <div className={styles.actions}>
-                      <button
-                        className={styles.buyBtn}
-                        onClick={() => handleBuy(mod.module_id)}
-                        type="button"
-                      >
-                        <ShoppingCart size={11} />
-                        Buy
-                      </button>
-                      <button
-                        className={styles.installBtn}
-                        onClick={() => handleInstall(mod.module_id)}
-                        type="button"
-                      >
-                        <CircuitBoard size={11} />
-                        Buy & Install
-                      </button>
-                    </div>
+
+                    {!hasStock && (
+                      <div className={styles.moduleDesc}>
+                        No sell orders available for this module.
+                      </div>
+                    )}
+
+                    {hasStock && (
+                      <div className={styles.actions}>
+                        <button
+                          className={styles.buyBtn}
+                          onClick={() => handleBuy(item.item_id)}
+                          disabled={isBusy}
+                          type="button"
+                        >
+                          <ShoppingCart size={11} />
+                          {isBusy ? 'Buying...' : 'Buy'}
+                        </button>
+                        <button
+                          className={styles.installBtn}
+                          onClick={() => handleBuyAndInstall(item.item_id)}
+                          disabled={isBusy}
+                          type="button"
+                        >
+                          <Wrench size={11} />
+                          {isBusy ? 'Working...' : 'Buy & Install'}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

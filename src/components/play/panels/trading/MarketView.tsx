@@ -11,6 +11,7 @@ import {
   Building2,
   BarChart3,
   Calculator,
+  Filter,
 } from 'lucide-react'
 import { useGame } from '../../GameProvider'
 import type { MarketItem } from '../../types'
@@ -71,6 +72,7 @@ export function MarketView() {
   const [analysisOpen, setAnalysisOpen] = useState(true)
   const [estimateData, setEstimateData] = useState<Record<string, EstimateData>>({})
   const [estimatingItem, setEstimatingItem] = useState<string | null>(null)
+  const [selectedCategory, setSelectedCategory] = useState<string>('')
 
   // Auto-fetch market data when docked and data is null
   useEffect(() => {
@@ -80,14 +82,39 @@ export function MarketView() {
   }, [isDocked, marketData, sendCommand])
 
   const handleRefresh = useCallback(() => {
-    sendCommand('view_market')
-  }, [sendCommand])
+    const params: Record<string, unknown> = {}
+    if (selectedCategory) {
+      params.category = selectedCategory
+    }
+    sendCommand('view_market', Object.keys(params).length > 0 ? params : undefined)
+  }, [sendCommand, selectedCategory])
 
-  const handleToggleItem = useCallback((itemId: string) => {
-    setExpandedItem((prev) => (prev === itemId ? null : itemId))
-    setBuyQty('1')
-    setSellQty('1')
-  }, [])
+  const handleCategoryChange = useCallback(
+    (category: string) => {
+      setSelectedCategory(category)
+      setExpandedItem(null)
+      const params: Record<string, unknown> = {}
+      if (category) {
+        params.category = category
+      }
+      sendCommand('view_market', Object.keys(params).length > 0 ? params : undefined)
+    },
+    [sendCommand]
+  )
+
+  const handleToggleItem = useCallback(
+    (itemId: string) => {
+      const collapsing = expandedItem === itemId
+      setExpandedItem(collapsing ? null : itemId)
+      setBuyQty('1')
+      setSellQty('1')
+      // In summary mode, fetch full order book for the selected item
+      if (!collapsing && marketData?.summarized) {
+        sendCommand('view_market', { item_id: itemId })
+      }
+    },
+    [expandedItem, marketData?.summarized, sendCommand]
+  )
 
   const handleBuyAtMarket = useCallback(
     (itemId: string) => {
@@ -153,6 +180,23 @@ export function MarketView() {
           {marketData?.base || 'Market'}
         </span>
         <div className={styles.toolbarActions}>
+          {marketData?.categories && marketData.categories.length > 0 && (
+            <div className={styles.categoryFilter}>
+              <Filter size={11} className={styles.filterIcon} />
+              <select
+                className={styles.categorySelect}
+                value={selectedCategory}
+                onChange={(e) => handleCategoryChange(e.target.value)}
+              >
+                <option value="">All</option>
+                {marketData.categories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <button
             className={styles.analyzeBtn}
             onClick={handleAnalyzeMarket}
@@ -220,6 +264,13 @@ export function MarketView() {
         </div>
       ) : (
         <>
+          {/* Summary mode notice */}
+          {marketData.summarized && (
+            <div className={styles.summaryNotice}>
+              Showing summary. Select an item to view full order book.
+            </div>
+          )}
+
           {/* Table header */}
           <div className={styles.tableHeader}>
             <span className={styles.colItem}>Item</span>
@@ -240,6 +291,8 @@ export function MarketView() {
               const cargoItem = cargo.find((c) => c.item_id === item.item_id)
               const totalBuyQty = item.buy_orders.reduce((sum, o) => sum + o.quantity, 0)
               const totalSellQty = item.sell_orders.reduce((sum, o) => sum + o.quantity, 0)
+              // In summary mode, don't show expandable order book depth
+              const isSummaryItem = marketData.summarized && item.sell_orders.length === 0 && item.buy_orders.length === 0
 
               return (
                 <div key={item.item_id} className={styles.itemBlock}>
@@ -249,7 +302,9 @@ export function MarketView() {
                     type="button"
                   >
                     <span className={styles.colItem}>
-                      {isExpanded ? (
+                      {isSummaryItem ? (
+                        <ChevronRight size={12} />
+                      ) : isExpanded ? (
                         <ChevronDown size={12} />
                       ) : (
                         <ChevronRight size={12} />
@@ -273,7 +328,7 @@ export function MarketView() {
                     </span>
                   </button>
 
-                  {isExpanded && (
+                  {isExpanded && !isSummaryItem && (
                     <div className={styles.expandedPanel}>
                       {/* Order book */}
                       <div className={styles.orderBookRow}>

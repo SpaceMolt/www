@@ -92,47 +92,71 @@ export function MissionsPanel() {
     })
   }, [])
 
-  const handleLoadAvailable = useCallback(() => {
+  const handleLoadAvailable = useCallback(async () => {
     setLoadingAvailable(true)
-    sendCommand('get_missions')
-    setTimeout(() => {
-      setLoadingAvailable(false)
+    try {
+      const resp = await sendCommand('get_missions')
+      const missions = (resp.missions || []) as Mission[]
+      setAvailableMissions(missions)
       setAvailableLoaded(true)
-    }, 3000)
+    } finally {
+      setLoadingAvailable(false)
+    }
   }, [sendCommand])
 
-  const handleLoadActive = useCallback(() => {
+  const handleLoadActive = useCallback(async () => {
     setLoadingActive(true)
-    sendCommand('get_active_missions')
-    setTimeout(() => {
-      setLoadingActive(false)
+    try {
+      const resp = await sendCommand('get_active_missions')
+      const missions = (resp.missions || []) as Mission[]
+      setActiveMissions(missions)
       setActiveLoaded(true)
-    }, 3000)
+    } finally {
+      setLoadingActive(false)
+    }
   }, [sendCommand])
 
-  const handleLoadCompleted = useCallback(() => {
+  const handleLoadCompleted = useCallback(async () => {
     setLoadingCompleted(true)
-    sendCommand('completed_missions')
-    setTimeout(() => {
-      setLoadingCompleted(false)
+    try {
+      const resp = await sendCommand('completed_missions')
+      const missions = (resp.missions || []) as CompletedMission[]
+      setCompletedMissions(missions)
+      setCompletedMissionsTotal((resp.total as number) || missions.length)
       setCompletedLoaded(true)
-    }, 3000)
+    } finally {
+      setLoadingCompleted(false)
+    }
   }, [sendCommand])
 
-  const handleAcceptMission = useCallback((missionId: string) => {
-    sendCommand('accept_mission', { mission_id: missionId })
+  const handleAcceptMission = useCallback(async (missionId: string) => {
+    await sendCommand('accept_mission', { mission_id: missionId })
+    // Refresh both available and active missions after accepting
+    const [availResp, activeResp] = await Promise.all([
+      sendCommand('get_missions'),
+      sendCommand('get_active_missions'),
+    ])
+    setAvailableMissions((availResp.missions || []) as Mission[])
+    setActiveMissions((activeResp.missions || []) as Mission[])
   }, [sendCommand])
 
-  const handleAbandonMission = useCallback((missionId: string) => {
-    sendCommand('abandon_mission', { mission_id: missionId })
+  const handleAbandonMission = useCallback(async (missionId: string) => {
+    await sendCommand('abandon_mission', { mission_id: missionId })
+    // Refresh active missions after abandoning
+    const resp = await sendCommand('get_active_missions')
+    const missions = (resp.missions || []) as Mission[]
+    setActiveMissions(missions)
+    setActiveLoaded(true)
   }, [sendCommand])
 
-  const handleViewCompletedMission = useCallback((templateId: string) => {
+  const handleViewCompletedMission = useCallback(async (templateId: string) => {
     setLoadingMissionDetail(true)
-    sendCommand('view_completed_mission', { template_id: templateId })
-    setTimeout(() => {
+    try {
+      const resp = await sendCommand('view_completed_mission', { template_id: templateId })
+      setSelectedCompletedMission(resp as unknown as CompletedMissionDetail)
+    } finally {
       setLoadingMissionDetail(false)
-    }, 3000)
+    }
   }, [sendCommand])
 
   const renderObjective = (obj: MissionObjective, index: number, showProgress: boolean) => (

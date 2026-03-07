@@ -19,6 +19,18 @@ export interface Player {
   stats?: Record<string, number>
   skill_xp?: Record<string, number>
   trading_restricted_until?: string
+  empire_rep?: Record<string, EmpireReputation>
+  home_poi?: string
+  home_system?: string
+}
+
+export interface EmpireReputation {
+  fame: number
+  criminal: number
+  love: number
+  hate: number
+  fear: number
+  need: number
 }
 
 export interface Ship {
@@ -50,6 +62,7 @@ export interface CargoItem {
   name: string
   quantity: number
   size: number
+  hazardous?: boolean
 }
 
 export interface Module {
@@ -62,6 +75,7 @@ export interface Module {
   wear?: number
   cpu_cost: number
   power_cost: number
+  power_bonus?: number
   size?: number
 }
 
@@ -319,6 +333,8 @@ export interface MarketData {
   base: string
   items: MarketItem[]
   message?: string
+  summarized?: boolean
+  categories?: string[]
 }
 
 export interface OrderEntry {

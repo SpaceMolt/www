@@ -200,6 +200,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (actionName === 'send_gift' || actionName === 'gift_ship') {
         return addEvent({ ...state, storageData: null }, 'trade', p.message as string || 'Gift sent')
       }
+      if (actionName === 'repair_module') {
+        return addEvent(state, 'info', p.message as string || 'Module repaired')
+      }
+      if (actionName === 'install_mod' || actionName === 'uninstall_mod') {
+        return addEvent(state, 'info', p.message as string || 'Module updated')
+      }
       if (actionName === 'self_destruct') {
         const fee = p.self_destruct_fee as number | undefined
         let msg = p.message as string || 'Ship self-destructed'

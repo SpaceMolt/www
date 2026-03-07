@@ -212,6 +212,22 @@ export function SettingsPanel() {
             <span className={styles.sectionIcon}><Home size={12} /></span>
             Home Base
           </div>
+          {(player?.home_system || player?.home_poi || player?.home_base_id) && (
+            <div className={styles.connectionCard} style={{ marginBottom: '0.5rem' }}>
+              {player.home_system && (
+                <div className={styles.connectionRow}>
+                  <span className={styles.connectionLabel}>System</span>
+                  <span className={styles.connectionValue}>{player.home_system}</span>
+                </div>
+              )}
+              {player.home_poi && (
+                <div className={styles.connectionRow}>
+                  <span className={styles.connectionLabel}>POI</span>
+                  <span className={styles.connectionValue}>{player.home_poi}</span>
+                </div>
+              )}
+            </div>
+          )}
           <ActionButton
             label="Set Current Base as Home"
             icon={<Home size={14} />}
