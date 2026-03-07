@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useState } from 'react'
 import {
   Ship,
   RefreshCw,
@@ -11,16 +11,28 @@ import {
   MapPin,
   ArrowRightLeft,
   Trash2,
+  ChevronDown,
+  ChevronRight,
+  Loader2,
 } from 'lucide-react'
 import { useGame } from '../../GameProvider'
-import type { FleetShip } from '../../types'
+import type { FleetShip, CargoItem, Module } from '../../types'
 import styles from './FleetView.module.css'
+
+interface ShipInspection {
+  cargo: CargoItem[]
+  modules: Module[]
+}
 
 export function FleetView() {
   const { state, sendCommand } = useGame()
   const fleet = state.fleetData
   const isDocked = state.isDocked
   const currentBaseId = state.poi?.base_id
+
+  const [expandedShipId, setExpandedShipId] = useState<string | null>(null)
+  const [inspectionData, setInspectionData] = useState<Record<string, ShipInspection>>({})
+  const [inspectingShipId, setInspectingShipId] = useState<string | null>(null)
 
   // Auto-fetch on mount or when fleetData is cleared
   useEffect(() => {
@@ -45,6 +57,33 @@ export function FleetView() {
       sendCommand('sell_ship', { ship_id: shipId })
     },
     [sendCommand]
+  )
+
+  const handleToggleExpand = useCallback(
+    (shipId: string) => {
+      if (expandedShipId === shipId) {
+        setExpandedShipId(null)
+        return
+      }
+      setExpandedShipId(shipId)
+      // Fetch inspection data if we don't have it yet
+      if (!inspectionData[shipId]) {
+        setInspectingShipId(shipId)
+        sendCommand('inspect_ship', { ship_id: shipId }).then((result) => {
+          setInspectingShipId(null)
+          if (result && !result.error) {
+            setInspectionData((prev) => ({
+              ...prev,
+              [shipId]: {
+                cargo: (result.cargo as unknown as CargoItem[]) || [],
+                modules: (result.modules as unknown as Module[]) || [],
+              },
+            }))
+          }
+        })
+      }
+    },
+    [expandedShipId, inspectionData, sendCommand]
   )
 
   return (
@@ -97,6 +136,10 @@ export function FleetView() {
                   ship={ship}
                   isDocked={isDocked}
                   currentBaseId={currentBaseId}
+                  isExpanded={expandedShipId === ship.ship_id}
+                  isInspecting={inspectingShipId === ship.ship_id}
+                  inspection={inspectionData[ship.ship_id] || null}
+                  onToggleExpand={handleToggleExpand}
                   onSwitch={handleSwitch}
                   onSell={handleSell}
                 />
@@ -113,19 +156,62 @@ interface FleetCardProps {
   ship: FleetShip
   isDocked: boolean
   currentBaseId?: string
+  isExpanded: boolean
+  isInspecting: boolean
+  inspection: ShipInspection | null
+  onToggleExpand: (shipId: string) => void
   onSwitch: (shipId: string) => void
   onSell: (shipId: string) => void
 }
 
-function FleetCard({ ship, isDocked, currentBaseId, onSwitch, onSell }: FleetCardProps) {
+function FleetCard({
+  ship,
+  isDocked,
+  currentBaseId,
+  isExpanded,
+  isInspecting,
+  inspection,
+  onToggleExpand,
+  onSwitch,
+  onSell,
+}: FleetCardProps) {
   const isAtCurrentBase =
     isDocked && currentBaseId && ship.location_base_id === currentBaseId
   const canManage = !ship.is_active && isAtCurrentBase
 
+  const cardClass = isExpanded
+    ? styles.fleetCardExpanded
+    : ship.is_active
+      ? styles.fleetCardActive
+      : styles.fleetCard
+
   return (
-    <div className={ship.is_active ? styles.fleetCardActive : styles.fleetCard}>
-      <div className={styles.fleetCardTop}>
+    <div className={cardClass}>
+      <div
+        className={styles.fleetCardTop}
+        onClick={() => onToggleExpand(ship.ship_id)}
+        style={{ cursor: 'pointer' }}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            onToggleExpand(ship.ship_id)
+          }
+        }}
+      >
         <div className={styles.fleetCardInfo}>
+          <button
+            className={styles.inspectToggle}
+            title={isExpanded ? 'Collapse' : 'Inspect ship'}
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              onToggleExpand(ship.ship_id)
+            }}
+          >
+            {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+          </button>
           <span className={styles.fleetCardName}>
             {ship.class_name || ship.class_id}
           </span>
@@ -133,7 +219,7 @@ function FleetCard({ ship, isDocked, currentBaseId, onSwitch, onSell }: FleetCar
             <span className={styles.activeIndicator}>Active</span>
           )}
         </div>
-        <div className={styles.fleetCardActions}>
+        <div className={styles.fleetCardActions} onClick={(e) => e.stopPropagation()}>
           {canManage && (
             <>
               <button
@@ -188,6 +274,64 @@ function FleetCard({ ship, isDocked, currentBaseId, onSwitch, onSell }: FleetCar
         <span className={styles.fleetLocationIcon}><MapPin size={10} /></span>
         <span className={styles.fleetLocation}>{ship.location}</span>
       </div>
+
+      {/* Expanded inspection details */}
+      {isExpanded && (
+        <div className={styles.expandedSection}>
+          {isInspecting ? (
+            <div className={styles.emptyState}>
+              <Loader2 size={14} style={{ display: 'inline', animation: 'spin 1s linear infinite' }} />
+              {' '}Inspecting ship...
+            </div>
+          ) : inspection ? (
+            <>
+              {/* Fitted Modules */}
+              <div>
+                <div className={styles.expandedHeader}>
+                  <WrenchIcon size={10} />
+                  Fitted Modules ({inspection.modules.length})
+                </div>
+                {inspection.modules.length === 0 ? (
+                  <div className={styles.emptyState}>No modules fitted</div>
+                ) : (
+                  inspection.modules.map((mod, i) => (
+                    <div key={mod.instance_id || `${mod.module_id}-${i}`} className={styles.expandedItem}>
+                      <span className={styles.expandedItemName}>{mod.name}</span>
+                      <span className={styles.expandedItemMeta}>
+                        {mod.slot_type}
+                        {mod.quality != null && ` / Q${mod.quality}`}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Cargo */}
+              <div>
+                <div className={styles.expandedHeader}>
+                  <Package size={10} />
+                  Cargo ({inspection.cargo.length})
+                </div>
+                {inspection.cargo.length === 0 ? (
+                  <div className={styles.emptyState}>Cargo hold empty</div>
+                ) : (
+                  inspection.cargo.map((item) => (
+                    <div key={item.item_id} className={styles.expandedItem}>
+                      <span className={styles.expandedItemName}>{item.name}</span>
+                      <span className={styles.expandedItemMeta}>
+                        x{item.quantity}
+                        {item.size > 0 && ` (${item.size * item.quantity}m3)`}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </>
+          ) : (
+            <div className={styles.emptyState}>Failed to load ship details</div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

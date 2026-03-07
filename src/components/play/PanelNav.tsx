@@ -10,6 +10,7 @@ import {
   Hammer,
   Users,
   Building2,
+  Target,
   Info,
   Settings,
   ChevronDown,
@@ -32,6 +33,7 @@ const PANELS = [
   { id: 'crafting', icon: Hammer, label: 'Crafting' },
   { id: 'faction', icon: Users, label: 'Faction' },
   { id: 'base', icon: Building2, label: 'Base' },
+  { id: 'missions', icon: Target, label: 'Missions' },
   { id: 'info', icon: Info, label: 'Info' },
   { id: 'settings', icon: Settings, label: 'Settings' },
 ] as const

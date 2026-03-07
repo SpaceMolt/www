@@ -50,7 +50,12 @@ export function RightPane() {
         </button>
       </div>
       <div className={styles.content}>
-        {activeTab === 'events' ? <EventLog /> : <ChatPanel />}
+        <div className={styles.contentPane} style={{ display: activeTab === 'events' ? 'flex' : 'none' }}>
+          <EventLog />
+        </div>
+        <div className={styles.contentPane} style={{ display: activeTab === 'chat' ? 'flex' : 'none' }}>
+          <ChatPanel />
+        </div>
       </div>
     </div>
   )

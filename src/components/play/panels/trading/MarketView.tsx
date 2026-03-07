@@ -223,7 +223,9 @@ export function MarketView() {
           {/* Table header */}
           <div className={styles.tableHeader}>
             <span className={styles.colItem}>Item</span>
+            <span className={styles.colQty}>Qty</span>
             <span className={styles.colPrice}>Best Buy</span>
+            <span className={styles.colQty}>Qty</span>
             <span className={styles.colPrice}>Best Ask</span>
             <span className={styles.colPrice}>Spread</span>
           </div>
@@ -236,6 +238,8 @@ export function MarketView() {
               const hasSell = item.best_sell > 0
               const spread = item.spread ?? (hasBuy && hasSell ? item.best_sell - item.best_buy : undefined)
               const cargoItem = cargo.find((c) => c.item_id === item.item_id)
+              const totalBuyQty = item.buy_orders.reduce((sum, o) => sum + o.quantity, 0)
+              const totalSellQty = item.sell_orders.reduce((sum, o) => sum + o.quantity, 0)
 
               return (
                 <div key={item.item_id} className={styles.itemBlock}>
@@ -252,8 +256,14 @@ export function MarketView() {
                       )}
                       <span className={styles.itemName}>{item.item_name}</span>
                     </span>
+                    <span className={`${styles.colQty} ${hasBuy ? styles.buyPrice : styles.noPrice}`}>
+                      {totalBuyQty > 0 ? totalBuyQty.toLocaleString() : '--'}
+                    </span>
                     <span className={`${styles.colPrice} ${hasBuy ? styles.buyPrice : styles.noPrice}`}>
                       {hasBuy ? item.best_buy.toLocaleString() : '--'}
+                    </span>
+                    <span className={`${styles.colQty} ${hasSell ? styles.sellPrice : styles.noPrice}`}>
+                      {totalSellQty > 0 ? totalSellQty.toLocaleString() : '--'}
                     </span>
                     <span className={`${styles.colPrice} ${hasSell ? styles.sellPrice : styles.noPrice}`}>
                       {hasSell ? item.best_sell.toLocaleString() : '--'}

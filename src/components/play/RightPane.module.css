@@ -73,6 +73,13 @@
   flex-direction: column;
 }
 
+.contentPane {
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 /* Mobile toggle — hidden on desktop */
 .mobileToggle {
   display: none;

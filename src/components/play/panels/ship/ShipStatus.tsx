@@ -1,19 +1,32 @@
 'use client'
 
+import { useCallback } from 'react'
 import {
   Rocket,
   Gauge,
   Shield,
   Crosshair,
   CircuitBoard,
+  Fuel,
+  Wrench,
+  Package,
 } from 'lucide-react'
 import { useGame } from '../../GameProvider'
 import { ProgressBar } from '../../ProgressBar'
 import styles from '../ShipPanel.module.css'
 
 export function ShipStatus() {
-  const { state } = useGame()
+  const { state, sendCommand } = useGame()
   const ship = state.ship
+  const isDocked = state.isDocked
+
+  const handleRefuel = useCallback(() => {
+    sendCommand('refuel')
+  }, [sendCommand])
+
+  const handleRepair = useCallback(() => {
+    sendCommand('repair_ship')
+  }, [sendCommand])
 
   if (!ship) {
     return (
@@ -45,6 +58,24 @@ export function ShipStatus() {
       </div>
 
       <div className={styles.content}>
+        {/* Refuel / Repair actions (docked only) */}
+        {isDocked && (ship.fuel < ship.max_fuel || ship.hull < ship.max_hull) && (
+          <div className={styles.actionsRow}>
+            {ship.fuel < ship.max_fuel && (
+              <button className={styles.fuelBtn} onClick={handleRefuel}>
+                <Fuel size={14} />
+                Refuel
+              </button>
+            )}
+            {ship.hull < ship.max_hull && (
+              <button className={styles.repairBtn} onClick={handleRepair}>
+                <Wrench size={14} />
+                Repair
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Ship overview */}
         <div className={styles.shipOverview}>
           <div className={styles.shipClass}>{ship.class}</div>
@@ -143,6 +174,27 @@ export function ShipStatus() {
             <span className={styles.slotValue}>{ship.utility_slots}</span>
           </div>
         </div>
+
+        {/* Cargo Hold */}
+        <div className={styles.sectionTitle}>
+          <Package size={12} />
+          Cargo Hold
+        </div>
+        {ship.cargo && ship.cargo.length > 0 ? (
+          <div className={styles.modulesList}>
+            {ship.cargo.map((item: { item_id: string; name: string; quantity: number; size: number }) => (
+              <div key={item.item_id} className={styles.moduleItem}>
+                <span className={styles.moduleName}>{item.name}</span>
+                <span className={styles.moduleMeta}>
+                  <span className={styles.moduleType}>x{item.quantity}</span>
+                  <span className={styles.moduleType}>{item.quantity * item.size}u</span>
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className={styles.emptyState}>Cargo hold is empty</div>
+        )}
       </div>
     </div>
   )

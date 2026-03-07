@@ -127,6 +127,13 @@
   font-size: 0.7rem;
 }
 
+.colQty {
+  flex: 0.6;
+  text-align: right;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+}
+
 /* Item list */
 .itemList {
   display: flex;

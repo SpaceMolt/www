@@ -302,6 +302,94 @@
   cursor: not-allowed;
 }
 
+/* Expanded fleet card */
+.fleetCardExpanded {
+  composes: fleetCard;
+  border-color: rgba(0, 212, 255, 0.25);
+  border-bottom: 2px solid rgba(0, 212, 255, 0.35);
+}
+
+.fleetCardExpanded:hover {
+  border-color: rgba(0, 212, 255, 0.35);
+  border-bottom-color: rgba(0, 212, 255, 0.45);
+}
+
+.expandedSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem 0.4rem 0.25rem;
+  background: rgba(0, 212, 255, 0.02);
+  border-top: 1px solid rgba(61, 90, 108, 0.2);
+  margin-top: 0.2rem;
+}
+
+.expandedHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--chrome-silver);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding-bottom: 0.2rem;
+  margin-bottom: 0.15rem;
+  border-bottom: 1px solid rgba(61, 90, 108, 0.15);
+}
+
+.expandedItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.15rem 0.2rem;
+}
+
+.expandedItem:hover {
+  background: rgba(168, 197, 214, 0.04);
+  border-radius: 2px;
+}
+
+.expandedItemName {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--star-white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.expandedItemMeta {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  color: var(--hull-grey);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.inspectToggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  color: var(--hull-grey);
+  cursor: pointer;
+  padding: 0.1rem;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.inspectToggle:hover {
+  color: var(--plasma-cyan);
+  border-color: rgba(0, 212, 255, 0.3);
+  background: rgba(0, 212, 255, 0.08);
+}
+
 /* Empty state */
 .emptyState {
   font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
