@@ -45,7 +45,7 @@ Minimum: **1 tick** (10 seconds real time).
 effectiveSpeed = speed × (1.0 + speedBuffBonus) × (1.0 - towPenalty)
 ```
 
-- `speedBuffBonus` — decimal bonus from active consumable buffs with `stat = "speed"` (e.g. 0.50 for +50%). Zero if no buff active.
+- `speedBuffBonus` — sum of `buff.amount / 100.0` for each entry in `get_ship → ship.active_buffs[]` where `buff.stat == "speed"` and `buff.expires_at > currentTick`. Zero if no speed buff is active (e.g. 0.50 for a +50% buff).
 - `towPenalty` — only applies when towing a wreck:
 
 ```
@@ -98,13 +98,17 @@ This is integer multiplication then integer division (truncation, not rounding).
 
 `moduleEfficiency` is the sum of `fuel_efficiency` across all your equipped modules. Positive values reduce cost (e.g. a fuel optimizer at +10 = 10% reduction). Negative values increase cost (e.g. an afterburner at −20 = 20% penalty). The total is capped at **80** before applying (maximum 80% reduction); penalties are uncapped.
 
+**API note:** `get_ship → modules[].fuel_efficiency` only includes modules with a positive value. Modules with a fuel penalty (e.g. afterburners) do not have `fuel_efficiency` in the `get_ship` response. To find the penalty for a specific module, use `catalog` with that module's type ID and check its `fuel_efficiency` field in the definition.
+
 ### 2. Fuel Consumption Skill Bonus
 
 ```
 fuelCost = ceil(fuelCost × (1.0 + fuelConsBonus / 100.0))
 ```
 
-`fuelConsBonus` is your total skill bonus for the `fuelConsumption` stat. Negative values reduce cost. Check `get_skills` to see your current bonuses.
+`fuelConsBonus` is your total skill bonus for the `fuelConsumption` stat. Negative values reduce cost.
+
+To compute it: for each skill you have levels in, multiply your level (from `get_skills`) by that skill's `bonus_per_level.fuelConsumption` value (from `catalog type=skills`), then sum across all skills. Most players have zero or small bonuses here early on.
 
 ### 3. Jump Fuel Skill Bonus (jumps only)
 
@@ -112,7 +116,7 @@ fuelCost = ceil(fuelCost × (1.0 + fuelConsBonus / 100.0))
 fuelCost = ceil(fuelCost × (1.0 + jumpFuelBonus / 100.0))
 ```
 
-`jumpFuelBonus` is your total skill bonus for the `jumpFuel` stat. Applies to jumps only — intra-system travel is unaffected.
+`jumpFuelBonus` is your total skill bonus for the `jumpFuel` stat. Applies to jumps only — intra-system travel is unaffected. Computed the same way as `fuelConsBonus` but using `bonus_per_level.jumpFuel`.
 
 ### Jump Time Skill Bonus
 
@@ -120,7 +124,7 @@ fuelCost = ceil(fuelCost × (1.0 + jumpFuelBonus / 100.0))
 jumpTicks = ceil(jumpTicks × (1.0 + jumpTimeBonus / 100.0))
 ```
 
-`jumpTimeBonus` is your total skill bonus for the `jumpTime` stat. Negative values reduce jump time. Applied after disruption, before committing the jump state.
+`jumpTimeBonus` is your total skill bonus for the `jumpTime` stat. Negative values reduce jump time. Applied after disruption, before committing the jump state. Computed the same way using `bonus_per_level.jumpTime`.
 
 ---
 
@@ -172,8 +176,8 @@ travelTicks = ceil(3.0 / 2) = 2 ticks (20 seconds)
 **Small (scale 2) ship, speed 3, 20 cargo, jumping to adjacent system:**
 
 ```
-base = floor(2^1.5 × 3 × 10.0 × 0.10 + 20 × 0.002 × 10.0)
-     = floor(2.828 × 3 × 1.0 + 0.4)
+base = ceil(2^1.5 × 3 × 10.0 × 0.10 + 20 × 0.002 × 10.0)
+     = ceil(2.828 × 3 × 1.0 + 0.4)
      = ceil(8.485 + 0.4)
      = ceil(8.885)
      = 9 fuel
