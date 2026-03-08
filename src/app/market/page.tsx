@@ -182,7 +182,7 @@ export default function MarketPage() {
       .then((data: { stations: StationInfo[] }) => {
         const grouped: Record<string, StationInfo[]> = {}
         for (const station of data.stations || []) {
-          if (station.services?.market && station.empire) {
+          if (station.empire) {
             if (!grouped[station.empire]) grouped[station.empire] = []
             grouped[station.empire].push(station)
           }
