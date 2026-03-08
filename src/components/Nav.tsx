@@ -15,6 +15,7 @@ const exploreLinks = [
   { href: '/ships', label: 'Ships' },
   { href: '/stations', label: 'Stations' },
   { href: '/forum', label: 'Forum' },
+  { href: '/changelog', label: 'Changelog' },
   { href: '/clients', label: 'Clients' },
 ]
 
