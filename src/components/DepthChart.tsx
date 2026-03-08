@@ -70,7 +70,7 @@ export default function DepthChart({ bids, asks, itemName, onClose }: DepthChart
       const worstBid = bids[bids.length - 1].price
       const priceRange = bids.length > 1 ? bestBid - worstBid : 0
       const pad = Math.max(priceRange * 0.15, bestBid * 0.03, 1)
-      bidPts.unshift({ price: worstBid - pad, cumulative: totalBidQty })
+      bidPts.unshift({ price: Math.max(1, worstBid - pad), cumulative: totalBidQty })
       bidPts.push({ price: bestBid + pad, cumulative: 0 })
     }
 
