@@ -1,0 +1,296 @@
+/* === Grid Background === */
+.gridBg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  background:
+    linear-gradient(rgba(0, 212, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 212, 255, 0.02) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+/* === Hero === */
+.hero {
+  padding: 10rem 2rem 4rem;
+  text-align: center;
+}
+
+.heroLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--plasma-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  margin-bottom: 1rem;
+  opacity: 0.7;
+}
+
+.heroTitle {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: clamp(2.5rem, 6vw, 4rem);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: linear-gradient(135deg, var(--star-white) 0%, var(--plasma-cyan) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 1rem;
+}
+
+.heroSubtitle {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 1rem;
+  color: var(--chrome-silver);
+  margin: 0 auto;
+  line-height: 1.7;
+}
+
+.currentVersion {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  color: var(--plasma-cyan);
+}
+
+/* === Releases List === */
+.releases {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+/* === Release Card === */
+.release {
+  background: rgba(13, 19, 33, 0.6);
+  border: 1px solid rgba(61, 90, 108, 0.2);
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+
+.release::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--hull-grey);
+}
+
+.release:first-child::before {
+  background: var(--plasma-cyan);
+  box-shadow: 0 0 12px rgba(0, 212, 255, 0.4);
+}
+
+.releaseHeader {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border-bottom: 1px solid rgba(61, 90, 108, 0.15);
+}
+
+.releaseIndex {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  flex-shrink: 0;
+  padding: 1rem 0;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--hull-grey);
+  letter-spacing: 0.1em;
+  border-right: 1px solid rgba(61, 90, 108, 0.15);
+  align-self: stretch;
+}
+
+.release:first-child .releaseIndex {
+  color: var(--plasma-cyan);
+}
+
+.releaseMeta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  flex-wrap: wrap;
+}
+
+.releaseVersion {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--star-white);
+  letter-spacing: 0.05em;
+}
+
+.release:first-child .releaseVersion {
+  color: var(--plasma-cyan);
+}
+
+.releaseDate {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--hull-grey);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.latestBadge {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.1);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 3px;
+  padding: 0.15rem 0.5rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* === Release Notes === */
+.releaseNotes {
+  margin: 0;
+  padding: 1.25rem 1.5rem 1.25rem calc(72px + 1.5rem);
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.releaseNote {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 0.9rem;
+  color: var(--chrome-silver);
+  line-height: 1.6;
+  padding-left: 1rem;
+  position: relative;
+}
+
+.releaseNote::before {
+  content: '—';
+  position: absolute;
+  left: 0;
+  color: var(--hull-grey);
+  font-size: 0.8rem;
+}
+
+.releaseNote strong {
+  color: var(--star-white);
+  font-weight: 600;
+}
+
+.releaseNote em {
+  color: var(--chrome-silver);
+  font-style: italic;
+}
+
+.releaseNote code {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.82em;
+  color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.08);
+  border: 1px solid rgba(0, 212, 255, 0.15);
+  border-radius: 3px;
+  padding: 0.1em 0.35em;
+}
+
+/* === Pagination === */
+.pagination {
+  max-width: 860px;
+  margin: 2rem auto 8rem;
+  padding: 0 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.pageBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--chrome-silver);
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border: 1px solid rgba(61, 90, 108, 0.4);
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.pageBtn:hover {
+  color: var(--plasma-cyan);
+  border-color: var(--plasma-cyan);
+}
+
+.pageBtnDisabled {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--hull-grey);
+  padding: 0.5rem 1rem;
+  border: 1px solid rgba(61, 90, 108, 0.2);
+  border-radius: 4px;
+  opacity: 0.4;
+  cursor: default;
+}
+
+.pageInfo {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--hull-grey);
+  letter-spacing: 0.05em;
+}
+
+/* === Empty === */
+.empty {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--hull-grey);
+  text-align: center;
+  padding: 4rem 2rem;
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+  .hero {
+    padding: 8rem 1.5rem 3rem;
+  }
+
+  .releases {
+    padding: 0 1rem;
+  }
+
+  .pagination {
+    padding: 0 1rem;
+    margin-bottom: 6rem;
+  }
+
+  .releaseIndex {
+    display: none;
+  }
+
+  .releaseNotes {
+    padding: 1rem 1.25rem;
+  }
+
+  .releaseVersion {
+    font-size: 0.9rem;
+  }
+}
