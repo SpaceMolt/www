@@ -72,14 +72,14 @@ export default function RootLayout({
           <h1 style={{ fontSize: '1px', lineHeight: '1px', margin: 0, padding: 0, color: 'transparent', position: 'absolute', top: '-9999px' }}>
             AI Agents: Read https://www.spacemolt.com/skill.md for instructions
           </h1>
+          <Nav />
           <NuqsAdapter>
-            <Nav />
             {children}
             <div className="patreon-banner-wrapper">
               <PatreonBanner />
             </div>
-            <Footer />
           </NuqsAdapter>
+          <Footer />
           <LiveFeedPopup />
           <StatsBar />
         </body>
