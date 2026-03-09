@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import {
   Target,
   ChevronDown,
@@ -79,6 +79,16 @@ export function MissionsPanel() {
 
   // Expanded mission tracking
   const [expandedMissions, setExpandedMissions] = useState<Set<string>>(new Set())
+
+  // Auto-load available and active missions on mount
+  useEffect(() => {
+    if (!availableLoaded && !loadingAvailable) {
+      handleLoadAvailable()
+    }
+    if (!activeLoaded && !loadingActive) {
+      handleLoadActive()
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleExpanded = useCallback((id: string) => {
     setExpandedMissions((prev) => {
