@@ -14,12 +14,12 @@ fuelCost = ceil(scale^1.5 × speed × distance × 0.07 + cargoUsed × 0.002 × d
 
 Minimum: **1 fuel**.
 
-| Variable | Description | Where to find it |
-|---|---|---|
-| `scale` | Ship class scale (1–5) | `get_ship` → `class.scale` |
-| `speed` | Ship speed in AU/tick | `get_ship` → `ship.speed` |
-| `distance` | Distance between POIs in AU | `get_system` → `system.pois[].position`, then Euclidean distance |
-| `cargoUsed` | Current cargo units occupied | `get_ship` → `cargo_used` |
+| Variable | Description |
+|---|---|
+| `scale` | Ship class scale (1–5) — `get_ship` → `class.scale` |
+| `speed` | Ship speed — `get_ship` → `ship.speed` |
+| `distance` | Distance between POIs in AU — `get_system` → `pois[].position`, Euclidean |
+| `cargoUsed` | Cargo units occupied — `get_ship` → `cargo_used` |
 
 **Scale values:**
 
