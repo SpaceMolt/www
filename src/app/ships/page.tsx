@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback, Fragment } from 'react'
 import Image from 'next/image'
 import styles from './page.module.css'
 
@@ -57,6 +57,27 @@ interface ShipsResponse {
   classes: string[]
   tiers: number[]
 }
+
+const TABLE_COLS = [
+  { key: 'name',                 label: 'Name',    title: 'Name',              numeric: false },
+  { key: 'empire_name',          label: 'Empire',  title: 'Empire',            numeric: false },
+  { key: 'category',             label: 'Category',title: 'Category',          numeric: false },
+  { key: 'class',                label: 'Class',   title: 'Class',             numeric: false },
+  { key: 'tier',                 label: 'T',       title: 'Tier',              numeric: true  },
+  { key: 'base_hull',            label: 'Hull',    title: 'Hull HP',           numeric: true  },
+  { key: 'base_shield',          label: 'Shield',  title: 'Shield HP',         numeric: true  },
+  { key: 'base_shield_recharge', label: 'ShRgn',   title: 'Shield Recharge/tick', numeric: true },
+  { key: 'base_armor',           label: 'Armor',   title: 'Armor',             numeric: true  },
+  { key: 'base_speed',           label: 'Speed',   title: 'Speed (AU/tick)',   numeric: true  },
+  { key: 'base_fuel',            label: 'Fuel',    title: 'Fuel Capacity',     numeric: true  },
+  { key: 'cargo_capacity',       label: 'Cargo',   title: 'Cargo Capacity',    numeric: true  },
+  { key: 'cpu_capacity',         label: 'CPU',     title: 'CPU Capacity',      numeric: true  },
+  { key: 'power_capacity',       label: 'Power',   title: 'Power Capacity',    numeric: true  },
+  { key: 'weapon_slots',         label: 'Wpn',     title: 'Weapon Slots',      numeric: true  },
+  { key: 'defense_slots',        label: 'Def',     title: 'Defense Slots',     numeric: true  },
+  { key: 'utility_slots',        label: 'Util',    title: 'Utility Slots',     numeric: true  },
+  { key: 'price',                label: 'Price',   title: 'Base Price (cr)',   numeric: true  },
+] as const
 
 const EMPIRE_COLORS: Record<string, string> = {
   solarian: '#ffd700',
@@ -245,7 +266,13 @@ export default function ShipsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
 
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid')
+  const [sortCol, setSortCol] = useState<keyof Ship>('tier')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+  const [tableExpandedId, setTableExpandedId] = useState<string | null>(null)
+
   const [activeEmpire, setActiveEmpire] = useState<string>('')
+  const [activeCategory, setActiveCategory] = useState<string>('')
   const [activeClasses, setActiveClasses] = useState<Set<string>>(new Set())
   const [activeTier, setActiveTier] = useState<number>(0)
   const [search, setSearch] = useState('')
@@ -275,6 +302,25 @@ export default function ShipsPage() {
       return next
     })
   }, [])
+
+  const setView = useCallback((mode: 'grid' | 'table') => {
+    setViewMode(mode)
+    if (mode === 'table') {
+      setExpandedIds(new Set())
+      setAllExpanded(false)
+    } else {
+      setTableExpandedId(null)
+    }
+  }, [])
+
+  const handleSort = useCallback((col: keyof Ship) => {
+    if (sortCol === col) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortCol(col)
+      setSortDir('asc')
+    }
+  }, [sortCol])
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
@@ -321,10 +367,25 @@ export default function ShipsPage() {
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [zoomedShip])
 
+  const categories = useMemo(() => {
+    const seen = new Set<string>()
+    ships.forEach((s) => { if (s.category) seen.add(s.category) })
+    return Array.from(seen).sort()
+  }, [ships])
+
+  const visibleClasses = useMemo(() => {
+    if (!activeCategory) return classes
+    const inCategory = new Set(ships.filter((s) => s.category === activeCategory).map((s) => s.class))
+    return classes.filter((c) => inCategory.has(c))
+  }, [classes, ships, activeCategory])
+
   const filteredShips = useMemo(() => {
     let result = ships.filter((s) => s.empire !== '')
     if (activeEmpire) {
       result = result.filter((s) => s.empire === activeEmpire)
+    }
+    if (activeCategory) {
+      result = result.filter((s) => s.category === activeCategory)
     }
     if (activeClasses.size > 0) {
       result = result.filter((s) => activeClasses.has(s.class))
@@ -343,7 +404,21 @@ export default function ShipsPage() {
       )
     }
     return result
-  }, [ships, activeEmpire, activeClasses, activeTier, search])
+  }, [ships, activeEmpire, activeCategory, activeClasses, activeTier, search])
+
+  const tableShips = useMemo(() => {
+    return [...filteredShips].sort((a, b) => {
+      const av = a[sortCol]
+      const bv = b[sortCol]
+      let cmp = 0
+      if (typeof av === 'number' && typeof bv === 'number') {
+        cmp = av - bv
+      } else {
+        cmp = String(av ?? '').localeCompare(String(bv ?? ''))
+      }
+      return sortDir === 'asc' ? cmp : -cmp
+    })
+  }, [filteredShips, sortCol, sortDir])
 
   const toggleExpand = (id: string) => {
     setAllExpanded(false)
@@ -392,6 +467,25 @@ export default function ShipsPage() {
       {!loading && !error && ships.length > 0 && (
         <div className={styles.filterSection}>
           <div className={styles.filterRow}>
+            <span className={styles.filterLabel}>Category</span>
+            <button
+              className={`${styles.filterBtn} ${activeCategory === '' ? styles.filterBtnActive : ''}`}
+              onClick={() => setActiveCategory('')}
+            >
+              All
+            </button>
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                className={`${styles.filterBtn} ${activeCategory === cat ? styles.filterBtnActive : ''}`}
+                onClick={() => setActiveCategory(cat)}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+
+          <div className={styles.filterRow}>
             <span className={styles.filterLabel}>Empire</span>
             <button
               className={`${styles.filterBtn} ${activeEmpire === '' ? styles.filterBtnActive : ''}`}
@@ -416,12 +510,41 @@ export default function ShipsPage() {
                 {empire.name}
               </button>
             ))}
-            <button
-              className={`${styles.filterBtn} ${styles.expandAllBtn} ${allExpanded ? styles.filterBtnActive : ''}`}
-              onClick={toggleExpandAll}
-            >
-              {allExpanded ? 'Collapse All' : 'Expand All'}
-            </button>
+            <div className={styles.filterRowRight}>
+              {viewMode === 'grid' && (
+                <button
+                  className={`${styles.filterBtn} ${allExpanded ? styles.filterBtnActive : ''}`}
+                  onClick={toggleExpandAll}
+                >
+                  {allExpanded ? 'Collapse All' : 'Expand All'}
+                </button>
+              )}
+              <div className={styles.viewToggle}>
+                <button
+                  className={`${styles.viewToggleBtn} ${viewMode === 'grid' ? styles.viewToggleBtnActive : ''}`}
+                  onClick={() => setView('grid')}
+                  title="Grid view"
+                >
+                  <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                    <rect x="0.65" y="0.65" width="4.7" height="4.7" rx="0.8" stroke="currentColor" strokeWidth="1.3"/>
+                    <rect x="7.65" y="0.65" width="4.7" height="4.7" rx="0.8" stroke="currentColor" strokeWidth="1.3"/>
+                    <rect x="0.65" y="7.65" width="4.7" height="4.7" rx="0.8" stroke="currentColor" strokeWidth="1.3"/>
+                    <rect x="7.65" y="7.65" width="4.7" height="4.7" rx="0.8" stroke="currentColor" strokeWidth="1.3"/>
+                  </svg>
+                </button>
+                <button
+                  className={`${styles.viewToggleBtn} ${viewMode === 'table' ? styles.viewToggleBtnActive : ''}`}
+                  onClick={() => setView('table')}
+                  title="Table view"
+                >
+                  <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                    <line x1="1" y1="2.5" x2="12" y2="2.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+                    <line x1="1" y1="6.5" x2="12" y2="6.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+                    <line x1="1" y1="10.5" x2="12" y2="10.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
           </div>
 
           <div className={styles.filterRow}>
@@ -451,7 +574,7 @@ export default function ShipsPage() {
                     Clear all
                   </button>
                   <div className={styles.classDropdownList}>
-                    {classes.map((cls) => (
+                    {visibleClasses.map((cls) => (
                       <label key={cls} className={styles.classDropdownItem}>
                         <input
                           type="checkbox"
@@ -512,7 +635,7 @@ export default function ShipsPage() {
         </div>
       )}
 
-      {!loading && !error && filteredShips.length > 0 && (
+      {!loading && !error && filteredShips.length > 0 && viewMode === 'grid' && (
         <div className={styles.shipGrid}>
           {filteredShips.map((ship) => {
             const isExpanded = expandedIds.has(ship.id)
@@ -722,6 +845,102 @@ export default function ShipsPage() {
           })}
         </div>
       )}
+      {!loading && !error && filteredShips.length > 0 && viewMode === 'table' && (
+        <div className={styles.tableWrap}>
+          <table className={styles.shipTable}>
+            <thead>
+              <tr>
+                {TABLE_COLS.map((col) => (
+                  <th
+                    key={col.key}
+                    className={`${styles.tableHeaderCell} ${sortCol === col.key ? styles.sortActive : ''}`}
+                    onClick={() => handleSort(col.key as keyof Ship)}
+                    title={col.title}
+                  >
+                    {col.label}
+                    <span className={styles.sortIndicator}>
+                      {sortCol === col.key ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ' ⇅'}
+                    </span>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {tableShips.map((ship) => {
+                const isExpanded = tableExpandedId === ship.id
+                const empireColor = EMPIRE_COLORS[ship.empire] || '#888'
+                return (
+                  <Fragment key={ship.id}>
+                    <tr
+                      className={`${styles.tableRow} ${isExpanded ? styles.tableRowExpanded : ''}`}
+                      onClick={() => setTableExpandedId(isExpanded ? null : ship.id)}
+                    >
+                      <td className={`${styles.tableCell} ${styles.tableName}`}>
+                        <span className={styles.tableEmpireAccent} style={{ background: empireColor }} />
+                        {ship.name}
+                      </td>
+                      <td className={styles.tableCell}>
+                        <span className={styles.empireDot} style={{ background: empireColor }} />
+                        {' '}{ship.empire_name}
+                      </td>
+                      <td className={styles.tableCell}>{ship.category}</td>
+                      <td className={styles.tableCell}>{ship.class}</td>
+                      <td className={`${styles.tableCell} ${styles.tableCellNum}`}>T{ship.tier}</td>
+                      <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{ship.base_hull}</td>
+                      <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{ship.base_shield}</td>
+                      <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{ship.base_shield_recharge}</td>
+                      <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{ship.base_armor}</td>
+                      <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{ship.base_speed}</td>
+                      <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{ship.base_fuel}</td>
+                      <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{ship.cargo_capacity}</td>
+                      <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{ship.cpu_capacity}</td>
+                      <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{ship.power_capacity}</td>
+                      <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{ship.weapon_slots}</td>
+                      <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{ship.defense_slots}</td>
+                      <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{ship.utility_slots}</td>
+                      <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{ship.price.toLocaleString()}</td>
+                    </tr>
+                    {isExpanded && (
+                      <tr className={styles.tableExpandRow}>
+                        <td colSpan={TABLE_COLS.length} className={styles.tableExpandCell}>
+                          <div className={styles.tableExpandContent}>
+                            {!brokenImages.has(ship.id) && (
+                              <div className={styles.tableExpandImageWrap}>
+                                <Image
+                                  src={`/images/ships/catalog/${ship.id}.webp`}
+                                  alt={ship.name}
+                                  width={560}
+                                  height={420}
+                                  className={styles.tableExpandImage}
+                                  onError={() => handleImageError(ship.id)}
+                                />
+                                <button
+                                  className={styles.zoomBtn}
+                                  onClick={(e) => { e.stopPropagation(); setZoomedShip(ship) }}
+                                  aria-label={`View ${ship.name} full size`}
+                                >
+                                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                                    <path d="M1 5V1H5M9 1H13V5M13 9V13H9M5 13H1V9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
+                                </button>
+                              </div>
+                            )}
+                            <div className={styles.tableExpandText}>
+                              <p className={styles.tableExpandDescription}>{ship.description}</p>
+                              {ship.lore && <p className={styles.tableExpandLore}>{ship.lore}</p>}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
       {zoomedShip && (
         <div className={styles.modalOverlay} onClick={() => setZoomedShip(null)}>
           <button className={styles.modalClose} onClick={() => setZoomedShip(null)} aria-label="Close">

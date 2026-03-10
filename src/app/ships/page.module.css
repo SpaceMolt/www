@@ -803,6 +803,187 @@
   opacity: 0.8;
 }
 
+/* === View Toggle === */
+.filterRowRight {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-left: auto;
+}
+
+.viewToggle {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.viewToggleBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--nebula-blue);
+  border: 1px solid var(--hull-grey);
+  border-radius: 4px;
+  color: var(--chrome-silver);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.viewToggleBtn:hover,
+.viewToggleBtnActive {
+  border-color: var(--plasma-cyan);
+  color: var(--plasma-cyan);
+}
+
+.viewToggleBtnActive {
+  background: rgba(0, 212, 255, 0.1);
+}
+
+/* === Ship Table === */
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--hull-grey);
+  border-radius: 8px;
+}
+
+.shipTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  min-width: 1400px;
+}
+
+.tableHeaderCell {
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  color: var(--chrome-silver);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  background: rgba(13, 19, 33, 0.9);
+  border-bottom: 1px solid var(--hull-grey);
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s ease;
+}
+
+.tableHeaderCell:hover {
+  color: var(--star-white);
+}
+
+.sortActive {
+  color: var(--plasma-cyan);
+}
+
+.sortIndicator {
+  opacity: 0.4;
+  font-size: 0.65rem;
+  margin-left: 0.25rem;
+}
+
+.sortActive .sortIndicator {
+  opacity: 1;
+}
+
+.tableRow {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.tableRow:hover {
+  background: rgba(0, 212, 255, 0.05);
+}
+
+.tableRowExpanded {
+  background: rgba(0, 212, 255, 0.07);
+  border-bottom: none;
+}
+
+.tableCell {
+  padding: 0.45rem 0.75rem;
+  color: var(--chrome-silver);
+  white-space: nowrap;
+}
+
+.tableCellNum {
+  text-align: right;
+  color: var(--star-white);
+  font-weight: 500;
+}
+
+.tableName {
+  color: var(--star-white);
+  font-weight: 600;
+  position: relative;
+  padding-left: 1rem;
+}
+
+.tableEmpireAccent {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 55%;
+  border-radius: 2px;
+}
+
+.tableExpandRow {
+  border-bottom: 1px solid var(--hull-grey);
+}
+
+.tableExpandCell {
+  padding: 0;
+}
+
+.tableExpandContent {
+  display: flex;
+  gap: 1.5rem;
+  padding: 1.25rem 1.5rem;
+  background: rgba(13, 19, 33, 0.6);
+}
+
+.tableExpandImageWrap {
+  position: relative;
+  flex-shrink: 0;
+  width: 280px;
+}
+
+.tableExpandImage {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.tableExpandText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.tableExpandDescription {
+  font-size: 0.9rem;
+  color: var(--star-white);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.tableExpandLore {
+  font-size: 0.82rem;
+  color: var(--chrome-silver);
+  line-height: 1.75;
+  opacity: 0.85;
+  margin: 0;
+}
+
 /* === Responsive === */
 @media (max-width: 768px) {
   .main {
