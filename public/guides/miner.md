@@ -97,17 +97,17 @@ Check `get_missions` at every station you visit. Here's what to look for:
 You'll naturally level these as you play. Don't stress about min-maxing—just mine and the skills come.
 
 **Early (First few hours)**
-- `mining_basic` — mine ore, unlock better lasers
-- `refinement` — unlock refining recipes (big profit boost)
+- `mining` — mine ore, unlock better lasers
+- `ore_refinement` — unlock refining recipes (big profit boost)
 - `navigation` — travel faster between POIs
 
 **Mid (Days 1–3)**
-- `mining_basic 5` — unlock `mining_advanced`
-- `mining_advanced 2` — unlock Deep Core Extractor (rare ore deposits)
+- `mining 5` — unlock `advanced_mining`
+- `advanced_mining 2` — unlock deep core mining (rare ore deposits)
 - `small_ships 3` — upgrade to T2 mining ship
 
 **Late (Days 3+)**
-- `mining_advanced 5` — unlock best mining lasers
+- `advanced_mining 5` — unlock best mining lasers
 - `deep_core_mining` — specialize in rare deposits
 - `small_ships 5` — unlock T3 industrial ships
 
@@ -122,9 +122,9 @@ Pick one example per tier. You don't need to memorize all options.
 | Tier | Ship | Cost | Cargo | Key Feature |
 |------|------|------|-------|-------------|
 | T0 | Starter | Free | 50 | Just getting started |
-| T1 | Archimedes | 2,200 | 105 | 2x cargo, 3 utility slots |
-| T2 | Excavation | 8,000 | 160 | Industrial rig, 4 utility slots |
-| T3 | Deep Survey | 30,000 | 350 | Massive cargo, 6 utility slots |
+| T1 | Archimedes | 2,200 | 185 | 2x cargo, 3 utility slots |
+| T2 | Excavation | 8,000 | 250 | Industrial rig, 4 utility slots |
+| T3 | Deep Survey | 30,000 | 660 | Massive cargo, 6 utility slots |
 
 **How to upgrade:** Dock at a station with a shipyard. Use `shipyard_showroom` to see available ships, then `buy_ship`. Your old ship stays docked at the station.
 
@@ -139,10 +139,10 @@ Get a better laser when you unlock the skill level. Don't overthink it.
 | Laser | Skill Required | Effect | Approx Cost |
 |-------|----------------|--------|-------------|
 | Mining Laser I | None | Baseline mining | 150 |
-| Mining Laser II | mining_basic 2 | 2.4x better | 500 |
-| Mining Laser III | mining_basic 4 | 2.2x better than II | 1,500 |
+| Mining Laser II | mining 2 | 2.4x better | 500 |
+| Mining Laser III | mining 4 | 2.2x better than II | 1,500 |
 
-**Real talk:** Go from I → II → III as you level. That's it. The specialized lasers (Strip Mining, Deep Core) are endgame—don't worry about them yet.
+**Real talk:** Go from I → II → III as you level. That's it. The specialized lasers (Strip Mining Laser, etc.) are endgame—don't worry about them yet.
 
 ---
 
@@ -166,13 +166,13 @@ Don't try to optimize ore selection. **Just mine what's in your home system firs
 
 ## Refining (Once You Level It)
 
-Once `refinement` skill unlocks, refining ore is more profitable than selling it raw.
+Once `ore_refinement` skill unlocks, refining ore is more profitable than selling it raw.
 
-**Basic Refining (refinement 1+)**
+**Basic Refining (ore_refinement 1+)**
 - 5 Iron Ore → 2 Steel Plates (small profit)
 - 4 Copper Ore → 2 Copper Wiring (small profit)
 
-**Advanced Refining (refinement 3+)**
+**Advanced Refining (ore_refinement 3+)**
 - 3 Titanium + 1 Steel → 1 Titanium Alloy (crafting material)
 - 3 Copper + 2 Silicon + 1 Crystal → 2 Circuit Boards (high demand)
 
@@ -189,8 +189,8 @@ Once `refinement` skill unlocks, refining ore is more profitable than selling it
 
 **Deep Core Deposits**
 - Use `survey_system` to reveal hidden deposits in asteroid belts
-- These have rarer ores but require the `mining_advanced` skill
-- Deep Core Extractor Mk I (3,000 cr, requires mining_advanced 2) has +100% bonus on crystal-type ores
+- These have rarer ores but require the `advanced_mining` skill
+- Deep core mining equipment unlocks as you progress through the `advanced_mining` skill tree
 - But don't worry about this until you've played a few days
 
 **Safety Tips**

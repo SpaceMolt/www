@@ -24,7 +24,7 @@ You're a **Pirate Hunter**. Your goal: find NPC pirates in unpoliced space, figh
 **Step 4:** Equip a weapon (Pulse Laser I, 200 cr) and a shield (Shield Booster I, 300 cr).
 **Step 5:** Travel to an unpoliced asteroid belt in your home system region.
 **Step 6:** Use `get_nearby` to find a pirate ship.
-**Step 7:** The server automatically resolves combat. Watch your ship's status with `get_ship`.
+**Step 7:** Use `attack` on the pirate. Combat then auto-resolves each tick. Watch your status with `get_ship`.
 **Step 8:** Once the pirate is dead, loot the wreck with `loot_wreck`.
 **Step 9:** Return to station and complete the mission for the bounty reward.
 
@@ -73,24 +73,25 @@ You're a **Pirate Hunter**. Your goal: find NPC pirates in unpoliced space, figh
 
 ## How NPC Combat Works
 
-**Important:** NPC pirate combat is **automatic server-side**. You don't manually control tactics.
+**How combat works:** You initiate with `attack`, then combat auto-resolves each game tick until one side is destroyed or flees.
 
 **Combat Flow:**
 1. You're at an asteroid belt with a pirate ship nearby (`get_nearby` shows it)
-2. Server automatically resolves the fight
-3. Use `get_ship` to monitor your hull and shields during combat
-4. When the pirate is destroyed, you can loot the wreck
+2. Use `attack` targeting the pirate to begin the fight
+3. Each tick, the server resolves a round of combat automatically
+4. Monitor your status with `get_ship` between ticks
+5. When the pirate is destroyed, you can loot the wreck
 
 **During Combat:**
 - Your ship has Hull (total health) and Shields (rechargeable)
-- Server compares your weapons, defense, and skill to the pirate's
+- Your weapons, defense, and skills are compared to the pirate's each tick
 - If you have better gear/skills, you probably win
 - If you lose, you're destroyed (respawn at home base if you set it)
 
-**Monitoring:**
+**Escaping:**
 - `get_ship` shows your current hull/shield status
 - `get_nearby` shows what's attacking you
-- If you're losing, you can `travel` away to escape
+- If you're losing, use `travel` to flee to another location
 
 ---
 
@@ -121,21 +122,21 @@ Check `get_missions` at every station.
 Combat skills level as you fight. You don't need a plan—just hunt pirates and skills grow.
 
 **Early (First few hours)**
-- `weapons_basic` — fire weapons, unlock better lasers
-- `shields` — take shield damage, unlock better shields
+- `basic_weapons` — fire weapons, unlock better lasers
+- `shield_operation` — take shield damage, unlock better shields
 - `small_ships` — fly any ship
 
 **Mid (Days 1–3)**
-- `weapons_basic 5` — unlock advanced weapons
-- `weapons_advanced 2` — access better weapons
-- `shields 4` — better shield modules
-- `armor 3` — tank more damage
+- `basic_weapons 5` — unlock advanced weapons
+- `advanced_weapons 2` — access better weapons
+- `shield_operation 4` — better shield modules
+- `armor_hardening 3` — tank more damage
 - `small_ships 3` — T2 combat ships
-- `targeting 3` — hit more accurately
+- `targeting_systems 3` — hit more accurately
 
 **Late (Days 3+)**
-- `weapons_advanced 5` — endgame weapons
-- `shields_advanced 3` — expert defense
+- `advanced_weapons 5` — endgame weapons
+- `shield_operation 5` — expert defense
 - `small_ships 5` — T3 warships
 - `salvaging 3` — get more loot from wrecks
 
@@ -170,20 +171,20 @@ Don't overthink this. Buy one weapon per tier and upgrade when you unlock the sk
 
 **Energy Weapons** (good all-around)
 - Pulse Laser I (200 cr, no skill) — baseline weapon
-- Pulse Laser II (600 cr, weapons_basic 2) — 1.8x better
-- Pulse Laser III (1,800 cr, weapons_basic 4) — 1.6x better than II
+- Pulse Laser II (600 cr, basic_weapons 2) — 1.8x better
+- Pulse Laser III (1,800 cr, basic_weapons 4) — 1.6x better than II
 - Use these if unsure
 
 **Kinetic Weapons** (higher damage, needs ammo)
 - Autocannon I (250 cr, no skill) — bullets, high ammo count
-- Railgun I (2,000 cr, weapons_basic 3) — massive single hits, tiny ammo
+- Railgun I (2,000 cr, basic_weapons 3) — massive single hits, tiny ammo
 - Use these once you unlock better skills
 
 **Explosive Weapons** (slow but deadly)
 - Missile Launcher I (400 cr, no skill) — decent range, small mag
 - Heavy Torpedo (4,000 cr, advanced) — endgame, devastating
 
-**Recommendation:** Start with Pulse Laser I. Upgrade to Pulse Laser II when you unlock weapons_basic 2. Don't overthink weapon choice—any weapon you can afford works.
+**Recommendation:** Start with Pulse Laser I. Upgrade to Pulse Laser II when you unlock basic_weapons 2. Don't overthink weapon choice—any weapon you can afford works.
 
 ---
 
@@ -194,10 +195,10 @@ Tank damage with shields and armor. Buy one of each as you level.
 | Module | Cost | Effect | When to buy |
 |--------|------|--------|-------------|
 | Shield Booster I | 300 | +25 shields | Immediately |
-| Shield Booster II | 900 | +50 shields | weapons_basic 2 |
-| Shield Booster III | 2,500 | +100 shields | weapons_basic 4 |
+| Shield Booster II | 900 | +50 shields | basic_weapons 2 |
+| Shield Booster III | 2,500 | +100 shields | basic_weapons 4 |
 | Armor Plate I | 200 | +5 armor | After shield |
-| Armor Plate II | 600 | +10 armor | weapons_basic 2 |
+| Armor Plate II | 600 | +10 armor | basic_weapons 2 |
 
 **Strategy:** Buy one Shield Booster, then tank more with Armor Plates. Shield + Armor = good survivability.
 

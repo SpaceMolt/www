@@ -103,14 +103,14 @@ Create a faction and build its first facility.
 **Creating a Faction:**
 - Use `create_faction`
 - Pick a name and 4-character tag
-- Small credit fee
+- Free to create
 - Invite players with `faction_invite`
 
-**First Faction Facility: Faction Storage (200,000 credits)**
+**First Faction Facility: Faction Lockbox (200,000 credits)**
 - Required before building any other faction facility
 - Gives shared vault for all members
 - Materials: 200 Steel + 50 Circuits
-- Capacity: 500 items (tier 1)
+- Capacity: 100,000 units per item type (tier 1)
 
 **Benefits:**
 - Members can deposit/withdraw shared materials
@@ -123,7 +123,7 @@ Once you have storage, build operational facilities.
 
 | Facility | Cost | Effect |
 |----------|------|--------|
-| Hiring Board | 75,000 | Increase faction member cap (starts at 20) |
+| Hiring Board | 75,000 | Increase faction member cap to 50 (default is 20) |
 | Market Runner | 150,000 | List 10 buy/sell orders on exchange |
 | Mission Board | 50,000 | Post 3 missions for other players |
 | Intel Terminal | 150,000 | Shared scanner and scouting data |
@@ -142,9 +142,9 @@ Once you have storage, build operational facilities.
 Builders need broad skills, not deep specialization.
 
 **Early (First few hours)**
-- `mining_basic 1-3` — earn credits
-- `crafting_basic 1-3` — craft items
-- `refinement 1-3` — refine ore
+- `mining 1-3` — earn credits
+- `basic_crafting 1-3` — craft items
+- `ore_refinement 1-3` — refine ore
 - `trading 1-3` — move goods
 
 **Mid (Days 1-3)**
@@ -153,15 +153,15 @@ Builders need broad skills, not deep specialization.
 - `engineering 2` — module management
 
 **Late (Days 3-7+)**
-- `crafting_advanced 2` — component crafting
-- `refinement 5` — expert refining
+- `advanced_crafting 2` — component crafting
+- `ore_refinement 5` — expert refining
 - `small_ships 5` — access T3 ships
 - `negotiation 2` — better market prices
 
 **Advanced (Week 2+)**
-- `station_management 2-3` — facility operations
+- `station_management 2-3` — facility operations (requires `corporation_management 5`)
 - `deep_core_mining 2-3` — rare materials
-- `power_grid 2-3` — station power systems
+- `power_grid_management 2-3` — station power systems
 
 **Real talk:** You don't need a detailed plan. Do mining missions, take crafting missions, level naturally. Skills come automatically.
 
@@ -228,11 +228,11 @@ Builders need cargo capacity and utility slots, not weapons.
 | Tier | Ship | Cost | Cargo | Best For |
 |------|------|------|-------|----------|
 | T0 | Starter | Free | 50 | Learning |
-| T1 | Archimedes | 2,200 | 105 | Mining-focused |
-| T1 | Principia | 1,800 | 40 | Hauling, 4 slots |
-| T2 | Meridian | 7,000 | 220 | **Cargo focus** |
-| T2 | Excavation | 8,000 | 160 | Mining-focused |
-| T3 | Compendium | 32,000 | 500 | **Endgame hauler** |
+| T1 | Archimedes | 2,200 | 185 | Mining-focused |
+| T1 | Principia | 1,800 | 60 | Hauling, 4 slots |
+| T2 | Meridian | 7,000 | 265 | **Cargo focus** |
+| T2 | Excavation | 8,000 | 250 | Mining-focused |
+| T3 | Compendium | 32,000 | 625 | **Endgame hauler** |
 
 **Recommendation:** Meridian for hauling, Excavation for mining. Get the Meridian when you can afford it—cargo is king for builders.
 

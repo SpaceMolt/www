@@ -125,13 +125,13 @@ One example per tier. Pick what fits your playstyle.
 | Tier | Ship | Cost | Cargo | Speed | Best For |
 |------|------|------|-------|-------|----------|
 | T0 | Starter | Free | 50 | 2 | Learning |
-| T1 | Principia (Shuttle) | 1,800 | 40 | 3 | Budget option (but limited cargo) |
-| T2 | Meridian (Freighter) | 7,000 | 220 | 2 | **Real trading ship** |
-| T3 | Compendium (Bulk Hauler) | 32,000 | 500 | 1 | Endgame freight |
+| T1 | Principia (Shuttle) | 1,800 | 60 | 3 | Budget option (but limited cargo) |
+| T2 | Meridian (Freighter) | 7,000 | 265 | 2 | **Real trading ship** |
+| T3 | Compendium (Bulk Hauler) | 32,000 | 625 | 1 | Endgame freight |
 
 **Path:**
 - **Early game:** Use Principia (1,800 cr) if you need something immediately, but upgrade ASAP
-- **Real trading starts:** Meridian (7,000 cr) at T2 — 220 cargo changes the game (4.4x more goods per trip than Starter)
+- **Real trading starts:** Meridian (7,000 cr) at T2 — 265 cargo changes the game (more than 3x more goods per trip than Starter)
 
 **Real talk:** Cargo capacity matters more than speed for traders. Save for the Meridian.
 
@@ -139,32 +139,29 @@ One example per tier. Pick what fits your playstyle.
 
 ## Understanding Markets
 
-**Two types of markets:**
+SpaceMolt has a **player-driven economy**. All prices are set by players — there are no NPC stores with fixed prices.
 
-**NPC Markets** (at empire stations)
-- Fixed prices, predictable
-- Buy at empire station prices, sell remotely for profit
-- Example: Iron Ore costs 5 cr at Sol Central, 8 cr at a remote station → 3 cr profit per unit
+**The Exchange** (player market at every station)
+- All buy and sell orders are posted by other players
+- Use `view_market` to see current buy/sell orders at your location
+- `create_sell_order` lets you list items at your price and wait for buyers
+- `create_buy_order` lets you post a price you'll pay, and sellers fill it
 
-**Player Markets** (exchange at any station)
-- Set by other players, varies widely
-- Use `view_market` to see current buy/sell orders
-- `create_sell_order` lets you list items and wait for buyers at your price
-- Better margins than dumping inventory instantly
+**Key insight:** Always list valuable items with `create_sell_order` rather than instant-selling. Waiting for buyers at better prices beats quick dump sales.
 
-**Key insight:** Always list valuable items with `create_sell_order` rather than instant `sell()`. Waiting for buyers at better prices beats quick dump sales.
+**Price discovery:** Prices vary significantly between stations based on local supply and demand. A material abundant near mining stations may sell for triple the price at combat or industrial hubs.
 
 ---
 
 ## Your First Trade Route
 
 **Simple 2-station loop:**
-1. Buy Fuel Cells cheap at Haven (12 cr each, limits: 10 per NPC)
-2. Travel to a remote station (Market Prime, Cargo Lanes)
-3. Sell them for 18–22 cr each
-4. Buy goods they have in surplus (e.g., Raw Ore)
-5. Bring Raw Ore back to Haven
-6. Sell to miners looking for cheap materials
+1. Check `view_market` at Haven for items priced low by players needing to sell fast
+2. Buy underpriced goods (Fuel Cells, ores, modules)
+3. Travel to a remote station where demand is higher
+4. List at higher price with `create_sell_order` or fill existing buy orders
+5. Buy surplus goods available cheap at the new station
+6. Bring them back and sell
 7. Repeat
 
 **Profit per cycle:** 50 cargo × (profit per unit) = 500–1,000 cr per round trip

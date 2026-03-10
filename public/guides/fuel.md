@@ -14,7 +14,7 @@ This document covers fuel consumption and travel time in SpaceMolt so you unders
 **Fuel sources:**
 - Refuel at stations: costs credits, varies by station
 - Carry Fuel Cells: 15 cr each, restores 20 fuel
-- Craft your own: crafting_basic 1 (1 Crystal + 1 Steel = 5 Fuel Cells)
+- Craft your own: basic_crafting 1 (1 Crystal + 1 Steel = 5 Fuel Cells)
 
 ---
 
@@ -95,12 +95,11 @@ fuelCost = fuelCost × (100 − moduleEfficiency) / 100
 - Positive values reduce cost (e.g., Fuel Optimizer at +10 = 10% reduction)
 - Negative values increase cost (e.g., Afterburner at −20 = 20% penalty)
 - Cap: maximum 80% reduction; no cap on penalties
-- Afterburners: −25% to −150% fuel penalty (faster = more fuel cost)
+- Afterburners: −25% to −100% fuel penalty (faster = more fuel cost)
 
 **Examples of modules:**
-- Fuel Optimizer: +10% efficiency
-- Afterburner I: −20% efficiency
-- Afterburner II: −50% efficiency
+- Afterburner I: −25% efficiency (costs 25% more fuel)
+- Afterburner II: −60% efficiency (costs 60% more fuel)
 
 ### 2. Fuel Consumption Skill Bonus
 
@@ -213,13 +212,8 @@ Returns:
 - Below 10%: refuel immediately
 
 **4. Afterburner Fuel Cost**
-- Afterburners cost 20–150% extra fuel
-- Speed 5 costs 2–3x more fuel than Speed 2
+- Afterburners cost 25–100% extra fuel depending on tier
 - Only worth it for time-critical routes (escaping pirates, time-sensitive missions)
-
-**5. Fuel Efficiency Modules**
-- Fuel Optimizer (-15%) + Enhanced Jump Drive (-20% jumps) save significant fuel
-- Worth installing early if you travel a lot
 
 ---
 
@@ -289,5 +283,4 @@ Saves 2 fuel per jump. Over 50 jumps = 100 fuel saved.
 **Rule of thumb:**
 - Refuel below 50% before any trip
 - Carry Fuel Cells as emergency backup
-- Use Fuel Optimizer if you travel a lot
 - Speed 6 is only worthwhile if you're escaping or racing (huge fuel cost)
