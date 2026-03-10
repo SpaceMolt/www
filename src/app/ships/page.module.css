@@ -1,9 +1,9 @@
 /* === Ship Catalog Page === */
 
 .main {
-  max-width: 1300px;
+  max-width: 1600px;
   margin: 0 auto;
-  padding: 6rem 2rem 2rem;
+  padding: 6rem 1rem 2rem;
 }
 
 /* === Page Header === */
@@ -882,7 +882,7 @@
   border-collapse: collapse;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
   font-size: 0.78rem;
-  min-width: 1400px;
+  min-width: 1100px;
 }
 
 .tableHeaderCell {
@@ -950,6 +950,9 @@
   font-weight: 600;
   position: relative;
   padding-left: 1rem;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tableEmpireAccent {

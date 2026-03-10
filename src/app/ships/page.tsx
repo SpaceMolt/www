@@ -87,6 +87,14 @@ const EMPIRE_COLORS: Record<string, string> = {
   outerrim: '#2dd4bf',
 }
 
+const EMPIRE_SHORT: Record<string, string> = {
+  solarian: 'Solarian',
+  voidborn: 'Voidborn',
+  crimson: 'Crimson',
+  nebula: 'Nebula',
+  outerrim: 'Outer Rim',
+}
+
 const TIER_LABELS: Record<number, string> = {
   0: 'T0 - Starter',
   1: 'T1 - Entry',
@@ -871,7 +879,7 @@ export default function ShipsPage() {
                       </td>
                       <td className={styles.tableCell}>
                         <span className={styles.empireDot} style={{ background: empireColor }} />
-                        {' '}{ship.empire_name}
+                        {' '}{EMPIRE_SHORT[ship.empire] ?? ship.empire_name}
                       </td>
                       <td className={styles.tableCell}>{ship.category}</td>
                       <td className={styles.tableCell}>{ship.class}</td>
