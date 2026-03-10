@@ -882,7 +882,7 @@ export default function ShipsPage() {
                         {' '}{EMPIRE_SHORT[ship.empire] ?? ship.empire_name}
                       </td>
                       <td className={styles.tableCell}>{ship.category}</td>
-                      <td className={styles.tableCell}>{ship.class}</td>
+                      <td className={`${styles.tableCell} ${styles.tableClass}`}>{ship.class}</td>
                       <td className={`${styles.tableCell} ${styles.tableCellNum}`}>T{ship.tier}</td>
                       <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{ship.base_hull}</td>
                       <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{ship.base_shield}</td>

@@ -886,7 +886,7 @@
 }
 
 .tableHeaderCell {
-  padding: 0.6rem 0.75rem;
+  padding: 0.6rem 0.6rem;
   text-align: left;
   color: var(--chrome-silver);
   font-size: 0.7rem;
@@ -934,7 +934,7 @@
 }
 
 .tableCell {
-  padding: 0.45rem 0.75rem;
+  padding: 0.45rem 0.6rem;
   color: var(--chrome-silver);
   white-space: nowrap;
 }
@@ -951,6 +951,12 @@
   position: relative;
   padding-left: 1rem;
   max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tableClass {
+  max-width: 90px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
