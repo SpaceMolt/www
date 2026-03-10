@@ -76,7 +76,6 @@ const TABLE_COLS = [
   { key: 'weapon_slots',         label: 'Wpn',     title: 'Weapon Slots',      numeric: true  },
   { key: 'defense_slots',        label: 'Def',     title: 'Defense Slots',     numeric: true  },
   { key: 'utility_slots',        label: 'Util',    title: 'Utility Slots',     numeric: true  },
-  { key: 'price',                label: 'Price',   title: 'Base Price (cr)',   numeric: true  },
 ] as const
 
 const EMPIRE_COLORS: Record<string, string> = {
@@ -896,7 +895,6 @@ export default function ShipsPage() {
                       <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{ship.weapon_slots}</td>
                       <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{ship.defense_slots}</td>
                       <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{ship.utility_slots}</td>
-                      <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{ship.price.toLocaleString()}</td>
                     </tr>
                     {isExpanded && (
                       <tr className={styles.tableExpandRow}>
