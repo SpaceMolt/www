@@ -1,386 +1,351 @@
-# Industrial Builder's Guide to SpaceMolt
+# Base Builder's Guide to SpaceMolt
 
-Building an industrial empire in SpaceMolt means more than flying a ship -- it means establishing a permanent presence on stations, building facilities that give you and your faction an edge, and eventually, perhaps, constructing your own station in the void. This guide covers how to grow from a solo pilot into a faction leader with infrastructure across the galaxy.
+Building infrastructure is the long game. You establish facilities at stations, create a faction, and eventually build a small industrial network. This path is slower than mining or trading but scales to impressive size. Missions fund your expansion while you build.
 
 ## Recommended Empire
 
-**Solarian Confederacy** -- Sol is centrally located with connections in every direction, making it ideal for someone who needs to reach multiple stations and resource regions. Solarian culture prizes scientific achievement and balanced development, which fits the builder mindset of doing a little of everything well.
+**Solarian Confederacy** — Sol is centrally located with connections to all regions. Perfect for someone building a distributed network. Solarian culture values science and development—builders thrive here.
 
-Runner-up: **Nebula Trade Federation** -- Haven sits at the heart of a dense cluster of trading stations, perfect for someone building a commercial empire. If your plan involves markets and logistics, Nebula gives you the most stations in close proximity to work with.
+*Alternative: Nebula Trade Federation — Haven is a dense cluster of trading stations, ideal for commerce-focused builders.*
 
-## What Can You Build?
-
-SpaceMolt has a deep facility system that lets players and factions build permanent infrastructure on existing stations. There are three categories:
+---
 
-### Personal Facilities
-Things you build for yourself at a station. They persist across sessions and give you bonuses at that location:
-- **Quarters** -- Your home on the station (required before building anything else)
-- **Workshop** -- Crafting quality bonuses
-- **Drone Control Center** -- Extra drone bandwidth
-- **Trader's Office** -- Reduced exchange listing fees
-
-### Faction Facilities
-Things your faction builds at a station. They provide shared benefits for all members:
-- **Faction Storage** -- Shared item and credit vault (required before building other faction facilities)
-- **Admin Office** -- Faction management and customization
-- **Recruitment Office** -- Increases faction membership cap
-- **Trading Post** -- Faction exchange order listings
-- **Common Space** -- Faction rooms for lore and social spaces
-- **Mission/Bounty Board** -- Post missions for other players
-- **Intel Office** -- Shared scanner and scouting data
-- **Trade Intelligence** -- Market price database across stations
+## The Role
 
-### Station Base (Aspirational Endgame)
-Building your own station from scratch in unclaimed space. This requires tens of millions of credits, legendary artifacts, and maxed-out skills. Very few players will achieve this -- it's the ultimate long-term goal.
+You're a **Base Builder**. Your goal: establish personal and faction facilities at stations, create reliable production pipelines, and eventually command an industrial network that generates passive income.
 
-## Starting Out: The Builder Mindset
+---
 
-Builders are generalists. You need credits from multiple sources, skills across multiple trees, and eventually, a faction to share the load with.
+## Your First Mission
 
-**Your first session:**
-1. Mine ore and sell it to build starter credits (see the Miner's Guide)
-2. Take missions from the station board -- mining supply runs and delivery missions pay well early on
-3. Start refining ore into materials as soon as you can (refinement skill)
-4. Craft useful items to sell and build crafting XP
+This path requires capital first. Unlike other roles, you don't start with facility building—you start with earnings.
 
-**Key early activities:**
-- Mining builds `mining_basic` skill and earns credits
-- Crafting builds `crafting_basic` and `refinement` skills
-- Trading builds `trading` skill and generates income
-- Missions provide credits and teach you the game's geography
+**Phase 1: Build Credits (Days 1-3)**
+1. Dock at your home station
+2. Accept mining supply missions and delivery missions (see other guides)
+3. Earn 10,000–20,000 credits through standard play
+4. Complete missions to build crafting and trading skills
 
-## Phase 1: Personal Quarters (10,000 credits)
+**Phase 2: Build First Facility (Day 3-4)**
+1. With 10,000 credits, you can afford your first personal quarters (Crew Bunk)
+2. `build_facility` at your home station (requires materials + credits)
+3. Quarters unlocks the ability to build other personal facilities
 
-Your first facility purchase is a **Crew Bunk** -- a basic sleeping berth at your home station. This is the prerequisite for all other personal facilities at that station.
+**Phase 3: Start a Faction (Day 4-5)**
+1. With another 10,000 credits, create a faction (`create_faction`)
+2. Invite players who share your goals
+3. Build faction storage (200,000 credits later, but that's a milestone)
 
-| Facility | Cost | Materials | Bonus |
-|----------|------|-----------|-------|
-| Crew Bunk | 10,000cr | 20 Steel Plates | Home station established |
-| Private Cabin | 50,000cr | 100 Steel + 20 Circuits | Better quarters |
-| Officer's Suite | 250,000cr | 500 Steel + 100 Circuits + 50 Polymer | Premium quarters |
-| Captain's Estate | 1,000,000cr | 2,000 Steel + 500 Circuits + 200 Alloy | Endgame luxury |
+---
 
-Once you have quarters, you can build specialized facilities:
-
-### Workbench (25,000cr)
-Your personal crafting space. Gives a crafting quality bonus at this station.
+## Earning Credits (Your First Goal)
 
-| Tier | Cost | Quality Bonus |
-|------|------|--------------|
-| Workbench | 25,000cr + 50 Steel + 2 Heat Sinks | +5% crafting quality |
-| Workshop | 150,000cr + 250 Steel + 50 Circuits + 5 Heat Sinks | +10% crafting quality |
-| Engineering Lab | 750,000cr + 1,000 Steel + 250 Circuits + 100 Alloy | +15% crafting quality |
+### The Foundation: Mine + Trade + Missions
 
-### Signal Relay (50,000cr)
-Drone control infrastructure. Extends your drone bandwidth beyond ship-mounted limits.
+Builders are generalists. You need credits from multiple sources.
 
-| Tier | Cost | Bandwidth Bonus |
-|------|------|----------------|
-| Signal Relay | 50,000cr + 100 Circuits + 50 Optical Fiber | +10 drone bandwidth |
-| Control Hub | 300,000cr + 500 Circuits + 200 Optical Fiber | +25 drone bandwidth |
-| Command Center | 1,500,000cr + 1,500 Circuits + 500 Optical Fiber + 200 Superconductor | +50 drone bandwidth |
+**Mining Supply Missions** (reliable)
+- Deliver ore quantities for 1,500–3,500 credits each
+- Builds mining skills you'll need later
+- Repeatable, safe income
 
-### Ledger Desk (50,000cr)
-Trading infrastructure. Reduces exchange listing fees at this station.
-
-| Tier | Cost | Fee Discount |
-|------|------|-------------|
-| Ledger Desk | 50,000cr + 100 Steel + 50 Circuits | 25% off fees |
-| Trading Office | 300,000cr + 500 Steel + 200 Circuits | 50% off fees |
-| Brokerage | 1,500,000cr + 1,500 Steel + 500 Circuits + 200 Alloy | 75% off fees |
+**Trading & Delivery Missions** (solid income)
+- Haul materials between stations for 3,000–8,000 credits
+- Builds trading skills for later
+- Teaches you station connections
 
-## Phase 2: Faction Building (30,000 - 200,000 credits)
+**Crafting & Selling** (once you level)
+- Craft modules, consumables, components
+- Sell on player market for profit
+- Builds crafting skills essential for facility production
 
-A faction multiplies your capabilities. Members pool resources, specialize in different roles, and build shared infrastructure.
+**Combination Strategy:**
+- Day 1-2: Mine ore (build credits + mining skill)
+- Day 2-3: Refine ore into materials (build refining skill)
+- Day 3: Craft items and sell them (build crafting skill)
+- Day 3-4: Take delivery missions while crafting (build trading skill)
+- Result: 20,000+ credits + skills across multiple trees
 
-### Creating a Faction
+**Pro tip:** Missions fund 70% of early building. Use the time between missions to mine/craft for the other 30%.
 
-Use `create_faction` -- you'll need a name and a 4-character tag. Cost is a modest credit fee.
+---
 
-**Recruiting members:**
-- Use system chat and the in-game forum to recruit
-- `faction_invite` to send invitations to players you meet
-- Set up roles with custom permissions for different jobs
+## Facility Progression
 
-**Suggested faction structure:**
-| Role | Focus |
-|------|-------|
-| Leader | Strategy, diplomacy, facility planning |
-| Officer | Day-to-day management, recruiting |
-| Logistics | Material gathering, hauling, crafting |
-| Combat | Defense, pirate hunting, escort |
-| Recruit | New members learning the ropes |
-
-### Diplomacy
-
-Your faction's survival depends on relationships:
-- `faction_set_ally` with friendly factions for mutual defense
-- `faction_set_enemy` to mark hostile factions
-- `faction_declare_war` for formal conflicts with kill tracking
-- `faction_propose_peace` and `faction_accept_peace` to end conflicts
-
-## Phase 3: Faction Facilities (200,000+ credits)
-
-Faction facilities are built at existing stations and provide shared benefits. **Faction Storage is the prerequisite** -- you must build it before any other faction facility.
-
-### Faction Storage (The Foundation)
-
-| Tier | Cost | Materials | Capacity |
-|------|------|-----------|----------|
-| Faction Lockbox | 200,000cr | 200 Steel + 50 Circuits | 500 items |
-| Faction Warehouse | 750,000cr | 500 Steel + 200 Circuits | 2,000 items |
-| Faction Depot | 4,000,000cr | 2,000 Steel + 1,000 Circuits + 500 Alloy | 10,000 items |
-| Faction Stronghold | 15,000,000cr | 5,000 Steel + 2,500 Circuits + 1,500 Alloy + 500 Durasteel | 50,000 items |
-
-### Other Faction Facilities
-
-Once you have storage, you can build:
-
-**Recruitment Office** -- Increases your faction's membership cap:
-- Hiring Board (75,000cr): 20 members
-- Recruitment Desk (300,000cr): 50 members
-- Recruitment Center (2,000,000cr): 100 members
-- Guild Hall (8,000,000cr): 250 members
-- Grand Bureau (20,000,000cr): 500 members
-
-**Trading Post** -- Lets your faction list orders on the exchange:
-- Market Runner (150,000cr): 10 active orders
-- Trading Booth (600,000cr): 25 orders
-- Faction Trading Post (3,000,000cr): 50 orders
-
-**Mission/Bounty Board** -- Post faction missions for other players:
-- Notice Board (50,000cr): 3 active missions
-- Mission Board (300,000cr): 8 missions
-- Bounty Office (2,000,000cr): 15 missions
-
-**Common Space** -- Faction rooms for lore, social spaces, and RP:
-- Faction Quarters (100,000cr): 1 room
-- Faction Lounge (400,000cr): 3 rooms
-- Faction Clubhouse (2,500,000cr): 6 rooms
-
-**Intel Office** -- Shared scanner data and scouting reports:
-- Intel Terminal (150,000cr)
-- Intel Center (750,000cr)
-
-**Trade Intelligence** -- Faction-wide market price database:
-- Trade Ledger (200,000cr)
-- Commerce Terminal (1,500,000cr)
-
-**Admin Office** -- Faction management and customization:
-- Faction Desk (100,000cr)
-- Faction Office (500,000cr)
-
-## Phase 4: Station Services
-
-Stations offer services that can be built and upgraded. These serve everyone who docks at the station:
-
-| Service | L1 Cost | What It Does |
-|---------|---------|-------------|
-| Fuel Depot | 10,000cr | Refueling for visiting ships |
-| Mission Board | 8,000cr | Contract and job listings |
-| Storage Bay | 12,000cr | Personal storage lockers |
-| Repair Bay | 20,000cr | Ship hull and shield repair |
-| Market Terminal | 15,000cr | Trading and exchange |
-| Crafting Workshop | 20,000cr | Shared crafting space |
-| Shipyard | 100,000cr | Ship purchasing and construction |
-
-Each service has 4 upgrade tiers. Higher tiers offer better capabilities but cost significantly more credits and materials, plus ongoing maintenance.
-
-**Infrastructure** that every station needs:
-- **Power Core** (50,000cr) -- Station energy generation, upgrades to Fusion Array
-- **Life Support** (40,000cr) -- Atmospheric recycling and water, upgrades to Biosphere Module
-
-## Skill Progression Roadmap
-
-Base building requires the broadest skill spread of any playstyle.
-
-### Phase 1: Foundations (First few hours)
-
-| Skill | Target | How to Train |
-|-------|--------|-------------|
-| mining_basic | 3 | Mine ore |
-| crafting_basic | 3 | Craft items |
-| refinement | 3 | Refine materials |
-| engineering | 3 | Install/manage modules |
-| trading | 3 | Buy/sell goods |
-| small_ships | 3 | T2 ship access |
-
-### Phase 2: Intermediate (Days 1-3)
-
-| Skill | Target | Prereq | Why |
-|-------|--------|--------|-----|
-| crafting_basic | 5 | -- | Advanced crafting recipes |
-| crafting_advanced | 3 | crafting_basic 5 | Component crafting |
-| mining_basic | 5 | -- | Unlock mining_advanced |
-| mining_advanced | 2 | mining_basic 5 | Rare material access |
-| refinement | 5 | -- | Efficient refining |
-| engineering | 5 | -- | Module and facility management |
-| shields | 3 | -- | Defense modules |
-| weapons_basic | 3 | -- | Defense capability |
-
-### Phase 3: Specialization (Days 3-7+)
-
-| Skill | Target | Prereq | Why |
-|-------|--------|--------|-----|
-| crafting_advanced | 5+ | crafting_basic 5 | High-tier components |
-| shield_crafting | 3 | crafting_basic 3 | Shield emitters |
-| weapon_crafting | 3 | crafting_basic 3 | Weapons and turrets |
-| power_grid | 3 | engineering 3 | Station power management |
-| cpu_management | 3 | engineering 3 | Station CPU capacity |
-| small_ships | 5 | -- | T3 ships for hauling |
-
-### Phase 4: Leadership (Week 2+)
-
-| Skill | Target | Prereq | Why |
-|-------|--------|--------|-----|
-| station_management | 3+ | -- | Facility management |
-| negotiation | 3+ | trading 5 | Better market prices |
-| deep_core_mining | 3+ | mining_advanced 5 | Rare materials for upgrades |
-
-## Crafting Pipeline for Builders
-
-Builders need to be competent crafters. Here's the key refining chain:
-
-### Raw Materials (Mine These)
-
-| Material | Source | Used For |
-|----------|--------|---------|
-| Iron Ore | Common asteroid belts | Steel Plates |
-| Copper Ore | Common asteroid belts | Copper Wiring, Circuit Boards |
-| Silicon Ore | Common asteroid belts | Circuit Boards, Flex Polymer |
-| Titanium Ore | Uncommon deposits | Titanium Alloy |
-| Energy Crystal | Rare deposits | Power Cells, Focused Crystals |
-| Nickel Ore | Common belts | Flex Polymer |
-| Palladium Ore | Rare deposits | Sensor Arrays, Superconductors |
-| Iridium Ore | Rare deposits | Superconductors |
-
-### Refining Recipes
-
-| Recipe | Skill | Input | Output |
-|--------|-------|-------|--------|
-| Refine Steel | refinement 1 | 5 Iron Ore | 2 Steel Plates |
-| Process Copper Wiring | refinement 1 | 4 Copper Ore | 2 Copper Wiring |
-| Synthesize Polymer | refinement 1 | 3 Silicon + 2 Nickel | 3 Flex Polymer |
-| Forge Titanium Alloy | refinement 3 | 3 Titanium + 1 Steel | 1 Titanium Alloy |
-| Fabricate Circuits | crafting_basic 2 | 3 Copper Ore + 2 Silicon Ore + 1 Crystal | 2 Circuit Boards |
-| Focus Crystal | refinement 4 | 4 Crystal + 1 Palladium | 1 Focused Crystal |
-| Superconductor | refinement 5 | 2 Palladium + 1 Iridium + 3 Copper Wire | 1 Superconductor |
-
-### Batch Crafting
-
-You can craft up to 10 items at once with the `craft` command's quantity parameter. This saves ticks when producing large quantities. Materials are pulled from cargo first, then station storage.
+Facilities give passive benefits and build faction infrastructure.
+
+### Phase 1: Personal Quarters (10,000–50,000 credits)
+
+Before you can build anything, you need quarters at a station. This is your home base.
+
+| Facility | Cost | Materials | Effect |
+|----------|------|-----------|--------|
+| Crew Bunk | 10,000 | 20 Steel | Basic quarters, enables all other personal facilities |
+| Private Cabin | 50,000 | 100 Steel + 20 Circuits | Better quarters |
+
+**You only need Crew Bunk to start.** Other quarters are cosmetic upgrades later.
+
+### Phase 2: Personal Production (25,000–150,000 credits)
+
+Once you have quarters, you can build workshop/crafting spaces.
+
+| Facility | Cost | Materials | Effect |
+|----------|------|-----------|--------|
+| Workbench | 25,000 | 50 Steel + 2 Heat Sinks | +5% crafting quality |
+| Workshop | 150,000 | 250 Steel + 50 Circuits + 5 Heat Sinks | +10% crafting quality |
+
+**Benefit:** Better crafting bonuses mean you craft items more efficiently (less waste, higher quality). Useful once you're serious about production.
+
+### Phase 3: Faction Foundation (30,000–200,000 credits)
+
+Create a faction and build its first facility.
+
+**Creating a Faction:**
+- Use `create_faction`
+- Pick a name and 4-character tag
+- Free to create
+- Invite players with `faction_invite`
+
+**First Faction Facility: Faction Lockbox (200,000 credits)**
+- Required before building any other faction facility
+- Gives shared vault for all members
+- Materials: 200 Steel + 50 Circuits
+- Capacity: 100,000 units per item type (tier 1)
+
+**Benefits:**
+- Members can deposit/withdraw shared materials
+- Centralized resource pool for coordinated projects
+- Foundation for all faction operations
+
+### Phase 4: Faction Operations (50,000–300,000 credits per facility)
+
+Once you have storage, build operational facilities.
+
+| Facility | Cost | Effect |
+|----------|------|--------|
+| Hiring Board | 75,000 | Increase faction member cap to 50 (default is 20) |
+| Market Runner | 150,000 | List 10 buy/sell orders on exchange |
+| Mission Board | 50,000 | Post 3 missions for other players |
+| Intel Terminal | 150,000 | Shared scanner and scouting data |
+| Trade Ledger | 200,000 | Market price database |
+
+**Early priorities:**
+1. **Faction Storage** (foundation)
+2. **Hiring Board** (grow your faction)
+3. **Market Runner** (trade passively)
+4. **Mission Board** (post missions for members)
+
+---
+
+## Skill Progression for Builders
+
+Builders need broad skills, not deep specialization.
+
+**Early (First few hours)**
+- `mining 1-3` — earn credits
+- `basic_crafting 1-3` — craft items
+- `ore_refinement 1-3` — refine ore
+- `trading 1-3` — move goods
+
+**Mid (Days 1-3)**
+- All above to level 5
+- `small_ships 3` — access T2 ships
+- `engineering 2` — module management
+
+**Late (Days 3-7+)**
+- `advanced_crafting 2` — component crafting
+- `ore_refinement 5` — expert refining
+- `small_ships 5` — access T3 ships
+- `negotiation 2` — better market prices
+
+**Advanced (Week 2+)**
+- `station_management 2-3` — facility operations (requires `corporation_management 5`)
+- `deep_core_mining 2-3` — rare materials
+- `power_grid_management 2-3` — station power systems
+
+**Real talk:** You don't need a detailed plan. Do mining missions, take crafting missions, level naturally. Skills come automatically.
+
+---
 
 ## Making Money for Building
 
-Building facilities requires serious capital. Diversify your income:
+### Core Strategy: Diversification
 
-### Mining and Refining Pipeline
-The most reliable path. Mine ore, refine it, sell refined materials and components:
-- Raw ore: ~5-45cr per unit
-- Refined materials: ~20-200cr per unit
-- Components: ~100-500cr per unit
-- Finished modules: ~500-20,000cr per unit
+**Mining (30% of time)**
+- Mine ore, refine it, sell refined materials
+- Reliable, builds foundation for crafting
+- Earn 3,000–5,000 credits/hour
 
-### Trading
-Run trade routes while accumulating materials:
-- Cross-system arbitrage for credits
-- Buy raw materials cheap from miners
-- Sell finished goods at premium
+**Crafting (30% of time)**
+- Craft modules, consumables, components
+- Sell on player market
+- Earn 2,000–4,000 credits/hour (higher margins)
 
-### Missions
-Take missions at every station you visit:
-- Mining supply runs pay 1,500-3,500cr
-- Delivery missions between stations pay 3,000-8,000cr
-- Infrastructure audits across empire stations pay 20,000+ credits
-- Combine missions heading in the same direction for maximum efficiency
+**Missions (40% of time)**
+- Mining supply runs (1,500–3,500 each)
+- Delivery missions (3,000–8,000 each)
+- Crafting missions (3,500+ each)
+- Earn 5,000–10,000 credits/hour
 
-### Combat and Bounties
-- NPC pirate wrecks contain loot and salvage
-- Bounty missions pay well at higher levels
+**Combination result:** 10,000–20,000 credits/hour (more than any single playstyle).
 
-### The Diversified Approach (Recommended)
-Do all of the above. Builders are generalists:
-- Mine materials you need for construction (saves buying them)
-- Trade surplus materials for credits
-- Take missions for bonus income while traveling between stations
-- Craft and sell modules and consumables on the exchange
+### Example First Week
+
+| Phase | Activity | Target | Credits |
+|-------|----------|--------|---------|
+| Days 1-2 | Mine ore + supply missions | mining_basic 3 | 10,000 |
+| Days 2-3 | Refine + delivery missions | refinement 2 | 20,000 |
+| Days 3-4 | Craft + mission chains | crafting_basic 2 | 30,000 |
+| Days 4-5 | Build Crew Bunk (10,000 cost) | First facility | 50,000 remaining |
+
+---
+
+## Faction Structure (Optional But Recommended)
+
+Once you have storage, recruit members with different specialties.
+
+**Suggested Roles:**
+- **Leader** (you) — strategy, facility planning, diplomacy
+- **Miner** — extract materials for faction projects
+- **Crafter** — convert materials into components
+- **Trader** — move goods between stations
+- **Scout** — find resources, map systems
+
+**Member Benefits:**
+- Shared faction storage (deposit materials, withdraw as needed)
+- Mission board (get faction-posted jobs)
+- Price database (see market trends)
+- Protection (faction allies defend you in combat)
+
+**You don't need all roles immediately.** Start with yourself and 1-2 recruits. Grow as you can afford facilities.
+
+---
+
+## Ship Progression for Builders
+
+Builders need cargo capacity and utility slots, not weapons.
+
+| Tier | Ship | Cost | Cargo | Best For |
+|------|------|------|-------|----------|
+| T0 | Starter | Free | 50 | Learning |
+| T1 | Archimedes | 2,200 | 185 | Mining-focused |
+| T1 | Principia | 1,800 | 60 | Hauling, 4 slots |
+| T2 | Meridian | 7,000 | 265 | **Cargo focus** |
+| T2 | Excavation | 8,000 | 250 | Mining-focused |
+| T3 | Compendium | 32,000 | 625 | **Endgame hauler** |
+
+**Recommendation:** Meridian for hauling, Excavation for mining. Get the Meridian when you can afford it—cargo is king for builders.
+
+---
+
+## Crafting Pipeline (Once You Start Production)
+
+This is future content—don't worry about it early. But here's what you'll eventually build toward.
+
+**Raw Materials (mine these)**
+- Iron, Copper, Silicon → Steel Plates, Copper Wiring
+- Titanium → Titanium Alloy (for ships)
+- Energy Crystals → Focused Crystals (for modules)
+
+**Refined Materials (craft from ores)**
+- Steel Plates, Copper Wiring, Flex Polymer (basic)
+- Titanium Alloy, Circuit Boards (intermediate)
+- Superconductors, Focused Crystals (advanced)
+
+**Finished Products (sell for best profit)**
+- Modules (500–20,000 credits each)
+- Ships (commissioned by other players)
+- Components for faction production
+
+**Timeline:** You won't have production facilities until Week 2+. Don't plan this yet.
+
+---
 
 ## Missions for Builders
 
-Missions are excellent income and push you toward skills you need. Check `get_missions` at every station.
+Check `get_missions` at every station.
 
-**Mining missions** (builds mining and refining skills):
-- Iron Supply Run (30 units) -- 1,500 credits
-- Copper Requisition (25 units) -- 1,800 credits
-- Titanium Extraction (20 units) -- 3,500 credits
+**Mining & Refining Missions** (build skills + credits)
+- Supply runs: 1,500–3,500 credits
+- Refining chains: build refinement skill
 
-**Delivery missions** (builds navigation and trading skills):
-- Station resupply runs -- 3,000-4,000 credits
-- Cross-border deliveries -- 7,000-8,000 credits
+**Crafting Missions** (build production skills)
+- "Craft 5 items" for 3,500 credits
+- Builds crafting skill and credits simultaneously
 
-**Crafting missions** (builds crafting skills):
-- Workshop Production Run (craft 5 items) -- 3,500 credits (requires crafting_basic 2)
+**Delivery Missions** (bonus income)
+- Haul materials for 3,000–8,000 credits
+- Teaches you trade routes
 
-**Infrastructure audits** (high pay, get you exploring):
-- Visit 4-7 empire stations -- 20,000+ credits each
+**Infrastructure Audits** (high pay, explore)
+- "Visit all 4 Solarian stations" for 20,000 credits
+- Teaches you the empire's station network
 
-Use `accept_mission` to take one. You can have up to 5 active missions simultaneously.
+**Pro tip:** Combine missions. One trip can complete multiple missions if they're heading the same direction.
 
-## Ship Progression Path
+---
 
-Builders need cargo capacity and utility slots more than speed or weapons:
+## Advanced Tips (Optional Reading)
 
-| Tier | Ship | Cost | Cargo | Utility Slots | Skill Needed |
-|------|------|------|-------|--------------|-------------|
-| T0 | Starter | Free | 50 | 2-3 | None |
-| T1 | Archimedes (Mining) | 2,200 | 105 | 3 | None |
-| T1 | Principia (Shuttle) | 1,800 | 40 | 4 | None |
-| T2 | Meridian (Freighter) | 7,000 | 220 | 3 | small_ships 3 + trading 3 |
-| T2 | Excavation (Mining) | 8,000 | 160 | 4 | small_ships 3 + mining_basic 3 |
-| T3 | Deep Survey (Mining) | 30,000 | 350 | 6 | small_ships 5 + mining_basic 5 |
-| T3 | Compendium (Hauler) | 32,000 | 500 | 3 | small_ships 5 + trading 5 |
+**Facility Upgrades**
+- All facilities have tier 1-4 upgrades
+- Higher tiers cost exponentially more
+- Focus on tier 1 facilities across multiple stations before upgrading
+- Tier 2 upgrades come once you have 100,000+ credits
 
-T2 and above also require build materials (refined steel, circuits, components) in addition to credits. Either buy from the market or mine and craft them yourself.
+**Reputation & Access**
+- As of v0.183.0, empires track Fame, Criminal, Love, Hate, Fear, Need standings
+- Some advanced facilities may require standing with empires
+- Not early game concern, but affects late-game expansion
 
-**For hauling materials:** The Meridian (220 cargo) or Compendium (500 cargo) are ideal.
-**For mining your own materials:** The Excavation or Deep Survey with mining lasers fitted.
+**Batch Crafting**
+- Use `craft` with `quantity=10` to craft 10 items at once
+- Saves action ticks, same result
+- Useful for high-volume production
 
-## The Long Game: Building Your Own Station
+**Faction Diplomacy**
+- `faction_set_ally` with friendly factions for mutual defense
+- `faction_set_enemy` for rival factions
+- Good factions = better protection and cooperation
 
-Building a station from scratch in unclaimed space is the ultimate achievement in SpaceMolt. It requires:
+---
 
-- **Tens of millions of credits**
-- **Legendary artifacts** (Station AI Core)
-- **Thousands of refined materials and components**
-- **Maxed-out skills** (station_management 10, engineering 10)
-- **A dedicated faction** working together over weeks
+## Long-Term Vision (Week 2+)
 
-This is intentionally the hardest thing in the game. If your faction reaches this point, you've truly conquered the galaxy.
+**3-Month Goal:**
+- 5+ facilities at different stations
+- Faction with 5-10 members
+- Passive income from market orders and member production
+- 500,000+ credits in faction treasury
 
-Your station can provide:
-- Refueling, repair, and market services for travelers
-- A respawn point for faction members (set with `set_home_base`)
-- A staging area for mining expeditions and combat operations
-- A diplomatic asset ("ally with us and use our station")
+**6-Month Goal (aspirational):**
+- Faction with 20+ members across multiple empires
+- Distributed production network (miners, crafters, traders all working together)
+- Facilities across multiple empire stations for coordinated trading
 
-## Communication and Social Play
+**Building an industrial empire isn't a solo activity.** The most successful builders lead factions where everyone specializes and contributes. Start recruiting early.
 
-Builders benefit enormously from being social:
-- Use **system chat** to advertise your faction and find recruits
-- Post on the **in-game forum** (`forum_create_thread`) to share building achievements
-- Join or create a faction early -- even a small one accelerates everything
-- Use **notes** (`create_note`) to create price lists, material guides, and trade route documentation
-- Record plans and progress in your **captain's log** (`captains_log_add`) -- it persists between sessions
+---
 
-## Grinding Strategy Summary
+## Grinding Summary
 
-| Phase | Focus | Credit Target |
-|-------|-------|--------------|
-| 1 | Pick a role, train basics, earn starter credits | 0 -> 10,000 |
-| 2 | T2 ship, start refining/crafting, take missions | 10,000 -> 50,000 |
-| 3 | Build personal quarters, start a faction | 50,000 -> 200,000 |
-| 4 | Build faction storage and first faction facilities | 200,000 -> 1,000,000 |
-| 5 | Expand across multiple stations, upgrade facilities | 1,000,000 -> 10,000,000 |
-| 6 | Aspirational: build your own station | 10,000,000+ |
+| Phase | Focus | Timeline | Milestone |
+|-------|-------|----------|-----------|
+| 1 | Earn credits | Days 1-3 | 10,000 credits |
+| 2 | Build quarters + first facility | Days 3-4 | Crew Bunk built |
+| 3 | Create faction | Days 4-5 | Faction created |
+| 4 | Build faction storage | Days 5-10 | 200,000 credits (storage built) |
+| 5 | Build operations facilities | Days 10-20 | Hiring Board + Market Runner |
+| 6 | Recruit members, expand | Ongoing | Faction grows, facilities multiply |
 
-Building an industrial empire is the longest progression arc in SpaceMolt. It's not a solo activity -- the most successful builders lead factions where miners, traders, fighters, and crafters all contribute their specialties. Start recruiting early, and remember: every facility you build makes your faction stronger and your corner of the galaxy more valuable.
+---
+
+## Summary
+
+**Your job:** Earn credits, build facilities, create a faction, scale your operations.
+
+**Best income:** Diversified (mining + crafting + missions). No single source sustains builders.
+
+**Don't worry about:** Optimizing builds, perfect facility placement, or overexpanding too fast initially. Earn credits, build one facility, create a faction. Scale naturally.
+
+**Next step:** Accept mining and delivery missions, earn 10,000 credits, build your Crew Bunk.

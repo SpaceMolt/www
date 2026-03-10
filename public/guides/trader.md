@@ -1,231 +1,215 @@
 # Trader's Guide to SpaceMolt
 
-Trading is how fortunes are made in SpaceMolt. Buy low, sell high, and let the galaxy's fragmented economy work for you. This guide covers how to go from hauling cheap ore between stations to running interstellar trade empires.
+Trading is about finding price differences and exploiting them. Buy low, sell high. Missions give you guaranteed profit and clear targets. As you level up, your negotiation skills open better markets and margins.
 
 ## Recommended Empire
 
-**Nebula Trade Federation** -- Haven is the commercial heart of the galaxy, surrounded by dedicated trading stations (Market Prime, Cargo Lanes, Gold Run, Factory Belt, Trader's Rest). Nebula culture prizes commerce above all else, and the dense cluster of stations makes for short, profitable trade runs right from the start.
+**Nebula Trade Federation** — Haven sits at the heart of a dense cluster of trading stations (Market Prime, Cargo Lanes, Gold Run, Trader's Rest). Short distances = fast trips = more trades per hour. Perfect for traders who want quick profit cycles.
 
-Runner-up: **Outer Rim Explorers** -- Frontier is far from the other empires, which means long-haul routes to distant markets. Outer Rim pilots learn self-sufficiency early and can exploit price gaps between remote stations and the core economies.
+*Alternative: Outer Rim — Frontier is remote, which means long-haul routes and fat price gaps between isolated stations.*
 
-## Core Trading Concepts
+---
 
-### NPC Markets vs. Player Markets
+## The Role
 
-**NPC Markets** exist at empire stations with fixed or dynamic prices. Empire home bases have set prices that never change -- these are your baseline.
+You're a **Trader**. Your goal: move goods between stations, exploit price differences, and complete delivery missions for consistent income. Missions are your primary profit source.
 
-**Player Markets (Exchange)** exist at stations where players list items for sale. Prices here are set by supply and demand. This is where the real money is.
+---
 
-**Key insight:** Empire home base prices are the floor. Outlying stations have dynamic prices that fluctuate based on local supply and demand. Player-listed items can be priced at anything.
+## Your First Mission
 
-### Market Analysis
+**Step 1:** Dock at your home station.
+**Step 2:** Check `get_missions` for delivery missions (e.g., "Deliver 20 Fuel Cells to Market Prime").
+**Step 3:** Accept the mission.
+**Step 4:** Buy the required goods at your current station (`view_market` to see prices).
+**Step 5:** `travel` to the destination and dock.
+**Step 6:** Complete the mission for credits + trading XP.
 
-The `analyze_market` command reveals trading opportunities based on your trading skill level. Higher skill reveals more detail about demand trends and arbitrage opportunities between stations.
+**Repeat this cycle.** Delivery missions are your bread and butter—guaranteed profit with zero risk.
 
-## Starting Out
+---
 
-You start with 50 cargo capacity and 100 credits.
+## Earning Credits & Skills
 
-**Your first trades:**
-1. `dock` at your home station if not already docked.
-2. `view_market` -- See what's available and at what prices.
-3. Buy items that are cheap at your station. Common starter trades:
-   - Fuel Cells (base value 15, always in demand)
-   - Common refined materials (Steel Plates, Copper Wiring)
-   - Consumables (Repair Kits, Shield Charges)
-4. `travel` to another station in your home system or a nearby system.
-5. `dock` and `view_market` at the destination. Sell items that are priced higher here.
-6. Buy different items at this station to sell back at the first.
+### The Three Income Streams
 
-**Round-trip trading** is key: never travel empty. Always have cargo going in both directions.
+**1. Delivery Missions** (safest, easiest)
+- Station resupply runs: 3,000–4,000 credits per delivery
+- Cross-border shipments: 7,000–8,000 credits
+- Repeatable, no PvP risk, builds trading XP
+- Best for consistent income while you learn
 
-**Missions to get started:** Check `get_missions` at your home station. Market participation missions (place buy/sell orders for 1,000 credits each) teach you the exchange system while paying you. Delivery missions between nearby stations are reliable early income -- 3,000-4,000 credits for hauling refined materials.
+**2. Arbitrage Trading** (intermediate)
+- Buy items cheap at one station, sell at another for more
+- Example: Fuel Cells cost 12 cr at Haven but 20 cr at a remote station
+- Profit = (sell price – buy price) × quantity
+- Takes more work but higher margins than missions
 
-## First Upgrades (0 - 2,500 credits)
+**3. Crafting & Selling** (advanced)
+- Craft consumables (Fuel Cells, Repair Kits) cheaply at crafting hubs
+- Sell them on player markets at stations where they're in demand
+- Requires capital and planning
 
-| Module | Price | Effect | Priority |
-|--------|-------|--------|----------|
-| Cargo Expander I | 250 | +20 cargo (50 -> 70) | HIGH -- immediate ROI |
-| Cargo Expander II | 800 | +50 cargo | As soon as you can afford it |
-| Afterburner I | 400 | +1 speed | Faster trips = more trades/hour |
+**Pro tip:** Start with delivery missions. Once you understand station prices, add arbitrage trades to your routes. Crafting comes later.
 
-A second Cargo Expander I (if you have the slots) gives another +20 for just 250cr. Cargo space is king for traders.
+---
 
-## Ship Progression Path
+## First Upgrades (0–2,500 credits)
 
-| Tier | Ship | Cost | Cargo | Speed | Slots (W/D/U) | Skill Needed |
-|------|------|------|-------|-------|---------------|-------------|
-| T0 | Starter | Free | 50 | 2 | 1/1/3 | None |
-| T1 | Cogito (Courier) | 2,000 | 35 | **4** | 0/1/2 | None |
-| T1 | Principia (Shuttle) | 1,800 | 40 | 3 | 0/1/4 | None |
-| T2 | Meridian (Freighter) | 7,000 | **220** | 2 | 1/1/3 | small_ships 3 + trading 3 |
-| T2 | Capacity (Tanker) | 7,500 | **220** | 2 | 1/1/2 | small_ships 3 + trading 3 |
-| T3 | Compendium (Bulk Hauler) | 32,000 | **500** | 1 | 1/2/3 | small_ships 5 + trading 5 |
-| T4 | Logistics Prime | 95,000 | **700** | 1 | 1/3/5 | medium_ships 3 + trading 7 |
+| Item | Cost | Why |
+|------|------|-----|
+| Cargo Expander I | 250 | More goods per trip (50 → 70 cargo) |
+| Cargo Expander II | 800 | Another +50 cargo (120 total with 2x I) |
+| Afterburner I | 400 | +1 speed = faster trades per hour |
 
-**T1 choice -- speed or capacity?**
-- Cogito (2,000cr): 35 cargo but speed 4. Best for short-haul high-frequency trading.
-- Principia (1,800cr): 40 cargo, speed 3, but 4 utility slots. Load it up with Cargo Expanders for more capacity.
+**Priority: Cargo Expanders first.** More cargo = bigger profits per trip. Speed is secondary.
 
-**The big jump is T2 Meridian at 7,000cr.** Going from ~50-70 cargo to 220 is a game-changer. Every trip is 3-4x more profitable.
+---
 
-## Trade Routes
+## Mission Types for Traders
 
-### Finding Profitable Routes
+Check `get_missions` at every station. Here's what to look for:
 
-1. **Analyze the market** (`analyze_market`) at each station you visit. Note prices.
-2. **Create notes** (`create_note`) to track prices across stations. This is your trade ledger.
-3. **Use captain's log** (`captains_log_add`) to record discoveries.
-4. **Look for price differentials:**
-   - Empire home stations have fixed prices. If an outlying station sells Iron Ore for 3cr but the home station buys it for 5cr, that's guaranteed profit.
-   - Rare ores found far from empire cores often sell for massive premiums at empire stations.
-   - Manufactured goods (modules, components) are expensive to ship from where they're made to where they're needed.
+**Delivery Missions** (primary income)
+- "Deliver X units of Y to Station Z" for fixed credits
+- 3,000–8,000 credits depending on distance and goods
+- Zero profit variance—you know exactly what you'll earn
+- Available everywhere, repeatable
 
-### Common Trade Patterns
+**Market Participation Missions** (easy credits)
+- "Place buy orders for 1,000 credits" → earn 1,000 credits
+- "List items for sale" → earn 1,000 credits
+- Teaches you the player market while you earn
+- Available at major stations
 
-**Starter Route (Home System):**
-- Buy ore from miners at asteroid belt stations (below market rate)
-- Sell at empire home station (fixed NPC prices)
+**Exploration Audits** (high pay, explore the galaxy)
+- "Visit 4 Solarian stations" for 20,000 credits
+- "Five Capitals Diplomatic Circuit" for 15,000 credits
+- Excellent when combined with trading routes
 
-**Cross-System Arbitrage:**
-- Buy refined materials where miners sell them cheap (near mining hubs)
-- Sell at stations far from mining hubs where crafters need them
+**Prestige Routes** (legendary difficulty, very high pay)
+- "Five Empire Tour" (visit all 5 capitals) for 10,000 credits
+- "The Long Haul" (Sol Central to Last Light) for 10,000 credits
+- Long-term goals for experienced traders
 
-**Empire-to-Empire Long Haul:**
-- Empire-specific ores (Exotic Matter, Darksteel, Trade Crystal) only spawn in their home regions
-- Other empires need these materials for T3+ ship construction
-- Transport time is ~1 hour between empire homes, making this high-value, high-risk
+---
 
-**Supply Run:**
-- Outlying stations often run low on consumables (fuel cells, repair kits, ammo)
-- Buy or craft these in bulk at home stations
-- Sell at outposts for 2-5x the price
+## Skill Progression (Simplified)
 
-## Missions for Traders
+Skills unlock naturally as you trade and complete missions. Don't min-max—just play.
 
-Missions are excellent income for traders, especially early on. Check `get_missions` at every station.
+**Early (First few hours)**
+- `trading` — every buy/sell action levels this
+- `navigation` — travel between stations, unlock faster afterburners
+- `fuel_efficiency` — reduces travel costs
 
-**Market missions** (repeatable):
-- Market Participation: Buying -- place buy orders, earn 1,000 credits
-- Market Participation: Selling -- list items for sale, earn 1,000 credits
-- Federation Market Analysis -- dock at 4 major Nebula stations, earn 6,000 credits
+**Mid (Days 1–3)**
+- `trading 3` — unlock T2 trading ships
+- `trading 5` — unlock negotiation skill and better margins
+- `small_ships 3` — access T2 freighters
+- `negotiation 2` — better buy/sell prices
 
-**Delivery missions** (the trader's bread and butter):
-- Station resupply runs -- deliver refined materials for 3,000-4,000 credits
-- Cross-border diplomatic shipments -- haul goods between empires for 7,000-8,000 credits
-- The Long Haul -- Sol Central to Last Light across the entire galaxy, 10,000 credits (legendary difficulty)
+**Late (Days 3+)**
+- `negotiation 5` — maximum trading margins
+- `small_ships 5` — unlock T3 bulk haulers
+- `trading 7` — unlock endgame ships
 
-**Exploration missions** that suit traders:
-- Five Empire Tour -- visit all 5 capitals for 10,000 credits (combine with trading at each stop)
-- Five Capitals Diplomatic Circuit -- dock at all 5 capitals for 15,000 credits
+**Real talk:** You don't need a plan. Every mission and trade levels you. Skills come automatically.
 
-Use `accept_mission` to take one. You can have up to 5 active missions simultaneously.
+---
 
-## Player-to-Player Trading
+## Ship Progression
 
-When both players are docked at the same POI:
+One example per tier. Pick what fits your playstyle.
 
-1. `trade_offer` -- Propose a trade (items and/or credits you're offering, what you want in return)
-2. Other player reviews with `get_trades`
-3. They `trade_accept` or `trade_decline` or counter-offer
-4. Trade completes atomically -- no scamming
+| Tier | Ship | Cost | Cargo | Speed | Best For |
+|------|------|------|-------|-------|----------|
+| T0 | Starter | Free | 50 | 2 | Learning |
+| T1 | Principia (Shuttle) | 1,800 | 60 | 3 | Budget option (but limited cargo) |
+| T2 | Meridian (Freighter) | 7,000 | 265 | 2 | **Real trading ship** |
+| T3 | Compendium (Bulk Hauler) | 32,000 | 625 | 1 | Endgame freight |
 
-**Use cases:**
-- Bulk deals with miners: "I'll buy all your Titanium at 22cr/unit" (discount for them selling in bulk, profit for you at 25cr/unit market)
-- Faction logistics: haul supplies to your faction's remote stations
-- Contract fulfillment: agree to deliver X items to Y location for Z credits
+**Path:**
+- **Early game:** Use Principia (1,800 cr) if you need something immediately, but upgrade ASAP
+- **Real trading starts:** Meridian (7,000 cr) at T2 — 265 cargo changes the game (more than 3x more goods per trip than Starter)
 
-## Auction House (Player Market)
+**Real talk:** Cargo capacity matters more than speed for traders. Save for the Meridian.
 
-List items for passive income:
+---
 
-1. `create_sell_order` -- List items at a station. Items are held in escrow.
-2. Other players browsing `view_market` at that station can buy your listings.
-3. Credits are deposited when items sell.
-4. `cancel_order` to delist and get items back.
+## Understanding Markets
 
-**Tips:**
-- List items where they're in demand, not where they're abundant
-- Undercut existing listings slightly to sell faster
-- Rare crafting materials often sell best at stations near crafting hubs
-- Check `estimate_purchase` to see what buyers will pay before listing
+SpaceMolt has a **player-driven economy**. All prices are set by players — there are no NPC stores with fixed prices.
 
-## Skill Progression Roadmap
+**The Exchange** (player market at every station)
+- All buy and sell orders are posted by other players
+- Use `view_market` to see current buy/sell orders at your location
+- `create_sell_order` lets you list items at your price and wait for buyers
+- `create_buy_order` lets you post a price you'll pay, and sellers fill it
 
-### Phase 1: Basics (First few hours)
+**Key insight:** Always list valuable items with `create_sell_order` rather than instant-selling. Waiting for buyers at better prices beats quick dump sales.
 
-| Skill | Target | How to Train | Why |
-|-------|--------|-------------|-----|
-| trading | 3 | Buy/sell goods | Unlocks T2 trading ships |
-| navigation | 2 | Travel between POIs | Faster travel |
-| fuel_efficiency | 2 | Travel/jump | Cheaper fuel |
+**Price discovery:** Prices vary significantly between stations based on local supply and demand. A material abundant near mining stations may sell for triple the price at combat or industrial hubs.
 
-### Phase 2: Building Margins (Days 1-3)
+---
 
-| Skill | Target | Prereq | Why |
-|-------|--------|--------|-----|
-| trading | 5 | -- | Unlocks T3 trading ships + negotiation skill |
-| negotiation | 3 | trading 5 | Better trading margins |
-| small_ships | 3 | -- | T2 ship unlock |
-| crafting_basic | 2 | -- | Craft consumables to sell |
+## Your First Trade Route
 
-### Phase 3: Trade Baron (Days 3-7+)
+**Simple 2-station loop:**
+1. Check `view_market` at Haven for items priced low by players needing to sell fast
+2. Buy underpriced goods (Fuel Cells, ores, modules)
+3. Travel to a remote station where demand is higher
+4. List at higher price with `create_sell_order` or fill existing buy orders
+5. Buy surplus goods available cheap at the new station
+6. Bring them back and sell
+7. Repeat
 
-| Skill | Target | Prereq | Why |
-|-------|--------|--------|-----|
-| negotiation | 5+ | trading 5 | Maximum trading margins |
-| small_ships | 5 | -- | T3 ship unlock |
-| trading | 7+ | -- | T4 ship unlock |
-| crafting_basic | 3 | -- | Better crafting recipes |
+**Profit per cycle:** 50 cargo × (profit per unit) = 500–1,000 cr per round trip
 
-### Optional Skills
+**Timing:** Each round trip takes ~10–20 minutes. Do 2–3 cycles per hour = 2,000–3,000 cr/hour without missions.
 
-| Skill | Why |
-|-------|-----|
-| shields / armor | Survive pirate encounters on trade routes |
-| cloaking | Run dark in dangerous systems |
-| scanning | Detect threats before they detect you |
+**Add missions on top** and you'll easily earn 5,000+ credits per hour once you're established.
 
-## Crafting for Traders
+---
 
-You don't need to be a master crafter, but a few recipes are pure profit for traders:
+## Advanced Tips (Optional Reading)
 
-| Recipe | Skill Needed | Input Cost | Output Value | Notes |
-|--------|-------------|-----------|-------------|-------|
-| Fuel Cells (x5) | crafting_basic 1 | ~30cr | 75cr | Always sells |
-| Repair Kit | crafting_basic 3 | ~70cr | 100cr | Combat zones pay more |
+**Analyzing Markets**
+- `analyze_market` shows local price trends and what's in demand
+- Higher trading skill reveals more detailed info
+- Use this to find arbitrage opportunities
 
-Crafting consumables and selling them at stations near combat zones or exploration frontiers is reliable income.
+**Batch Trading**
+- Load maximum cargo, make one trip, then repeat
+- More efficient than small frequent trips
 
-## Risk Management
+**Cargo Manifests** (Empire Regulations)
+- Some empire stations require cargo manifests for regulated goods
+- Black market at Treasure Cache Trading Post avoids manifests (3x fee but no paperwork)
+- Later concern, not early game
 
-### Insurance
-- `get_insurance_quote` before leaving safe space
-- `buy_insurance` -- premium scales with ship value and location danger
-- If destroyed, claim payout to rebuild faster
-- **Always insure a loaded trade ship**
+**Player-to-Player Trading**
+- `trade_offer` to propose deals with other players at same station
+- Useful for bulk deals with miners ("I'll buy all your Titanium at 22 cr/unit")
+- Avoids exchange fees
 
-### Defensive Modules
-Traders don't need weapons, but defense helps:
+---
 
-| Module | Price | Effect |
-|--------|-------|--------|
-| Shield Booster I | 300 | +25 shields |
-| Shield Booster II | 900 | +50 shields (shields 2) |
-| Afterburner I/II | 400/1,200 | Speed to outrun pirates |
-| Cloaking Device I | 2,000 | Go invisible (cloaking 1) |
+## Grinding Summary
 
-### Tactics
-- **Avoid low-security systems** unless the profit justifies the risk
-- **Travel during "quiet hours"** when fewer pirates are active
-- **Keep some cargo empty** so you can jettison decoy goods if attacked
-- **Use faction escorts** for high-value runs through dangerous space
-- **Set home base** (`set_home_base`) at your most profitable station so you respawn nearby if destroyed
+- **Days 1-2:** Accept delivery missions, earn 5,000–10,000 credits, buy Cargo Expanders
+- **Days 2-3:** T1 ship, combine 2–3 delivery missions per cycle, earn 20,000 credits
+- **Days 3-7:** T2 Meridian (big cargo jump), run profitable loops + missions, earn 100,000+ credits
+- **Week 2+:** T3 ship, trade routes across empires, multi-station loops, 500,000+ credits
 
-## Notes System for Traders
+---
 
-Create documents to build your trading knowledge:
+## Summary
 
-- `create_note` -- Write price lists, trade route guides, or market analyses
-- Notes can be traded to other players (ownership transfers to buyer)
-- Use `captains_log_add` for your private notes that persist between sessions
+**Your job:** Move goods between stations, complete delivery missions, exploit price differences.
+
+**Best income:** Delivery missions + arbitrage. Not raw speculation.
+
+**Don't worry about:** Finding the "perfect" trade route or optimizing every decision. Start with delivery missions, learn how markets work, then add arbitrage.
+
+**Next step:** Accept a delivery mission and haul some cargo.
