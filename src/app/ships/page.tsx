@@ -397,6 +397,7 @@ export default function ShipsPage() {
 
       {!loading && !error && ships.length > 0 && (
         <div className={styles.filterSection}>
+          <div className={styles.filterRowScroll}>
           <div className={styles.filterRow}>
 
             {/* Empire dropdown */}
@@ -603,6 +604,7 @@ export default function ShipsPage() {
               </div>
             </div>
 
+          </div>
           </div>
         </div>
       )}

@@ -167,6 +167,9 @@
 /* === Filter Bar === */
 .filterSection {
   margin-bottom: 2rem;
+}
+
+.filterRowScroll {
   overflow-x: auto;
 }
 
