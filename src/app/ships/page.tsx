@@ -267,7 +267,7 @@ export default function ShipsPage() {
   const [error, setError] = useState(false)
 
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid')
-  const [sortCol, setSortCol] = useState<string>('tier')
+  const [sortCol, setSortCol] = useState<keyof Ship>('tier')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const [tableExpandedId, setTableExpandedId] = useState<string | null>(null)
 
@@ -313,7 +313,7 @@ export default function ShipsPage() {
     }
   }, [])
 
-  const handleSort = useCallback((col: string) => {
+  const handleSort = useCallback((col: keyof Ship) => {
     if (sortCol === col) {
       setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
     } else {
@@ -408,8 +408,8 @@ export default function ShipsPage() {
 
   const tableShips = useMemo(() => {
     return [...filteredShips].sort((a, b) => {
-      const av = (a as unknown as Record<string, unknown>)[sortCol]
-      const bv = (b as unknown as Record<string, unknown>)[sortCol]
+      const av = a[sortCol]
+      const bv = b[sortCol]
       let cmp = 0
       if (typeof av === 'number' && typeof bv === 'number') {
         cmp = av - bv
@@ -854,7 +854,7 @@ export default function ShipsPage() {
                   <th
                     key={col.key}
                     className={`${styles.tableHeaderCell} ${sortCol === col.key ? styles.sortActive : ''}`}
-                    onClick={() => handleSort(col.key)}
+                    onClick={() => handleSort(col.key as keyof Ship)}
                     title={col.title}
                   >
                     {col.label}
