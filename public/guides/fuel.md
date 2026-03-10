@@ -61,18 +61,18 @@ towPenalty = clamp((towRigPenalty - shipTowBonus) / 100.0, 0.0, 0.9)
 ### Fuel Cost
 
 ```
-fuelCost = ceil(scale^1.5 × speed × 10.0 × 0.10 + cargoUsed × 0.002 × 10.0)
+fuelCost = ceil(scale^1.5 × speed × 10.0 × 0.10)
 ```
 
-Minimum: **1 fuel**. The jump distance constant is always 10.0 regardless of galaxy topology.
+Minimum: **1 fuel**. The jump distance constant is always 10.0 regardless of galaxy topology. Cargo load does not affect jump fuel cost.
 
 ### Jump Time
 
 ```
-jumpTicks = ceil(10.0 / speed)
+jumpTicks = 7 − speed
 ```
 
-Minimum: **1 tick** (10 seconds).
+Minimum: **1 tick** (10 seconds). Speed values above 6 clamp to 1 tick.
 
 If your ship is EM-disrupted (from combat):
 
@@ -94,7 +94,7 @@ Modifiers apply **after** the base cost is computed, in this order. Each step en
 fuelCost = fuelCost × (100 - moduleEfficiency) / 100
 ```
 
-This is integer multiplication then integer division (truncation, not rounding).
+The result is computed in float64 then passed through a single `ceil` at the end of all modifier steps.
 
 `moduleEfficiency` is the sum of `fuel_efficiency` across all your equipped modules. Positive values reduce cost (e.g. a fuel optimizer at +10 = 10% reduction). Negative values increase cost (e.g. an afterburner at −20 = 20% penalty). The total is capped at **80** before applying (maximum 80% reduction); penalties are uncapped.
 
@@ -173,21 +173,22 @@ base = ceil(1^1.5 × 2 × 3.0 × 0.07 + 0 × 0.002 × 3.0)
 travelTicks = ceil(3.0 / 2) = 2 ticks (20 seconds)
 ```
 
-**Small (scale 2) ship, speed 3, 20 cargo, jumping to adjacent system:**
+**Small (scale 2) ship, speed 3, jumping to adjacent system:**
 
 ```
-base = ceil(2^1.5 × 3 × 10.0 × 0.10 + 20 × 0.002 × 10.0)
-     = ceil(2.828 × 3 × 1.0 + 0.4)
-     = ceil(8.485 + 0.4)
-     = ceil(8.885)
+base = ceil(2^1.5 × 3 × 10.0 × 0.10)
+     = ceil(2.828 × 3 × 1.0)
+     = ceil(8.485)
      = 9 fuel
 
-jumpTicks = ceil(10.0 / 3) = 4 ticks (40 seconds)
+jumpTicks = 7 − 3 = 4 ticks (40 seconds)
 ```
 
-With a fuel optimizer module at +15 efficiency, then a −5% fuelConsumption skill:
+With a fuel optimizer module at +15 efficiency, then a −5% fuelConsumption skill (all modifiers accumulate in float before the final ceil):
 
 ```
-after module:  9 × (100 - 15) / 100 = 9 × 85 / 100 = 765 / 100 = 7 fuel  (integer truncation)
-after skill:   ceil(7 × (1.0 + (-5) / 100.0)) = ceil(7 × 0.95) = ceil(6.65) = 7 fuel
+raw (pre-ceil): 2.828 × 3 × 1.0 = 8.485
+after module:   8.485 × (100 - 15) / 100 = 8.485 × 0.85 = 7.212
+after skill:    7.212 × (1.0 + (-5) / 100.0) = 7.212 × 0.95 = 6.851
+final:          ceil(6.851) = 7 fuel
 ```
