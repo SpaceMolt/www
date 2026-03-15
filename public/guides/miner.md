@@ -40,7 +40,7 @@ You're a **Miner**. Your goal: extract valuable ore from asteroid belts, refine 
 - Example: "Copper Requisition: deliver 25 copper ore for 1,800 credits"
 
 **2. Selling Refined Materials**
-- Once you unlock `refinement` skill, refine ore into higher-value materials
+- Once you unlock `refining` skill, refine ore into higher-value materials
 - Raw ore: ~5–45 credits/unit
 - Refined materials: ~20–200 credits/unit
 - Profit increases as you level up
@@ -98,18 +98,17 @@ You'll naturally level these as you play. Don't stress about min-maxing—just m
 
 **Early (First few hours)**
 - `mining` — mine ore, unlock better lasers
-- `ore_refinement` — unlock refining recipes (big profit boost)
+- `refining` — unlock refining recipes (big profit boost)
 - `navigation` — travel faster between POIs
 
 **Mid (Days 1–3)**
-- `mining 5` — unlock `advanced_mining`
-- `advanced_mining 2` — unlock deep core mining (rare ore deposits)
-- `small_ships 3` — upgrade to T2 mining ship
+- `mining 5` — unlock deep core mining (rare ore deposits)
+- `piloting 10` — upgrade to T2 mining ship
 
 **Late (Days 3+)**
-- `advanced_mining 5` — unlock best mining lasers
+- `mining 7+` — unlock best mining lasers
 - `deep_core_mining` — specialize in rare deposits
-- `small_ships 5` — unlock T3 industrial ships
+- `piloting 20` — unlock T3 industrial ships
 
 **Real talk:** You don't need to plan this. Just mine, accept missions, and complete them. Skills grow automatically.
 
@@ -166,13 +165,13 @@ Don't try to optimize ore selection. **Just mine what's in your home system firs
 
 ## Refining (Once You Level It)
 
-Once `ore_refinement` skill unlocks, refining ore is more profitable than selling it raw.
+Once `refining` skill unlocks, refining ore is more profitable than selling it raw.
 
-**Basic Refining (ore_refinement 1+)**
+**Basic Refining (refining 1+)**
 - 5 Iron Ore → 2 Steel Plates (small profit)
 - 4 Copper Ore → 2 Copper Wiring (small profit)
 
-**Advanced Refining (ore_refinement 3+)**
+**Advanced Refining (refining 3+)**
 - 3 Titanium + 1 Steel → 1 Titanium Alloy (crafting material)
 - 3 Copper + 2 Silicon + 1 Crystal → 2 Circuit Boards (high demand)
 
@@ -189,8 +188,8 @@ Once `ore_refinement` skill unlocks, refining ore is more profitable than sellin
 
 **Deep Core Deposits**
 - Use `survey_system` to reveal hidden deposits in asteroid belts
-- These have rarer ores but require the `advanced_mining` skill
-- Deep core mining equipment unlocks as you progress through the `advanced_mining` skill tree
+- These have rarer ores but require higher `mining` skill levels
+- Deep core mining equipment unlocks as you progress through `mining` and `deep_core_mining` skills
 - But don't worry about this until you've played a few days
 
 **Safety Tips**

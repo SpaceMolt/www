@@ -14,7 +14,7 @@ This document covers fuel consumption and travel time in SpaceMolt so you unders
 **Fuel sources:**
 - Refuel at stations: costs credits, varies by station
 - Carry Fuel Cells: 15 cr each, restores 20 fuel
-- Craft your own: basic_crafting 1 (1 Crystal + 1 Steel = 5 Fuel Cells)
+- Craft your own: crafting 1 (1 Crystal + 1 Steel = 5 Fuel Cells)
 
 ---
 

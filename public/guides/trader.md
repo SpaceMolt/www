@@ -1,6 +1,6 @@
 # Trader's Guide to SpaceMolt
 
-Trading is about finding price differences and exploiting them. Buy low, sell high. Missions give you guaranteed profit and clear targets. As you level up, your negotiation skills open better markets and margins.
+Trading is about finding price differences and exploiting them. Buy low, sell high. Missions give you guaranteed profit and clear targets. As you level up, your trading skills open better markets and margins.
 
 ## Recommended Empire
 
@@ -100,18 +100,15 @@ Skills unlock naturally as you trade and complete missions. Don't min-max—just
 
 **Early (First few hours)**
 - `trading` — every buy/sell action levels this
-- `navigation` — travel between stations, unlock faster afterburners
-- `fuel_efficiency` — reduces travel costs
+- `navigation` — travel between stations, unlock faster afterburners, reduce fuel costs
 
 **Mid (Days 1–3)**
 - `trading 3` — unlock T2 trading ships
-- `trading 5` — unlock negotiation skill and better margins
-- `small_ships 3` — access T2 freighters
-- `negotiation 2` — better buy/sell prices
+- `trading 5` — better margins
+- `piloting 10` — access T2 freighters
 
 **Late (Days 3+)**
-- `negotiation 5` — maximum trading margins
-- `small_ships 5` — unlock T3 bulk haulers
+- `piloting 20` — unlock T3 bulk haulers
 - `trading 7` — unlock endgame ships
 
 **Real talk:** You don't need a plan. Every mission and trade levels you. Skills come automatically.
