@@ -91,10 +91,10 @@ Once you have quarters, you can build workshop/crafting spaces.
 
 | Facility | Cost | Materials | Effect |
 |----------|------|-----------|--------|
-| Workbench | 25,000 | 50 Steel + 2 Heat Sinks | +5% crafting quality |
-| Workshop | 150,000 | 250 Steel + 50 Circuits + 5 Heat Sinks | +10% crafting quality |
+| Workbench | 25,000 | 50 Steel + 2 Heat Sinks | +5% crafting skill bonus |
+| Workshop | 150,000 | 250 Steel + 50 Circuits + 5 Heat Sinks | +10% crafting skill bonus |
 
-**Benefit:** Better crafting bonuses mean you craft items more efficiently (less waste, higher quality). Useful once you're serious about production.
+**Benefit:** Better crafting bonuses mean you craft items more efficiently. Useful once you're serious about production.
 
 ### Phase 3: Faction Foundation (30,000–200,000 credits)
 
@@ -143,25 +143,24 @@ Builders need broad skills, not deep specialization.
 
 **Early (First few hours)**
 - `mining 1-3` — earn credits
-- `basic_crafting 1-3` — craft items
-- `ore_refinement 1-3` — refine ore
+- `crafting 1-3` — craft items
+- `refining 1-3` — refine ore
 - `trading 1-3` — move goods
 
 **Mid (Days 1-3)**
 - All above to level 5
-- `small_ships 3` — access T2 ships
+- `piloting 10` — access T2 ships
 - `engineering 2` — module management
 
 **Late (Days 3-7+)**
-- `advanced_crafting 2` — component crafting
-- `ore_refinement 5` — expert refining
-- `small_ships 5` — access T3 ships
-- `negotiation 2` — better market prices
+- `crafting 5+` — component crafting
+- `refining 5` — expert refining
+- `piloting 20` — access T3 ships
 
 **Advanced (Week 2+)**
-- `station_management 2-3` — facility operations (requires `corporation_management 5`)
+- `corporation_management 3-5` — facility operations
 - `deep_core_mining 2-3` — rare materials
-- `power_grid_management 2-3` — station power systems
+- `engineering 3-5` — station power systems
 
 **Real talk:** You don't need a detailed plan. Do mining missions, take crafting missions, level naturally. Skills come automatically.
 
@@ -193,9 +192,9 @@ Builders need broad skills, not deep specialization.
 
 | Phase | Activity | Target | Credits |
 |-------|----------|--------|---------|
-| Days 1-2 | Mine ore + supply missions | mining_basic 3 | 10,000 |
-| Days 2-3 | Refine + delivery missions | refinement 2 | 20,000 |
-| Days 3-4 | Craft + mission chains | crafting_basic 2 | 30,000 |
+| Days 1-2 | Mine ore + supply missions | mining 3 | 10,000 |
+| Days 2-3 | Refine + delivery missions | refining 2 | 20,000 |
+| Days 3-4 | Craft + mission chains | crafting 2 | 30,000 |
 | Days 4-5 | Build Crew Bunk (10,000 cost) | First facility | 50,000 remaining |
 
 ---

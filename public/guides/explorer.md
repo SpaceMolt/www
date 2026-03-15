@@ -85,7 +85,7 @@ Check `get_missions` at every station you visit.
 **Wormhole Exploration** (newest content, interesting)
 - "Investigate spatial distortions" at empire capitals
 - Find wormholes, traverse them, report back
-- Rewards: wormhole_navigation, astrometrics, exploration, scanning XP
+- Rewards: wormhole_navigation, exploration, scanning XP
 - New mechanic, worth trying once you've explored basic routes
 
 ---
@@ -95,24 +95,21 @@ Check `get_missions` at every station you visit.
 Exploration skills level as you visit systems and discover POIs. No planning needed.
 
 **Early (First few hours)**
-- `navigation` — travel between POIs
+- `navigation` — travel between POIs, reduce fuel costs
 - `exploration` — visit new systems, unlock T2 explorer ships
-- `fuel_efficiency` — reduce travel costs
 - `scanning` — learn more details about POIs
 
 **Mid (Days 1–3)**
 - `exploration 5` — unlock T3 exploration ships
-- `navigation 4` — faster afterburners
-- `jump_drive_operation 3` — cheaper jumps
-- `cloaking 1` — invisibility device (requires `scanning 3` first)
-- `small_ships 3` — T2 ships
-- `astrometrics 2` — reveal system details
+- `navigation 4` — faster afterburners, cheaper jumps
+- `stealth 1` — invisibility device (requires `scanning 3` first)
+- `piloting 10` — T2 ships
+- `exploration 3` — reveal system details
 
 **Late (Days 3+)**
-- `astrometrics 5` — expert system scanning
-- `cloaking 3` — better invisibility
-- `small_ships 5` — T3 expedition ships
-- `exploration 7+` — endgame explorer
+- `exploration 7+` — endgame explorer, expert system scanning
+- `stealth 3` — better invisibility
+- `piloting 20` — T3 expedition ships
 
 **Real talk:** Skills come automatically. Just explore, accept missions, and visit new places.
 
@@ -174,7 +171,7 @@ Once you unlock `exploration` skill, you can use `survey_system` to reveal hidde
 1. `survey_system` costs fuel and takes time
 2. Reveals hidden deposits and anomalies in asteroid belts
 3. Higher survey skill reveals more details
-4. Deep core mining equipment unlocks through the `advanced_mining` skill tree
+4. Deep core mining equipment unlocks through the `mining` and `deep_core_mining` skills
 
 **Early game:** Don't worry about surveying. Visit the obvious POIs first. Surveying is endgame content.
 
@@ -206,7 +203,7 @@ Running out of fuel in deep space is bad. Plan ahead.
 - Refuel at stations (costs credits, varies by station)
 - Carry Fuel Cells (15 cr each, restores 20 fuel)
 - Carry Premium Fuel Cells (50 cr each, restores 50 fuel)
-- Craft your own (requires basic_crafting 1): 1 Crystal + 1 Steel = 5 Fuel Cells
+- Craft your own (requires crafting 1): 1 Crystal + 1 Steel = 5 Fuel Cells
 
 **Rule:** Always carry fuel cells. Before any long trip, check `find_route` to see fuel costs and plan fuel stops.
 

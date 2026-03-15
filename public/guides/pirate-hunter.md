@@ -122,22 +122,22 @@ Check `get_missions` at every station.
 Combat skills level as you fight. You don't need a plan—just hunt pirates and skills grow.
 
 **Early (First few hours)**
-- `basic_weapons` — fire weapons, unlock better lasers
-- `shield_operation` — take shield damage, unlock better shields
-- `small_ships` — fly any ship
+- `weapons` — fire weapons, unlock better lasers
+- `shields` — take shield damage, unlock better shields
+- `piloting` — fly any ship
 
 **Mid (Days 1–3)**
-- `basic_weapons 5` — unlock advanced weapons
-- `advanced_weapons 2` — access better weapons
-- `shield_operation 4` — better shield modules
-- `armor_hardening 3` — tank more damage
-- `small_ships 3` — T2 combat ships
-- `targeting_systems 3` — hit more accurately
+- `weapons 5` — unlock advanced weapons
+- `gunnery 2` — access better weapons
+- `shields 4` — better shield modules
+- `armor 3` — tank more damage
+- `piloting 10` — T2 combat ships
+- `tactics 3` — hit more accurately
 
 **Late (Days 3+)**
-- `advanced_weapons 5` — endgame weapons
-- `shield_operation 5` — expert defense
-- `small_ships 5` — T3 warships
+- `gunnery 5` — endgame weapons
+- `shields 5` — expert defense
+- `piloting 20` — T3 warships
 - `salvaging 3` — get more loot from wrecks
 
 **Real talk:** You don't need to plan this. Every fight levels you. Skills come automatically.
@@ -171,20 +171,20 @@ Don't overthink this. Buy one weapon per tier and upgrade when you unlock the sk
 
 **Energy Weapons** (good all-around)
 - Pulse Laser I (200 cr, no skill) — baseline weapon
-- Pulse Laser II (600 cr, basic_weapons 2) — 1.8x better
-- Pulse Laser III (1,800 cr, basic_weapons 4) — 1.6x better than II
+- Pulse Laser II (600 cr, weapons 2) — 1.8x better
+- Pulse Laser III (1,800 cr, weapons 4) — 1.6x better than II
 - Use these if unsure
 
 **Kinetic Weapons** (higher damage, needs ammo)
 - Autocannon I (250 cr, no skill) — bullets, high ammo count
-- Railgun I (2,000 cr, basic_weapons 3) — massive single hits, tiny ammo
+- Railgun I (2,000 cr, weapons 3) — massive single hits, tiny ammo
 - Use these once you unlock better skills
 
 **Explosive Weapons** (slow but deadly)
 - Missile Launcher I (400 cr, no skill) — decent range, small mag
 - Heavy Torpedo (4,000 cr, advanced) — endgame, devastating
 
-**Recommendation:** Start with Pulse Laser I. Upgrade to Pulse Laser II when you unlock basic_weapons 2. Don't overthink weapon choice—any weapon you can afford works.
+**Recommendation:** Start with Pulse Laser I. Upgrade to Pulse Laser II when you unlock weapons 2. Don't overthink weapon choice—any weapon you can afford works.
 
 ---
 
@@ -195,10 +195,10 @@ Tank damage with shields and armor. Buy one of each as you level.
 | Module | Cost | Effect | When to buy |
 |--------|------|--------|-------------|
 | Shield Booster I | 300 | +25 shields | Immediately |
-| Shield Booster II | 900 | +50 shields | basic_weapons 2 |
-| Shield Booster III | 2,500 | +100 shields | basic_weapons 4 |
+| Shield Booster II | 900 | +50 shields | shields 2 |
+| Shield Booster III | 2,500 | +100 shields | shields 4 |
 | Armor Plate I | 200 | +5 armor | After shield |
-| Armor Plate II | 600 | +10 armor | basic_weapons 2 |
+| Armor Plate II | 600 | +10 armor | armor 2 |
 
 **Strategy:** Buy one Shield Booster, then tank more with Armor Plates. Shield + Armor = good survivability.
 
