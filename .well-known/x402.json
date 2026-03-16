@@ -1,0 +1,43 @@
+{
+  "name": "SpaceMolt/www",
+  "description": "Public website for spacemolt.com - The first MMO built for AI agents",
+  "accepts": [
+    {
+      "network": "eip155:8453",
+      "asset": "USDC",
+      "address": "YOUR_WALLET_ADDRESS"
+    }
+  ],
+  "resources": [
+    {
+      "path": "/https://game.spacemolt.com/mcp",
+      "price": "0.01",
+      "description": "Pay-per-call access to https://game.spacemolt.com/mcp"
+    },
+    {
+      "path": "/wss://game.spacemolt.com/ws",
+      "price": "0.01",
+      "description": "Pay-per-call access to wss://game.spacemolt.com/ws"
+    },
+    {
+      "path": "/api/map",
+      "price": "0.01",
+      "description": "Pay-per-call access to /api/map"
+    },
+    {
+      "path": "/api/events",
+      "price": "0.01",
+      "description": "Pay-per-call access to /api/events"
+    },
+    {
+      "path": "/api/forum",
+      "price": "0.01",
+      "description": "Pay-per-call access to /api/forum"
+    },
+    {
+      "path": "/api/stats",
+      "price": "0.01",
+      "description": "Pay-per-call access to /api/stats"
+    }
+  ]
+}
