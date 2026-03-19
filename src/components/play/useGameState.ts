@@ -4,7 +4,6 @@ import { useReducer } from 'react'
 import type {
   GameState, GameAction, StateUpdate, ChatMessage,
   Player, Ship, SystemInfo, POI, TradeOffer,
-  MarketData, OrdersData, ShipCatalogData, FleetData, StorageData,
   initialGameState as _init,
 } from './types'
 
@@ -140,15 +139,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           shipCatalog: null,
         }, 'travel', 'Undocked from station')
       }
-      if (actionName === 'view_market') {
-        return { ...state, marketData: p as unknown as MarketData }
-      }
-      if (actionName === 'view_orders') {
-        return { ...state, ordersData: p as unknown as OrdersData }
-      }
-      if (actionName === 'view_storage') {
-        return { ...state, storageData: p as unknown as StorageData }
-      }
+      // view_market, view_orders, view_storage are dispatched as typed actions
+      // by sendCommand (SET_MARKET_DATA, SET_ORDERS_DATA, SET_STORAGE_DATA)
       if (actionName === 'create_sell_order' || actionName === 'create_buy_order') {
         return addEvent({ ...state, marketData: null, ordersData: null }, 'trade', p.message as string || 'Order placed')
       }

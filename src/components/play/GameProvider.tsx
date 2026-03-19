@@ -6,7 +6,8 @@ import { useGameState } from './useGameState'
 import { GameApi } from '@/lib/gameApi'
 import type {
   GameState, WSMessage, GameAction, WelcomePayload, StateUpdate, ChatMessage, TradeOffer,
-  RecipesData, Player, Ship, NearbyPlayer,
+  MarketData, OrdersData, StorageData, FleetData, ShowroomData, ShipCatalogData,
+  RecipesData, SkillsData, Player, Ship, NearbyPlayer,
 } from './types'
 
 interface GameContextValue {
@@ -99,41 +100,9 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
         break
       }
       case 'ok': {
+        // WS ok messages are rare now — mostly login_token auth responses.
+        // Data-setting commands go through HTTP v2 → sendCommand → typed dispatch.
         d({ type: 'OK', payload: p })
-        window.dispatchEvent(new CustomEvent('spacemolt:ok', { detail: p }))
-        const action = (p as Record<string, unknown>).action as string | undefined
-
-        // Auto-refresh system data after navigation via HTTP v2
-        if (action === 'arrived' || action === 'jumped') {
-          apiRef.current?.command('get_system').then((sysResult) => {
-            d({ type: 'OK', payload: (sysResult || {}) as Record<string, unknown> })
-          }).catch(() => {})
-        }
-
-        // Route get_status responses to STATUS_POLL
-        if (action === 'get_status') {
-          const player = (p as Record<string, unknown>).player as Player | undefined
-          const ship = (p as Record<string, unknown>).ship as Ship | undefined
-          if (player && ship) {
-            d({ type: 'STATUS_POLL', payload: { player, ship } })
-          }
-        }
-        // Route get_nearby responses to SET_NEARBY
-        if (action === 'get_nearby') {
-          const players = ((p as Record<string, unknown>).players || []) as NearbyPlayer[]
-          const pirates = ((p as Record<string, unknown>).pirates || []) as NearbyPlayer[]
-          d({ type: 'SET_NEARBY', payload: [...players, ...pirates] })
-        }
-        // catalog response: convert items array to recipes map
-        if (action === 'catalog' && (p.type as string) === 'recipes' && Array.isArray(p.items)) {
-          const recipes: Record<string, unknown> = {}
-          for (const item of p.items as Array<{ id: string }>) { recipes[item.id] = item }
-          d({ type: 'MERGE_RECIPES_DATA', payload: { recipes, total: p.total as number, page: p.page as number } as unknown as RecipesData })
-        }
-        // Handle wrecks response (dispatched via CustomEvent for BasePanel)
-        if (Array.isArray((p as Record<string, unknown>).wrecks)) {
-          window.dispatchEvent(new CustomEvent('spacemolt:wrecks', { detail: (p as Record<string, unknown>).wrecks }))
-        }
         break
       }
       case 'rate_limited': {
@@ -285,8 +254,8 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
   }, [state.authenticated, state.isDocked])
 
   /**
-   * Send a command via HTTP v2 API. The response is dispatched to the reducer
-   * for state updates.
+   * Send a command via HTTP v2 API. Dispatches typed reducer actions for
+   * data-setting commands; falls back to generic OK dispatch for the rest.
    */
   const sendCommand = useCallback((type: string, payload?: Record<string, unknown>): Promise<Record<string, unknown>> => {
     const api = apiRef.current
@@ -296,13 +265,49 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
 
     return api.command(type, payload).then((result) => {
       const r = (result || {}) as Record<string, unknown>
-      dispatchRef.current({ type: 'OK', payload: r })
+      const d = dispatchRef.current
+
+      // Dispatch typed actions for data-setting commands
+      switch (type) {
+        case 'view_market':
+          d({ type: 'SET_MARKET_DATA', payload: r as unknown as MarketData })
+          break
+        case 'view_orders':
+          d({ type: 'SET_ORDERS_DATA', payload: r as unknown as OrdersData })
+          break
+        case 'view_storage':
+          d({ type: 'SET_STORAGE_DATA', payload: r as unknown as StorageData })
+          break
+        case 'list_ships':
+          d({ type: 'SET_FLEET_DATA', payload: r as unknown as FleetData })
+          break
+        case 'shipyard_showroom':
+          d({ type: 'SET_SHOWROOM_DATA', payload: r as unknown as ShowroomData })
+          break
+        case 'get_ships':
+          d({ type: 'SET_SHIP_CATALOG', payload: r as unknown as ShipCatalogData })
+          break
+        case 'get_skills':
+          d({ type: 'SET_SKILLS_DATA', payload: r as unknown as SkillsData })
+          break
+        case 'catalog':
+          if ((r.type as string) === 'recipes' && Array.isArray(r.items)) {
+            const recipes: Record<string, unknown> = {}
+            for (const item of r.items as Array<{ id: string }>) { recipes[item.id] = item }
+            d({ type: 'MERGE_RECIPES_DATA', payload: { recipes, total: r.total as number, page: r.page as number } as unknown as RecipesData })
+          }
+          break
+        default:
+          // Everything else goes through the generic OK handler
+          d({ type: 'OK', payload: r })
+          break
+      }
 
       // Auto-refresh system data after navigation
       const action = r.action as string | undefined
       if (action === 'arrived' || action === 'jumped') {
         api.command('get_system').then((sysResult) => {
-          dispatchRef.current({ type: 'OK', payload: (sysResult || {}) as Record<string, unknown> })
+          d({ type: 'OK', payload: (sysResult || {}) as Record<string, unknown> })
         }).catch(() => {})
       }
       return r
