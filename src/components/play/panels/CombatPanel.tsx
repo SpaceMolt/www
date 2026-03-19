@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import {
   Swords,
   Search,
@@ -46,12 +46,10 @@ interface BattleStatus {
 }
 
 export function CombatPanel() {
-  const { state, sendCommand, send } = useGame()
+  const { state, sendCommand } = useGame()
   const [confirmSelfDestruct, setConfirmSelfDestruct] = useState(false)
   const [battleStatus, setBattleStatus] = useState<BattleStatus | null>(null)
   const [selectedAmmo, setSelectedAmmo] = useState<Record<string, string>>({})
-  const sendRef = useRef(send)
-  sendRef.current = send
 
   // Auto-fetch battle status every 5 seconds when in combat
   useEffect(() => {
@@ -61,7 +59,7 @@ export function CombatPanel() {
     }
 
     const fetchBattleStatus = () => {
-      sendRef.current({ type: 'get_battle_status' })
+      sendCommand('get_battle_status')
     }
 
     // Fetch immediately on entering combat

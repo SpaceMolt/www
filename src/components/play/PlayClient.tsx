@@ -30,7 +30,7 @@ function PlayClientInner({ playerId, authHeaders, onSwitchPlayer }: {
   authHeaders: () => Promise<Record<string, string>>
   onSwitchPlayer: () => void
 }) {
-  const { state, send, sendCommand, setApi, connect, disconnect, sessionReplaced } = useGame()
+  const { state, wsSend, sendCommand, setApi, connect, disconnect, sessionReplaced } = useGame()
   const [phase, setPhase] = useState<'connecting' | 'authenticating' | 'playing'>('connecting')
   const hasConnected = useRef(false)
   const authAttempted = useRef(false)
@@ -78,12 +78,12 @@ function PlayClientInner({ playerId, authHeaders, onSwitchPlayer }: {
       // Token B: authenticate WebSocket for notifications
       const tokenB = await fetchToken()
       if (tokenB) {
-        send({ type: 'login_token', payload: { token: tokenB } })
+        wsSend({ type: 'login_token', payload: { token: tokenB } })
       }
     } catch {
       // Auth error — will retry on next reconnect
     }
-  }, [fetchToken, setApi, send])
+  }, [fetchToken, setApi, wsSend])
 
   // Phase transitions based on WS state
   useEffect(() => {
