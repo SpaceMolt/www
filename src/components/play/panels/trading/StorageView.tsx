@@ -6,7 +6,6 @@ import {
   RefreshCw,
   ArrowDownToLine,
   ArrowUpFromLine,
-  Coins,
   Box,
   Ship,
   Gift,
@@ -15,7 +14,6 @@ import {
   Send,
 } from 'lucide-react'
 import { useGame } from '../../GameProvider'
-import type { StorageItem, StorageShip, StorageGift } from '../../types'
 import styles from './StorageView.module.css'
 
 export function StorageView() {
@@ -23,11 +21,6 @@ export function StorageView() {
   const isDocked = state.isDocked
   const storageData = state.storageData
   const cargo = state.ship?.cargo || []
-  const playerCredits = state.player?.credits ?? 0
-
-  // Credits forms
-  const [depositCreditsAmt, setDepositCreditsAmt] = useState('')
-  const [withdrawCreditsAmt, setWithdrawCreditsAmt] = useState('')
 
   // Item withdraw qty tracking (keyed by item_id)
   const [withdrawQtys, setWithdrawQtys] = useState<Record<string, string>>({})
@@ -55,21 +48,6 @@ export function StorageView() {
   const handleRefresh = useCallback(() => {
     sendCommand('view_storage')
   }, [sendCommand])
-
-  // Credit operations
-  const handleDepositCredits = useCallback(() => {
-    const amount = parseInt(depositCreditsAmt, 10)
-    if (isNaN(amount) || amount < 1) return
-    sendCommand('deposit_credits', { amount })
-    setDepositCreditsAmt('')
-  }, [sendCommand, depositCreditsAmt])
-
-  const handleWithdrawCredits = useCallback(() => {
-    const amount = parseInt(withdrawCreditsAmt, 10)
-    if (isNaN(amount) || amount < 1) return
-    sendCommand('withdraw_credits', { amount })
-    setWithdrawCreditsAmt('')
-  }, [sendCommand, withdrawCreditsAmt])
 
   // Item operations
   const handleWithdrawItem = useCallback(
@@ -137,9 +115,9 @@ export function StorageView() {
     return <div className={styles.loading}>Loading storage data...</div>
   }
 
-  const storedItems: StorageItem[] = storageData.items || []
-  const storedShips: StorageShip[] = storageData.ships || []
-  const gifts: StorageGift[] = storageData.gifts || []
+  const storedItems = storageData.items || []
+  const storedShips = storageData.ships || []
+  const gifts = storageData.gifts || []
 
   return (
     <div className={styles.container}>
@@ -173,7 +151,7 @@ export function StorageView() {
           </button>
           {showGifts && (
             <div className={styles.giftList}>
-              {gifts.map((gift: StorageGift, idx: number) => (
+              {gifts.map((gift, idx) => (
                 <div key={`${gift.sender_id}-${idx}`} className={styles.giftCard}>
                   <div className={styles.giftHeader}>
                     <span className={styles.giftSender}>From: {gift.sender}</span>
@@ -298,70 +276,6 @@ export function StorageView() {
         )}
       </div>
 
-      {/* Credits section */}
-      <div className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <Coins size={12} />
-          Credits
-        </div>
-        <div className={styles.creditsDisplay}>
-          <div className={styles.creditRow}>
-            <span className={styles.creditLabel}>Stored</span>
-            <span className={styles.creditValue}>
-              {storageData.credits.toLocaleString()} cr
-            </span>
-          </div>
-          <div className={styles.creditRow}>
-            <span className={styles.creditLabel}>Wallet</span>
-            <span className={styles.creditValue}>
-              {playerCredits.toLocaleString()} cr
-            </span>
-          </div>
-        </div>
-        <div className={styles.creditActions}>
-          <div className={styles.creditForm}>
-            <input
-              className={styles.creditInput}
-              type="number"
-              min={1}
-              placeholder="Amount"
-              value={depositCreditsAmt}
-              onChange={(e) => setDepositCreditsAmt(e.target.value)}
-            />
-            <button
-              className={styles.depositBtn}
-              onClick={handleDepositCredits}
-              disabled={!depositCreditsAmt || parseInt(depositCreditsAmt, 10) < 1}
-              title="Deposit credits to storage"
-              type="button"
-            >
-              <ArrowDownToLine size={11} />
-              Deposit
-            </button>
-          </div>
-          <div className={styles.creditForm}>
-            <input
-              className={styles.creditInput}
-              type="number"
-              min={1}
-              placeholder="Amount"
-              value={withdrawCreditsAmt}
-              onChange={(e) => setWithdrawCreditsAmt(e.target.value)}
-            />
-            <button
-              className={styles.withdrawBtn}
-              onClick={handleWithdrawCredits}
-              disabled={!withdrawCreditsAmt || parseInt(withdrawCreditsAmt, 10) < 1}
-              title="Withdraw credits from storage"
-              type="button"
-            >
-              <ArrowUpFromLine size={11} />
-              Withdraw
-            </button>
-          </div>
-        </div>
-      </div>
-
       {/* Stored items */}
       <div className={styles.section}>
         <div className={styles.sectionHeader}>
@@ -370,7 +284,7 @@ export function StorageView() {
         </div>
         {storedItems.length > 0 ? (
           <div className={styles.itemList}>
-            {storedItems.map((item: StorageItem) => {
+            {storedItems.map((item) => {
               const qtyStr = withdrawQtys[item.item_id] || ''
               return (
                 <div key={item.item_id} className={styles.itemRow}>
@@ -484,7 +398,7 @@ export function StorageView() {
             Stored Ships ({storedShips.length})
           </div>
           <div className={styles.shipList}>
-            {storedShips.map((ship: StorageShip) => (
+            {storedShips.map((ship) => (
               <div key={ship.ship_id} className={styles.shipCard}>
                 <span className={styles.shipName}>
                   {ship.class_name || ship.class_id}

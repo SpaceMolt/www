@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { Settings, Palette, Eye, EyeOff, Home, LogOut } from 'lucide-react'
+import { Settings, Palette, Home, LogOut } from 'lucide-react'
 import { useGame } from '../GameProvider'
 import { ActionButton } from '../ActionButton'
 import styles from './SettingsPanel.module.css'
@@ -19,7 +19,6 @@ export function SettingsPanel() {
   const [savingColors, setSavingColors] = useState(false)
   const [settingHome, setSettingHome] = useState(false)
 
-  const isAnonymous = player?.is_anonymous ?? false
   const isDocked = state.isDocked
 
   const handleSaveStatus = useCallback(() => {
@@ -42,10 +41,6 @@ export function SettingsPanel() {
     })
     setTimeout(() => setSavingColors(false), 2000)
   }, [sendCommand, primaryColor, secondaryColor])
-
-  const handleToggleAnonymous = useCallback(() => {
-    sendCommand('set_anonymous', { anonymous: !isAnonymous })
-  }, [sendCommand, isAnonymous])
 
   const handleSetHomeBase = useCallback(() => {
     setSettingHome(true)
@@ -173,59 +168,18 @@ export function SettingsPanel() {
 
         <div className={styles.divider} />
 
-        {/* Anonymous Toggle */}
-        <div>
-          <div className={styles.sectionTitle}>
-            <span className={styles.sectionIcon}>
-              {isAnonymous ? <EyeOff size={12} /> : <Eye size={12} />}
-            </span>
-            Visibility
-          </div>
-          <div className={styles.toggleRow}>
-            <div className={styles.toggleInfo}>
-              <span className={styles.toggleLabel}>
-                <span className={styles.toggleIcon}>
-                  {isAnonymous ? <EyeOff size={14} /> : <Eye size={14} />}
-                </span>
-                Anonymous Mode
-              </span>
-              <span className={styles.toggleDesc}>
-                {isAnonymous
-                  ? 'Your identity is hidden from other players'
-                  : 'Other players can see your name and info'}
-              </span>
-            </div>
-            <button
-              type="button"
-              className={`${styles.toggleSwitch} ${isAnonymous ? styles.toggleSwitchOn : ''}`}
-              onClick={handleToggleAnonymous}
-              aria-label="Toggle anonymous mode"
-            />
-          </div>
-        </div>
-
-        <div className={styles.divider} />
-
         {/* Set Home Base */}
         <div>
           <div className={styles.sectionTitle}>
             <span className={styles.sectionIcon}><Home size={12} /></span>
             Home Base
           </div>
-          {(player?.home_system || player?.home_poi || player?.home_base_id) && (
+          {player?.home_base && (
             <div className={styles.connectionCard} style={{ marginBottom: '0.5rem' }}>
-              {player.home_system && (
-                <div className={styles.connectionRow}>
-                  <span className={styles.connectionLabel}>System</span>
-                  <span className={styles.connectionValue}>{player.home_system}</span>
-                </div>
-              )}
-              {player.home_poi && (
-                <div className={styles.connectionRow}>
-                  <span className={styles.connectionLabel}>POI</span>
-                  <span className={styles.connectionValue}>{player.home_poi}</span>
-                </div>
-              )}
+              <div className={styles.connectionRow}>
+                <span className={styles.connectionLabel}>Home Base</span>
+                <span className={styles.connectionValue}>{player.home_base}</span>
+              </div>
             </div>
           )}
           <ActionButton

@@ -72,6 +72,11 @@ export function ShipModules() {
     )
   }
 
+  // ship.modules is string[] (module instance IDs from get_status).
+  // Treat each entry as an opaque record to support both bare IDs and
+  // enriched objects if the data source ever changes.
+  const modules = (ship.modules ?? []) as unknown as Array<Record<string, unknown>>
+
   return (
     <div className={styles.panel}>
       <div className={styles.header}>
@@ -87,85 +92,99 @@ export function ShipModules() {
         {/* Module list */}
         <div>
           <div className={styles.sectionTitle}>
-            Installed ({ship.modules.length})
+            Installed ({modules.length})
           </div>
-          {ship.modules.length > 0 ? (
+          {modules.length > 0 ? (
             <div className={styles.modulesList}>
-              {ship.modules.map((mod, idx) => (
-                <div
-                  key={mod.instance_id || `${mod.module_id}-${idx}`}
-                  className={styles.moduleItem}
-                  title={`${mod.name || formatModuleId(mod.module_id)} — ${mod.type} (${mod.slot_type} slot)\nCPU: ${mod.cpu_cost} | Power: ${mod.power_cost}${mod.quality !== undefined ? ` | Quality: ${mod.quality}%` : ''}${mod.wear !== undefined && mod.wear > 0 ? ` | Wear: ${mod.wear}%` : ''}`}
-                >
-                  <div className={styles.moduleLeft}>
-                    <span className={styles.moduleName}>{mod.name || formatModuleId(mod.module_id)}</span>
-                    <div className={styles.moduleMeta}>
-                      <span className={styles.moduleType}>
-                        {mod.slot_type} / {mod.type}
-                      </span>
-                      {(() => {
-                        const size = (mod as unknown as Record<string, unknown>).size as number | undefined
-                        return size !== undefined && size > 0 ? (
+              {modules.map((mod, idx) => {
+                const instanceId = (mod.instance_id as string | undefined) ?? String(mod)
+                const moduleId = (mod.module_id as string | undefined) ?? String(mod)
+                const displayName = (mod.name as string | undefined) ?? (mod.module_id as string | undefined) ?? formatModuleId(String(mod))
+                const slotType = mod.slot_type as string | undefined
+                const modType = mod.type as string | undefined
+                const quality = mod.quality as number | undefined
+                const wear = mod.wear as number | undefined
+                const cpuCost = mod.cpu_cost as number | undefined
+                const powerCost = mod.power_cost as number | undefined
+                const powerBonus = mod.power_bonus as number | undefined
+                const size = mod.size as number | undefined
+                const hasInstanceId = !!mod.instance_id
+
+                return (
+                  <div
+                    key={hasInstanceId ? instanceId : `${moduleId}-${idx}`}
+                    className={styles.moduleItem}
+                    title={`${displayName}${modType ? ` — ${modType}` : ''}${slotType ? ` (${slotType} slot)` : ''}${cpuCost !== undefined ? `\nCPU: ${cpuCost}` : ''}${powerCost !== undefined ? ` | Power: ${powerCost}` : ''}${quality !== undefined ? ` | Quality: ${quality}%` : ''}${wear !== undefined && wear > 0 ? ` | Wear: ${wear}%` : ''}`}
+                  >
+                    <div className={styles.moduleLeft}>
+                      <span className={styles.moduleName}>{displayName}</span>
+                      <div className={styles.moduleMeta}>
+                        {slotType && modType && (
+                          <span className={styles.moduleType}>
+                            {slotType} / {modType}
+                          </span>
+                        )}
+                        {size !== undefined && size > 0 && (
                           <span className={styles.moduleType}>S{size}</span>
-                        ) : null
-                      })()}
-                      {mod.quality !== undefined && (
-                        <span className={styles.moduleQuality}>
-                          Q{mod.quality}%
-                        </span>
+                        )}
+                        {quality !== undefined && (
+                          <span className={styles.moduleQuality}>
+                            Q{quality}%
+                          </span>
+                        )}
+                        {powerBonus !== undefined && powerBonus > 0 && (
+                          <span className={styles.moduleType}>
+                            +{powerBonus} pwr
+                          </span>
+                        )}
+                        {wear !== undefined && wear > 0 && (
+                          <span className={styles.moduleWear}>
+                            W{wear}%
+                          </span>
+                        )}
+                        {(cpuCost !== undefined || powerCost !== undefined) && (
+                          <span className={styles.moduleType}>
+                            <Cpu size={10} /> {cpuCost ?? '?'}{' '}
+                            <Zap size={10} /> {powerCost ?? '?'}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className={styles.moduleActions}>
+                      {hasInstanceId && isDocked && wear !== undefined && wear > 0 && (
+                        <button
+                          className={styles.repairModBtn}
+                          onClick={() => handleRepairModule(instanceId)}
+                          title={`Repair module (${wear}% wear) - requires repair_kit`}
+                          type="button"
+                        >
+                          <Hammer size={12} />
+                        </button>
                       )}
-                      {mod.power_bonus !== undefined && mod.power_bonus > 0 && (
-                        <span className={styles.moduleType}>
-                          +{mod.power_bonus} pwr
-                        </span>
+                      {hasInstanceId && isDocked && (
+                        <>
+                          <button
+                            className={styles.storeBtn}
+                            onClick={() => handleDepositModule(instanceId, moduleId)}
+                            title="Uninstall and store at station"
+                            type="button"
+                          >
+                            <ArrowDownToLine size={12} />
+                          </button>
+                          <button
+                            className={styles.uninstallBtn}
+                            onClick={() => handleUninstallModule(instanceId)}
+                            title="Uninstall to cargo"
+                            type="button"
+                          >
+                            <X size={14} />
+                          </button>
+                        </>
                       )}
-                      {mod.wear !== undefined && mod.wear > 0 && (
-                        <span className={styles.moduleWear}>
-                          W{mod.wear}%
-                        </span>
-                      )}
-                      <span className={styles.moduleType}>
-                        <Cpu size={10} /> {mod.cpu_cost}{' '}
-                        <Zap size={10} /> {mod.power_cost}
-                      </span>
                     </div>
                   </div>
-                  <div className={styles.moduleActions}>
-                    {mod.instance_id && isDocked && mod.wear !== undefined && mod.wear > 0 && (
-                      <button
-                        className={styles.repairModBtn}
-                        onClick={() => handleRepairModule(mod.instance_id!)}
-                        title={`Repair module (${mod.wear}% wear) - requires repair_kit`}
-                        type="button"
-                      >
-                        <Hammer size={12} />
-                      </button>
-                    )}
-                    {mod.instance_id && isDocked && (
-                      <>
-                        <button
-                          className={styles.storeBtn}
-                          onClick={() => handleDepositModule(mod.instance_id!, mod.module_id)}
-                          title="Uninstall and store at station"
-                          type="button"
-                        >
-                          <ArrowDownToLine size={12} />
-                        </button>
-                        <button
-                          className={styles.uninstallBtn}
-                          onClick={() =>
-                            handleUninstallModule(mod.instance_id!)
-                          }
-                          title="Uninstall to cargo"
-                          type="button"
-                        >
-                          <X size={14} />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           ) : (
             <div className={styles.emptyState}>No modules installed</div>

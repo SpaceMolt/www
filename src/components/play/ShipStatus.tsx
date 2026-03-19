@@ -27,7 +27,7 @@ export function ShipStatus() {
     <div className={styles.container}>
       <div className={styles.shipName}>
         <Rocket size={14} className={styles.shipIcon} />
-        <span className={styles.shipClass}>{ship.class}</span>
+        <span className={styles.shipClass}>{ship.name}</span>
       </div>
       <div className={styles.bars}>
         <div className={styles.barItem}>
@@ -41,8 +41,8 @@ export function ShipStatus() {
         </div>
         <div className={styles.barItem}>
           <ProgressBar
-            value={ship.shield}
-            max={ship.max_shield}
+            value={ship.shield ?? 0}
+            max={ship.max_shield ?? 0}
             color="blue"
             label="Shield"
             size="sm"
@@ -59,7 +59,7 @@ export function ShipStatus() {
         </div>
         <div className={styles.barItem}>
           <ProgressBar
-            value={ship.cargo_used}
+            value={ship.cargo_used ?? 0}
             max={ship.cargo_capacity}
             color="cyan"
             label="Cargo"

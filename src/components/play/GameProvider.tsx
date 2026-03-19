@@ -3,6 +3,7 @@
 import { createContext, useContext, useCallback, useEffect, useRef, type ReactNode } from 'react'
 import { useWebSocket } from './useWebSocket'
 import { useGameState } from './useGameState'
+import { GameApi } from '@/lib/gameApi'
 import type {
   GameState, WSMessage, GameAction, WelcomePayload, StateUpdate, ChatMessage, TradeOffer,
   ShipCatalogData, ShowroomData, FleetData, StorageData, MarketData, OrdersData,
@@ -12,8 +13,13 @@ import type {
 interface GameContextValue {
   state: GameState
   dispatch: React.Dispatch<GameAction>
+  /** Raw WS send — only for initial login_token auth handshake */
   send: (msg: WSMessage) => void
   sendCommand: (type: string, payload?: Record<string, unknown>) => Promise<Record<string, unknown>>
+  /** HTTP v2 API client — available after session is created */
+  api: GameApi | null
+  /** Set the API instance after auth completes */
+  setApi: (api: GameApi) => void
   connect: () => void
   disconnect: () => void
   readyState: number
@@ -39,6 +45,9 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
   const dispatchRef = useRef(dispatch)
   dispatchRef.current = dispatch
   const sendRef = useRef<(msg: WSMessage) => void>(() => {})
+  const apiRef = useRef<GameApi | null>(null)
+
+  // Legacy callback tracking — only used during transition for WS-originated responses
   const pendingCallbacksRef = useRef<Map<string, (payload: Record<string, unknown>) => void>>(new Map())
   const reqIdRef = useRef(0)
 
@@ -169,8 +178,8 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
           else if (Array.isArray(p.ships) && 'count' in p && ('active_ship_id' in p || !('message' in p))) {
             d({ type: 'SET_FLEET_DATA', payload: p as unknown as FleetData })
           }
-          // view_storage: has base_id + credits + items
-          else if ('base_id' in p && 'credits' in p && Array.isArray(p.items)) {
+          // view_storage: has base_id + items array
+          else if ('base_id' in p && Array.isArray(p.items) && !('shipyard_level' in p)) {
             d({ type: 'SET_STORAGE_DATA', payload: p as unknown as StorageData })
           }
           // get_recipes: has recipes object (map of recipe_id -> recipe)
@@ -317,29 +326,75 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
   const stateRef = useRef(state)
   stateRef.current = state
 
-  // Poll get_status every 5 seconds when authenticated and WS is open
+  // Poll get_status every 5 seconds via HTTP v2 when authenticated
   useEffect(() => {
     if (!state.authenticated) return
-    const interval = setInterval(() => {
-      if (readyStateRef.current === WebSocket.OPEN && stateRef.current.authenticated) {
-        sendRef.current({ type: 'get_status' })
+    const interval = setInterval(async () => {
+      if (!stateRef.current.authenticated || !apiRef.current) return
+      try {
+        const result = await apiRef.current.command('get_status') as Record<string, unknown>
+        const player = result.player as Player | undefined
+        const ship = result.ship as Ship | undefined
+        if (player && ship) {
+          dispatchRef.current({ type: 'STATUS_POLL', payload: { player, ship } })
+        }
+      } catch {
+        // Polling failure is non-critical
       }
     }, 5000)
     return () => clearInterval(interval)
   }, [state.authenticated])
 
-  // Poll get_nearby every 10 seconds when authenticated, connected, and not docked
+  // Poll get_nearby every 10 seconds via HTTP v2 when authenticated and not docked
   useEffect(() => {
     if (!state.authenticated || state.isDocked) return
-    const interval = setInterval(() => {
-      if (readyStateRef.current === WebSocket.OPEN && stateRef.current.authenticated && !stateRef.current.isDocked) {
-        sendRef.current({ type: 'get_nearby' })
+    const interval = setInterval(async () => {
+      if (!stateRef.current.authenticated || stateRef.current.isDocked || !apiRef.current) return
+      try {
+        const result = await apiRef.current.command('get_nearby') as Record<string, unknown>
+        const players = (result.players || []) as NearbyPlayer[]
+        const pirates = (result.pirates || []) as NearbyPlayer[]
+        dispatchRef.current({ type: 'SET_NEARBY', payload: [...players, ...pirates] })
+      } catch {
+        // Polling failure is non-critical
       }
     }, 10000)
     return () => clearInterval(interval)
   }, [state.authenticated, state.isDocked])
 
+  /**
+   * Send a command via HTTP v2 API. Falls back to WebSocket if API not available.
+   * The response is dispatched to the reducer via OK action (same as WS path)
+   * for backward compatibility during migration.
+   */
   const sendCommand = useCallback((type: string, payload?: Record<string, unknown>): Promise<Record<string, unknown>> => {
+    const api = apiRef.current
+    if (api) {
+      // HTTP v2 path — command goes over HTTP, response is immediate
+      return api.command(type, payload).then((result) => {
+        const r = (result || {}) as Record<string, unknown>
+        // Dispatch through the reducer for state updates (same as WS OK handler)
+        dispatchRef.current({ type: 'OK', payload: r })
+        // Auto-refresh system data after navigation
+        const action = r.action as string | undefined
+        if (action === 'arrived' || action === 'jumped') {
+          api.command('get_system').then((sysResult) => {
+            dispatchRef.current({ type: 'OK', payload: (sysResult || {}) as Record<string, unknown> })
+          }).catch(() => {})
+        }
+        return r
+      }).catch((err) => {
+        const errPayload = {
+          error: true,
+          code: err.code || 'command_error',
+          message: err.message || 'Command failed',
+        }
+        dispatchRef.current({ type: 'ERROR', payload: { code: errPayload.code, message: errPayload.message } })
+        return errPayload as Record<string, unknown>
+      })
+    }
+
+    // Fallback: WebSocket path (used before API session is established)
     return new Promise((resolve) => {
       const reqId = `${type}:${++reqIdRef.current}`
       pendingCallbacksRef.current.set(reqId, resolve)
@@ -350,11 +405,17 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
     })
   }, [send])
 
+  const setApi = useCallback((api: GameApi) => {
+    apiRef.current = api
+  }, [])
+
   const value: GameContextValue = {
     state,
     dispatch,
     send,
     sendCommand,
+    api: apiRef.current,
+    setApi,
     connect,
     disconnect,
     readyState,

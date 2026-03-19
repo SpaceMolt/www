@@ -8,6 +8,7 @@ import { GameProvider, useGame } from './GameProvider'
 import { PlayerSelector } from './PlayerSelector'
 import { HUD } from './HUD'
 import { useGameAuth } from '@/lib/useGameAuth'
+import { GameApi } from '@/lib/gameApi'
 import styles from './PlayClient.module.css'
 
 const GAME_SERVER = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
@@ -29,12 +30,12 @@ function PlayClientInner({ playerId, authHeaders, onSwitchPlayer }: {
   authHeaders: () => Promise<Record<string, string>>
   onSwitchPlayer: () => void
 }) {
-  const { state, send, sendCommand, connect, disconnect, sessionReplaced } = useGame()
+  const { state, send, sendCommand, setApi, connect, disconnect, sessionReplaced } = useGame()
   const [phase, setPhase] = useState<'connecting' | 'authenticating' | 'playing'>('connecting')
   const hasConnected = useRef(false)
   const authAttempted = useRef(false)
 
-  // Connect on mount
+  // Connect WS on mount
   useEffect(() => {
     connect()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -46,21 +47,43 @@ function PlayClientInner({ playerId, authHeaders, onSwitchPlayer }: {
     return () => { document.body.classList.remove('play-page') }
   }, [])
 
-  // Fetch a ws-token and send login_token over the WebSocket
-  const authenticateWithToken = useCallback(async () => {
+  // Fetch ws-token helper
+  const fetchToken = useCallback(async (): Promise<string | null> => {
     try {
       const headers = await authHeaders()
       const res = await fetch(`${GAME_SERVER}/api/player/${playerId}/ws-token`, {
         method: 'POST',
         headers,
       })
-      if (!res.ok) return
+      if (!res.ok) return null
       const data = await res.json()
-      send({ type: 'login_token', payload: { token: data.token } })
+      return data.token || null
+    } catch {
+      return null
+    }
+  }, [authHeaders, playerId])
+
+  // Authenticate both HTTP v2 (for commands) and WebSocket (for notifications)
+  const authenticateWithToken = useCallback(async () => {
+    try {
+      // Token A: authenticate HTTP v2 session
+      const tokenA = await fetchToken()
+      if (!tokenA) return
+
+      const api = new GameApi()
+      await api.createSession()
+      await api.loginToken(tokenA)
+      setApi(api)
+
+      // Token B: authenticate WebSocket for notifications
+      const tokenB = await fetchToken()
+      if (tokenB) {
+        send({ type: 'login_token', payload: { token: tokenB } })
+      }
     } catch {
       // Auth error — will retry on next reconnect
     }
-  }, [authHeaders, playerId, send])
+  }, [fetchToken, setApi, send])
 
   // Phase transitions based on WS state
   useEffect(() => {

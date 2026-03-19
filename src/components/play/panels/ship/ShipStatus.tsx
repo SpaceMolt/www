@@ -79,14 +79,14 @@ export function ShipStatus() {
         {/* Ship overview */}
         <div className={styles.shipOverview}>
           <img
-            src={`/images/ships/catalog/${ship.class.toLowerCase().replace(/\s+/g, '_')}.webp`}
-            alt={ship.class}
+            src={`/images/ships/catalog/${ship.class_id}.webp`}
+            alt={ship.name}
             className={styles.shipImage}
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
           />
           <div>
-            <div className={styles.shipClass}>{ship.class}</div>
-            {ship.name && ship.name !== ship.class && (
+            <div className={styles.shipClass}>{ship.name}</div>
+            {ship.name && ship.name !== ship.class_id && (
               <div className={styles.shipName}>&quot;{ship.name}&quot;</div>
             )}
           </div>
@@ -105,8 +105,8 @@ export function ShipStatus() {
           </div>
           <div className={styles.statCard}>
             <ProgressBar
-              value={ship.shield}
-              max={ship.max_shield}
+              value={ship.shield ?? 0}
+              max={ship.max_shield ?? 0}
               label="Shield"
               color="cyan"
               size="sm"
@@ -123,7 +123,7 @@ export function ShipStatus() {
           </div>
           <div className={styles.statCard}>
             <ProgressBar
-              value={ship.cargo_used}
+              value={ship.cargo_used ?? 0}
               max={ship.cargo_capacity}
               label="Cargo"
               color="yellow"
@@ -132,8 +132,8 @@ export function ShipStatus() {
           </div>
           <div className={styles.statCard}>
             <ProgressBar
-              value={ship.cpu_used}
-              max={ship.cpu_capacity}
+              value={ship.cpu_used ?? 0}
+              max={ship.cpu_capacity ?? 0}
               label="CPU"
               color="purple"
               size="sm"
@@ -141,8 +141,8 @@ export function ShipStatus() {
           </div>
           <div className={styles.statCard}>
             <ProgressBar
-              value={ship.power_used}
-              max={ship.power_capacity}
+              value={ship.power_used ?? 0}
+              max={ship.power_capacity ?? 0}
               label="Power"
               color="blue"
               size="sm"
@@ -190,12 +190,12 @@ export function ShipStatus() {
         </div>
         {ship.cargo && ship.cargo.length > 0 ? (
           <div className={styles.modulesList}>
-            {ship.cargo.map((item: { item_id: string; name: string; quantity: number; size: number }) => (
+            {ship.cargo.map((item) => (
               <div key={item.item_id} className={styles.moduleItem}>
-                <span className={styles.moduleName}>{item.name}</span>
+                <span className={styles.moduleName}>{item.name ?? item.item_id}</span>
                 <span className={styles.moduleMeta}>
                   <span className={styles.moduleType}>x{item.quantity}</span>
-                  <span className={styles.moduleType}>{item.quantity * item.size}u</span>
+                  <span className={styles.moduleType}>{item.quantity * (item.size ?? 0)}u</span>
                 </span>
               </div>
             ))}

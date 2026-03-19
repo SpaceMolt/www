@@ -4,8 +4,7 @@ import { useState, useCallback } from 'react'
 import { Building2, Shield, Wrench, Heart, Hammer, RefreshCw, Anchor, ArrowUpFromLine, Coins } from 'lucide-react'
 import { useGame } from '../GameProvider'
 import { ActionButton } from '../ActionButton'
-import { ProgressBar } from '../ProgressBar'
-import type { BaseInfo, Wreck } from '../types'
+import type { GetBaseResponse, Wreck } from '../types'
 import styles from './BasePanel.module.css'
 
 const STATION_TYPES = ['outpost', 'station', 'fortress'] as const
@@ -21,7 +20,7 @@ const AVAILABLE_SERVICES = [
 
 export function BasePanel() {
   const { state, sendCommand } = useGame()
-  const [baseInfo, setBaseInfo] = useState<BaseInfo | null>(null)
+  const [baseInfo, setBaseInfo] = useState<GetBaseResponse | null>(null)
   const [wrecks, setWrecks] = useState<Wreck[]>([])
   const [wrecksLoaded, setWrecksLoaded] = useState(false)
   const [loadingWrecks, setLoadingWrecks] = useState(false)
@@ -152,38 +151,29 @@ export function BasePanel() {
                 <span className={styles.sectionIcon}><Building2 size={12} /></span>
                 Current Base
               </div>
-              {state.poi?.base_name ? (
+              {state.poi?.name ? (
                 <div className={styles.baseCard}>
-                  <div className={styles.baseName}>{state.poi.base_name}</div>
+                  <div className={styles.baseName}>{state.poi.name}</div>
                   <div className={styles.baseMeta}>
                     <span className={styles.metaTag}>
                       Type: <span className={styles.metaValue}>
-                        {baseInfo?.type ?? 'Unknown'}
+                        {baseInfo?.base.type ?? 'Unknown'}
                       </span>
                     </span>
                     <span className={styles.metaTag}>
                       <Shield size={10} />
                       Defense: <span className={styles.metaValue}>
-                        {baseInfo?.defense_level ?? '--'}
+                        {baseInfo?.base.defense_level ?? '--'}
                       </span>
                     </span>
                     {baseInfo?.condition && (
                       <span className={styles.metaTag}>
                         Condition: <span className={styles.metaValue}>
-                          {baseInfo.condition}
+                          {baseInfo.condition.condition}
                         </span>
                       </span>
                     )}
                   </div>
-                  {baseInfo?.health != null && baseInfo?.max_health != null && (
-                    <ProgressBar
-                      value={baseInfo.health}
-                      max={baseInfo.max_health}
-                      color="green"
-                      label="Health"
-                      size="sm"
-                    />
-                  )}
                   {baseInfo?.services && baseInfo.services.length > 0 && (
                     <div className={styles.serviceList}>
                       {baseInfo.services.map((s) => (
@@ -384,36 +374,36 @@ export function BasePanel() {
           {wrecks.length > 0 && (
             <div className={styles.wreckList}>
               {wrecks.map((w) => (
-                <div key={w.wreck_id} className={styles.wreckItem}>
+                <div key={w.id} className={styles.wreckItem}>
                   <button
                     className={styles.wreckHeader}
-                    onClick={() => setExpandedWreck(expandedWreck === w.wreck_id ? null : w.wreck_id)}
+                    onClick={() => setExpandedWreck(expandedWreck === w.id ? null : w.id)}
                     type="button"
                   >
                     <div className={styles.wreckInfo}>
                       <span className={styles.wreckName}>
-                        {w.player_name ?? 'Unknown'} - {w.ship_class ?? 'Wreck'}
+                        {w.victim_name} - {w.ship_class ?? 'Wreck'}
                       </span>
                       <span className={styles.wreckMeta}>
-                        {w.items.length} items{w.credits ? ` + ${w.credits.toLocaleString()} cr` : ''}
+                        {w.cargo.length} items{w.salvage_value ? ` · ${w.salvage_value.toLocaleString()} cr salvage` : ''}
                       </span>
                     </div>
                     <span className={styles.wreckTimer}>
-                      {w.ticks_remaining} ticks
+                      tick {w.expire_tick}
                     </span>
                   </button>
-                  {expandedWreck === w.wreck_id && (
+                  {expandedWreck === w.id && (
                     <div className={styles.wreckContents}>
-                      {w.items.length > 0 ? (
+                      {w.cargo.length > 0 ? (
                         <div className={styles.wreckItemList}>
-                          {w.items.map((item) => (
+                          {w.cargo.map((item) => (
                             <div key={item.item_id} className={styles.wreckLootRow}>
                               <span className={styles.wreckLootName}>
-                                {item.name} x{item.quantity}
+                                {item.name ?? item.item_id} x{item.quantity}
                               </span>
                               <button
                                 className={styles.lootBtn}
-                                onClick={() => handleLootItem(w.wreck_id, item.item_id)}
+                                onClick={() => handleLootItem(w.id, item.item_id)}
                                 disabled={lootingItem === item.item_id}
                                 type="button"
                               >
@@ -426,14 +416,14 @@ export function BasePanel() {
                       ) : (
                         <div className={styles.emptyState}>No items remaining</div>
                       )}
-                      {w.credits != null && w.credits > 0 && (
+                      {w.salvage_value > 0 && (
                         <div className={styles.wreckCredits}>
-                          <Coins size={10} /> {w.credits.toLocaleString()} credits
+                          <Coins size={10} /> {w.salvage_value.toLocaleString()} cr salvage value
                         </div>
                       )}
                       <button
                         className={styles.salvageBtn}
-                        onClick={() => handleSalvageWreck(w.wreck_id)}
+                        onClick={() => handleSalvageWreck(w.id)}
                         disabled={salvaging}
                         type="button"
                       >

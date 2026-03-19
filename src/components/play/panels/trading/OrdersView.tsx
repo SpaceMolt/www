@@ -11,7 +11,6 @@ import {
   Check,
 } from 'lucide-react'
 import { useGame } from '../../GameProvider'
-import type { OrderEntry } from '../../types'
 import styles from './OrdersView.module.css'
 
 export function OrdersView() {
@@ -110,8 +109,8 @@ export function OrdersView() {
     )
   }
 
-  const personalOrders = ordersData?.orders || []
-  const factionOrders = ordersData?.faction_orders || []
+  const personalOrders = (ordersData?.orders || []).filter((o) => !o.faction_order)
+  const factionOrders = (ordersData?.orders || []).filter((o) => o.faction_order)
 
   const formatDate = (iso: string) => {
     try {
@@ -230,7 +229,7 @@ export function OrdersView() {
         <div className={styles.emptyState}>No active orders</div>
       ) : (
         <div className={styles.orderList}>
-          {personalOrders.map((order: OrderEntry) => {
+          {personalOrders.map((order) => {
             const isEditing = editingOrderId === order.order_id
             const result = modifyResult[order.order_id]
             return (
@@ -342,7 +341,7 @@ export function OrdersView() {
             Faction Orders ({factionOrders.length})
           </div>
           <div className={styles.orderList}>
-            {factionOrders.map((order: OrderEntry) => (
+            {factionOrders.map((order) => (
               <div key={order.order_id} className={`${styles.orderCard} ${styles.factionCard}`}>
                 <div className={styles.orderTop}>
                   <span
