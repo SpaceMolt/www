@@ -126,9 +126,9 @@ export function NavigationPanel() {
   const isTraveling =
     state.travelProgress !== null && state.travelProgress !== undefined
 
-  const hasSurveyScanner = state.ship?.modules?.some(
-    (m) => m.type === 'utility' && m.name.toLowerCase().includes('survey')
-  )
+  // Module instances are stored as IDs in Ship; we can't filter by type/name here,
+  // so always show the survey button and let the server reject if no scanner is installed.
+  const hasSurveyScanner = Boolean(state.ship?.modules?.length)
 
   return (
     <div className={styles.panel}>
@@ -197,7 +197,7 @@ export function NavigationPanel() {
         )}
 
         {/* Dock / Undock */}
-        {poi && poi.has_base && (
+        {poi && poi.base_id && (
           <div className={styles.dockRow}>
             <button
               className={styles.searchBtn}
@@ -248,7 +248,7 @@ export function NavigationPanel() {
                       <span className={styles.poiType}>{p.type}</span>
                     </div>
                     <div className={styles.poiRight}>
-                      {p.online > 0 && (
+                      {(p.online ?? 0) > 0 && (
                         <span className={styles.poiOnline}>
                           {p.online} online
                         </span>

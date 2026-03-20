@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import {
   Swords,
   Search,
@@ -46,12 +46,10 @@ interface BattleStatus {
 }
 
 export function CombatPanel() {
-  const { state, sendCommand, send } = useGame()
+  const { state, sendCommand } = useGame()
   const [confirmSelfDestruct, setConfirmSelfDestruct] = useState(false)
   const [battleStatus, setBattleStatus] = useState<BattleStatus | null>(null)
   const [selectedAmmo, setSelectedAmmo] = useState<Record<string, string>>({})
-  const sendRef = useRef(send)
-  sendRef.current = send
 
   // Auto-fetch battle status every 5 seconds when in combat
   useEffect(() => {
@@ -61,7 +59,7 @@ export function CombatPanel() {
     }
 
     const fetchBattleStatus = () => {
-      sendRef.current({ type: 'get_battle_status' })
+      sendCommand('get_battle_status')
     }
 
     // Fetch immediately on entering combat
@@ -149,9 +147,8 @@ export function CombatPanel() {
 
   const isCloaked = state.player?.is_cloaked ?? false
   const nearby = state.nearby || []
-  const weapons = (state.ship?.modules || []).filter(
-    (mod) => mod.type === 'weapon'
-  )
+  // ship.modules is string[] (module instance IDs); no weapon filtering available from this field
+  const moduleIds = state.ship?.modules || []
   const cargoItems = state.ship?.cargo || []
 
   return (
@@ -359,18 +356,15 @@ export function CombatPanel() {
           {nearby.length > 0 ? (
             <div className={styles.playerList}>
               {nearby.map((player) => {
-                const displayName = player.is_anonymous
-                  ? 'Unknown Vessel'
-                  : player.username || 'Unknown'
+                const displayName = player.username || 'Unknown'
+                const playerId = player.player_id ?? ''
 
                 return (
-                  <div key={player.player_id} className={styles.playerCard}>
+                  <div key={playerId} className={styles.playerCard}>
                     <div className={styles.playerInfo}>
                       <div className={styles.playerNameRow}>
                         <span
-                          className={`${styles.playerName} ${
-                            player.is_anonymous ? styles.anonymousName : ''
-                          }`}
+                          className={styles.playerName}
                           style={
                             player.primary_color
                               ? { color: player.primary_color }
@@ -384,11 +378,6 @@ export function CombatPanel() {
                             [{player.clan_tag}]
                           </span>
                         )}
-                        {player.is_npc && (
-                          <span className={styles.npcTag}>
-                            {player.npc_type || 'NPC'}
-                          </span>
-                        )}
                       </div>
                       {player.ship_class && (
                         <span className={styles.playerShip}>
@@ -400,22 +389,20 @@ export function CombatPanel() {
                     <div className={styles.playerActions}>
                       <button
                         className={styles.scanBtn}
-                        onClick={() => handleScan(player.player_id)}
+                        onClick={() => handleScan(playerId)}
                         title={`Scan ${displayName}`}
                         type="button"
                       >
                         <Search size={14} />
                       </button>
-                      {!player.is_npc && (
-                        <button
-                          className={styles.attackBtn}
-                          onClick={() => handleAttack(player.player_id)}
-                          title={`Attack ${displayName}`}
-                          type="button"
-                        >
-                          <Swords size={14} />
-                        </button>
-                      )}
+                      <button
+                        className={styles.attackBtn}
+                        onClick={() => handleAttack(playerId)}
+                        title={`Attack ${displayName}`}
+                        type="button"
+                      >
+                        <Swords size={14} />
+                      </button>
                     </div>
                   </div>
                 )
@@ -429,49 +416,46 @@ export function CombatPanel() {
         </div>
 
         {/* Reload Section */}
-        {weapons.length > 0 && (
+        {moduleIds.length > 0 && (
           <div>
             <div className={styles.sectionTitle}>
               <RotateCw size={12} /> Weapon Reload
             </div>
             <div className={styles.reloadList}>
-              {weapons.map((mod) => {
-                const instanceId = mod.instance_id || mod.module_id
-                return (
-                  <div key={instanceId} className={styles.reloadCard}>
-                    <div className={styles.reloadWeaponName}>{mod.name}</div>
-                    <div className={styles.reloadControls}>
-                      <select
-                        className={styles.ammoSelect}
-                        value={selectedAmmo[instanceId] || ''}
-                        onChange={(e) =>
-                          setSelectedAmmo((prev) => ({
-                            ...prev,
-                            [instanceId]: e.target.value,
-                          }))
-                        }
-                      >
-                        <option value="">Select ammo</option>
-                        {cargoItems.map((item) => (
-                          <option key={item.item_id} value={item.item_id}>
-                            {item.name} (x{item.quantity})
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        className={styles.reloadBtn}
-                        onClick={() => handleReload(instanceId)}
-                        disabled={!selectedAmmo[instanceId]}
-                        title={`Reload ${mod.name}`}
-                        type="button"
-                      >
-                        <RotateCw size={12} />
-                        Reload
-                      </button>
-                    </div>
+              {moduleIds.map((instanceId) => (
+                <div key={instanceId} className={styles.reloadCard}>
+                  <div className={styles.reloadWeaponName}>{instanceId}</div>
+                  <div className={styles.reloadControls}>
+                    <select
+                      className={styles.ammoSelect}
+                      value={selectedAmmo[instanceId] || ''}
+                      onChange={(e) =>
+                        setSelectedAmmo((prev) => ({
+                          ...prev,
+                          [instanceId]: e.target.value,
+                        }))
+                      }
+                    >
+                      <option value="">Select ammo</option>
+                      {cargoItems.map((item) => (
+                        <option key={item.item_id} value={item.item_id}>
+                          {item.name} (x{item.quantity})
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      className={styles.reloadBtn}
+                      onClick={() => handleReload(instanceId)}
+                      disabled={!selectedAmmo[instanceId]}
+                      title={`Reload ${instanceId}`}
+                      type="button"
+                    >
+                      <RotateCw size={12} />
+                      Reload
+                    </button>
                   </div>
-                )
-              })}
+                </div>
+              ))}
             </div>
           </div>
         )}

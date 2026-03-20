@@ -14,7 +14,6 @@ import {
   Filter,
 } from 'lucide-react'
 import { useGame } from '../../GameProvider'
-import type { MarketItem } from '../../types'
 import styles from './MarketView.module.css'
 
 interface MarketInsight {
@@ -108,12 +107,8 @@ export function MarketView() {
       setExpandedItem(collapsing ? null : itemId)
       setBuyQty('1')
       setSellQty('1')
-      // In summary mode, fetch full order book for the selected item
-      if (!collapsing && marketData?.summarized) {
-        sendCommand('view_market', { item_id: itemId })
-      }
     },
-    [expandedItem, marketData?.summarized, sendCommand]
+    [expandedItem, sendCommand]
   )
 
   const handleBuyAtMarket = useCallback(
@@ -264,13 +259,6 @@ export function MarketView() {
         </div>
       ) : (
         <>
-          {/* Summary mode notice */}
-          {marketData.summarized && (
-            <div className={styles.summaryNotice}>
-              Showing summary. Select an item to view full order book.
-            </div>
-          )}
-
           {/* Table header */}
           <div className={styles.tableHeader}>
             <span className={styles.colItem}>Item</span>
@@ -283,7 +271,7 @@ export function MarketView() {
 
           {/* Item rows */}
           <div className={styles.itemList}>
-            {items.map((item: MarketItem) => {
+            {items.map((item) => {
               const isExpanded = expandedItem === item.item_id
               const hasBuy = item.best_buy > 0
               const hasSell = item.best_sell > 0
@@ -291,8 +279,6 @@ export function MarketView() {
               const cargoItem = cargo.find((c) => c.item_id === item.item_id)
               const totalBuyQty = item.buy_orders.reduce((sum, o) => sum + o.quantity, 0)
               const totalSellQty = item.sell_orders.reduce((sum, o) => sum + o.quantity, 0)
-              // In summary mode, don't show expandable order book depth
-              const isSummaryItem = marketData.summarized && item.sell_orders.length === 0 && item.buy_orders.length === 0
 
               return (
                 <div key={item.item_id} className={styles.itemBlock}>
@@ -302,9 +288,7 @@ export function MarketView() {
                     type="button"
                   >
                     <span className={styles.colItem}>
-                      {isSummaryItem ? (
-                        <ChevronRight size={12} />
-                      ) : isExpanded ? (
+                      {isExpanded ? (
                         <ChevronDown size={12} />
                       ) : (
                         <ChevronRight size={12} />
@@ -328,7 +312,7 @@ export function MarketView() {
                     </span>
                   </button>
 
-                  {isExpanded && !isSummaryItem && (
+                  {isExpanded && (
                     <div className={styles.expandedPanel}>
                       {/* Order book */}
                       <div className={styles.orderBookRow}>

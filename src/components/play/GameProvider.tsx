@@ -3,17 +3,23 @@
 import { createContext, useContext, useCallback, useEffect, useRef, type ReactNode } from 'react'
 import { useWebSocket } from './useWebSocket'
 import { useGameState } from './useGameState'
+import { GameApi } from '@/lib/gameApi'
 import type {
   GameState, WSMessage, GameAction, WelcomePayload, StateUpdate, ChatMessage, TradeOffer,
-  ShipCatalogData, ShowroomData, FleetData, StorageData, MarketData, OrdersData,
+  MarketData, OrdersData, StorageData, FleetData, ShowroomData, ShipCatalogData,
   RecipesData, SkillsData, Player, Ship, NearbyPlayer,
 } from './types'
 
 interface GameContextValue {
   state: GameState
   dispatch: React.Dispatch<GameAction>
-  send: (msg: WSMessage) => void
+  /** Raw WS send — only for login_token auth in PlayClient */
+  wsSend: (msg: WSMessage) => void
   sendCommand: (type: string, payload?: Record<string, unknown>) => Promise<Record<string, unknown>>
+  /** HTTP v2 API client — available after session is created */
+  api: GameApi | null
+  /** Set the API instance after auth completes */
+  setApi: (api: GameApi) => void
   connect: () => void
   disconnect: () => void
   readyState: number
@@ -38,9 +44,7 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
   const [state, dispatch] = useGameState()
   const dispatchRef = useRef(dispatch)
   dispatchRef.current = dispatch
-  const sendRef = useRef<(msg: WSMessage) => void>(() => {})
-  const pendingCallbacksRef = useRef<Map<string, (payload: Record<string, unknown>) => void>>(new Map())
-  const reqIdRef = useRef(0)
+  const apiRef = useRef<GameApi | null>(null)
 
   const onMessage = useCallback((msg: WSMessage) => {
     const d = dispatchRef.current
@@ -71,21 +75,12 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
         d({ type: 'OK', payload: result })
 
         const arAction = result.action as string | undefined
-        // Resolve pending sendCommand promise using _req_id or command field
-        const arReqId = (result._req_id || p._req_id) as string | undefined
-        const arCommand = p.command as string | undefined
-        const arKey = arReqId || arCommand
-        if (arKey) {
-          const cb = pendingCallbacksRef.current.get(arKey)
-          if (cb) {
-            pendingCallbacksRef.current.delete(arKey)
-            cb(result)
-          }
-        }
 
-        // Auto-refresh system data after arriving at a POI or jumping to a new system
+        // Auto-refresh system data after navigation via HTTP v2
         if (arAction === 'arrived' || arAction === 'jumped') {
-          sendRef.current({ type: 'get_system' })
+          apiRef.current?.command('get_system').then((sysResult) => {
+            d({ type: 'OK', payload: (sysResult || {}) as Record<string, unknown> })
+          }).catch(() => {})
         }
 
         // Handle auto dock/undock flags
@@ -101,105 +96,13 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
         // Deferred mutation error from the engine
         const aeTick = p.tick as number
         if (aeTick > 0) d({ type: 'TICK', tick: aeTick })
-
         d({ type: 'ERROR', payload: { code: (p.code as string) || 'action_error', message: (p.message as string) || 'Action failed' } })
-
-        // Resolve pending sendCommand promise
-        const aeReqId = p._req_id as string | undefined
-        const aeCommand = p.command as string | undefined
-        const aeKey = aeReqId || aeCommand
-        if (aeKey) {
-          const cb = pendingCallbacksRef.current.get(aeKey)
-          if (cb) {
-            pendingCallbacksRef.current.delete(aeKey)
-            cb({ error: true, code: p.code, message: p.message } as Record<string, unknown>)
-          }
-        }
         break
       }
       case 'ok': {
+        // WS ok messages are rare now — mostly login_token auth responses.
+        // Data-setting commands go through HTTP v2 → sendCommand → typed dispatch.
         d({ type: 'OK', payload: p })
-        window.dispatchEvent(new CustomEvent('spacemolt:ok', { detail: p }))
-        const action = (p as Record<string, unknown>).action as string | undefined
-        // Resolve pending sendCommand promise if any
-        const okReqId = (p as Record<string, unknown>)._req_id as string | undefined
-        const okKey = okReqId || action
-        if (okKey) {
-          const cb = pendingCallbacksRef.current.get(okKey)
-          if (cb) {
-            pendingCallbacksRef.current.delete(okKey)
-            cb(p as Record<string, unknown>)
-          }
-        }
-        // Auto-refresh system data after arriving at a POI or jumping to a new system
-        if (action === 'arrived' || action === 'jumped') {
-          sendRef.current({ type: 'get_system' })
-        }
-        // Route get_status responses to STATUS_POLL
-        if (action === 'get_status') {
-          const player = (p as Record<string, unknown>).player as Player | undefined
-          const ship = (p as Record<string, unknown>).ship as Ship | undefined
-          if (player && ship) {
-            d({ type: 'STATUS_POLL', payload: { player, ship } })
-          }
-        }
-        // Route get_nearby responses to SET_NEARBY
-        if (action === 'get_nearby') {
-          const players = ((p as Record<string, unknown>).players || []) as NearbyPlayer[]
-          const pirates = ((p as Record<string, unknown>).pirates || []) as NearbyPlayer[]
-          d({ type: 'SET_NEARBY', payload: [...players, ...pirates] })
-        }
-        // catalog response: convert items array to recipes map
-        if (action === 'catalog' && (p.type as string) === 'recipes' && Array.isArray(p.items)) {
-          const recipes: Record<string, unknown> = {}
-          for (const item of p.items as Array<{ id: string }>) { recipes[item.id] = item }
-          d({ type: 'MERGE_RECIPES_DATA', payload: { recipes, total: p.total as number, page: p.page as number } as unknown as RecipesData })
-        }
-        // Classify responses without action field by structure
-        if (!action) {
-          // shipyard_showroom: has base_id + shipyard_level + ships array
-          if ('shipyard_level' in p && Array.isArray(p.ships) && 'base_id' in p) {
-            d({ type: 'SET_SHOWROOM_DATA', payload: p as unknown as ShowroomData })
-          }
-          // get_ships: has ships array + count + message (ship catalog)
-          else if (Array.isArray(p.ships) && 'count' in p && 'message' in p && !('active_ship_id' in p)) {
-            d({ type: 'SET_SHIP_CATALOG', payload: p as unknown as ShipCatalogData })
-          }
-          // list_ships: has ships array + count + active_ship_id (player fleet)
-          else if (Array.isArray(p.ships) && 'count' in p && ('active_ship_id' in p || !('message' in p))) {
-            d({ type: 'SET_FLEET_DATA', payload: p as unknown as FleetData })
-          }
-          // view_storage: has base_id + credits + items
-          else if ('base_id' in p && 'credits' in p && Array.isArray(p.items)) {
-            d({ type: 'SET_STORAGE_DATA', payload: p as unknown as StorageData })
-          }
-          // get_recipes: has recipes object (map of recipe_id -> recipe)
-          else if ('recipes' in p && typeof p.recipes === 'object' && !Array.isArray(p.recipes)) {
-            d({ type: 'SET_RECIPES_DATA', payload: p as unknown as RecipesData })
-          }
-          // catalog recipes (no action field): has type='recipes' + items array
-          else if ((p.type as string) === 'recipes' && Array.isArray(p.items) && 'total' in p) {
-            const recipes: Record<string, unknown> = {}
-            for (const item of p.items as Array<{ id: string }>) { recipes[item.id] = item }
-            d({ type: 'MERGE_RECIPES_DATA', payload: { recipes, total: p.total as number, page: p.page as number } as unknown as RecipesData })
-          }
-          // get_skills: has skills object + message
-          else if ('skills' in p && typeof p.skills === 'object' && 'message' in p) {
-            d({ type: 'SET_SKILLS_DATA', payload: p as unknown as SkillsData })
-          }
-          // get_status: has player + ship + modules (no action field)
-          else if ('player' in p && 'ship' in p && 'modules' in p) {
-            const player = p.player as Player | undefined
-            const ship = p.ship as Ship | undefined
-            if (player && ship) {
-              d({ type: 'STATUS_POLL', payload: { player, ship } })
-            }
-          }
-          // get_base_wrecks: has wrecks array
-          else if (Array.isArray(p.wrecks)) {
-            window.dispatchEvent(new CustomEvent('spacemolt:wrecks', { detail: p.wrecks }))
-          }
-        }
         break
       }
       case 'rate_limited': {
@@ -309,52 +212,127 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
     onConnect,
     onDisconnect,
   })
-  sendRef.current = send
 
   // Keep refs for polling to avoid stale closures in setInterval
-  const readyStateRef = useRef(readyState)
-  readyStateRef.current = readyState
   const stateRef = useRef(state)
   stateRef.current = state
 
-  // Poll get_status every 5 seconds when authenticated and WS is open
+  // Poll get_status every 5 seconds via HTTP v2 when authenticated
   useEffect(() => {
     if (!state.authenticated) return
-    const interval = setInterval(() => {
-      if (readyStateRef.current === WebSocket.OPEN && stateRef.current.authenticated) {
-        sendRef.current({ type: 'get_status' })
+    const interval = setInterval(async () => {
+      if (!stateRef.current.authenticated || !apiRef.current) return
+      try {
+        const result = await apiRef.current.command('get_status') as Record<string, unknown>
+        const player = result.player as Player | undefined
+        const ship = result.ship as Ship | undefined
+        if (player && ship) {
+          dispatchRef.current({ type: 'STATUS_POLL', payload: { player, ship } })
+        }
+      } catch {
+        // Polling failure is non-critical
       }
     }, 5000)
     return () => clearInterval(interval)
   }, [state.authenticated])
 
-  // Poll get_nearby every 10 seconds when authenticated, connected, and not docked
+  // Poll get_nearby every 10 seconds via HTTP v2 when authenticated and not docked
   useEffect(() => {
     if (!state.authenticated || state.isDocked) return
-    const interval = setInterval(() => {
-      if (readyStateRef.current === WebSocket.OPEN && stateRef.current.authenticated && !stateRef.current.isDocked) {
-        sendRef.current({ type: 'get_nearby' })
+    const interval = setInterval(async () => {
+      if (!stateRef.current.authenticated || stateRef.current.isDocked || !apiRef.current) return
+      try {
+        const result = await apiRef.current.command('get_nearby') as Record<string, unknown>
+        const players = (result.players || []) as NearbyPlayer[]
+        const pirates = (result.pirates || []) as NearbyPlayer[]
+        dispatchRef.current({ type: 'SET_NEARBY', payload: [...players, ...pirates] })
+      } catch {
+        // Polling failure is non-critical
       }
     }, 10000)
     return () => clearInterval(interval)
   }, [state.authenticated, state.isDocked])
 
+  /**
+   * Send a command via HTTP v2 API. Dispatches typed reducer actions for
+   * data-setting commands; falls back to generic OK dispatch for the rest.
+   */
   const sendCommand = useCallback((type: string, payload?: Record<string, unknown>): Promise<Record<string, unknown>> => {
-    return new Promise((resolve) => {
-      const reqId = `${type}:${++reqIdRef.current}`
-      pendingCallbacksRef.current.set(reqId, resolve)
-      const msg: WSMessage = { type }
-      if (payload) msg.payload = { ...payload, _req_id: reqId }
-      else msg.payload = { _req_id: reqId }
-      send(msg)
+    const api = apiRef.current
+    if (!api) {
+      return Promise.reject(new Error('API not initialized — auth may not be complete'))
+    }
+
+    return api.command(type, payload).then((result) => {
+      const r = (result || {}) as Record<string, unknown>
+      const d = dispatchRef.current
+
+      // Dispatch typed actions for data-setting commands
+      switch (type) {
+        case 'view_market':
+          d({ type: 'SET_MARKET_DATA', payload: r as unknown as MarketData })
+          break
+        case 'view_orders':
+          d({ type: 'SET_ORDERS_DATA', payload: r as unknown as OrdersData })
+          break
+        case 'view_storage':
+          d({ type: 'SET_STORAGE_DATA', payload: r as unknown as StorageData })
+          break
+        case 'list_ships':
+          d({ type: 'SET_FLEET_DATA', payload: r as unknown as FleetData })
+          break
+        case 'shipyard_showroom':
+          d({ type: 'SET_SHOWROOM_DATA', payload: r as unknown as ShowroomData })
+          break
+        case 'get_ships':
+          d({ type: 'SET_SHIP_CATALOG', payload: r as unknown as ShipCatalogData })
+          break
+        case 'get_skills':
+          d({ type: 'SET_SKILLS_DATA', payload: r as unknown as SkillsData })
+          break
+        case 'catalog':
+          if ((r.type as string) === 'recipes' && Array.isArray(r.items)) {
+            const recipes: Record<string, unknown> = {}
+            for (const item of r.items as Array<{ id: string }>) { recipes[item.id] = item }
+            d({ type: 'MERGE_RECIPES_DATA', payload: { recipes, total: r.total as number, page: r.page as number } as unknown as RecipesData })
+          }
+          break
+        default:
+          // Everything else goes through the generic OK handler
+          d({ type: 'OK', payload: r })
+          break
+      }
+
+      // Auto-refresh system data after navigation
+      const action = r.action as string | undefined
+      if (action === 'arrived' || action === 'jumped') {
+        api.command('get_system').then((sysResult) => {
+          d({ type: 'OK', payload: (sysResult || {}) as Record<string, unknown> })
+        }).catch(() => {})
+      }
+      return r
+    }).catch((err) => {
+      const errPayload = {
+        error: true,
+        code: err.code || 'command_error',
+        message: err.message || 'Command failed',
+      }
+      dispatchRef.current({ type: 'ERROR', payload: { code: errPayload.code, message: errPayload.message } })
+      return errPayload as Record<string, unknown>
     })
-  }, [send])
+  }, [])
+
+  const setApi = useCallback((api: GameApi) => {
+    apiRef.current = api
+  }, [])
 
   const value: GameContextValue = {
     state,
     dispatch,
-    send,
+    wsSend: send,
     sendCommand,
+    api: apiRef.current,
+    setApi,
     connect,
     disconnect,
     readyState,

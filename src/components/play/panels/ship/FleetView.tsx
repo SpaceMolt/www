@@ -16,12 +16,12 @@ import {
   Loader2,
 } from 'lucide-react'
 import { useGame } from '../../GameProvider'
-import type { FleetShip, CargoItem, Module } from '../../types'
+import type { FleetShip, CargoItem } from '../../types'
 import styles from './FleetView.module.css'
 
 interface ShipInspection {
   cargo: CargoItem[]
-  modules: Module[]
+  modules: Record<string, unknown>[]
 }
 
 export function FleetView() {
@@ -79,7 +79,7 @@ export function FleetView() {
               ...prev,
               [shipId]: {
                 cargo: (result.cargo as unknown as CargoItem[]) || [],
-                modules: (result.modules as unknown as Module[]) || [],
+                modules: (result.modules as unknown as Record<string, unknown>[]) || [],
               },
             }))
           }
@@ -304,11 +304,11 @@ function FleetCard({
                   <div className={styles.emptyState}>No modules fitted</div>
                 ) : (
                   inspection.modules.map((mod, i) => (
-                    <div key={mod.instance_id || `${mod.module_id}-${i}`} className={styles.expandedItem}>
-                      <span className={styles.expandedItemName}>{mod.name}</span>
+                    <div key={(mod.instance_id as string) || `${mod.module_id as string}-${i}`} className={styles.expandedItem}>
+                      <span className={styles.expandedItemName}>{mod.name as string}</span>
                       <span className={styles.expandedItemMeta}>
-                        {mod.slot_type}
-                        {mod.quality != null && ` / Q${mod.quality}`}
+                        {mod.slot_type as string}
+                        {mod.quality != null && ` / Q${mod.quality as number}`}
                       </span>
                     </div>
                   ))
@@ -329,7 +329,7 @@ function FleetCard({
                       <span className={styles.expandedItemName}>{item.name}</span>
                       <span className={styles.expandedItemMeta}>
                         x{item.quantity}
-                        {item.size > 0 && ` (${item.size * item.quantity}m3)`}
+                        {(item.size ?? 0) > 0 && ` (${(item.size ?? 0) * item.quantity}m3)`}
                       </span>
                     </div>
                   ))

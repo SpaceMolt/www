@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { Pickaxe, Package, Trash2, X, Check, Zap, AlertTriangle } from 'lucide-react'
+import { Pickaxe, Package, Trash2, X, Check, Zap } from 'lucide-react'
 import { useGame } from '../GameProvider'
 import { ProgressBar } from '../ProgressBar'
 import styles from './MiningPanel.module.css'
@@ -106,12 +106,7 @@ export function MiningPanel() {
                       <Package size={13} />
                     </span>
                     <span className={styles.cargoName}>
-                      {item.name}
-                      {item.hazardous && (
-                        <span style={{ color: 'var(--shell-orange)', marginLeft: '0.25rem', display: 'inline-flex' }}>
-                          <AlertTriangle size={10} />
-                        </span>
-                      )}
+                      {item.name ?? item.item_id}
                     </span>
                   </div>
                   <div className={styles.cargoRight}>
@@ -121,7 +116,7 @@ export function MiningPanel() {
                       onClick={() =>
                         sendCommand('use_item', { item_id: item.item_id })
                       }
-                      title={`Use ${item.name}`}
+                      title={`Use ${item.name ?? item.item_id}`}
                       type="button"
                     >
                       <Zap size={13} />
@@ -129,9 +124,9 @@ export function MiningPanel() {
                     <button
                       className={styles.jettisonBtn}
                       onClick={() =>
-                        openJettison(item.item_id, item.name, item.quantity)
+                        openJettison(item.item_id, item.name ?? item.item_id, item.quantity)
                       }
-                      title={`Jettison ${item.name}`}
+                      title={`Jettison ${item.name ?? item.item_id}`}
                       type="button"
                     >
                       <Trash2 size={13} />

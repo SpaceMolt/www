@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react'
 import { Users, Flag, Shield, UserPlus, UserMinus, Swords, RefreshCw, Radar, DoorOpen, Trash2, Plus, Search, BarChart3, Eye } from 'lucide-react'
 import { useGame } from '../GameProvider'
 import { ActionButton } from '../ActionButton'
-import type { Faction, FactionMember } from '../types'
+import type { FactionInfoResponse, FactionMember } from '../types'
 import styles from './FactionPanel.module.css'
 
 interface FactionListEntry {
@@ -51,7 +51,7 @@ interface FactionRoomDetail {
 
 export function FactionPanel() {
   const { state, sendCommand } = useGame()
-  const [factionInfo, setFactionInfo] = useState<Faction | null>(null)
+  const [factionInfo, setFactionInfo] = useState<FactionInfoResponse | null>(null)
   const [factionList, setFactionList] = useState<FactionListEntry[]>([])
   const [listLoaded, setListLoaded] = useState(false)
   const [loadingList, setLoadingList] = useState(false)
@@ -208,11 +208,11 @@ export function FactionPanel() {
             {/* Current Faction Info */}
             <div className={styles.factionCard}>
               <div className={styles.factionName}>
-                {state.player?.faction_name ?? 'Your Faction'}
+                {factionInfo?.name ?? 'Your Faction'}
               </div>
-              {state.player?.faction_tag && (
+              {factionInfo?.tag && (
                 <span className={styles.factionTag}>
-                  [{state.player.faction_tag}]
+                  [{factionInfo.tag}]
                 </span>
               )}
               <div className={styles.factionMeta}>

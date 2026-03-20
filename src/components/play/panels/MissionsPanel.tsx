@@ -13,8 +13,14 @@ import {
 } from 'lucide-react'
 import { useGame } from '../GameProvider'
 import { ActionButton } from '../ActionButton'
-import type { Mission, MissionObjective } from '../types'
+import type { Mission } from '@/lib/gameTypes'
 import styles from './MissionsPanel.module.css'
+
+type ActiveMissionObjective = NonNullable<Mission['objectives']>[number] & {
+  completed?: boolean
+  current?: number
+  target?: number
+}
 
 type TabId = 'available' | 'active' | 'completed'
 
@@ -169,7 +175,7 @@ export function MissionsPanel() {
     }
   }, [sendCommand])
 
-  const renderObjective = (obj: MissionObjective, index: number, showProgress: boolean) => (
+  const renderObjective = (obj: ActiveMissionObjective, index: number, showProgress: boolean) => (
     <div key={index} className={styles.objectiveItem}>
       {showProgress && obj.completed ? (
         <span className={styles.objectiveComplete}>
@@ -193,13 +199,15 @@ export function MissionsPanel() {
     </div>
   )
 
-  const renderRewards = (credits: number, items?: { item_id: string; quantity: number }[]) => (
+  const renderRewards = (rewards?: Mission['rewards']) => (
     <div className={styles.rewardRow}>
       <span className={styles.rewardIcon}><Award size={12} /></span>
-      <span className={styles.rewardCredits}>{credits.toLocaleString()} credits</span>
-      {items && items.length > 0 && (
+      {rewards?.credits != null && (
+        <span className={styles.rewardCredits}>{rewards.credits.toLocaleString()} credits</span>
+      )}
+      {rewards?.items && Object.keys(rewards.items).length > 0 && (
         <span className={styles.rewardItems}>
-          + {items.map((item) => `${item.item_id} x${item.quantity}`).join(', ')}
+          + {Object.entries(rewards.items).map(([itemId, qty]) => `${itemId} x${qty}`).join(', ')}
         </span>
       )}
     </div>
@@ -267,12 +275,12 @@ export function MissionsPanel() {
             {availableMissions.length > 0 && (
               <div className={styles.missionList}>
                 {availableMissions.map((m) => {
-                  const isExpanded = expandedMissions.has(m.id)
+                  const isExpanded = expandedMissions.has(m.mission_id)
                   return (
-                    <div key={m.id} className={styles.missionItem}>
+                    <div key={m.mission_id} className={styles.missionItem}>
                       <div
                         className={styles.missionHeader}
-                        onClick={() => toggleExpanded(m.id)}
+                        onClick={() => toggleExpanded(m.mission_id)}
                         style={{ cursor: 'pointer' }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
@@ -282,15 +290,15 @@ export function MissionsPanel() {
                         <span className={styles.missionDifficulty}>{m.difficulty}</span>
                       </div>
                       <div className={styles.missionDesc}>{m.description}</div>
-                      {renderRewards(m.reward_credits, m.reward_items)}
+                      {renderRewards(m.rewards)}
                       {isExpanded && m.objectives && m.objectives.length > 0 && (
                         <div className={styles.objectiveList}>
-                          {m.objectives.map((obj, i) => renderObjective(obj, i, false))}
+                          {m.objectives.map((obj, i) => renderObjective(obj as ActiveMissionObjective, i, false))}
                         </div>
                       )}
                       <button
                         className={styles.acceptBtn}
-                        onClick={() => handleAcceptMission(m.id)}
+                        onClick={() => handleAcceptMission(m.mission_id)}
                         type="button"
                       >
                         <Check size={12} />
@@ -329,12 +337,12 @@ export function MissionsPanel() {
             {activeMissions.length > 0 && (
               <div className={styles.missionList}>
                 {activeMissions.map((m) => {
-                  const isExpanded = expandedMissions.has(m.id)
+                  const isExpanded = expandedMissions.has(m.mission_id)
                   return (
-                    <div key={m.id} className={styles.missionItem}>
+                    <div key={m.mission_id} className={styles.missionItem}>
                       <div
                         className={styles.missionHeader}
-                        onClick={() => toggleExpanded(m.id)}
+                        onClick={() => toggleExpanded(m.mission_id)}
                         style={{ cursor: 'pointer' }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
@@ -345,16 +353,16 @@ export function MissionsPanel() {
                       </div>
                       <div className={styles.missionDesc}>{m.description}</div>
                       <div className={styles.missionDifficulty}>{m.difficulty}</div>
-                      {renderRewards(m.reward_credits, m.reward_items)}
+                      {renderRewards(m.rewards)}
                       {m.objectives && m.objectives.length > 0 && (
                         <div className={styles.objectiveList}>
-                          {m.objectives.map((obj, i) => renderObjective(obj, i, true))}
+                          {m.objectives.map((obj, i) => renderObjective(obj as ActiveMissionObjective, i, true))}
                         </div>
                       )}
                       {isExpanded && (
                         <button
                           className={styles.abandonBtn}
-                          onClick={() => handleAbandonMission(m.id)}
+                          onClick={() => handleAbandonMission(m.mission_id)}
                           type="button"
                         >
                           <X size={12} />

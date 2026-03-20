@@ -7,7 +7,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "generate:types": "npx openapi-typescript src/lib/openapi-v2.json -o src/lib/generated/v2api.d.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.37.3",
@@ -28,6 +29,7 @@
     "@types/node": "^25.2.2",
     "@types/react": "^19.2.13",
     "@types/react-dom": "^19.2.3",
+    "openapi-typescript": "^7.13.0",
     "typescript": "^5.9.3"
   },
   "pnpm": {

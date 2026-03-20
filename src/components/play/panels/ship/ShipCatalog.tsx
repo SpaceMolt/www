@@ -7,8 +7,6 @@ import {
   Coins,
   Heart,
   Shield,
-  Gauge,
-  Package,
   ShoppingCart,
   Lock,
   Info,
@@ -42,8 +40,8 @@ export function ShipCatalog() {
   )
 
   const sortedShips = useMemo(() => {
-    if (!showroom?.ships) return []
-    return [...showroom.ships].sort((a, b) => a.showroom_price - b.showroom_price)
+    if (!showroom?.listings) return []
+    return [...showroom.listings].sort((a, b) => a.price - b.price)
   }, [showroom])
 
   if (!isDocked) {
@@ -76,9 +74,6 @@ export function ShipCatalog() {
             <Layers size={16} />
           </span>
           Shipyard
-          {showroom && (
-            <span className={styles.shipyardLevel} title={`Shipyard Level ${showroom.shipyard_level} — Higher levels unlock more advanced ships for purchase`}>Lv{showroom.shipyard_level}</span>
-          )}
         </div>
         <div className={styles.headerActions}>
           <button
@@ -110,7 +105,7 @@ export function ShipCatalog() {
           <div className={styles.emptyState}>
             <Info size={14} style={{ marginBottom: '0.25rem', opacity: 0.6 }} />
             <br />
-            {showroom.tip || 'No ships in stock at this shipyard'}
+            No ships in stock at this shipyard
           </div>
         ) : (
           <>
@@ -120,7 +115,7 @@ export function ShipCatalog() {
             <div className={styles.shipList}>
               {sortedShips.map((ship) => (
                 <ShowroomCard
-                  key={ship.ship_id}
+                  key={ship.listing_id}
                   ship={ship}
                   credits={credits}
                   isDocked={isDocked}
@@ -143,52 +138,47 @@ interface ShowroomCardProps {
 }
 
 function ShowroomCard({ ship, credits, isDocked, onBuy }: ShowroomCardProps) {
-  const canAfford = credits >= ship.showroom_price
-  const imgName = ship.name.toLowerCase().replace(/\s+/g, '_')
+  const canAfford = credits >= ship.price
+  const displayName = ship.custom_name ?? ship.ship_name ?? ship.class_id
+  const imgName = ship.class_id.toLowerCase().replace(/\s+/g, '_')
 
   return (
     <div className={styles.shipCard}>
       <div className={styles.shipCardTop}>
         <img
           src={`/images/ships/catalog/${imgName}.webp`}
-          alt={ship.name}
+          alt={displayName}
           className={styles.shipImage}
           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
         />
         <div className={styles.shipCardInfo}>
-          <span className={styles.shipCardName}>{ship.name}</span>
+          <span className={styles.shipCardName}>{displayName}</span>
           <span className={styles.shipCardClass}>{ship.category}</span>
         </div>
         <span className={canAfford ? styles.shipCardPrice : styles.shipCardPriceUnaffordable}>
-          {ship.showroom_price.toLocaleString()} cr
+          {ship.price.toLocaleString()} cr
         </span>
       </div>
 
       {/* Key stats */}
       <div className={styles.shipStatsRow}>
-        <div className={styles.shipStat}>
-          <span className={styles.shipStatIcon}><Heart size={10} /></span>
-          <span className={styles.shipStatLabel}>Hull</span>
-          <span className={styles.shipStatValue}>{ship.hull}</span>
-        </div>
-        <div className={styles.shipStat}>
-          <span className={styles.shipStatIcon}><Shield size={10} /></span>
-          <span className={styles.shipStatLabel}>Shld</span>
-          <span className={styles.shipStatValue}>{ship.shield}</span>
-        </div>
-        <div className={styles.shipStat}>
-          <span className={styles.shipStatIcon}><Gauge size={10} /></span>
-          <span className={styles.shipStatLabel}>Spd</span>
-          <span className={styles.shipStatValue}>{ship.speed}</span>
-        </div>
-        <div className={styles.shipStat}>
-          <span className={styles.shipStatIcon}><Package size={10} /></span>
-          <span className={styles.shipStatLabel}>Cargo</span>
-          <span className={styles.shipStatValue}>{ship.cargo}</span>
-        </div>
+        {ship.hull != null && (
+          <div className={styles.shipStat}>
+            <span className={styles.shipStatIcon}><Heart size={10} /></span>
+            <span className={styles.shipStatLabel}>Hull</span>
+            <span className={styles.shipStatValue}>{ship.hull}</span>
+          </div>
+        )}
+        {ship.shield != null && (
+          <div className={styles.shipStat}>
+            <span className={styles.shipStatIcon}><Shield size={10} /></span>
+            <span className={styles.shipStatLabel}>Shld</span>
+            <span className={styles.shipStatValue}>{ship.shield}</span>
+          </div>
+        )}
       </div>
 
-      {ship.tier > 0 && (
+      {(ship.tier ?? 0) > 0 && (
         <span className={styles.tierBadge} title={`Tier ${ship.tier} — Higher tiers are more powerful but require more skills and resources`}>
           T{ship.tier}
         </span>
@@ -202,8 +192,8 @@ function ShowroomCard({ ship, credits, isDocked, onBuy }: ShowroomCardProps) {
           !isDocked
             ? 'Dock to purchase'
             : !canAfford
-              ? `Need ${(ship.showroom_price - credits).toLocaleString()} more credits`
-              : `Buy ${ship.name} for ${ship.showroom_price.toLocaleString()} credits`
+              ? `Need ${(ship.price - credits).toLocaleString()} more credits`
+              : `Buy ${displayName} for ${ship.price.toLocaleString()} credits`
         }
         type="button"
       >

@@ -9,7 +9,6 @@ import {
   HelpCircle,
   ExternalLink,
   ScrollText,
-  Shield,
 } from 'lucide-react'
 import { useGame } from '../GameProvider'
 import { ActionButton } from '../ActionButton'
@@ -216,47 +215,6 @@ export function InfoPanel() {
                   <span className={styles.statValue}>
                     {typeof value === 'number' ? value.toLocaleString() : value}
                   </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Empire Reputation */}
-        {player?.empire_rep && Object.keys(player.empire_rep).length > 0 && (
-          <div>
-            <div className={styles.sectionTitle}>
-              <span className={styles.sectionIcon}><Shield size={12} /></span>
-              Empire Reputation
-            </div>
-            <div className={styles.statsGrid}>
-              {Object.entries(player.empire_rep).map(([empire, rep]) => (
-                <div key={empire} className={styles.statItem} style={{
-                  borderLeft: `2px solid ${empire === player.empire ? 'var(--plasma-cyan)' : 'var(--hull-grey)'}`,
-                }}>
-                  <span className={styles.statLabel} style={{
-                    color: empire === player.empire ? 'var(--plasma-cyan)' : undefined,
-                  }}>
-                    {empire.replace(/_/g, ' ')}
-                  </span>
-                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                    <span style={{
-                      fontFamily: "var(--font-jetbrains), 'JetBrains Mono', monospace",
-                      fontSize: '0.68rem',
-                      fontWeight: 600,
-                      color: rep.fame > 0 ? 'var(--plasma-cyan)' : 'var(--hull-grey)',
-                    }}>
-                      Fame: {rep.fame.toLocaleString()}
-                    </span>
-                    <span style={{
-                      fontFamily: "var(--font-jetbrains), 'JetBrains Mono', monospace",
-                      fontSize: '0.68rem',
-                      fontWeight: 600,
-                      color: rep.criminal > 0 ? 'var(--alert-red, #ff4444)' : 'var(--hull-grey)',
-                    }}>
-                      Crim: {rep.criminal.toLocaleString()}
-                    </span>
-                  </div>
                 </div>
               ))}
             </div>

@@ -105,7 +105,7 @@ export function TopBar() {
             <span className={styles.sep} />
             <div className={styles.shipSection}>
               <Rocket size={12} className={styles.shipIcon} />
-              <span className={styles.shipClass}>{ship.class}</span>
+              <span className={styles.shipClass}>{ship.name}</span>
             </div>
           </>
         )}
@@ -128,9 +128,9 @@ export function TopBar() {
       {ship && (
         <div className={styles.barsRow}>
           <StatusBar value={ship.hull} max={ship.max_hull} color={hullColor} label="Hull" />
-          <StatusBar value={ship.shield} max={ship.max_shield} color="blue" label="Shield" />
+          <StatusBar value={ship.shield ?? 0} max={ship.max_shield ?? 0} color="blue" label="Shield" />
           <StatusBar value={ship.fuel} max={ship.max_fuel} color="yellow" label="Fuel" />
-          <StatusBar value={ship.cargo_used} max={ship.cargo_capacity} color="cyan" label="Cargo" />
+          <StatusBar value={ship.cargo_used ?? 0} max={ship.cargo_capacity} color="cyan" label="Cargo" />
         </div>
       )}
     </div>
