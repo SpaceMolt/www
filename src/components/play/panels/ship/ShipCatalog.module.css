@@ -128,6 +128,369 @@
   margin-left: auto;
 }
 
+/* Filters */
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.topRow {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.searchRow {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(10, 14, 23, 0.8);
+  border: 1px solid var(--hull-grey);
+  border-radius: 4px;
+  padding: 0.3rem 0.5rem;
+  transition: border-color 0.2s;
+}
+
+.searchRow:focus-within {
+  border-color: var(--plasma-cyan);
+  box-shadow: 0 0 6px rgba(0, 212, 255, 0.12);
+}
+
+.searchIcon {
+  color: var(--hull-grey);
+  flex-shrink: 0;
+}
+
+.searchInput {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--star-white);
+  min-width: 0;
+}
+
+.searchInput::placeholder {
+  color: var(--hull-grey);
+}
+
+.filterRow {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.filterSelect {
+  flex: 1;
+  min-width: 0;
+  background: rgba(10, 14, 23, 0.8);
+  border: 1px solid var(--hull-grey);
+  border-radius: 4px;
+  padding: 0.25rem 0.35rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--star-white);
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.filterSelect:focus {
+  border-color: var(--plasma-cyan);
+}
+
+.filterSelect option {
+  background: rgba(10, 14, 23, 0.98);
+  color: var(--star-white);
+}
+
+.toggleBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+  padding: 0.2rem 0.45rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--hull-grey);
+  background: transparent;
+  border: 1px solid rgba(61, 90, 108, 0.3);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.toggleBtn:hover {
+  color: var(--plasma-cyan);
+  border-color: rgba(0, 212, 255, 0.3);
+}
+
+.toggleBtnActive {
+  color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.1);
+  border-color: var(--plasma-cyan);
+}
+
+/* Commission button on card */
+.commissionBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+  padding: 0.25rem 0.5rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--void-purple);
+  background: rgba(155, 89, 182, 0.08);
+  border: 1px solid rgba(155, 89, 182, 0.3);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.cardActions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex-shrink: 0;
+  align-items: flex-end;
+}
+
+.buyListingBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+  padding: 0.25rem 0.5rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--energy-green);
+  background: rgba(0, 200, 83, 0.08);
+  border: 1px solid rgba(0, 200, 83, 0.3);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.buyListingBtn:hover {
+  background: rgba(0, 200, 83, 0.18);
+  border-color: var(--energy-green);
+}
+
+.commissionBtn:hover {
+  background: rgba(155, 89, 182, 0.18);
+  border-color: var(--void-purple);
+}
+
+/* Commission modal */
+.commissionModal {
+  background: var(--deep-void);
+  border: 1px solid rgba(61, 90, 108, 0.4);
+  border-radius: 8px;
+  width: 90vw;
+  max-width: 480px;
+  max-height: 80vh;
+  overflow-y: auto;
+  cursor: default;
+}
+
+.commissionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(61, 90, 108, 0.3);
+}
+
+.commissionTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--void-purple);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.commissionLoading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--hull-grey);
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.commissionError {
+  padding: 1.5rem 1rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--claw-red);
+  text-align: center;
+}
+
+.commissionBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.commissionInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.commissionRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.commissionLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--hull-grey);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.commissionValue {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--star-white);
+  font-weight: 600;
+}
+
+.commissionMaterials {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  background: rgba(61, 90, 108, 0.08);
+  border: 1px solid rgba(61, 90, 108, 0.15);
+  border-radius: 4px;
+}
+
+.commissionMaterialRow {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  color: var(--chrome-silver);
+}
+
+.materialHave {
+  color: var(--energy-green);
+  font-weight: 600;
+}
+
+.materialMissing {
+  color: var(--claw-red);
+  font-weight: 600;
+}
+
+.commissionBlockers {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.commissionBlocker {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  color: var(--shell-orange);
+  padding: 0.3rem 0.5rem;
+  background: rgba(255, 107, 53, 0.06);
+  border: 1px solid rgba(255, 107, 53, 0.15);
+  border-radius: 3px;
+}
+
+.commissionActions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.commissionPayBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--void-purple);
+  background: rgba(155, 89, 182, 0.08);
+  border: 1px solid var(--void-purple);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.commissionPayBtn:hover:not(:disabled) {
+  background: rgba(155, 89, 182, 0.18);
+}
+
+.commissionPayBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.commissionCancelBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 0.4rem 0.75rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--hull-grey);
+  background: transparent;
+  border: 1px solid rgba(61, 90, 108, 0.3);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.commissionCancelBtn:hover {
+  color: var(--star-white);
+  border-color: rgba(61, 90, 108, 0.5);
+}
+
 /* Ship list */
 .shipList {
   display: flex;
@@ -154,8 +517,219 @@
 .shipCardTop {
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
   gap: 0.5rem;
+  cursor: pointer;
+}
+
+.shipCardNameRow {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.shipCardBadges {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.factionBadge {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  font-weight: 600;
+  color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.1);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  border-radius: 3px;
+  padding: 0.05rem 0.3rem;
+}
+
+.shipCardDesc {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  color: var(--hull-grey);
+  line-height: 1.35;
+  margin-top: 0.15rem;
+}
+
+.shipDetails {
+  display: flex;
+  gap: 0.75rem;
+  align-items: stretch;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(61, 90, 108, 0.15);
+}
+
+.shipImageWrap {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  width: 250px;
+  min-width: 250px;
+}
+
+.shipImageExpanded {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(61, 90, 108, 0.2);
+}
+
+.fullscreenBtn {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(61, 90, 108, 0.3);
+  border-radius: 3px;
+  color: var(--hull-grey);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.fullscreenBtn:hover {
+  color: var(--plasma-cyan);
+  background: rgba(0, 0, 0, 0.9);
+}
+
+.shipDetailsRight {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Fullscreen image modal */
+.imageModal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+}
+
+.imageModalClose {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: rgba(61, 90, 108, 0.3);
+  border: 1px solid rgba(61, 90, 108, 0.5);
+  border-radius: 50%;
+  color: var(--star-white);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.imageModalClose:hover {
+  background: rgba(61, 90, 108, 0.5);
+}
+
+.imageModalImg {
+  max-width: 90vw;
+  max-height: 80vh;
+  object-fit: contain;
+  border-radius: 6px;
+  cursor: default;
+}
+
+.imageModalName {
+  margin-top: 1rem;
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1rem;
+  color: var(--star-white);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.shipDesc {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--chrome-silver);
+  line-height: 1.4;
+}
+
+.shipLore {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  color: var(--hull-grey);
+  line-height: 1.4;
+  font-style: italic;
+}
+
+.buildMats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.buildLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  color: var(--hull-grey);
+  text-transform: uppercase;
+}
+
+.buildItem {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  color: var(--laser-blue);
+  background: rgba(77, 171, 247, 0.08);
+  border: 1px solid rgba(77, 171, 247, 0.2);
+  border-radius: 3px;
+  padding: 0.05rem 0.3rem;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.pageBtn {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.05);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  border-radius: 3px;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.pageBtn:hover:not(:disabled) {
+  background: rgba(0, 212, 255, 0.12);
+}
+
+.pageBtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.pageInfo {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--hull-grey);
 }
 
 .shipCardInfo {
@@ -163,6 +737,7 @@
   flex-direction: column;
   gap: 0.15rem;
   min-width: 0;
+  flex: 1;
 }
 
 .shipCardName {
@@ -217,6 +792,9 @@
   display: flex;
   align-items: center;
   gap: 0.2rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  color: var(--chrome-silver);
 }
 
 .shipStatIcon {
@@ -365,16 +943,6 @@
   font-weight: 600;
 }
 
-/* Ship image */
-.shipImage {
-  width: 48px;
-  height: 48px;
-  object-fit: contain;
-  border-radius: 4px;
-  flex-shrink: 0;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(61, 90, 108, 0.2);
-}
 
 .tierBadge {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;

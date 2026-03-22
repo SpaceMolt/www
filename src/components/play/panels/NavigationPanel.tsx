@@ -196,25 +196,26 @@ export function NavigationPanel() {
           </div>
         )}
 
-        {/* Dock / Undock */}
+        {/* Dock / Undock — show only the action available in current state */}
         {poi && poi.base_id && (
           <div className={styles.dockRow}>
-            <button
-              className={styles.searchBtn}
-              onClick={handleDock}
-              disabled={state.isDocked}
-              type="button"
-            >
-              <Anchor size={13} /> Dock
-            </button>
-            <button
-              className={styles.searchBtn}
-              onClick={handleUndock}
-              disabled={!state.isDocked}
-              type="button"
-            >
-              <ArrowRight size={13} /> Undock
-            </button>
+            {state.isDocked ? (
+              <button
+                className={styles.searchBtn}
+                onClick={handleUndock}
+                type="button"
+              >
+                <ArrowRight size={13} /> Undock
+              </button>
+            ) : (
+              <button
+                className={styles.searchBtn}
+                onClick={handleDock}
+                type="button"
+              >
+                <Anchor size={13} /> Dock
+              </button>
+            )}
           </div>
         )}
 

@@ -432,6 +432,239 @@
   margin-left: auto;
 }
 
+/* Buy button */
+.buyBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--void-purple);
+  background: rgba(155, 89, 182, 0.08);
+  border: 1px solid var(--void-purple);
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.buyBtn:hover:not(:disabled) {
+  background: rgba(155, 89, 182, 0.18);
+}
+
+.buyBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Cancel action button */
+.cancelActionBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--claw-red);
+  background: rgba(230, 57, 70, 0.06);
+  border: 1px solid rgba(230, 57, 70, 0.3);
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.cancelActionBtn:hover {
+  background: rgba(230, 57, 70, 0.15);
+}
+
+/* Own listing badge */
+.ownBadge {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  font-weight: 600;
+  color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.1);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  border-radius: 3px;
+  padding: 0.05rem 0.3rem;
+}
+
+/* Sell card */
+.sellCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.65rem;
+  background: rgba(61, 90, 108, 0.08);
+  border: 1px solid rgba(61, 90, 108, 0.18);
+  border-radius: 4px;
+}
+
+.sellBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--energy-green);
+  background: rgba(0, 200, 83, 0.08);
+  border: 1px solid rgba(0, 200, 83, 0.3);
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.sellBtn:hover {
+  background: rgba(0, 200, 83, 0.18);
+}
+
+/* Spinner */
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Sell modal */
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+}
+
+.modal {
+  background: var(--deep-void);
+  border: 1px solid rgba(61, 90, 108, 0.4);
+  border-radius: 8px;
+  width: 90vw;
+  max-width: 400px;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(61, 90, 108, 0.3);
+}
+
+.modalTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--energy-green);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.modalClose {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: rgba(61, 90, 108, 0.2);
+  border: 1px solid rgba(61, 90, 108, 0.3);
+  border-radius: 50%;
+  color: var(--hull-grey);
+  cursor: pointer;
+}
+
+.modalClose:hover {
+  background: rgba(61, 90, 108, 0.4);
+  color: var(--star-white);
+}
+
+.modalBody {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.modalRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.modalLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--hull-grey);
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.priceInput {
+  flex: 1;
+  background: rgba(10, 14, 23, 0.8);
+  border: 1px solid var(--hull-grey);
+  border-radius: 4px;
+  padding: 0.4rem 0.5rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--star-white);
+  outline: none;
+}
+
+.priceInput:focus {
+  border-color: var(--plasma-cyan);
+}
+
+.modalActions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.confirmSellBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  width: 100%;
+  padding: 0.5rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--energy-green);
+  background: rgba(0, 200, 83, 0.08);
+  border: 1px solid var(--energy-green);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.confirmSellBtn:hover:not(:disabled) {
+  background: rgba(0, 200, 83, 0.18);
+}
+
+.confirmSellBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
 /* Mobile */
 @media (max-width: 768px) {
   .header { padding: 0.5rem 0.75rem; }

@@ -230,6 +230,8 @@ export interface GameState {
   storageData: StorageData | null
   recipesData: RecipesData | null
   skillsData: SkillsData | null
+  /** Non-null while a mutation is in-flight (HTTP request or tick-queued) */
+  pendingAction: { command: string; startedAt: number } | null
 }
 
 export const initialGameState: GameState = {
@@ -260,6 +262,7 @@ export const initialGameState: GameState = {
   storageData: null,
   recipesData: null,
   skillsData: null,
+  pendingAction: null,
 }
 
 // === WebSocket Message Types ===
@@ -302,4 +305,6 @@ export type GameAction =
   | { type: 'SET_SKILLS_DATA'; payload: SkillsData }
   | { type: 'STATUS_POLL'; payload: { player: Player; ship: Ship } }
   | { type: 'SET_NEARBY'; payload: NearbyPlayer[] }
+  | { type: 'SET_PENDING_ACTION'; command: string }
+  | { type: 'CLEAR_PENDING_ACTION' }
   | { type: 'RESET' }

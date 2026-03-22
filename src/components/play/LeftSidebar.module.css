@@ -1,0 +1,352 @@
+/* === LeftSidebar — Location, Actions, POIs === */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  background: rgba(10, 14, 23, 0.95);
+  border-right: 1px solid rgba(61, 90, 108, 0.4);
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+}
+
+.sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: rgba(0, 212, 255, 0.3);
+  border-radius: 2px;
+}
+
+/* --- Location Header --- */
+.location {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid rgba(61, 90, 108, 0.3);
+}
+
+.systemName {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--plasma-cyan);
+  margin-bottom: 0.25rem;
+}
+
+.systemMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.3rem;
+}
+
+.metaTag {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  color: var(--hull-grey);
+  background: rgba(61, 90, 108, 0.2);
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dockedBadge {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  color: var(--energy-green);
+  background: rgba(0, 200, 83, 0.15);
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.currentPoiBlock {
+  margin-top: 0.3rem;
+}
+
+.currentPoi {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--star-white);
+}
+
+.poiDescription {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  color: var(--hull-grey);
+  margin-top: 0.25rem;
+  line-height: 1.4;
+}
+
+.resourceList {
+  margin-top: 0.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.resourceItem {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  padding: 0.15rem 0.3rem;
+  background: rgba(61, 90, 108, 0.1);
+  border-radius: 2px;
+}
+
+.resourceName {
+  flex: 1;
+  color: var(--star-white);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.resourceRichness {
+  color: var(--plasma-cyan);
+  flex-shrink: 0;
+}
+
+.resourceRemaining {
+  color: var(--hull-grey);
+  flex-shrink: 0;
+}
+
+.poiType {
+  color: var(--hull-grey);
+  font-size: 0.55rem;
+}
+
+.emptyState {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--hull-grey);
+}
+
+/* --- Travel Progress --- */
+.travelBar {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid rgba(61, 90, 108, 0.3);
+}
+
+.travelLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--hull-grey);
+  margin-bottom: 0.3rem;
+}
+
+/* --- Actions --- */
+.actions {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid rgba(61, 90, 108, 0.3);
+}
+
+.sectionLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--hull-grey);
+  margin-bottom: 0.4rem;
+}
+
+.actionBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  margin-bottom: 0.2rem;
+  border: 1px solid rgba(61, 90, 108, 0.3);
+  border-radius: 4px;
+  background: rgba(0, 212, 255, 0.05);
+  color: var(--star-white);
+  cursor: pointer;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.actionBtn:hover:not(:disabled) {
+  background: rgba(0, 212, 255, 0.12);
+  border-color: var(--plasma-cyan);
+  color: var(--plasma-cyan);
+}
+
+.actionBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* --- POI Section --- */
+.poiSection {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid rgba(61, 90, 108, 0.3);
+}
+
+.poiList {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.poiEntry {
+  /* wrapper for item + details */
+}
+
+.poiItem {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.4rem;
+  border-radius: 3px;
+  cursor: pointer;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--hull-grey);
+  transition: background 0.15s, color 0.15s;
+}
+
+.poiItem:hover {
+  background: rgba(0, 212, 255, 0.06);
+  color: var(--star-white);
+}
+
+.poiItemActive {
+  color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.08);
+}
+
+.poiIcon {
+  flex-shrink: 0;
+}
+
+.poiName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.poiOnline {
+  font-size: 0.5rem;
+  color: var(--energy-green);
+  background: rgba(0, 200, 83, 0.15);
+  padding: 0.05rem 0.25rem;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.poiChevron {
+  flex-shrink: 0;
+  color: var(--hull-grey);
+  transition: transform 0.2s ease;
+}
+
+.poiChevronOpen {
+  transform: rotate(180deg);
+}
+
+.poiDetails {
+  padding: 0.3rem 0.4rem 0.3rem 1.4rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  color: var(--hull-grey);
+}
+
+.poiDetailRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.1rem 0;
+}
+
+.poiDetailLabel {
+  color: var(--hull-grey);
+}
+
+.poiTravelBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.3rem;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 3px;
+  background: rgba(0, 212, 255, 0.05);
+  color: var(--plasma-cyan);
+  cursor: pointer;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  transition: background 0.15s;
+}
+
+.poiTravelBtn:hover {
+  background: rgba(0, 212, 255, 0.15);
+}
+
+/* --- Connections Section --- */
+.connectionsSection {
+  padding: 0.5rem 0.75rem;
+}
+
+.connectionList {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.connectionItem {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.4rem;
+  border-radius: 3px;
+  cursor: pointer;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--hull-grey);
+  transition: background 0.15s, color 0.15s;
+}
+
+.connectionItem:hover {
+  background: rgba(0, 212, 255, 0.06);
+  color: var(--plasma-cyan);
+}
+
+.connectionName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.connectionDist {
+  flex-shrink: 0;
+  font-size: 0.5rem;
+  color: var(--hull-grey);
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+  .sidebar {
+    display: none;
+  }
+}

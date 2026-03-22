@@ -12,15 +12,30 @@ import {
   ChevronDown,
   ChevronRight,
   Send,
+  MapPin,
 } from 'lucide-react'
 import { useGame } from '../../GameProvider'
+import { GameApiError } from '@/lib/gameApi'
 import styles from './StorageView.module.css'
 
+/** Parse station IDs from the hint string: "X items in storage at station1, station2" */
+function parseStationsFromHint(hint: string): string[] {
+  const match = hint.match(/storage at (.+)$/)
+  if (!match) return []
+  return match[1].split(',').map((s) => s.trim()).filter(Boolean)
+}
+
 export function StorageView() {
-  const { state, sendCommand } = useGame()
+  const { state, sendCommand, api } = useGame()
   const isDocked = state.isDocked
   const storageData = state.storageData
   const cargo = state.ship?.cargo || []
+
+  // Remote viewing state (undocked)
+  const [remoteStations, setRemoteStations] = useState<string[]>([])
+  const [selectedStation, setSelectedStation] = useState('')
+  const [remoteData, setRemoteData] = useState<typeof storageData>(null)
+  const [remoteLoading, setRemoteLoading] = useState(false)
 
   // Item withdraw qty tracking (keyed by item_id)
   const [withdrawQtys, setWithdrawQtys] = useState<Record<string, string>>({})
@@ -38,18 +53,62 @@ export function StorageView() {
   const [giftShipId, setGiftShipId] = useState('')
   const [sendingGift, setSendingGift] = useState(false)
 
-  // Auto-fetch storage data when docked and data is null
+  // When docked, auto-fetch storage
   useEffect(() => {
     if (isDocked && !storageData) {
       sendCommand('view_storage')
     }
   }, [isDocked, storageData, sendCommand])
 
-  const handleRefresh = useCallback(() => {
-    sendCommand('view_storage')
-  }, [sendCommand])
+  // When undocked, probe for station list using the API directly
+  // (bypasses sendCommand error dispatch to avoid showing error toasts)
+  useEffect(() => {
+    if (isDocked) {
+      setRemoteStations([])
+      setSelectedStation('')
+      setRemoteData(null)
+      return
+    }
+    if (!api) return
+    api.command('view_storage').then((result) => {
+      const hint = (result as Record<string, unknown>).hint as string || ''
+      if (hint) {
+        setRemoteStations(parseStationsFromHint(hint))
+      }
+    }).catch((err: unknown) => {
+      // The not_docked error message contains the station list hint
+      if (err instanceof GameApiError) {
+        const stations = parseStationsFromHint(err.message)
+        setRemoteStations(stations)
+      }
+    })
+  }, [isDocked, api])
 
-  // Item operations
+  // Fetch remote station storage
+  useEffect(() => {
+    if (!selectedStation || isDocked || !api) return
+    setRemoteLoading(true)
+    api.command('view_storage', { station_id: selectedStation }).then((result) => {
+      setRemoteData(result as typeof storageData)
+      setRemoteLoading(false)
+    }).catch(() => {
+      setRemoteLoading(false)
+    })
+  }, [selectedStation, isDocked, api])
+
+  const handleRefresh = useCallback(() => {
+    if (isDocked) {
+      sendCommand('view_storage')
+    } else if (selectedStation && api) {
+      setRemoteLoading(true)
+      api.command('view_storage', { station_id: selectedStation }).then((result) => {
+        setRemoteData(result as typeof storageData)
+        setRemoteLoading(false)
+      }).catch(() => setRemoteLoading(false))
+    }
+  }, [sendCommand, isDocked, selectedStation, api])
+
+  // Item operations (docked only)
   const handleWithdrawItem = useCallback(
     (itemId: string, maxQty: number) => {
       const qtyStr = withdrawQtys[itemId] || ''
@@ -88,7 +147,6 @@ export function StorageView() {
       }
       if (giftShipId) params.ship_id = giftShipId
       await sendCommand('send_gift', params)
-      // Reset form
       setGiftRecipient('')
       setGiftMessage('')
       setGiftCredits('')
@@ -96,21 +154,111 @@ export function StorageView() {
       setGiftItemQty('')
       setGiftShipId('')
       setShowSendGift(false)
-      // Refresh storage
       sendCommand('view_storage')
     } finally {
       setSendingGift(false)
     }
   }, [sendCommand, giftRecipient, giftMessage, giftCredits, giftItemId, giftItemQty, giftShipId])
 
+  // --- Undocked: remote station viewer ---
   if (!isDocked) {
+    const viewData = remoteData
+    const viewItems = viewData?.items || []
+    const viewShips = viewData?.ships || []
+
     return (
-      <div className={styles.dockedOnly}>
-        Dock at a base to access storage
+      <div className={styles.container}>
+        <div className={styles.toolbar}>
+          <span className={styles.sectionLabel}>
+            <MapPin size={12} />
+            Remote Storage View
+          </span>
+          {selectedStation && (
+            <button
+              className={styles.refreshBtn}
+              onClick={handleRefresh}
+              title="Refresh"
+              type="button"
+            >
+              <RefreshCw size={13} />
+            </button>
+          )}
+        </div>
+
+        {remoteStations.length > 0 ? (
+          <div className={styles.section}>
+            <select
+              className={styles.stationSelect}
+              value={selectedStation}
+              onChange={(e) => setSelectedStation(e.target.value)}
+            >
+              <option value="">Select a station...</option>
+              {remoteStations.map((stationId) => (
+                <option key={stationId} value={stationId}>
+                  {stationId.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <div className={styles.emptyState}>No items stored at any station</div>
+        )}
+
+        {remoteLoading && (
+          <div className={styles.loading}>Loading storage...</div>
+        )}
+
+        {selectedStation && !remoteLoading && viewData && (
+          <>
+            <div className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <Box size={12} />
+                Stored Items ({viewItems.length})
+              </div>
+              {viewItems.length > 0 ? (
+                <div className={styles.itemList}>
+                  {viewItems.map((item) => (
+                    <div key={item.item_id} className={styles.itemRow}>
+                      <div className={styles.itemInfo}>
+                        <span className={styles.itemName}>{item.name}</span>
+                        <span className={styles.itemQty}>x{item.quantity}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className={styles.emptyState}>No items at this station</div>
+              )}
+            </div>
+
+            {viewShips.length > 0 && (
+              <div className={styles.section}>
+                <div className={styles.sectionHeader}>
+                  <Ship size={12} />
+                  Stored Ships ({viewShips.length})
+                </div>
+                <div className={styles.shipList}>
+                  {viewShips.map((ship) => (
+                    <div key={ship.ship_id} className={styles.shipCard}>
+                      <span className={styles.shipName}>
+                        {ship.class_name || ship.class_id}
+                      </span>
+                      <div className={styles.shipMeta}>
+                        <span className={styles.shipStat}>Modules: {ship.modules}</span>
+                        <span className={styles.shipStat}>Cargo: {ship.cargo_used}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
     )
   }
 
+  // --- Docked: full storage with controls ---
   if (!storageData) {
     return <div className={styles.loading}>Loading storage data...</div>
   }

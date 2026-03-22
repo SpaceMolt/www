@@ -6,30 +6,32 @@ import { TopBar } from './TopBar'
 import { ToastContainer } from './ToastContainer'
 import { TravelProgress } from './TravelProgress'
 import { PanelNav } from './PanelNav'
+import { LeftSidebar } from './LeftSidebar'
 import { RightPane } from './RightPane'
 import { TickCooldown } from './TickCooldown'
-import { NavigationPanel } from './panels/NavigationPanel'
+import { ActionBanner } from './ActionBanner'
+import { GalaxyPanel } from './panels/GalaxyPanel'
 import { CombatPanel } from './panels/CombatPanel'
-import { MiningPanel } from './panels/MiningPanel'
 import { TradingPanel } from './panels/TradingPanel'
+import { StoragePanel } from './panels/StoragePanel'
 import { ShipPanel } from './panels/ShipPanel'
+import { ShipyardPanel } from './panels/ShipyardPanel'
 import { CraftingPanel } from './panels/CraftingPanel'
 import { FactionPanel } from './panels/FactionPanel'
-import { BasePanel } from './panels/BasePanel'
 import { MissionsPanel } from './panels/MissionsPanel'
 import { InfoPanel } from './panels/InfoPanel'
 import { SettingsPanel } from './panels/SettingsPanel'
 import styles from './HUD.module.css'
 
 const PANELS: Record<string, React.ComponentType> = {
-  navigation: NavigationPanel,
+  galaxy: GalaxyPanel,
   combat: CombatPanel,
-  mining: MiningPanel,
   trading: TradingPanel,
+  storage: StoragePanel,
   ship: ShipPanel,
+  shipyard: ShipyardPanel,
   crafting: CraftingPanel,
   faction: FactionPanel,
-  base: BasePanel,
   missions: MissionsPanel,
   info: InfoPanel,
   settings: SettingsPanel,
@@ -37,9 +39,9 @@ const PANELS: Record<string, React.ComponentType> = {
 
 export function HUD() {
   const { state } = useGame()
-  const [activePanel, setActivePanel] = useState('navigation')
+  const [activePanel, setActivePanel] = useState('galaxy')
 
-  const ActivePanelComponent = PANELS[activePanel] || NavigationPanel
+  const ActivePanelComponent = PANELS[activePanel] || GalaxyPanel
 
   const badges: Record<string, number> = {}
   if (state.pendingTrades.length > 0) badges.trading = state.pendingTrades.length
@@ -59,11 +61,15 @@ export function HUD() {
           activePanel={activePanel}
           onPanelChange={setActivePanel}
           badges={badges}
+          isDocked={state.isDocked}
+          inCombat={state.inCombat}
         />
 
-        {/* Main Content: Panel + Right Pane */}
+        {/* Main Content: Left Sidebar + Panel + Right Pane */}
         <div className={styles.main}>
+          <LeftSidebar />
           <div className={styles.panel}>
+            <ActionBanner />
             <TravelProgress />
             <div className={styles.panelContent}>
               <ActivePanelComponent />

@@ -3,7 +3,7 @@
 import { createContext, useContext, useCallback, useEffect, useRef, type ReactNode } from 'react'
 import { useWebSocket } from './useWebSocket'
 import { useGameState } from './useGameState'
-import { GameApi } from '@/lib/gameApi'
+import { GameApi, MUTATION_COMMANDS } from '@/lib/gameApi'
 import type {
   GameState, WSMessage, GameAction, WelcomePayload, StateUpdate, ChatMessage, TradeOffer,
   MarketData, OrdersData, StorageData, FleetData, ShowroomData, ShipCatalogData,
@@ -76,10 +76,13 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
 
         const arAction = result.action as string | undefined
 
-        // Auto-refresh system data after navigation via HTTP v2
+        // Auto-refresh system and POI data after navigation via HTTP v2
         if (arAction === 'arrived' || arAction === 'jumped') {
           apiRef.current?.command('get_system').then((sysResult) => {
             d({ type: 'OK', payload: (sysResult || {}) as Record<string, unknown> })
+          }).catch(() => {})
+          apiRef.current?.command('get_poi').then((poiResult) => {
+            d({ type: 'OK', payload: (poiResult || {}) as Record<string, unknown> })
           }).catch(() => {})
         }
 
@@ -263,6 +266,11 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
       return Promise.reject(new Error('API not initialized — auth may not be complete'))
     }
 
+    const isMutation = MUTATION_COMMANDS.has(type)
+    if (isMutation) {
+      dispatchRef.current({ type: 'SET_PENDING_ACTION', command: type })
+    }
+
     return api.command(type, payload).then((result) => {
       const r = (result || {}) as Record<string, unknown>
       const d = dispatchRef.current
@@ -290,6 +298,19 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
         case 'get_skills':
           d({ type: 'SET_SKILLS_DATA', payload: r as unknown as SkillsData })
           break
+        case 'get_poi': {
+          // Merge rich POI data (description, resources) into state.poi
+          // The top-level 'resources' array has display names; merge into poi.resources
+          const poiData = r.poi as Record<string, unknown> | undefined
+          const richResources = r.resources as Array<Record<string, unknown>> | undefined
+          if (poiData) {
+            if (richResources && Array.isArray(richResources)) {
+              poiData.resources = richResources
+            }
+            d({ type: 'OK', payload: { action: 'get_poi', poi: poiData } })
+          }
+          break
+        }
         case 'catalog':
           if ((r.type as string) === 'recipes' && Array.isArray(r.items)) {
             const recipes: Record<string, unknown> = {}
@@ -303,15 +324,24 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
           break
       }
 
-      // Auto-refresh system data after navigation
+      // Auto-refresh system and POI data after navigation
       const action = r.action as string | undefined
       if (action === 'arrived' || action === 'jumped') {
         api.command('get_system').then((sysResult) => {
           d({ type: 'OK', payload: (sysResult || {}) as Record<string, unknown> })
         }).catch(() => {})
+        api.command('get_poi').then((poiResult) => {
+          d({ type: 'OK', payload: (poiResult || {}) as Record<string, unknown> })
+        }).catch(() => {})
+      }
+      if (isMutation) {
+        dispatchRef.current({ type: 'CLEAR_PENDING_ACTION' })
       }
       return r
     }).catch((err) => {
+      if (isMutation) {
+        dispatchRef.current({ type: 'CLEAR_PENDING_ACTION' })
+      }
       const errPayload = {
         error: true,
         code: err.code || 'command_error',

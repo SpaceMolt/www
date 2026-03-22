@@ -1,18 +1,18 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import {
-  Compass,
+  Map,
   Swords,
-  Pickaxe,
-  TrendingUp,
   Rocket,
-  Hammer,
   Users,
-  Building2,
   Target,
   Info,
   Settings,
+  TrendingUp,
+  Package,
+  Warehouse,
+  Hammer,
   ChevronDown,
   Menu,
 } from 'lucide-react'
@@ -22,28 +22,63 @@ interface PanelNavProps {
   activePanel: string
   onPanelChange: (panel: string) => void
   badges?: Record<string, number>
+  isDocked?: boolean
+  inCombat?: boolean
 }
 
-const PANELS = [
-  { id: 'navigation', icon: Compass, label: 'Navigation' },
-  { id: 'combat', icon: Swords, label: 'Combat' },
-  { id: 'mining', icon: Pickaxe, label: 'Mining' },
-  { id: 'trading', icon: TrendingUp, label: 'Trading' },
-  { id: 'ship', icon: Rocket, label: 'Ship' },
-  { id: 'crafting', icon: Hammer, label: 'Crafting' },
-  { id: 'faction', icon: Users, label: 'Faction' },
-  { id: 'base', icon: Building2, label: 'Base' },
-  { id: 'missions', icon: Target, label: 'Missions' },
-  { id: 'info', icon: Info, label: 'Info' },
-  { id: 'settings', icon: Settings, label: 'Settings' },
-] as const
+interface PanelDef {
+  id: string
+  icon: React.ComponentType<{ size?: number; className?: string }>
+  label: string
+  /** 'always' | 'docked' | 'combat' */
+  visibility: 'always' | 'docked' | 'combat'
+  /** Right-justify this tab (pushes to far right) */
+  right?: boolean
+}
 
-export function PanelNav({ activePanel, onPanelChange, badges }: PanelNavProps) {
+const ALL_PANELS: PanelDef[] = [
+  { id: 'galaxy', icon: Map, label: 'Galaxy', visibility: 'always' },
+  { id: 'ship', icon: Rocket, label: 'Ship', visibility: 'always' },
+  { id: 'faction', icon: Users, label: 'Faction', visibility: 'always' },
+  { id: 'missions', icon: Target, label: 'Missions', visibility: 'always' },
+  { id: 'info', icon: Info, label: 'Info', visibility: 'always' },
+  // Station tabs — always visible (view remotely), mutations disabled in space
+  { id: 'trading', icon: TrendingUp, label: 'Market', visibility: 'always' },
+  { id: 'storage', icon: Package, label: 'Storage', visibility: 'always' },
+  // Docked-only tabs
+  { id: 'shipyard', icon: Warehouse, label: 'Shipyard', visibility: 'docked' },
+  { id: 'crafting', icon: Hammer, label: 'Crafting', visibility: 'docked' },
+  // Combat tab — only when in battle
+  { id: 'combat', icon: Swords, label: 'Combat', visibility: 'combat' },
+  // Right-justified
+  { id: 'settings', icon: Settings, label: 'Settings', visibility: 'always', right: true },
+]
+
+export function PanelNav({ activePanel, onPanelChange, badges, isDocked, inCombat }: PanelNavProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  const activeConfig = PANELS.find((p) => p.id === activePanel) || PANELS[0]
+  const visiblePanels = useMemo(() => {
+    return ALL_PANELS.filter((p) => {
+      if (p.visibility === 'always') return true
+      if (p.visibility === 'docked') return isDocked
+      if (p.visibility === 'combat') return inCombat
+      return false
+    })
+  }, [isDocked, inCombat])
+
+  const leftPanels = visiblePanels.filter((p) => !p.right)
+  const rightPanels = visiblePanels.filter((p) => p.right)
+
+  const activeConfig = visiblePanels.find((p) => p.id === activePanel) || visiblePanels[0]
   const ActiveIcon = activeConfig.icon
+
+  // If active panel becomes hidden (e.g. undock hides trading), fall back to galaxy
+  useEffect(() => {
+    if (!visiblePanels.some((p) => p.id === activePanel)) {
+      onPanelChange('galaxy')
+    }
+  }, [visiblePanels, activePanel, onPanelChange])
 
   useEffect(() => {
     if (!mobileOpen) return
@@ -56,31 +91,36 @@ export function PanelNav({ activePanel, onPanelChange, badges }: PanelNavProps) 
     return () => document.removeEventListener('mousedown', handleClick)
   }, [mobileOpen])
 
+  function renderTab(panel: PanelDef) {
+    const { id, icon: Icon, label } = panel
+    const isActive = activePanel === id
+    const badgeCount = badges?.[id]
+    return (
+      <button
+        key={id}
+        className={`${styles.tab} ${isActive ? styles.tabActive : ''}`}
+        onClick={() => onPanelChange(id)}
+        aria-label={label}
+        aria-current={isActive ? 'page' : undefined}
+      >
+        <Icon size={14} className={styles.tabIcon} />
+        <span className={styles.tabLabel}>{label}</span>
+        {badgeCount !== undefined && badgeCount > 0 && (
+          <span className={styles.badge}>
+            {badgeCount > 99 ? '99+' : badgeCount}
+          </span>
+        )}
+      </button>
+    )
+  }
+
   return (
     <nav className={styles.container}>
-      {/* Desktop: horizontal scrollable tabs */}
+      {/* Desktop: horizontal tabs with spacer for right-justified items */}
       <div className={styles.tabRow}>
-        {PANELS.map(({ id, icon: Icon, label }) => {
-          const isActive = activePanel === id
-          const badgeCount = badges?.[id]
-          return (
-            <button
-              key={id}
-              className={`${styles.tab} ${isActive ? styles.tabActive : ''}`}
-              onClick={() => onPanelChange(id)}
-              aria-label={label}
-              aria-current={isActive ? 'page' : undefined}
-            >
-              <Icon size={14} className={styles.tabIcon} />
-              <span className={styles.tabLabel}>{label}</span>
-              {badgeCount !== undefined && badgeCount > 0 && (
-                <span className={styles.badge}>
-                  {badgeCount > 99 ? '99+' : badgeCount}
-                </span>
-              )}
-            </button>
-          )
-        })}
+        {leftPanels.map(renderTab)}
+        <div className={styles.tabSpacer} />
+        {rightPanels.map(renderTab)}
       </div>
 
       {/* Mobile: dropdown selector */}
@@ -98,7 +138,7 @@ export function PanelNav({ activePanel, onPanelChange, badges }: PanelNavProps) 
         </button>
         {mobileOpen && (
           <div className={styles.mobileMenu} role="listbox">
-            {PANELS.map(({ id, icon: Icon, label }) => {
+            {visiblePanels.map(({ id, icon: Icon, label }) => {
               const isActive = activePanel === id
               const badgeCount = badges?.[id]
               return (

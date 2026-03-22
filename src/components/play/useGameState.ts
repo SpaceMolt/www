@@ -71,7 +71,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         travelDestination: su.travel_destination ?? null,
         travelType: su.travel_type ?? null,
         travelArrivalTick: su.travel_arrival_tick ?? null,
-        isDocked: su.player ? !!(su.player as unknown as Record<string, unknown>).docked_at_base : state.isDocked,
+        // isDocked is set only by explicit dock/undock actions and initial login
+        // — state_update player objects may not include docked_at_base.
       }
       // If server sends player data but we're not authenticated yet,
       // the registered/logged_in messages were likely lost — treat as authenticated
@@ -87,6 +88,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'OK': {
       const p = action.payload
       const actionName = p.action as string | undefined
+      // Clear pending action when we receive a mutation result
+      if (actionName && state.pendingAction) {
+        state = { ...state, pendingAction: null }
+      }
       if (actionName === 'arrived') {
         // Update current POI and clear travel state when arriving
         const newPoi = p.poi_data as POI | undefined
@@ -110,6 +115,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           system: sys || state.system,
           poi: poiData || state.poi,
         }
+      }
+      if (actionName === 'get_poi') {
+        // Rich POI data (description, resources) from get_poi
+        const poiData = p.poi as POI | undefined
+        if (poiData) {
+          return { ...state, poi: poiData }
+        }
+        return state
       }
       if (actionName === 'jumped') {
         // Jumped to a new system - clear travel state and update system name
@@ -211,6 +224,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case 'ERROR': {
+      // Clear pending action on errors (except action_pending which means it's still running)
+      if (state.pendingAction && action.payload.code !== 'action_pending') {
+        state = { ...state, pendingAction: null }
+      }
       const errMsg = action.payload.message
       // Server says we're already logged in — treat as authenticated
       if (action.payload.code === 'already_logged_in' || errMsg.toLowerCase().includes('already logged in')) {
@@ -347,17 +364,24 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return { ...state, skillsData: action.payload }
 
     case 'STATUS_POLL': {
+      // Note: get_status returns TrimmedPlayer which omits docked_at_base.
+      // isDocked is set only by explicit dock/undock actions and initial login.
       const { player, ship } = action.payload
       return {
         ...state,
         player: player || state.player,
         ship: ship || state.ship,
-        isDocked: player ? !!(player as unknown as Record<string, unknown>).docked_at_base : state.isDocked,
       }
     }
 
     case 'SET_NEARBY':
       return { ...state, nearby: action.payload }
+
+    case 'SET_PENDING_ACTION':
+      return { ...state, pendingAction: { command: action.command, startedAt: Date.now() } }
+
+    case 'CLEAR_PENDING_ACTION':
+      return { ...state, pendingAction: null }
 
     case 'RESET':
       return { ..._initState, connected: state.connected, welcome: state.welcome }
@@ -395,6 +419,7 @@ const _initState: GameState = {
   storageData: null,
   recipesData: null,
   skillsData: null,
+  pendingAction: null,
 }
 
 export function useGameState() {

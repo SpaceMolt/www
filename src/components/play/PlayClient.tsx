@@ -96,6 +96,7 @@ function PlayClientInner({ playerId, authHeaders, onSwitchPlayer }: {
       if (phase !== 'playing') {
         sendCommand('get_status')
         sendCommand('get_system')
+        sendCommand('get_poi')
       }
       setPhase('playing')
       authAttempted.current = false

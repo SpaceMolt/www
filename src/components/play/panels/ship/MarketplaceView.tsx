@@ -3,18 +3,16 @@
 import { useState, useCallback, useEffect } from 'react'
 import {
   Store,
-  RefreshCw,
   Coins,
   Heart,
-  Shield,
-  Tag,
   ShoppingCart,
   AlertTriangle,
   User,
   X,
+  Tag,
+  Loader2,
 } from 'lucide-react'
 import { useGame } from '../../GameProvider'
-import { ActionButton } from '../../ActionButton'
 import styles from './MarketplaceView.module.css'
 
 interface ShipListing {
@@ -29,429 +27,259 @@ interface ShipListing {
   seller: string
 }
 
-interface BrowseShipsResponse {
-  base_name: string
-  listings: ShipListing[]
-}
-
 export function MarketplaceView() {
   const { state, sendCommand } = useGame()
   const isDocked = state.isDocked
   const credits = state.player?.credits ?? 0
   const fleet = state.fleetData
 
-  const [listings, setListings] = useState<BrowseShipsResponse | null>(null)
+  const [listings, setListings] = useState<ShipListing[]>([])
   const [loadingBrowse, setLoadingBrowse] = useState(false)
   const [buyConfirm, setBuyConfirm] = useState<string | null>(null)
   const [cancelConfirm, setCancelConfirm] = useState<string | null>(null)
+  const [buying, setBuying] = useState(false)
 
-  // List ship form state
-  const [listShipId, setListShipId] = useState('')
-  const [listPrice, setListPrice] = useState('')
-  const [loadingList, setLoadingList] = useState(false)
+  // Sell modal
+  const [sellShipId, setSellShipId] = useState<string | null>(null)
+  const [sellPrice, setSellPrice] = useState('')
+  const [selling, setSelling] = useState(false)
+
+  const fetchListings = useCallback(() => {
+    setLoadingBrowse(true)
+    sendCommand('browse_ships').then((resp) => {
+      const data = resp as Record<string, unknown>
+      setListings((data.listings || []) as ShipListing[])
+      setLoadingBrowse(false)
+    }).catch(() => setLoadingBrowse(false))
+  }, [sendCommand])
 
   // Auto-fetch when docked
   useEffect(() => {
-    if (isDocked && !listings) {
-      setLoadingBrowse(true)
-      sendCommand('browse_ships').then((resp) => {
-        const data = resp as unknown as BrowseShipsResponse | undefined
-        if (data?.listings) {
-          setListings(data)
-        } else {
-          setListings({ base_name: '', listings: [] })
-        }
-        setLoadingBrowse(false)
-      }).catch(() => {
-        setLoadingBrowse(false)
-      })
+    if (isDocked) {
+      fetchListings()
+      if (!fleet) sendCommand('list_ships')
     }
   }, [isDocked]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Also fetch fleet data for listing ships
-  useEffect(() => {
-    if (isDocked && !fleet) {
-      sendCommand('list_ships')
-    }
-  }, [isDocked, fleet, sendCommand])
-
-  const handleRefresh = useCallback(() => {
-    setLoadingBrowse(true)
-    sendCommand('browse_ships').then((resp) => {
-      const data = resp as unknown as BrowseShipsResponse | undefined
-      if (data?.listings) {
-        setListings(data)
-      } else {
-        setListings({ base_name: '', listings: [] })
-      }
-      setLoadingBrowse(false)
-    }).catch(() => {
-      setLoadingBrowse(false)
-    })
-  }, [sendCommand])
-
-  const handleBuy = useCallback(
-    (listingId: string) => {
-      sendCommand('buy_listed_ship', { listing_id: listingId }).then(() => {
-        handleRefresh()
-      })
+  const handleBuy = useCallback((listingId: string) => {
+    setBuying(true)
+    sendCommand('buy_listed_ship', { listing_id: listingId }).then(() => {
+      setBuying(false)
       setBuyConfirm(null)
-    },
-    [sendCommand, handleRefresh]
-  )
+      fetchListings()
+    }).catch(() => setBuying(false))
+  }, [sendCommand, fetchListings])
 
-  const handleListShip = useCallback(() => {
-    if (!listShipId || !listPrice) return
-    const price = parseInt(listPrice, 10)
-    if (isNaN(price) || price <= 0) return
-    setLoadingList(true)
-    sendCommand('list_ship_for_sale', { ship_id: listShipId, price }).then(() => {
-      setLoadingList(false)
-      setListShipId('')
-      setListPrice('')
-      handleRefresh()
-      sendCommand('list_ships')
-    }).catch(() => {
-      setLoadingList(false)
-    })
-  }, [listShipId, listPrice, sendCommand, handleRefresh])
-
-  const handleCancelListing = useCallback(
-    (listingId: string) => {
-      sendCommand('cancel_ship_listing', { listing_id: listingId }).then(() => {
-        handleRefresh()
-      })
+  const handleCancelListing = useCallback((listingId: string) => {
+    sendCommand('cancel_ship_listing', { listing_id: listingId }).then(() => {
       setCancelConfirm(null)
-    },
-    [sendCommand, handleRefresh]
-  )
+      fetchListings()
+    })
+  }, [sendCommand, fetchListings])
+
+  const handleSell = useCallback(() => {
+    if (!sellShipId || !sellPrice) return
+    const price = parseInt(sellPrice, 10)
+    if (isNaN(price) || price <= 0) return
+    setSelling(true)
+    sendCommand('list_ship_for_sale', { ship_id: sellShipId, price }).then(() => {
+      setSelling(false)
+      setSellShipId(null)
+      setSellPrice('')
+      fetchListings()
+      sendCommand('list_ships')
+    }).catch(() => setSelling(false))
+  }, [sellShipId, sellPrice, sendCommand, fetchListings])
 
   if (!isDocked) {
     return (
-      <div className={styles.panel}>
-        <div className={styles.header}>
-          <div className={styles.title}>
-            <span className={styles.titleIcon}>
-              <Store size={16} />
-            </span>
-            Marketplace
-          </div>
-        </div>
-        <div className={styles.content}>
-          <div className={styles.dockedOnly}>
-            <Store size={16} style={{ marginBottom: '0.25rem', opacity: 0.6 }} />
-            <br />
-            Dock at a base to browse ship listings
-          </div>
-        </div>
+      <div className={styles.dockedOnly}>
+        Dock at a base to browse ship listings
       </div>
     )
   }
 
-  // Determine which listings are from the current player (for cancel)
   const playerName = state.player?.username
+  const ownListings = listings.filter((l) => l.seller === playerName)
+  const otherListings = listings.filter((l) => l.seller !== playerName)
 
-  // Separate own listings from others
-  const ownListings = listings?.listings.filter(
-    (l) => l.seller === playerName
-  ) ?? []
-  const otherListings = listings?.listings.filter(
-    (l) => l.seller !== playerName
-  ) ?? []
-
-  // Non-active ships at this base for listing
+  // Ships available to sell: inactive, docked at this base
   const availableShips = fleet?.ships.filter(
     (s) => !s.is_active && s.location_base_id === state.poi?.base_id
   ) ?? []
 
-  return (
-    <div className={styles.panel}>
-      <div className={styles.header}>
-        <div className={styles.title}>
-          <span className={styles.titleIcon}>
-            <Store size={16} />
-          </span>
-          Marketplace
-          {listings?.base_name && (
-            <span className={styles.baseName}>{listings.base_name}</span>
-          )}
-        </div>
-        <div className={styles.headerActions}>
-          <button
-            className={styles.refreshBtn}
-            onClick={handleRefresh}
-            title="Refresh listings"
-            type="button"
-          >
-            <RefreshCw size={14} />
-          </button>
-        </div>
-      </div>
-
-      <div className={styles.content}>
-        {/* Credits display */}
-        <div className={styles.creditsBar}>
-          <span className={styles.creditsIcon}>
-            <Coins size={14} />
-          </span>
-          <span className={styles.creditsLabel}>Credits</span>
-          <span className={styles.creditsValue}>
-            {credits.toLocaleString()}
-          </span>
-        </div>
-
-        {/* Ships for sale */}
-        <span className={styles.sectionTitle}>Ships For Sale</span>
-
-        {loadingBrowse && !listings && (
-          <div className={styles.emptyState}>Loading listings...</div>
-        )}
-
-        {listings && otherListings.length === 0 && ownListings.length === 0 && (
-          <div className={styles.emptyState}>No ships currently for sale at this base.</div>
-        )}
-
-        {otherListings.length > 0 && (
-          <>
-            <span className={styles.countLabel}>
-              {otherListings.length} listing{otherListings.length !== 1 ? 's' : ''} available
-            </span>
-            <div className={styles.listingsList}>
-              {otherListings.map((listing) => (
-                <ListingCard
-                  key={listing.listing_id}
-                  listing={listing}
-                  credits={credits}
-                  isOwn={false}
-                  buyConfirm={buyConfirm}
-                  cancelConfirm={cancelConfirm}
-                  onBuyRequest={(id) => setBuyConfirm(id)}
-                  onBuyConfirm={handleBuy}
-                  onBuyDismiss={() => setBuyConfirm(null)}
-                  onCancelRequest={(id) => setCancelConfirm(id)}
-                  onCancelConfirm={handleCancelListing}
-                  onCancelDismiss={() => setCancelConfirm(null)}
-                />
-              ))}
-            </div>
-          </>
-        )}
-
-        {/* Own listings */}
-        {ownListings.length > 0 && (
-          <>
-            <span className={styles.sectionTitle}>Your Listings</span>
-            <div className={styles.listingsList}>
-              {ownListings.map((listing) => (
-                <ListingCard
-                  key={listing.listing_id}
-                  listing={listing}
-                  credits={credits}
-                  isOwn={true}
-                  buyConfirm={buyConfirm}
-                  cancelConfirm={cancelConfirm}
-                  onBuyRequest={(id) => setBuyConfirm(id)}
-                  onBuyConfirm={handleBuy}
-                  onBuyDismiss={() => setBuyConfirm(null)}
-                  onCancelRequest={(id) => setCancelConfirm(id)}
-                  onCancelConfirm={handleCancelListing}
-                  onCancelDismiss={() => setCancelConfirm(null)}
-                />
-              ))}
-            </div>
-          </>
-        )}
-
-        {/* List a ship for sale */}
-        <span className={styles.sectionTitle}>List a Ship</span>
-        <div className={styles.listForm}>
-          <div className={styles.listFormRow}>
-            <span className={styles.inputLabel}>Ship</span>
-            <select
-              className={styles.selectInput}
-              value={listShipId}
-              onChange={(e) => setListShipId(e.target.value)}
-            >
-              <option value="">Select a ship...</option>
-              {availableShips.map((ship) => (
-                <option key={ship.ship_id} value={ship.ship_id}>
-                  {ship.class_name || ship.class_id}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className={styles.listFormRow}>
-            <span className={styles.inputLabel}>Price</span>
-            <input
-              className={styles.textInput}
-              type="number"
-              min="1"
-              value={listPrice}
-              onChange={(e) => setListPrice(e.target.value)}
-              placeholder="Credits"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleListShip()
-              }}
-            />
-          </div>
-          <ActionButton
-            label="List for Sale"
-            icon={<Tag size={12} />}
-            onClick={handleListShip}
-            disabled={!listShipId || !listPrice || parseInt(listPrice, 10) <= 0}
-            loading={loadingList}
-            size="sm"
-          />
-          {availableShips.length === 0 && (
-            <div className={styles.emptyState}>
-              No ships available to list. Ships must be inactive and docked here.
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-interface ListingCardProps {
-  listing: ShipListing
-  credits: number
-  isOwn: boolean
-  buyConfirm: string | null
-  cancelConfirm: string | null
-  onBuyRequest: (id: string) => void
-  onBuyConfirm: (id: string) => void
-  onBuyDismiss: () => void
-  onCancelRequest: (id: string) => void
-  onCancelConfirm: (id: string) => void
-  onCancelDismiss: () => void
-}
-
-function ListingCard({
-  listing,
-  credits,
-  isOwn,
-  buyConfirm,
-  cancelConfirm,
-  onBuyRequest,
-  onBuyConfirm,
-  onBuyDismiss,
-  onCancelRequest,
-  onCancelConfirm,
-  onCancelDismiss,
-}: ListingCardProps) {
-  const canAfford = credits >= listing.price
+  // Ship being sold (for modal)
+  const sellShipInfo = availableShips.find((s) => s.ship_id === sellShipId)
 
   return (
-    <div className={isOwn ? styles.listingCardOwn : styles.listingCard}>
-      <div className={styles.listingTop}>
-        <div className={styles.listingInfo}>
-          <span className={styles.listingName}>{listing.ship_name}</span>
-          <span className={styles.listingClass}>{listing.class_id}</span>
-        </div>
-        <span className={canAfford ? styles.listingPrice : styles.listingPriceUnaffordable}>
-          {listing.price.toLocaleString()} cr
-        </span>
-      </div>
-
-      {/* Badges and stats */}
-      <div className={styles.listingBadges}>
-        {listing.category && (
-          <span className={styles.categoryBadge}>{listing.category}</span>
-        )}
-        {listing.tier > 0 && (
-          <span className={styles.tierBadge}>T{listing.tier}</span>
-        )}
-      </div>
-
-      <div className={styles.listingStatsRow}>
-        <div className={styles.listingStat}>
-          <span className={styles.listingStatIcon}><Heart size={10} /></span>
-          <span className={styles.listingStatLabel}>Hull</span>
-          <span className={styles.listingStatValue}>
-            {listing.hull}/{listing.max_hull}
-          </span>
-        </div>
-      </div>
-
-      {/* Seller */}
-      {!isOwn && listing.seller && (
-        <div className={styles.listingSeller}>
-          <User size={10} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '0.2rem' }} />
-          {listing.seller}
+    <>
+      {/* Ships for sale */}
+      {loadingBrowse && listings.length === 0 && (
+        <div className={styles.emptyState}>
+          <Loader2 size={14} className={styles.spinner} /> Loading listings...
         </div>
       )}
 
-      {/* Buy confirmation */}
-      {buyConfirm === listing.listing_id && (
-        <div className={styles.confirmBuyOverlay}>
-          <ShoppingCart size={14} style={{ color: 'var(--void-purple)', flexShrink: 0 }} />
-          <span className={styles.confirmText}>
-            Buy {listing.ship_name} for {listing.price.toLocaleString()} cr?
-          </span>
-          <div className={styles.confirmActions}>
-            <ActionButton
-              label="Buy"
-              onClick={() => onBuyConfirm(listing.listing_id)}
-              size="sm"
-            />
-            <ActionButton
-              label="No"
-              onClick={onBuyDismiss}
-              size="sm"
-              variant="secondary"
-            />
+      {!loadingBrowse && otherListings.length === 0 && ownListings.length === 0 && (
+        <div className={styles.emptyState}>No ships currently for sale at this base.</div>
+      )}
+
+      {(otherListings.length > 0 || ownListings.length > 0) && (
+        <>
+          <span className={styles.sectionTitle}>Ships For Sale</span>
+          <div className={styles.listingsList}>
+            {/* Other players' listings */}
+            {otherListings.map((listing) => {
+              const canAfford = credits >= listing.price
+              return (
+                <div key={listing.listing_id} className={styles.listingCard}>
+                  <div className={styles.listingTop}>
+                    <div className={styles.listingInfo}>
+                      <span className={styles.listingName}>{listing.ship_name}</span>
+                      <span className={styles.listingClass}>{listing.class_id}</span>
+                    </div>
+                    <span className={canAfford ? styles.listingPrice : styles.listingPriceUnaffordable}>
+                      {listing.price.toLocaleString()} cr
+                    </span>
+                  </div>
+                  <div className={styles.listingBadges}>
+                    {listing.category && <span className={styles.categoryBadge}>{listing.category}</span>}
+                    {listing.tier > 0 && <span className={styles.tierBadge}>T{listing.tier}</span>}
+                  </div>
+                  <div className={styles.listingStatsRow}>
+                    <div className={styles.listingStat}>
+                      <Heart size={10} /> Hull {listing.hull}/{listing.max_hull}
+                    </div>
+                    <div className={styles.listingStat}>
+                      <User size={10} /> {listing.seller}
+                    </div>
+                  </div>
+
+                  {buyConfirm === listing.listing_id ? (
+                    <div className={styles.confirmOverlay}>
+                      <ShoppingCart size={14} style={{ color: 'var(--void-purple)', flexShrink: 0 }} />
+                      <span className={styles.confirmText}>
+                        Buy for {listing.price.toLocaleString()} cr?
+                      </span>
+                      <button className={styles.buyBtn} onClick={() => handleBuy(listing.listing_id)} disabled={buying || !canAfford} type="button">
+                        {buying ? <Loader2 size={11} className={styles.spinner} /> : null} Yes
+                      </button>
+                      <button className={styles.cancelActionBtn} onClick={() => setBuyConfirm(null)} type="button">No</button>
+                    </div>
+                  ) : (
+                    <button
+                      className={styles.buyBtn}
+                      onClick={() => setBuyConfirm(listing.listing_id)}
+                      disabled={!canAfford}
+                      title={!canAfford ? `Need ${(listing.price - credits).toLocaleString()} more credits` : undefined}
+                      type="button"
+                    >
+                      <ShoppingCart size={12} /> Buy
+                    </button>
+                  )}
+                </div>
+              )
+            })}
+
+            {/* Own listings */}
+            {ownListings.map((listing) => (
+              <div key={listing.listing_id} className={styles.listingCardOwn}>
+                <div className={styles.listingTop}>
+                  <div className={styles.listingInfo}>
+                    <span className={styles.listingName}>{listing.ship_name}</span>
+                    <span className={styles.listingClass}>{listing.class_id}</span>
+                  </div>
+                  <span className={styles.listingPrice}>{listing.price.toLocaleString()} cr</span>
+                </div>
+                <div className={styles.listingBadges}>
+                  <span className={styles.ownBadge}>Your listing</span>
+                </div>
+                {cancelConfirm === listing.listing_id ? (
+                  <div className={styles.confirmOverlay}>
+                    <AlertTriangle size={14} style={{ color: 'var(--claw-red)', flexShrink: 0 }} />
+                    <span className={styles.confirmText}>Cancel listing?</span>
+                    <button className={styles.cancelActionBtn} onClick={() => handleCancelListing(listing.listing_id)} type="button">Yes</button>
+                    <button className={styles.buyBtn} onClick={() => setCancelConfirm(null)} type="button">No</button>
+                  </div>
+                ) : (
+                  <button className={styles.cancelActionBtn} onClick={() => setCancelConfirm(listing.listing_id)} type="button">
+                    <X size={12} /> Cancel Listing
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Sell a ship */}
+      <span className={styles.sectionTitle}>Sell a Ship</span>
+      {availableShips.length === 0 ? (
+        <div className={styles.emptyState}>No ships available to sell. Ships must be inactive and docked here.</div>
+      ) : (
+        <div className={styles.listingsList}>
+          {availableShips.map((ship) => (
+            <div key={ship.ship_id} className={styles.sellCard}>
+              <div className={styles.listingInfo}>
+                <span className={styles.listingName}>{ship.class_name || ship.class_id}</span>
+              </div>
+              <button
+                className={styles.sellBtn}
+                onClick={() => { setSellShipId(ship.ship_id); setSellPrice('') }}
+                type="button"
+              >
+                <Tag size={12} /> Sell
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Sell modal */}
+      {sellShipId && sellShipInfo && (
+        <div className={styles.modalBackdrop} onClick={() => setSellShipId(null)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <span className={styles.modalTitle}>
+                <Tag size={14} />
+                Sell {sellShipInfo.class_name || sellShipInfo.class_id}
+              </span>
+              <button className={styles.modalClose} onClick={() => setSellShipId(null)} type="button">
+                <X size={16} />
+              </button>
+            </div>
+            <div className={styles.modalBody}>
+              <div className={styles.modalRow}>
+                <span className={styles.modalLabel}>Asking Price</span>
+                <input
+                  className={styles.priceInput}
+                  type="number"
+                  min="1"
+                  value={sellPrice}
+                  onChange={(e) => setSellPrice(e.target.value)}
+                  placeholder="Credits"
+                  autoFocus
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleSell() }}
+                />
+              </div>
+              <div className={styles.modalActions}>
+                <button
+                  className={styles.confirmSellBtn}
+                  onClick={handleSell}
+                  disabled={selling || !sellPrice || parseInt(sellPrice, 10) <= 0}
+                  type="button"
+                >
+                  {selling ? <Loader2 size={12} className={styles.spinner} /> : <Tag size={12} />}
+                  List for Sale
+                </button>
+                <button className={styles.cancelActionBtn} onClick={() => setSellShipId(null)} disabled={selling} type="button">
+                  Cancel
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
-
-      {/* Cancel confirmation */}
-      {cancelConfirm === listing.listing_id && (
-        <div className={styles.confirmOverlay}>
-          <AlertTriangle size={14} style={{ color: 'var(--claw-red)', flexShrink: 0 }} />
-          <span className={styles.confirmText}>
-            Cancel this listing?
-          </span>
-          <div className={styles.confirmActions}>
-            <ActionButton
-              label="Yes"
-              onClick={() => onCancelConfirm(listing.listing_id)}
-              size="sm"
-              variant="danger"
-            />
-            <ActionButton
-              label="No"
-              onClick={onCancelDismiss}
-              size="sm"
-              variant="secondary"
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Actions */}
-      {buyConfirm !== listing.listing_id && cancelConfirm !== listing.listing_id && (
-        <div className={styles.listingActions}>
-          {!isOwn && (
-            <ActionButton
-              label="Buy"
-              icon={<ShoppingCart size={12} />}
-              onClick={() => onBuyRequest(listing.listing_id)}
-              disabled={!canAfford}
-              size="sm"
-            />
-          )}
-          {isOwn && (
-            <ActionButton
-              label="Cancel Listing"
-              icon={<X size={12} />}
-              onClick={() => onCancelRequest(listing.listing_id)}
-              size="sm"
-              variant="danger"
-            />
-          )}
-        </div>
-      )}
-    </div>
+    </>
   )
 }

@@ -247,6 +247,30 @@
   gap: 0.25rem;
 }
 
+.stationSelect {
+  width: 100%;
+  background: rgba(10, 14, 23, 0.8);
+  border: 1px solid var(--hull-grey);
+  border-radius: 4px;
+  padding: 0.4rem 0.5rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--star-white);
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.stationSelect:focus {
+  border-color: var(--plasma-cyan);
+  box-shadow: 0 0 6px rgba(0, 212, 255, 0.12);
+}
+
+.stationSelect option {
+  background: rgba(10, 14, 23, 0.98);
+  color: var(--star-white);
+}
+
 .creditInput {
   flex: 1;
   background: rgba(10, 14, 23, 0.8);

@@ -9,17 +9,18 @@
   z-index: 1;
 }
 
-/* === Main Content: Panel + Right Pane === */
+/* === Main Content: Left Sidebar + Panel + Right Pane === */
 .main {
   display: grid;
-  grid-template-columns: 1fr 300px;
+  grid-template-columns: 300px 1fr 300px;
   flex: 1;
   min-height: 0;
   overflow: hidden;
 }
 
-/* === Panel Area === */
+/* === Panel Area (center) === */
 .panel {
+  position: relative;
   display: flex;
   flex-direction: column;
   min-height: 0;
