@@ -170,6 +170,83 @@ export interface SkillsData {
   message?: string
 }
 
+// Enriched module instance from get_status response (top-level 'modules' field)
+export interface EnrichedShipModule {
+  id: string
+  type_id: string
+  name: string
+  type: 'weapon' | 'defense' | 'mining' | 'utility'
+  size: number
+  wear: number
+  wear_status: string
+  cpu_usage: number
+  power_usage: number
+  damage?: number
+  damage_type?: string
+  range?: number
+  cooldown?: number
+  reach?: number
+  shield_bonus?: number
+  armor_bonus?: number
+  hull_bonus?: number
+  speed_penalty?: number
+  shield_recharge_bonus?: number
+  damage_reduction?: number
+  mining_power?: number
+  mining_range?: number
+  harvest_power?: number
+  harvest_range?: number
+  speed_bonus?: number
+  cargo_bonus?: number
+  power_bonus?: number
+  cpu_bonus?: number
+  scanner_power?: number
+  cloak_strength?: number
+  fuel_efficiency?: number
+  survey_power?: number
+  magazine_size?: number
+  current_ammo?: number
+  ammo_type?: string
+  loaded_ammo_name?: string
+}
+
+// Module catalog entry — cached from catalog API for type lookups
+export interface ModuleCatalogEntry {
+  id: string
+  name: string
+  description: string
+  type: 'weapon' | 'defense' | 'mining' | 'utility'
+  cpu_usage: number
+  power_usage: number
+  size: number
+  base_value: number
+  // Weapon stats
+  damage?: number
+  damage_type?: string
+  range?: number
+  cooldown?: number
+  reach?: number
+  // Defense stats
+  shield_bonus?: number
+  armor_bonus?: number
+  hull_bonus?: number
+  speed_penalty?: number
+  shield_recharge_bonus?: number
+  damage_reduction?: number
+  // Mining stats
+  mining_power?: number
+  harvest_power?: number
+  // Utility stats
+  speed_bonus?: number
+  cargo_bonus?: number
+  power_bonus?: number
+  cpu_bonus?: number
+  scanner_power?: number
+  cloak_strength?: number
+  fuel_efficiency?: number
+  survey_power?: number
+}
+
 // Ship catalog — uses different shape from BrowseShipsResponse
 export interface ShipClassInfo {
   id: string
@@ -232,6 +309,10 @@ export interface GameState {
   skillsData: SkillsData | null
   /** Non-null while a mutation is in-flight (HTTP request or tick-queued) */
   pendingAction: { command: string; startedAt: number } | null
+  /** Enriched installed modules from get_status (separate from ship.modules which is just IDs) */
+  shipModules: EnrichedShipModule[]
+  /** Cached module catalog: item_id → module info (fetched once on login) */
+  moduleCatalog: Record<string, ModuleCatalogEntry> | null
 }
 
 export const initialGameState: GameState = {
@@ -263,6 +344,8 @@ export const initialGameState: GameState = {
   recipesData: null,
   skillsData: null,
   pendingAction: null,
+  shipModules: [],
+  moduleCatalog: null,
 }
 
 // === WebSocket Message Types ===
@@ -303,8 +386,9 @@ export type GameAction =
   | { type: 'SET_RECIPES_DATA'; payload: RecipesData }
   | { type: 'MERGE_RECIPES_DATA'; payload: RecipesData }
   | { type: 'SET_SKILLS_DATA'; payload: SkillsData }
-  | { type: 'STATUS_POLL'; payload: { player: Player; ship: Ship } }
+  | { type: 'STATUS_POLL'; payload: { player: Player; ship: Ship; modules?: EnrichedShipModule[] } }
   | { type: 'SET_NEARBY'; payload: NearbyPlayer[] }
   | { type: 'SET_PENDING_ACTION'; command: string }
   | { type: 'CLEAR_PENDING_ACTION' }
+  | { type: 'SET_MODULE_CATALOG'; payload: Record<string, ModuleCatalogEntry> }
   | { type: 'RESET' }

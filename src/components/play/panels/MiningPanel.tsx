@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react'
 import { Pickaxe, Package, Trash2, X, Check, Zap } from 'lucide-react'
 import { useGame } from '../GameProvider'
 import { ProgressBar } from '../ProgressBar'
+import { Panel, shared } from '../shared'
 import styles from './MiningPanel.module.css'
 
 interface JettisonTarget {
@@ -50,17 +51,7 @@ export function MiningPanel() {
   const isDocked = state.isDocked
 
   return (
-    <div className={styles.panel}>
-      <div className={styles.header}>
-        <div className={styles.title}>
-          <span className={styles.titleIcon}>
-            <Pickaxe size={16} />
-          </span>
-          Mining
-        </div>
-      </div>
-
-      <div className={styles.content}>
+    <Panel title="Mining" icon={<Pickaxe size={16} />} color="var(--shell-orange)">
         {/* Mine button */}
         <div className={styles.mineSection}>
           <button
@@ -86,7 +77,7 @@ export function MiningPanel() {
 
         {/* Cargo */}
         <div className={styles.cargoSection}>
-          <div className={styles.sectionTitle}>Cargo Hold</div>
+          <div className={shared.sectionTitle}>Cargo Hold</div>
           <div className={styles.cargoBar}>
             <ProgressBar
               value={cargoUsed}
@@ -136,10 +127,9 @@ export function MiningPanel() {
               ))}
             </div>
           ) : (
-            <div className={styles.emptyState}>Cargo hold is empty</div>
+            <div className={shared.emptyState}>Cargo hold is empty</div>
           )}
         </div>
-      </div>
 
       {/* Jettison quantity picker modal */}
       {jettisonTarget && (
@@ -203,6 +193,6 @@ export function MiningPanel() {
           </div>
         </div>
       )}
-    </div>
+    </Panel>
   )
 }

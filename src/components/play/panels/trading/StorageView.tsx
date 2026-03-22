@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { useGame } from '../../GameProvider'
 import { GameApiError } from '@/lib/gameApi'
+import { Credits, shared } from '../../shared'
 import styles from './StorageView.module.css'
 
 /** Parse station IDs from the hint string: "X items in storage at station1, station2" */
@@ -175,7 +176,7 @@ export function StorageView() {
           </span>
           {selectedStation && (
             <button
-              className={styles.refreshBtn}
+              className={shared.refreshBtn}
               onClick={handleRefresh}
               title="Refresh"
               type="button"
@@ -188,7 +189,7 @@ export function StorageView() {
         {remoteStations.length > 0 ? (
           <div className={styles.section}>
             <select
-              className={styles.stationSelect}
+              className={shared.selectInput}
               value={selectedStation}
               onChange={(e) => setSelectedStation(e.target.value)}
             >
@@ -201,7 +202,7 @@ export function StorageView() {
             </select>
           </div>
         ) : (
-          <div className={styles.emptyState}>No items stored at any station</div>
+          <div className={shared.emptyState}>No items stored at any station</div>
         )}
 
         {remoteLoading && (
@@ -227,7 +228,7 @@ export function StorageView() {
                   ))}
                 </div>
               ) : (
-                <div className={styles.emptyState}>No items at this station</div>
+                <div className={shared.emptyState}>No items at this station</div>
               )}
             </div>
 
@@ -275,7 +276,7 @@ export function StorageView() {
           Station Storage
         </span>
         <button
-          className={styles.refreshBtn}
+          className={shared.refreshBtn}
           onClick={handleRefresh}
           title="Refresh storage"
           type="button"
@@ -321,7 +322,7 @@ export function StorageView() {
                     )}
                     {gift.credits != null && gift.credits > 0 && (
                       <span className={styles.giftCredits}>
-                        {gift.credits.toLocaleString()} cr
+                        <Credits amount={gift.credits} />
                       </span>
                     )}
                   </div>
@@ -346,14 +347,14 @@ export function StorageView() {
         {showSendGift && (
           <div className={styles.giftSendForm}>
             <input
-              className={styles.creditInput}
+              className={shared.textInput}
               type="text"
               placeholder="Recipient username"
               value={giftRecipient}
               onChange={(e) => setGiftRecipient(e.target.value)}
             />
             <input
-              className={styles.creditInput}
+              className={shared.textInput}
               type="text"
               placeholder="Message (optional)"
               value={giftMessage}
@@ -361,7 +362,7 @@ export function StorageView() {
             />
             <div className={styles.giftSendRow}>
               <input
-                className={styles.creditInput}
+                className={shared.textInput}
                 type="number"
                 min={0}
                 placeholder="Credits"
@@ -372,7 +373,7 @@ export function StorageView() {
             {storedItems.length > 0 && (
               <div className={styles.giftSendRow}>
                 <select
-                  className={styles.creditInput}
+                  className={shared.selectInput}
                   value={giftItemId}
                   onChange={(e) => setGiftItemId(e.target.value)}
                 >
@@ -385,7 +386,7 @@ export function StorageView() {
                 </select>
                 {giftItemId && (
                   <input
-                    className={styles.qtyInput}
+                    className={shared.textInput}
                     type="number"
                     min={1}
                     placeholder="Qty"
@@ -398,7 +399,7 @@ export function StorageView() {
             {storedShips.length > 0 && (
               <div className={styles.giftSendRow}>
                 <select
-                  className={styles.creditInput}
+                  className={shared.selectInput}
                   value={giftShipId}
                   onChange={(e) => setGiftShipId(e.target.value)}
                 >
@@ -412,7 +413,7 @@ export function StorageView() {
               </div>
             )}
             <button
-              className={styles.depositBtn}
+              className={shared.confirmBtn}
               onClick={handleSendGift}
               disabled={sendingGift || !giftRecipient.trim() || (!giftCredits && !giftItemId && !giftShipId)}
               type="button"
@@ -445,7 +446,7 @@ export function StorageView() {
                   </div>
                   <div className={styles.itemAction}>
                     <input
-                      className={styles.qtyInput}
+                      className={shared.textInput}
                       type="number"
                       min={1}
                       max={item.quantity}
@@ -459,7 +460,7 @@ export function StorageView() {
                       }
                     />
                     <button
-                      className={styles.withdrawBtn}
+                      className={shared.accentBtn}
                       onClick={() => handleWithdrawItem(item.item_id, item.quantity)}
                       disabled={
                         !qtyStr ||
@@ -477,7 +478,7 @@ export function StorageView() {
             })}
           </div>
         ) : (
-          <div className={styles.emptyState}>No items in storage</div>
+          <div className={shared.emptyState}>No items in storage</div>
         )}
       </div>
 
@@ -502,7 +503,7 @@ export function StorageView() {
                   </div>
                   <div className={styles.itemAction}>
                     <input
-                      className={styles.qtyInput}
+                      className={shared.textInput}
                       type="number"
                       min={1}
                       max={item.quantity}
@@ -516,7 +517,7 @@ export function StorageView() {
                       }
                     />
                     <button
-                      className={styles.depositBtn}
+                      className={shared.confirmBtn}
                       onClick={() => handleDepositItem(item.item_id, item.quantity)}
                       disabled={
                         !qtyStr ||
@@ -534,7 +535,7 @@ export function StorageView() {
             })}
           </div>
         ) : (
-          <div className={styles.emptyState}>Cargo hold is empty</div>
+          <div className={shared.emptyState}>Cargo hold is empty</div>
         )}
       </div>
 

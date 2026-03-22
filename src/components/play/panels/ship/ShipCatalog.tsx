@@ -17,6 +17,7 @@ import {
   ShoppingCart,
 } from 'lucide-react'
 import { useGame } from '../../GameProvider'
+import { Credits, Loading, Modal, shared } from '../../shared'
 import styles from './ShipCatalog.module.css'
 
 const EMPIRES = ['solarian', 'voidborn', 'crimson', 'nebula', 'outerrim']
@@ -270,9 +271,9 @@ export function ShipCatalog() {
 
       {/* Results */}
       {loading && ships.length === 0 ? (
-        <div className={styles.emptyState}>Loading catalog...</div>
+        <Loading message="Loading catalog..." />
       ) : ships.length === 0 ? (
-        <div className={styles.emptyState}>No ships found</div>
+        <div className={shared.emptyState}>No ships found</div>
       ) : (
         <>
           <span className={styles.countLabel}>
@@ -298,8 +299,8 @@ export function ShipCatalog() {
                       <div className={styles.shipCardNameRow}>
                         <span className={styles.shipCardName}>{ship.name}</span>
                         <span className={styles.shipCardBadges}>
-                          {ship.tier > 0 && <span className={styles.tierBadge}>T{ship.tier}</span>}
-                          {ship.faction && <span className={styles.factionBadge}>{ship.faction}</span>}
+                          {ship.tier > 0 && <span className={shared.badgeOrange}>T{ship.tier}</span>}
+                          {ship.faction && <span className={shared.badgeCyan}>{ship.faction}</span>}
                         </span>
                       </div>
                       <span className={styles.shipCardClass}>
@@ -336,7 +337,7 @@ export function ShipCatalog() {
                             type="button"
                           >
                             <ShoppingCart size={12} />
-                            Buy {cheapestByClass[ship.id].price.toLocaleString()} cr
+                            Buy <Credits amount={cheapestByClass[ship.id].price} />
                           </button>
                         )}
                       </div>
@@ -425,27 +426,13 @@ export function ShipCatalog() {
 
       {/* Commission modal */}
       {commissionShip && (
-        <div className={styles.imageModal} onClick={() => { setCommissionShip(null); setQuote(null) }} role="dialog" aria-modal="true">
-          <div className={styles.commissionModal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.commissionHeader}>
-              <span className={styles.commissionTitle}>
-                <Hammer size={14} />
-                Commission {commissionShip.name}
-              </span>
-              <button
-                className={styles.imageModalClose}
-                onClick={() => { setCommissionShip(null); setQuote(null) }}
-                type="button"
-              >
-                <X size={16} />
-              </button>
-            </div>
-
+        <Modal
+          title={`Commission ${commissionShip.name}`}
+          icon={<Hammer size={14} />}
+          onClose={() => { setCommissionShip(null); setQuote(null) }}
+        >
             {quoteLoading && (
-              <div className={styles.commissionLoading}>
-                <Loader2 size={20} className={styles.spinner} />
-                Getting quote...
-              </div>
+              <Loading message="Getting quote..." />
             )}
 
             {!quoteLoading && !quote && (
@@ -483,7 +470,7 @@ export function ShipCatalog() {
                   </div>
                   <div className={styles.commissionRow}>
                     <span className={styles.commissionLabel}>Your Credits</span>
-                    <span className={styles.commissionValue}>{quote.player_credits.toLocaleString()} cr</span>
+                    <span className={styles.commissionValue}><Credits amount={quote.player_credits} /></span>
                   </div>
                 </div>
 
@@ -515,28 +502,28 @@ export function ShipCatalog() {
                 <div className={styles.commissionActions}>
                   {quote.credits_only_available && (
                     <button
-                      className={styles.commissionPayBtn}
+                      className={shared.accentBtn}
                       onClick={() => handleCommission(false)}
                       disabled={commissioning || !quote.can_afford_credits_only}
                       title={!quote.can_afford_credits_only ? `Need ${quote.credits_only_total.toLocaleString()} cr` : undefined}
                       type="button"
                     >
-                      {commissioning ? <Loader2 size={12} className={styles.spinner} /> : null}
-                      Pay Credits ({quote.credits_only_total.toLocaleString()} cr)
+                      {commissioning ? <Loader2 size={12} className={shared.spinner} /> : null}
+                      Pay Credits (<Credits amount={quote.credits_only_total} />)
                     </button>
                   )}
                   <button
-                    className={styles.commissionPayBtn}
+                    className={shared.accentBtn}
                     onClick={() => handleCommission(true)}
                     disabled={commissioning || !canAffordMaterials}
                     title={!hasAllMaterials ? 'Missing required materials' : !canAffordMaterials ? `Need ${quote.provide_materials_total.toLocaleString()} cr for labor` : undefined}
                     type="button"
                   >
-                    {commissioning ? <Loader2 size={12} className={styles.spinner} /> : null}
-                    Provide Materials ({quote.provide_materials_total.toLocaleString()} cr + materials)
+                    {commissioning ? <Loader2 size={12} className={shared.spinner} /> : null}
+                    Provide Materials (<Credits amount={quote.provide_materials_total} /> + materials)
                   </button>
                   <button
-                    className={styles.commissionCancelBtn}
+                    className={shared.subtleBtn}
                     onClick={() => { setCommissionShip(null); setQuote(null) }}
                     disabled={commissioning}
                     type="button"
@@ -547,8 +534,7 @@ export function ShipCatalog() {
               </div>
               )
             })()}
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* Buy listing confirmation modal */}
@@ -556,26 +542,16 @@ export function ShipCatalog() {
         const credits = state.player?.credits ?? 0
         const canAfford = credits >= buyTarget.listing.price
         return (
-          <div className={styles.imageModal} onClick={() => setBuyTarget(null)} role="dialog" aria-modal="true">
-            <div className={styles.commissionModal} onClick={(e) => e.stopPropagation()}>
-              <div className={styles.commissionHeader}>
-                <span className={styles.commissionTitle}>
-                  <ShoppingCart size={14} />
-                  Buy {buyTarget.ship.name}
-                </span>
-                <button
-                  className={styles.imageModalClose}
-                  onClick={() => setBuyTarget(null)}
-                  type="button"
-                >
-                  <X size={16} />
-                </button>
-              </div>
+          <Modal
+            title={`Buy ${buyTarget.ship.name}`}
+            icon={<ShoppingCart size={14} />}
+            onClose={() => setBuyTarget(null)}
+          >
               <div className={styles.commissionBody}>
                 <div className={styles.commissionInfo}>
                   <div className={styles.commissionRow}>
                     <span className={styles.commissionLabel}>Price</span>
-                    <span className={styles.commissionValue}>{buyTarget.listing.price.toLocaleString()} cr</span>
+                    <span className={styles.commissionValue}><Credits amount={buyTarget.listing.price} /></span>
                   </div>
                   <div className={styles.commissionRow}>
                     <span className={styles.commissionLabel}>Seller</span>
@@ -584,7 +560,7 @@ export function ShipCatalog() {
                   <div className={styles.commissionRow}>
                     <span className={styles.commissionLabel}>Your Credits</span>
                     <span className={canAfford ? styles.commissionValue : styles.materialMissing}>
-                      {credits.toLocaleString()} cr
+                      <Credits amount={credits} />
                     </span>
                   </div>
                   {!canAfford && (
@@ -595,16 +571,16 @@ export function ShipCatalog() {
                 </div>
                 <div className={styles.commissionActions}>
                   <button
-                    className={styles.commissionPayBtn}
+                    className={shared.accentBtn}
                     onClick={handleBuyListing}
                     disabled={buying || !canAfford}
                     type="button"
                   >
-                    {buying ? <Loader2 size={12} className={styles.spinner} /> : <ShoppingCart size={12} />}
-                    Buy for {buyTarget.listing.price.toLocaleString()} cr
+                    {buying ? <Loader2 size={12} className={shared.spinner} /> : <ShoppingCart size={12} />}
+                    Buy for <Credits amount={buyTarget.listing.price} />
                   </button>
                   <button
-                    className={styles.commissionCancelBtn}
+                    className={shared.subtleBtn}
                     onClick={() => setBuyTarget(null)}
                     disabled={buying}
                     type="button"
@@ -613,8 +589,7 @@ export function ShipCatalog() {
                   </button>
                 </div>
               </div>
-            </div>
-          </div>
+          </Modal>
         )
       })()}
     </>

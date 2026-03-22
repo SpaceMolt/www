@@ -366,11 +366,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'STATUS_POLL': {
       // Note: get_status returns TrimmedPlayer which omits docked_at_base.
       // isDocked is set only by explicit dock/undock actions and initial login.
-      const { player, ship } = action.payload
+      const { player, ship, modules } = action.payload
       return {
         ...state,
         player: player || state.player,
         ship: ship || state.ship,
+        shipModules: modules || state.shipModules,
       }
     }
 
@@ -382,6 +383,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'CLEAR_PENDING_ACTION':
       return { ...state, pendingAction: null }
+
+    case 'SET_MODULE_CATALOG':
+      return { ...state, moduleCatalog: action.payload }
 
     case 'RESET':
       return { ..._initState, connected: state.connected, welcome: state.welcome }
@@ -420,6 +424,8 @@ const _initState: GameState = {
   recipesData: null,
   skillsData: null,
   pendingAction: null,
+  shipModules: [],
+  moduleCatalog: null,
 }
 
 export function useGameState() {

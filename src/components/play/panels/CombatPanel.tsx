@@ -15,6 +15,7 @@ import {
   RotateCw,
 } from 'lucide-react'
 import { useGame } from '../GameProvider'
+import { Panel, Modal, shared } from '../shared'
 import styles from './CombatPanel.module.css'
 
 interface BattleParticipant {
@@ -152,366 +153,354 @@ export function CombatPanel() {
   const cargoItems = state.ship?.cargo || []
 
   return (
-    <div className={styles.panel}>
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <div className={styles.title}>
-            <span className={styles.titleIcon}>
-              <Swords size={16} />
-            </span>
-            Combat
-          </div>
+    <Panel
+      title="Combat"
+      icon={<Swords size={16} />}
+      color="var(--claw-red)"
+      headerRight={
+        <div className={styles.headerRight}>
           {state.inCombat && (
             <span className={styles.combatBadge}>In Combat</span>
           )}
+          <button
+            className={shared.refreshBtn}
+            onClick={handleRefresh}
+            title="Refresh nearby"
+            type="button"
+          >
+            <RefreshCw size={14} />
+          </button>
         </div>
+      }
+    >
+      {/* Controls */}
+      <div className={styles.controlsRow}>
         <button
-          className={styles.refreshBtn}
-          onClick={handleRefresh}
-          title="Refresh nearby"
+          className={`${styles.cloakBtn} ${
+            isCloaked ? styles.cloakActive : ''
+          }`}
+          onClick={handleCloak}
+          title={isCloaked ? 'Disable cloak' : 'Enable cloak'}
           type="button"
         >
-          <RefreshCw size={14} />
+          {isCloaked ? <EyeOff size={14} /> : <Eye size={14} />}
+          {isCloaked ? 'Cloaked' : 'Cloak'}
+        </button>
+
+        <button
+          className={styles.selfDestructBtn}
+          onClick={() => setConfirmSelfDestruct(true)}
+          title="Self-destruct"
+          type="button"
+        >
+          <Skull size={14} />
+          Self-Destruct
         </button>
       </div>
 
-      <div className={styles.content}>
-        {/* Controls */}
-        <div className={styles.controlsRow}>
-          <button
-            className={`${styles.cloakBtn} ${
-              isCloaked ? styles.cloakActive : ''
-            }`}
-            onClick={handleCloak}
-            title={isCloaked ? 'Disable cloak' : 'Enable cloak'}
-            type="button"
-          >
-            {isCloaked ? <EyeOff size={14} /> : <Eye size={14} />}
-            {isCloaked ? 'Cloaked' : 'Cloak'}
-          </button>
+      {/* Battle Status */}
+      {state.inCombat && (
+        <div className={styles.battleSection}>
+          <div className={shared.sectionTitle}>
+            <Target size={12} /> Battle Status
+          </div>
+          {battleStatus ? (
+            <div className={styles.battleInfo}>
+              {/* Sides */}
+              <div className={styles.sidesRow}>
+                {battleStatus.sides.map((side) => (
+                  <div key={side.side_id} className={styles.sideCard}>
+                    <span className={styles.sideName}>
+                      {side.faction_tag
+                        ? `[${side.faction_tag}] ${side.faction_name}`
+                        : `Side ${side.side_id}`}
+                    </span>
+                    <span className={styles.sideCount}>
+                      {side.player_count}{' '}
+                      {side.player_count === 1 ? 'pilot' : 'pilots'}
+                    </span>
+                  </div>
+                ))}
+              </div>
 
-          <button
-            className={styles.selfDestructBtn}
-            onClick={() => setConfirmSelfDestruct(true)}
-            title="Self-destruct"
-            type="button"
-          >
-            <Skull size={14} />
-            Self-Destruct
-          </button>
+              {/* Participants */}
+              <div className={styles.participantList}>
+                {battleStatus.participants.map((p) => (
+                  <div
+                    key={p.player_id}
+                    className={styles.participantCard}
+                  >
+                    <div className={styles.participantHeader}>
+                      <span className={styles.participantName}>
+                        {p.username}
+                      </span>
+                      <span className={styles.participantShip}>
+                        {p.ship_class}
+                      </span>
+                    </div>
+                    <div className={styles.barGroup}>
+                      <div className={styles.barRow}>
+                        <span className={styles.barLabel}>SHD</span>
+                        <div className={styles.barTrack}>
+                          <div
+                            className={styles.barFillShield}
+                            style={{ width: `${p.shield_pct}%` }}
+                          />
+                        </div>
+                        <span className={styles.barValue}>
+                          {p.shield_pct}%
+                        </span>
+                      </div>
+                      <div className={styles.barRow}>
+                        <span className={styles.barLabel}>HUL</span>
+                        <div className={styles.barTrack}>
+                          <div
+                            className={styles.barFillHull}
+                            style={{ width: `${p.hull_pct}%` }}
+                          />
+                        </div>
+                        <span className={styles.barValue}>
+                          {p.hull_pct}%
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className={shared.emptyState}>
+              Fetching battle data...
+            </div>
+          )}
+
+          {/* Tactical Controls */}
+          <div className={styles.tacticalSection}>
+            <div className={shared.sectionTitle}>
+              <Shield size={12} /> Tactical Controls
+            </div>
+
+            {/* Stance Selector */}
+            <div className={styles.stanceRow}>
+              <button
+                className={styles.stanceBtn}
+                onClick={() => handleStance('aggressive')}
+                title="Aggressive stance: max damage, less defense"
+                type="button"
+              >
+                <Swords size={12} />
+                Aggressive
+              </button>
+              <button
+                className={styles.stanceBtn}
+                onClick={() => handleStance('balanced')}
+                title="Balanced stance: equal offense and defense"
+                type="button"
+              >
+                <Target size={12} />
+                Balanced
+              </button>
+              <button
+                className={styles.stanceBtn}
+                onClick={() => handleStance('defensive')}
+                title="Defensive stance: max defense, less damage"
+                type="button"
+              >
+                <Shield size={12} />
+                Defensive
+              </button>
+            </div>
+
+            {/* Movement + Engage */}
+            <div className={styles.tacticalRow}>
+              <button
+                className={styles.tacticalBtn}
+                onClick={handleAdvance}
+                title="Advance toward target"
+                type="button"
+              >
+                <ChevronUp size={14} />
+                Advance
+              </button>
+              <button
+                className={styles.tacticalBtn}
+                onClick={handleRetreat}
+                title="Retreat from battle"
+                type="button"
+              >
+                <ChevronDown size={14} />
+                Retreat
+              </button>
+              <button
+                className={styles.engageBtn}
+                onClick={handleEngage}
+                title="Engage enemy"
+                type="button"
+              >
+                <Swords size={14} />
+                Engage
+              </button>
+            </div>
+          </div>
         </div>
+      )}
 
-        {/* Battle Status */}
-        {state.inCombat && (
-          <div className={styles.battleSection}>
-            <div className={styles.sectionTitle}>
-              <Target size={12} /> Battle Status
-            </div>
-            {battleStatus ? (
-              <div className={styles.battleInfo}>
-                {/* Sides */}
-                <div className={styles.sidesRow}>
-                  {battleStatus.sides.map((side) => (
-                    <div key={side.side_id} className={styles.sideCard}>
-                      <span className={styles.sideName}>
-                        {side.faction_tag
-                          ? `[${side.faction_tag}] ${side.faction_name}`
-                          : `Side ${side.side_id}`}
+      {/* Nearby players */}
+      <div>
+        <div className={shared.sectionTitle}>
+          Nearby ({nearby.length})
+        </div>
+        {nearby.length > 0 ? (
+          <div className={styles.playerList}>
+            {nearby.map((player) => {
+              const displayName = player.username || 'Unknown'
+              const playerId = player.player_id ?? ''
+
+              return (
+                <div key={playerId} className={styles.playerCard}>
+                  <div className={styles.playerInfo}>
+                    <div className={styles.playerNameRow}>
+                      <span
+                        className={styles.playerName}
+                        style={
+                          player.primary_color
+                            ? { color: player.primary_color }
+                            : undefined
+                        }
+                      >
+                        {displayName}
                       </span>
-                      <span className={styles.sideCount}>
-                        {side.player_count}{' '}
-                        {side.player_count === 1 ? 'pilot' : 'pilots'}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Participants */}
-                <div className={styles.participantList}>
-                  {battleStatus.participants.map((p) => (
-                    <div
-                      key={p.player_id}
-                      className={styles.participantCard}
-                    >
-                      <div className={styles.participantHeader}>
-                        <span className={styles.participantName}>
-                          {p.username}
-                        </span>
-                        <span className={styles.participantShip}>
-                          {p.ship_class}
-                        </span>
-                      </div>
-                      <div className={styles.barGroup}>
-                        <div className={styles.barRow}>
-                          <span className={styles.barLabel}>SHD</span>
-                          <div className={styles.barTrack}>
-                            <div
-                              className={styles.barFillShield}
-                              style={{ width: `${p.shield_pct}%` }}
-                            />
-                          </div>
-                          <span className={styles.barValue}>
-                            {p.shield_pct}%
-                          </span>
-                        </div>
-                        <div className={styles.barRow}>
-                          <span className={styles.barLabel}>HUL</span>
-                          <div className={styles.barTrack}>
-                            <div
-                              className={styles.barFillHull}
-                              style={{ width: `${p.hull_pct}%` }}
-                            />
-                          </div>
-                          <span className={styles.barValue}>
-                            {p.hull_pct}%
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className={styles.emptyState}>
-                Fetching battle data...
-              </div>
-            )}
-
-            {/* Tactical Controls */}
-            <div className={styles.tacticalSection}>
-              <div className={styles.sectionTitle}>
-                <Shield size={12} /> Tactical Controls
-              </div>
-
-              {/* Stance Selector */}
-              <div className={styles.stanceRow}>
-                <button
-                  className={styles.stanceBtn}
-                  onClick={() => handleStance('aggressive')}
-                  title="Aggressive stance: max damage, less defense"
-                  type="button"
-                >
-                  <Swords size={12} />
-                  Aggressive
-                </button>
-                <button
-                  className={styles.stanceBtn}
-                  onClick={() => handleStance('balanced')}
-                  title="Balanced stance: equal offense and defense"
-                  type="button"
-                >
-                  <Target size={12} />
-                  Balanced
-                </button>
-                <button
-                  className={styles.stanceBtn}
-                  onClick={() => handleStance('defensive')}
-                  title="Defensive stance: max defense, less damage"
-                  type="button"
-                >
-                  <Shield size={12} />
-                  Defensive
-                </button>
-              </div>
-
-              {/* Movement + Engage */}
-              <div className={styles.tacticalRow}>
-                <button
-                  className={styles.tacticalBtn}
-                  onClick={handleAdvance}
-                  title="Advance toward target"
-                  type="button"
-                >
-                  <ChevronUp size={14} />
-                  Advance
-                </button>
-                <button
-                  className={styles.tacticalBtn}
-                  onClick={handleRetreat}
-                  title="Retreat from battle"
-                  type="button"
-                >
-                  <ChevronDown size={14} />
-                  Retreat
-                </button>
-                <button
-                  className={styles.engageBtn}
-                  onClick={handleEngage}
-                  title="Engage enemy"
-                  type="button"
-                >
-                  <Swords size={14} />
-                  Engage
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Nearby players */}
-        <div>
-          <div className={styles.sectionTitle}>
-            Nearby ({nearby.length})
-          </div>
-          {nearby.length > 0 ? (
-            <div className={styles.playerList}>
-              {nearby.map((player) => {
-                const displayName = player.username || 'Unknown'
-                const playerId = player.player_id ?? ''
-
-                return (
-                  <div key={playerId} className={styles.playerCard}>
-                    <div className={styles.playerInfo}>
-                      <div className={styles.playerNameRow}>
-                        <span
-                          className={styles.playerName}
-                          style={
-                            player.primary_color
-                              ? { color: player.primary_color }
-                              : undefined
-                          }
-                        >
-                          {displayName}
-                        </span>
-                        {player.clan_tag && (
-                          <span className={styles.clanTag}>
-                            [{player.clan_tag}]
-                          </span>
-                        )}
-                      </div>
-                      {player.ship_class && (
-                        <span className={styles.playerShip}>
-                          <Shield size={10} /> {player.ship_class}
+                      {player.clan_tag && (
+                        <span className={styles.clanTag}>
+                          [{player.clan_tag}]
                         </span>
                       )}
                     </div>
-
-                    <div className={styles.playerActions}>
-                      <button
-                        className={styles.scanBtn}
-                        onClick={() => handleScan(playerId)}
-                        title={`Scan ${displayName}`}
-                        type="button"
-                      >
-                        <Search size={14} />
-                      </button>
-                      <button
-                        className={styles.attackBtn}
-                        onClick={() => handleAttack(playerId)}
-                        title={`Attack ${displayName}`}
-                        type="button"
-                      >
-                        <Swords size={14} />
-                      </button>
-                    </div>
+                    {player.ship_class && (
+                      <span className={styles.playerShip}>
+                        <Shield size={10} /> {player.ship_class}
+                      </span>
+                    )}
                   </div>
-                )
-              })}
-            </div>
-          ) : (
-            <div className={styles.emptyState}>
-              No other vessels detected at this location
-            </div>
-          )}
-        </div>
 
-        {/* Reload Section */}
-        {moduleIds.length > 0 && (
-          <div>
-            <div className={styles.sectionTitle}>
-              <RotateCw size={12} /> Weapon Reload
-            </div>
-            <div className={styles.reloadList}>
-              {moduleIds.map((instanceId) => (
-                <div key={instanceId} className={styles.reloadCard}>
-                  <div className={styles.reloadWeaponName}>{instanceId}</div>
-                  <div className={styles.reloadControls}>
-                    <select
-                      className={styles.ammoSelect}
-                      value={selectedAmmo[instanceId] || ''}
-                      onChange={(e) =>
-                        setSelectedAmmo((prev) => ({
-                          ...prev,
-                          [instanceId]: e.target.value,
-                        }))
-                      }
-                    >
-                      <option value="">Select ammo</option>
-                      {cargoItems.map((item) => (
-                        <option key={item.item_id} value={item.item_id}>
-                          {item.name} (x{item.quantity})
-                        </option>
-                      ))}
-                    </select>
+                  <div className={styles.playerActions}>
                     <button
-                      className={styles.reloadBtn}
-                      onClick={() => handleReload(instanceId)}
-                      disabled={!selectedAmmo[instanceId]}
-                      title={`Reload ${instanceId}`}
+                      className={styles.scanBtn}
+                      onClick={() => handleScan(playerId)}
+                      title={`Scan ${displayName}`}
                       type="button"
                     >
-                      <RotateCw size={12} />
-                      Reload
+                      <Search size={14} />
+                    </button>
+                    <button
+                      className={styles.attackBtn}
+                      onClick={() => handleAttack(playerId)}
+                      title={`Attack ${displayName}`}
+                      type="button"
+                    >
+                      <Swords size={14} />
                     </button>
                   </div>
                 </div>
-              ))}
-            </div>
+              )
+            })}
+          </div>
+        ) : (
+          <div className={shared.emptyState}>
+            No other vessels detected at this location
           </div>
         )}
       </div>
 
+      {/* Reload Section */}
+      {moduleIds.length > 0 && (
+        <div>
+          <div className={shared.sectionTitle}>
+            <RotateCw size={12} /> Weapon Reload
+          </div>
+          <div className={styles.reloadList}>
+            {moduleIds.map((instanceId) => (
+              <div key={instanceId} className={styles.reloadCard}>
+                <div className={styles.reloadWeaponName}>{instanceId}</div>
+                <div className={styles.reloadControls}>
+                  <select
+                    className={shared.selectInput}
+                    value={selectedAmmo[instanceId] || ''}
+                    onChange={(e) =>
+                      setSelectedAmmo((prev) => ({
+                        ...prev,
+                        [instanceId]: e.target.value,
+                      }))
+                    }
+                  >
+                    <option value="">Select ammo</option>
+                    {cargoItems.map((item) => (
+                      <option key={item.item_id} value={item.item_id}>
+                        {item.name} (x{item.quantity})
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    className={styles.reloadBtn}
+                    onClick={() => handleReload(instanceId)}
+                    disabled={!selectedAmmo[instanceId]}
+                    title={`Reload ${instanceId}`}
+                    type="button"
+                  >
+                    <RotateCw size={12} />
+                    Reload
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Self-destruct confirmation modal */}
       {confirmSelfDestruct && (
-        <div
-          className={styles.confirmOverlay}
-          onClick={() => setConfirmSelfDestruct(false)}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div
-            className={styles.confirmDialog}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className={styles.confirmTitle}>
-              <Skull size={18} /> Confirm Self-Destruct
-            </div>
-            <div className={styles.confirmText}>
-              This will destroy your ship and all cargo. You will respawn at your
-              home base. This action cannot be undone.
-              <br /><br />
-              <strong>Fee schedule:</strong> First 2 self-destructs per 24h are free.
-              3rd costs 200 cr, then doubles (400, 800, 1600...).
-              Repeated use restricts trading and gifting.
-              {state.player?.trading_restricted_until && new Date(state.player.trading_restricted_until) > new Date() && (
-                <>
-                  <br /><br />
-                  <span style={{ color: 'var(--claw-red)' }}>
-                    You are currently trade-restricted until {new Date(state.player.trading_restricted_until).toLocaleTimeString()}.
-                  </span>
-                </>
-              )}
-            </div>
-            <div className={styles.confirmActions}>
+        <Modal
+          title="Confirm Self-Destruct"
+          icon={<Skull size={18} />}
+          onClose={() => setConfirmSelfDestruct(false)}
+          actions={
+            <>
               <button
-                className={styles.cloakBtn}
+                className={shared.accentBtn}
                 onClick={() => setConfirmSelfDestruct(false)}
                 type="button"
               >
                 Cancel
               </button>
               <button
-                className={styles.selfDestructBtn}
+                className={shared.dangerBtn}
                 onClick={handleSelfDestruct}
                 type="button"
               >
                 <Skull size={14} />
                 Confirm
               </button>
-            </div>
+            </>
+          }
+        >
+          <div className={shared.confirmText}>
+            This will destroy your ship and all cargo. You will respawn at your
+            home base. This action cannot be undone.
+            <br /><br />
+            <strong>Fee schedule:</strong> First 2 self-destructs per 24h are free.
+            3rd costs 200 cr, then doubles (400, 800, 1600...).
+            Repeated use restricts trading and gifting.
+            {state.player?.trading_restricted_until && new Date(state.player.trading_restricted_until) > new Date() && (
+              <>
+                <br /><br />
+                <span style={{ color: 'var(--claw-red)' }}>
+                  You are currently trade-restricted until {new Date(state.player.trading_restricted_until).toLocaleTimeString()}.
+                </span>
+              </>
+            )}
           </div>
-        </div>
+        </Modal>
       )}
-    </div>
+    </Panel>
   )
 }

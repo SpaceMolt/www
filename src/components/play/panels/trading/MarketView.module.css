@@ -29,54 +29,6 @@
   gap: 0.3rem;
 }
 
-.refreshBtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: 1px solid var(--hull-grey);
-  border-radius: 4px;
-  color: var(--chrome-silver);
-  cursor: pointer;
-  padding: 0.25rem;
-  transition: all 0.2s ease;
-}
-
-.refreshBtn:hover {
-  border-color: var(--bio-green);
-  color: var(--bio-green);
-  box-shadow: 0 0 8px rgba(45, 212, 191, 0.2);
-}
-
-.analyzeBtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: 1px solid var(--hull-grey);
-  border-radius: 4px;
-  color: var(--chrome-silver);
-  cursor: pointer;
-  padding: 0.25rem;
-  transition: all 0.2s ease;
-}
-
-.analyzeBtn:hover {
-  border-color: var(--plasma-cyan);
-  color: var(--plasma-cyan);
-  box-shadow: 0 0 8px rgba(0, 212, 255, 0.2);
-}
-
-.dockedOnly {
-  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
-  font-size: 0.78rem;
-  color: var(--hull-grey);
-  text-align: center;
-  padding: 1.5rem 0.5rem;
-  background: rgba(61, 90, 108, 0.06);
-  border: 1px dashed var(--dim-grey);
-  border-radius: 4px;
-}
 
 .loading {
   font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
@@ -86,13 +38,6 @@
   padding: 1rem 0.5rem;
 }
 
-.emptyState {
-  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
-  font-size: 0.78rem;
-  color: var(--hull-grey);
-  text-align: center;
-  padding: 1rem 0.5rem;
-}
 
 /* Table header */
 .tableHeader {
@@ -330,120 +275,8 @@
   align-items: stretch;
 }
 
-.quickInput {
-  flex: 1;
-  background: rgba(10, 14, 23, 0.8);
-  border: 1px solid var(--hull-grey);
-  border-radius: 4px;
-  padding: 0.3rem 0.4rem;
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.68rem;
-  color: var(--star-white);
-  outline: none;
-  transition: border-color 0.2s ease;
-  min-width: 0;
-  max-width: 5rem;
-}
 
-.quickInput::placeholder {
-  color: var(--hull-grey);
-}
 
-.quickInput:focus {
-  border-color: var(--plasma-cyan);
-  box-shadow: 0 0 6px rgba(0, 212, 255, 0.12);
-}
-
-.quickBuyBtn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.3rem;
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.63rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  background: rgba(0, 212, 255, 0.08);
-  border: 1px solid var(--plasma-cyan);
-  border-radius: 4px;
-  color: var(--plasma-cyan);
-  cursor: pointer;
-  padding: 0.3rem 0.5rem;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.quickBuyBtn:hover:not(:disabled) {
-  background: rgba(0, 212, 255, 0.18);
-  box-shadow: 0 0 10px rgba(0, 212, 255, 0.25);
-}
-
-.quickBuyBtn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
-.quickSellBtn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.3rem;
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.63rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  background: rgba(255, 107, 53, 0.08);
-  border: 1px solid var(--shell-orange);
-  border-radius: 4px;
-  color: var(--shell-orange);
-  cursor: pointer;
-  padding: 0.3rem 0.5rem;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.quickSellBtn:hover:not(:disabled) {
-  background: rgba(255, 107, 53, 0.18);
-  box-shadow: 0 0 10px rgba(255, 107, 53, 0.25);
-}
-
-.quickSellBtn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
-/* Estimate button */
-.estimateBtn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  background: rgba(167, 139, 250, 0.08);
-  border: 1px solid var(--void-purple);
-  border-radius: 4px;
-  color: var(--void-purple);
-  cursor: pointer;
-  padding: 0.3rem 0.4rem;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.estimateBtn:hover:not(:disabled) {
-  background: rgba(167, 139, 250, 0.18);
-  box-shadow: 0 0 10px rgba(167, 139, 250, 0.25);
-}
-
-.estimateBtn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
 
 /* Estimate breakdown */
 .estimateBreakdown {
@@ -585,37 +418,6 @@
   flex-shrink: 0;
 }
 
-.categorySelect {
-  appearance: none;
-  background: rgba(10, 14, 23, 0.8);
-  border: 1px solid var(--hull-grey);
-  border-radius: 4px;
-  padding: 0.2rem 1.2rem 0.2rem 0.35rem;
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
-  color: var(--chrome-silver);
-  cursor: pointer;
-  outline: none;
-  transition: border-color 0.2s ease;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 0.3rem center;
-  min-width: 4.5rem;
-}
-
-.categorySelect:hover {
-  border-color: var(--plasma-cyan);
-}
-
-.categorySelect:focus {
-  border-color: var(--plasma-cyan);
-  box-shadow: 0 0 6px rgba(0, 212, 255, 0.12);
-}
-
-.categorySelect option {
-  background: #0a0e17;
-  color: var(--chrome-silver);
-}
 
 /* Summary mode notice */
 .summaryNotice {
@@ -631,14 +433,7 @@
 
 /* Mobile */
 @media (max-width: 768px) {
-  .refreshBtn { padding: 0.5rem; min-width: 44px; min-height: 44px; }
-  .analyzeBtn { padding: 0.5rem; min-width: 44px; min-height: 44px; }
   .itemRow { min-height: 44px; padding: 0.5rem; }
-  .quickInput { font-size: 16px; min-height: 44px; }
-  .quickBuyBtn { min-height: 44px; padding: 0.4rem 0.5rem; }
-  .quickSellBtn { min-height: 44px; padding: 0.4rem 0.5rem; }
-  .estimateBtn { min-height: 44px; padding: 0.4rem 0.5rem; }
-  .categorySelect { font-size: 16px; min-height: 44px; }
   .npcTag { font-size: 0.68rem; }
   .insightBadge { font-size: 0.68rem; }
   .cargoHint { font-size: 0.68rem; }

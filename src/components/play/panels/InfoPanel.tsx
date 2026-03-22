@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { useGame } from '../GameProvider'
 import { ActionButton } from '../ActionButton'
+import { PanelWithTabs, shared } from '../shared'
 import styles from './InfoPanel.module.css'
 
 interface Note {
@@ -152,35 +153,19 @@ export function InfoPanel() {
   const player = state.player
   const welcome = state.welcome
 
+  const tabs = [
+    { id: 'info', label: 'Info', icon: <Info size={12} /> },
+    { id: 'log', label: "Captain's Log", icon: <BookOpen size={12} /> },
+  ]
+
   return (
-    <div className={styles.panel}>
-      <div className={styles.header}>
-        <div className={styles.title}>
-          <span className={styles.titleIcon}><Info size={16} /></span>
-          Info
-        </div>
-      </div>
-
-      <div className={styles.tabs}>
-        <button
-          className={`${styles.tab} ${activeTab === 'info' ? styles.tabActive : ''}`}
-          onClick={() => setActiveTab('info')}
-          type="button"
-        >
-          <Info size={12} />
-          Info
-        </button>
-        <button
-          className={`${styles.tab} ${activeTab === 'log' ? styles.tabActive : ''}`}
-          onClick={() => setActiveTab('log')}
-          type="button"
-        >
-          <BookOpen size={12} />
-          Captain&apos;s Log
-        </button>
-      </div>
-
-      <div className={styles.content}>
+    <PanelWithTabs
+      title="Info"
+      icon={<Info size={16} />}
+      tabs={tabs}
+      activeTab={activeTab}
+      onTabChange={(id) => setActiveTab(id as 'info' | 'log')}
+    >
         {activeTab === 'info' && (<>
         {/* Game Version */}
         {welcome && (
@@ -202,7 +187,7 @@ export function InfoPanel() {
         {/* Player Stats */}
         {player?.stats && Object.keys(player.stats).length > 0 && (
           <div>
-            <div className={styles.sectionTitle}>
+            <div className={shared.sectionTitle}>
               <span className={styles.sectionIcon}><Info size={12} /></span>
               Player Stats
             </div>
@@ -225,7 +210,7 @@ export function InfoPanel() {
 
         {/* Action Log */}
         <div className={styles.actionLogSection}>
-          <div className={styles.sectionTitle}>
+          <div className={shared.sectionTitle}>
             <span className={styles.sectionIcon}><ScrollText size={12} /></span>
             Action Log
           </div>
@@ -277,7 +262,7 @@ export function InfoPanel() {
           )}
           {loadingActionLog && actionLogEntries.length === 0 && (
             <div className={styles.loading}>
-              <span className={styles.spinner} />
+              <span className={shared.spinner} />
               Loading action log...
             </div>
           )}
@@ -287,7 +272,7 @@ export function InfoPanel() {
 
         {/* Quick Links */}
         <div>
-          <div className={styles.sectionTitle}>
+          <div className={shared.sectionTitle}>
             <span className={styles.sectionIcon}><ExternalLink size={12} /></span>
             Quick Links
           </div>
@@ -327,7 +312,7 @@ export function InfoPanel() {
 
         {/* Notes */}
         <div>
-          <div className={styles.sectionTitle}>
+          <div className={shared.sectionTitle}>
             <span className={styles.sectionIcon}><FileText size={12} /></span>
             Notes
           </div>
@@ -350,12 +335,12 @@ export function InfoPanel() {
           )}
           {loadingNotes && (
             <div className={styles.loading}>
-              <span className={styles.spinner} />
+              <span className={shared.spinner} />
               Loading notes...
             </div>
           )}
           {notesLoaded && notes.length === 0 && (
-            <div className={styles.emptyState}>
+            <div className={shared.emptyState}>
               No notes yet. Create your first note.
             </div>
           )}
@@ -413,12 +398,12 @@ export function InfoPanel() {
           )}
           {loadingLog && (
             <div className={styles.loading}>
-              <span className={styles.spinner} />
+              <span className={shared.spinner} />
               Loading log...
             </div>
           )}
           {logLoaded && logEntries.length === 0 && (
-            <div className={styles.emptyState}>
+            <div className={shared.emptyState}>
               Your captain&apos;s log is empty.
             </div>
           )}
@@ -433,7 +418,6 @@ export function InfoPanel() {
           )}
         </div>
         )}
-      </div>
-    </div>
+    </PanelWithTabs>
   )
 }

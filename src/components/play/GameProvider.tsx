@@ -7,7 +7,7 @@ import { GameApi, MUTATION_COMMANDS } from '@/lib/gameApi'
 import type {
   GameState, WSMessage, GameAction, WelcomePayload, StateUpdate, ChatMessage, TradeOffer,
   MarketData, OrdersData, StorageData, FleetData, ShowroomData, ShipCatalogData,
-  RecipesData, SkillsData, Player, Ship, NearbyPlayer,
+  RecipesData, SkillsData, Player, Ship, NearbyPlayer, EnrichedShipModule,
 } from './types'
 
 interface GameContextValue {
@@ -229,8 +229,9 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
         const result = await apiRef.current.command('get_status') as Record<string, unknown>
         const player = result.player as Player | undefined
         const ship = result.ship as Ship | undefined
+        const modules = result.modules as EnrichedShipModule[] | undefined
         if (player && ship) {
-          dispatchRef.current({ type: 'STATUS_POLL', payload: { player, ship } })
+          dispatchRef.current({ type: 'STATUS_POLL', payload: { player, ship, modules } })
         }
       } catch {
         // Polling failure is non-critical

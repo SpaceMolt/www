@@ -14,6 +14,7 @@ import {
   Filter,
 } from 'lucide-react'
 import { useGame } from '../../GameProvider'
+import { Credits, shared } from '../../shared'
 import styles from './MarketView.module.css'
 
 interface MarketInsight {
@@ -159,7 +160,7 @@ export function MarketView() {
 
   if (!isDocked) {
     return (
-      <div className={styles.dockedOnly}>
+      <div className={shared.dockedOnly}>
         Dock at a base to access the market
       </div>
     )
@@ -179,7 +180,7 @@ export function MarketView() {
             <div className={styles.categoryFilter}>
               <Filter size={11} className={styles.filterIcon} />
               <select
-                className={styles.categorySelect}
+                className={shared.selectInput}
                 value={selectedCategory}
                 onChange={(e) => handleCategoryChange(e.target.value)}
               >
@@ -193,7 +194,7 @@ export function MarketView() {
             </div>
           )}
           <button
-            className={styles.analyzeBtn}
+            className={shared.iconBtn}
             onClick={handleAnalyzeMarket}
             title="Analyze market"
             type="button"
@@ -201,7 +202,7 @@ export function MarketView() {
             <BarChart3 size={13} />
           </button>
           <button
-            className={styles.refreshBtn}
+            className={shared.refreshBtn}
             onClick={handleRefresh}
             title="Refresh market data"
             type="button"
@@ -254,7 +255,7 @@ export function MarketView() {
       {!marketData ? (
         <div className={styles.loading}>Loading market data...</div>
       ) : items.length === 0 ? (
-        <div className={styles.emptyState}>
+        <div className={shared.emptyState}>
           {marketData.message || 'No items listed on this market.'}
         </div>
       ) : (
@@ -332,7 +333,7 @@ export function MarketView() {
                                     className={`${styles.orderEntry} ${styles.orderSell}`}
                                   >
                                     <span className={styles.orderPrice}>
-                                      {order.price_each.toLocaleString()} cr
+                                      <Credits amount={order.price_each} />
                                     </span>
                                     <span className={styles.orderQty}>
                                       x{order.quantity.toLocaleString()}
@@ -364,7 +365,7 @@ export function MarketView() {
                                     className={`${styles.orderEntry} ${styles.orderBuy}`}
                                   >
                                     <span className={styles.orderPrice}>
-                                      {order.price_each.toLocaleString()} cr
+                                      <Credits amount={order.price_each} />
                                     </span>
                                     <span className={styles.orderQty}>
                                       x{order.quantity.toLocaleString()}
@@ -388,7 +389,7 @@ export function MarketView() {
                           <span className={styles.quickLabel}>Buy at Market</span>
                           <div className={styles.quickRow}>
                             <input
-                              className={styles.quickInput}
+                              className={shared.textInput}
                               type="number"
                               min={1}
                               placeholder="Qty"
@@ -396,7 +397,7 @@ export function MarketView() {
                               onChange={(e) => setBuyQty(e.target.value)}
                             />
                             <button
-                              className={styles.estimateBtn}
+                              className={shared.accentBtn}
                               onClick={() => handleEstimatePurchase(item.item_id)}
                               disabled={!buyQty || parseInt(buyQty, 10) < 1 || estimatingItem === item.item_id}
                               title="Estimate purchase cost"
@@ -406,7 +407,7 @@ export function MarketView() {
                               Est.
                             </button>
                             <button
-                              className={styles.quickBuyBtn}
+                              className={shared.actionBtn}
                               onClick={() => handleBuyAtMarket(item.item_id)}
                               disabled={!buyQty || parseInt(buyQty, 10) < 1}
                               type="button"
@@ -419,7 +420,7 @@ export function MarketView() {
                           {estimateData[item.item_id] && (
                             <div className={styles.estimateBreakdown}>
                               <div className={styles.estimateTotal}>
-                                Total: {estimateData[item.item_id].total_cost.toLocaleString()} cr
+                                Total: <Credits amount={estimateData[item.item_id].total_cost} />
                                 {estimateData[item.item_id].unfilled > 0 && (
                                   <span className={styles.estimateUnfilled}>
                                     ({estimateData[item.item_id].unfilled} unfilled)
@@ -432,7 +433,7 @@ export function MarketView() {
                                     <div key={fi} className={styles.estimateFill}>
                                       <span className={styles.estimateFillQty}>x{fill.quantity}</span>
                                       <span className={styles.estimateFillPrice}>
-                                        @ {fill.price_each.toLocaleString()} cr
+                                        @ <Credits amount={fill.price_each} />
                                       </span>
                                       {fill.source === 'npc' && (
                                         <span className={styles.npcTag}>NPC</span>
@@ -457,7 +458,7 @@ export function MarketView() {
                           </span>
                           <div className={styles.quickRow}>
                             <input
-                              className={styles.quickInput}
+                              className={shared.textInput}
                               type="number"
                               min={1}
                               max={cargoItem?.quantity}
@@ -466,7 +467,7 @@ export function MarketView() {
                               onChange={(e) => setSellQty(e.target.value)}
                             />
                             <button
-                              className={styles.quickSellBtn}
+                              className={shared.warningBtn}
                               onClick={() => handleSellAtMarket(item.item_id)}
                               disabled={
                                 !sellQty ||

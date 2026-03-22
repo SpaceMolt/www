@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react'
 import { Settings, Palette, Home, LogOut } from 'lucide-react'
 import { useGame } from '../GameProvider'
 import { ActionButton } from '../ActionButton'
+import { Panel, shared } from '../shared'
 import styles from './SettingsPanel.module.css'
 
 export function SettingsPanel() {
@@ -54,18 +55,10 @@ export function SettingsPanel() {
   }, [sendCommand, onSwitchPlayer])
 
   return (
-    <div className={styles.panel}>
-      <div className={styles.header}>
-        <div className={styles.title}>
-          <span className={styles.titleIcon}><Settings size={16} /></span>
-          Settings
-        </div>
-      </div>
-
-      <div className={styles.content}>
+    <Panel title="Settings" icon={<Settings size={16} />}>
         {/* Status Message */}
         <div>
-          <div className={styles.sectionTitle}>
+          <div className={shared.sectionTitle}>
             <span className={styles.sectionIcon}><Settings size={12} /></span>
             Status Message
           </div>
@@ -94,7 +87,7 @@ export function SettingsPanel() {
 
         {/* Clan Tag */}
         <div>
-          <div className={styles.sectionTitle}>
+          <div className={shared.sectionTitle}>
             <span className={styles.sectionIcon}><Settings size={12} /></span>
             Clan Tag
           </div>
@@ -124,7 +117,7 @@ export function SettingsPanel() {
 
         {/* Colors */}
         <div>
-          <div className={styles.sectionTitle}>
+          <div className={shared.sectionTitle}>
             <span className={styles.sectionIcon}><Palette size={12} /></span>
             Ship Colors
           </div>
@@ -170,7 +163,7 @@ export function SettingsPanel() {
 
         {/* Set Home Base */}
         <div>
-          <div className={styles.sectionTitle}>
+          <div className={shared.sectionTitle}>
             <span className={styles.sectionIcon}><Home size={12} /></span>
             Home Base
           </div>
@@ -197,7 +190,7 @@ export function SettingsPanel() {
 
         {/* Connection Info */}
         <div>
-          <div className={styles.sectionTitle}>
+          <div className={shared.sectionTitle}>
             <span className={styles.sectionIcon}><Settings size={12} /></span>
             Connection
           </div>
@@ -251,7 +244,6 @@ export function SettingsPanel() {
             size="sm"
           />
         </div>
-      </div>
-    </div>
+    </Panel>
   )
 }

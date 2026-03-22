@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { useGame } from '../GameProvider'
 import { ProgressBar } from '../ProgressBar'
+import { Panel, shared } from '../shared'
 import styles from './NavigationPanel.module.css'
 
 interface RouteStep {
@@ -130,26 +131,19 @@ export function NavigationPanel() {
   // so always show the survey button and let the server reject if no scanner is installed.
   const hasSurveyScanner = Boolean(state.ship?.modules?.length)
 
-  return (
-    <div className={styles.panel}>
-      <div className={styles.header}>
-        <div className={styles.title}>
-          <span className={styles.titleIcon}>
-            <Compass size={16} />
-          </span>
-          Navigation
-        </div>
-        <button
-          className={styles.refreshBtn}
-          onClick={handleRefresh}
-          title="Refresh system info"
-          type="button"
-        >
-          <RefreshCw size={14} />
-        </button>
-      </div>
+  const refreshButton = (
+    <button
+      className={shared.refreshBtn}
+      onClick={handleRefresh}
+      title="Refresh system info"
+      type="button"
+    >
+      <RefreshCw size={14} />
+    </button>
+  )
 
-      <div className={styles.content}>
+  return (
+    <Panel title="Navigation" icon={<Compass size={16} />} headerRight={refreshButton}>
         {/* Current system info */}
         {system ? (
           <div className={styles.systemInfo}>
@@ -176,7 +170,7 @@ export function NavigationPanel() {
             )}
           </div>
         ) : (
-          <div className={styles.emptyState}>No system data available</div>
+          <div className={shared.emptyState}>No system data available</div>
         )}
 
         {/* Travel progress */}
@@ -222,7 +216,7 @@ export function NavigationPanel() {
         {/* POIs in system */}
         {system && system.pois.length > 0 && (
           <div>
-            <div className={styles.sectionTitle}>Points of Interest</div>
+            <div className={shared.sectionTitle}>Points of Interest</div>
             <div className={styles.poiList}>
               {system.pois.map((p, i) => {
                 const isActive = poi?.id === p.id
@@ -270,7 +264,7 @@ export function NavigationPanel() {
         {/* Connected systems */}
         {system && system.connections.length > 0 && (
           <div>
-            <div className={styles.sectionTitle}>Connected Systems</div>
+            <div className={shared.sectionTitle}>Connected Systems</div>
             <div className={styles.connectionList}>
               {system.connections.map((conn) => (
                 <div
@@ -302,10 +296,10 @@ export function NavigationPanel() {
 
         {/* Search systems */}
         <div>
-          <div className={styles.sectionTitle}>Search Systems</div>
+          <div className={shared.sectionTitle}>Search Systems</div>
           <div className={styles.searchRow}>
             <input
-              className={styles.searchInput}
+              className={shared.textInput}
               type="text"
               placeholder="System name..."
               value={searchQuery}
@@ -325,12 +319,12 @@ export function NavigationPanel() {
 
         {/* Find Route */}
         <div className={styles.routeSection}>
-          <div className={styles.sectionTitle}>
+          <div className={shared.sectionTitle}>
             <Route size={13} /> Find Route
           </div>
           <div className={styles.searchRow}>
             <input
-              className={styles.searchInput}
+              className={shared.textInput}
               type="text"
               placeholder="Target system..."
               value={routeQuery}
@@ -393,7 +387,7 @@ export function NavigationPanel() {
         {/* Survey System */}
         {hasSurveyScanner && (
           <div className={styles.surveySection}>
-            <div className={styles.sectionTitle}>
+            <div className={shared.sectionTitle}>
               <Radar size={13} /> System Survey
             </div>
             <button
@@ -405,7 +399,6 @@ export function NavigationPanel() {
             </button>
           </div>
         )}
-      </div>
-    </div>
+    </Panel>
   )
 }

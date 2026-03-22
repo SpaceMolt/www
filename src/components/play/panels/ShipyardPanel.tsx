@@ -7,59 +7,33 @@ import {
   Hammer,
   Store,
 } from 'lucide-react'
+import { PanelWithTabs } from '../shared'
 import { ShipCatalog } from './ship/ShipCatalog'
 import { CommissionsView } from './ship/CommissionsView'
 import { MarketplaceView } from './ship/MarketplaceView'
-import styles from './ShipPanel.module.css'
 
 type TabId = 'catalog' | 'commissions' | 'marketplace'
+
+const tabs = [
+  { id: 'catalog', label: 'Catalog', icon: <Layers size={13} /> },
+  { id: 'commissions', label: 'Commissions', icon: <Hammer size={13} /> },
+  { id: 'marketplace', label: 'Marketplace', icon: <Store size={13} /> },
+]
 
 export function ShipyardPanel() {
   const [activeTab, setActiveTab] = useState<TabId>('catalog')
 
   return (
-    <div className={styles.panel}>
-      <div className={styles.header}>
-        <div className={styles.title}>
-          <span className={styles.titleIcon}>
-            <Warehouse size={16} />
-          </span>
-          Shipyard
-        </div>
-      </div>
-
-      <div className={styles.tabs}>
-        <button
-          className={`${styles.tab} ${activeTab === 'catalog' ? styles.tabActive : ''}`}
-          onClick={() => setActiveTab('catalog')}
-          type="button"
-        >
-          <Layers size={13} />
-          Catalog
-        </button>
-        <button
-          className={`${styles.tab} ${activeTab === 'commissions' ? styles.tabActive : ''}`}
-          onClick={() => setActiveTab('commissions')}
-          type="button"
-        >
-          <Hammer size={13} />
-          Commissions
-        </button>
-        <button
-          className={`${styles.tab} ${activeTab === 'marketplace' ? styles.tabActive : ''}`}
-          onClick={() => setActiveTab('marketplace')}
-          type="button"
-        >
-          <Store size={13} />
-          Marketplace
-        </button>
-      </div>
-
-      <div className={styles.content}>
-        {activeTab === 'catalog' && <ShipCatalog />}
-        {activeTab === 'commissions' && <CommissionsView />}
-        {activeTab === 'marketplace' && <MarketplaceView />}
-      </div>
-    </div>
+    <PanelWithTabs
+      title="Shipyard"
+      icon={<Warehouse size={16} />}
+      tabs={tabs}
+      activeTab={activeTab}
+      onTabChange={(id) => setActiveTab(id as TabId)}
+    >
+      {activeTab === 'catalog' && <ShipCatalog />}
+      {activeTab === 'commissions' && <CommissionsView />}
+      {activeTab === 'marketplace' && <MarketplaceView />}
+    </PanelWithTabs>
   )
 }

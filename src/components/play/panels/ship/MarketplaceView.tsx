@@ -13,6 +13,7 @@ import {
   Loader2,
 } from 'lucide-react'
 import { useGame } from '../../GameProvider'
+import { Credits, Loading, Modal, ConfirmAction, shared } from '../../shared'
 import styles from './MarketplaceView.module.css'
 
 interface ShipListing {
@@ -93,7 +94,7 @@ export function MarketplaceView() {
 
   if (!isDocked) {
     return (
-      <div className={styles.dockedOnly}>
+      <div className={shared.dockedOnly}>
         Dock at a base to browse ship listings
       </div>
     )
@@ -115,18 +116,16 @@ export function MarketplaceView() {
     <>
       {/* Ships for sale */}
       {loadingBrowse && listings.length === 0 && (
-        <div className={styles.emptyState}>
-          <Loader2 size={14} className={styles.spinner} /> Loading listings...
-        </div>
+        <Loading message="Loading listings..." />
       )}
 
       {!loadingBrowse && otherListings.length === 0 && ownListings.length === 0 && (
-        <div className={styles.emptyState}>No ships currently for sale at this base.</div>
+        <div className={shared.emptyState}>No ships currently for sale at this base.</div>
       )}
 
       {(otherListings.length > 0 || ownListings.length > 0) && (
         <>
-          <span className={styles.sectionTitle}>Ships For Sale</span>
+          <span className={shared.sectionTitle}>Ships For Sale</span>
           <div className={styles.listingsList}>
             {/* Other players' listings */}
             {otherListings.map((listing) => {
@@ -139,12 +138,12 @@ export function MarketplaceView() {
                       <span className={styles.listingClass}>{listing.class_id}</span>
                     </div>
                     <span className={canAfford ? styles.listingPrice : styles.listingPriceUnaffordable}>
-                      {listing.price.toLocaleString()} cr
+                      <Credits amount={listing.price} />
                     </span>
                   </div>
                   <div className={styles.listingBadges}>
-                    {listing.category && <span className={styles.categoryBadge}>{listing.category}</span>}
-                    {listing.tier > 0 && <span className={styles.tierBadge}>T{listing.tier}</span>}
+                    {listing.category && <span className={shared.badgeGreen}>{listing.category}</span>}
+                    {listing.tier > 0 && <span className={shared.badgeCyan}>T{listing.tier}</span>}
                   </div>
                   <div className={styles.listingStatsRow}>
                     <div className={styles.listingStat}>
@@ -156,19 +155,17 @@ export function MarketplaceView() {
                   </div>
 
                   {buyConfirm === listing.listing_id ? (
-                    <div className={styles.confirmOverlay}>
-                      <ShoppingCart size={14} style={{ color: 'var(--void-purple)', flexShrink: 0 }} />
-                      <span className={styles.confirmText}>
-                        Buy for {listing.price.toLocaleString()} cr?
-                      </span>
-                      <button className={styles.buyBtn} onClick={() => handleBuy(listing.listing_id)} disabled={buying || !canAfford} type="button">
-                        {buying ? <Loader2 size={11} className={styles.spinner} /> : null} Yes
-                      </button>
-                      <button className={styles.cancelActionBtn} onClick={() => setBuyConfirm(null)} type="button">No</button>
-                    </div>
+                    <ConfirmAction
+                      message={`Buy for ${listing.price.toLocaleString()} cr?`}
+                      icon={<ShoppingCart size={14} style={{ color: 'var(--void-purple)', flexShrink: 0 }} />}
+                      onConfirm={() => handleBuy(listing.listing_id)}
+                      onCancel={() => setBuyConfirm(null)}
+                      confirmDisabled={buying || !canAfford}
+                      variant="accent"
+                    />
                   ) : (
                     <button
-                      className={styles.buyBtn}
+                      className={shared.accentBtn}
                       onClick={() => setBuyConfirm(listing.listing_id)}
                       disabled={!canAfford}
                       title={!canAfford ? `Need ${(listing.price - credits).toLocaleString()} more credits` : undefined}
@@ -189,20 +186,20 @@ export function MarketplaceView() {
                     <span className={styles.listingName}>{listing.ship_name}</span>
                     <span className={styles.listingClass}>{listing.class_id}</span>
                   </div>
-                  <span className={styles.listingPrice}>{listing.price.toLocaleString()} cr</span>
+                  <span className={styles.listingPrice}><Credits amount={listing.price} /></span>
                 </div>
                 <div className={styles.listingBadges}>
-                  <span className={styles.ownBadge}>Your listing</span>
+                  <span className={shared.badgeGreen}>Your listing</span>
                 </div>
                 {cancelConfirm === listing.listing_id ? (
-                  <div className={styles.confirmOverlay}>
-                    <AlertTriangle size={14} style={{ color: 'var(--claw-red)', flexShrink: 0 }} />
-                    <span className={styles.confirmText}>Cancel listing?</span>
-                    <button className={styles.cancelActionBtn} onClick={() => handleCancelListing(listing.listing_id)} type="button">Yes</button>
-                    <button className={styles.buyBtn} onClick={() => setCancelConfirm(null)} type="button">No</button>
-                  </div>
+                  <ConfirmAction
+                    message="Cancel listing?"
+                    icon={<AlertTriangle size={14} style={{ color: 'var(--claw-red)', flexShrink: 0 }} />}
+                    onConfirm={() => handleCancelListing(listing.listing_id)}
+                    onCancel={() => setCancelConfirm(null)}
+                  />
                 ) : (
-                  <button className={styles.cancelActionBtn} onClick={() => setCancelConfirm(listing.listing_id)} type="button">
+                  <button className={shared.dangerBtn} onClick={() => setCancelConfirm(listing.listing_id)} type="button">
                     <X size={12} /> Cancel Listing
                   </button>
                 )}
@@ -213,9 +210,9 @@ export function MarketplaceView() {
       )}
 
       {/* Sell a ship */}
-      <span className={styles.sectionTitle}>Sell a Ship</span>
+      <span className={shared.sectionTitle}>Sell a Ship</span>
       {availableShips.length === 0 ? (
-        <div className={styles.emptyState}>No ships available to sell. Ships must be inactive and docked here.</div>
+        <div className={shared.emptyState}>No ships available to sell. Ships must be inactive and docked here.</div>
       ) : (
         <div className={styles.listingsList}>
           {availableShips.map((ship) => (
@@ -224,7 +221,7 @@ export function MarketplaceView() {
                 <span className={styles.listingName}>{ship.class_name || ship.class_id}</span>
               </div>
               <button
-                className={styles.sellBtn}
+                className={shared.warningBtn}
                 onClick={() => { setSellShipId(ship.ship_id); setSellPrice('') }}
                 type="button"
               >
@@ -237,48 +234,41 @@ export function MarketplaceView() {
 
       {/* Sell modal */}
       {sellShipId && sellShipInfo && (
-        <div className={styles.modalBackdrop} onClick={() => setSellShipId(null)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <span className={styles.modalTitle}>
-                <Tag size={14} />
-                Sell {sellShipInfo.class_name || sellShipInfo.class_id}
-              </span>
-              <button className={styles.modalClose} onClick={() => setSellShipId(null)} type="button">
-                <X size={16} />
+        <Modal
+          title={`Sell ${sellShipInfo.class_name || sellShipInfo.class_id}`}
+          icon={<Tag size={14} />}
+          onClose={() => setSellShipId(null)}
+          actions={
+            <>
+              <button
+                className={shared.confirmBtn}
+                onClick={handleSell}
+                disabled={selling || !sellPrice || parseInt(sellPrice, 10) <= 0}
+                type="button"
+              >
+                {selling ? <Loader2 size={12} className={shared.spinner} /> : <Tag size={12} />}
+                List for Sale
               </button>
-            </div>
-            <div className={styles.modalBody}>
-              <div className={styles.modalRow}>
-                <span className={styles.modalLabel}>Asking Price</span>
-                <input
-                  className={styles.priceInput}
-                  type="number"
-                  min="1"
-                  value={sellPrice}
-                  onChange={(e) => setSellPrice(e.target.value)}
-                  placeholder="Credits"
-                  autoFocus
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleSell() }}
-                />
-              </div>
-              <div className={styles.modalActions}>
-                <button
-                  className={styles.confirmSellBtn}
-                  onClick={handleSell}
-                  disabled={selling || !sellPrice || parseInt(sellPrice, 10) <= 0}
-                  type="button"
-                >
-                  {selling ? <Loader2 size={12} className={styles.spinner} /> : <Tag size={12} />}
-                  List for Sale
-                </button>
-                <button className={styles.cancelActionBtn} onClick={() => setSellShipId(null)} disabled={selling} type="button">
-                  Cancel
-                </button>
-              </div>
-            </div>
+              <button className={shared.subtleBtn} onClick={() => setSellShipId(null)} disabled={selling} type="button">
+                Cancel
+              </button>
+            </>
+          }
+        >
+          <div className={styles.modalRow}>
+            <span className={styles.modalLabel}>Asking Price</span>
+            <input
+              className={shared.textInput}
+              type="number"
+              min="1"
+              value={sellPrice}
+              onChange={(e) => setSellPrice(e.target.value)}
+              placeholder="Credits"
+              autoFocus
+              onKeyDown={(e) => { if (e.key === 'Enter') handleSell() }}
+            />
           </div>
-        </div>
+        </Modal>
       )}
     </>
   )

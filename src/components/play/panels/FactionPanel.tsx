@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react'
 import { Users, Flag, Shield, UserPlus, UserMinus, Swords, RefreshCw, Radar, DoorOpen, Trash2, Plus, Search, BarChart3, Eye } from 'lucide-react'
 import { useGame } from '../GameProvider'
 import { ActionButton } from '../ActionButton'
+import { Panel, shared } from '../shared'
 import type { FactionInfoResponse, FactionMember } from '../types'
 import styles from './FactionPanel.module.css'
 
@@ -186,23 +187,20 @@ export function FactionPanel() {
   }, [sendCommand])
 
   return (
-    <div className={styles.panel}>
-      <div className={styles.header}>
-        <div className={styles.title}>
-          <span className={styles.titleIcon}><Users size={16} /></span>
-          Faction
-        </div>
+    <Panel
+      title="Faction"
+      icon={<Users size={16} />}
+      headerRight={
         <button
-          className={styles.refreshBtn}
+          className={shared.refreshBtn}
           onClick={handleLoadFactions}
           title="Browse factions"
           disabled={loadingList}
         >
           <RefreshCw size={14} />
         </button>
-      </div>
-
-      <div className={styles.content}>
+      }
+    >
         {hasFaction ? (
           <>
             {/* Current Faction Info */}
@@ -228,7 +226,7 @@ export function FactionPanel() {
             {/* Members */}
             {factionInfo?.members && factionInfo.members.length > 0 && (
               <div>
-                <div className={styles.sectionTitle}>
+                <div className={shared.sectionTitle}>
                   <span className={styles.sectionIcon}><Users size={12} /></span>
                   Members
                 </div>
@@ -252,7 +250,7 @@ export function FactionPanel() {
 
             {/* Invite Player */}
             <div>
-              <div className={styles.sectionTitle}>
+              <div className={shared.sectionTitle}>
                 <span className={styles.sectionIcon}><UserPlus size={12} /></span>
                 Invite Player
               </div>
@@ -280,7 +278,7 @@ export function FactionPanel() {
 
             {/* Diplomacy */}
             <div>
-              <div className={styles.sectionTitle}>
+              <div className={shared.sectionTitle}>
                 <span className={styles.sectionIcon}><Shield size={12} /></span>
                 Diplomacy
               </div>
@@ -312,7 +310,7 @@ export function FactionPanel() {
 
             {/* Intel */}
             <div className={styles.intelSection}>
-              <div className={styles.sectionTitle}>
+              <div className={shared.sectionTitle}>
                 <span className={styles.sectionIcon}><Radar size={12} /></span>
                 Intel
               </div>
@@ -403,7 +401,7 @@ export function FactionPanel() {
                 <div className={styles.divider} />
 
                 <div className={styles.roomSection}>
-                  <div className={styles.sectionTitle}>
+                  <div className={shared.sectionTitle}>
                     <span className={styles.sectionIcon}><DoorOpen size={12} /></span>
                     Rooms
                   </div>
@@ -420,13 +418,13 @@ export function FactionPanel() {
 
                   {loadingRooms && (
                     <div className={styles.loading}>
-                      <span className={styles.spinner} />
+                      <span className={shared.spinner} />
                       Loading rooms...
                     </div>
                   )}
 
                   {roomsLoaded && rooms.length === 0 && (
-                    <div className={styles.emptyState}>
+                    <div className={shared.emptyState}>
                       No faction rooms yet.
                     </div>
                   )}
@@ -483,7 +481,7 @@ export function FactionPanel() {
 
                   {loadingRoom && (
                     <div className={styles.loading}>
-                      <span className={styles.spinner} />
+                      <span className={shared.spinner} />
                       Loading room...
                     </div>
                   )}
@@ -558,7 +556,7 @@ export function FactionPanel() {
           <>
             {/* Create Faction */}
             <div>
-              <div className={styles.sectionTitle}>
+              <div className={shared.sectionTitle}>
                 <span className={styles.sectionIcon}><Flag size={12} /></span>
                 Create Faction
               </div>
@@ -614,7 +612,7 @@ export function FactionPanel() {
 
         {/* Faction Browser */}
         <div>
-          <div className={styles.sectionTitle}>
+          <div className={shared.sectionTitle}>
             <span className={styles.sectionIcon}><Users size={12} /></span>
             Faction Browser
           </div>
@@ -629,12 +627,12 @@ export function FactionPanel() {
           )}
           {loadingList && (
             <div className={styles.loading}>
-              <span className={styles.spinner} />
+              <span className={shared.spinner} />
               Loading factions...
             </div>
           )}
           {listLoaded && factionList.length === 0 && (
-            <div className={styles.emptyState}>
+            <div className={shared.emptyState}>
               No factions found in the galaxy.
             </div>
           )}
@@ -652,7 +650,6 @@ export function FactionPanel() {
             </div>
           )}
         </div>
-      </div>
-    </div>
+    </Panel>
   )
 }

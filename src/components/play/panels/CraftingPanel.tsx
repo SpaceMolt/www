@@ -5,6 +5,7 @@ import { Hammer, BookOpen, FlaskConical, Star, RefreshCw, AlertTriangle, Lock, C
 import { useGame } from '../GameProvider'
 import { ActionButton } from '../ActionButton'
 import { ProgressBar } from '../ProgressBar'
+import { Panel, shared } from '../shared'
 import type { Recipe } from '../types'
 import styles from './CraftingPanel.module.css'
 
@@ -112,15 +113,13 @@ export function CraftingPanel() {
   const hasMore = totalRecipes > 0 && recipes.length < totalRecipes
 
   return (
-    <div className={styles.panel}>
-      <div className={styles.header}>
-        <div className={styles.title}>
-          <span className={styles.titleIcon}><Hammer size={16} /></span>
-          Crafting
-        </div>
+    <Panel
+      title="Crafting"
+      icon={<Hammer size={16} />}
+      headerRight={
         <div className={styles.headerActions}>
           <button
-            className={styles.refreshBtn}
+            className={shared.refreshBtn}
             onClick={() => { loadRecipes(); loadSkills() }}
             title="Refresh recipes and skills"
             type="button"
@@ -128,9 +127,8 @@ export function CraftingPanel() {
             <RefreshCw size={14} />
           </button>
         </div>
-      </div>
-
-      <div className={styles.content}>
+      }
+    >
         {!isDocked && (
           <div className={styles.dockedWarning}>
             <span className={styles.dockedWarningIcon}>
@@ -142,7 +140,7 @@ export function CraftingPanel() {
 
         {/* Recipes Section */}
         <div>
-          <div className={styles.sectionTitle}>
+          <div className={shared.sectionTitle}>
             <span className={styles.sectionIcon}><BookOpen size={12} /></span>
             Recipes
             {recipes.length > 0 && totalRecipes > 0 && (
@@ -183,7 +181,7 @@ export function CraftingPanel() {
             />
           )}
           {state.recipesData && recipes.length === 0 && (
-            <div className={styles.emptyState}>
+            <div className={shared.emptyState}>
               No recipes available.
             </div>
           )}
@@ -294,7 +292,7 @@ export function CraftingPanel() {
 
         {/* Skills Section */}
         <div>
-          <div className={styles.sectionTitle}>
+          <div className={shared.sectionTitle}>
             <span className={styles.sectionIcon}><Star size={12} /></span>
             Skills
           </div>
@@ -307,7 +305,7 @@ export function CraftingPanel() {
             />
           )}
           {state.skillsData && skills.length === 0 && (
-            <div className={styles.emptyState}>
+            <div className={shared.emptyState}>
               No skills trained yet.
             </div>
           )}
@@ -336,7 +334,6 @@ export function CraftingPanel() {
             </div>
           )}
         </div>
-      </div>
-    </div>
+    </Panel>
   )
 }

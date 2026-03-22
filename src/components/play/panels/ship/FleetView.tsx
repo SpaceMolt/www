@@ -13,9 +13,9 @@ import {
   Trash2,
   ChevronDown,
   ChevronRight,
-  Loader2,
 } from 'lucide-react'
 import { useGame } from '../../GameProvider'
+import { Loading, Panel, shared } from '../../shared'
 import type { FleetShip, CargoItem } from '../../types'
 import styles from './FleetView.module.css'
 
@@ -89,32 +89,23 @@ export function FleetView() {
     [expandedShipId, inspectionData, sendCommand]
   )
 
-  return (
-    <div className={styles.panel}>
-      <div className={styles.header}>
-        <div className={styles.title}>
-          <span className={styles.titleIcon}>
-            <Ship size={16} />
-          </span>
-          Fleet
-        </div>
-        <div className={styles.headerActions}>
-          <button
-            className={styles.refreshBtn}
-            onClick={handleRefresh}
-            title="Refresh fleet"
-            type="button"
-          >
-            <RefreshCw size={14} />
-          </button>
-        </div>
-      </div>
+  const refreshButton = (
+    <button
+      className={shared.refreshBtn}
+      onClick={handleRefresh}
+      title="Refresh fleet"
+      type="button"
+    >
+      <RefreshCw size={14} />
+    </button>
+  )
 
-      <div className={styles.content}>
+  return (
+    <Panel title="Fleet" icon={<Ship size={16} />} headerRight={refreshButton}>
         {!fleet ? (
-          <div className={styles.emptyState}>Loading fleet data...</div>
+          <Loading message="Loading fleet data..." />
         ) : fleet.ships.length === 0 ? (
-          <div className={styles.emptyState}>You have no ships</div>
+          <div className={shared.emptyState}>You have no ships</div>
         ) : (
           <>
             {/* Summary */}
@@ -150,8 +141,7 @@ export function FleetView() {
             </div>
           </>
         )}
-      </div>
-    </div>
+    </Panel>
   )
 }
 
@@ -232,7 +222,7 @@ function FleetCard({
           {canManage && (
             <>
               <button
-                className={styles.switchBtn}
+                className={shared.actionBtn}
                 onClick={() => onSwitch(ship.ship_id)}
                 title="Switch to this ship"
                 type="button"
@@ -241,7 +231,7 @@ function FleetCard({
                 Switch
               </button>
               <button
-                className={styles.sellBtn}
+                className={shared.dangerBtn}
                 onClick={() => onSell(ship.ship_id)}
                 title="Sell this ship"
                 type="button"
@@ -288,10 +278,7 @@ function FleetCard({
       {isExpanded && (
         <div className={styles.expandedSection}>
           {isInspecting ? (
-            <div className={styles.emptyState}>
-              <Loader2 size={14} style={{ display: 'inline', animation: 'spin 1s linear infinite' }} />
-              {' '}Inspecting ship...
-            </div>
+            <Loading message="Inspecting ship..." />
           ) : inspection ? (
             <>
               {/* Fitted Modules */}
@@ -301,7 +288,7 @@ function FleetCard({
                   Fitted Modules ({inspection.modules.length})
                 </div>
                 {inspection.modules.length === 0 ? (
-                  <div className={styles.emptyState}>No modules fitted</div>
+                  <div className={shared.emptyState}>No modules fitted</div>
                 ) : (
                   inspection.modules.map((mod, i) => (
                     <div key={(mod.instance_id as string) || `${mod.module_id as string}-${i}`} className={styles.expandedItem}>
@@ -322,7 +309,7 @@ function FleetCard({
                   Cargo ({inspection.cargo.length})
                 </div>
                 {inspection.cargo.length === 0 ? (
-                  <div className={styles.emptyState}>Cargo hold empty</div>
+                  <div className={shared.emptyState}>Cargo hold empty</div>
                 ) : (
                   inspection.cargo.map((item) => (
                     <div key={item.item_id} className={styles.expandedItem}>
@@ -337,7 +324,7 @@ function FleetCard({
               </div>
             </>
           ) : (
-            <div className={styles.emptyState}>Failed to load ship details</div>
+            <div className={shared.emptyState}>Failed to load ship details</div>
           )}
         </div>
       )}

@@ -8,9 +8,9 @@ import {
   X,
   AlertTriangle,
   MapPin,
-  Loader2,
 } from 'lucide-react'
 import { useGame } from '../../GameProvider'
+import { Loading, ConfirmAction, shared } from '../../shared'
 import styles from './CommissionsView.module.css'
 
 interface MaterialProgress {
@@ -64,16 +64,13 @@ export function CommissionsView() {
 
   if (loading && commissions.length === 0) {
     return (
-      <div className={styles.emptyState}>
-        <Loader2 size={16} className={styles.spinner} />
-        Loading commissions...
-      </div>
+      <Loading message="Loading commissions..." />
     )
   }
 
   if (commissions.length === 0) {
     return (
-      <div className={styles.emptyState}>
+      <div className={shared.emptyState}>
         No active commissions. Use the Catalog tab to commission a ship.
       </div>
     )
@@ -104,7 +101,7 @@ export function CommissionsView() {
                 <div className={styles.commissionActions}>
                   {isReady && (
                     <button
-                      className={styles.claimBtn}
+                      className={shared.confirmBtn}
                       onClick={() => handleClaim(c.commission_id)}
                       type="button"
                     >
@@ -114,7 +111,7 @@ export function CommissionsView() {
                   )}
                   {!isReady && cancelConfirm !== c.commission_id && (
                     <button
-                      className={styles.cancelBtn}
+                      className={shared.dangerBtn}
                       onClick={() => setCancelConfirm(c.commission_id)}
                       type="button"
                     >
@@ -127,12 +124,12 @@ export function CommissionsView() {
 
               {/* Cancel confirmation */}
               {cancelConfirm === c.commission_id && (
-                <div className={styles.confirmOverlay}>
-                  <AlertTriangle size={14} style={{ color: 'var(--claw-red)', flexShrink: 0 }} />
-                  <span className={styles.confirmText}>Cancel? Refund may be partial.</span>
-                  <button className={styles.cancelBtn} onClick={() => handleCancel(c.commission_id)} type="button">Yes</button>
-                  <button className={styles.claimBtn} onClick={() => setCancelConfirm(null)} type="button">No</button>
-                </div>
+                <ConfirmAction
+                  message="Cancel? Refund may be partial."
+                  icon={<AlertTriangle size={14} style={{ color: 'var(--claw-red)', flexShrink: 0 }} />}
+                  onConfirm={() => handleCancel(c.commission_id)}
+                  onCancel={() => setCancelConfirm(null)}
+                />
               )}
 
               <div className={styles.commissionMeta}>
