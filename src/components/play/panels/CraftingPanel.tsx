@@ -1,10 +1,9 @@
 'use client'
 
-import { useState, useCallback, useMemo, useEffect } from 'react'
-import { Hammer, BookOpen, FlaskConical, Star, RefreshCw, AlertTriangle, Lock, Check, ChevronDown, ChevronRight } from 'lucide-react'
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
+import { Hammer, BookOpen, RefreshCw, AlertTriangle, Lock, Check, ChevronDown, ChevronRight, Search } from 'lucide-react'
 import { useGame } from '../GameProvider'
 import { ActionButton } from '../ActionButton'
-import { ProgressBar } from '../ProgressBar'
 import { Panel, shared } from '../shared'
 import type { Recipe } from '../types'
 import styles from './CraftingPanel.module.css'
@@ -15,6 +14,12 @@ function canCraftRecipe(
   cargoItems: { item_id: string; quantity: number }[]
 ): { craftable: boolean; reasons: string[] } {
   const reasons: string[] = []
+
+  // Facility Only and Ship Passive recipes can never be manually crafted
+  const cat = recipe.category?.toLowerCase() ?? ''
+  if (cat === 'facility only' || cat === 'ship passive') {
+    return { craftable: false, reasons: [`${recipe.category} — cannot be crafted manually`] }
+  }
 
   // Check skills
   if (recipe.required_skills && Object.keys(recipe.required_skills).length > 0) {
@@ -44,29 +49,45 @@ export function CraftingPanel() {
   const [craftingId, setCraftingId] = useState<string | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [filter, setFilter] = useState<'all' | 'craftable'>('all')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set())
 
-  // Auto-load recipes and skills on mount
+  // Auto-load all recipes on mount (skills needed for craftability check)
+  const recipesLoading = useRef(false)
   useEffect(() => {
-    if (!state.recipesData) {
-      sendCommand('catalog', { type: 'recipes', page_size: 50, page: 1 })
-    }
-    if (!state.skillsData) {
-      sendCommand('get_skills')
+    if (!state.skillsData) sendCommand('get_skills')
+    if (!state.recipesData && !recipesLoading.current) {
+      recipesLoading.current = true
+      fetchAllRecipes()
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Continue loading if we have partial data
+  useEffect(() => {
+    if (state.recipesData && state.recipesData.total && Object.keys(state.recipesData.recipes).length < state.recipesData.total && recipesLoading.current) {
+      const loaded = Object.keys(state.recipesData.recipes).length
+      const nextPage = Math.floor(loaded / 50) + 1
+      sendCommand('catalog', { type: 'recipes', page_size: 50, page: nextPage })
+    } else if (state.recipesData) {
+      recipesLoading.current = false
+    }
+  }, [state.recipesData]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function fetchAllRecipes() {
+    let page = 1
+    let totalPages = 1
+    while (page <= totalPages) {
+      const result = await sendCommand('catalog', { type: 'recipes', page_size: 50, page })
+      const r = result as Record<string, unknown>
+      totalPages = (r.total_pages as number) || 1
+      page++
+    }
+  }
+
   const loadRecipes = useCallback(() => {
-    sendCommand('catalog', { type: 'recipes', page_size: 50, page: 1 })
-  }, [sendCommand])
-
-  const loadMoreRecipes = useCallback(() => {
-    const nextPage = (state.recipesData?.page ?? 1) + 1
-    sendCommand('catalog', { type: 'recipes', page_size: 50, page: nextPage })
-  }, [sendCommand, state.recipesData?.page])
-
-  const loadSkills = useCallback(() => {
-    sendCommand('get_skills')
-  }, [sendCommand])
+    recipesLoading.current = true
+    fetchAllRecipes()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCraft = useCallback((recipeId: string) => {
     setCraftingId(recipeId)
@@ -82,35 +103,55 @@ export function CraftingPanel() {
     return Object.values(state.recipesData.recipes)
   }, [state.recipesData])
 
-  // Sort: craftable first, then alphabetical
-  const sortedRecipes = useMemo(() => {
+  // Filter, group by category, sort
+  const groupedRecipes = useMemo(() => {
+    const search = searchQuery.toLowerCase().trim()
     const withStatus = recipes.map((recipe) => ({
       recipe,
       ...canCraftRecipe(recipe, skillsMap, cargoItems),
     }))
 
-    withStatus.sort((a, b) => {
+    let filtered = withStatus
+    if (filter === 'craftable') {
+      filtered = filtered.filter((r) => r.craftable)
+    }
+    if (search) {
+      filtered = filtered.filter((r) =>
+        r.recipe.name.toLowerCase().includes(search) ||
+        r.recipe.id.toLowerCase().includes(search) ||
+        (r.recipe.outputs ?? []).some(o => o.item_id.toLowerCase().includes(search))
+      )
+    }
+
+    // Sort: craftable first, then alphabetical
+    filtered.sort((a, b) => {
       if (a.craftable !== b.craftable) return a.craftable ? -1 : 1
       return a.recipe.name.localeCompare(b.recipe.name)
     })
 
-    if (filter === 'craftable') {
-      return withStatus.filter((r) => r.craftable)
+    // Group by category
+    const groups: Record<string, typeof filtered> = {}
+    for (const item of filtered) {
+      const cat = item.recipe.category || 'Other'
+      if (!groups[cat]) groups[cat] = []
+      groups[cat].push(item)
     }
-    return withStatus
-  }, [recipes, skillsMap, cargoItems, filter])
 
-  const skills = useMemo(() => {
-    if (!state.skillsData?.skills) return []
-    return Object.entries(state.skillsData.skills).map(([id, s]) => ({
-      id,
-      ...s,
-    }))
-  }, [state.skillsData])
+    return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b))
+  }, [recipes, skillsMap, cargoItems, filter, searchQuery])
+
+  const toggleCategory = useCallback((cat: string) => {
+    setCollapsedCategories(prev => {
+      const next = new Set(prev)
+      if (next.has(cat)) next.delete(cat)
+      else next.add(cat)
+      return next
+    })
+  }, [])
 
   const isDocked = state.isDocked
   const totalRecipes = state.recipesData?.total ?? 0
-  const hasMore = totalRecipes > 0 && recipes.length < totalRecipes
+  const allLoaded = recipes.length >= totalRecipes
 
   return (
     <Panel
@@ -120,7 +161,7 @@ export function CraftingPanel() {
         <div className={styles.headerActions}>
           <button
             className={shared.refreshBtn}
-            onClick={() => { loadRecipes(); loadSkills() }}
+            onClick={loadRecipes}
             title="Refresh recipes and skills"
             type="button"
           >
@@ -138,26 +179,24 @@ export function CraftingPanel() {
           </div>
         )}
 
-        {/* Recipes Section */}
-        <div>
-          <div className={shared.sectionTitle}>
-            <span className={styles.sectionIcon}><BookOpen size={12} /></span>
-            Recipes
-            {recipes.length > 0 && totalRecipes > 0 && (
-              <span className={styles.recipeCount}>
-                {recipes.length} of {totalRecipes}
-              </span>
-            )}
-          </div>
-
-          {/* Filter tabs */}
-          {recipes.length > 0 && (
+        {/* Search + filter */}
+        {recipes.length > 0 && (
+          <div className={styles.filterBar}>
+            <div className={styles.searchBox}>
+              <Search size={12} className={styles.searchIcon} />
+              <input
+                className={styles.searchInput}
+                type="text"
+                placeholder="Search recipes..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
             <div className={styles.filterRow}>
               <button
                 className={`${styles.filterBtn} ${filter === 'all' ? styles.filterBtnActive : ''}`}
                 onClick={() => setFilter('all')}
                 type="button"
-                title="Show all recipes"
               >
                 All
               </button>
@@ -165,175 +204,147 @@ export function CraftingPanel() {
                 className={`${styles.filterBtn} ${filter === 'craftable' ? styles.filterBtnActive : ''}`}
                 onClick={() => setFilter('craftable')}
                 type="button"
-                title="Show only recipes you can craft right now"
               >
                 <Check size={10} /> Craftable
               </button>
             </div>
-          )}
+          </div>
+        )}
 
-          {!state.recipesData && (
-            <ActionButton
-              label="Load Recipes"
-              icon={<BookOpen size={14} />}
-              onClick={loadRecipes}
-              size="sm"
-            />
-          )}
-          {state.recipesData && recipes.length === 0 && (
-            <div className={shared.emptyState}>
-              No recipes available.
-            </div>
-          )}
-          {sortedRecipes.length > 0 && (
-            <div className={styles.recipeGrid}>
-              {sortedRecipes.map(({ recipe, craftable, reasons }) => {
-                const isExpanded = expandedId === recipe.id
-                return (
-                  <div
-                    key={recipe.id}
-                    className={`${styles.recipeCard} ${craftable ? styles.recipeCardCraftable : styles.recipeCardLocked}`}
-                  >
-                    <button
-                      className={styles.recipeCardHeader}
-                      onClick={() => setExpandedId(isExpanded ? null : recipe.id)}
-                      type="button"
-                      title={craftable ? 'You can craft this' : reasons.join('; ')}
-                    >
-                      <div className={styles.recipeCardTitle}>
-                        {isExpanded ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
-                        <span className={styles.recipeName}>{recipe.name}</span>
-                      </div>
-                      <span className={styles.recipeCategory}>{recipe.category}</span>
-                    </button>
+        {!allLoaded && totalRecipes > 0 && (
+          <div className={styles.loadingNotice}>Loading recipes... {recipes.length}/{totalRecipes}</div>
+        )}
 
-                    {isExpanded && (
-                      <div className={styles.recipeCardBody}>
-                        <div className={styles.recipeRow}>
-                          <span className={styles.recipeLabel}>In:</span>
-                          <span className={styles.recipeInputs}>
-                            {(recipe.inputs ?? []).map((i) => {
-                              const name = i.item_id.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
-                              const have = cargoItems.find((c) => c.item_id === i.item_id)?.quantity ?? 0
-                              const enough = have >= i.quantity
-                              return (
-                                <span key={i.item_id} className={enough ? styles.inputOk : styles.inputMissing}>
-                                  {name} x{i.quantity}{!enough && ` (${have})`}
-                                </span>
-                              )
-                            })}
-                            {(recipe.inputs ?? []).length === 0 && 'None'}
-                          </span>
-                        </div>
-                        <div className={styles.recipeRow}>
-                          <span className={styles.recipeLabel}>Out:</span>
-                          <span className={styles.recipeOutputs}>
-                            {(recipe.outputs ?? []).map((o) => {
-                              const name = o.item_id.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
-                              return `${name} x${o.quantity}`
-                            }).join(', ') || 'None'}
-                          </span>
-                        </div>
-                        {recipe.required_skills && Object.keys(recipe.required_skills).length > 0 && (
-                          <div className={styles.recipeRow}>
-                            <span className={styles.recipeLabel}>Skills:</span>
-                            <span className={styles.recipeSkills}>
-                              {Object.entries(recipe.required_skills)
-                                .map(([skill, level]) => {
-                                  const name = skill.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
-                                  const have = skillsMap?.[skill]?.level ?? 0
-                                  const met = have >= (level as number)
+        {!state.recipesData && (
+          <ActionButton
+            label="Load Recipes"
+            icon={<BookOpen size={14} />}
+            onClick={loadRecipes}
+            size="sm"
+          />
+        )}
+        {state.recipesData && groupedRecipes.length === 0 && (
+          <div className={shared.emptyState}>
+            {searchQuery || filter === 'craftable' ? 'No recipes match your filters.' : 'No recipes available.'}
+          </div>
+        )}
+
+        {/* Recipe categories as accordions */}
+        {groupedRecipes.map(([category, items]) => {
+          const isCollapsed = collapsedCategories.has(category)
+          const craftableCount = items.filter(r => r.craftable).length
+          return (
+            <div key={category} className={styles.categoryGroup}>
+              <button
+                className={styles.categoryHeader}
+                onClick={() => toggleCategory(category)}
+                type="button"
+              >
+                {isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                <span className={styles.categoryName}>{category}</span>
+                <span className={styles.categoryCount}>
+                  {craftableCount > 0 && <span className={styles.craftableCount}>{craftableCount} craftable</span>}
+                  {items.length}
+                </span>
+              </button>
+
+              {!isCollapsed && (
+                <div className={styles.recipeGrid}>
+                  {items.map(({ recipe, craftable, reasons }) => {
+                    const isExpanded = expandedId === recipe.id
+                    return (
+                      <div
+                        key={recipe.id}
+                        className={`${styles.recipeCard} ${craftable ? styles.recipeCardCraftable : styles.recipeCardLocked}`}
+                      >
+                        <button
+                          className={styles.recipeCardHeader}
+                          onClick={() => setExpandedId(isExpanded ? null : recipe.id)}
+                          type="button"
+                          title={craftable ? 'You can craft this' : reasons.join('; ')}
+                        >
+                          <div className={styles.recipeCardTitle}>
+                            {isExpanded ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
+                            <span className={styles.recipeName}>{recipe.name}</span>
+                          </div>
+                        </button>
+
+                        {isExpanded && (
+                          <div className={styles.recipeCardBody}>
+                            {recipe.description && (
+                              <div className={styles.recipeDesc}>{recipe.description}</div>
+                            )}
+                            <div className={styles.recipeRow}>
+                              <span className={styles.recipeLabel}>In:</span>
+                              <span className={styles.recipeInputs}>
+                                {(recipe.inputs ?? []).map((i) => {
+                                  const name = i.item_id.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+                                  const have = cargoItems.find((c) => c.item_id === i.item_id)?.quantity ?? 0
+                                  const enough = have >= i.quantity
                                   return (
-                                    <span key={skill} className={met ? styles.skillMet : styles.skillUnmet}>
-                                      {name} Lv{level as number}{!met && ` (have ${have})`}
+                                    <span key={i.item_id} className={enough ? styles.inputOk : styles.inputMissing}>
+                                      {name} x{i.quantity}{!enough && ` (${have})`}
                                     </span>
                                   )
                                 })}
-                            </span>
+                                {(recipe.inputs ?? []).length === 0 && 'None'}
+                              </span>
+                            </div>
+                            <div className={styles.recipeRow}>
+                              <span className={styles.recipeLabel}>Out:</span>
+                              <span className={styles.recipeOutputs}>
+                                {(recipe.outputs ?? []).map((o) => {
+                                  const name = o.item_id.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+                                  return `${name} x${o.quantity}`
+                                }).join(', ') || 'None'}
+                              </span>
+                            </div>
+                            {recipe.required_skills && Object.keys(recipe.required_skills).length > 0 && (
+                              <div className={styles.recipeRow}>
+                                <span className={styles.recipeLabel}>Skills:</span>
+                                <span className={styles.recipeSkills}>
+                                  {Object.entries(recipe.required_skills)
+                                    .map(([skill, level]) => {
+                                      const name = skill.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+                                      const have = skillsMap?.[skill]?.level ?? 0
+                                      const met = have >= (level as number)
+                                      return (
+                                        <span key={skill} className={met ? styles.skillMet : styles.skillUnmet}>
+                                          {name} Lv{level as number}{!met && ` (have ${have})`}
+                                        </span>
+                                      )
+                                    })}
+                                </span>
+                              </div>
+                            )}
+                            {!craftable && reasons.length > 0 && (
+                              <div className={styles.reasonsList}>
+                                <Lock size={10} />
+                                {reasons.map((r, i) => (
+                                  <span key={i} className={styles.reasonItem}>{r}</span>
+                                ))}
+                              </div>
+                            )}
+                            <div className={styles.recipeCraftBtn}>
+                              <ActionButton
+                                label="Craft"
+                                icon={<Hammer size={12} />}
+                                onClick={() => handleCraft(recipe.id)}
+                                disabled={!isDocked || !craftable || craftingId === recipe.id}
+                                loading={craftingId === recipe.id}
+                                size="sm"
+                              />
+                            </div>
                           </div>
                         )}
-                        {!craftable && reasons.length > 0 && (
-                          <div className={styles.reasonsList}>
-                            <Lock size={10} />
-                            {reasons.map((r, i) => (
-                              <span key={i} className={styles.reasonItem}>{r}</span>
-                            ))}
-                          </div>
-                        )}
-                        <div className={styles.recipeCraftBtn}>
-                          <ActionButton
-                            label="Craft"
-                            icon={<Hammer size={12} />}
-                            onClick={() => handleCraft(recipe.id)}
-                            disabled={!isDocked || !craftable || craftingId === recipe.id}
-                            loading={craftingId === recipe.id}
-                            size="sm"
-                          />
-                        </div>
                       </div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          )}
-          {hasMore && (
-            <ActionButton
-              label={`Load more (${recipes.length} of ${totalRecipes})`}
-              icon={<BookOpen size={14} />}
-              onClick={loadMoreRecipes}
-              variant="secondary"
-              size="sm"
-            />
-          )}
-        </div>
-
-        <div className={styles.divider} />
-
-        {/* Skills Section */}
-        <div>
-          <div className={shared.sectionTitle}>
-            <span className={styles.sectionIcon}><Star size={12} /></span>
-            Skills
-          </div>
-          {!state.skillsData && (
-            <ActionButton
-              label="Load Skills"
-              icon={<FlaskConical size={14} />}
-              onClick={loadSkills}
-              size="sm"
-            />
-          )}
-          {state.skillsData && skills.length === 0 && (
-            <div className={shared.emptyState}>
-              No skills trained yet.
-            </div>
-          )}
-          {skills.length > 0 && (
-            <div className={styles.skillList}>
-              {skills.map((skill) => (
-                <div key={skill.id} className={styles.skillItem}>
-                  <div className={styles.skillInfo}>
-                    <span className={styles.skillName}>{skill.id.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}</span>
-                  </div>
-                  <div className={styles.skillLevel}>
-                    <span className={styles.skillLevelText}>
-                      Lv {skill.level}
-                    </span>
-                  </div>
-                  {skill.next_level_xp > 0 && (
-                    <div className={styles.skillProgress}>
-                      <ProgressBar value={skill.xp} max={skill.next_level_xp} color="purple" size="sm" />
-                      <span className={styles.skillXp}>
-                        {skill.xp} / {skill.next_level_xp} XP
-                      </span>
-                    </div>
-                  )}
+                    )
+                  })}
                 </div>
-              ))}
+              )}
             </div>
-          )}
-        </div>
+          )
+        })}
     </Panel>
   )
 }

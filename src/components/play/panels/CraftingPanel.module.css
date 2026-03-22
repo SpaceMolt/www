@@ -39,6 +39,113 @@
   margin: 0.25rem 0;
 }
 
+/* Search + filter bar */
+.filterBar {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.searchBox {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: rgba(10, 14, 20, 0.6);
+  border: 1px solid var(--dim-grey);
+  border-radius: 3px;
+  padding: 0.25rem 0.4rem;
+  transition: border-color 0.15s ease;
+}
+
+.searchBox:focus-within {
+  border-color: var(--plasma-cyan);
+}
+
+.searchIcon {
+  color: var(--hull-grey);
+  flex-shrink: 0;
+}
+
+.searchInput {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--star-white);
+  min-width: 0;
+}
+
+.searchInput::placeholder {
+  color: var(--hull-grey);
+  opacity: 0.6;
+}
+
+.loadingNotice {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--hull-grey);
+  text-align: center;
+  padding: 0.25rem;
+}
+
+/* Category accordion */
+.categoryGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.categoryHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.5rem;
+  background: rgba(61, 90, 108, 0.06);
+  border: none;
+  border-bottom: 1px solid rgba(61, 90, 108, 0.15);
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.categoryHeader:hover {
+  background: rgba(61, 90, 108, 0.12);
+}
+
+.categoryName {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--chrome-silver);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  flex: 1;
+}
+
+.categoryCount {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  color: var(--hull-grey);
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.craftableCount {
+  color: var(--bio-green);
+}
+
+.recipeDesc {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.65rem;
+  color: var(--chrome-silver);
+  line-height: 1.4;
+  margin-bottom: 0.15rem;
+}
+
 /* Recipe count label */
 .recipeCount {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
@@ -206,34 +313,41 @@
   color: var(--hull-grey);
 }
 
-/* Filter row */
+/* Filter toggles */
 .filterRow {
   display: flex;
-  gap: 0.25rem;
-  margin-bottom: 0.5rem;
+  gap: 0;
+  border: 1px solid var(--dim-grey);
+  border-radius: 3px;
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
 .filterBtn {
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  padding: 0.3rem 0.6rem;
+  padding: 0.25rem 0.45rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.62rem;
+  font-size: 0.58rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--hull-grey);
-  background: none;
-  border: 1px solid var(--dim-grey);
-  border-radius: 3px;
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--dim-grey);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
+.filterBtn:last-child {
+  border-right: none;
+}
+
 .filterBtn:hover {
   color: var(--chrome-silver);
-  border-color: var(--hull-grey);
+  background: rgba(61, 90, 108, 0.1);
 }
 
 .filterBtnActive {
@@ -244,9 +358,10 @@
 
 /* Recipe grid */
 .recipeGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.2rem 0;
 }
 
 .recipeCard {

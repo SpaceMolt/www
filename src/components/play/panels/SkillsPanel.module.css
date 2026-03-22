@@ -1,0 +1,167 @@
+/* === SkillsPanel === */
+
+.skillGroups {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.skillGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.groupHeader {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--hull-grey);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.25rem 0.4rem;
+  background: rgba(61, 90, 108, 0.06);
+  border-bottom: 1px solid rgba(61, 90, 108, 0.15);
+}
+
+.skillCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.3rem 0.4rem;
+  border-radius: 4px;
+  transition: background 0.15s ease;
+}
+
+.skillCard:hover {
+  background: rgba(61, 90, 108, 0.08);
+}
+
+.skillTrained {
+  border-left: 2px solid rgba(155, 89, 182, 0.4);
+}
+
+.skillHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  width: 100%;
+  text-align: left;
+}
+
+.skillNameRow {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.skillName {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--star-white);
+}
+
+.skillLevelRow {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+.skillLevel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--plasma-cyan);
+  font-weight: 600;
+}
+
+.skillProgress {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding-left: 0.6rem;
+}
+
+.skillXp {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  color: var(--hull-grey);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.skillMaxed {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--bio-green);
+  padding-left: 0.6rem;
+}
+
+/* Expanded detail */
+.skillDetail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.3rem 0.4rem 0.2rem 0.6rem;
+  margin-top: 0.15rem;
+  border-top: 1px solid rgba(61, 90, 108, 0.1);
+}
+
+.skillDesc {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.7rem;
+  color: var(--chrome-silver);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.skillMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.metaLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  font-weight: 600;
+  color: var(--hull-grey);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.metaValue {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.68rem;
+  color: var(--chrome-silver);
+}
+
+.bonusList {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.bonusItem {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  color: var(--bio-green);
+  background: rgba(45, 212, 191, 0.08);
+  border: 1px solid rgba(45, 212, 191, 0.15);
+  border-radius: 3px;
+  padding: 0.08rem 0.3rem;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .skillName { font-size: 0.85rem; }
+  .skillLevel { font-size: 0.75rem; }
+  .skillCard { min-height: 44px; padding: 0.4rem; }
+}

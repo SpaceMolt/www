@@ -6,8 +6,6 @@
   flex-direction: column;
   height: 100%;
   background: var(--deep-void);
-  border: 1px solid var(--dim-grey);
-  border-radius: 6px;
   overflow: hidden;
 }
 

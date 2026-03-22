@@ -25,26 +25,13 @@
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
+  background: var(--deep-void);
 }
 
 .panelContent {
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
-  padding: 1rem;
-}
-
-.panelContent::-webkit-scrollbar {
-  width: 4px;
-}
-
-.panelContent::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.3);
-}
-
-.panelContent::-webkit-scrollbar-thumb {
-  background: rgba(0, 212, 255, 0.3);
-  border-radius: 2px;
+  overflow: hidden;
 }
 
 /* === Responsive === */
@@ -54,6 +41,6 @@
   }
 
   .panelContent {
-    padding: 0.75rem 0.5rem;
+    overflow: hidden;
   }
 }

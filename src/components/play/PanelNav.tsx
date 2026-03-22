@@ -13,6 +13,7 @@ import {
   Package,
   Warehouse,
   Hammer,
+  Star,
   ChevronDown,
   Menu,
 } from 'lucide-react'
@@ -48,6 +49,7 @@ const ALL_PANELS: PanelDef[] = [
   // Docked-only tabs
   { id: 'shipyard', icon: Warehouse, label: 'Shipyard', visibility: 'docked' },
   { id: 'crafting', icon: Hammer, label: 'Crafting', visibility: 'docked' },
+  { id: 'skills', icon: Star, label: 'Skills', visibility: 'always' },
   // Combat tab — only when in battle
   { id: 'combat', icon: Swords, label: 'Combat', visibility: 'combat' },
   // Right-justified

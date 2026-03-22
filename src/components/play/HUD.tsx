@@ -20,6 +20,7 @@ import { CraftingPanel } from './panels/CraftingPanel'
 import { FactionPanel } from './panels/FactionPanel'
 import { MissionsPanel } from './panels/MissionsPanel'
 import { InfoPanel } from './panels/InfoPanel'
+import { SkillsPanel } from './panels/SkillsPanel'
 import { SettingsPanel } from './panels/SettingsPanel'
 import styles from './HUD.module.css'
 
@@ -31,6 +32,7 @@ const PANELS: Record<string, React.ComponentType> = {
   ship: ShipPanel,
   shipyard: ShipyardPanel,
   crafting: CraftingPanel,
+  skills: SkillsPanel,
   faction: FactionPanel,
   missions: MissionsPanel,
   info: InfoPanel,
