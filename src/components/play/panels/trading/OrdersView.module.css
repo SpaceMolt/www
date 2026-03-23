@@ -29,58 +29,6 @@
   letter-spacing: 0.04em;
 }
 
-.refreshBtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: 1px solid var(--hull-grey);
-  border-radius: 4px;
-  color: var(--chrome-silver);
-  cursor: pointer;
-  padding: 0.25rem;
-  transition: all 0.2s ease;
-}
-
-.refreshBtn:hover {
-  border-color: var(--bio-green);
-  color: var(--bio-green);
-  box-shadow: 0 0 8px rgba(45, 212, 191, 0.2);
-}
-
-.newOrderBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  background: rgba(0, 212, 255, 0.08);
-  border: 1px solid var(--plasma-cyan);
-  border-radius: 4px;
-  color: var(--plasma-cyan);
-  cursor: pointer;
-  padding: 0.25rem 0.45rem;
-  transition: all 0.2s ease;
-}
-
-.newOrderBtn:hover {
-  background: rgba(0, 212, 255, 0.18);
-  box-shadow: 0 0 10px rgba(0, 212, 255, 0.25);
-}
-
-.dockedOnly {
-  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
-  font-size: 0.78rem;
-  color: var(--hull-grey);
-  text-align: center;
-  padding: 1.5rem 0.5rem;
-  background: rgba(61, 90, 108, 0.06);
-  border: 1px dashed var(--dim-grey);
-  border-radius: 4px;
-}
 
 .loading {
   font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
@@ -90,13 +38,6 @@
   padding: 1rem 0.5rem;
 }
 
-.emptyState {
-  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
-  font-size: 0.78rem;
-  color: var(--hull-grey);
-  text-align: center;
-  padding: 1rem 0.5rem;
-}
 
 /* New order form */
 .formContainer {
@@ -161,28 +102,6 @@
   gap: 0.3rem;
 }
 
-.formInput {
-  flex: 1;
-  background: rgba(10, 14, 23, 0.8);
-  border: 1px solid var(--hull-grey);
-  border-radius: 4px;
-  padding: 0.35rem 0.5rem;
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
-  color: var(--star-white);
-  outline: none;
-  transition: border-color 0.2s ease;
-  min-width: 0;
-}
-
-.formInput::placeholder {
-  color: var(--hull-grey);
-}
-
-.formInput:focus {
-  border-color: var(--plasma-cyan);
-  box-shadow: 0 0 6px rgba(0, 212, 255, 0.12);
-}
 
 .formActions {
   display: flex;
@@ -190,82 +109,6 @@
   justify-content: flex-end;
 }
 
-.cancelFormBtn {
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.63rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  background: transparent;
-  border: 1px solid var(--hull-grey);
-  border-radius: 4px;
-  color: var(--hull-grey);
-  cursor: pointer;
-  padding: 0.3rem 0.5rem;
-  transition: all 0.2s ease;
-}
-
-.cancelFormBtn:hover {
-  border-color: var(--chrome-silver);
-  color: var(--chrome-silver);
-}
-
-.submitSellBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.63rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  background: rgba(255, 107, 53, 0.08);
-  border: 1px solid var(--shell-orange);
-  border-radius: 4px;
-  color: var(--shell-orange);
-  cursor: pointer;
-  padding: 0.3rem 0.6rem;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.submitSellBtn:hover:not(:disabled) {
-  background: rgba(255, 107, 53, 0.18);
-  box-shadow: 0 0 10px rgba(255, 107, 53, 0.25);
-}
-
-.submitSellBtn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
-.submitBuyBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.63rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  background: rgba(0, 212, 255, 0.08);
-  border: 1px solid var(--plasma-cyan);
-  border-radius: 4px;
-  color: var(--plasma-cyan);
-  cursor: pointer;
-  padding: 0.3rem 0.6rem;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.submitBuyBtn:hover:not(:disabled) {
-  background: rgba(0, 212, 255, 0.18);
-  box-shadow: 0 0 10px rgba(0, 212, 255, 0.25);
-}
-
-.submitBuyBtn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
 
 /* Order list */
 .orderList {
@@ -338,24 +181,6 @@
   flex-shrink: 0;
 }
 
-.cancelBtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(230, 57, 70, 0.06);
-  border: 1px solid rgba(230, 57, 70, 0.3);
-  border-radius: 3px;
-  color: var(--claw-red);
-  cursor: pointer;
-  padding: 0.2rem;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-}
-
-.cancelBtn:hover {
-  background: rgba(230, 57, 70, 0.18);
-  box-shadow: 0 0 8px rgba(230, 57, 70, 0.25);
-}
 
 .orderDetails {
   display: flex;
@@ -381,25 +206,6 @@
   color: var(--hull-grey);
 }
 
-/* Modify order */
-.modifyBtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 212, 255, 0.06);
-  border: 1px solid rgba(0, 212, 255, 0.25);
-  border-radius: 3px;
-  color: var(--plasma-cyan);
-  cursor: pointer;
-  padding: 0.2rem;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-}
-
-.modifyBtn:hover {
-  background: rgba(0, 212, 255, 0.18);
-  box-shadow: 0 0 8px rgba(0, 212, 255, 0.25);
-}
 
 .modifyInline {
   display: flex;
@@ -426,45 +232,6 @@
   box-shadow: 0 0 6px rgba(0, 212, 255, 0.12);
 }
 
-.modifySaveBtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(45, 212, 191, 0.08);
-  border: 1px solid var(--bio-green);
-  border-radius: 3px;
-  color: var(--bio-green);
-  cursor: pointer;
-  padding: 0.2rem;
-  transition: all 0.2s ease;
-}
-
-.modifySaveBtn:hover:not(:disabled) {
-  background: rgba(45, 212, 191, 0.2);
-  box-shadow: 0 0 8px rgba(45, 212, 191, 0.25);
-}
-
-.modifySaveBtn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
-.modifyCancelBtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(230, 57, 70, 0.06);
-  border: 1px solid rgba(230, 57, 70, 0.25);
-  border-radius: 3px;
-  color: var(--claw-red);
-  cursor: pointer;
-  padding: 0.2rem;
-  transition: all 0.2s ease;
-}
-
-.modifyCancelBtn:hover {
-  background: rgba(230, 57, 70, 0.18);
-}
 
 .modifyResult {
   display: flex;
@@ -504,18 +271,8 @@
 
 /* Mobile */
 @media (max-width: 768px) {
-  .refreshBtn { padding: 0.5rem; min-width: 44px; min-height: 44px; }
-  .newOrderBtn { min-height: 44px; padding: 0.4rem 0.5rem; }
   .typeBtn { min-height: 44px; padding: 0.4rem 0.5rem; }
-  .formInput { font-size: 16px; min-height: 44px; }
   .modifyInput { font-size: 16px; min-height: 44px; }
-  .cancelFormBtn { min-height: 44px; padding: 0.4rem 0.5rem; }
-  .submitSellBtn { min-height: 44px; padding: 0.4rem 0.6rem; }
-  .submitBuyBtn { min-height: 44px; padding: 0.4rem 0.6rem; }
-  .cancelBtn { min-height: 44px; min-width: 44px; padding: 0.4rem; }
-  .modifyBtn { min-height: 44px; min-width: 44px; padding: 0.4rem; }
-  .modifySaveBtn { min-height: 44px; min-width: 44px; padding: 0.4rem; }
-  .modifyCancelBtn { min-height: 44px; min-width: 44px; padding: 0.4rem; }
   .orderTypeBadge { font-size: 0.68rem; }
   .orderMeta { font-size: 0.68rem; }
   .createdBy { font-size: 0.68rem; }

@@ -1,0 +1,1155 @@
+/* === Galaxy Panel - Map inside /play center panel === */
+
+/* Container - fills the flex panel (position: relative for absolute children) */
+.mapContainer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--deep-void);
+}
+
+/* Canvas */
+.canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.canvas:active {
+  cursor: grabbing;
+}
+
+/* Control Hint (floating) */
+.controlHint {
+  position: absolute;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--chrome-silver);
+  opacity: 0.5;
+  z-index: 100;
+  pointer-events: none;
+}
+
+/* Tooltip */
+.tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: rgba(10, 14, 23, 0.95);
+  border: 1px solid var(--hull-grey);
+  border-radius: 6px;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.85rem;
+  z-index: 200;
+  opacity: 0;
+  transition: opacity 0.15s;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.tooltipVisible {
+  opacity: 1;
+}
+
+.tooltipName {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.tooltipEmpire {
+  font-size: 0.75rem;
+  opacity: 0.7;
+  margin-bottom: 0.25rem;
+}
+
+.tooltipTags {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--plasma-cyan);
+  display: none;
+}
+
+.tooltipOnline {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+}
+
+.tooltipOnlineActive {
+  color: #2dd4bf;
+}
+
+.tooltipBattle {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--claw-red);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: none;
+  margin-top: 0.15rem;
+}
+
+/* Activity Toast */
+.activityToast {
+  position: absolute;
+  left: 50%;
+  bottom: 4rem;
+  transform: translateX(-50%);
+  background: rgba(10, 14, 23, 0.95);
+  border: 1px solid var(--hull-grey);
+  border-radius: 8px;
+  padding: 1rem 1.5rem;
+  font-size: 0.9rem;
+  z-index: 150;
+  opacity: 0;
+  transition: opacity 0.4s ease-out;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.6);
+  max-width: 90vw;
+  text-align: center;
+  pointer-events: none;
+}
+
+.activityToastVisible {
+  opacity: 1;
+}
+
+.activityToastIcon {
+  font-size: 1.2rem;
+  margin-right: 0.5rem;
+}
+
+.activityToastText {
+  color: var(--star-white);
+}
+
+.activityToastTime {
+  font-size: 0.75rem;
+  color: var(--chrome-silver);
+  margin-top: 0.3rem;
+  opacity: 0.7;
+}
+
+/* Legend */
+.legend {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  background: rgba(10, 14, 23, 0.85);
+  border: 1px solid var(--hull-grey);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  font-size: 0.75rem;
+  z-index: 100;
+}
+
+.legendTitle {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--chrome-silver);
+  margin-bottom: 0.5rem;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+}
+
+.legendDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.legendLabel {
+  color: var(--chrome-silver);
+}
+
+/* Stats panel (top-left) */
+.stats {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  background: rgba(10, 14, 23, 0.85);
+  border: 1px solid var(--hull-grey);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  font-size: 0.8rem;
+  z-index: 100;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+}
+
+/* Zoom Controls */
+.zoomControls {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  z-index: 100;
+}
+
+.zoomControls button:first-child {
+  margin-bottom: 0.25rem;
+}
+
+.zoomBtn {
+  width: 36px;
+  height: 36px;
+  background: rgba(10, 14, 23, 0.85);
+  border: 1px solid var(--hull-grey);
+  border-radius: 6px;
+  color: var(--plasma-cyan);
+  font-size: 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+}
+
+.zoomBtn:hover {
+  background: rgba(0, 212, 255, 0.15);
+  border-color: var(--plasma-cyan);
+}
+
+.zoomBtn:active {
+  background: rgba(0, 212, 255, 0.25);
+  transform: scale(0.95);
+}
+
+.statRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.statLabel {
+  color: var(--chrome-silver);
+}
+
+.statValue {
+  color: var(--plasma-cyan);
+}
+
+.statsHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding-bottom: 0.4rem;
+  margin-bottom: 0.4rem;
+  border-bottom: 1px solid rgba(45, 212, 191, 0.2);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #2dd4bf;
+}
+
+.statStatusDot {
+  width: 6px;
+  height: 6px;
+  background: #2dd4bf;
+  border-radius: 50%;
+  animation: pulseServer 2s infinite;
+  box-shadow: 0 0 4px #2dd4bf;
+}
+
+@keyframes pulseServer {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 4px #2dd4bf;
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.8);
+    box-shadow: 0 0 2px #2dd4bf;
+  }
+}
+
+/* POI Panel */
+.poiPanel {
+  position: absolute;
+  top: 0;
+  right: -380px;
+  width: 360px;
+  max-height: 100%;
+  background: linear-gradient(135deg, rgba(5, 8, 16, 0.98) 0%, rgba(10, 20, 35, 0.98) 100%);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  border-radius: 2px;
+  z-index: 150;
+  transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow:
+    0 0 40px rgba(0, 212, 255, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.poiPanel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--plasma-cyan), transparent);
+  opacity: 0.6;
+}
+
+.poiPanelVisible {
+  right: 1rem;
+}
+
+.poiPanelHeader {
+  padding: 1.25rem 1rem 1rem;
+  background: linear-gradient(180deg, rgba(0, 212, 255, 0.05) 0%, transparent 100%);
+  border-bottom: 1px solid rgba(0, 212, 255, 0.15);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.poiPanelTitle {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-shadow: 0 0 20px currentColor;
+}
+
+.poiPanelEmpire {
+  font-size: 0.7rem;
+  color: var(--chrome-silver);
+  margin-top: 0.35rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.poiPanelDesc {
+  font-size: 0.75rem;
+  color: rgba(168, 197, 214, 0.7);
+  margin-top: 0.5rem;
+  line-height: 1.5;
+  font-style: italic;
+}
+
+.poiPanelTags {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.poiPanelTag {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 2px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.poiPanelTagSecurity {
+  background: rgba(45, 212, 191, 0.15);
+  color: #2dd4bf;
+  border: 1px solid rgba(45, 212, 191, 0.3);
+}
+
+.poiPanelTagSecurityLawless {
+  background: rgba(255, 68, 68, 0.15);
+  color: #ff6b6b;
+  border: 1px solid rgba(255, 68, 68, 0.3);
+}
+
+.poiPanelTagSecurityFrontier {
+  background: rgba(255, 165, 0, 0.15);
+  color: #ffa500;
+  border: 1px solid rgba(255, 165, 0, 0.3);
+}
+
+.poiPanelTagStronghold {
+  background: rgba(255, 68, 68, 0.2);
+  color: #ff4444;
+  border: 1px solid rgba(255, 68, 68, 0.4);
+}
+
+.poiPanelTagStation {
+  background: rgba(0, 212, 255, 0.15);
+  color: var(--plasma-cyan);
+  border: 1px solid rgba(0, 212, 255, 0.4);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.poiPanelTagStation:hover {
+  background: rgba(0, 212, 255, 0.3);
+}
+
+.poiPanelTagBattle {
+  background: rgba(230, 57, 70, 0.15);
+  color: var(--claw-red);
+  border: 1px solid rgba(230, 57, 70, 0.4);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.poiPanelTagBattle:hover {
+  background: rgba(230, 57, 70, 0.3);
+}
+
+.poiPanelClose {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--chrome-silver);
+  width: 28px;
+  height: 28px;
+  border-radius: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.poiPanelClose:hover {
+  background: rgba(255, 107, 53, 0.2);
+  border-color: var(--shell-orange);
+  color: var(--shell-orange);
+}
+
+.poiPanelContent {
+  padding: 0.75rem;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.poiPanelContent::-webkit-scrollbar {
+  width: 4px;
+}
+
+.poiPanelContent::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.poiPanelContent::-webkit-scrollbar-thumb {
+  background: rgba(0, 212, 255, 0.3);
+  border-radius: 2px;
+}
+
+/* POI Section */
+.poiSection {
+  margin-bottom: 0.5rem;
+}
+
+.poiSectionHeader {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--plasma-cyan);
+  padding: 0.5rem 0.75rem;
+  background: rgba(0, 212, 255, 0.05);
+  border-left: 2px solid var(--plasma-cyan);
+  margin-bottom: 0.5rem;
+}
+
+.poiItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 2px;
+  margin-bottom: 0.5rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.poiItem:hover {
+  background: rgba(0, 212, 255, 0.06);
+  border-color: rgba(0, 212, 255, 0.2);
+}
+
+.poiItemExpanded {
+  background: rgba(0, 212, 255, 0.08);
+  border-color: rgba(0, 212, 255, 0.3);
+}
+
+.poiIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.poiIcon::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 3px;
+  border: 1px solid currentColor;
+  opacity: 0.2;
+}
+
+.poiInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.poiName {
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.poiMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.poiType {
+  font-size: 0.65rem;
+  color: var(--chrome-silver);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.poiBaseBadge {
+  font-size: 0.6rem;
+  padding: 0.15rem 0.4rem;
+  background: rgba(255, 215, 0, 0.15);
+  color: #FFD700;
+  border-radius: 2px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.poiStationCondition {
+  font-size: 0.6rem;
+  padding: 0.15rem 0.4rem;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.poiStationServices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+}
+
+.poiServiceTag {
+  font-size: 0.6rem;
+  padding: 0.15rem 0.4rem;
+  background: rgba(0, 212, 255, 0.1);
+  color: var(--plasma-cyan);
+  border-radius: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.poiStationLink {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--plasma-cyan);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.poiStationLink:hover {
+  color: var(--shell-orange);
+}
+
+.poiOnlineBadge {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: #2dd4bf;
+  background: rgba(45, 212, 191, 0.15);
+  padding: 0.25rem 0.5rem;
+  border-radius: 2px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.poiOnlineBadge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: #2dd4bf;
+  border-radius: 50%;
+  animation: pulseDot 2s infinite;
+}
+
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+.poiOnlineBadgeEmpty {
+  color: var(--hull-grey);
+  background: transparent;
+}
+
+.poiOnlineBadgeEmpty::before {
+  display: none;
+}
+
+/* Player List */
+.poiPlayersList {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.poiPlayer {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.poiPlayer:last-child {
+  border-bottom: none;
+}
+
+.playerAvatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  position: relative;
+  overflow: hidden;
+}
+
+.playerAvatar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--p-primary) 0%, var(--p-secondary) 100%);
+  opacity: 0.8;
+}
+
+.playerAvatarInitials {
+  position: relative;
+  z-index: 1;
+  color: rgba(0, 0, 0, 0.8);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.playerInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.playerNameRow {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.playerClanTag {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  padding: 0.1rem 0.3rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  color: var(--chrome-silver);
+}
+
+.playerUsername {
+  font-size: 0.8rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.playerStatus {
+  font-size: 0.65rem;
+  color: rgba(168, 197, 214, 0.6);
+  margin-top: 0.15rem;
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.poiPanelEmpty {
+  text-align: center;
+  color: var(--chrome-silver);
+  padding: 3rem 1.5rem;
+  font-size: 0.85rem;
+}
+
+.poiPanelEmptyIcon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.poiPanelEmptyHint {
+  margin-top: 0.75rem;
+  font-size: 0.7rem;
+  color: var(--hull-grey);
+}
+
+/* System-wide player summary */
+.systemPlayersSummary {
+  padding: 0.75rem 1rem;
+  background: rgba(45, 212, 191, 0.08);
+  border-bottom: 1px solid rgba(45, 212, 191, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.systemPlayersSummaryIcon {
+  width: 8px;
+  height: 8px;
+  background: #2dd4bf;
+  border-radius: 50%;
+  animation: pulseDot 2s infinite;
+}
+
+.systemPlayersSummaryText {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: #2dd4bf;
+}
+
+.systemPlayersSummaryEmpty {
+  background: transparent;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.systemPlayersSummaryEmpty .systemPlayersSummaryIcon {
+  background: var(--hull-grey);
+  animation: none;
+}
+
+.systemPlayersSummaryEmpty .systemPlayersSummaryText {
+  color: var(--hull-grey);
+}
+
+/* Loading */
+.loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  color: var(--plasma-cyan);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  z-index: 200;
+}
+
+.loading::after {
+  content: '';
+  animation: dots 1.5s infinite;
+}
+
+@keyframes dots {
+  0%, 20% { content: ''; }
+  40% { content: '.'; }
+  60% { content: '..'; }
+  80%, 100% { content: '...'; }
+}
+
+/* Search */
+.searchContainer {
+  position: absolute;
+  bottom: calc(1rem + 115px + 0.5rem);
+  right: 1rem;
+  z-index: 100;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-end;
+}
+
+.searchBtn {
+  width: 36px;
+  height: 36px;
+  background: rgba(10, 14, 23, 0.85);
+  border: 1px solid var(--hull-grey);
+  border-radius: 6px;
+  color: var(--plasma-cyan);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  margin-bottom: 0.25rem;
+}
+
+.searchBtn:hover {
+  background: rgba(0, 212, 255, 0.15);
+  border-color: var(--plasma-cyan);
+}
+
+.searchBtnActive {
+  background: rgba(0, 212, 255, 0.15);
+  border-color: var(--plasma-cyan);
+}
+
+.searchBtn:active {
+  background: rgba(0, 212, 255, 0.25);
+  transform: scale(0.95);
+}
+
+.searchDropdown {
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  right: 0;
+  width: 300px;
+  background: rgba(10, 14, 23, 0.95);
+  border: 1px solid var(--hull-grey);
+  border-radius: 6px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+}
+
+.searchInput {
+  display: block;
+  width: 100%;
+  padding: 0.6rem 0.9rem;
+  background: rgba(10, 14, 23, 0.7);
+  border: none;
+  border-bottom: 1px solid var(--hull-grey);
+  color: var(--chrome-silver);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  box-sizing: border-box;
+}
+
+.searchInput::placeholder {
+  color: rgba(140, 170, 200, 0.4);
+}
+
+.searchInput:focus {
+  outline: none;
+  border-bottom-color: var(--plasma-cyan);
+}
+
+.searchResults {
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.searchResults::-webkit-scrollbar {
+  width: 6px;
+}
+
+.searchResults::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.searchResults::-webkit-scrollbar-thumb {
+  background: rgba(0, 212, 255, 0.4);
+  border-radius: 3px;
+}
+
+.searchResult {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.65rem 0.9rem;
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(140, 170, 200, 0.2);
+  color: var(--chrome-silver);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.searchResult:last-child {
+  border-bottom: none;
+}
+
+.searchResult:hover {
+  background: rgba(0, 212, 255, 0.1);
+  color: var(--plasma-cyan);
+}
+
+.searchResultName {
+  flex: 1;
+}
+
+.searchResultOnline {
+  font-size: 0.75rem;
+  color: #4ecdc4;
+  margin-left: 0.5rem;
+}
+
+.searchResultsEmpty {
+  padding: 1rem 0.9rem;
+  text-align: center;
+  color: rgba(140, 170, 200, 0.5);
+  font-size: 0.85rem;
+}
+
+/* Travel Tracker */
+.travelTracker {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 100;
+}
+
+.travelTrackerBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(10, 14, 23, 0.85);
+  border: 1px solid var(--hull-grey);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  color: var(--chrome-silver);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.travelTrackerBtn:hover {
+  background: rgba(10, 14, 23, 0.85);
+  border-color: var(--plasma-cyan);
+  color: var(--plasma-cyan);
+}
+
+.travelTrackerBtnActive {
+  background: rgba(0, 212, 255, 0.15);
+  border-color: var(--plasma-cyan);
+  color: var(--plasma-cyan);
+}
+
+.travelTrackerIcon {
+  font-size: 1rem;
+}
+
+.travelTrackerBadge {
+  background: var(--plasma-cyan);
+  color: #050810;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  border-radius: 8px;
+  min-width: 1.2rem;
+  text-align: center;
+}
+
+.travelDropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  width: 260px;
+  background: rgba(10, 14, 23, 0.95);
+  border: 1px solid var(--hull-grey);
+  border-radius: 6px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+}
+
+.travelDropdownEmpty {
+  padding: 1.5rem 1rem;
+  text-align: center;
+  color: var(--hull-grey);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.travelFilterInput {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background: rgba(0, 0, 0, 0.4);
+  border: none;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+  color: #e8f4f8;
+  font-size: 0.8rem;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.travelFilterInput::placeholder {
+  color: var(--hull-grey);
+}
+
+.travelFilterInput:focus {
+  border-bottom-color: var(--plasma-cyan);
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.travelDropdownList {
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 0.5rem 0;
+}
+
+.travelDropdownList::-webkit-scrollbar {
+  width: 4px;
+}
+
+.travelDropdownList::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.travelDropdownList::-webkit-scrollbar-thumb {
+  background: rgba(0, 212, 255, 0.3);
+  border-radius: 2px;
+}
+
+.travelPlayerRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+  transition: background 0.15s;
+  font-size: 0.8rem;
+}
+
+.travelPlayerRow:hover {
+  background: rgba(0, 212, 255, 0.08);
+}
+
+.travelCheckbox {
+  accent-color: var(--plasma-cyan);
+  cursor: pointer;
+}
+
+.travelColorDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.travelPlayerName {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--star-white);
+}
+
+.travelJumpCount {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--chrome-silver);
+  flex-shrink: 0;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .controlHint {
+    display: none;
+  }
+
+  .legend {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.65rem;
+  }
+
+  .legendTitle {
+    font-size: 0.6rem;
+  }
+
+  .legendDot {
+    width: 8px;
+    height: 8px;
+  }
+
+  .stats {
+    top: 1rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+  }
+
+  .zoomControls {
+    bottom: 8rem;
+  }
+
+  .poiPanel {
+    top: auto;
+    width: 100%;
+    max-width: none;
+    border-radius: 12px 12px 0 0;
+    bottom: 0;
+    right: 0;
+    max-height: 50vh;
+  }
+
+  .activityToast {
+    bottom: 140px;
+    padding: 0.75rem 1rem;
+    font-size: 0.8rem;
+  }
+
+  .travelTracker {
+    top: 1rem;
+    right: 0.5rem;
+  }
+
+  .travelTrackerBtn {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.7rem;
+  }
+
+  .travelDropdown {
+    width: 220px;
+  }
+}

@@ -18,6 +18,10 @@
   display: none;
 }
 
+.tabSpacer {
+  flex: 1;
+}
+
 .tab {
   position: relative;
   display: flex;

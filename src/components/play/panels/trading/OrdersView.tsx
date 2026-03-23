@@ -11,6 +11,7 @@ import {
   Check,
 } from 'lucide-react'
 import { useGame } from '../../GameProvider'
+import { Credits, shared } from '../../shared'
 import styles from './OrdersView.module.css'
 
 export function OrdersView() {
@@ -103,7 +104,7 @@ export function OrdersView() {
 
   if (!isDocked) {
     return (
-      <div className={styles.dockedOnly}>
+      <div className={shared.dockedOnly}>
         Dock at a base to manage your orders
       </div>
     )
@@ -131,7 +132,7 @@ export function OrdersView() {
         </span>
         <div className={styles.toolbarActions}>
           <button
-            className={styles.newOrderBtn}
+            className={shared.actionBtn}
             onClick={() => setShowForm(!showForm)}
             title="Create new order"
             type="button"
@@ -140,7 +141,7 @@ export function OrdersView() {
             New
           </button>
           <button
-            className={styles.refreshBtn}
+            className={shared.refreshBtn}
             onClick={handleRefresh}
             title="Refresh orders"
             type="button"
@@ -172,14 +173,14 @@ export function OrdersView() {
           </div>
           <div className={styles.formFields}>
             <input
-              className={styles.formInput}
+              className={shared.textInput}
               type="text"
               placeholder="Item ID"
               value={orderItemId}
               onChange={(e) => setOrderItemId(e.target.value)}
             />
             <input
-              className={styles.formInput}
+              className={shared.textInput}
               type="number"
               placeholder="Quantity"
               min={1}
@@ -187,7 +188,7 @@ export function OrdersView() {
               onChange={(e) => setOrderQty(e.target.value)}
             />
             <input
-              className={styles.formInput}
+              className={shared.textInput}
               type="number"
               placeholder="Price each"
               min={1}
@@ -197,14 +198,14 @@ export function OrdersView() {
           </div>
           <div className={styles.formActions}>
             <button
-              className={styles.cancelFormBtn}
+              className={shared.subtleBtn}
               onClick={() => setShowForm(false)}
               type="button"
             >
               Cancel
             </button>
             <button
-              className={orderType === 'sell' ? styles.submitSellBtn : styles.submitBuyBtn}
+              className={orderType === 'sell' ? shared.warningBtn : shared.actionBtn}
               onClick={handleCreateOrder}
               disabled={
                 !orderItemId.trim() ||
@@ -226,7 +227,7 @@ export function OrdersView() {
       {!ordersData ? (
         <div className={styles.loading}>Loading orders...</div>
       ) : personalOrders.length === 0 ? (
-        <div className={styles.emptyState}>No active orders</div>
+        <div className={shared.emptyState}>No active orders</div>
       ) : (
         <div className={styles.orderList}>
           {personalOrders.map((order) => {
@@ -244,7 +245,7 @@ export function OrdersView() {
                   </span>
                   <span className={styles.orderItemName}>{order.item_name}</span>
                   <button
-                    className={styles.modifyBtn}
+                    className={shared.iconBtn}
                     onClick={() => handleStartModify(order.order_id, order.price_each)}
                     title="Modify price"
                     type="button"
@@ -252,7 +253,7 @@ export function OrdersView() {
                     <Pencil size={11} />
                   </button>
                   <button
-                    className={styles.cancelBtn}
+                    className={shared.dangerBtn}
                     onClick={() => handleCancelOrder(order.order_id)}
                     title="Cancel order"
                     type="button"
@@ -280,7 +281,7 @@ export function OrdersView() {
                         autoFocus
                       />
                       <button
-                        className={styles.modifySaveBtn}
+                        className={shared.confirmBtn}
                         onClick={() => handleSubmitModify(order.order_id)}
                         disabled={!editPrice || parseInt(editPrice, 10) < 1}
                         title="Save new price"
@@ -289,7 +290,7 @@ export function OrdersView() {
                         <Check size={11} />
                       </button>
                       <button
-                        className={styles.modifyCancelBtn}
+                        className={shared.dangerBtn}
                         onClick={handleCancelModify}
                         title="Cancel editing"
                         type="button"
@@ -304,12 +305,12 @@ export function OrdersView() {
                     </span>
                   ) : (
                     <span className={styles.orderDetail}>
-                      Price: {order.price_each.toLocaleString()} cr
+                      Price: <Credits amount={order.price_each} />
                     </span>
                   )}
                   {order.listing_fee > 0 && (
                     <span className={styles.orderDetailDim}>
-                      Fee: {order.listing_fee.toLocaleString()} cr
+                      Fee: <Credits amount={order.listing_fee} />
                     </span>
                   )}
                 </div>
@@ -318,7 +319,7 @@ export function OrdersView() {
                     <span className={styles.modifyMessage}>{result.message}</span>
                     {result.listing_fee != null && result.listing_fee > 0 && (
                       <span className={styles.modifyFeeWarning}>
-                        Listing fee: {result.listing_fee.toLocaleString()} cr
+                        Listing fee: <Credits amount={result.listing_fee} />
                       </span>
                     )}
                   </div>
@@ -361,7 +362,7 @@ export function OrdersView() {
                     Qty: {order.remaining}/{order.quantity}
                   </span>
                   <span className={styles.orderDetail}>
-                    Price: {order.price_each.toLocaleString()} cr
+                    Price: <Credits amount={order.price_each} />
                   </span>
                 </div>
                 <div className={styles.orderMeta}>

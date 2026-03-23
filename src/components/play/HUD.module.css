@@ -9,41 +9,360 @@
   z-index: 1;
 }
 
-/* === Main Content: Panel + Right Pane === */
+/* === Main Content: Left Sidebar + Panel + Right Pane === */
 .main {
   display: grid;
-  grid-template-columns: 1fr 300px;
+  grid-template-columns: 300px 1fr 300px;
   flex: 1;
   min-height: 0;
   overflow: hidden;
 }
 
-/* === Panel Area === */
+/* === Panel Area (center) === */
 .panel {
+  position: relative;
   display: flex;
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
+  background: var(--deep-void);
 }
 
 .panelContent {
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
-  padding: 1rem;
+  overflow: hidden;
 }
 
-.panelContent::-webkit-scrollbar {
-  width: 4px;
+/* === Route Banner === */
+.routeBanner {
+  flex-shrink: 0;
+  background: rgba(0, 212, 255, 0.06);
+  border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+  padding: 0.5rem 0.75rem;
 }
 
-.panelContent::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.3);
+.routeBannerContent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
 }
 
-.panelContent::-webkit-scrollbar-thumb {
-  background: rgba(0, 212, 255, 0.3);
+.routeBannerInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.routeBannerLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--plasma-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.routeBannerStats {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--chrome-silver);
+}
+
+.routeBannerWarning {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--claw-red);
+  font-weight: 600;
+}
+
+.routeBannerCaution {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--warning-yellow);
+}
+
+.routeBannerActions {
+  display: flex;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.routeBannerBegin {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid rgba(0, 200, 83, 0.4);
+  border-radius: 3px;
+  background: rgba(0, 200, 83, 0.1);
+  color: var(--energy-green);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.routeBannerBegin:hover:not(:disabled) {
+  background: rgba(0, 200, 83, 0.2);
+}
+
+.routeBannerBegin:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.routeBannerCancel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  border-radius: 3px;
+  background: rgba(255, 107, 107, 0.08);
+  color: #ff6b6b;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.routeBannerCancel:hover {
+  background: rgba(255, 107, 107, 0.2);
+}
+
+.routeBannerVia {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--chrome-silver);
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.viaWaypointChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.1rem 0.35rem;
+  background: rgba(0, 212, 255, 0.12);
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  border-radius: 3px;
+  color: var(--plasma-cyan);
+  font-size: 0.6rem;
+}
+
+.viaWaypointRemove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: none;
   border-radius: 2px;
+  background: transparent;
+  color: var(--hull-grey);
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.viaWaypointRemove:hover {
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.15);
+}
+
+/* === Auto-Travel Banner === */
+.autoTravelBanner {
+  flex-shrink: 0;
+  background: linear-gradient(180deg, rgba(0, 212, 255, 0.08) 0%, rgba(0, 212, 255, 0.03) 100%);
+  border-bottom: 1px solid rgba(0, 212, 255, 0.3);
+  padding: 0.5rem 0.75rem;
+}
+
+.atbTop {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.4rem;
+}
+
+.atbPhase {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--plasma-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.atbCountdown {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--star-white);
+  text-shadow: 0 0 10px rgba(0, 212, 255, 0.4);
+  min-width: 4rem;
+}
+
+.atbFuel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--chrome-silver);
+  letter-spacing: 0.06em;
+}
+
+.atbAbort {
+  margin-left: auto;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 0.3rem 0.75rem;
+  border: 2px solid rgba(255, 68, 68, 0.6);
+  border-radius: 3px;
+  background: rgba(255, 68, 68, 0.12);
+  color: #ff4444;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.atbAbort:hover {
+  background: rgba(255, 68, 68, 0.25);
+  border-color: #ff4444;
+  box-shadow: 0 0 12px rgba(255, 68, 68, 0.3);
+}
+
+/* Segmented progress bar */
+.atbProgressBar {
+  display: flex;
+  gap: 2px;
+  height: 6px;
+  margin-bottom: 0.3rem;
+}
+
+.atbSegment {
+  flex: 1;
+  background: rgba(61, 90, 108, 0.3);
+  border-radius: 1px;
+  overflow: hidden;
+}
+
+.atbSegmentFill {
+  height: 100%;
+  background: var(--plasma-cyan);
+  border-radius: 1px;
+  transition: width 0.1s linear;
+}
+
+.atbSegmentComplete {
+  background: rgba(0, 212, 255, 0.6);
+}
+
+.atbRoute {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  color: var(--hull-grey);
+  letter-spacing: 0.04em;
+}
+
+/* === Abort / Arrived Modals === */
+.abortModalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.abortModal {
+  background: linear-gradient(135deg, rgba(20, 10, 10, 0.98) 0%, rgba(40, 15, 15, 0.98) 100%);
+  border: 2px solid rgba(255, 68, 68, 0.5);
+  border-radius: 4px;
+  padding: 2rem 2.5rem;
+  text-align: center;
+  max-width: 420px;
+  box-shadow: 0 0 40px rgba(255, 68, 68, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.abortModalIcon {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.abortModalTitle {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #ff4444;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-bottom: 0.75rem;
+  text-shadow: 0 0 15px rgba(255, 68, 68, 0.4);
+}
+
+.abortModalReason {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--star-white);
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+}
+
+.abortModalDetail {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--hull-grey);
+  margin-bottom: 1.25rem;
+}
+
+.abortModalOk {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.5rem 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--star-white);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition: background 0.15s;
+}
+
+.abortModalOk:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.arrivedModal {
+  background: linear-gradient(135deg, rgba(5, 15, 10, 0.98) 0%, rgba(10, 30, 20, 0.98) 100%);
+  border: 2px solid rgba(0, 255, 136, 0.4);
+  border-radius: 4px;
+  padding: 2rem 2.5rem;
+  text-align: center;
+  max-width: 420px;
+  box-shadow: 0 0 40px rgba(0, 255, 136, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.arrivedModalTitle {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #00ff88;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-bottom: 0.75rem;
+  text-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
+}
+
+.arrivedModalDetail {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--chrome-silver);
+  margin-bottom: 1.25rem;
 }
 
 /* === Responsive === */
@@ -53,6 +372,6 @@
   }
 
   .panelContent {
-    padding: 0.75rem 0.5rem;
+    overflow: hidden;
   }
 }

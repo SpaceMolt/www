@@ -3,6 +3,7 @@
 import { useCallback } from 'react'
 import { Check, X } from 'lucide-react'
 import { useGame } from '../../GameProvider'
+import { Credits, shared } from '../../shared'
 import styles from '../TradingPanel.module.css'
 
 export function TradesList() {
@@ -25,7 +26,7 @@ export function TradesList() {
 
   return (
     <div>
-      <div className={styles.sectionTitle}>
+      <div className={shared.sectionTitle}>
         Pending Trades ({pendingTrades.length})
       </div>
       {pendingTrades.length > 0 ? (
@@ -38,7 +39,7 @@ export function TradesList() {
                 </span>
                 {trade.offer_credits > 0 && (
                   <span className={styles.tradeCredits}>
-                    {trade.offer_credits.toLocaleString()} cr
+                    <Credits amount={trade.offer_credits} />
                   </span>
                 )}
               </div>
@@ -73,7 +74,7 @@ export function TradesList() {
 
               <div className={styles.tradeActions}>
                 <button
-                  className={styles.acceptBtn}
+                  className={shared.confirmBtn}
                   onClick={() => handleAcceptTrade(trade.trade_id)}
                   type="button"
                 >
@@ -81,7 +82,7 @@ export function TradesList() {
                   Accept
                 </button>
                 <button
-                  className={styles.declineBtn}
+                  className={shared.dangerBtn}
                   onClick={() => handleDeclineTrade(trade.trade_id)}
                   type="button"
                 >
@@ -93,7 +94,7 @@ export function TradesList() {
           ))}
         </div>
       ) : (
-        <div className={styles.emptyState}>No pending trade offers</div>
+        <div className={shared.emptyState}>No pending trade offers</div>
       )}
     </div>
   )

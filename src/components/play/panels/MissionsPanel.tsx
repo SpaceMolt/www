@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { useGame } from '../GameProvider'
 import { ActionButton } from '../ActionButton'
+import { Credits, PanelWithTabs, shared } from '../shared'
 import type { Mission } from '@/lib/gameTypes'
 import styles from './MissionsPanel.module.css'
 
@@ -203,7 +204,7 @@ export function MissionsPanel() {
     <div className={styles.rewardRow}>
       <span className={styles.rewardIcon}><Award size={12} /></span>
       {rewards?.credits != null && (
-        <span className={styles.rewardCredits}>{rewards.credits.toLocaleString()} credits</span>
+        <span className={styles.rewardCredits}><Credits amount={rewards.credits} /></span>
       )}
       {rewards?.items && Object.keys(rewards.items).length > 0 && (
         <span className={styles.rewardItems}>
@@ -213,43 +214,20 @@ export function MissionsPanel() {
     </div>
   )
 
+  const tabs = [
+    { id: 'available', label: 'Available', icon: <Target size={13} /> },
+    { id: 'active', label: 'Active', icon: <AlertTriangle size={13} /> },
+    { id: 'completed', label: 'Completed', icon: <Award size={13} /> },
+  ]
+
   return (
-    <div className={styles.panel}>
-      <div className={styles.header}>
-        <div className={styles.title}>
-          <span className={styles.titleIcon}><Target size={16} /></span>
-          Missions
-        </div>
-      </div>
-
-      <div className={styles.tabs}>
-        <button
-          className={`${styles.tab} ${activeTab === 'available' ? styles.tabActive : ''}`}
-          onClick={() => setActiveTab('available')}
-          type="button"
-        >
-          <Target size={13} />
-          Available
-        </button>
-        <button
-          className={`${styles.tab} ${activeTab === 'active' ? styles.tabActive : ''}`}
-          onClick={() => setActiveTab('active')}
-          type="button"
-        >
-          <AlertTriangle size={13} />
-          Active
-        </button>
-        <button
-          className={`${styles.tab} ${activeTab === 'completed' ? styles.tabActive : ''}`}
-          onClick={() => setActiveTab('completed')}
-          type="button"
-        >
-          <Award size={13} />
-          Completed
-        </button>
-      </div>
-
-      <div className={styles.content}>
+    <PanelWithTabs
+      title="Missions"
+      icon={<Target size={16} />}
+      tabs={tabs}
+      activeTab={activeTab}
+      onTabChange={(id) => setActiveTab(id as TabId)}
+    >
         {/* Available Missions Tab */}
         {activeTab === 'available' && (
           <>
@@ -263,12 +241,12 @@ export function MissionsPanel() {
             />
             {loadingAvailable && availableMissions.length === 0 && (
               <div className={styles.loading}>
-                <span className={styles.spinner} />
+                <span className={shared.spinner} />
                 Loading available missions...
               </div>
             )}
             {availableLoaded && availableMissions.length === 0 && !loadingAvailable && (
-              <div className={styles.emptyState}>
+              <div className={shared.emptyState}>
                 No missions available at this location.
               </div>
             )}
@@ -325,12 +303,12 @@ export function MissionsPanel() {
             />
             {loadingActive && activeMissions.length === 0 && (
               <div className={styles.loading}>
-                <span className={styles.spinner} />
+                <span className={shared.spinner} />
                 Loading active missions...
               </div>
             )}
             {activeLoaded && activeMissions.length === 0 && !loadingActive && (
-              <div className={styles.emptyState}>
+              <div className={shared.emptyState}>
                 No active missions. Accept a mission to get started.
               </div>
             )}
@@ -390,12 +368,12 @@ export function MissionsPanel() {
             />
             {loadingCompleted && completedMissions.length === 0 && (
               <div className={styles.loading}>
-                <span className={styles.spinner} />
+                <span className={shared.spinner} />
                 Loading completed missions...
               </div>
             )}
             {completedLoaded && completedMissions.length === 0 && !loadingCompleted && (
-              <div className={styles.emptyState}>
+              <div className={shared.emptyState}>
                 No completed missions yet.
               </div>
             )}
@@ -403,7 +381,7 @@ export function MissionsPanel() {
             {/* Completed mission list */}
             {completedMissions.length > 0 && !selectedCompletedMission && (
               <div className={styles.missionList}>
-                <div className={styles.sectionTitle}>
+                <div className={shared.sectionTitle}>
                   <span className={styles.sectionIcon}><Award size={12} /></span>
                   Completed ({completedMissionsTotal})
                 </div>
@@ -431,7 +409,7 @@ export function MissionsPanel() {
             {/* Completed mission detail */}
             {loadingMissionDetail && (
               <div className={styles.loading}>
-                <span className={styles.spinner} />
+                <span className={shared.spinner} />
                 Loading mission details...
               </div>
             )}
@@ -473,7 +451,7 @@ export function MissionsPanel() {
                 <div className={styles.missionDetailSection}>
                   <div className={styles.missionDetailLabel}>Rewards</div>
                   <div className={styles.missionReward}>
-                    {selectedCompletedMission.rewards.credits.toLocaleString()} credits
+                    <Credits amount={selectedCompletedMission.rewards.credits} />
                   </div>
                   {selectedCompletedMission.rewards.items && selectedCompletedMission.rewards.items.length > 0 && (
                     <div className={styles.missionDesc}>
@@ -510,7 +488,6 @@ export function MissionsPanel() {
             )}
           </>
         )}
-      </div>
-    </div>
+    </PanelWithTabs>
   )
 }

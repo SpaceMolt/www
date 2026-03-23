@@ -1,0 +1,240 @@
+/* === Mining Modal === */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: linear-gradient(135deg, rgba(5, 8, 16, 0.98) 0%, rgba(10, 20, 30, 0.98) 100%);
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  border-radius: 4px;
+  width: 380px;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 30px rgba(0, 212, 255, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.15);
+  background: linear-gradient(180deg, rgba(0, 212, 255, 0.05) 0%, transparent 100%);
+}
+
+.headerIcon {
+  color: var(--plasma-cyan);
+}
+
+.title {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--plasma-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  flex: 1;
+}
+
+.count {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--chrome-silver);
+}
+
+/* Cargo gauge */
+.cargoSection {
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid rgba(61, 90, 108, 0.2);
+}
+
+.cargoLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--chrome-silver);
+  margin-bottom: 0.3rem;
+}
+
+.cargoTrack {
+  height: 6px;
+  background: rgba(61, 90, 108, 0.3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.cargoFill {
+  height: 100%;
+  background: var(--plasma-cyan);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.cargoFillWarning {
+  background: var(--warning-yellow);
+}
+
+.cargoFillFull {
+  background: var(--energy-green);
+}
+
+/* Action progress */
+.actionProgress {
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid rgba(61, 90, 108, 0.2);
+}
+
+.actionLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--hull-grey);
+  margin-bottom: 0.25rem;
+}
+
+.actionTrack {
+  height: 4px;
+  background: rgba(61, 90, 108, 0.3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.actionFill {
+  height: 100%;
+  background: var(--plasma-cyan);
+  border-radius: 2px;
+  transition: width 0.1s linear;
+}
+
+/* Totals */
+.totals {
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid rgba(61, 90, 108, 0.2);
+}
+
+.totalsLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--hull-grey);
+  margin-bottom: 0.3rem;
+}
+
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.15rem 0;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+}
+
+.totalName {
+  color: var(--star-white);
+}
+
+.totalQty {
+  color: var(--energy-green);
+  font-weight: 600;
+}
+
+/* Log */
+.log {
+  flex: 1;
+  min-height: 120px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 0.5rem 1rem;
+  scrollbar-width: thin;
+}
+
+.log::-webkit-scrollbar {
+  width: 4px;
+}
+
+.log::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.log::-webkit-scrollbar-thumb {
+  background: rgba(0, 212, 255, 0.3);
+  border-radius: 2px;
+}
+
+.logEntry {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  padding: 0.15rem 0;
+  color: var(--chrome-silver);
+}
+
+.logEntry_yield {
+  color: var(--energy-green);
+}
+
+.logEntry_info {
+  color: var(--plasma-cyan);
+}
+
+.logEntry_error {
+  color: var(--claw-red);
+}
+
+/* Actions */
+.actions {
+  padding: 0.6rem 1rem;
+  border-top: 1px solid rgba(61, 90, 108, 0.2);
+  display: flex;
+  justify-content: center;
+}
+
+.stopBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.4rem 1.2rem;
+  border: 2px solid rgba(255, 68, 68, 0.5);
+  border-radius: 3px;
+  background: rgba(255, 68, 68, 0.1);
+  color: #ff6b6b;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.stopBtn:hover {
+  background: rgba(255, 68, 68, 0.2);
+  border-color: #ff4444;
+}
+
+.closeBtn {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.4rem 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--star-white);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transition: background 0.15s;
+}
+
+.closeBtn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}

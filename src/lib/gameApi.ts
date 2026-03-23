@@ -256,6 +256,28 @@ const COMMAND_MAP: Record<string, V2Route> = {
 }
 
 // ---------------------------------------------------------------------------
+// Mutation commands (from server OpenAPI x-is-mutation flag)
+// These are rate-limited to 1 per tick (10 seconds) and queued by the engine.
+// ---------------------------------------------------------------------------
+
+export const MUTATION_COMMANDS = new Set([
+  'accept_mission', 'attack', 'buy', 'buy_insurance', 'buy_listed_ship',
+  'cancel_commission', 'cancel_order', 'cancel_ship_listing', 'claim_commission',
+  'cloak', 'commission_ship', 'complete_mission', 'craft', 'create_buy_order',
+  'create_faction', 'create_sell_order', 'deposit_items', 'dock',
+  'faction_accept_peace', 'faction_declare_war', 'faction_invite', 'faction_kick',
+  'faction_post_mission', 'faction_promote', 'faction_propose_peace',
+  'faction_set_ally', 'faction_set_enemy', 'faction_submit_intel',
+  'install_mod', 'jettison', 'join_faction', 'jump', 'leave_faction',
+  'list_ship_for_sale', 'loot_wreck', 'mine', 'modify_order', 'refuel',
+  'release_tow', 'repair', 'repair_module', 'salvage_wreck', 'scan',
+  'scrap_wreck', 'self_destruct', 'sell', 'sell_ship', 'sell_wreck',
+  'send_gift', 'set_home_base', 'supply_commission', 'survey_system',
+  'switch_ship', 'tow_wreck', 'trade_accept', 'trade_offer', 'travel',
+  'undock', 'uninstall_mod', 'use_item', 'withdraw_items',
+])
+
+// ---------------------------------------------------------------------------
 // Client
 // ---------------------------------------------------------------------------
 

@@ -12,15 +12,31 @@ import {
   ChevronDown,
   ChevronRight,
   Send,
+  MapPin,
 } from 'lucide-react'
 import { useGame } from '../../GameProvider'
+import { GameApiError } from '@/lib/gameApi'
+import { Credits, shared } from '../../shared'
 import styles from './StorageView.module.css'
 
+/** Parse station IDs from the hint string: "X items in storage at station1, station2" */
+function parseStationsFromHint(hint: string): string[] {
+  const match = hint.match(/storage at (.+)$/)
+  if (!match) return []
+  return match[1].split(',').map((s) => s.trim()).filter(Boolean)
+}
+
 export function StorageView() {
-  const { state, sendCommand } = useGame()
+  const { state, sendCommand, api } = useGame()
   const isDocked = state.isDocked
   const storageData = state.storageData
   const cargo = state.ship?.cargo || []
+
+  // Remote viewing state (undocked)
+  const [remoteStations, setRemoteStations] = useState<string[]>([])
+  const [selectedStation, setSelectedStation] = useState('')
+  const [remoteData, setRemoteData] = useState<typeof storageData>(null)
+  const [remoteLoading, setRemoteLoading] = useState(false)
 
   // Item withdraw qty tracking (keyed by item_id)
   const [withdrawQtys, setWithdrawQtys] = useState<Record<string, string>>({})
@@ -38,21 +54,65 @@ export function StorageView() {
   const [giftShipId, setGiftShipId] = useState('')
   const [sendingGift, setSendingGift] = useState(false)
 
-  // Auto-fetch storage data when docked and data is null
+  // When docked, auto-fetch storage
   useEffect(() => {
     if (isDocked && !storageData) {
       sendCommand('view_storage')
     }
   }, [isDocked, storageData, sendCommand])
 
-  const handleRefresh = useCallback(() => {
-    sendCommand('view_storage')
-  }, [sendCommand])
+  // When undocked, probe for station list using the API directly
+  // (bypasses sendCommand error dispatch to avoid showing error toasts)
+  useEffect(() => {
+    if (isDocked) {
+      setRemoteStations([])
+      setSelectedStation('')
+      setRemoteData(null)
+      return
+    }
+    if (!api) return
+    api.command('view_storage').then((result) => {
+      const hint = (result as Record<string, unknown>).hint as string || ''
+      if (hint) {
+        setRemoteStations(parseStationsFromHint(hint))
+      }
+    }).catch((err: unknown) => {
+      // The not_docked error message contains the station list hint
+      if (err instanceof GameApiError) {
+        const stations = parseStationsFromHint(err.message)
+        setRemoteStations(stations)
+      }
+    })
+  }, [isDocked, api])
 
-  // Item operations
+  // Fetch remote station storage
+  useEffect(() => {
+    if (!selectedStation || isDocked || !api) return
+    setRemoteLoading(true)
+    api.command('view_storage', { station_id: selectedStation }).then((result) => {
+      setRemoteData(result as typeof storageData)
+      setRemoteLoading(false)
+    }).catch(() => {
+      setRemoteLoading(false)
+    })
+  }, [selectedStation, isDocked, api])
+
+  const handleRefresh = useCallback(() => {
+    if (isDocked) {
+      sendCommand('view_storage')
+    } else if (selectedStation && api) {
+      setRemoteLoading(true)
+      api.command('view_storage', { station_id: selectedStation }).then((result) => {
+        setRemoteData(result as typeof storageData)
+        setRemoteLoading(false)
+      }).catch(() => setRemoteLoading(false))
+    }
+  }, [sendCommand, isDocked, selectedStation, api])
+
+  // Item operations (docked only)
   const handleWithdrawItem = useCallback(
     (itemId: string, maxQty: number) => {
-      const qtyStr = withdrawQtys[itemId] || ''
+      const qtyStr = withdrawQtys[itemId] ?? String(maxQty)
       const quantity = parseInt(qtyStr, 10)
       if (isNaN(quantity) || quantity < 1 || quantity > maxQty) return
       sendCommand('withdraw_items', { item_id: itemId, quantity })
@@ -63,7 +123,7 @@ export function StorageView() {
 
   const handleDepositItem = useCallback(
     (itemId: string, maxQty: number) => {
-      const qtyStr = depositQtys[itemId] || ''
+      const qtyStr = depositQtys[itemId] ?? String(maxQty)
       const quantity = parseInt(qtyStr, 10)
       if (isNaN(quantity) || quantity < 1 || quantity > maxQty) return
       sendCommand('deposit_items', { item_id: itemId, quantity })
@@ -88,7 +148,6 @@ export function StorageView() {
       }
       if (giftShipId) params.ship_id = giftShipId
       await sendCommand('send_gift', params)
-      // Reset form
       setGiftRecipient('')
       setGiftMessage('')
       setGiftCredits('')
@@ -96,21 +155,111 @@ export function StorageView() {
       setGiftItemQty('')
       setGiftShipId('')
       setShowSendGift(false)
-      // Refresh storage
       sendCommand('view_storage')
     } finally {
       setSendingGift(false)
     }
   }, [sendCommand, giftRecipient, giftMessage, giftCredits, giftItemId, giftItemQty, giftShipId])
 
+  // --- Undocked: remote station viewer ---
   if (!isDocked) {
+    const viewData = remoteData
+    const viewItems = viewData?.items || []
+    const viewShips = viewData?.ships || []
+
     return (
-      <div className={styles.dockedOnly}>
-        Dock at a base to access storage
+      <div className={styles.container}>
+        <div className={styles.toolbar}>
+          <span className={styles.sectionLabel}>
+            <MapPin size={12} />
+            Remote Storage View
+          </span>
+          {selectedStation && (
+            <button
+              className={shared.refreshBtn}
+              onClick={handleRefresh}
+              title="Refresh"
+              type="button"
+            >
+              <RefreshCw size={13} />
+            </button>
+          )}
+        </div>
+
+        {remoteStations.length > 0 ? (
+          <div className={styles.section}>
+            <select
+              className={shared.selectInput}
+              value={selectedStation}
+              onChange={(e) => setSelectedStation(e.target.value)}
+            >
+              <option value="">Select a station...</option>
+              {remoteStations.map((stationId) => (
+                <option key={stationId} value={stationId}>
+                  {stationId.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <div className={shared.emptyState}>No items stored at any station</div>
+        )}
+
+        {remoteLoading && (
+          <div className={styles.loading}>Loading storage...</div>
+        )}
+
+        {selectedStation && !remoteLoading && viewData && (
+          <>
+            <div className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <Box size={12} />
+                Stored Items ({viewItems.length})
+              </div>
+              {viewItems.length > 0 ? (
+                <div className={styles.itemList}>
+                  {viewItems.map((item) => (
+                    <div key={item.item_id} className={styles.itemRow}>
+                      <div className={styles.itemInfo}>
+                        <span className={styles.itemName}>{item.name}</span>
+                        <span className={styles.itemQty}>x{item.quantity}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className={shared.emptyState}>No items at this station</div>
+              )}
+            </div>
+
+            {viewShips.length > 0 && (
+              <div className={styles.section}>
+                <div className={styles.sectionHeader}>
+                  <Ship size={12} />
+                  Stored Ships ({viewShips.length})
+                </div>
+                <div className={styles.shipList}>
+                  {viewShips.map((ship) => (
+                    <div key={ship.ship_id} className={styles.shipCard}>
+                      <span className={styles.shipName}>
+                        {ship.class_name || ship.class_id}
+                      </span>
+                      <div className={styles.shipMeta}>
+                        <span className={styles.shipStat}>Modules: {ship.modules}</span>
+                        <span className={styles.shipStat}>Cargo: {ship.cargo_used}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
     )
   }
 
+  // --- Docked: full storage with controls ---
   if (!storageData) {
     return <div className={styles.loading}>Loading storage data...</div>
   }
@@ -127,7 +276,7 @@ export function StorageView() {
           Station Storage
         </span>
         <button
-          className={styles.refreshBtn}
+          className={shared.refreshBtn}
           onClick={handleRefresh}
           title="Refresh storage"
           type="button"
@@ -173,7 +322,7 @@ export function StorageView() {
                     )}
                     {gift.credits != null && gift.credits > 0 && (
                       <span className={styles.giftCredits}>
-                        {gift.credits.toLocaleString()} cr
+                        <Credits amount={gift.credits} />
                       </span>
                     )}
                   </div>
@@ -198,14 +347,14 @@ export function StorageView() {
         {showSendGift && (
           <div className={styles.giftSendForm}>
             <input
-              className={styles.creditInput}
+              className={shared.textInput}
               type="text"
               placeholder="Recipient username"
               value={giftRecipient}
               onChange={(e) => setGiftRecipient(e.target.value)}
             />
             <input
-              className={styles.creditInput}
+              className={shared.textInput}
               type="text"
               placeholder="Message (optional)"
               value={giftMessage}
@@ -213,7 +362,7 @@ export function StorageView() {
             />
             <div className={styles.giftSendRow}>
               <input
-                className={styles.creditInput}
+                className={shared.textInput}
                 type="number"
                 min={0}
                 placeholder="Credits"
@@ -224,7 +373,7 @@ export function StorageView() {
             {storedItems.length > 0 && (
               <div className={styles.giftSendRow}>
                 <select
-                  className={styles.creditInput}
+                  className={shared.selectInput}
                   value={giftItemId}
                   onChange={(e) => setGiftItemId(e.target.value)}
                 >
@@ -237,7 +386,7 @@ export function StorageView() {
                 </select>
                 {giftItemId && (
                   <input
-                    className={styles.qtyInput}
+                    className={shared.textInput}
                     type="number"
                     min={1}
                     placeholder="Qty"
@@ -250,7 +399,7 @@ export function StorageView() {
             {storedShips.length > 0 && (
               <div className={styles.giftSendRow}>
                 <select
-                  className={styles.creditInput}
+                  className={shared.selectInput}
                   value={giftShipId}
                   onChange={(e) => setGiftShipId(e.target.value)}
                 >
@@ -264,7 +413,7 @@ export function StorageView() {
               </div>
             )}
             <button
-              className={styles.depositBtn}
+              className={shared.confirmBtn}
               onClick={handleSendGift}
               disabled={sendingGift || !giftRecipient.trim() || (!giftCredits && !giftItemId && !giftShipId)}
               type="button"
@@ -285,7 +434,7 @@ export function StorageView() {
         {storedItems.length > 0 ? (
           <div className={styles.itemList}>
             {storedItems.map((item) => {
-              const qtyStr = withdrawQtys[item.item_id] || ''
+              const qtyStr = withdrawQtys[item.item_id] ?? String(item.quantity)
               return (
                 <div key={item.item_id} className={styles.itemRow}>
                   <div className={styles.itemInfo}>
@@ -301,7 +450,6 @@ export function StorageView() {
                       type="number"
                       min={1}
                       max={item.quantity}
-                      placeholder="Qty"
                       value={qtyStr}
                       onChange={(e) =>
                         setWithdrawQtys((prev) => ({
@@ -311,7 +459,7 @@ export function StorageView() {
                       }
                     />
                     <button
-                      className={styles.withdrawBtn}
+                      className={shared.accentBtn}
                       onClick={() => handleWithdrawItem(item.item_id, item.quantity)}
                       disabled={
                         !qtyStr ||
@@ -329,7 +477,7 @@ export function StorageView() {
             })}
           </div>
         ) : (
-          <div className={styles.emptyState}>No items in storage</div>
+          <div className={shared.emptyState}>No items in storage</div>
         )}
       </div>
 
@@ -342,11 +490,11 @@ export function StorageView() {
         {cargo.length > 0 ? (
           <div className={styles.itemList}>
             {cargo.map((item) => {
-              const qtyStr = depositQtys[item.item_id] || ''
+              const qtyStr = depositQtys[item.item_id] ?? String(item.quantity)
               return (
                 <div key={item.item_id} className={styles.itemRow}>
                   <div className={styles.itemInfo}>
-                    <span className={styles.itemName}>{item.name}</span>
+                    <span className={styles.itemName}>{item.name ?? item.item_id}</span>
                     <span className={styles.itemQty}>x{item.quantity}</span>
                     {item.size != null && item.size > 0 && (
                       <span className={styles.itemSize}>{item.size}u</span>
@@ -358,7 +506,6 @@ export function StorageView() {
                       type="number"
                       min={1}
                       max={item.quantity}
-                      placeholder="Qty"
                       value={qtyStr}
                       onChange={(e) =>
                         setDepositQtys((prev) => ({
@@ -368,7 +515,7 @@ export function StorageView() {
                       }
                     />
                     <button
-                      className={styles.depositBtn}
+                      className={shared.confirmBtn}
                       onClick={() => handleDepositItem(item.item_id, item.quantity)}
                       disabled={
                         !qtyStr ||
@@ -386,7 +533,7 @@ export function StorageView() {
             })}
           </div>
         ) : (
-          <div className={styles.emptyState}>Cargo hold is empty</div>
+          <div className={shared.emptyState}>Cargo hold is empty</div>
         )}
       </div>
 

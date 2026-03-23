@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { Loader2, RefreshCw, WifiOff, LogIn, MonitorSmartphone } from 'lucide-react'
 import { SignInButton } from '@clerk/nextjs'
 import { GameProvider, useGame } from './GameProvider'
+import type { ModuleCatalogEntry } from './types'
 import { PlayerSelector } from './PlayerSelector'
 import { HUD } from './HUD'
 import { useGameAuth } from '@/lib/useGameAuth'
@@ -30,7 +31,7 @@ function PlayClientInner({ playerId, authHeaders, onSwitchPlayer }: {
   authHeaders: () => Promise<Record<string, string>>
   onSwitchPlayer: () => void
 }) {
-  const { state, wsSend, sendCommand, setApi, connect, disconnect, sessionReplaced } = useGame()
+  const { state, dispatch, wsSend, sendCommand, setApi, api, connect, disconnect, sessionReplaced } = useGame()
   const [phase, setPhase] = useState<'connecting' | 'authenticating' | 'playing'>('connecting')
   const hasConnected = useRef(false)
   const authAttempted = useRef(false)
@@ -96,6 +97,7 @@ function PlayClientInner({ playerId, authHeaders, onSwitchPlayer }: {
       if (phase !== 'playing') {
         sendCommand('get_status')
         sendCommand('get_system')
+        sendCommand('get_poi')
       }
       setPhase('playing')
       authAttempted.current = false
@@ -121,6 +123,48 @@ function PlayClientInner({ playerId, authHeaders, onSwitchPlayer }: {
       authAttempted.current = false
     }
   }, [state.connected, state.authenticated, state.welcome, sendCommand, authenticateWithToken, phase])
+
+  // Fetch and cache the full module catalog on first auth
+  const moduleCatalogFetched = useRef(false)
+  useEffect(() => {
+    if (!state.authenticated || !api || moduleCatalogFetched.current) return
+    moduleCatalogFetched.current = true
+
+    async function fetchAllModules() {
+      const modules: Record<string, ModuleCatalogEntry> = {}
+      let page = 1
+      let totalPages = 1
+
+      while (page <= totalPages) {
+        try {
+          const result = await api!.command('catalog', {
+            type: 'items',
+            category: 'module',
+            page,
+            page_size: 50,
+          }) as Record<string, unknown>
+
+          const items = (result.items || []) as Array<Record<string, unknown>>
+          for (const item of items) {
+            // Module items have a 'type' field that's one of weapon/defense/mining/utility
+            const modType = item.type as string | undefined
+            if (modType && ['weapon', 'defense', 'mining', 'utility'].includes(modType)) {
+              modules[item.id as string] = item as unknown as ModuleCatalogEntry
+            }
+          }
+
+          totalPages = (result.total_pages as number) || 1
+          page++
+        } catch {
+          break
+        }
+      }
+
+      dispatch({ type: 'SET_MODULE_CATALOG', payload: modules })
+    }
+
+    fetchAllModules()
+  }, [state.authenticated, api, dispatch]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Reconnect overlay
   const showReconnecting = !state.connected && hasConnected.current && phase === 'playing' && !sessionReplaced

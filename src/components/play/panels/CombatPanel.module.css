@@ -1,47 +1,9 @@
 /* === CombatPanel === */
-.panel {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  background: var(--deep-void);
-  border: 1px solid var(--dim-grey);
-  border-radius: 6px;
-  overflow: hidden;
-}
 
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--dim-grey);
-  background: rgba(230, 57, 70, 0.03);
-  flex-shrink: 0;
-}
-
-.headerLeft {
+.headerRight {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-}
-
-.title {
-  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--claw-red);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.titleIcon {
-  display: flex;
-  align-items: center;
-  color: var(--claw-red);
-  opacity: 0.8;
 }
 
 .combatBadge {
@@ -63,67 +25,11 @@
   50% { opacity: 0.5; }
 }
 
-.refreshBtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: 1px solid var(--hull-grey);
-  border-radius: 4px;
-  color: var(--chrome-silver);
-  cursor: pointer;
-  padding: 0.3rem;
-  transition: all 0.2s ease;
-}
-
-.refreshBtn:hover {
-  border-color: var(--claw-red);
-  color: var(--claw-red);
-  box-shadow: 0 0 8px rgba(230, 57, 70, 0.2);
-}
-
-.content {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding: 0.75rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.content::-webkit-scrollbar {
-  width: 4px;
-}
-
-.content::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.content::-webkit-scrollbar-thumb {
-  background: var(--hull-grey);
-  border-radius: 2px;
-}
-
 /* Controls row */
 .controlsRow {
   display: flex;
   gap: 0.35rem;
   flex-wrap: wrap;
-}
-
-/* Section title */
-.sectionTitle {
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--chrome-silver);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-bottom: 0.25rem;
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
 }
 
 /* Nearby players list */
@@ -298,62 +204,6 @@
 .selfDestructBtn:hover {
   background: rgba(230, 57, 70, 0.2);
   box-shadow: 0 0 16px rgba(230, 57, 70, 0.35);
-}
-
-/* Confirm dialog */
-.confirmOverlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(10, 14, 23, 0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-}
-
-.confirmDialog {
-  background: var(--deep-void);
-  border: 1px solid var(--claw-red);
-  border-radius: 8px;
-  padding: 1.5rem;
-  max-width: 320px;
-  text-align: center;
-  box-shadow: 0 0 40px rgba(230, 57, 70, 0.2);
-}
-
-.confirmTitle {
-  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: var(--claw-red);
-  text-transform: uppercase;
-  margin-bottom: 0.5rem;
-}
-
-.confirmText {
-  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
-  font-size: 0.8rem;
-  color: var(--chrome-silver);
-  margin-bottom: 1rem;
-  line-height: 1.4;
-}
-
-.confirmActions {
-  display: flex;
-  gap: 0.5rem;
-  justify-content: center;
-}
-
-/* Empty state */
-.emptyState {
-  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
-  font-size: 0.78rem;
-  color: var(--hull-grey);
-  text-align: center;
-  padding: 1.5rem 0.5rem;
 }
 
 /* === Battle Status Section === */
@@ -624,31 +474,6 @@
   align-items: center;
 }
 
-.ammoSelect {
-  flex: 1;
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
-  background: rgba(10, 14, 23, 0.6);
-  border: 1px solid var(--hull-grey);
-  border-radius: 3px;
-  color: var(--chrome-silver);
-  padding: 0.25rem 0.35rem;
-  min-width: 0;
-  cursor: pointer;
-  transition: border-color 0.2s ease;
-}
-
-.ammoSelect:hover,
-.ammoSelect:focus {
-  border-color: var(--plasma-cyan);
-  outline: none;
-}
-
-.ammoSelect option {
-  background: var(--deep-void);
-  color: var(--chrome-silver);
-}
-
 .reloadBtn {
   display: inline-flex;
   align-items: center;
@@ -681,11 +506,6 @@
 
 /* Mobile */
 @media (max-width: 768px) {
-  .header { padding: 0.5rem 0.75rem; }
-  .content { padding: 0.5rem; gap: 0.5rem; }
-  .title { font-size: 0.8rem; }
-  .sectionTitle { font-size: 0.78rem; }
-  .refreshBtn { padding: 0.5rem; min-width: 44px; min-height: 44px; }
   .combatBadge { font-size: 0.68rem; }
   .iconBtn { padding: 0.5rem; min-width: 44px; min-height: 44px; }
   .cloakBtn { font-size: 0.75rem; padding: 0.5rem 0.75rem; min-height: 44px; }
@@ -696,9 +516,5 @@
   .stanceBtn { font-size: 0.68rem; padding: 0.45rem 0.5rem; min-height: 44px; }
   .tacticalBtn { font-size: 0.68rem; padding: 0.45rem 0.5rem; min-height: 44px; }
   .engageBtn { font-size: 0.68rem; padding: 0.45rem 0.5rem; min-height: 44px; }
-  .ammoSelect { font-size: 16px; padding: 0.4rem; min-height: 44px; }
   .reloadBtn { font-size: 0.68rem; padding: 0.4rem 0.6rem; min-height: 44px; }
-  .confirmDialog { padding: 1.25rem; max-width: 90vw; }
-  .confirmText { font-size: 0.85rem; }
-  .confirmActions { flex-direction: column; gap: 0.35rem; }
 }

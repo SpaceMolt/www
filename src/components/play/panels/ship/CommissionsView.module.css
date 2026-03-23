@@ -1,100 +1,9 @@
 /* === CommissionsView === */
-.panel {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  background: var(--deep-void);
-  border: 1px solid var(--dim-grey);
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--dim-grey);
-  background: rgba(255, 107, 53, 0.03);
-  flex-shrink: 0;
-}
-
-.title {
-  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--shell-orange);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.titleIcon {
-  display: flex;
-  align-items: center;
-  color: var(--shell-orange);
-  opacity: 0.8;
-}
 
 .headerActions {
   display: flex;
   align-items: center;
   gap: 0.35rem;
-}
-
-.refreshBtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: 1px solid transparent;
-  border-radius: 3px;
-  color: var(--hull-grey);
-  cursor: pointer;
-  padding: 0.25rem;
-  transition: all 0.15s ease;
-}
-
-.refreshBtn:hover {
-  border-color: var(--shell-orange);
-  color: var(--shell-orange);
-  background: rgba(255, 107, 53, 0.1);
-}
-
-.content {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding: 0.75rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.content::-webkit-scrollbar {
-  width: 4px;
-}
-
-.content::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.content::-webkit-scrollbar-thumb {
-  background: var(--hull-grey);
-  border-radius: 2px;
-}
-
-/* Section headers */
-.sectionTitle {
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--chrome-silver);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-bottom: 0.25rem;
 }
 
 /* Quote request form */
@@ -120,28 +29,6 @@
   color: var(--chrome-silver);
   text-transform: uppercase;
   white-space: nowrap;
-}
-
-.textInput {
-  flex: 1;
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.72rem;
-  color: var(--star-white);
-  background: rgba(10, 14, 20, 0.6);
-  border: 1px solid var(--dim-grey);
-  border-radius: 3px;
-  padding: 0.35rem 0.5rem;
-  outline: none;
-  transition: border-color 0.15s ease;
-}
-
-.textInput:focus {
-  border-color: var(--shell-orange);
-}
-
-.textInput::placeholder {
-  color: var(--hull-grey);
-  opacity: 0.6;
 }
 
 /* Quote result card */
@@ -402,51 +289,6 @@
   flex-shrink: 0;
 }
 
-/* Docked-only message */
-.dockedOnly {
-  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
-  font-size: 0.78rem;
-  color: var(--hull-grey);
-  text-align: center;
-  padding: 1.5rem 0.5rem;
-  background: rgba(61, 90, 108, 0.06);
-  border: 1px dashed var(--dim-grey);
-  border-radius: 4px;
-}
-
-/* Empty state */
-.emptyState {
-  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
-  font-size: 0.78rem;
-  color: var(--hull-grey);
-  text-align: center;
-  padding: 1.5rem 0.5rem;
-}
-
-/* Confirmation overlay */
-.confirmOverlay {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.65rem;
-  background: rgba(230, 57, 70, 0.06);
-  border: 1px solid rgba(230, 57, 70, 0.2);
-  border-radius: 4px;
-}
-
-.confirmText {
-  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
-  font-size: 0.72rem;
-  color: var(--chrome-silver);
-  flex: 1;
-}
-
-.confirmActions {
-  display: flex;
-  gap: 0.25rem;
-  flex-shrink: 0;
-}
-
 /* Materials progress */
 .materialsProgress {
   display: flex;
@@ -481,12 +323,6 @@
 
 /* Mobile */
 @media (max-width: 768px) {
-  .header { padding: 0.5rem 0.75rem; }
-  .content { padding: 0.5rem; gap: 0.5rem; }
-  .title { font-size: 0.8rem; }
-  .sectionTitle { font-size: 0.78rem; }
-  .refreshBtn { padding: 0.5rem; min-width: 44px; min-height: 44px; }
-  .textInput { font-size: 16px; min-height: 44px; }
   .inputLabel { font-size: 0.68rem; }
   .quoteStatLabel { font-size: 0.68rem; }
   .materialsLabel { font-size: 0.68rem; }
