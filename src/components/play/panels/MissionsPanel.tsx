@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import {
   Target,
   ChevronDown,
@@ -138,12 +138,15 @@ export function MissionsPanel() {
     }
   }, [sendCommand])
 
-  // Load data when switching tabs
+  // Load data when switching tabs — track last loaded tab to avoid re-fetching
+  const lastLoadedTabRef = useRef<string>('')
   useEffect(() => {
-    if (activeTab === 'available' && !loadingAvailable) handleLoadAvailable()
-    if (activeTab === 'active' && !loadingActive) handleLoadActive()
-    if (activeTab === 'completed' && !loadingCompleted) handleLoadCompleted()
-  }, [activeTab, handleLoadAvailable, handleLoadActive, handleLoadCompleted, loadingAvailable, loadingActive, loadingCompleted])
+    if (lastLoadedTabRef.current === activeTab) return
+    lastLoadedTabRef.current = activeTab
+    if (activeTab === 'available') handleLoadAvailable()
+    if (activeTab === 'active') handleLoadActive()
+    if (activeTab === 'completed') handleLoadCompleted()
+  }, [activeTab, handleLoadAvailable, handleLoadActive, handleLoadCompleted])
 
   const handleAcceptMission = useCallback(async (missionId: string) => {
     await sendCommand('accept_mission', { mission_id: missionId })
