@@ -320,8 +320,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'PILOTLESS_SHIP':
       return addEvent(state, 'warning', `Pilotless ship detected: ${action.payload.player_username} (${action.payload.ship_class})`)
 
-    case 'SKILL_LEVEL_UP':
-      return addEvent(state, 'info', `Skill leveled up: ${action.payload.skill_name} -> Level ${action.payload.new_level}`)
+    case 'SKILL_LEVEL_UP': {
+      const skillId = (action.payload.skill_id as string || 'unknown').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+      return addEvent(state, 'info', `Skill leveled up: ${skillId} → Level ${action.payload.new_level}`)
+    }
 
     case 'POLICE_WARNING':
       return addEvent(state, 'warning', action.payload.message as string || 'Police warning!')
@@ -379,7 +381,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return { ...state, nearby: action.payload }
 
     case 'SET_PENDING_ACTION':
-      return { ...state, pendingAction: { command: action.command, startedAt: Date.now() } }
+      return { ...state, pendingAction: { command: action.command, startedAt: Date.now(), estimatedMs: action.estimatedMs } }
 
     case 'CLEAR_PENDING_ACTION':
       return { ...state, pendingAction: null }

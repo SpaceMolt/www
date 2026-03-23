@@ -82,7 +82,15 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
             d({ type: 'OK', payload: (sysResult || {}) as Record<string, unknown> })
           }).catch(() => {})
           apiRef.current?.command('get_poi').then((poiResult) => {
-            d({ type: 'OK', payload: (poiResult || {}) as Record<string, unknown> })
+            const pr = (poiResult || {}) as Record<string, unknown>
+            const poiData = pr.poi as Record<string, unknown> | undefined
+            const richResources = pr.resources as Array<Record<string, unknown>> | undefined
+            if (poiData) {
+              if (richResources && Array.isArray(richResources)) {
+                poiData.resources = richResources
+              }
+              d({ type: 'OK', payload: { action: 'get_poi', poi: poiData } })
+            }
           }).catch(() => {})
         }
 
@@ -191,6 +199,76 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
           timestamp: Date.now(),
         }})
         break
+      // Battle notifications
+      case 'battle_started':
+      case 'battle_joined':
+      case 'battle_update':
+      case 'battle_damage':
+      case 'battle_left':
+      case 'battle_ended':
+      case 'battle_alert':
+        d({ type: 'ADD_EVENT', entry: {
+          id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+          type: 'combat',
+          message: (p.message as string) || msg.type.replace(/_/g, ' '),
+          timestamp: Date.now(),
+        }})
+        break
+      // Pirate encounters
+      case 'pirate_radio':
+        d({ type: 'ADD_EVENT', entry: {
+          id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+          type: 'combat',
+          message: (p.message as string) || 'Pirate radio broadcast',
+          timestamp: Date.now(),
+        }})
+        break
+      case 'pirate_destroyed':
+        d({ type: 'ADD_EVENT', entry: {
+          id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+          type: 'combat',
+          message: (p.message as string) || 'Pirate destroyed',
+          timestamp: Date.now(),
+        }})
+        break
+      // Trade completions
+      case 'trade_complete':
+      case 'trade_declined':
+      case 'trade_cancelled':
+        d({ type: 'ADD_EVENT', entry: {
+          id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+          type: 'trade',
+          message: (p.message as string) || msg.type.replace(/_/g, ' '),
+          timestamp: Date.now(),
+        }})
+        break
+      // Skill XP gain
+      case 'skill_xp_gain':
+        d({ type: 'ADD_EVENT', entry: {
+          id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+          type: 'info',
+          message: `+${p.xp_gained || '?'} XP: ${((p.skill_id as string) || 'unknown').replace(/_/g, ' ')}`,
+          timestamp: Date.now(),
+        }})
+        break
+      // Player kill
+      case 'player_kill':
+        d({ type: 'ADD_EVENT', entry: {
+          id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+          type: 'combat',
+          message: (p.message as string) || `Destroyed ${p.victim || 'target'}`,
+          timestamp: Date.now(),
+        }})
+        break
+      // Gameplay tips
+      case 'gameplay_tip':
+        d({ type: 'ADD_EVENT', entry: {
+          id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+          type: 'info',
+          message: (p.message as string) || (p.tip as string) || 'Tip',
+          timestamp: Date.now(),
+        }})
+        break
     }
   }, [])
 
@@ -226,11 +304,31 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
     const interval = setInterval(async () => {
       if (!stateRef.current.authenticated || !apiRef.current) return
       try {
-        const result = await apiRef.current.command('get_status') as Record<string, unknown>
-        const player = result.player as Player | undefined
-        const ship = result.ship as Ship | undefined
-        const modules = result.modules as EnrichedShipModule[] | undefined
+        const [statusResult, cargoResult] = await Promise.all([
+          apiRef.current.command('get_status') as Promise<Record<string, unknown>>,
+          apiRef.current.command('get_cargo') as Promise<Record<string, unknown>>,
+        ])
+        const player = statusResult.player as Player | undefined
+        const ship = statusResult.ship as Ship | undefined
+        const modules = statusResult.modules as EnrichedShipModule[] | undefined
         if (player && ship) {
+          // Merge cargo data from v2 get_cargo (has enriched item names)
+          const cargoItems = cargoResult.cargo as Array<Record<string, unknown>> | undefined
+          if (cargoItems && Array.isArray(cargoItems)) {
+            // v2 uses item_name, ship type uses name — normalize
+            (ship as Record<string, unknown>).cargo = cargoItems.map(c => ({
+              item_id: c.item_id,
+              name: c.item_name || c.name || c.item_id,
+              quantity: c.quantity,
+              size: c.size,
+            }))
+          }
+          // v2 get_cargo includes ship with cargo_used/cargo_capacity
+          const cargoShip = cargoResult.ship as Record<string, unknown> | undefined
+          if (cargoShip) {
+            if (typeof cargoShip.cargo_used === 'number') (ship as Record<string, unknown>).cargo_used = cargoShip.cargo_used
+            if (typeof cargoShip.cargo_capacity === 'number') (ship as Record<string, unknown>).cargo_capacity = cargoShip.cargo_capacity
+          }
           dispatchRef.current({ type: 'STATUS_POLL', payload: { player, ship, modules } })
         }
       } catch {
@@ -269,7 +367,28 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
 
     const isMutation = MUTATION_COMMANDS.has(type)
     if (isMutation) {
-      dispatchRef.current({ type: 'SET_PENDING_ACTION', command: type })
+      let estimatedMs: number | undefined
+      // Estimate travel time from POI distance and ship speed
+      if (type === 'travel' && payload?.target_poi) {
+        const s = stateRef.current
+        const ship = s.ship
+        const currentPoi = s.poi
+        const targetPoi = s.system?.pois?.find(
+          (p: { id: string }) => p.id === payload.target_poi
+        )
+        if (ship && currentPoi?.position && targetPoi?.position) {
+          const dx = (targetPoi.position.x ?? 0) - (currentPoi.position.x ?? 0)
+          const dy = (targetPoi.position.y ?? 0) - (currentPoi.position.y ?? 0)
+          const distance = Math.sqrt(dx * dx + dy * dy)
+          const speed = Math.max(0.1, ship.speed ?? 1)
+          const travelTicks = Math.max(1, Math.ceil(distance / speed))
+          estimatedMs = travelTicks * 10000
+        }
+      } else if (type === 'jump') {
+        const speed = stateRef.current.ship?.speed ?? 1
+        estimatedMs = Math.max(10, 70 - 10 * speed) * 1000
+      }
+      dispatchRef.current({ type: 'SET_PENDING_ACTION', command: type, estimatedMs })
     }
 
     return api.command(type, payload).then((result) => {
@@ -278,6 +397,16 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
 
       // Dispatch typed actions for data-setting commands
       switch (type) {
+        case 'get_status': {
+          // Route through STATUS_POLL, not generic OK (avoids "Current game state" event spam)
+          const player = r.player as Player | undefined
+          const ship = r.ship as Ship | undefined
+          const modules = r.modules as EnrichedShipModule[] | undefined
+          if (player && ship) {
+            d({ type: 'STATUS_POLL', payload: { player, ship, modules } })
+          }
+          break
+        }
         case 'view_market':
           d({ type: 'SET_MARKET_DATA', payload: r as unknown as MarketData })
           break
@@ -332,7 +461,15 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
           d({ type: 'OK', payload: (sysResult || {}) as Record<string, unknown> })
         }).catch(() => {})
         api.command('get_poi').then((poiResult) => {
-          d({ type: 'OK', payload: (poiResult || {}) as Record<string, unknown> })
+          const pr = (poiResult || {}) as Record<string, unknown>
+          const poiData = pr.poi as Record<string, unknown> | undefined
+          const richResources = pr.resources as Array<Record<string, unknown>> | undefined
+          if (poiData) {
+            if (richResources && Array.isArray(richResources)) {
+              poiData.resources = richResources
+            }
+            d({ type: 'OK', payload: { action: 'get_poi', poi: poiData } })
+          }
         }).catch(() => {})
       }
       if (isMutation) {

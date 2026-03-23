@@ -46,7 +46,7 @@ function getLabel(command: string): string {
   return ACTION_LABELS[command] || command.replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase()) + '...'
 }
 
-export function ActionBanner() {
+export function ActionBanner({ autoTravelActive }: { autoTravelActive?: boolean }) {
   const { state } = useGame()
   const [elapsed, setElapsed] = useState(0)
 
@@ -63,16 +63,28 @@ export function ActionBanner() {
     return () => clearInterval(interval)
   }, [pending])
 
-  if (!pending) return null
+  if (!pending || autoTravelActive) return null
 
-  // Progress bar: assume ~10 second tick cycle max
-  const progressPct = Math.min(100, (elapsed / 10000) * 100)
+  // Use client-side estimate if available, otherwise assume one tick (10s)
+  const totalMs = pending.estimatedMs || 10000
+  const progressPct = Math.min(100, (elapsed / totalMs) * 100)
+  const remainingMs = Math.max(0, totalMs - elapsed)
+  const remainingSecs = Math.ceil(remainingMs / 1000)
+
+  let etaText: string | null = null
+  if (totalMs > 10000) {
+    // Only show ETA for multi-tick actions
+    etaText = remainingSecs >= 60
+      ? `${Math.floor(remainingSecs / 60)}m ${remainingSecs % 60}s`
+      : `${remainingSecs}s`
+  }
 
   return (
     <div className={styles.banner}>
       <div className={styles.content}>
         <Loader2 size={20} className={styles.spinner} />
         <span className={styles.label}>{getLabel(pending.command)}</span>
+        {etaText && <span className={styles.eta}>{etaText}</span>}
       </div>
       <div className={styles.progressTrack}>
         <div

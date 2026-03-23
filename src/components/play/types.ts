@@ -308,7 +308,7 @@ export interface GameState {
   recipesData: RecipesData | null
   skillsData: SkillsData | null
   /** Non-null while a mutation is in-flight (HTTP request or tick-queued) */
-  pendingAction: { command: string; startedAt: number } | null
+  pendingAction: { command: string; startedAt: number; estimatedMs?: number } | null
   /** Enriched installed modules from get_status (separate from ship.modules which is just IDs) */
   shipModules: EnrichedShipModule[]
   /** Cached module catalog: item_id → module info (fetched once on login) */
@@ -388,7 +388,7 @@ export type GameAction =
   | { type: 'SET_SKILLS_DATA'; payload: SkillsData }
   | { type: 'STATUS_POLL'; payload: { player: Player; ship: Ship; modules?: EnrichedShipModule[] } }
   | { type: 'SET_NEARBY'; payload: NearbyPlayer[] }
-  | { type: 'SET_PENDING_ACTION'; command: string }
+  | { type: 'SET_PENDING_ACTION'; command: string; estimatedMs?: number }
   | { type: 'CLEAR_PENDING_ACTION' }
   | { type: 'SET_MODULE_CATALOG'; payload: Record<string, ModuleCatalogEntry> }
   | { type: 'RESET' }

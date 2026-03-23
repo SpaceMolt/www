@@ -37,9 +37,10 @@ export function TravelProgress() {
           </div>
           {eta !== null && (
             <div className={styles.eta}>
-              <span className={styles.etaValue}>{eta}</span>
-              <span className={styles.etaLabel}>
-                {eta === 1 ? 'tick' : 'ticks'}
+              <span className={styles.etaValue}>
+                {eta * 10 >= 60
+                  ? `${Math.floor((eta * 10) / 60)}m ${(eta * 10) % 60}s`
+                  : `${eta * 10}s`}
               </span>
             </div>
           )}

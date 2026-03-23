@@ -120,15 +120,18 @@ export function InfoPanel() {
   }, [sendCommand])
 
   // Action Log handlers
+  const [actionLogPage, setActionLogPage] = useState(1)
+
   const handleLoadActionLog = useCallback(async () => {
     setLoadingActionLog(true)
     try {
-      const params: Record<string, unknown> = { limit: 20 }
+      const params: Record<string, unknown> = { page: 1, page_size: 20 }
       if (actionLogCategory !== 'all') params.category = actionLogCategory
       const resp = await sendCommand('get_action_log', params)
       const entries = (resp.entries || []) as ActionLogEntry[]
       setActionLogEntries(entries)
-      setActionLogHasMore(entries.length >= 20)
+      setActionLogHasMore(!!(resp.has_more))
+      setActionLogPage(1)
     } finally {
       setLoadingActionLog(false)
     }
@@ -138,17 +141,18 @@ export function InfoPanel() {
     if (actionLogEntries.length === 0) return
     setLoadingMoreActionLog(true)
     try {
-      const lastEntry = actionLogEntries[actionLogEntries.length - 1]
-      const params: Record<string, unknown> = { limit: 20, before: lastEntry.created_at }
+      const nextPage = actionLogPage + 1
+      const params: Record<string, unknown> = { page: nextPage, page_size: 20 }
       if (actionLogCategory !== 'all') params.category = actionLogCategory
       const resp = await sendCommand('get_action_log', params)
       const entries = (resp.entries || []) as ActionLogEntry[]
       setActionLogEntries(prev => [...prev, ...entries])
-      setActionLogHasMore(entries.length >= 20)
+      setActionLogHasMore(!!(resp.has_more))
+      setActionLogPage(nextPage)
     } finally {
       setLoadingMoreActionLog(false)
     }
-  }, [sendCommand, actionLogCategory, actionLogEntries])
+  }, [sendCommand, actionLogCategory, actionLogEntries, actionLogPage])
 
   const player = state.player
   const welcome = state.welcome

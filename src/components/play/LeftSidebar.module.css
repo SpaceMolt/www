@@ -5,6 +5,50 @@
   background: rgba(10, 14, 23, 0.95);
   border-right: 1px solid rgba(61, 90, 108, 0.4);
   min-height: 0;
+  overflow: hidden;
+}
+
+/* Tab Bar */
+.tabBar {
+  display: flex;
+  border-bottom: 1px solid rgba(61, 90, 108, 0.3);
+  flex-shrink: 0;
+}
+
+.tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0.45rem 0.5rem;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--hull-grey);
+  cursor: pointer;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transition: color 0.2s, background 0.2s, border-color 0.2s;
+}
+
+.tab:hover {
+  color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.05);
+}
+
+.tabActive {
+  color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.08);
+  border-bottom-color: var(--plasma-cyan);
+}
+
+.tabContent {
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
@@ -342,6 +386,198 @@
   flex-shrink: 0;
   font-size: 0.5rem;
   color: var(--hull-grey);
+}
+
+/* --- Explore Tab --- */
+.exploreSearch {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid rgba(61, 90, 108, 0.3);
+}
+
+.searchInputWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.5rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(61, 90, 108, 0.3);
+  border-radius: 4px;
+  transition: border-color 0.2s;
+}
+
+.searchInputWrapper:focus-within {
+  border-color: var(--plasma-cyan);
+}
+
+.searchIcon {
+  color: var(--hull-grey);
+  flex-shrink: 0;
+}
+
+.searchInput {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--star-white);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  outline: none;
+  min-width: 0;
+}
+
+.searchInput::placeholder {
+  color: rgba(140, 170, 200, 0.4);
+}
+
+.searchResults {
+  margin-top: 0.4rem;
+  max-height: 300px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.searchResultItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.35rem 0.5rem;
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(61, 90, 108, 0.15);
+  color: var(--chrome-silver);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.searchResultItem:last-child {
+  border-bottom: none;
+}
+
+.searchResultItem:hover {
+  background: rgba(0, 212, 255, 0.08);
+  color: var(--plasma-cyan);
+}
+
+.searchResultName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.searchResultEmpire {
+  font-size: 0.55rem;
+  color: var(--hull-grey);
+  margin-left: 0.5rem;
+  flex-shrink: 0;
+}
+
+.searchEmpty {
+  padding: 0.75rem 0.5rem;
+  text-align: center;
+  color: var(--hull-grey);
+  font-size: 0.65rem;
+}
+
+/* --- System Detail (Explore) --- */
+.systemDetail {
+  padding: 0.6rem 0.75rem;
+}
+
+.systemDetailName {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--plasma-cyan);
+  margin-bottom: 0.25rem;
+}
+
+.systemDetailEmpire {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--chrome-silver);
+  margin-bottom: 0.4rem;
+}
+
+.systemDetailTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-bottom: 0.6rem;
+}
+
+.detailTag {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.1);
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.detailTagDanger {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  color: #ff6b6b;
+  background: rgba(255, 68, 68, 0.12);
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.plotCourseBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  margin-bottom: 0.5rem;
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 4px;
+  background: rgba(0, 212, 255, 0.08);
+  color: var(--plasma-cyan);
+  cursor: pointer;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.plotCourseBtn:hover:not(:disabled) {
+  background: rgba(0, 212, 255, 0.15);
+  border-color: var(--plasma-cyan);
+}
+
+.plotCourseBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.systemDetailConnections {
+  margin-top: 0.4rem;
+}
+
+.exploreEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2rem 1rem;
+  text-align: center;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--hull-grey);
+}
+
+.exploreEmptyIcon {
+  opacity: 0.2;
 }
 
 /* === Responsive === */

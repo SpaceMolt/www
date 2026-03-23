@@ -579,6 +579,20 @@ export function MarketView() {
   )
 }
 
+/** Quick-fill qty buttons */
+function QtyButtons({ max, current, onChange }: { max: number; current: string; onChange: (v: string) => void }) {
+  const cur = parseInt(current, 10) || 0
+  const add = (n: number) => onChange(String(Math.min(max, cur + n)))
+  return (
+    <div className={styles.qtyButtons}>
+      <button className={styles.qtyBtn} onClick={(e) => { e.stopPropagation(); add(5) }} disabled={cur >= max} type="button">+5</button>
+      <button className={styles.qtyBtn} onClick={(e) => { e.stopPropagation(); add(10) }} disabled={cur >= max} type="button">+10</button>
+      <button className={styles.qtyBtn} onClick={(e) => { e.stopPropagation(); add(100) }} disabled={cur >= max} type="button">+100</button>
+      <button className={`${styles.qtyBtn} ${styles.qtyBtnMax}`} onClick={(e) => { e.stopPropagation(); onChange(String(max)) }} disabled={cur >= max} type="button">MAX</button>
+    </div>
+  )
+}
+
 /** Expanded panel for a single market item — order book + actions */
 function ExpandedItemPanel({ item, credits, buyQty, setBuyQty, estimating, onBuyEstimate, onBuyFromOrder, onSellToOrder, getAvailable, listingItemId, setListingItemId, listingQty, setListingQty, listingPrice, setListingPrice, listing, onCreateListing }: {
   item: MarketItem
@@ -632,6 +646,7 @@ function ExpandedItemPanel({ item, credits, buyQty, setBuyQty, estimating, onBuy
                         <span className={styles.orderQty}>x{order.quantity.toLocaleString()}</span>
                         {order.source === 'npc' && <span className={styles.npcTag}>NPC</span>}
                         <div className={styles.orderAction}>
+                          <QtyButtons max={maxBuyable} current={qty} onChange={(v) => setOrderQty(key, v)} />
                           <input
                             className={styles.orderQtyInput}
                             type="number"
@@ -683,6 +698,7 @@ function ExpandedItemPanel({ item, credits, buyQty, setBuyQty, estimating, onBuy
                         <span className={styles.orderQty}>x{order.quantity.toLocaleString()}</span>
                         {order.source === 'npc' && <span className={styles.npcTag}>NPC</span>}
                         <div className={styles.orderAction}>
+                          <QtyButtons max={maxSellable} current={qty} onChange={(v) => setOrderQty(key, v)} />
                           <input
                             className={styles.orderQtyInput}
                             type="number"

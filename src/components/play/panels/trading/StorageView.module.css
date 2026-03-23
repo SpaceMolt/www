@@ -273,6 +273,23 @@
   flex-shrink: 0;
 }
 
+.qtyInput {
+  width: 52px;
+  min-width: 52px;
+  background: rgba(10, 14, 20, 0.6);
+  border: 1px solid var(--dim-grey);
+  border-radius: 3px;
+  padding: 0.2rem 0.3rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--star-white);
+  outline: none;
+  text-align: right;
+}
+
+.qtyInput:focus {
+  border-color: var(--plasma-cyan);
+}
 
 /* Ship list */
 .shipList {

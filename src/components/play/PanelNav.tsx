@@ -42,7 +42,6 @@ const ALL_PANELS: PanelDef[] = [
   { id: 'ship', icon: Rocket, label: 'Ship', visibility: 'always' },
   { id: 'faction', icon: Users, label: 'Faction', visibility: 'always' },
   { id: 'missions', icon: Target, label: 'Missions', visibility: 'always' },
-  { id: 'info', icon: Info, label: 'Info', visibility: 'always' },
   // Station tabs — always visible (view remotely), mutations disabled in space
   { id: 'trading', icon: TrendingUp, label: 'Market', visibility: 'always' },
   { id: 'storage', icon: Package, label: 'Storage', visibility: 'always' },
@@ -53,6 +52,7 @@ const ALL_PANELS: PanelDef[] = [
   // Combat tab — only when in battle
   { id: 'combat', icon: Swords, label: 'Combat', visibility: 'combat' },
   // Right-justified
+  { id: 'info', icon: Info, label: 'Info', visibility: 'always', right: true },
   { id: 'settings', icon: Settings, label: 'Settings', visibility: 'always', right: true },
 ]
 

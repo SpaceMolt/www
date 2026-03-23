@@ -112,7 +112,7 @@ export function StorageView() {
   // Item operations (docked only)
   const handleWithdrawItem = useCallback(
     (itemId: string, maxQty: number) => {
-      const qtyStr = withdrawQtys[itemId] || ''
+      const qtyStr = withdrawQtys[itemId] ?? String(maxQty)
       const quantity = parseInt(qtyStr, 10)
       if (isNaN(quantity) || quantity < 1 || quantity > maxQty) return
       sendCommand('withdraw_items', { item_id: itemId, quantity })
@@ -123,7 +123,7 @@ export function StorageView() {
 
   const handleDepositItem = useCallback(
     (itemId: string, maxQty: number) => {
-      const qtyStr = depositQtys[itemId] || ''
+      const qtyStr = depositQtys[itemId] ?? String(maxQty)
       const quantity = parseInt(qtyStr, 10)
       if (isNaN(quantity) || quantity < 1 || quantity > maxQty) return
       sendCommand('deposit_items', { item_id: itemId, quantity })
@@ -434,7 +434,7 @@ export function StorageView() {
         {storedItems.length > 0 ? (
           <div className={styles.itemList}>
             {storedItems.map((item) => {
-              const qtyStr = withdrawQtys[item.item_id] || ''
+              const qtyStr = withdrawQtys[item.item_id] ?? String(item.quantity)
               return (
                 <div key={item.item_id} className={styles.itemRow}>
                   <div className={styles.itemInfo}>
@@ -446,11 +446,10 @@ export function StorageView() {
                   </div>
                   <div className={styles.itemAction}>
                     <input
-                      className={shared.textInput}
+                      className={styles.qtyInput}
                       type="number"
                       min={1}
                       max={item.quantity}
-                      placeholder="Qty"
                       value={qtyStr}
                       onChange={(e) =>
                         setWithdrawQtys((prev) => ({
@@ -491,11 +490,11 @@ export function StorageView() {
         {cargo.length > 0 ? (
           <div className={styles.itemList}>
             {cargo.map((item) => {
-              const qtyStr = depositQtys[item.item_id] || ''
+              const qtyStr = depositQtys[item.item_id] ?? String(item.quantity)
               return (
                 <div key={item.item_id} className={styles.itemRow}>
                   <div className={styles.itemInfo}>
-                    <span className={styles.itemName}>{item.name}</span>
+                    <span className={styles.itemName}>{item.name ?? item.item_id}</span>
                     <span className={styles.itemQty}>x{item.quantity}</span>
                     {item.size != null && item.size > 0 && (
                       <span className={styles.itemSize}>{item.size}u</span>
@@ -503,11 +502,10 @@ export function StorageView() {
                   </div>
                   <div className={styles.itemAction}>
                     <input
-                      className={shared.textInput}
+                      className={styles.qtyInput}
                       type="number"
                       min={1}
                       max={item.quantity}
-                      placeholder="Qty"
                       value={qtyStr}
                       onChange={(e) =>
                         setDepositQtys((prev) => ({

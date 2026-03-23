@@ -375,6 +375,40 @@
   border-color: var(--plasma-cyan);
 }
 
+.qtyButtons {
+  display: flex;
+  gap: 1px;
+}
+
+.qtyBtn {
+  padding: 0.1rem 0.25rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.5rem;
+  background: rgba(61, 90, 108, 0.2);
+  border: 1px solid rgba(61, 90, 108, 0.3);
+  border-radius: 2px;
+  color: var(--chrome-silver);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.qtyBtn:hover:not(:disabled) {
+  background: rgba(0, 212, 255, 0.12);
+  color: var(--plasma-cyan);
+  border-color: rgba(0, 212, 255, 0.3);
+}
+
+.qtyBtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.qtyBtnMax {
+  color: var(--plasma-cyan);
+  font-weight: 600;
+}
+
 .modalBuyActions {
   display: flex;
   gap: 0.35rem;

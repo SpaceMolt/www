@@ -37,6 +37,12 @@
   letter-spacing: 0.06em;
 }
 
+.eta {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--chrome-silver);
+}
+
 .progressTrack {
   height: 3px;
   background: rgba(61, 90, 108, 0.3);
