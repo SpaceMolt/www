@@ -9,10 +9,8 @@ import {
   AlertTriangle,
   Check,
   X,
-  RefreshCw,
 } from 'lucide-react'
 import { useGame } from '../GameProvider'
-import { ActionButton } from '../ActionButton'
 import { Credits, PanelWithTabs, shared } from '../shared'
 import type { Mission } from '@/lib/gameTypes'
 import styles from './MissionsPanel.module.css'
@@ -140,15 +138,12 @@ export function MissionsPanel() {
     }
   }, [sendCommand])
 
-  // Auto-load available and active missions on mount
+  // Load data when switching tabs
   useEffect(() => {
-    if (!availableLoaded && !loadingAvailable) {
-      handleLoadAvailable()
-    }
-    if (!activeLoaded && !loadingActive) {
-      handleLoadActive()
-    }
-  }, [availableLoaded, loadingAvailable, activeLoaded, loadingActive, handleLoadAvailable, handleLoadActive])
+    if (activeTab === 'available' && !loadingAvailable) handleLoadAvailable()
+    if (activeTab === 'active' && !loadingActive) handleLoadActive()
+    if (activeTab === 'completed' && !loadingCompleted) handleLoadCompleted()
+  }, [activeTab, handleLoadAvailable, handleLoadActive, handleLoadCompleted, loadingAvailable, loadingActive, loadingCompleted])
 
   const handleAcceptMission = useCallback(async (missionId: string) => {
     await sendCommand('accept_mission', { mission_id: missionId })
@@ -257,14 +252,6 @@ export function MissionsPanel() {
         {/* Available Missions Tab */}
         {activeTab === 'available' && (
           <>
-            <ActionButton
-              label="Load Available Missions"
-              icon={<RefreshCw size={14} />}
-              onClick={handleLoadAvailable}
-              variant="secondary"
-              size="sm"
-              loading={loadingAvailable}
-            />
             {loadingAvailable && availableMissions.length === 0 && (
               <div className={styles.loading}>
                 <span className={shared.spinner} />
@@ -319,14 +306,6 @@ export function MissionsPanel() {
         {/* Active Missions Tab */}
         {activeTab === 'active' && (
           <>
-            <ActionButton
-              label="Load Active Missions"
-              icon={<RefreshCw size={14} />}
-              onClick={handleLoadActive}
-              variant="secondary"
-              size="sm"
-              loading={loadingActive}
-            />
             {loadingActive && activeMissions.length === 0 && (
               <div className={styles.loading}>
                 <span className={shared.spinner} />
@@ -399,14 +378,6 @@ export function MissionsPanel() {
         {/* Completed Missions Tab */}
         {activeTab === 'completed' && (
           <>
-            <ActionButton
-              label="Load Completed Missions"
-              icon={<RefreshCw size={14} />}
-              onClick={handleLoadCompleted}
-              variant="secondary"
-              size="sm"
-              loading={loadingCompleted}
-            />
             {loadingCompleted && completedMissions.length === 0 && (
               <div className={styles.loading}>
                 <span className={shared.spinner} />
