@@ -341,9 +341,9 @@ function DashboardContent() {
     }
   }, [authHeaders])
 
-  const fetchAllPlayerInfo = useCallback(async () => {
+  const fetchAllPlayerInfo = useCallback(async (silent = false) => {
     if (players.length === 0) return
-    setChatPlayersLoading(true)
+    if (!silent) setChatPlayersLoading(true)
     try {
       const headers = await authHeaders()
       const results: PlayerInfo[] = []
@@ -361,7 +361,7 @@ function DashboardContent() {
       }
       setAllPlayerInfo(results)
     } finally {
-      setChatPlayersLoading(false)
+      if (!silent) setChatPlayersLoading(false)
     }
   }, [authHeaders, players])
 
@@ -370,14 +370,15 @@ function DashboardContent() {
     fetchRegistrationCode()
   }, [userLoaded, authLoaded, user, fetchRegistrationCode])
 
-  // Fetch all player info when switching to players tab (needed for chat subsection)
+  // Fetch all player info when switching to players tab, and poll every 30s
   useEffect(() => {
-    if (activeTab === 'players' && authLoaded && players.length > 0 && allPlayerInfo.length === 0) {
-      fetchAllPlayerInfo()
-    }
-  }, [activeTab, authLoaded, players.length, allPlayerInfo.length, fetchAllPlayerInfo])
+    if (activeTab !== 'players' || !authLoaded || players.length === 0) return
+    fetchAllPlayerInfo()
+    const interval = setInterval(() => fetchAllPlayerInfo(true), 30_000)
+    return () => clearInterval(interval)
+  }, [activeTab, authLoaded, players.length, fetchAllPlayerInfo])
 
-  // Fetch player info + log when selected player changes
+  // Fetch player info + log when selected player changes, and poll info every 30s
   useEffect(() => {
     if (!selectedPlayer || !authLoaded) return
     setCaptainsLog(null)
@@ -385,6 +386,8 @@ function DashboardContent() {
     setPasswordVisible(false)
     fetchPlayerInfo(selectedPlayer)
     fetchCaptainsLog(selectedPlayer)
+    const interval = setInterval(() => fetchPlayerInfo(selectedPlayer), 30_000)
+    return () => clearInterval(interval)
   }, [selectedPlayer, authLoaded, fetchPlayerInfo, fetchCaptainsLog])
 
 
