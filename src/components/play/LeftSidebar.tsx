@@ -79,7 +79,7 @@ interface LeftSidebarProps {
 }
 
 export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, plannedRoute, onPlannedRouteChange, activeTab, onTabChange, autoTravelActive, onHighlightedSystemsChange }: LeftSidebarProps) {
-  const { state, sendCommand } = useGame()
+  const { state, sendCommand, api } = useGame()
   const [expandedPoi, setExpandedPoi] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [showMiningModal, setShowMiningModal] = useState(false)
@@ -97,16 +97,16 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
     if (exploreSystem) onTabChange('explore')
   }, [exploreSystem, onTabChange])
 
-  // Fetch intel status on mount to determine intel level
+  // Fetch intel status on mount to determine intel level (use api directly to avoid event log noise)
   useEffect(() => {
-    if (intelStatusFetched.current || !state.player?.faction_id) return
+    if (intelStatusFetched.current || !state.player?.faction_id || !api) return
     intelStatusFetched.current = true
-    sendCommand('faction_intel_status').then((result) => {
+    api.callStructured<{ intel_level?: number }>('spacemolt_intel', 'intel_status').then((result) => {
       if (result && typeof result.intel_level === 'number') {
         setIntelLevel(result.intel_level)
       }
     }).catch(() => {})
-  }, [state.player?.faction_id, sendCommand])
+  }, [state.player?.faction_id, api])
 
   // Fetch intel for selected system
   useEffect(() => {
@@ -114,10 +114,10 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
       setSelectedSystemIntel(null)
       return
     }
+    if (!api) return
     let cancelled = false
-    sendCommand('faction_query_intel', { system_id: exploreSystem.id, limit: 1 }).then((result) => {
+    api.callStructured<IntelQueryResult>('spacemolt_intel', 'query_intel', { system_id: exploreSystem.id, limit: 1 }).then((r) => {
       if (cancelled) return
-      const r = result as unknown as IntelQueryResult | null
       if (r?.entries?.length) {
         setSelectedSystemIntel(r.entries[0])
       } else {
@@ -125,7 +125,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
       }
     }).catch(() => { if (!cancelled) setSelectedSystemIntel(null) })
     return () => { cancelled = true }
-  }, [exploreSystem, intelLevel, sendCommand])
+  }, [exploreSystem, intelLevel, api])
 
   // Intel search: debounced query when search changes
   const hasIntel = intelLevel >= 2
@@ -144,9 +144,8 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
     const resourceId = query.toLowerCase().replace(/\s+/g, '_')
 
     intelDebounceRef.current = setTimeout(() => {
-      // Query intel by resource_type
-      sendCommand('faction_query_intel', { resource_type: resourceId, limit: 100 }).then((result) => {
-        const r = result as unknown as IntelQueryResult | null
+      if (!api) return
+      api.callStructured<IntelQueryResult>('spacemolt_intel', 'query_intel', { resource_type: resourceId, limit: 100 }).then((r) => {
         if (r?.entries?.length) {
           setIntelResults(r.entries)
           onHighlightedSystemsChange?.(new Set(r.entries.map(e => e.system_id)))
@@ -165,7 +164,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
     return () => {
       if (intelDebounceRef.current) clearTimeout(intelDebounceRef.current)
     }
-  }, [searchQuery, hasIntel, sendCommand, onHighlightedSystemsChange])
+  }, [searchQuery, hasIntel, api, onHighlightedSystemsChange])
 
   const handleIntelResultSelect = useCallback((entry: IntelEntry) => {
     const systems = galaxyRef.current?.getSystems() ?? []
