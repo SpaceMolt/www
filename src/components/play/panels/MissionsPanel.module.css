@@ -23,6 +23,73 @@
   border-radius: 4px;
 }
 
+.missionItemReady {
+  background: rgba(0, 200, 83, 0.06);
+  border-color: rgba(0, 200, 83, 0.2);
+}
+
+/* Progress bar */
+.progressTrack {
+  height: 3px;
+  background: rgba(61, 90, 108, 0.3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--plasma-cyan);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.progressFillReady {
+  background: var(--energy-green);
+}
+
+/* Mission meta (giver, location) */
+.missionMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  color: var(--hull-grey);
+}
+
+.metaSep::before {
+  content: '\00B7';
+  margin-right: 0.3rem;
+}
+
+/* Mission dialog (offer/accept/complete text) */
+.missionDialog {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  color: rgba(168, 197, 214, 0.7);
+  font-style: italic;
+  line-height: 1.5;
+  padding: 0.35rem 0.5rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-left: 2px solid rgba(255, 217, 61, 0.2);
+  border-radius: 0 3px 3px 0;
+  margin: 0.15rem 0;
+  white-space: pre-line;
+}
+
+/* Objective done state */
+.objectiveItemDone {
+  opacity: 0.6;
+}
+
+/* Expiration */
+.expiresIn {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  color: var(--hull-grey);
+  margin-top: 0.15rem;
+}
+
 .missionHeader {
   display: flex;
   align-items: center;

@@ -15,10 +15,20 @@ import { Credits, PanelWithTabs, shared } from '../shared'
 import type { Mission } from '@/lib/gameTypes'
 import styles from './MissionsPanel.module.css'
 
-type ActiveMissionObjective = NonNullable<Mission['objectives']>[number] & {
-  completed?: boolean
-  current?: number
-  target?: number
+interface ActiveMissionObjective {
+  type: string
+  description: string
+  current: number
+  required: number
+  completed: boolean
+  item_id?: string
+  item_name?: string
+  target_base?: string
+  target_base_name?: string
+  system_id?: string
+  system_name?: string
+  in_cargo?: number
+  in_storage?: number
 }
 
 type TabId = 'available' | 'active' | 'completed'
@@ -201,42 +211,61 @@ export function MissionsPanel() {
   }, [sendCommand])
 
   const renderObjective = (obj: ActiveMissionObjective, index: number, showProgress: boolean) => (
-    <div key={index} className={styles.objectiveItem}>
+    <div key={index} className={`${styles.objectiveItem} ${obj.completed ? styles.objectiveItemDone : ''}`}>
       {showProgress && obj.completed ? (
         <span className={styles.objectiveComplete}>
           <Check size={12} />
         </span>
       ) : showProgress ? (
         <span className={styles.objectiveProgress}>
-          {obj.current}/{obj.target}
+          {obj.current}/{obj.required}
         </span>
       ) : null}
       <span className={styles.objectiveDesc}>{obj.description}</span>
-      {obj.system_name && (
-        <span className={styles.objectiveMeta}> [{obj.system_name}]</span>
+      {obj.item_name && obj.required > 0 && (
+        <span className={styles.objectiveMeta}>{obj.item_name} x{obj.required}</span>
       )}
       {obj.target_base_name && (
-        <span className={styles.objectiveMeta}> @ {obj.target_base_name}</span>
+        <span className={styles.objectiveMeta}>@ {obj.target_base_name}</span>
       )}
-      {obj.item_id && obj.quantity && (
-        <span className={styles.objectiveMeta}> ({obj.item_id} x{obj.quantity})</span>
+      {obj.system_name && (
+        <span className={styles.objectiveMeta}>[{obj.system_name}]</span>
+      )}
+      {showProgress && obj.in_cargo != null && obj.in_cargo > 0 && (
+        <span className={styles.objectiveMeta}>Cargo: {obj.in_cargo}</span>
+      )}
+      {showProgress && obj.in_storage != null && obj.in_storage > 0 && (
+        <span className={styles.objectiveMeta}>Storage: {obj.in_storage}</span>
       )}
     </div>
   )
 
-  const renderRewards = (rewards?: Mission['rewards']) => (
-    <div className={styles.rewardRow}>
-      <span className={styles.rewardIcon}><Award size={12} /></span>
-      {rewards?.credits != null && (
-        <span className={styles.rewardCredits}><Credits amount={rewards.credits} /></span>
-      )}
-      {rewards?.items && Object.keys(rewards.items).length > 0 && (
-        <span className={styles.rewardItems}>
-          + {Object.entries(rewards.items).map(([itemId, qty]) => `${itemId} x${qty}`).join(', ')}
-        </span>
-      )}
-    </div>
-  )
+  const renderRewards = (rewards?: Record<string, unknown>) => {
+    if (!rewards) return null
+    const credits = rewards.credits as number | undefined
+    const items = rewards.items as Record<string, number> | undefined
+    const skillXp = rewards.skill_xp as Record<string, number> | undefined
+    const hasContent = (credits && credits > 0) || (items && Object.keys(items).length > 0) || (skillXp && Object.keys(skillXp).length > 0)
+    if (!hasContent) return null
+    return (
+      <div className={styles.rewardRow}>
+        <span className={styles.rewardIcon}><Award size={12} /></span>
+        {credits != null && credits > 0 && (
+          <span className={styles.rewardCredits}><Credits amount={credits} /></span>
+        )}
+        {items && Object.keys(items).length > 0 && (
+          <span className={styles.rewardItems}>
+            + {Object.entries(items).map(([itemId, qty]) => `${itemId} x${qty}`).join(', ')}
+          </span>
+        )}
+        {skillXp && Object.keys(skillXp).length > 0 && (
+          <span className={styles.rewardItems}>
+            + {Object.entries(skillXp).map(([skill, xp]) => `${skill.replace(/_/g, ' ')} +${xp}XP`).join(', ')}
+          </span>
+        )}
+      </div>
+    )
+  }
 
   const tabs = [
     { id: 'available', label: 'Available', icon: <Target size={13} /> },
@@ -269,7 +298,13 @@ export function MissionsPanel() {
             {availableMissions.length > 0 && (
               <div className={styles.missionList}>
                 {availableMissions.map((m) => {
+                  const mr = m as unknown as Record<string, unknown>
                   const isExpanded = expandedMissions.has(m.mission_id)
+                  const giver = mr.giver as { name: string; title: string } | undefined
+                  const objectives = (mr.objectives || m.objectives || []) as ActiveMissionObjective[]
+                  const rewards = (mr.rewards || m.rewards) as Record<string, unknown> | undefined
+                  const dialog = mr.dialog as { offer?: string } | undefined
+
                   return (
                     <div key={m.mission_id} className={styles.missionItem}>
                       <div
@@ -277,26 +312,42 @@ export function MissionsPanel() {
                         onClick={() => toggleExpanded(m.mission_id)}
                         style={{ cursor: 'pointer' }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flex: 1, minWidth: 0 }}>
                           {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                           <span className={styles.missionTitle}>{m.title}</span>
                         </div>
                         <span className={styles.missionDifficulty}>{m.difficulty}</span>
                       </div>
-                      <div className={styles.missionDesc}>{m.description}</div>
-                      {renderRewards(m.rewards)}
-                      {isExpanded && m.objectives && m.objectives.length > 0 && (
-                        <div className={styles.objectiveList}>
-                          {m.objectives.map((obj, i) => renderObjective(obj as ActiveMissionObjective, i, false))}
+
+                      {giver && (
+                        <div className={styles.missionMeta}>
+                          <span>{giver.name}, {giver.title}</span>
                         </div>
                       )}
+
+                      <div className={styles.missionDesc}>{m.description}</div>
+
+                      {isExpanded && dialog?.offer && (
+                        <div className={styles.missionDialog}>
+                          &ldquo;{dialog.offer}&rdquo;
+                        </div>
+                      )}
+
+                      {renderRewards(rewards)}
+
+                      {objectives.length > 0 && (
+                        <div className={styles.objectiveList}>
+                          {objectives.map((obj, i) => renderObjective(obj, i, false))}
+                        </div>
+                      )}
+
                       <button
                         className={styles.acceptBtn}
                         onClick={() => handleAcceptMission(m.mission_id)}
                         type="button"
                       >
                         <Check size={12} />
-                        Accept
+                        Accept Mission
                       </button>
                     </div>
                   )
@@ -323,33 +374,71 @@ export function MissionsPanel() {
             {activeMissions.length > 0 && (
               <div className={styles.missionList}>
                 {activeMissions.map((m) => {
+                  const mr = m as unknown as Record<string, unknown>
                   const isExpanded = expandedMissions.has(m.mission_id)
-                  const isCompletable = (m as Record<string, unknown>).percent_complete !== undefined
-                    ? ((m as Record<string, unknown>).percent_complete as number) >= 100
-                    : m.objectives?.every((obj) => (obj as ActiveMissionObjective).completed)
+                  const percentComplete = (mr.percent_complete as number) ?? 0
+                  const objectives = (mr.objectives || m.objectives || []) as ActiveMissionObjective[]
+                  const isCompletable = percentComplete >= 100 || objectives.every((obj) => obj.completed)
+                  const giver = mr.giver as { name: string; title: string } | undefined
+                  const expiresInTicks = mr.expires_in_ticks as number | undefined
+                  const issuingBase = mr.issuing_base as string | undefined
+                  const issuingSystemName = mr.issuing_system_name as string | undefined
+                  const rewards = (mr.rewards || m.rewards) as Record<string, unknown> | undefined
+
                   return (
-                    <div key={m.mission_id} className={styles.missionItem}>
+                    <div key={m.mission_id} className={`${styles.missionItem} ${isCompletable ? styles.missionItemReady : ''}`}>
                       <div
                         className={styles.missionHeader}
                         onClick={() => toggleExpanded(m.mission_id)}
                         style={{ cursor: 'pointer' }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flex: 1, minWidth: 0 }}>
                           {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                           <span className={styles.missionTitle}>{m.title}</span>
                         </div>
                         <span className={styles.missionStatusBadge} data-status={isCompletable ? 'completable' : 'active'}>
-                          {isCompletable ? 'Ready' : 'Active'}
+                          {isCompletable ? 'Ready' : `${Math.round(percentComplete)}%`}
                         </span>
                       </div>
-                      <div className={styles.missionDesc}>{m.description}</div>
-                      <div className={styles.missionDifficulty}>{m.difficulty}</div>
-                      {renderRewards(m.rewards)}
-                      {m.objectives && m.objectives.length > 0 && (
-                        <div className={styles.objectiveList}>
-                          {m.objectives.map((obj, i) => renderObjective(obj as ActiveMissionObjective, i, true))}
+
+                      {/* Progress bar */}
+                      <div className={styles.progressTrack}>
+                        <div
+                          className={`${styles.progressFill} ${isCompletable ? styles.progressFillReady : ''}`}
+                          style={{ width: `${Math.min(100, percentComplete)}%` }}
+                        />
+                      </div>
+
+                      {/* Giver + location */}
+                      {(giver || issuingBase) && (
+                        <div className={styles.missionMeta}>
+                          {giver && <span>{giver.name}, {giver.title}</span>}
+                          {issuingBase && <span className={styles.metaSep}>{issuingBase}{issuingSystemName ? ` (${issuingSystemName})` : ''}</span>}
                         </div>
                       )}
+
+                      {isExpanded && (
+                        <div className={styles.missionDesc}>{m.description}</div>
+                      )}
+
+                      {/* Objectives */}
+                      {objectives.length > 0 && (
+                        <div className={styles.objectiveList}>
+                          {objectives.map((obj, i) => renderObjective(obj, i, true))}
+                        </div>
+                      )}
+
+                      {/* Rewards */}
+                      {isExpanded && renderRewards(rewards)}
+
+                      {/* Expiration */}
+                      {isExpanded && expiresInTicks != null && expiresInTicks > 0 && (
+                        <div className={styles.expiresIn}>
+                          Expires in {Math.floor(expiresInTicks * 10 / 3600)}h {Math.floor((expiresInTicks * 10 % 3600) / 60)}m
+                        </div>
+                      )}
+
+                      {/* Complete button */}
                       {isCompletable && (
                         <button
                           className={styles.completeBtn}
@@ -360,6 +449,8 @@ export function MissionsPanel() {
                           Complete Mission
                         </button>
                       )}
+
+                      {/* Abandon (expanded only) */}
                       {isExpanded && (
                         <button
                           className={styles.abandonBtn}
