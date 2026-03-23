@@ -199,6 +199,9 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
   const onPlannedRouteChangeRef = useRef(onPlannedRouteChange)
   onPlannedRouteChangeRef.current = onPlannedRouteChange
 
+  const onSystemSelectRef = useRef(onSystemSelect)
+  onSystemSelectRef.current = onSystemSelect
+
   const autoTravelProgressRef = useRef<AutoTravelProgress | null>(null)
   autoTravelProgressRef.current = autoTravelProgress ?? null
 
@@ -1016,10 +1019,10 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
       const dy = e.clientY - s.dragStart.y
       const wasDrag = Math.abs(dx) > 5 || Math.abs(dy) > 5
 
-      if (!wasDrag && onSystemSelect) {
+      if (!wasDrag && onSystemSelectRef.current) {
         const pos = canvasCoords(e.clientX, e.clientY)
         const system = findSystemAt(pos.x, pos.y)
-        if (system) onSystemSelect(system)
+        if (system) onSystemSelectRef.current(system)
       }
 
       s.isDragging = false
@@ -1179,10 +1182,10 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
         const dy = touch.clientY - s.initialTouchPos.y
         const wasMove = Math.abs(dx) > 10 || Math.abs(dy) > 10
 
-        if (!wasMove && onSystemSelect) {
+        if (!wasMove && onSystemSelectRef.current) {
           const tpos = canvasCoords(touch.clientX, touch.clientY)
           const system = findSystemAt(tpos.x, tpos.y)
-          if (system) onSystemSelect(system)
+          if (system) onSystemSelectRef.current(system)
         }
       }
 
@@ -1235,8 +1238,7 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
       if (resizeObserver) resizeObserver.disconnect()
       cancelAnimationFrame(animFrameId)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [render, generateStars, canvasCoords, findSystemAt, updateTooltip, worldToScreen])
 
   // ── JSX ────────────────────────────────────────────────────────────
 

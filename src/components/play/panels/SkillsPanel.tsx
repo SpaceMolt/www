@@ -29,7 +29,7 @@ export function SkillsPanel() {
     if (!state.skillsData) {
       sendCommand('get_skills')
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [state.skillsData, sendCommand])
 
   // Fetch skill catalog (metadata) once
   useEffect(() => {

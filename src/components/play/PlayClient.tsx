@@ -37,9 +37,10 @@ function PlayClientInner({ playerId, authHeaders, onSwitchPlayer }: {
   const authAttempted = useRef(false)
 
   // Connect WS on mount
+  const connectRef = useRef(connect)
+  connectRef.current = connect
   useEffect(() => {
-    connect()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    connectRef.current()
   }, [])
 
   // Add play-page class to body
@@ -164,7 +165,7 @@ function PlayClientInner({ playerId, authHeaders, onSwitchPlayer }: {
     }
 
     fetchAllModules()
-  }, [state.authenticated, api, dispatch]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [state.authenticated, api, dispatch])
 
   // Reconnect overlay
   const showReconnecting = !state.connected && hasConnected.current && phase === 'playing' && !sessionReplaced

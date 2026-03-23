@@ -18,6 +18,8 @@ interface MiningModalProps {
 
 export function MiningModal({ onClose }: MiningModalProps) {
   const { state, sendCommand } = useGame()
+  const sendCommandRef = useRef(sendCommand)
+  sendCommandRef.current = sendCommand
   const [recentLog, setRecentLog] = useState<MineLogEntry[]>([])
   const [totals, setTotals] = useState<Record<string, { name: string; quantity: number }>>({}
   )
@@ -87,7 +89,7 @@ export function MiningModal({ onClose }: MiningModalProps) {
         setMineStartTime(Date.now())
 
         try {
-          const result = await sendCommand('mine')
+          const result = await sendCommandRef.current('mine')
 
           if (!result) {
             addLog('Mine failed — no response', 'error')
@@ -132,8 +134,7 @@ export function MiningModal({ onClose }: MiningModalProps) {
 
       setIsRunning(false)
     })()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [addYield, addLog])
 
   const [stopRequested, setStopRequested] = useState(false)
 
