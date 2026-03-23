@@ -74,6 +74,9 @@ export function MissionsPanel() {
   const { state, sendCommand } = useGame()
   const [activeTab, setActiveTab] = useState<TabId>('available')
 
+  // Completion modal
+  const [completionResult, setCompletionResult] = useState<Record<string, unknown> | null>(null)
+
   // Available missions state
   const [availableMissions, setAvailableMissions] = useState<Mission[]>([])
   const [availableLoaded, setAvailableLoaded] = useState(false)
@@ -174,7 +177,8 @@ export function MissionsPanel() {
   }, [sendCommand])
 
   const handleCompleteMission = useCallback(async (missionId: string) => {
-    await sendCommand('complete_mission', { mission_id: missionId })
+    const result = await sendCommand('complete_mission', { mission_id: missionId })
+    setCompletionResult(result)
     // Refresh active and completed missions
     const [activeResp, completedResp] = await Promise.all([
       sendCommand('get_active_missions'),
@@ -274,6 +278,7 @@ export function MissionsPanel() {
   ]
 
   return (
+    <>
     <PanelWithTabs
       title="Missions"
       icon={<Target size={16} />}
@@ -595,5 +600,59 @@ export function MissionsPanel() {
           </>
         )}
     </PanelWithTabs>
+      {/* Mission Completion Modal */}
+      {completionResult && (
+        <div className={styles.completionOverlay}>
+          <div className={styles.completionModal}>
+            <div className={styles.completionHeader}>
+              <Award size={20} className={styles.completionIcon} />
+              <span className={styles.completionTitle}>Mission Complete</span>
+            </div>
+            <div className={styles.completionMissionTitle}>
+              {completionResult.title as string}
+            </div>
+            {!!completionResult.message && (
+              <div className={styles.completionDialog}>
+                {completionResult.message as string}
+              </div>
+            )}
+            <div className={styles.completionRewards}>
+              <div className={styles.completionRewardsLabel}>Rewards</div>
+              {(completionResult.credits_earned as number) > 0 && (
+                <div className={styles.completionRewardRow}>
+                  <Credits amount={completionResult.credits_earned as number} />
+                </div>
+              )}
+              {!!completionResult.items_received && Object.keys(completionResult.items_received as Record<string, number>).length > 0 && (
+                <div className={styles.completionRewardRow}>
+                  {Object.entries(completionResult.items_received as Record<string, number>).map(([itemId, qty]) => (
+                    <span key={itemId}>{itemId.replace(/_/g, ' ')} x{qty}</span>
+                  ))}
+                </div>
+              )}
+              {!!completionResult.skill_xp_gained && Object.keys(completionResult.skill_xp_gained as Record<string, number>).length > 0 && (
+                <div className={styles.completionRewardRow}>
+                  {Object.entries(completionResult.skill_xp_gained as Record<string, number>).map(([skill, xp]) => (
+                    <span key={skill} className={styles.completionXp}>+{xp} {skill.replace(/_/g, ' ')} XP</span>
+                  ))}
+                </div>
+              )}
+            </div>
+            {!!completionResult.chain_next && (
+              <div className={styles.completionChain}>
+                A new mission is available...
+              </div>
+            )}
+            <button
+              className={styles.completionOk}
+              onClick={() => setCompletionResult(null)}
+              type="button"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
