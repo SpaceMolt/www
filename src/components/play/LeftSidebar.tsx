@@ -22,6 +22,7 @@ import { useGame } from './GameProvider'
 import { ProgressBar } from './ProgressBar'
 import { MiningModal } from './MiningModal'
 import type { GalaxyPanelHandle, MapSystemData, PlannedRoute } from './panels/GalaxyPanel'
+import { formatLabel } from './panels/facilities/FacilityCard'
 import styles from './LeftSidebar.module.css'
 
 // Intel query response types (not in generated types)
@@ -53,11 +54,6 @@ interface IntelQueryResult {
   count: number
   total: number
   intel_level: number
-}
-
-/** Convert snake_case to Title Case */
-function formatLabel(s: string): string {
-  return s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
 
 const EMPIRE_NAMES: Record<string, string> = {
@@ -118,14 +114,17 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
       setSelectedSystemIntel(null)
       return
     }
+    let cancelled = false
     sendCommand('faction_query_intel', { system_id: exploreSystem.id, limit: 1 }).then((result) => {
+      if (cancelled) return
       const r = result as unknown as IntelQueryResult | null
       if (r?.entries?.length) {
         setSelectedSystemIntel(r.entries[0])
       } else {
         setSelectedSystemIntel(null)
       }
-    }).catch(() => setSelectedSystemIntel(null))
+    }).catch(() => { if (!cancelled) setSelectedSystemIntel(null) })
+    return () => { cancelled = true }
   }, [exploreSystem, intelLevel, sendCommand])
 
   // Intel search: debounced query when search changes
@@ -167,13 +166,6 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
       if (intelDebounceRef.current) clearTimeout(intelDebounceRef.current)
     }
   }, [searchQuery, hasIntel, sendCommand, onHighlightedSystemsChange])
-
-  // Clear highlights when search is cleared or tab changes
-  useEffect(() => {
-    if (!searchQuery) {
-      onHighlightedSystemsChange?.(null)
-    }
-  }, [searchQuery, onHighlightedSystemsChange])
 
   const handleIntelResultSelect = useCallback((entry: IntelEntry) => {
     const systems = galaxyRef.current?.getSystems() ?? []
@@ -588,11 +580,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value)
-                if (e.target.value === '') {
-                  onExploreSystemChange(null)
-                  setIntelResults(null)
-                  onHighlightedSystemsChange?.(null)
-                }
+                if (e.target.value === '') onExploreSystemChange(null)
               }}
             />
           </div>
@@ -627,30 +615,33 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
                   <Database size={10} /> Searching intel…
                 </div>
               )}
-              {hasIntel && !intelSearching && intelResults && intelResults.length > 0 && (
-                <>
-                  <div className={styles.searchSectionLabel}>
-                    <Database size={10} /> Intel — {intelResults.length} system{intelResults.length !== 1 ? 's' : ''} with resource
-                  </div>
-                  {intelResults.map((entry) => (
-                    <button
-                      key={entry.system_id}
-                      className={styles.searchResultItem}
-                      onClick={() => handleIntelResultSelect(entry)}
-                    >
-                      <span className={styles.searchResultName}>{entry.name}</span>
-                      <span className={styles.searchResultIntelDetail}>
-                        {(entry.pois ?? [])
-                          .flatMap(p => p.resources ?? [])
-                          .filter(r => r.resource_id.toLowerCase().includes(searchQuery.trim().toLowerCase().replace(/\s+/g, '_')))
-                          .slice(0, 2)
-                          .map(r => `${formatLabel(r.resource_id)} ×${r.richness}`)
-                          .join(', ')}
-                      </span>
-                    </button>
-                  ))}
-                </>
-              )}
+              {hasIntel && !intelSearching && intelResults && intelResults.length > 0 && (() => {
+                const normalizedQuery = searchQuery.trim().toLowerCase().replace(/\s+/g, '_')
+                return (
+                  <>
+                    <div className={styles.searchSectionLabel}>
+                      <Database size={10} /> Intel — {intelResults.length} system{intelResults.length !== 1 ? 's' : ''} with resource
+                    </div>
+                    {intelResults.map((entry) => (
+                      <button
+                        key={entry.system_id}
+                        className={styles.searchResultItem}
+                        onClick={() => handleIntelResultSelect(entry)}
+                      >
+                        <span className={styles.searchResultName}>{entry.name}</span>
+                        <span className={styles.searchResultIntelDetail}>
+                          {(entry.pois ?? [])
+                            .flatMap(p => p.resources ?? [])
+                            .filter(r => r.resource_id.toLowerCase().includes(normalizedQuery))
+                            .slice(0, 2)
+                            .map(r => `${formatLabel(r.resource_id)} ×${r.richness}`)
+                            .join(', ')}
+                        </span>
+                      </button>
+                    ))}
+                  </>
+                )
+              })()}
 
               {searchResults.length === 0 && !intelSearching && (!intelResults || intelResults.length === 0) && (
                 <div className={styles.searchEmpty}>No results found</div>
