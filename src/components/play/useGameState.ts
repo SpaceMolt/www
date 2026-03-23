@@ -382,14 +382,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return { ...state, skillsData: action.payload }
 
     case 'STATUS_POLL': {
-      // Note: get_status returns TrimmedPlayer which omits docked_at_base.
-      // isDocked is set only by explicit dock/undock actions and initial login.
-      const { player, ship, modules } = action.payload
+      const { player, ship, modules, dockedAt } = action.payload
       return {
         ...state,
         player: player || state.player,
         ship: ship || state.ship,
         shipModules: modules || state.shipModules,
+        isDocked: dockedAt !== undefined ? !!dockedAt : state.isDocked,
       }
     }
 
