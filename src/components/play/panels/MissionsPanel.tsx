@@ -87,16 +87,6 @@ export function MissionsPanel() {
   // Expanded mission tracking
   const [expandedMissions, setExpandedMissions] = useState<Set<string>>(new Set())
 
-  // Auto-load available and active missions on mount
-  useEffect(() => {
-    if (!availableLoaded && !loadingAvailable) {
-      handleLoadAvailable()
-    }
-    if (!activeLoaded && !loadingActive) {
-      handleLoadActive()
-    }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
   const toggleExpanded = useCallback((id: string) => {
     setExpandedMissions((prev) => {
       const next = new Set(prev)
@@ -125,7 +115,11 @@ export function MissionsPanel() {
     setLoadingActive(true)
     try {
       const resp = await sendCommand('get_active_missions')
-      const missions = (resp.missions || []) as Mission[]
+      // v2 returns { missions: { active: [...], max_missions: N } }
+      const missionsData = resp.missions as Record<string, unknown> | unknown[] | undefined
+      const missions = Array.isArray(missionsData)
+        ? missionsData as Mission[]
+        : ((missionsData as Record<string, unknown>)?.active || []) as Mission[]
       setActiveMissions(missions)
       setActiveLoaded(true)
     } finally {
@@ -146,6 +140,16 @@ export function MissionsPanel() {
     }
   }, [sendCommand])
 
+  // Auto-load available and active missions on mount
+  useEffect(() => {
+    if (!availableLoaded && !loadingAvailable) {
+      handleLoadAvailable()
+    }
+    if (!activeLoaded && !loadingActive) {
+      handleLoadActive()
+    }
+  }, [availableLoaded, loadingAvailable, activeLoaded, loadingActive, handleLoadAvailable, handleLoadActive])
+
   const handleAcceptMission = useCallback(async (missionId: string) => {
     await sendCommand('accept_mission', { mission_id: missionId })
     // Refresh both available and active missions after accepting
@@ -154,14 +158,21 @@ export function MissionsPanel() {
       sendCommand('get_active_missions'),
     ])
     setAvailableMissions((availResp.missions || []) as Mission[])
-    setActiveMissions((activeResp.missions || []) as Mission[])
+    const activeMissionsData = activeResp.missions as Record<string, unknown> | unknown[] | undefined
+    const activeMissionsList = Array.isArray(activeMissionsData)
+      ? activeMissionsData as Mission[]
+      : ((activeMissionsData as Record<string, unknown>)?.active || []) as Mission[]
+    setActiveMissions(activeMissionsList)
   }, [sendCommand])
 
   const handleAbandonMission = useCallback(async (missionId: string) => {
     await sendCommand('abandon_mission', { mission_id: missionId })
     // Refresh active missions after abandoning
     const resp = await sendCommand('get_active_missions')
-    const missions = (resp.missions || []) as Mission[]
+    const missionsData = resp.missions as Record<string, unknown> | unknown[] | undefined
+    const missions = Array.isArray(missionsData)
+      ? missionsData as Mission[]
+      : ((missionsData as Record<string, unknown>)?.active || []) as Mission[]
     setActiveMissions(missions)
     setActiveLoaded(true)
   }, [sendCommand])

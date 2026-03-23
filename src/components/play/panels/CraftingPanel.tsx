@@ -52,15 +52,27 @@ export function CraftingPanel() {
   const [searchQuery, setSearchQuery] = useState('')
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set())
 
-  // Auto-load all recipes on mount (skills needed for craftability check)
   const recipesLoading = useRef(false)
+
+  const fetchAllRecipes = useCallback(async () => {
+    let page = 1
+    let totalPages = 1
+    while (page <= totalPages) {
+      const result = await sendCommand('catalog', { type: 'recipes', page_size: 50, page })
+      const r = result as Record<string, unknown>
+      totalPages = (r.total_pages as number) || 1
+      page++
+    }
+  }, [sendCommand])
+
+  // Auto-load all recipes on mount (skills needed for craftability check)
   useEffect(() => {
     if (!state.skillsData) sendCommand('get_skills')
     if (!state.recipesData && !recipesLoading.current) {
       recipesLoading.current = true
       fetchAllRecipes()
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [state.skillsData, state.recipesData, sendCommand, fetchAllRecipes])
 
   // Continue loading if we have partial data
   useEffect(() => {
@@ -71,23 +83,12 @@ export function CraftingPanel() {
     } else if (state.recipesData) {
       recipesLoading.current = false
     }
-  }, [state.recipesData]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  async function fetchAllRecipes() {
-    let page = 1
-    let totalPages = 1
-    while (page <= totalPages) {
-      const result = await sendCommand('catalog', { type: 'recipes', page_size: 50, page })
-      const r = result as Record<string, unknown>
-      totalPages = (r.total_pages as number) || 1
-      page++
-    }
-  }
+  }, [state.recipesData, sendCommand])
 
   const loadRecipes = useCallback(() => {
     recipesLoading.current = true
     fetchAllRecipes()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [fetchAllRecipes])
 
   const handleCraft = useCallback((recipeId: string) => {
     setCraftingId(recipeId)

@@ -60,7 +60,7 @@ export function MarketplaceView() {
       fetchListings()
       if (!fleet) sendCommand('list_ships')
     }
-  }, [isDocked]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isDocked, fetchListings, sendCommand, fleet])
 
   const handleBuy = useCallback((listingId: string) => {
     setBuying(true)

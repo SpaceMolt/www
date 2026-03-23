@@ -172,7 +172,8 @@ export interface SkillsData {
 
 // Enriched module instance from get_status response (top-level 'modules' field)
 export interface EnrichedShipModule {
-  id: string
+  id?: string         // v1 format
+  module_id?: string  // v2 format
   type_id: string
   name: string
   type: 'weapon' | 'defense' | 'mining' | 'utility'

@@ -130,8 +130,9 @@ export function ShipPanel() {
 
   const renderModuleSlot = (mod: EnrichedShipModule, idx: number) => {
     const wear = mod.wear ?? 0
+    const modInstanceId = mod.module_id || mod.id || ''
     return (
-      <div key={mod.id || `mod-${idx}`} className={styles.slotFilled}>
+      <div key={modInstanceId || `mod-${idx}`} className={styles.slotFilled}>
         <div className={styles.slotModInfo}>
           <span className={styles.slotModName}>{mod.name}</span>
           <div className={styles.slotModMeta}>
@@ -151,7 +152,7 @@ export function ShipPanel() {
           {isDocked && wear > 0 && (
             <button
               className={styles.repairModBtn}
-              onClick={() => handleRepairModule(mod.id)}
+              onClick={() => handleRepairModule(modInstanceId)}
               title="Repair module"
               type="button"
             >
@@ -161,7 +162,7 @@ export function ShipPanel() {
           {isDocked && (
             <button
               className={shared.dangerBtn}
-              onClick={() => handleUninstallModule(mod.id)}
+              onClick={() => handleUninstallModule(modInstanceId)}
               title="Uninstall to cargo"
               type="button"
             >

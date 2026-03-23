@@ -116,12 +116,13 @@ export function HUD() {
   }, [plannedRoute, state.ship, state.isDocked, autoTravel])
 
   // When auto-travel completes a jump, switch to system tab
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const completedJumps = autoTravel.progress?.completedJumps ?? 0
+  const travelPhase = autoTravel.progress?.phase
   useEffect(() => {
-    if (autoTravel.progress && autoTravel.progress.phase === 'jumping' && autoTravel.progress.completedJumps > 0) {
+    if (travelPhase === 'jumping' && completedJumps > 0) {
       setSidebarTab('current')
     }
-  }, [autoTravel.progress?.completedJumps])
+  }, [completedJumps, travelPhase])
 
   const handleSystemSelect = useCallback((system: MapSystemData) => {
     setExploreSystem(system)

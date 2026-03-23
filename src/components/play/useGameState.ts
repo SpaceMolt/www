@@ -211,6 +211,22 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (actionName === 'install_mod' || actionName === 'uninstall_mod') {
         return addEvent(state, 'info', p.message as string || 'Module updated')
       }
+      if (actionName === 'accept_mission') {
+        const title = p.title as string || 'mission'
+        const msg = p.message as string || `Mission accepted: ${title}`
+        return addEvent(state, 'info', msg)
+      }
+      if (actionName === 'complete_mission') {
+        const title = p.title as string || 'mission'
+        const msg = p.message as string || `Mission complete: ${title}`
+        return addEvent(state, 'info', msg)
+      }
+      if (actionName === 'decline_mission') {
+        return addEvent(state, 'info', p.message as string || 'Mission declined')
+      }
+      if (actionName === 'abandon_mission') {
+        return addEvent(state, 'info', p.message as string || 'Mission abandoned')
+      }
       if (actionName === 'self_destruct') {
         const fee = p.self_destruct_fee as number | undefined
         let msg = p.message as string || 'Ship self-destructed'

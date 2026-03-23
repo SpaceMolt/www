@@ -449,7 +449,11 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
           }
           break
         default:
-          // Everything else goes through the generic OK handler
+          // Inject action name for commands whose v2 response doesn't include one,
+          // so the reducer can identify the response type
+          if (!r.action) {
+            r.action = type
+          }
           d({ type: 'OK', payload: r })
           break
       }
