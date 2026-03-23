@@ -1,55 +1,88 @@
-name: Discord Notification
+name: Release Notification
 
 on:
-  push:
-    branches:
-      - main
+  pull_request:
+    types: [closed]
+    branches: [main]
 
 jobs:
   notify:
+    # Only run on merged PRs
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      - name: Extract release notes from PR body
+        id: notes
+        run: |
+          cat > /tmp/parse_notes.py << 'PYEOF'
+          import re, json, os
+
+          body = os.environ.get('PR_BODY', '')
+
+          # Extract content under "## User-Facing Changes" heading
+          match = re.search(
+              r'##\s*User-Facing Changes\s*\n(.*?)(?=\n##\s|\Z)',
+              body,
+              re.DOTALL | re.IGNORECASE
+          )
+
+          notes = []
+          if match:
+              text = match.group(1)
+              # Remove HTML comments (template placeholders)
+              text = re.sub(r'<!--.*?-->', '', text, flags=re.DOTALL).strip()
+              if text:
+                  for line in text.split('\n'):
+                      line = re.sub(r'^[-*•]\s*', '', line.strip()).strip()
+                      if line:
+                          notes.append(line)
+
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write(f'NOTES_JSON={json.dumps(notes)}\n')
+              f.write(f'HAS_NOTES={"true" if notes else "false"}\n')
+          PYEOF
+
+          python3 /tmp/parse_notes.py
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
 
       - name: Send Discord notification
         run: |
-          # Get commit info
-          COMMIT_MSG=$(git log -1 --pretty=format:"%s")
-          COMMIT_AUTHOR=$(git log -1 --pretty=format:"%an")
-          COMMIT_SHA=$(git rev-parse --short HEAD)
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          PR_URL="${{ github.event.pull_request.html_url }}"
+          HAS_NOTES="${{ steps.notes.outputs.HAS_NOTES }}"
+          NOTES_JSON='${{ steps.notes.outputs.NOTES_JSON }}'
 
-          # Get list of changed files
-          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | head -5 | tr '\n' ', ' | sed 's/,$//')
-          if [ -z "$CHANGED_FILES" ]; then
-            CHANGED_FILES="Initial commit"
+          if [ "$HAS_NOTES" = "true" ]; then
+            # Format notes as bullet points
+            NOTES_TEXT=$(echo "$NOTES_JSON" | python3 -c "
+          import sys, json
+          notes = json.load(sys.stdin)
+          print('\n'.join(f'• {n}' for n in notes))
+          ")
+            DESCRIPTION="**[PR #${PR_NUMBER}: ${PR_TITLE}](${PR_URL})**
+
+          ${NOTES_TEXT}"
+            COLOR=2067276  # green
+          else
+            DESCRIPTION="Internal change: [${PR_TITLE}](${PR_URL})"
+            COLOR=8421504  # gray
           fi
 
-          # Build Discord webhook payload
           PAYLOAD=$(jq -n \
-            --arg title "Website Updated" \
-            --arg desc "$COMMIT_MSG" \
-            --arg author "$COMMIT_AUTHOR" \
-            --arg sha "$COMMIT_SHA" \
-            --arg files "$CHANGED_FILES" \
-            --arg url "https://github.com/SpaceMolt/www/commit/$COMMIT_SHA" \
+            --arg desc "$DESCRIPTION" \
+            --argjson color "$COLOR" \
             '{
               "embeds": [{
-                "title": $title,
+                "title": "Website Updated",
                 "description": $desc,
-                "url": $url,
-                "color": 2067276,
-                "fields": [
-                  { "name": "Commit", "value": $sha, "inline": true },
-                  { "name": "Files Changed", "value": $files, "inline": false }
-                ],
+                "color": $color,
                 "footer": { "text": "spacemolt.com" }
               }]
             }')
 
-          # Send to Discord
-          curl -H "Content-Type: application/json" \
+          curl -s -H "Content-Type: application/json" \
             -d "$PAYLOAD" \
             "${{ secrets.DISCORD_WEBHOOK_URL }}"

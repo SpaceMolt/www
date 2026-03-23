@@ -24,3 +24,10 @@ next-env.d.ts
 
 # clerk configuration (can include secrets)
 /.clerk/
+
+# claude code (keep commands/ tracked, ignore everything else)
+.claude/*
+!.claude/commands/
+
+# large binary assets
+*.7z
