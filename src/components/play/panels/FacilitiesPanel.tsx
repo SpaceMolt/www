@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect, useMemo } from 'react'
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import {
   Building2,
   Warehouse,
@@ -26,6 +26,7 @@ export function FacilitiesPanel() {
   const [activeTab, setActiveTab] = useState<TabId>('station')
   const [facilityData, setFacilityData] = useState<FacilityListResponse | null>(null)
   const [loading, setLoading] = useState(false)
+  const fetchAttempted = useRef(false)
 
   const tabs = useMemo(() => [
     { id: 'station', label: 'Station', icon: <Warehouse size={13} /> },
@@ -48,15 +49,16 @@ export function FacilitiesPanel() {
   useEffect(() => {
     if (!isDocked) {
       setFacilityData(null)
+      fetchAttempted.current = false
     }
   }, [isDocked])
 
-  // Auto-fetch when docked and data is null
   useEffect(() => {
-    if (isDocked && !facilityData && !loading) {
+    if (isDocked && !facilityData && !fetchAttempted.current) {
+      fetchAttempted.current = true
       refreshFacilities()
     }
-  }, [isDocked, facilityData, loading, refreshFacilities])
+  }, [isDocked, facilityData, refreshFacilities])
 
   if (!isDocked) {
     return (

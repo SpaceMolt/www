@@ -351,6 +351,7 @@ export function BuildView({ onRefresh }: BuildViewProps) {
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage <= 1}
                 type="button"
+                aria-label="Previous page"
               >
                 <ChevronLeft size={12} />
               </button>
@@ -360,6 +361,7 @@ export function BuildView({ onRefresh }: BuildViewProps) {
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage >= filteredData.total_pages}
                 type="button"
+                aria-label="Next page"
               >
                 <ChevronRight size={12} />
               </button>
