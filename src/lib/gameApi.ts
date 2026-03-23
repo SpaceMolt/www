@@ -249,6 +249,20 @@ const COMMAND_MAP: Record<string, V2Route> = {
 
   // facility
   facility: { tool: 'spacemolt_facility', action: 'list' }, // action-dispatched; caller provides action
+  facility_list: { tool: 'spacemolt_facility', action: 'list' },
+  facility_types: { tool: 'spacemolt_facility', action: 'types' },
+  facility_build: { tool: 'spacemolt_facility', action: 'build' },
+  facility_personal_build: { tool: 'spacemolt_facility', action: 'personal_build' },
+  facility_faction_build: { tool: 'spacemolt_facility', action: 'faction_build' },
+  facility_toggle: { tool: 'spacemolt_facility', action: 'toggle' },
+  facility_faction_toggle: { tool: 'spacemolt_facility', action: 'faction_toggle' },
+  facility_upgrade: { tool: 'spacemolt_facility', action: 'upgrade' },
+  facility_faction_upgrade: { tool: 'spacemolt_facility', action: 'faction_upgrade' },
+  facility_upgrades: { tool: 'spacemolt_facility', action: 'upgrades' },
+  facility_transfer: { tool: 'spacemolt_facility', action: 'transfer' },
+  facility_personal_decorate: { tool: 'spacemolt_facility', action: 'personal_decorate' },
+  facility_personal_visit: { tool: 'spacemolt_facility', action: 'personal_visit' },
+  facility_faction_list: { tool: 'spacemolt_facility', action: 'faction_list' },
 
   // base
   build_base: { tool: 'spacemolt', action: 'help' }, // hidden
@@ -275,6 +289,11 @@ export const MUTATION_COMMANDS = new Set([
   'send_gift', 'set_home_base', 'supply_commission', 'survey_system',
   'switch_ship', 'tow_wreck', 'trade_accept', 'trade_offer', 'travel',
   'undock', 'uninstall_mod', 'use_item', 'withdraw_items',
+  // Facility mutations
+  'facility_build', 'facility_personal_build', 'facility_faction_build',
+  'facility_toggle', 'facility_faction_toggle',
+  'facility_upgrade', 'facility_faction_upgrade',
+  'facility_transfer', 'facility_personal_decorate',
 ])
 
 // ---------------------------------------------------------------------------

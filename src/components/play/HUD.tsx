@@ -22,6 +22,7 @@ import { MissionsPanel } from './panels/MissionsPanel'
 import { InfoPanel } from './panels/InfoPanel'
 import { SkillsPanel } from './panels/SkillsPanel'
 import { SettingsPanel } from './panels/SettingsPanel'
+import { FacilitiesPanel } from './panels/FacilitiesPanel'
 import { useAutoTravel, type AutoTravelProgress } from './useAutoTravel'
 import styles from './HUD.module.css'
 
@@ -33,6 +34,7 @@ const PANELS: Record<string, React.ComponentType> = {
   shipyard: ShipyardPanel,
   crafting: CraftingPanel,
   skills: SkillsPanel,
+  facilities: FacilitiesPanel,
   faction: FactionPanel,
   missions: MissionsPanel,
   info: InfoPanel,

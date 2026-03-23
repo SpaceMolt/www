@@ -1,0 +1,358 @@
+/* Facility Card */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.5rem;
+  background: rgba(61, 90, 108, 0.06);
+  border: 1px solid rgba(61, 90, 108, 0.15);
+  border-radius: 4px;
+  transition: border-color 0.15s ease;
+}
+
+.card:hover {
+  border-color: rgba(61, 90, 108, 0.3);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 1.4rem;
+}
+
+.statusDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.statusActive {
+  background: var(--bio-green);
+  box-shadow: 0 0 4px rgba(45, 212, 191, 0.5);
+}
+
+.statusInactive {
+  background: var(--claw-red);
+  box-shadow: 0 0 4px rgba(230, 57, 70, 0.4);
+}
+
+.cardName {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--chrome-silver);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cardDescription {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  color: var(--hull-grey);
+  line-height: 1.4;
+}
+
+.cardMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.6rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  color: var(--hull-grey);
+}
+
+.metaItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.maintenanceWarning {
+  color: var(--warning-yellow);
+  font-weight: 600;
+}
+
+.cardActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.15rem;
+}
+
+/* Section grouping */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--hull-grey);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-bottom: 0.2rem;
+  border-bottom: 1px solid rgba(61, 90, 108, 0.15);
+}
+
+.collapsibleHeader {
+  composes: sectionHeader;
+  cursor: pointer;
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(61, 90, 108, 0.15);
+  width: 100%;
+  text-align: left;
+  padding: 0 0 0.2rem 0;
+}
+
+.sectionCount {
+  font-weight: 400;
+  opacity: 0.7;
+}
+
+/* Category filter bar (BuildView) */
+.filterBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  padding: 0.4rem;
+}
+
+.filterBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid rgba(61, 90, 108, 0.2);
+  border-radius: 3px;
+  background: none;
+  color: var(--hull-grey);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.filterBtn:hover {
+  border-color: var(--shell-orange);
+  color: var(--shell-orange);
+}
+
+.filterBtnActive {
+  border-color: var(--shell-orange);
+  color: var(--shell-orange);
+  background: rgba(255, 107, 53, 0.1);
+}
+
+.filterCount {
+  opacity: 0.6;
+  font-size: 0.52rem;
+}
+
+/* Build type card (expanded detail) */
+.typeDetail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.5rem;
+  background: rgba(61, 90, 108, 0.04);
+  border: 1px solid rgba(61, 90, 108, 0.15);
+  border-radius: 4px;
+}
+
+.typeHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  width: 100%;
+  text-align: left;
+  color: inherit;
+}
+
+.typeName {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--chrome-silver);
+  flex: 1;
+}
+
+.typeCost {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--shell-orange);
+  white-space: nowrap;
+}
+
+.typeLevel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  color: var(--hull-grey);
+  opacity: 0.7;
+}
+
+.costBreakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.3rem;
+  background: rgba(61, 90, 108, 0.06);
+  border-radius: 3px;
+}
+
+.costRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  color: var(--hull-grey);
+}
+
+.costLabel {
+  opacity: 0.8;
+}
+
+.costValue {
+  color: var(--chrome-silver);
+  font-weight: 600;
+}
+
+.recipeBox {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.3rem;
+  background: rgba(255, 107, 53, 0.04);
+  border: 1px solid rgba(255, 107, 53, 0.15);
+  border-radius: 3px;
+}
+
+.recipeLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--shell-orange);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.recipeFlow {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  color: var(--hull-grey);
+  flex-wrap: wrap;
+}
+
+.recipeArrow {
+  color: var(--shell-orange);
+  font-weight: 700;
+}
+
+.upgradeChain {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  color: var(--hull-grey);
+}
+
+.upgradeChainCurrent {
+  font-weight: 600;
+}
+
+.upgradeArrow {
+  color: var(--bio-green);
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.4rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  color: var(--hull-grey);
+}
+
+.pageBtn {
+  composes: filterBtn;
+  min-width: 1.5rem;
+  justify-content: center;
+}
+
+.pageBtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Search input */
+.searchRow {
+  display: flex;
+  gap: 0.3rem;
+  padding: 0 0.4rem;
+}
+
+.searchInputWrap {
+  position: relative;
+  flex: 1;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 0.4rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--hull-grey);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.searchInput {
+  padding-left: 1.5rem;
+  width: 100%;
+}
+
+/* Decorate modal fields */
+.decorateFields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.decorateField label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--hull-grey);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .cardHeader { flex-wrap: wrap; }
+  .filterBar { gap: 0.2rem; }
+  .recipeFlow { font-size: 0.55rem; }
+}
