@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect, type RefObject } from 'react'
+import { useState, useCallback, useEffect, useRef, type RefObject } from 'react'
 import {
   MapPin,
   Globe,
@@ -15,12 +15,46 @@ import {
   Wrench,
   Search,
   Compass,
+  Database,
+  Gem,
 } from 'lucide-react'
 import { useGame } from './GameProvider'
 import { ProgressBar } from './ProgressBar'
 import { MiningModal } from './MiningModal'
 import type { GalaxyPanelHandle, MapSystemData, PlannedRoute } from './panels/GalaxyPanel'
+import { formatLabel } from './panels/facilities/FacilityCard'
 import styles from './LeftSidebar.module.css'
+
+// Intel query response types (not in generated types)
+interface IntelPoi {
+  id: string
+  type: string
+  name: string
+  class?: string
+  base_id?: string
+  base_name?: string
+  resources?: { resource_id: string; richness: number; remaining: number }[]
+}
+
+interface IntelEntry {
+  system_id: string
+  name: string
+  empire?: string
+  police_level: number
+  connections?: string[]
+  pois?: IntelPoi[]
+  submitted_by: string
+  submitter_name: string
+  submitted_at_tick: number
+  auto_synced?: boolean
+}
+
+interface IntelQueryResult {
+  entries: IntelEntry[]
+  count: number
+  total: number
+  intel_level: number
+}
 
 const EMPIRE_NAMES: Record<string, string> = {
   solarian: 'Solarian Confederacy',
@@ -41,18 +75,110 @@ interface LeftSidebarProps {
   activeTab: SidebarTab
   onTabChange: (tab: SidebarTab) => void
   autoTravelActive: boolean
+  onHighlightedSystemsChange?: (systems: Set<string> | null) => void
 }
 
-export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, plannedRoute, onPlannedRouteChange, activeTab, onTabChange, autoTravelActive }: LeftSidebarProps) {
+export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, plannedRoute, onPlannedRouteChange, activeTab, onTabChange, autoTravelActive, onHighlightedSystemsChange }: LeftSidebarProps) {
   const { state, sendCommand } = useGame()
   const [expandedPoi, setExpandedPoi] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [showMiningModal, setShowMiningModal] = useState(false)
 
+  // Intel state
+  const [intelLevel, setIntelLevel] = useState<number>(0)
+  const [intelResults, setIntelResults] = useState<IntelEntry[] | null>(null)
+  const [intelSearching, setIntelSearching] = useState(false)
+  const [selectedSystemIntel, setSelectedSystemIntel] = useState<IntelEntry | null>(null)
+  const intelDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const intelStatusFetched = useRef(false)
+
   // Switch to Explore tab when a system is selected from the map
   useEffect(() => {
     if (exploreSystem) onTabChange('explore')
   }, [exploreSystem, onTabChange])
+
+  // Fetch intel status on mount to determine intel level
+  useEffect(() => {
+    if (intelStatusFetched.current || !state.player?.faction_id) return
+    intelStatusFetched.current = true
+    sendCommand('faction_intel_status').then((result) => {
+      if (result && typeof result.intel_level === 'number') {
+        setIntelLevel(result.intel_level)
+      }
+    }).catch(() => {})
+  }, [state.player?.faction_id, sendCommand])
+
+  // Fetch intel for selected system
+  useEffect(() => {
+    if (!exploreSystem || intelLevel < 2) {
+      setSelectedSystemIntel(null)
+      return
+    }
+    let cancelled = false
+    sendCommand('faction_query_intel', { system_id: exploreSystem.id, limit: 1 }).then((result) => {
+      if (cancelled) return
+      const r = result as unknown as IntelQueryResult | null
+      if (r?.entries?.length) {
+        setSelectedSystemIntel(r.entries[0])
+      } else {
+        setSelectedSystemIntel(null)
+      }
+    }).catch(() => { if (!cancelled) setSelectedSystemIntel(null) })
+    return () => { cancelled = true }
+  }, [exploreSystem, intelLevel, sendCommand])
+
+  // Intel search: debounced query when search changes
+  const hasIntel = intelLevel >= 2
+  useEffect(() => {
+    if (intelDebounceRef.current) clearTimeout(intelDebounceRef.current)
+
+    if (!hasIntel || !searchQuery.trim()) {
+      setIntelResults(null)
+      setIntelSearching(false)
+      onHighlightedSystemsChange?.(null)
+      return
+    }
+
+    setIntelSearching(true)
+    const query = searchQuery.trim()
+    const resourceId = query.toLowerCase().replace(/\s+/g, '_')
+
+    intelDebounceRef.current = setTimeout(() => {
+      // Query intel by resource_type
+      sendCommand('faction_query_intel', { resource_type: resourceId, limit: 100 }).then((result) => {
+        const r = result as unknown as IntelQueryResult | null
+        if (r?.entries?.length) {
+          setIntelResults(r.entries)
+          onHighlightedSystemsChange?.(new Set(r.entries.map(e => e.system_id)))
+        } else {
+          setIntelResults(null)
+          onHighlightedSystemsChange?.(null)
+        }
+        setIntelSearching(false)
+      }).catch(() => {
+        setIntelResults(null)
+        setIntelSearching(false)
+        onHighlightedSystemsChange?.(null)
+      })
+    }, 400)
+
+    return () => {
+      if (intelDebounceRef.current) clearTimeout(intelDebounceRef.current)
+    }
+  }, [searchQuery, hasIntel, sendCommand, onHighlightedSystemsChange])
+
+  const handleIntelResultSelect = useCallback((entry: IntelEntry) => {
+    const systems = galaxyRef.current?.getSystems() ?? []
+    const mapSys = systems.find(s => s.id === entry.system_id)
+    if (mapSys) {
+      onExploreSystemChange(mapSys)
+      setSearchQuery('')
+      setIntelResults(null)
+      onHighlightedSystemsChange?.(null)
+      onTabChange('explore')
+      galaxyRef.current?.panToSystem(mapSys.id)
+    }
+  }, [galaxyRef, onExploreSystemChange, onTabChange, onHighlightedSystemsChange])
 
   const system = state.system
   const poi = state.poi
@@ -450,7 +576,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
             <input
               type="text"
               className={styles.searchInput}
-              placeholder="Search systems…"
+              placeholder={hasIntel ? 'Search systems or resources…' : 'Search systems…'}
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value)
@@ -462,23 +588,63 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
           {/* Search Results */}
           {searchQuery && (
             <div className={styles.searchResults}>
-              {searchResults.length > 0 ? (
-                searchResults.map((sys) => (
-                  <button
-                    key={sys.id}
-                    className={styles.searchResultItem}
-                    onClick={() => handleSearchSelect(sys)}
-                  >
-                    <span className={styles.searchResultName}>{sys.name}</span>
-                    {sys.empire && (
-                      <span className={styles.searchResultEmpire}>
-                        {EMPIRE_NAMES[sys.empire] || sys.empire}
-                      </span>
-                    )}
-                  </button>
-                ))
-              ) : (
-                <div className={styles.searchEmpty}>No systems found</div>
+              {/* System name matches */}
+              {searchResults.length > 0 && (
+                <>
+                  {hasIntel && <div className={styles.searchSectionLabel}>Systems</div>}
+                  {searchResults.map((sys) => (
+                    <button
+                      key={sys.id}
+                      className={styles.searchResultItem}
+                      onClick={() => handleSearchSelect(sys)}
+                    >
+                      <span className={styles.searchResultName}>{sys.name}</span>
+                      {sys.empire && (
+                        <span className={styles.searchResultEmpire}>
+                          {EMPIRE_NAMES[sys.empire] || sys.empire}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </>
+              )}
+
+              {/* Intel resource matches */}
+              {hasIntel && intelSearching && (
+                <div className={styles.searchSectionLabel}>
+                  <Database size={10} /> Searching intel…
+                </div>
+              )}
+              {hasIntel && !intelSearching && intelResults && intelResults.length > 0 && (() => {
+                const normalizedQuery = searchQuery.trim().toLowerCase().replace(/\s+/g, '_')
+                return (
+                  <>
+                    <div className={styles.searchSectionLabel}>
+                      <Database size={10} /> Intel — {intelResults.length} system{intelResults.length !== 1 ? 's' : ''} with resource
+                    </div>
+                    {intelResults.map((entry) => (
+                      <button
+                        key={entry.system_id}
+                        className={styles.searchResultItem}
+                        onClick={() => handleIntelResultSelect(entry)}
+                      >
+                        <span className={styles.searchResultName}>{entry.name}</span>
+                        <span className={styles.searchResultIntelDetail}>
+                          {(entry.pois ?? [])
+                            .flatMap(p => p.resources ?? [])
+                            .filter(r => r.resource_id.toLowerCase().includes(normalizedQuery))
+                            .slice(0, 2)
+                            .map(r => `${formatLabel(r.resource_id)} ×${r.richness}`)
+                            .join(', ')}
+                        </span>
+                      </button>
+                    ))}
+                  </>
+                )
+              })()}
+
+              {searchResults.length === 0 && !intelSearching && (!intelResults || intelResults.length === 0) && (
+                <div className={styles.searchEmpty}>No results found</div>
               )}
             </div>
           )}
@@ -516,6 +682,60 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
               <Navigation size={13} />
               <span>Plot a Course</span>
             </button>
+
+            {/* Intel detail for selected system */}
+            {selectedSystemIntel && (
+              <div className={styles.intelSection}>
+                <div className={styles.sectionLabel}>
+                  <Database size={10} /> Faction Intel
+                </div>
+                <div className={styles.intelMeta}>
+                  <span className={styles.metaTag}>Sec {selectedSystemIntel.police_level}</span>
+                  {selectedSystemIntel.empire && (
+                    <span className={styles.metaTag}>{selectedSystemIntel.empire}</span>
+                  )}
+                  <span className={styles.intelSubmitter}>
+                    by {selectedSystemIntel.submitter_name}
+                  </span>
+                </div>
+
+                {(selectedSystemIntel.pois ?? []).length > 0 && (
+                  <div className={styles.intelPoiList}>
+                    {(selectedSystemIntel.pois ?? []).map((p) => (
+                      <div key={p.id} className={styles.intelPoiItem}>
+                        <div className={styles.intelPoiHeader}>
+                          <MapPin size={10} />
+                          <span className={styles.intelPoiName}>{p.name}</span>
+                          <span className={styles.intelPoiType}>
+                            {p.type}{p.class ? ` · ${p.class}` : ''}
+                          </span>
+                        </div>
+                        {p.base_name && (
+                          <div className={styles.intelPoiStation}>
+                            <Anchor size={9} /> {p.base_name}
+                          </div>
+                        )}
+                        {p.resources && p.resources.length > 0 && (
+                          <div className={styles.intelResourceList}>
+                            {p.resources.map((r) => (
+                              <div key={r.resource_id} className={styles.intelResourceItem}>
+                                <Gem size={9} className={styles.intelResourceIcon} />
+                                <span className={styles.intelResourceName}>{formatLabel(r.resource_id)}</span>
+                                <span className={styles.intelResourceRichness}>×{r.richness}</span>
+                                <span className={styles.intelResourceRemaining}>
+                                  {r.remaining < 0 ? '∞' : r.remaining === 0 ? 'depleted' : r.remaining.toLocaleString()}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className={styles.systemDetailConnections}>
               <div className={styles.sectionLabel}>Connections</div>
               {exploreSystem.connections.length > 0 ? (
@@ -552,7 +772,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
         {!exploreSystem && !searchQuery && (
           <div className={styles.exploreEmpty}>
             <Search size={24} className={styles.exploreEmptyIcon} />
-            <div>Search for a system to view its details</div>
+            <div>{hasIntel ? 'Search for systems or resources' : 'Search for a system to view its details'}</div>
           </div>
         )}
       </div>

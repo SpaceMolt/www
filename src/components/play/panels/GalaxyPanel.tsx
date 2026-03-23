@@ -151,9 +151,10 @@ interface GalaxyPanelProps {
   plannedRoute?: PlannedRoute | null
   onPlannedRouteChange?: (route: PlannedRoute | null) => void
   autoTravelProgress?: AutoTravelProgress | null
+  highlightedSystems?: Set<string> | null
 }
 
-export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(function GalaxyPanel({ onSystemSelect, plannedRoute, onPlannedRouteChange, autoTravelProgress }, ref) {
+export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(function GalaxyPanel({ onSystemSelect, plannedRoute, onPlannedRouteChange, autoTravelProgress, highlightedSystems }, ref) {
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const tooltipRef = useRef<HTMLDivElement>(null)
@@ -195,6 +196,9 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
   if (stateRef.current.draggingWaypointIdx < 0) {
     plannedRouteRef.current = plannedRoute ?? null
   }
+
+  const highlightedSystemsRef = useRef<Set<string> | null>(null)
+  highlightedSystemsRef.current = highlightedSystems ?? null
 
   const onPlannedRouteChangeRef = useRef(onPlannedRouteChange)
   onPlannedRouteChangeRef.current = onPlannedRouteChange
@@ -512,6 +516,8 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
       drawGrid(ctx)
 
       // Draw connections
+      const hl = highlightedSystemsRef.current
+      const hasDimming = hl != null && hl.size > 0
       const drawnConnections = new Set<string>()
       for (const system of s.mapData.systems) {
         const pos1 = worldToScreen(system.x, system.y)
@@ -526,7 +532,11 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
           if (!connSystem) continue
 
           const pos2 = worldToScreen(connSystem.x, connSystem.y)
-          ctx.strokeStyle = LINE_COLOR
+          if (hasDimming && !hl.has(system.id) && !hl.has(connId)) {
+            ctx.strokeStyle = 'rgba(140, 170, 200, 0.12)'
+          } else {
+            ctx.strokeStyle = LINE_COLOR
+          }
           ctx.lineWidth = 1.5
           ctx.beginPath()
           ctx.moveTo(pos1.x, pos1.y)
@@ -551,6 +561,25 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
           s.hoveredSystem && s.hoveredSystem.id === system.id
         const isHomeSystem = system.is_home === true
         const isStronghold = system.is_stronghold === true
+        const isDimmed = hasDimming && !hl.has(system.id)
+        const isHighlighted = hasDimming && hl.has(system.id)
+
+        // Dim non-matching systems when search is active
+        if (isDimmed && !isHovered) {
+          ctx.globalAlpha = 0.15
+        }
+
+        // Highlight glow for matching systems
+        if (isHighlighted && !isHovered) {
+          const gradient = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, nr * 5)
+          gradient.addColorStop(0, 'rgba(255, 170, 50, 0.35)')
+          gradient.addColorStop(0.6, 'rgba(255, 170, 50, 0.08)')
+          gradient.addColorStop(1, 'rgba(255, 170, 50, 0)')
+          ctx.fillStyle = gradient
+          ctx.beginPath()
+          ctx.arc(pos.x, pos.y, nr * 5, 0, Math.PI * 2)
+          ctx.fill()
+        }
 
         // Hover glow
         if (isHovered) {
@@ -701,7 +730,7 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
         // System name label — hide when tooltip is showing (system has extra info)
         const hasExtraInfo = !!(system.empire || system.is_home || system.has_station || system.is_stronghold)
         const tooltipShowing = isHovered && hasExtraInfo
-        if ((s.zoom > 0.15 || isHovered) && !tooltipShowing) {
+        if ((s.zoom > 0.15 || isHovered || isHighlighted) && !tooltipShowing) {
           ctx.font = isHovered
             ? 'bold 14px "Space Grotesk", sans-serif'
             : '13px "Space Grotesk", sans-serif'
@@ -712,6 +741,11 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
             : 'rgba(168, 197, 214, 0.9)'
           const labelY = pos.y + nr + 8
           ctx.fillText(system.name, pos.x, labelY)
+        }
+
+        // Reset alpha after dimmed system
+        if (isDimmed && !isHovered) {
+          ctx.globalAlpha = 1
         }
       }
 

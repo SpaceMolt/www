@@ -560,6 +560,148 @@
   cursor: not-allowed;
 }
 
+/* --- Intel Section (in system detail) --- */
+.intelSection {
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(61, 90, 108, 0.2);
+}
+
+.intelSection .sectionLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--shell-orange, #f59e0b);
+}
+
+.intelMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  align-items: center;
+  margin-bottom: 0.4rem;
+}
+
+.intelSubmitter {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.5rem;
+  color: var(--hull-grey);
+  font-style: italic;
+}
+
+.intelPoiList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.intelPoiItem {
+  padding: 0.3rem 0.4rem;
+  background: rgba(61, 90, 108, 0.08);
+  border-radius: 3px;
+  border-left: 2px solid rgba(245, 158, 11, 0.3);
+}
+
+.intelPoiHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--star-white);
+}
+
+.intelPoiName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.intelPoiType {
+  font-size: 0.5rem;
+  color: var(--hull-grey);
+  flex-shrink: 0;
+}
+
+.intelPoiStation {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.5rem;
+  color: var(--plasma-cyan);
+  margin-top: 0.15rem;
+  padding-left: 0.2rem;
+}
+
+.intelResourceList {
+  margin-top: 0.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.intelResourceItem {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.5rem;
+  padding: 0.1rem 0.2rem 0.1rem 0.2rem;
+}
+
+.intelResourceIcon {
+  color: var(--shell-orange, #f59e0b);
+  flex-shrink: 0;
+}
+
+.intelResourceName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--star-white);
+}
+
+.intelResourceRichness {
+  color: var(--plasma-cyan);
+  flex-shrink: 0;
+}
+
+.intelResourceRemaining {
+  color: var(--hull-grey);
+  flex-shrink: 0;
+  min-width: 3rem;
+  text-align: right;
+}
+
+/* --- Search section labels --- */
+.searchSectionLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--hull-grey);
+  padding: 0.4rem 0.5rem 0.15rem;
+}
+
+.searchResultIntelDetail {
+  font-size: 0.5rem;
+  color: var(--shell-orange, #f59e0b);
+  margin-left: 0.4rem;
+  flex-shrink: 0;
+  max-width: 50%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .systemDetailConnections {
   margin-top: 0.4rem;
 }
