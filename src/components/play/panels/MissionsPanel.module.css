@@ -157,6 +157,31 @@
   box-shadow: 0 0 12px rgba(230, 57, 70, 0.25);
 }
 
+.completeBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(0, 200, 83, 0.1);
+  border: 1px solid var(--energy-green);
+  border-radius: 4px;
+  color: var(--energy-green);
+  cursor: pointer;
+  padding: 0.3rem 0.6rem;
+  margin-top: 0.35rem;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.completeBtn:hover {
+  background: rgba(0, 200, 83, 0.2);
+  box-shadow: 0 0 12px rgba(0, 200, 83, 0.25);
+}
+
 /* Mission status badge */
 .missionStatusBadge {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
@@ -174,6 +199,12 @@
   color: var(--plasma-cyan);
   background: rgba(0, 212, 255, 0.08);
   border: 1px solid rgba(0, 212, 255, 0.15);
+}
+
+.missionStatusBadge[data-status='completable'] {
+  color: var(--energy-green);
+  background: rgba(0, 200, 83, 0.12);
+  border: 1px solid rgba(0, 200, 83, 0.3);
 }
 
 .missionStatusBadge[data-status='completed'] {

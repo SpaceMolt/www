@@ -165,6 +165,21 @@ export function MissionsPanel() {
     setActiveMissions(activeMissionsList)
   }, [sendCommand])
 
+  const handleCompleteMission = useCallback(async (missionId: string) => {
+    await sendCommand('complete_mission', { mission_id: missionId })
+    // Refresh active and completed missions
+    const [activeResp, completedResp] = await Promise.all([
+      sendCommand('get_active_missions'),
+      sendCommand('completed_missions'),
+    ])
+    const activeMissionsData = activeResp.missions as Record<string, unknown> | unknown[] | undefined
+    setActiveMissions(Array.isArray(activeMissionsData)
+      ? activeMissionsData as Mission[]
+      : ((activeMissionsData as Record<string, unknown>)?.active || []) as Mission[])
+    setCompletedMissions((completedResp.missions || []) as CompletedMission[])
+    setCompletedMissionsTotal((completedResp.total as number) || 0)
+  }, [sendCommand])
+
   const handleAbandonMission = useCallback(async (missionId: string) => {
     await sendCommand('abandon_mission', { mission_id: missionId })
     // Refresh active missions after abandoning
@@ -327,6 +342,9 @@ export function MissionsPanel() {
               <div className={styles.missionList}>
                 {activeMissions.map((m) => {
                   const isExpanded = expandedMissions.has(m.mission_id)
+                  const isCompletable = (m as Record<string, unknown>).percent_complete !== undefined
+                    ? ((m as Record<string, unknown>).percent_complete as number) >= 100
+                    : m.objectives?.every((obj) => (obj as ActiveMissionObjective).completed)
                   return (
                     <div key={m.mission_id} className={styles.missionItem}>
                       <div
@@ -338,7 +356,9 @@ export function MissionsPanel() {
                           {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                           <span className={styles.missionTitle}>{m.title}</span>
                         </div>
-                        <span className={styles.missionStatusBadge} data-status="active">Active</span>
+                        <span className={styles.missionStatusBadge} data-status={isCompletable ? 'completable' : 'active'}>
+                          {isCompletable ? 'Ready' : 'Active'}
+                        </span>
                       </div>
                       <div className={styles.missionDesc}>{m.description}</div>
                       <div className={styles.missionDifficulty}>{m.difficulty}</div>
@@ -347,6 +367,16 @@ export function MissionsPanel() {
                         <div className={styles.objectiveList}>
                           {m.objectives.map((obj, i) => renderObjective(obj as ActiveMissionObjective, i, true))}
                         </div>
+                      )}
+                      {isCompletable && (
+                        <button
+                          className={styles.completeBtn}
+                          onClick={() => handleCompleteMission(m.mission_id)}
+                          type="button"
+                        >
+                          <Check size={12} />
+                          Complete Mission
+                        </button>
                       )}
                       {isExpanded && (
                         <button
