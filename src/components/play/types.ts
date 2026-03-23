@@ -387,7 +387,7 @@ export type GameAction =
   | { type: 'SET_RECIPES_DATA'; payload: RecipesData }
   | { type: 'MERGE_RECIPES_DATA'; payload: RecipesData }
   | { type: 'SET_SKILLS_DATA'; payload: SkillsData }
-  | { type: 'STATUS_POLL'; payload: { player: Player; ship: Ship; modules?: EnrichedShipModule[] } }
+  | { type: 'STATUS_POLL'; payload: { player: Player; ship: Ship; modules?: EnrichedShipModule[]; dockedAt?: string } }
   | { type: 'SET_NEARBY'; payload: NearbyPlayer[] }
   | { type: 'SET_PENDING_ACTION'; command: string; estimatedMs?: number }
   | { type: 'CLEAR_PENDING_ACTION' }

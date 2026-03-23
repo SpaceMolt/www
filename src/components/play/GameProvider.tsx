@@ -329,7 +329,10 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
             if (typeof cargoShip.cargo_used === 'number') (ship as Record<string, unknown>).cargo_used = cargoShip.cargo_used
             if (typeof cargoShip.cargo_capacity === 'number') (ship as Record<string, unknown>).cargo_capacity = cargoShip.cargo_capacity
           }
-          dispatchRef.current({ type: 'STATUS_POLL', payload: { player, ship, modules } })
+          // Extract docked state from location data
+          const location = statusResult.location as Record<string, unknown> | undefined
+          const dockedAt = location?.docked_at as string | undefined
+          dispatchRef.current({ type: 'STATUS_POLL', payload: { player, ship, modules, dockedAt } })
         }
       } catch {
         // Polling failure is non-critical
@@ -402,8 +405,10 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
           const player = r.player as Player | undefined
           const ship = r.ship as Ship | undefined
           const modules = r.modules as EnrichedShipModule[] | undefined
+          const loc = r.location as Record<string, unknown> | undefined
+          const dockedAtStatus = loc?.docked_at as string | undefined
           if (player && ship) {
-            d({ type: 'STATUS_POLL', payload: { player, ship, modules } })
+            d({ type: 'STATUS_POLL', payload: { player, ship, modules, dockedAt: dockedAtStatus } })
           }
           break
         }
