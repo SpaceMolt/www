@@ -129,6 +129,7 @@ export function HUD() {
   const [plannedRoute, setPlannedRoute] = useState<PlannedRoute | null>(null)
   const autoTravel = useAutoTravel()
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>('current')
+  const [highlightedSystems, setHighlightedSystems] = useState<Set<string> | null>(null)
 
   const handleBeginTravel = useCallback(() => {
     if (!plannedRoute || !state.ship) return
@@ -230,7 +231,7 @@ export function HUD() {
 
         {/* Main Content: Left Sidebar + Panel + Right Pane */}
         <div className={styles.main}>
-          <LeftSidebar galaxyRef={galaxyRef} exploreSystem={exploreSystem} onExploreSystemChange={setExploreSystem} plannedRoute={plannedRoute} onPlannedRouteChange={setPlannedRoute} activeTab={sidebarTab} onTabChange={setSidebarTab} autoTravelActive={autoTravel.isActive} />
+          <LeftSidebar galaxyRef={galaxyRef} exploreSystem={exploreSystem} onExploreSystemChange={setExploreSystem} plannedRoute={plannedRoute} onPlannedRouteChange={setPlannedRoute} activeTab={sidebarTab} onTabChange={setSidebarTab} autoTravelActive={autoTravel.isActive} onHighlightedSystemsChange={setHighlightedSystems} />
           <div className={styles.panel}>
             <ActionBanner autoTravelActive={autoTravel.isActive} />
             {!autoTravel.isActive && <TravelProgress />}
@@ -296,11 +297,11 @@ export function HUD() {
             )}
             <div className={styles.panelContent}>
               {activePanel === 'galaxy' ? (
-                <GalaxyPanel ref={galaxyRef} onSystemSelect={handleSystemSelect} plannedRoute={plannedRoute} onPlannedRouteChange={setPlannedRoute} autoTravelProgress={autoTravel.progress} />
+                <GalaxyPanel ref={galaxyRef} onSystemSelect={handleSystemSelect} plannedRoute={plannedRoute} onPlannedRouteChange={setPlannedRoute} autoTravelProgress={autoTravel.progress} highlightedSystems={highlightedSystems} />
               ) : ActivePanelComponent ? (
                 <ActivePanelComponent />
               ) : (
-                <GalaxyPanel ref={galaxyRef} onSystemSelect={handleSystemSelect} plannedRoute={plannedRoute} onPlannedRouteChange={setPlannedRoute} autoTravelProgress={autoTravel.progress} />
+                <GalaxyPanel ref={galaxyRef} onSystemSelect={handleSystemSelect} plannedRoute={plannedRoute} onPlannedRouteChange={setPlannedRoute} autoTravelProgress={autoTravel.progress} highlightedSystems={highlightedSystems} />
               )}
             </div>
           </div>
