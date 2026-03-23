@@ -1,4 +1,4 @@
-import type { GameState, Recipe, EnrichedShipModule } from './types'
+import type { GameState, Recipe } from './types'
 import type { Mission, Facility } from '@/lib/gameTypes'
 
 /** Convert snake_case to Title Case */

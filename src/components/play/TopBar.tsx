@@ -114,7 +114,7 @@ export function TopBar() {
         <div className={styles.spacer} />
 
         {player && (
-          <BugReportButton contextType="generic" className={styles.logoutBtn} />
+          <BugReportButton contextType="generic" />
         )}
         {player && (
           <button
