@@ -9,10 +9,8 @@ import {
   AlertTriangle,
   Check,
   X,
-  RefreshCw,
 } from 'lucide-react'
 import { useGame } from '../GameProvider'
-import { ActionButton } from '../ActionButton'
 import { Credits, PanelWithTabs, shared } from '../shared'
 import type { Mission } from '@/lib/gameTypes'
 import styles from './MissionsPanel.module.css'
@@ -140,15 +138,12 @@ export function MissionsPanel() {
     }
   }, [sendCommand])
 
-  // Auto-load available and active missions on mount
+  // Load data when switching tabs
   useEffect(() => {
-    if (!availableLoaded && !loadingAvailable) {
-      handleLoadAvailable()
-    }
-    if (!activeLoaded && !loadingActive) {
-      handleLoadActive()
-    }
-  }, [availableLoaded, loadingAvailable, activeLoaded, loadingActive, handleLoadAvailable, handleLoadActive])
+    if (activeTab === 'available' && !loadingAvailable) handleLoadAvailable()
+    if (activeTab === 'active' && !loadingActive) handleLoadActive()
+    if (activeTab === 'completed' && !loadingCompleted) handleLoadCompleted()
+  }, [activeTab, handleLoadAvailable, handleLoadActive, handleLoadCompleted, loadingAvailable, loadingActive, loadingCompleted])
 
   const handleAcceptMission = useCallback(async (missionId: string) => {
     await sendCommand('accept_mission', { mission_id: missionId })
@@ -163,6 +158,21 @@ export function MissionsPanel() {
       ? activeMissionsData as Mission[]
       : ((activeMissionsData as Record<string, unknown>)?.active || []) as Mission[]
     setActiveMissions(activeMissionsList)
+  }, [sendCommand])
+
+  const handleCompleteMission = useCallback(async (missionId: string) => {
+    await sendCommand('complete_mission', { mission_id: missionId })
+    // Refresh active and completed missions
+    const [activeResp, completedResp] = await Promise.all([
+      sendCommand('get_active_missions'),
+      sendCommand('completed_missions'),
+    ])
+    const activeMissionsData = activeResp.missions as Record<string, unknown> | unknown[] | undefined
+    setActiveMissions(Array.isArray(activeMissionsData)
+      ? activeMissionsData as Mission[]
+      : ((activeMissionsData as Record<string, unknown>)?.active || []) as Mission[])
+    setCompletedMissions((completedResp.missions || []) as CompletedMission[])
+    setCompletedMissionsTotal((completedResp.total as number) || 0)
   }, [sendCommand])
 
   const handleAbandonMission = useCallback(async (missionId: string) => {
@@ -242,14 +252,6 @@ export function MissionsPanel() {
         {/* Available Missions Tab */}
         {activeTab === 'available' && (
           <>
-            <ActionButton
-              label="Load Available Missions"
-              icon={<RefreshCw size={14} />}
-              onClick={handleLoadAvailable}
-              variant="secondary"
-              size="sm"
-              loading={loadingAvailable}
-            />
             {loadingAvailable && availableMissions.length === 0 && (
               <div className={styles.loading}>
                 <span className={shared.spinner} />
@@ -304,14 +306,6 @@ export function MissionsPanel() {
         {/* Active Missions Tab */}
         {activeTab === 'active' && (
           <>
-            <ActionButton
-              label="Load Active Missions"
-              icon={<RefreshCw size={14} />}
-              onClick={handleLoadActive}
-              variant="secondary"
-              size="sm"
-              loading={loadingActive}
-            />
             {loadingActive && activeMissions.length === 0 && (
               <div className={styles.loading}>
                 <span className={shared.spinner} />
@@ -327,6 +321,9 @@ export function MissionsPanel() {
               <div className={styles.missionList}>
                 {activeMissions.map((m) => {
                   const isExpanded = expandedMissions.has(m.mission_id)
+                  const isCompletable = (m as Record<string, unknown>).percent_complete !== undefined
+                    ? ((m as Record<string, unknown>).percent_complete as number) >= 100
+                    : m.objectives?.every((obj) => (obj as ActiveMissionObjective).completed)
                   return (
                     <div key={m.mission_id} className={styles.missionItem}>
                       <div
@@ -338,7 +335,9 @@ export function MissionsPanel() {
                           {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                           <span className={styles.missionTitle}>{m.title}</span>
                         </div>
-                        <span className={styles.missionStatusBadge} data-status="active">Active</span>
+                        <span className={styles.missionStatusBadge} data-status={isCompletable ? 'completable' : 'active'}>
+                          {isCompletable ? 'Ready' : 'Active'}
+                        </span>
                       </div>
                       <div className={styles.missionDesc}>{m.description}</div>
                       <div className={styles.missionDifficulty}>{m.difficulty}</div>
@@ -347,6 +346,16 @@ export function MissionsPanel() {
                         <div className={styles.objectiveList}>
                           {m.objectives.map((obj, i) => renderObjective(obj as ActiveMissionObjective, i, true))}
                         </div>
+                      )}
+                      {isCompletable && (
+                        <button
+                          className={styles.completeBtn}
+                          onClick={() => handleCompleteMission(m.mission_id)}
+                          type="button"
+                        >
+                          <Check size={12} />
+                          Complete Mission
+                        </button>
                       )}
                       {isExpanded && (
                         <button
@@ -369,14 +378,6 @@ export function MissionsPanel() {
         {/* Completed Missions Tab */}
         {activeTab === 'completed' && (
           <>
-            <ActionButton
-              label="Load Completed Missions"
-              icon={<RefreshCw size={14} />}
-              onClick={handleLoadCompleted}
-              variant="secondary"
-              size="sm"
-              loading={loadingCompleted}
-            />
             {loadingCompleted && completedMissions.length === 0 && (
               <div className={styles.loading}>
                 <span className={shared.spinner} />
