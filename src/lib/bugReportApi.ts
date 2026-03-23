@@ -5,7 +5,7 @@ export async function submitBugReport(
   title: string,
   body: string,
 ): Promise<{ issue_url: string }> {
-  const resp = await fetch(`${GAME_SERVER}/api/v1/bugreport`, {
+  const resp = await fetch(`${GAME_SERVER}/api/v2/bugreport`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
