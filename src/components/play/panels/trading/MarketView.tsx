@@ -96,7 +96,8 @@ export function MarketView() {
   const [expandedItem, setExpandedItem] = useState<string | null>(null)
   const [buyQty, setBuyQty] = useState('1')
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null)
-  const [analysisOpen, setAnalysisOpen] = useState(true)
+  const [analysisModalOpen, setAnalysisModalOpen] = useState(false)
+  const [analysisLoading, setAnalysisLoading] = useState(false)
 
   // Buy confirmation modal
   const [buyEstimate, setBuyEstimate] = useState<{ itemId: string; itemName: string; data: EstimateData } | null>(null)
@@ -217,13 +218,15 @@ export function MarketView() {
   }, [sendCommand, listingItemId, listingQty, listingPrice])
 
   const handleAnalyzeMarket = useCallback(() => {
+    setAnalysisLoading(true)
+    setAnalysisModalOpen(true)
     sendCommand('analyze_market').then((resp: unknown) => {
       const data = resp as AnalysisData | undefined
       if (data?.insights) {
         setAnalysisData(data)
-        setAnalysisOpen(true)
       }
-    })
+      setAnalysisLoading(false)
+    }).catch(() => setAnalysisLoading(false))
   }, [sendCommand])
 
   // Helper: get available quantity for an item (cargo + storage)
@@ -316,12 +319,13 @@ export function MarketView() {
         </span>
         <div className={styles.toolbarActions}>
           <button
-            className={shared.iconBtn}
+            className={shared.actionBtn}
             onClick={handleAnalyzeMarket}
-            title="Analyze market"
+            disabled={analysisLoading}
             type="button"
           >
-            <BarChart3 size={13} />
+            {analysisLoading ? <Loader2 size={11} className={shared.spinner} /> : <BarChart3 size={11} />}
+            Analyze
           </button>
           <button
             className={shared.refreshBtn}
@@ -381,19 +385,12 @@ export function MarketView() {
         </div>
       )}
 
-      {/* Market Analysis Insights */}
-      {analysisData && analysisData.insights.length > 0 && (
-        <div className={styles.insightsSection}>
-          <button
-            className={styles.insightsToggle}
-            onClick={() => setAnalysisOpen(!analysisOpen)}
-            type="button"
-          >
-            {analysisOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-            <BarChart3 size={11} />
-            <span>Analysis ({analysisData.insights.length})</span>
-          </button>
-          {analysisOpen && (
+      {/* Market Analysis Modal */}
+      {analysisModalOpen && (
+        <Modal title="Market Analysis" icon={<BarChart3 size={14} />} onClose={() => setAnalysisModalOpen(false)}>
+          {analysisLoading ? (
+            <Loading message="Analyzing market..." />
+          ) : analysisData && analysisData.insights.length > 0 ? (
             <div className={styles.insightsList}>
               {[...analysisData.insights]
                 .sort((a, b) => b.priority - a.priority)
@@ -417,8 +414,10 @@ export function MarketView() {
                   )
                 })}
             </div>
+          ) : (
+            <div className={shared.emptyState}>No market insights available.</div>
           )}
-        </div>
+        </Modal>
       )}
 
       {!marketData ? (

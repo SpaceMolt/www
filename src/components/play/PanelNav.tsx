@@ -12,6 +12,7 @@ import {
   TrendingUp,
   Package,
   Warehouse,
+  Building2,
   Hammer,
   Star,
   ChevronDown,
@@ -48,6 +49,7 @@ const ALL_PANELS: PanelDef[] = [
   // Docked-only tabs
   { id: 'shipyard', icon: Warehouse, label: 'Shipyard', visibility: 'docked' },
   { id: 'crafting', icon: Hammer, label: 'Crafting', visibility: 'docked' },
+  { id: 'facilities', icon: Building2, label: 'Facilities', visibility: 'docked' },
   { id: 'skills', icon: Star, label: 'Skills', visibility: 'always' },
   // Combat tab — only when in battle
   { id: 'combat', icon: Swords, label: 'Combat', visibility: 'combat' },

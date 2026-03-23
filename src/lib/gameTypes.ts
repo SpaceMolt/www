@@ -114,6 +114,10 @@ export type FactionInfoResponse = Schema['FactionInfoResponse']
 export type FactionListResponse = Schema['FactionListResponse']
 export type CreateFactionResponse = Schema['CreateFactionResponse']
 
+// Facilities
+export type FacilityListResponse = Schema['FacilityListResponse']
+export type Facility = FacilityListResponse['station_facilities'][number]
+
 // Insurance & Salvage
 export type GetInsuranceQuoteResponse = Schema['GetInsuranceQuoteResponse']
 export type BuyInsuranceResponse = Schema['BuyInsuranceResponse']

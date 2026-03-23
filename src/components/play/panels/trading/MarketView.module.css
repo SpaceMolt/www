@@ -521,35 +521,6 @@
 .estimateFillPrice { color: var(--hull-grey); }
 
 /* Market Analysis Insights */
-.insightsSection {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  padding: 0.4rem;
-  background: rgba(61, 90, 108, 0.06);
-  border: 1px solid rgba(61, 90, 108, 0.18);
-  border-radius: 4px;
-}
-
-.insightsToggle {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.62rem;
-  font-weight: 700;
-  color: var(--chrome-silver);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding: 0;
-  transition: color 0.15s ease;
-}
-
-.insightsToggle:hover { color: var(--plasma-cyan); }
-
 .insightsList {
   display: flex;
   flex-direction: column;
