@@ -93,6 +93,7 @@ export function BuildView({ onRefresh }: BuildViewProps) {
 
   const [selectedCategory, setSelectedCategory] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
+  const [buildableOnly, setBuildableOnly] = useState(true)
   const [filteredData, setFilteredData] = useState<FacilityTypesFiltered | null>(null)
   const [filteredLoading, setFilteredLoading] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
@@ -209,6 +210,13 @@ export function BuildView({ onRefresh }: BuildViewProps) {
               </button>
             )
           })}
+          <button
+            className={`${styles.filterBtn} ${buildableOnly ? styles.filterBtnActive : ''}`}
+            onClick={() => setBuildableOnly(prev => !prev)}
+            type="button"
+          >
+            Buildable Only
+          </button>
         </div>
       )}
 
@@ -234,10 +242,18 @@ export function BuildView({ onRefresh }: BuildViewProps) {
       ) : filteredData ? (
         <>
           <div className={styles.section}>
-            {filteredData.types.length === 0 ? (
-              <div className={shared.emptyState}>No facility types match your search.</div>
-            ) : (
-              filteredData.types.map(ft => {
+            {(() => {
+              const visibleTypes = buildableOnly
+                ? filteredData.types.filter(ft => ft.buildable)
+                : filteredData.types
+              if (visibleTypes.length === 0) return (
+                <div className={shared.emptyState}>
+                  {buildableOnly
+                    ? 'No buildable facility types match your search. Try toggling "Buildable Only" off to see all types.'
+                    : 'No facility types match your search.'}
+                </div>
+              )
+              return visibleTypes.map(ft => {
                 const isExpanded = expandedType === ft.id
                 return (
                   <div key={ft.id} className={styles.typeDetail}>
@@ -341,7 +357,7 @@ export function BuildView({ onRefresh }: BuildViewProps) {
                   </div>
                 )
               })
-            )}
+            })()}
           </div>
 
           {filteredData.total_pages > 1 && (
