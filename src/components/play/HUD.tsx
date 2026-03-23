@@ -54,9 +54,18 @@ function AutoTravelBanner({ progress, onAbort }: { progress: AutoTravelProgress;
   const jumpElapsed = (now - jumpStartTime) / 1000
   const jumpProgress = phase === 'jumping' ? Math.min(1, jumpElapsed / estimatedSecsPerJump) : 0
 
-  // ETA calculation
+  // Station travel progress
+  const stationTravelElapsed = progress.stationTravelStart ? (now - progress.stationTravelStart) / 1000 : 0
+  const stationTravelTotal = progress.stationTravelSecs ?? 1
+  const stationTravelProgress = phase === 'traveling_to_station' ? Math.min(1, stationTravelElapsed / stationTravelTotal) : 0
+
+  // ETA calculation — include station travel time if applicable
   const remainingJumps = totalJumps - completedJumps - (phase === 'jumping' ? jumpProgress : 0)
-  const etaSecs = Math.max(0, Math.round(remainingJumps * estimatedSecsPerJump))
+  const jumpEtaSecs = Math.max(0, Math.round(remainingJumps * estimatedSecsPerJump))
+  const stationEtaSecs = phase === 'traveling_to_station'
+    ? Math.max(0, Math.round(stationTravelTotal - stationTravelElapsed))
+    : 0
+  const etaSecs = jumpEtaSecs + stationEtaSecs
   const etaMins = Math.floor(etaSecs / 60)
   const etaRemSecs = etaSecs % 60
 
@@ -64,7 +73,9 @@ function AutoTravelBanner({ progress, onAbort }: { progress: AutoTravelProgress;
     <div className={styles.autoTravelBanner}>
       <div className={styles.atbTop}>
         <div className={styles.atbPhase}>
-          {phase === 'undocking' ? 'UNDOCKING' : `JUMPING ${completedJumps + 1} / ${totalJumps}`}
+          {phase === 'undocking' ? 'UNDOCKING'
+            : phase === 'traveling_to_station' ? `TRAVELING TO ${progress.stationName?.toUpperCase() || 'STATION'}`
+            : `JUMPING ${completedJumps + 1} / ${totalJumps}`}
         </div>
         <div className={styles.atbCountdown}>
           {etaMins > 0 ? `${etaMins}m ` : ''}{etaRemSecs}s
@@ -76,22 +87,33 @@ function AutoTravelBanner({ progress, onAbort }: { progress: AutoTravelProgress;
           EMERGENCY ABORT
         </button>
       </div>
-      {/* Segmented progress bar */}
-      <div className={styles.atbProgressBar}>
-        {Array.from({ length: totalJumps }, (_, i) => {
-          let fill = 0
-          if (i < completedJumps) fill = 1
-          else if (i === completedJumps && phase === 'jumping') fill = jumpProgress
-          return (
-            <div key={i} className={styles.atbSegment}>
-              <div
-                className={`${styles.atbSegmentFill} ${fill >= 1 ? styles.atbSegmentComplete : ''}`}
-                style={{ width: `${fill * 100}%` }}
-              />
-            </div>
-          )
-        })}
-      </div>
+      {/* Progress bar — segmented for jumps, single bar for station travel */}
+      {phase === 'traveling_to_station' ? (
+        <div className={styles.atbProgressBar}>
+          <div className={styles.atbSegment}>
+            <div
+              className={styles.atbSegmentFill}
+              style={{ width: `${stationTravelProgress * 100}%` }}
+            />
+          </div>
+        </div>
+      ) : (
+        <div className={styles.atbProgressBar}>
+          {Array.from({ length: totalJumps }, (_, i) => {
+            let fill = 0
+            if (i < completedJumps) fill = 1
+            else if (i === completedJumps && phase === 'jumping') fill = jumpProgress
+            return (
+              <div key={i} className={styles.atbSegment}>
+                <div
+                  className={`${styles.atbSegmentFill} ${fill >= 1 ? styles.atbSegmentComplete : ''}`}
+                  style={{ width: `${fill * 100}%` }}
+                />
+              </div>
+            )
+          })}
+        </div>
+      )}
       <div className={styles.atbRoute}>
         {route.route[0].name} → {route.route[route.route.length - 1].name}
       </div>
@@ -211,7 +233,7 @@ export function HUD() {
           <LeftSidebar galaxyRef={galaxyRef} exploreSystem={exploreSystem} onExploreSystemChange={setExploreSystem} plannedRoute={plannedRoute} onPlannedRouteChange={setPlannedRoute} activeTab={sidebarTab} onTabChange={setSidebarTab} autoTravelActive={autoTravel.isActive} />
           <div className={styles.panel}>
             <ActionBanner autoTravelActive={autoTravel.isActive} />
-            <TravelProgress />
+            {!autoTravel.isActive && <TravelProgress />}
             {plannedRoute && !autoTravel.isActive && (
               <div className={styles.routeBanner}>
                 <div className={styles.routeBannerContent}>
@@ -269,7 +291,7 @@ export function HUD() {
                 </div>
               </div>
             )}
-            {autoTravel.progress && (autoTravel.progress.phase === 'undocking' || autoTravel.progress.phase === 'jumping') && (
+            {autoTravel.progress && (autoTravel.progress.phase === 'undocking' || autoTravel.progress.phase === 'jumping' || autoTravel.progress.phase === 'traveling_to_station') && (
               <AutoTravelBanner progress={autoTravel.progress} onAbort={autoTravel.requestAbort} />
             )}
             <div className={styles.panelContent}>
@@ -310,7 +332,9 @@ export function HUD() {
           <div className={styles.arrivedModal}>
             <div className={styles.arrivedModalTitle}>DESTINATION REACHED</div>
             <div className={styles.arrivedModalDetail}>
-              {autoTravel.progress.totalJumps} jumps completed in {Math.round(autoTravel.progress.totalElapsedMs / 1000)}s · Fuel remaining: {autoTravel.progress.currentFuel}
+              {autoTravel.progress.totalJumps} jumps completed in {Math.round(autoTravel.progress.totalElapsedMs / 1000)}s
+              {autoTravel.progress.stationName && ` · Arrived at ${autoTravel.progress.stationName}`}
+              {' · '}Fuel remaining: {autoTravel.progress.currentFuel}
             </div>
             <button className={styles.abortModalOk} onClick={autoTravel.dismissAbort}>
               OK

@@ -1,11 +1,12 @@
 import { useRef, useState, useCallback } from 'react'
 import { useGame } from './GameProvider'
 import type { PlannedRoute } from './panels/GalaxyPanel'
+import type { SystemInfo, POI } from './types'
 
 export interface AutoTravelProgress {
   currentJumpIndex: number    // 0-based, which jump we're on (-1 = undocking)
   totalJumps: number
-  phase: 'undocking' | 'jumping' | 'arrived' | 'aborted'
+  phase: 'undocking' | 'jumping' | 'traveling_to_station' | 'arrived' | 'aborted'
   jumpStartTime: number       // Date.now() when current jump started
   jumpElapsedMs: number       // updated by caller via tick
   estimatedSecsPerJump: number // refined from actual timing
@@ -14,6 +15,9 @@ export interface AutoTravelProgress {
   currentFuel: number
   route: PlannedRoute
   abortReason: string | null
+  stationName?: string        // name of station being traveled to (traveling_to_station phase)
+  stationTravelSecs?: number  // predicted travel time in seconds
+  stationTravelStart?: number // Date.now() when station travel began
 }
 
 export interface UseAutoTravelReturn {
@@ -25,12 +29,14 @@ export interface UseAutoTravelReturn {
 }
 
 export function useAutoTravel(): UseAutoTravelReturn {
-  const { sendCommand } = useGame()
+  const { sendCommand, state } = useGame()
   const [progress, setProgress] = useState<AutoTravelProgress | null>(null)
 
   // Refs for the async loop to read current values
   const abortRequestedRef = useRef(false)
   const activeRef = useRef(false)
+  const stateRef = useRef(state)
+  stateRef.current = state
 
   const start = useCallback((route: PlannedRoute, options: { shipSpeed: number; isDocked: boolean }) => {
     if (activeRef.current) return
@@ -168,6 +174,66 @@ export function useAutoTravel(): UseAutoTravelReturn {
 
         if (abortRequestedRef.current) { abort('Emergency abort'); return }
       }
+
+      // Step 3: Travel to station if destination system has one.
+      // We call get_system explicitly rather than reading stateRef because
+      // GameProvider's auto-refresh (fired after the last jump) may not have
+      // resolved yet — we need the response data synchronously here.
+      if (!abortRequestedRef.current) {
+        try {
+          const sysResult = await sendCommand('get_system') as Record<string, unknown>
+          const sysInfo = sysResult?.system as SystemInfo | undefined
+          const currentPoi = sysResult?.poi as POI | undefined
+          const stationPoi = sysInfo?.pois?.find(p => p.base_id && p.id !== currentPoi?.id)
+
+          if (stationPoi && currentPoi?.position && stationPoi.position) {
+            // Calculate travel time from POI distance and ship speed
+            const dx = (stationPoi.position.x ?? 0) - (currentPoi.position.x ?? 0)
+            const dy = (stationPoi.position.y ?? 0) - (currentPoi.position.y ?? 0)
+            const distance = Math.sqrt(dx * dx + dy * dy)
+            const speed = Math.max(0.1, shipSpeed)
+            const travelTicks = Math.max(1, Math.ceil(distance / speed))
+            const travelSecs = travelTicks * 10
+            const travelStartMs = Date.now()
+
+            setProgress(prev => prev ? {
+              ...prev,
+              phase: 'traveling_to_station' as const,
+              completedJumps: route.totalJumps,
+              totalElapsedMs: Date.now() - startTime,
+              currentFuel,
+              stationName: stationPoi.base_name || stationPoi.name,
+              stationTravelSecs: travelSecs,
+              stationTravelStart: travelStartMs,
+            } : null)
+
+            try {
+              await sendCommand('travel', { target_poi: stationPoi.id })
+
+              // Wait for in-system travel to complete by watching game state.
+              // travelProgress: null → non-null (traveling) → null (arrived).
+              // Initial 2s delay ensures the first STATE_UPDATE with travel
+              // progress has arrived before we start polling — avoids a race
+              // where travel completes before our first check.
+              await new Promise(r => setTimeout(r, 2000))
+              if (abortRequestedRef.current) { abort('Emergency abort'); return }
+
+              const maxWaitMs = (travelSecs + 10) * 1000 // predicted time + 10s buffer
+              while (Date.now() - travelStartMs < maxWaitMs) {
+                if (stateRef.current.travelProgress === null) break
+                await new Promise(r => setTimeout(r, 500))
+                if (abortRequestedRef.current) { abort('Emergency abort'); return }
+              }
+            } catch {
+              // Travel command failed — still in the right system, proceed to arrived
+            }
+          }
+        } catch {
+          // get_system failed — skip station travel, proceed to arrived
+        }
+      }
+
+      if (abortRequestedRef.current) { abort('Emergency abort'); return }
 
       // Arrived!
       setProgress(prev => prev ? {
