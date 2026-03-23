@@ -4,6 +4,8 @@ import type { ReactNode } from 'react'
 import { AlertTriangle } from 'lucide-react'
 import type { Facility } from '@/lib/gameTypes'
 import { shared } from '../../shared'
+import { BugReportButton } from '../../BugReportButton'
+import { buildFacilityContext } from '../../bugReportContext'
 import styles from './facilities.module.css'
 
 const CATEGORY_BADGE: Record<string, string> = {
@@ -40,6 +42,7 @@ export function FacilityCard({ facility, children }: FacilityCardProps) {
             {formatLabel(serviceLabel)}
           </span>
         )}
+        <BugReportButton contextType="facility" entityName={facility.name} entityContext={buildFacilityContext(facility)} />
       </div>
 
       <div className={styles.cardDescription}>{facility.description}</div>

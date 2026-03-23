@@ -5,6 +5,8 @@ import { Hammer, BookOpen, RefreshCw, AlertTriangle, Lock, Check, ChevronDown, C
 import { useGame } from '../GameProvider'
 import { ActionButton } from '../ActionButton'
 import { Panel, shared } from '../shared'
+import { BugReportButton } from '../BugReportButton'
+import { buildRecipeContext } from '../bugReportContext'
 import type { Recipe } from '../types'
 import styles from './CraftingPanel.module.css'
 
@@ -267,6 +269,7 @@ export function CraftingPanel() {
                           <div className={styles.recipeCardTitle}>
                             {isExpanded ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
                             <span className={styles.recipeName}>{recipe.name}</span>
+                            <BugReportButton contextType="recipe" entityName={recipe.name} entityContext={buildRecipeContext(recipe)} />
                           </div>
                         </button>
 

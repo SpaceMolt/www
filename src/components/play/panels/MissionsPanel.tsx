@@ -12,6 +12,8 @@ import {
 } from 'lucide-react'
 import { useGame } from '../GameProvider'
 import { Credits, PanelWithTabs, shared } from '../shared'
+import { BugReportButton } from '../BugReportButton'
+import { buildMissionContext } from '../bugReportContext'
 import type { Mission } from '@/lib/gameTypes'
 import styles from './MissionsPanel.module.css'
 
@@ -322,6 +324,7 @@ export function MissionsPanel() {
                           <span className={styles.missionTitle}>{m.title}</span>
                         </div>
                         <span className={styles.missionDifficulty}>{m.difficulty}</span>
+                        <BugReportButton contextType="mission" entityName={m.title} entityContext={buildMissionContext(m)} />
                       </div>
 
                       {giver && (
@@ -404,6 +407,7 @@ export function MissionsPanel() {
                         <span className={styles.missionStatusBadge} data-status={isCompletable ? 'completable' : 'active'}>
                           {isCompletable ? 'Ready' : `${Math.round(percentComplete)}%`}
                         </span>
+                        <BugReportButton contextType="mission" entityName={m.title} entityContext={buildMissionContext(m)} />
                       </div>
 
                       {/* Progress bar */}

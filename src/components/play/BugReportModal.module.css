@@ -1,0 +1,65 @@
+.textarea {
+  width: 100%;
+  min-height: 80px;
+  resize: vertical;
+  font-family: var(--font-jetbrains);
+  font-size: 0.7rem;
+  color: var(--hull-white);
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  padding: 0.4rem;
+  outline: none;
+}
+
+.textarea:focus {
+  border-color: rgba(0, 212, 255, 0.4);
+}
+
+.contextDetails {
+  margin-top: 0.5rem;
+}
+
+.contextDetails summary {
+  cursor: pointer;
+  font-family: var(--font-jetbrains);
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  user-select: none;
+}
+
+.contextDetails summary:hover {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.contextPre {
+  margin-top: 0.3rem;
+  padding: 0.4rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  font-family: var(--font-jetbrains);
+  font-size: 0.55rem;
+  color: rgba(255, 255, 255, 0.6);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.successMessage {
+  text-align: center;
+  color: #2DD4BF;
+  font-family: var(--font-jetbrains);
+  font-size: 0.7rem;
+  padding: 1rem 0;
+}
+
+.errorMessage {
+  color: #E63946;
+  font-family: var(--font-jetbrains);
+  font-size: 0.6rem;
+  margin-top: 0.3rem;
+}

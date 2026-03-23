@@ -18,6 +18,8 @@ import {
 } from 'lucide-react'
 import { useGame } from '../../GameProvider'
 import { Credits, Loading, Modal, shared } from '../../shared'
+import { BugReportButton } from '../../BugReportButton'
+import { buildShipCatalogContext } from '../../bugReportContext'
 import styles from './ShipCatalog.module.css'
 
 const EMPIRES = ['solarian', 'voidborn', 'crimson', 'nebula', 'outerrim']
@@ -302,6 +304,7 @@ export function ShipCatalog() {
                           {ship.tier > 0 && <span className={shared.badgeOrange}>T{ship.tier}</span>}
                           {ship.faction && <span className={shared.badgeCyan}>{ship.faction}</span>}
                         </span>
+                        <BugReportButton contextType="ship" entityName={ship.name} entityContext={buildShipCatalogContext(ship)} />
                       </div>
                       <span className={styles.shipCardClass}>
                         {ship.category} · {ship.class}
