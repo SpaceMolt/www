@@ -8,7 +8,7 @@ import { Panel, shared } from '../shared'
 import { BugReportButton } from '../BugReportButton'
 import { buildRecipeContext } from '../bugReportContext'
 import type { Recipe } from '../types'
-import { recipes as bundledRecipes } from '@/data/catalog'
+import { recipesById, formatItemId } from '@/data/catalog'
 import styles from './CraftingPanel.module.css'
 
 function canCraftRecipe(
@@ -29,7 +29,7 @@ function canCraftRecipe(
     for (const [skillId, reqLevel] of Object.entries(recipe.required_skills)) {
       const playerLevel = skills?.[skillId]?.level ?? 0
       if (playerLevel < (reqLevel as number)) {
-        const name = skillId.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+        const name = skillId.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
         reasons.push(`Need ${name} Lv${reqLevel} (have ${playerLevel})`)
       }
     }
@@ -39,8 +39,7 @@ function canCraftRecipe(
   for (const input of recipe.inputs ?? []) {
     const have = cargoItems.find((c) => c.item_id === input.item_id)?.quantity ?? 0
     if (have < input.quantity) {
-      const name = input.item_id.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
-      reasons.push(`Need ${input.quantity}x ${name} (have ${have})`)
+      reasons.push(`Need ${input.quantity}x ${formatItemId(input.item_id)} (have ${have})`)
     }
   }
 
@@ -61,7 +60,6 @@ export function CraftingPanel() {
   }, [state.skillsData, sendCommand])
 
   const loadRecipes = useCallback(() => {
-    // Recipes are bundled — nothing to fetch, but keep the callback for the refresh button
     sendCommand('get_skills')
   }, [sendCommand])
 
@@ -74,9 +72,17 @@ export function CraftingPanel() {
   const cargoItems = useMemo(() => state.ship?.cargo ?? [], [state.ship?.cargo])
   const skillsMap = state.skillsData?.skills
 
-  const recipes = useMemo(() => {
-    // Use bundled catalog data — all recipes available instantly
-    return Array.from(bundledRecipes.values()) as unknown as Recipe[]
+  const recipes = useMemo((): Recipe[] => {
+    return Object.values(recipesById).map(r => ({
+      id: r.id,
+      name: r.name,
+      description: r.description,
+      category: r.category || '',
+      required_skills: r.required_skills || {},
+      inputs: (r.inputs || []).map(i => ({ item_id: i.item_id, quantity: i.quantity })),
+      outputs: (r.outputs || []).map(o => ({ item_id: o.item_id, quantity: o.quantity })),
+      crafting_time: r.crafting_time || 0,
+    }))
   }, [])
 
   // Filter, group by category, sort
@@ -247,7 +253,7 @@ export function CraftingPanel() {
                               <span className={styles.recipeLabel}>In:</span>
                               <span className={styles.recipeInputs}>
                                 {(recipe.inputs ?? []).map((i) => {
-                                  const name = i.item_id.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+                                  const name = formatItemId(i.item_id)
                                   const have = cargoItems.find((c) => c.item_id === i.item_id)?.quantity ?? 0
                                   const enough = have >= i.quantity
                                   return (
@@ -263,7 +269,7 @@ export function CraftingPanel() {
                               <span className={styles.recipeLabel}>Out:</span>
                               <span className={styles.recipeOutputs}>
                                 {(recipe.outputs ?? []).map((o) => {
-                                  const name = o.item_id.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+                                  const name = formatItemId(o.item_id)
                                   return `${name} x${o.quantity}`
                                 }).join(', ') || 'None'}
                               </span>
@@ -274,7 +280,7 @@ export function CraftingPanel() {
                                 <span className={styles.recipeSkills}>
                                   {Object.entries(recipe.required_skills)
                                     .map(([skill, level]) => {
-                                      const name = skill.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+                                      const name = skill.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
                                       const have = skillsMap?.[skill]?.level ?? 0
                                       const met = have >= (level as number)
                                       return (

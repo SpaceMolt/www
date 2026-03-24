@@ -100,14 +100,14 @@ const catalog = rawCatalog as unknown as CatalogData
 
 // ── Exports ─────────────────────────────────────────────────────────────
 
-/** All items keyed by ID (includes modules) */
-export const items: ReadonlyMap<string, RawCatalogItem> = new Map(Object.entries(catalog.items))
+/** All items keyed by ID (includes modules) — plain object, O(1) lookups */
+export const itemsById: Readonly<Record<string, RawCatalogItem>> = catalog.items
 
 /** All recipes keyed by ID */
-export const recipes: ReadonlyMap<string, RawRecipe> = new Map(Object.entries(catalog.recipes))
+export const recipesById: Readonly<Record<string, RawRecipe>> = catalog.recipes
 
 /** All ships keyed by ID */
-export const ships: ReadonlyMap<string, RawShip> = new Map(Object.entries(catalog.ships))
+export const shipsById: Readonly<Record<string, RawShip>> = catalog.ships
 
 /** Get a single item by ID */
 export function getItem(id: string): RawCatalogItem | undefined {

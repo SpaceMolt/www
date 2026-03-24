@@ -145,8 +145,11 @@ function BuyAutocomplete({ value, onChange }: BuyAutocompleteProps) {
   const handleInputChange = (text: string) => {
     setInputText(text)
     setOpen(text.length >= 2)
-    // Clear the selected ID if the user is typing something new
-    if (value) onChange('')
+    // Clear selection only when the text no longer matches the selected item
+    if (value) {
+      const selected = getItem(value)
+      if (!selected || selected.name !== text) onChange('')
+    }
   }
 
   return (
@@ -262,7 +265,7 @@ export function OrdersView() {
   const handleBuyItemChange = useCallback((itemId: string) => {
     setOrderItemId(itemId)
     if (itemId) {
-      setOrderQty('') // No default qty for buy
+      setOrderQty('')
       const catalogItem = getItem(itemId)
       if (catalogItem?.base_value) setOrderPrice(catalogItem.base_value.toString())
       else setOrderPrice('')

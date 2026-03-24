@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useCallback, type ReactNode } from 'react'
 import type { CatalogItem, CatalogRecipe, CatalogModuleStats } from '../ItemDetail'
-import { getItem as getRawItem, items as allRawItems, recipes as allRawRecipes, formatItemId } from '@/data/catalog'
+import { getItem as getRawItem, recipesById, formatItemId } from '@/data/catalog'
 import type { RawCatalogItem } from '@/data/catalog'
 
 // Module stat fields to extract from flat item into nested module object
@@ -43,7 +43,7 @@ function transformItem(raw: RawCatalogItem): CatalogItem {
   const producedBy: CatalogRecipe[] = []
   const consumedBy: CatalogRecipe[] = []
 
-  for (const r of allRawRecipes.values()) {
+  for (const r of Object.values(recipesById)) {
     const inputs = r.inputs || []
     const outputs = r.outputs || []
 
@@ -101,12 +101,10 @@ export function useItemCatalog() {
 }
 
 export function ItemCatalogProvider({ children }: { children: ReactNode }) {
-  // All data is now bundled — lookups are synchronous
   const getItem = useCallback((id: string): CatalogItem | undefined => {
     return getTransformedItem(id)
   }, [])
 
-  // fetchItem kept for API compatibility but now resolves instantly
   const fetchItem = useCallback(async (id: string): Promise<CatalogItem | undefined> => {
     return getTransformedItem(id)
   }, [])

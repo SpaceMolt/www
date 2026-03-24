@@ -7,7 +7,7 @@ import { SignInButton } from '@clerk/nextjs'
 import { GameProvider, useGame } from './GameProvider'
 import { ItemCatalogProvider } from './ItemCatalogContext'
 import type { ModuleCatalogEntry } from './types'
-import { items as bundledItems, isModule } from '@/data/catalog'
+import { itemsById, isModule } from '@/data/catalog'
 import { PlayerSelector } from './PlayerSelector'
 import { HUD } from './HUD'
 import { useGameAuth } from '@/lib/useGameAuth'
@@ -134,7 +134,7 @@ function PlayClientInner({ playerId, authHeaders, onSwitchPlayer }: {
     moduleCatalogFetched.current = true
 
     const modules: Record<string, ModuleCatalogEntry> = {}
-    for (const [id, item] of bundledItems) {
+    for (const [id, item] of Object.entries(itemsById)) {
       if (isModule(item)) {
         modules[id] = item as unknown as ModuleCatalogEntry
       }
