@@ -17,6 +17,7 @@ import {
   AlertTriangle,
   Bookmark,
   X,
+  Lightbulb,
 } from 'lucide-react'
 import { useGame } from '../../GameProvider'
 import { useItemCatalog } from '../../ItemCatalogContext'
@@ -457,12 +458,17 @@ export function MarketView() {
       )}
 
       {/* Inline analysis status */}
-      {analysisLoading && (
+      {analysisLoading ? (
         <div className={styles.analysisStatus}>
           <Loader2 size={10} className={shared.spinner} />
           <span>Analyzing market...</span>
         </div>
-      )}
+      ) : analysisData && analysisData.insights.length > 0 ? (
+        <div className={styles.analysisStatus}>
+          <Lightbulb size={10} aria-hidden="true" />
+          <span>{analysisData.insights.length} insight{analysisData.insights.length !== 1 ? 's' : ''} found</span>
+        </div>
+      ) : null}
 
       {!marketData ? (
         <Loading message="Loading market data..." />
@@ -539,12 +545,14 @@ export function MarketView() {
                           )}
                           {insightStyle && (
                             <span
-                              className={styles.insightDot}
-                              style={{ background: insightStyle.color }}
+                              className={styles.insightBadge}
+                              style={{ color: insightStyle.color }}
                               role="img"
                               aria-label={itemInsights?.map(i => `${formatCategory(i.category)}: ${i.message}`).join('. ') ?? ''}
                               title={itemInsights?.map(i => `[${formatCategory(i.category)}] ${i.message}`).join('\n') ?? ''}
-                            />
+                            >
+                              <Lightbulb size={10} aria-hidden="true" />
+                            </span>
                           )}
                         </span>
                         <span className={`${styles.colHave} ${haveQty > 0 ? styles.haveQty : styles.noPrice}`}>

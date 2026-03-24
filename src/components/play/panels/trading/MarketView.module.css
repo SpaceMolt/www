@@ -301,12 +301,11 @@
   opacity: 0.8;
 }
 
-.insightDot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
+.insightBadge {
   flex-shrink: 0;
-  opacity: 0.9;
+  opacity: 0.85;
+  display: flex;
+  align-items: center;
 }
 
 .analysisStatus {
