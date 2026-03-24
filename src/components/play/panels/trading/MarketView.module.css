@@ -303,9 +303,67 @@
 
 .insightBadge {
   flex-shrink: 0;
-  opacity: 0.85;
+  color: var(--warning-yellow);
   display: flex;
   align-items: center;
+  cursor: help;
+}
+
+.insightTooltip {
+  position: fixed;
+  z-index: 10000;
+  width: 300px;
+  background: rgba(10, 15, 28, 0.97);
+  border: 1px solid rgba(255, 217, 61, 0.35);
+  border-radius: 6px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6), 0 0 12px rgba(255, 217, 61, 0.1);
+  pointer-events: none;
+  animation: insightFadeIn 0.15s ease-out;
+}
+
+.insightTooltipHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid rgba(255, 217, 61, 0.15);
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--warning-yellow);
+}
+
+.insightTooltipRow {
+  padding: 0.35rem 0.6rem;
+  border-bottom: 1px solid rgba(42, 58, 74, 0.3);
+}
+
+.insightTooltipRow:last-child {
+  border-bottom: none;
+}
+
+.insightTooltipCategory {
+  display: block;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--warning-yellow);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.15rem;
+}
+
+.insightTooltipMessage {
+  display: block;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  line-height: 1.35;
+  color: var(--chrome-silver);
+}
+
+@keyframes insightFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .analysisStatus {

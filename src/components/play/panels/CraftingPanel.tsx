@@ -8,6 +8,7 @@ import { Panel, shared } from '../shared'
 import { BugReportButton } from '../BugReportButton'
 import { buildRecipeContext } from '../bugReportContext'
 import type { Recipe } from '../types'
+import { recipesById, formatItemId } from '@/data/catalog'
 import styles from './CraftingPanel.module.css'
 
 function canCraftRecipe(
@@ -28,7 +29,7 @@ function canCraftRecipe(
     for (const [skillId, reqLevel] of Object.entries(recipe.required_skills)) {
       const playerLevel = skills?.[skillId]?.level ?? 0
       if (playerLevel < (reqLevel as number)) {
-        const name = skillId.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+        const name = skillId.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
         reasons.push(`Need ${name} Lv${reqLevel} (have ${playerLevel})`)
       }
     }
@@ -38,8 +39,7 @@ function canCraftRecipe(
   for (const input of recipe.inputs ?? []) {
     const have = cargoItems.find((c) => c.item_id === input.item_id)?.quantity ?? 0
     if (have < input.quantity) {
-      const name = input.item_id.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
-      reasons.push(`Need ${input.quantity}x ${name} (have ${have})`)
+      reasons.push(`Need ${input.quantity}x ${formatItemId(input.item_id)} (have ${have})`)
     }
   }
 
@@ -54,43 +54,14 @@ export function CraftingPanel() {
   const [searchQuery, setSearchQuery] = useState('')
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set())
 
-  const recipesLoading = useRef(false)
-
-  const fetchAllRecipes = useCallback(async () => {
-    let page = 1
-    let totalPages = 1
-    while (page <= totalPages) {
-      const result = await sendCommand('catalog', { type: 'recipes', page_size: 50, page })
-      const r = result as Record<string, unknown>
-      totalPages = (r.total_pages as number) || 1
-      page++
-    }
-  }, [sendCommand])
-
-  // Auto-load all recipes on mount (skills needed for craftability check)
+  // Fetch skills on mount (needed for craftability check)
   useEffect(() => {
     if (!state.skillsData) sendCommand('get_skills')
-    if (!state.recipesData && !recipesLoading.current) {
-      recipesLoading.current = true
-      fetchAllRecipes()
-    }
-  }, [state.skillsData, state.recipesData, sendCommand, fetchAllRecipes])
+  }, [state.skillsData, sendCommand])
 
-  // Continue loading if we have partial data
-  useEffect(() => {
-    if (state.recipesData && state.recipesData.total && Object.keys(state.recipesData.recipes).length < state.recipesData.total && recipesLoading.current) {
-      const loaded = Object.keys(state.recipesData.recipes).length
-      const nextPage = Math.floor(loaded / 50) + 1
-      sendCommand('catalog', { type: 'recipes', page_size: 50, page: nextPage })
-    } else if (state.recipesData) {
-      recipesLoading.current = false
-    }
-  }, [state.recipesData, sendCommand])
-
-  const loadRecipes = useCallback(() => {
-    recipesLoading.current = true
-    fetchAllRecipes()
-  }, [fetchAllRecipes])
+  const refreshSkills = useCallback(() => {
+    sendCommand('get_skills')
+  }, [sendCommand])
 
   const handleCraft = useCallback((recipeId: string) => {
     setCraftingId(recipeId)
@@ -101,10 +72,18 @@ export function CraftingPanel() {
   const cargoItems = useMemo(() => state.ship?.cargo ?? [], [state.ship?.cargo])
   const skillsMap = state.skillsData?.skills
 
-  const recipes = useMemo(() => {
-    if (!state.recipesData?.recipes) return []
-    return Object.values(state.recipesData.recipes)
-  }, [state.recipesData])
+  const recipes = useMemo((): Recipe[] => {
+    return Object.values(recipesById).map(r => ({
+      id: r.id,
+      name: r.name,
+      description: r.description,
+      category: r.category || '',
+      required_skills: r.required_skills || {},
+      inputs: (r.inputs || []).map(i => ({ item_id: i.item_id, quantity: i.quantity })),
+      outputs: (r.outputs || []).map(o => ({ item_id: o.item_id, quantity: o.quantity })),
+      crafting_time: r.crafting_time || 0,
+    }))
+  }, [])
 
   // Filter, group by category, sort
   const groupedRecipes = useMemo(() => {
@@ -153,8 +132,6 @@ export function CraftingPanel() {
   }, [])
 
   const isDocked = state.isDocked
-  const totalRecipes = state.recipesData?.total ?? 0
-  const allLoaded = recipes.length >= totalRecipes
 
   return (
     <Panel
@@ -164,8 +141,8 @@ export function CraftingPanel() {
         <div className={styles.headerActions}>
           <button
             className={shared.refreshBtn}
-            onClick={loadRecipes}
-            title="Refresh recipes and skills"
+            onClick={refreshSkills}
+            title="Refresh skills"
             type="button"
           >
             <RefreshCw size={14} />
@@ -214,19 +191,8 @@ export function CraftingPanel() {
           </div>
         )}
 
-        {!allLoaded && totalRecipes > 0 && (
-          <div className={styles.loadingNotice}>Loading recipes... {recipes.length}/{totalRecipes}</div>
-        )}
 
-        {!state.recipesData && (
-          <ActionButton
-            label="Load Recipes"
-            icon={<BookOpen size={14} />}
-            onClick={loadRecipes}
-            size="sm"
-          />
-        )}
-        {state.recipesData && groupedRecipes.length === 0 && (
+        {groupedRecipes.length === 0 && (
           <div className={shared.emptyState}>
             {searchQuery || filter === 'craftable' ? 'No recipes match your filters.' : 'No recipes available.'}
           </div>
@@ -282,7 +248,7 @@ export function CraftingPanel() {
                               <span className={styles.recipeLabel}>In:</span>
                               <span className={styles.recipeInputs}>
                                 {(recipe.inputs ?? []).map((i) => {
-                                  const name = i.item_id.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+                                  const name = formatItemId(i.item_id)
                                   const have = cargoItems.find((c) => c.item_id === i.item_id)?.quantity ?? 0
                                   const enough = have >= i.quantity
                                   return (
@@ -298,7 +264,7 @@ export function CraftingPanel() {
                               <span className={styles.recipeLabel}>Out:</span>
                               <span className={styles.recipeOutputs}>
                                 {(recipe.outputs ?? []).map((o) => {
-                                  const name = o.item_id.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+                                  const name = formatItemId(o.item_id)
                                   return `${name} x${o.quantity}`
                                 }).join(', ') || 'None'}
                               </span>
@@ -309,7 +275,7 @@ export function CraftingPanel() {
                                 <span className={styles.recipeSkills}>
                                   {Object.entries(recipe.required_skills)
                                     .map(([skill, level]) => {
-                                      const name = skill.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+                                      const name = skill.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
                                       const have = skillsMap?.[skill]?.level ?? 0
                                       const met = have >= (level as number)
                                       return (

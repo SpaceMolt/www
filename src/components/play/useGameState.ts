@@ -409,9 +409,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'CLEAR_PENDING_ACTION':
       return { ...state, pendingAction: null }
 
-    case 'SET_MODULE_CATALOG':
-      return { ...state, moduleCatalog: action.payload }
-
     case 'RESET':
       return { ..._initState, connected: state.connected, welcome: state.welcome }
 
@@ -450,7 +447,6 @@ const _initState: GameState = {
   skillsData: null,
   pendingAction: null,
   shipModules: [],
-  moduleCatalog: null,
 }
 
 export function useGameState() {

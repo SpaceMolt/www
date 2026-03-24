@@ -211,43 +211,6 @@ export interface EnrichedShipModule {
   loaded_ammo_name?: string
 }
 
-// Module catalog entry — cached from catalog API for type lookups
-export interface ModuleCatalogEntry {
-  id: string
-  name: string
-  description: string
-  type: 'weapon' | 'defense' | 'mining' | 'utility'
-  cpu_usage: number
-  power_usage: number
-  size: number
-  base_value: number
-  // Weapon stats
-  damage?: number
-  damage_type?: string
-  range?: number
-  cooldown?: number
-  reach?: number
-  // Defense stats
-  shield_bonus?: number
-  armor_bonus?: number
-  hull_bonus?: number
-  speed_penalty?: number
-  shield_recharge_bonus?: number
-  damage_reduction?: number
-  // Mining stats
-  mining_power?: number
-  harvest_power?: number
-  // Utility stats
-  speed_bonus?: number
-  cargo_bonus?: number
-  power_bonus?: number
-  cpu_bonus?: number
-  scanner_power?: number
-  cloak_strength?: number
-  fuel_efficiency?: number
-  survey_power?: number
-}
-
 // Ship catalog — uses different shape from BrowseShipsResponse
 export interface ShipClassInfo {
   id: string
@@ -312,8 +275,6 @@ export interface GameState {
   pendingAction: { command: string; startedAt: number; estimatedMs?: number } | null
   /** Enriched installed modules from get_status (separate from ship.modules which is just IDs) */
   shipModules: EnrichedShipModule[]
-  /** Cached module catalog: item_id → module info (fetched once on login) */
-  moduleCatalog: Record<string, ModuleCatalogEntry> | null
 }
 
 export const initialGameState: GameState = {
@@ -346,7 +307,6 @@ export const initialGameState: GameState = {
   skillsData: null,
   pendingAction: null,
   shipModules: [],
-  moduleCatalog: null,
 }
 
 // === WebSocket Message Types ===
@@ -391,5 +351,4 @@ export type GameAction =
   | { type: 'SET_NEARBY'; payload: NearbyPlayer[] }
   | { type: 'SET_PENDING_ACTION'; command: string; estimatedMs?: number }
   | { type: 'CLEAR_PENDING_ACTION' }
-  | { type: 'SET_MODULE_CATALOG'; payload: Record<string, ModuleCatalogEntry> }
   | { type: 'RESET' }

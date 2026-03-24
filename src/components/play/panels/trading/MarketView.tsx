@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import {
   ShoppingCart,
   RefreshCw,
@@ -20,9 +21,10 @@ import {
   Lightbulb,
 } from 'lucide-react'
 import { useGame } from '../../GameProvider'
-import { useItemCatalog } from '../../ItemCatalogContext'
+import { getCatalogItem } from '../../../ItemDetail'
 import { ItemName } from '../../ItemTooltip'
 import { Credits, Loading, Modal, shared } from '../../shared'
+import { useHoverTooltip } from '../../hooks/useHoverTooltip'
 import styles from './MarketView.module.css'
 
 interface MarketInsight {
@@ -75,19 +77,43 @@ type SortField = 'name' | 'have' | 'buyQty' | 'buyPrice' | 'sellQty' | 'sellPric
 type SortDir = 'asc' | 'desc'
 type ShowFilter = 'all' | 'buying' | 'selling' | 'mine'
 
-const CATEGORY_COLORS: Record<string, { color: string; bg: string; border: string }> = {
-  sell_here: { color: 'var(--bio-green)', bg: 'rgba(45, 212, 191, 0.12)', border: 'rgba(45, 212, 191, 0.3)' },
-  opportunity: { color: 'var(--bio-green)', bg: 'rgba(45, 212, 191, 0.12)', border: 'rgba(45, 212, 191, 0.3)' },
-  order_warning: { color: 'var(--claw-red)', bg: 'rgba(230, 57, 70, 0.12)', border: 'rgba(230, 57, 70, 0.3)' },
-  demand: { color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.12)', border: 'rgba(96, 165, 250, 0.3)' },
-  trend: { color: 'var(--void-purple)', bg: 'rgba(167, 139, 250, 0.12)', border: 'rgba(167, 139, 250, 0.3)' },
-  supply_imbalance: { color: 'var(--shell-orange)', bg: 'rgba(255, 107, 53, 0.12)', border: 'rgba(255, 107, 53, 0.3)' },
-  arbitrage: { color: 'var(--plasma-cyan)', bg: 'rgba(0, 212, 255, 0.12)', border: 'rgba(0, 212, 255, 0.3)' },
-  depth_warning: { color: 'var(--warning-yellow)', bg: 'rgba(255, 217, 61, 0.12)', border: 'rgba(255, 217, 61, 0.3)' },
-}
-
 function formatCategory(cat: string): string {
   return cat.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+}
+
+/** Insight badge with rich hover tooltip */
+function InsightBadge({ insights }: { insights: MarketInsight[] }) {
+  const { ref, show, position, handleMouseEnter, handleMouseLeave } = useHoverTooltip({ delay: 150, width: 300 })
+
+  return (
+    <>
+      <span
+        ref={ref}
+        className={styles.insightBadge}
+        role="img"
+        aria-label={insights.map(i => `${formatCategory(i.category)}: ${i.message}`).join('. ')}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        <Lightbulb size={10} aria-hidden="true" />
+      </span>
+      {show && createPortal(
+        <div className={styles.insightTooltip} style={{ top: position.top, left: position.left }}>
+          <div className={styles.insightTooltipHeader}>
+            <Lightbulb size={12} aria-hidden="true" />
+            Market Insights
+          </div>
+          {insights.map((insight, i) => (
+            <div key={i} className={styles.insightTooltipRow}>
+              <span className={styles.insightTooltipCategory}>{formatCategory(insight.category)}</span>
+              <span className={styles.insightTooltipMessage}>{insight.message}</span>
+            </div>
+          ))}
+        </div>,
+        document.body
+      )}
+    </>
+  )
 }
 
 export function MarketView() {
@@ -465,7 +491,7 @@ export function MarketView() {
         </div>
       ) : analysisData && analysisData.insights.length > 0 ? (
         <div className={styles.analysisStatus}>
-          <Lightbulb size={10} aria-hidden="true" />
+          <span className={styles.insightBadge}><Lightbulb size={10} aria-hidden="true" /></span>
           <span>{analysisData.insights.length} insight{analysisData.insights.length !== 1 ? 's' : ''} found</span>
         </div>
       ) : null}
@@ -525,8 +551,6 @@ export function MarketView() {
                   const totalBuyQty = item.buy_orders.reduce((sum, o) => sum + o.quantity, 0)
                   const totalSellQty = item.sell_orders.reduce((sum, o) => sum + o.quantity, 0)
                   const itemInsights = insightsByItem.get(item.item_id)
-                  const topInsight = itemInsights?.[0]
-                  const insightStyle = topInsight ? (CATEGORY_COLORS[topInsight.category] || CATEGORY_COLORS.demand) : null
 
                   return (
                     <div key={item.item_id} className={styles.itemBlock}>
@@ -543,16 +567,8 @@ export function MarketView() {
                               <Bookmark size={9} />
                             </span>
                           )}
-                          {insightStyle && (
-                            <span
-                              className={styles.insightBadge}
-                              style={{ color: insightStyle.color }}
-                              role="img"
-                              aria-label={itemInsights?.map(i => `${formatCategory(i.category)}: ${i.message}`).join('. ') ?? ''}
-                              title={itemInsights?.map(i => `[${formatCategory(i.category)}] ${i.message}`).join('\n') ?? ''}
-                            >
-                              <Lightbulb size={10} aria-hidden="true" />
-                            </span>
+                          {itemInsights && itemInsights.length > 0 && (
+                            <InsightBadge insights={itemInsights} />
                           )}
                         </span>
                         <span className={`${styles.colHave} ${haveQty > 0 ? styles.haveQty : styles.noPrice}`}>
@@ -704,16 +720,7 @@ function ExpandedItemPanel({ item, credits, getAvailable, sendCommand, ordersDat
   onQuickSell: (itemId: string, itemName: string, quantity: number, priceEach: number, baseValue: number) => void
 }) {
   const available = getAvailable(item.item_id)
-  const { getItem, fetchItem } = useItemCatalog()
-  const [catalogItem, setCatalogItem] = useState(() => getItem(item.item_id))
-
-  useEffect(() => {
-    if (catalogItem) return
-    fetchItem(item.item_id).then(fetched => {
-      if (fetched) setCatalogItem(fetched)
-    })
-  }, [item.item_id, catalogItem, fetchItem])
-
+  const catalogItem = getCatalogItem(item.item_id)
   const baseValue = catalogItem?.base_value ?? 0
 
   // Best non-own buy order for quick sell

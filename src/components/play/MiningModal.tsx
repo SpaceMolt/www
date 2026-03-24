@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Pickaxe, Square, Package } from 'lucide-react'
 import { useGame } from './GameProvider'
+import { formatItemId } from '@/data/catalog'
 import styles from './MiningModal.module.css'
 
 interface MineLogEntry {
@@ -43,7 +44,7 @@ export function MiningModal({ onClose }: MiningModalProps) {
   }, [])
 
   const addYield = useCallback((resourceId: string, quantity: number) => {
-    const name = resourceId.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+    const name = formatItemId(resourceId)
     setTotals(prev => ({
       ...prev,
       [resourceId]: {

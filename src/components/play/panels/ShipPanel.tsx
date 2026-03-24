@@ -20,7 +20,9 @@ import { useGame } from '../GameProvider'
 import { ProgressBar } from '../ProgressBar'
 import { Panel, Modal, shared } from '../shared'
 import { ItemName } from '../ItemTooltip'
-import type { ModuleCatalogEntry, EnrichedShipModule } from '../types'
+import type { EnrichedShipModule } from '../types'
+import { getItem as getCatalogRawItem, isModule } from '@/data/catalog'
+import type { RawCatalogItem } from '@/data/catalog'
 import { Check, AlertTriangle } from 'lucide-react'
 import styles from './ShipPanel.module.css'
 
@@ -40,7 +42,6 @@ export function ShipPanel() {
   const { state, sendCommand, api } = useGame()
   const ship = state.ship
   const isDocked = state.isDocked
-  const moduleCatalog = state.moduleCatalog
 
   // Ship class details (description, lore)
   const [classDetail, setClassDetail] = useState<ShipClassDetail | null>(null)
@@ -111,23 +112,18 @@ export function ShipPanel() {
   const emptyUtility = Math.max(0, utilitySlots - utilityMods.length)
 
   // Get installable modules from cargo for a slot type
-  const getInstallableModules = (slotType: SlotType): Array<{ item_id: string; name: string; quantity: number; catalogEntry?: ModuleCatalogEntry }> => {
-    if (!ship.cargo || !moduleCatalog) return []
+  const getInstallableModules = (slotType: SlotType): Array<{ item_id: string; name: string; quantity: number; catalogEntry?: RawCatalogItem }> => {
+    if (!ship.cargo) return []
 
-    return ship.cargo
-      .filter(item => {
-        const entry = moduleCatalog[item.item_id]
-        if (!entry) return false
-        if (slotType === 'weapon') return entry.type === 'weapon'
-        if (slotType === 'defense') return entry.type === 'defense'
-        return entry.type === 'mining' || entry.type === 'utility'
-      })
-      .map(item => ({
-        item_id: item.item_id,
-        name: item.name ?? item.item_id,
-        quantity: item.quantity,
-        catalogEntry: moduleCatalog[item.item_id],
-      }))
+    return ship.cargo.flatMap(item => {
+      const entry = getCatalogRawItem(item.item_id)
+      if (!entry || !isModule(entry)) return []
+      const modType = entry.type
+      if (slotType === 'weapon' && modType !== 'weapon') return []
+      if (slotType === 'defense' && modType !== 'defense') return []
+      if (slotType === 'utility' && modType !== 'mining' && modType !== 'utility') return []
+      return [{ item_id: item.item_id, name: item.name ?? item.item_id, quantity: item.quantity, catalogEntry: entry }]
+    })
   }
 
   const renderModuleSlot = (mod: EnrichedShipModule, idx: number) => {
@@ -287,7 +283,8 @@ export function ShipPanel() {
         {ship.cargo && ship.cargo.length > 0 ? (
           <div className={styles.cargoList}>
             {ship.cargo.map((item) => {
-              const modEntry = moduleCatalog?.[item.item_id]
+              const rawItem = getCatalogRawItem(item.item_id)
+              const modEntry = rawItem && isModule(rawItem) ? rawItem : null
               let compatStatus: { ok: boolean; reason?: string } | null = null
               if (modEntry && isDocked) {
                 const cpuFree = (ship.cpu_capacity ?? 0) - (ship.cpu_used ?? 0)
@@ -305,10 +302,12 @@ export function ShipPanel() {
                   slotsUsed = utilityMods.length
                   slotsTotal = utilitySlots
                 }
-                if (modEntry.cpu_usage > cpuFree) {
-                  compatStatus = { ok: false, reason: `Needs ${modEntry.cpu_usage} CPU, ${cpuFree} free` }
-                } else if (modEntry.power_usage > powerFree) {
-                  compatStatus = { ok: false, reason: `Needs ${modEntry.power_usage} power, ${powerFree} free` }
+                const cpu = modEntry.cpu_usage ?? 0
+                const power = modEntry.power_usage ?? 0
+                if (cpu > cpuFree) {
+                  compatStatus = { ok: false, reason: `Needs ${cpu} CPU, ${cpuFree} free` }
+                } else if (power > powerFree) {
+                  compatStatus = { ok: false, reason: `Needs ${power} power, ${powerFree} free` }
                 } else if (slotsUsed >= slotsTotal) {
                   const label = slotType === 'mining' || slotType === 'utility' ? 'utility' : slotType
                   compatStatus = { ok: false, reason: `No ${label} slots free` }
@@ -357,7 +356,7 @@ export function ShipPanel() {
 
 function InstallModuleModal({ slotType, modules, onInstall, onClose, cpuAvailable, powerAvailable }: {
   slotType: SlotType
-  modules: Array<{ item_id: string; name: string; quantity: number; catalogEntry?: ModuleCatalogEntry }>
+  modules: Array<{ item_id: string; name: string; quantity: number; catalogEntry?: RawCatalogItem }>
   onInstall: (itemId: string) => void
   onClose: () => void
   cpuAvailable: number
@@ -380,7 +379,7 @@ function InstallModuleModal({ slotType, modules, onInstall, onClose, cpuAvailabl
           {modules.map((mod) => {
             const cat = mod.catalogEntry
             const fitsResources = cat
-              ? (cat.cpu_usage <= cpuAvailable && cat.power_usage <= powerAvailable)
+              ? ((cat.cpu_usage ?? 0) <= cpuAvailable && (cat.power_usage ?? 0) <= powerAvailable)
               : true
             return (
               <div key={mod.item_id} className={styles.installItem}>

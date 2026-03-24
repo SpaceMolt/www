@@ -1,6 +1,8 @@
 'use client'
 
 import styles from './ItemDetail.module.css'
+import { getItem as getRawItem, recipesById, formatItemId, isModule } from '@/data/catalog'
+import type { RawCatalogItem } from '@/data/catalog'
 
 /* Types from /api/items catalog */
 
@@ -51,6 +53,13 @@ export interface CatalogModuleStats {
   fuel_efficiency?: number
   drone_capacity?: number
   drone_bandwidth?: number
+  speed_penalty?: number
+  shield_recharge_bonus?: number
+  damage_reduction?: number
+  power_bonus?: number
+  cpu_bonus?: number
+  survey_power?: number
+  reach?: number
 }
 
 export interface CatalogItem {
@@ -106,6 +115,13 @@ export function ModuleStatsDisplay({ mod, compact }: { mod: CatalogModuleStats; 
   if (mod.fuel_efficiency) stats.push({ label: 'Fuel Eff', value: `${mod.fuel_efficiency}%` })
   if (mod.drone_capacity) stats.push({ label: 'Drone Cap', value: String(mod.drone_capacity) })
   if (mod.drone_bandwidth) stats.push({ label: 'Drone BW', value: String(mod.drone_bandwidth) })
+  if (mod.speed_penalty) stats.push({ label: 'Speed', value: `${mod.speed_penalty}` })
+  if (mod.shield_recharge_bonus) stats.push({ label: 'Shield Regen', value: `+${mod.shield_recharge_bonus}` })
+  if (mod.damage_reduction) stats.push({ label: 'Dmg Reduction', value: `${mod.damage_reduction}%` })
+  if (mod.power_bonus) stats.push({ label: 'Power', value: `+${mod.power_bonus}` })
+  if (mod.cpu_bonus) stats.push({ label: 'CPU', value: `+${mod.cpu_bonus}` })
+  if (mod.survey_power) stats.push({ label: 'Survey', value: String(mod.survey_power) })
+  if (mod.reach) stats.push({ label: 'Reach', value: String(mod.reach) })
 
   return (
     <div className={`${styles.moduleSection} ${compact ? styles.compact : ''}`}>
@@ -233,4 +249,92 @@ export function ItemDetail({ item, totalCols }: { item: CatalogItem; totalCols: 
       </td>
     </tr>
   )
+}
+
+// ── Build-time catalog lookup ──────────────────────────────────────────
+
+const MODULE_STAT_KEYS: (keyof CatalogModuleStats)[] = [
+  'type', 'cpu_usage', 'power_usage', 'damage', 'damage_type', 'range', 'cooldown',
+  'shield_bonus', 'armor_bonus', 'hull_bonus', 'mining_power', 'mining_range',
+  'harvest_power', 'harvest_range', 'special', 'speed_bonus', 'cargo_bonus',
+  'scanner_power', 'cloak_strength', 'fuel_efficiency', 'drone_capacity', 'drone_bandwidth',
+  'speed_penalty', 'shield_recharge_bonus', 'damage_reduction', 'power_bonus', 'cpu_bonus',
+  'survey_power', 'reach',
+]
+
+function transformRawItem(raw: RawCatalogItem): CatalogItem {
+  const item: CatalogItem = {
+    id: raw.id,
+    name: raw.name,
+    description: raw.description || '',
+    category: raw.category || raw.type || '',
+    size: raw.size || 0,
+    base_value: raw.base_value || 0,
+    rarity: raw.rarity,
+    stackable: raw.stackable ?? false,
+    tradeable: raw.tradeable ?? false,
+  }
+
+  if (isModule(raw)) {
+    const mod = {} as Record<string, unknown>
+    for (const key of MODULE_STAT_KEYS) {
+      const val = (raw as unknown as Record<string, unknown>)[key]
+      if (val != null) mod[key] = val
+    }
+    if (Object.keys(mod).length > 0) {
+      item.module = mod as unknown as CatalogModuleStats
+    }
+  }
+
+  const producedBy: CatalogRecipe[] = []
+  const consumedBy: CatalogRecipe[] = []
+
+  for (const r of Object.values(recipesById)) {
+    const inputs = r.inputs || []
+    const outputs = r.outputs || []
+
+    const inOutputs = outputs.some(o => o.item_id === raw.id)
+    const inInputs = inputs.some(i => i.item_id === raw.id)
+
+    if (inOutputs || inInputs) {
+      const recipe: CatalogRecipe = {
+        recipe_id: r.id,
+        recipe_name: r.name,
+        recipe_category: r.category || '',
+        crafting_time: r.crafting_time || 0,
+        required_skills: r.required_skills || {},
+        inputs: inputs.map(i => ({ item_id: i.item_id, item_name: formatItemId(i.item_id), quantity: i.quantity })),
+        outputs: outputs.map(o => ({ item_id: o.item_id, item_name: formatItemId(o.item_id), quantity: o.quantity })),
+      }
+      if (inOutputs) producedBy.push(recipe)
+      if (inInputs) consumedBy.push(recipe)
+    }
+  }
+
+  if (producedBy.length > 0) item.produced_by = producedBy
+  if (consumedBy.length > 0) item.consumed_by = consumedBy
+
+  return item
+}
+
+const transformedCache = new Map<string, CatalogItem>()
+
+/** Look up an item from the bundled catalog and transform it to CatalogItem shape */
+export function getCatalogItem(id: string): CatalogItem | undefined {
+  const cached = transformedCache.get(id)
+  if (cached) return cached
+
+  const raw = getRawItem(id)
+  if (!raw) return undefined
+
+  const item = transformRawItem(raw)
+  transformedCache.set(id, item)
+  return item
+}
+
+/** Render item detail content by looking up from the bundled catalog */
+export function ItemDetailFromCatalog({ itemId, compact }: { itemId: string; compact?: boolean }) {
+  const item = getCatalogItem(itemId)
+  if (!item) return null
+  return <ItemDetailContent item={item} compact={compact} />
 }
