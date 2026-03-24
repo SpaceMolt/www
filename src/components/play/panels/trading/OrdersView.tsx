@@ -69,6 +69,7 @@ function SellDropdown({ items, value, onChange }: SellDropdownProps) {
               placeholder="Search inventory..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Escape') { setOpen(false); setSearch('') } }}
             />
           </div>
           <div className={styles.dropdownList} role="listbox">
@@ -155,6 +156,7 @@ function BuyAutocomplete({ value, onChange }: BuyAutocompleteProps) {
           value={inputText}
           onChange={(e) => handleInputChange(e.target.value)}
           onFocus={() => { if (inputText.length >= 2) setOpen(true) }}
+          onKeyDown={(e) => { if (e.key === 'Escape') setOpen(false) }}
           role="combobox"
           aria-expanded={open && suggestions.length > 0}
           aria-autocomplete="list"

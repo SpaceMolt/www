@@ -1,7 +1,7 @@
 'use client'
 
 import styles from './ItemDetail.module.css'
-import { getItem as getRawItem, recipesById, formatItemId } from '@/data/catalog'
+import { getItem as getRawItem, recipesById, formatItemId, isModule } from '@/data/catalog'
 import type { RawCatalogItem } from '@/data/catalog'
 
 /* Types from /api/items catalog */
@@ -275,7 +275,7 @@ function transformRawItem(raw: RawCatalogItem): CatalogItem {
     tradeable: raw.tradeable ?? false,
   }
 
-  if (raw.cpu_usage != null || raw.power_usage != null || raw.slot != null) {
+  if (isModule(raw)) {
     const mod = {} as Record<string, unknown>
     for (const key of MODULE_STAT_KEYS) {
       const val = (raw as unknown as Record<string, unknown>)[key]

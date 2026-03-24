@@ -106,8 +106,16 @@ async function main() {
   console.log(`  Total: ${Object.keys(itemMap).length} items, ${Object.keys(recipeMap).length} recipes, ${Object.keys(shipMap).length} ships`)
 }
 
-main().catch((err) => {
+main().catch(async (err) => {
   console.error('Failed to fetch catalog:', err.message)
-  // Don't fail the build — stale catalog is better than no build
-  process.exit(0)
+  const { existsSync } = await import('node:fs')
+  const { resolve } = await import('node:path')
+  const outPath = resolve(import.meta.dirname, '..', 'src', 'data', 'catalog.json')
+  if (existsSync(outPath)) {
+    console.log('  Using stale catalog.json from previous build')
+    process.exit(0)
+  } else {
+    console.error('  No existing catalog.json — build cannot proceed without catalog data')
+    process.exit(1)
+  }
 })

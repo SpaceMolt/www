@@ -9,7 +9,7 @@ export function useHoverTooltip(options: UseHoverTooltipOptions = {}) {
   const { delay = 200, width = 320 } = options
   const [show, setShow] = useState(false)
   const [position, setPosition] = useState({ top: 0, left: 0 })
-  const ref = useRef<HTMLSpanElement>(null)
+  const ref = useRef<HTMLElement>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const handleMouseEnter = useCallback(() => {

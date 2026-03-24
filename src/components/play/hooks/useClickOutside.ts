@@ -8,5 +8,5 @@ export function useClickOutside(ref: RefObject<HTMLElement | null>, active: bool
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
-  }, [ref, active, onClose])
+  }, [active, onClose]) // ref is stable (useRef), intentionally excluded
 }
