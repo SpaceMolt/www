@@ -938,11 +938,12 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
       return
     }
     if (hasFitRouteRef.current) return
-    hasFitRouteRef.current = true
 
     if (!plannedRoute.route || plannedRoute.route.length < 2) return
     const s = stateRef.current
     if (!s.mapData) return
+
+    hasFitRouteRef.current = true
 
     const systemMap = new Map(s.mapData.systems.map((sys) => [sys.id, sys]))
 
