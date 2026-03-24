@@ -334,7 +334,7 @@ export function MarketView() {
       groupedItems: sortedCats.map(cat => ({ category: cat, items: groups[cat] })),
       visibleCategories: sortedCats,
     }
-  }, [marketData?.items, selectedCategory, searchQuery, showFilter, sortField, sortDir, cargo, storageItems, haveMap])
+  }, [marketData?.items, selectedCategory, searchQuery, showFilter, sortField, sortDir, haveMap])
 
   // Map insights by item_id for inline display
   const insightsByItem = useMemo(() => {
@@ -529,7 +529,9 @@ export function MarketView() {
                             <span
                               className={styles.insightDot}
                               style={{ background: insightStyle.color }}
-                              title={itemInsights!.map(i => `[${formatCategory(i.category)}] ${i.message}`).join('\n')}
+                              role="img"
+                              aria-label={itemInsights?.map(i => `${formatCategory(i.category)}: ${i.message}`).join('. ') ?? ''}
+                              title={itemInsights?.map(i => `[${formatCategory(i.category)}] ${i.message}`).join('\n') ?? ''}
                             />
                           )}
                         </span>
