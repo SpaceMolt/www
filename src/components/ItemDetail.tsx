@@ -53,6 +53,13 @@ export interface CatalogModuleStats {
   fuel_efficiency?: number
   drone_capacity?: number
   drone_bandwidth?: number
+  speed_penalty?: number
+  shield_recharge_bonus?: number
+  damage_reduction?: number
+  power_bonus?: number
+  cpu_bonus?: number
+  survey_power?: number
+  reach?: number
 }
 
 export interface CatalogItem {
@@ -108,6 +115,13 @@ export function ModuleStatsDisplay({ mod, compact }: { mod: CatalogModuleStats; 
   if (mod.fuel_efficiency) stats.push({ label: 'Fuel Eff', value: `${mod.fuel_efficiency}%` })
   if (mod.drone_capacity) stats.push({ label: 'Drone Cap', value: String(mod.drone_capacity) })
   if (mod.drone_bandwidth) stats.push({ label: 'Drone BW', value: String(mod.drone_bandwidth) })
+  if (mod.speed_penalty) stats.push({ label: 'Speed', value: `${mod.speed_penalty}` })
+  if (mod.shield_recharge_bonus) stats.push({ label: 'Shield Regen', value: `+${mod.shield_recharge_bonus}` })
+  if (mod.damage_reduction) stats.push({ label: 'Dmg Reduction', value: `${mod.damage_reduction}%` })
+  if (mod.power_bonus) stats.push({ label: 'Power', value: `+${mod.power_bonus}` })
+  if (mod.cpu_bonus) stats.push({ label: 'CPU', value: `+${mod.cpu_bonus}` })
+  if (mod.survey_power) stats.push({ label: 'Survey', value: String(mod.survey_power) })
+  if (mod.reach) stats.push({ label: 'Reach', value: String(mod.reach) })
 
   return (
     <div className={`${styles.moduleSection} ${compact ? styles.compact : ''}`}>
@@ -244,6 +258,8 @@ const MODULE_STAT_KEYS: (keyof CatalogModuleStats)[] = [
   'shield_bonus', 'armor_bonus', 'hull_bonus', 'mining_power', 'mining_range',
   'harvest_power', 'harvest_range', 'special', 'speed_bonus', 'cargo_bonus',
   'scanner_power', 'cloak_strength', 'fuel_efficiency', 'drone_capacity', 'drone_bandwidth',
+  'speed_penalty', 'shield_recharge_bonus', 'damage_reduction', 'power_bonus', 'cpu_bonus',
+  'survey_power', 'reach',
 ]
 
 function transformRawItem(raw: RawCatalogItem): CatalogItem {
@@ -286,7 +302,7 @@ function transformRawItem(raw: RawCatalogItem): CatalogItem {
         recipe_name: r.name,
         recipe_category: r.category || '',
         crafting_time: r.crafting_time || 0,
-        required_skills: r.required_skills,
+        required_skills: r.required_skills || {},
         inputs: inputs.map(i => ({ item_id: i.item_id, item_name: formatItemId(i.item_id), quantity: i.quantity })),
         outputs: outputs.map(o => ({ item_id: o.item_id, item_name: formatItemId(o.item_id), quantity: o.quantity })),
       }

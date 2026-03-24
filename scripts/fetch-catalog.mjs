@@ -55,23 +55,18 @@ async function main() {
   const sessionId = await createSession()
   console.log('  Session created')
 
-  // Fetch all four catalog types in parallel
-  const [items, modules, recipes, ships] = await Promise.all([
+  // Fetch all catalog types in parallel (items search includes modules)
+  const [items, recipes, ships] = await Promise.all([
     fetchPaginated(sessionId, { type: 'items', search: '' }),
-    fetchPaginated(sessionId, { type: 'items', category: 'module' }),
     fetchPaginated(sessionId, { type: 'recipes' }),
     fetchPaginated(sessionId, { type: 'ships' }),
   ])
 
-  console.log(`  Items: ${items.length}, Modules: ${modules.length}, Recipes: ${recipes.length}, Ships: ${ships.length}`)
+  console.log(`  Items: ${items.length}, Recipes: ${recipes.length}, Ships: ${ships.length}`)
 
-  // Build keyed maps
   const itemMap = {}
   for (const item of items) {
     itemMap[item.id] = item
-  }
-  for (const mod of modules) {
-    itemMap[mod.id] = mod
   }
 
   const recipeMap = {}

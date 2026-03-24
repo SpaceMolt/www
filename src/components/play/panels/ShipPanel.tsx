@@ -115,21 +115,15 @@ export function ShipPanel() {
   const getInstallableModules = (slotType: SlotType): Array<{ item_id: string; name: string; quantity: number; catalogEntry?: RawCatalogItem }> => {
     if (!ship.cargo) return []
 
-    return ship.cargo
-      .filter(item => {
-        const entry = getCatalogRawItem(item.item_id)
-        if (!entry || !isModule(entry)) return false
-        const modType = entry.type
-        if (slotType === 'weapon') return modType === 'weapon'
-        if (slotType === 'defense') return modType === 'defense'
-        return modType === 'mining' || modType === 'utility'
-      })
-      .map(item => ({
-        item_id: item.item_id,
-        name: item.name ?? item.item_id,
-        quantity: item.quantity,
-        catalogEntry: getCatalogRawItem(item.item_id),
-      }))
+    return ship.cargo.flatMap(item => {
+      const entry = getCatalogRawItem(item.item_id)
+      if (!entry || !isModule(entry)) return []
+      const modType = entry.type
+      if (slotType === 'weapon' && modType !== 'weapon') return []
+      if (slotType === 'defense' && modType !== 'defense') return []
+      if (slotType === 'utility' && modType !== 'mining' && modType !== 'utility') return []
+      return [{ item_id: item.item_id, name: item.name ?? item.item_id, quantity: item.quantity, catalogEntry: entry }]
+    })
   }
 
   const renderModuleSlot = (mod: EnrichedShipModule, idx: number) => {

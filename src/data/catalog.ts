@@ -44,6 +44,13 @@ export interface RawCatalogItem {
   fuel_efficiency?: number
   drone_capacity?: number
   drone_bandwidth?: number
+  speed_penalty?: number
+  shield_recharge_bonus?: number
+  damage_reduction?: number
+  power_bonus?: number
+  cpu_bonus?: number
+  survey_power?: number
+  reach?: number
   required_skills?: Record<string, number>
   type_id?: string
 }
@@ -129,9 +136,11 @@ export function getItemCategory(item: RawCatalogItem): string {
   return item.category || item.type || 'unknown'
 }
 
+const MODULE_TYPES = new Set(['weapon', 'defense', 'mining', 'utility', 'drone'])
+
 /** Check if an item is a module */
 export function isModule(item: RawCatalogItem): boolean {
-  return item.slot != null || item.cpu_usage != null
+  return MODULE_TYPES.has(item.type ?? '') || item.slot != null
 }
 
 /** Format an item_id as a display name ("iron_ore" → "Iron Ore") */

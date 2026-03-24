@@ -59,7 +59,7 @@ export function CraftingPanel() {
     if (!state.skillsData) sendCommand('get_skills')
   }, [state.skillsData, sendCommand])
 
-  const loadRecipes = useCallback(() => {
+  const refreshSkills = useCallback(() => {
     sendCommand('get_skills')
   }, [sendCommand])
 
@@ -132,8 +132,6 @@ export function CraftingPanel() {
   }, [])
 
   const isDocked = state.isDocked
-  const totalRecipes = recipes.length
-  const allLoaded = true
 
   return (
     <Panel
@@ -143,8 +141,8 @@ export function CraftingPanel() {
         <div className={styles.headerActions}>
           <button
             className={shared.refreshBtn}
-            onClick={loadRecipes}
-            title="Refresh recipes and skills"
+            onClick={refreshSkills}
+            title="Refresh skills"
             type="button"
           >
             <RefreshCw size={14} />
@@ -193,9 +191,6 @@ export function CraftingPanel() {
           </div>
         )}
 
-        {!allLoaded && totalRecipes > 0 && (
-          <div className={styles.loadingNotice}>Loading recipes... {recipes.length}/{totalRecipes}</div>
-        )}
 
         {groupedRecipes.length === 0 && (
           <div className={shared.emptyState}>
