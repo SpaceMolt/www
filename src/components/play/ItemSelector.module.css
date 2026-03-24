@@ -104,7 +104,7 @@
   outline: none;
   color: var(--star-white);
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
 }
 
 .searchInput::placeholder {
@@ -146,7 +146,7 @@
 
 .optionName {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: var(--star-white);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -155,7 +155,7 @@
 
 .optionQty {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   color: var(--chrome-silver);
   flex-shrink: 0;
   margin-left: 0.5rem;
@@ -166,7 +166,7 @@
   padding: 0.75rem 0.6rem;
   text-align: center;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
   font-style: italic;
 }

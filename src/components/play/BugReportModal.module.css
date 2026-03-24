@@ -23,7 +23,7 @@
 .contextDetails summary {
   cursor: pointer;
   font-family: var(--font-jetbrains);
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   color: rgba(255, 255, 255, 0.5);
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -41,7 +41,7 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 4px;
   font-family: var(--font-jetbrains);
-  font-size: 0.55rem;
+  font-size: 0.75rem;
   color: rgba(255, 255, 255, 0.6);
   white-space: pre-wrap;
   word-break: break-word;
@@ -60,6 +60,6 @@
 .errorMessage {
   color: #E63946;
   font-family: var(--font-jetbrains);
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   margin-top: 0.3rem;
 }

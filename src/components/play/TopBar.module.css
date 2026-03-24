@@ -40,7 +40,7 @@
   align-items: center;
   gap: 0.2rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--warning-yellow);
   white-space: nowrap;
@@ -53,7 +53,7 @@
   align-items: center;
   gap: 0.15rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.55rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: var(--claw-red);
   background: rgba(230, 57, 70, 0.12);
@@ -90,19 +90,19 @@
 
 .systemName {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: var(--plasma-cyan);
   white-space: nowrap;
 }
 
 .poiSep {
   color: var(--hull-grey);
-  font-size: 0.6rem;
+  font-size: 0.75rem;
 }
 
 .poiName {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   color: var(--chrome-silver);
   white-space: nowrap;
   overflow: hidden;
@@ -114,7 +114,7 @@
   align-items: center;
   gap: 0.15rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.55rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: var(--bio-green);
   background: rgba(45, 212, 191, 0.12);
@@ -136,7 +136,7 @@
 
 .shipClass {
   font-family: var(--font-orbitron), 'Orbitron', sans-serif;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--star-white);
   text-transform: uppercase;
@@ -183,7 +183,7 @@
 
 .statusLabel {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--chrome-silver);
   text-transform: uppercase;
@@ -209,7 +209,7 @@
 
 .statusValue {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--chrome-silver);
   width: 2rem;

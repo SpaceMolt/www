@@ -73,7 +73,7 @@
 
 .tooltipTags {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   color: var(--plasma-cyan);
   display: none;
 }
@@ -89,7 +89,7 @@
 
 .tooltipBattle {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: var(--claw-red);
   text-transform: uppercase;
@@ -153,7 +153,7 @@
 
 .legendTitle {
   font-family: var(--font-orbitron), 'Orbitron', sans-serif;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 1px;
   color: var(--chrome-silver);
@@ -256,7 +256,7 @@
   margin-bottom: 0.4rem;
   border-bottom: 1px solid rgba(45, 212, 191, 0.2);
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 1px;
   color: #2dd4bf;
@@ -339,7 +339,7 @@
 }
 
 .poiPanelEmpire {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: var(--chrome-silver);
   margin-top: 0.35rem;
   text-transform: uppercase;
@@ -363,7 +363,7 @@
 
 .poiPanelTag {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   padding: 0.2rem 0.5rem;
   border-radius: 2px;
   text-transform: uppercase;
@@ -468,7 +468,7 @@
 
 .poiSectionHeader {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 2px;
   color: var(--plasma-cyan);
@@ -545,14 +545,14 @@
 }
 
 .poiType {
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   color: var(--chrome-silver);
   text-transform: uppercase;
   letter-spacing: 1px;
 }
 
 .poiBaseBadge {
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   padding: 0.15rem 0.4rem;
   background: rgba(255, 215, 0, 0.15);
   color: #FFD700;
@@ -562,7 +562,7 @@
 }
 
 .poiStationCondition {
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   padding: 0.15rem 0.4rem;
   background: rgba(255, 255, 255, 0.08);
   border-radius: 2px;
@@ -578,7 +578,7 @@
 }
 
 .poiServiceTag {
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   padding: 0.15rem 0.4rem;
   background: rgba(0, 212, 255, 0.1);
   color: var(--plasma-cyan);
@@ -602,7 +602,7 @@
 
 .poiOnlineBadge {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: #2dd4bf;
   background: rgba(45, 212, 191, 0.15);
   padding: 0.25rem 0.5rem;
@@ -662,7 +662,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 600;
   position: relative;
   overflow: hidden;
@@ -696,7 +696,7 @@
 
 .playerClanTag {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   padding: 0.1rem 0.3rem;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 2px;
@@ -712,7 +712,7 @@
 }
 
 .playerStatus {
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   color: rgba(168, 197, 214, 0.6);
   margin-top: 0.15rem;
   font-style: italic;
@@ -736,7 +736,7 @@
 
 .poiPanelEmptyHint {
   margin-top: 0.75rem;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
 }
 
@@ -806,7 +806,7 @@
 /* Search */
 .searchContainer {
   position: absolute;
-  bottom: calc(1rem + 115px + 0.5rem);
+  bottom: calc(1rem + 155px + 0.5rem);
   right: 1rem;
   z-index: 100;
   display: flex;
@@ -982,7 +982,7 @@
 .travelTrackerBadge {
   background: var(--plasma-cyan);
   color: #050810;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   font-weight: 700;
   padding: 0.1rem 0.4rem;
   border-radius: 8px;
@@ -1088,7 +1088,7 @@
 
 .travelJumpCount {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   color: var(--chrome-silver);
   flex-shrink: 0;
 }

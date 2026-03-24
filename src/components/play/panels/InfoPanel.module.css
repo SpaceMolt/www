@@ -32,13 +32,13 @@
 
 .versionDate {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
 }
 
 .versionMotd {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   color: var(--chrome-silver);
   font-style: italic;
   line-height: 1.4;
@@ -63,7 +63,7 @@
 
 .statLabel {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.58rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -92,7 +92,7 @@
   border: 1px solid var(--hull-grey);
   border-radius: 4px;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--chrome-silver);
   text-decoration: none;
@@ -160,7 +160,7 @@
 
 .noteInput {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: var(--star-white);
   background: rgba(10, 14, 23, 0.8);
   border: 1px solid var(--hull-grey);
@@ -181,7 +181,7 @@
 
 .noteTextarea {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: var(--star-white);
   background: rgba(10, 14, 23, 0.8);
   border: 1px solid var(--hull-grey);
@@ -235,7 +235,7 @@
 
 .missionDifficulty {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.58rem;
+  font-size: 0.75rem;
   color: var(--warning-yellow);
   text-transform: uppercase;
   flex-shrink: 0;
@@ -243,14 +243,14 @@
 
 .missionDesc {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   color: var(--chrome-silver);
   line-height: 1.4;
 }
 
 .missionReward {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   color: var(--bio-green);
 }
 
@@ -266,7 +266,7 @@
   background: rgba(61, 90, 108, 0.08);
   border-radius: 3px;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   color: var(--chrome-silver);
   line-height: 1.3;
 }
@@ -287,7 +287,7 @@
 .filterSelect {
   flex: 1;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   color: var(--star-white);
   background: rgba(10, 14, 23, 0.8);
   border: 1px solid var(--hull-grey);
@@ -328,7 +328,7 @@
 
 .logCategory {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.55rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: var(--plasma-cyan);
   text-transform: uppercase;
@@ -342,7 +342,7 @@
 
 .logTimestamp {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.55rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
   white-space: nowrap;
   flex-shrink: 0;
@@ -350,7 +350,7 @@
 
 .logEntrySummary {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   color: var(--chrome-silver);
   line-height: 1.3;
 }
@@ -394,7 +394,7 @@
 
 .missionDetailLabel {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--warning-yellow);
   text-transform: uppercase;
@@ -409,7 +409,7 @@
   gap: 0.5rem;
   padding: 1.5rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
 }
 
@@ -424,7 +424,7 @@
 }
 
 .objectiveItem {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: var(--chrome-silver);
 }
 
@@ -435,7 +435,7 @@
 .objectiveMeta {
   color: var(--plasma-cyan);
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
 }
 
 /* Mobile */

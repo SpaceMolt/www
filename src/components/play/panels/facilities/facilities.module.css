@@ -40,7 +40,7 @@
 
 .cardName {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--chrome-silver);
   flex: 1;
@@ -52,7 +52,7 @@
 
 .cardDescription {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.62rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
   line-height: 1.4;
 }
@@ -62,7 +62,7 @@
   flex-wrap: wrap;
   gap: 0.3rem 0.6rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.58rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
 }
 
@@ -96,7 +96,7 @@
   align-items: center;
   gap: 0.3rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: var(--hull-grey);
   text-transform: uppercase;
@@ -134,7 +134,7 @@
   align-items: center;
   gap: 0.25rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.58rem;
+  font-size: 0.75rem;
   padding: 0.25rem 0.5rem;
   border: 1px solid rgba(61, 90, 108, 0.2);
   border-radius: 3px;
@@ -157,7 +157,7 @@
 
 .filterCount {
   opacity: 0.6;
-  font-size: 0.52rem;
+  font-size: 0.75rem;
 }
 
 /* Build type card (expanded detail) */
@@ -186,7 +186,7 @@
 
 .typeName {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--chrome-silver);
   flex: 1;
@@ -194,14 +194,14 @@
 
 .typeCost {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   color: var(--shell-orange);
   white-space: nowrap;
 }
 
 .typeLevel {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.55rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
   opacity: 0.7;
 }
@@ -220,7 +220,7 @@
   align-items: center;
   justify-content: space-between;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.58rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
 }
 
@@ -245,7 +245,7 @@
 
 .recipeLabel {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.55rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: var(--shell-orange);
   text-transform: uppercase;
@@ -257,7 +257,7 @@
   align-items: center;
   gap: 0.3rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.58rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
   flex-wrap: wrap;
 }
@@ -272,7 +272,7 @@
   align-items: center;
   gap: 0.2rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.55rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
 }
 
@@ -292,7 +292,7 @@
   gap: 0.5rem;
   padding: 0.4rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.58rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
 }
 
@@ -346,7 +346,7 @@
   flex-direction: column;
   gap: 0.2rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
 }
 

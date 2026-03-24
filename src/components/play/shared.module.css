@@ -65,7 +65,7 @@
   gap: 0.35rem;
   padding: 0.55rem 0.75rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -89,7 +89,7 @@
 /* Section title */
 .sectionTitle {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--chrome-silver);
   text-transform: uppercase;
@@ -139,7 +139,7 @@
   justify-content: center;
   gap: 0.3rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -265,7 +265,7 @@
 
 .badge {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.55rem;
+  font-size: 0.75rem;
   padding: 0.1rem 0.35rem;
   border-radius: 3px;
   text-transform: uppercase;
@@ -319,7 +319,7 @@
 
 .textInput {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: var(--star-white);
   background: rgba(10, 14, 20, 0.6);
   border: 1px solid var(--dim-grey);
@@ -423,7 +423,7 @@
 
 .confirmText {
   font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: var(--chrome-silver);
   flex: 1;
 }
@@ -457,7 +457,7 @@
 
 .listCardMeta {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
   display: flex;
   gap: 0.4rem;

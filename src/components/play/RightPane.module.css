@@ -28,7 +28,7 @@
   color: var(--hull-grey);
   cursor: pointer;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   transition: color 0.2s, background 0.2s, border-color 0.2s;
@@ -46,7 +46,7 @@
 }
 
 .countBadge {
-  font-size: 0.5rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: var(--hull-grey);
   background: rgba(61, 90, 108, 0.3);

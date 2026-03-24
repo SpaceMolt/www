@@ -68,20 +68,20 @@
 
 .routeBannerStats {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   color: var(--chrome-silver);
 }
 
 .routeBannerWarning {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   color: var(--claw-red);
   font-weight: 600;
 }
 
 .routeBannerCaution {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   color: var(--warning-yellow);
 }
 
@@ -93,7 +93,7 @@
 
 .routeBannerBegin {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   padding: 0.3rem 0.6rem;
   border: 1px solid rgba(0, 200, 83, 0.4);
   border-radius: 3px;
@@ -114,7 +114,7 @@
 
 .routeBannerCancel {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   padding: 0.3rem 0.6rem;
   border: 1px solid rgba(255, 107, 107, 0.3);
   border-radius: 3px;
@@ -130,7 +130,7 @@
 
 .routeBannerVia {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   color: var(--chrome-silver);
   display: flex;
   align-items: center;
@@ -147,7 +147,7 @@
   border: 1px solid rgba(0, 212, 255, 0.25);
   border-radius: 3px;
   color: var(--plasma-cyan);
-  font-size: 0.6rem;
+  font-size: 0.75rem;
 }
 
 .viaWaypointRemove {
@@ -161,7 +161,7 @@
   border-radius: 2px;
   background: transparent;
   color: var(--hull-grey);
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   cursor: pointer;
   transition: color 0.15s, background 0.15s;
 }
@@ -188,7 +188,7 @@
 
 .atbPhase {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: var(--plasma-cyan);
   text-transform: uppercase;
@@ -206,7 +206,7 @@
 
 .atbFuel {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   color: var(--chrome-silver);
   letter-spacing: 0.06em;
 }
@@ -214,7 +214,7 @@
 .atbAbort {
   margin-left: auto;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   font-weight: 700;
   padding: 0.3rem 0.75rem;
   border: 2px solid rgba(255, 68, 68, 0.6);
@@ -261,7 +261,7 @@
 
 .atbRoute {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.55rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
   letter-spacing: 0.04em;
 }
@@ -313,14 +313,14 @@
 
 .abortModalDetail {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
   margin-bottom: 1.25rem;
 }
 
 .abortModalOk {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 600;
   padding: 0.5rem 2rem;
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -360,7 +360,7 @@
 
 .arrivedModalDetail {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   color: var(--chrome-silver);
   margin-bottom: 1.25rem;
 }

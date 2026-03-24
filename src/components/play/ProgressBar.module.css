@@ -14,7 +14,7 @@
 
 .label {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: var(--chrome-silver);
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -23,7 +23,7 @@
 
 .valueText {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   color: var(--chrome-silver);
   white-space: nowrap;
 }

@@ -41,7 +41,7 @@
 
 .tabLabel {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -102,7 +102,7 @@
 
 .sender {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: var(--plasma-cyan);
 }
@@ -114,13 +114,13 @@
 
 .whisperTarget {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   color: var(--void-purple);
 }
 
 .timestamp {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.55rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
   margin-left: auto;
 }

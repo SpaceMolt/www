@@ -14,7 +14,7 @@
 
 .groupHeader {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: var(--hull-grey);
   text-transform: uppercase;
@@ -76,7 +76,7 @@
 
 .skillLevel {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   color: var(--plasma-cyan);
   font-weight: 600;
 }
@@ -90,7 +90,7 @@
 
 .skillXp {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.55rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
   white-space: nowrap;
   flex-shrink: 0;
@@ -98,7 +98,7 @@
 
 .skillMaxed {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.55rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: var(--bio-green);
   padding-left: 0.6rem;
@@ -116,7 +116,7 @@
 
 .skillDesc {
   font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: var(--chrome-silver);
   line-height: 1.5;
   margin: 0;
@@ -130,7 +130,7 @@
 
 .metaLabel {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.58rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--hull-grey);
   text-transform: uppercase;
@@ -139,7 +139,7 @@
 
 .metaValue {
   font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   color: var(--chrome-silver);
 }
 
@@ -151,7 +151,7 @@
 
 .bonusItem {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.58rem;
+  font-size: 0.75rem;
   color: var(--bio-green);
   background: rgba(45, 212, 191, 0.08);
   border: 1px solid rgba(45, 212, 191, 0.15);

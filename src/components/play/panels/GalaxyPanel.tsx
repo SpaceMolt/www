@@ -1,6 +1,8 @@
 'use client'
 
-import { useEffect, useRef, useCallback, useImperativeHandle, forwardRef } from 'react'
+import { useEffect, useRef, useCallback, useImperativeHandle, forwardRef, useState } from 'react'
+import { Home, Crosshair } from 'lucide-react'
+import { useGame } from '../GameProvider'
 import styles from './GalaxyPanel.module.css'
 
 // ── Types ──────────────────────────────────────────────────────────────
@@ -155,6 +157,18 @@ interface GalaxyPanelProps {
 }
 
 export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(function GalaxyPanel({ onSystemSelect, plannedRoute, onPlannedRouteChange, autoTravelProgress, highlightedSystems }, ref) {
+  const { state: gameState } = useGame()
+  const [focusedSystemId, setFocusedSystemId] = useState<string | null>(null)
+  const focusedSystemRef = useRef<string | null>(null)
+  focusedSystemRef.current = focusedSystemId
+
+  // Clear focus highlight after 3 seconds
+  useEffect(() => {
+    if (!focusedSystemId) return
+    const timeout = setTimeout(() => setFocusedSystemId(null), 3000)
+    return () => clearTimeout(timeout)
+  }, [focusedSystemId])
+
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const tooltipRef = useRef<HTMLDivElement>(null)
@@ -563,6 +577,7 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
         const isStronghold = system.is_stronghold === true
         const isDimmed = hasDimming && !hl.has(system.id)
         const isHighlighted = hasDimming && hl.has(system.id)
+        const isFocused = focusedSystemRef.current === system.id
 
         // Dim non-matching systems when search is active
         if (isDimmed && !isHovered) {
@@ -579,6 +594,31 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
           ctx.beginPath()
           ctx.arc(pos.x, pos.y, nr * 5, 0, Math.PI * 2)
           ctx.fill()
+        }
+
+        // Focused system pulse (from home/location button)
+        if (isFocused) {
+          const pulsePhase = (s.animationTime % 1500) / 1500
+          const pulseAlpha = 0.5 + 0.5 * Math.sin(pulsePhase * Math.PI * 2)
+          const pulseRadius = nr * (4 + 2 * Math.sin(pulsePhase * Math.PI * 2))
+
+          ctx.save()
+          ctx.strokeStyle = `rgba(0, 212, 255, ${0.3 + 0.4 * pulseAlpha})`
+          ctx.lineWidth = 2
+          ctx.beginPath()
+          ctx.arc(pos.x, pos.y, pulseRadius, 0, Math.PI * 2)
+          ctx.stroke()
+
+          // Inner glow
+          const gradient = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, nr * 6)
+          gradient.addColorStop(0, `rgba(0, 212, 255, ${0.25 * pulseAlpha})`)
+          gradient.addColorStop(0.5, `rgba(0, 212, 255, ${0.08 * pulseAlpha})`)
+          gradient.addColorStop(1, 'rgba(0, 212, 255, 0)')
+          ctx.fillStyle = gradient
+          ctx.beginPath()
+          ctx.arc(pos.x, pos.y, nr * 6, 0, Math.PI * 2)
+          ctx.fill()
+          ctx.restore()
         }
 
         // Hover glow
@@ -807,6 +847,39 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
   )
 
   // ── View Controls ──────────────────────────────────────────────────
+
+  const panToSystemWithHighlight = useCallback((systemId: string) => {
+    const s = stateRef.current
+    if (!s.mapData) return
+    const system = s.mapData.systems.find((sys) => sys.id === systemId)
+    if (!system) return
+    s.targetViewX = -system.x
+    s.targetViewY = -system.y
+    s.targetZoom = 0.5
+    s.isAnimating = true
+    setFocusedSystemId(systemId)
+  }, [])
+
+  const handleGoHome = useCallback(() => {
+    const s = stateRef.current
+    if (!s.mapData) return
+    // Find the empire home system for the player's empire
+    const empire = gameState.player?.empire
+    if (!empire) return
+    const homeSystem = s.mapData.systems.find((sys) => sys.empire === empire && sys.is_home)
+    if (homeSystem) {
+      panToSystemWithHighlight(homeSystem.id)
+    }
+  }, [gameState.player?.empire, panToSystemWithHighlight])
+
+  const handleGoCurrentLocation = useCallback(() => {
+    const s = stateRef.current
+    if (!s.mapData || !gameState.system) return
+    const currentSystem = s.mapData.systems.find((sys) => sys.id === gameState.system!.id)
+    if (currentSystem) {
+      panToSystemWithHighlight(currentSystem.id)
+    }
+  }, [gameState.system, panToSystemWithHighlight])
 
   const resetView = useCallback(() => {
     const s = stateRef.current
@@ -1292,11 +1365,19 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
       <div className={styles.zoomControls}>
         <button
           className={styles.zoomBtn}
-          onClick={resetView}
-          aria-label="Reset view"
-          title="Reset View"
+          onClick={handleGoHome}
+          aria-label="Go to home system"
+          title="Home System"
         >
-          {'\u2302'}
+          <Home size={16} />
+        </button>
+        <button
+          className={styles.zoomBtn}
+          onClick={handleGoCurrentLocation}
+          aria-label="Go to current location"
+          title="Current Location"
+        >
+          <Crosshair size={16} />
         </button>
         <button
           className={styles.zoomBtn}

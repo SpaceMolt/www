@@ -32,7 +32,7 @@
 
 .factionTag {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: var(--plasma-cyan);
   background: rgba(0, 212, 255, 0.1);
@@ -51,7 +51,7 @@
 
 .metaTag {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   color: var(--chrome-silver);
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -111,7 +111,7 @@
 
 .memberRole {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
   text-transform: uppercase;
   flex-shrink: 0;
@@ -132,7 +132,7 @@
 
 .label {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--chrome-silver);
   text-transform: uppercase;
@@ -174,7 +174,7 @@
 .inviteInput {
   flex: 1;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: var(--star-white);
   background: rgba(10, 14, 23, 0.8);
   border: 1px solid var(--hull-grey);
@@ -231,14 +231,14 @@
 
 .factionListTag {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: var(--plasma-cyan);
 }
 
 .factionListMembers {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
   flex-shrink: 0;
 }
@@ -251,7 +251,7 @@
   gap: 0.5rem;
   padding: 1.5rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
 }
 
@@ -302,7 +302,7 @@
 
 .intelMeta {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
   flex-shrink: 0;
 }
@@ -326,7 +326,7 @@
 
 .intelStatLabel {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.55rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--hull-grey);
   text-transform: uppercase;
@@ -388,7 +388,7 @@
 
 .roomItemMeta {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.55rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
 }
 
@@ -424,7 +424,7 @@
 
 .roomContentMeta {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
 }
 
@@ -439,7 +439,7 @@
 
 .roomContentFooter {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.55rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
   border-top: 1px solid var(--dim-grey);
   padding-top: 0.35rem;
@@ -458,7 +458,7 @@
 
 .roomFormTitle {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--chrome-silver);
   text-transform: uppercase;
@@ -469,7 +469,7 @@
 }
 
 .roomFormCount {
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
   margin-left: auto;
 }

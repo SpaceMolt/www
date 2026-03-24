@@ -17,7 +17,7 @@
 
 .headerTitle {
   font-family: var(--font-orbitron), 'Orbitron', sans-serif;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--chrome-silver);
   text-transform: uppercase;
@@ -26,7 +26,7 @@
 
 .eventCount {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
 }
 
@@ -60,7 +60,7 @@
 
 .emptyMessage {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
   text-align: center;
   padding: 0.5rem;
@@ -87,15 +87,23 @@
   margin-top: 1px;
 }
 
-.eventMessage {
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
-  line-height: 1.15;
-  color: var(--chrome-silver);
+.eventMessageWrap {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.eventMessage {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  line-height: 1.3;
+  color: var(--chrome-silver);
   word-break: break-word;
-  max-height: 3.5em;
+}
+
+.eventMessageClamped {
+  max-height: 3.9em;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
@@ -103,10 +111,31 @@
   -webkit-box-orient: vertical;
 }
 
+.eventMessageExpanded {
+  /* no clamp */
+}
+
+.expandBtn {
+  background: none;
+  border: none;
+  color: var(--plasma-cyan);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0;
+  margin-top: 0.15rem;
+  opacity: 0.8;
+  transition: opacity 0.15s;
+}
+
+.expandBtn:hover {
+  opacity: 1;
+}
+
 .eventTime {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.55rem;
-  line-height: 1.15;
+  font-size: 0.75rem;
+  line-height: 1.3;
   color: var(--hull-grey);
   flex-shrink: 0;
   min-width: 24px;

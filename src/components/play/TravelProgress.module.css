@@ -46,7 +46,7 @@
 
 .typeLabel {
   font-family: var(--font-orbitron), 'Orbitron', sans-serif;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -63,7 +63,7 @@
 
 .destLabel {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
 }
 
@@ -93,7 +93,7 @@
 
 .etaLabel {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   color: var(--chrome-silver);
 }
 

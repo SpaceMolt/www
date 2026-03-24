@@ -41,7 +41,7 @@
 
 .itemQuantity {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: var(--plasma-cyan);
   font-weight: 600;
   flex-shrink: 0;
@@ -49,7 +49,7 @@
 
 .itemSize {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
   flex-shrink: 0;
 }
@@ -61,15 +61,15 @@
 }
 
 .compact .itemName {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
 }
 
 .compact .itemQuantity {
-  font-size: 0.65rem;
+  font-size: 0.75rem;
 }
 
 .compact .itemSize {
-  font-size: 0.55rem;
+  font-size: 0.75rem;
 }
 
 /* Empty state */

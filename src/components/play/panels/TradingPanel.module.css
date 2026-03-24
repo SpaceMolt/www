@@ -1,7 +1,7 @@
 /* === TradingPanel === */
 
 .tabBadge {
-  font-size: 0.55rem;
+  font-size: 0.75rem;
   font-weight: 700;
   background: rgba(230, 57, 70, 0.2);
   color: var(--claw-red);
@@ -31,7 +31,7 @@
 
 .formLabel {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--chrome-silver);
   text-transform: uppercase;
@@ -51,7 +51,7 @@
   border-radius: 4px;
   padding: 0.35rem 0.5rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: var(--star-white);
   outline: none;
   transition: border-color 0.2s ease;
@@ -74,7 +74,7 @@
   border-radius: 4px;
   padding: 0.35rem 0.5rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: var(--star-white);
   outline: none;
   cursor: pointer;
@@ -119,13 +119,13 @@
 
 .tradeCredits {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: var(--warning-yellow);
 }
 
 .tradeItems {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   color: var(--chrome-silver);
   line-height: 1.4;
 }

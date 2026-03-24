@@ -21,7 +21,7 @@
 
 .shipName {
   font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: var(--chrome-silver);
   font-style: italic;
 }
@@ -43,7 +43,7 @@
 
 .overviewStat {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
   display: flex;
   align-items: center;
@@ -63,7 +63,7 @@
 /* Ship description */
 .shipDescription {
   font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: var(--chrome-silver);
   line-height: 1.5;
   padding: 0.4rem 0.5rem;
@@ -75,7 +75,7 @@
 /* Ship lore */
 .shipLore {
   font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
   line-height: 1.5;
   padding: 0.4rem 0.5rem;
@@ -111,7 +111,7 @@
 
 .slotColumnHeader {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--hull-grey);
   text-transform: uppercase;
@@ -149,7 +149,7 @@
 
 .slotModName {
   font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   color: var(--star-white);
   white-space: nowrap;
   overflow: hidden;
@@ -165,7 +165,7 @@
 
 .slotStat {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.55rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
   display: flex;
   align-items: center;
@@ -174,7 +174,7 @@
 
 .slotWear {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.55rem;
+  font-size: 0.75rem;
   color: var(--warning-yellow);
 }
 
@@ -252,7 +252,7 @@
 
 .cargoName {
   font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: var(--star-white);
   white-space: nowrap;
   overflow: hidden;
@@ -267,13 +267,13 @@
 
 .cargoQty {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
 }
 
 .cargoSize {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
 }
 
@@ -283,7 +283,7 @@
   gap: 1rem;
   padding: 0.5rem 1rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   color: var(--chrome-silver);
   border-bottom: 1px solid rgba(61, 90, 108, 0.15);
 }
@@ -339,13 +339,13 @@
 
 .installQty {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
 }
 
 .installWarning {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.58rem;
+  font-size: 0.75rem;
   color: var(--claw-red);
 }
 

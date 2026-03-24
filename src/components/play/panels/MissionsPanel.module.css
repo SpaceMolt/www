@@ -53,7 +53,7 @@
   flex-wrap: wrap;
   gap: 0.3rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.58rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
 }
 
@@ -65,7 +65,7 @@
 /* Mission dialog (offer/accept/complete text) */
 .missionDialog {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.62rem;
+  font-size: 0.75rem;
   color: rgba(168, 197, 214, 0.7);
   font-style: italic;
   line-height: 1.5;
@@ -85,7 +85,7 @@
 /* Expiration */
 .expiresIn {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.55rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
   margin-top: 0.15rem;
 }
@@ -106,7 +106,7 @@
 
 .missionDifficulty {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.58rem;
+  font-size: 0.75rem;
   color: var(--warning-yellow);
   text-transform: uppercase;
   flex-shrink: 0;
@@ -114,14 +114,14 @@
 
 .missionDesc {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   color: var(--chrome-silver);
   line-height: 1.4;
 }
 
 .missionReward {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   color: var(--bio-green);
 }
 
@@ -139,7 +139,7 @@
   display: flex;
   align-items: center;
   gap: 0.35rem;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: var(--chrome-silver);
 }
 
@@ -150,13 +150,13 @@
 .objectiveMeta {
   color: var(--plasma-cyan);
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
 }
 
 /* Objective progress */
 .objectiveProgress {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   color: var(--plasma-cyan);
   white-space: nowrap;
   flex-shrink: 0;
@@ -176,7 +176,7 @@
   justify-content: center;
   gap: 0.35rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -203,7 +203,7 @@
   justify-content: center;
   gap: 0.35rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -230,7 +230,7 @@
   justify-content: center;
   gap: 0.35rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -252,7 +252,7 @@
 /* Mission status badge */
 .missionStatusBadge {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.55rem;
+  font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -297,14 +297,14 @@
 
 .rewardCredits {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   color: var(--bio-green);
   font-weight: 600;
 }
 
 .rewardItems {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   color: var(--chrome-silver);
 }
 
@@ -347,7 +347,7 @@
 
 .missionDetailLabel {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--warning-yellow);
   text-transform: uppercase;
@@ -356,7 +356,7 @@
 
 .completionTime {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.55rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
   white-space: nowrap;
   flex-shrink: 0;
@@ -370,7 +370,7 @@
   gap: 0.5rem;
   padding: 1.5rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
 }
 
@@ -384,7 +384,7 @@
   border: 1px solid var(--hull-grey);
   border-radius: 4px;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--chrome-silver);
   text-decoration: none;
@@ -435,7 +435,7 @@
 
 .completionTitle {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.12em;
@@ -452,7 +452,7 @@
 
 .completionDialog {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: rgba(168, 197, 214, 0.8);
   line-height: 1.6;
   padding: 0.6rem 0.75rem;
@@ -469,7 +469,7 @@
 
 .completionRewardsLabel {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.55rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--hull-grey);
@@ -481,7 +481,7 @@
   flex-wrap: wrap;
   gap: 0.5rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: var(--energy-green);
   margin-bottom: 0.2rem;
 }
@@ -492,7 +492,7 @@
 
 .completionChain {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   color: var(--warning-yellow);
   font-style: italic;
   margin-bottom: 0.75rem;
@@ -502,7 +502,7 @@
   display: block;
   width: 100%;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 600;
   padding: 0.5rem;
   border: 1px solid rgba(255, 217, 61, 0.3);

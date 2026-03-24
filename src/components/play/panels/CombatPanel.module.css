@@ -8,7 +8,7 @@
 
 .combatBadge {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: var(--claw-red);
   background: rgba(230, 57, 70, 0.15);
@@ -80,7 +80,7 @@
 
 .clanTag {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: var(--void-purple);
   background: rgba(155, 89, 182, 0.12);
@@ -91,7 +91,7 @@
 
 .npcTag {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.55rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: var(--warning-yellow);
   background: rgba(255, 217, 61, 0.12);
@@ -103,7 +103,7 @@
 
 .playerShip {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
   text-transform: uppercase;
 }
@@ -158,7 +158,7 @@
   align-items: center;
   gap: 0.4rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -188,7 +188,7 @@
   align-items: center;
   gap: 0.4rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -244,7 +244,7 @@
 
 .sideName {
   font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--star-white);
   white-space: nowrap;
@@ -254,7 +254,7 @@
 
 .sideCount {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
   text-transform: uppercase;
 }
@@ -282,14 +282,14 @@
 
 .participantName {
   font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--star-white);
 }
 
 .participantShip {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.55rem;
+  font-size: 0.75rem;
   color: var(--hull-grey);
   text-transform: uppercase;
 }
@@ -309,7 +309,7 @@
 
 .barLabel {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.5rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: var(--hull-grey);
   width: 1.8rem;
@@ -341,7 +341,7 @@
 
 .barValue {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.5rem;
+  font-size: 0.75rem;
   color: var(--chrome-silver);
   width: 2rem;
   text-align: right;
@@ -368,7 +368,7 @@
   justify-content: center;
   gap: 0.3rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -399,7 +399,7 @@
   justify-content: center;
   gap: 0.3rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -425,7 +425,7 @@
   justify-content: center;
   gap: 0.3rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -463,7 +463,7 @@
 
 .reloadWeaponName {
   font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--star-white);
 }
@@ -479,7 +479,7 @@
   align-items: center;
   gap: 0.25rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;

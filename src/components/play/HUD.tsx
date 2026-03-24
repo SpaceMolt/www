@@ -8,7 +8,6 @@ import { TravelProgress } from './TravelProgress'
 import { PanelNav } from './PanelNav'
 import { LeftSidebar, type SidebarTab } from './LeftSidebar'
 import { RightPane } from './RightPane'
-import { TickCooldown } from './TickCooldown'
 import { ActionBanner } from './ActionBanner'
 import { GalaxyPanel, type GalaxyPanelHandle, type MapSystemData, type PlannedRoute } from './panels/GalaxyPanel'
 import { CombatPanel } from './panels/CombatPanel'
@@ -216,9 +215,6 @@ export function HUD() {
       <div className={styles.hud}>
         {/* Top Bar */}
         <TopBar />
-
-        {/* Tick Cooldown Bar */}
-        <TickCooldown />
 
         {/* Tab Bar */}
         <PanelNav

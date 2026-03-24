@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { useGame } from './GameProvider'
 import { BugReportButton } from './BugReportButton'
+import { TickCooldown } from './TickCooldown'
 import styles from './TopBar.module.css'
 
 function StatusBar({ value, max, color, label }: { value: number; max: number; color: string; label: string }) {
@@ -113,6 +114,9 @@ export function TopBar() {
 
         <div className={styles.spacer} />
 
+        {player && (
+          <TickCooldown />
+        )}
         {player && (
           <BugReportButton contextType="generic" />
         )}

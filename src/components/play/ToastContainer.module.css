@@ -38,7 +38,7 @@
 
 .toastMessage {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: var(--star-white);
   flex: 1;
   min-width: 0;

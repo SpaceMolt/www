@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useMemo } from 'react'
+import { useEffect, useRef, useMemo, useState, useCallback } from 'react'
 import { useGame } from './GameProvider'
 import {
   AlertTriangle,
@@ -90,6 +90,40 @@ function trafficSummary(arrivals: number, departures: number): string {
   return parts.join(', ')
 }
 
+function EventMessage({ id, message }: { id: string; message: string }) {
+  const textRef = useRef<HTMLSpanElement>(null)
+  const [clamped, setClamped] = useState(false)
+  const [expanded, setExpanded] = useState(false)
+
+  useEffect(() => {
+    const el = textRef.current
+    if (!el) return
+    // Check if text is overflowing (clamped)
+    setClamped(el.scrollHeight > el.clientHeight + 1)
+  }, [message])
+
+  const toggle = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    setExpanded(prev => !prev)
+  }, [])
+
+  return (
+    <div className={styles.eventMessageWrap}>
+      <span
+        ref={textRef}
+        className={`${styles.eventMessage} ${expanded ? styles.eventMessageExpanded : styles.eventMessageClamped}`}
+      >
+        {message}
+      </span>
+      {(clamped || expanded) && (
+        <button className={styles.expandBtn} onClick={toggle} type="button">
+          {expanded ? 'less' : 'more'}
+        </button>
+      )}
+    </div>
+  )
+}
+
 export function EventLog() {
   const { state } = useGame()
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -151,7 +185,7 @@ export function EventLog() {
             return (
               <div key={item.entry.id} className={`${styles.event} ${eventClass}`}>
                 <Icon size={13} className={styles.eventIcon} />
-                <span className={styles.eventMessage}>{item.entry.message}</span>
+                <EventMessage id={item.entry.id} message={item.entry.message} />
                 <span className={styles.eventTime}>
                   {relativeTime(item.entry.timestamp)}
                 </span>
