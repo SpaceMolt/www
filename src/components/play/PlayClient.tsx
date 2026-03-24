@@ -7,6 +7,7 @@ import { SignInButton } from '@clerk/nextjs'
 import { GameProvider, useGame } from './GameProvider'
 import { ItemCatalogProvider } from './ItemCatalogContext'
 import type { ModuleCatalogEntry } from './types'
+import { items as bundledItems, isModule } from '@/data/catalog'
 import { PlayerSelector } from './PlayerSelector'
 import { HUD } from './HUD'
 import { useGameAuth } from '@/lib/useGameAuth'
@@ -126,47 +127,20 @@ function PlayClientInner({ playerId, authHeaders, onSwitchPlayer }: {
     }
   }, [state.connected, state.authenticated, state.welcome, sendCommand, authenticateWithToken, phase])
 
-  // Fetch and cache the full module catalog on first auth
+  // Populate module catalog from bundled data on first auth
   const moduleCatalogFetched = useRef(false)
   useEffect(() => {
-    if (!state.authenticated || !api || moduleCatalogFetched.current) return
+    if (!state.authenticated || moduleCatalogFetched.current) return
     moduleCatalogFetched.current = true
 
-    async function fetchAllModules() {
-      const modules: Record<string, ModuleCatalogEntry> = {}
-      let page = 1
-      let totalPages = 1
-
-      while (page <= totalPages) {
-        try {
-          const result = await api!.command('catalog', {
-            type: 'items',
-            category: 'module',
-            page,
-            page_size: 50,
-          }) as Record<string, unknown>
-
-          const items = (result.items || []) as Array<Record<string, unknown>>
-          for (const item of items) {
-            // Module items have a 'type' field that's one of weapon/defense/mining/utility
-            const modType = item.type as string | undefined
-            if (modType && ['weapon', 'defense', 'mining', 'utility'].includes(modType)) {
-              modules[item.id as string] = item as unknown as ModuleCatalogEntry
-            }
-          }
-
-          totalPages = (result.total_pages as number) || 1
-          page++
-        } catch {
-          break
-        }
+    const modules: Record<string, ModuleCatalogEntry> = {}
+    for (const [id, item] of bundledItems) {
+      if (isModule(item)) {
+        modules[id] = item as unknown as ModuleCatalogEntry
       }
-
-      dispatch({ type: 'SET_MODULE_CATALOG', payload: modules })
     }
-
-    fetchAllModules()
-  }, [state.authenticated, api, dispatch])
+    dispatch({ type: 'SET_MODULE_CATALOG', payload: modules })
+  }, [state.authenticated, dispatch])
 
   // Reconnect overlay
   const showReconnecting = !state.connected && hasConnected.current && phase === 'playing' && !sessionReplaced
