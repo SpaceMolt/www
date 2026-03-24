@@ -212,7 +212,7 @@
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--chrome-silver);
-  width: 2rem;
+  min-width: 4.5rem;
   text-align: right;
   flex-shrink: 0;
 }

@@ -34,8 +34,8 @@
 
 .tickBadgeFlash .tickIcon,
 .tickBadgeFlash .tickNum {
-  color: var(--plasma-cyan);
-  text-shadow: 0 0 8px rgba(0, 212, 255, 0.6);
+  color: var(--void-purple);
+  text-shadow: 0 0 8px rgba(155, 89, 182, 0.6);
 }
 
 /* Track */
@@ -54,7 +54,7 @@
   top: 0;
   left: 0;
   height: 100%;
-  background: var(--plasma-cyan);
+  background: var(--void-purple);
   border-radius: 2px;
   transition: none;
   will-change: width;
@@ -67,7 +67,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 212, 255, 0.3);
+  background: rgba(155, 89, 182, 0.3);
   animation: tickPulse 2s ease-in-out infinite;
 }
 
@@ -79,7 +79,7 @@
 /* Flash state when tick arrives */
 .fillFlash {
   background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 0 6px rgba(0, 212, 255, 0.6);
+  box-shadow: 0 0 6px rgba(155, 89, 182, 0.6);
 }
 
 /* Burst effect on tick arrival */
@@ -89,7 +89,7 @@
   left: 0;
   right: 0;
   bottom: -2px;
-  background: rgba(0, 212, 255, 0.5);
+  background: rgba(155, 89, 182, 0.5);
   animation: tickBurst 0.7s ease-out forwards;
   pointer-events: none;
   border-radius: 2px;
