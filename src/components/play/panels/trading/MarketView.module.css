@@ -279,7 +279,87 @@
 .buyPrice { color: var(--bio-green); }
 .sellPrice { color: var(--shell-orange); }
 .spreadPositive { color: var(--plasma-cyan); }
+.haveQty { color: var(--plasma-cyan); font-weight: 600; }
 .noPrice { color: var(--hull-grey); opacity: 0.6; }
+
+.colHave {
+  flex: 0.5;
+  text-align: right;
+  justify-content: flex-end;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+}
+
+.itemRowOwned {
+  background: rgba(0, 212, 255, 0.04);
+  border-left: 2px solid rgba(0, 212, 255, 0.3);
+}
+
+.myOrderBadge {
+  color: var(--void-purple);
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.insightDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+.analysisStatus {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--hull-grey);
+  padding: 0.15rem 0.5rem;
+}
+
+/* Quick sell bar */
+.quickSell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  padding: 0.35rem 0.4rem;
+  background: rgba(255, 107, 53, 0.06);
+  border: 1px solid rgba(255, 107, 53, 0.15);
+  border-radius: 4px;
+}
+
+.quickSellLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--chrome-silver);
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.sellWarning {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--shell-orange);
+  padding: 0.2rem 0;
+}
+
+.sellWarningInline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  color: var(--shell-orange);
+  font-weight: 600;
+  font-size: 0.55rem;
+}
 
 /* Expanded panel */
 .expandedPanel {
@@ -345,10 +425,26 @@
 
 .orderSell { background: rgba(255, 107, 53, 0.06); }
 .orderBuy { background: rgba(45, 212, 191, 0.06); }
+.orderMine {
+  background: rgba(167, 139, 250, 0.08);
+  border-left: 2px solid var(--void-purple);
+}
 .orderPrice { font-weight: 600; color: var(--star-white); }
 .orderSell .orderPrice { color: var(--shell-orange); }
 .orderBuy .orderPrice { color: var(--bio-green); }
+.orderMine .orderPrice { color: var(--void-purple); }
 .orderQty { color: var(--chrome-silver); }
+
+.yourTag {
+  font-size: 0.5rem;
+  font-weight: 700;
+  color: var(--void-purple);
+  background: rgba(167, 139, 250, 0.15);
+  border-radius: 2px;
+  padding: 0.05rem 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
 
 .orderAction {
   display: flex;
@@ -473,6 +569,13 @@
   display: flex;
   gap: 0.3rem;
   align-items: stretch;
+  flex-wrap: wrap;
+}
+
+.listingButtons {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
 }
 
 /* Estimate breakdown */
@@ -520,56 +623,10 @@
 .estimateFillQty { color: var(--chrome-silver); font-weight: 600; }
 .estimateFillPrice { color: var(--hull-grey); }
 
-/* Market Analysis Insights */
-.insightsList {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.insightItem {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.35rem;
-  padding: 0.25rem 0.3rem;
-  background: rgba(10, 14, 23, 0.3);
-  border-radius: 3px;
-  flex-wrap: wrap;
-}
-
-.insightBadge {
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.48rem;
-  font-weight: 700;
-  border-radius: 2px;
-  padding: 0.08rem 0.25rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  border: 1px solid;
-  flex-shrink: 0;
-}
-
-.insightItemName {
-  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
-  font-size: 0.68rem;
-  font-weight: 600;
-  color: var(--star-white);
-  flex-shrink: 0;
-}
-
-.insightMessage {
-  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
-  font-size: 0.65rem;
-  color: var(--chrome-silver);
-  line-height: 1.3;
-}
-
 /* Mobile */
 @media (max-width: 768px) {
   .itemRow { min-height: 44px; padding: 0.5rem; }
   .npcTag { font-size: 0.68rem; }
-  .insightBadge { font-size: 0.68rem; }
   .cargoHint { font-size: 0.68rem; }
   .categoryToggle { font-size: 0.65rem; padding: 0.25rem 0.5rem; }
   .showToggle { font-size: 0.65rem; padding: 0.3rem 0.5rem; }

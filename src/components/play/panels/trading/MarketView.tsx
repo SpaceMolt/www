@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import {
   ShoppingCart,
   RefreshCw,
@@ -14,8 +14,12 @@ import {
   ArrowUpDown,
   Plus,
   Loader2,
+  AlertTriangle,
+  Bookmark,
+  X,
 } from 'lucide-react'
 import { useGame } from '../../GameProvider'
+import { useItemCatalog } from '../../ItemCatalogContext'
 import { ItemName } from '../../ItemTooltip'
 import { Credits, Loading, Modal, shared } from '../../shared'
 import styles from './MarketView.module.css'
@@ -66,9 +70,9 @@ interface MarketItem {
   sell_orders: Array<{ price_each: number; quantity: number; source?: string; my_quantity?: number }>
 }
 
-type SortField = 'name' | 'buyQty' | 'buyPrice' | 'sellQty' | 'sellPrice' | 'spread'
+type SortField = 'name' | 'have' | 'buyQty' | 'buyPrice' | 'sellQty' | 'sellPrice' | 'spread'
 type SortDir = 'asc' | 'desc'
-type ShowFilter = 'all' | 'buying' | 'selling'
+type ShowFilter = 'all' | 'buying' | 'selling' | 'mine'
 
 const CATEGORY_COLORS: Record<string, { color: string; bg: string; border: string }> = {
   sell_here: { color: 'var(--bio-green)', bg: 'rgba(45, 212, 191, 0.12)', border: 'rgba(45, 212, 191, 0.3)' },
@@ -93,23 +97,16 @@ export function MarketView() {
 
   const credits = state.player?.credits ?? 0
   const storageItems = state.storageData?.items || []
+  const ordersData = state.ordersData
 
   const [expandedItem, setExpandedItem] = useState<string | null>(null)
-  const [buyQty, setBuyQty] = useState('1')
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null)
-  const [analysisModalOpen, setAnalysisModalOpen] = useState(false)
   const [analysisLoading, setAnalysisLoading] = useState(false)
 
   // Buy confirmation modal
   const [buyEstimate, setBuyEstimate] = useState<{ itemId: string; itemName: string; data: EstimateData } | null>(null)
   const [estimating, setEstimating] = useState(false)
   const [buying, setBuying] = useState(false)
-
-  // New listing form
-  const [listingItemId, setListingItemId] = useState<string | null>(null)
-  const [listingQty, setListingQty] = useState('')
-  const [listingPrice, setListingPrice] = useState('')
-  const [listing, setListing] = useState(false)
 
   // Filters
   const [selectedCategory, setSelectedCategory] = useState<string>('')
@@ -120,14 +117,45 @@ export function MarketView() {
   const [sortField, setSortField] = useState<SortField>('name')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
 
-  // Auto-fetch market data when docked and data is null
+  // Sell confirmation modal
+  const [sellConfirm, setSellConfirm] = useState<{
+    itemId: string; itemName: string; quantity: number; priceEach: number; total: number; baseValue: number
+  } | null>(null)
+  const [selling, setSelling] = useState(false)
+
+  // Track whether we've auto-analyzed for the current market data
+  const analyzedRef = useRef(false)
+
+  // Auto-fetch market + storage data when docked
   useEffect(() => {
     if (isDocked && !marketData) {
       sendCommand('view_market')
     }
-  }, [isDocked, marketData, sendCommand])
+    if (isDocked && !state.storageData) {
+      sendCommand('view_storage')
+    }
+    if (isDocked && !ordersData) {
+      sendCommand('view_orders')
+    }
+  }, [isDocked, marketData, state.storageData, ordersData, sendCommand])
+
+  // Auto-analyze market when data arrives
+  useEffect(() => {
+    if (!marketData || analyzedRef.current) return
+    analyzedRef.current = true
+    setAnalysisLoading(true)
+    sendCommand('analyze_market').then((resp: unknown) => {
+      const r = resp as Record<string, unknown>
+      if (!r.error) {
+        const data = resp as AnalysisData
+        if (data.insights) setAnalysisData(data)
+      }
+      setAnalysisLoading(false)
+    })
+  }, [marketData, sendCommand])
 
   const handleRefresh = useCallback(() => {
+    analyzedRef.current = false
     sendCommand('view_market')
   }, [sendCommand])
 
@@ -148,11 +176,7 @@ export function MarketView() {
   }, [])
 
   const handleToggleItem = useCallback(
-    (itemId: string) => {
-      setExpandedItem(prev => prev === itemId ? null : itemId)
-      setBuyQty('1')
-      setListingItemId(null)
-    },
+    (itemId: string) => setExpandedItem(prev => prev === itemId ? null : itemId),
     []
   )
 
@@ -161,12 +185,10 @@ export function MarketView() {
     (itemId: string, itemName: string, quantity: number) => {
       setEstimating(true)
       sendCommand('estimate_purchase', { item_id: itemId, quantity }).then((resp: unknown) => {
-        const data = resp as EstimateData | undefined
-        if (data) {
-          setBuyEstimate({ itemId, itemName, data })
-        }
+        const r = resp as Record<string, unknown>
+        if (!r.error) setBuyEstimate({ itemId, itemName, data: resp as EstimateData })
         setEstimating(false)
-      }).catch(() => setEstimating(false))
+      })
     },
     [sendCommand]
   )
@@ -174,68 +196,57 @@ export function MarketView() {
   const handleConfirmBuy = useCallback(() => {
     if (!buyEstimate) return
     setBuying(true)
-    sendCommand('buy', { item_id: buyEstimate.itemId, quantity: buyEstimate.data.quantity_requested }).then(() => {
+    sendCommand('buy', { item_id: buyEstimate.itemId, quantity: buyEstimate.data.quantity_requested }).then((resp: unknown) => {
       setBuying(false)
-      setBuyEstimate(null)
-      setBuyQty('1')
-      sendCommand('view_market')
-    }).catch(() => setBuying(false))
+      const r = resp as Record<string, unknown>
+      if (!r.error) {
+        setBuyEstimate(null)
+        sendCommand('view_market')
+      }
+    })
   }, [sendCommand, buyEstimate])
-
-  // Sell to a specific buy order
-  const handleSellToOrder = useCallback(
-    (itemId: string, quantity: number) => {
-      sendCommand('sell', { item_id: itemId, quantity }).then(() => {
-        sendCommand('view_market')
-      })
-    },
-    [sendCommand]
-  )
-
-  // Buy from a specific sell order
-  const handleBuyFromOrder = useCallback(
-    (itemId: string, quantity: number) => {
-      sendCommand('buy', { item_id: itemId, quantity }).then(() => {
-        sendCommand('view_market')
-      })
-    },
-    [sendCommand]
-  )
-
-  // Create a new sell listing
-  const handleCreateListing = useCallback(() => {
-    if (!listingItemId || !listingQty || !listingPrice) return
-    const qty = parseInt(listingQty, 10)
-    const price = parseInt(listingPrice, 10)
-    if (isNaN(qty) || qty < 1 || isNaN(price) || price < 1) return
-    setListing(true)
-    sendCommand('create_sell_order', { item_id: listingItemId, quantity: qty, price_each: price }).then(() => {
-      setListing(false)
-      setListingItemId(null)
-      setListingQty('')
-      setListingPrice('')
-      sendCommand('view_market')
-    }).catch(() => setListing(false))
-  }, [sendCommand, listingItemId, listingQty, listingPrice])
 
   const handleAnalyzeMarket = useCallback(() => {
     setAnalysisLoading(true)
-    setAnalysisModalOpen(true)
     sendCommand('analyze_market').then((resp: unknown) => {
-      const data = resp as AnalysisData | undefined
-      if (data?.insights) {
-        setAnalysisData(data)
+      const r = resp as Record<string, unknown>
+      if (!r.error) {
+        const data = resp as AnalysisData
+        if (data.insights) setAnalysisData(data)
       }
       setAnalysisLoading(false)
-    }).catch(() => setAnalysisLoading(false))
+    })
   }, [sendCommand])
 
-  // Helper: get available quantity for an item (cargo + storage)
-  const getAvailable = useCallback((itemId: string): number => {
-    const inCargo = cargo.find(c => c.item_id === itemId)?.quantity ?? 0
-    const inStorage = storageItems.find((s: { item_id: string; quantity: number }) => s.item_id === itemId)?.quantity ?? 0
-    return inCargo + inStorage
+  // Sell confirmation: show modal with price check
+  const handleQuickSell = useCallback(
+    (itemId: string, itemName: string, quantity: number, priceEach: number, baseValue: number) => {
+      setSellConfirm({ itemId, itemName, quantity, priceEach, total: quantity * priceEach, baseValue })
+    },
+    []
+  )
+
+  const handleConfirmSell = useCallback(() => {
+    if (!sellConfirm) return
+    setSelling(true)
+    sendCommand('sell', { item_id: sellConfirm.itemId, quantity: sellConfirm.quantity }).then((resp: unknown) => {
+      setSelling(false)
+      const r = resp as Record<string, unknown>
+      if (!r.error) {
+        setSellConfirm(null)
+        sendCommand('view_market')
+      }
+    })
+  }, [sendCommand, sellConfirm])
+
+  const haveMap = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const c of cargo) map.set(c.item_id, (map.get(c.item_id) ?? 0) + c.quantity)
+    for (const s of storageItems as Array<{ item_id: string; quantity: number }>) map.set(s.item_id, (map.get(s.item_id) ?? 0) + s.quantity)
+    return map
   }, [cargo, storageItems])
+
+  const getAvailable = useCallback((itemId: string) => haveMap.get(itemId) ?? 0, [haveMap])
 
   // Filter and sort items
   const { groupedItems, visibleCategories } = useMemo(() => {
@@ -256,12 +267,54 @@ export function MarketView() {
       filtered = filtered.filter(i => i.buy_orders.length > 0)
     } else if (showFilter === 'selling') {
       filtered = filtered.filter(i => i.sell_orders.length > 0)
+    } else if (showFilter === 'mine') {
+      // Build owned items map from cargo + storage
+      const owned = new Map<string, { name: string; quantity: number }>()
+      for (const c of cargo) {
+        const prev = owned.get(c.item_id)
+        owned.set(c.item_id, {
+          name: c.name || prev?.name || c.item_id,
+          quantity: (prev?.quantity ?? 0) + c.quantity,
+        })
+      }
+      for (const s of storageItems as Array<{ item_id: string; name: string; quantity: number }>) {
+        const prev = owned.get(s.item_id)
+        owned.set(s.item_id, {
+          name: s.name || prev?.name || s.item_id,
+          quantity: (prev?.quantity ?? 0) + s.quantity,
+        })
+      }
+
+      // Filter market items to ones we own
+      filtered = filtered.filter(i => owned.has(i.item_id))
+
+      // Synthesize rows for owned items not in market data
+      const marketIds = new Set(items.map(i => i.item_id))
+      for (const [itemId, info] of owned) {
+        if (marketIds.has(itemId)) continue
+        if (selectedCategory) continue // synthetic items have no real category
+        if (search && !info.name.toLowerCase().includes(search) && !itemId.toLowerCase().includes(search)) continue
+        filtered.push({
+          item_id: itemId,
+          item_name: info.name,
+          category: 'inventory',
+          best_buy: 0,
+          best_sell: 0,
+          buy_price: 0,
+          buy_quantity: 0,
+          sell_price: 0,
+          sell_quantity: 0,
+          buy_orders: [],
+          sell_orders: [],
+        })
+      }
     }
 
     // Sort within categories
     const getSortValue = (item: MarketItem): number | string => {
       switch (sortField) {
         case 'name': return item.item_name.toLowerCase()
+        case 'have': return haveMap.get(item.item_id) ?? 0
         case 'buyQty': return item.buy_orders.reduce((s, o) => s + o.quantity, 0)
         case 'buyPrice': return item.best_buy
         case 'sellQty': return item.sell_orders.reduce((s, o) => s + o.quantity, 0)
@@ -293,7 +346,19 @@ export function MarketView() {
       groupedItems: sortedCats.map(cat => ({ category: cat, items: groups[cat] })),
       visibleCategories: sortedCats,
     }
-  }, [marketData?.items, selectedCategory, searchQuery, showFilter, sortField, sortDir])
+  }, [marketData?.items, selectedCategory, searchQuery, showFilter, sortField, sortDir, haveMap])
+
+  // Map insights by item_id for inline display
+  const insightsByItem = useMemo(() => {
+    const map = new Map<string, MarketInsight[]>()
+    if (!analysisData?.insights) return map
+    for (const insight of analysisData.insights) {
+      const existing = map.get(insight.item_id)
+      if (existing) existing.push(insight)
+      else map.set(insight.item_id, [insight])
+    }
+    return map
+  }, [analysisData])
 
   if (!isDocked) {
     return (
@@ -326,7 +391,7 @@ export function MarketView() {
             type="button"
           >
             {analysisLoading ? <Loader2 size={11} className={shared.spinner} /> : <BarChart3 size={11} />}
-            Analyze
+            {analysisData ? 'Re-analyze' : 'Analyze'}
           </button>
           <button
             className={shared.refreshBtn}
@@ -367,6 +432,11 @@ export function MarketView() {
             onClick={() => setShowFilter('selling')}
             type="button"
           >Selling</button>
+          <button
+            className={`${styles.showToggle} ${showFilter === 'mine' ? styles.showToggleActive : ''}`}
+            onClick={() => setShowFilter('mine')}
+            type="button"
+          >Mine</button>
         </div>
       </div>
 
@@ -386,48 +456,23 @@ export function MarketView() {
         </div>
       )}
 
-      {/* Market Analysis Modal */}
-      {analysisModalOpen && (
-        <Modal title="Market Analysis" icon={<BarChart3 size={14} />} onClose={() => setAnalysisModalOpen(false)}>
-          {analysisLoading ? (
-            <Loading message="Analyzing market..." />
-          ) : analysisData && analysisData.insights.length > 0 ? (
-            <div className={styles.insightsList}>
-              {[...analysisData.insights]
-                .sort((a, b) => b.priority - a.priority)
-                .map((insight, i) => {
-                  const catStyle = CATEGORY_COLORS[insight.category] || CATEGORY_COLORS.demand
-                  return (
-                    <div key={i} className={styles.insightItem}>
-                      <span
-                        className={styles.insightBadge}
-                        style={{
-                          color: catStyle.color,
-                          background: catStyle.bg,
-                          borderColor: catStyle.border,
-                        }}
-                      >
-                        {insight.category.replace(/_/g, ' ')}
-                      </span>
-                      <span className={styles.insightItemName}>{insight.item}</span>
-                      <span className={styles.insightMessage}>{insight.message}</span>
-                    </div>
-                  )
-                })}
-            </div>
-          ) : (
-            <div className={shared.emptyState}>No market insights available.</div>
-          )}
-        </Modal>
+      {/* Inline analysis status */}
+      {analysisLoading && (
+        <div className={styles.analysisStatus}>
+          <Loader2 size={10} className={shared.spinner} />
+          <span>Analyzing market...</span>
+        </div>
       )}
 
       {!marketData ? (
         <Loading message="Loading market data..." />
       ) : groupedItems.length === 0 ? (
         <div className={shared.emptyState}>
-          {searchQuery || selectedCategory || showFilter !== 'all'
-            ? 'No items match your filters.'
-            : (marketData.message || 'No items listed on this market.')}
+          {showFilter === 'mine'
+            ? 'No items in cargo or storage at this base.'
+            : searchQuery || selectedCategory || showFilter !== 'all'
+              ? 'No items match your filters.'
+              : (marketData.message || 'No items listed on this market.')}
         </div>
       ) : (
         <>
@@ -435,6 +480,9 @@ export function MarketView() {
           <div className={styles.tableHeader}>
             <button className={`${styles.colItem} ${styles.colSortable}`} onClick={() => handleSort('name')} type="button">
               Item {sortIndicator('name')}
+            </button>
+            <button className={`${styles.colHave} ${styles.colSortable}`} onClick={() => handleSort('have')} type="button">
+              Have {sortIndicator('have')}
             </button>
             <button className={`${styles.colQty} ${styles.colSortable}`} onClick={() => handleSort('buyQty')} type="button">
               Qty {sortIndicator('buyQty')}
@@ -466,20 +514,41 @@ export function MarketView() {
                   const hasBuy = item.best_buy > 0
                   const hasSell = item.best_sell > 0
                   const spread = item.spread ?? (hasBuy && hasSell ? item.best_sell - item.best_buy : undefined)
-                  const cargoItem = cargo.find((c) => c.item_id === item.item_id)
+                  const haveQty = getAvailable(item.item_id)
+                  const hasMyOrders = item.buy_orders.some(o => (o.my_quantity ?? 0) > 0) || item.sell_orders.some(o => (o.my_quantity ?? 0) > 0)
                   const totalBuyQty = item.buy_orders.reduce((sum, o) => sum + o.quantity, 0)
                   const totalSellQty = item.sell_orders.reduce((sum, o) => sum + o.quantity, 0)
+                  const itemInsights = insightsByItem.get(item.item_id)
+                  const topInsight = itemInsights?.[0]
+                  const insightStyle = topInsight ? (CATEGORY_COLORS[topInsight.category] || CATEGORY_COLORS.demand) : null
 
                   return (
                     <div key={item.item_id} className={styles.itemBlock}>
                       <button
-                        className={`${styles.itemRow} ${isExpanded ? styles.itemRowExpanded : ''}`}
+                        className={`${styles.itemRow} ${isExpanded ? styles.itemRowExpanded : ''} ${haveQty > 0 && showFilter !== 'mine' ? styles.itemRowOwned : ''}`}
                         onClick={() => handleToggleItem(item.item_id)}
                         type="button"
                       >
                         <span className={styles.colItem}>
                           {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                           <span className={styles.itemName}><ItemName itemId={item.item_id}>{item.item_name}</ItemName></span>
+                          {hasMyOrders && (
+                            <span className={styles.myOrderBadge} title="You have active orders">
+                              <Bookmark size={9} />
+                            </span>
+                          )}
+                          {insightStyle && (
+                            <span
+                              className={styles.insightDot}
+                              style={{ background: insightStyle.color }}
+                              role="img"
+                              aria-label={itemInsights?.map(i => `${formatCategory(i.category)}: ${i.message}`).join('. ') ?? ''}
+                              title={itemInsights?.map(i => `[${formatCategory(i.category)}] ${i.message}`).join('\n') ?? ''}
+                            />
+                          )}
+                        </span>
+                        <span className={`${styles.colHave} ${haveQty > 0 ? styles.haveQty : styles.noPrice}`}>
+                          {haveQty > 0 ? haveQty.toLocaleString() : '--'}
                         </span>
                         <span className={`${styles.colQty} ${hasBuy ? styles.buyPrice : styles.noPrice}`}>
                           {totalBuyQty > 0 ? totalBuyQty.toLocaleString() : '--'}
@@ -502,21 +571,12 @@ export function MarketView() {
                         <ExpandedItemPanel
                           item={item}
                           credits={credits}
-                          buyQty={buyQty}
-                          setBuyQty={setBuyQty}
-                          estimating={estimating}
-                          onBuyEstimate={handleBuyEstimate}
-                          onBuyFromOrder={handleBuyFromOrder}
-                          onSellToOrder={handleSellToOrder}
                           getAvailable={getAvailable}
-                          listingItemId={listingItemId}
-                          setListingItemId={setListingItemId}
-                          listingQty={listingQty}
-                          setListingQty={setListingQty}
-                          listingPrice={listingPrice}
-                          setListingPrice={setListingPrice}
-                          listing={listing}
-                          onCreateListing={handleCreateListing}
+                          sendCommand={sendCommand}
+                          ordersData={ordersData}
+                          onBuyEstimate={handleBuyEstimate}
+                          estimating={estimating}
+                          onQuickSell={handleQuickSell}
                         />
                       )}
                     </div>
@@ -575,6 +635,37 @@ export function MarketView() {
           </div>
         </Modal>
       )}
+
+      {/* Sell confirmation modal */}
+      {sellConfirm && (
+        <Modal title={`Sell ${sellConfirm.itemName}`} icon={<ShoppingCart size={14} />} onClose={() => setSellConfirm(null)}>
+          <div className={styles.estimateBreakdown}>
+            <div className={styles.estimateTotal}>
+              Sell {sellConfirm.quantity} × <Credits amount={sellConfirm.priceEach} /> = <Credits amount={sellConfirm.total} />
+            </div>
+            {sellConfirm.baseValue > 0 && sellConfirm.priceEach < sellConfirm.baseValue && (
+              <div className={styles.sellWarning}>
+                <AlertTriangle size={12} />
+                Selling at {Math.round((sellConfirm.priceEach / sellConfirm.baseValue) * 100)}% of base value ({sellConfirm.baseValue.toLocaleString()} cr)
+              </div>
+            )}
+          </div>
+          <div className={styles.modalBuyActions}>
+            <button
+              className={sellConfirm.baseValue > 0 && sellConfirm.priceEach < sellConfirm.baseValue * 0.5 ? shared.dangerBtn : shared.warningBtn}
+              onClick={handleConfirmSell}
+              disabled={selling}
+              type="button"
+            >
+              {selling ? <Loader2 size={11} className={shared.spinner} /> : <ShoppingCart size={11} />}
+              Confirm Sell
+            </button>
+            <button className={shared.subtleBtn} onClick={() => setSellConfirm(null)} type="button">
+              Cancel
+            </button>
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }
@@ -594,30 +685,105 @@ function QtyButtons({ max, current, onChange }: { max: number; current: string; 
 }
 
 /** Expanded panel for a single market item — order book + actions */
-function ExpandedItemPanel({ item, credits, buyQty, setBuyQty, estimating, onBuyEstimate, onBuyFromOrder, onSellToOrder, getAvailable, listingItemId, setListingItemId, listingQty, setListingQty, listingPrice, setListingPrice, listing, onCreateListing }: {
+function ExpandedItemPanel({ item, credits, getAvailable, sendCommand, ordersData, onBuyEstimate, estimating, onQuickSell }: {
   item: MarketItem
   credits: number
-  buyQty: string
-  setBuyQty: (v: string) => void
-  estimating: boolean
-  onBuyEstimate: (itemId: string, itemName: string, qty: number) => void
-  onBuyFromOrder: (itemId: string, qty: number) => void
-  onSellToOrder: (itemId: string, qty: number) => void
   getAvailable: (itemId: string) => number
-  listingItemId: string | null
-  setListingItemId: (v: string | null) => void
-  listingQty: string
-  setListingQty: (v: string) => void
-  listingPrice: string
-  setListingPrice: (v: string) => void
-  listing: boolean
-  onCreateListing: () => void
+  sendCommand: (cmd: string, params?: Record<string, unknown>) => Promise<unknown>
+  ordersData: { orders: Array<{ order_id: string; item_id: string; price_each: number; order_type: string; remaining: number }> } | null
+  onBuyEstimate: (itemId: string, itemName: string, qty: number) => void
+  estimating: boolean
+  onQuickSell: (itemId: string, itemName: string, quantity: number, priceEach: number, baseValue: number) => void
 }) {
   const available = getAvailable(item.item_id)
+  const { getItem, fetchItem } = useItemCatalog()
+  const [catalogItem, setCatalogItem] = useState(() => getItem(item.item_id))
 
-  // Per-order qty state (keyed by order index)
+  useEffect(() => {
+    if (catalogItem) return
+    fetchItem(item.item_id).then(fetched => {
+      if (fetched) setCatalogItem(fetched)
+    })
+  }, [item.item_id, catalogItem, fetchItem])
+
+  const baseValue = catalogItem?.base_value ?? 0
+
+  // Best non-own buy order for quick sell
+  const bestBuyer = item.buy_orders.length > 0
+    ? [...item.buy_orders]
+        .filter(o => (o.quantity - (o.my_quantity ?? 0)) > 0)
+        .sort((a, b) => b.price_each - a.price_each)[0] ?? null
+    : null
+  const quickSellQty = bestBuyer ? Math.min(available, bestBuyer.quantity - (bestBuyer.my_quantity ?? 0)) : 0
+
+  const [buyQty, setBuyQty] = useState('1')
+  const [listingOpen, setListingOpen] = useState(false)
+  const [listingQty, setListingQty] = useState('')
+  const [listingPrice, setListingPrice] = useState('')
+  const [listing, setListing] = useState(false)
   const [orderQtys, setOrderQtys] = useState<Record<string, string>>({})
   const setOrderQty = (key: string, val: string) => setOrderQtys(prev => ({ ...prev, [key]: val }))
+
+  const submitOrder = useCallback((cmd: string, params: Record<string, unknown>, onSuccess?: () => void) => {
+    setListing(true)
+    sendCommand(cmd, params).then((resp: unknown) => {
+      setListing(false)
+      const r = resp as Record<string, unknown>
+      if (!r.error) {
+        sendCommand('view_market')
+        onSuccess?.()
+      }
+    })
+  }, [sendCommand])
+
+  const handleTradeOrder = useCallback(
+    (cmd: 'buy' | 'sell', qty: number) => sendCommand(cmd, { item_id: item.item_id, quantity: qty }).then(() => { sendCommand('view_market') }),
+    [sendCommand, item.item_id]
+  )
+
+  const handleCancelOrder = useCallback(
+    (orderId: string) => sendCommand('cancel_order', { order_id: orderId }).then(() => {
+      sendCommand('view_market')
+      sendCommand('view_orders')
+    }),
+    [sendCommand]
+  )
+
+  const handleSubmitListing = useCallback(() => {
+    const qty = parseInt(listingQty, 10)
+    const price = parseInt(listingPrice, 10)
+    if (qty >= 1 && price >= 1) {
+      submitOrder('create_sell_order', { item_id: item.item_id, quantity: qty, price_each: price }, () => {
+        setListingOpen(false); setListingQty(''); setListingPrice('')
+      })
+    }
+  }, [listingQty, listingPrice, submitOrder, item.item_id])
+
+  const findOrderId = (priceEach: number, side: 'buy' | 'sell'): string | undefined => {
+    if (!ordersData) return undefined
+    return ordersData.orders.find(
+      o => o.item_id === item.item_id && o.price_each === priceEach && o.order_type === side
+    )?.order_id
+  }
+
+  // Shared renderer for "YOURS" cancel row in order book
+  const renderOwnOrderRow = (key: string, priceEach: number, quantity: number, side: 'buy' | 'sell') => {
+    const orderId = findOrderId(priceEach, side)
+    return (
+      <div key={key} className={`${styles.orderEntry} ${styles.orderMine}`}>
+        <span className={styles.orderPrice}><Credits amount={priceEach} /></span>
+        <span className={styles.orderQty}>x{quantity.toLocaleString()}</span>
+        <span className={styles.yourTag}>YOURS</span>
+        {orderId && (
+          <div className={styles.orderAction}>
+            <button className={shared.dangerBtn} onClick={(e) => { e.stopPropagation(); handleCancelOrder(orderId) }} type="button">
+              <X size={10} /> Cancel
+            </button>
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div className={styles.expandedPanel}>
@@ -634,39 +800,33 @@ function ExpandedItemPanel({ item, credits, buyQty, setBuyQty, estimating, onBuy
               <div className={styles.orderList}>
                 {[...item.sell_orders]
                   .sort((a, b) => a.price_each - b.price_each)
-                  .map((order, i) => {
-                    const key = `sell-${i}`
-                    const maxBuyable = Math.min(order.quantity, Math.floor(credits / order.price_each))
-                    const qty = orderQtys[key] ?? String(maxBuyable > 0 ? maxBuyable : '')
-                    return (
-                      <div key={i} className={`${styles.orderEntry} ${styles.orderSell}`}>
-                        <span className={styles.orderPrice}>
-                          <Credits amount={order.price_each} />
-                        </span>
-                        <span className={styles.orderQty}>x{order.quantity.toLocaleString()}</span>
-                        {order.source === 'npc' && <span className={styles.npcTag}>NPC</span>}
-                        <div className={styles.orderAction}>
-                          <QtyButtons max={maxBuyable} current={qty} onChange={(v) => setOrderQty(key, v)} />
-                          <input
-                            className={styles.orderQtyInput}
-                            type="number"
-                            min={1}
-                            max={order.quantity}
-                            value={qty}
-                            onChange={(e) => setOrderQty(key, e.target.value)}
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                          <button
-                            className={shared.actionBtn}
-                            onClick={(e) => { e.stopPropagation(); onBuyFromOrder(item.item_id, parseInt(qty, 10) || 0) }}
-                            disabled={!qty || parseInt(qty, 10) < 1}
-                            type="button"
-                          >
-                            Buy
-                          </button>
+                  .flatMap((order, i) => {
+                    const myQty = order.my_quantity ?? 0
+                    const othersQty = order.quantity - myQty
+                    const rows: React.ReactNode[] = []
+
+                    if (othersQty > 0) {
+                      const key = `sell-${i}`
+                      const maxBuyable = Math.min(othersQty, Math.floor(credits / order.price_each))
+                      const qty = orderQtys[key] ?? String(maxBuyable > 0 ? maxBuyable : '')
+                      rows.push(
+                        <div key={key} className={`${styles.orderEntry} ${styles.orderSell}`}>
+                          <span className={styles.orderPrice}><Credits amount={order.price_each} /></span>
+                          <span className={styles.orderQty}>x{othersQty.toLocaleString()}</span>
+                          {order.source === 'npc' && <span className={styles.npcTag}>NPC</span>}
+                          <div className={styles.orderAction}>
+                            <QtyButtons max={maxBuyable} current={qty} onChange={(v) => setOrderQty(key, v)} />
+                            <input className={styles.orderQtyInput} type="number" min={1} max={othersQty} value={qty}
+                              onChange={(e) => setOrderQty(key, e.target.value)} onClick={(e) => e.stopPropagation()} />
+                            <button className={shared.actionBtn}
+                              onClick={(e) => { e.stopPropagation(); handleTradeOrder('buy', parseInt(qty, 10) || 0) }}
+                              disabled={!qty || parseInt(qty, 10) < 1} type="button">Buy</button>
+                          </div>
                         </div>
-                      </div>
-                    )
+                      )
+                    }
+                    if (myQty > 0) rows.push(renderOwnOrderRow(`sell-mine-${i}`, order.price_each, myQty, 'sell'))
+                    return rows
                   })}
               </div>
             ) : (
@@ -686,39 +846,33 @@ function ExpandedItemPanel({ item, credits, buyQty, setBuyQty, estimating, onBuy
               <div className={styles.orderList}>
                 {[...item.buy_orders]
                   .sort((a, b) => b.price_each - a.price_each)
-                  .map((order, i) => {
-                    const key = `buy-${i}`
-                    const maxSellable = Math.min(order.quantity, available)
-                    const qty = orderQtys[key] ?? String(maxSellable > 0 ? maxSellable : '')
-                    return (
-                      <div key={i} className={`${styles.orderEntry} ${styles.orderBuy}`}>
-                        <span className={styles.orderPrice}>
-                          <Credits amount={order.price_each} />
-                        </span>
-                        <span className={styles.orderQty}>x{order.quantity.toLocaleString()}</span>
-                        {order.source === 'npc' && <span className={styles.npcTag}>NPC</span>}
-                        <div className={styles.orderAction}>
-                          <QtyButtons max={maxSellable} current={qty} onChange={(v) => setOrderQty(key, v)} />
-                          <input
-                            className={styles.orderQtyInput}
-                            type="number"
-                            min={1}
-                            max={order.quantity}
-                            value={qty}
-                            onChange={(e) => setOrderQty(key, e.target.value)}
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                          <button
-                            className={shared.warningBtn}
-                            onClick={(e) => { e.stopPropagation(); onSellToOrder(item.item_id, parseInt(qty, 10) || 0) }}
-                            disabled={!qty || parseInt(qty, 10) < 1 || available === 0}
-                            type="button"
-                          >
-                            Sell
-                          </button>
+                  .flatMap((order, i) => {
+                    const myQty = order.my_quantity ?? 0
+                    const othersQty = order.quantity - myQty
+                    const rows: React.ReactNode[] = []
+
+                    if (othersQty > 0) {
+                      const key = `buy-${i}`
+                      const maxSellable = Math.min(othersQty, available)
+                      const qty = orderQtys[key] ?? String(maxSellable > 0 ? maxSellable : '')
+                      rows.push(
+                        <div key={key} className={`${styles.orderEntry} ${styles.orderBuy}`}>
+                          <span className={styles.orderPrice}><Credits amount={order.price_each} /></span>
+                          <span className={styles.orderQty}>x{othersQty.toLocaleString()}</span>
+                          {order.source === 'npc' && <span className={styles.npcTag}>NPC</span>}
+                          <div className={styles.orderAction}>
+                            <QtyButtons max={maxSellable} current={qty} onChange={(v) => setOrderQty(key, v)} />
+                            <input className={styles.orderQtyInput} type="number" min={1} max={othersQty} value={qty}
+                              onChange={(e) => setOrderQty(key, e.target.value)} onClick={(e) => e.stopPropagation()} />
+                            <button className={shared.warningBtn}
+                              onClick={(e) => { e.stopPropagation(); handleTradeOrder('sell', parseInt(qty, 10) || 0) }}
+                              disabled={!qty || parseInt(qty, 10) < 1 || available === 0} type="button">Sell</button>
+                          </div>
                         </div>
-                      </div>
-                    )
+                      )
+                    }
+                    if (myQty > 0) rows.push(renderOwnOrderRow(`buy-mine-${i}`, order.price_each, myQty, 'buy'))
+                    return rows
                   })}
               </div>
             ) : (
@@ -728,10 +882,32 @@ function ExpandedItemPanel({ item, credits, buyQty, setBuyQty, estimating, onBuy
         </div>
       </div>
 
-      {/* Actions row: Buy at Market + New Listing */}
+      {quickSellQty > 0 && bestBuyer && (
+        <div className={styles.quickSell}>
+          <span className={styles.quickSellLabel}>
+            Quick Sell: {quickSellQty} × <Credits amount={bestBuyer.price_each} /> = <Credits amount={quickSellQty * bestBuyer.price_each} />
+            {baseValue > 0 && bestBuyer.price_each < baseValue && (
+              <span className={styles.sellWarningInline}>
+                <AlertTriangle size={9} />
+                {Math.round((bestBuyer.price_each / baseValue) * 100)}% of base
+              </span>
+            )}
+          </span>
+          <button
+            className={baseValue > 0 && bestBuyer.price_each < baseValue * 0.5 ? shared.dangerBtn : shared.warningBtn}
+            onClick={() => onQuickSell(item.item_id, item.item_name, quickSellQty, bestBuyer.price_each, baseValue)}
+            type="button"
+          >
+            <ShoppingCart size={11} />
+            Sell to Best Buyer
+          </button>
+        </div>
+      )}
+
+      {/* Actions row: Buy Quantity + New Listing */}
       <div className={styles.quickTradeForms}>
         <div className={styles.quickForm}>
-          <span className={styles.quickLabel}>Buy at Market</span>
+          <span className={styles.quickLabel}>Buy Quantity</span>
           <div className={styles.quickRow}>
             <input
               className={shared.textInput}
@@ -743,14 +919,27 @@ function ExpandedItemPanel({ item, credits, buyQty, setBuyQty, estimating, onBuy
             />
             <button
               className={shared.actionBtn}
-              onClick={() => onBuyEstimate(item.item_id, item.item_name, parseInt(buyQty, 10) || 0)}
+              onClick={() => onBuyEstimate(item.item_id, item.item_name, parseInt(buyQty, 10))}
               disabled={!buyQty || parseInt(buyQty, 10) < 1 || estimating}
               type="button"
             >
               {estimating ? <Loader2 size={11} className={shared.spinner} /> : <ShoppingCart size={11} />}
-              Buy
+              Buy at Market
+            </button>
+            <button
+              className={shared.actionBtn}
+              onClick={() => submitOrder('create_buy_order', { item_id: item.item_id, quantity: parseInt(buyQty, 10) || 0, price_each: baseValue })}
+              disabled={!buyQty || parseInt(buyQty, 10) < 1 || baseValue < 1}
+              title={baseValue > 0 ? `Place buy order at ${baseValue.toLocaleString()} cr each` : 'Base price unavailable'}
+              type="button"
+            >
+              <Plus size={11} />
+              Order at Base Price
             </button>
           </div>
+          {baseValue > 0 && (
+            <span className={styles.cargoHint}>Base price: {baseValue.toLocaleString()} cr</span>
+          )}
         </div>
 
         <div className={styles.quickForm}>
@@ -758,47 +947,38 @@ function ExpandedItemPanel({ item, credits, buyQty, setBuyQty, estimating, onBuy
             New Listing
             {available > 0 && <span className={styles.cargoHint}>(have {available})</span>}
           </span>
-          {listingItemId === item.item_id ? (
+          {listingOpen ? (
             <div className={styles.quickRow}>
-              <input
-                className={shared.textInput}
-                type="number"
-                min={1}
-                max={available}
-                placeholder="Qty"
-                value={listingQty}
-                onChange={(e) => setListingQty(e.target.value)}
-              />
-              <input
-                className={shared.textInput}
-                type="number"
-                min={1}
-                placeholder="Price"
-                value={listingPrice}
-                onChange={(e) => setListingPrice(e.target.value)}
-              />
-              <button
-                className={shared.warningBtn}
-                onClick={onCreateListing}
+              <input className={shared.textInput} type="number" min={1} max={available} placeholder="Qty"
+                value={listingQty} onChange={(e) => setListingQty(e.target.value)} />
+              <input className={shared.textInput} type="number" min={1} placeholder="Price"
+                value={listingPrice} onChange={(e) => setListingPrice(e.target.value)} />
+              <button className={shared.warningBtn} onClick={handleSubmitListing}
                 disabled={listing || !listingQty || !listingPrice || parseInt(listingQty, 10) < 1 || parseInt(listingPrice, 10) < 1 || parseInt(listingQty, 10) > available}
-                type="button"
-              >
+                type="button">
                 {listing ? <Loader2 size={11} className={shared.spinner} /> : <Plus size={11} />}
                 List
               </button>
-              <button className={shared.subtleBtn} onClick={() => setListingItemId(null)} type="button">
-                Cancel
-              </button>
+              <button className={shared.subtleBtn} onClick={() => setListingOpen(false)} type="button">Cancel</button>
             </div>
           ) : (
-            <button
-              className={shared.warningBtn}
-              onClick={() => { setListingItemId(item.item_id); setListingQty(''); setListingPrice('') }}
-              disabled={available === 0}
-              type="button"
-            >
-              <Plus size={11} /> New Listing
-            </button>
+            <div className={styles.listingButtons}>
+              <button className={shared.warningBtn}
+                onClick={() => { setListingOpen(true); setListingQty(''); setListingPrice('') }}
+                disabled={available === 0} type="button">
+                <Plus size={11} /> New Listing
+              </button>
+              <button
+                className={shared.warningBtn}
+                onClick={() => submitOrder('create_sell_order', { item_id: item.item_id, quantity: available, price_each: baseValue })}
+                disabled={listing || available === 0 || baseValue < 1}
+                title={baseValue > 0 ? `List all ${available} at ${baseValue.toLocaleString()} cr each` : 'Base price unavailable'}
+                type="button"
+              >
+                {listing ? <Loader2 size={11} className={shared.spinner} /> : <Plus size={11} />}
+                List All at Base Price
+              </button>
+            </div>
           )}
         </div>
       </div>
