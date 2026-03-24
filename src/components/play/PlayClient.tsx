@@ -221,12 +221,29 @@ export function PlayClient() {
   const { user, isLoaded, authHeaders } = useGameAuth()
   const searchParams = useSearchParams()
   const [players, setPlayers] = useState<LinkedPlayer[]>([])
+  const [registrationCode, setRegistrationCode] = useState('')
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null)
   const [loadingPlayers, setLoadingPlayers] = useState(true)
 
   const handleSwitchPlayer = useCallback(() => {
     setSelectedPlayerId(null)
   }, [])
+
+  const handlePlayerCreated = useCallback(async (playerId: string) => {
+    // Re-fetch player list then auto-select the new player
+    try {
+      const headers = await authHeaders()
+      const res = await fetch(`${GAME_SERVER}/api/registration-code`, { headers })
+      if (res.ok) {
+        const data = await res.json()
+        setPlayers(data.players || [])
+        if (data.registration_code) setRegistrationCode(data.registration_code)
+      }
+    } catch {
+      // Non-critical — we still select the player
+    }
+    setSelectedPlayerId(playerId)
+  }, [authHeaders])
 
   // Add play-page class even while loading
   useEffect(() => {
@@ -247,6 +264,7 @@ export function PlayClient() {
           const data = await res.json()
           const linked: LinkedPlayer[] = data.players || []
           setPlayers(linked)
+          if (data.registration_code) setRegistrationCode(data.registration_code)
 
           // Auto-select from query param or if only one player
           const queryPlayer = searchParams.get('player')
@@ -306,6 +324,8 @@ export function PlayClient() {
         onSelect={setSelectedPlayerId}
         loading={loadingPlayers}
         authHeaders={authHeaders}
+        registrationCode={registrationCode}
+        onPlayerCreated={handlePlayerCreated}
       />
     )
   }

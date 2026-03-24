@@ -214,14 +214,238 @@
   flex-shrink: 0;
 }
 
+/* New Player button in player grid */
+.newPlayerCard {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.65rem;
+  background: transparent;
+  border: 1px dashed rgba(0, 212, 255, 0.3);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  width: 100%;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--chrome-silver);
+}
+
+.newPlayerCard:hover {
+  border-color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.05);
+  color: var(--plasma-cyan);
+}
+
+/* New Player button in empty state */
+.newPlayerBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1.2rem;
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--star-white);
+  background: linear-gradient(135deg, var(--plasma-cyan), #0088aa);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: box-shadow 0.2s, transform 0.2s;
+  margin-top: 0.5rem;
+}
+
+.newPlayerBtn:hover {
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+  transform: translateY(-1px);
+}
+
+/* Creation form */
+.createForm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 480px;
+  padding: 0 0.5rem;
+}
+
+.usernameInput {
+  padding: 0.6rem 0.8rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--star-white);
+  background: rgba(10, 14, 23, 0.95);
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  border-radius: 4px;
+  outline: none;
+  width: 100%;
+}
+
+.usernameInput:focus {
+  border-color: var(--plasma-cyan);
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.15);
+}
+
+.usernameInput::placeholder {
+  color: rgba(157, 178, 191, 0.5);
+}
+
+.usernameInput:disabled {
+  opacity: 0.6;
+}
+
+.empireLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--chrome-silver);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.25rem;
+}
+
+.empireGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.empireCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.5rem 0.7rem;
+  background: rgba(10, 14, 23, 0.95);
+  border: 1px solid rgba(0, 212, 255, 0.12);
+  border-left: 3px solid var(--empire-color, var(--chrome-silver));
+  border-radius: 4px;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  text-align: left;
+  width: 100%;
+  font-family: inherit;
+  color: inherit;
+}
+
+.empireCard:hover {
+  border-color: var(--empire-color, var(--plasma-cyan));
+  background: rgba(0, 212, 255, 0.03);
+}
+
+.empireCard:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.empireCardSelected {
+  border-color: var(--empire-color, var(--plasma-cyan));
+  background: rgba(0, 212, 255, 0.06);
+  box-shadow: 0 0 12px rgba(0, 212, 255, 0.1);
+}
+
+.empireName {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--empire-color, var(--star-white));
+}
+
+.empireTagline {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  color: var(--chrome-silver);
+}
+
+.formActions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.cancelBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.45rem 0.9rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--chrome-silver);
+  background: transparent;
+  border: 1px solid rgba(157, 178, 191, 0.3);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.cancelBtn:hover {
+  border-color: var(--chrome-silver);
+  color: var(--star-white);
+}
+
+.cancelBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.createBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.45rem 1rem;
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--star-white);
+  background: linear-gradient(135deg, var(--plasma-cyan), #0088aa);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: box-shadow 0.2s, opacity 0.2s;
+  flex: 1;
+}
+
+.createBtn:hover:not(:disabled) {
+  box-shadow: 0 0 16px rgba(0, 212, 255, 0.3);
+}
+
+.createBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.errorMsg {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--claw-red, #e63946);
+  padding: 0.4rem 0.6rem;
+  background: rgba(230, 57, 70, 0.08);
+  border: 1px solid rgba(230, 57, 70, 0.2);
+  border-radius: 4px;
+}
+
 /* Mobile */
 @media (max-width: 768px) {
   .container { padding: 1rem 0.5rem 0.5rem; }
   .playerList { grid-template-columns: 1fr; gap: 0.35rem; }
   .playerCard { padding: 0.65rem 0.75rem; min-height: 44px; }
+  .newPlayerCard { padding: 0.65rem 0.75rem; min-height: 44px; }
   .playerName { font-size: 0.82rem; }
   .playerMeta { font-size: 0.68rem; }
   .searchInput { font-size: 16px; padding: 0.55rem 0.65rem; min-height: 44px; }
   .playerCount { font-size: 0.72rem; }
   .dashboardLink { min-height: 44px; font-size: 0.8rem; }
+  .newPlayerBtn { min-height: 44px; font-size: 0.8rem; }
+  .usernameInput { font-size: 16px; padding: 0.65rem 0.8rem; min-height: 44px; }
+  .empireCard { padding: 0.65rem 0.75rem; min-height: 44px; }
+  .cancelBtn { min-height: 44px; }
+  .createBtn { min-height: 44px; font-size: 0.78rem; }
 }
