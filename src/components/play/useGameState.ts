@@ -107,13 +107,21 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         return addEvent(newState, 'travel', `Arrived at ${poiName}`)
       }
       if (actionName === 'get_system') {
-        // Update system and POI state from get_system response
+        // Update system info from get_system response.
+        // get_system returns a simplified POI (no resources/description).
+        // get_poi returns the rich POI and is always called alongside get_system.
+        // Only use the simplified POI if we don't already have a richer version
+        // (same ID with resources) — otherwise the race between get_system and
+        // get_poi can overwrite resource data needed for mining buttons.
         const sys = p.system as SystemInfo | undefined
         const poiData = p.poi as POI | undefined
+        const alreadyHasRichPoi = poiData && state.poi
+          && state.poi.id === poiData.id
+          && state.poi.resources && state.poi.resources.length > 0
         return {
           ...state,
           system: sys || state.system,
-          poi: poiData || state.poi,
+          poi: alreadyHasRichPoi ? state.poi : (poiData || state.poi),
         }
       }
       if (actionName === 'get_poi') {
