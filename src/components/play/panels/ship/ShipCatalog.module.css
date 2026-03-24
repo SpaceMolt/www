@@ -711,6 +711,21 @@
 }
 
 
+/* Stat comparison deltas */
+.deltaPositive {
+  color: var(--energy-green);
+  font-weight: 600;
+}
+
+.deltaNegative {
+  color: var(--claw-red);
+  font-weight: 600;
+}
+
+.deltaNeutral {
+  color: var(--hull-grey);
+}
+
 /* Mobile */
 @media (max-width: 768px) {
   .shipStatLabel { font-size: 0.68rem; }

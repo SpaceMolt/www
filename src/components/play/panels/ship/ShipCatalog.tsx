@@ -75,6 +75,23 @@ interface CommissionQuote {
   blockers?: string[]
 }
 
+function StatWithDelta({ label, value, currentValue }: { label: string; value: number; currentValue?: number }) {
+  const delta = currentValue != null ? value - currentValue : null
+  return (
+    <span>
+      {label} {value}
+      {delta != null && delta !== 0 && (
+        <span className={delta > 0 ? styles.deltaPositive : styles.deltaNegative}>
+          {' '}({delta > 0 ? '+' : ''}{delta})
+        </span>
+      )}
+      {delta === 0 && currentValue != null && (
+        <span className={styles.deltaNeutral}> (=)</span>
+      )}
+    </span>
+  )
+}
+
 export function ShipCatalog() {
   const { state, sendCommand } = useGame()
   const [ships, setShips] = useState<CatalogShip[]>([])
@@ -372,18 +389,18 @@ export function ShipCatalog() {
 
                       <div className={styles.shipDetailsRight}>
                         <div className={styles.shipStatsRow}>
-                          <div className={styles.shipStat}><Heart size={10} /><span>Hull {ship.base_hull}</span></div>
-                          <div className={styles.shipStat}><Shield size={10} /><span>Shield {ship.base_shield}</span></div>
-                          <div className={styles.shipStat}><Gauge size={10} /><span>Speed {ship.base_speed}</span></div>
+                          <div className={styles.shipStat}><Heart size={10} /><StatWithDelta label="Hull" value={ship.base_hull} currentValue={state.ship?.max_hull} /></div>
+                          <div className={styles.shipStat}><Shield size={10} /><StatWithDelta label="Shield" value={ship.base_shield} currentValue={state.ship?.max_shield} /></div>
+                          <div className={styles.shipStat}><Gauge size={10} /><StatWithDelta label="Speed" value={ship.base_speed} currentValue={state.ship?.speed} /></div>
                         </div>
                         <div className={styles.shipStatsRow}>
-                          <div className={styles.shipStat}><Fuel size={10} /><span>Fuel {ship.base_fuel}</span></div>
-                          <div className={styles.shipStat}><Package size={10} /><span>Cargo {ship.cargo_capacity}</span></div>
+                          <div className={styles.shipStat}><Fuel size={10} /><StatWithDelta label="Fuel" value={ship.base_fuel} currentValue={state.ship?.max_fuel} /></div>
+                          <div className={styles.shipStat}><Package size={10} /><StatWithDelta label="Cargo" value={ship.cargo_capacity} currentValue={state.ship?.cargo_capacity} /></div>
                         </div>
                         <div className={styles.shipStatsRow}>
-                          <div className={styles.shipStat}><Crosshair size={10} /><span>Wpn {ship.weapon_slots}</span></div>
-                          <div className={styles.shipStat}><Shield size={10} /><span>Def {ship.defense_slots}</span></div>
-                          <div className={styles.shipStat}><CircuitBoard size={10} /><span>Util {ship.utility_slots}</span></div>
+                          <div className={styles.shipStat}><Crosshair size={10} /><StatWithDelta label="Wpn" value={ship.weapon_slots} currentValue={state.ship?.weapon_slots} /></div>
+                          <div className={styles.shipStat}><Shield size={10} /><StatWithDelta label="Def" value={ship.defense_slots} currentValue={state.ship?.defense_slots} /></div>
+                          <div className={styles.shipStat}><CircuitBoard size={10} /><StatWithDelta label="Util" value={ship.utility_slots} currentValue={state.ship?.utility_slots} /></div>
                         </div>
 
                         {ship.build_materials && ship.build_materials.length > 0 && (
