@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
-import { Hammer, BookOpen, RefreshCw, AlertTriangle, Lock, Check, ChevronDown, ChevronRight, Search } from 'lucide-react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
+import { Hammer, RefreshCw, AlertTriangle, Lock, Check, ChevronDown, ChevronRight, Search, Filter } from 'lucide-react'
 import { useGame } from '../GameProvider'
 import { ActionButton } from '../ActionButton'
 import { Panel, shared } from '../shared'
@@ -11,18 +11,14 @@ import type { Recipe } from '../types'
 import { recipesById, formatItemId } from '@/data/catalog'
 import styles from './CraftingPanel.module.css'
 
+const HIDDEN_CATEGORIES = new Set(['facility only', 'ship passive'])
+
 function canCraftRecipe(
   recipe: Recipe,
   skills: Record<string, { level: number; xp: number; next_level_xp: number }> | undefined,
   cargoItems: { item_id: string; quantity: number }[]
 ): { craftable: boolean; reasons: string[] } {
   const reasons: string[] = []
-
-  // Facility Only and Ship Passive recipes can never be manually crafted
-  const cat = recipe.category?.toLowerCase() ?? ''
-  if (cat === 'facility only' || cat === 'ship passive') {
-    return { craftable: false, reasons: [`${recipe.category} — cannot be crafted manually`] }
-  }
 
   // Check skills
   if (recipe.required_skills && Object.keys(recipe.required_skills).length > 0) {
@@ -51,6 +47,7 @@ export function CraftingPanel() {
   const [craftingId, setCraftingId] = useState<string | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [filter, setFilter] = useState<'all' | 'craftable'>('all')
+  const [categoryFilter, setCategoryFilter] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set())
 
@@ -73,17 +70,24 @@ export function CraftingPanel() {
   const skillsMap = state.skillsData?.skills
 
   const recipes = useMemo((): Recipe[] => {
-    return Object.values(recipesById).map(r => ({
-      id: r.id,
-      name: r.name,
-      description: r.description,
-      category: r.category || '',
-      required_skills: r.required_skills || {},
-      inputs: (r.inputs || []).map(i => ({ item_id: i.item_id, quantity: i.quantity })),
-      outputs: (r.outputs || []).map(o => ({ item_id: o.item_id, quantity: o.quantity })),
-      crafting_time: r.crafting_time || 0,
-    }))
+    return Object.values(recipesById)
+      .filter(r => !HIDDEN_CATEGORIES.has((r.category || '').toLowerCase()))
+      .map(r => ({
+        id: r.id,
+        name: r.name,
+        description: r.description,
+        category: r.category || '',
+        required_skills: r.required_skills || {},
+        inputs: (r.inputs || []).map(i => ({ item_id: i.item_id, quantity: i.quantity })),
+        outputs: (r.outputs || []).map(o => ({ item_id: o.item_id, quantity: o.quantity })),
+        crafting_time: r.crafting_time || 0,
+      }))
   }, [])
+
+  const categories = useMemo(() => {
+    const cats = new Set(recipes.map(r => r.category).filter(Boolean))
+    return [...cats].sort()
+  }, [recipes])
 
   // Filter, group by category, sort
   const groupedRecipes = useMemo(() => {
@@ -94,6 +98,9 @@ export function CraftingPanel() {
     }))
 
     let filtered = withStatus
+    if (categoryFilter !== 'all') {
+      filtered = filtered.filter((r) => r.recipe.category === categoryFilter)
+    }
     if (filter === 'craftable') {
       filtered = filtered.filter((r) => r.craftable)
     }
@@ -101,7 +108,14 @@ export function CraftingPanel() {
       filtered = filtered.filter((r) =>
         r.recipe.name.toLowerCase().includes(search) ||
         r.recipe.id.toLowerCase().includes(search) ||
-        (r.recipe.outputs ?? []).some(o => o.item_id.toLowerCase().includes(search))
+        (r.recipe.outputs ?? []).some(o =>
+          o.item_id.toLowerCase().includes(search) ||
+          formatItemId(o.item_id).toLowerCase().includes(search)
+        ) ||
+        (r.recipe.inputs ?? []).some(i =>
+          i.item_id.toLowerCase().includes(search) ||
+          formatItemId(i.item_id).toLowerCase().includes(search)
+        )
       )
     }
 
@@ -120,7 +134,7 @@ export function CraftingPanel() {
     }
 
     return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b))
-  }, [recipes, skillsMap, cargoItems, filter, searchQuery])
+  }, [recipes, skillsMap, cargoItems, filter, categoryFilter, searchQuery])
 
   const toggleCategory = useCallback((cat: string) => {
     setCollapsedCategories(prev => {
@@ -167,10 +181,23 @@ export function CraftingPanel() {
               <input
                 className={styles.searchInput}
                 type="text"
-                placeholder="Search recipes..."
+                placeholder="Search recipes or items..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
+            </div>
+            <div className={styles.categorySelect}>
+              <Filter size={10} className={styles.categorySelectIcon} />
+              <select
+                className={styles.categoryDropdown}
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+              >
+                <option value="all">All Categories</option>
+                {categories.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
             </div>
             <div className={styles.filterRow}>
               <button
@@ -191,10 +218,11 @@ export function CraftingPanel() {
           </div>
         )}
 
-
         {groupedRecipes.length === 0 && (
           <div className={shared.emptyState}>
-            {searchQuery || filter === 'craftable' ? 'No recipes match your filters.' : 'No recipes available.'}
+            {searchQuery || filter === 'craftable' || categoryFilter !== 'all'
+              ? 'No recipes match your filters.'
+              : 'No recipes available.'}
           </div>
         )}
 
