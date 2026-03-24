@@ -713,7 +713,7 @@
 
 /* Stat comparison deltas */
 .deltaPositive {
-  color: var(--energy-green);
+  color: var(--bio-green);
   font-weight: 600;
 }
 
@@ -723,7 +723,7 @@
 }
 
 .deltaNeutral {
-  color: var(--hull-grey);
+  color: var(--warning-yellow);
 }
 
 /* Mobile */
