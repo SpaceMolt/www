@@ -29,5 +29,8 @@ next-env.d.ts
 .claude/*
 !.claude/commands/
 
+# generated catalog data (fetched at build time)
+src/data/catalog.json
+
 # large binary assets
 *.7z

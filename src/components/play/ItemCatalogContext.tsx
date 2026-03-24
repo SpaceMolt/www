@@ -1,10 +1,11 @@
 'use client'
 
-import { createContext, useContext, useCallback, useRef, type ReactNode } from 'react'
-import { useGame } from './GameProvider'
+import { createContext, useContext, useCallback, type ReactNode } from 'react'
 import type { CatalogItem, CatalogRecipe, CatalogModuleStats } from '../ItemDetail'
+import { getItem as getRawItem, items as allRawItems, recipes as allRawRecipes, formatItemId } from '@/data/catalog'
+import type { RawCatalogItem } from '@/data/catalog'
 
-// Module stat fields that should be extracted from the flat item into a nested module object
+// Module stat fields to extract from flat item into nested module object
 const MODULE_STAT_KEYS: (keyof CatalogModuleStats)[] = [
   'type', 'cpu_usage', 'power_usage', 'damage', 'damage_type', 'range', 'cooldown',
   'shield_bonus', 'armor_bonus', 'hull_bonus', 'mining_power', 'mining_range',
@@ -12,67 +13,76 @@ const MODULE_STAT_KEYS: (keyof CatalogModuleStats)[] = [
   'scanner_power', 'cloak_strength', 'fuel_efficiency', 'drone_capacity', 'drone_bandwidth',
 ]
 
-/** Format item_id as a display name (e.g. "iron_ore" → "Iron Ore") */
-function formatItemName(itemId: string): string {
-  return itemId.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
-}
-
-/** Transform the raw catalog API response into a proper CatalogItem */
-function transformCatalogResponse(id: string, raw: Record<string, unknown>, rawItem: Record<string, unknown>): CatalogItem {
+/** Transform a raw catalog item + related recipes into the CatalogItem shape used by ItemDetail */
+function transformItem(raw: RawCatalogItem): CatalogItem {
   const item: CatalogItem = {
-    id: (rawItem.id as string) || id,
-    name: (rawItem.name as string) || formatItemName(id),
-    description: (rawItem.description as string) || '',
-    category: (rawItem.category as string) || (rawItem.type as string) || '',
-    size: (rawItem.size as number) || 0,
-    base_value: (rawItem.base_value as number) || 0,
-    rarity: rawItem.rarity as string | undefined,
-    stackable: (rawItem.stackable as boolean) ?? false,
-    tradeable: (rawItem.tradeable as boolean) ?? false,
+    id: raw.id,
+    name: raw.name,
+    description: raw.description || '',
+    category: raw.category || raw.type || '',
+    size: raw.size || 0,
+    base_value: raw.base_value || 0,
+    rarity: raw.rarity,
+    stackable: raw.stackable ?? false,
+    tradeable: raw.tradeable ?? false,
   }
 
-  // Extract module stats from flat item fields if present
-  if (rawItem.cpu_usage != null || rawItem.power_usage != null || rawItem.slot != null) {
+  // Extract module stats from flat fields
+  if (raw.cpu_usage != null || raw.power_usage != null || raw.slot != null) {
     const mod = {} as Record<string, unknown>
     for (const key of MODULE_STAT_KEYS) {
-      if (rawItem[key] != null) mod[key] = rawItem[key]
+      const val = (raw as unknown as Record<string, unknown>)[key]
+      if (val != null) mod[key] = val
     }
     if (Object.keys(mod).length > 0) {
       item.module = mod as unknown as CatalogModuleStats
     }
   }
 
-  // Map top-level recipes into produced_by / consumed_by
-  const recipes = (raw.recipes || []) as Array<Record<string, unknown>>
-  if (recipes.length > 0) {
-    const producedBy: CatalogRecipe[] = []
-    const consumedBy: CatalogRecipe[] = []
+  // Cross-reference bundled recipes to find produced_by / consumed_by
+  const producedBy: CatalogRecipe[] = []
+  const consumedBy: CatalogRecipe[] = []
 
-    for (const r of recipes) {
-      const inputs = (r.inputs || []) as Array<{ item_id: string; quantity: number; item_name?: string }>
-      const outputs = (r.outputs || []) as Array<{ item_id: string; quantity: number; item_name?: string }>
+  for (const r of allRawRecipes.values()) {
+    const inputs = r.inputs || []
+    const outputs = r.outputs || []
 
+    const inOutputs = outputs.some(o => o.item_id === raw.id)
+    const inInputs = inputs.some(i => i.item_id === raw.id)
+
+    if (inOutputs || inInputs) {
       const recipe: CatalogRecipe = {
-        recipe_id: (r.id as string) || '',
-        recipe_name: (r.name as string) || '',
-        recipe_category: (r.category as string) || '',
-        crafting_time: (r.crafting_time as number) || 0,
-        required_skills: r.required_skills as Record<string, number> | undefined,
-        inputs: inputs.map(i => ({ item_id: i.item_id, item_name: i.item_name || formatItemName(i.item_id), quantity: i.quantity })),
-        outputs: outputs.map(o => ({ item_id: o.item_id, item_name: o.item_name || formatItemName(o.item_id), quantity: o.quantity })),
+        recipe_id: r.id,
+        recipe_name: r.name,
+        recipe_category: r.category || '',
+        crafting_time: r.crafting_time || 0,
+        required_skills: r.required_skills,
+        inputs: inputs.map(i => ({ item_id: i.item_id, item_name: formatItemId(i.item_id), quantity: i.quantity })),
+        outputs: outputs.map(o => ({ item_id: o.item_id, item_name: formatItemId(o.item_id), quantity: o.quantity })),
       }
-
-      const inOutputs = outputs.some(o => o.item_id === id)
-      const inInputs = inputs.some(i => i.item_id === id)
       if (inOutputs) producedBy.push(recipe)
       if (inInputs) consumedBy.push(recipe)
-      // If the item appears in neither (shouldn't happen), skip
     }
-
-    if (producedBy.length > 0) item.produced_by = producedBy
-    if (consumedBy.length > 0) item.consumed_by = consumedBy
   }
 
+  if (producedBy.length > 0) item.produced_by = producedBy
+  if (consumedBy.length > 0) item.consumed_by = consumedBy
+
+  return item
+}
+
+// Lazily-populated cache of transformed CatalogItems
+const transformedCache = new Map<string, CatalogItem>()
+
+function getTransformedItem(id: string): CatalogItem | undefined {
+  const cached = transformedCache.get(id)
+  if (cached) return cached
+
+  const raw = getRawItem(id)
+  if (!raw) return undefined
+
+  const item = transformItem(raw)
+  transformedCache.set(id, item)
   return item
 }
 
@@ -91,46 +101,18 @@ export function useItemCatalog() {
 }
 
 export function ItemCatalogProvider({ children }: { children: ReactNode }) {
-  const { api } = useGame()
-  const cache = useRef<Map<string, CatalogItem>>(new Map())
-  const inflight = useRef<Map<string, Promise<CatalogItem | undefined>>>(new Map())
-  const loading = useRef<Set<string>>(new Set())
-
-  const fetchItem = useCallback(async (id: string): Promise<CatalogItem | undefined> => {
-    const cached = cache.current.get(id)
-    if (cached) return cached
-
-    // Deduplicate in-flight requests
-    const existing = inflight.current.get(id)
-    if (existing) return existing
-
-    if (!api) return undefined
-
-    loading.current.add(id)
-    const promise = api.command('catalog', { type: 'items', id }).then((result) => {
-      const r = result as Record<string, unknown>
-      const rawItems = (r.items || []) as Array<Record<string, unknown>>
-      if (rawItems.length > 0) {
-        const item = transformCatalogResponse(id, r, rawItems[0])
-        cache.current.set(id, item)
-        return item
-      }
-      return undefined
-    }).catch(() => undefined).finally(() => {
-      loading.current.delete(id)
-      inflight.current.delete(id)
-    })
-
-    inflight.current.set(id, promise)
-    return promise
-  }, [api])
-
+  // All data is now bundled — lookups are synchronous
   const getItem = useCallback((id: string): CatalogItem | undefined => {
-    return cache.current.get(id)
+    return getTransformedItem(id)
   }, [])
 
-  const isLoading = useCallback((id: string): boolean => {
-    return loading.current.has(id)
+  // fetchItem kept for API compatibility but now resolves instantly
+  const fetchItem = useCallback(async (id: string): Promise<CatalogItem | undefined> => {
+    return getTransformedItem(id)
+  }, [])
+
+  const isLoading = useCallback((_id: string): boolean => {
+    return false
   }, [])
 
   return (

@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import {
   ShoppingCart,
   RefreshCw,
@@ -75,19 +76,73 @@ type SortField = 'name' | 'have' | 'buyQty' | 'buyPrice' | 'sellQty' | 'sellPric
 type SortDir = 'asc' | 'desc'
 type ShowFilter = 'all' | 'buying' | 'selling' | 'mine'
 
-const CATEGORY_COLORS: Record<string, { color: string; bg: string; border: string }> = {
-  sell_here: { color: 'var(--bio-green)', bg: 'rgba(45, 212, 191, 0.12)', border: 'rgba(45, 212, 191, 0.3)' },
-  opportunity: { color: 'var(--bio-green)', bg: 'rgba(45, 212, 191, 0.12)', border: 'rgba(45, 212, 191, 0.3)' },
-  order_warning: { color: 'var(--claw-red)', bg: 'rgba(230, 57, 70, 0.12)', border: 'rgba(230, 57, 70, 0.3)' },
-  demand: { color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.12)', border: 'rgba(96, 165, 250, 0.3)' },
-  trend: { color: 'var(--void-purple)', bg: 'rgba(167, 139, 250, 0.12)', border: 'rgba(167, 139, 250, 0.3)' },
-  supply_imbalance: { color: 'var(--shell-orange)', bg: 'rgba(255, 107, 53, 0.12)', border: 'rgba(255, 107, 53, 0.3)' },
-  arbitrage: { color: 'var(--plasma-cyan)', bg: 'rgba(0, 212, 255, 0.12)', border: 'rgba(0, 212, 255, 0.3)' },
-  depth_warning: { color: 'var(--warning-yellow)', bg: 'rgba(255, 217, 61, 0.12)', border: 'rgba(255, 217, 61, 0.3)' },
-}
-
 function formatCategory(cat: string): string {
   return cat.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+}
+
+/** Insight badge with rich hover tooltip */
+function InsightBadge({ insights }: { insights: MarketInsight[] }) {
+  const [show, setShow] = useState(false)
+  const [pos, setPos] = useState({ top: 0, left: 0 })
+  const ref = useRef<HTMLSpanElement>(null)
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const handleEnter = useCallback(() => {
+    timer.current = setTimeout(() => {
+      if (!ref.current) return
+      const rect = ref.current.getBoundingClientRect()
+      let left = rect.left
+      let top = rect.bottom + 8
+      if (left + 300 > window.innerWidth - 8) left = Math.max(8, window.innerWidth - 300 - 8)
+      if (top + 120 > window.innerHeight) top = Math.max(8, rect.top - 120 - 8)
+      setPos({ top, left })
+      setShow(true)
+    }, 150)
+  }, [])
+
+  const handleLeave = useCallback(() => {
+    if (timer.current) { clearTimeout(timer.current); timer.current = null }
+    setShow(false)
+  }, [])
+
+  useEffect(() => () => { if (timer.current) clearTimeout(timer.current) }, [])
+
+  useEffect(() => {
+    if (!show) return
+    const close = () => setShow(false)
+    window.addEventListener('scroll', close, true)
+    return () => window.removeEventListener('scroll', close, true)
+  }, [show])
+
+  return (
+    <>
+      <span
+        ref={ref}
+        className={styles.insightBadge}
+        role="img"
+        aria-label={insights.map(i => `${formatCategory(i.category)}: ${i.message}`).join('. ')}
+        onMouseEnter={handleEnter}
+        onMouseLeave={handleLeave}
+      >
+        <Lightbulb size={10} aria-hidden="true" />
+      </span>
+      {show && createPortal(
+        <div className={styles.insightTooltip} style={{ top: pos.top, left: pos.left }}>
+          <div className={styles.insightTooltipHeader}>
+            <Lightbulb size={12} aria-hidden="true" />
+            Market Insights
+          </div>
+          {insights.map((insight, i) => (
+            <div key={i} className={styles.insightTooltipRow}>
+              <span className={styles.insightTooltipCategory}>{formatCategory(insight.category)}</span>
+              <span className={styles.insightTooltipMessage}>{insight.message}</span>
+            </div>
+          ))}
+        </div>,
+        document.body
+      )}
+    </>
+  )
 }
 
 export function MarketView() {
@@ -465,7 +520,7 @@ export function MarketView() {
         </div>
       ) : analysisData && analysisData.insights.length > 0 ? (
         <div className={styles.analysisStatus}>
-          <Lightbulb size={10} aria-hidden="true" />
+          <span className={styles.insightBadge}><Lightbulb size={10} aria-hidden="true" /></span>
           <span>{analysisData.insights.length} insight{analysisData.insights.length !== 1 ? 's' : ''} found</span>
         </div>
       ) : null}
@@ -525,8 +580,6 @@ export function MarketView() {
                   const totalBuyQty = item.buy_orders.reduce((sum, o) => sum + o.quantity, 0)
                   const totalSellQty = item.sell_orders.reduce((sum, o) => sum + o.quantity, 0)
                   const itemInsights = insightsByItem.get(item.item_id)
-                  const topInsight = itemInsights?.[0]
-                  const insightStyle = topInsight ? (CATEGORY_COLORS[topInsight.category] || CATEGORY_COLORS.demand) : null
 
                   return (
                     <div key={item.item_id} className={styles.itemBlock}>
@@ -543,16 +596,8 @@ export function MarketView() {
                               <Bookmark size={9} />
                             </span>
                           )}
-                          {insightStyle && (
-                            <span
-                              className={styles.insightBadge}
-                              style={{ color: insightStyle.color }}
-                              role="img"
-                              aria-label={itemInsights?.map(i => `${formatCategory(i.category)}: ${i.message}`).join('. ') ?? ''}
-                              title={itemInsights?.map(i => `[${formatCategory(i.category)}] ${i.message}`).join('\n') ?? ''}
-                            >
-                              <Lightbulb size={10} aria-hidden="true" />
-                            </span>
+                          {itemInsights && itemInsights.length > 0 && (
+                            <InsightBadge insights={itemInsights} />
                           )}
                         </span>
                         <span className={`${styles.colHave} ${haveQty > 0 ? styles.haveQty : styles.noPrice}`}>

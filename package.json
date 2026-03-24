@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/fetch-catalog.mjs && next build",
     "start": "next start",
     "lint": "tsc --noEmit",
     "generate:types": "npx openapi-typescript src/lib/openapi-v2.json -o src/lib/generated/v2api.d.ts"
