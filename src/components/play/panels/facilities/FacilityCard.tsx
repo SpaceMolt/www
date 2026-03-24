@@ -43,7 +43,7 @@ export function FacilityCard({ facility, children }: FacilityCardProps) {
           </span>
         )}
         {!facility.yours && facility.owner_id && (
-          <span className={shared.badgeGrey}>
+          <span className={facility.faction_id ? shared.badgePurple : shared.badgeCyan}>
             {facility.faction_id ? 'Faction-owned' : 'Player-owned'}
           </span>
         )}

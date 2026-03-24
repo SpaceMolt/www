@@ -34,7 +34,7 @@ export function StationView({ facilityData }: StationViewProps) {
     return keys.map(cat => ({ category: cat, facilities: groups[cat] }))
   }, [facilityData.station_facilities])
 
-  if (facilityData.station_facilities.length === 0) {
+  if (grouped.length === 0) {
     return <div className={shared.emptyState}>No station facilities at this base.</div>
   }
 
