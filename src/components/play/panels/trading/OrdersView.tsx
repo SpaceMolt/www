@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useClickOutside } from '../../hooks/useClickOutside'
 import {
   ClipboardList,
   RefreshCw,
@@ -38,15 +39,8 @@ function SellDropdown({ items, value, onChange }: SellDropdownProps) {
     return items.filter(i => i.name.toLowerCase().includes(q) || i.item_id.toLowerCase().includes(q))
   }, [items, search])
 
-  // Close on outside click
-  useEffect(() => {
-    if (!open) return
-    const handleClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [open])
+  const handleClose = useCallback(() => setOpen(false), [])
+  useClickOutside(ref, open, handleClose)
 
   const selectedItem = items.find(i => i.item_id === value)
 
@@ -56,6 +50,8 @@ function SellDropdown({ items, value, onChange }: SellDropdownProps) {
         className={styles.dropdownTrigger}
         onClick={() => { setOpen(!open); if (!open) setTimeout(() => inputRef.current?.focus(), 0) }}
         type="button"
+        aria-expanded={open}
+        aria-haspopup="listbox"
       >
         <span className={styles.dropdownValue}>
           {selectedItem ? `${selectedItem.name} (${selectedItem.quantity})` : 'Select item...'}
@@ -75,7 +71,7 @@ function SellDropdown({ items, value, onChange }: SellDropdownProps) {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <div className={styles.dropdownList}>
+          <div className={styles.dropdownList} role="listbox">
             {filtered.length === 0 ? (
               <div className={styles.dropdownEmpty}>No matching items</div>
             ) : filtered.map(item => (
@@ -84,6 +80,8 @@ function SellDropdown({ items, value, onChange }: SellDropdownProps) {
                 className={`${styles.dropdownItem} ${item.item_id === value ? styles.dropdownItemActive : ''}`}
                 onClick={() => { onChange(item.item_id); setOpen(false); setSearch('') }}
                 type="button"
+                role="option"
+                aria-selected={item.item_id === value}
               >
                 <span className={styles.dropdownItemName}>{item.name}</span>
                 <span className={styles.dropdownItemQty}>{item.quantity}</span>
@@ -116,15 +114,8 @@ function BuyAutocomplete({ value, onChange }: BuyAutocompleteProps) {
       .slice(0, 20)
   }, [inputText])
 
-  // Close on outside click
-  useEffect(() => {
-    if (!open) return
-    const handleClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [open])
+  const handleClose = useCallback(() => setOpen(false), [])
+  useClickOutside(ref, open, handleClose)
 
   // Sync display text when value changes externally
   useEffect(() => {
@@ -163,6 +154,9 @@ function BuyAutocomplete({ value, onChange }: BuyAutocompleteProps) {
           value={inputText}
           onChange={(e) => handleInputChange(e.target.value)}
           onFocus={() => { if (inputText.length >= 2) setOpen(true) }}
+          role="combobox"
+          aria-expanded={open && suggestions.length > 0}
+          aria-autocomplete="list"
         />
         {value && (
           <button
@@ -175,13 +169,15 @@ function BuyAutocomplete({ value, onChange }: BuyAutocompleteProps) {
         )}
       </div>
       {open && suggestions.length > 0 && (
-        <div className={styles.autocompletePanel}>
+        <div className={styles.autocompletePanel} role="listbox">
           {suggestions.map(item => (
             <button
               key={item.id}
               className={`${styles.dropdownItem} ${item.id === value ? styles.dropdownItemActive : ''}`}
               onClick={() => handleSelect(item)}
               type="button"
+              role="option"
+              aria-selected={item.id === value}
             >
               <span className={styles.dropdownItemName}>{item.name}</span>
               <span className={styles.dropdownItemCategory}>{item.category || item.type || ''}</span>

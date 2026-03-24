@@ -5,9 +5,6 @@ import { useSearchParams } from 'next/navigation'
 import { Loader2, RefreshCw, WifiOff, LogIn, MonitorSmartphone } from 'lucide-react'
 import { SignInButton } from '@clerk/nextjs'
 import { GameProvider, useGame } from './GameProvider'
-import { ItemCatalogProvider } from './ItemCatalogContext'
-import type { ModuleCatalogEntry } from './types'
-import { itemsById, isModule } from '@/data/catalog'
 import { PlayerSelector } from './PlayerSelector'
 import { HUD } from './HUD'
 import { useGameAuth } from '@/lib/useGameAuth'
@@ -33,7 +30,7 @@ function PlayClientInner({ playerId, authHeaders, onSwitchPlayer }: {
   authHeaders: () => Promise<Record<string, string>>
   onSwitchPlayer: () => void
 }) {
-  const { state, dispatch, wsSend, sendCommand, setApi, api, connect, disconnect, sessionReplaced } = useGame()
+  const { state, wsSend, sendCommand, setApi, api, connect, disconnect, sessionReplaced } = useGame()
   const [phase, setPhase] = useState<'connecting' | 'authenticating' | 'playing'>('connecting')
   const hasConnected = useRef(false)
   const authAttempted = useRef(false)
@@ -127,21 +124,6 @@ function PlayClientInner({ playerId, authHeaders, onSwitchPlayer }: {
     }
   }, [state.connected, state.authenticated, state.welcome, sendCommand, authenticateWithToken, phase])
 
-  // Populate module catalog from bundled data on first auth
-  const moduleCatalogFetched = useRef(false)
-  useEffect(() => {
-    if (!state.authenticated || moduleCatalogFetched.current) return
-    moduleCatalogFetched.current = true
-
-    const modules: Record<string, ModuleCatalogEntry> = {}
-    for (const [id, item] of Object.entries(itemsById)) {
-      if (isModule(item)) {
-        modules[id] = item as unknown as ModuleCatalogEntry
-      }
-    }
-    dispatch({ type: 'SET_MODULE_CATALOG', payload: modules })
-  }, [state.authenticated, dispatch])
-
   // Reconnect overlay
   const showReconnecting = !state.connected && hasConnected.current && phase === 'playing' && !sessionReplaced
 
@@ -176,7 +158,7 @@ function PlayClientInner({ playerId, authHeaders, onSwitchPlayer }: {
   }
 
   return (
-    <ItemCatalogProvider>
+    <>
       <HUD />
       {showReconnecting && (
         <div className={styles.reconnectOverlay}>
@@ -188,7 +170,7 @@ function PlayClientInner({ playerId, authHeaders, onSwitchPlayer }: {
           </div>
         </div>
       )}
-    </ItemCatalogProvider>
+    </>
   )
 }
 

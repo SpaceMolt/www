@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo, useRef, type ReactNode } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import {
   ShoppingCart,
@@ -21,9 +21,10 @@ import {
   Lightbulb,
 } from 'lucide-react'
 import { useGame } from '../../GameProvider'
-import { useItemCatalog } from '../../ItemCatalogContext'
+import { getCatalogItem } from '../../../ItemDetail'
 import { ItemName } from '../../ItemTooltip'
 import { Credits, Loading, Modal, shared } from '../../shared'
+import { useHoverTooltip } from '../../hooks/useHoverTooltip'
 import styles from './MarketView.module.css'
 
 interface MarketInsight {
@@ -82,37 +83,7 @@ function formatCategory(cat: string): string {
 
 /** Insight badge with rich hover tooltip */
 function InsightBadge({ insights }: { insights: MarketInsight[] }) {
-  const [show, setShow] = useState(false)
-  const [pos, setPos] = useState({ top: 0, left: 0 })
-  const ref = useRef<HTMLSpanElement>(null)
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  const handleEnter = useCallback(() => {
-    timer.current = setTimeout(() => {
-      if (!ref.current) return
-      const rect = ref.current.getBoundingClientRect()
-      let left = rect.left
-      let top = rect.bottom + 8
-      if (left + 300 > window.innerWidth - 8) left = Math.max(8, window.innerWidth - 300 - 8)
-      if (top + 120 > window.innerHeight) top = Math.max(8, rect.top - 120 - 8)
-      setPos({ top, left })
-      setShow(true)
-    }, 150)
-  }, [])
-
-  const handleLeave = useCallback(() => {
-    if (timer.current) { clearTimeout(timer.current); timer.current = null }
-    setShow(false)
-  }, [])
-
-  useEffect(() => () => { if (timer.current) clearTimeout(timer.current) }, [])
-
-  useEffect(() => {
-    if (!show) return
-    const close = () => setShow(false)
-    window.addEventListener('scroll', close, true)
-    return () => window.removeEventListener('scroll', close, true)
-  }, [show])
+  const { ref, show, position, handleMouseEnter, handleMouseLeave } = useHoverTooltip({ delay: 150, width: 300 })
 
   return (
     <>
@@ -121,13 +92,13 @@ function InsightBadge({ insights }: { insights: MarketInsight[] }) {
         className={styles.insightBadge}
         role="img"
         aria-label={insights.map(i => `${formatCategory(i.category)}: ${i.message}`).join('. ')}
-        onMouseEnter={handleEnter}
-        onMouseLeave={handleLeave}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
       >
         <Lightbulb size={10} aria-hidden="true" />
       </span>
       {show && createPortal(
-        <div className={styles.insightTooltip} style={{ top: pos.top, left: pos.left }}>
+        <div className={styles.insightTooltip} style={{ top: position.top, left: position.left }}>
           <div className={styles.insightTooltipHeader}>
             <Lightbulb size={12} aria-hidden="true" />
             Market Insights
@@ -749,16 +720,7 @@ function ExpandedItemPanel({ item, credits, getAvailable, sendCommand, ordersDat
   onQuickSell: (itemId: string, itemName: string, quantity: number, priceEach: number, baseValue: number) => void
 }) {
   const available = getAvailable(item.item_id)
-  const { getItem, fetchItem } = useItemCatalog()
-  const [catalogItem, setCatalogItem] = useState(() => getItem(item.item_id))
-
-  useEffect(() => {
-    if (catalogItem) return
-    fetchItem(item.item_id).then(fetched => {
-      if (fetched) setCatalogItem(fetched)
-    })
-  }, [item.item_id, catalogItem, fetchItem])
-
+  const catalogItem = getCatalogItem(item.item_id)
   const baseValue = catalogItem?.base_value ?? 0
 
   // Best non-own buy order for quick sell
