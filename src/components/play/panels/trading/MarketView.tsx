@@ -145,10 +145,13 @@ export function MarketView() {
     analyzedRef.current = true
     setAnalysisLoading(true)
     sendCommand('analyze_market').then((resp: unknown) => {
-      const data = resp as AnalysisData | undefined
-      if (data?.insights) setAnalysisData(data)
+      const r = resp as Record<string, unknown>
+      if (!r.error) {
+        const data = resp as AnalysisData
+        if (data.insights) setAnalysisData(data)
+      }
       setAnalysisLoading(false)
-    }).catch(() => setAnalysisLoading(false))
+    })
   }, [marketData, sendCommand])
 
   const handleRefresh = useCallback(() => {
@@ -182,10 +185,10 @@ export function MarketView() {
     (itemId: string, itemName: string, quantity: number) => {
       setEstimating(true)
       sendCommand('estimate_purchase', { item_id: itemId, quantity }).then((resp: unknown) => {
-        const data = resp as EstimateData | undefined
-        if (data) setBuyEstimate({ itemId, itemName, data })
+        const r = resp as Record<string, unknown>
+        if (!r.error) setBuyEstimate({ itemId, itemName, data: resp as EstimateData })
         setEstimating(false)
-      }).catch(() => setEstimating(false))
+      })
     },
     [sendCommand]
   )
@@ -193,20 +196,26 @@ export function MarketView() {
   const handleConfirmBuy = useCallback(() => {
     if (!buyEstimate) return
     setBuying(true)
-    sendCommand('buy', { item_id: buyEstimate.itemId, quantity: buyEstimate.data.quantity_requested }).then(() => {
+    sendCommand('buy', { item_id: buyEstimate.itemId, quantity: buyEstimate.data.quantity_requested }).then((resp: unknown) => {
       setBuying(false)
-      setBuyEstimate(null)
-      sendCommand('view_market')
-    }).catch(() => setBuying(false))
+      const r = resp as Record<string, unknown>
+      if (!r.error) {
+        setBuyEstimate(null)
+        sendCommand('view_market')
+      }
+    })
   }, [sendCommand, buyEstimate])
 
   const handleAnalyzeMarket = useCallback(() => {
     setAnalysisLoading(true)
     sendCommand('analyze_market').then((resp: unknown) => {
-      const data = resp as AnalysisData | undefined
-      if (data?.insights) setAnalysisData(data)
+      const r = resp as Record<string, unknown>
+      if (!r.error) {
+        const data = resp as AnalysisData
+        if (data.insights) setAnalysisData(data)
+      }
       setAnalysisLoading(false)
-    }).catch(() => setAnalysisLoading(false))
+    })
   }, [sendCommand])
 
   // Sell confirmation: show modal with price check
@@ -220,11 +229,14 @@ export function MarketView() {
   const handleConfirmSell = useCallback(() => {
     if (!sellConfirm) return
     setSelling(true)
-    sendCommand('sell', { item_id: sellConfirm.itemId, quantity: sellConfirm.quantity }).then(() => {
+    sendCommand('sell', { item_id: sellConfirm.itemId, quantity: sellConfirm.quantity }).then((resp: unknown) => {
       setSelling(false)
-      setSellConfirm(null)
-      sendCommand('view_market')
-    }).catch(() => setSelling(false))
+      const r = resp as Record<string, unknown>
+      if (!r.error) {
+        setSellConfirm(null)
+        sendCommand('view_market')
+      }
+    })
   }, [sendCommand, sellConfirm])
 
   const haveMap = useMemo(() => {
@@ -714,11 +726,14 @@ function ExpandedItemPanel({ item, credits, getAvailable, sendCommand, ordersDat
 
   const submitOrder = useCallback((cmd: string, params: Record<string, unknown>, onSuccess?: () => void) => {
     setListing(true)
-    sendCommand(cmd, params).then(() => {
+    sendCommand(cmd, params).then((resp: unknown) => {
       setListing(false)
-      sendCommand('view_market')
-      onSuccess?.()
-    }).catch(() => setListing(false))
+      const r = resp as Record<string, unknown>
+      if (!r.error) {
+        sendCommand('view_market')
+        onSuccess?.()
+      }
+    })
   }, [sendCommand])
 
   const handleTradeOrder = useCallback(
