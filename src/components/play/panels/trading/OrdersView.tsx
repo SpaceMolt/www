@@ -111,6 +111,7 @@ function BuyAutocomplete({ value, onChange }: BuyAutocompleteProps) {
     const q = inputText.toLowerCase()
     return tradeableItems()
       .filter(i => i.name.toLowerCase().includes(q) || i.id.toLowerCase().includes(q))
+      .sort((a, b) => a.name.localeCompare(b.name))
       .slice(0, 20)
   }, [inputText])
 
@@ -206,30 +207,30 @@ export function OrdersView() {
     const map = new Map<string, { item_id: string; name: string; quantity: number }>()
     for (const c of cargo) {
       if (!c.item_id || c.quantity <= 0) continue
-      const catalogItem = getItem(c.item_id)
-      if (catalogItem && catalogItem.tradeable === false) continue
+      const cat = getItem(c.item_id)
+      if (cat && cat.tradeable === false) continue
       const existing = map.get(c.item_id)
       if (existing) {
         existing.quantity += c.quantity
       } else {
         map.set(c.item_id, {
           item_id: c.item_id,
-          name: formatItemId(c.item_id),
+          name: cat?.name ?? formatItemId(c.item_id),
           quantity: c.quantity,
         })
       }
     }
     for (const s of storageItems) {
       if (!s.item_id || s.quantity <= 0) continue
-      const catalogItem = getItem(s.item_id)
-      if (catalogItem && catalogItem.tradeable === false) continue
+      const cat = getItem(s.item_id)
+      if (cat && cat.tradeable === false) continue
       const existing = map.get(s.item_id)
       if (existing) {
         existing.quantity += s.quantity
       } else {
         map.set(s.item_id, {
           item_id: s.item_id,
-          name: formatItemId(s.item_id),
+          name: cat?.name ?? formatItemId(s.item_id),
           quantity: s.quantity,
         })
       }

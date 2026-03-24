@@ -98,9 +98,10 @@ async function main() {
   const { resolve } = await import('node:path')
 
   const outPath = resolve(import.meta.dirname, '..', 'src', 'data', 'catalog.json')
-  writeFileSync(outPath, JSON.stringify(catalog))
+  const json = JSON.stringify(catalog)
+  writeFileSync(outPath, json)
 
-  const size = (JSON.stringify(catalog).length / 1024).toFixed(0)
+  const size = (json.length / 1024).toFixed(0)
   console.log(`  Written to src/data/catalog.json (${size} KB)`)
   console.log(`  Total: ${Object.keys(itemMap).length} items, ${Object.keys(recipeMap).length} recipes, ${Object.keys(shipMap).length} ships`)
 }
