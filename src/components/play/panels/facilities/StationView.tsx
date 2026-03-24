@@ -16,6 +16,8 @@ export function StationView({ facilityData }: StationViewProps) {
   const grouped = useMemo(() => {
     const groups: Record<string, typeof facilityData.station_facilities> = {}
     for (const f of facilityData.station_facilities) {
+      // Hide personal/faction facilities belonging to other players
+      if ((f.category === 'personal' || f.category === 'faction') && !f.yours) continue
       const cat = f.category || 'other'
       if (!groups[cat]) groups[cat] = []
       groups[cat].push(f)
