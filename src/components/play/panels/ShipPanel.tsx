@@ -19,7 +19,9 @@ import {
 import { useGame } from '../GameProvider'
 import { ProgressBar } from '../ProgressBar'
 import { Panel, Modal, shared } from '../shared'
+import { ItemName } from '../ItemTooltip'
 import type { ModuleCatalogEntry, EnrichedShipModule } from '../types'
+import { Check, AlertTriangle } from 'lucide-react'
 import styles from './ShipPanel.module.css'
 
 interface ShipClassDetail {
@@ -134,7 +136,7 @@ export function ShipPanel() {
     return (
       <div key={modInstanceId || `mod-${idx}`} className={styles.slotFilled}>
         <div className={styles.slotModInfo}>
-          <span className={styles.slotModName}>{mod.name}</span>
+          <span className={styles.slotModName}><ItemName itemId={mod.type_id}>{mod.name}</ItemName></span>
           <div className={styles.slotModMeta}>
             {mod.cpu_usage > 0 && <span className={styles.slotStat}><Cpu size={9} /> {mod.cpu_usage}</span>}
             {mod.power_usage > 0 && <span className={styles.slotStat}><Zap size={9} /> {mod.power_usage}</span>}
@@ -284,15 +286,55 @@ export function ShipPanel() {
         </div>
         {ship.cargo && ship.cargo.length > 0 ? (
           <div className={styles.cargoList}>
-            {ship.cargo.map((item) => (
-              <div key={item.item_id} className={styles.cargoItem}>
-                <span className={styles.cargoName}>{item.name ?? item.item_id}</span>
-                <span className={styles.cargoMeta}>
-                  <span className={styles.cargoQty}>x{item.quantity}</span>
-                  <span className={styles.cargoSize}>{item.quantity * (item.size ?? 0)}u</span>
-                </span>
-              </div>
-            ))}
+            {ship.cargo.map((item) => {
+              const modEntry = moduleCatalog?.[item.item_id]
+              let compatStatus: { ok: boolean; reason?: string } | null = null
+              if (modEntry && isDocked) {
+                const cpuFree = (ship.cpu_capacity ?? 0) - (ship.cpu_used ?? 0)
+                const powerFree = (ship.power_capacity ?? 0) - (ship.power_used ?? 0)
+                const slotType = modEntry.type
+                let slotsUsed = 0
+                let slotsTotal = 0
+                if (slotType === 'weapon') {
+                  slotsUsed = weaponMods.length
+                  slotsTotal = weaponSlots
+                } else if (slotType === 'defense') {
+                  slotsUsed = defenseMods.length
+                  slotsTotal = defenseSlots
+                } else {
+                  slotsUsed = utilityMods.length
+                  slotsTotal = utilitySlots
+                }
+                if (modEntry.cpu_usage > cpuFree) {
+                  compatStatus = { ok: false, reason: `Needs ${modEntry.cpu_usage} CPU, ${cpuFree} free` }
+                } else if (modEntry.power_usage > powerFree) {
+                  compatStatus = { ok: false, reason: `Needs ${modEntry.power_usage} power, ${powerFree} free` }
+                } else if (slotsUsed >= slotsTotal) {
+                  const label = slotType === 'mining' || slotType === 'utility' ? 'utility' : slotType
+                  compatStatus = { ok: false, reason: `No ${label} slots free` }
+                } else {
+                  compatStatus = { ok: true }
+                }
+              }
+              return (
+                <div key={item.item_id} className={styles.cargoItem}>
+                  <span className={styles.cargoName}>
+                    <ItemName itemId={item.item_id}>{item.name ?? item.item_id}</ItemName>
+                  </span>
+                  <span className={styles.cargoMeta}>
+                    {compatStatus && (
+                      compatStatus.ok ? (
+                        <span className={styles.compatOk} title="Can install"><Check size={10} /></span>
+                      ) : (
+                        <span className={styles.compatNo} title={compatStatus.reason}><AlertTriangle size={10} /> {compatStatus.reason}</span>
+                      )
+                    )}
+                    <span className={styles.cargoQty}>x{item.quantity}</span>
+                    <span className={styles.cargoSize}>{item.quantity * (item.size ?? 0)}u</span>
+                  </span>
+                </div>
+              )
+            })}
           </div>
         ) : (
           <div className={shared.emptyState}>Cargo hold is empty</div>

@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { Loader2, RefreshCw, WifiOff, LogIn, MonitorSmartphone } from 'lucide-react'
 import { SignInButton } from '@clerk/nextjs'
 import { GameProvider, useGame } from './GameProvider'
+import { ItemCatalogProvider } from './ItemCatalogContext'
 import type { ModuleCatalogEntry } from './types'
 import { PlayerSelector } from './PlayerSelector'
 import { HUD } from './HUD'
@@ -201,7 +202,7 @@ function PlayClientInner({ playerId, authHeaders, onSwitchPlayer }: {
   }
 
   return (
-    <>
+    <ItemCatalogProvider>
       <HUD />
       {showReconnecting && (
         <div className={styles.reconnectOverlay}>
@@ -213,7 +214,7 @@ function PlayClientInner({ playerId, authHeaders, onSwitchPlayer }: {
           </div>
         </div>
       )}
-    </>
+    </ItemCatalogProvider>
   )
 }
 

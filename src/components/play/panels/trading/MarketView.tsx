@@ -16,6 +16,7 @@ import {
   Loader2,
 } from 'lucide-react'
 import { useGame } from '../../GameProvider'
+import { ItemName } from '../../ItemTooltip'
 import { Credits, Loading, Modal, shared } from '../../shared'
 import styles from './MarketView.module.css'
 
@@ -478,7 +479,7 @@ export function MarketView() {
                       >
                         <span className={styles.colItem}>
                           {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-                          <span className={styles.itemName}>{item.item_name}</span>
+                          <span className={styles.itemName}><ItemName itemId={item.item_id}>{item.item_name}</ItemName></span>
                         </span>
                         <span className={`${styles.colQty} ${hasBuy ? styles.buyPrice : styles.noPrice}`}>
                           {totalBuyQty > 0 ? totalBuyQty.toLocaleString() : '--'}

@@ -1,0 +1,78 @@
+/* === Item Tooltip === */
+
+.itemName {
+  cursor: help;
+  border-bottom: 1px dotted rgba(0, 212, 255, 0.3);
+}
+
+.tooltip {
+  position: fixed;
+  z-index: 10000;
+  width: 320px;
+  max-height: 400px;
+  overflow-y: auto;
+  background: rgba(10, 15, 28, 0.97);
+  border: 1px solid rgba(0, 212, 255, 0.35);
+  border-radius: 6px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6), 0 0 12px rgba(0, 212, 255, 0.1);
+  pointer-events: none;
+  animation: tooltipFadeIn 0.15s ease-out;
+}
+
+.tooltipHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.15);
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--star-white);
+}
+
+.tooltipValue {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--chrome-silver);
+  margin-left: auto;
+}
+
+.tooltipBody {
+  padding: 0;
+}
+
+.tooltipLoading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  color: var(--hull-grey);
+  font-size: 0.75rem;
+  gap: 0.4rem;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Scrollbar styling for tooltip */
+.tooltip::-webkit-scrollbar {
+  width: 4px;
+}
+
+.tooltip::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tooltip::-webkit-scrollbar-thumb {
+  background: rgba(0, 212, 255, 0.2);
+  border-radius: 2px;
+}

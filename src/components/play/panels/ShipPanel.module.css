@@ -277,6 +277,25 @@
   color: var(--hull-grey);
 }
 
+/* Module compatibility indicators */
+.compatOk {
+  display: flex;
+  align-items: center;
+  color: var(--bio-green);
+  flex-shrink: 0;
+}
+
+.compatNo {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--claw-red);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 /* Install modal extras */
 .modalCapacity {
   display: flex;

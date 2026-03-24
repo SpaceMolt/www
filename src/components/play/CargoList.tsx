@@ -1,6 +1,7 @@
 'use client'
 
 import { Package, Archive } from 'lucide-react'
+import { ItemName } from './ItemTooltip'
 import styles from './CargoList.module.css'
 
 interface CargoListItem {
@@ -38,8 +39,8 @@ export function CargoList({ items, compact = false }: CargoListProps) {
           <span className={styles.itemIcon}>
             <Package size={iconSize} />
           </span>
-          <span className={styles.itemName} title={item.name}>
-            {item.name}
+          <span className={styles.itemName}>
+            <ItemName itemId={item.item_id}>{item.name}</ItemName>
           </span>
           <span className={styles.itemQuantity}>
             x{item.quantity}

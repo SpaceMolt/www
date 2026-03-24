@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { useGame } from '../../GameProvider'
 import { GameApiError } from '@/lib/gameApi'
+import { ItemName } from '../../ItemTooltip'
 import { Credits, shared } from '../../shared'
 import styles from './StorageView.module.css'
 
@@ -221,7 +222,7 @@ export function StorageView() {
                   {viewItems.map((item) => (
                     <div key={item.item_id} className={styles.itemRow}>
                       <div className={styles.itemInfo}>
-                        <span className={styles.itemName}>{item.name}</span>
+                        <span className={styles.itemName}><ItemName itemId={item.item_id}>{item.name}</ItemName></span>
                         <span className={styles.itemQty}>x{item.quantity}</span>
                       </div>
                     </div>
@@ -438,7 +439,7 @@ export function StorageView() {
               return (
                 <div key={item.item_id} className={styles.itemRow}>
                   <div className={styles.itemInfo}>
-                    <span className={styles.itemName}>{item.name}</span>
+                    <span className={styles.itemName}><ItemName itemId={item.item_id}>{item.name}</ItemName></span>
                     <span className={styles.itemQty}>x{item.quantity}</span>
                     {item.size != null && item.size > 0 && (
                       <span className={styles.itemSize}>{item.size}u</span>
@@ -494,7 +495,7 @@ export function StorageView() {
               return (
                 <div key={item.item_id} className={styles.itemRow}>
                   <div className={styles.itemInfo}>
-                    <span className={styles.itemName}>{item.name ?? item.item_id}</span>
+                    <span className={styles.itemName}><ItemName itemId={item.item_id}>{item.name ?? item.item_id}</ItemName></span>
                     <span className={styles.itemQty}>x{item.quantity}</span>
                     {item.size != null && item.size > 0 && (
                       <span className={styles.itemSize}>{item.size}u</span>
