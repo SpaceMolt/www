@@ -192,6 +192,7 @@ export function CraftingPanel() {
                 className={styles.categoryDropdown}
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
+                aria-label="Filter by category"
               >
                 <option value="all">All Categories</option>
                 {categories.map(cat => (
