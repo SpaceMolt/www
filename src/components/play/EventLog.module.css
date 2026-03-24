@@ -75,6 +75,7 @@
   border-radius: 3px;
   animation: eventSlideIn 0.2s ease;
   min-height: 22px;
+  flex-shrink: 0;
 }
 
 .event:hover {

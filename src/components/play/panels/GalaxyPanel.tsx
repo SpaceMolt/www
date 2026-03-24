@@ -223,6 +223,11 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
   const autoTravelProgressRef = useRef<AutoTravelProgress | null>(null)
   autoTravelProgressRef.current = autoTravelProgress ?? null
 
+  const currentSystemIdRef = useRef<string | null>(null)
+  currentSystemIdRef.current = gameState.system?.id ?? null
+
+  const hasCenteredRef = useRef(false)
+
   // ── Imperative API for sidebar ─────────────────────────────────────
   useImperativeHandle(ref, () => ({
     panToSystem: (systemId: string) => {
@@ -767,6 +772,27 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
         )
         ctx.fill()
 
+        // Current location indicator — persistent bright ring with glow
+        if (system.id === currentSystemIdRef.current) {
+          ctx.save()
+          const glowRadius = nr * 5
+          const glow = ctx.createRadialGradient(pos.x, pos.y, nodeRadius * hoverScale, pos.x, pos.y, glowRadius)
+          glow.addColorStop(0, 'rgba(0, 212, 255, 0.3)')
+          glow.addColorStop(0.5, 'rgba(0, 212, 255, 0.08)')
+          glow.addColorStop(1, 'rgba(0, 212, 255, 0)')
+          ctx.fillStyle = glow
+          ctx.beginPath()
+          ctx.arc(pos.x, pos.y, glowRadius, 0, Math.PI * 2)
+          ctx.fill()
+
+          ctx.strokeStyle = 'rgba(0, 212, 255, 0.9)'
+          ctx.lineWidth = 2.5
+          ctx.beginPath()
+          ctx.arc(pos.x, pos.y, nodeRadius * hoverScale + 6 * nodeScale, 0, Math.PI * 2)
+          ctx.stroke()
+          ctx.restore()
+        }
+
         // System name label — hide when tooltip is showing (system has extra info)
         const hasExtraInfo = !!(system.empire || system.is_home || system.has_station || system.is_stronghold)
         const tooltipShowing = isHovered && hasExtraInfo
@@ -880,6 +906,81 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
       panToSystemWithHighlight(currentSystem.id)
     }
   }, [gameState.system, panToSystemWithHighlight])
+
+  // Snap the view to a system without animation (used for initial centering)
+  const snapToSystem = useCallback((system: MapSystemData) => {
+    const s = stateRef.current
+    s.viewX = -system.x
+    s.viewY = -system.y
+    s.targetViewX = -system.x
+    s.targetViewY = -system.y
+    s.zoom = 0.5
+    s.targetZoom = 0.5
+  }, [])
+
+  // Center on current location if game state arrives after map data loaded
+  useEffect(() => {
+    if (hasCenteredRef.current) return
+    const s = stateRef.current
+    if (!s.mapData || !gameState.system) return
+    const currentSystem = s.mapData.systems.find((sys) => sys.id === gameState.system!.id)
+    if (currentSystem) {
+      snapToSystem(currentSystem)
+      hasCenteredRef.current = true
+    }
+  }, [gameState.system, snapToSystem])
+
+  // Fit view to show full route when one is first plotted
+  const hasFitRouteRef = useRef(false)
+  useEffect(() => {
+    if (!plannedRoute) {
+      hasFitRouteRef.current = false
+      return
+    }
+    if (hasFitRouteRef.current) return
+
+    if (!plannedRoute.route || plannedRoute.route.length < 2) return
+    const s = stateRef.current
+    if (!s.mapData) return
+
+    hasFitRouteRef.current = true
+
+    const systemMap = new Map(s.mapData.systems.map((sys) => [sys.id, sys]))
+
+    // Compute bounding box of all route systems
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
+    for (const step of plannedRoute.route) {
+      const sys = systemMap.get(step.system_id)
+      if (!sys) continue
+      minX = Math.min(minX, sys.x)
+      maxX = Math.max(maxX, sys.x)
+      minY = Math.min(minY, sys.y)
+      maxY = Math.max(maxY, sys.y)
+    }
+    if (!isFinite(minX)) return
+
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const centerX = (minX + maxX) / 2
+    const centerY = (minY + maxY) / 2
+    const routeWidth = maxX - minX
+    const routeHeight = maxY - minY
+    const padding = 1.4
+
+    let fitZoom = DEFAULT_ZOOM
+    if (routeWidth > 0 || routeHeight > 0) {
+      const zoomX = routeWidth > 0 ? canvas.clientWidth / (routeWidth * padding) : MAX_ZOOM
+      const zoomY = routeHeight > 0 ? canvas.clientHeight / (routeHeight * padding) : MAX_ZOOM
+      fitZoom = Math.min(zoomX, zoomY)
+    }
+    fitZoom = Math.max(MIN_ZOOM, Math.min(1.0, fitZoom))
+
+    s.targetViewX = -centerX
+    s.targetViewY = -centerY
+    s.targetZoom = fitZoom
+    s.isAnimating = true
+  }, [plannedRoute])
 
   const resetView = useCallback(() => {
     const s = stateRef.current
@@ -999,6 +1100,16 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
         }
 
         s.mapData = data
+
+        // Center on player's current location on first load
+        const currentId = currentSystemIdRef.current
+        if (currentId && !hasCenteredRef.current) {
+          const currentSystem = data.systems.find((sys) => sys.id === currentId)
+          if (currentSystem) {
+            snapToSystem(currentSystem)
+            hasCenteredRef.current = true
+          }
+        }
 
         if (loadingRef.current)
           loadingRef.current.style.display = 'none'
