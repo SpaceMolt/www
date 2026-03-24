@@ -16,6 +16,8 @@ export function StationView({ facilityData }: StationViewProps) {
   const grouped = useMemo(() => {
     const groups: Record<string, typeof facilityData.station_facilities> = {}
     for (const f of facilityData.station_facilities) {
+      // Hide personal/faction facilities belonging to other players
+      if ((f.category === 'personal' || f.category === 'faction') && !f.yours) continue
       const cat = f.category || 'other'
       if (!groups[cat]) groups[cat] = []
       groups[cat].push(f)
@@ -32,7 +34,7 @@ export function StationView({ facilityData }: StationViewProps) {
     return keys.map(cat => ({ category: cat, facilities: groups[cat] }))
   }, [facilityData.station_facilities])
 
-  if (facilityData.station_facilities.length === 0) {
+  if (grouped.length === 0) {
     return <div className={shared.emptyState}>No station facilities at this base.</div>
   }
 
