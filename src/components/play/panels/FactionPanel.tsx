@@ -369,6 +369,7 @@ export function FactionPanel() {
   }, [sendCommand, s.roomFormName, s.roomFormDesc, s.roomFormAccess, handleLoadRooms])
 
   const handleDeleteRoom = useCallback(async (roomId: string) => {
+    if (!confirm('Delete this room? This cannot be undone.')) return
     set({ deletingRoomId: roomId })
     try {
       await sendCommand('faction_delete_room', { room_id: roomId })
