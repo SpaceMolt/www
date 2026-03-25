@@ -123,7 +123,10 @@ const INITIAL_STATE: PanelState = {
   kickingPlayer: null,
 }
 
-function merge(prev: PanelState, next: Partial<PanelState>): PanelState {
+type PanelAction = Partial<PanelState> | ((prev: PanelState) => Partial<PanelState>)
+
+function merge(prev: PanelState, action: PanelAction): PanelState {
+  const next = typeof action === 'function' ? action(prev) : action
   return { ...prev, ...next }
 }
 
@@ -170,21 +173,13 @@ export function FactionPanel() {
     }
   }, [sendCommand, hasFaction])
 
-  // Auto-load faction info when panel opens (or faction changes)
   useEffect(() => {
-    if (!hasFaction) {
+    if (hasFaction) {
+      loadFactionInfo()
+    } else {
       set({ factionInfo: null })
-      return
     }
-    let cancelled = false
-    set({ loadingInfo: true })
-    sendCommand('faction_info').then((res) => {
-      if (!cancelled) set({ factionInfo: res as unknown as FactionInfoResponse })
-    }).finally(() => {
-      if (!cancelled) set({ loadingInfo: false })
-    })
-    return () => { cancelled = true }
-  }, [hasFaction, sendCommand])
+  }, [loadFactionInfo, hasFaction])
 
   const handleCreateFaction = useCallback(async () => {
     if (!s.createName.trim() || !s.createTag.trim()) return
@@ -253,11 +248,11 @@ export function FactionPanel() {
     set({ decliningInvite: factionId })
     try {
       await sendCommand('faction_decline_invite', { faction_id: factionId })
-      set({ pendingInvites: s.pendingInvites.filter(i => i.faction_id !== factionId) })
+      set(prev => ({ pendingInvites: prev.pendingInvites.filter(i => i.faction_id !== factionId) }))
     } finally {
       set({ decliningInvite: null })
     }
-  }, [sendCommand, s.pendingInvites])
+  }, [sendCommand])
 
   const handleLoadFactions = useCallback(async () => {
     set({ loadingList: true })
@@ -377,14 +372,14 @@ export function FactionPanel() {
     set({ deletingRoomId: roomId })
     try {
       await sendCommand('faction_delete_room', { room_id: roomId })
-      set({
-        rooms: s.rooms.filter(r => r.room_id !== roomId),
-        selectedRoom: s.selectedRoom?.room_id === roomId ? null : s.selectedRoom,
-      })
+      set(prev => ({
+        rooms: prev.rooms.filter(r => r.room_id !== roomId),
+        selectedRoom: prev.selectedRoom?.room_id === roomId ? null : prev.selectedRoom,
+      }))
     } finally {
       set({ deletingRoomId: null })
     }
-  }, [sendCommand, s.rooms, s.selectedRoom])
+  }, [sendCommand])
 
   return (
     <Panel
