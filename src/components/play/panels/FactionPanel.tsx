@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useReducer } from 'react'
 import { Users, Flag, Shield, UserPlus, UserMinus, Swords, RefreshCw, Radar, DoorOpen, Trash2, Plus, Search, BarChart3, Eye, Crown, X, Handshake, LogIn, ChevronDown, ChevronRight } from 'lucide-react'
 import { useGame } from '../GameProvider'
 import { ActionButton } from '../ActionButton'
@@ -65,6 +65,68 @@ type FactionWar = NonNullable<FactionInfoResponse['wars']>[number]
 type PeaceProposal = NonNullable<FactionInfoResponse['peace_proposals']>[number]
 type FactionRelation = NonNullable<FactionInfoResponse['allies']>[number]
 
+// Panel state — single reducer instead of 27 useState hooks
+interface PanelState {
+  factionInfo: FactionInfoResponse | null
+  loadingInfo: boolean
+  factionList: FactionListEntry[]
+  listLoaded: boolean
+  loadingList: boolean
+  createName: string
+  createTag: string
+  creating: boolean
+  inviteTarget: string
+  inviting: boolean
+  pendingInvites: FactionInvite[]
+  invitesLoaded: boolean
+  loadingInvites: boolean
+  joiningFaction: string | null
+  decliningInvite: string | null
+  diplomacyTarget: string
+  warReason: string
+  peaceTerms: string
+  diplomacyLoading: boolean
+  intelQuery: string
+  intelEntries: IntelEntry[]
+  intelStatus: IntelStatus | null
+  submittingIntel: boolean
+  queryingIntel: boolean
+  loadingIntelStatus: boolean
+  rooms: FactionRoom[]
+  maxRooms: number
+  roomsLoaded: boolean
+  loadingRooms: boolean
+  selectedRoom: FactionRoomDetail | null
+  loadingRoom: boolean
+  roomFormName: string
+  roomFormDesc: string
+  roomFormAccess: string
+  creatingRoom: boolean
+  deletingRoomId: string | null
+  kickingPlayer: string | null
+}
+
+const INITIAL_STATE: PanelState = {
+  factionInfo: null, loadingInfo: false,
+  factionList: [], listLoaded: false, loadingList: false,
+  createName: '', createTag: '', creating: false,
+  inviteTarget: '', inviting: false,
+  pendingInvites: [], invitesLoaded: false, loadingInvites: false,
+  joiningFaction: null, decliningInvite: null,
+  diplomacyTarget: '', warReason: '', peaceTerms: '', diplomacyLoading: false,
+  intelQuery: '', intelEntries: [], intelStatus: null,
+  submittingIntel: false, queryingIntel: false, loadingIntelStatus: false,
+  rooms: [], maxRooms: 5, roomsLoaded: false, loadingRooms: false,
+  selectedRoom: null, loadingRoom: false,
+  roomFormName: '', roomFormDesc: '', roomFormAccess: 'members',
+  creatingRoom: false, deletingRoomId: null,
+  kickingPlayer: null,
+}
+
+function merge(prev: PanelState, next: Partial<PanelState>): PanelState {
+  return { ...prev, ...next }
+}
+
 // Collapsible Section
 function Section({ title, icon, children, defaultOpen = true }: {
   title: string
@@ -92,315 +154,238 @@ function Section({ title, icon, children, defaultOpen = true }: {
 // FactionPanel
 export function FactionPanel() {
   const { state, sendCommand } = useGame()
-
-  // Faction info
-  const [factionInfo, setFactionInfo] = useState<FactionInfoResponse | null>(null)
-  const [loadingInfo, setLoadingInfo] = useState(false)
-
-  // Faction browser
-  const [factionList, setFactionList] = useState<FactionListEntry[]>([])
-  const [listLoaded, setListLoaded] = useState(false)
-  const [loadingList, setLoadingList] = useState(false)
-
-  // Create faction form
-  const [createName, setCreateName] = useState('')
-  const [createTag, setCreateTag] = useState('')
-  const [creating, setCreating] = useState(false)
-
-  // Invite
-  const [inviteTarget, setInviteTarget] = useState('')
-  const [inviting, setInviting] = useState(false)
-
-  // Pending invites (for non-members)
-  const [pendingInvites, setPendingInvites] = useState<FactionInvite[]>([])
-  const [invitesLoaded, setInvitesLoaded] = useState(false)
-  const [loadingInvites, setLoadingInvites] = useState(false)
-  const [joiningFaction, setJoiningFaction] = useState<string | null>(null)
-  const [decliningInvite, setDecliningInvite] = useState<string | null>(null)
-
-  // Diplomacy
-  const [diplomacyTarget, setDiplomacyTarget] = useState('')
-  const [warReason, setWarReason] = useState('')
-  const [peaceTerms, setPeaceTerms] = useState('')
-  const [diplomacyLoading, setDiplomacyLoading] = useState(false)
-
-  // Intel state
-  const [intelQuery, setIntelQuery] = useState('')
-  const [intelEntries, setIntelEntries] = useState<IntelEntry[]>([])
-  const [intelStatus, setIntelStatus] = useState<IntelStatus | null>(null)
-  const [submittingIntel, setSubmittingIntel] = useState(false)
-  const [queryingIntel, setQueryingIntel] = useState(false)
-  const [loadingIntelStatus, setLoadingIntelStatus] = useState(false)
-
-  // Rooms state
-  const [rooms, setRooms] = useState<FactionRoom[]>([])
-  const [maxRooms, setMaxRooms] = useState(5)
-  const [roomsLoaded, setRoomsLoaded] = useState(false)
-  const [loadingRooms, setLoadingRooms] = useState(false)
-  const [selectedRoom, setSelectedRoom] = useState<FactionRoomDetail | null>(null)
-  const [loadingRoom, setLoadingRoom] = useState(false)
-  const [roomFormName, setRoomFormName] = useState('')
-  const [roomFormDesc, setRoomFormDesc] = useState('')
-  const [roomFormAccess, setRoomFormAccess] = useState('members')
-  const [creatingRoom, setCreatingRoom] = useState(false)
-  const [deletingRoomId, setDeletingRoomId] = useState<string | null>(null)
-
-  // Kick / promote
-  const [kickingPlayer, setKickingPlayer] = useState<string | null>(null)
+  const [s, set] = useReducer(merge, INITIAL_STATE)
 
   const hasFaction = Boolean(state.player?.faction_id)
   const playerId = state.player?.player_id
 
   const loadFactionInfo = useCallback(async () => {
     if (!hasFaction) return
-    setLoadingInfo(true)
+    set({ loadingInfo: true })
     try {
       const res = await sendCommand('faction_info') as Record<string, unknown>
-      setFactionInfo(res as unknown as FactionInfoResponse)
+      set({ factionInfo: res as unknown as FactionInfoResponse })
     } finally {
-      setLoadingInfo(false)
+      set({ loadingInfo: false })
     }
   }, [sendCommand, hasFaction])
 
   // Auto-load faction info when panel opens (or faction changes)
   useEffect(() => {
     if (!hasFaction) {
-      setFactionInfo(null)
+      set({ factionInfo: null })
       return
     }
     let cancelled = false
-    setLoadingInfo(true)
+    set({ loadingInfo: true })
     sendCommand('faction_info').then((res) => {
-      if (!cancelled) {
-        setFactionInfo(res as unknown as FactionInfoResponse)
-      }
+      if (!cancelled) set({ factionInfo: res as unknown as FactionInfoResponse })
     }).finally(() => {
-      if (!cancelled) setLoadingInfo(false)
+      if (!cancelled) set({ loadingInfo: false })
     })
     return () => { cancelled = true }
   }, [hasFaction, sendCommand])
 
-  // Faction creation
   const handleCreateFaction = useCallback(async () => {
-    if (!createName.trim() || !createTag.trim()) return
-    setCreating(true)
+    if (!s.createName.trim() || !s.createTag.trim()) return
+    set({ creating: true })
     try {
       await sendCommand('create_faction', {
-        name: createName.trim(),
-        tag: createTag.trim().toUpperCase(),
+        name: s.createName.trim(),
+        tag: s.createTag.trim().toUpperCase(),
       })
-      setCreateName('')
-      setCreateTag('')
+      set({ createName: '', createTag: '' })
     } finally {
-      setCreating(false)
+      set({ creating: false })
     }
-  }, [sendCommand, createName, createTag])
+  }, [sendCommand, s.createName, s.createTag])
 
-  // Leave faction
   const handleLeaveFaction = useCallback(async () => {
     await sendCommand('leave_faction')
-    setFactionInfo(null)
-    setRooms([])
-    setRoomsLoaded(false)
-    setIntelEntries([])
-    setIntelStatus(null)
+    set({
+      factionInfo: null, rooms: [], roomsLoaded: false,
+      intelEntries: [], intelStatus: null,
+    })
   }, [sendCommand])
 
-  // Invite player
   const handleInvite = useCallback(async () => {
-    if (!inviteTarget.trim()) return
-    setInviting(true)
+    if (!s.inviteTarget.trim()) return
+    set({ inviting: true })
     try {
-      await sendCommand('faction_invite', { player_id: inviteTarget.trim() })
-      setInviteTarget('')
+      await sendCommand('faction_invite', { player_id: s.inviteTarget.trim() })
+      set({ inviteTarget: '' })
     } finally {
-      setInviting(false)
+      set({ inviting: false })
     }
-  }, [sendCommand, inviteTarget])
+  }, [sendCommand, s.inviteTarget])
 
-  // Kick member
   const handleKick = useCallback(async (memberId: string) => {
-    setKickingPlayer(memberId)
+    set({ kickingPlayer: memberId })
     try {
       await sendCommand('faction_kick', { player_id: memberId })
       await loadFactionInfo()
     } finally {
-      setKickingPlayer(null)
+      set({ kickingPlayer: null })
     }
   }, [sendCommand, loadFactionInfo])
 
-  // Pending invites (non-member)
   const handleLoadInvites = useCallback(async () => {
-    setLoadingInvites(true)
+    set({ loadingInvites: true })
     try {
       const res = await sendCommand('faction_get_invites') as Record<string, unknown>
-      const invites = (res.invites || []) as FactionInvite[]
-      setPendingInvites(invites)
-      setInvitesLoaded(true)
+      set({ pendingInvites: (res.invites || []) as FactionInvite[], invitesLoaded: true })
     } finally {
-      setLoadingInvites(false)
+      set({ loadingInvites: false })
     }
   }, [sendCommand])
 
   const handleAcceptInvite = useCallback(async (factionId: string) => {
-    setJoiningFaction(factionId)
+    set({ joiningFaction: factionId })
     try {
       await sendCommand('join_faction', { faction_id: factionId })
-      setPendingInvites([])
-      setInvitesLoaded(false)
+      set({ pendingInvites: [], invitesLoaded: false })
     } finally {
-      setJoiningFaction(null)
+      set({ joiningFaction: null })
     }
   }, [sendCommand])
 
   const handleDeclineInvite = useCallback(async (factionId: string) => {
-    setDecliningInvite(factionId)
+    set({ decliningInvite: factionId })
     try {
       await sendCommand('faction_decline_invite', { faction_id: factionId })
-      setPendingInvites(prev => prev.filter(i => i.faction_id !== factionId))
+      set({ pendingInvites: s.pendingInvites.filter(i => i.faction_id !== factionId) })
     } finally {
-      setDecliningInvite(null)
+      set({ decliningInvite: null })
     }
-  }, [sendCommand])
+  }, [sendCommand, s.pendingInvites])
 
-  // Faction browser
   const handleLoadFactions = useCallback(async () => {
-    setLoadingList(true)
+    set({ loadingList: true })
     try {
       const res = await sendCommand('faction_list') as Record<string, unknown>
-      const factions = (res.factions || []) as FactionListEntry[]
-      setFactionList(factions)
-      setListLoaded(true)
+      set({ factionList: (res.factions || []) as FactionListEntry[], listLoaded: true })
     } finally {
-      setLoadingList(false)
+      set({ loadingList: false })
     }
   }, [sendCommand])
 
   const handleJoinFaction = useCallback(async (factionId: string) => {
-    setJoiningFaction(factionId)
+    set({ joiningFaction: factionId })
     try {
       await sendCommand('join_faction', { faction_id: factionId })
-      setFactionList([])
-      setListLoaded(false)
+      set({ factionList: [], listLoaded: false })
     } finally {
-      setJoiningFaction(null)
+      set({ joiningFaction: null })
     }
   }, [sendCommand])
 
-  // Diplomacy
   const handleDiplomacy = useCallback(async (action: string, factionId: string, extra?: Record<string, unknown>) => {
     if (!factionId) return
-    setDiplomacyLoading(true)
+    set({ diplomacyLoading: true })
     try {
       await sendCommand(action, { faction_id: factionId, ...extra })
-      setDiplomacyTarget('')
-      setWarReason('')
-      setPeaceTerms('')
+      set({ diplomacyTarget: '', warReason: '', peaceTerms: '' })
       await loadFactionInfo()
     } finally {
-      setDiplomacyLoading(false)
+      set({ diplomacyLoading: false })
     }
   }, [sendCommand, loadFactionInfo])
 
   const handleAcceptPeace = useCallback(async (factionId: string) => {
-    setDiplomacyLoading(true)
+    set({ diplomacyLoading: true })
     try {
       await sendCommand('faction_accept_peace', { faction_id: factionId })
       await loadFactionInfo()
     } finally {
-      setDiplomacyLoading(false)
+      set({ diplomacyLoading: false })
     }
   }, [sendCommand, loadFactionInfo])
 
-  // Intel handlers
   const handleSubmitIntel = useCallback(async () => {
     if (!state.system?.id) return
-    setSubmittingIntel(true)
+    set({ submittingIntel: true })
     try {
       await sendCommand('faction_submit_intel', { systems: [{ system_id: state.system.id }] })
     } finally {
-      setSubmittingIntel(false)
+      set({ submittingIntel: false })
     }
   }, [sendCommand, state.system])
 
   const handleQueryIntel = useCallback(async () => {
-    setQueryingIntel(true)
+    set({ queryingIntel: true })
     try {
       const params: Record<string, unknown> = {}
-      if (intelQuery.trim()) {
-        params.system_name = intelQuery.trim()
-      }
+      if (s.intelQuery.trim()) params.system_name = s.intelQuery.trim()
       const res = await sendCommand('faction_query_intel', params) as Record<string, unknown>
-      const entries = (res.entries || []) as IntelEntry[]
-      setIntelEntries(entries)
+      set({ intelEntries: (res.entries || []) as IntelEntry[] })
     } finally {
-      setQueryingIntel(false)
+      set({ queryingIntel: false })
     }
-  }, [sendCommand, intelQuery])
+  }, [sendCommand, s.intelQuery])
 
   const handleIntelStatus = useCallback(async () => {
-    setLoadingIntelStatus(true)
+    set({ loadingIntelStatus: true })
     try {
       const res = await sendCommand('faction_intel_status') as Record<string, unknown>
-      setIntelStatus(res as unknown as IntelStatus)
+      set({ intelStatus: res as unknown as IntelStatus })
     } finally {
-      setLoadingIntelStatus(false)
+      set({ loadingIntelStatus: false })
     }
   }, [sendCommand])
 
-  // Rooms handlers
   const handleLoadRooms = useCallback(async () => {
-    setLoadingRooms(true)
+    set({ loadingRooms: true })
     try {
       const res = await sendCommand('faction_rooms') as Record<string, unknown>
-      const roomList = (res.rooms || []) as FactionRoom[]
-      setRooms(roomList)
-      if (typeof res.max_rooms === 'number') setMaxRooms(res.max_rooms)
-      setRoomsLoaded(true)
+      set({
+        rooms: (res.rooms || []) as FactionRoom[],
+        maxRooms: typeof res.max_rooms === 'number' ? res.max_rooms : 5,
+        roomsLoaded: true,
+      })
     } finally {
-      setLoadingRooms(false)
+      set({ loadingRooms: false })
     }
   }, [sendCommand])
 
   const handleVisitRoom = useCallback(async (roomId: string) => {
-    setLoadingRoom(true)
-    setSelectedRoom(null)
+    set({ loadingRoom: true, selectedRoom: null })
     try {
       const res = await sendCommand('faction_visit_room', { room_id: roomId }) as unknown as FactionRoomDetail
-      setSelectedRoom(res)
+      set({ selectedRoom: res })
     } finally {
-      setLoadingRoom(false)
+      set({ loadingRoom: false })
     }
   }, [sendCommand])
 
   const handleCreateRoom = useCallback(async () => {
-    if (!roomFormName.trim()) return
-    setCreatingRoom(true)
+    if (!s.roomFormName.trim()) return
+    set({ creatingRoom: true })
     try {
       await sendCommand('faction_write_room', {
-        name: roomFormName.trim(),
-        content: roomFormDesc.trim(),
-        access: roomFormAccess,
+        name: s.roomFormName.trim(),
+        content: s.roomFormDesc.trim(),
+        access: s.roomFormAccess,
       })
-      setRoomFormName('')
-      setRoomFormDesc('')
-      setRoomFormAccess('members')
+      set({ roomFormName: '', roomFormDesc: '', roomFormAccess: 'members' })
       await handleLoadRooms()
     } finally {
-      setCreatingRoom(false)
+      set({ creatingRoom: false })
     }
-  }, [sendCommand, roomFormName, roomFormDesc, roomFormAccess, handleLoadRooms])
+  }, [sendCommand, s.roomFormName, s.roomFormDesc, s.roomFormAccess, handleLoadRooms])
 
   const handleDeleteRoom = useCallback(async (roomId: string) => {
-    setDeletingRoomId(roomId)
+    set({ deletingRoomId: roomId })
     try {
       await sendCommand('faction_delete_room', { room_id: roomId })
-      setRooms(prev => prev.filter(r => r.room_id !== roomId))
-      if (selectedRoom?.room_id === roomId) setSelectedRoom(null)
+      set({
+        rooms: s.rooms.filter(r => r.room_id !== roomId),
+        selectedRoom: s.selectedRoom?.room_id === roomId ? null : s.selectedRoom,
+      })
     } finally {
-      setDeletingRoomId(null)
+      set({ deletingRoomId: null })
     }
-  }, [sendCommand, selectedRoom])
+  }, [sendCommand, s.rooms, s.selectedRoom])
+
   return (
     <Panel
       title="Faction"
@@ -411,7 +396,7 @@ export function FactionPanel() {
             className={shared.refreshBtn}
             onClick={loadFactionInfo}
             title="Refresh faction info"
-            disabled={loadingInfo}
+            disabled={s.loadingInfo}
           >
             <RefreshCw size={14} />
           </button>
@@ -420,61 +405,62 @@ export function FactionPanel() {
     >
       {hasFaction ? (
         <>
-          {loadingInfo && !factionInfo && (
+          {s.loadingInfo && !s.factionInfo && (
             <div className={styles.loading}>
               <span className={shared.spinner} />
               Loading faction info...
             </div>
           )}
 
-          {factionInfo && (
+          {s.factionInfo && (
             <div className={styles.factionCard}>
               <div className={styles.factionHeader}>
-                <div className={styles.factionName}>{factionInfo.name}</div>
-                <span className={styles.factionTag}>[{factionInfo.tag}]</span>
+                <div className={styles.factionName}>{s.factionInfo.name}</div>
+                <span className={styles.factionTag}>[{s.factionInfo.tag}]</span>
               </div>
-              {factionInfo.description && (
-                <div className={styles.factionDescription}>{factionInfo.description}</div>
+              {s.factionInfo.description && (
+                <div className={styles.factionDescription}>{s.factionInfo.description}</div>
               )}
               <div className={styles.factionMeta}>
                 <span className={styles.metaTag}>
                   <Users size={10} />
-                  Members: <span className={styles.metaValue}>{factionInfo.member_count}</span>
+                  Members: <span className={styles.metaValue}>{s.factionInfo.member_count}</span>
                 </span>
                 <span className={styles.metaTag}>
                   <Crown size={10} />
-                  Leader: <span className={styles.metaValue}>{factionInfo.leader_username}</span>
+                  Leader: <span className={styles.metaValue}>{s.factionInfo.leader_username}</span>
                 </span>
-                {typeof factionInfo.treasury === 'number' && (
+                {typeof s.factionInfo.treasury === 'number' && (
                   <span className={styles.metaTag}>
-                    Treasury: <span className={styles.metaValue}>{factionInfo.treasury.toLocaleString()} cr</span>
+                    Treasury: <span className={styles.metaValue}>{s.factionInfo.treasury.toLocaleString()} cr</span>
                   </span>
                 )}
               </div>
             </div>
           )}
-          {factionInfo && (factionInfo.allies?.length || factionInfo.enemies?.length) ? (
+
+          {s.factionInfo && (s.factionInfo.allies?.length || s.factionInfo.enemies?.length) ? (
             <>
               <div className={styles.divider} />
               <div className={styles.relationsRow}>
-                {factionInfo.allies && factionInfo.allies.length > 0 && (
+                {s.factionInfo.allies && s.factionInfo.allies.length > 0 && (
                   <div className={styles.relationGroup}>
                     <div className={styles.relationLabel}>
                       <Shield size={10} /> Allies
                     </div>
-                    {factionInfo.allies.map((ally: FactionRelation) => (
+                    {s.factionInfo.allies.map((ally: FactionRelation) => (
                       <span key={ally.id} className={styles.allyBadge}>
                         [{ally.tag}] {ally.name}
                       </span>
                     ))}
                   </div>
                 )}
-                {factionInfo.enemies && factionInfo.enemies.length > 0 && (
+                {s.factionInfo.enemies && s.factionInfo.enemies.length > 0 && (
                   <div className={styles.relationGroup}>
                     <div className={styles.relationLabel}>
                       <Swords size={10} /> Enemies
                     </div>
-                    {factionInfo.enemies.map((enemy: FactionRelation) => (
+                    {s.factionInfo.enemies.map((enemy: FactionRelation) => (
                       <span key={enemy.id} className={styles.enemyBadge}>
                         [{enemy.tag}] {enemy.name}
                       </span>
@@ -484,12 +470,13 @@ export function FactionPanel() {
               </div>
             </>
           ) : null}
-          {factionInfo?.wars && factionInfo.wars.length > 0 && (
+
+          {s.factionInfo?.wars && s.factionInfo.wars.length > 0 && (
             <>
               <div className={styles.divider} />
               <Section title="Active Wars" icon={<Swords size={12} />}>
                 <div className={styles.warList}>
-                  {factionInfo.wars.map((war: FactionWar) => (
+                  {s.factionInfo.wars.map((war: FactionWar) => (
                     <div key={war.target_faction_id} className={styles.warItem}>
                       <div className={styles.warHeader}>
                         <span className={styles.warTarget}>
@@ -510,10 +497,7 @@ export function FactionPanel() {
                       <ActionButton
                         label="Propose Peace"
                         icon={<Handshake size={12} />}
-                        onClick={() => {
-                          setDiplomacyTarget(war.target_faction_id)
-                          setPeaceTerms('')
-                        }}
+                        onClick={() => set({ diplomacyTarget: war.target_faction_id, peaceTerms: '' })}
                         size="sm"
                         variant="secondary"
                       />
@@ -523,12 +507,13 @@ export function FactionPanel() {
               </Section>
             </>
           )}
-          {factionInfo?.peace_proposals && factionInfo.peace_proposals.length > 0 && (
+
+          {s.factionInfo?.peace_proposals && s.factionInfo.peace_proposals.length > 0 && (
             <>
               <div className={styles.divider} />
               <Section title="Peace Proposals" icon={<Handshake size={12} />}>
                 <div className={styles.proposalList}>
-                  {factionInfo.peace_proposals.map((proposal: PeaceProposal) => (
+                  {s.factionInfo.peace_proposals.map((proposal: PeaceProposal) => (
                     <div key={proposal.from_faction_id} className={styles.proposalItem}>
                       <div className={styles.proposalInfo}>
                         <span className={styles.proposalFrom}>From: {proposal.from_faction_name}</span>
@@ -540,8 +525,8 @@ export function FactionPanel() {
                         label="Accept"
                         icon={<Handshake size={12} />}
                         onClick={() => handleAcceptPeace(proposal.from_faction_id)}
-                        disabled={diplomacyLoading}
-                        loading={diplomacyLoading}
+                        disabled={s.diplomacyLoading}
+                        loading={s.diplomacyLoading}
                         size="sm"
                       />
                     </div>
@@ -552,10 +537,11 @@ export function FactionPanel() {
           )}
 
           <div className={styles.divider} />
-          {factionInfo?.members && factionInfo.members.length > 0 && (
+
+          {s.factionInfo?.members && s.factionInfo.members.length > 0 && (
             <Section title="Members" icon={<Users size={12} />}>
               <div className={styles.memberList}>
-                {factionInfo.members.map((member: FactionMember) => (
+                {s.factionInfo.members.map((member: FactionMember) => (
                   <div key={member.player_id} className={styles.memberItem}>
                     <div className={styles.memberLeft}>
                       <span className={`${styles.onlineDot} ${member.is_online ? styles.online : ''}`} />
@@ -567,7 +553,7 @@ export function FactionPanel() {
                         <button
                           className={styles.kickBtn}
                           onClick={() => handleKick(member.player_id)}
-                          disabled={kickingPlayer === member.player_id}
+                          disabled={s.kickingPlayer === member.player_id}
                           title={`Kick ${member.username}`}
                           type="button"
                         >
@@ -582,6 +568,7 @@ export function FactionPanel() {
           )}
 
           <div className={styles.divider} />
+
           <div>
             <div className={shared.sectionTitle}>
               <span className={styles.sectionIcon}><UserPlus size={12} /></span>
@@ -592,22 +579,23 @@ export function FactionPanel() {
                 className={styles.inviteInput}
                 type="text"
                 placeholder="Player name"
-                value={inviteTarget}
-                onChange={(e) => setInviteTarget(e.target.value)}
+                value={s.inviteTarget}
+                onChange={(e) => set({ inviteTarget: e.target.value })}
                 onKeyDown={(e) => e.key === 'Enter' && handleInvite()}
               />
               <ActionButton
                 label="Invite"
                 icon={<UserPlus size={12} />}
                 onClick={handleInvite}
-                disabled={!inviteTarget.trim() || inviting}
-                loading={inviting}
+                disabled={!s.inviteTarget.trim() || s.inviting}
+                loading={s.inviting}
                 size="sm"
               />
             </div>
           </div>
 
           <div className={styles.divider} />
+
           <Section title="Diplomacy" icon={<Shield size={12} />} defaultOpen={false}>
             <div className={styles.diplomacySection}>
               <div className={styles.field}>
@@ -616,24 +604,24 @@ export function FactionPanel() {
                   className={styles.input}
                   type="text"
                   placeholder="Faction ID (from browser below)"
-                  value={diplomacyTarget}
-                  onChange={(e) => setDiplomacyTarget(e.target.value)}
+                  value={s.diplomacyTarget}
+                  onChange={(e) => set({ diplomacyTarget: e.target.value })}
                 />
               </div>
               <div className={styles.diplomacyRow}>
                 <ActionButton
                   label="Set Ally"
                   icon={<Shield size={12} />}
-                  onClick={() => handleDiplomacy('faction_set_ally', diplomacyTarget)}
-                  disabled={!diplomacyTarget || diplomacyLoading}
-                  loading={diplomacyLoading}
+                  onClick={() => handleDiplomacy('faction_set_ally', s.diplomacyTarget)}
+                  disabled={!s.diplomacyTarget || s.diplomacyLoading}
+                  loading={s.diplomacyLoading}
                   size="sm"
                 />
                 <ActionButton
                   label="Set Enemy"
                   icon={<Swords size={12} />}
-                  onClick={() => handleDiplomacy('faction_set_enemy', diplomacyTarget)}
-                  disabled={!diplomacyTarget || diplomacyLoading}
+                  onClick={() => handleDiplomacy('faction_set_enemy', s.diplomacyTarget)}
+                  disabled={!s.diplomacyTarget || s.diplomacyLoading}
                   variant="danger"
                   size="sm"
                 />
@@ -644,16 +632,16 @@ export function FactionPanel() {
                   className={styles.input}
                   type="text"
                   placeholder="Reason for declaration..."
-                  value={warReason}
-                  onChange={(e) => setWarReason(e.target.value)}
+                  value={s.warReason}
+                  onChange={(e) => set({ warReason: e.target.value })}
                 />
               </div>
               <ActionButton
                 label="Declare War"
                 icon={<Flag size={12} />}
-                onClick={() => handleDiplomacy('faction_declare_war', diplomacyTarget, { reason: warReason })}
-                disabled={!diplomacyTarget || diplomacyLoading}
-                loading={diplomacyLoading}
+                onClick={() => handleDiplomacy('faction_declare_war', s.diplomacyTarget, { reason: s.warReason })}
+                disabled={!s.diplomacyTarget || s.diplomacyLoading}
+                loading={s.diplomacyLoading}
                 variant="danger"
                 size="sm"
               />
@@ -664,16 +652,16 @@ export function FactionPanel() {
                   className={styles.input}
                   type="text"
                   placeholder="Terms of peace..."
-                  value={peaceTerms}
-                  onChange={(e) => setPeaceTerms(e.target.value)}
+                  value={s.peaceTerms}
+                  onChange={(e) => set({ peaceTerms: e.target.value })}
                 />
               </div>
               <ActionButton
                 label="Propose Peace"
                 icon={<Handshake size={12} />}
-                onClick={() => handleDiplomacy('faction_propose_peace', diplomacyTarget, { terms: peaceTerms })}
-                disabled={!diplomacyTarget || diplomacyLoading}
-                loading={diplomacyLoading}
+                onClick={() => handleDiplomacy('faction_propose_peace', s.diplomacyTarget, { terms: s.peaceTerms })}
+                disabled={!s.diplomacyTarget || s.diplomacyLoading}
+                loading={s.diplomacyLoading}
                 variant="secondary"
                 size="sm"
               />
@@ -681,14 +669,15 @@ export function FactionPanel() {
           </Section>
 
           <div className={styles.divider} />
+
           <Section title="Intel" icon={<Radar size={12} />} defaultOpen={false}>
             <div className={styles.intelSection}>
               <ActionButton
                 label="Submit Intel"
                 icon={<Radar size={12} />}
                 onClick={handleSubmitIntel}
-                disabled={!state.system?.id || submittingIntel}
-                loading={submittingIntel}
+                disabled={!state.system?.id || s.submittingIntel}
+                loading={s.submittingIntel}
                 size="sm"
               />
 
@@ -697,23 +686,23 @@ export function FactionPanel() {
                   className={styles.inviteInput}
                   type="text"
                   placeholder="System name filter..."
-                  value={intelQuery}
-                  onChange={(e) => setIntelQuery(e.target.value)}
+                  value={s.intelQuery}
+                  onChange={(e) => set({ intelQuery: e.target.value })}
                   onKeyDown={(e) => e.key === 'Enter' && handleQueryIntel()}
                 />
                 <ActionButton
                   label="Query"
                   icon={<Search size={12} />}
                   onClick={handleQueryIntel}
-                  disabled={queryingIntel}
-                  loading={queryingIntel}
+                  disabled={s.queryingIntel}
+                  loading={s.queryingIntel}
                   size="sm"
                 />
               </div>
 
-              {intelEntries.length > 0 && (
+              {s.intelEntries.length > 0 && (
                 <div className={styles.intelList}>
-                  {intelEntries.map((entry) => (
+                  {s.intelEntries.map((entry) => (
                     <div key={entry.system_id} className={styles.intelItem}>
                       <span className={styles.intelSystemName}>{entry.name}</span>
                       {entry.submitter_name && (
@@ -731,35 +720,35 @@ export function FactionPanel() {
                 label="Intel Status"
                 icon={<BarChart3 size={12} />}
                 onClick={handleIntelStatus}
-                disabled={loadingIntelStatus}
-                loading={loadingIntelStatus}
+                disabled={s.loadingIntelStatus}
+                loading={s.loadingIntelStatus}
                 variant="secondary"
                 size="sm"
               />
 
-              {intelStatus && (
+              {s.intelStatus && (
                 <div className={styles.intelStats}>
                   <div className={styles.intelStatItem}>
                     <span className={styles.intelStatLabel}>Intel Level</span>
-                    <span className={styles.intelStatValue}>{intelStatus.intel_level}</span>
+                    <span className={styles.intelStatValue}>{s.intelStatus.intel_level}</span>
                   </div>
                   <div className={styles.intelStatItem}>
                     <span className={styles.intelStatLabel}>Reports (24h)</span>
-                    <span className={styles.intelStatValue}>{intelStatus.reports_24h ?? '--'}</span>
+                    <span className={styles.intelStatValue}>{s.intelStatus.reports_24h ?? '--'}</span>
                   </div>
                   <div className={styles.intelStatItem}>
                     <span className={styles.intelStatLabel}>Total Reports</span>
-                    <span className={styles.intelStatValue}>{intelStatus.total_reports ?? '--'}</span>
+                    <span className={styles.intelStatValue}>{s.intelStatus.total_reports ?? '--'}</span>
                   </div>
                   <div className={styles.intelStatItem}>
                     <span className={styles.intelStatLabel}>Unique Systems</span>
-                    <span className={styles.intelStatValue}>{intelStatus.unique_systems ?? '--'}</span>
+                    <span className={styles.intelStatValue}>{s.intelStatus.unique_systems ?? '--'}</span>
                   </div>
-                  {intelStatus.top_contributors && intelStatus.top_contributors.length > 0 && (
+                  {s.intelStatus.top_contributors && s.intelStatus.top_contributors.length > 0 && (
                     <div className={styles.intelStatItem}>
                       <span className={styles.intelStatLabel}>Top Contributor</span>
                       <span className={styles.intelStatValue}>
-                        {intelStatus.top_contributors[0].username} ({intelStatus.top_contributors[0].reports})
+                        {s.intelStatus.top_contributors[0].username} ({s.intelStatus.top_contributors[0].reports})
                       </span>
                     </div>
                   )}
@@ -769,9 +758,10 @@ export function FactionPanel() {
           </Section>
 
           <div className={styles.divider} />
+
           <Section title="Rooms" icon={<DoorOpen size={12} />} defaultOpen={false}>
             <div className={styles.roomSection}>
-              {!roomsLoaded && !loadingRooms && (
+              {!s.roomsLoaded && !s.loadingRooms && (
                 <ActionButton
                   label="Load Rooms"
                   icon={<DoorOpen size={12} />}
@@ -781,22 +771,22 @@ export function FactionPanel() {
                 />
               )}
 
-              {loadingRooms && (
+              {s.loadingRooms && (
                 <div className={styles.loading}>
                   <span className={shared.spinner} />
                   Loading rooms...
                 </div>
               )}
 
-              {roomsLoaded && rooms.length === 0 && (
+              {s.roomsLoaded && s.rooms.length === 0 && (
                 <div className={shared.emptyState}>
                   No faction rooms yet.
                 </div>
               )}
 
-              {rooms.length > 0 && (
+              {s.rooms.length > 0 && (
                 <div className={styles.roomList}>
-                  {rooms.map((room) => (
+                  {s.rooms.map((room) => (
                     <div key={room.room_id} className={styles.roomItem}>
                       <div className={styles.roomItemInfo}>
                         <span className={styles.roomItemName}>{room.name}</span>
@@ -809,15 +799,15 @@ export function FactionPanel() {
                           label="Visit"
                           icon={<Eye size={12} />}
                           onClick={() => handleVisitRoom(room.room_id)}
-                          disabled={loadingRoom}
+                          disabled={s.loadingRoom}
                           size="sm"
                         />
                         <ActionButton
                           label="Delete"
                           icon={<Trash2 size={12} />}
                           onClick={() => handleDeleteRoom(room.room_id)}
-                          disabled={deletingRoomId === room.room_id}
-                          loading={deletingRoomId === room.room_id}
+                          disabled={s.deletingRoomId === room.room_id}
+                          loading={s.deletingRoomId === room.room_id}
                           variant="danger"
                           size="sm"
                         />
@@ -827,37 +817,36 @@ export function FactionPanel() {
                 </div>
               )}
 
-              {selectedRoom && (
+              {s.selectedRoom && (
                 <div className={styles.roomContent}>
                   <div className={styles.roomContentHeader}>
-                    <span className={styles.roomContentTitle}>{selectedRoom.name}</span>
+                    <span className={styles.roomContentTitle}>{s.selectedRoom.name}</span>
                     <span className={styles.roomContentMeta}>
-                      {selectedRoom.access} -- by {selectedRoom.author}
+                      {s.selectedRoom.access} -- by {s.selectedRoom.author}
                     </span>
                   </div>
                   <div className={styles.roomContentBody}>
-                    {selectedRoom.description || 'No description.'}
+                    {s.selectedRoom.description || 'No description.'}
                   </div>
                   <div className={styles.roomContentFooter}>
-                    Created: {selectedRoom.created_at} -- Updated: {selectedRoom.updated_at}
+                    Created: {s.selectedRoom.created_at} -- Updated: {s.selectedRoom.updated_at}
                   </div>
                 </div>
               )}
 
-              {loadingRoom && (
+              {s.loadingRoom && (
                 <div className={styles.loading}>
                   <span className={shared.spinner} />
                   Loading room...
                 </div>
               )}
 
-              {/* Create Room Form */}
-              {roomsLoaded && (
+              {s.roomsLoaded && (
                 <div className={styles.roomForm}>
                   <div className={styles.roomFormTitle}>
                     <Plus size={12} /> Create Room
                     <span className={styles.roomFormCount}>
-                      {rooms.length}/{maxRooms}
+                      {s.rooms.length}/{s.maxRooms}
                     </span>
                   </div>
                   <div className={styles.field}>
@@ -866,8 +855,8 @@ export function FactionPanel() {
                       className={styles.input}
                       type="text"
                       placeholder="Room name"
-                      value={roomFormName}
-                      onChange={(e) => setRoomFormName(e.target.value)}
+                      value={s.roomFormName}
+                      onChange={(e) => set({ roomFormName: e.target.value })}
                     />
                   </div>
                   <div className={styles.field}>
@@ -875,8 +864,8 @@ export function FactionPanel() {
                     <textarea
                       className={styles.textarea}
                       placeholder="Room description..."
-                      value={roomFormDesc}
-                      onChange={(e) => setRoomFormDesc(e.target.value)}
+                      value={s.roomFormDesc}
+                      onChange={(e) => set({ roomFormDesc: e.target.value })}
                       rows={3}
                     />
                   </div>
@@ -884,8 +873,8 @@ export function FactionPanel() {
                     <label className={styles.label}>Access</label>
                     <select
                       className={styles.select}
-                      value={roomFormAccess}
-                      onChange={(e) => setRoomFormAccess(e.target.value)}
+                      value={s.roomFormAccess}
+                      onChange={(e) => set({ roomFormAccess: e.target.value })}
                     >
                       <option value="public">Public</option>
                       <option value="members">Members</option>
@@ -897,8 +886,8 @@ export function FactionPanel() {
                       label="Create Room"
                       icon={<Plus size={12} />}
                       onClick={handleCreateRoom}
-                      disabled={!roomFormName.trim() || creatingRoom || rooms.length >= maxRooms}
-                      loading={creatingRoom}
+                      disabled={!s.roomFormName.trim() || s.creatingRoom || s.rooms.length >= s.maxRooms}
+                      loading={s.creatingRoom}
                       size="sm"
                     />
                   </div>
@@ -908,6 +897,7 @@ export function FactionPanel() {
           </Section>
 
           <div className={styles.divider} />
+
           <ActionButton
             label="Leave Faction"
             icon={<UserMinus size={14} />}
@@ -919,7 +909,7 @@ export function FactionPanel() {
       ) : (
         <>
           <Section title="Pending Invites" icon={<UserPlus size={12} />}>
-            {!invitesLoaded && !loadingInvites && (
+            {!s.invitesLoaded && !s.loadingInvites && (
               <ActionButton
                 label="Check Invites"
                 icon={<UserPlus size={14} />}
@@ -928,20 +918,20 @@ export function FactionPanel() {
                 size="sm"
               />
             )}
-            {loadingInvites && (
+            {s.loadingInvites && (
               <div className={styles.loading}>
                 <span className={shared.spinner} />
                 Loading invites...
               </div>
             )}
-            {invitesLoaded && pendingInvites.length === 0 && (
+            {s.invitesLoaded && s.pendingInvites.length === 0 && (
               <div className={shared.emptyState}>
                 No pending invites.
               </div>
             )}
-            {pendingInvites.length > 0 && (
+            {s.pendingInvites.length > 0 && (
               <div className={styles.inviteList}>
-                {pendingInvites.map((invite) => (
+                {s.pendingInvites.map((invite) => (
                   <div key={invite.faction_id} className={styles.inviteItem}>
                     <div className={styles.inviteItemInfo}>
                       <span className={styles.inviteItemName}>
@@ -958,16 +948,16 @@ export function FactionPanel() {
                         label="Join"
                         icon={<LogIn size={12} />}
                         onClick={() => handleAcceptInvite(invite.faction_id)}
-                        disabled={joiningFaction === invite.faction_id}
-                        loading={joiningFaction === invite.faction_id}
+                        disabled={s.joiningFaction === invite.faction_id}
+                        loading={s.joiningFaction === invite.faction_id}
                         size="sm"
                       />
                       <ActionButton
                         label="Decline"
                         icon={<X size={12} />}
                         onClick={() => handleDeclineInvite(invite.faction_id)}
-                        disabled={decliningInvite === invite.faction_id}
-                        loading={decliningInvite === invite.faction_id}
+                        disabled={s.decliningInvite === invite.faction_id}
+                        loading={s.decliningInvite === invite.faction_id}
                         variant="danger"
                         size="sm"
                       />
@@ -979,6 +969,7 @@ export function FactionPanel() {
           </Section>
 
           <div className={styles.divider} />
+
           <div>
             <div className={shared.sectionTitle}>
               <span className={styles.sectionIcon}><Flag size={12} /></span>
@@ -991,8 +982,8 @@ export function FactionPanel() {
                   className={styles.input}
                   type="text"
                   placeholder="e.g. Star Wolves"
-                  value={createName}
-                  onChange={(e) => setCreateName(e.target.value)}
+                  value={s.createName}
+                  onChange={(e) => set({ createName: e.target.value })}
                 />
               </div>
               <div className={styles.field}>
@@ -1002,8 +993,8 @@ export function FactionPanel() {
                   type="text"
                   placeholder="e.g. SWLF"
                   maxLength={4}
-                  value={createTag}
-                  onChange={(e) => setCreateTag(e.target.value.toUpperCase())}
+                  value={s.createTag}
+                  onChange={(e) => set({ createTag: e.target.value.toUpperCase() })}
                 />
               </div>
               <div className={styles.formActions}>
@@ -1011,8 +1002,8 @@ export function FactionPanel() {
                   label="Create Faction"
                   icon={<Flag size={14} />}
                   onClick={handleCreateFaction}
-                  disabled={!createName.trim() || !createTag.trim() || creating}
-                  loading={creating}
+                  disabled={!s.createName.trim() || !s.createTag.trim() || s.creating}
+                  loading={s.creating}
                   size="sm"
                 />
               </div>
@@ -1024,7 +1015,7 @@ export function FactionPanel() {
       <div className={styles.divider} />
 
       <Section title="Faction Browser" icon={<Users size={12} />} defaultOpen={false}>
-        {!listLoaded && !loadingList && (
+        {!s.listLoaded && !s.loadingList && (
           <ActionButton
             label="Browse Factions"
             icon={<Users size={14} />}
@@ -1033,20 +1024,20 @@ export function FactionPanel() {
             size="sm"
           />
         )}
-        {loadingList && (
+        {s.loadingList && (
           <div className={styles.loading}>
             <span className={shared.spinner} />
             Loading factions...
           </div>
         )}
-        {listLoaded && factionList.length === 0 && (
+        {s.listLoaded && s.factionList.length === 0 && (
           <div className={shared.emptyState}>
             No factions found in the galaxy.
           </div>
         )}
-        {factionList.length > 0 && (
+        {s.factionList.length > 0 && (
           <div className={styles.factionList}>
-            {factionList.map((f) => (
+            {s.factionList.map((f) => (
               <div key={f.id} className={styles.factionListItem}>
                 <div className={styles.factionListInfo}>
                   <span className={styles.factionListName}>{f.name}</span>
@@ -1059,7 +1050,7 @@ export function FactionPanel() {
                   {hasFaction ? (
                     <button
                       className={styles.diplomacyTargetBtn}
-                      onClick={() => setDiplomacyTarget(f.id)}
+                      onClick={() => set({ diplomacyTarget: f.id })}
                       title="Set as diplomacy target"
                       type="button"
                     >
@@ -1070,8 +1061,8 @@ export function FactionPanel() {
                       label="Join"
                       icon={<LogIn size={12} />}
                       onClick={() => handleJoinFaction(f.id)}
-                      disabled={joiningFaction === f.id}
-                      loading={joiningFaction === f.id}
+                      disabled={s.joiningFaction === f.id}
+                      loading={s.joiningFaction === f.id}
                       size="sm"
                     />
                   )}
@@ -1080,13 +1071,13 @@ export function FactionPanel() {
             ))}
           </div>
         )}
-        {listLoaded && (
+        {s.listLoaded && (
           <ActionButton
             label="Refresh"
             icon={<RefreshCw size={12} />}
             onClick={handleLoadFactions}
-            disabled={loadingList}
-            loading={loadingList}
+            disabled={s.loadingList}
+            loading={s.loadingList}
             variant="secondary"
             size="sm"
           />
