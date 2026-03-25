@@ -160,7 +160,7 @@ export function FactionPanel() {
   const [s, set] = useReducer(merge, INITIAL_STATE)
 
   const hasFaction = Boolean(state.player?.faction_id)
-  const playerId = state.player?.player_id
+  const playerId = state.player?.id
 
   const loadFactionInfo = useCallback(async () => {
     if (!hasFaction) return
