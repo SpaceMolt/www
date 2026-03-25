@@ -19,8 +19,14 @@
   transition: color 0.15s ease;
 }
 
-.sectionToggle:hover {
+.sectionToggle:hover,
+.sectionToggle:focus-visible {
   color: var(--star-white);
+}
+
+.sectionToggle:focus-visible {
+  outline: 1px solid var(--plasma-cyan);
+  outline-offset: 2px;
 }
 
 .divider {
@@ -311,10 +317,12 @@
   transition: all 0.15s ease;
 }
 
-.kickBtn:hover {
+.kickBtn:hover,
+.kickBtn:focus-visible {
   color: #f87171;
   border-color: rgba(248, 113, 113, 0.3);
   background: rgba(248, 113, 113, 0.1);
+  outline: none;
 }
 
 .kickBtn:disabled {
@@ -529,9 +537,11 @@
   transition: all 0.15s ease;
 }
 
-.diplomacyTargetBtn:hover {
+.diplomacyTargetBtn:hover,
+.diplomacyTargetBtn:focus-visible {
   background: rgba(0, 212, 255, 0.1);
   border-color: rgba(0, 212, 255, 0.4);
+  outline: none;
 }
 
 /* Loading */

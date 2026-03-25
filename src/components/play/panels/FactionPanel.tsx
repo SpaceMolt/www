@@ -144,6 +144,7 @@ function Section({ title, icon, children, defaultOpen = true }: {
         className={styles.sectionToggle}
         onClick={() => setOpen(!open)}
         type="button"
+        aria-expanded={open}
       >
         <span className={styles.sectionIcon}>{icon}</span>
         <span className={shared.sectionTitle}>{title}</span>
@@ -551,6 +552,7 @@ export function FactionPanel() {
                           onClick={() => handleKick(member.player_id)}
                           disabled={s.kickingPlayer === member.player_id}
                           title={`Kick ${member.username}`}
+                          aria-label={`Kick ${member.username}`}
                           type="button"
                         >
                           <X size={10} />
