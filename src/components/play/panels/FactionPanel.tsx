@@ -8,10 +8,7 @@ import { Panel, shared } from '../shared'
 import type { FactionInfoResponse, FactionMember } from '../types'
 import styles from './FactionPanel.module.css'
 
-// ---------------------------------------------------------------------------
 // Local types for API responses not in shared types
-// ---------------------------------------------------------------------------
-
 interface FactionListEntry {
   id: string
   name: string
@@ -68,10 +65,7 @@ type FactionWar = NonNullable<FactionInfoResponse['wars']>[number]
 type PeaceProposal = NonNullable<FactionInfoResponse['peace_proposals']>[number]
 type FactionRelation = NonNullable<FactionInfoResponse['allies']>[number]
 
-// ---------------------------------------------------------------------------
 // Collapsible Section
-// ---------------------------------------------------------------------------
-
 function Section({ title, icon, children, defaultOpen = true }: {
   title: string
   icon: React.ReactNode
@@ -95,10 +89,7 @@ function Section({ title, icon, children, defaultOpen = true }: {
   )
 }
 
-// ---------------------------------------------------------------------------
 // FactionPanel
-// ---------------------------------------------------------------------------
-
 export function FactionPanel() {
   const { state, sendCommand } = useGame()
 
@@ -160,9 +151,6 @@ export function FactionPanel() {
   const hasFaction = Boolean(state.player?.faction_id)
   const playerId = state.player?.player_id
 
-  // -------------------------------------------------------------------------
-  // Auto-load faction info when panel opens (or faction changes)
-  // -------------------------------------------------------------------------
   const loadFactionInfo = useCallback(async () => {
     if (!hasFaction) return
     setLoadingInfo(true)
@@ -174,17 +162,25 @@ export function FactionPanel() {
     }
   }, [sendCommand, hasFaction])
 
+  // Auto-load faction info when panel opens (or faction changes)
   useEffect(() => {
-    if (hasFaction) {
-      loadFactionInfo()
-    } else {
+    if (!hasFaction) {
       setFactionInfo(null)
+      return
     }
-  }, [hasFaction]) // eslint-disable-line react-hooks/exhaustive-deps
+    let cancelled = false
+    setLoadingInfo(true)
+    sendCommand('faction_info').then((res) => {
+      if (!cancelled) {
+        setFactionInfo(res as unknown as FactionInfoResponse)
+      }
+    }).finally(() => {
+      if (!cancelled) setLoadingInfo(false)
+    })
+    return () => { cancelled = true }
+  }, [hasFaction, sendCommand])
 
-  // -------------------------------------------------------------------------
   // Faction creation
-  // -------------------------------------------------------------------------
   const handleCreateFaction = useCallback(async () => {
     if (!createName.trim() || !createTag.trim()) return
     setCreating(true)
@@ -200,9 +196,7 @@ export function FactionPanel() {
     }
   }, [sendCommand, createName, createTag])
 
-  // -------------------------------------------------------------------------
   // Leave faction
-  // -------------------------------------------------------------------------
   const handleLeaveFaction = useCallback(async () => {
     await sendCommand('leave_faction')
     setFactionInfo(null)
@@ -212,9 +206,7 @@ export function FactionPanel() {
     setIntelStatus(null)
   }, [sendCommand])
 
-  // -------------------------------------------------------------------------
   // Invite player
-  // -------------------------------------------------------------------------
   const handleInvite = useCallback(async () => {
     if (!inviteTarget.trim()) return
     setInviting(true)
@@ -226,9 +218,7 @@ export function FactionPanel() {
     }
   }, [sendCommand, inviteTarget])
 
-  // -------------------------------------------------------------------------
   // Kick member
-  // -------------------------------------------------------------------------
   const handleKick = useCallback(async (memberId: string) => {
     setKickingPlayer(memberId)
     try {
@@ -239,9 +229,7 @@ export function FactionPanel() {
     }
   }, [sendCommand, loadFactionInfo])
 
-  // -------------------------------------------------------------------------
   // Pending invites (non-member)
-  // -------------------------------------------------------------------------
   const handleLoadInvites = useCallback(async () => {
     setLoadingInvites(true)
     try {
@@ -275,9 +263,7 @@ export function FactionPanel() {
     }
   }, [sendCommand])
 
-  // -------------------------------------------------------------------------
   // Faction browser
-  // -------------------------------------------------------------------------
   const handleLoadFactions = useCallback(async () => {
     setLoadingList(true)
     try {
@@ -301,9 +287,7 @@ export function FactionPanel() {
     }
   }, [sendCommand])
 
-  // -------------------------------------------------------------------------
   // Diplomacy
-  // -------------------------------------------------------------------------
   const handleDiplomacy = useCallback(async (action: string, factionId: string, extra?: Record<string, unknown>) => {
     if (!factionId) return
     setDiplomacyLoading(true)
@@ -328,9 +312,7 @@ export function FactionPanel() {
     }
   }, [sendCommand, loadFactionInfo])
 
-  // -------------------------------------------------------------------------
   // Intel handlers
-  // -------------------------------------------------------------------------
   const handleSubmitIntel = useCallback(async () => {
     if (!state.system?.id) return
     setSubmittingIntel(true)
@@ -366,9 +348,7 @@ export function FactionPanel() {
     }
   }, [sendCommand])
 
-  // -------------------------------------------------------------------------
   // Rooms handlers
-  // -------------------------------------------------------------------------
   const handleLoadRooms = useCallback(async () => {
     setLoadingRooms(true)
     try {
@@ -421,11 +401,6 @@ export function FactionPanel() {
       setDeletingRoomId(null)
     }
   }, [sendCommand, selectedRoom])
-
-  // =========================================================================
-  // RENDER
-  // =========================================================================
-
   return (
     <Panel
       title="Faction"
@@ -445,9 +420,6 @@ export function FactionPanel() {
     >
       {hasFaction ? (
         <>
-          {/* ============================================================= */}
-          {/* FACTION INFO CARD                                             */}
-          {/* ============================================================= */}
           {loadingInfo && !factionInfo && (
             <div className={styles.loading}>
               <span className={shared.spinner} />
@@ -481,10 +453,6 @@ export function FactionPanel() {
               </div>
             </div>
           )}
-
-          {/* ============================================================= */}
-          {/* ALLIES & ENEMIES                                              */}
-          {/* ============================================================= */}
           {factionInfo && (factionInfo.allies?.length || factionInfo.enemies?.length) ? (
             <>
               <div className={styles.divider} />
@@ -516,10 +484,6 @@ export function FactionPanel() {
               </div>
             </>
           ) : null}
-
-          {/* ============================================================= */}
-          {/* ACTIVE WARS                                                   */}
-          {/* ============================================================= */}
           {factionInfo?.wars && factionInfo.wars.length > 0 && (
             <>
               <div className={styles.divider} />
@@ -559,10 +523,6 @@ export function FactionPanel() {
               </Section>
             </>
           )}
-
-          {/* ============================================================= */}
-          {/* PEACE PROPOSALS                                               */}
-          {/* ============================================================= */}
           {factionInfo?.peace_proposals && factionInfo.peace_proposals.length > 0 && (
             <>
               <div className={styles.divider} />
@@ -592,10 +552,6 @@ export function FactionPanel() {
           )}
 
           <div className={styles.divider} />
-
-          {/* ============================================================= */}
-          {/* MEMBERS                                                       */}
-          {/* ============================================================= */}
           {factionInfo?.members && factionInfo.members.length > 0 && (
             <Section title="Members" icon={<Users size={12} />}>
               <div className={styles.memberList}>
@@ -626,10 +582,6 @@ export function FactionPanel() {
           )}
 
           <div className={styles.divider} />
-
-          {/* ============================================================= */}
-          {/* INVITE PLAYER                                                 */}
-          {/* ============================================================= */}
           <div>
             <div className={shared.sectionTitle}>
               <span className={styles.sectionIcon}><UserPlus size={12} /></span>
@@ -656,10 +608,6 @@ export function FactionPanel() {
           </div>
 
           <div className={styles.divider} />
-
-          {/* ============================================================= */}
-          {/* DIPLOMACY                                                     */}
-          {/* ============================================================= */}
           <Section title="Diplomacy" icon={<Shield size={12} />} defaultOpen={false}>
             <div className={styles.diplomacySection}>
               <div className={styles.field}>
@@ -733,10 +681,6 @@ export function FactionPanel() {
           </Section>
 
           <div className={styles.divider} />
-
-          {/* ============================================================= */}
-          {/* INTEL                                                         */}
-          {/* ============================================================= */}
           <Section title="Intel" icon={<Radar size={12} />} defaultOpen={false}>
             <div className={styles.intelSection}>
               <ActionButton
@@ -825,10 +769,6 @@ export function FactionPanel() {
           </Section>
 
           <div className={styles.divider} />
-
-          {/* ============================================================= */}
-          {/* ROOMS                                                         */}
-          {/* ============================================================= */}
           <Section title="Rooms" icon={<DoorOpen size={12} />} defaultOpen={false}>
             <div className={styles.roomSection}>
               {!roomsLoaded && !loadingRooms && (
@@ -968,10 +908,6 @@ export function FactionPanel() {
           </Section>
 
           <div className={styles.divider} />
-
-          {/* ============================================================= */}
-          {/* LEAVE FACTION                                                 */}
-          {/* ============================================================= */}
           <ActionButton
             label="Leave Faction"
             icon={<UserMinus size={14} />}
@@ -982,9 +918,6 @@ export function FactionPanel() {
         </>
       ) : (
         <>
-          {/* ============================================================= */}
-          {/* NON-MEMBER: PENDING INVITES                                   */}
-          {/* ============================================================= */}
           <Section title="Pending Invites" icon={<UserPlus size={12} />}>
             {!invitesLoaded && !loadingInvites && (
               <ActionButton
@@ -1046,10 +979,6 @@ export function FactionPanel() {
           </Section>
 
           <div className={styles.divider} />
-
-          {/* ============================================================= */}
-          {/* NON-MEMBER: CREATE FACTION                                    */}
-          {/* ============================================================= */}
           <div>
             <div className={shared.sectionTitle}>
               <span className={styles.sectionIcon}><Flag size={12} /></span>
@@ -1094,9 +1023,6 @@ export function FactionPanel() {
 
       <div className={styles.divider} />
 
-      {/* =================================================================== */}
-      {/* FACTION BROWSER (visible to both members and non-members)           */}
-      {/* =================================================================== */}
       <Section title="Faction Browser" icon={<Users size={12} />} defaultOpen={false}>
         {!listLoaded && !loadingList && (
           <ActionButton
