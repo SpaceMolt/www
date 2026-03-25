@@ -42,6 +42,7 @@
 /* Search + filter bar */
 .filterBar {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.4rem;
   align-items: center;
 }
@@ -311,6 +312,44 @@
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
   font-size: 0.75rem;
   color: var(--hull-grey);
+}
+
+/* Category dropdown */
+.categorySelect {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: rgba(10, 14, 20, 0.6);
+  border: 1px solid var(--dim-grey);
+  border-radius: 3px;
+  padding: 0.2rem 0.35rem;
+  flex-shrink: 0;
+  transition: border-color 0.15s ease;
+}
+
+.categorySelect:focus-within {
+  border-color: var(--plasma-cyan);
+}
+
+.categorySelectIcon {
+  color: var(--hull-grey);
+  flex-shrink: 0;
+}
+
+.categoryDropdown {
+  background: none;
+  border: none;
+  outline: none;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--star-white);
+  cursor: pointer;
+  padding: 0;
+}
+
+.categoryDropdown option {
+  background: #0a0e14;
+  color: var(--star-white);
 }
 
 /* Filter toggles */
