@@ -6,6 +6,29 @@
   color: var(--hull-grey);
 }
 
+.sectionToggle {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0.25rem 0;
+  cursor: pointer;
+  color: var(--chrome-silver);
+  transition: color 0.15s ease;
+}
+
+.sectionToggle:hover,
+.sectionToggle:focus-visible {
+  color: var(--star-white);
+}
+
+.sectionToggle:focus-visible {
+  outline: 1px solid var(--plasma-cyan);
+  outline-offset: 2px;
+}
+
 .divider {
   height: 1px;
   background: var(--dim-grey);
@@ -21,6 +44,12 @@
   background: rgba(0, 212, 255, 0.04);
   border: 1px solid rgba(0, 212, 255, 0.1);
   border-radius: 4px;
+}
+
+.factionHeader {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
 }
 
 .factionName {
@@ -43,6 +72,13 @@
   width: fit-content;
 }
 
+.factionDescription {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.78rem;
+  color: var(--chrome-silver);
+  line-height: 1.4;
+}
+
 .factionMeta {
   display: flex;
   gap: 0.75rem;
@@ -62,6 +98,144 @@
 
 .metaValue {
   color: var(--plasma-cyan);
+}
+
+/* Relations (allies & enemies) */
+.relationsRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.relationGroup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.relationLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--hull-grey);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-right: 0.25rem;
+}
+
+.allyBadge {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.1);
+  border: 1px solid rgba(74, 222, 128, 0.2);
+  border-radius: 3px;
+  padding: 0.1rem 0.35rem;
+}
+
+.enemyBadge {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.2);
+  border-radius: 3px;
+  padding: 0.1rem 0.35rem;
+}
+
+/* War list */
+.warList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.warItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.5rem 0.6rem;
+  background: rgba(248, 113, 113, 0.06);
+  border: 1px solid rgba(248, 113, 113, 0.15);
+  border-radius: 4px;
+}
+
+.warHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.warTarget {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #f87171;
+}
+
+.warStats {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.warKills {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--chrome-silver);
+}
+
+.warLosses {
+  color: #f87171;
+}
+
+.warReason {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--hull-grey);
+  font-style: italic;
+}
+
+/* Peace proposals */
+.proposalList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.proposalItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.4rem 0.55rem;
+  background: rgba(74, 222, 128, 0.06);
+  border: 1px solid rgba(74, 222, 128, 0.15);
+  border-radius: 4px;
+}
+
+.proposalInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.proposalFrom {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.78rem;
+  color: var(--star-white);
+}
+
+.proposalTerms {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--hull-grey);
+  font-style: italic;
 }
 
 /* Member list */
@@ -93,11 +267,24 @@
   min-width: 0;
 }
 
-.memberIcon {
+.memberRight {
   display: flex;
   align-items: center;
-  color: var(--chrome-silver);
+  gap: 0.4rem;
   flex-shrink: 0;
+}
+
+.onlineDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--hull-grey);
+  flex-shrink: 0;
+}
+
+.onlineDot.online {
+  background: #4ade80;
+  box-shadow: 0 0 4px rgba(74, 222, 128, 0.5);
 }
 
 .memberName {
@@ -115,6 +302,32 @@
   color: var(--hull-grey);
   text-transform: uppercase;
   flex-shrink: 0;
+}
+
+.kickBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  padding: 0.2rem;
+  cursor: pointer;
+  color: var(--hull-grey);
+  transition: all 0.15s ease;
+}
+
+.kickBtn:hover,
+.kickBtn:focus-visible {
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.3);
+  background: rgba(248, 113, 113, 0.1);
+  outline: none;
+}
+
+.kickBtn:disabled {
+  opacity: 0.4;
+  pointer-events: none;
 }
 
 /* Create faction form */
@@ -193,7 +406,56 @@
   box-shadow: 0 0 8px rgba(0, 212, 255, 0.15);
 }
 
+/* Pending invites list */
+.inviteList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.inviteItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.4rem 0.55rem;
+  background: rgba(0, 212, 255, 0.04);
+  border: 1px solid rgba(0, 212, 255, 0.1);
+  border-radius: 4px;
+}
+
+.inviteItemInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.inviteItemName {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.78rem;
+  color: var(--star-white);
+}
+
+.inviteItemMeta {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--hull-grey);
+}
+
+.inviteItemActions {
+  display: flex;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
 /* Diplomacy */
+.diplomacySection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .diplomacyRow {
   display: flex;
   gap: 0.35rem;
@@ -216,6 +478,7 @@
   border: 1px solid transparent;
   border-radius: 4px;
   transition: all 0.15s ease;
+  gap: 0.5rem;
 }
 
 .factionListItem:hover {
@@ -223,10 +486,27 @@
   border-color: rgba(0, 212, 255, 0.15);
 }
 
+.factionListInfo {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.factionListRight {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
 .factionListName {
   font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
   font-size: 0.78rem;
   color: var(--star-white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .factionListTag {
@@ -234,6 +514,7 @@
   font-size: 0.75rem;
   font-weight: 700;
   color: var(--plasma-cyan);
+  flex-shrink: 0;
 }
 
 .factionListMembers {
@@ -241,6 +522,26 @@
   font-size: 0.75rem;
   color: var(--hull-grey);
   flex-shrink: 0;
+}
+
+.diplomacyTargetBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  border-radius: 3px;
+  padding: 0.25rem;
+  cursor: pointer;
+  color: var(--plasma-cyan);
+  transition: all 0.15s ease;
+}
+
+.diplomacyTargetBtn:hover,
+.diplomacyTargetBtn:focus-visible {
+  background: rgba(0, 212, 255, 0.1);
+  border-color: rgba(0, 212, 255, 0.4);
+  outline: none;
 }
 
 /* Loading */
