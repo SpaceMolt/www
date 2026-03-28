@@ -503,18 +503,18 @@ export function MarketView() {
         >
           <span className={styles.insightBadge}><Lightbulb size={10} aria-hidden="true" /></span>
           <span>{analysisData.insights.length} insight{analysisData.insights.length !== 1 ? 's' : ''} found</span>
-          {showFilter === 'insights' && <X size={10} />}
+          {showFilter === 'insights' && <X size={10} aria-hidden="true" />}
         </button>
       ) : null}
 
       {showFilter === 'insights' && generalInsights.length > 0 && (
         <div className={styles.generalInsightsPanel}>
           <div className={styles.generalInsightsHeader}>
-            <Lightbulb size={10} />
+            <Lightbulb size={10} aria-hidden="true" />
             General Insights
           </div>
-          {generalInsights.map((insight, i) => (
-            <div key={i} className={styles.generalInsightRow}>
+          {generalInsights.map((insight) => (
+            <div key={`${insight.category}-${insight.message}`} className={styles.generalInsightRow}>
               <span className={styles.generalInsightCategory}>{formatCategory(insight.category)}</span>
               <span className={styles.generalInsightMessage}>{insight.message}</span>
             </div>

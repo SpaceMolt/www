@@ -385,6 +385,11 @@
   transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
 }
 
+.analysisStatusClickable:focus-visible {
+  outline: 1px solid var(--warning-yellow);
+  outline-offset: 1px;
+}
+
 .analysisStatusClickable:hover {
   color: var(--warning-yellow);
   background: rgba(255, 217, 61, 0.06);
