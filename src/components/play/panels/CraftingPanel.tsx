@@ -9,6 +9,7 @@ import { BugReportButton } from '../BugReportButton'
 import { buildRecipeContext } from '../bugReportContext'
 import type { Recipe } from '../types'
 import { recipesById, formatItemId } from '@/data/catalog'
+import { titleCase } from '@/lib/format'
 import styles from './CraftingPanel.module.css'
 
 const HIDDEN_CATEGORIES = new Set(['facility only', 'ship passive'])
@@ -25,7 +26,7 @@ function canCraftRecipe(
     for (const [skillId, reqLevel] of Object.entries(recipe.required_skills)) {
       const playerLevel = skills?.[skillId]?.level ?? 0
       if (playerLevel < (reqLevel as number)) {
-        const name = skillId.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+        const name = titleCase(skillId)
         reasons.push(`Need ${name} Lv${reqLevel} (have ${playerLevel})`)
       }
     }
@@ -304,7 +305,7 @@ export function CraftingPanel() {
                                 <span className={styles.recipeSkills}>
                                   {Object.entries(recipe.required_skills)
                                     .map(([skill, level]) => {
-                                      const name = skill.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+                                      const name = titleCase(skill)
                                       const have = skillsMap?.[skill]?.level ?? 0
                                       const met = have >= (level as number)
                                       return (

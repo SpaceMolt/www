@@ -6,6 +6,7 @@ import type {
   Player, Ship, SystemInfo, POI, TradeOffer,
   initialGameState as _init,
 } from './types'
+import { titleCase } from '@/lib/format'
 
 const MAX_CHAT = 200
 const MAX_EVENTS = 100
@@ -345,7 +346,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return addEvent(state, 'warning', `Pilotless ship detected: ${action.payload.player_username} (${action.payload.ship_class})`)
 
     case 'SKILL_LEVEL_UP': {
-      const skillId = (action.payload.skill_id as string || 'unknown').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+      const skillId = titleCase(action.payload.skill_id as string || 'unknown')
       return addEvent(state, 'info', `Skill leveled up: ${skillId} → Level ${action.payload.new_level}`)
     }
 

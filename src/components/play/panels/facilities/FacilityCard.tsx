@@ -6,6 +6,7 @@ import type { Facility } from '@/lib/gameTypes'
 import { shared } from '../../shared'
 import { BugReportButton } from '../../BugReportButton'
 import { buildFacilityContext } from '../../bugReportContext'
+import { titleCase as formatLabel } from '@/lib/format'
 import styles from './facilities.module.css'
 
 const CATEGORY_BADGE: Record<string, string> = {
@@ -14,11 +15,6 @@ const CATEGORY_BADGE: Record<string, string> = {
   production: shared.badgeOrange,
   faction: shared.badgePurple,
   personal: shared.badgeCyan,
-}
-
-/** Convert snake_case to Title Case */
-export function formatLabel(s: string): string {
-  return s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
 
 interface FacilityCardProps {

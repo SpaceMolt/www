@@ -22,7 +22,7 @@ import { useGame } from './GameProvider'
 import { ProgressBar } from './ProgressBar'
 import { MiningModal } from './MiningModal'
 import type { GalaxyPanelHandle, MapSystemData, PlannedRoute } from './panels/GalaxyPanel'
-import { formatLabel } from './panels/facilities/FacilityCard'
+import { titleCase as formatLabel } from '@/lib/format'
 import styles from './LeftSidebar.module.css'
 
 // Intel query response types (not in generated types)

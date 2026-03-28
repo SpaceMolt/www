@@ -25,6 +25,7 @@ import { getCatalogItem } from '../../../ItemDetail'
 import { ItemName } from '../../ItemTooltip'
 import { Credits, Loading, Modal, shared } from '../../shared'
 import { useHoverTooltip } from '../../hooks/useHoverTooltip'
+import { titleCase } from '@/lib/format'
 import styles from './MarketView.module.css'
 
 interface MarketInsight {
@@ -77,9 +78,7 @@ type SortField = 'name' | 'have' | 'buyQty' | 'buyPrice' | 'sellQty' | 'sellPric
 type SortDir = 'asc' | 'desc'
 type ShowFilter = 'all' | 'buying' | 'selling' | 'mine' | 'insights'
 
-function formatCategory(cat: string): string {
-  return cat.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
-}
+const formatCategory = titleCase
 
 /** Insight badge with rich hover tooltip */
 function InsightBadge({ insights }: { insights: MarketInsight[] }) {

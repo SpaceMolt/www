@@ -1,10 +1,6 @@
 import type { GameState, Recipe } from './types'
 import type { Mission, Facility } from '@/lib/gameTypes'
-
-/** Convert snake_case to Title Case */
-function titleCase(s: string): string {
-  return s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
-}
+import { titleCase } from '@/lib/format'
 
 // ---------------------------------------------------------------------------
 // Generic context — included in every bug report
