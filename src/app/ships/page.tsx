@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback, Fragment } from 'react'
 import Image from 'next/image'
+import { titleCase } from '@/lib/format'
 import styles from './page.module.css'
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
@@ -107,9 +108,7 @@ function formatNumber(n: number): string {
   return n.toLocaleString('en-US')
 }
 
-function formatSkillName(id: string): string {
-  return id.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
-}
+const formatSkillName = titleCase
 
 function GuideSection() {
   const [open, setOpen] = useState(false)

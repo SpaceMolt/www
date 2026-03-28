@@ -18,6 +18,7 @@ import { useGame } from '../../GameProvider'
 import { GameApiError } from '@/lib/gameApi'
 import { ItemName } from '../../ItemTooltip'
 import { Credits, shared } from '../../shared'
+import { titleCase } from '@/lib/format'
 import styles from './StorageView.module.css'
 
 /** Parse station IDs from the hint string: "X items in storage at station1, station2" */
@@ -197,7 +198,7 @@ export function StorageView() {
               <option value="">Select a station...</option>
               {remoteStations.map((stationId) => (
                 <option key={stationId} value={stationId}>
-                  {stationId.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+                  {titleCase(stationId)}
                 </option>
               ))}
             </select>

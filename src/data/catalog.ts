@@ -6,6 +6,7 @@
  */
 
 import rawCatalog from './catalog.json'
+import { titleCase } from '@/lib/format'
 
 // ── Raw types matching the JSON shape from the game server ──────────────
 
@@ -147,7 +148,7 @@ export function isModule(item: RawCatalogItem): boolean {
 export function formatItemId(itemId: string): string {
   const item = catalog.items[itemId]
   if (item) return item.name
-  return itemId.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+  return titleCase(itemId)
 }
 
 /** All items as a flat array (cached) */

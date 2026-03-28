@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { titleCase } from '@/lib/format'
 import styles from './page.module.css'
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
@@ -92,7 +93,7 @@ const SORT_OPTIONS = [
 function formatCategoryLabel(category: string): string {
   const found = CATEGORIES.find((c) => c.value === category)
   if (found) return found.label
-  return category.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+  return titleCase(category)
 }
 
 function MarkdownContent({ content, className }: { content: string; className?: string }) {
