@@ -290,7 +290,7 @@ export function MarketView() {
       }
     }
     return { insightsByItem: map, generalInsights: general }
-  }, [analysisData])
+  }, [analysisData?.insights])
 
   // Filter and sort items
   const { groupedItems, visibleCategories } = useMemo(() => {
@@ -496,7 +496,7 @@ export function MarketView() {
           <Loader2 size={10} className={shared.spinner} />
           <span>Analyzing market...</span>
         </div>
-      ) : analysisData && analysisData.insights.length > 0 ? (
+      ) : analysisData?.insights && analysisData.insights.length > 0 ? (
         <button
           className={`${styles.analysisStatus} ${styles.analysisStatusClickable} ${showFilter === 'insights' ? styles.analysisStatusActive : ''}`}
           onClick={() => setShowFilter(prev => prev === 'insights' ? 'all' : 'insights')}
@@ -508,7 +508,6 @@ export function MarketView() {
         </button>
       ) : null}
 
-      {/* General insights panel (shown when insights filter active) */}
       {showFilter === 'insights' && generalInsights.length > 0 && (
         <div className={styles.generalInsightsPanel}>
           <div className={styles.generalInsightsHeader}>
@@ -517,8 +516,8 @@ export function MarketView() {
           </div>
           {generalInsights.map((insight, i) => (
             <div key={i} className={styles.generalInsightRow}>
-              <span className={styles.insightTooltipCategory}>{formatCategory(insight.category)}</span>
-              <span className={styles.insightTooltipMessage}>{insight.message}</span>
+              <span className={styles.generalInsightCategory}>{formatCategory(insight.category)}</span>
+              <span className={styles.generalInsightMessage}>{insight.message}</span>
             </div>
           ))}
         </div>

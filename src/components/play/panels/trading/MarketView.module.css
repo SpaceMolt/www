@@ -431,6 +431,25 @@
   border-bottom: none;
 }
 
+.generalInsightCategory {
+  display: block;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--warning-yellow);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.15rem;
+}
+
+.generalInsightMessage {
+  display: block;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  line-height: 1.35;
+  color: var(--chrome-silver);
+}
+
 /* Quick sell bar */
 .quickSell {
   display: flex;
