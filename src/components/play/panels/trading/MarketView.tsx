@@ -75,7 +75,7 @@ interface MarketItem {
 
 type SortField = 'name' | 'have' | 'buyQty' | 'buyPrice' | 'sellQty' | 'sellPrice' | 'spread'
 type SortDir = 'asc' | 'desc'
-type ShowFilter = 'all' | 'buying' | 'selling' | 'mine'
+type ShowFilter = 'all' | 'buying' | 'selling' | 'mine' | 'insights'
 
 function formatCategory(cat: string): string {
   return cat.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
@@ -275,6 +275,23 @@ export function MarketView() {
 
   const getAvailable = useCallback((itemId: string) => haveMap.get(itemId) ?? 0, [haveMap])
 
+  // Map insights by item_id for inline display; separate general (non-item) insights
+  const { insightsByItem, generalInsights } = useMemo(() => {
+    const map = new Map<string, MarketInsight[]>()
+    const general: MarketInsight[] = []
+    if (!analysisData?.insights) return { insightsByItem: map, generalInsights: general }
+    for (const insight of analysisData.insights) {
+      if (!insight.item_id) {
+        general.push(insight)
+      } else {
+        const existing = map.get(insight.item_id)
+        if (existing) existing.push(insight)
+        else map.set(insight.item_id, [insight])
+      }
+    }
+    return { insightsByItem: map, generalInsights: general }
+  }, [analysisData])
+
   // Filter and sort items
   const { groupedItems, visibleCategories } = useMemo(() => {
     const items = (marketData?.items || []) as MarketItem[]
@@ -335,6 +352,8 @@ export function MarketView() {
           sell_orders: [],
         })
       }
+    } else if (showFilter === 'insights') {
+      filtered = filtered.filter(i => insightsByItem.has(i.item_id))
     }
 
     // Sort within categories
@@ -373,19 +392,7 @@ export function MarketView() {
       groupedItems: sortedCats.map(cat => ({ category: cat, items: groups[cat] })),
       visibleCategories: sortedCats,
     }
-  }, [marketData?.items, selectedCategory, searchQuery, showFilter, sortField, sortDir, haveMap])
-
-  // Map insights by item_id for inline display
-  const insightsByItem = useMemo(() => {
-    const map = new Map<string, MarketInsight[]>()
-    if (!analysisData?.insights) return map
-    for (const insight of analysisData.insights) {
-      const existing = map.get(insight.item_id)
-      if (existing) existing.push(insight)
-      else map.set(insight.item_id, [insight])
-    }
-    return map
-  }, [analysisData])
+  }, [marketData?.items, selectedCategory, searchQuery, showFilter, sortField, sortDir, haveMap, insightsByItem])
 
   if (!isDocked) {
     return (
@@ -490,21 +497,44 @@ export function MarketView() {
           <span>Analyzing market...</span>
         </div>
       ) : analysisData && analysisData.insights.length > 0 ? (
-        <div className={styles.analysisStatus}>
+        <button
+          className={`${styles.analysisStatus} ${styles.analysisStatusClickable} ${showFilter === 'insights' ? styles.analysisStatusActive : ''}`}
+          onClick={() => setShowFilter(prev => prev === 'insights' ? 'all' : 'insights')}
+          type="button"
+        >
           <span className={styles.insightBadge}><Lightbulb size={10} aria-hidden="true" /></span>
           <span>{analysisData.insights.length} insight{analysisData.insights.length !== 1 ? 's' : ''} found</span>
-        </div>
+          {showFilter === 'insights' && <X size={10} />}
+        </button>
       ) : null}
+
+      {/* General insights panel (shown when insights filter active) */}
+      {showFilter === 'insights' && generalInsights.length > 0 && (
+        <div className={styles.generalInsightsPanel}>
+          <div className={styles.generalInsightsHeader}>
+            <Lightbulb size={10} />
+            General Insights
+          </div>
+          {generalInsights.map((insight, i) => (
+            <div key={i} className={styles.generalInsightRow}>
+              <span className={styles.insightTooltipCategory}>{formatCategory(insight.category)}</span>
+              <span className={styles.insightTooltipMessage}>{insight.message}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {!marketData ? (
         <Loading message="Loading market data..." />
       ) : groupedItems.length === 0 ? (
         <div className={shared.emptyState}>
-          {showFilter === 'mine'
-            ? 'No items in cargo or storage at this base.'
-            : searchQuery || selectedCategory || showFilter !== 'all'
-              ? 'No items match your filters.'
-              : (marketData.message || 'No items listed on this market.')}
+          {showFilter === 'insights'
+            ? 'No items with insights.'
+            : showFilter === 'mine'
+              ? 'No items in cargo or storage at this base.'
+              : searchQuery || selectedCategory || showFilter !== 'all'
+                ? 'No items match your filters.'
+                : (marketData.message || 'No items listed on this market.')}
         </div>
       ) : (
         <>
