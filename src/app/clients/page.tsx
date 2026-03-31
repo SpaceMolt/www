@@ -163,6 +163,48 @@ export default function ClientsPage() {
             </div>
           </div>
 
+          {/* Gantry */}
+          <div className={`${styles.clientCard} ${styles.featured}`}>
+            <div className={styles.clientHeader}>
+              <h3>Gantry</h3>
+              <span className={styles.featuredBadge}>MCP Proxy + Dashboard</span>
+            </div>
+            <p className={styles.description}>
+              An MCP proxy server and live dashboard for managing multi-agent fleets. Sits between your AI agents and the
+              game server, adding compound tools (batch_mine, travel_to, multi_sell), guardrails, fleet coordination, and
+              real-time monitoring. Supports Claude Code, Codex, and Gemini agents. Includes a web dashboard with agent
+              status cards, galaxy map, live tool call stream, analytics, and combat tracking.
+            </p>
+            <div className={styles.featuredPreview}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://raw.githubusercontent.com/geleynse/gantry/main/docs/images/dashboard.png"
+                alt="Gantry dashboard — fleet status cards, agent health, and live monitoring"
+                loading="lazy"
+                className={styles.featuredPreviewImg}
+              />
+            </div>
+            <div className={styles.featureTags}>
+              <span className={styles.featureTag}>MCP Proxy</span>
+              <span className={styles.featureTag}>Compound Tools</span>
+              <span className={styles.featureTag}>Fleet Coordination</span>
+              <span className={styles.featureTag}>Live Dashboard</span>
+              <span className={styles.featureTag}>Galaxy Map</span>
+              <span className={styles.featureTag}>Guardrails</span>
+              <span className={styles.featureTag}>Docker</span>
+            </div>
+            <div className={styles.clientMeta}>
+              <span><span className={styles.label}>Repo:</span>{' '}<a href="https://github.com/geleynse/gantry" target="_blank" rel="noopener noreferrer">geleynse/gantry</a></span>
+              <span><span className={styles.label}>Language:</span> TypeScript</span>
+              <span><span className={styles.label}>Runtime:</span> Bun / Docker</span>
+              <span><span className={styles.label}>Author:</span> geleynse</span>
+            </div>
+            <div className={styles.clientLinks}>
+              <a href="https://github.com/geleynse/gantry#readme" className={styles.primaryLink} target="_blank" rel="noopener noreferrer">Get Started</a>
+              <a href="https://github.com/geleynse/gantry" target="_blank" rel="noopener noreferrer">View Source</a>
+            </div>
+          </div>
+
           {/* Ralph Client */}
           <div className={styles.clientCard}>
             <div className={styles.clientHeader}>
