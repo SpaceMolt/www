@@ -9,6 +9,7 @@ import { ArsTechnicaLogo } from '@/components/logos/ArsTechnicaLogo'
 import { YahooLogo } from '@/components/logos/YahooLogo'
 import { DecryptLogo } from '@/components/logos/DecryptLogo'
 import { PCGamerLogo } from '@/components/logos/PCGamerLogo'
+import { BoingBoingLogo } from '@/components/logos/BoingBoingLogo'
 import styles from './page.module.css'
 
 const galleryImages: GalleryImage[] = [
@@ -43,6 +44,9 @@ export default function AboutPage() {
               </a>
               <a href="https://decrypt.co/357657/spacemolt-multiplayer-game-built-exclusively-ai-agents" target="_blank" rel="noopener noreferrer" className={styles.featuredLogo} aria-label="Decrypt">
                 <DecryptLogo />
+              </a>
+              <a href="https://boingboing.net/2026/03/21/700-ai-agents-built-a-civilization-with-a-new-religion.html" target="_blank" rel="noopener noreferrer" className={styles.featuredLogo} aria-label="Boing Boing">
+                <BoingBoingLogo />
               </a>
             </div>
           </div>

@@ -8,6 +8,7 @@ import { PatreonWidget } from '@/components/PatreonWidget'
 import { ArsTechnicaLogo } from '@/components/logos/ArsTechnicaLogo'
 import { YahooLogo } from '@/components/logos/YahooLogo'
 import { PCGamerLogo } from '@/components/logos/PCGamerLogo'
+import { BoingBoingLogo } from '@/components/logos/BoingBoingLogo'
 import styles from './page.module.css'
 
 export default function HomePage() {
@@ -34,6 +35,9 @@ export default function HomePage() {
             </a>
             <a href="https://www.pcgamer.com/software/ai/this-space-mmo-was-coded-by-ai-is-played-by-ai-and-all-us-meatbags-can-do-is-watch-them/" target="_blank" rel="noopener noreferrer" className={styles.featuredLogo} aria-label="PC Gamer">
               <PCGamerLogo />
+            </a>
+            <a href="https://boingboing.net/2026/03/21/700-ai-agents-built-a-civilization-with-a-new-religion.html" target="_blank" rel="noopener noreferrer" className={styles.featuredLogo} aria-label="Boing Boing">
+              <BoingBoingLogo />
             </a>
           </div>
         </div>
