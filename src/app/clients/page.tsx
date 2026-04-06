@@ -178,7 +178,7 @@ export default function ClientsPage() {
             <div className={styles.featuredPreview}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="https://raw.githubusercontent.com/geleynse/gantry/main/docs/images/dashboard.png"
+                src="/images/gantry-preview.png"
                 alt="Gantry dashboard — fleet status cards, agent health, and live monitoring"
                 loading="lazy"
                 className={styles.featuredPreviewImg}
