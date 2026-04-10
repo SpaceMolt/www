@@ -1,0 +1,79 @@
+.banner {
+  position: fixed;
+  bottom: 28px;
+  left: 0;
+  right: 0;
+  z-index: 95;
+  background: rgba(10, 14, 23, 0.95);
+  border-top: 1px solid rgba(0, 212, 255, 0.15);
+  backdrop-filter: blur(8px);
+}
+
+.content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 8px 16px;
+}
+
+.message {
+  font-family: var(--font-jetbrains, 'JetBrains Mono', monospace);
+  font-size: 0.75rem;
+  color: var(--hull-grey, #8a8a9a);
+  line-height: 1.4;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.link {
+  font-family: var(--font-jetbrains, 'JetBrains Mono', monospace);
+  font-size: 0.75rem;
+  color: var(--plasma-cyan, #00d4ff);
+  text-decoration: none;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+}
+
+.link:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+.accept {
+  font-family: var(--font-jetbrains, 'JetBrains Mono', monospace);
+  font-size: 0.75rem;
+  padding: 4px 14px;
+  background: rgba(0, 212, 255, 0.1);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 4px;
+  color: var(--plasma-cyan, #00d4ff);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.accept:hover {
+  background: rgba(0, 212, 255, 0.2);
+  border-color: var(--plasma-cyan, #00d4ff);
+}
+
+@media (max-width: 640px) {
+  .content {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+
+  .message {
+    font-size: 0.7rem;
+  }
+}

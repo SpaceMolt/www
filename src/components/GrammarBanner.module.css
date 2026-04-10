@@ -1,0 +1,58 @@
+.banner {
+  width: 100%;
+  background: rgba(0, 212, 255, 0.05);
+  border-bottom: 1px solid rgba(0, 212, 255, 0.15);
+  z-index: 90;
+}
+
+.content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 6px 16px;
+}
+
+.message {
+  font-family: var(--font-jetbrains, 'JetBrains Mono', monospace);
+  font-size: 0.75rem;
+  color: var(--chrome-silver, #b0b0c0);
+  text-align: center;
+}
+
+.link {
+  color: var(--plasma-cyan, #00d4ff);
+  text-decoration: none;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.link:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+.dismiss {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: var(--chrome-silver, #b0b0c0);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.dismiss:hover {
+  border-color: var(--plasma-cyan, #00d4ff);
+  color: var(--star-white, #eee);
+}

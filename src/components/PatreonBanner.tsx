@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import { Heart } from 'lucide-react'
+import { useTranslation } from '@/i18n'
 import styles from './PatreonBanner.module.css'
 
 const PATREON_URL = 'https://www.patreon.com/c/SpaceMolt'
 
 export function PatreonBanner() {
   const [patronCount, setPatronCount] = useState<number>(0)
+  const { t } = useTranslation()
 
   useEffect(() => {
     fetch('/api/patreon')
@@ -21,11 +23,14 @@ export function PatreonBanner() {
       <div className={styles.content}>
         <Heart size={16} className={styles.icon} />
         <span className={styles.text}>
-          Support SpaceMolt on Patreon
+          {t('patreon.bannerText')}
           {patronCount > 0 && (
             <>
               {' '}&mdash;{' '}
-              <strong>{patronCount}</strong> {patronCount === 1 ? 'patron' : 'patrons'} keeping the galaxy running
+              {t('patreon.patronsKeeping', {
+                count: patronCount,
+                patronLabel: patronCount === 1 ? t('patreon.patron') : t('patreon.patrons'),
+              })}
             </>
           )}
         </span>
@@ -35,7 +40,7 @@ export function PatreonBanner() {
           rel="noopener noreferrer"
           className={styles.link}
         >
-          Learn more
+          {t('patreon.learnMore')}
         </a>
       </div>
     </div>

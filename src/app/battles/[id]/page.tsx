@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import styles from './page.module.css'
+import { useTranslation } from '@/i18n'
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 
@@ -588,6 +589,7 @@ function renderBattle(
 // --- Main component ---
 
 export default function BattleDetailPage() {
+  const { t } = useTranslation()
   const params = useParams()
   const battleId = params.id as string
 
@@ -873,7 +875,7 @@ export default function BattleDetailPage() {
   if (loading) {
     return (
       <main className={styles.main}>
-        <div className={styles.loading}>Loading battle replay...</div>
+        <div className={styles.loading}>{t('battles.loading')}</div>
       </main>
     )
   }
@@ -882,8 +884,8 @@ export default function BattleDetailPage() {
     return (
       <main className={styles.main}>
         <div className={styles.error}>
-          <p>Failed to load battle: {error}</p>
-          <Link href="/battles" className={styles.backLink}>Back to Battle Records</Link>
+          <p>{t('battleDetail.failedToLoad', { error })}</p>
+          <Link href="/battles" className={styles.backLink}>{t('battleDetail.backToBattles')}</Link>
         </div>
       </main>
     )
@@ -893,8 +895,8 @@ export default function BattleDetailPage() {
     return (
       <main className={styles.main}>
         <div className={styles.error}>
-          <p>No battle data found for this ID.</p>
-          <Link href="/battles" className={styles.backLink}>Back to Battle Records</Link>
+          <p>{t('battleDetail.notFound')}</p>
+          <Link href="/battles" className={styles.backLink}>{t('battleDetail.backToBattles')}</Link>
         </div>
       </main>
     )
@@ -904,21 +906,21 @@ export default function BattleDetailPage() {
     <main className={styles.main}>
       {/* Header */}
       <div className={styles.header}>
-        <Link href="/battles" className={styles.backLink}>&larr; Battle Records</Link>
+        <Link href="/battles" className={styles.backLink}>&larr; {t('battleDetail.backToBattles')}</Link>
         <div className={styles.headerInfo}>
           <h1 className={styles.title}>
-            Battle in {entries[0].system_id}
+            {t('battleDetail.battleIn', { system: entries[0].system_id })}
             {battleEnded && (
               <span className={styles.outcomeBadge}>
-                {battleEnded.outcome === 'victory' ? 'Victory' : battleEnded.outcome === 'stalemate' ? 'Stalemate' : 'Mutual Destruction'}
+                {battleEnded.outcome === 'victory' ? t('battles.outcomeVictory') : battleEnded.outcome === 'stalemate' ? t('battles.outcomeStalemate') : t('battles.outcomeMutualDestruction')}
               </span>
             )}
           </h1>
           <div className={styles.headerMeta}>
             <span>ID: {battleId.slice(0, 12)}...</span>
-            <span>{entries.length} ticks</span>
-            {battleEnded && <span>{battleEnded.total_damage.toLocaleString()} total damage</span>}
-            {battleEnded && <span>{battleEnded.ships_destroyed} ships destroyed</span>}
+            <span>{t('battleDetail.ticks', { count: String(entries.length) })}</span>
+            {battleEnded && <span>{t('battleDetail.totalDamage', { amount: battleEnded.total_damage.toLocaleString() })}</span>}
+            {battleEnded && <span>{t('battleDetail.shipsDestroyed', { count: String(battleEnded.ships_destroyed) })}</span>}
           </div>
         </div>
 
@@ -931,7 +933,7 @@ export default function BattleDetailPage() {
                 {side.participants.join(', ')}
               </span>
               {battleEnded && battleEnded.winning_side === sideId && (
-                <span className={styles.winnerLabel}>WINNER</span>
+                <span className={styles.winnerLabel}>{t('battleDetail.winner')}</span>
               )}
             </div>
           ))}
@@ -961,7 +963,7 @@ export default function BattleDetailPage() {
                 </div>
                 <div className={styles.shipInfoBars}>
                   <div className={styles.barRow}>
-                    <span className={styles.barLabel}>Hull</span>
+                    <span className={styles.barLabel}>{t('battleDetail.hull')}</span>
                     <div className={styles.barTrack}>
                       <div
                         className={styles.barFill}
@@ -975,7 +977,7 @@ export default function BattleDetailPage() {
                   </div>
                   {inspectedSnap.max_shield > 0 && (
                     <div className={styles.barRow}>
-                      <span className={styles.barLabel}>Shield</span>
+                      <span className={styles.barLabel}>{t('battleDetail.shield')}</span>
                       <div className={styles.barTrack}>
                         <div className={styles.barFill} style={{ width: `${(inspectedSnap.shield / inspectedSnap.max_shield) * 100}%`, backgroundColor: '#4dabf7' }} />
                       </div>
@@ -983,7 +985,7 @@ export default function BattleDetailPage() {
                     </div>
                   )}
                   <div className={styles.barRow}>
-                    <span className={styles.barLabel}>Fuel</span>
+                    <span className={styles.barLabel}>{t('battleDetail.fuel')}</span>
                     <div className={styles.barTrack}>
                       <div className={styles.barFill} style={{ width: `${(inspectedSnap.fuel / inspectedSnap.max_fuel) * 100}%`, backgroundColor: '#ff6b35' }} />
                     </div>
@@ -991,16 +993,16 @@ export default function BattleDetailPage() {
                   </div>
                 </div>
                 <div className={styles.shipInfoDetails}>
-                  <span>Zone: {inspectedSnap.zone}</span>
-                  <span>Stance: {inspectedSnap.stance}</span>
-                  {inspectedSnap.target_id && <span>Target: {usernameMap.current.get(inspectedSnap.target_id) || inspectedSnap.target_id.slice(0, 8)}</span>}
-                  <span>Dmg dealt: {inspectedSnap.damage_dealt}</span>
-                  <span>Dmg taken: {inspectedSnap.damage_taken}</span>
-                  {inspectedSnap.kill_count > 0 && <span>Kills: {inspectedSnap.kill_count}</span>}
+                  <span>{t('battleDetail.zone')}: {inspectedSnap.zone}</span>
+                  <span>{t('battleDetail.stance')}: {inspectedSnap.stance}</span>
+                  {inspectedSnap.target_id && <span>{t('battleDetail.target')}: {usernameMap.current.get(inspectedSnap.target_id) || inspectedSnap.target_id.slice(0, 8)}</span>}
+                  <span>{t('battleDetail.dmgDealt')}: {inspectedSnap.damage_dealt}</span>
+                  <span>{t('battleDetail.dmgTaken')}: {inspectedSnap.damage_taken}</span>
+                  {inspectedSnap.kill_count > 0 && <span>{t('battleDetail.kills')}: {inspectedSnap.kill_count}</span>}
                 </div>
                 {inspectedSnap.modules && inspectedSnap.modules.length > 0 && (
                   <div className={styles.shipInfoModules}>
-                    <div className={styles.shipInfoModulesLabel}>Loadout</div>
+                    <div className={styles.shipInfoModulesLabel}>{t('battleDetail.loadout')}</div>
                     {inspectedSnap.modules.map((mod, i) => (
                       <div key={i} className={styles.moduleRow}>
                         <span className={styles.moduleName}>{mod.name}</span>
@@ -1020,10 +1022,10 @@ export default function BattleDetailPage() {
 
         {/* Event feed */}
         <div className={styles.feedSection}>
-          <div className={styles.feedHeader}>Event Log</div>
+          <div className={styles.feedHeader}>{t('battleDetail.eventLog')}</div>
           <div className={styles.feed} ref={feedRef}>
             {allEvents.length === 0 && (
-              <div className={styles.feedEmpty}>No events yet</div>
+              <div className={styles.feedEmpty}>{t('battleDetail.noEvents')}</div>
             )}
             {allEvents.map((ev, i) => (
               <div key={i} className={styles.feedEvent}>
@@ -1079,7 +1081,7 @@ export default function BattleDetailPage() {
 
         <div className={styles.timelineInfo}>
           <span className={styles.tickCounter}>
-            Tick {currentEntry?.tick ?? 0} ({currentTickIndex + 1}/{entries.length})
+            {t('battleDetail.tick', { n: String(currentEntry?.tick ?? 0), current: String(currentTickIndex + 1), total: String(entries.length) })}
           </span>
           <div className={styles.speedControls}>
             {PLAYBACK_SPEEDS.map(speed => (

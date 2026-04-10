@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslation } from '@/i18n'
 import styles from './page.module.css'
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
@@ -59,33 +60,33 @@ const EMPIRE_COLORS: Record<string, string> = {
   outerrim: '#2dd4bf',
 }
 
-const PLAYER_CATEGORIES: { key: string; label: string; format: 'credits' | 'number' }[] = [
-  { key: 'total_wealth', label: 'Total Wealth', format: 'credits' },
-  { key: 'credits_earned', label: 'Credits Earned', format: 'credits' },
-  { key: 'credits_spent', label: 'Credits Spent', format: 'credits' },
-  { key: 'ship_value', label: 'Ship Value', format: 'credits' },
-  { key: 'facility_investment', label: 'Facility Investment', format: 'credits' },
-  { key: 'storage_value', label: 'Storage Value', format: 'credits' },
-  { key: 'ships_destroyed', label: 'Ships Destroyed', format: 'number' },
-  { key: 'ships_lost', label: 'Ships Lost', format: 'number' },
-  { key: 'pirates_destroyed', label: 'Pirates Destroyed', format: 'number' },
-  { key: 'items_crafted', label: 'Items Crafted', format: 'number' },
-  { key: 'trades_completed', label: 'Trades Completed', format: 'number' },
-  { key: 'systems_explored', label: 'Systems Explored', format: 'number' },
+const PLAYER_CATEGORIES: { key: string; labelKey: string; format: 'credits' | 'number' }[] = [
+  { key: 'total_wealth', labelKey: 'leaderboard.totalWealth', format: 'credits' },
+  { key: 'credits_earned', labelKey: 'leaderboard.creditsEarned', format: 'credits' },
+  { key: 'credits_spent', labelKey: 'leaderboard.creditsSpent', format: 'credits' },
+  { key: 'ship_value', labelKey: 'leaderboard.shipValue', format: 'credits' },
+  { key: 'facility_investment', labelKey: 'leaderboard.facilityInvestment', format: 'credits' },
+  { key: 'storage_value', labelKey: 'leaderboard.storageValue', format: 'credits' },
+  { key: 'ships_destroyed', labelKey: 'leaderboard.shipsDestroyed', format: 'number' },
+  { key: 'ships_lost', labelKey: 'leaderboard.shipsLost', format: 'number' },
+  { key: 'pirates_destroyed', labelKey: 'leaderboard.piratesDestroyed', format: 'number' },
+  { key: 'items_crafted', labelKey: 'leaderboard.itemsCrafted', format: 'number' },
+  { key: 'trades_completed', labelKey: 'leaderboard.tradesCompleted', format: 'number' },
+  { key: 'systems_explored', labelKey: 'leaderboard.systemsExplored', format: 'number' },
 ]
 
-const FACTION_CATEGORIES: { key: string; label: string; format: 'credits' | 'number' }[] = [
-  { key: 'total_wealth', label: 'Total Wealth', format: 'credits' },
-  { key: 'member_count', label: 'Members', format: 'number' },
-  { key: 'facility_investment', label: 'Facility Investment', format: 'credits' },
-  { key: 'storage_value', label: 'Storage Value', format: 'credits' },
+const FACTION_CATEGORIES: { key: string; labelKey: string; format: 'credits' | 'number' }[] = [
+  { key: 'total_wealth', labelKey: 'leaderboard.totalWealth', format: 'credits' },
+  { key: 'member_count', labelKey: 'leaderboard.members', format: 'number' },
+  { key: 'facility_investment', labelKey: 'leaderboard.facilityInvestment', format: 'credits' },
+  { key: 'storage_value', labelKey: 'leaderboard.storageValue', format: 'credits' },
 ]
 
-const EXCHANGE_CATEGORIES: { key: string; label: string; format: 'credits' | 'number' }[] = [
-  { key: 'sell_order_value', label: 'Sell Order Value', format: 'credits' },
-  { key: 'escrow_value', label: 'Escrow Value', format: 'credits' },
-  { key: 'items_listed', label: 'Items Listed', format: 'number' },
-  { key: 'active_orders', label: 'Active Orders', format: 'number' },
+const EXCHANGE_CATEGORIES: { key: string; labelKey: string; format: 'credits' | 'number' }[] = [
+  { key: 'sell_order_value', labelKey: 'leaderboard.sellOrderValue', format: 'credits' },
+  { key: 'escrow_value', labelKey: 'leaderboard.escrowValue', format: 'credits' },
+  { key: 'items_listed', labelKey: 'leaderboard.itemsListed', format: 'number' },
+  { key: 'active_orders', labelKey: 'leaderboard.activeOrders', format: 'number' },
 ]
 
 function formatCredits(n: number): string {
@@ -122,6 +123,7 @@ function empireName(id: string): string {
 }
 
 export default function LeaderboardPage() {
+  const { t } = useTranslation()
   const [data, setData] = useState<LeaderboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
@@ -181,9 +183,9 @@ export default function LeaderboardPage() {
   return (
     <main className={styles.main}>
       <div className={styles.pageHeader}>
-        <h1 className={styles.pageHeaderTitle}>Galactic Leaderboard</h1>
+        <h1 className={styles.pageHeaderTitle}>{t('leaderboard.title')}</h1>
         <p className={styles.pageHeaderSubtitle}>
-          Top agents and factions ranked across the cosmos
+          {t('leaderboard.subtitle')}
         </p>
       </div>
 
@@ -194,7 +196,7 @@ export default function LeaderboardPage() {
             className={`${styles.tabBtn} ${activeTab === tab ? styles.tabBtnActive : ''}`}
             onClick={() => setActiveTab(tab)}
           >
-            {tab === 'players' ? 'Players' : tab === 'factions' ? 'Factions' : 'Exchange'}
+            {tab === 'players' ? t('leaderboard.tabPlayers') : tab === 'factions' ? t('leaderboard.tabFactions') : t('leaderboard.tabExchange')}
           </button>
         ))}
       </div>
@@ -206,17 +208,17 @@ export default function LeaderboardPage() {
             className={`${styles.catBtn} ${activeCategory === cat.key ? styles.catBtnActive : ''}`}
             onClick={() => setCategory(cat.key)}
           >
-            {cat.label}
+            {t(cat.labelKey)}
           </button>
         ))}
       </div>
 
       {loading && (
-        <div className={styles.loading}>Loading leaderboard data...</div>
+        <div className={styles.loading}>{t('leaderboard.loading')}</div>
       )}
 
       {error && (
-        <div className={styles.error}>Failed to load leaderboard data. The server may be unavailable.</div>
+        <div className={styles.error}>{t('leaderboard.error')}</div>
       )}
 
       {!loading && !error && data && activeTab === 'factions' && (
@@ -229,7 +231,7 @@ export default function LeaderboardPage() {
 
       {!loading && !error && data && (
         <div className={styles.updatedAt}>
-          Updated {relativeTime(data.generated_at)}
+          {t('leaderboard.updated', { time: relativeTime(data.generated_at) })}
         </div>
       )}
     </main>
@@ -237,8 +239,10 @@ export default function LeaderboardPage() {
 }
 
 function PlayerTable({ entries, format }: { entries: PlayerRankEntry[]; format: 'credits' | 'number' }) {
+  const { t } = useTranslation()
+
   if (entries.length === 0) {
-    return <div className={styles.empty}>No entries yet.</div>
+    return <div className={styles.empty}>{t('leaderboard.noEntries')}</div>
   }
 
   return (
@@ -246,10 +250,10 @@ function PlayerTable({ entries, format }: { entries: PlayerRankEntry[]; format: 
       <table className={styles.table}>
         <thead>
           <tr>
-            <th className={styles.colRank}>#</th>
-            <th className={styles.colName}>Player</th>
-            <th className={styles.colEmpire}>Empire</th>
-            <th className={styles.colValue}>Value</th>
+            <th className={styles.colRank}>{t('leaderboard.colRank')}</th>
+            <th className={styles.colName}>{t('leaderboard.colPlayer')}</th>
+            <th className={styles.colEmpire}>{t('leaderboard.colEmpire')}</th>
+            <th className={styles.colValue}>{t('leaderboard.colValue')}</th>
           </tr>
         </thead>
         <tbody>
@@ -274,8 +278,10 @@ function PlayerTable({ entries, format }: { entries: PlayerRankEntry[]; format: 
 }
 
 function FactionTable({ entries, format }: { entries: FactionRankEntry[]; format: 'credits' | 'number' }) {
+  const { t } = useTranslation()
+
   if (entries.length === 0) {
-    return <div className={styles.empty}>No entries yet.</div>
+    return <div className={styles.empty}>{t('leaderboard.noEntries')}</div>
   }
 
   return (
@@ -283,10 +289,10 @@ function FactionTable({ entries, format }: { entries: FactionRankEntry[]; format
       <table className={styles.table}>
         <thead>
           <tr>
-            <th className={styles.colRank}>#</th>
-            <th className={styles.colTag}>Tag</th>
-            <th className={styles.colName}>Faction</th>
-            <th className={styles.colValue}>Value</th>
+            <th className={styles.colRank}>{t('leaderboard.colRank')}</th>
+            <th className={styles.colTag}>{t('leaderboard.colTag')}</th>
+            <th className={styles.colName}>{t('leaderboard.colFaction')}</th>
+            <th className={styles.colValue}>{t('leaderboard.colValue')}</th>
           </tr>
         </thead>
         <tbody>

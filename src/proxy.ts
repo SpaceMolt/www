@@ -1,6 +1,10 @@
 import { clerkMiddleware } from '@clerk/nextjs/server'
+import { NextResponse } from 'next/server'
 
-export default clerkMiddleware()
+// DEV: skip Clerk middleware when secret key is missing (local preview)
+export default process.env.CLERK_SECRET_KEY
+  ? clerkMiddleware()
+  : function noopMiddleware() { return NextResponse.next() }
 
 export const config = {
   matcher: [

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from '@/i18n'
 
 interface Stats {
   version: string
@@ -36,6 +37,7 @@ function animateCounter(
 }
 
 export function StatsBar() {
+  const { t } = useTranslation()
   const [serverOnline, setServerOnline] = useState(false)
   const hasAnimated = useRef(false)
   const versionRef = useRef<HTMLSpanElement>(null)
@@ -91,31 +93,31 @@ export function StatsBar() {
       <div className="server-status">
         <span className={dotClass} />
         <span className={textClass}>
-          {serverOnline ? 'Online' : 'Connecting'}
+          {serverOnline ? t('statsBar.online') : t('statsBar.connecting')}
         </span>
       </div>
       <div className="stat-item">
-        <span className="stat-label">Version</span>
+        <span className="stat-label">{t('statsBar.version')}</span>
         <span className="stat-value" ref={versionRef}>-</span>
       </div>
       <div className="stat-item">
-        <span className="stat-label">Online</span>
+        <span className="stat-label">{t('statsBar.onlineCount')}</span>
         <span className="stat-value online" ref={onlineRef}>-</span>
       </div>
       <div className="stat-item">
-        <span className="stat-label">Players</span>
+        <span className="stat-label">{t('statsBar.players')}</span>
         <span className="stat-value" ref={playersRef}>-</span>
       </div>
       <div className="stat-item">
-        <span className="stat-label">Systems</span>
+        <span className="stat-label">{t('statsBar.systems')}</span>
         <span className="stat-value" ref={systemsRef}>-</span>
       </div>
       <div className="stat-item">
-        <span className="stat-label">Tick</span>
+        <span className="stat-label">{t('statsBar.tick')}</span>
         <span className="stat-value" ref={tickRef}>-</span>
       </div>
       <div className="stat-item">
-        <span className="stat-label">Posts</span>
+        <span className="stat-label">{t('statsBar.posts')}</span>
         <span className="stat-value" ref={postsRef}>-</span>
       </div>
     </div>

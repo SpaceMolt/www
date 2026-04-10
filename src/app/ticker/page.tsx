@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react'
 import Link from 'next/link'
 import styles from './page.module.css'
+import { useTranslation } from '@/i18n'
 
 const MarketTicker = lazy(() => import('@/components/MarketTicker'))
 
@@ -71,6 +72,7 @@ function relativeTime(ts: string): string {
 }
 
 export default function TickerPage() {
+  const { t } = useTranslation()
   const [stats, setStats] = useState<FillStats | null>(null)
   const [topItems, setTopItems] = useState<TopItem[]>([])
   const [fills, setFills] = useState<Fill[]>([])
@@ -196,17 +198,17 @@ export default function TickerPage() {
       </div>
 
       <main className={styles.main}>
-        <Link href="/market" className={styles.backLink}>&larr; Galactic Exchange</Link>
+        <Link href="/market" className={styles.backLink}>&larr; {t('ticker.backToExchange')}</Link>
 
         <div className={styles.pageHeader}>
-          <h1 className={styles.pageHeaderTitle}>Market Activity</h1>
+          <h1 className={styles.pageHeaderTitle}>{t('ticker.pageTitle')}</h1>
           <p className={styles.pageHeaderSubtitle}>
-            Live exchange transactions across the galaxy
+            {t('ticker.pageSubtitle')}
           </p>
         </div>
 
         {loading ? (
-          <div className={styles.loading}>Loading market data...</div>
+          <div className={styles.loading}>{t('ticker.loading')}</div>
         ) : error ? (
           <div className={styles.error}>{error}</div>
         ) : (
@@ -215,24 +217,24 @@ export default function TickerPage() {
             {stats && (
               <div className={styles.statCards}>
                 <div className={styles.statCard}>
-                  <div className={styles.statLabel}>24h Volume</div>
+                  <div className={styles.statLabel}>{t('ticker.stat24hVolume')}</div>
                   <div className={styles.statValue}>{formatCredits(stats.total_volume)}</div>
-                  <div className={styles.statUnit}>credits</div>
+                  <div className={styles.statUnit}>{t('ticker.credits')}</div>
                 </div>
                 <div className={styles.statCard}>
-                  <div className={styles.statLabel}>Total Trades</div>
+                  <div className={styles.statLabel}>{t('ticker.statTotalTrades')}</div>
                   <div className={styles.statValue}>{formatNumber(stats.total_count)}</div>
-                  <div className={styles.statUnit}>transactions</div>
+                  <div className={styles.statUnit}>{t('ticker.transactions')}</div>
                 </div>
                 <div className={styles.statCard}>
-                  <div className={styles.statLabel}>Player Trades</div>
+                  <div className={styles.statLabel}>{t('ticker.statPlayerTrades')}</div>
                   <div className={styles.statValue}>{formatNumber(stats.player_fill_count)}</div>
-                  <div className={styles.statUnit}>{playerPct}% of total</div>
+                  <div className={styles.statUnit}>{t('ticker.percentOfTotal', { percent: playerPct })}</div>
                 </div>
                 <div className={styles.statCard}>
-                  <div className={styles.statLabel}>Avg Trade Size</div>
+                  <div className={styles.statLabel}>{t('ticker.statAvgTradeSize')}</div>
                   <div className={styles.statValue}>{formatCredits(avgTradeSize)}</div>
-                  <div className={styles.statUnit}>credits/trade</div>
+                  <div className={styles.statUnit}>{t('ticker.creditsPerTrade')}</div>
                 </div>
               </div>
             )}
@@ -240,7 +242,7 @@ export default function TickerPage() {
             {/* Top Items */}
             {topItems.length > 0 && (
               <section className={styles.topSection}>
-                <h2 className={styles.sectionTitle}>Top Items by Volume (24h)</h2>
+                <h2 className={styles.sectionTitle}>{t('ticker.topItemsByVolume')}</h2>
                 <div className={styles.topItems}>
                   {topItems.map((item, i) => (
                     <div key={item.item_id} className={styles.topItem}>
@@ -253,7 +255,7 @@ export default function TickerPage() {
                         />
                       </div>
                       <span className={styles.topVolume}>{formatCredits(item.volume)}</span>
-                      <span className={styles.topTrades}>{formatNumber(item.trade_count)} trades</span>
+                      <span className={styles.topTrades}>{formatNumber(item.trade_count)} {t('ticker.trades')}</span>
                     </div>
                   ))}
                 </div>
@@ -262,44 +264,44 @@ export default function TickerPage() {
 
             {/* Recent Trades */}
             <section className={styles.tradesSection}>
-              <h2 className={styles.sectionTitle}>Recent Trades</h2>
+              <h2 className={styles.sectionTitle}>{t('ticker.recentTrades')}</h2>
 
               <div className={styles.toolbar}>
                 <input
                   type="text"
                   className={styles.searchInput}
-                  placeholder="Search items, players, stations..."
+                  placeholder={t('ticker.searchPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
 
               {filteredFills.length === 0 ? (
-                <div className={styles.emptyState}>No trades found.</div>
+                <div className={styles.emptyState}>{t('ticker.noTrades')}</div>
               ) : (
                 <div className={styles.tableContainer}>
                   <table className={styles.table}>
                     <thead>
                       <tr>
                         <th className={`${styles.colTime} ${styles.sortable}`} onClick={() => handleSort('timestamp')}>
-                          Time{sortIndicator('timestamp')}
+                          {t('ticker.colTime')}{sortIndicator('timestamp')}
                         </th>
                         <th className={`${styles.colItem} ${styles.sortable}`} onClick={() => handleSort('item_name')}>
-                          Item{sortIndicator('item_name')}
+                          {t('ticker.colItem')}{sortIndicator('item_name')}
                         </th>
                         <th className={`${styles.colQty} ${styles.sortable}`} onClick={() => handleSort('quantity')}>
-                          Qty{sortIndicator('quantity')}
+                          {t('ticker.colQty')}{sortIndicator('quantity')}
                         </th>
                         <th className={`${styles.colPrice} ${styles.sortable}`} onClick={() => handleSort('price_each')}>
-                          Price{sortIndicator('price_each')}
+                          {t('ticker.colPrice')}{sortIndicator('price_each')}
                         </th>
                         <th className={`${styles.colTotal} ${styles.sortable}`} onClick={() => handleSort('total')}>
-                          Total{sortIndicator('total')}
+                          {t('ticker.colTotal')}{sortIndicator('total')}
                         </th>
-                        <th className={styles.colBuyer}>Buyer</th>
-                        <th className={styles.colSeller}>Seller</th>
+                        <th className={styles.colBuyer}>{t('ticker.colBuyer')}</th>
+                        <th className={styles.colSeller}>{t('ticker.colSeller')}</th>
                         <th className={`${styles.colStation} ${styles.sortable}`} onClick={() => handleSort('station_name')}>
-                          Station{sortIndicator('station_name')}
+                          {t('ticker.colStation')}{sortIndicator('station_name')}
                         </th>
                       </tr>
                     </thead>

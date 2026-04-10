@@ -11,28 +11,30 @@ import {
   BarChart2, Scroll,
   type LucideIcon,
 } from 'lucide-react'
+import { useTranslation } from '@/i18n'
 import styles from './page.module.css'
 
-const sidebarSections: { id: string; Icon: LucideIcon; label: string }[] = [
-  { id: 'overview', Icon: BookOpen, label: 'Overview' },
-  { id: 'empires', Icon: Globe, label: 'Empires' },
-  { id: 'ships', Icon: Rocket, label: 'Ships' },
-  { id: 'travel', Icon: Compass, label: 'Travel' },
-  { id: 'combat', Icon: Swords, label: 'Combat' },
-  { id: 'combat-logout', Icon: Timer, label: 'Combat Logout' },
-  { id: 'wrecks', Icon: Skull, label: 'Wrecks & Loot' },
-  { id: 'mining', Icon: Pickaxe, label: 'Mining' },
-  { id: 'economy', Icon: BarChart2, label: 'Economy' },
-  { id: 'trading', Icon: Coins, label: 'Trading' },
-  { id: 'skills', Icon: TrendingUp, label: 'Skills' },
-  { id: 'crafting', Icon: Wrench, label: 'Crafting' },
-  { id: 'factions', Icon: Flag, label: 'Factions' },
-  { id: 'missions', Icon: Scroll, label: 'Missions' },
-  { id: 'insurance', Icon: Shield, label: 'Insurance' },
-  { id: 'chat', Icon: MessageSquare, label: 'Communication' },
+const sidebarSections: { id: string; Icon: LucideIcon; labelKey: string }[] = [
+  { id: 'overview', Icon: BookOpen, labelKey: 'features.sidebarOverview' },
+  { id: 'empires', Icon: Globe, labelKey: 'features.sidebarEmpires' },
+  { id: 'ships', Icon: Rocket, labelKey: 'features.sidebarShips' },
+  { id: 'travel', Icon: Compass, labelKey: 'features.sidebarTravel' },
+  { id: 'combat', Icon: Swords, labelKey: 'features.sidebarCombat' },
+  { id: 'combat-logout', Icon: Timer, labelKey: 'features.sidebarCombatLogout' },
+  { id: 'wrecks', Icon: Skull, labelKey: 'features.sidebarWrecks' },
+  { id: 'mining', Icon: Pickaxe, labelKey: 'features.sidebarMining' },
+  { id: 'economy', Icon: BarChart2, labelKey: 'features.sidebarEconomy' },
+  { id: 'trading', Icon: Coins, labelKey: 'features.sidebarTrading' },
+  { id: 'skills', Icon: TrendingUp, labelKey: 'features.sidebarSkills' },
+  { id: 'crafting', Icon: Wrench, labelKey: 'features.sidebarCrafting' },
+  { id: 'factions', Icon: Flag, labelKey: 'features.sidebarFactions' },
+  { id: 'missions', Icon: Scroll, labelKey: 'features.sidebarMissions' },
+  { id: 'insurance', Icon: Shield, labelKey: 'features.sidebarInsurance' },
+  { id: 'chat', Icon: MessageSquare, labelKey: 'features.sidebarChat' },
 ]
 
 export default function FeaturesPage() {
+  const { t } = useTranslation()
   const [activeSection, setActiveSection] = useState('overview')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const sidebarRef = useRef<HTMLElement>(null)
@@ -92,7 +94,7 @@ export default function FeaturesPage() {
           className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarOpen : ''}`}
         >
           <div className={styles.sidebarHeader}>
-            <h2>Codex Index</h2>
+            <h2>{t('features.codexIndex')}</h2>
           </div>
           <ul className={styles.sidebarNav}>
             {sidebarSections.map((s) => (
@@ -102,7 +104,7 @@ export default function FeaturesPage() {
                   className={`${styles.sidebarNavLink} ${activeSection === s.id ? styles.sidebarNavLinkActive : ''}`}
                   onClick={handleSidebarLinkClick}
                 >
-                  <span className={styles.navIcon}><s.Icon size={16} /></span> {s.label}
+                  <span className={styles.navIcon}><s.Icon size={16} /></span> {t(s.labelKey)}
                 </a>
               </li>
             ))}
@@ -112,8 +114,8 @@ export default function FeaturesPage() {
         {/* Main Content */}
         <main className={styles.mainContent}>
           <header className={styles.pageHeader}>
-            <h1>Game Features</h1>
-            <p className={styles.subtitle}>// Complete guide to the Crustacean Cosmos</p>
+            <h1>{t('features.pageTitle')}</h1>
+            <p className={styles.subtitle}>{t('features.pageSubtitle')}</p>
           </header>
 
           {/* Overview */}

@@ -70,6 +70,9 @@ export function Lightbox({ images }: { images: GalleryImage[] }) {
   return (
     <div
       className={`${styles.lightbox} ${styles.lightboxActive}`}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Image lightbox"
       onClick={(e) => {
         if (e.target === e.currentTarget) close()
       }}
