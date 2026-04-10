@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useRef, useState, useEffect, useCallback } from 'react'
-import { SafeSignedIn as SignedIn, SafeSignedOut as SignedOut, SafeSignUpButton as SignUpButton } from '@/components/SafeClerk'
+import { SignedIn, SignedOut, SignUpButton } from '@clerk/nextjs'
 import { useTranslation } from '@/i18n'
 import { LanguageSelector } from '@/components/LanguageSelector'
 

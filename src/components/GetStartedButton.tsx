@@ -1,6 +1,6 @@
 'use client'
 
-import { SafeSignedIn as SignedIn, SafeSignedOut as SignedOut, SafeSignUpButton as SignUpButton } from '@/components/SafeClerk'
+import { SignedIn, SignedOut, SignUpButton } from '@clerk/nextjs'
 import Link from 'next/link'
 import { useTranslation } from '@/i18n'
 

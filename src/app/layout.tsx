@@ -3,7 +3,6 @@ import { Orbitron, JetBrains_Mono, Space_Grotesk } from 'next/font/google'
 import { ClerkProvider } from '@clerk/nextjs'
 import { dark } from '@clerk/themes'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
-import { AuthAvailableProvider } from '@/components/AuthContext'
 import { I18nProvider } from '@/i18n'
 import { Nav } from '@/components/Nav'
 import { GrammarBanner } from '@/components/GrammarBanner'
@@ -65,25 +64,13 @@ export const metadata: Metadata = {
   },
 }
 
-// DEV: conditionally wrap with ClerkProvider (requires CLERK_SECRET_KEY for server-side)
-const hasClerk = !!process.env.CLERK_SECRET_KEY
-
-function AuthProvider({ children }: { children: React.ReactNode }) {
-  if (!hasClerk) return <AuthAvailableProvider available={false}>{children}</AuthAvailableProvider>
-  return (
-    <ClerkProvider appearance={{ baseTheme: dark }} signInFallbackRedirectUrl="/dashboard" signUpFallbackRedirectUrl="/dashboard">
-      <AuthAvailableProvider available={true}>{children}</AuthAvailableProvider>
-    </ClerkProvider>
-  )
-}
-
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
   return (
-    <AuthProvider>
+    <ClerkProvider appearance={{ baseTheme: dark }} signInFallbackRedirectUrl="/dashboard" signUpFallbackRedirectUrl="/dashboard">
       <html lang="en" className={`${orbitron.variable} ${jetbrainsMono.variable} ${spaceGrotesk.variable}`}>
         <head>
           <script
@@ -140,6 +127,6 @@ export default function RootLayout({
           </I18nProvider>
         </body>
       </html>
-    </AuthProvider>
+    </ClerkProvider>
   )
 }
