@@ -53,6 +53,13 @@ function sp(cls: string, text: string | number | undefined): string {
   return `<span data-cls="${cls}">${escapeHtml(text)}</span>`
 }
 
+// Validate that a color string is a safe hex code to prevent CSS injection
+function isValidHexColor(color: string): boolean {
+  return /^#[0-9A-Fa-f]{3,6}$/.test(color)
+}
+
+const FALLBACK_COLOR = '#e8f4f8'
+
 // Empire colors matching the galaxy map / www CSS
 const EMPIRE_COLORS: Record<string, string> = {
   solarian: '#ffd700',
@@ -70,7 +77,8 @@ function pp(name: string | number | undefined, pi?: Record<string, PlayerMeta>):
   const escaped = escapeHtml(nameStr)
   const meta = pi?.[nameStr]
   if (!meta) return `<span data-cls="eventPlayer">${escaped}</span>`
-  const color = EMPIRE_COLORS[meta.empire] || '#888'
+  const rawColor = EMPIRE_COLORS[meta.empire] || '#888'
+  const color = isValidHexColor(rawColor) ? rawColor : FALLBACK_COLOR
   const dot = `<span style="color:${color}" title="${escapeHtml(meta.empire)}">&#9679;</span>`
   const faction = meta.faction_tag ? ` <span data-cls="eventFaction">[${escapeHtml(meta.faction_tag)}]</span> ` : ' '
   return `${dot}${faction}<span data-cls="eventPlayer">${escaped}</span>`

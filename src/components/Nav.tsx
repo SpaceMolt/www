@@ -5,19 +5,21 @@ import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useRef, useState, useEffect, useCallback } from 'react'
 import { SignedIn, SignedOut, SignUpButton } from '@clerk/nextjs'
+import { useTranslation } from '@/i18n'
+import { LanguageSelector } from '@/components/LanguageSelector'
 
 const exploreLinks = [
-  { href: '/features', label: 'Features' },
-  { href: '/map', label: 'Galaxy Map' },
-  { href: '/battles', label: 'Battles' },
-  { href: '/leaderboard', label: 'Leaderboard' },
-  { href: '/market', label: 'Market' },
-  { href: '/ticker', label: 'Ticker' },
-  { href: '/ships', label: 'Ships' },
-  { href: '/stations', label: 'Stations' },
-  { href: '/forum', label: 'Forum' },
-  { href: '/changelog', label: 'Changelog' },
-  { href: '/clients', label: 'Clients' },
+  { href: '/features', labelKey: 'nav.features' },
+  { href: '/map', labelKey: 'nav.galaxyMap' },
+  { href: '/battles', labelKey: 'nav.battles' },
+  { href: '/leaderboard', labelKey: 'nav.leaderboard' },
+  { href: '/market', labelKey: 'nav.market' },
+  { href: '/ticker', labelKey: 'nav.ticker' },
+  { href: '/ships', labelKey: 'nav.ships' },
+  { href: '/stations', labelKey: 'nav.stations' },
+  { href: '/forum', labelKey: 'nav.forum' },
+  { href: '/changelog', labelKey: 'nav.changelog' },
+  { href: '/clients', labelKey: 'nav.clients' },
 ]
 
 export function Nav() {
@@ -26,6 +28,8 @@ export function Nav() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const dropdownRef = useRef<HTMLLIElement>(null)
   const mobileMenuRef = useRef<HTMLDivElement>(null)
+
+  const { t } = useTranslation()
 
   const isExploreActive = exploreLinks.some(
     ({ href }) => pathname === href || pathname.startsWith(href + '/'),
@@ -111,20 +115,20 @@ export function Nav() {
               aria-expanded={dropdownOpen}
               aria-haspopup="true"
             >
-              Explore
+              {t('nav.explore')}
               <svg className="nav-dropdown-chevron" width="10" height="6" viewBox="0 0 10 6" fill="none">
                 <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
             <ul className="nav-dropdown-menu">
-              {exploreLinks.map(({ href, label }) => (
+              {exploreLinks.map(({ href, labelKey }) => (
                 <li key={href}>
                   <Link
                     href={href}
                     className={pathname === href || pathname.startsWith(href + '/') ? 'active' : undefined}
                     onClick={() => setDropdownOpen(false)}
                   >
-                    {label}
+                    {t(labelKey)}
                   </Link>
                 </li>
               ))}
@@ -135,12 +139,12 @@ export function Nav() {
               href="/news"
               className={pathname === '/news' || pathname.startsWith('/news/') ? 'active' : undefined}
             >
-              News
+              {t('nav.news')}
             </Link>
           </li>
           <li>
             <a href="https://discord.gg/Jm4UdQPuNB" target="_blank" rel="noopener noreferrer">
-              Discord
+              {t('nav.discord')}
             </a>
           </li>
           <li>
@@ -148,22 +152,25 @@ export function Nav() {
               href="/about"
               className={pathname === '/about' ? 'active' : undefined}
             >
-              About
+              {t('nav.about')}
             </Link>
           </li>
           <li>
             <a href="https://www.patreon.com/c/SpaceMolt" target="_blank" rel="noopener noreferrer">
-              Support
+              {t('nav.support')}
             </a>
+          </li>
+          <li>
+            <LanguageSelector />
           </li>
           <li>
             <SignedOut>
               <SignUpButton mode="modal">
-                <button className="highlight">Get Started</button>
+                <button className="highlight">{t('nav.getStarted')}</button>
               </SignUpButton>
             </SignedOut>
             <SignedIn>
-              <Link href="/dashboard" className="highlight">Dashboard</Link>
+              <Link href="/dashboard" className="highlight">{t('nav.dashboard')}</Link>
             </SignedIn>
           </li>
         </ul>
@@ -183,24 +190,28 @@ export function Nav() {
         <div className="mobile-menu-cta">
           <SignedOut>
             <SignUpButton mode="modal">
-              <button className="highlight" onClick={closeMobileMenu}>Get Started</button>
+              <button className="highlight" onClick={closeMobileMenu}>{t('nav.getStarted')}</button>
             </SignUpButton>
           </SignedOut>
           <SignedIn>
-            <Link href="/dashboard" className="highlight" onClick={closeMobileMenu}>Dashboard</Link>
+            <Link href="/dashboard" className="highlight" onClick={closeMobileMenu}>{t('nav.dashboard')}</Link>
           </SignedIn>
         </div>
         <div className="mobile-menu-divider" />
         <div className="mobile-menu-section">
-          <span className="mobile-menu-label">Explore</span>
-          {exploreLinks.map(({ href, label }) => (
+          <LanguageSelector />
+        </div>
+        <div className="mobile-menu-divider" />
+        <div className="mobile-menu-section">
+          <span className="mobile-menu-label">{t('nav.explore')}</span>
+          {exploreLinks.map(({ href, labelKey }) => (
             <Link
               key={href}
               href={href}
               className={`mobile-menu-link ${pathname === href || pathname.startsWith(href + '/') ? 'active' : ''}`}
               onClick={closeMobileMenu}
             >
-              {label}
+              {t(labelKey)}
             </Link>
           ))}
         </div>
@@ -210,7 +221,7 @@ export function Nav() {
           className={`mobile-menu-link ${pathname === '/news' || pathname.startsWith('/news/') ? 'active' : ''}`}
           onClick={closeMobileMenu}
         >
-          News
+          {t('nav.news')}
         </Link>
         <a
           href="https://discord.gg/Jm4UdQPuNB"
@@ -219,14 +230,14 @@ export function Nav() {
           className="mobile-menu-link"
           onClick={closeMobileMenu}
         >
-          Join Discord
+          {t('nav.joinDiscord')}
         </a>
         <Link
           href="/about"
           className={`mobile-menu-link ${pathname === '/about' ? 'active' : ''}`}
           onClick={closeMobileMenu}
         >
-          About
+          {t('nav.about')}
         </Link>
         <a
           href="https://www.patreon.com/c/SpaceMolt"
@@ -235,14 +246,14 @@ export function Nav() {
           className="mobile-menu-link"
           onClick={closeMobileMenu}
         >
-          Support
+          {t('nav.support')}
         </a>
         <div className="mobile-menu-divider" />
         <div className="mobile-menu-section">
-          <span className="mobile-menu-label">Legal</span>
-          <Link href="/terms" className="mobile-menu-link" onClick={closeMobileMenu}>Terms</Link>
-          <Link href="/privacy" className="mobile-menu-link" onClick={closeMobileMenu}>Privacy</Link>
-          <Link href="/cookies" className="mobile-menu-link" onClick={closeMobileMenu}>Cookies</Link>
+          <span className="mobile-menu-label">{t('nav.legal')}</span>
+          <Link href="/terms" className="mobile-menu-link" onClick={closeMobileMenu}>{t('nav.terms')}</Link>
+          <Link href="/privacy" className="mobile-menu-link" onClick={closeMobileMenu}>{t('nav.privacy')}</Link>
+          <Link href="/cookies" className="mobile-menu-link" onClick={closeMobileMenu}>{t('nav.cookies')}</Link>
         </div>
       </div>
     </>

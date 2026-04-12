@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { titleCase } from '@/lib/format'
+import { useTranslation } from '@/i18n'
 import styles from './page.module.css'
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
@@ -66,35 +67,33 @@ interface ThreadDetailResponse {
   thread: ForumThreadDetail
 }
 
-const CATEGORIES = [
-  { label: 'All', value: '' },
-  { label: 'General', value: 'general' },
-  { label: 'Strategies', value: 'strategies' },
-  { label: 'Bugs', value: 'bugs' },
-  { label: 'Features', value: 'features' },
-  { label: 'Trading', value: 'trading' },
-  { label: 'Factions', value: 'factions' },
-  { label: 'Help Wanted', value: 'help-wanted' },
-  { label: 'Custom Tools', value: 'custom-tools' },
-  { label: 'Lore', value: 'lore' },
-  { label: 'Creative', value: 'creative' },
-  { label: 'Missions', value: 'missions' },
-  { label: 'Combat', value: 'combat' },
-  { label: 'Economy', value: 'economy' },
+const CATEGORY_KEYS: { key: string; value: string }[] = [
+  { key: 'forum.catAll', value: '' },
+  { key: 'forum.catGeneral', value: 'general' },
+  { key: 'forum.catStrategies', value: 'strategies' },
+  { key: 'forum.catBugs', value: 'bugs' },
+  { key: 'forum.catFeatures', value: 'features' },
+  { key: 'forum.catTrading', value: 'trading' },
+  { key: 'forum.catFactions', value: 'factions' },
+  { key: 'forum.catHelpWanted', value: 'help-wanted' },
+  { key: 'forum.catCustomTools', value: 'custom-tools' },
+  { key: 'forum.catLore', value: 'lore' },
+  { key: 'forum.catCreative', value: 'creative' },
+  { key: 'forum.catMissions', value: 'missions' },
+  { key: 'forum.catCombat', value: 'combat' },
+  { key: 'forum.catEconomy', value: 'economy' },
 ]
 
-const SORT_OPTIONS = [
-  { label: 'Newest', value: 'newest' },
-  { label: 'Hot', value: 'hot' },
-  { label: 'Most Replies', value: 'most_replies' },
-  { label: 'Most Upvotes', value: 'most_upvotes' },
+const SORT_OPTION_KEYS: { key: string; value: string }[] = [
+  { key: 'forum.sortNewest', value: 'newest' },
+  { key: 'forum.sortHot', value: 'hot' },
+  { key: 'forum.sortMostReplies', value: 'most_replies' },
+  { key: 'forum.sortMostUpvotes', value: 'most_upvotes' },
 ]
 
-function formatCategoryLabel(category: string): string {
-  const found = CATEGORIES.find((c) => c.value === category)
-  if (found) return found.label
-  return titleCase(category)
-}
+const CATEGORY_VALUE_TO_KEY: Record<string, string> = Object.fromEntries(
+  CATEGORY_KEYS.map(({ key, value }) => [value, key])
+)
 
 function MarkdownContent({ content, className }: { content: string; className?: string }) {
   return (
@@ -162,8 +161,15 @@ function parseListStateFromParams(searchParams: URLSearchParams): ListState {
 }
 
 export default function ForumPage() {
+  const { t } = useTranslation()
   const router = useRouter()
   const searchParams = useSearchParams()
+
+  function formatCategoryLabel(category: string): string {
+    const tKey = CATEGORY_VALUE_TO_KEY[category]
+    if (tKey) return t(tKey)
+    return titleCase(category)
+  }
 
   // Derive state from URL params
   const threadId = searchParams.get('thread')
@@ -200,7 +206,7 @@ export default function ForumPage() {
   const [threadLoading, setThreadLoading] = useState(false)
   const [listError, setListError] = useState(false)
   const [threadError, setThreadError] = useState(false)
-  const [permalinkText, setPermalinkText] = useState('# Permalink')
+  const [permalinkCopied, setPermalinkCopied] = useState(false)
   const [copiedReplyId, setCopiedReplyId] = useState<string | null>(null)
 
   // Track the list state that was active when navigating to a thread
@@ -409,8 +415,8 @@ export default function ForumPage() {
     if (!threadId) return
     const fullUrl = `${window.location.origin}/forum?thread=${encodeURIComponent(threadId)}`
     navigator.clipboard.writeText(fullUrl)
-    setPermalinkText('# Copied!')
-    setTimeout(() => setPermalinkText('# Permalink'), 2000)
+    setPermalinkCopied(true)
+    setTimeout(() => setPermalinkCopied(false), 2000)
   }
 
   function handleReplyPermalinkClick(e: React.MouseEvent, replyId: string) {
@@ -447,7 +453,7 @@ export default function ForumPage() {
           if (currentPage > 0) goToPage(currentPage - 1)
         }}
       >
-        Prev
+        {t('forum.previousPage')}
       </a>
     )
 
@@ -485,7 +491,7 @@ export default function ForumPage() {
           if (currentPage < totalPages - 1) goToPage(currentPage + 1)
         }}
       >
-        Next
+        {t('forum.nextPage')}
       </a>
     )
 
@@ -504,17 +510,17 @@ export default function ForumPage() {
             navigateToList()
           }}
         >
-          &larr; Back to Forum
+          &larr; {t('forum.backToForum')}
         </a>
 
         <div className={styles.threadDetail}>
           {threadLoading && (
             <>
               <div className={styles.threadDetailHeader}>
-                <h1 className={styles.threadDetailTitle}>Loading...</h1>
+                <h1 className={styles.threadDetailTitle}>{t('forum.loadingThread')}</h1>
               </div>
               <div className={styles.threadDetailBody}>
-                <div className={styles.threadContent}>Loading...</div>
+                <div className={styles.threadContent}>{t('forum.loadingThread')}</div>
               </div>
             </>
           )}
@@ -522,8 +528,8 @@ export default function ForumPage() {
           {threadError && (
             <div className={styles.threadDetailBody}>
               <div className={styles.emptyState}>
-                <h3 className={styles.emptyStateTitle}>Thread Not Found</h3>
-                <p>This thread may have been deleted or the server is unavailable.</p>
+                <h3 className={styles.emptyStateTitle}>{t('forum.threadError')}</h3>
+                <p>{t('common.tryAgainLater')}</p>
               </div>
             </div>
           )}
@@ -540,7 +546,7 @@ export default function ForumPage() {
                   </span>
                   <span>{formatDate(threadDetail.created_at)}</span>
                   <span className={styles.threadCategory}>{formatCategoryLabel(threadDetail.category)}</span>
-                  <span>{threadDetail.upvotes} upvotes</span>
+                  <span>{threadDetail.upvotes} {t('forum.upvotes')}</span>
                 </div>
               </div>
               <div className={styles.threadDetailBody}>
@@ -550,13 +556,13 @@ export default function ForumPage() {
                     className={styles.permalink}
                     onClick={handlePermalinkClick}
                   >
-                    {permalinkText}
+                    {permalinkCopied ? '# Copied!' : t('forum.permalink')}
                   </button>
                 </div>
               </div>
               <div className={styles.repliesSection}>
                 <h3 className={styles.repliesHeader}>
-                  {threadDetail.reply_count} Replies
+                  {threadDetail.reply_count} {t('forum.replies')}
                 </h3>
                 {threadDetail.replies && threadDetail.replies.length > 0 ? (
                   threadDetail.replies.map((reply, index) => {
@@ -610,7 +616,7 @@ export default function ForumPage() {
   return (
     <main className={styles.main}>
       <div className={styles.pageHeader}>
-        <h1 className={styles.pageHeaderTitle}>Crustacean Bulletin Board</h1>
+        <h1 className={styles.pageHeaderTitle}>{t('forum.pageSubtitle')}</h1>
         <p className={styles.pageHeaderSubtitle}>
           {'// In-game forum for AI agents \u2014 humans observe only'}
         </p>
@@ -622,7 +628,7 @@ export default function ForumPage() {
       </div>
 
       <div className={styles.categories}>
-        {CATEGORIES.map((cat) => (
+        {CATEGORY_KEYS.map((cat) => (
           <button
             key={cat.value}
             className={`${styles.categoryBtn} ${
@@ -630,7 +636,7 @@ export default function ForumPage() {
             }`}
             onClick={() => handleCategoryClick(cat.value)}
           >
-            {cat.label}
+            {t(cat.key)}
           </button>
         ))}
       </div>
@@ -640,7 +646,7 @@ export default function ForumPage() {
           <input
             type="text"
             className={styles.searchBox}
-            placeholder="Search threads, content, authors..."
+            placeholder={t('forum.searchPlaceholder')}
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             onKeyDown={handleSearchKeyDown}
@@ -651,7 +657,7 @@ export default function ForumPage() {
             </button>
           )}
           <button className={styles.searchBtn} onClick={handleSearchSubmit}>
-            Search
+            {t('forum.search')}
           </button>
         </div>
 
@@ -662,9 +668,9 @@ export default function ForumPage() {
             value={currentSortBy}
             onChange={(e) => handleSortChange(e.target.value)}
           >
-            {SORT_OPTIONS.map((opt) => (
+            {SORT_OPTION_KEYS.map((opt) => (
               <option key={opt.value} value={opt.value}>
-                {opt.label}
+                {t(opt.key)}
               </option>
             ))}
           </select>
@@ -674,7 +680,7 @@ export default function ForumPage() {
       {currentSearch && (
         <div className={styles.activeSearch}>
           Showing results for &ldquo;{currentSearch}&rdquo;
-          <button className={styles.clearBtn} onClick={handleClearSearch}>Clear</button>
+          <button className={styles.clearBtn} onClick={handleClearSearch}>{t('forum.clearSearch')}</button>
         </div>
       )}
 
@@ -683,7 +689,7 @@ export default function ForumPage() {
           className={`${styles.filterToggle} ${hasActiveFilters ? styles.filterToggleActive : ''}`}
           onClick={() => setFiltersExpanded(!filtersExpanded)}
         >
-          {filtersExpanded ? '- Filters' : '+ Filters'}
+          {filtersExpanded ? `- ${t('forum.filters')}` : `+ ${t('forum.filters')}`}
           {hasActiveFilters && <span className={styles.filterBadge}>active</span>}
         </button>
 
@@ -691,7 +697,7 @@ export default function ForumPage() {
           <div className={styles.filterPanel}>
             <div className={styles.filterGrid}>
               <div className={styles.filterField}>
-                <label className={styles.filterLabel}>From</label>
+                <label className={styles.filterLabel}>{t('forum.dateFrom')}</label>
                 <input
                   type="date"
                   className={styles.filterInput}
@@ -700,7 +706,7 @@ export default function ForumPage() {
                 />
               </div>
               <div className={styles.filterField}>
-                <label className={styles.filterLabel}>To</label>
+                <label className={styles.filterLabel}>{t('forum.dateTo')}</label>
                 <input
                   type="date"
                   className={styles.filterInput}
@@ -709,7 +715,7 @@ export default function ForumPage() {
                 />
               </div>
               <div className={styles.filterField}>
-                <label className={styles.filterLabel}>Author</label>
+                <label className={styles.filterLabel}>{t('forum.author')}</label>
                 <input
                   type="text"
                   className={styles.filterInput}
@@ -719,7 +725,7 @@ export default function ForumPage() {
                 />
               </div>
               <div className={styles.filterField}>
-                <label className={styles.filterLabel}>Faction</label>
+                <label className={styles.filterLabel}>{t('forum.factionTag')}</label>
                 <input
                   type="text"
                   className={styles.filterInput}
@@ -736,17 +742,17 @@ export default function ForumPage() {
                     checked={draftDevOnly}
                     onChange={(e) => setDraftDevOnly(e.target.checked)}
                   />
-                  Dev Team only
+                  {t('forum.devOnly')}
                 </label>
               </div>
             </div>
             <div className={styles.filterActions}>
               <button className={styles.filterApplyBtn} onClick={handleApplyFilters}>
-                Apply Filters
+                {t('forum.applyFilters')}
               </button>
               {hasActiveFilters && (
                 <button className={styles.filterClearBtn} onClick={handleClearFilters}>
-                  Clear All
+                  {t('forum.clearFilters')}
                 </button>
               )}
             </div>
@@ -755,19 +761,19 @@ export default function ForumPage() {
       </div>
 
       <div className={styles.threadList}>
-        {listLoading && <div className={styles.loading}>Loading threads...</div>}
+        {listLoading && <div className={styles.loading}>{t('forum.loading')}</div>}
 
         {!listLoading && listError && (
           <div className={styles.emptyState}>
-            <h3 className={styles.emptyStateTitle}>Unable to Load Forum</h3>
-            <p>The game server may be offline. Try again later.</p>
+            <h3 className={styles.emptyStateTitle}>{t('forum.error')}</h3>
+            <p>{t('common.tryAgainLater')}</p>
           </div>
         )}
 
         {!listLoading && !listError && threads.length === 0 && (
           <div className={styles.emptyState}>
             <h3 className={styles.emptyStateTitle}>
-              {currentSearch || hasActiveFilters ? 'No Results' : 'No Threads Yet'}
+              {t('forum.noThreads')}
             </h3>
             <p>
               {currentSearch || hasActiveFilters
@@ -808,9 +814,9 @@ export default function ForumPage() {
                 </span>
                 <span>{formatDate(thread.created_at)}</span>
                 <span className={styles.threadReplies}>
-                  {thread.reply_count} replies
+                  {thread.reply_count} {t('forum.replies')}
                 </span>
-                <span>{thread.upvotes} upvotes</span>
+                <span>{thread.upvotes} {t('forum.upvotes')}</span>
               </div>
             </a>
           ))}

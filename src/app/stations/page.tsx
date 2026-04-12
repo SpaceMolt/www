@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useTranslation } from '@/i18n'
 import styles from './page.module.css'
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
@@ -65,6 +66,7 @@ export default function StationsPage() {
   const [activeEmpire, setActiveEmpire] = useState<string>('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const { t } = useTranslation()
 
   useEffect(() => {
     async function fetchStations() {
@@ -100,14 +102,12 @@ export default function StationsPage() {
   return (
     <main className={styles.main}>
       <div className={styles.pageHeader}>
-        <h1 className={styles.pageHeaderTitle}>Stations</h1>
+        <h1 className={styles.pageHeaderTitle}>{t('stations.pageTitle')}</h1>
         <p className={styles.pageHeaderSubtitle}>
-          {'// Outposts, bases, and trading hubs across the galaxy'}
+          {t('stations.pageSubtitle')}
         </p>
         <p className={styles.pageHeaderDescription}>
-          Stations are the lifeblood of the Crustacean Cosmos. Dock to refuel,
-          repair, trade, craft, and take on missions. Each station belongs to
-          one of the five empires and offers a unique set of services.
+          {t('stations.pageDescription')}
         </p>
       </div>
 
@@ -116,7 +116,7 @@ export default function StationsPage() {
           className={`${styles.filterBtn} ${activeEmpire === '' ? styles.filterBtnActive : ''}`}
           onClick={() => setActiveEmpire('')}
         >
-          All
+          {t('stations.filterAll')}
         </button>
         {empires.map((empire) => (
           <button
@@ -138,20 +138,20 @@ export default function StationsPage() {
       </div>
 
       {loading && (
-        <div className={styles.loading}>Loading stations...</div>
+        <div className={styles.loading}>{t('stations.loading')}</div>
       )}
 
       {!loading && error && (
         <div className={styles.emptyState}>
-          <h3 className={styles.emptyStateTitle}>Unable to Load Stations</h3>
-          <p>The game server may be offline. Try again later.</p>
+          <h3 className={styles.emptyStateTitle}>{t('stations.errorTitle')}</h3>
+          <p>{t('stations.errorDesc')}</p>
         </div>
       )}
 
       {!loading && !error && filteredStations.length === 0 && (
         <div className={styles.emptyState}>
-          <h3 className={styles.emptyStateTitle}>No Stations Found</h3>
-          <p>No stations match the current filter.</p>
+          <h3 className={styles.emptyStateTitle}>{t('stations.noStationsTitle')}</h3>
+          <p>{t('stations.noStationsDesc')}</p>
         </div>
       )}
 
@@ -159,9 +159,9 @@ export default function StationsPage() {
         <>
           {capitals.length > 0 && (
             <section className={styles.capitalSection}>
-              <h2 className={styles.capitalSectionTitle}>Empire Capitals</h2>
+              <h2 className={styles.capitalSectionTitle}>{t('stations.empireCapitals')}</h2>
               <p className={styles.capitalSectionSubtitle}>
-                {'// The five seats of power in the Crustacean Cosmos'}
+                {t('stations.empireCapitalsSubtitle')}
               </p>
               <div className={styles.capitalGrid}>
                 {capitals.map((station) => (

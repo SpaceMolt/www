@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback, Fragment } from 'react'
 import Image from 'next/image'
 import { titleCase } from '@/lib/format'
+import { useTranslation } from '@/i18n'
 import styles from './page.module.css'
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
@@ -60,23 +61,23 @@ interface ShipsResponse {
 }
 
 const TABLE_COLS = [
-  { key: 'name',                 label: 'Name',    title: 'Name',              numeric: false },
-  { key: 'empire_name',          label: 'Empire',  title: 'Empire',            numeric: false },
-  { key: 'category',             label: 'Category',title: 'Category',          numeric: false },
-  { key: 'class',                label: 'Class',   title: 'Class',             numeric: false },
-  { key: 'tier',                 label: 'T',       title: 'Tier',              numeric: true  },
-  { key: 'base_hull',            label: 'Hull',    title: 'Hull HP',           numeric: true  },
-  { key: 'base_shield',          label: 'Shield',  title: 'Shield HP',         numeric: true  },
-  { key: 'base_shield_recharge', label: 'ShRgn',   title: 'Shield Recharge/tick', numeric: true },
-  { key: 'base_armor',           label: 'Armor',   title: 'Armor',             numeric: true  },
-  { key: 'base_speed',           label: 'Speed',   title: 'Speed (AU/tick)',   numeric: true  },
-  { key: 'base_fuel',            label: 'Fuel',    title: 'Fuel Capacity',     numeric: true  },
-  { key: 'cargo_capacity',       label: 'Cargo',   title: 'Cargo Capacity',    numeric: true  },
-  { key: 'cpu_capacity',         label: 'CPU',     title: 'CPU Capacity',      numeric: true  },
-  { key: 'power_capacity',       label: 'Power',   title: 'Power Capacity',    numeric: true  },
-  { key: 'weapon_slots',         label: 'Wpn',     title: 'Weapon Slots',      numeric: true  },
-  { key: 'defense_slots',        label: 'Def',     title: 'Defense Slots',     numeric: true  },
-  { key: 'utility_slots',        label: 'Util',    title: 'Utility Slots',     numeric: true  },
+  { key: 'name',                 label: 'Name',    tKey: 'ships.colName',     title: 'Name',              numeric: false },
+  { key: 'empire_name',          label: 'Empire',  tKey: 'ships.colEmpire',   title: 'Empire',            numeric: false },
+  { key: 'category',             label: 'Category',tKey: 'ships.colCategory', title: 'Category',          numeric: false },
+  { key: 'class',                label: 'Class',   tKey: 'ships.colClass',    title: 'Class',             numeric: false },
+  { key: 'tier',                 label: 'T',       tKey: 'ships.colTier',     title: 'Tier',              numeric: true  },
+  { key: 'base_hull',            label: 'Hull',    tKey: 'ships.colHull',     title: 'Hull HP',           numeric: true  },
+  { key: 'base_shield',          label: 'Shield',  tKey: 'ships.colShield',   title: 'Shield HP',         numeric: true  },
+  { key: 'base_shield_recharge', label: 'ShRgn',   tKey: '',                  title: 'Shield Recharge/tick', numeric: true },
+  { key: 'base_armor',           label: 'Armor',   tKey: 'ships.colArmor',    title: 'Armor',             numeric: true  },
+  { key: 'base_speed',           label: 'Speed',   tKey: 'ships.colSpeed',    title: 'Speed (AU/tick)',   numeric: true  },
+  { key: 'base_fuel',            label: 'Fuel',    tKey: 'ships.colFuel',     title: 'Fuel Capacity',     numeric: true  },
+  { key: 'cargo_capacity',       label: 'Cargo',   tKey: 'ships.colCargo',    title: 'Cargo Capacity',    numeric: true  },
+  { key: 'cpu_capacity',         label: 'CPU',     tKey: 'ships.colCPU',      title: 'CPU Capacity',      numeric: true  },
+  { key: 'power_capacity',       label: 'Power',   tKey: 'ships.colPower',    title: 'Power Capacity',    numeric: true  },
+  { key: 'weapon_slots',         label: 'Wpn',     tKey: 'ships.colWeapons',  title: 'Weapon Slots',      numeric: true  },
+  { key: 'defense_slots',        label: 'Def',     tKey: 'ships.colDefense',  title: 'Defense Slots',     numeric: true  },
+  { key: 'utility_slots',        label: 'Util',    tKey: 'ships.colUtility',  title: 'Utility Slots',     numeric: true  },
 ] as const
 
 const EMPIRE_COLORS: Record<string, string> = {
@@ -87,21 +88,21 @@ const EMPIRE_COLORS: Record<string, string> = {
   outerrim: '#2dd4bf',
 }
 
-const EMPIRE_SHORT: Record<string, string> = {
-  solarian: 'Solarian',
-  voidborn: 'Voidborn',
-  crimson: 'Crimson',
-  nebula: 'Nebula',
-  outerrim: 'Outer Rim',
+const EMPIRE_SHORT_KEYS: Record<string, string> = {
+  solarian: 'ships.empireSolarian',
+  voidborn: 'ships.empireVoidborn',
+  crimson: 'ships.empireCrimson',
+  nebula: 'ships.empireNebula',
+  outerrim: 'ships.empireOuterRim',
 }
 
-const TIER_LABELS: Record<number, string> = {
-  0: 'T0 - Starter',
-  1: 'T1 - Entry',
-  2: 'T2 - Mid',
-  3: 'T3 - Advanced',
-  4: 'T4 - Elite',
-  5: 'T5 - Capital',
+const TIER_LABEL_KEYS: Record<number, string> = {
+  0: 'ships.tierStarter',
+  1: 'ships.tierEntry',
+  2: 'ships.tierMid',
+  3: 'ships.tierAdvanced',
+  4: 'ships.tierElite',
+  5: 'ships.tierCapital',
 }
 
 function formatNumber(n: number): string {
@@ -112,6 +113,7 @@ const formatSkillName = titleCase
 
 function GuideSection() {
   const [open, setOpen] = useState(false)
+  const { t } = useTranslation()
 
   return (
     <div className={styles.guideSection}>
@@ -121,7 +123,7 @@ function GuideSection() {
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
         >
-          <span className={styles.guidePanelTitle}>How to Get Ships</span>
+          <span className={styles.guidePanelTitle}>{t('ships.howToGetShips')}</span>
           <svg
             className={styles.guidePanelChevron}
             width="12"
@@ -142,7 +144,7 @@ function GuideSection() {
           <div className={styles.guidePanelContent}>
             <div className={styles.guideColumns}>
               <div className={styles.guideColumn}>
-                <h5 className={styles.guideColumnTitle}>Buying from the Showroom</h5>
+                <h5 className={styles.guideColumnTitle}>{t('ships.buyFromShowroom')}</h5>
                 <p>
                   The fastest way to get a new ship. Dock at any station with a shipyard and browse
                   the showroom for ships ready for immediate purchase. Shipyard managers keep their
@@ -152,7 +154,7 @@ function GuideSection() {
                 </p>
               </div>
               <div className={styles.guideColumn}>
-                <h5 className={styles.guideColumnTitle}>Commissioning a Custom Build</h5>
+                <h5 className={styles.guideColumnTitle}>{t('ships.commissionBuild')}</h5>
                 <p>
                   For more control or better prices, commission a shipyard to build a ship to order.
                   Pay credits only and the shipyard sources materials from the market (with a markup),
@@ -161,7 +163,7 @@ function GuideSection() {
                 </p>
               </div>
               <div className={styles.guideColumn}>
-                <h5 className={styles.guideColumnTitle}>Buying from Other Players</h5>
+                <h5 className={styles.guideColumnTitle}>{t('ships.buyFromPlayers')}</h5>
                 <p>
                   Players can list stored ships for sale on any station&apos;s exchange. Prices vary
                   &mdash; sometimes below showroom price, especially for ships with modules installed.
@@ -170,7 +172,7 @@ function GuideSection() {
                 </p>
               </div>
               <div className={styles.guideColumn}>
-                <h5 className={styles.guideColumnTitle}>How Ships Fit Into the Economy</h5>
+                <h5 className={styles.guideColumnTitle}>{t('ships.economyRole')}</h5>
                 <p>
                   Ship production drives demand across the entire supply chain. Each ship requires
                   specific build materials that must be mined, refined, and crafted by players.
@@ -217,6 +219,8 @@ export default function ShipsPage() {
   const categoryDropdownRef = useRef<HTMLDivElement>(null)
   const [brokenImages, setBrokenImages] = useState<Set<string>>(new Set())
   const [zoomedShip, setZoomedShip] = useState<Ship | null>(null)
+
+  const { t } = useTranslation()
 
   const handleImageError = useCallback((shipId: string) => {
     setBrokenImages((prev) => {
@@ -383,18 +387,16 @@ export default function ShipsPage() {
   return (
     <main className={styles.main}>
       <div className={styles.pageHeader}>
-        <h1 className={styles.pageHeaderTitle}>Ship Catalog</h1>
+        <h1 className={styles.pageHeaderTitle}>{t('ships.pageTitle')}</h1>
         <p className={styles.pageHeaderSubtitle}>
-          {'// Browse all empire ships across 5 tiers'}
+          {t('ships.pageSubtitle')}
         </p>
         <p className={styles.pageHeaderDescription}>
-          Every ship in the galaxy, from entry-level fighters to capital-class
-          titans. Each empire designs ships with distinct strengths. Click any
-          ship to see full stats, build materials, and lore.
+          {t('ships.pageDescription')}
         </p>
         {!loading && !error && (
           <p className={styles.shipCount}>
-            {filteredShips.length} of {ships.length} ships
+            {t('ships.shipCount', { filtered: String(filteredShips.length), total: String(ships.length) })}
           </p>
         )}
       </div>
@@ -416,7 +418,7 @@ export default function ShipsPage() {
               >
                 {activeEmpire
                   ? <><span className={styles.empireDot} style={{ background: EMPIRE_COLORS[activeEmpire] }} />{empires.find((e) => e.id === activeEmpire)?.name}</>
-                  : 'All Empires'}
+                  : t('ships.allEmpires')}
                 <svg className={styles.classDropdownChevron} width="10" height="6" viewBox="0 0 10 6" fill="none">
                   <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
@@ -454,7 +456,7 @@ export default function ShipsPage() {
                 aria-expanded={tierDropdownOpen}
                 aria-haspopup="true"
               >
-                {activeTier === 0 ? 'All Tiers' : `T${activeTier}`}
+                {activeTier === 0 ? t('ships.allTiers') : `T${activeTier}`}
                 <svg className={styles.classDropdownChevron} width="10" height="6" viewBox="0 0 10 6" fill="none">
                   <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
@@ -491,7 +493,7 @@ export default function ShipsPage() {
                 aria-expanded={categoryDropdownOpen}
                 aria-haspopup="true"
               >
-                {activeCategory || 'All Categories'}
+                {activeCategory || t('ships.allCategories')}
                 <svg className={styles.classDropdownChevron} width="10" height="6" viewBox="0 0 10 6" fill="none">
                   <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
@@ -529,7 +531,7 @@ export default function ShipsPage() {
                 aria-haspopup="true"
               >
                 {activeClasses.size === 0
-                  ? 'All Classes'
+                  ? t('ships.allClasses')
                   : activeClasses.size === 1
                     ? [...activeClasses][0]
                     : `${activeClasses.size} classes`}
@@ -567,7 +569,7 @@ export default function ShipsPage() {
             <input
               type="text"
               className={styles.searchInput}
-              placeholder="Search ships..."
+              placeholder={t('ships.search')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -579,14 +581,14 @@ export default function ShipsPage() {
                   className={`${styles.filterBtn} ${allExpanded ? styles.filterBtnActive : ''}`}
                   onClick={toggleExpandAll}
                 >
-                  {allExpanded ? 'Collapse All' : 'Expand All'}
+                  {allExpanded ? t('ships.collapseAll') : t('ships.expandAll')}
                 </button>
               )}
               <div className={styles.viewToggle}>
                 <button
                   className={`${styles.viewToggleBtn} ${viewMode === 'grid' ? styles.viewToggleBtnActive : ''}`}
                   onClick={() => setView('grid')}
-                  title="Grid view"
+                  title={t('ships.gridView')}
                 >
                   <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
                     <rect x="0.65" y="0.65" width="4.7" height="4.7" rx="0.8" stroke="currentColor" strokeWidth="1.3"/>
@@ -598,7 +600,7 @@ export default function ShipsPage() {
                 <button
                   className={`${styles.viewToggleBtn} ${viewMode === 'table' ? styles.viewToggleBtnActive : ''}`}
                   onClick={() => setView('table')}
-                  title="Table view"
+                  title={t('ships.tableView')}
                 >
                   <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
                     <line x1="1" y1="2.5" x2="12" y2="2.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
@@ -614,20 +616,20 @@ export default function ShipsPage() {
       )}
 
       {loading && (
-        <div className={styles.loading}>Loading ship catalog...</div>
+        <div className={styles.loading}>{t('ships.loading')}</div>
       )}
 
       {!loading && error && (
         <div className={styles.emptyState}>
-          <h3 className={styles.emptyStateTitle}>Unable to Load Ships</h3>
-          <p>The game server may be offline. Try again later.</p>
+          <h3 className={styles.emptyStateTitle}>{t('ships.errorTitle')}</h3>
+          <p>{t('ships.errorDesc')}</p>
         </div>
       )}
 
       {!loading && !error && filteredShips.length === 0 && ships.length > 0 && (
         <div className={styles.emptyState}>
-          <h3 className={styles.emptyStateTitle}>No Ships Found</h3>
-          <p>No ships match the current filters.</p>
+          <h3 className={styles.emptyStateTitle}>{t('ships.noResults')}</h3>
+          <p>{t('ships.noResultsDesc')}</p>
         </div>
       )}
 
@@ -853,7 +855,7 @@ export default function ShipsPage() {
                     onClick={() => handleSort(col.key as keyof Ship)}
                     title={col.title}
                   >
-                    {col.label}
+                    {col.tKey ? t(col.tKey) : col.label}
                     <span className={styles.sortIndicator}>
                       {sortCol === col.key ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ' ⇅'}
                     </span>
@@ -877,7 +879,7 @@ export default function ShipsPage() {
                       </td>
                       <td className={styles.tableCell}>
                         <span className={styles.empireDot} style={{ background: empireColor }} />
-                        {' '}{EMPIRE_SHORT[ship.empire] ?? ship.empire_name}
+                        {' '}{EMPIRE_SHORT_KEYS[ship.empire] ? t(EMPIRE_SHORT_KEYS[ship.empire]) : ship.empire_name}
                       </td>
                       <td className={styles.tableCell}>{ship.category}</td>
                       <td className={`${styles.tableCell} ${styles.tableClass}`}>{ship.class}</td>

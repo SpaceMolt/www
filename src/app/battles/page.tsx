@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import styles from './page.module.css'
+import { useTranslation } from '@/i18n'
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 const POLL_INTERVAL = 10_000
@@ -49,20 +50,20 @@ function formatDuration(ticks: number): string {
   return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`
 }
 
-function formatOutcome(battle: BattleSummary): string {
+function formatOutcome(battle: BattleSummary, t: (key: string) => string): string {
   if (!battle.outcome) return ''
   switch (battle.outcome) {
     case 'victory': {
       const winningSide = battle.sides.find(s => s.side_id === battle.winning_side)
       if (winningSide) {
-        return `Victory: ${winningSide.participants.join(', ')}`
+        return `${t('battles.outcomeVictory')}: ${winningSide.participants.join(', ')}`
       }
-      return 'Victory'
+      return t('battles.outcomeVictory')
     }
     case 'stalemate':
-      return 'Stalemate'
+      return t('battles.outcomeStalemate')
     case 'mutual_destruction':
-      return 'Mutual Destruction'
+      return t('battles.outcomeMutualDestruction')
     default:
       return battle.outcome
   }
@@ -81,6 +82,7 @@ function formatDate(dateStr: string): string {
 type FilterStatus = 'all' | 'active' | 'completed'
 
 export default function BattlesPage() {
+  const { t } = useTranslation()
   const [battles, setBattles] = useState<BattleSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
@@ -119,9 +121,9 @@ export default function BattlesPage() {
   return (
     <main className={styles.main}>
       <div className={styles.pageHeader}>
-        <h1 className={styles.pageHeaderTitle}>Battle Records</h1>
+        <h1 className={styles.pageHeaderTitle}>{t('battles.pageTitle')}</h1>
         <p className={styles.pageHeaderSubtitle}>
-          Real-time combat engagements across the galaxy
+          {t('battles.pageSubtitle')}
         </p>
       </div>
 
@@ -132,7 +134,7 @@ export default function BattlesPage() {
             className={`${styles.filterBtn} ${filter === status ? styles.filterBtnActive : ''}`}
             onClick={() => setFilter(status)}
           >
-            {status === 'all' ? 'All' : status === 'active' ? 'Active' : 'Completed'}
+            {status === 'all' ? t('battles.filterAll') : status === 'active' ? t('battles.filterActive') : t('battles.filterCompleted')}
             {status === 'active' && activeBattles.length > 0 && (
               <span className={styles.activeCount}>{activeBattles.length}</span>
             )}
@@ -141,19 +143,18 @@ export default function BattlesPage() {
       </div>
 
       {loading && (
-        <div className={styles.loading}>Loading battle records...</div>
+        <div className={styles.loading}>{t('battles.loading')}</div>
       )}
 
       {error && (
-        <div className={styles.error}>Failed to load battle records. The server may be unavailable.</div>
+        <div className={styles.error}>{t('battles.error')}</div>
       )}
 
       {!loading && !error && battles.length === 0 && (
         <div className={styles.empty}>
-          <p>No battles found.</p>
+          <p>{t('battles.noBattles')}</p>
           <p className={styles.emptyHint}>
-            Battles are logged when players engage in combat. Check back later or view the{' '}
-            <Link href="/map">Galaxy Map</Link> for active engagements.
+            {t('battles.noBattlesHint')}
           </p>
         </div>
       )}
@@ -171,10 +172,10 @@ export default function BattlesPage() {
                   {battle.status === 'active' ? (
                     <span className={styles.statusLive}>
                       <span className={styles.liveDot} />
-                      LIVE
+                      {t('battles.statusLive')}
                     </span>
                   ) : (
-                    <span className={styles.statusCompleted}>COMPLETED</span>
+                    <span className={styles.statusCompleted}>{t('battles.statusCompleted')}</span>
                   )}
                   <span className={styles.systemName}>{battle.system_name || battle.system_id}</span>
                 </div>
@@ -206,22 +207,22 @@ export default function BattlesPage() {
 
               <div className={styles.cardStats}>
                 <span className={styles.stat}>
-                  <span className={styles.statLabel}>Damage</span>
+                  <span className={styles.statLabel}>{t('battles.damage')}</span>
                   <span className={styles.statValue}>{battle.total_damage.toLocaleString()}</span>
                 </span>
                 <span className={styles.stat}>
-                  <span className={styles.statLabel}>Ships Lost</span>
+                  <span className={styles.statLabel}>{t('battles.destroyed')}</span>
                   <span className={styles.statValue}>{battle.ships_destroyed}</span>
                 </span>
                 <span className={styles.stat}>
-                  <span className={styles.statLabel}>Combatants</span>
+                  <span className={styles.statLabel}>{t('battles.participants')}</span>
                   <span className={styles.statValue}>{battle.participant_count}</span>
                 </span>
                 {battle.outcome && (
                   <span className={styles.stat}>
                     <span className={styles.statLabel}>Outcome</span>
                     <span className={`${styles.statValue} ${styles.outcome}`}>
-                      {formatOutcome(battle)}
+                      {formatOutcome(battle, t)}
                     </span>
                   </span>
                 )}

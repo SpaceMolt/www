@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import { useTranslation } from '@/i18n'
 import styles from './page.module.css'
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
@@ -55,11 +56,11 @@ const CONDITION_COLORS: Record<string, string> = {
 
 const CATEGORY_ORDER = ['service', 'infrastructure', 'production', 'faction']
 
-const CATEGORY_LABELS: Record<string, string> = {
-  service: 'Service',
-  infrastructure: 'Infrastructure',
-  production: 'Production',
-  faction: 'Faction',
+const CATEGORY_LABEL_KEYS: Record<string, string> = {
+  service: 'stationDetail.catService',
+  infrastructure: 'stationDetail.catInfrastructure',
+  production: 'stationDetail.catProduction',
+  faction: 'stationDetail.catFaction',
 }
 
 function groupFacilitiesByCategory(facilities: Facility[]): Record<string, Facility[]> {
@@ -88,6 +89,7 @@ function renderLevelIndicator(level: number) {
 }
 
 export default function StationDetailPage() {
+  const { t } = useTranslation()
   const params = useParams()
   const stationId = params.id as string
 
@@ -146,9 +148,9 @@ export default function StationDetailPage() {
     return (
       <main className={styles.main}>
         <Link href="/stations" className={styles.backLink}>
-          &larr; Back to Stations
+          &larr; {t('stationDetail.backToStations')}
         </Link>
-        <div className={styles.loading}>Loading station data...</div>
+        <div className={styles.loading}>{t('stationDetail.loading')}</div>
       </main>
     )
   }
@@ -157,11 +159,11 @@ export default function StationDetailPage() {
     return (
       <main className={styles.main}>
         <Link href="/stations" className={styles.backLink}>
-          &larr; Back to Stations
+          &larr; {t('stationDetail.backToStations')}
         </Link>
         <div className={styles.emptyState}>
-          <h3 className={styles.emptyStateTitle}>Station Not Found</h3>
-          <p>This station does not exist or the ID is invalid.</p>
+          <h3 className={styles.emptyStateTitle}>{t('stationDetail.notFoundTitle')}</h3>
+          <p>{t('stationDetail.notFoundDesc')}</p>
         </div>
       </main>
     )
@@ -171,11 +173,11 @@ export default function StationDetailPage() {
     return (
       <main className={styles.main}>
         <Link href="/stations" className={styles.backLink}>
-          &larr; Back to Stations
+          &larr; {t('stationDetail.backToStations')}
         </Link>
         <div className={styles.emptyState}>
-          <h3 className={styles.emptyStateTitle}>Unable to Load Station</h3>
-          <p>The game server may be offline. Try again later.</p>
+          <h3 className={styles.emptyStateTitle}>{t('stationDetail.errorTitle')}</h3>
+          <p>{t('stationDetail.errorDesc')}</p>
         </div>
       </main>
     )
@@ -193,7 +195,7 @@ export default function StationDetailPage() {
   return (
     <main className={styles.main}>
       <Link href="/stations" className={styles.backLink}>
-        &larr; Back to Stations
+        &larr; {t('stationDetail.backToStations')}
       </Link>
 
       {/* Hero Section */}
@@ -231,23 +233,23 @@ export default function StationDetailPage() {
       {/* Info Bar */}
       <section className={styles.infoBar}>
         <div className={styles.infoItem}>
-          <span className={styles.infoLabel}>System</span>
+          <span className={styles.infoLabel}>{t('stationDetail.system')}</span>
           <Link href="/map" className={styles.infoValueLink}>
             {station.system_name}
           </Link>
         </div>
         <div className={styles.infoItem}>
-          <span className={styles.infoLabel}>Defense</span>
+          <span className={styles.infoLabel}>{t('stationDetail.defense')}</span>
           <span className={styles.infoValue}>{station.defense_level}%</span>
         </div>
         <div className={styles.infoItem}>
-          <span className={styles.infoLabel}>Satisfaction</span>
+          <span className={styles.infoLabel}>{t('stationDetail.satisfaction')}</span>
           <span className={styles.infoValue}>{station.satisfaction_pct}%</span>
         </div>
         <div className={styles.infoItem}>
-          <span className={styles.infoLabel}>Access</span>
+          <span className={styles.infoLabel}>{t('stationDetail.access')}</span>
           <span className={styles.infoValue}>
-            {station.public_access ? 'Public' : 'Restricted'}
+            {station.public_access ? t('stationDetail.accessPublic') : t('stationDetail.accessRestricted')}
           </span>
         </div>
       </section>
@@ -255,11 +257,11 @@ export default function StationDetailPage() {
       {/* Facilities */}
       {allCategories.length > 0 && (
         <section className={styles.facilitiesSection}>
-          <h2 className={styles.sectionTitle}>Facilities</h2>
+          <h2 className={styles.sectionTitle}>{t('stationDetail.facilities')}</h2>
           {allCategories.map((category) => (
             <div key={category} className={styles.facilityGroup}>
               <h3 className={styles.categoryHeader}>
-                {CATEGORY_LABELS[category] || category}
+                {CATEGORY_LABEL_KEYS[category] ? t(CATEGORY_LABEL_KEYS[category]) : category}
               </h3>
               <div className={styles.facilityGrid}>
                 {facilityGroups[category].map((facility) => (
@@ -274,7 +276,7 @@ export default function StationDetailPage() {
                         <h4 className={styles.facilityName}>
                           {facility.name}
                           {facility.unique && (
-                            <span className={styles.uniqueBadge}>Unique</span>
+                            <span className={styles.uniqueBadge}>{t('stationDetail.uniqueBadge')}</span>
                           )}
                         </h4>
                         <span
@@ -289,7 +291,7 @@ export default function StationDetailPage() {
                           {facility.category}
                         </span>
                         <span className={styles.facilityLevel}>
-                          Lv {facility.level} {renderLevelIndicator(facility.level)}
+                          {t('stationDetail.level')} {facility.level} {renderLevelIndicator(facility.level)}
                         </span>
                       </div>
                       <p className={styles.facilityDescription}>
@@ -303,7 +305,7 @@ export default function StationDetailPage() {
                             className={styles.loreToggle}
                             onClick={() => toggleLore(facility.id)}
                           >
-                            {expandedLore[facility.id] ? '// Hide lore' : '// Show lore'}
+                            {expandedLore[facility.id] ? `// ${t('stationDetail.hideLore')}` : `// ${t('stationDetail.showLore')}`}
                           </button>
                           {expandedLore[facility.id] && (
                             <p className={styles.loreText}>{facility.lore}</p>

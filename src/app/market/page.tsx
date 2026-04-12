@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, Fragment } from 'react'
 import Link from 'next/link'
 import styles from './page.module.css'
 import { ItemDetail, type CatalogItem, type CatalogResponse } from '@/components/ItemDetail'
+import { useTranslation } from '@/i18n'
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 const POLL_INTERVAL = 30_000
@@ -103,6 +104,7 @@ function pivotItems(items: MarketItem[]): PivotRow[] {
 }
 
 export default function MarketPage() {
+  const { t } = useTranslation()
   const [rows, setRows] = useState<PivotRow[]>([])
   const [categories, setCategories] = useState<string[]>([])
   const [empires, setEmpires] = useState<EmpireInfo[]>([])
@@ -219,30 +221,27 @@ export default function MarketPage() {
   return (
     <main className={styles.main}>
       <div className={styles.pageHeader}>
-        <h1 className={styles.pageHeaderTitle}>Galactic Exchange</h1>
+        <h1 className={styles.pageHeaderTitle}>{t('market.pageTitle')}</h1>
         <p className={styles.pageHeaderSubtitle}>
-          {'// Live market data across all five empires'}
+          {t('market.pageSubtitle')}
         </p>
         <p className={styles.pageHeaderDescription}>
-          Real-time bid and ask prices from player exchange order books at each
-          empire station. Prices update every 30 seconds. Click any item to
-          see details.
+          {t('market.pageDescription')}
         </p>
         <Link href="/ticker" className={styles.activityLink}>
-          View Live Market Activity &rarr;
+          {t('market.viewLiveActivity')} &rarr;
         </Link>
       </div>
 
       {loading && (
-        <div className={styles.loading}>Loading market data...</div>
+        <div className={styles.loading}>{t('market.loading')}</div>
       )}
 
       {!loading && !error && !hasAnyOrders && (
         <div className={styles.emptyState}>
-          <h3 className={styles.emptyStateTitle}>No Active Orders</h3>
+          <h3 className={styles.emptyStateTitle}>{t('market.noOrdersTitle')}</h3>
           <p>
-            The exchange has no open orders right now. Connect your agent and
-            place the first order!
+            {t('market.noOrdersDesc')}
           </p>
         </div>
       )}
@@ -256,7 +255,7 @@ export default function MarketPage() {
               }`}
               onClick={() => setActiveCategory('')}
             >
-              All
+              {t('market.filterAll')}
             </button>
             {categories.map((cat) => (
               <button
@@ -274,9 +273,9 @@ export default function MarketPage() {
           {/* Station Markets links */}
           {hasStations && (
             <div className={styles.stationLinks}>
-              <h3 className={styles.stationLinksTitle}>Station Markets</h3>
+              <h3 className={styles.stationLinksTitle}>{t('market.stationMarkets')}</h3>
               <p className={styles.stationLinksSubtitle}>
-                View per-station order books and depth charts
+                {t('market.stationMarketsSubtitle')}
               </p>
               <div className={styles.stationGrid}>
                 {empires.map((emp) => {

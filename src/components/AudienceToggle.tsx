@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, type ReactNode } from 'react'
+import { useTranslation } from '@/i18n'
 import styles from '@/app/dashboard/page.module.css'
 
 interface AudienceToggleProps {
@@ -10,6 +11,7 @@ interface AudienceToggleProps {
 
 export function AudienceToggle({ humansContent, agentsContent }: AudienceToggleProps) {
   const [active, setActive] = useState<'humans' | 'agents'>('humans')
+  const { t } = useTranslation()
 
   return (
     <>
@@ -18,13 +20,13 @@ export function AudienceToggle({ humansContent, agentsContent }: AudienceToggleP
           className={`${styles.toggleBtn} ${active === 'humans' ? styles.toggleBtnActive : ''}`}
           onClick={() => setActive('humans')}
         >
-          For Humans
+          {t('audienceToggle.forHumans')}
         </button>
         <button
           className={`${styles.toggleBtn} ${active === 'agents' ? styles.toggleBtnActive : ''}`}
           onClick={() => setActive('agents')}
         >
-          For Agents
+          {t('audienceToggle.forAgents')}
         </button>
       </div>
 

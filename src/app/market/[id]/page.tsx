@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import styles from './page.module.css'
 import { ItemDetailContent, type CatalogItem, type CatalogResponse } from '@/components/ItemDetail'
+import { useTranslation } from '@/i18n'
 
 const DepthChart = lazy(() => import('@/components/DepthChart'))
 
@@ -66,6 +67,7 @@ function formatNumber(n: number): string {
 }
 
 export default function StationMarketPage() {
+  const { t } = useTranslation()
   const params = useParams()
   const stationId = params.id as string
 
@@ -195,7 +197,7 @@ export default function StationMarketPage() {
   if (loading) {
     return (
       <main className={styles.main}>
-        <div className={styles.loading}>Loading station market data...</div>
+        <div className={styles.loading}>{t('market.loading')}</div>
       </main>
     )
   }
@@ -204,10 +206,10 @@ export default function StationMarketPage() {
     return (
       <main className={styles.main}>
         <div className={styles.error}>
-          <p>{error || 'Unable to load station market data.'}</p>
-          <Link href="/market" className={styles.backLink}>&larr; Back to Galactic Exchange</Link>
+          <p>{error || t('marketDetail.errorFallback')}</p>
+          <Link href="/market" className={styles.backLink}>&larr; {t('marketDetail.backToMarket')}</Link>
         </div>
-      </main>
+  </main>
     )
   }
 
@@ -257,17 +259,17 @@ export default function StationMarketPage() {
 
   return (
     <main className={styles.main}>
-      <Link href="/market" className={styles.backLink}>&larr; Back to Galactic Exchange</Link>
+      <Link href="/market" className={styles.backLink}>&larr; {t('marketDetail.backToMarket')}</Link>
 
       <div className={styles.pageHeader}>
         <h1 className={styles.pageHeaderTitle} style={{ color: empireColor }}>
           {data.base_name}
         </h1>
         <p className={styles.pageHeaderSubtitle}>
-          {data.empire_name} — {filteredItems.length} items with active orders
+          {data.empire_name} — {t('marketDetail.itemsWithOrders', { count: String(filteredItems.length) })}
         </p>
         <p className={styles.pageHeaderDescription}>
-          Click any row to view order book depth chart{hasCatalog ? ' and item details' : ''}.
+          {hasCatalog ? t('marketDetail.clickRowHintWithDetails') : t('marketDetail.clickRowHint')}
         </p>
       </div>
 
@@ -277,7 +279,7 @@ export default function StationMarketPage() {
             className={`${styles.categoryBtn} ${activeCategory === '' ? styles.categoryBtnActive : ''}`}
             onClick={() => setActiveCategory('')}
           >
-            All
+            {t('market.filterAll')}
           </button>
           {data.categories.map((cat) => (
             <button
@@ -296,7 +298,7 @@ export default function StationMarketPage() {
         <input
           type="text"
           className={styles.searchInput}
-          placeholder="Search items..."
+          placeholder={t('marketDetail.searchItems')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
@@ -305,7 +307,7 @@ export default function StationMarketPage() {
             className={`${styles.filterBtn} ${orderFilter ? styles.filterBtnActive : ''}`}
             onClick={() => setFilterOpen((prev) => !prev)}
           >
-            {orderFilter === 'bids' ? 'Has Bids' : orderFilter === 'asks' ? 'Has Asks' : orderFilter === 'both' ? 'Has Both' : 'Filter Orders'}
+            {orderFilter === 'bids' ? t('marketDetail.hasBids') : orderFilter === 'asks' ? t('marketDetail.hasAsks') : orderFilter === 'both' ? t('marketDetail.hasBoth') : t('marketDetail.filterOrders')}
           </button>
           {filterOpen && (
             <div className={styles.filterDropdown}>
@@ -313,19 +315,19 @@ export default function StationMarketPage() {
                 className={`${styles.filterOption} ${orderFilter === 'bids' ? styles.filterOptionActive : ''}`}
                 onClick={() => { toggleOrderFilter('bids'); setFilterOpen(false) }}
               >
-                Has Bids
+                {t('marketDetail.hasBids')}
               </button>
               <button
                 className={`${styles.filterOption} ${orderFilter === 'asks' ? styles.filterOptionActive : ''}`}
                 onClick={() => { toggleOrderFilter('asks'); setFilterOpen(false) }}
               >
-                Has Asks
+                {t('marketDetail.hasAsks')}
               </button>
               <button
                 className={`${styles.filterOption} ${orderFilter === 'both' ? styles.filterOptionActive : ''}`}
                 onClick={() => { toggleOrderFilter('both'); setFilterOpen(false) }}
               >
-                Has Both
+                {t('marketDetail.hasBoth')}
               </button>
             </div>
           )}
@@ -333,35 +335,35 @@ export default function StationMarketPage() {
       </div>
 
       {filteredItems.length === 0 ? (
-        <div className={styles.emptyState}>No active orders at this station.</div>
+        <div className={styles.emptyState}>{t('marketDetail.noOrders')}</div>
       ) : (
         <div className={styles.tableContainer}>
           <table className={styles.table}>
             <thead>
               <tr>
                 <th className={`${styles.colItem} ${styles.sortable}`} onClick={() => handleSort('item_name')}>
-                  Item{sortIndicator('item_name')}
+                  {t('marketDetail.colItem')}{sortIndicator('item_name')}
                 </th>
                 <th className={`${styles.colCategory} ${styles.sortable}`} onClick={() => handleSort('category')}>
-                  Category{sortIndicator('category')}
+                  {t('marketDetail.colCategory')}{sortIndicator('category')}
                 </th>
                 <th className={`${styles.colValue} ${styles.sortable}`} onClick={() => handleSort('base_value')}>
-                  Base Value{sortIndicator('base_value')}
+                  {t('marketDetail.colBaseValue')}{sortIndicator('base_value')}
                 </th>
                 <th className={`${styles.colBid} ${styles.sortable}`} onClick={() => handleSort('best_bid')}>
-                  Best Bid{sortIndicator('best_bid')}
+                  {t('marketDetail.colBestBid')}{sortIndicator('best_bid')}
                 </th>
                 <th className={`${styles.colBidQty} ${styles.sortable}`} onClick={() => handleSort('bid_quantity')}>
-                  Bid Qty{sortIndicator('bid_quantity')}
+                  {t('marketDetail.colBidQty')}{sortIndicator('bid_quantity')}
                 </th>
                 <th className={`${styles.colAsk} ${styles.sortable}`} onClick={() => handleSort('best_ask')}>
-                  Best Ask{sortIndicator('best_ask')}
+                  {t('marketDetail.colBestAsk')}{sortIndicator('best_ask')}
                 </th>
                 <th className={`${styles.colAskQty} ${styles.sortable}`} onClick={() => handleSort('ask_quantity')}>
-                  Ask Qty{sortIndicator('ask_quantity')}
+                  {t('marketDetail.colAskQty')}{sortIndicator('ask_quantity')}
                 </th>
                 <th className={`${styles.colSpread} ${styles.sortable}`} onClick={() => handleSort('spread')}>
-                  Spread{sortIndicator('spread')}
+                  {t('marketDetail.colSpread')}{sortIndicator('spread')}
                 </th>
               </tr>
             </thead>
@@ -414,10 +416,10 @@ export default function StationMarketPage() {
                       <tr className={styles.depthRow}>
                         <td colSpan={TABLE_COL_COUNT} className={styles.depthCell}>
                           {depthLoading && (
-                            <div className={styles.depthLoading}>Loading depth data...</div>
+                            <div className={styles.depthLoading}>{t('marketDetail.loadingDepth')}</div>
                           )}
                           {!depthLoading && depthData && (
-                            <Suspense fallback={<div className={styles.depthLoading}>Loading chart...</div>}>
+                            <Suspense fallback={<div className={styles.depthLoading}>{t('marketDetail.loadingChart')}</div>}>
                               <DepthChart
                                 bids={depthData.bids || []}
                                 asks={depthData.asks || []}
@@ -427,7 +429,7 @@ export default function StationMarketPage() {
                             </Suspense>
                           )}
                           {!depthLoading && !depthData && (
-                            <div className={styles.depthLoading}>No depth data available.</div>
+                            <div className={styles.depthLoading}>{t('marketDetail.noDepthData')}</div>
                           )}
                           {catalogItem && (
                             <ItemDetailContent item={catalogItem} compact />
