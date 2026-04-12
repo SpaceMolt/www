@@ -1,9 +1,9 @@
 .banner {
   position: fixed;
-  bottom: 28px;
+  bottom: 40px;
   left: 0;
   right: 0;
-  z-index: 95;
+  z-index: 1004;
   background: rgba(10, 14, 23, 0.95);
   border-top: 1px solid rgba(0, 212, 255, 0.15);
   backdrop-filter: blur(8px);
