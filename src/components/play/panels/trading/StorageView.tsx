@@ -138,18 +138,27 @@ export function StorageView() {
     if (!giftRecipient.trim()) return
     setSendingGift(true)
     try {
-      const params: Record<string, unknown> = { recipient: giftRecipient.trim() }
-      if (giftMessage.trim()) params.message = giftMessage.trim()
-      const credits = parseInt(giftCredits, 10)
-      if (!isNaN(credits) && credits > 0) params.credits = credits
-      if (giftItemId && giftItemQty) {
+      // send_gift routes to spacemolt_storage/deposit on v2. The backend payload
+      // uses target=<player_name> for recipient and item_id for the thing being
+      // gifted (item id, "credits", or a ship instance ID). A single send_gift
+      // call transfers one of items, credits, or ship — so prefer ship > item
+      // > credits when the user fills in multiple fields.
+      const base: Record<string, unknown> = { target: giftRecipient.trim() }
+      if (giftMessage.trim()) base.message = giftMessage.trim()
+
+      if (giftShipId) {
+        await sendCommand('send_gift', { ...base, item_id: giftShipId })
+      } else if (giftItemId && giftItemQty) {
         const qty = parseInt(giftItemQty, 10)
         if (!isNaN(qty) && qty > 0) {
-          params.items = { [giftItemId]: qty }
+          await sendCommand('send_gift', { ...base, item_id: giftItemId, quantity: qty })
+        }
+      } else {
+        const credits = parseInt(giftCredits, 10)
+        if (!isNaN(credits) && credits > 0) {
+          await sendCommand('send_gift', { ...base, item_id: 'credits', quantity: credits })
         }
       }
-      if (giftShipId) params.ship_id = giftShipId
-      await sendCommand('send_gift', params)
       setGiftRecipient('')
       setGiftMessage('')
       setGiftCredits('')
