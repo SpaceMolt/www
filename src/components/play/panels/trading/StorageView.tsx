@@ -33,6 +33,7 @@ export function StorageView() {
   const isDocked = state.isDocked
   const storageData = state.storageData
   const cargo = state.ship?.cargo || []
+  const actionPending = state.pendingAction !== null
 
   // Remote viewing state (undocked)
   const [remoteStations, setRemoteStations] = useState<string[]>([])
@@ -114,24 +115,26 @@ export function StorageView() {
   // Item operations (docked only)
   const handleWithdrawItem = useCallback(
     (itemId: string, maxQty: number) => {
+      if (actionPending) return
       const qtyStr = withdrawQtys[itemId] ?? String(maxQty)
       const quantity = parseInt(qtyStr, 10)
       if (isNaN(quantity) || quantity < 1 || quantity > maxQty) return
       sendCommand('withdraw_items', { item_id: itemId, quantity })
       setWithdrawQtys((prev) => ({ ...prev, [itemId]: '' }))
     },
-    [sendCommand, withdrawQtys]
+    [sendCommand, withdrawQtys, actionPending]
   )
 
   const handleDepositItem = useCallback(
     (itemId: string, maxQty: number) => {
+      if (actionPending) return
       const qtyStr = depositQtys[itemId] ?? String(maxQty)
       const quantity = parseInt(qtyStr, 10)
       if (isNaN(quantity) || quantity < 1 || quantity > maxQty) return
       sendCommand('deposit_items', { item_id: itemId, quantity })
       setDepositQtys((prev) => ({ ...prev, [itemId]: '' }))
     },
-    [sendCommand, depositQtys]
+    [sendCommand, depositQtys, actionPending]
   )
 
   const handleSendGift = useCallback(async () => {
@@ -464,11 +467,12 @@ export function StorageView() {
                       className={shared.accentBtn}
                       onClick={() => handleWithdrawItem(item.item_id, item.quantity)}
                       disabled={
+                        actionPending ||
                         !qtyStr ||
                         parseInt(qtyStr, 10) < 1 ||
                         parseInt(qtyStr, 10) > item.quantity
                       }
-                      title="Withdraw to cargo"
+                      title={actionPending ? 'Another action is pending' : 'Withdraw to cargo'}
                       type="button"
                     >
                       <ArrowUpFromLine size={10} />
@@ -520,11 +524,12 @@ export function StorageView() {
                       className={shared.confirmBtn}
                       onClick={() => handleDepositItem(item.item_id, item.quantity)}
                       disabled={
+                        actionPending ||
                         !qtyStr ||
                         parseInt(qtyStr, 10) < 1 ||
                         parseInt(qtyStr, 10) > item.quantity
                       }
-                      title="Deposit to storage"
+                      title={actionPending ? 'Another action is pending' : 'Deposit to storage'}
                       type="button"
                     >
                       <ArrowDownToLine size={10} />
