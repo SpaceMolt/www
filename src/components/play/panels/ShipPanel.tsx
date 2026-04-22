@@ -15,6 +15,7 @@ import {
   Plus,
   ShieldPlus,
   Swords,
+  ArrowDownToLine,
 } from 'lucide-react'
 import { useGame } from '../GameProvider'
 import { ProgressBar } from '../ProgressBar'
@@ -42,6 +43,7 @@ export function ShipPanel() {
   const { state, sendCommand, api } = useGame()
   const ship = state.ship
   const isDocked = state.isDocked
+  const actionPending = state.pendingAction !== null
 
   // Ship class details (description, lore)
   const [classDetail, setClassDetail] = useState<ShipClassDetail | null>(null)
@@ -49,6 +51,10 @@ export function ShipPanel() {
 
   // Install modal
   const [installSlotType, setInstallSlotType] = useState<SlotType | null>(null)
+
+  // Deposit controls (docked only) — per-item quantity + multi-select
+  const [depositQtys, setDepositQtys] = useState<Record<string, string>>({})
+  const [selectedCargo, setSelectedCargo] = useState<Record<string, boolean>>({})
 
   // Fetch ship class details from catalog
   useEffect(() => {
@@ -87,6 +93,38 @@ export function ShipPanel() {
     },
     [sendCommand]
   )
+
+  const handleDepositItem = useCallback(
+    (itemId: string, maxQty: number) => {
+      if (actionPending) return
+      const qtyStr = depositQtys[itemId] ?? String(maxQty)
+      const quantity = parseInt(qtyStr, 10)
+      if (isNaN(quantity) || quantity < 1 || quantity > maxQty) return
+      sendCommand('deposit_items', { item_id: itemId, quantity })
+      setDepositQtys((prev) => ({ ...prev, [itemId]: '' }))
+      setSelectedCargo((prev) => {
+        const next = { ...prev }
+        delete next[itemId]
+        return next
+      })
+    },
+    [sendCommand, depositQtys, actionPending]
+  )
+
+  const handleDepositSelected = useCallback(() => {
+    if (actionPending || !ship?.cargo) return
+    // Loop through the selected items and fire one deposit_items call per item.
+    // A bulk_deposit backend endpoint is planned as a follow-up.
+    ship.cargo.forEach((item) => {
+      if (!selectedCargo[item.item_id]) return
+      const qtyStr = depositQtys[item.item_id] ?? String(item.quantity)
+      const quantity = parseInt(qtyStr, 10)
+      if (isNaN(quantity) || quantity < 1 || quantity > item.quantity) return
+      sendCommand('deposit_items', { item_id: item.item_id, quantity })
+    })
+    setDepositQtys({})
+    setSelectedCargo({})
+  }, [sendCommand, ship, selectedCargo, depositQtys, actionPending])
 
   if (!ship) {
     return (
@@ -281,60 +319,132 @@ export function ShipPanel() {
           Cargo Hold ({ship.cargo_used ?? 0}/{ship.cargo_capacity})
         </div>
         {ship.cargo && ship.cargo.length > 0 ? (
-          <div className={styles.cargoList}>
-            {ship.cargo.map((item) => {
-              const rawItem = getCatalogRawItem(item.item_id)
-              const modEntry = rawItem && isModule(rawItem) ? rawItem : null
-              let compatStatus: { ok: boolean; reason?: string } | null = null
-              if (modEntry && isDocked) {
-                const cpuFree = (ship.cpu_capacity ?? 0) - (ship.cpu_used ?? 0)
-                const powerFree = (ship.power_capacity ?? 0) - (ship.power_used ?? 0)
-                const slotType = modEntry.type
-                let slotsUsed = 0
-                let slotsTotal = 0
-                if (slotType === 'weapon') {
-                  slotsUsed = weaponMods.length
-                  slotsTotal = weaponSlots
-                } else if (slotType === 'defense') {
-                  slotsUsed = defenseMods.length
-                  slotsTotal = defenseSlots
-                } else {
-                  slotsUsed = utilityMods.length
-                  slotsTotal = utilitySlots
+          <>
+            <div className={styles.cargoList}>
+              {ship.cargo.map((item) => {
+                const rawItem = getCatalogRawItem(item.item_id)
+                const modEntry = rawItem && isModule(rawItem) ? rawItem : null
+                let compatStatus: { ok: boolean; reason?: string } | null = null
+                if (modEntry && isDocked) {
+                  const cpuFree = (ship.cpu_capacity ?? 0) - (ship.cpu_used ?? 0)
+                  const powerFree = (ship.power_capacity ?? 0) - (ship.power_used ?? 0)
+                  const slotType = modEntry.type
+                  let slotsUsed = 0
+                  let slotsTotal = 0
+                  if (slotType === 'weapon') {
+                    slotsUsed = weaponMods.length
+                    slotsTotal = weaponSlots
+                  } else if (slotType === 'defense') {
+                    slotsUsed = defenseMods.length
+                    slotsTotal = defenseSlots
+                  } else {
+                    slotsUsed = utilityMods.length
+                    slotsTotal = utilitySlots
+                  }
+                  const cpu = modEntry.cpu_usage ?? 0
+                  const power = modEntry.power_usage ?? 0
+                  if (cpu > cpuFree) {
+                    compatStatus = { ok: false, reason: `Needs ${cpu} CPU, ${cpuFree} free` }
+                  } else if (power > powerFree) {
+                    compatStatus = { ok: false, reason: `Needs ${power} power, ${powerFree} free` }
+                  } else if (slotsUsed >= slotsTotal) {
+                    const label = slotType === 'mining' || slotType === 'utility' ? 'utility' : slotType
+                    compatStatus = { ok: false, reason: `No ${label} slots free` }
+                  } else {
+                    compatStatus = { ok: true }
+                  }
                 }
-                const cpu = modEntry.cpu_usage ?? 0
-                const power = modEntry.power_usage ?? 0
-                if (cpu > cpuFree) {
-                  compatStatus = { ok: false, reason: `Needs ${cpu} CPU, ${cpuFree} free` }
-                } else if (power > powerFree) {
-                  compatStatus = { ok: false, reason: `Needs ${power} power, ${powerFree} free` }
-                } else if (slotsUsed >= slotsTotal) {
-                  const label = slotType === 'mining' || slotType === 'utility' ? 'utility' : slotType
-                  compatStatus = { ok: false, reason: `No ${label} slots free` }
-                } else {
-                  compatStatus = { ok: true }
-                }
-              }
-              return (
-                <div key={item.item_id} className={styles.cargoItem}>
-                  <span className={styles.cargoName}>
-                    <ItemName itemId={item.item_id}>{item.name ?? item.item_id}</ItemName>
-                  </span>
-                  <span className={styles.cargoMeta}>
-                    {compatStatus && (
-                      compatStatus.ok ? (
-                        <span className={styles.compatOk} title="Can install"><Check size={10} /></span>
-                      ) : (
-                        <span className={styles.compatNo} title={compatStatus.reason}><AlertTriangle size={10} /> {compatStatus.reason}</span>
-                      )
-                    )}
-                    <span className={styles.cargoQty}>x{item.quantity}</span>
-                    <span className={styles.cargoSize}>{item.quantity * (item.size ?? 0)}u</span>
-                  </span>
-                </div>
-              )
-            })}
-          </div>
+                const qtyStr = depositQtys[item.item_id] ?? String(item.quantity)
+                const qtyNum = parseInt(qtyStr, 10)
+                const qtyValid = !isNaN(qtyNum) && qtyNum >= 1 && qtyNum <= item.quantity
+                const checked = !!selectedCargo[item.item_id]
+                return (
+                  <div key={item.item_id} className={styles.cargoItem}>
+                    <div className={styles.cargoNameWrap}>
+                      {isDocked && (
+                        <input
+                          type="checkbox"
+                          className={styles.cargoSelect}
+                          checked={checked}
+                          onChange={(e) =>
+                            setSelectedCargo((prev) => ({
+                              ...prev,
+                              [item.item_id]: e.target.checked,
+                            }))
+                          }
+                          title="Select for Move Selected"
+                        />
+                      )}
+                      <span className={styles.cargoName}>
+                        <ItemName itemId={item.item_id}>{item.name ?? item.item_id}</ItemName>
+                      </span>
+                    </div>
+                    <span className={styles.cargoMeta}>
+                      {compatStatus && (
+                        compatStatus.ok ? (
+                          <span className={styles.compatOk} title="Can install"><Check size={10} /></span>
+                        ) : (
+                          <span className={styles.compatNo} title={compatStatus.reason}><AlertTriangle size={10} /> {compatStatus.reason}</span>
+                        )
+                      )}
+                      <span className={styles.cargoQty}>x{item.quantity}</span>
+                      <span className={styles.cargoSize}>{item.quantity * (item.size ?? 0)}u</span>
+                      {isDocked && (
+                        <span className={styles.cargoDepositAction}>
+                          <input
+                            className={styles.cargoQtyInput}
+                            type="number"
+                            min={1}
+                            max={item.quantity}
+                            value={qtyStr}
+                            onChange={(e) =>
+                              setDepositQtys((prev) => ({
+                                ...prev,
+                                [item.item_id]: e.target.value,
+                              }))
+                            }
+                            title="Quantity to move to storage"
+                          />
+                          <button
+                            className={shared.confirmBtn}
+                            onClick={() => handleDepositItem(item.item_id, item.quantity)}
+                            disabled={actionPending || !qtyValid}
+                            title={actionPending ? 'Another action is pending' : 'Move to station storage'}
+                            type="button"
+                          >
+                            <ArrowDownToLine size={10} />
+                          </button>
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+            {isDocked && (
+              <div className={styles.cargoBulkRow}>
+                <span className={styles.cargoBulkHint}>
+                  {Object.values(selectedCargo).filter(Boolean).length} selected
+                </span>
+                <button
+                  className={shared.confirmBtn}
+                  onClick={handleDepositSelected}
+                  disabled={
+                    actionPending ||
+                    Object.values(selectedCargo).filter(Boolean).length === 0
+                  }
+                  title={
+                    actionPending
+                      ? 'Another action is pending'
+                      : 'Move all selected items to station storage'
+                  }
+                  type="button"
+                >
+                  <ArrowDownToLine size={10} /> Move Selected to Storage
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           <div className={shared.emptyState}>Cargo hold is empty</div>
         )}
