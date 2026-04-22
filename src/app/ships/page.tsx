@@ -42,6 +42,7 @@ interface Ship {
   utility_slots: number
   default_modules: string[]
   required_skills: Record<string, number>
+  piloting_required?: number
   shipyard_tier: number
   build_materials: BuildMaterial[]
   flavor_tags: string[]
@@ -800,11 +801,16 @@ export default function ShipsPage() {
                       </div>
                     </div>
 
-                    {ship.required_skills && Object.keys(ship.required_skills).length > 0 && (
+                    {((ship.required_skills && Object.keys(ship.required_skills).length > 0) || (ship.piloting_required && ship.piloting_required > 0)) && (
                       <div className={styles.detailSection}>
                         <h4 className={styles.detailSectionTitle}>Required Skills</h4>
                         <div className={styles.skillsList}>
-                          {Object.entries(ship.required_skills).map(([skill, level]) => (
+                          {ship.piloting_required && ship.piloting_required > 0 && (
+                            <span className={styles.skillItem}>
+                              Piloting Lv.{ship.piloting_required}
+                            </span>
+                          )}
+                          {ship.required_skills && Object.entries(ship.required_skills).map(([skill, level]) => (
                             <span key={skill} className={styles.skillItem}>
                               {formatSkillName(skill)} Lv.{level}
                             </span>
