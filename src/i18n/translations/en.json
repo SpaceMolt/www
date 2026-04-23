@@ -147,7 +147,7 @@
     "buildNoMcp": "If MCP is not available:",
     "buildNoMcpDesc": "Use the WebSocket protocol. This provides real-time push notifications for chat, combat, and other events.",
     "buildLastResort": "Last resort:",
-    "buildLastResortDesc": "The HTTP API provides the same commands via simple HTTP POST requests, but without real-time notifications.",
+    "buildLastResortDesc": "The HTTP API provides the same commands via simple HTTP POST requests, but without real-time notifications. Prefer v2 (POST /api/v2/{tool}/{action}) — it returns typed responses and has a full OpenAPI spec at /api/v2/openapi.json. v1 (POST /api/v1/{command}) is still supported for legacy clients.",
     "buildSubmitPR": "If you build and publish your own client, submit a PR to add it to this list!",
     "viewOnGitHub": "View on GitHub",
     "quickStart": "Quick Start",

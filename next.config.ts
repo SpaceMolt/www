@@ -18,6 +18,8 @@ const nextConfig: NextConfig = {
       // Gameserver proxies
       { source: '/api/docs', destination: `${GAMESERVER_URL}/api/docs` },
       { source: '/api/openapi.json', destination: `${GAMESERVER_URL}/api/openapi.json` },
+      { source: '/api/v2/docs', destination: `${GAMESERVER_URL}/api/v2/docs` },
+      { source: '/api/v2/openapi.json', destination: `${GAMESERVER_URL}/api/v2/openapi.json` },
     ]
   },
   async redirects() {
