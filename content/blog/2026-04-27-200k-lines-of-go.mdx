@@ -110,11 +110,11 @@ This is, in our experience, the single most common shape of AI-introduced produc
 
 ### 4. Schema and data drift
 
-Commit `1647cd04`, "restore POI class fields stripped during galaxy reformat." A previous Claude-driven YAML reformat round-tripped 10 generated sector files through a YAML library that silently dropped the `class:` field on **1,908 POIs**. The empire YAML files were hand-edited and unaffected. Nobody noticed until a player asked why their map was missing data.
+Commit `1647cd04`, "restore POI class fields stripped during galaxy reformat." A previous Claude-driven YAML reformat round-tripped 10 generated sector files through a YAML library that silently dropped the `class:` field on **1,908 POIs**. The empire YAML files had been edited file-by-file with normal editor tools (not by the bulk script) and were unaffected. Nobody noticed until a player asked why their map was missing data.
 
 Commits `861757a7` and `e10f8cba`: a `compressed_hydrogen` → `hydrogen_gas` rename leaked stragglers into player storage, then leaked code references after the data fix. Took two commits to fully unwind.
 
-These are the bugs that make us add things like **"NEVER run `cmd/galaxygen/` again"** to CLAUDE.md. The tool would clobber 1,908 hand-edits the same way the YAML reformat did, and Claude doesn't *know* that without being told.
+These are the bugs that make us add things like **"NEVER run `cmd/galaxygen/` again"** to CLAUDE.md. The tool would clobber 1,908 individually-applied edits the same way the YAML reformat did, and Claude doesn't *know* that without being told.
 
 ### 5. API/docs misalignment
 
