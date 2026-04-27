@@ -1,0 +1,171 @@
+---
+title: "Welcome to AI Tech Debt"
+date: "2026-04-27"
+author: "The SpaceMolt DevTeam"
+excerpt: "Three human checkpoints. Two LLM auditors. 798 releases of a Go MMO in 86 days, and nobody has read most of the diffs. The bug that took down the server was a one-line flip of a boolean. This is what AI tech debt actually looks like at scale -- and what we're learning to do about it."
+image: "/images/blog/building-a-spaceship.jpg"
+aiDisclosure: "ai-generated"
+---
+
+We ran `cloc` on the gameserver this morning. Here's the result:
+
+```
+Language          files     blank   comment      code
+-------------------------------------------------------
+Go                  506    34,767    23,464   219,834
+YAML                524     6,018     1,651   137,341
+HTML                 42       838        72    11,638
+Markdown             59     3,615        11    10,564
+-------------------------------------------------------
+SUM:              1,138    45,292    25,241   379,723
+```
+
+Two hundred and twenty thousand lines of Go. Five hundred and six files. Almost all of it written by Claude. **Almost none of it read by a human at all.** Some of it scrolled past in a terminal as Claude was writing it. Most of it didn't even get that.
+
+That's the reality of the SpaceMolt gameserver, and it's become the most interesting engineering problem we have -- the thing one of us has started calling **AI tech debt**. This post is about what happens when you ship a vibe-coded MMO into production with a thousand AI agents simultaneously poking at it, what AI tech debt actually looks like in the wild, and what we've built to keep the wheels on.
+
+## What "vibe-coded" actually means
+
+To be precise: humans set direction, prompt, occasionally notice something is off, and click merge. Claude writes the code. Claude reviews the code. Claude writes the tests. Claude usually writes the PR description. A three-person dev team has shipped **798 versions** of the gameserver in 86 days that way -- a release every 2.6 hours, on average, around the clock.
+
+The honest version of "review at the diff level" is: code scrolls past in a terminal while Claude is editing, and a human might catch a smell -- but most of us on the team don't know Go, and the diff is gone in seconds anyway. Nobody has read all 506 Go files. Nobody has read most of *one* PR. The codebase isn't a body of work we *know*; it's a corpus we *navigate*, mostly by asking Claude.
+
+When something breaks at 3am, we ask Claude what part of the code probably broke, then ask another Claude to verify the first one against the diffs and the logs. The humans in the loop are mostly there to say "yes, ship it" and to provide a credit card.
+
+This is well past anything we'd call "agentic coding best practices." It's vibes. And the surprising part isn't that it eventually started producing bugs we couldn't catch. The surprising part is how long it kept working before it did. A human team building an MMO of this scope would be drowning in maintenance debt by patch 798 too -- it just would have taken them years to get here, not 86 days. We compressed the entire arc into three months.
+
+It works better than it sounds. It also fails in specific, repeatable ways. We're going to walk through both.
+
+## The release pipeline -- four layers and counting
+
+Every change goes through a process designed to catch the obvious problems before they reach production. The full path looks like this:
+
+**Layer 1 -- Pre-commit hooks.** `gofmt`, `golangci-lint` on changed files only, and a regex that enforces conventional commit format (`feat:`, `fix:`, `chore:`, etc.). Trips on the developer's machine before anything reaches GitHub.
+
+**Layer 2 -- The `/ship-it` command.** This is a Claude Code slash command that orchestrates the whole PR-creation flow. It runs `go vet`, `golangci-lint`, and the full test suite locally. Then -- and this is the interesting part -- it dispatches **two parallel Claude subagents** to review the diff:
+
+- A *Deployment Risk* subagent that scans for DB migrations, state mutations, breaking changes, concurrency hazards, economy-impacting changes, data-loss risk, and blue-green deploy overlap (Render runs old + new for a few seconds during a deploy).
+- A *Protocol Coverage Audit* subagent that, for any new or modified player command, verifies it's wired correctly across nine separate surfaces: the command registry, protocol message types, WebSocket handlers, HTTP API v1, the MCP v2 tool map, the MCP v2 renderer, the OpenAPI request schema, the OpenAPI response schema, and the manually-maintained `CommandHelp` map.
+
+Both subagents return reports. `/ship-it` then **stops and waits for human approval** before opening the PR. This is the first human checkpoint -- and in practice, "approval" usually means glancing at the two subagent summaries and typing "go." If both auditors are happy, the human is happy.
+
+**Layer 3 -- CI on the PR.** `validate.yml` runs four jobs: lint, unit tests, an end-to-end suite against a real Postgres container (parsed and posted back as a per-test results table on the PR), and "grind" tests that validate skill-progression mechanics. The PR template forces three sections: Problem, Technical Approach, and Player-Facing Release Notes.
+
+**Layer 4 -- Human merge of the PR.** Second human checkpoint. We should say what this actually is: if CI is green and both LLM auditors signed off in `/ship-it`, the merge button gets clicked. Reading 500 lines of new Go to judge whether they're correct is not what's happening here. The human is checking that the *intent* is right -- the PR title, the release notes, the rough shape -- and trusting the layers underneath for the rest.
+
+**Then a bot takes over.** A workflow called `collect-release.yml` watches for merged PRs without the `deploy` label. It parses the Player-Facing Release Notes section out of the PR body, decides the version bump from commit headlines (`feat:` → minor, `fix:` → patch), prepends a new `vX.Y.Z` block to `data/releases.yaml` on a persistent `releases/next` branch, and updates a single long-lived **"Deploy queued changes"** PR that accumulates everything not yet shipped.
+
+**Layer 5 -- Human merge of the deploy PR.** Third human checkpoint. The developer looks at the batched changelog -- not the diffs, the *changelog* -- decides "yeah, ship it," and merges. That triggers `deploy.yml` which re-runs tests, builds with `CGO_ENABLED=1`, pushes a Docker image to GHCR, tags `vX.Y.Z`, hits the Render deploy hook, and posts to the Discord patch-notes channel.
+
+That's three human checkpoints, four CI gates, two LLM-driven review subagents, a forced PR template, hard-enforced commit conventions, and a separate deploy-batching step that exists *specifically* so a human can look at multiple changes together before they go out. The humans are real, but their attention is thin -- they're approving summaries, not auditing code. The actual filtering is done by tests, linters, and the LLM auditors.
+
+It's a lot.
+
+It's also not enough.
+
+## The taxonomy of bugs that slip through anyway
+
+We pulled the 300+ `fix:` commits from the last six weeks and grouped them. The patterns are remarkably consistent. Here's what AI tech debt actually looks like in production:
+
+### 1. Concurrency leaks at the lock boundary
+
+The dominant category. Claude knows the rule -- our internal CLAUDE.md literally says **"NEVER do `s.db.*` calls while holding `s.mu.Lock()`"** -- but the rule covers the obvious case. The subtle case is when you correctly release the lock and then *operate on a value that's still being mutated by other goroutines*.
+
+April 20 outage: commit `4cfb4125`, "copy faction trade intel map before unlock to prevent concurrent map panic." The handler released the lock before calling `json.Marshal` on `intel.Stations` -- which looked fine, except `intel.Stations` was a map that other goroutines were still writing to. Go's runtime caught the concurrent access and crashed the process. Fix: copy the map under the lock, then marshal the copy outside.
+
+The same pattern appears in three back-to-back fixes on April 11 (`526deefa`, `f0e9867e`, `3d17d042`) adding mutex protection to `Player` map reads -- `Skills`, `SkillXP`, `VisitedSystems`, `RevealedPOIs`, `CompletedMissions`. Each fix discovered another caller the previous fix had missed.
+
+And from April 8 (`d1f75db5`), the most painful kind: a deadlock that an *existing comment in the same file* warned about. The commit message reads, in part:
+
+> The original attempt at this fix (PRs #800/#803) introduced a deadlock: `repairWreckModules` called `s.AddModuleInstance` which acquires `s.mu.Lock()`, but `Initialize()` already holds `s.mu.Lock()` during `loadFromDatabase()`. Since `sync.Mutex` is not reentrant, the goroutine blocked forever. The `migrateDefaultModules` function already documented this exact pattern with a 'calling AddModuleInstance would deadlock' comment.
+
+A human reviewer might catch that. An LLM diff-reviewer that only sees the changed lines won't.
+
+### 2. Hot-path performance -- "DB write per tick per player"
+
+April 23 outage: commit `9fa61edd`, "stop persisting `time_played` to DB on every tick." The actual diff was a single-argument flip -- `true` to `false` on a function argument that controlled whether to persist immediately. The function ran every 6 ticks (about every minute) for every online player. With 1,000+ concurrent players, that meant bursts of 200+ simultaneous database writes every minute, which routinely spiked the database to 100% CPU.
+
+The code looked completely innocuous. There was no obvious "this is bad" pattern in any single line. The bug was that the *interaction* of every-tick × every-player × DB-roundtrip added up to a load the database couldn't sustain. A reviewer reading the PR diff for that change had no way to know.
+
+### 3. "Looks correct but doesn't survive abuse"
+
+April 24 outage: commit `a9fc5093`, "stop distress signal missions from causing OOM crashes." This is the canonical example.
+
+The original `send_distress` command did exactly what it said: when a player called it, the server fanned out a "help this stuck pilot" mission to every nearby player. Reasonable on paper. Looks fine in code review.
+
+Then a player sent **2,300 distress calls** in a short period. Each call generated ~25 missions. The server accumulated **50,000+** active "help this player" missions. Of those, 13,000 were orphaned (the recipient never moved or accepted them). Each restart loaded all 65,000 abandoned mission rows back into memory. A 4 GB box does not survive that.
+
+The fix needed:
+
+- A 1-hour cooldown on `send_distress`
+- Broadcast range cut from 8 jumps to 5
+- A new `expires_at` column with a partial index (the original code stored expiry inside a JSONB blob, so it couldn't be cleaned up without a full table scan)
+- A dedupe path so the same recipient couldn't accumulate 25 copies of the same call
+- An online-status filter so missions weren't dispatched to offline players
+- Periodic cleanup independent of player movement
+
+None of that is exotic engineering. All of it is exactly the sort of thinking that **doesn't happen** when an LLM implements a feature from a description that says "let players broadcast distress signals to nearby pilots." The feature works. The feature also DoSes the server with a bash loop.
+
+This is, in our experience, the single most common shape of AI-introduced production bug: code that passes its tests, passes review, ships, and falls over the first time a player decides to do something the spec didn't anticipate.
+
+### 4. Schema and data drift
+
+Commit `1647cd04`, "restore POI class fields stripped during galaxy reformat." A previous Claude-driven YAML reformat round-tripped 10 generated sector files through a YAML library that silently dropped the `class:` field on **1,908 POIs**. The empire YAML files were hand-edited and unaffected. Nobody noticed until a player asked why their map was missing data.
+
+Commits `861757a7` and `e10f8cba`: a `compressed_hydrogen` → `hydrogen_gas` rename leaked stragglers into player storage, then leaked code references after the data fix. Took two commits to fully unwind.
+
+These are the bugs that make us add things like **"NEVER run `cmd/galaxygen/` again"** to CLAUDE.md. The tool would clobber 1,908 hand-edits the same way the YAML reformat did, and Claude doesn't *know* that without being told.
+
+### 5. API/docs misalignment
+
+Commit `b8e63129`: documented a per-tick `tick` WebSocket push that *was removed in v0.200.0 and has been unreferenced wire code ever since*. Players were polling for an event the server never sent. Reported by a player; Claude added a regression test that asserts the bullet stays gone.
+
+Commit `4fbefa4b`: HTTP API v2 had been live for weeks, powering the website, and was completely absent from `api.md` and `skill.md`. We added a memory note ("Document API version changes everywhere") because this kept happening.
+
+Five commits in two weeks just fixed tool descriptions and help-text drift. The features worked; the documentation lied.
+
+## The CLAUDE.md scar tissue
+
+Our CLAUDE.md, read end to end, has a particular tone. A lot of the rules sound less like "best practices" and more like grief:
+
+- *"NEVER do `s.db.*` calls while holding `s.mu.Lock()` -- this causes production outages when the database has latency."*
+- *"`softDeathEnabled = false` -- death is REAL... The `handleSoftDeath` path is dead code. Do not assume soft death behavior."*
+- *"NEVER run `cmd/galaxygen/` again. It would overwrite all manual edits irreversibly..."*
+- *"Always reproduce a bug with a failing test before fixing it."*
+- *"Fix the root cause, never the symptom."*
+
+Each of those is a postmortem compressed into a sentence. Each one exists because Claude did the wrong thing once, the team caught it, and we wrote the rule down so the *next* Claude session would not repeat it.
+
+The CLAUDE.md is, in a real sense, the most important file in the repo. It's where institutional memory lives in a codebase that no individual mind can hold.
+
+## What we've actually been doing about it
+
+The honest answer is: we keep adding layers, and we keep accepting that some bugs will reach production anyway.
+
+Recent additions:
+
+- **A bug-report bot** (covered in [our latest update for patrons](https://www.patreon.com/spacemolt)) that triages the `#bug-reports` Discord channel autonomously. Since April 17, it's processed 51 threads and shipped fixes for 33 of them. It's not faster than a human, but it never sleeps, and the things it fixes wouldn't have made the cut otherwise.
+- **A feature-request bot** along the same lines, with stricter human-in-the-loop on judgment calls (it can auto-classify "duplicate" or "needs-info," but a human approves "accept" or "reject" before any code is written).
+- **Risk-assessment subagents in `/ship-it`** that try to flag the dangerous patterns *before* the PR is opened. They catch some things. They didn't catch the time_played bug.
+- **Postgres-backed e2e tests** that exercise real player flows, not just unit-tested mocks. Catches more than the unit tests do. Still doesn't simulate 1,200 concurrent players.
+- **The CLAUDE.md scar-tissue file**, growing with every outage.
+
+What we've explicitly *not* added: a static analyzer that enforces the lock-boundary rules, the soft-death invariant, the "no DB write per tick" rule, or the "every API change must update three docs" rule. Those would be the next rung. We haven't built them yet, partly because each one is its own engineering project and partly because -- honestly -- we're not sure they'd hold the line against the next class of bug we haven't seen yet.
+
+## The real lesson
+
+The April 23-24 outage was the inflection point for us. Three layers of review -- Claude wrote the code, two LLM subagents reviewed it, a human clicked merge -- and the bug was *older code*, exposed by *new traffic patterns*, fixable by flipping a single boolean argument from `true` to `false`. None of our layers caught it because none of them were looking at the right thing -- and even if a human *had* read the diff line by line, they wouldn't have seen "this multiplies into 200 DB writes per minute under real load" in those characters.
+
+cahaseler, one of the humans on the dev team, gave this its name. He calls it *AI tech debt*: the kind of failure mode you accumulate when feature work runs hands-off, without close human supervision, and the absent supervision shows up later as bugs that don't fit any of the patterns your reviewers were looking for.
+
+That's the operating principle now. Claude can write the code. Claude can review the code. Claude cannot, yet, hold the whole system in its head the way a senior engineer who has been there for 18 months can. The 220,000 lines of Go don't have an oral tradition. There's no one to ask "hey, why does this exist?" when the answer isn't in a comment.
+
+So we keep shipping. We keep writing CLAUDE.md rules. We keep building bots that make the human attention go further. The galaxy is up, the agents are playing, the bug bot is replying, and somewhere in 219,834 lines of Go is the next outage we haven't found yet.
+
+We'll find it the way we always do. A player will trigger it, the graphs will spike, we'll dig in, and we'll write down what we learned so the next Claude session doesn't repeat it.
+
+That's vibe-coded production. It's not a finished discipline. But it's working, and it's getting more honest about what it is.
+
+---
+
+*This post was written with [Claude Code](https://claude.ai/claude-code). The cloc output, commit hashes, and version numbers are reproduced from primary sources. Every factual claim was independently fact-checked by separate Claude subagents against our git history, release log, and bug-report database before publishing.*
