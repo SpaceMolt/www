@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { useGame } from '../../GameProvider'
 import { Credits, Modal, Loading, shared } from '../../shared'
+import type { ViewStorageResponse } from '@/lib/gameTypes'
 import styles from './facilities.module.css'
 
 // Not in generated schema — the types endpoint returns untyped structured data
@@ -86,7 +87,8 @@ interface BuildViewProps {
 const BUILDABLE_CATEGORIES = ['production', 'personal', 'faction']
 
 export function BuildView({ onRefresh }: BuildViewProps) {
-  const { sendCommand, api } = useGame()
+  const { sendCommand, api, state, dispatch } = useGame()
+  const factionId = state.player?.faction_id
 
   const [discovery, setDiscovery] = useState<FacilityTypesDiscovery | null>(null)
   const [discoveryLoading, setDiscoveryLoading] = useState(false)
@@ -105,6 +107,13 @@ export function BuildView({ onRefresh }: BuildViewProps) {
   const [buildConfirm, setBuildConfirm] = useState<FacilityTypeDetail | null>(null)
   const [building, setBuilding] = useState(false)
 
+  // Faction resources for client-side buildable evaluation. Only fetched if the
+  // player belongs to a faction — server's `buildable` flag for faction-typed
+  // facilities ignores faction treasury/storage and only checks the player's
+  // personal credits/inventory, which hides faction-buildable entries.
+  const [factionStorage, setFactionStorage] = useState<ViewStorageResponse | null>(null)
+  const [factionTreasury, setFactionTreasury] = useState<number | null>(null)
+
   useEffect(() => {
     if (!api) return
     setDiscoveryLoading(true)
@@ -113,6 +122,37 @@ export function BuildView({ onRefresh }: BuildViewProps) {
       .catch(() => {})
       .finally(() => setDiscoveryLoading(false))
   }, [api])
+
+  // Fetch faction storage + treasury once when the build view opens and the
+  // player has a faction. These are used to override the server-side
+  // `buildable` flag for faction-typed facilities.
+  useEffect(() => {
+    if (!api || !factionId) return
+    let cancelled = false
+    api.callStructured<ViewStorageResponse>('spacemolt_storage', 'view', { target: 'faction' })
+      .then(data => { if (!cancelled && data) setFactionStorage(data) })
+      .catch(() => {})
+    api.callStructured<{ treasury?: number }>('spacemolt_faction', 'info', {})
+      .then(data => {
+        if (!cancelled && data && typeof data.treasury === 'number') {
+          setFactionTreasury(data.treasury)
+        }
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [api, factionId])
+
+  // Faction-aware buildable check for a facility type summary. Only used for
+  // the "Buildable Only" filter; the server still validates on actual build.
+  // Without a fetched detail we can only check credits, not materials — this
+  // is intentional, since the cheap path is enough to surface the entry so the
+  // user can expand it and see the breakdown.
+  const isFactionBuildable = useCallback((ft: FacilityTypeSummary): boolean => {
+    if (ft.category !== 'faction') return ft.buildable
+    if (!factionId) return ft.buildable
+    if (factionTreasury == null) return ft.buildable
+    return factionTreasury >= ft.build_cost
+  }, [factionId, factionTreasury])
 
   const fetchFiltered = useCallback(async (category: string, name: string, page: number) => {
     if (!api) return
@@ -181,12 +221,36 @@ export function BuildView({ onRefresh }: BuildViewProps) {
         ? 'facility_faction_build'
         : 'facility_build'
     try {
-      await sendCommand(action, { facility_type: detail.type_id })
-      setBuildConfirm(null)
-      onRefresh()
+      const result = await sendCommand(action, { facility_type: detail.type_id })
+      // sendCommand resolves with { error: true, ... } on failure rather than
+      // throwing, so check the result before claiming success.
+      if (!result?.error) {
+        const owner = detail.category === 'faction' ? 'faction' : 'station'
+        const message = (result?.message as string | undefined)
+          || `Construction started: ${detail.name} (${owner}) — ${detail.build_time} ticks`
+        dispatch({ type: 'ADD_EVENT', entry: {
+          id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+          type: 'info',
+          message,
+          timestamp: Date.now(),
+        }})
+        setBuildConfirm(null)
+        // Refresh faction resources so subsequent build evaluations are accurate
+        if (detail.category === 'faction' && api && factionId) {
+          api.callStructured<ViewStorageResponse>('spacemolt_storage', 'view', { target: 'faction' })
+            .then(data => { if (data) setFactionStorage(data) })
+            .catch(() => {})
+          api.callStructured<{ treasury?: number }>('spacemolt_faction', 'info', {})
+            .then(data => {
+              if (data && typeof data.treasury === 'number') setFactionTreasury(data.treasury)
+            })
+            .catch(() => {})
+        }
+        onRefresh()
+      }
     } catch { /* handled by event log */ }
     setBuilding(false)
-  }, [sendCommand, onRefresh])
+  }, [sendCommand, onRefresh, dispatch, api, factionId])
 
   if (discoveryLoading) return <Loading message="Loading facility catalog..." />
 
@@ -244,7 +308,7 @@ export function BuildView({ onRefresh }: BuildViewProps) {
           <div className={styles.section}>
             {(() => {
               const visibleTypes = buildableOnly
-                ? filteredData.types.filter(ft => ft.buildable)
+                ? filteredData.types.filter(ft => isFactionBuildable(ft))
                 : filteredData.types
               if (visibleTypes.length === 0) return (
                 <div className={shared.emptyState}>
@@ -339,18 +403,44 @@ export function BuildView({ onRefresh }: BuildViewProps) {
                             </div>
                           )}
 
-                          {typeDetail.buildable && (
-                            <button
-                              className={shared.confirmBtn}
-                              onClick={() => setBuildConfirm(typeDetail)}
-                              type="button"
-                            >
-                              <Hammer size={11} /> Build {typeDetail.name}
-                            </button>
-                          )}
-                          {!typeDetail.buildable && (
-                            <div className={shared.emptyState}>This facility type cannot be built by players.</div>
-                          )}
+                          {(() => {
+                            // Faction-aware buildable check for the detail view.
+                            // The server's `buildable` flag is computed against the
+                            // player's personal credits/inventory only — for
+                            // faction-typed facilities we instead consult the
+                            // faction treasury + faction storage. Final auth
+                            // is still the server's job; this just unhides the
+                            // Build button so the user can attempt the action.
+                            let canBuild = typeDetail.buildable
+                            if (!canBuild && typeDetail.category === 'faction' && factionId) {
+                              const treasuryOk = factionTreasury != null
+                                && factionTreasury >= typeDetail.build_cost
+                              const matsOk = !typeDetail.build_materials.length
+                                || (factionStorage != null && typeDetail.build_materials.every(m => {
+                                  const have = (factionStorage.items || []).find(i => i.item_id === m.item_id)
+                                  return (have?.quantity ?? 0) >= m.quantity
+                                }))
+                              if (treasuryOk && matsOk) canBuild = true
+                            }
+                            if (canBuild) {
+                              return (
+                                <button
+                                  className={shared.confirmBtn}
+                                  onClick={() => setBuildConfirm(typeDetail)}
+                                  type="button"
+                                >
+                                  <Hammer size={11} /> Build {typeDetail.name}
+                                </button>
+                              )
+                            }
+                            return (
+                              <div className={shared.emptyState}>
+                                {typeDetail.category === 'faction' && factionId
+                                  ? 'Insufficient faction credits or materials to build this facility.'
+                                  : 'This facility type cannot be built by players.'}
+                              </div>
+                            )
+                          })()}
                         </>
                       ) : null
                     )}
