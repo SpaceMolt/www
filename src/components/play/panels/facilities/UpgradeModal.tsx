@@ -97,9 +97,46 @@ export async function fetchUpgradeOptions(
   api: GameApi,
   facility: Facility
 ): Promise<UpgradeOption[]> {
+  // Pass the facility's id and type so the backend can scope upgrade options
+  // to this specific facility (faction facilities require this context;
+  // personal facilities tolerate it as well).
+  const params: Record<string, unknown> = {
+    facility_id: facility.facility_id,
+    facility_type: facility.type,
+  }
   try {
-    const resp = await api.callStructured<{ upgrades: UpgradeOption[] }>('spacemolt_facility', 'upgrades', {})
-    return (resp?.upgrades || []).filter(u => u.type_id !== facility.type)
+    const resp = await api.callStructured<{ upgrades?: UpgradeOption[] }>(
+      'spacemolt_facility',
+      'upgrades',
+      params,
+    )
+    const upgrades = resp?.upgrades || []
+    if (upgrades.length > 0) {
+      return upgrades.filter(u => u.type_id !== facility.type)
+    }
+
+    // Fallback: if the backend ignored facility context and returned nothing
+    // useful, look up the facility type's upgrades_to chain via the discovery
+    // endpoint so the modal at least surfaces the next tier (the gameserver
+    // already accepts `facility upgrade facility_id=...` for faction
+    // facilities — see Discord thread 1501373272296652890).
+    try {
+      const detail = await api.callStructured<{
+        type_id?: string
+        upgrades_to?: string
+      }>('spacemolt_facility', 'types', { facility_type: facility.type })
+      const upgradesToId = detail?.upgrades_to
+      if (!upgradesToId) return []
+      const next = await api.callStructured<UpgradeOption>(
+        'spacemolt_facility',
+        'types',
+        { facility_type: upgradesToId },
+      )
+      if (!next || !next.type_id) return []
+      return [next]
+    } catch {
+      return []
+    }
   } catch {
     return []
   }
