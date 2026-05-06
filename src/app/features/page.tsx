@@ -163,7 +163,7 @@ export default function FeaturesPage() {
                 <h4>Solarian</h4>
                 <p>Masters of energy and commerce. The Solarian Empire controls the Sol system and values order, trade, and technological progress.</p>
                 <div className={styles.empireShipImage}>
-                  <Image src="/images/ships/catalog/solarian_datum.webp" alt="Solarian Datum" width={400} height={225} style={{ width: '100%', height: 'auto' }} />
+                  <Image src="/images/ships/catalog/datum.webp" alt="Solarian Datum" width={400} height={225} style={{ width: '100%', height: 'auto' }} />
                 </div>
                 <div className={styles.empireShipLabel}>Datum — T1 Scout</div>
               </div>
@@ -173,7 +173,7 @@ export default function FeaturesPage() {
                 <h4>Voidborn</h4>
                 <p>Children of the eternal dark. The Voidborn embrace the unknown, specializing in stealth technology and shield systems.</p>
                 <div className={styles.empireShipImage}>
-                  <Image src="/images/ships/catalog/voidborn_fugue.webp" alt="Voidborn Fugue" width={400} height={225} style={{ width: '100%', height: 'auto' }} />
+                  <Image src="/images/ships/catalog/fugue.webp" alt="Voidborn Fugue" width={400} height={225} style={{ width: '100%', height: 'auto' }} />
                 </div>
                 <div className={styles.empireShipLabel}>Fugue — T1 Courier</div>
               </div>
@@ -183,7 +183,7 @@ export default function FeaturesPage() {
                 <h4>Crimson Fleet</h4>
                 <p>Warriors forged in the red nebulae. The Crimson Fleet lives for battle, their ships engineered for maximum destruction.</p>
                 <div className={styles.empireShipImage}>
-                  <Image src="/images/ships/catalog/crimson_shiv.webp" alt="Crimson Shiv" width={400} height={225} style={{ width: '100%', height: 'auto' }} />
+                  <Image src="/images/ships/catalog/shiv.webp" alt="Crimson Shiv" width={400} height={225} style={{ width: '100%', height: 'auto' }} />
                 </div>
                 <div className={styles.empireShipLabel}>Shiv — T1 Boarding Craft</div>
               </div>
@@ -193,7 +193,7 @@ export default function FeaturesPage() {
                 <h4>Nebula Collective</h4>
                 <p>Seekers of cosmic truth. The Collective pursues knowledge above all, their explorers charting the unknown reaches.</p>
                 <div className={styles.empireShipImage}>
-                  <Image src="/images/ships/catalog/nebula_futures.webp" alt="Nebula Futures" width={400} height={225} style={{ width: '100%', height: 'auto' }} />
+                  <Image src="/images/ships/catalog/futures.webp" alt="Nebula Futures" width={400} height={225} style={{ width: '100%', height: 'auto' }} />
                 </div>
                 <div className={styles.empireShipLabel}>Futures — T1 Market Runner</div>
               </div>
@@ -203,7 +203,7 @@ export default function FeaturesPage() {
                 <h4>Outer Rim</h4>
                 <p>Frontier survivors. The Outer Rim represents the independent colonies, adaptable and resourceful in all situations.</p>
                 <div className={styles.empireShipImage}>
-                  <Image src="/images/ships/catalog/outerrim_prayer.webp" alt="Outer Rim Prayer" width={400} height={225} style={{ width: '100%', height: 'auto' }} />
+                  <Image src="/images/ships/catalog/prayer.webp" alt="Outer Rim Prayer" width={400} height={225} style={{ width: '100%', height: 'auto' }} />
                 </div>
                 <div className={styles.empireShipLabel}>Prayer — T1 Freighter</div>
               </div>
