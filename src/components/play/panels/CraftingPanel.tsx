@@ -10,38 +10,10 @@ import { buildRecipeContext } from '../bugReportContext'
 import type { Recipe } from '../types'
 import { recipesById, formatItemId } from '@/data/catalog'
 import { titleCase } from '@/lib/format'
+import { canCraftRecipe, availableQuantity } from '@/lib/crafting'
 import styles from './CraftingPanel.module.css'
 
 const HIDDEN_CATEGORIES = new Set(['facility only', 'ship passive'])
-
-function canCraftRecipe(
-  recipe: Recipe,
-  skills: Record<string, { level: number; xp: number; next_level_xp: number }> | undefined,
-  cargoItems: { item_id: string; quantity: number }[]
-): { craftable: boolean; reasons: string[] } {
-  const reasons: string[] = []
-
-  // Check skills
-  if (recipe.required_skills && Object.keys(recipe.required_skills).length > 0) {
-    for (const [skillId, reqLevel] of Object.entries(recipe.required_skills)) {
-      const playerLevel = skills?.[skillId]?.level ?? 0
-      if (playerLevel < (reqLevel as number)) {
-        const name = titleCase(skillId)
-        reasons.push(`Need ${name} Lv${reqLevel} (have ${playerLevel})`)
-      }
-    }
-  }
-
-  // Check materials
-  for (const input of recipe.inputs ?? []) {
-    const have = cargoItems.find((c) => c.item_id === input.item_id)?.quantity ?? 0
-    if (have < input.quantity) {
-      reasons.push(`Need ${input.quantity}x ${formatItemId(input.item_id)} (have ${have})`)
-    }
-  }
-
-  return { craftable: reasons.length === 0, reasons }
-}
 
 export function CraftingPanel() {
   const { state, sendCommand } = useGame()
@@ -57,6 +29,16 @@ export function CraftingPanel() {
     if (!state.skillsData) sendCommand('get_skills')
   }, [state.skillsData, sendCommand])
 
+  // When docked, ensure station storage is fetched so the craftable filter
+  // can consider items the player has stored at the station, not just cargo.
+  // Without this the filter under-counts inventory and hides recipes the
+  // gameserver would actually accept (gh#794).
+  useEffect(() => {
+    if (state.isDocked && !state.storageData) {
+      sendCommand('view_storage')
+    }
+  }, [state.isDocked, state.storageData, sendCommand])
+
   const refreshSkills = useCallback(() => {
     sendCommand('get_skills')
   }, [sendCommand])
@@ -68,6 +50,12 @@ export function CraftingPanel() {
   }, [sendCommand])
 
   const cargoItems = useMemo(() => state.ship?.cargo ?? [], [state.ship?.cargo])
+  // Station storage when docked. The gameserver craft handler accepts inputs
+  // from cargo + station storage combined, so the craftable filter must too.
+  const storageItems = useMemo(
+    () => (state.isDocked ? state.storageData?.items ?? [] : []),
+    [state.isDocked, state.storageData?.items],
+  )
   const skillsMap = state.skillsData?.skills
 
   const recipes = useMemo((): Recipe[] => {
@@ -95,7 +83,7 @@ export function CraftingPanel() {
     const search = searchQuery.toLowerCase().trim()
     const withStatus = recipes.map((recipe) => ({
       recipe,
-      ...canCraftRecipe(recipe, skillsMap, cargoItems),
+      ...canCraftRecipe(recipe, skillsMap, cargoItems, storageItems),
     }))
 
     let filtered = withStatus
@@ -135,7 +123,7 @@ export function CraftingPanel() {
     }
 
     return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b))
-  }, [recipes, skillsMap, cargoItems, filter, categoryFilter, searchQuery])
+  }, [recipes, skillsMap, cargoItems, storageItems, filter, categoryFilter, searchQuery])
 
   const toggleCategory = useCallback((cat: string) => {
     setCollapsedCategories(prev => {
@@ -279,7 +267,7 @@ export function CraftingPanel() {
                               <span className={styles.recipeInputs}>
                                 {(recipe.inputs ?? []).map((i) => {
                                   const name = formatItemId(i.item_id)
-                                  const have = cargoItems.find((c) => c.item_id === i.item_id)?.quantity ?? 0
+                                  const have = availableQuantity(i.item_id, cargoItems, storageItems)
                                   const enough = have >= i.quantity
                                   return (
                                     <span key={i.item_id} className={enough ? styles.inputOk : styles.inputMissing}>
