@@ -77,6 +77,75 @@
   font-weight: 600;
 }
 
+.maintenanceToggle {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.maintenanceToggle:hover {
+  text-decoration: underline;
+}
+
+.maintenanceToggle:focus-visible {
+  outline: 1px solid var(--plasma-cyan, var(--warning-yellow));
+  outline-offset: 2px;
+}
+
+.maintenanceDetail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.4rem 0.5rem;
+  margin-top: 0.1rem;
+  background: rgba(255, 196, 0, 0.05);
+  border-left: 2px solid var(--warning-yellow);
+  border-radius: 2px;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--chrome-silver);
+}
+
+.maintenanceDetailMuted {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--hull-grey);
+  font-style: italic;
+}
+
+.maintenanceDetailLabel {
+  color: var(--hull-grey);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.65rem;
+}
+
+.maintenanceDetailList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.maintenanceDetailItem {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.maintenanceDetailQty {
+  color: var(--plasma-cyan, var(--warning-yellow));
+  font-weight: 600;
+}
+
 .cardActions {
   display: flex;
   flex-wrap: wrap;
