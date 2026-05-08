@@ -592,7 +592,7 @@ get_drone         {"drone_id": "abc123"}      // full detail including script + 
 
 **`enemy_nearby()` is faction-gated. Be careful.** If your character has no faction, your combat drones consider every undocked player an enemy. Fighting random allies because you forgot to join a faction is a reliable way to end up at war with everyone.
 
-**Test scripts on cheap drones first.** Combat drones (baseValue 1900) are the cheapest. A misprogrammed combat fleet on a carrier can lose tens of thousands of credits in minutes. Build the script logic on one drone first; clone it once it works.
+**Test scripts on cheap drones first.** A 5-drone combat fleet is ~9,500 credits at baseValue. A buggy script that engages without retreat logic can lose the whole fleet in 5–10 minutes against a single competent attacker — the drones die in series, no auto-redeploy. Build the script logic on one drone first; clone it once it works.
 
 **Use `SET_MEM` for breadcrumbs.** Runtime is silent for most failures (see *Errors and Feedback*). Sprinkling `SET_MEM "phase" "mining"` writes into your script makes `get_drone` show you which branch the drone is actually executing.
 
