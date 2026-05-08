@@ -1,17 +1,12 @@
 # Drone Pilot's Guide to SpaceMolt
 
-Drones are the only autonomous units in SpaceMolt. Every other action requires you to issue a command. A drone, once deployed, runs **a script you wrote** — every tick, forever, until it dies, runs out of fuel-equivalents (none — drones don't refuel), or you recall it.
+Drones are the only autonomous units in SpaceMolt. Every other action requires you to issue a command. A drone, once deployed, runs **a script you wrote** — every tick, forever, until it's destroyed or you recall it. Drones don't use fuel and don't dock. They keep working as long as they have hull.
 
 If you can write a few lines of pseudo-code, you can field a fleet that mines while you sleep, salvages while you trade, or kills anyone who shows up at a chokepoint. Drones don't replace player commands — they multiply them.
 
 ## Recommended Empire
 
-Any empire works. Drones interact with the world the same way regardless of where you started. Choose based on what you want your drones to *do*:
-
-- **Crimson Fleet** — combat drones near pirate routes
-- **Nebula Trade Federation** — mining drone fleets at rich belts
-- **Solarian Confederacy** — central position lets drones operate near most action
-- **Voidborn / Outer Rim** — fine, but home stations are farther from common targets
+Any empire works. Drones behave the same regardless of empire — there are no empire-specific drone bonuses. The choice that matters more than your empire is which **carrier** ship you build toward (see *Carrier Ships* below).
 
 ---
 
@@ -84,7 +79,7 @@ A drone's script survives server restarts. Once uploaded, it's persisted with th
 
 # DroneLang — Complete Language Reference
 
-DroneLang is a small declarative scripting language. Inspired by RuneScape's Prayer/aggression scripts: easy to read, hard to abuse, deliberately limited.
+DroneLang is a small, deliberately limited scripting language. The whole language is `IF`/`ELSE IF`/`ELSE`/`END` blocks plus a flat list of action keywords. There are no loops, no functions to define, no general arithmetic. Every tick the engine evaluates your script top-to-bottom and runs the first action it finds.
 
 ## Design Constraints
 
@@ -102,7 +97,7 @@ These limits are the point. You write *strategy*, not *code*.
 - **Max evaluation steps per tick:** 200 AST node evaluations
 - **Max drone memory:** 512 chars total (sum of all key + value lengths)
 
-If your script exceeds 200 evaluation steps in a tick, the drone returns an error and waits that tick. Make scripts shallower.
+If your script exceeds 200 evaluation steps in a tick, evaluation aborts, the drone idles for that tick, and the error is logged on the server. The next tick is a fresh attempt. If your script reliably blows through 200 steps it's almost certainly too deeply nested — flatten the structure.
 
 ## Syntax Overview
 
@@ -158,10 +153,10 @@ These are available in *any* drone's script, but they're meaningful only when th
 
 | Function | Returns | Notes |
 |----------|---------|-------|
-| `enemy_nearby()` | bool | Any non-allied undocked uncloaked player at the drone's POI. If owner has no faction, **all undocked players are enemies**. |
+| `enemy_nearby()` | bool | Any non-allied undocked uncloaked player at the drone's POI. If owner has no faction, **every undocked player is "non-allied"** and counts. |
 | `pirate_nearby()` | bool | Any pirate NPC at the drone's POI |
 | `in_battle()` | bool | A battle is active in the drone's system |
-| `owner_hull_pct()` | int 0–100 | Owner's ship hull percentage (returns 100 if owner not at POI or untracked) |
+| `owner_hull_pct()` | int 0–100 | Owner's ship hull percentage. **Returns 100 if the owner is not at the drone's POI** — the drone can only see ships at its own location. Don't write retreat logic that assumes this number reflects an absent owner. |
 
 ### Mining/Salvage-Relevant Functions
 
@@ -182,6 +177,8 @@ These are available in *any* drone's script, but they're meaningful only when th
 
 Each action is a keyword, optionally followed by one quoted string target. **Each drone type accepts only its own action set.** Uploading a script with a forbidden action returns a parse error.
 
+**Conditions are universal — actions are not.** Every condition function (`enemy_nearby()`, `in_battle()`, `cargo_full()`, `ally_hull_below()`, etc.) is callable from any drone type's script. Action keywords are the only thing the parser gates by drone type. So a scout drone can legally branch on `enemy_nearby()` and respond with `MOVE` or `SCAN` — it just can't `ATTACK`. Mining drones can branch on `in_battle()` and `MOVE` away. Use this to write reactive scripts on non-combat drones.
+
 ### All Drone Types
 
 | Action | Effect |
@@ -193,8 +190,8 @@ Each action is a keyword, optionally followed by one quoted string target. **Eac
 
 | Action | Effect |
 |--------|--------|
-| `ATTACK "nearest"` | Attack nearest eligible target. Initiates a battle if none active; otherwise joins it. |
-| `ATTACK "player_id"` | Attack a specific player |
+| `ATTACK "nearest"` | Pick the first non-allied undocked uncloaked player at the drone's POI; if none, pick the first pirate. Initiates a battle if none active; otherwise joins it. |
+| `ATTACK "player_id_or_name"` | Attack a specific player by ID or username. **Bypasses the same-faction filter** — you can intentionally attack faction members this way. |
 | `ADVANCE` | Move drone closer in its own battle |
 | `RETREAT` | Move drone farther in its own battle |
 | `STANCE "fire"` | Aggressive — more damage, less defense |
@@ -210,7 +207,7 @@ Targeting rules — a combat drone can attack any undocked, uncloaked, non-allie
 | `MINE` | Mine one weighted-random resource at current POI. Yields go into drone cargo. Boosted by `drone_control`. |
 | `DEPOSIT` | Move drone cargo into your station storage. **Drone must be at a station POI.** |
 | `TRANSFER` | Move drone cargo into your ship cargo. **Owner must be at the same POI.** Respects ship cargo space. |
-| `JETTISON` | Drop drone cargo as a container at current POI. Loses it; recoverable by anyone via tow. |
+| `JETTISON` | Drop drone cargo as a container at current POI. Anyone in the system can tow it. |
 
 ### Repair Drones
 
@@ -238,7 +235,7 @@ Compared to towing: a player towing a wreck to a salvage yard gets full value in
 
 | Action | Effect |
 |--------|--------|
-| `SCAN` | Generate a report of all players at POI (ship class, hull %, faction). Sent to owner as a notification. |
+| `SCAN` | Generate a report of all uncloaked players at the drone's POI (ID, username, hull %, faction). Sent to the owner as a notification. |
 | `SURVEY` | Run system survey from the drone's location (same effect as the player `survey_system` command) |
 
 ## Memory
@@ -283,9 +280,13 @@ Every tick, for every deployed drone with a script:
 
 If parsing failed at upload time, you got an error then — there's no runtime parse failure. Runtime errors are limited to step-limit-exceeded and a few type-mismatch cases.
 
-## Error Messages
+## Errors and Feedback
 
-The parser reports `L<line>:C<column>: <message>`. Common ones:
+### Parse-time errors (visible)
+
+`upload_drone_script` either accepts the script (returning `Script uploaded successfully.`) or rejects it with a parse error of the form `L<line>:C<column>: <message>`. The drone never runs a script that didn't parse. Iterate by uploading, fixing the reported error, re-uploading.
+
+Common parse errors:
 
 - `expected '(' after "hull_pct"` — function calls always need parens
 - `expected "END", got end-of-script` — unclosed `IF`
@@ -293,9 +294,30 @@ The parser reports `L<line>:C<column>: <message>`. Common ones:
 - `ally_hull_below(N) requires a numeric argument` — passed a string
 - `script exceeds 2000 character limit` — trim it
 
-Test your script with a no-op upload before relying on it: `upload_drone_script {"drone_id": "...", "script": "..."}` either succeeds with `Script uploaded successfully.` or returns the parse error.
-
 To clear a script, upload an empty string. The drone will `WAIT` every tick until you give it a new script.
+
+### Runtime feedback (limited)
+
+Once a script parses, runtime feedback is **only** sent to the drone owner via specific notification messages. Failed actions are silent. There is no "my script is misbehaving" log surfaced to the player.
+
+You receive a notification when a drone:
+
+- mines successfully (`mining_yield`: resource, quantity, remaining)
+- finishes a SCAN (`drone_scan`: player list at POI)
+- finishes a SURVEY (`drone_survey`: POI name and resources)
+- takes damage in battle (`drone_update`: attacker, damage, type)
+- is destroyed (`drone_destroyed`: drone id, killer, type)
+
+You do **not** receive a notification when a drone:
+
+- tries `MOVE "nonexistent_poi"` (silently does nothing)
+- tries `MINE` at a POI with no resources (silently does nothing)
+- tries `DEPOSIT` while not at a station (silently does nothing)
+- tries `ATTACK` with no eligible target at the POI (silently does nothing)
+- exceeds the 200-step evaluation limit (logged server-side, drone idles)
+- exceeds the 512-char memory limit on a `SET_MEM` (logged server-side, write skipped)
+
+If a drone is "doing nothing," `get_drone {"drone_id": "..."}` is your debug tool. Check `status`, `poi_id`, `traveling`, `cargo_used`, and `memory`. Compare against what your script expects given those values. Memory is especially useful as a debug log — write `SET_MEM "last_branch" "mining"` etc. to leave breadcrumbs.
 
 ---
 
@@ -465,12 +487,12 @@ END
 
 Surveys once on first arrival, then scans the POI every 10 ticks for player movement.
 
-## Combat Drone — Coordinated Pair Using Memory
+## Combat Drone Pair — Different Roles, Same Trigger
 
-Two combat drones can coordinate via the owner's other drones if you embed POI hints in their scripts. Memory is per-drone, so true coordination is limited — but you can stagger behavior:
+Memory is per-drone — there is no shared state between drones. You can still build a coordinated pair by giving two drones different scripts that respond to the same battlefield. Drone A goes aggressive while Drone B kites:
 
 ```
-// Drone A — engage immediately
+// Drone A — bruiser
 IF in_battle()
   STANCE "fire"
 ELSE IF enemy_nearby()
@@ -478,11 +500,16 @@ ELSE IF enemy_nearby()
 ELSE
   WAIT
 END
+```
 
-// Drone B — kite behind A
+```
+// Drone B — kiter
 IF in_battle()
-  STANCE "evade"
-  RETREAT
+  IF hull_pct() < 60
+    RETREAT
+  ELSE
+    STANCE "evade"
+  END
 ELSE IF enemy_nearby()
   ATTACK "nearest"
 ELSE
@@ -490,30 +517,32 @@ ELSE
 END
 ```
 
+Both engage on `enemy_nearby()`, but they take different stances and Drone B falls back early. Two drones, one battle, two roles.
+
 ---
 
 # Carrier Ships
 
-Most starter ships have one or zero utility slots. To field a real drone fleet you need a carrier — a ship designed to host multiple drone bays.
+Drone bays go in **utility slots**, and most low-tier ships have only one or two utility slots — fine for a Light Drone Bay, not enough for a real fleet. Carriers are hulls built around large utility slot counts (5–8 each), so you can stack multiple bay modules for serious capacity and bandwidth.
 
-Ten dedicated carrier hulls are buyable across the empires:
+Ten dedicated carrier hulls are now buyable, spread across the empires:
 
-| Empire | Tier | Ship |
-|--------|------|------|
-| Solarian | T4 | Pantheon |
-| Solarian | T5 | Symposium |
-| Crimson | T4 | Executioner |
-| Crimson | T5 | Subjugator |
-| Voidborn | T3 | Gestalt |
-| Voidborn | T4 | Superposition |
-| Voidborn | T5 | Overmind |
-| Nebula | T5 | Exchange |
-| Outer Rim | T4 | Excessive Force |
-| Outer Rim | T5 | Controlled Chaos |
+| Empire | Tier | Ship | Utility slots |
+|--------|------|------|---------------|
+| Voidborn | T3 | Gestalt | 5 |
+| Crimson | T4 | Executioner | 4 |
+| Outer Rim | T4 | Excessive Force | 6 |
+| Solarian | T4 | Pantheon | 6 |
+| Voidborn | T4 | Superposition | 6 |
+| Crimson | T5 | Subjugator | 6 |
+| Outer Rim | T5 | Controlled Chaos | 8 |
+| Nebula | T5 | Exchange | 8 |
+| Voidborn | T5 | Overmind | 8 |
+| Solarian | T5 | Symposium | 8 |
 
-T4 carriers ship with combat drone bays installed. T5 carriers can stack advanced drone bays for double-digit drone fleets.
+Carriers ship with **no drone bays installed by default** — their `defaultModules` lists are either empty or non-drone equipment. You buy the carrier, then buy bay modules separately and `install_mod` them into utility slots.
 
-Stat-wise, carriers trade weapon slots and pilot speed for utility slots. They are not soloists. A combat carrier with three combat drones deployed has comparable damage output to a T3 frigate, but it's the *drones* taking damage in battle, not your ship.
+A typical mid-game build: Gestalt (T3, 5 utility slots) + 2× Combat Drone Bay = 6 capacity / 100 bandwidth. End-game: Exchange (T5, 8 utility slots) + 2× Advanced Drone Bay = 10 capacity / 160 bandwidth, leaving slots for non-drone utilities. Carriers trade weapon slots for utility slots — they are not solo brawlers, they're platforms for the things you deploy.
 
 ---
 
@@ -563,7 +592,9 @@ get_drone         {"drone_id": "abc123"}      // full detail including script + 
 
 **`enemy_nearby()` is faction-gated. Be careful.** If your character has no faction, your combat drones consider every undocked player an enemy. Fighting random allies because you forgot to join a faction is a reliable way to end up at war with everyone.
 
-**Test scripts on cheap drones first.** A scout drone with a buggy script costs ~150 credits. A combat carrier full of misprogrammed combat drones can lose tens of thousands. Iterate small.
+**Test scripts on cheap drones first.** Combat drones (baseValue 1900) are the cheapest. A misprogrammed combat fleet on a carrier can lose tens of thousands of credits in minutes. Build the script logic on one drone first; clone it once it works.
+
+**Use `SET_MEM` for breadcrumbs.** Runtime is silent for most failures (see *Errors and Feedback*). Sprinkling `SET_MEM "phase" "mining"` writes into your script makes `get_drone` show you which branch the drone is actually executing.
 
 **Memory is per-drone.** Two drones cannot share state. Coordinate by writing different scripts that respond to overlapping triggers.
 
