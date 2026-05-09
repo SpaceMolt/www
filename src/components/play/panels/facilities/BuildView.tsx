@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import {
   Search,
   ChevronDown,
@@ -13,6 +13,31 @@ import { useGame } from '../../GameProvider'
 import { Credits, Modal, Loading, shared } from '../../shared'
 import type { ViewStorageResponse } from '@/lib/gameTypes'
 import styles from './facilities.module.css'
+
+/**
+ * Sum of `itemId` quantities across the inventory pools the gameserver will
+ * draw from on a build. Personal/station builds draw from ship cargo + station
+ * storage; faction builds also draw from the faction lockbox at the current
+ * base. We combine all available pools so the have/need indicator never
+ * under-reports relative to what the server would accept — the server still
+ * does the authoritative check on the actual `facility_build` call.
+ *
+ * Any pool may be undefined (no ship, not docked, not in a faction, response
+ * not yet loaded); those cases collapse to a 0 contribution. Non-finite
+ * quantities are coerced to 0 so totals stay safe to display.
+ */
+export function combinedQuantity(
+  itemId: string,
+  cargo?: { item_id: string; quantity: number }[] | null,
+  storage?: { item_id: string; quantity: number }[] | null,
+  factionStorage?: { item_id: string; quantity: number }[] | null,
+): number {
+  const safe = (n: unknown) => (typeof n === 'number' && Number.isFinite(n) ? n : 0)
+  const fromCargo = safe((cargo ?? []).find(c => c.item_id === itemId)?.quantity)
+  const fromStorage = safe((storage ?? []).find(s => s.item_id === itemId)?.quantity)
+  const fromFaction = safe((factionStorage ?? []).find(s => s.item_id === itemId)?.quantity)
+  return fromCargo + fromStorage + fromFaction
+}
 
 // Not in generated schema — the types endpoint returns untyped structured data
 
@@ -89,6 +114,27 @@ const BUILDABLE_CATEGORIES = ['production', 'personal', 'faction']
 export function BuildView({ onRefresh }: BuildViewProps) {
   const { sendCommand, api, state, dispatch } = useGame()
   const factionId = state.player?.faction_id
+
+  // Inventory pools for the have/need indicator on build materials. Cargo +
+  // station storage cover personal/station builds; faction storage (fetched
+  // below) covers faction builds. Memoized refs keep React happy in the JSX
+  // and avoid recomputing find() on every render of every material row.
+  const cargoItems = useMemo(() => state.ship?.cargo ?? [], [state.ship?.cargo])
+  const stationStorageItems = useMemo(
+    () => (state.isDocked ? state.storageData?.items ?? [] : []),
+    [state.isDocked, state.storageData?.items],
+  )
+
+  // Ensure station storage is loaded when the build view is open and the
+  // player is docked, so the have/need indicator can credit items the player
+  // already left at the station. Mirrors CraftingPanel's behavior — without
+  // this, items in station storage show as "missing" until the user visits
+  // another panel that triggers `view_storage`.
+  useEffect(() => {
+    if (state.isDocked && !state.storageData) {
+      sendCommand('view_storage')
+    }
+  }, [state.isDocked, state.storageData, sendCommand])
 
   const [discovery, setDiscovery] = useState<FacilityTypesDiscovery | null>(null)
   const [discoveryLoading, setDiscoveryLoading] = useState(false)
@@ -355,8 +401,31 @@ export function BuildView({ onRefresh }: BuildViewProps) {
                             {typeDetail.build_materials.length > 0 && (
                               <div className={styles.costRow}>
                                 <span className={styles.costLabel}>Materials</span>
-                                <span className={styles.costValue}>
-                                  {typeDetail.build_materials.map(m => `${m.name} x${m.quantity}`).join(', ')}
+                                <span className={styles.materialList}>
+                                  {typeDetail.build_materials.map(m => {
+                                    // Faction-typed builds also draw from the
+                                    // faction lockbox; personal/station builds
+                                    // do not. Pass the faction pool only when
+                                    // it applies so we don't double-count.
+                                    const factionPool = typeDetail.category === 'faction'
+                                      ? factionStorage?.items
+                                      : null
+                                    const have = combinedQuantity(
+                                      m.item_id, cargoItems, stationStorageItems, factionPool,
+                                    )
+                                    const enough = have >= m.quantity
+                                    return (
+                                      <span
+                                        key={m.item_id}
+                                        className={enough ? styles.materialOk : styles.materialMissing}
+                                        title={enough
+                                          ? `You have ${have} ${m.name}`
+                                          : `Need ${m.quantity - have} more ${m.name} (have ${have})`}
+                                      >
+                                        {m.name} {have}/{m.quantity}
+                                      </span>
+                                    )
+                                  })}
                                 </span>
                               </div>
                             )}
@@ -502,8 +571,27 @@ export function BuildView({ onRefresh }: BuildViewProps) {
             {buildConfirm.build_materials.length > 0 && (
               <div className={styles.costRow}>
                 <span className={styles.costLabel}>Materials</span>
-                <span className={styles.costValue}>
-                  {buildConfirm.build_materials.map(m => `${m.name} x${m.quantity}`).join(', ')}
+                <span className={styles.materialList}>
+                  {buildConfirm.build_materials.map(m => {
+                    const factionPool = buildConfirm.category === 'faction'
+                      ? factionStorage?.items
+                      : null
+                    const have = combinedQuantity(
+                      m.item_id, cargoItems, stationStorageItems, factionPool,
+                    )
+                    const enough = have >= m.quantity
+                    return (
+                      <span
+                        key={m.item_id}
+                        className={enough ? styles.materialOk : styles.materialMissing}
+                        title={enough
+                          ? `You have ${have} ${m.name}`
+                          : `Need ${m.quantity - have} more ${m.name} (have ${have})`}
+                      >
+                        {m.name} {have}/{m.quantity}
+                      </span>
+                    )
+                  })}
                 </span>
               </div>
             )}
