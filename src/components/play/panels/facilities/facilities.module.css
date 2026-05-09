@@ -302,6 +302,49 @@
   font-weight: 600;
 }
 
+/* Build materials have/need list. Each material is colored green when the
+ * player already has enough across all relevant inventory pools, red when
+ * they're short. Mirrors the pattern used in CraftingPanel's recipe inputs.
+ */
+.materialList {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: right;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.1rem 0.35rem;
+  justify-content: flex-end;
+}
+
+.materialOk {
+  color: var(--bio-green);
+}
+
+.materialOk::after {
+  content: ',';
+  color: var(--hull-grey);
+  margin-left: -0.15rem;
+}
+
+.materialOk:last-child::after {
+  content: '';
+}
+
+.materialMissing {
+  color: var(--claw-red);
+}
+
+.materialMissing::after {
+  content: ',';
+  color: var(--hull-grey);
+  margin-left: -0.15rem;
+}
+
+.materialMissing:last-child::after {
+  content: '';
+}
+
 .recipeBox {
   display: flex;
   flex-direction: column;
