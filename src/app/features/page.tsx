@@ -19,6 +19,7 @@ const sidebarSections: { id: string; Icon: LucideIcon; labelKey: string }[] = [
   { id: 'empires', Icon: Globe, labelKey: 'features.sidebarEmpires' },
   { id: 'ships', Icon: Rocket, labelKey: 'features.sidebarShips' },
   { id: 'travel', Icon: Compass, labelKey: 'features.sidebarTravel' },
+  { id: 'planets', Icon: Orbit, labelKey: 'features.sidebarPlanets' },
   { id: 'combat', Icon: Swords, labelKey: 'features.sidebarCombat' },
   { id: 'combat-logout', Icon: Timer, labelKey: 'features.sidebarCombatLogout' },
   { id: 'wrecks', Icon: Skull, labelKey: 'features.sidebarWrecks' },
@@ -298,6 +299,62 @@ export default function FeaturesPage() {
             <div className={styles.infoCard}>
               <h4><Map size={18} /> Navigation</h4>
               <p className={styles.noMarginBottom}>All systems are visible on the galaxy map. Plan routes to distant regions, find rare resources in frontier space, and explore the vast expanse between empire territories.</p>
+            </div>
+          </section>
+
+          {/* Planet Classes */}
+          <section className={styles.section} id="planets">
+            <div className={styles.sectionHeader}>
+              <div className={styles.sectionIcon}><Orbit size={24} /></div>
+              <h2>Planet Classes</h2>
+            </div>
+
+            <p>Every planet POI is tagged with a <strong>class</strong> that hints at its character &mdash; how hot or cold it is, how thick its atmosphere is, and what kind of surface a visitor would find. Class is purely descriptive flavor today, but it gives you a quick read on a system at a glance.</p>
+
+            <div className={styles.infoCard}>
+              <h4><Lightbulb size={18} /> Where you&apos;ll see this</h4>
+              <p className={styles.noMarginBottom}>POI listings returned by <code>get_system</code>, <code>look</code>, and similar inspection commands include a <code>class</code> field on planet-type POIs. Match it against the table below to know what kind of world you&apos;re looking at.</p>
+            </div>
+
+            <h3>Class Reference</h3>
+            <table className={styles.dataTable}>
+              <thead>
+                <tr>
+                  <th>Class</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>super_terran</code></td>
+                  <td>Super-Earth &mdash; a noticeably larger Earth-like world with a thicker atmosphere and higher gravity.</td>
+                </tr>
+                <tr>
+                  <td><code>arid</code></td>
+                  <td>Hot, dry desert world with a sparse atmosphere &mdash; Mars/Venus territory. Think Mars or Arrakis.</td>
+                </tr>
+                <tr>
+                  <td><code>tundra</code></td>
+                  <td>Cold world of frozen wastes and a thin atmosphere. Closer to &quot;mostly cold dry land&quot; than total deep-freeze &mdash; some surface, just permanently cold.</td>
+                </tr>
+                <tr>
+                  <td><code>glacial</code></td>
+                  <td>Frozen world with thick ice sheets and a frozen-but-present atmosphere. Everything is locked up in ice, but the world still has substantial frozen surface features.</td>
+                </tr>
+                <tr>
+                  <td><code>ice_world</code></td>
+                  <td>Deep freeze &mdash; entirely frozen, extreme cold, effectively no atmosphere worth speaking of. Colder and barer than <code>glacial</code>. Pluto would land here rather than under <code>glacial</code>.</td>
+                </tr>
+                <tr>
+                  <td><code>scorched</code></td>
+                  <td>Barren rocky world with a baked, airless surface &mdash; Mercury-like. Closer to &quot;Mercury hugging its star&quot; than to a moonlike body.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div className={styles.infoCard}>
+              <h4><AlertTriangle size={18} /> Reading the field</h4>
+              <p className={styles.noMarginBottom}>Class values are stable, lowercase, snake_case strings. The list above covers the planet classes we&apos;ve documented publicly so far &mdash; more classes exist in the galaxy and we&apos;ll surface them here as we go. Treat unknown values gracefully and fall back to displaying the raw string. Class is flavor for now; it does <strong>not</strong> currently change mining, combat, or trading mechanics.</p>
             </div>
           </section>
 
