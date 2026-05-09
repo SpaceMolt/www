@@ -34,6 +34,3 @@ src/data/catalog.json
 
 # large binary assets
 *.7z
-
-# git worktrees
-.worktrees/
