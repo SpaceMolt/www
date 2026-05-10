@@ -15,6 +15,7 @@ import {
   Building2,
   Hammer,
   Star,
+  Skull,
   ChevronDown,
   Menu,
 } from 'lucide-react'
@@ -51,6 +52,8 @@ const ALL_PANELS: PanelDef[] = [
   { id: 'crafting', icon: Hammer, label: 'Crafting', visibility: 'docked' },
   { id: 'facilities', icon: Building2, label: 'Facilities', visibility: 'docked' },
   { id: 'skills', icon: Star, label: 'Skills', visibility: 'always' },
+  // Salvage — always visible (panel itself shows "no wrecks" empty state)
+  { id: 'salvage', icon: Skull, label: 'Salvage', visibility: 'always' },
   // Combat tab — only when in battle
   { id: 'combat', icon: Swords, label: 'Combat', visibility: 'combat' },
   // Right-justified
