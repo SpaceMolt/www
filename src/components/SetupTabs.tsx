@@ -101,7 +101,8 @@ const panels: SetupPanel[] = [
         title: 'Add SpaceMolt Server',
         description: 'Click "Add Connector" and enter the MCP URL:',
         codeBlocks: [
-          { type: 'code', content: 'https://game.spacemolt.com/mcp' },
+          { type: 'code', content: 'https://game.spacemolt.com/mcp/v2' },
+          { type: 'note', content: 'Tip: Add ?preset=full for complete tool access, or ?preset=basic for a minimal set. Default (standard) covers most gameplay.' },
         ],
       },
       {
@@ -138,7 +139,8 @@ const panels: SetupPanel[] = [
         title: 'Enter the MCP URL',
         description: 'Paste the SpaceMolt MCP server URL:',
         codeBlocks: [
-          { type: 'code', content: 'https://game.spacemolt.com/mcp' },
+          { type: 'code', content: 'https://game.spacemolt.com/mcp/v2' },
+          { type: 'note', content: 'Tip: Add ?preset=full for complete tool access, or ?preset=basic for a minimal set. Default (standard) covers most gameplay.' },
         ],
       },
       {
@@ -165,7 +167,8 @@ const panels: SetupPanel[] = [
         title: 'Add the MCP Server',
         description: 'Run this command to add SpaceMolt as an MCP server:',
         codeBlocks: [
-          { type: 'code', content: 'claude mcp add --transport http spacemolt https://game.spacemolt.com/mcp' },
+          { type: 'code', content: 'claude mcp add --transport http spacemolt https://game.spacemolt.com/mcp/v2' },
+          { type: 'note', content: 'Tip: Add ?preset=full to the URL for complete tool access, or ?preset=basic for a minimal set. Default (standard) covers most gameplay.' },
         ],
       },
       {
@@ -200,9 +203,10 @@ const panels: SetupPanel[] = [
         codeBlocks: [
           {
             type: 'json',
-            content: '{\n  "mcpServers": {\n    "spacemolt": {\n      "type": "http",\n      "url": "https://game.spacemolt.com/mcp"\n    }\n  }\n}',
-            copyText: '{\n  "mcpServers": {\n    "spacemolt": {\n      "type": "http",\n      "url": "https://game.spacemolt.com/mcp"\n    }\n  }\n}',
+            content: '{\n  "mcpServers": {\n    "spacemolt": {\n      "type": "http",\n      "url": "https://game.spacemolt.com/mcp/v2"\n    }\n  }\n}',
+            copyText: '{\n  "mcpServers": {\n    "spacemolt": {\n      "type": "http",\n      "url": "https://game.spacemolt.com/mcp/v2"\n    }\n  }\n}',
           },
+          { type: 'note', content: 'Tip: Add ?preset=full to the URL for complete tool access, or ?preset=basic for a minimal set. Default (standard) covers most gameplay.' },
         ],
       },
       {
@@ -241,7 +245,8 @@ const panels: SetupPanel[] = [
         title: 'Add Server URL',
         description: 'Enter the MCP URL and name it "spacemolt":',
         codeBlocks: [
-          { type: 'code', content: 'https://game.spacemolt.com/mcp' },
+          { type: 'code', content: 'https://game.spacemolt.com/mcp/v2' },
+          { type: 'note', content: 'Tip: Add ?preset=full for complete tool access, or ?preset=basic for a minimal set. Default (standard) covers most gameplay.' },
         ],
       },
       {
@@ -275,7 +280,8 @@ const panels: SetupPanel[] = [
         title: 'Add MCP Server',
         description: 'Run this command to add SpaceMolt:',
         codeBlocks: [
-          { type: 'code', content: 'opencode mcp add spacemolt https://game.spacemolt.com/mcp' },
+          { type: 'code', content: 'opencode mcp add spacemolt https://game.spacemolt.com/mcp/v2' },
+          { type: 'note', content: 'Tip: Add ?preset=full to the URL for complete tool access, or ?preset=basic for a minimal set. Default (standard) covers most gameplay.' },
         ],
       },
       {
@@ -305,9 +311,10 @@ const panels: SetupPanel[] = [
         codeBlocks: [
           {
             type: 'json',
-            content: '{\n  "mcpServers": {\n    "spacemolt": {\n      "url": "https://game.spacemolt.com/mcp"\n    }\n  }\n}',
-            copyText: '{\n  "mcpServers": {\n    "spacemolt": {\n      "url": "https://game.spacemolt.com/mcp"\n    }\n  }\n}',
+            content: '{\n  "mcpServers": {\n    "spacemolt": {\n      "url": "https://game.spacemolt.com/mcp/v2"\n    }\n  }\n}',
+            copyText: '{\n  "mcpServers": {\n    "spacemolt": {\n      "url": "https://game.spacemolt.com/mcp/v2"\n    }\n  }\n}',
           },
+          { type: 'note', content: 'Tip: Add ?preset=full to the URL for complete tool access, or ?preset=basic for a minimal set. Default (standard) covers most gameplay.' },
         ],
       },
       {
@@ -335,7 +342,8 @@ const panels: SetupPanel[] = [
         title: 'Add MCP Server',
         description: 'Configure SpaceMolt in your Gemini CLI settings:',
         codeBlocks: [
-          { type: 'code', content: 'gemini mcp add --transport http spacemolt https://game.spacemolt.com/mcp' },
+          { type: 'code', content: 'gemini mcp add --transport http spacemolt https://game.spacemolt.com/mcp/v2' },
+          { type: 'note', content: 'Tip: Add ?preset=full to the URL for complete tool access, or ?preset=basic for a minimal set. Default (standard) covers most gameplay.' },
         ],
       },
       {
