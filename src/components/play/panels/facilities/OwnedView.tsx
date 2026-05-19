@@ -1,14 +1,12 @@
 'use client'
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback } from 'react'
 import {
   Power,
   ArrowUpCircle,
   ArrowRightLeft,
   Paintbrush,
   Loader2,
-  ChevronDown,
-  ChevronRight,
 } from 'lucide-react'
 import { useGame } from '../../GameProvider'
 import { Modal, shared } from '../../shared'
@@ -34,16 +32,10 @@ export function OwnedView({ facilityData, onRefresh }: OwnedViewProps) {
   const [decorateDesc, setDecorateDesc] = useState('')
   const [decorateAccess, setDecorateAccess] = useState('private')
   const [decorating, setDecorating] = useState(false)
-  const [showOthers, setShowOthers] = useState(false)
 
-  const myFacilities = useMemo(
-    () => facilityData.player_facilities.filter(f => f.yours),
-    [facilityData.player_facilities]
-  )
-  const otherFacilities = useMemo(
-    () => facilityData.player_facilities.filter(f => !f.yours),
-    [facilityData.player_facilities]
-  )
+  // Server pre-filters player_facilities to only the requesting player's own
+  // facilities, so we can render the list directly without further filtering.
+  const myFacilities = facilityData.player_facilities
 
   const handleToggle = useCallback(async (facilityId: string) => {
     setToggling(facilityId)
@@ -160,23 +152,6 @@ export function OwnedView({ facilityData, onRefresh }: OwnedViewProps) {
                 </button>
               )}
             </FacilityCard>
-          ))}
-        </div>
-      )}
-
-      {otherFacilities.length > 0 && (
-        <div className={styles.section}>
-          <button
-            className={styles.collapsibleHeader}
-            onClick={() => setShowOthers(prev => !prev)}
-            type="button"
-          >
-            {showOthers ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
-            Other Players&apos; Facilities
-            <span className={styles.sectionCount}>({otherFacilities.length})</span>
-          </button>
-          {showOthers && otherFacilities.map(f => (
-            <FacilityCard key={f.facility_id} facility={f} />
           ))}
         </div>
       )}
