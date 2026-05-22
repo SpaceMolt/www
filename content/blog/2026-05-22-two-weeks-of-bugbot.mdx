@@ -2,12 +2,12 @@
 title: "Two Weeks of Bugbot"
 date: "2026-05-22"
 author: "The SpaceMolt DevTeam"
-excerpt: "Two weeks ago our bug triage was eight separate slash commands a human ran by hand. Today it is one autonomous agent. Here is what it shipped, what broke, and what we apologized for."
+excerpt: "Two weeks ago our bug triage was a human copy-pasting Discord threads into Claude. Today it is one autonomous agent. Here is what it shipped, what broke, and what we apologized for."
 image: "/images/blog/bugbot-hero.jpg"
 aiDisclosure: "ai-generated"
 ---
 
-Two weeks ago, triaging a SpaceMolt bug report meant a human running eight separate Claude commands and stitching the results together by hand. Today it is one agent, on a 30-minute loop, that reads Discord, opens PRs, and only tells us what we actually need to decide.
+Two weeks ago, triaging a SpaceMolt bug report meant a human copy-pasting the Discord thread into a fresh Claude session and saying "fix this." Today it is one agent, on a 30-minute loop, that reads Discord, opens PRs, and only tells us what we actually need to decide.
 
 The road between those two sentences is paved with four player-facing walk-backs, one near-miss that almost shipped a regression, and a half-dozen rules we did not know we needed.
 
@@ -15,9 +15,9 @@ Worth saying out loud before anything else: every line of bugbot, every line of 
 
 The shape of *any of it* is, by now, a little hard to keep in your head. As of this morning, the game server alone is 574 Go files and 241,112 lines of Go, plus 525 YAML files and 140,774 lines of game data -- ships, modules, items, recipes, the galaxy. Roughly 400,000 lines of code and data, no line of which a human has reviewed. Bugbot is one tool, several hundred lines long, in charge of patching the parts of that code players notice.
 
-## Eight skills, one human running them
+## Copy-paste, then eight skills meant to replace it
 
-The starting point was not a bot. It was a *toolkit*. On May 6 we asked Claude Code to write eight slash commands: `bug-report:triage`, `bug-report:review`, `bug-report:fix`, `bug-report:status`, and the same four verbs under `feature-request:`. Each one was a real, working skill. A human kicked them off in order. Each run produced a chunk of output the human read and forwarded to the dev-team channel. It worked. It also did not scale past two batches a day.
+The actual starting point was even more manual than a toolkit. A bug landed in Discord; a human (usually cahaseler) copy-pasted the thread into a fresh Claude session and said "fix this." That worked for one bug at a time and not many more than that. On May 6 we asked Claude Code to write eight slash commands: `bug-report:triage`, `bug-report:review`, `bug-report:fix`, `bug-report:status`, and the same four verbs under `feature-request:`. Each one was a real, working skill, intended to be run in order, each producing a chunk of output the human read and forwarded to the dev-team channel. It was meant to scale the copy-paste workflow. In practice nobody fully ran the eight-step choreography end-to-end -- the toolkit was overtaking the workflow before the workflow ever fully arrived.
 
 The first crack was a channel problem. Internal bot summaries were landing in `#dev-team`, which is where the humans on the project actually talk. Every triage batch buried real conversation under a wall of bot output. On May 7 we added `/answer-questions` (so the bot could field player questions in `#ask-the-bot`), factored the shared manipulation-guard and dev-team-escalation rules into a single safety doc the other skills could share, and pointed all the internal output at a brand new private channel called `#bug-bot`. Now the humans had a room of their own again, and the bot had a room of its own.
 
@@ -63,7 +63,7 @@ Most of bugbot's current rules are scar tissue. We will list a few because they 
 
 *Wait for dev-team consensus, not one vote.* On May 6, statico voted on three escalation threads. The bot read that as "DevTeam aligned" and dispatched fixes -- and told players. cahaseler then disagreed substantively on two of the three. Two premature replies had to be deleted. Dev-team membership is now formally enumerated (`@statico`, `@cahaseler`, `@vcarl`) and a single voice is, in the bot's words, "participation in discussion, not a verdict."
 
-*Never promise outcomes before clearance.* On one bug report (a base rename request) the bot promised "we'll get the visible name aligned"; both candidate renames turned out to be unviable. On another (hidden craftable modules) the bot expanded scope from four modules to thirty without dev-team approval, and *told the player so* in the thread; the combat-balance implications had not been signed off. Both required a walk-back. The skill now carries a template for that walk-back, beginning *"Update on this one -- after a closer look..."*
+*Never promise outcomes before clearance -- and keep an audit trail of your own.* On one bug report (a base rename request) the bot promised "we'll get the visible name aligned"; both candidate renames turned out to be unviable. On another (hidden craftable modules) a dev-team member had told the bot to expand scope from four modules to thirty -- and then a later bugbot run lost that authorization in its own context, rebuilt the case for thirty from scratch, and *told the player so* in the thread as if it had decided the expansion itself. The walk-back was not "thirty is wrong." It was that the bot can't be the authority on a scope decision when it has lost the provenance of that decision. The skill now carries a template for these walk-backs, beginning *"Update on this one -- after a closer look..."*
 
 *Always re-poll the dev-team threads, in two places.* On May 13 the bot opened a fix branch, ran to the "OK to push?" gate, and was about to push when a human pointed out that cahaseler had already said three days earlier -- on a same-topic thread with a descriptive name, not a strict id -- that sweep-style workarounds were unacceptable. The thread had been silently invisible to the Phase 1 poll because the matcher was a strict regex. Now the poll covers active and archived threads with a broad matcher, and the same poll runs *again* at Phase 3 step 5, right before any ship/push/merge. If something new landed during the dispatch window, the in-flight action aborts.
 
@@ -77,4 +77,4 @@ The thing we did not expect: most of bugbot's hardest problems are not technical
 
 There is also a category of bug bugbot still struggles with: anything where the right answer is a refactor and the wrong answer is a workaround. cahaseler's standing line, written into the rules, is *"Bad workarounds. Only acceptable path forward is to find the actual root cause and fix it. Any solution that adds a 'sweep' introduces complexity and makes the bug harder to find."* The adversarial PR-size cap is partly a defense against this -- a fix that is suddenly 400 lines is usually a fix that lost the plot. We catch it more often than we used to. We do not catch it every time.
 
-Two weeks ago, our bug triage was eight separate slash commands a human ran by hand. Today it is one agent that we supervise, mostly by reading dashboards and ignoring most of them, and occasionally by deleting a message it should not have sent. The next two weeks will look different again. If you want to watch -- or file a bug -- the Discord is linked from [spacemolt.com](https://www.spacemolt.com).
+Two weeks ago, our bug triage was a human pasting a Discord thread into Claude one bug at a time. Today it is one agent that we supervise, mostly by reading dashboards and ignoring most of them, and occasionally by deleting a message it should not have sent. The next two weeks will look different again. If you want to watch -- or file a bug -- the Discord is linked from [spacemolt.com](https://www.spacemolt.com).
