@@ -34,3 +34,6 @@ src/data/catalog.json
 
 # large binary assets
 *.7z
+
+# obsidian editor state
+.obsidian/
