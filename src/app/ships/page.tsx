@@ -14,6 +14,12 @@ interface BuildMaterial {
   quantity: number
 }
 
+interface InherentCapability {
+  type: string
+  value?: number
+  flag?: string
+}
+
 interface Ship {
   id: string
   name: string
@@ -47,6 +53,7 @@ interface Ship {
   build_materials: BuildMaterial[]
   flavor_tags: string[]
   tow_speed_bonus: number
+  inherent_capabilities?: InherentCapability[]
 }
 
 interface Empire {
@@ -111,6 +118,63 @@ function formatNumber(n: number): string {
 }
 
 const formatSkillName = titleCase
+
+// Human-readable labels for inherent ship capability types.
+const CAPABILITY_LABELS: Record<string, string> = {
+  ore_yield_bonus: 'Ore Mining Yield',
+  ice_yield_bonus: 'Ice Harvesting Yield',
+  gas_yield_bonus: 'Gas Harvesting Yield',
+  ore_cargo_efficiency: 'Ore Cargo Space',
+  gas_cargo_efficiency: 'Gas Cargo Space',
+  ice_cargo_efficiency: 'Ice Cargo Space',
+  fuel_efficiency_bonus: 'Fuel Efficiency',
+  integrated_cloak: 'Integrated Cloak',
+  integrated_scanner: 'Integrated Scanner',
+  integrated_survey_scanner: 'Integrated Survey Scanner',
+  scan_resistance: 'Scan Resistance',
+  ship_bay_capacity: 'Ship Bay Capacity',
+  anomaly_detection: 'Anomaly Detection',
+  special_flag: 'Special',
+}
+
+// Capability types whose value is a percentage of normal cargo space consumed
+// (lower is better, e.g. 50 = takes half the usual space).
+const CARGO_EFFICIENCY_TYPES = new Set([
+  'ore_cargo_efficiency',
+  'gas_cargo_efficiency',
+  'ice_cargo_efficiency',
+])
+
+// Capability types whose value is a percentage bonus.
+const PERCENT_BONUS_TYPES = new Set([
+  'ore_yield_bonus',
+  'ice_yield_bonus',
+  'gas_yield_bonus',
+  'fuel_efficiency_bonus',
+])
+
+function capabilityLabel(cap: InherentCapability): string {
+  if (cap.type === 'special_flag' && cap.flag) {
+    return titleCase(cap.flag)
+  }
+  return CAPABILITY_LABELS[cap.type] || titleCase(cap.type)
+}
+
+function capabilityValue(cap: InherentCapability): string {
+  if (cap.type === 'special_flag') {
+    return 'Enabled'
+  }
+  if (cap.value === undefined) {
+    return 'Yes'
+  }
+  if (CARGO_EFFICIENCY_TYPES.has(cap.type)) {
+    return `${cap.value}% of normal`
+  }
+  if (PERCENT_BONUS_TYPES.has(cap.type)) {
+    return `+${cap.value}%`
+  }
+  return formatNumber(cap.value)
+}
 
 function GuideSection() {
   const [open, setOpen] = useState(false)
@@ -801,6 +865,20 @@ export default function ShipsPage() {
                       </div>
                     </div>
 
+                    {ship.inherent_capabilities && ship.inherent_capabilities.length > 0 && (
+                      <div className={styles.detailSection}>
+                        <h4 className={styles.detailSectionTitle}>Inherent Bonuses</h4>
+                        <div className={styles.fullStatsGrid}>
+                          {ship.inherent_capabilities.map((cap, i) => (
+                            <div key={`${cap.type}-${cap.flag ?? i}`} className={styles.fullStatItem}>
+                              <span className={styles.fullStatLabel}>{capabilityLabel(cap)}</span>
+                              <span className={styles.fullStatValue}>{capabilityValue(cap)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     {((ship.required_skills && Object.keys(ship.required_skills).length > 0) || (ship.piloting_required && ship.piloting_required > 0)) && (
                       <div className={styles.detailSection}>
                         <h4 className={styles.detailSectionTitle}>Required Skills</h4>
@@ -931,6 +1009,18 @@ export default function ShipsPage() {
                             <div className={styles.tableExpandText}>
                               <p className={styles.tableExpandDescription}>{ship.description}</p>
                               {ship.lore && <p className={styles.tableExpandLore}>{ship.lore}</p>}
+                              {ship.inherent_capabilities && ship.inherent_capabilities.length > 0 && (
+                                <div className={styles.detailSection}>
+                                  <h4 className={styles.detailSectionTitle}>Inherent Bonuses</h4>
+                                  <div className={styles.skillsList}>
+                                    {ship.inherent_capabilities.map((cap, i) => (
+                                      <span key={`${cap.type}-${cap.flag ?? i}`} className={styles.skillItem}>
+                                        {capabilityLabel(cap)}: {capabilityValue(cap)}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </td>
