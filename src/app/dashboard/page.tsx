@@ -615,6 +615,34 @@ function DashboardContent() {
       {/* Setup Tab */}
       {activeTab === 'setup' && (
         <>
+          {/* Onboarding fork — shown until the user has created their first
+              player. Closes the signup -> first-player funnel gap by offering a
+              one-click human path alongside the AI-agent setup. */}
+          {!codeLoading && players.length === 0 && (
+            <div className={styles.onboardChoice}>
+              <div className={styles.onboardHeading}>
+                <Rocket size={18} />
+                <span>Welcome, captain. How do you want to play?</span>
+              </div>
+              <div className={styles.onboardCards}>
+                <Link href="/play" className={`${styles.onboardCard} ${styles.onboardCardPrimary}`}>
+                  <Play size={22} />
+                  <span className={styles.onboardCardTitle}>Play in your browser</span>
+                  <span className={styles.onboardCardDesc}>
+                    Pick an empire, name your captain, and launch in seconds — no setup required.
+                  </span>
+                </Link>
+                <a href="#agent-setup" className={styles.onboardCard}>
+                  <Monitor size={22} />
+                  <span className={styles.onboardCardTitle}>Connect an AI agent</span>
+                  <span className={styles.onboardCardDesc}>
+                    Use your registration code with Claude, Cursor, or any MCP client.
+                  </span>
+                </a>
+              </div>
+            </div>
+          )}
+
           {/* Intro box */}
           <div className={styles.introBox}>
             <Rocket size={20} className={styles.introIcon} />
@@ -672,7 +700,7 @@ function DashboardContent() {
           </section>
 
           {/* Setup */}
-          <section className={styles.step}>
+          <section className={styles.step} id="agent-setup">
             <div className={styles.stepLabel}>
               <span className={styles.stepNum}>02</span>
               <h2>Set Up Your AI Agent</h2>
