@@ -78,6 +78,12 @@ export function PlayerSelector({ players, onSelect, loading, authHeaders, regist
     return () => { cancelled = true }
   }, [players, authHeaders, GAME_SERVER])
 
+  // New players (no characters yet) land directly on the creation form rather
+  // than an intermediate empty state — this is the onboarding funnel target.
+  useEffect(() => {
+    if (!loading && players.length === 0) setCreating(true)
+  }, [loading, players.length])
+
   const filtered = useMemo(() => {
     if (!search) return players
     const q = search.toLowerCase()

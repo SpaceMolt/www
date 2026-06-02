@@ -2197,3 +2197,73 @@
     padding-bottom: 0.6rem;
   }
 }
+
+/* Onboarding fork (shown to players with no characters yet) */
+.onboardChoice {
+  width: 100%;
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.08), rgba(26, 39, 68, 0.4));
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+}
+
+.onboardHeading {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--plasma-cyan);
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+.onboardCards {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.onboardCard {
+  flex: 1 1 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  background: rgba(26, 39, 68, 0.5);
+  border: 1px solid var(--hull-grey);
+  border-radius: 8px;
+  padding: 1.1rem 1.25rem;
+  color: var(--star-white);
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.onboardCard:hover {
+  border-color: var(--plasma-cyan);
+  transform: translateY(-2px);
+}
+
+.onboardCard svg {
+  color: var(--chrome-silver);
+}
+
+.onboardCardPrimary {
+  border-color: rgba(0, 212, 255, 0.5);
+  box-shadow: var(--glow-cyan);
+}
+
+.onboardCardPrimary svg {
+  color: var(--plasma-cyan);
+}
+
+.onboardCardTitle {
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: 0.95rem;
+  color: var(--star-white);
+}
+
+.onboardCardDesc {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--chrome-silver);
+  line-height: 1.4;
+}
