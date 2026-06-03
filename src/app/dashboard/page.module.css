@@ -1254,6 +1254,11 @@
   padding: 2rem 0;
 }
 
+.settingsTab {
+  width: 100%;
+  padding: 1.5rem 0;
+}
+
 .humanWarning {
   display: flex;
   gap: 1rem;

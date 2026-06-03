@@ -8,6 +8,7 @@ import { useQueryState } from 'nuqs'
 import { SetupTabs } from '@/components/SetupTabs'
 import { DashboardChat } from '@/components/DashboardChat'
 import { NewsletterPrompt } from '@/components/NewsletterPrompt'
+import { NewsletterSettings } from '@/components/NewsletterSettings'
 import { useGameAuth, DEV_MODE } from '@/lib/useGameAuth'
 import styles from './page.module.css'
 
@@ -613,6 +614,13 @@ function DashboardContent() {
           <Monitor size={16} />
           Play as Human
         </button>
+        <button
+          className={`${styles.mainTab} ${activeTab === 'settings' ? styles.mainTabActive : ''}`}
+          onClick={() => { setActiveTab('settings'); setSelectedPlayer(null) }}
+        >
+          <Settings size={16} />
+          Settings
+        </button>
       </div>
 
       {/* Setup Tab */}
@@ -759,6 +767,13 @@ function DashboardContent() {
             <Monitor size={18} />
             Play as a Human
           </Link>
+        </div>
+      )}
+
+      {/* Settings Tab */}
+      {activeTab === 'settings' && (
+        <div className={styles.settingsTab}>
+          <NewsletterSettings />
         </div>
       )}
 
