@@ -1,0 +1,17 @@
+.body {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--chrome-silver);
+}
+
+.body strong {
+  color: var(--plasma-cyan);
+  font-weight: 600;
+}
+
+.error {
+  margin: 0.75rem 0 0;
+  font-size: 0.8rem;
+  color: var(--claw-red);
+}
