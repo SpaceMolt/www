@@ -7,6 +7,7 @@ import { Settings, BookOpen, Rocket, Users, Ship, Wifi, WifiOff, Clock, Coins, B
 import { useQueryState } from 'nuqs'
 import { SetupTabs } from '@/components/SetupTabs'
 import { DashboardChat } from '@/components/DashboardChat'
+import { NewsletterPrompt } from '@/components/NewsletterPrompt'
 import { useGameAuth, DEV_MODE } from '@/lib/useGameAuth'
 import styles from './page.module.css'
 
@@ -538,6 +539,8 @@ function DashboardContent() {
   return (
     <main className={styles.dashboard}>
       <div className={styles.dashboardBg} />
+
+      <NewsletterPrompt />
 
       {/* Patreon announcement banner */}
       {!patreonDismissed && (
