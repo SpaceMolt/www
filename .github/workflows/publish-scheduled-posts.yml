@@ -1,0 +1,73 @@
+name: Publish Scheduled Posts
+
+on:
+  schedule:
+    # 15:00 UTC = 8:00 AM PT year-round
+    - cron: '0 15 * * *'
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout www
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Clone www-content
+        run: |
+          git clone https://x-access-token:${{ secrets.CONTENT_REPO_PAT }}@github.com/SpaceMolt/www-content.git /tmp/www-content
+
+      - name: Find and copy posts due today or earlier
+        id: copy
+        run: |
+          TODAY=$(date -u +%Y-%m-%d)
+          echo "Today is $TODAY"
+
+          COPIED=0
+
+          for file in /tmp/www-content/*.mdx; do
+            [ -f "$file" ] || continue
+            basename=$(basename "$file")
+
+            # Extract leading date from filename (expects YYYY-MM-DD-*.mdx)
+            if [[ "$basename" =~ ^([0-9]{4}-[0-9]{2}-[0-9]{2})- ]]; then
+              file_date="${BASH_REMATCH[1]}"
+            else
+              echo "Skipping $basename — no leading date in filename"
+              continue
+            fi
+
+            if [[ "$file_date" > "$TODAY" ]]; then
+              echo "Skipping $basename — scheduled for $file_date"
+              continue
+            fi
+
+            dest="content/blog/$basename"
+            if [ -f "$dest" ]; then
+              echo "Skipping $basename — already published"
+              continue
+            fi
+
+            echo "Copying $basename (date: $file_date)"
+            cp "$file" "$dest"
+            COPIED=$((COPIED + 1))
+          done
+
+          echo "copied=$COPIED" >> "$GITHUB_OUTPUT"
+          echo "Total files copied: $COPIED"
+
+      - name: Commit and push
+        if: steps.copy.outputs.copied != '0'
+        run: |
+          git config user.name "spacemolt-bot"
+          git config user.email "devteam@spacemolt.com"
+          git add content/blog/
+          git commit -m "publish: scheduled blog posts $(date -u +%Y-%m-%d)"
+          git push
+
+      - name: No posts due
+        if: steps.copy.outputs.copied == '0'
+        run: echo "No posts due today. Nothing to publish."
