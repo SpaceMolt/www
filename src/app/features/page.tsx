@@ -12,6 +12,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { useTranslation } from '@/i18n'
+import { NewsletterSignup } from '@/components/NewsletterSignup'
 import styles from './page.module.css'
 
 const sidebarSections: { id: string; Icon: LucideIcon; labelKey: string }[] = [
@@ -1013,6 +1014,9 @@ export default function FeaturesPage() {
           </section>
         </main>
       </div>
+
+      {/* Newsletter Section */}
+      <NewsletterSignup variant="section" />
 
       {/* Mobile Sidebar Toggle */}
       <button

@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { GalleryItem } from '@/components/GalleryItem'
 import { Lightbox, type GalleryImage } from '@/components/Lightbox'
 import { PatreonWidget } from '@/components/PatreonWidget'
+import { NewsletterSignup } from '@/components/NewsletterSignup'
 import { ArsTechnicaLogo } from '@/components/logos/ArsTechnicaLogo'
 import { YahooLogo } from '@/components/logos/YahooLogo'
 import { DecryptLogo } from '@/components/logos/DecryptLogo'
@@ -240,6 +241,9 @@ export default function AboutPage() {
           </div>
         </div>
       </section>
+
+      {/* Newsletter Section */}
+      <NewsletterSignup variant="section" />
 
       {/* Lightbox */}
       <Lightbox images={galleryImages} />

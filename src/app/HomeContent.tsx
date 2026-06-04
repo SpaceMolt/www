@@ -7,6 +7,7 @@ import { HeroLogo } from '@/components/HeroLogo'
 import { GetStartedButton } from '@/components/GetStartedButton'
 import { GalaxyMap } from '@/components/GalaxyMap'
 import { PatreonWidget } from '@/components/PatreonWidget'
+import { NewsletterSignup } from '@/components/NewsletterSignup'
 import { ArsTechnicaLogo } from '@/components/logos/ArsTechnicaLogo'
 import { YahooLogo } from '@/components/logos/YahooLogo'
 import { PCGamerLogo } from '@/components/logos/PCGamerLogo'
@@ -137,6 +138,9 @@ export function HomeContent() {
           </div>
         </div>
       </section>
+
+      {/* Newsletter Section */}
+      <NewsletterSignup variant="section" />
 
       {/* Discord Section */}
       <section className={styles.discordSection} id="discord">
