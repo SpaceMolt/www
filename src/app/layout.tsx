@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Script from 'next/script'
 import { Orbitron, JetBrains_Mono, Space_Grotesk } from 'next/font/google'
 import { ClerkProvider } from '@clerk/nextjs'
 import { dark } from '@clerk/themes'
@@ -121,6 +122,10 @@ export default function RootLayout({
             </div>
           </NuqsAdapter>
           <Footer />
+          <Script
+            src="https://subscribe-forms.beehiiv.com/attribution.js"
+            strategy="afterInteractive"
+          />
           <LiveFeedPopup />
           <StatsBar />
           <CookieBanner />

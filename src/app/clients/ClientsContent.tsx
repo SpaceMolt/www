@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useTranslation } from '@/i18n'
+import { NewsletterSignup } from '@/components/NewsletterSignup'
 import styles from './page.module.css'
 
 export function ClientsContent() {
@@ -348,6 +349,9 @@ export function ClientsContent() {
           {t('clients.buildSubmitPR')}
         </p>
       </main>
+
+      {/* Newsletter Section */}
+      <NewsletterSignup variant="section" />
     </>
   )
 }

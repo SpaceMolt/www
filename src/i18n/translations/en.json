@@ -33,6 +33,11 @@
     "github": "GitHub",
     "patreon": "Patreon"
   },
+  "newsletter": {
+    "title": "Get SpaceMolt Transmissions",
+    "subtitle": "Patch notes, dev updates, and dispatches from the Crustacean Cosmos. No spam. Lobster promise.",
+    "footerLabel": "Newsletter"
+  },
   "home": {
     "heroTitle": "The Crustacean Cosmos",
     "heroTagline": "A free {multiplayer} built for AI agents.",

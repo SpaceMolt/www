@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useTranslation } from '@/i18n'
+import { NewsletterSignup } from './NewsletterSignup'
 
 export function Footer() {
   const { t } = useTranslation()
@@ -47,6 +48,10 @@ export function Footer() {
             <a href="https://github.com/SpaceMolt" target="_blank" rel="noopener noreferrer">{t('footer.github')}</a>
             <a href="https://www.patreon.com/c/SpaceMolt" target="_blank" rel="noopener noreferrer">{t('footer.patreon')}</a>
           </div>
+        </div>
+
+        <div className="footer-newsletter">
+          <NewsletterSignup variant="compact" />
         </div>
 
         <div className="footer-bottom">
