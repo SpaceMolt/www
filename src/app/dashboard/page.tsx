@@ -14,6 +14,18 @@ import styles from './page.module.css'
 
 const GAME_SERVER = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 
+// Survey A (active-player research) banner — see www issue #123
+const SURVEY_A_URL = 'https://tally.so/r/0Qk77B'
+const SURVEY_A_ACTIVE_WINDOW_MS = 7 * 24 * 60 * 60 * 1000
+
+/** True if the given ISO timestamp is within the last 7 days. */
+function isRecentlyActive(ts?: string): boolean {
+  if (!ts) return false
+  const t = Date.parse(ts)
+  if (Number.isNaN(t)) return false
+  return Date.now() - t <= SURVEY_A_ACTIVE_WINDOW_MS
+}
+
 interface LinkedPlayer {
   id: string
   username: string
@@ -267,6 +279,36 @@ function DashboardContent() {
     if (typeof window === 'undefined') return false
     return localStorage.getItem('patreon-banner-dismissed') === '1'
   })
+
+  // Survey A banner state (www issue #123)
+  const [surveyDismissed, setSurveyDismissed] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return localStorage.getItem('survey-a-banner-dismissed') === '1'
+  })
+  // Timing gate: show immediately on a second-or-later visit, otherwise after ~30s.
+  const [surveyTimingReady, setSurveyTimingReady] = useState(false)
+  const surveyVisitRecorded = useRef(false)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    // Increment the persisted visit count once per real mount. The ref guard keeps
+    // React StrictMode's double-invoke (mount → cleanup → remount in dev) from
+    // counting a single visit twice; a genuine new page load gets a fresh ref.
+    let count: number
+    if (surveyVisitRecorded.current) {
+      count = parseInt(localStorage.getItem('survey-a-visit-count') || '1', 10)
+    } else {
+      surveyVisitRecorded.current = true
+      const prev = parseInt(localStorage.getItem('survey-a-visit-count') || '0', 10)
+      count = (Number.isFinite(prev) ? prev : 0) + 1
+      localStorage.setItem('survey-a-visit-count', String(count))
+    }
+    if (count >= 2) {
+      setSurveyTimingReady(true)
+      return
+    }
+    const timer = setTimeout(() => setSurveyTimingReady(true), 30000)
+    return () => clearTimeout(timer)
+  }, [])
 
   // Chat tab state
   const [allPlayerInfo, setAllPlayerInfo] = useState<PlayerInfo[]>([])
@@ -565,6 +607,37 @@ function DashboardContent() {
               localStorage.setItem('patreon-banner-dismissed', '1')
             }}
             aria-label="Dismiss"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
+      {/* Survey A research banner — shown to recently-active players (www issue #123) */}
+      {!surveyDismissed &&
+        surveyTimingReady &&
+        (isRecentlyActive(playerInfo?.last_active_at) ||
+          allPlayerInfo.some((p) => isRecentlyActive(p.last_active_at))) && (
+        <div className={styles.surveyBanner}>
+          <ScrollText size={16} className={styles.surveyBannerIcon} />
+          <span className={styles.surveyBannerText}>
+            Help us improve SpaceMolt &mdash; 3-minute survey
+          </span>
+          <a
+            href={SURVEY_A_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.surveyBannerLink}
+          >
+            Take the survey
+          </a>
+          <button
+            className={styles.surveyBannerClose}
+            onClick={() => {
+              setSurveyDismissed(true)
+              localStorage.setItem('survey-a-banner-dismissed', '1')
+            }}
+            aria-label="Dismiss survey banner"
           >
             <X size={14} />
           </button>
