@@ -27,7 +27,7 @@ const TIERS = [1, 2, 3, 4, 5]
 const CATEGORIES = ['Civilian', 'Combat', 'Commercial', 'Exploration', 'Industrial']
 const CLASSES = ['Assault', 'Courier', 'Explorer', 'Fighter', 'Freighter', 'Gas Harvester', 'Ice Harvester', 'Miner', 'Raider', 'Salvager', 'Scout', 'Shuttle']
 
-interface CatalogShip {
+export interface CatalogShip {
   id: string
   name: string
   class: string
@@ -49,6 +49,18 @@ interface CatalogShip {
   build_materials?: { item_id: string; quantity: number }[]
   build_time?: number
   faction?: string
+}
+
+/**
+ * Whether a catalog ship passes the tier dropdown filter.
+ *
+ * `tier` is the raw <select> value: '' means "All Tiers" (show everything),
+ * otherwise it's a stringified tier number ('1'..'5') that must match the
+ * ship's numeric tier exactly. Tier-0 ships were previously dropped because
+ * the old predicate fell back to `s.tier > 0` when no tier was selected.
+ */
+export function matchesTierFilter(ship: { tier: number }, tier: string): boolean {
+  return !tier || parseInt(tier, 10) === ship.tier
 }
 
 interface ShipListing {
@@ -161,7 +173,7 @@ export function ShipCatalog() {
     if (commissionableOnly) params.commissionable = true
     sendCommand('catalog', params).then((result) => {
       const r = result as Record<string, unknown>
-      const items = ((r.items || []) as CatalogShip[]).filter((s) => tier || s.tier > 0)
+      const items = ((r.items || []) as CatalogShip[]).filter((s) => matchesTierFilter(s, tier))
       setShips(items)
       setTotal((r.total as number) || 0)
       setLoading(false)
