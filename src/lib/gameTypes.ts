@@ -40,7 +40,6 @@ export type SurveySystemResponse = Schema['SurveySystemResponse']
 export type GetBaseResponse = Schema['GetBaseResponse']
 export type GetPOIResponse = Schema['GetPOIResponse']
 export type GetSystemResponse = Schema['GetSystemResponse']
-export type GetShipsResponse = Schema['GetShipsResponse']
 export type GetNearbyResponse = Schema['GetNearbyResponse']
 export type GetVersionResponse = Schema['GetVersionResponse']
 export type GetMapResponse = Schema['GetMapResponse']
@@ -61,7 +60,9 @@ export type AnalyzeMarketResponse = Schema['AnalyzeMarketResponse']
 export type EstimatePurchaseResponse = Schema['EstimatePurchaseResponse']
 
 // Storage
-export type ViewStorageResponse = Schema['ViewStorageResponse']
+// StorageResponse is a oneOf union of every storage action result; the view
+// shape is the variant with a required `items` field.
+export type ViewStorageResponse = Extract<Schema['StorageResponse'], { items: unknown }>
 export type DepositItemsResponse = Schema['DepositItemsResponse']
 export type WithdrawItemsResponse = Schema['WithdrawItemsResponse']
 
@@ -115,7 +116,9 @@ export type FactionListResponse = Schema['FactionListResponse']
 export type CreateFactionResponse = Schema['CreateFactionResponse']
 
 // Facilities
-export type FacilityListResponse = Schema['FacilityListResponse']
+// FacilityResponse is a oneOf union of every facility action result; the list
+// shape is the variant with a required `station_facilities` field.
+export type FacilityListResponse = Extract<Schema['FacilityResponse'], { station_facilities: unknown }>
 export type Facility = FacilityListResponse['station_facilities'][number]
 
 // Insurance & Salvage
@@ -123,7 +126,7 @@ export type GetInsuranceQuoteResponse = Schema['GetInsuranceQuoteResponse']
 export type BuyInsuranceResponse = Schema['BuyInsuranceResponse']
 export type SetHomeBaseResponse = Schema['SetHomeBaseResponse']
 export type LootWreckResponse = Schema['LootWreckResponse']
-export type SalvageWreckResponse = Schema['SalvageWreckResponse']
+export type ScrapWreckResponse = Schema['ScrapWreckResponse']
 
 // Shared
 export type V2Response = Schema['V2Response']

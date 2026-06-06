@@ -196,16 +196,18 @@ export function InfoPanel() {
               Player Stats
             </div>
             <div className={styles.statsGrid}>
-              {Object.entries(player.stats).map(([key, value]) => (
-                <div key={key} className={styles.statItem}>
-                  <span className={styles.statLabel}>
-                    {key.replace(/_/g, ' ')}
-                  </span>
-                  <span className={styles.statValue}>
-                    {typeof value === 'number' ? value.toLocaleString() : value}
-                  </span>
-                </div>
-              ))}
+              {Object.entries(player.stats)
+                .filter(([, value]) => typeof value === 'number')
+                .map(([key, value]) => (
+                  <div key={key} className={styles.statItem}>
+                    <span className={styles.statLabel}>
+                      {key.replace(/_/g, ' ')}
+                    </span>
+                    <span className={styles.statValue}>
+                      {(value as number).toLocaleString()}
+                    </span>
+                  </div>
+                ))}
             </div>
           </div>
         )}

@@ -83,11 +83,6 @@ export function FacilityCard({ facility, children }: FacilityCardProps) {
             {formatLabel(serviceLabel)}
           </span>
         )}
-        {!facility.yours && facility.owner_id && (
-          <span className={facility.faction_id ? shared.badgePurple : shared.badgeCyan}>
-            {facility.faction_id ? 'Faction-owned' : 'Player-owned'}
-          </span>
-        )}
         <BugReportButton contextType="facility" entityName={facility.name} entityContext={buildFacilityContext(facility)} />
       </div>
 
