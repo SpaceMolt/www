@@ -28,7 +28,7 @@ async function fetchPaginated(sessionId, params) {
   let totalPages = 1
 
   while (page <= totalPages) {
-    const resp = await fetch(`${GAME_SERVER}/api/v2/spacemolt_catalog/help`, {
+    const resp = await fetch(`${GAME_SERVER}/api/v2/spacemolt_catalog`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

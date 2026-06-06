@@ -91,7 +91,7 @@ const COMMAND_MAP: Record<string, V2Route> = {
   dock: { tool: 'spacemolt', action: 'dock' },
   undock: { tool: 'spacemolt', action: 'undock' },
   get_system: { tool: 'spacemolt', action: 'get_system' },
-  search_systems: { tool: 'spacemolt', action: 'search_systems' },
+  search_systems: { tool: 'spacemolt', action: 'search_systems', params: { query: 'text' } },
   find_route: { tool: 'spacemolt', action: 'find_route', params: { target_system: 'id' } },
   survey_system: { tool: 'spacemolt', action: 'survey_system' },
 
@@ -138,7 +138,7 @@ const COMMAND_MAP: Record<string, V2Route> = {
   complete_mission: { tool: 'spacemolt', action: 'complete_mission', params: { mission_id: 'id' } },
   abandon_mission: { tool: 'spacemolt', action: 'abandon_mission', params: { mission_id: 'id' } },
   completed_missions: { tool: 'spacemolt', action: 'completed_missions' },
-  view_completed_mission: { tool: 'spacemolt', action: 'view_completed_mission' },
+  view_completed_mission: { tool: 'spacemolt', action: 'view_completed_mission', params: { template_id: 'id' } },
 
   // market / exchange
   view_market: { tool: 'spacemolt_market', action: 'view_market' },
@@ -146,7 +146,7 @@ const COMMAND_MAP: Record<string, V2Route> = {
   create_sell_order: { tool: 'spacemolt_market', action: 'create_sell_order' },
   create_buy_order: { tool: 'spacemolt_market', action: 'create_buy_order' },
   cancel_order: { tool: 'spacemolt_market', action: 'cancel_order' },
-  modify_order: { tool: 'spacemolt_market', action: 'modify_order' },
+  modify_order: { tool: 'spacemolt_market', action: 'modify_order', params: { new_price: 'price_each' } },
   estimate_purchase: { tool: 'spacemolt_market', action: 'estimate_purchase' },
   analyze_market: { tool: 'spacemolt_market', action: 'analyze_market' },
 
@@ -158,21 +158,22 @@ const COMMAND_MAP: Record<string, V2Route> = {
 
   // ship exchange
   list_ships: { tool: 'spacemolt_ship', action: 'list_ships' },
-  switch_ship: { tool: 'spacemolt_ship', action: 'switch_ship' },
-  sell_ship: { tool: 'spacemolt_ship', action: 'sell_ship' },
-  buy_ship: { tool: 'spacemolt_ship', action: 'buy_listed_ship' },
+  switch_ship: { tool: 'spacemolt_ship', action: 'switch_ship', params: { ship_id: 'id' } },
+  sell_ship: { tool: 'spacemolt_ship', action: 'sell_ship', params: { ship_id: 'id' } },
+  buy_ship: { tool: 'spacemolt_ship', action: 'buy_listed_ship', params: { listing_id: 'id' } },
   browse_ships: { tool: 'spacemolt_ship', action: 'browse_ships' },
-  buy_listed_ship: { tool: 'spacemolt_ship', action: 'buy_listed_ship' },
+  buy_listed_ship: { tool: 'spacemolt_ship', action: 'buy_listed_ship', params: { listing_id: 'id' } },
   shipyard_showroom: { tool: 'spacemolt_ship', action: 'browse_ships' },
-  commission_ship: { tool: 'spacemolt_ship', action: 'commission_ship' },
-  commission_quote: { tool: 'spacemolt_ship', action: 'commission_quote' },
+  commission_ship: { tool: 'spacemolt_ship', action: 'commission_ship', params: { ship_class: 'id' } },
+  commission_quote: { tool: 'spacemolt_ship', action: 'commission_quote', params: { ship_class: 'id' } },
   commission_status: { tool: 'spacemolt_ship', action: 'commission_status' },
-  claim_commission: { tool: 'spacemolt_ship', action: 'claim_commission' },
-  cancel_commission: { tool: 'spacemolt_ship', action: 'cancel_commission' },
+  claim_commission: { tool: 'spacemolt_ship', action: 'claim_commission', params: { commission_id: 'id' } },
+  cancel_commission: { tool: 'spacemolt_ship', action: 'cancel_commission', params: { commission_id: 'id' } },
 
   // battle
   get_battle_status: { tool: 'spacemolt_battle', action: 'status' },
   battle: { tool: 'spacemolt_battle', action: 'stance' }, // default; caller may override action
+  reload: { tool: 'spacemolt_battle', action: 'reload', params: { weapon_instance_id: 'id', ammo_item_id: 'target' } },
 
   // catalog
   catalog: { tool: 'spacemolt_catalog', action: 'help' }, // catalog passes params directly
@@ -180,7 +181,7 @@ const COMMAND_MAP: Record<string, V2Route> = {
   // social
   chat: { tool: 'spacemolt_social', action: 'chat' },
   get_chat_history: { tool: 'spacemolt_social', action: 'get_chat_history' },
-  set_status: { tool: 'spacemolt_social', action: 'set_status' },
+  set_status: { tool: 'spacemolt_social', action: 'set_status', params: { status_message: 'content' } },
   set_colors: { tool: 'spacemolt_social', action: 'set_colors' },
   set_anonymous: { tool: 'spacemolt_social', action: 'set_status' },
   get_action_log: { tool: 'spacemolt_social', action: 'get_action_log' },
@@ -211,10 +212,11 @@ const COMMAND_MAP: Record<string, V2Route> = {
   faction_list: { tool: 'spacemolt_faction', action: 'list' },
   faction_invite: { tool: 'spacemolt_fleet', action: 'invite', params: { player_id: 'id' } },
   faction_kick: { tool: 'spacemolt_fleet', action: 'kick', params: { player_id: 'id' } },
-  faction_promote: { tool: 'spacemolt_faction', action: 'promote', params: { player_id: 'id', role: 'text' } },
+  faction_promote: { tool: 'spacemolt_faction_admin', action: 'promote', params: { player_id: 'id', role: 'text' } },
   faction_get_invites: { tool: 'spacemolt_faction', action: 'get_invites' },
   faction_decline_invite: { tool: 'spacemolt_faction', action: 'decline_invite', params: { faction_id: 'id' } },
-  faction_set_ally: { tool: 'spacemolt_faction', action: 'set_ally', params: { faction_id: 'id' } },
+  faction_propose_ally: { tool: 'spacemolt_faction', action: 'propose_ally', params: { faction_id: 'id' } },
+  faction_accept_ally: { tool: 'spacemolt_faction', action: 'accept_ally', params: { faction_id: 'id' } },
   faction_set_enemy: { tool: 'spacemolt_faction', action: 'set_enemy', params: { faction_id: 'id' } },
   faction_declare_war: { tool: 'spacemolt_faction', action: 'declare_war', params: { faction_id: 'id', reason: 'text' } },
   faction_propose_peace: { tool: 'spacemolt_faction', action: 'propose_peace', params: { faction_id: 'id', terms: 'text' } },
@@ -222,7 +224,7 @@ const COMMAND_MAP: Record<string, V2Route> = {
   faction_edit: { tool: 'spacemolt_faction_admin', action: 'edit' },
   faction_rooms: { tool: 'spacemolt_faction', action: 'rooms' },
   faction_visit_room: { tool: 'spacemolt_faction', action: 'visit_room', params: { room_id: 'id' } },
-  faction_write_room: { tool: 'spacemolt_faction', action: 'write_room', params: { name: 'id', content: 'text' } },
+  faction_write_room: { tool: 'spacemolt_faction_admin', action: 'write_room', params: { content: 'description' } },
   faction_delete_room: { tool: 'spacemolt_faction', action: 'delete_room', params: { room_id: 'id' } },
   faction_submit_intel: { tool: 'spacemolt_intel', action: 'submit_intel' },
   faction_query_intel: { tool: 'spacemolt_intel', action: 'query_intel' },
@@ -230,8 +232,8 @@ const COMMAND_MAP: Record<string, V2Route> = {
 
   // salvage / wrecks / insurance
   get_wrecks: { tool: 'spacemolt_salvage', action: 'wrecks' },
-  loot_wreck: { tool: 'spacemolt_salvage', action: 'loot' },
-  salvage_wreck: { tool: 'spacemolt_salvage', action: 'salvage' },
+  loot_wreck: { tool: 'spacemolt_salvage', action: 'loot', params: { wreck_id: 'id' } },
+  salvage_wreck: { tool: 'spacemolt_salvage', action: 'salvage', params: { wreck_id: 'id' } },
   tow_wreck: { tool: 'spacemolt_salvage', action: 'tow' },
   release_tow: { tool: 'spacemolt_salvage', action: 'release' },
   sell_wreck: { tool: 'spacemolt_salvage', action: 'sell' },
@@ -284,7 +286,7 @@ export const MUTATION_COMMANDS = new Set([
   'faction_set_ally', 'faction_set_enemy', 'faction_submit_intel',
   'install_mod', 'jettison', 'join_faction', 'jump', 'leave_faction',
   'list_ship_for_sale', 'loot_wreck', 'mine', 'modify_order', 'refuel',
-  'release_tow', 'repair', 'repair_module', 'salvage_wreck', 'scan',
+  'release_tow', 'reload', 'repair', 'repair_module', 'salvage_wreck', 'scan',
   'scrap_wreck', 'self_destruct', 'sell', 'sell_ship', 'sell_wreck',
   'send_gift', 'set_home_base', 'supply_commission', 'survey_system',
   'switch_ship', 'tow_wreck', 'trade_accept', 'trade_offer', 'travel',
@@ -359,15 +361,21 @@ export class GameApi {
     // but some commands override it based on the v1 params.
     let action = route.action
 
-    // Special case: catalog sends type as a param, not as action
+    // Special case: catalog sends type as a param, not as action — it posts
+    // to the bare tool path (POST /api/v2/spacemolt_catalog)
     if (v1Command === 'catalog') {
-      return this.callStructured('spacemolt_catalog', 'help', v2Params)
+      return this.callStructured('spacemolt_catalog', '', v2Params)
     }
 
     // Special case: battle dispatches on action field
     if (v1Command === 'battle' && v1Params?.action) {
       action = v1Params.action as string
       delete v2Params.action
+      // The stance action takes the stance value as its `id` param
+      if (action === 'stance' && v2Params.stance !== undefined) {
+        v2Params.id = v2Params.stance
+        delete v2Params.stance
+      }
     }
 
     return this.callStructured(route.tool, action, v2Params)
@@ -381,7 +389,8 @@ export class GameApi {
       throw new Error('No session. Call createSession() first.')
     }
 
-    const resp = await fetch(`${this.baseUrl}/${tool}/${action}`, {
+    // An empty action targets the bare tool path (e.g. POST /api/v2/spacemolt_catalog)
+    const resp = await fetch(action ? `${this.baseUrl}/${tool}/${action}` : `${this.baseUrl}/${tool}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

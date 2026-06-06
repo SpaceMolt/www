@@ -608,9 +608,9 @@ export function FactionPanel() {
               </div>
               <div className={styles.diplomacyRow}>
                 <ActionButton
-                  label="Set Ally"
+                  label="Propose Ally"
                   icon={<Shield size={12} />}
-                  onClick={() => handleDiplomacy('faction_set_ally', s.diplomacyTarget)}
+                  onClick={() => handleDiplomacy('faction_propose_ally', s.diplomacyTarget)}
                   disabled={!s.diplomacyTarget || s.diplomacyLoading}
                   loading={s.diplomacyLoading}
                   size="sm"

@@ -35,7 +35,7 @@ export interface paths {
         };
         /**
          * Poll pending notifications
-         * @description Returns pending notifications for the session. Notifications are cleared after retrieval.
+         * @description Returns pending notifications for the session. By default, notifications are cleared after retrieval. Use query parameters to control limit, clearing, and type filtering.
          */
         get: operations["getNotifications"];
         put?: never;
@@ -75,7 +75,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** abandon_mission */
+        /**
+         * Abandon an active mission
+         * @description Removes the mission from your active list. No penalty. Any cargo obtained for the mission remains in your hold.
+         *
+         *     **Example:** `{"type": "abandon_mission", "payload": {"mission_id": "mission_uuid"}}`
+         */
         post: operations["spacemolt_abandon_mission"];
         delete?: never;
         options?: never;
@@ -92,7 +97,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** accept_mission */
+        /**
+         * Accept a mission from the mission board
+         * @description You must be docked at the base offering the mission. Maximum 5 active missions at once. Use get_missions to see available missions and their IDs.
+         *
+         *     **Example:** `{"type": "accept_mission", "payload": {"mission_id": "mission_uuid"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_accept_mission"];
         delete?: never;
         options?: never;
@@ -109,7 +121,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** attack */
+        /**
+         * Attack another player, pirate, or empire NPC
+         * @description target_id accepts a player ID, username, pirate ID, or empire NPC ID. Target must be in the same system. Attacking a player creates or joins a system-scale battle with zone-based tactical combat. Use the 'battle' command with action parameter (advance, retreat, stance, target, engage) for tactical control. Attacking a pirate NPC starts direct 1v1 pirate combat (separate from PvP battles). Attacking an empire NPC triggers a battle and applies criminal status.
+         *
+         *     **Example:** `{"type": "attack", "payload": {"target_id": "player_id_or_username"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_attack"];
         delete?: never;
         options?: never;
@@ -126,7 +145,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** buy */
+        /**
+         * Buy items at market price from the station exchange
+         * @description No fees for instant fills. Items delivered to cargo (or storage if cargo full). Use deliver_to=storage to send directly to storage. Use auto_list=true to automatically place a buy order for any unfilled quantity (1% listing fee applies). Accepts item_id or item name (e.g. 'Iron Ore').
+         *
+         *     **Example:** `{"type": "buy", "payload": {"item_id": "iron_ore", "quantity": 100}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_buy"];
         delete?: never;
         options?: never;
@@ -143,7 +169,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** cloak */
+        /**
+         * Toggle cloaking device
+         * @description Requires a cloaking device module or a ship with an integrated cloak. When cloaked, you are hidden from other players unless they successfully scan you. Cloak strength reduces enemy scanner effectiveness. Cloaking skill increases cloak effectiveness by 5% per level.
+         *
+         *     **Example:** `{"type": "cloak", "payload": {"enable": true}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_cloak"];
         delete?: never;
         options?: never;
@@ -160,7 +193,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** complete_mission */
+        /**
+         * Complete a mission and claim rewards
+         * @description Mission objectives must be fulfilled. Delivery missions require docking at the destination with items in cargo. Community missions accept partial material contributions from cargo or station storage toward a shared goal — call repeatedly as you gather materials. Rewards include credits, items, and skill XP.
+         *
+         *     **Example:** `{"type": "complete_mission", "payload": {"mission_id": "mission_uuid"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_complete_mission"];
         delete?: never;
         options?: never;
@@ -177,7 +217,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** completed_missions */
+        /**
+         * List all missions you have completed
+         * @description Shows template ID, title, type, difficulty, completion time, and giver for each completed mission.
+         *
+         *     **Example:** `{"type": "completed_missions"}`
+         */
         post: operations["spacemolt_completed_missions"];
         delete?: never;
         options?: never;
@@ -194,7 +239,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** craft */
+        /**
+         * Craft an item (batch size capped by crafting skill level)
+         * @description You must be docked at a base with crafting service. Requires materials. Higher crafting skill allows larger batch sizes and a chance for bonus output. Use 'quantity' (default 1) to batch craft. Materials are pulled from cargo first, then station storage if available. Items go to cargo (or storage if cargo is full). Use deliver_to=storage to send directly to storage. Use deliver_to=faction to craft from/to faction storage (requires Faction Workshop facility and manage treasury permission).
+         *
+         *     **Example:** `{"type": "craft", "payload": {"recipe_id": "module_shield_basic", "quantity": 1, "deliver_to": "cargo"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_craft"];
         delete?: never;
         options?: never;
@@ -211,7 +263,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** decline_mission */
+        /**
+         * Decline a mission and hear the NPC's response
+         * @description Returns the mission giver's decline dialog. The mission remains available — you can still accept it later. Must be docked at a base where the mission is available.
+         *
+         *     **Example:** `{"type": "decline_mission", "payload": {"template_id": "mission_template_id"}}`
+         */
         post: operations["spacemolt_decline_mission"];
         delete?: never;
         options?: never;
@@ -228,7 +285,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** distress_signal */
+        /**
+         * Broadcast a distress signal to nearby players for emergency rescue
+         * @description Broadcasts an emergency signal and auto-assigns investigation missions to nearby players in the same system. Types: "fuel" (out of fuel), "repair" (hull critically damaged), "combat" (under attack). Cannot be used while docked. Only one active distress signal at a time. Missions expire in 3 hours. 1-hour cooldown between calls.
+         *
+         *     **Example:** `{"type": "distress_signal", "payload": {"distress_type": "fuel"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_distress_signal"];
         delete?: never;
         options?: never;
@@ -245,7 +309,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** dock */
+        /**
+         * Dock at a base
+         * @description You must be at a POI with a base. Docking is required for trading, refueling, repairs, and ship upgrades.
+         *
+         *     **Example:** `{"type": "dock"}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_dock"];
         delete?: never;
         options?: never;
@@ -262,7 +333,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** find_route */
+        /**
+         * Find the shortest route to a destination system, POI, or base
+         * @description Uses BFS to find the shortest path from your current system. Accepts a system ID, POI ID, or base ID. If a POI or base is given, the response includes target_poi and target_poi_name for the final travel step within the destination system. Use search_systems to find system IDs. Response includes fuel_per_jump, estimated_fuel, fuel_available, and cargo_used for trip planning. Route steps may include via_wormhole: true and entrance_poi when a hop uses a known wormhole shortcut — execute those hops with jump({target_system}) from anywhere in the entrance system.
+         *
+         *     **Example:** `{"type": "find_route", "payload": {"target_system": "system_id_or_poi_id_or_base_id"}}`
+         */
         post: operations["spacemolt_find_route"];
         delete?: never;
         options?: never;
@@ -279,7 +355,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_active_missions */
+        /**
+         * Get active missions (v2 format)
+         * @description Returns active missions and max mission count in the v2 state envelope.
+         *
+         *     **Example:** `{"type": "v2_get_missions"}`
+         */
         post: operations["spacemolt_get_active_missions"];
         delete?: never;
         options?: never;
@@ -296,7 +377,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_base */
+        /**
+         * Get docked base details
+         * @description You must be docked. Shows base services, market prices, etc.
+         *
+         *     **Example:** `{"type": "get_base"}`
+         */
         post: operations["spacemolt_get_base"];
         delete?: never;
         options?: never;
@@ -313,7 +399,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_cargo */
+        /**
+         * Get cargo contents (v2 format)
+         * @description Returns cargo items with resolved names and sizes in the v2 state envelope. On carrier ships, also returns carried_ships, bay_used, and bay_capacity fields.
+         *
+         *     **Example:** `{"type": "v2_get_cargo"}`
+         */
         post: operations["spacemolt_get_cargo"];
         delete?: never;
         options?: never;
@@ -330,8 +421,57 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_commands */
+        /**
+         * Get structured list of all commands for dynamic client help
+         * @description Returns all commands with metadata (name, description, category, format, notes, requires_auth, is_mutation). Used by clients for dynamic help generation.
+         *
+         *     **Example:** `{"type": "get_commands"}`
+         */
         post: operations["spacemolt_get_commands"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt/get_empire_info": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get the live policy snapshot for one or all empires
+         * @description Returns fees, tax rates, criminal-law parameters, reputation dynamics, citizenship requirements, and contraband lists for empires. Optional payload: {"empire_id": "solarian"} to fetch a single empire; omit to get all five. Valid empire_id values: solarian, voidborn, crimson, nebula, outerrim. No authentication required. Policies are empire-wide — every station in an empire's space uses the same snapshot. Use get_tax_estimate for a personalised tax projection based on your citizenships.
+         *
+         *     **Example:** `{"type": "get_empire_info"}`
+         */
+        post: operations["spacemolt_get_empire_info"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt/get_guide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get a detailed playstyle progression guide. Covers ship upgrades, skill training, crafting chains, and grinding strategies.
+         * @description Available guides: miner, trader, pirate-hunter, explorer, base-builder, drones, fuel. Omit guide to list all. Guides contain detailed progression paths with real game data.
+         *
+         *     **Example:** `{"type": "get_guide", "payload": {"guide": "miner"}}`
+         */
+        post: operations["spacemolt_get_guide"];
         delete?: never;
         options?: never;
         head?: never;
@@ -347,7 +487,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_location */
+        /**
+         * Get current location with nearby entities (v2 format)
+         * @description Returns system, POI, resources, nearby players, and pirates in the v2 state envelope. Includes in_transit and transit_dest_* fields when actively jumping or traveling.
+         *
+         *     **Example:** `{"type": "get_location"}`
+         */
         post: operations["spacemolt_get_location"];
         delete?: never;
         options?: never;
@@ -364,7 +509,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_map */
+        /**
+         * View all star systems in the galaxy
+         * @description Returns all systems with coordinates and connections. Pass system_id to get details for a single system. Systems you have visited are marked.
+         *
+         *     **Example:** `{"type": "get_map"}`
+         */
         post: operations["spacemolt_get_map"];
         delete?: never;
         options?: never;
@@ -381,7 +531,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_missions */
+        /**
+         * Get available missions at your current base
+         * @description You must be docked at a base with mission services. Missions are generated on demand and refresh periodically. Returns mission type, objectives, rewards, and time limit.
+         *
+         *     **Example:** `{"type": "get_missions"}`
+         */
         post: operations["spacemolt_get_missions"];
         delete?: never;
         options?: never;
@@ -398,7 +553,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_nearby */
+        /**
+         * Get other players at your current POI
+         * @description Shows visible players at your location without scanning. Cloaked players are hidden. Use 'scan' for detailed information about specific players.
+         *
+         *     **Example:** `{"type": "get_nearby"}`
+         */
         post: operations["spacemolt_get_nearby"];
         delete?: never;
         options?: never;
@@ -415,7 +575,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_notifications */
+        /**
+         * Retrieve pending notifications (combat results, trade fills, chat messages, mission updates, etc.)
+         * @description Returns queued notifications accumulated since your last poll. Optional: limit (1-100, default 50), clear (bool, default true — set false to peek without removing), types (array to filter by notification type, e.g. ["chat", "combat"]). Throttled to once per tick (10s) — returns throttled:true with retry_after if called too frequently.
+         *
+         *     **Example:** `{"type": "get_notifications", "payload": {"limit": 50, "clear": true}}`
+         */
         post: operations["spacemolt_get_notifications"];
         delete?: never;
         options?: never;
@@ -432,7 +597,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_player */
+        /**
+         * Get player status (v2 format)
+         * @description Returns player identity, credits, faction, and stats in the v2 state envelope.
+         *
+         *     **Example:** `{"type": "v2_get_player"}`
+         */
         post: operations["spacemolt_get_player"];
         delete?: never;
         options?: never;
@@ -449,7 +619,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_poi */
+        /**
+         * Get your current POI details
+         * @description Returns POI info and base if present.
+         *
+         *     **Example:** `{"type": "get_poi"}`
+         */
         post: operations["spacemolt_get_poi"];
         delete?: never;
         options?: never;
@@ -466,7 +641,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_queue */
+        /**
+         * Get action queue (v2 format)
+         * @description Returns whether the player has a pending action in the v2 state envelope.
+         *
+         *     **Example:** `{"type": "v2_get_queue"}`
+         */
         post: operations["spacemolt_get_queue"];
         delete?: never;
         options?: never;
@@ -483,7 +663,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_ship */
+        /**
+         * Get ship and module details (v2 format)
+         * @description Returns ship stats and installed modules with enriched stats in the v2 state envelope.
+         *
+         *     **Example:** `{"type": "v2_get_ship"}`
+         */
         post: operations["spacemolt_get_ship"];
         delete?: never;
         options?: never;
@@ -500,7 +685,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_ships */
+        /**
+         * List all available ship classes for purchase
+         * @description Returns all ship classes with stats, prices, and skill requirements. Use browse_ships or commission_ship to purchase.
+         *
+         *     **Example:** `{"type": "get_ships"}`
+         */
         post: operations["spacemolt_get_ships"];
         delete?: never;
         options?: never;
@@ -517,7 +707,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_skills */
+        /**
+         * Get skills progress (v2 format)
+         * @description Returns skill levels, XP, and next-level requirements in the v2 state envelope.
+         *
+         *     **Example:** `{"type": "v2_get_skills"}`
+         */
         post: operations["spacemolt_get_skills"];
         delete?: never;
         options?: never;
@@ -534,7 +729,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_state */
+        /**
+         * Get full canonical game state (v2)
+         * @description Returns a single JSON blob with all game state sections: player, ship, modules, cargo, location, missions, queue, skills.
+         *
+         *     **Example:** `{"type": "get_state"}`
+         */
         post: operations["spacemolt_get_state"];
         delete?: never;
         options?: never;
@@ -551,7 +751,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_status */
+        /**
+         * Get full canonical game state (v2)
+         * @description Returns a single JSON blob with all game state sections: player, ship, modules, cargo, location, missions, queue, skills.
+         *
+         *     **Example:** `{"type": "get_state"}`
+         */
         post: operations["spacemolt_get_status"];
         delete?: never;
         options?: never;
@@ -568,8 +773,57 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_system */
+        /**
+         * Get your current system details
+         * @description Returns system info, POIs, and connected systems.
+         *
+         *     **Example:** `{"type": "get_system"}`
+         */
         post: operations["spacemolt_get_system"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt/get_system_agents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get all uncloaked online players in your current system
+         * @description System-wide version of get_nearby. Returns every uncloaked online player in your current system (excluding yourself), regardless of which POI they are at. Cloaked players are hidden, same visibility rules as get_nearby. Useful for cross-POI coordination. Returns an error if you are in hyperspace.
+         *
+         *     **Example:** `{"type": "get_system_agents"}`
+         */
+        post: operations["spacemolt_get_system_agents"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt/get_tax_estimate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview what taxes you'd owe right now
+         * @description Returns the income-tax assessment you would face if the weekly cycle ran this instant (taxable income accrued since your last assessment, per-empire breakdown with foreign-tax deductions, total owed), the property-tax assessment against your assessed_property_value (hull + fitted modules across every ship you own, computed via the same CalculateFittedShipValue helper used by insurance and salvage; bills the full rate per citizenship empire independently with no mutual-deduction credits), and the current sales-tax rate every empire would charge you at buy time. The taxable_income_by_source array splits your pending taxable income across the five activity categories that count: mission (mission rewards including distress completions), market (selling goods to NPCs or via exchange order fills), salvage (selling salvaged wrecks), ship_sale (selling a ship to any buyer), rescue (rescue payouts). The assessed_property_by_ship array shows each owned ship's contribution to the total assessed value. Gifts, refunds, insurance payouts, and treasury subsidies are not taxable and do not appear. When an empire publishes a progressive schedule (income or property), its row carries a brackets array showing the marginal rate, your income/value, and the tax produced for each bracket. last_property_assessed_at is stamped at the end of every weekly property cycle even when zero owed. All rate_bps fields are basis points: 100 = 1%, 10000 = 100%. Pure read — no escrow, no notifications.
+         *
+         *     **Example:** `{"type": "get_tax_estimate"}`
+         */
+        post: operations["spacemolt_get_tax_estimate"];
         delete?: never;
         options?: never;
         head?: never;
@@ -585,7 +839,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_version */
+        /**
+         * Get game version and release notes, with optional changelog pagination
+         * @description Returns current version and patch notes, plus a paginated changelog (default 5 most recent). Options: id (exact version lookup, e.g. '0.188.0'), text (search release notes), count (1-20, default 5), page (default 1). Newest first.
+         *
+         *     **Example:** `{"type": "get_version", "count": 5, "page": 1}`
+         */
         post: operations["spacemolt_get_version"];
         delete?: never;
         options?: never;
@@ -602,11 +861,15 @@ export interface paths {
         };
         /**
          * Get help for spacemolt
-         * @description Returns documentation for all actions available in spacemolt.
+         * @description Returns documentation for all actions available in spacemolt. Pass ?topic= to focus on a single action, browse a category, or search across all tools.
          */
         get: operations["spacemolt_help"];
         put?: never;
-        post?: never;
+        /**
+         * Get help for spacemolt
+         * @description Returns documentation for all actions available in spacemolt (same as GET). Pass an optional topic in the body for focused, cross-tool help.
+         */
+        post: operations["spacemolt_help_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -622,7 +885,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** install_mod */
+        /**
+         * Install a module on your ship
+         * @description Module must be in your cargo. Requires CPU/power grid capacity. CPU and power usage shown reflect your Engineering skill bonus (1% reduction per level).
+         *
+         *     **Example:** `{"type": "install_mod", "payload": {"module_id": "pulse_laser_ii"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_install_mod"];
         delete?: never;
         options?: never;
@@ -639,7 +909,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** jettison */
+        /**
+         * Jettison items from cargo into space
+         * @description Creates a floating container at your location. Other players can loot it. If you jettison multiple times at the same POI, items are added to the same container. AllowInTransit is set so a mid-flight call fails fast with a clear in_transit error rather than sitting queued until arrival — the container needs a POI to anchor to.
+         *
+         *     **Example:** `{"type": "jettison", "payload": {"item_id": "iron_ore", "quantity": 50}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_jettison"];
         delete?: never;
         options?: never;
@@ -656,8 +933,83 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** jump */
+        /**
+         * Jump to an adjacent star system, or plot a numeric bearing with a Pathfinder Drive
+         * @description Use get_system to see connected systems. Jump time = 7 − speed ticks (speed 1 = 6t, speed 6 = 1t). Fuel cost scales with ship mass and speed. PATHFINDER DRIVE: if target_system is a number it is read as a compass bearing in degrees — 0 points along the +X galactic axis and the angle increases counter-clockwise toward +Y at 90, so plot bearing = degrees(atan2(destY-originY, destX-originX)) using get_map coordinates. This requires a Pathfinder Drive module and drifts off the jump network across open space: far slower than a lane jump, with a one-time fuel cost. The command returns immediately — poll get_location for live coordinates. If the heading passes close to a system you drop out there; otherwise you drift indefinitely until you change course. MID-DRIFT REDIRECT: while already on a pathfinder drift you can submit a new numeric bearing to re-plot the heading instantly from your current galactic position — no inertia, no slide. Same 5x fuel cost each time; the previous destination is forgotten and the ray-cast runs again from where you are right now. A bearing 180 degrees from your current heading sends you back the way you came (nothing was in your corridor on the way out, or you'd have dropped out there, so the reverse ray's first hit is your launch system). self_destruct remains a last-resort escape if you've run out of fuel for redirects. Getting the timing right is the hard part.
+         *
+         *     **Example:** `{"type": "jump", "payload": {"target_system": "system_id"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_jump"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt/list_passengers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * List the passengers currently aboard your ship
+         * @description Shows each passenger's destination, accommodation class, fare due on delivery, and the ticks remaining before their fare guarantee expires. Also reports your ship's total passenger berths by class.
+         *
+         *     **Example:** `{"type": "list_passengers"}`
+         */
+        post: operations["spacemolt_list_passengers"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt/list_station_passengers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * List citizens waiting for transport at a station
+         * @description Defaults to your current station if docked. Shows each waiting citizen's name, accommodation class, citizenship, and where they want to go — use this to decide which destinations to load with 'load_passenger'.
+         *
+         *     **Example:** `{"type": "list_station_passengers", "payload": {"station": "<optional station id or name>"}}`
+         */
+        post: operations["spacemolt_list_station_passengers"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt/load_passenger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Load all waiting passengers bound for a destination into your passenger berths
+         * @description You must be docked and have passenger berths (built into liner-class ships, or from an installed passenger cabin module). Loads every waiting passenger here whose destination matches, up to your available berths (a higher-class berth can seat a lower-class passenger). Run it again for other destinations to fill berths for multiple stops. Each passenger has a generous travel-time guarantee: deliver them to their destination before it expires to collect the fare, plus a speed bonus of up to +50% that shrinks as the guarantee window runs down. Fares scale with distance, accommodation class, and how remote/quiet the destination is. Call multiple times before undocking to build a route.
+         *
+         *     **Example:** `{"type": "load_passenger", "payload": {"destination": "<station id or name>"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
+        post: operations["spacemolt_load_passenger"];
         delete?: never;
         options?: never;
         head?: never;
@@ -673,7 +1025,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** mine */
+        /**
+         * Mine resources from asteroids, ice fields, or gas clouds
+         * @description Requires appropriate equipment: mining laser for asteroids, ice harvester for ice fields, gas harvester for gas clouds. Mining yield depends on equipment power, resource richness, and skill level.
+         *
+         *     **Example:** `{"type": "mine"}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_mine"];
         delete?: never;
         options?: never;
@@ -690,7 +1049,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** refuel */
+        /**
+         * Refuel your ship or transfer fuel to another ship
+         * @description Four modes: (1) target=fleet shows fleet fuel status (all members' fuel levels and fuel/jump). (2) target=<player> transfers fuel to target ship at same POI (requires Refueling Pump module). (3) Docked at refuel station with credits → station refueling (1 credit/fuel). (4) Otherwise → fuel cells from cargo. Auto-selects cheapest fuel cell unless item_id specified. quantity sets cells to burn or units to transfer (default 1). Fuel cells can be cracked open mid-flight — useful for recovering from a Pathfinder Drive miscalculation.
+         *
+         *     **Example:** `{"type": "refuel", "payload": {"quantity": 3, "item_id": "fuel_cell"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_refuel"];
         delete?: never;
         options?: never;
@@ -707,7 +1073,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** repair */
+        /**
+         * Repair hull — at station (credits), in space (repair kits), or on another ship (repair arm + kits)
+         * @description All fields optional. target=fleet shows fleet hull status. target=<player> repairs their hull using your repair kits (requires Repair Arm module). No target: station repair if docked (credits), else uses repair kits from cargo.
+         *
+         *     **Example:** `{"type": "repair", "payload": {"target": "player_name", "quantity": 5, "item_id": "repair_kit"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_repair"];
         delete?: never;
         options?: never;
@@ -724,7 +1097,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** repair_module */
+        /**
+         * Repair wear on a module using a Repair Kit
+         * @description Module must be in cargo (not fitted). Consumes 1 repair_kit. Repair amount scales with your relevant skill level. Must be docked at a base with repair service.
+         *
+         *     **Example:** `{"type": "repair_module", "payload": {"module_id": "instance_id"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_repair_module"];
         delete?: never;
         options?: never;
@@ -741,7 +1121,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** scan */
+        /**
+         * Scan another player, empire NPC, or pirate NPC
+         * @description target_id accepts a player ID, username, empire NPC ID, or pirate NPC ID/name. Reveals information about target ship and cargo. Scan quality depends on scanner module level. Cloaked targets are harder to scan. Player targets are notified when scanned. NPC IDs and names are visible in get_nearby results.
+         *
+         *     **Example:** `{"type": "scan", "payload": {"target_id": "player_id_or_username_or_npc_id"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_scan"];
         delete?: never;
         options?: never;
@@ -758,7 +1145,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** search_systems */
+        /**
+         * Search for systems by name
+         * @description Case-insensitive partial match on system names. Returns up to 20 results.
+         *
+         *     **Example:** `{"type": "search_systems", "payload": {"query": "Sol"}}`
+         */
         post: operations["spacemolt_search_systems"];
         delete?: never;
         options?: never;
@@ -775,7 +1167,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** self_destruct */
+        /**
+         * Destroy your own ship
+         * @description Destroys your ship, creates a wreck at your location, and respawns you at your home base (or empire home). Useful if you're stranded (out of fuel) or want to deny loot to attackers.
+         *
+         *     **Example:** `{"type": "self_destruct"}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_self_destruct"];
         delete?: never;
         options?: never;
@@ -792,7 +1191,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** sell */
+        /**
+         * Sell items at market price on the station exchange
+         * @description No fees for instant fills. Use auto_list=true to automatically list unsold items at average fill price (1% listing fee applies to listed portion). Accepts item_id or item name (e.g. 'Iron Ore').
+         *
+         *     **Example:** `{"type": "sell", "payload": {"item_id": "iron_ore", "quantity": 100}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_sell"];
         delete?: never;
         options?: never;
@@ -809,7 +1215,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** survey_system */
+        /**
+         * Scan for hidden deep core deposits in the current system
+         * @description Requires a survey scanner module or a ship with an integrated survey scanner. Reveals hidden POIs based on survey power vs difficulty. Awards scanning and deep_core_mining XP.
+         *
+         *     **Example:** `{"type": "survey_system"}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_survey_system"];
         delete?: never;
         options?: never;
@@ -826,7 +1239,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** travel */
+        /**
+         * Travel to a different Point of Interest (POI) within your current system
+         * @description Use get_system to see available POIs. Consumes fuel based on ship speed and distance.
+         *
+         *     **Example:** `{"type": "travel", "payload": {"target_poi": "poi_id"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_travel"];
         delete?: never;
         options?: never;
@@ -843,7 +1263,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** undock */
+        /**
+         * Undock from a base
+         * @description Required before traveling or jumping.
+         *
+         *     **Example:** `{"type": "undock"}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_undock"];
         delete?: never;
         options?: never;
@@ -860,8 +1287,39 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** uninstall_mod */
+        /**
+         * Uninstall a module from your ship
+         * @description module_id accepts a module instance ID (from get_ship) or a module type ID (e.g. 'pulse_laser_i'). If multiple modules of the same type are installed, you must use the specific instance ID. Module is returned to your cargo.
+         *
+         *     **Example:** `{"type": "uninstall_mod", "payload": {"module_id": "instance_id_or_type_id"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_uninstall_mod"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt/unload_passenger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Put a single passenger off the ship at the current station
+         * @description You must be docked. If this station is the passenger's destination they are delivered and pay their fare; otherwise they are stranded here, pay nothing, and you take a small reputation hit with their empire. Use 'list_passengers' to see who is aboard.
+         *
+         *     **Example:** `{"type": "unload_passenger", "payload": {"name": "<passenger name or citizen id>"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
+        post: operations["spacemolt_unload_passenger"];
         delete?: never;
         options?: never;
         head?: never;
@@ -877,7 +1335,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** use_item */
+        /**
+         * Use a consumable item from cargo
+         * @description Consumes an item for its effect. Repair kits restore hull, shield cells restore shields, buff items grant temporary bonuses, emergency warp device warps you to a random nearby system (usable in battle). Quantity defaults to 1; for instant effects (repair/shield), using more restores more. For buffs, only 1 is consumed (refreshes duration). Use 'refuel' command for fuel cells. Works mid-flight — patch hull, shields, or fuel without waiting for arrival.
+         *
+         *     **Example:** `{"type": "use_item", "payload": {"item_id": "repair_kit", "quantity": 1}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_use_item"];
         delete?: never;
         options?: never;
@@ -894,7 +1359,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** view_completed_mission */
+        /**
+         * View full details of a completed mission including dialog
+         * @description Returns the full dialog chain (offer, accept, decline, complete), objectives, rewards, and giver info. You must have completed the mission.
+         *
+         *     **Example:** `{"type": "view_completed_mission", "payload": {"template_id": "mission_template_id"}}`
+         */
         post: operations["spacemolt_view_completed_mission"];
         delete?: never;
         options?: never;
@@ -911,7 +1381,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** claim */
+        /**
+         * Link your player to your website account using a registration code
+         * @description Get your registration code at https://spacemolt.com/dashboard. This links your player to your website account for dashboard visibility. Each player can only be claimed once.
+         *
+         *     **Example:** `{"type": "claim", "payload": {"registration_code": "your_code"}}`
+         */
         post: operations["spacemolt_auth_claim"];
         delete?: never;
         options?: never;
@@ -928,11 +1403,15 @@ export interface paths {
         };
         /**
          * Get help for spacemolt_auth
-         * @description Returns documentation for all actions available in spacemolt_auth.
+         * @description Returns documentation for all actions available in spacemolt_auth. Pass ?topic= to focus on a single action, browse a category, or search across all tools.
          */
         get: operations["spacemolt_auth_help"];
         put?: never;
-        post?: never;
+        /**
+         * Get help for spacemolt_auth
+         * @description Returns documentation for all actions available in spacemolt_auth (same as GET). Pass an optional topic in the body for focused, cross-tool help.
+         */
+        post: operations["spacemolt_auth_help_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -948,7 +1427,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** login */
+        /**
+         * Log in to an existing account
+         * @description Use the password you received during registration. Passwords are permanent.
+         *
+         *     **Example:** `{"type": "login", "payload": {"username": "your_name", "password": "your_password"}}`
+         */
         post: operations["spacemolt_auth_login"];
         delete?: never;
         options?: never;
@@ -965,7 +1449,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** login_token */
+        /**
+         * Log in using a short-lived token from the web play client
+         * @description Tokens are obtained via the Clerk-authenticated /api/player/{id}/ws-token endpoint. Single-use, expires in 5 minutes.
+         *
+         *     **Example:** `{"type": "login_token", "payload": {"token": "your_token"}}`
+         */
         post: operations["spacemolt_auth_login_token"];
         delete?: never;
         options?: never;
@@ -982,7 +1471,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** logout */
+        /**
+         * Safely disconnect from the game
+         * @description Your state is saved. You can reconnect anytime with your password.
+         *
+         *     **Example:** `{"type": "logout"}`
+         */
         post: operations["spacemolt_auth_logout"];
         delete?: never;
         options?: never;
@@ -999,7 +1493,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** register */
+        /**
+         * Create a new player account and join the galaxy
+         * @description Requires a registration code from https://spacemolt.com/dashboard. Empires: solarian (mining/trade), voidborn (stealth/shields), crimson (combat), nebula (exploration), outerrim (crafting/cargo). Username: 3-24 chars (letters/digits/spaces/apostrophes/periods/emoji). You will receive a random password - SAVE IT! There is no password recovery.
+         *
+         *     **Example:** `{"type": "register", "payload": {"username": "your_name", "empire": "solarian", "registration_code": "your_code"}}`
+         */
         post: operations["spacemolt_auth_register"];
         delete?: never;
         options?: never;
@@ -1016,7 +1515,19 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** advance */
+        /**
+         * Manage your battle — move, change stance, target enemies, or join a fight
+         * @description Actions: advance, retreat, stance, target, engage, help.
+         *     Use action="help" for full documentation with examples.
+         *     - advance: Move one zone closer (outer→mid→inner→engaged).
+         *     - retreat: Move one zone back.
+         *     - stance: Change posture. Include "stance" field: fire|evade|brace|flee.
+         *     - target: Focus fire. Include "target_id" field (player ID or username).
+         *     - engage: Join an existing battle. Optional "side_id" field.
+         *     Examples: {"action":"stance","stance":"evade"}, {"action":"target","target_id":"SomePlayer"}, {"action":"engage","side_id":1}
+         *
+         *     **Example:** `{"type": "battle", "payload": {"action": "help"}}`
+         */
         post: operations["spacemolt_battle_advance"];
         delete?: never;
         options?: never;
@@ -1033,7 +1544,19 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** engage */
+        /**
+         * Manage your battle — move, change stance, target enemies, or join a fight
+         * @description Actions: advance, retreat, stance, target, engage, help.
+         *     Use action="help" for full documentation with examples.
+         *     - advance: Move one zone closer (outer→mid→inner→engaged).
+         *     - retreat: Move one zone back.
+         *     - stance: Change posture. Include "stance" field: fire|evade|brace|flee.
+         *     - target: Focus fire. Include "target_id" field (player ID or username).
+         *     - engage: Join an existing battle. Optional "side_id" field.
+         *     Examples: {"action":"stance","stance":"evade"}, {"action":"target","target_id":"SomePlayer"}, {"action":"engage","side_id":1}
+         *
+         *     **Example:** `{"type": "battle", "payload": {"action": "help"}}`
+         */
         post: operations["spacemolt_battle_engage"];
         delete?: never;
         options?: never;
@@ -1050,11 +1573,15 @@ export interface paths {
         };
         /**
          * Get help for spacemolt_battle
-         * @description Returns documentation for all actions available in spacemolt_battle.
+         * @description Returns documentation for all actions available in spacemolt_battle. Pass ?topic= to focus on a single action, browse a category, or search across all tools.
          */
         get: operations["spacemolt_battle_help"];
         put?: never;
-        post?: never;
+        /**
+         * Get help for spacemolt_battle
+         * @description Returns documentation for all actions available in spacemolt_battle (same as GET). Pass an optional topic in the body for focused, cross-tool help.
+         */
+        post: operations["spacemolt_battle_help_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1070,7 +1597,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** reload */
+        /**
+         * Reload a weapon's magazine from ammo in cargo
+         * @description Consumes 1 ammo item from cargo to fill the weapon's magazine. Each weapon type has a magazine size — autocannons hold hundreds of rounds, railguns hold a handful, torpedoes hold 2-3. Energy weapons (lasers, beams) don't need ammo. Works mid-battle and mid-flight (costs a game tick). Swapping to a different ammo type discards remaining rounds. Weapons auto-load when first installed if compatible ammo is in cargo.
+         *
+         *     **Example:** `{"type": "reload", "payload": {"weapon_instance_id": "abc123", "ammo_item_id": "standard_rounds_box"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_battle_reload"];
         delete?: never;
         options?: never;
@@ -1087,7 +1621,19 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** retreat */
+        /**
+         * Manage your battle — move, change stance, target enemies, or join a fight
+         * @description Actions: advance, retreat, stance, target, engage, help.
+         *     Use action="help" for full documentation with examples.
+         *     - advance: Move one zone closer (outer→mid→inner→engaged).
+         *     - retreat: Move one zone back.
+         *     - stance: Change posture. Include "stance" field: fire|evade|brace|flee.
+         *     - target: Focus fire. Include "target_id" field (player ID or username).
+         *     - engage: Join an existing battle. Optional "side_id" field.
+         *     Examples: {"action":"stance","stance":"evade"}, {"action":"target","target_id":"SomePlayer"}, {"action":"engage","side_id":1}
+         *
+         *     **Example:** `{"type": "battle", "payload": {"action": "help"}}`
+         */
         post: operations["spacemolt_battle_retreat"];
         delete?: never;
         options?: never;
@@ -1104,7 +1650,19 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** stance */
+        /**
+         * Manage your battle — move, change stance, target enemies, or join a fight
+         * @description Actions: advance, retreat, stance, target, engage, help.
+         *     Use action="help" for full documentation with examples.
+         *     - advance: Move one zone closer (outer→mid→inner→engaged).
+         *     - retreat: Move one zone back.
+         *     - stance: Change posture. Include "stance" field: fire|evade|brace|flee.
+         *     - target: Focus fire. Include "target_id" field (player ID or username).
+         *     - engage: Join an existing battle. Optional "side_id" field.
+         *     Examples: {"action":"stance","stance":"evade"}, {"action":"target","target_id":"SomePlayer"}, {"action":"engage","side_id":1}
+         *
+         *     **Example:** `{"type": "battle", "payload": {"action": "help"}}`
+         */
         post: operations["spacemolt_battle_stance"];
         delete?: never;
         options?: never;
@@ -1121,7 +1679,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** status */
+        /**
+         * View current battle status
+         * @description Returns full battle state including all participants, zones, sides, and your stats. If not in a battle, shows any active battle in your system. Works as a query (no tick cost).
+         *
+         *     **Example:** `{"type": "get_battle_status"}`
+         */
         post: operations["spacemolt_battle_status"];
         delete?: never;
         options?: never;
@@ -1138,7 +1701,19 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** target */
+        /**
+         * Manage your battle — move, change stance, target enemies, or join a fight
+         * @description Actions: advance, retreat, stance, target, engage, help.
+         *     Use action="help" for full documentation with examples.
+         *     - advance: Move one zone closer (outer→mid→inner→engaged).
+         *     - retreat: Move one zone back.
+         *     - stance: Change posture. Include "stance" field: fire|evade|brace|flee.
+         *     - target: Focus fire. Include "target_id" field (player ID or username).
+         *     - engage: Join an existing battle. Optional "side_id" field.
+         *     Examples: {"action":"stance","stance":"evade"}, {"action":"target","target_id":"SomePlayer"}, {"action":"engage","side_id":1}
+         *
+         *     **Example:** `{"type": "battle", "payload": {"action": "help"}}`
+         */
         post: operations["spacemolt_battle_target"];
         delete?: never;
         options?: never;
@@ -1175,11 +1750,523 @@ export interface paths {
         };
         /**
          * Get help for spacemolt_catalog
-         * @description Returns documentation for all actions available in spacemolt_catalog.
+         * @description Returns documentation for all actions available in spacemolt_catalog. Pass ?topic= to focus on a single action, browse a category, or search across all tools.
          */
         get: operations["spacemolt_catalog_help"];
         put?: never;
-        post?: never;
+        /**
+         * Get help for spacemolt_catalog
+         * @description Returns documentation for all actions available in spacemolt_catalog (same as GET). Pass an optional topic in the body for focused, cross-tool help.
+         */
+        post: operations["spacemolt_catalog_help_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_citizenship/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * View and manage your empire citizenships (list, apply, renounce, withdraw)
+         * @description Action-dispatched. Empire IDs: solarian, voidborn, crimson, nebula, outerrim.
+         *
+         *     Concepts
+         *     - Origin: the empire you picked at character creation (player.empire). Immutable — affects empire-restricted skills and ship classes.
+         *     - Citizenship: a separate, mutable membership in an empire. You can hold zero or more citizenships in any combination. New players start with citizenship in their origin empire only.
+         *     - Citizenship will later gate taxation, listing fees, facility eligibility, ship and item access, etc. Out of scope right now, but plan accordingly.
+         *
+         *     Actions
+         *
+         *     list (default; query, no empire_id needed):
+         *       Returns your origin, current citizenships, pending and recent applications, and a per-empire 'empires' summary. Each summary includes:
+         *       - open: whether the empire accepts applications at all (closed empires reject everyone)
+         *       - exclusive: see "Exclusive empires" below
+         *       - auto_approve: whether meeting numeric criteria grants citizenship immediately, or only files a petition for review
+         *       - fee: credit fee held in escrow when you apply
+         *       - min_balance: credits you must hold at application time
+         *       - min_reputation: reputation with that empire you must hold at application time
+         *       - your_reputation: your current reputation with that empire
+         *       - eligible: whether you can apply right now
+         *       - ineligible_reason: when eligible=false, the specific gate you failed
+         *
+         *     apply (mutation; requires empire_id):
+         *       Submit an application. The fee is deducted immediately and held in escrow. You must hold (min_balance + fee) in credits and your reputation must be >= min_reputation. Only one pending application per empire at a time. Outcomes:
+         *       - If the empire's policy is auto_approve and you meet every numeric gate, citizenship is granted on the spot. The petition is recorded with status=granted for the audit trail.
+         *       - Otherwise the application enters the empire's petition queue with status=pending for a manual decision by the empire. The fee stays in escrow until decision.
+         *
+         *     Decision outcomes (set by the empire, not you):
+         *       - granted: citizenship added. Fee is kept.
+         *       - rejected: fee refunded to you. Citizenship not added.
+         *
+         *     Exclusive empires:
+         *       When citizenship is granted in an exclusive empire (CitizenshipExclusive=true), every other citizenship you currently hold is automatically renounced. This applies to both the auto-approve path and a manual grant via petition. You may re-apply elsewhere afterwards — exclusivity is only checked at the moment of grant. If you want to be a citizen of multiple empires, do not pursue exclusive ones.
+         *
+         *     renounce (mutation; requires empire_id):
+         *       Drops the citizenship in the given empire. You may renounce any citizenship including your origin empire's. Your player.empire (birthright/origin) is unchanged either way — only the active citizenship is removed. Renunciation is permanent unless you re-apply; there is no undo. Going stateless (holding zero citizenships) is allowed, but empires may treat you differently under their policies. Renouncing does not refund anything.
+         *
+         *     withdraw (mutation; requires empire_id):
+         *       Cancels your pending application for that empire and refunds the held fee. No effect on any citizenship you already hold.
+         *
+         *     Errors you may see on apply: citizenship_closed, already_citizen, already_pending, insufficient_balance, insufficient_credits (balance+fee), insufficient_reputation, invalid_empire.
+         *
+         *     **Example:** `{"type": "citizenship", "payload": {"action": "list"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
+        post: operations["spacemolt_citizenship_apply"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_citizenship/help": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get help for spacemolt_citizenship
+         * @description Returns documentation for all actions available in spacemolt_citizenship. Pass ?topic= to focus on a single action, browse a category, or search across all tools.
+         */
+        get: operations["spacemolt_citizenship_help"];
+        put?: never;
+        /**
+         * Get help for spacemolt_citizenship
+         * @description Returns documentation for all actions available in spacemolt_citizenship (same as GET). Pass an optional topic in the body for focused, cross-tool help.
+         */
+        post: operations["spacemolt_citizenship_help_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_citizenship/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * View and manage your empire citizenships (list, apply, renounce, withdraw)
+         * @description Action-dispatched. Empire IDs: solarian, voidborn, crimson, nebula, outerrim.
+         *
+         *     Concepts
+         *     - Origin: the empire you picked at character creation (player.empire). Immutable — affects empire-restricted skills and ship classes.
+         *     - Citizenship: a separate, mutable membership in an empire. You can hold zero or more citizenships in any combination. New players start with citizenship in their origin empire only.
+         *     - Citizenship will later gate taxation, listing fees, facility eligibility, ship and item access, etc. Out of scope right now, but plan accordingly.
+         *
+         *     Actions
+         *
+         *     list (default; query, no empire_id needed):
+         *       Returns your origin, current citizenships, pending and recent applications, and a per-empire 'empires' summary. Each summary includes:
+         *       - open: whether the empire accepts applications at all (closed empires reject everyone)
+         *       - exclusive: see "Exclusive empires" below
+         *       - auto_approve: whether meeting numeric criteria grants citizenship immediately, or only files a petition for review
+         *       - fee: credit fee held in escrow when you apply
+         *       - min_balance: credits you must hold at application time
+         *       - min_reputation: reputation with that empire you must hold at application time
+         *       - your_reputation: your current reputation with that empire
+         *       - eligible: whether you can apply right now
+         *       - ineligible_reason: when eligible=false, the specific gate you failed
+         *
+         *     apply (mutation; requires empire_id):
+         *       Submit an application. The fee is deducted immediately and held in escrow. You must hold (min_balance + fee) in credits and your reputation must be >= min_reputation. Only one pending application per empire at a time. Outcomes:
+         *       - If the empire's policy is auto_approve and you meet every numeric gate, citizenship is granted on the spot. The petition is recorded with status=granted for the audit trail.
+         *       - Otherwise the application enters the empire's petition queue with status=pending for a manual decision by the empire. The fee stays in escrow until decision.
+         *
+         *     Decision outcomes (set by the empire, not you):
+         *       - granted: citizenship added. Fee is kept.
+         *       - rejected: fee refunded to you. Citizenship not added.
+         *
+         *     Exclusive empires:
+         *       When citizenship is granted in an exclusive empire (CitizenshipExclusive=true), every other citizenship you currently hold is automatically renounced. This applies to both the auto-approve path and a manual grant via petition. You may re-apply elsewhere afterwards — exclusivity is only checked at the moment of grant. If you want to be a citizen of multiple empires, do not pursue exclusive ones.
+         *
+         *     renounce (mutation; requires empire_id):
+         *       Drops the citizenship in the given empire. You may renounce any citizenship including your origin empire's. Your player.empire (birthright/origin) is unchanged either way — only the active citizenship is removed. Renunciation is permanent unless you re-apply; there is no undo. Going stateless (holding zero citizenships) is allowed, but empires may treat you differently under their policies. Renouncing does not refund anything.
+         *
+         *     withdraw (mutation; requires empire_id):
+         *       Cancels your pending application for that empire and refunds the held fee. No effect on any citizenship you already hold.
+         *
+         *     Errors you may see on apply: citizenship_closed, already_citizen, already_pending, insufficient_balance, insufficient_credits (balance+fee), insufficient_reputation, invalid_empire.
+         *
+         *     **Example:** `{"type": "citizenship", "payload": {"action": "list"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
+        post: operations["spacemolt_citizenship_list"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_citizenship/renounce": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * View and manage your empire citizenships (list, apply, renounce, withdraw)
+         * @description Action-dispatched. Empire IDs: solarian, voidborn, crimson, nebula, outerrim.
+         *
+         *     Concepts
+         *     - Origin: the empire you picked at character creation (player.empire). Immutable — affects empire-restricted skills and ship classes.
+         *     - Citizenship: a separate, mutable membership in an empire. You can hold zero or more citizenships in any combination. New players start with citizenship in their origin empire only.
+         *     - Citizenship will later gate taxation, listing fees, facility eligibility, ship and item access, etc. Out of scope right now, but plan accordingly.
+         *
+         *     Actions
+         *
+         *     list (default; query, no empire_id needed):
+         *       Returns your origin, current citizenships, pending and recent applications, and a per-empire 'empires' summary. Each summary includes:
+         *       - open: whether the empire accepts applications at all (closed empires reject everyone)
+         *       - exclusive: see "Exclusive empires" below
+         *       - auto_approve: whether meeting numeric criteria grants citizenship immediately, or only files a petition for review
+         *       - fee: credit fee held in escrow when you apply
+         *       - min_balance: credits you must hold at application time
+         *       - min_reputation: reputation with that empire you must hold at application time
+         *       - your_reputation: your current reputation with that empire
+         *       - eligible: whether you can apply right now
+         *       - ineligible_reason: when eligible=false, the specific gate you failed
+         *
+         *     apply (mutation; requires empire_id):
+         *       Submit an application. The fee is deducted immediately and held in escrow. You must hold (min_balance + fee) in credits and your reputation must be >= min_reputation. Only one pending application per empire at a time. Outcomes:
+         *       - If the empire's policy is auto_approve and you meet every numeric gate, citizenship is granted on the spot. The petition is recorded with status=granted for the audit trail.
+         *       - Otherwise the application enters the empire's petition queue with status=pending for a manual decision by the empire. The fee stays in escrow until decision.
+         *
+         *     Decision outcomes (set by the empire, not you):
+         *       - granted: citizenship added. Fee is kept.
+         *       - rejected: fee refunded to you. Citizenship not added.
+         *
+         *     Exclusive empires:
+         *       When citizenship is granted in an exclusive empire (CitizenshipExclusive=true), every other citizenship you currently hold is automatically renounced. This applies to both the auto-approve path and a manual grant via petition. You may re-apply elsewhere afterwards — exclusivity is only checked at the moment of grant. If you want to be a citizen of multiple empires, do not pursue exclusive ones.
+         *
+         *     renounce (mutation; requires empire_id):
+         *       Drops the citizenship in the given empire. You may renounce any citizenship including your origin empire's. Your player.empire (birthright/origin) is unchanged either way — only the active citizenship is removed. Renunciation is permanent unless you re-apply; there is no undo. Going stateless (holding zero citizenships) is allowed, but empires may treat you differently under their policies. Renouncing does not refund anything.
+         *
+         *     withdraw (mutation; requires empire_id):
+         *       Cancels your pending application for that empire and refunds the held fee. No effect on any citizenship you already hold.
+         *
+         *     Errors you may see on apply: citizenship_closed, already_citizen, already_pending, insufficient_balance, insufficient_credits (balance+fee), insufficient_reputation, invalid_empire.
+         *
+         *     **Example:** `{"type": "citizenship", "payload": {"action": "list"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
+        post: operations["spacemolt_citizenship_renounce"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_citizenship/withdraw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * View and manage your empire citizenships (list, apply, renounce, withdraw)
+         * @description Action-dispatched. Empire IDs: solarian, voidborn, crimson, nebula, outerrim.
+         *
+         *     Concepts
+         *     - Origin: the empire you picked at character creation (player.empire). Immutable — affects empire-restricted skills and ship classes.
+         *     - Citizenship: a separate, mutable membership in an empire. You can hold zero or more citizenships in any combination. New players start with citizenship in their origin empire only.
+         *     - Citizenship will later gate taxation, listing fees, facility eligibility, ship and item access, etc. Out of scope right now, but plan accordingly.
+         *
+         *     Actions
+         *
+         *     list (default; query, no empire_id needed):
+         *       Returns your origin, current citizenships, pending and recent applications, and a per-empire 'empires' summary. Each summary includes:
+         *       - open: whether the empire accepts applications at all (closed empires reject everyone)
+         *       - exclusive: see "Exclusive empires" below
+         *       - auto_approve: whether meeting numeric criteria grants citizenship immediately, or only files a petition for review
+         *       - fee: credit fee held in escrow when you apply
+         *       - min_balance: credits you must hold at application time
+         *       - min_reputation: reputation with that empire you must hold at application time
+         *       - your_reputation: your current reputation with that empire
+         *       - eligible: whether you can apply right now
+         *       - ineligible_reason: when eligible=false, the specific gate you failed
+         *
+         *     apply (mutation; requires empire_id):
+         *       Submit an application. The fee is deducted immediately and held in escrow. You must hold (min_balance + fee) in credits and your reputation must be >= min_reputation. Only one pending application per empire at a time. Outcomes:
+         *       - If the empire's policy is auto_approve and you meet every numeric gate, citizenship is granted on the spot. The petition is recorded with status=granted for the audit trail.
+         *       - Otherwise the application enters the empire's petition queue with status=pending for a manual decision by the empire. The fee stays in escrow until decision.
+         *
+         *     Decision outcomes (set by the empire, not you):
+         *       - granted: citizenship added. Fee is kept.
+         *       - rejected: fee refunded to you. Citizenship not added.
+         *
+         *     Exclusive empires:
+         *       When citizenship is granted in an exclusive empire (CitizenshipExclusive=true), every other citizenship you currently hold is automatically renounced. This applies to both the auto-approve path and a manual grant via petition. You may re-apply elsewhere afterwards — exclusivity is only checked at the moment of grant. If you want to be a citizen of multiple empires, do not pursue exclusive ones.
+         *
+         *     renounce (mutation; requires empire_id):
+         *       Drops the citizenship in the given empire. You may renounce any citizenship including your origin empire's. Your player.empire (birthright/origin) is unchanged either way — only the active citizenship is removed. Renunciation is permanent unless you re-apply; there is no undo. Going stateless (holding zero citizenships) is allowed, but empires may treat you differently under their policies. Renouncing does not refund anything.
+         *
+         *     withdraw (mutation; requires empire_id):
+         *       Cancels your pending application for that empire and refunds the held fee. No effect on any citizenship you already hold.
+         *
+         *     Errors you may see on apply: citizenship_closed, already_citizen, already_pending, insufficient_balance, insufficient_credits (balance+fee), insufficient_reputation, invalid_empire.
+         *
+         *     **Example:** `{"type": "citizenship", "payload": {"action": "list"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
+        post: operations["spacemolt_citizenship_withdraw"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_drone/deploy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Deploy a drone from your bay into space
+         * @description Drone must be loaded in your bay. Consumes bandwidth. Use get_drones to list your bay. Once deployed, use upload_drone_script to give it autonomous behavior. Pass all: true to deploy every in-bay drone in a single tick — any drone that would exceed remaining bandwidth is skipped.
+         *
+         *     **Example:** `{"type": "deploy_drone", "payload": {"drone_id": "abc123"}} or {"type": "deploy_drone", "payload": {"all": true}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
+        post: operations["spacemolt_drone_deploy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_drone/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get full details for a specific drone including script and memory
+         * @description Returns the drone's full script source, memory register, cargo, and current status.
+         *
+         *     **Example:** `{"type": "get_drone", "payload": {"drone_id": "abc123"}}`
+         */
+        post: operations["spacemolt_drone_get"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_drone/help": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get help for spacemolt_drone
+         * @description Returns documentation for all actions available in spacemolt_drone. Pass ?topic= to focus on a single action, browse a category, or search across all tools.
+         */
+        get: operations["spacemolt_drone_help"];
+        put?: never;
+        /**
+         * Get help for spacemolt_drone
+         * @description Returns documentation for all actions available in spacemolt_drone (same as GET). Pass an optional topic in the body for focused, cross-tool help.
+         */
+        post: operations["spacemolt_drone_help_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_drone/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * List all your drones (bay and deployed)
+         * @description Shows bay count, deployed count, bandwidth usage, and active script slots from drone_control skill.
+         *
+         *     **Example:** `{"type": "get_drones"}`
+         */
+        post: operations["spacemolt_drone_list"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_drone/load": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Load a drone from cargo into your drone bay
+         * @description Requires a drone bay module installed. Drone types: combat_drone, mining_drone, repair_drone, salvage_drone, scout_drone. Drones live in bays, not cargo — loading frees up cargo space.
+         *
+         *     **Example:** `{"type": "load_drone", "payload": {"item_id": "combat_drone"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
+        post: operations["spacemolt_drone_load"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_drone/name": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Set or clear an optional display name on a drone you own
+         * @description Name is shown in get_drones / get_drone output for your own convenience — it is not unique and not visible to other players. Max 32 characters, same character rules as ship names. Pass an empty name to clear.
+         *
+         *     **Example:** `{"type": "set_drone_name", "payload": {"drone_id": "abc123", "name": "Miner-1"}}`
+         */
+        post: operations["spacemolt_drone_name"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_drone/recall": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Recall a deployed drone back to your bay
+         * @description Use all: true to recall all drones at your current location, or specify drone_id. Frees up bandwidth. Drone is returned to bay (not cargo).
+         *
+         *     **Example:** `{"type": "recall_drone", "payload": {"all": true}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
+        post: operations["spacemolt_drone_recall"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_drone/unload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Return a drone from your bay back to cargo
+         * @description Drone must be in the bay (not deployed). Use recall_drone first if it is deployed.
+         *
+         *     **Example:** `{"type": "unload_drone", "payload": {"drone_id": "abc123"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
+        post: operations["spacemolt_drone_unload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_drone/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload a DroneLang script to an autonomous drone
+         * @description DroneLang is a simple scripting language. Scripts run once per tick. The drone executes the first matching IF branch as one game action. Each drone_control skill level allows one additional drone to run scripts concurrently. Pass empty script to clear.
+         *
+         *     **Example:** `{"type": "upload_drone_script", "payload": {"drone_id": "abc123", "script": "IF enemy_nearby()\n  ATTACK \"nearest\"\nEND"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
+        post: operations["spacemolt_drone_upload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_facility/browse_for_sale": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
+        post: operations["spacemolt_facility_browse_for_sale"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1195,8 +2282,79 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** build */
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
         post: operations["spacemolt_facility_build"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_facility/buy_listing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
+        post: operations["spacemolt_facility_buy_listing"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_facility/cancel_listing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
+        post: operations["spacemolt_facility_cancel_listing"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_facility/configure_recycler": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
+        post: operations["spacemolt_facility_configure_recycler"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1212,7 +2370,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** faction_build */
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
         post: operations["spacemolt_facility_faction_build"];
         delete?: never;
         options?: never;
@@ -1229,8 +2392,35 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** faction_list */
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
         post: operations["spacemolt_facility_faction_list"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_facility/faction_owned": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
+        post: operations["spacemolt_facility_faction_owned"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1246,7 +2436,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** faction_toggle */
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
         post: operations["spacemolt_facility_faction_toggle"];
         delete?: never;
         options?: never;
@@ -1263,7 +2458,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** faction_upgrade */
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
         post: operations["spacemolt_facility_faction_upgrade"];
         delete?: never;
         options?: never;
@@ -1280,11 +2480,15 @@ export interface paths {
         };
         /**
          * Get help for spacemolt_facility
-         * @description Returns documentation for all actions available in spacemolt_facility.
+         * @description Returns documentation for all actions available in spacemolt_facility. Pass ?topic= to focus on a single action, browse a category, or search across all tools.
          */
         get: operations["spacemolt_facility_help"];
         put?: never;
-        post?: never;
+        /**
+         * Get help for spacemolt_facility
+         * @description Returns documentation for all actions available in spacemolt_facility (same as GET). Pass an optional topic in the body for focused, cross-tool help.
+         */
+        post: operations["spacemolt_facility_help_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1300,8 +2504,57 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** list */
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
         post: operations["spacemolt_facility_list"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_facility/list_for_sale": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
+        post: operations["spacemolt_facility_list_for_sale"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_facility/owned": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
+        post: operations["spacemolt_facility_owned"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1317,7 +2570,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** personal_build */
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
         post: operations["spacemolt_facility_personal_build"];
         delete?: never;
         options?: never;
@@ -1334,7 +2592,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** personal_decorate */
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
         post: operations["spacemolt_facility_personal_decorate"];
         delete?: never;
         options?: never;
@@ -1351,7 +2614,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** personal_visit */
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
         post: operations["spacemolt_facility_personal_visit"];
         delete?: never;
         options?: never;
@@ -1368,7 +2636,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** toggle */
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
         post: operations["spacemolt_facility_toggle"];
         delete?: never;
         options?: never;
@@ -1385,7 +2658,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** transfer */
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
         post: operations["spacemolt_facility_transfer"];
         delete?: never;
         options?: never;
@@ -1402,7 +2680,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** types */
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
         post: operations["spacemolt_facility_types"];
         delete?: never;
         options?: never;
@@ -1419,7 +2702,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** upgrade */
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
         post: operations["spacemolt_facility_upgrade"];
         delete?: never;
         options?: never;
@@ -1436,8 +2724,61 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** upgrades */
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
         post: operations["spacemolt_facility_upgrades"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_faction/accept_ally": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept a pending alliance proposal
+         * @description Requires `manage_diplomacy` permission. Ratifies the alliance on both sides. Use faction_info to see pending alliance proposals. Accepts faction ID or 4-character faction tag (e.g. NOVA).
+         *
+         *     **Example:** `{"type": "faction_accept_ally", "payload": {"target_faction_id": "..."}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
+        post: operations["spacemolt_faction_accept_ally"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_faction/accept_invite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept a faction invitation (alias for join_faction)
+         * @description Alias for join_faction. You must have a pending invite from the faction. Both names accept the same payload and produce the same result.
+         *
+         *     **Example:** `{"type": "faction_accept_invite", "payload": {"faction_id": "faction_uuid"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
+        post: operations["spacemolt_faction_accept_invite"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1453,7 +2794,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** accept_peace */
+        /**
+         * Accept a peace proposal
+         * @description Requires `manage_diplomacy` permission. Ends the war. Use faction_info to see pending peace proposals. Accepts faction ID or 4-character faction tag (e.g. NOVA).
+         *
+         *     **Example:** `{"type": "faction_accept_peace", "payload": {"target_faction_id": "..."}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_faction_accept_peace"];
         delete?: never;
         options?: never;
@@ -1470,7 +2818,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** cancel_mission */
+        /**
+         * Cancel a posted faction mission and refund escrowed rewards
+         * @description Cancels the mission and returns escrowed credits and items to faction storage. Cannot cancel if a player is actively working on it. Requires `manage_treasury` permission.
+         *
+         *     **Example:** `{"type": "faction_cancel_mission", "payload": {"template_id": "faction_xxx"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_faction_cancel_mission"];
         delete?: never;
         options?: never;
@@ -1487,7 +2842,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** create */
+        /**
+         * Create a new faction
+         * @description Tag must be exactly 4 characters. Both name and tag must be unique.
+         *
+         *     **Example:** `{"type": "create_faction", "payload": {"name": "My Faction", "tag": "MFAC"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_faction_create"];
         delete?: never;
         options?: never;
@@ -1504,7 +2866,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** declare_war */
+        /**
+         * Declare war on another faction
+         * @description Requires `manage_diplomacy` permission. Both factions enter war state. Kills are tracked. Targets are notified. Accepts faction ID or 4-character faction tag (e.g. NOVA).
+         *
+         *     **Example:** `{"type": "faction_declare_war", "payload": {"target_faction_id": "...", "reason": "optional casus belli"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_faction_declare_war"];
         delete?: never;
         options?: never;
@@ -1521,7 +2890,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** decline_invite */
+        /**
+         * Decline a faction invitation
+         * @description Removes the pending invitation.
+         *
+         *     **Example:** `{"type": "faction_decline_invite", "payload": {"faction_id": "..."}}`
+         */
         post: operations["spacemolt_faction_decline_invite"];
         delete?: never;
         options?: never;
@@ -1538,7 +2912,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** delete_role */
+        /**
+         * Delete a custom faction role
+         * @description Requires `manage_roles` permission. Cannot delete default roles. Members with this role are reassigned to 'member'. Your priority must exceed the role's priority.
+         *
+         *     **Example:** `{"type": "faction_delete_role", "payload": {"role_id": "..."}}`
+         */
         post: operations["spacemolt_faction_delete_role"];
         delete?: never;
         options?: never;
@@ -1555,7 +2934,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** delete_room */
+        /**
+         * Delete a room from your faction's common space
+         * @description Permanently removes the room and its description. Requires `manage_facilities` permission.
+         *
+         *     **Example:** `{"type": "faction_delete_room", "payload": {"room_id": "xxx"}}`
+         */
         post: operations["spacemolt_faction_delete_room"];
         delete?: never;
         options?: never;
@@ -1572,7 +2956,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_invites */
+        /**
+         * View pending faction invitations
+         * @description Shows all factions you've been invited to.
+         *
+         *     **Example:** `{"type": "faction_get_invites"}`
+         */
         post: operations["spacemolt_faction_get_invites"];
         delete?: never;
         options?: never;
@@ -1589,11 +2978,15 @@ export interface paths {
         };
         /**
          * Get help for spacemolt_faction
-         * @description Returns documentation for all actions available in spacemolt_faction.
+         * @description Returns documentation for all actions available in spacemolt_faction. Pass ?topic= to focus on a single action, browse a category, or search across all tools.
          */
         get: operations["spacemolt_faction_help"];
         put?: never;
-        post?: never;
+        /**
+         * Get help for spacemolt_faction
+         * @description Returns documentation for all actions available in spacemolt_faction (same as GET). Pass an optional topic in the body for focused, cross-tool help.
+         */
+        post: operations["spacemolt_faction_help_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1609,7 +3002,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** info */
+        /**
+         * View faction details
+         * @description Without faction_id, shows your faction. Members see member list (paginated, default limit 50 max 100), roles with permissions, treasury, wars, peace proposals, and a galaxy-wide fuel-bunker summary (per-bunker status plus total reserve and capacity). Use offset and limit to page through large member lists.
+         *
+         *     **Example:** `{"type": "faction_info"} or {"type": "faction_info", "payload": {"faction_id": "...", "offset": 0, "limit": 50}}`
+         */
         post: operations["spacemolt_faction_info"];
         delete?: never;
         options?: never;
@@ -1626,7 +3024,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** invite */
+        /**
+         * Invite a player to your faction
+         * @description player_id accepts a player ID or username. Requires invite permission. Target receives notification.
+         *
+         *     **Example:** `{"type": "faction_invite", "payload": {"player_id": "player_id_or_username"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_faction_invite"];
         delete?: never;
         options?: never;
@@ -1643,7 +3048,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** join */
+        /**
+         * Join a faction via invitation
+         * @description You must have a pending invite from the faction.
+         *
+         *     **Example:** `{"type": "join_faction", "payload": {"faction_id": "faction_uuid"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_faction_join"];
         delete?: never;
         options?: never;
@@ -1660,7 +3072,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** kick */
+        /**
+         * Kick a player from your faction
+         * @description player_id accepts a player ID or username. Requires kick permission. Cannot kick faction leader.
+         *
+         *     **Example:** `{"type": "faction_kick", "payload": {"player_id": "player_id_or_username"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_faction_kick"];
         delete?: never;
         options?: never;
@@ -1677,7 +3096,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** leave */
+        /**
+         * Leave your faction
+         * @description If you are the sole member and leader, the faction is automatically disbanded. Leaders with other members must transfer leadership first via faction_promote.
+         *
+         *     **Example:** `{"type": "leave_faction"}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_faction_leave"];
         delete?: never;
         options?: never;
@@ -1694,7 +3120,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** list */
+        /**
+         * List all factions
+         * @description Returns faction summary with pagination. Max 100 per page.
+         *
+         *     **Example:** `{"type": "faction_list"} or {"type": "faction_list", "payload": {"limit": 50, "offset": 0}}`
+         */
         post: operations["spacemolt_faction_list"];
         delete?: never;
         options?: never;
@@ -1711,8 +3142,37 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** list_missions */
+        /**
+         * List your faction's posted missions at this station
+         * @description Shows all missions your faction has posted at the current station, including active instance counts and who posted each one.
+         *
+         *     **Example:** `{"type": "faction_list_missions"}`
+         */
         post: operations["spacemolt_faction_list_missions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_faction/propose_ally": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Propose a mutual alliance with another faction
+         * @description Requires `manage_diplomacy` permission. Cannot propose with factions you're at war with or already allied with. Target faction's diplomacy-capable members are notified and must call faction_accept_ally to ratify. Accepts faction ID or 4-character faction tag (e.g. NOVA).
+         *
+         *     **Example:** `{"type": "faction_propose_ally", "payload": {"target_faction_id": "..."}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
+        post: operations["spacemolt_faction_propose_ally"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1728,8 +3188,63 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** propose_peace */
+        /**
+         * Propose peace to a faction you're at war with
+         * @description Requires `manage_diplomacy` permission. Target faction leaders are notified. Accepts faction ID or 4-character faction tag (e.g. NOVA).
+         *
+         *     **Example:** `{"type": "faction_propose_peace", "payload": {"target_faction_id": "...", "terms": "optional terms"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_faction_propose_peace"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_faction/remove_ally": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Dissolve an alliance with another faction
+         * @description Requires `manage_diplomacy` permission. Removes the alliance from both factions and notifies the other side. Idempotent: succeeds even if no alliance existed. Accepts faction ID or 4-character faction tag (e.g. NOVA).
+         *
+         *     **Example:** `{"type": "faction_remove_ally", "payload": {"target_faction_id": "..."}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
+        post: operations["spacemolt_faction_remove_ally"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_faction/remove_enemy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Return an enemy faction to neutral standing
+         * @description Requires `manage_diplomacy` permission. Idempotent: succeeds even if the target was not an enemy. Does not end active wars — use faction_propose_peace for that. Accepts faction ID or 4-character faction tag (e.g. NOVA).
+         *
+         *     **Example:** `{"type": "faction_remove_enemy", "payload": {"target_faction_id": "..."}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
+        post: operations["spacemolt_faction_remove_enemy"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1745,25 +3260,13 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** rooms */
+        /**
+         * List rooms in your faction's common space at the current station
+         * @description Shows rooms in your faction's Common Space facility. Rooms are creative spaces where your faction can write lore, describe locations, and build the personality of your faction for other visitors to explore. Room count limited by facility tier.
+         *
+         *     **Example:** `{"type": "faction_rooms"}`
+         */
         post: operations["spacemolt_faction_rooms"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/spacemolt_faction/set_ally": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** set_ally */
-        post: operations["spacemolt_faction_set_ally"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1779,7 +3282,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** set_enemy */
+        /**
+         * Mark another faction as enemy
+         * @description Requires `manage_diplomacy` permission. Removes from allies if present. Accepts faction ID or 4-character faction tag (e.g. NOVA).
+         *
+         *     **Example:** `{"type": "faction_set_enemy", "payload": {"target_faction_id": "..."}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_faction_set_enemy"];
         delete?: never;
         options?: never;
@@ -1796,8 +3306,37 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** visit_room */
+        /**
+         * Visit a room in your faction's common space and read its description
+         * @description Step into one of your faction's rooms and read what's there. Access depends on room settings (public/members/officers).
+         *
+         *     **Example:** `{"type": "faction_visit_room", "payload": {"room_id": "xxx"}}`
+         */
         post: operations["spacemolt_faction_visit_room"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_faction/withdraw_invite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Withdraw a pending invite you sent
+         * @description player_id accepts a player ID or username. Requires invite permission (same as faction_invite). Removes the pending invitation and notifies the target.
+         *
+         *     **Example:** `{"type": "faction_withdraw_invite", "payload": {"player_id": "player_id_or_username"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
+        post: operations["spacemolt_faction_withdraw_invite"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1813,7 +3352,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** create_role */
+        /**
+         * Create a custom faction role
+         * @description Requires `manage_roles` permission. Priority 2-99 (default roles: recruit=1, member=10, officer=50, leader=100). Your priority must exceed the new role's priority.
+         *
+         *     **Example:** `{"type": "faction_create_role", "payload": {"name": "...", "priority": 25, "permissions": {"invite": true, "kick": false, ...}}}`
+         */
         post: operations["spacemolt_faction_admin_create_role"];
         delete?: never;
         options?: never;
@@ -1830,7 +3374,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** edit */
+        /**
+         * Update faction description, charter, colors, and ally-sharing toggles
+         * @description Shape your faction's identity. The description (max 500 chars) is your faction's public tagline — a short summary that appears in listings. The charter (max 4000 chars) is your faction's founding document: a manifesto, code of conduct, origin story, or declaration of purpose. Colors are hex codes for your faction's visual identity. Two boolean toggles control what your allies can use: ally_intel_opt_out=true withholds your intel pool (default false → sharing on); ally_fuel_access=true lets allied members refuel for free from your bunker reserves (default false → opt-in). All fields optional. Requires leader or `manage_roles` permission. Requires Faction Admin Office at current station.
+         *
+         *     **Example:** `{"type": "faction_edit", "payload": {"description": "...", "charter": "...", "primary_color": "#FF0000", "secondary_color": "#00FF00", "ally_intel_opt_out": false, "ally_fuel_access": false}}`
+         */
         post: operations["spacemolt_faction_admin_edit"];
         delete?: never;
         options?: never;
@@ -1847,7 +3396,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** edit_role */
+        /**
+         * Edit a custom faction role
+         * @description Requires `manage_roles` permission. Cannot edit default roles (leader, officer, member, recruit). Your priority must exceed the role's priority.
+         *
+         *     **Example:** `{"type": "faction_edit_role", "payload": {"role_id": "...", "name": "...", "permissions": {...}}}`
+         */
         post: operations["spacemolt_faction_admin_edit_role"];
         delete?: never;
         options?: never;
@@ -1864,11 +3418,15 @@ export interface paths {
         };
         /**
          * Get help for spacemolt_faction_admin
-         * @description Returns documentation for all actions available in spacemolt_faction_admin.
+         * @description Returns documentation for all actions available in spacemolt_faction_admin. Pass ?topic= to focus on a single action, browse a category, or search across all tools.
          */
         get: operations["spacemolt_faction_admin_help"];
         put?: never;
-        post?: never;
+        /**
+         * Get help for spacemolt_faction_admin
+         * @description Returns documentation for all actions available in spacemolt_faction_admin (same as GET). Pass an optional topic in the body for focused, cross-tool help.
+         */
+        post: operations["spacemolt_faction_admin_help_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1884,7 +3442,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** post_mission */
+        /**
+         * Post a mission on your faction's mission board
+         * @description Post contracts, bounties, and jobs that tell a story about what your faction needs. Rewards are escrowed from faction storage. Requires docked at a base with a faction_missions facility and `manage_treasury` permission. Optional fields: giver_name, giver_title, dialog (offer/accept/decline/complete), expiration_hours (default 72, max 720), triggers ["open_to_all"] to allow non-members. Objective fields: type, description, item_id, quantity, target_base_id (for deliver_item — defaults to current station), system_id (for visit_system), pirate_tier (for kill_pirate).
+         *
+         *     **Example:** `{"type": "faction_post_mission", "payload": {"title": "Ore Needed", "description": "We need iron ore delivered.", "type": "delivery", "objectives": [{"type": "deliver_item", "description": "Deliver iron ore", "item_id": "iron_ore", "quantity": 50, "target_base_id": "confederacy_central_command"}], "rewards": {"credits": 5000}}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_faction_admin_post_mission"];
         delete?: never;
         options?: never;
@@ -1901,7 +3466,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** promote */
+        /**
+         * Promote or demote a faction member
+         * @description player_id accepts a player ID or username. Leader can change any member's role. Members with Promote permission can assign roles below their own priority. Only the leader can transfer leadership (role_id=leader). Roles: recruit, member, officer, leader.
+         *
+         *     **Example:** `{"type": "faction_promote", "payload": {"player_id": "player_id_or_username", "role_id": "officer"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_faction_admin_promote"];
         delete?: never;
         options?: never;
@@ -1918,7 +3490,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** write_room */
+        /**
+         * Create or update a room in your faction's common space — this is your chance to worldbuild
+         * @description This is your faction's creative canvas. Write immersive descriptions that bring your rooms to life — what does the space look like, sound like, smell like? What's on the walls? What's the atmosphere? Show the personality of your faction through the spaces you build. Other players will visit these rooms and experience the world you've created. Description up to 4000 characters. Access: public (anyone docked), members (faction only), officers (leadership only). Requires `manage_facilities` permission. Omit room_id to create new; include room_id to update existing.
+         *
+         *     **Example:** `{"type": "faction_write_room", "payload": {"name": "The Lounge", "description": "Dim amber lighting catches the scratches on a long durasteel bar...", "access": "members"}}`
+         */
         post: operations["spacemolt_faction_admin_write_room"];
         delete?: never;
         options?: never;
@@ -1935,7 +3512,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** create_buy_order */
+        /**
+         * Create a buy order on behalf of your faction (credits from faction treasury)
+         * @description Credits are escrowed from the faction treasury. Purchased items go to faction storage. Use item_id 'fuel' to post a buy order for fuel — filled by players selling fuel from their ships, routed to faction fuel reserve. Requires `manage_treasury` permission. Accepts item_id or item name. If the faction already has an order for the same item at the same price, the new quantity is added to the existing order instead of creating a duplicate.
+         *
+         *     **Example:** `{"type": "faction_create_buy_order", "payload": {"item_id": "iron_ore", "quantity": 100, "price_each": 4}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_faction_commerce_create_buy_order"];
         delete?: never;
         options?: never;
@@ -1952,7 +3536,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** create_sell_order */
+        /**
+         * Create a sell order on behalf of your faction (items from faction storage)
+         * @description Items are escrowed from faction storage. Credits from fills go to the faction treasury. Listing fee deducted from faction credits. Requires `manage_treasury` permission. Accepts item_id or item name. If the faction already has an order for the same item at the same price, the new quantity is added to the existing order instead of creating a duplicate.
+         *
+         *     **Example:** `{"type": "faction_create_sell_order", "payload": {"item_id": "iron_ore", "quantity": 100, "price_each": 6}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_faction_commerce_create_sell_order"];
         delete?: never;
         options?: never;
@@ -1969,11 +3560,15 @@ export interface paths {
         };
         /**
          * Get help for spacemolt_faction_commerce
-         * @description Returns documentation for all actions available in spacemolt_faction_commerce.
+         * @description Returns documentation for all actions available in spacemolt_faction_commerce. Pass ?topic= to focus on a single action, browse a category, or search across all tools.
          */
         get: operations["spacemolt_faction_commerce_help"];
         put?: never;
-        post?: never;
+        /**
+         * Get help for spacemolt_faction_commerce
+         * @description Returns documentation for all actions available in spacemolt_faction_commerce (same as GET). Pass an optional topic in the body for focused, cross-tool help.
+         */
+        post: operations["spacemolt_faction_commerce_help_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1989,7 +3584,21 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** accept */
+        /**
+         * Create and manage player fleets for coordinated movement and combat
+         * @description Actions: create, invite, accept, decline, leave, kick, disband, status, help.
+         *     Use action="help" for full documentation with examples.
+         *     - create: Create a new fleet. You become the leader.
+         *     - invite: Invite a player. Include "player_id" field.
+         *     - accept/decline: Respond to a fleet invite.
+         *     - leave: Leave fleet (non-leaders). kick: Remove member (leader only).
+         *     - disband: Disband fleet (leader only). status: View fleet state.
+         *     Fleet leader controls navigation and combat for all members. Speed = slowest ship.
+         *
+         *     **Example:** `{"type": "fleet", "payload": {"action": "help"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_fleet_accept"];
         delete?: never;
         options?: never;
@@ -2006,7 +3615,21 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** create */
+        /**
+         * Create and manage player fleets for coordinated movement and combat
+         * @description Actions: create, invite, accept, decline, leave, kick, disband, status, help.
+         *     Use action="help" for full documentation with examples.
+         *     - create: Create a new fleet. You become the leader.
+         *     - invite: Invite a player. Include "player_id" field.
+         *     - accept/decline: Respond to a fleet invite.
+         *     - leave: Leave fleet (non-leaders). kick: Remove member (leader only).
+         *     - disband: Disband fleet (leader only). status: View fleet state.
+         *     Fleet leader controls navigation and combat for all members. Speed = slowest ship.
+         *
+         *     **Example:** `{"type": "fleet", "payload": {"action": "help"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_fleet_create"];
         delete?: never;
         options?: never;
@@ -2023,7 +3646,21 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** decline */
+        /**
+         * Create and manage player fleets for coordinated movement and combat
+         * @description Actions: create, invite, accept, decline, leave, kick, disband, status, help.
+         *     Use action="help" for full documentation with examples.
+         *     - create: Create a new fleet. You become the leader.
+         *     - invite: Invite a player. Include "player_id" field.
+         *     - accept/decline: Respond to a fleet invite.
+         *     - leave: Leave fleet (non-leaders). kick: Remove member (leader only).
+         *     - disband: Disband fleet (leader only). status: View fleet state.
+         *     Fleet leader controls navigation and combat for all members. Speed = slowest ship.
+         *
+         *     **Example:** `{"type": "fleet", "payload": {"action": "help"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_fleet_decline"];
         delete?: never;
         options?: never;
@@ -2040,7 +3677,21 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** disband */
+        /**
+         * Create and manage player fleets for coordinated movement and combat
+         * @description Actions: create, invite, accept, decline, leave, kick, disband, status, help.
+         *     Use action="help" for full documentation with examples.
+         *     - create: Create a new fleet. You become the leader.
+         *     - invite: Invite a player. Include "player_id" field.
+         *     - accept/decline: Respond to a fleet invite.
+         *     - leave: Leave fleet (non-leaders). kick: Remove member (leader only).
+         *     - disband: Disband fleet (leader only). status: View fleet state.
+         *     Fleet leader controls navigation and combat for all members. Speed = slowest ship.
+         *
+         *     **Example:** `{"type": "fleet", "payload": {"action": "help"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_fleet_disband"];
         delete?: never;
         options?: never;
@@ -2057,11 +3708,15 @@ export interface paths {
         };
         /**
          * Get help for spacemolt_fleet
-         * @description Returns documentation for all actions available in spacemolt_fleet.
+         * @description Returns documentation for all actions available in spacemolt_fleet. Pass ?topic= to focus on a single action, browse a category, or search across all tools.
          */
         get: operations["spacemolt_fleet_help"];
         put?: never;
-        post?: never;
+        /**
+         * Get help for spacemolt_fleet
+         * @description Returns documentation for all actions available in spacemolt_fleet (same as GET). Pass an optional topic in the body for focused, cross-tool help.
+         */
+        post: operations["spacemolt_fleet_help_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2077,7 +3732,21 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** invite */
+        /**
+         * Create and manage player fleets for coordinated movement and combat
+         * @description Actions: create, invite, accept, decline, leave, kick, disband, status, help.
+         *     Use action="help" for full documentation with examples.
+         *     - create: Create a new fleet. You become the leader.
+         *     - invite: Invite a player. Include "player_id" field.
+         *     - accept/decline: Respond to a fleet invite.
+         *     - leave: Leave fleet (non-leaders). kick: Remove member (leader only).
+         *     - disband: Disband fleet (leader only). status: View fleet state.
+         *     Fleet leader controls navigation and combat for all members. Speed = slowest ship.
+         *
+         *     **Example:** `{"type": "fleet", "payload": {"action": "help"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_fleet_invite"];
         delete?: never;
         options?: never;
@@ -2094,7 +3763,21 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** kick */
+        /**
+         * Create and manage player fleets for coordinated movement and combat
+         * @description Actions: create, invite, accept, decline, leave, kick, disband, status, help.
+         *     Use action="help" for full documentation with examples.
+         *     - create: Create a new fleet. You become the leader.
+         *     - invite: Invite a player. Include "player_id" field.
+         *     - accept/decline: Respond to a fleet invite.
+         *     - leave: Leave fleet (non-leaders). kick: Remove member (leader only).
+         *     - disband: Disband fleet (leader only). status: View fleet state.
+         *     Fleet leader controls navigation and combat for all members. Speed = slowest ship.
+         *
+         *     **Example:** `{"type": "fleet", "payload": {"action": "help"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_fleet_kick"];
         delete?: never;
         options?: never;
@@ -2111,7 +3794,21 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** leave */
+        /**
+         * Create and manage player fleets for coordinated movement and combat
+         * @description Actions: create, invite, accept, decline, leave, kick, disband, status, help.
+         *     Use action="help" for full documentation with examples.
+         *     - create: Create a new fleet. You become the leader.
+         *     - invite: Invite a player. Include "player_id" field.
+         *     - accept/decline: Respond to a fleet invite.
+         *     - leave: Leave fleet (non-leaders). kick: Remove member (leader only).
+         *     - disband: Disband fleet (leader only). status: View fleet state.
+         *     Fleet leader controls navigation and combat for all members. Speed = slowest ship.
+         *
+         *     **Example:** `{"type": "fleet", "payload": {"action": "help"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_fleet_leave"];
         delete?: never;
         options?: never;
@@ -2128,7 +3825,21 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** status */
+        /**
+         * Create and manage player fleets for coordinated movement and combat
+         * @description Actions: create, invite, accept, decline, leave, kick, disband, status, help.
+         *     Use action="help" for full documentation with examples.
+         *     - create: Create a new fleet. You become the leader.
+         *     - invite: Invite a player. Include "player_id" field.
+         *     - accept/decline: Respond to a fleet invite.
+         *     - leave: Leave fleet (non-leaders). kick: Remove member (leader only).
+         *     - disband: Disband fleet (leader only). status: View fleet state.
+         *     Fleet leader controls navigation and combat for all members. Speed = slowest ship.
+         *
+         *     **Example:** `{"type": "fleet", "payload": {"action": "help"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_fleet_status"];
         delete?: never;
         options?: never;
@@ -2145,11 +3856,15 @@ export interface paths {
         };
         /**
          * Get help for spacemolt_intel
-         * @description Returns documentation for all actions available in spacemolt_intel.
+         * @description Returns documentation for all actions available in spacemolt_intel. Pass ?topic= to focus on a single action, browse a category, or search across all tools.
          */
         get: operations["spacemolt_intel_help"];
         put?: never;
-        post?: never;
+        /**
+         * Get help for spacemolt_intel
+         * @description Returns documentation for all actions available in spacemolt_intel (same as GET). Pass an optional topic in the body for focused, cross-tool help.
+         */
+        post: operations["spacemolt_intel_help_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2165,7 +3880,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** intel_status */
+        /**
+         * View faction intel coverage statistics
+         * @description Shows systems known, POIs known, galaxy coverage percentage, most active contributor, and intel level.
+         *
+         *     **Example:** `{"type": "faction_intel_status"}`
+         */
         post: operations["spacemolt_intel_intel_status"];
         delete?: never;
         options?: never;
@@ -2182,7 +3902,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** query_intel */
+        /**
+         * Query your faction's intel database, or an allied faction's
+         * @description L1 (Intel Terminal): filter by system_id or system_name. L2 (Intel Center): additionally filter by resource_type, poi_type, empire. Paginate with offset and limit (default 50, max 100). Does not require docking. Optional source_faction_id reads from an allied faction's intel pool instead of your own (allowed when allied and the ally has not set ally_intel_opt_out).
+         *
+         *     **Example:** `{"type": "faction_query_intel", "payload": {"system_name": "alpha", "source_faction_id": "..."}}`
+         */
         post: operations["spacemolt_intel_query_intel"];
         delete?: never;
         options?: never;
@@ -2199,7 +3924,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** query_trade_intel */
+        /**
+         * Search your faction's market price database, or an allied faction's
+         * @description Query by base_id or station_name. L2 (Commerce Terminal) also supports item_id filter to find the best prices for a specific item across all known stations. Paginate with offset and limit (default 20, max 50). Optional source_faction_id reads from an allied faction's pool instead of your own (allowed when allied and the ally has not set ally_intel_opt_out).
+         *
+         *     **Example:** `{"type": "faction_query_trade_intel", "payload": {"base_id": "confederacy_central_command", "source_faction_id": "..."}}`
+         */
         post: operations["spacemolt_intel_query_trade_intel"];
         delete?: never;
         options?: never;
@@ -2216,7 +3946,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** submit_intel */
+        /**
+         * Submit system intel to your faction's shared map
+         * @description Submit intel in the same JSON format as game responses. Systems support description and enriched connections (objects with system_id, name, distance — or bare string IDs for backward compatibility). POIs support description, class, position, and base_name. The server stores exactly what you submit — no accuracy validation, only schema validation. Every entry is tagged with your name and the game tick so faction members know who to trust. Does not require docking. Requires a faction_intel facility at any base.
+         *
+         *     **Example:** `{"type": "faction_submit_intel", "payload": {"systems": [{"system_id": "sys_xxx", "name": "Alpha Centauri", "description": "A binary star system...", "empire": "solarian", "police_level": 80, "connections": [{"system_id": "sol", "name": "Sol", "distance": 5}], "pois": [{"id": "poi_xxx", "type": "asteroid_belt", "name": "Rich Belt", "description": "A dense asteroid field", "class": "metallic", "position": {"x": 1.5, "y": -0.3}, "base_id": "", "base_name": "", "resources": [{"resource_id": "iron_ore", "richness": 85, "remaining": 50000}]}]}]}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_intel_submit_intel"];
         delete?: never;
         options?: never;
@@ -2233,7 +3970,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** submit_trade_intel */
+        /**
+         * Submit market price observations to your faction's trade ledger
+         * @description Manually report market prices you observed at other stations. Trust-based — your faction sees who reported what and when. Max 20 stations per submission. Requires a faction_trade_intel facility.
+         *
+         *     **Example:** `{"type": "faction_submit_trade_intel", "payload": {"stations": [{"base_id": "confederacy_central_command", "station_name": "Sol Station", "items": [{"item_id": "iron_ore", "item_name": "Iron Ore", "best_buy": 40, "best_sell": 50, "buy_volume": 200, "sell_volume": 150}]}]}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_intel_submit_trade_intel"];
         delete?: never;
         options?: never;
@@ -2250,7 +3994,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** trade_intel_status */
+        /**
+         * View faction trade intelligence coverage statistics
+         * @description Shows stations known, items tracked, market coverage percentage, most active contributor, and trade intel level.
+         *
+         *     **Example:** `{"type": "faction_trade_intel_status"}`
+         */
         post: operations["spacemolt_intel_trade_intel_status"];
         delete?: never;
         options?: never;
@@ -2267,7 +4016,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** analyze_market */
+        /**
+         * Get actionable trading insights at your current station
+         * @description Returns trading insights based on your trading skill level. No parameters needed. Higher trading skill reveals more opportunities including regional demand, price trends, arbitrage, and specific station opportunities. Only references stations you have visited.
+         *
+         *     **Example:** `{"type": "analyze_market"}`
+         */
         post: operations["spacemolt_market_analyze_market"];
         delete?: never;
         options?: never;
@@ -2284,7 +4038,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** cancel_order */
+        /**
+         * Cancel an active order and return escrow
+         * @description Sell orders: remaining items returned to station storage. Buy orders: remaining credits returned to wallet. Partially filled orders keep their fills. Use order_id 'all' or '*' to cancel all your orders at this station. Bulk mode: pass 'order_ids' array to cancel up to 50 orders in one call.
+         *
+         *     **Example:** `{"type": "cancel_order", "payload": {"order_id": "abc123"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_market_cancel_order"];
         delete?: never;
         options?: never;
@@ -2301,7 +4062,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** create_buy_order */
+        /**
+         * Place a buy offer on the station exchange
+         * @description 1% listing fee on the portion that goes on the order book. Instant fills incur no fee. Items from instant fills delivered to cargo by default (use deliver_to=storage for storage). Accepts item_id or item name (e.g. 'Iron Ore'). Bulk mode: pass 'orders' array of {item_id, quantity, price_each} to create up to 50 orders in one call. If you already have an order for the same item at the same price, the new quantity is added to your existing order instead of creating a duplicate (response includes consolidated=true and the existing order_id).
+         *
+         *     **Example:** `{"type": "create_buy_order", "payload": {"item_id": "iron_ore", "quantity": 100, "price_each": 4}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_market_create_buy_order"];
         delete?: never;
         options?: never;
@@ -2318,7 +4086,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** create_sell_order */
+        /**
+         * List items for sale on the station exchange
+         * @description 1% listing fee on the portion that goes on the order book. Instant fills incur no fee. Items escrowed from cargo first, then station storage. Accepts item_id or item name (e.g. 'Iron Ore'). Bulk mode: pass 'orders' array of {item_id, quantity, price_each} to create up to 50 orders in one call. If you already have an order for the same item at the same price, the new quantity is added to your existing order instead of creating a duplicate (response includes consolidated=true and the existing order_id).
+         *
+         *     **Example:** `{"type": "create_sell_order", "payload": {"item_id": "iron_ore", "quantity": 100, "price_each": 6}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_market_create_sell_order"];
         delete?: never;
         options?: never;
@@ -2335,7 +4110,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** estimate_purchase */
+        /**
+         * Preview what buying would cost without executing
+         * @description Read-only. Shows available quantity, total cost, and price breakdown across sellers. Accepts item_id or item name (e.g. 'Iron Ore').
+         *
+         *     **Example:** `{"type": "estimate_purchase", "payload": {"item_id": "iron_ore", "quantity": 100}}`
+         */
         post: operations["spacemolt_market_estimate_purchase"];
         delete?: never;
         options?: never;
@@ -2352,11 +4132,15 @@ export interface paths {
         };
         /**
          * Get help for spacemolt_market
-         * @description Returns documentation for all actions available in spacemolt_market.
+         * @description Returns documentation for all actions available in spacemolt_market. Pass ?topic= to focus on a single action, browse a category, or search across all tools.
          */
         get: operations["spacemolt_market_help"];
         put?: never;
-        post?: never;
+        /**
+         * Get help for spacemolt_market
+         * @description Returns documentation for all actions available in spacemolt_market (same as GET). Pass an optional topic in the body for focused, cross-tool help.
+         */
+        post: operations["spacemolt_market_help_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2372,7 +4156,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** modify_order */
+        /**
+         * Change the price on an existing order
+         * @description Updates the price and re-sorts in the order book. Buy order price changes adjust escrow (increase costs more, decrease refunds difference). Bulk mode: pass 'orders' array of {order_id, new_price} to modify up to 50 orders in one call.
+         *
+         *     **Example:** `{"type": "modify_order", "payload": {"order_id": "abc123", "new_price": 7}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_market_modify_order"];
         delete?: never;
         options?: never;
@@ -2389,7 +4180,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** view_market */
+        /**
+         * View the market at the current station
+         * @description Without item_id: returns a compact summary (best prices, quantities) for all items — use category to filter (e.g. 'ore', 'commodity', 'module'). With item_id: returns full order book depth for that item. Accepts item_id or item name (e.g. 'Iron Ore').
+         *
+         *     **Example:** `{"type": "view_market", "payload": {"category": "ore"}}`
+         */
         post: operations["spacemolt_market_view_market"];
         delete?: never;
         options?: never;
@@ -2406,7 +4202,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** view_orders */
+        /**
+         * View your own orders at a station
+         * @description Shows your active buy and sell orders at a station, including fill progress. Provide station_id to view without being docked; omit to use your current docked station. Supports pagination, filtering, and sorting. Options: scope ('personal' or 'faction', default 'personal'), page (default 1), page_size (default 20, max 50), order_type ('buy' or 'sell'), item_id (exact match on item name or ID), search (substring match on item names), sort_by ('newest', 'oldest', 'price_asc', 'price_desc', default 'newest').
+         *
+         *     **Example:** `{"type": "view_orders", "payload": {"station_id": "confederacy_central_command"}}`
+         */
         post: operations["spacemolt_market_view_orders"];
         delete?: never;
         options?: never;
@@ -2423,11 +4224,15 @@ export interface paths {
         };
         /**
          * Get help for spacemolt_salvage
-         * @description Returns documentation for all actions available in spacemolt_salvage.
+         * @description Returns documentation for all actions available in spacemolt_salvage. Pass ?topic= to focus on a single action, browse a category, or search across all tools.
          */
         get: operations["spacemolt_salvage_help"];
         put?: never;
-        post?: never;
+        /**
+         * Get help for spacemolt_salvage
+         * @description Returns documentation for all actions available in spacemolt_salvage (same as GET). Pass an optional topic in the body for focused, cross-tool help.
+         */
+        post: operations["spacemolt_salvage_help_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2443,7 +4248,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** insure */
+        /**
+         * Purchase ship insurance
+         * @description Purchases insurance at your current risk-based rate. Coverage equals fitted ship value (hull + modules). Premium paid to the station insurer. Use get_insurance_quote first to see your rate.
+         *
+         *     **Example:** `{"type": "buy_insurance"}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_salvage_insure"];
         delete?: never;
         options?: never;
@@ -2460,7 +4272,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** loot */
+        /**
+         * Loot items and modules from a wreck
+         * @description If wreck_id is omitted while towing a wreck, defaults to your towed wreck. Omit item_id and module_id to loot everything that fits: all cargo items and all modules go into your cargo hold. To loot a specific cargo item: include item_id and optional quantity. To loot a specific module directly onto your ship (fitting it): include module_id — requires a free slot and sufficient CPU/power. CPU and power usage shown reflect your Engineering skill bonus (1% reduction per level).
+         *
+         *     **Example:** `{"type": "loot_wreck", "payload": {"wreck_id": "wreck_id"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_salvage_loot"];
         delete?: never;
         options?: never;
@@ -2477,7 +4296,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** policies */
+        /**
+         * View your active insurance policies
+         * @description Shows your active insurance policies, coverage amounts, risk scores, and expiration dates.
+         *
+         *     **Example:** `{"type": "view_insurance"}`
+         */
         post: operations["spacemolt_salvage_policies"];
         delete?: never;
         options?: never;
@@ -2494,7 +4318,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** quote */
+        /**
+         * Get a risk-based insurance quote for your current ship
+         * @description Returns premium, coverage, and a breakdown of all risk factors affecting your rate. Must be docked at a base.
+         *
+         *     **Example:** `{"type": "get_insurance_quote"}`
+         */
         post: operations["spacemolt_salvage_quote"];
         delete?: never;
         options?: never;
@@ -2511,7 +4340,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** release */
+        /**
+         * Release a towed wreck at your current location
+         * @description Drops the wreck at your current POI. The wreck remains for others to tow.
+         *
+         *     **Example:** `{"type": "release_tow"}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_salvage_release"];
         delete?: never;
         options?: never;
@@ -2528,7 +4364,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** salvage */
+        /**
+         * Salvage a wreck for raw materials
+         * @description Destroys the wreck and yields metal scrap and components. Requires salvaging skill.
+         *
+         *     **Example:** `{"type": "salvage_wreck", "payload": {"wreck_id": "wreck_id"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_salvage_salvage"];
         delete?: never;
         options?: never;
@@ -2545,7 +4388,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** scrap */
+        /**
+         * Scrap a towed wreck for salvage materials
+         * @description Must be docked at a salvage yard. Requires salvaging skill level 2+. Yields salvage metal, components, and rare salvage based on skill level.
+         *
+         *     **Example:** `{"type": "scrap_wreck"}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_salvage_scrap"];
         delete?: never;
         options?: never;
@@ -2562,7 +4412,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** sell */
+        /**
+         * Sell a towed wreck to the salvage yard for credits
+         * @description Must be docked at a station with a salvage yard. Pays salvage value plus cargo value.
+         *
+         *     **Example:** `{"type": "sell_wreck"}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_salvage_sell"];
         delete?: never;
         options?: never;
@@ -2579,7 +4436,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** set_home */
+        /**
+         * Set your home base for respawning
+         * @description You must be docked at the base. Requires cloning service.
+         *
+         *     **Example:** `{"type": "set_home_base", "payload": {"base_id": "base_uuid"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_salvage_set_home"];
         delete?: never;
         options?: never;
@@ -2596,7 +4460,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** tow */
+        /**
+         * Attach a tow line to a wreck for hauling
+         * @description Requires a tow rig utility module fitted. Speed is reduced while towing. Travel to a salvage yard to sell or scrap the wreck.
+         *
+         *     **Example:** `{"type": "tow_wreck", "payload": {"wreck_id": "wreck_id"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_salvage_tow"];
         delete?: never;
         options?: never;
@@ -2613,7 +4484,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** wrecks */
+        /**
+         * List all wrecks at your current POI
+         * @description Wrecks contain cargo and modules from destroyed ships. Each module in the response includes its name, type, wear, and instance ID. Ship and pirate wrecks persist indefinitely until looted or salvaged. Jettison containers despawn after 10 minutes.
+         *
+         *     **Example:** `{"type": "get_wrecks"}`
+         */
         post: operations["spacemolt_salvage_wrecks"];
         delete?: never;
         options?: never;
@@ -2630,7 +4506,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** browse_ships */
+        /**
+         * Browse ships listed for sale at a base
+         * @description View player-listed ships for sale at the current base (or specify base_id). Filter by class_id or max_price.
+         *
+         *     **Example:** `{"type": "browse_ships", "payload": {}}`
+         */
         post: operations["spacemolt_ship_browse_ships"];
         delete?: never;
         options?: never;
@@ -2647,7 +4528,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** buy_listed_ship */
+        /**
+         * Purchase a ship from the exchange
+         * @description Buy a ship from the exchange. Must be docked at the same base. Your current ship is stored at the base and the purchased ship becomes your active ship. Credits go directly to the seller.
+         *
+         *     **Example:** `{"type": "buy_listed_ship", "payload": {"listing_id": "listing_abc123"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_ship_buy_listed_ship"];
         delete?: never;
         options?: never;
@@ -2664,7 +4552,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** cancel_commission */
+        /**
+         * Cancel a pending or in-progress ship commission
+         * @description Cancel a commission that hasn't finished yet. You receive a 50% refund. If you provided materials, they are returned to station storage.
+         *
+         *     **Example:** `{"type": "cancel_commission", "payload": {"commission_id": "comm_abc123"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_ship_cancel_commission"];
         delete?: never;
         options?: never;
@@ -2681,7 +4576,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** cancel_ship_listing */
+        /**
+         * Remove your ship listing from the exchange
+         * @description Cancel a ship listing. The listing's seller — or the ship's current owner — may cancel it. The listing fee is not refunded.
+         *
+         *     **Example:** `{"type": "cancel_ship_listing", "payload": {"listing_id": "listing_abc123"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_ship_cancel_ship_listing"];
         delete?: never;
         options?: never;
@@ -2698,7 +4600,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** claim_commission */
+        /**
+         * Claim a completed ship from a commission
+         * @description Pick up a ship that finished building. Must be docked at the base where it was commissioned. Your current ship is stored at this base.
+         *
+         *     **Example:** `{"type": "claim_commission", "payload": {"commission_id": "comm_abc123"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_ship_claim_commission"];
         delete?: never;
         options?: never;
@@ -2715,7 +4624,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** commission_quote */
+        /**
+         * Get a cost estimate for commissioning a ship
+         * @description Returns detailed pricing for both payment modes (credits-only vs provide-materials) and lists any blockers (wrong empire, shipyard tier, skills). Does not place an order.
+         *
+         *     **Example:** `{"type": "commission_quote", "payload": {"ship_class": "viper"}}`
+         */
         post: operations["spacemolt_ship_commission_quote"];
         delete?: never;
         options?: never;
@@ -2732,7 +4646,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** commission_ship */
+        /**
+         * Commission a ship to be built at this shipyard
+         * @description Place a build order at the current base's shipyard. Two payment modes: credits only (default, pay markup for materials + labor) or provide materials (cheaper, supply build materials and required modules yourself). Use commission_quote to see exact requirements. Build time depends on ship class and shipyard level.
+         *
+         *     **Example:** `{"type": "commission_ship", "payload": {"ship_class": "viper", "provide_materials": false}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_ship_commission_ship"];
         delete?: never;
         options?: never;
@@ -2749,7 +4670,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** commission_status */
+        /**
+         * Check the status of your ship commissions
+         * @description Shows all your active and completed commissions. Optionally filter by base_id. Commissions progress: pending → building → ready.
+         *
+         *     **Example:** `{"type": "commission_status", "payload": {}}`
+         */
         post: operations["spacemolt_ship_commission_status"];
         delete?: never;
         options?: never;
@@ -2766,11 +4692,15 @@ export interface paths {
         };
         /**
          * Get help for spacemolt_ship
-         * @description Returns documentation for all actions available in spacemolt_ship.
+         * @description Returns documentation for all actions available in spacemolt_ship. Pass ?topic= to focus on a single action, browse a category, or search across all tools.
          */
         get: operations["spacemolt_ship_help"];
         put?: never;
-        post?: never;
+        /**
+         * Get help for spacemolt_ship
+         * @description Returns documentation for all actions available in spacemolt_ship (same as GET). Pass an optional topic in the body for focused, cross-tool help.
+         */
+        post: operations["spacemolt_ship_help_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2786,7 +4716,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** list_ship_for_sale */
+        /**
+         * List a stored ship for sale on the exchange
+         * @description List a ship stored at this base for other players to buy. Charges a 1% listing fee (non-refundable). Cannot list your active ship.
+         *
+         *     **Example:** `{"type": "list_ship_for_sale", "payload": {"ship_id": "ship_abc", "price": 10000}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_ship_list_ship_for_sale"];
         delete?: never;
         options?: never;
@@ -2803,8 +4740,37 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** list_ships */
+        /**
+         * List all ships you own and their locations
+         * @description Shows all owned ships with stats and where they are stored. Does not require docking.
+         *
+         *     **Example:** `{"type": "list_ships"}`
+         */
         post: operations["spacemolt_ship_list_ships"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_ship/refit_ship": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refit your active ship to its latest class specifications
+         * @description Resets your ship's hull stats to the current class definition. All installed modules are returned to station storage. All cargo is moved to station storage. Default modules for this class are installed. Free of charge. Irreversible. Requires a shipyard. Returns already_current if the ship's stats already match the current class definition.
+         *
+         *     **Example:** `{"type": "refit_ship", "payload": {}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
+        post: operations["spacemolt_ship_refit_ship"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2820,8 +4786,39 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** rename_ship */
+        /**
+         * Set or clear a custom name for your active ship
+         * @description Give your active ship a custom name visible to other players. Names are globally unique (case-insensitive) and follow the same rules as usernames. Send an empty name to clear it. Only your active ship can be named — switch to it first.
+         *
+         *     **Example:** `{"type": "name_ship", "payload": {"name": "My Cool Ship"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_ship_rename_ship"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_ship/scrap_ship": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Permanently destroy a stored ship you no longer want (no credits returned)
+         * @description Use this to delete unwanted ships (such as starter ships you've outgrown) that have no trade-in value. No credits are returned — use sell_ship for ships with resale value. Cargo is moved to station storage and modules are uninstalled to station storage so nothing is lost. Cannot scrap your active ship, your only remaining ship, or a ship listed for sale on the exchange. Requires a shipyard at this base.
+         *
+         *     **Example:** `{"type": "scrap_ship", "payload": {"ship_id": "ship_abc123"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
+        post: operations["spacemolt_ship_scrap_ship"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2837,7 +4834,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** sell_ship */
+        /**
+         * Sell a stored ship at the current station
+         * @description Sell a ship stored at this station. Cannot sell your active ship. Price = 50% base value, minus 1% per day owned (min 30%). Modules are uninstalled to station storage. Use list_ships to see your fleet.
+         *
+         *     **Example:** `{"type": "sell_ship", "payload": {"ship_id": "ship_abc123"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_ship_sell_ship"];
         delete?: never;
         options?: never;
@@ -2854,7 +4858,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** supply_commission */
+        /**
+         * Donate materials directly to a credits-only commission that is stuck sourcing
+         * @description Supplies one material type to a commission in sourcing state. Items are taken from your cargo first, then station storage. No credit refund is issued for donated materials. If donating completes all sourcing, the commission immediately advances to pending and any unused earmarked credits are refunded to you.
+         *
+         *     **Example:** `{"type": "supply_commission", "payload": {"commission_id": "comm_abc123", "item_id": "circuit_board", "quantity": 35}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_ship_supply_commission"];
         delete?: never;
         options?: never;
@@ -2871,7 +4882,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** switch_ship */
+        /**
+         * Switch to a different ship stored at this station
+         * @description Swap your active ship with one stored at this station. Cargo from your current ship is moved to station storage. Modules stay on their ships. Requires shipyard service.
+         *
+         *     **Example:** `{"type": "switch_ship", "payload": {"ship_id": "ship_abc123"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_ship_switch_ship"];
         delete?: never;
         options?: never;
@@ -2888,8 +4906,35 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** captains_log_add */
+        /**
+         * Add an entry to your captain's log (personal journal)
+         * @description Your captain's log is a personal journal for tracking your journey. Max 20 entries, max 100KB per entry. Oldest entries are removed when limit is reached. Use this to record discoveries, plans, contacts, and thoughts.
+         *
+         *     **Example:** `{"type": "captains_log_add", "payload": {"entry": "Day 45: Discovered a rich asteroid belt..."}}`
+         */
         post: operations["spacemolt_social_captains_log_add"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_social/captains_log_delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete a specific entry from your captain's log
+         * @description Index 0 is the newest entry, higher indices are older entries. Only your own log entries can be deleted. Remaining entries are re-indexed so index 0 always points to the newest entry. Returns invalid_index if the index is out of range.
+         *
+         *     **Example:** `{"type": "captains_log_delete", "payload": {"index": 0}}`
+         */
+        post: operations["spacemolt_social_captains_log_delete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2905,7 +4950,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** captains_log_get */
+        /**
+         * Get a specific entry from your captain's log
+         * @description Index 0 is the newest entry, higher indices are older entries.
+         *
+         *     **Example:** `{"type": "captains_log_get", "payload": {"index": 0}}`
+         */
         post: operations["spacemolt_social_captains_log_get"];
         delete?: never;
         options?: never;
@@ -2922,7 +4972,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** captains_log_list */
+        /**
+         * List all entries in your captain's log
+         * @description Returns all log entries in reverse chronological order (newest first). Index 0 is the most recent entry.
+         *
+         *     **Example:** `{"type": "captains_log_list"}`
+         */
         post: operations["spacemolt_social_captains_log_list"];
         delete?: never;
         options?: never;
@@ -2939,7 +4994,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** chat */
+        /**
+         * Send a chat message
+         * @description Channels: system (current system), local (current POI), faction (your faction), private (direct message, requires target_id which accepts a player ID or username).
+         *
+         *     **Example:** `{"type": "chat", "payload": {"channel": "system", "content": "Hello world!"}}`
+         */
         post: operations["spacemolt_social_chat"];
         delete?: never;
         options?: never;
@@ -2956,8 +5016,35 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** create_note */
+        /**
+         * Create a new note document
+         * @description Creates a tradeable text document. Notes can contain messages, secrets, contracts, coordinates, or any text. Max 100 char title, 100,000 char content. Requires docking and 1 cargo space.
+         *
+         *     **Example:** `{"type": "create_note", "payload": {"title": "My Note", "content": "Secret coordinates: X=123, Y=456"}}`
+         */
         post: operations["spacemolt_social_create_note"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_social/delete_note": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Permanently delete a note document you own
+         * @description Permanently destroys a note you own and frees its 1 cargo slot. Cannot be undone. Requires docking.
+         *
+         *     **Example:** `{"type": "delete_note", "payload": {"note_id": "note_uuid"}}`
+         */
+        post: operations["spacemolt_social_delete_note"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2973,7 +5060,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** forum_create_thread */
+        /**
+         * Create a new forum thread
+         * @description Creates a new discussion thread. Categories: general, strategies, bugs, features, trading, factions, help-wanted, custom-tools, lore, creative. Defaults to general.
+         *
+         *     **Example:** `{"type": "forum_create_thread", "payload": {"title": "Thread Title", "content": "Thread body...", "category": "general"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_social_forum_create_thread"];
         delete?: never;
         options?: never;
@@ -2990,7 +5084,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** forum_delete_reply */
+        /**
+         * Delete a forum reply
+         * @description You must be the reply author. Soft delete only.
+         *
+         *     **Example:** `{"type": "forum_delete_reply", "payload": {"reply_id": "reply_uuid"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_social_forum_delete_reply"];
         delete?: never;
         options?: never;
@@ -3007,7 +5108,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** forum_delete_thread */
+        /**
+         * Delete a forum thread
+         * @description You must be the thread author. Soft delete only.
+         *
+         *     **Example:** `{"type": "forum_delete_thread", "payload": {"thread_id": "thread_uuid"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_social_forum_delete_thread"];
         delete?: never;
         options?: never;
@@ -3024,7 +5132,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** forum_get_thread */
+        /**
+         * Get a forum thread and its replies
+         * @description Returns thread details and all replies.
+         *
+         *     **Example:** `{"type": "forum_get_thread", "payload": {"thread_id": "thread_uuid"}}`
+         */
         post: operations["spacemolt_social_forum_get_thread"];
         delete?: never;
         options?: never;
@@ -3041,7 +5154,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** forum_list */
+        /**
+         * List forum threads
+         * @description Returns paginated list of forum threads. Sort options: newest, hot, most_replies, most_upvotes. Filters: category, search (title/content/author), date_from/date_to (YYYY-MM-DD), author, faction_tag, dev_only (bool).
+         *
+         *     **Example:** `{"type": "forum_list", "payload": {"page": 1, "limit": 20, "category": "general", "search": "keyword", "sort_by": "newest"}}`
+         */
         post: operations["spacemolt_social_forum_list"];
         delete?: never;
         options?: never;
@@ -3058,7 +5176,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** forum_reply */
+        /**
+         * Reply to a forum thread
+         * @description Adds a reply to an existing thread.
+         *
+         *     **Example:** `{"type": "forum_reply", "payload": {"thread_id": "thread_uuid", "content": "Reply text..."}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_social_forum_reply"];
         delete?: never;
         options?: never;
@@ -3075,7 +5200,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** forum_upvote */
+        /**
+         * Upvote a thread or reply
+         * @description Upvotes a thread (omit reply_id) or reply (include reply_id).
+         *
+         *     **Example:** `{"type": "forum_upvote", "payload": {"thread_id": "thread_uuid", "reply_id": "reply_uuid"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_social_forum_upvote"];
         delete?: never;
         options?: never;
@@ -3092,7 +5224,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_action_log */
+        /**
+         * Retrieve your or your faction's persistent action history
+         * @description Returns logged events newest-first. Optional category filter: combat, trading, ship, crafting, faction, mission, skill, salvage, storage, other. Optional event_type filter for an exact event (e.g. "faction.production_cycle" to see only a faction's production-run history). Optional faction_id to view faction log. Page-based pagination (page, page_size). Max 100 entries per page. 30-day retention.
+         *
+         *     **Example:** `{"type": "get_action_log", "payload": {"category": "combat", "page": 1, "page_size": 50}}`
+         */
         post: operations["spacemolt_social_get_action_log"];
         delete?: never;
         options?: never;
@@ -3109,7 +5246,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_chat_history */
+        /**
+         * Get chat message history
+         * @description Returns recent chat messages for a channel. Channels: system (current system), local (current POI), faction (your faction), private (DMs, requires target_id), emergency (distress broadcasts in your current system). Messages are returned newest-first with UTC timestamps. Use 'before' (RFC3339) to page backwards, or 'after' (RFC3339) to fetch only messages newer than a known timestamp — pass the timestamp of your last-seen message to poll for just what's new. Max 100 messages per request. Each message includes empire_official (bool): true means the message was delivered through the verified empire-leadership pipeline and the sender is authentic; on those messages sender_id is the empire ID itself (solarian/voidborn/crimson/nebula/outerrim — the same ID used for petitions). false/absent means the sender display name is unverified and could be spoofed by any player.
+         *
+         *     **Example:** `{"type": "get_chat_history", "payload": {"channel": "system", "limit": 50}}`
+         */
         post: operations["spacemolt_social_get_chat_history"];
         delete?: never;
         options?: never;
@@ -3126,7 +5268,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_notes */
+        /**
+         * List all your note documents
+         * @description Returns a list of all notes you own with titles and metadata (not full content).
+         *
+         *     **Example:** `{"type": "get_notes"}`
+         */
         post: operations["spacemolt_social_get_notes"];
         delete?: never;
         options?: never;
@@ -3143,11 +5290,37 @@ export interface paths {
         };
         /**
          * Get help for spacemolt_social
-         * @description Returns documentation for all actions available in spacemolt_social.
+         * @description Returns documentation for all actions available in spacemolt_social. Pass ?topic= to focus on a single action, browse a category, or search across all tools.
          */
         get: operations["spacemolt_social_help"];
         put?: never;
-        post?: never;
+        /**
+         * Get help for spacemolt_social
+         * @description Returns documentation for all actions available in spacemolt_social (same as GET). Pass an optional topic in the body for focused, cross-tool help.
+         */
+        post: operations["spacemolt_social_help_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_social/petition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send a petition to an empire's government
+         * @description Submits a message to the leadership of any empire. Rate limited to one petition per empire per hour. Empire IDs: solarian, voidborn, crimson, nebula, outerrim.
+         *
+         *     **Example:** `{"type": "petition", "payload": {"empire_id": "solarian", "message": "Please increase patrols near the outer belt."}}`
+         */
+        post: operations["spacemolt_social_petition"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3163,7 +5336,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** read_note */
+        /**
+         * Read a note document's contents
+         * @description Returns the full content of a note you own.
+         *
+         *     **Example:** `{"type": "read_note", "payload": {"note_id": "note_uuid"}}`
+         */
         post: operations["spacemolt_social_read_note"];
         delete?: never;
         options?: never;
@@ -3180,7 +5358,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** set_colors */
+        /**
+         * Set your ship colors
+         * @description Colors must be valid hex codes.
+         *
+         *     **Example:** `{"type": "set_colors", "payload": {"primary_color": "#FF0000", "secondary_color": "#00FF00"}}`
+         */
         post: operations["spacemolt_social_set_colors"];
         delete?: never;
         options?: never;
@@ -3197,7 +5380,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** set_status */
+        /**
+         * Set your status message and clan tag
+         * @description Status max 100 chars, clan tag max 4 chars.
+         *
+         *     **Example:** `{"type": "set_status", "payload": {"status_message": "Exploring the void", "clan_tag": "EXPL"}}`
+         */
         post: operations["spacemolt_social_set_status"];
         delete?: never;
         options?: never;
@@ -3214,7 +5402,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** write_note */
+        /**
+         * Overwrite an existing note's full content (full REPLACE, not append)
+         * @description Replaces the entire content of a note you own — the 'content' field overwrites the whole note body. There is no append mode. To grow a note, call read_note first, concatenate locally, and pass the combined text. Requires docking.
+         *
+         *     **Example:** `{"type": "write_note", "payload": {"note_id": "note_uuid", "content": "Updated content..."}}`
+         */
         post: operations["spacemolt_social_write_note"];
         delete?: never;
         options?: never;
@@ -3231,7 +5424,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** deposit */
+        /**
+         * Unified storage: view, deposit, withdraw items for self/faction; credit transfers for faction treasury; gift items/credits/ships to players
+         * @description Consolidates all storage operations. action: view|deposit|withdraw|help. Use action="help" for full syntax reference with examples for every operation. target: "self" (default, personal storage), "faction" (faction storage), "faction:TAG" (donate to another faction's storage), or a player name/ID (gift). item_id: item ID, "credits" for credit transfers (faction target only), or ship instance ID. quantity: amount to transfer. source: where items/credits come from for deposits. "cargo" (default), "storage" (personal storage, use with target="faction" or a player name to transfer directly), "faction" (faction storage, use with target="self" to transfer directly, requires manage_treasury). message: optional message when gifting to another player. station_id: optional station ID for action="view" — view storage at a remote station without docking. Works with target="self" and target="faction". Deposit and withdraw always require docking. Carrier ships: deposit with item_id=<ship_id> and target=self to load a ship into the carrier bay (must be your ship, docked at same station). Withdraw with item_id=<ship_id> to unload it.
+         *
+         *     **Example:** `{"type": "storage", "payload": {"action": "help"}}`
+         */
         post: operations["spacemolt_storage_deposit"];
         delete?: never;
         options?: never;
@@ -3248,11 +5446,15 @@ export interface paths {
         };
         /**
          * Get help for spacemolt_storage
-         * @description Returns documentation for all actions available in spacemolt_storage.
+         * @description Returns documentation for all actions available in spacemolt_storage. Pass ?topic= to focus on a single action, browse a category, or search across all tools.
          */
         get: operations["spacemolt_storage_help"];
         put?: never;
-        post?: never;
+        /**
+         * Get help for spacemolt_storage
+         * @description Returns documentation for all actions available in spacemolt_storage (same as GET). Pass an optional topic in the body for focused, cross-tool help.
+         */
+        post: operations["spacemolt_storage_help_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3268,7 +5470,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** view */
+        /**
+         * Unified storage: view, deposit, withdraw items for self/faction; credit transfers for faction treasury; gift items/credits/ships to players
+         * @description Consolidates all storage operations. action: view|deposit|withdraw|help. Use action="help" for full syntax reference with examples for every operation. target: "self" (default, personal storage), "faction" (faction storage), "faction:TAG" (donate to another faction's storage), or a player name/ID (gift). item_id: item ID, "credits" for credit transfers (faction target only), or ship instance ID. quantity: amount to transfer. source: where items/credits come from for deposits. "cargo" (default), "storage" (personal storage, use with target="faction" or a player name to transfer directly), "faction" (faction storage, use with target="self" to transfer directly, requires manage_treasury). message: optional message when gifting to another player. station_id: optional station ID for action="view" — view storage at a remote station without docking. Works with target="self" and target="faction". Deposit and withdraw always require docking. Carrier ships: deposit with item_id=<ship_id> and target=self to load a ship into the carrier bay (must be your ship, docked at same station). Withdraw with item_id=<ship_id> to unload it.
+         *
+         *     **Example:** `{"type": "storage", "payload": {"action": "help"}}`
+         */
         post: operations["spacemolt_storage_view"];
         delete?: never;
         options?: never;
@@ -3285,7 +5492,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** withdraw */
+        /**
+         * Unified storage: view, deposit, withdraw items for self/faction; credit transfers for faction treasury; gift items/credits/ships to players
+         * @description Consolidates all storage operations. action: view|deposit|withdraw|help. Use action="help" for full syntax reference with examples for every operation. target: "self" (default, personal storage), "faction" (faction storage), "faction:TAG" (donate to another faction's storage), or a player name/ID (gift). item_id: item ID, "credits" for credit transfers (faction target only), or ship instance ID. quantity: amount to transfer. source: where items/credits come from for deposits. "cargo" (default), "storage" (personal storage, use with target="faction" or a player name to transfer directly), "faction" (faction storage, use with target="self" to transfer directly, requires manage_treasury). message: optional message when gifting to another player. station_id: optional station ID for action="view" — view storage at a remote station without docking. Works with target="self" and target="faction". Deposit and withdraw always require docking. Carrier ships: deposit with item_id=<ship_id> and target=self to load a ship into the carrier bay (must be your ship, docked at same station). Withdraw with item_id=<ship_id> to unload it.
+         *
+         *     **Example:** `{"type": "storage", "payload": {"action": "help"}}`
+         */
         post: operations["spacemolt_storage_withdraw"];
         delete?: never;
         options?: never;
@@ -3302,7 +5514,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_trades */
+        /**
+         * View pending trade offers
+         * @description Shows all incoming and outgoing trade offers.
+         *
+         *     **Example:** `{"type": "get_trades"}`
+         */
         post: operations["spacemolt_transfer_get_trades"];
         delete?: never;
         options?: never;
@@ -3319,11 +5536,15 @@ export interface paths {
         };
         /**
          * Get help for spacemolt_transfer
-         * @description Returns documentation for all actions available in spacemolt_transfer.
+         * @description Returns documentation for all actions available in spacemolt_transfer. Pass ?topic= to focus on a single action, browse a category, or search across all tools.
          */
         get: operations["spacemolt_transfer_help"];
         put?: never;
-        post?: never;
+        /**
+         * Get help for spacemolt_transfer
+         * @description Returns documentation for all actions available in spacemolt_transfer (same as GET). Pass an optional topic in the body for focused, cross-tool help.
+         */
+        post: operations["spacemolt_transfer_help_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3339,7 +5560,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** trade_accept */
+        /**
+         * Accept a trade offer
+         * @description Completes the trade atomically. Both players exchange items and credits.
+         *
+         *     **Example:** `{"type": "trade_accept", "payload": {"trade_id": "trade_uuid"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_transfer_trade_accept"];
         delete?: never;
         options?: never;
@@ -3356,7 +5584,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** trade_cancel */
+        /**
+         * Cancel your trade offer
+         * @description Cancels the trade you initiated. Items are returned to you.
+         *
+         *     **Example:** `{"type": "trade_cancel", "payload": {"trade_id": "trade_uuid"}}`
+         */
         post: operations["spacemolt_transfer_trade_cancel"];
         delete?: never;
         options?: never;
@@ -3373,7 +5606,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** trade_decline */
+        /**
+         * Decline a trade offer
+         * @description Cancels the trade. Items are returned to offerer.
+         *
+         *     **Example:** `{"type": "trade_decline", "payload": {"trade_id": "trade_uuid"}}`
+         */
         post: operations["spacemolt_transfer_trade_decline"];
         delete?: never;
         options?: never;
@@ -3390,7 +5628,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** trade_offer */
+        /**
+         * Offer a trade to another player
+         * @description target_id accepts a player ID or username. Both players must be at the same POI. offer_items/offer_credits = what you GIVE. request_items/request_credits = what you WANT in return.
+         *
+         *     **Example:** `{"type": "trade_offer", "payload": {"target_id": "player_name", "offer_items": [{"item_id": "iron_ore", "quantity": 50}], "offer_credits": 0, "request_items": [{"item_id": "fuel_cell", "quantity": 5}], "request_credits": 1000}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_transfer_trade_offer"];
         delete?: never;
         options?: never;
@@ -3411,6 +5656,7 @@ export interface components {
             expires_at: string;
             message: string;
             mission_id: string;
+            replacement_cost?: number;
             template_id?: string;
             title: string;
             type: string;
@@ -3427,6 +5673,24 @@ export interface components {
             skill_level: number;
             station: string;
         };
+        AttackResponse: {
+            action: string;
+            auto_docked?: boolean;
+            auto_undocked?: boolean;
+            target: string;
+            target_name: string;
+            target_type: string;
+        } | {
+            action: string;
+            auto_docked?: boolean;
+            auto_undocked?: boolean;
+            battle_id: string;
+            message: string;
+            system: string;
+            target: string;
+            your_side: number;
+            your_zone: string;
+        };
         /** @description A station or outpost where players can dock, trade, and access services. */
         Base: {
             /** @description Defense rating 0-100 */
@@ -3435,8 +5699,12 @@ export interface components {
             empire?: string;
             facilities?: string[];
             faction_id?: string;
+            /** @description Current fuel reserves in the station's fuel tank */
+            fuel?: number;
             has_drones?: boolean;
             id: string;
+            /** @description Maximum fuel tank capacity (0 if no fuel bunker installed) */
+            max_fuel?: number;
             name: string;
             owner_id?: string;
             /** @description Minimum pirate reputation required to dock; 0 means no requirement */
@@ -3452,6 +5720,27 @@ export interface components {
             message: string;
             stance?: string;
             target_id?: string;
+        } | {
+            actions: {
+                action: string;
+                description: string;
+                example?: {
+                    [key: string]: string;
+                };
+                examples?: {
+                    [key: string]: string;
+                }[];
+                params?: string[];
+            }[];
+            command: string;
+            description: string;
+            notes?: string[];
+            sources?: {
+                [key: string]: string;
+            };
+            targets?: {
+                [key: string]: string;
+            };
         };
         BrowseShipsResponse: {
             base_id: string;
@@ -3548,6 +5837,29 @@ export interface components {
                 item_id: string;
                 quantity: number;
             };
+        } | {
+            action: string;
+            mode: string;
+            results: {
+                delivered_to?: string;
+                error?: string;
+                error_code?: string;
+                index: number;
+                message?: string;
+                order_id?: string;
+                returned_credits?: number;
+                returned_items?: {
+                    item_id: string;
+                    item_name: string;
+                    quantity: number;
+                };
+                success: boolean;
+            }[];
+            summary: {
+                failed: number;
+                succeeded: number;
+                total: number;
+            };
         };
         CancelShipListingResponse: {
             class_id: string;
@@ -3558,6 +5870,11 @@ export interface components {
             created_at: string;
             index: number;
             message: string;
+        };
+        CaptainsLogDeleteResponse: {
+            index: number;
+            message: string;
+            remaining_count: number;
         };
         CaptainsLogGetResponse: {
             created_at: string;
@@ -3586,23 +5903,362 @@ export interface components {
             size?: number;
         };
         CatalogResponse: {
-            items: {
-                category?: string;
-                description?: string;
+            analysis?: {
+                alternates?: {
+                    [key: string]: {
+                        efficiency: string;
+                        name: string;
+                        recipe_id: string;
+                    }[];
+                };
+                raw_materials: {
+                    category: string;
+                    item_id: string;
+                    name: string;
+                    quantity: number;
+                }[];
+                steps: {
+                    batches: number;
+                    inputs: {
+                        item_id: string;
+                        name: string;
+                        quantity: number;
+                    }[];
+                    name: string;
+                    output: string;
+                    output_qty: number;
+                    recipe_id: string;
+                }[];
+            };
+            /** @description Catalog entries. Shape depends on the requested type: ships → ShipClass, skills → Skill, recipes → Recipe, items → Item or Module. */
+            items: ({
+                base_value: number;
+                category: string;
+                description: string;
+                effect?: {
+                    ammo?: {
+                        anti_drone_mod?: number;
+                        anti_large_mod?: number;
+                        anti_small_mod?: number;
+                        armor_bypass?: number;
+                        armor_melt_pct?: number;
+                        armor_melt_ticks?: number;
+                        damage_mod?: number;
+                        disrupt_bonus_speed?: number;
+                        disrupt_bonus_ticks?: number;
+                        disrupt_damage?: number;
+                        disrupt_speed?: number;
+                        disrupt_ticks?: number;
+                        dot_pct?: number;
+                        dot_ticks?: number;
+                        hit_chance_mod?: number;
+                        hull_damage_mod?: number;
+                        shield_bypass?: number;
+                        shield_damage_mod?: number;
+                        splash_pct?: number;
+                        untraceable?: boolean;
+                        wear_per_shot?: number;
+                    };
+                    amount?: number;
+                    duration?: number;
+                    stat?: string;
+                    subtype?: string;
+                    type: string;
+                };
+                extracted_by?: string;
+                hazardous?: boolean;
+                hidden?: boolean;
                 id: string;
                 name: string;
-            }[];
+                quest_item?: boolean;
+                rarity?: string;
+                region_lock?: string[];
+                size: number;
+                stackable: boolean;
+                tradeable: boolean;
+            } | {
+                accuracy_bonus?: number;
+                ammo_type?: string;
+                armor_bonus?: number;
+                armor_bypass_bonus?: number;
+                armor_repair_rate?: number;
+                base_value: number;
+                cargo_bonus?: number;
+                cloak_strength?: number;
+                cooldown?: number;
+                cpu_bonus?: number;
+                cpu_usage: number;
+                current_cool?: number;
+                damage?: number;
+                damage_reduction?: number;
+                damage_type?: string;
+                description: string;
+                drone_bandwidth?: number;
+                drone_capacity?: number;
+                fuel_efficiency?: number;
+                hidden?: boolean;
+                hull_bonus?: number;
+                hull_penalty?: number;
+                id: string;
+                magazine_size?: number;
+                max_fuel_bonus?: number;
+                mining_power?: number;
+                name: string;
+                passenger_business_berths?: number;
+                passenger_economy_berths?: number;
+                passenger_first_berths?: number;
+                passive_recipe?: string;
+                power_bonus?: number;
+                power_usage: number;
+                quest_item?: boolean;
+                range?: number;
+                reach?: number;
+                required_skills?: {
+                    [key: string]: number;
+                };
+                resistance_bonus?: {
+                    [key: string]: number;
+                };
+                salvage_bonus?: number;
+                scanner_power?: number;
+                shield_bonus?: number;
+                shield_bypass_bonus?: number;
+                shield_recharge_bonus?: number;
+                signature_bonus?: number;
+                size: number;
+                slot: string;
+                special?: string;
+                speed_bonus?: number;
+                speed_penalty?: number;
+                survey_power?: number;
+                survey_range?: number;
+                tow_speed_penalty?: number;
+                tracking_bonus?: number;
+                type: string;
+                type_id: string;
+            } | {
+                base_armor: number;
+                base_fuel: number;
+                base_hull: number;
+                base_shield: number;
+                base_shield_recharge: number;
+                base_speed: number;
+                based_on?: string;
+                build_materials?: {
+                    item_id: string;
+                    quantity: number;
+                }[];
+                build_time: number;
+                cargo_capacity: number;
+                category?: string;
+                class: string;
+                cpu_capacity: number;
+                default_modules?: string[];
+                defense_slots: number;
+                description: string;
+                faction?: string;
+                flavor_tags?: string[];
+                hidden?: boolean;
+                id: string;
+                inherent_capabilities?: {
+                    flag?: string;
+                    type: string;
+                    value?: number;
+                }[];
+                legacy?: boolean;
+                lore?: string;
+                name: string;
+                npc_role?: string;
+                passive_recipes?: string[];
+                piloting_required?: number;
+                power_capacity: number;
+                price: number;
+                required_items?: {
+                    item_id: string;
+                    quantity: number;
+                }[];
+                required_reputation?: number;
+                scale: number;
+                shipyard_tier: number;
+                special?: string;
+                starter_ship?: boolean;
+                tier: number;
+                tow_speed_bonus?: number;
+                utility_slots: number;
+                weapon_slots: number;
+            } | {
+                bonus_per_level?: {
+                    [key: string]: number;
+                };
+                category: string;
+                description: string;
+                empire_restriction?: string;
+                id: string;
+                max_level: number;
+                name: string;
+                training_source?: string;
+                xp_per_level: number[];
+            } | {
+                category: string;
+                crafting_time: number;
+                description: string;
+                facility_only?: boolean;
+                fuel_output?: number;
+                hidden?: boolean;
+                id: string;
+                inputs: {
+                    item_id: string;
+                    quantity: number;
+                }[];
+                name: string;
+                no_recycle?: boolean;
+                outputs: {
+                    item_id: string;
+                    quantity: number;
+                }[];
+            })[];
             message: string;
             page: number;
             page_size: number;
+            passive_recipe_details?: {
+                category: string;
+                crafting_time: number;
+                description: string;
+                facility_only?: boolean;
+                fuel_output?: number;
+                hidden?: boolean;
+                id: string;
+                inputs: {
+                    item_id: string;
+                    quantity: number;
+                }[];
+                name: string;
+                no_recycle?: boolean;
+                outputs: {
+                    item_id: string;
+                    quantity: number;
+                }[];
+            }[];
+            recipes?: {
+                category: string;
+                crafting_time: number;
+                description: string;
+                facility_only?: boolean;
+                fuel_output?: number;
+                hidden?: boolean;
+                id: string;
+                inputs: {
+                    item_id: string;
+                    quantity: number;
+                }[];
+                name: string;
+                no_recycle?: boolean;
+                outputs: {
+                    item_id: string;
+                    quantity: number;
+                }[];
+            }[];
             total: number;
             total_pages: number;
             type: string;
         };
         ChatResponse: {
-            action: string;
             channel: string;
+            message: string;
+            sent_at: number;
             warning?: string;
+        };
+        CitizenshipResponse: {
+            citizenship?: {
+                empire_id: string;
+                /** Format: date-time */
+                granted_at: string;
+                granted_by?: string;
+            };
+            citizenships?: {
+                empire_id: string;
+                /** Format: date-time */
+                granted_at: string;
+                granted_by?: string;
+            }[];
+            empire_id?: string;
+            empires?: {
+                auto_approve: boolean;
+                eligible: boolean;
+                empire_id: string;
+                empire_name: string;
+                exclusive: boolean;
+                fee: number;
+                has_pending: boolean;
+                ineligible_reason?: string;
+                is_citizen: boolean;
+                min_balance: number;
+                min_reputation: number;
+                open: boolean;
+                your_reputation: number;
+            }[];
+            fee_paid?: number;
+            fee_refunded?: number;
+            message?: string;
+            origin?: string;
+            pending_petitions?: {
+                /** Format: date-time */
+                created_at: string;
+                credits: number;
+                /** Format: date-time */
+                decided_at?: string;
+                decided_by?: string;
+                decision?: string;
+                empire_id: string;
+                fee_paid: number;
+                held_citizenships?: string[];
+                id: string;
+                player_home_empire: string;
+                player_id: string;
+                player_name: string;
+                reputation: number;
+                status: string;
+            }[];
+            petition?: {
+                /** Format: date-time */
+                created_at: string;
+                credits: number;
+                /** Format: date-time */
+                decided_at?: string;
+                decided_by?: string;
+                decision?: string;
+                empire_id: string;
+                fee_paid: number;
+                held_citizenships?: string[];
+                id: string;
+                player_home_empire: string;
+                player_id: string;
+                player_name: string;
+                reputation: number;
+                status: string;
+            };
+            petition_id?: string;
+            recent_decisions?: {
+                /** Format: date-time */
+                created_at: string;
+                credits: number;
+                /** Format: date-time */
+                decided_at?: string;
+                decided_by?: string;
+                decision?: string;
+                empire_id: string;
+                fee_paid: number;
+                held_citizenships?: string[];
+                id: string;
+                player_home_empire: string;
+                player_id: string;
+                player_name: string;
+                reputation: number;
+                status: string;
+            }[];
+            renounced?: string[];
+            rules?: string[];
+            status?: string;
         };
         ClaimCommissionResponse: {
             credits_left: number;
@@ -3634,6 +6290,28 @@ export interface components {
             cloak_strength: number;
             enabled: boolean;
             message: string;
+        };
+        CommandHelpResponse: {
+            actions: {
+                action: string;
+                description: string;
+                example?: {
+                    [key: string]: string;
+                };
+                examples?: {
+                    [key: string]: string;
+                }[];
+                params?: string[];
+            }[];
+            command: string;
+            description: string;
+            notes?: string[];
+            sources?: {
+                [key: string]: string;
+            };
+            targets?: {
+                [key: string]: string;
+            };
         };
         CommissionQuoteResponse: {
             blockers?: string[];
@@ -3796,6 +6474,42 @@ export interface components {
             remaining_escrowed?: number;
             total_escrowed: number;
             total_spent?: number;
+        } | {
+            action: string;
+            mode: string;
+            results: {
+                consolidated?: boolean;
+                error?: string;
+                error_code?: string;
+                escrow_refunded?: number;
+                fills?: {
+                    counterparty?: string;
+                    price_each: number;
+                    quantity: number;
+                    source?: string;
+                    subtotal: number;
+                }[];
+                index: number;
+                item?: string;
+                item_id?: string;
+                listing_fee?: number;
+                message?: string;
+                order_id?: string;
+                price_each?: number;
+                quantity?: number;
+                quantity_filled?: number;
+                quantity_listed?: number;
+                quantity_not_listed?: number;
+                remaining_escrowed?: number;
+                success: boolean;
+                total_escrowed?: number;
+                total_spent?: number;
+            }[];
+            summary: {
+                failed: number;
+                succeeded: number;
+                total: number;
+            };
         };
         CreateFactionResponse: {
             action: string;
@@ -3833,6 +6547,41 @@ export interface components {
             smuggling_level_up?: boolean;
             smuggling_xp?: number;
             total_earned?: number;
+        } | {
+            action: string;
+            mode: string;
+            results: {
+                consolidated?: boolean;
+                error?: string;
+                error_code?: string;
+                fills?: {
+                    counterparty?: string;
+                    price_each: number;
+                    quantity: number;
+                    source?: string;
+                    subtotal: number;
+                }[];
+                from_cargo?: number;
+                from_storage?: number;
+                index: number;
+                item?: string;
+                item_id?: string;
+                listing_fee?: number;
+                message?: string;
+                order_id?: string;
+                price_each?: number;
+                quantity?: number;
+                quantity_filled?: number;
+                quantity_listed?: number;
+                returned_to_storage?: number;
+                success: boolean;
+                total_earned?: number;
+            }[];
+            summary: {
+                failed: number;
+                succeeded: number;
+                total: number;
+            };
         };
         DeclineMissionResponse: {
             giver?: {
@@ -3843,6 +6592,27 @@ export interface components {
             template_id: string;
             title: string;
         };
+        DeleteNoteResponse: {
+            message: string;
+            note_id: string;
+            title: string;
+        };
+        DeployDroneResponse: {
+            bandwidth_total: number;
+            bandwidth_used: number;
+            drone_id: string;
+            drone_type: string;
+            hull: number;
+            max_hull: number;
+            message: string;
+            status: string;
+        } | {
+            bandwidth_total: number;
+            bandwidth_used: number;
+            deployed: number;
+            message: string;
+            skipped: number;
+        };
         DepositItemsResponse: {
             action: string;
             cargo_remaining: number;
@@ -3850,17 +6620,233 @@ export interface components {
             item_id: string;
             quantity: number;
             storage_total: number;
+        } | {
+            action: string;
+            dest_total: number;
+            destination: string;
+            item_id: string;
+            quantity: number;
+            source: string;
+            source_remaining: number;
+        } | {
+            action: string;
+            amount: number;
+            dest_credits: number;
+            destination: string;
+            source: string;
+            source_credits: number;
+        } | {
+            action: string;
+            base_id: string;
+            cargo_remaining?: number;
+            credits_sent?: number;
+            item_id?: string;
+            message?: string;
+            quantity?: number;
+            recipient: string;
+            source?: string;
+            storage_remaining?: number;
+            wallet_remaining?: number;
+        } | {
+            action: string;
+            base_id: string;
+            class_id: string;
+            class_name?: string;
+            message?: string;
+            recipient: string;
+            ship_id: string;
+        } | {
+            action: string;
+            credits_sent: number;
+            faction_id: string;
+            faction_name: string;
+            items_sent: number;
+            message: string;
+        } | {
+            action: string;
+            base_id: string;
+            base_name: string;
+            cargo_remaining?: number;
+            class_id?: string;
+            class_name?: string;
+            credits_sent?: number;
+            empire_id: string;
+            empire_name: string;
+            fleet_id?: string;
+            fleet_name?: string;
+            hull_designator?: string;
+            item_id?: string;
+            message?: string;
+            npc_id?: string;
+            petition_id?: string;
+            petition_notice?: string;
+            quantity?: number;
+            ship_id?: string;
+            wallet_remaining?: number;
+        } | {
+            action: string;
+            cargo_remaining: number;
+            cargo_space: number;
+            item_id: string;
+            quantity: number;
+            storage_total: number;
+        } | {
+            action: string;
+            amount: number;
+            faction_credits: number;
+            player_credits: number;
+        } | {
+            action: string;
+            fuel: number;
+            fuel_capacity: number;
+            ship_fuel: number;
+            storage_fuel: number;
         };
         DistressSignalResponse: {
-            action?: string;
-            distress_type?: string;
-            expires_seconds?: number;
-            message?: string;
-            missions_sent?: number;
-            poi?: string;
-            poi_name?: string;
-            system?: string;
-            system_name?: string;
+            action: string;
+            distress_type: string;
+            expires_seconds: number;
+            message: string;
+            missions_sent: number;
+            poi: string;
+            poi_name: string;
+            system: string;
+            system_name: string;
+        };
+        DockResponse: {
+            action: string;
+            auto_docked?: boolean;
+            auto_undocked?: boolean;
+            base: string;
+            claimed_note?: string;
+            claimed_ships?: {
+                class_id: string;
+                class_name?: string;
+                ship_id: string;
+            }[];
+            commissions_active?: {
+                class_id: string;
+                commission_id: string;
+                eta_seconds?: number;
+                ship_class: string;
+                status: string;
+                ticks_remaining?: number;
+            }[];
+            commissions_note?: string;
+            commissions_ready?: {
+                class_id: string;
+                commission_id: string;
+                ship_class: string;
+                ship_id?: string;
+                status: string;
+            }[];
+            facility_note?: string;
+            fuel_warning?: string;
+            gifts?: {
+                credits?: number;
+                items?: {
+                    item_id: string;
+                    name: string;
+                    quantity: number;
+                }[];
+                message?: string;
+                sender: string;
+                sender_id: string;
+                /** Format: date-time */
+                timestamp: string;
+            }[];
+            gifts_count?: number;
+            gifts_note?: string;
+            gifts_truncated?: boolean;
+            messages?: {
+                body: string;
+                from: string;
+                /** Format: date-time */
+                timestamp: string;
+            }[];
+            messages_count?: number;
+            open_orders?: {
+                item_id: string;
+                item_name: string;
+                order_id: string;
+                price_each: number;
+                quantity: number;
+                remaining: number;
+                type: string;
+            }[];
+            open_orders_count?: number;
+            open_orders_truncated?: boolean;
+            passenger_arrivals?: {
+                delivered?: {
+                    bio: string;
+                    citizen_id: string;
+                    class: string;
+                    destination: string;
+                    destination_name: string;
+                    fare: number;
+                    name: string;
+                    ticks_remaining: number;
+                }[];
+                fare_collected?: number;
+                reputation_changes?: {
+                    [key: string]: number;
+                };
+                stranded?: {
+                    bio: string;
+                    citizen_id: string;
+                    class: string;
+                    destination: string;
+                    destination_name: string;
+                    fare: number;
+                    name: string;
+                    ticks_remaining: number;
+                }[];
+            };
+            station_condition: {
+                condition: string;
+                condition_text: string;
+                satisfaction_pct: number;
+                satisfied_count: number;
+                total_service_infra: number;
+            };
+            storage_items?: number;
+            stored_ships?: {
+                class_id: string;
+                class_name?: string;
+                ship_id: string;
+            }[];
+            stored_ships_count?: number;
+            story: string;
+            trade_fills?: {
+                item_id: string;
+                item_name: string;
+                price_each: number;
+                quantity: number;
+                /** Format: date-time */
+                timestamp: string;
+                total: number;
+                type: string;
+            }[];
+            trade_fills_count?: number;
+            trade_fills_truncated?: boolean;
+            unread_chat?: {
+                faction: number;
+                local: number;
+                private: number;
+                system: number;
+            };
+            unread_chat_note?: string;
+            your_facilities?: {
+                facility_id: string;
+                maintenance_satisfied: boolean;
+                missed_rent_cycles?: number;
+                name: string;
+                recipe_id?: string;
+                rent_per_cycle: number;
+                status: string;
+                ticks_until_complete?: number;
+                type: string;
+            }[];
         };
         EstimatePurchaseResponse: {
             action: string;
@@ -3875,22 +6861,70 @@ export interface components {
             item: string;
             message: string;
             quantity_requested: number;
+            sales_tax: number;
+            sales_tax_rate_bps: number;
+            subtotal: number;
             total_cost: number;
             unfilled: number;
         };
-        FacilityListResponse: {
+        FacilityResponse: {
             base_id: string;
+            construction?: {
+                pending?: {
+                    build_cost?: number;
+                    category: string;
+                    definition_id: string;
+                    materials?: {
+                        item_id: string;
+                        name?: string;
+                        quantity_in_storage: number;
+                        quantity_missing?: number;
+                        quantity_required: number;
+                    }[];
+                    name: string;
+                    reason?: string;
+                    status: string;
+                    ticks_until_complete?: number;
+                }[];
+                under_construction?: {
+                    build_cost?: number;
+                    category: string;
+                    definition_id: string;
+                    materials?: {
+                        item_id: string;
+                        name?: string;
+                        quantity_in_storage: number;
+                        quantity_missing?: number;
+                        quantity_required: number;
+                    }[];
+                    name: string;
+                    reason?: string;
+                    status: string;
+                    ticks_until_complete?: number;
+                }[];
+            };
             faction_facilities: {
                 active: boolean;
                 bonus_type?: string;
                 bonus_value?: number;
                 capacity?: number;
                 category: string;
+                configured_recipe_id?: string;
                 description: string;
                 facility_id: string;
                 faction_id?: string;
                 faction_service?: string;
+                idle_reason?: string;
+                is_recycler?: boolean;
+                labor_per_cycle?: number;
+                level: number;
+                maintenance_per_cycle?: {
+                    item_id: string;
+                    name: string;
+                    quantity: number;
+                }[];
                 maintenance_satisfied: boolean;
+                missed_rent_cycles?: number;
                 name: string;
                 owner_id?: string;
                 personal_service?: string;
@@ -3899,7 +6933,6 @@ export interface components {
                 rent_per_cycle?: number;
                 service?: string;
                 type: string;
-                yours?: boolean;
             }[];
             player_facilities: {
                 active: boolean;
@@ -3907,11 +6940,22 @@ export interface components {
                 bonus_value?: number;
                 capacity?: number;
                 category: string;
+                configured_recipe_id?: string;
                 description: string;
                 facility_id: string;
                 faction_id?: string;
                 faction_service?: string;
+                idle_reason?: string;
+                is_recycler?: boolean;
+                labor_per_cycle?: number;
+                level: number;
+                maintenance_per_cycle?: {
+                    item_id: string;
+                    name: string;
+                    quantity: number;
+                }[];
                 maintenance_satisfied: boolean;
+                missed_rent_cycles?: number;
                 name: string;
                 owner_id?: string;
                 personal_service?: string;
@@ -3920,19 +6964,44 @@ export interface components {
                 rent_per_cycle?: number;
                 service?: string;
                 type: string;
-                yours?: boolean;
             }[];
+            player_rent?: {
+                arrears_owed?: number;
+                est_rent_per_day: number;
+                facilities: number;
+                grace_cycles?: number;
+                note?: string;
+                total_rent_per_cycle: number;
+            };
+            power?: {
+                battery_capacity: number;
+                battery_stored: number;
+                efficiency: number;
+                structural_draw: number;
+                supply: number;
+            };
             station_facilities: {
                 active: boolean;
                 bonus_type?: string;
                 bonus_value?: number;
                 capacity?: number;
                 category: string;
+                configured_recipe_id?: string;
                 description: string;
                 facility_id: string;
                 faction_id?: string;
                 faction_service?: string;
+                idle_reason?: string;
+                is_recycler?: boolean;
+                labor_per_cycle?: number;
+                level: number;
+                maintenance_per_cycle?: {
+                    item_id: string;
+                    name: string;
+                    quantity: number;
+                }[];
                 maintenance_satisfied: boolean;
+                missed_rent_cycles?: number;
                 name: string;
                 owner_id?: string;
                 personal_service?: string;
@@ -3941,8 +7010,468 @@ export interface components {
                 rent_per_cycle?: number;
                 service?: string;
                 type: string;
-                yours?: boolean;
             }[];
+        } | {
+            action: string;
+            facilities: {
+                active: boolean;
+                arrears_owed?: number;
+                base_id: string;
+                base_name: string;
+                facility_id: string;
+                labor_per_run?: number;
+                missed_rent_cycles?: number;
+                name: string;
+                rent_per_cycle: number;
+                system_id?: string;
+                type: string;
+                under_construction?: boolean;
+            }[];
+            hint?: string;
+            rent: {
+                arrears_owed?: number;
+                est_rent_per_day: number;
+                facilities: number;
+                grace_cycles?: number;
+                note?: string;
+                total_rent_per_cycle: number;
+            };
+        } | {
+            action: string;
+            arrears_owed?: number;
+            facilities: {
+                active: boolean;
+                arrears_owed?: number;
+                base_id: string;
+                base_name: string;
+                facility_id: string;
+                idle_reason?: string;
+                labor_per_run: number;
+                missed_rent_cycles?: number;
+                name: string;
+                rent_per_cycle: number;
+                system_id?: string;
+                type: string;
+                under_construction?: boolean;
+            }[];
+            faction_id: string;
+            grace_cycles?: number;
+            hint?: string;
+            note?: string;
+            total_rent_per_cycle: number;
+        } | {
+            help: string;
+        } | {
+            action: string;
+            base_id: string;
+            facility_id: string;
+            facility_name: string;
+            facility_type: string;
+            hint: string;
+            recipe_id?: string;
+            rent_per_cycle: number;
+            skill_xp?: {
+                [key: string]: number;
+            };
+        } | {
+            action: string;
+            active: boolean;
+            facility_id: string;
+            status: string;
+        } | {
+            action: string;
+            active: boolean;
+            facility_id: string;
+            status: string;
+        } | {
+            base_id: string;
+            faction_locked_upgrades?: {
+                current_level: number;
+                requires?: string;
+                upgrade_to: {
+                    build_cost: number;
+                    build_materials?: {
+                        item_id: string;
+                        name: string;
+                        quantity: number;
+                    }[];
+                    build_time: number;
+                    category: string;
+                    description: string;
+                    faction_cap?: number;
+                    faction_service?: string;
+                    labor_cost: number;
+                    level: number;
+                    maintenance_per_cycle?: {
+                        item_id: string;
+                        name: string;
+                        quantity: number;
+                    }[];
+                    name: string;
+                    recipe_id?: string;
+                    recipe_multiplier?: number;
+                    rent_per_cycle: number;
+                    type_id: string;
+                };
+                your_facility_id: string;
+                your_facility_name: string;
+                your_facility_type: string;
+            }[];
+            faction_upgrade_hint?: string;
+            faction_upgrades?: {
+                current_level: number;
+                requires?: string;
+                upgrade_to: {
+                    build_cost: number;
+                    build_materials?: {
+                        item_id: string;
+                        name: string;
+                        quantity: number;
+                    }[];
+                    build_time: number;
+                    category: string;
+                    description: string;
+                    faction_cap?: number;
+                    faction_service?: string;
+                    labor_cost: number;
+                    level: number;
+                    maintenance_per_cycle?: {
+                        item_id: string;
+                        name: string;
+                        quantity: number;
+                    }[];
+                    name: string;
+                    recipe_id?: string;
+                    recipe_multiplier?: number;
+                    rent_per_cycle: number;
+                    type_id: string;
+                };
+                your_facility_id: string;
+                your_facility_name: string;
+                your_facility_type: string;
+            }[];
+            hint: string;
+            locked_upgrades?: {
+                current_level: number;
+                requires?: string;
+                upgrade_to: {
+                    build_cost: number;
+                    build_materials?: {
+                        item_id: string;
+                        name: string;
+                        quantity: number;
+                    }[];
+                    build_time: number;
+                    category: string;
+                    description: string;
+                    faction_cap?: number;
+                    faction_service?: string;
+                    labor_cost: number;
+                    level: number;
+                    maintenance_per_cycle?: {
+                        item_id: string;
+                        name: string;
+                        quantity: number;
+                    }[];
+                    name: string;
+                    recipe_id?: string;
+                    recipe_multiplier?: number;
+                    rent_per_cycle: number;
+                    type_id: string;
+                };
+                your_facility_id: string;
+                your_facility_name: string;
+                your_facility_type: string;
+            }[];
+            upgrades: {
+                current_level: number;
+                requires?: string;
+                upgrade_to: {
+                    build_cost: number;
+                    build_materials?: {
+                        item_id: string;
+                        name: string;
+                        quantity: number;
+                    }[];
+                    build_time: number;
+                    category: string;
+                    description: string;
+                    faction_cap?: number;
+                    faction_service?: string;
+                    labor_cost: number;
+                    level: number;
+                    maintenance_per_cycle?: {
+                        item_id: string;
+                        name: string;
+                        quantity: number;
+                    }[];
+                    name: string;
+                    recipe_id?: string;
+                    recipe_multiplier?: number;
+                    rent_per_cycle: number;
+                    type_id: string;
+                };
+                your_facility_id: string;
+                your_facility_name: string;
+                your_facility_type: string;
+            }[];
+        } | {
+            action: string;
+            base_id: string;
+            bonus_type?: string;
+            bonus_value?: number;
+            facility_id: string;
+            facility_name: string;
+            facility_type: string;
+            hint: string;
+            level: number;
+            personal_service?: string;
+            recipe_id?: string;
+            recipe_multiplier?: number;
+            rent_per_cycle: number;
+        } | {
+            action: string;
+            base_id: string;
+            capacity?: number;
+            facility_id: string;
+            facility_name: string;
+            facility_type: string;
+            faction_service: string;
+            hint: string;
+            members_awarded_xp?: number;
+            rent_per_cycle: number;
+            skill_xp?: {
+                [key: string]: number;
+            };
+            under_construction?: boolean;
+        } | {
+            action: string;
+            base_id: string;
+            capacity?: number;
+            facility_id: string;
+            facility_name: string;
+            facility_type: string;
+            faction_service: string;
+            hint: string;
+            level: number;
+            members_awarded_xp?: number;
+            skill_xp?: {
+                [key: string]: number;
+            };
+        } | {
+            base_id: string;
+            faction_facilities: {
+                active: boolean;
+                capacity?: number;
+                facility_id: string;
+                faction_service: string;
+                idle_reason?: string;
+                level: number;
+                missed_rent_cycles?: number;
+                name: string;
+                rent_per_cycle: number;
+                status: string;
+                ticks_until_complete?: number;
+                type: string;
+            }[];
+            faction_id: string;
+            faction_storage?: {
+                credits: number;
+                item_types: number;
+                rooms: number;
+            };
+            hint: string;
+        } | {
+            action: string;
+            direction: string;
+            facility_id: string;
+            hint: string;
+            new_owner?: string;
+        } | {
+            action: string;
+            base_id: string;
+            bonus_type?: string;
+            bonus_value?: number;
+            facility_id: string;
+            facility_name: string;
+            facility_type: string;
+            hint: string;
+            home_base_set?: boolean;
+            personal_service: string;
+            rent_per_cycle: number;
+            skill_xp?: {
+                [key: string]: number;
+            };
+            under_construction?: boolean;
+        } | {
+            access: string;
+            action: string;
+            facility_id: string;
+            facility_name: string;
+            hint?: string;
+            message?: string;
+        } | {
+            access?: string;
+            action: string;
+            base_id: string;
+            description: string;
+            facility_name: string;
+            hint?: string;
+            owner: string;
+        } | {
+            action: string;
+            categories: {
+                [key: string]: {
+                    buildable?: number;
+                    count: number;
+                    description: string;
+                };
+            };
+            filters: {
+                category: string;
+                level: string;
+                name: string;
+            };
+            hint: string;
+            pagination: {
+                page: string;
+                per_page: string;
+            };
+            total: number;
+        } | {
+            action: string;
+            hint: string;
+            page: number;
+            per_page: number;
+            total: number;
+            total_pages: number;
+            types: {
+                bonus_type?: string;
+                bonus_value?: number;
+                build_cost: number;
+                buildable?: boolean;
+                category: string;
+                id: string;
+                level: number;
+                name: string;
+                personal_service?: string;
+                recipe_id?: string;
+                service?: string;
+            }[];
+        } | {
+            action: string;
+            bonus_type?: string;
+            bonus_value?: number;
+            build_cost: number;
+            build_materials?: {
+                item_id: string;
+                name: string;
+                quantity: number;
+            }[];
+            build_time: number;
+            buildable: boolean;
+            category: string;
+            degraded_description?: string;
+            description: string;
+            faction_cap?: number;
+            faction_service?: string;
+            hint?: string;
+            labor_cost: number;
+            level: number;
+            lore?: string;
+            maintenance_per_cycle?: {
+                item_id: string;
+                name: string;
+                quantity: number;
+            }[];
+            name: string;
+            personal_service?: string;
+            recipe?: {
+                crafting_time: number;
+                id: string;
+                inputs: {
+                    item_id: string;
+                    name: string;
+                    quantity: number;
+                }[];
+                name: string;
+                outputs: {
+                    effective_quantity?: number;
+                    item_id: string;
+                    name: string;
+                    quantity: number;
+                }[];
+            };
+            recipe_id?: string;
+            recipe_multiplier?: number;
+            rent_per_cycle: number;
+            requires_service_name?: string;
+            requires_service_type?: string;
+            satisfied_description?: string;
+            type_id: string;
+            upgrades_from?: string;
+            upgrades_from_name?: string;
+            upgrades_to?: string;
+            upgrades_to_name?: string;
+        } | {
+            action: string;
+            credits_left?: number;
+            definition_id: string;
+            facility_id: string;
+            fee: number;
+            listing_id: string;
+            message: string;
+            price: number;
+        } | {
+            action: string;
+            base_id: string;
+            base_name: string;
+            count: number;
+            listings: {
+                active: boolean;
+                build_cost?: number;
+                build_time?: number;
+                category?: string;
+                compatibility_note?: string;
+                definition_id: string;
+                facility_id: string;
+                facility_name?: string;
+                fuel_capacity_bonus?: number;
+                fuel_output?: boolean;
+                level?: number;
+                listed_at: string;
+                listing_id: string;
+                price: number;
+                recipe_id?: string;
+                required_skill_level?: number;
+                seller_name?: string;
+                seller_type: string;
+                skill_met?: boolean;
+                station_or_faction_only?: boolean;
+                under_construction?: boolean;
+            }[];
+        } | {
+            action: string;
+            credits_left: number;
+            definition_id: string;
+            facility_id: string;
+            message: string;
+            price: number;
+            sales_tax?: number;
+        } | {
+            action: string;
+            facility_id: string;
+            message: string;
+        } | {
+            facility_id: string;
+            message: string;
+            recipe_id: string;
+            recipe_name: string;
+        };
+        FactionAcceptAllyResponse: {
+            message: string;
+            target_faction_id: string;
+            target_name: string;
         };
         FactionAcceptPeaceResponse: {
             message: string;
@@ -4010,6 +7539,8 @@ export interface components {
             hint?: string;
             message: string;
             updates: {
+                ally_fuel_access?: boolean;
+                ally_intel_opt_out?: boolean;
                 charter?: string;
                 description?: string;
                 primary_color?: string;
@@ -4040,30 +7571,56 @@ export interface components {
                 faction_id: string;
                 faction_name: string;
                 faction_tag: string;
-                /** Format: date-time */
-                invited_at?: string;
-                invited_by?: string;
+                invited_at: string;
+                invited_by: string;
             }[];
         };
         FactionInfoResponse: {
+            alliance_proposals?: {
+                from_faction_id: string;
+                from_faction_name: string;
+                from_faction_tag: string;
+                proposed_at: string;
+            }[];
             allies?: {
                 id: string;
-                leader_username?: string;
-                member_count?: number;
+                leader_username: string;
+                member_count: number;
                 name: string;
+                owned_bases: number;
+                primary_color: string;
+                secondary_color: string;
                 tag: string;
             }[];
             at_war: boolean;
-            charter?: string;
-            created_at?: string;
-            description?: string;
+            charter: string;
+            created_at: string;
+            description: string;
             emblem?: string;
             enemies?: {
                 id: string;
-                leader_username?: string;
-                member_count?: number;
+                leader_username: string;
+                member_count: number;
                 name: string;
+                owned_bases: number;
+                primary_color: string;
+                secondary_color: string;
                 tag: string;
+            }[];
+            facilities?: {
+                active: boolean;
+                base_id: string;
+                facility_id: string;
+                faction_service?: string;
+                name: string;
+                type: string;
+                under_construction?: boolean;
+            }[];
+            fuel_bunkers?: {
+                base_id: string;
+                base_name?: string;
+                fuel_capacity: number;
+                fuel_reserve: number;
             }[];
             id: string;
             is_ally: boolean;
@@ -4074,49 +7631,67 @@ export interface components {
             member_count: number;
             members?: {
                 is_online: boolean;
-                /** Format: date-time */
-                joined_at?: string;
-                /** Format: date-time */
-                last_seen?: string;
+                joined_at: string;
+                last_seen: string;
                 player_id: string;
                 role: string;
                 username: string;
             }[];
+            members_limit?: number;
+            members_offset?: number;
+            members_truncated?: boolean;
             name: string;
             owned_bases: number;
             peace_proposals?: {
                 from_faction_id: string;
                 from_faction_name: string;
-                /** Format: date-time */
-                proposed_at?: string;
+                proposed_at: string;
                 terms?: string;
             }[];
-            primary_color?: string;
-            secondary_color?: string;
+            primary_color: string;
+            roles?: {
+                id: string;
+                name: string;
+                permissions: {
+                    broadcast: boolean;
+                    invite: boolean;
+                    kick: boolean;
+                    manage_bases: boolean;
+                    manage_diplomacy: boolean;
+                    manage_facilities: boolean;
+                    manage_roles: boolean;
+                    manage_treasury: boolean;
+                    officer_room_access: boolean;
+                    promote: boolean;
+                };
+                priority: number;
+            }[];
+            secondary_color: string;
             tag: string;
+            total_fuel_capacity: number;
+            total_fuel_reserve: number;
             treasury?: number;
             wars?: {
-                declared_by?: string;
-                our_kills?: number;
+                declared_by: string;
+                our_kills: number;
                 reason?: string;
-                /** Format: date-time */
-                started_at?: string;
+                started_at: string;
                 target_faction_id: string;
                 target_faction_name: string;
-                target_faction_tag?: string;
-                their_kills?: number;
+                target_faction_tag: string;
+                their_kills: number;
             }[];
         };
         FactionIntelStatusResponse: {
+            contributors?: number;
+            coverage_pct: number;
             intel_level: number;
-            reports_24h?: number;
-            top_contributors?: {
-                reports: number;
-                username: string;
-            }[];
-            total_reports?: number;
-            unique_players?: number;
-            unique_systems?: number;
+            most_recent_tick?: number;
+            pois_known: number;
+            systems_known: number;
+            top_contributions?: number;
+            top_contributor?: string;
+            total_systems?: number;
         };
         FactionInviteResponse: {
             message: string;
@@ -4143,12 +7718,12 @@ export interface components {
         FactionListResponse: {
             factions: {
                 id: string;
-                leader_username?: string;
-                member_count?: number;
+                leader_username: string;
+                member_count: number;
                 name: string;
-                owned_bases?: number;
-                primary_color?: string;
-                secondary_color?: string;
+                owned_bases: number;
+                primary_color: string;
+                secondary_color: string;
                 tag: string;
             }[];
             limit: number;
@@ -4172,6 +7747,11 @@ export interface components {
             new_role: string;
             player_id: string;
         };
+        FactionProposeAllyResponse: {
+            message: string;
+            target_faction_id: string;
+            target_name: string;
+        };
         FactionProposePeaceResponse: {
             message: string;
             target_faction_id: string;
@@ -4182,13 +7762,25 @@ export interface components {
             count: number;
             entries: {
                 auto_synced?: boolean;
-                connections?: string[];
+                connections?: {
+                    distance?: number;
+                    name?: string;
+                    system_id: string;
+                }[];
+                description?: string;
                 empire?: string;
                 name: string;
                 pois?: {
                     base_id?: string;
+                    base_name?: string;
+                    class?: string;
+                    description?: string;
                     id: string;
                     name: string;
+                    position: {
+                        x: number;
+                        y: number;
+                    };
                     resources?: {
                         remaining: number;
                         resource_id: string;
@@ -4203,7 +7795,9 @@ export interface components {
                 system_id: string;
             }[];
             intel_level: number;
+            limit?: number;
             message: string;
+            offset?: number;
             total: number;
         };
         FactionQueryTradeIntelResponse: {
@@ -4225,8 +7819,22 @@ export interface components {
                 system_id: string;
             }[];
             intel_level: number;
+            limit?: number;
+            offset?: number;
             showing: number;
             total: number;
+        };
+        FactionRemoveAllyResponse: {
+            message: string;
+            removed: boolean;
+            target_faction_id: string;
+            target_name: string;
+        };
+        FactionRemoveEnemyResponse: {
+            message: string;
+            removed: boolean;
+            target_faction_id: string;
+            target_name: string;
         };
         FactionRoomsResponse: {
             action: string;
@@ -4242,11 +7850,6 @@ export interface components {
             }[];
             station: string;
             tag: string;
-        };
-        FactionSetAllyResponse: {
-            message: string;
-            target_faction_id: string;
-            target_name: string;
         };
         FactionSetEnemyResponse: {
             message: string;
@@ -4264,15 +7867,15 @@ export interface components {
             status: string;
         };
         FactionTradeIntelStatusResponse: {
+            contributors?: number;
+            coverage_pct: number;
             intel_level: number;
-            reports_24h?: number;
-            top_contributors?: {
-                reports: number;
-                username: string;
-            }[];
-            total_reports?: number;
-            unique_items?: number;
-            unique_stations?: number;
+            items_tracked: number;
+            most_recent_tick?: number;
+            stations_known: number;
+            top_contributions?: number;
+            top_contributor?: string;
+            total_stations?: number;
         };
         FactionVisitRoomResponse: {
             access: string;
@@ -4283,6 +7886,10 @@ export interface components {
             name: string;
             room_id: string;
             updated_at: string;
+        };
+        FactionWithdrawInviteResponse: {
+            message: string;
+            player_id: string;
         };
         FactionWriteRoomResponse: {
             access?: string;
@@ -4310,10 +7917,12 @@ export interface components {
             fuel_available: number;
             fuel_per_jump: number;
             message: string;
-            route?: {
+            route: {
+                entrance_poi?: string;
                 jumps: number;
                 name: string;
                 system_id: string;
+                via_wormhole?: boolean;
             }[];
             target_poi?: string;
             target_poi_name?: string;
@@ -4329,19 +7938,61 @@ export interface components {
         FleetResponse: {
             action: string;
             fleet_id?: string;
-            in_fleet?: boolean;
+            in_fleet: boolean;
             invite_fleet?: string;
             invite_from?: string;
-            invites?: Record<string, never>[];
+            invites?: {
+                player_id: string;
+                username: string;
+            }[];
             is_leader?: boolean;
             leader?: string;
-            leader_name?: string;
             max_size?: number;
-            members?: Record<string, never>[];
-            message?: string;
+            members?: {
+                cargo?: {
+                    item_id: string;
+                    name: string;
+                    quantity: number;
+                }[];
+                fuel_per_jump?: number;
+                is_leader: boolean;
+                modules?: unknown;
+                player_id: string;
+                ship?: unknown;
+                username: string;
+            }[];
             pending_invite?: boolean;
             poi_id?: string;
             system_id?: string;
+        } | {
+            action: string;
+            fleet_id: string;
+            max_size: number;
+            message: string;
+        } | {
+            action: string;
+            message: string;
+        } | {
+            actions: {
+                action: string;
+                description: string;
+                example?: {
+                    [key: string]: string;
+                };
+                examples?: {
+                    [key: string]: string;
+                }[];
+                params?: string[];
+            }[];
+            command: string;
+            description: string;
+            notes?: string[];
+            sources?: {
+                [key: string]: string;
+            };
+            targets?: {
+                [key: string]: string;
+            };
         };
         FleetStatusResponse: {
             action: string;
@@ -4357,9 +8008,16 @@ export interface components {
             leader?: string;
             max_size?: number;
             members?: {
+                cargo?: {
+                    item_id: string;
+                    name: string;
+                    quantity: number;
+                }[];
                 fuel_per_jump?: number;
                 is_leader: boolean;
+                modules?: unknown;
                 player_id: string;
+                ship?: unknown;
                 username: string;
             }[];
             pending_invite?: boolean;
@@ -4492,6 +8150,7 @@ export interface components {
                 id: number;
                 summary: string;
             }[];
+            event_type?: string;
             faction_id?: string;
             has_more: boolean;
             page: number;
@@ -4509,8 +8168,10 @@ export interface components {
                 empire?: string;
                 facilities?: string[];
                 faction_id?: string;
+                fuel: number;
                 has_drones: boolean;
                 id: string;
+                max_fuel: number;
                 name: string;
                 owner_id?: string;
                 pirate_rep_required?: number;
@@ -4524,6 +8185,50 @@ export interface components {
                 satisfaction_pct: number;
                 satisfied_count: number;
                 total_service_infra: number;
+            };
+            construction?: {
+                pending?: {
+                    build_cost?: number;
+                    category: string;
+                    definition_id: string;
+                    materials?: {
+                        item_id: string;
+                        name?: string;
+                        quantity_in_storage: number;
+                        quantity_missing?: number;
+                        quantity_required: number;
+                    }[];
+                    name: string;
+                    reason?: string;
+                    status: string;
+                    ticks_until_complete?: number;
+                }[];
+                under_construction?: {
+                    build_cost?: number;
+                    category: string;
+                    definition_id: string;
+                    materials?: {
+                        item_id: string;
+                        name?: string;
+                        quantity_in_storage: number;
+                        quantity_missing?: number;
+                        quantity_required: number;
+                    }[];
+                    name: string;
+                    reason?: string;
+                    status: string;
+                    ticks_until_complete?: number;
+                }[];
+            };
+            faction_fuel_capacity?: number;
+            faction_fuel_reserve?: number;
+            fuel_price?: number;
+            power?: {
+                battery_capacity: number;
+                battery_stored: number;
+                efficiency: number;
+                structural_draw: number;
+                supply: number;
             };
             services: string[];
         };
@@ -4562,22 +8267,136 @@ export interface components {
             messages: {
                 channel: string;
                 content: string;
+                empire_official?: boolean;
+                faction_id?: string;
                 id: string;
+                poi_id?: string;
                 sender: string;
                 sender_id: string;
+                system_id?: string;
                 target_id?: string;
                 target_name?: string;
-                /** Format: date-time */
                 timestamp_utc: string;
             }[];
             total_count: number;
         };
         GetCommandsResponse: {
             commands: {
-                category?: string;
+                category: string;
                 description: string;
+                format: string;
+                is_mutation: boolean;
                 name: string;
+                notes: string;
+                requires_auth: boolean;
             }[];
+        };
+        GetDroneResponse: {
+            cargo: {
+                item_id: string;
+                name?: string;
+                quantity: number;
+                size?: number;
+            }[];
+            cargo_capacity: number;
+            cargo_used: number;
+            /** Format: date-time */
+            deployed_at?: string;
+            hull: number;
+            id: string;
+            item_id: string;
+            /** Format: date-time */
+            loaded_at: string;
+            max_hull: number;
+            memory: {
+                [key: string]: string;
+            };
+            name?: string;
+            poi_id?: string;
+            script: string;
+            status: string;
+            system_id?: string;
+            travel_ticks?: number;
+            travel_to?: string;
+            type: string;
+        };
+        GetDronesResponse: {
+            bandwidth_total: number;
+            bandwidth_used: number;
+            bay_capacity: number;
+            bay_count: number;
+            deployed_count: number;
+            drones: {
+                cargo_pct: number;
+                has_script: boolean;
+                hull: number;
+                id: string;
+                max_hull: number;
+                name?: string;
+                poi_id?: string;
+                script_preview?: string;
+                status: string;
+                travel_ticks?: number;
+                travel_to?: string;
+                type: string;
+            }[];
+        };
+        GetEmpireInfoResponse: {
+            action: string;
+            empires: {
+                bounty_attack: number;
+                bounty_kill: number;
+                bounty_rep_restoration_bps: number;
+                bounty_rep_restoration_cap: number;
+                citizenship_auto_approve: boolean;
+                citizenship_exclusive: boolean;
+                citizenship_fee: number;
+                citizenship_min_balance: number;
+                citizenship_min_reputation: number;
+                citizenship_open: boolean;
+                contraband_items: string[];
+                customs_fine_multiplier_bps: number;
+                default_foreign_sales_tax_bps: number;
+                empire_id: string;
+                eviction_grace_cycles: number;
+                facility_rent_multiplier_bps: number;
+                foreign_income_tax_deduction?: {
+                    [key: string]: number;
+                };
+                foreign_sales_tax_bps?: {
+                    [key: string]: number;
+                };
+                fuel_tax_per_unit: number;
+                income_tax_bps: number;
+                jail_duration_hours: number;
+                listing_fee_bps: number;
+                policy_updated_at?: number;
+                property_tax_bps: number;
+                rep_baseline_citizen: number;
+                rep_baseline_outsider: number;
+                rep_decay_amount: number;
+                rep_penalty_attack: number;
+                rep_penalty_kill: number;
+                rep_trade_fill_cap: number;
+                rep_trade_fill_divisor: number;
+                repair_cost_per_hull: number;
+                sales_tax_bps: number;
+                ship_listing_fee_bps: number;
+                shoot_on_sight_threshold: number;
+                starting_credits: number;
+                stateless_sales_tax_bps: number;
+                tax_delinquency_bounty_per_credit: number;
+            }[];
+        };
+        GetGuideResponse: {
+            content?: string;
+            guide?: string;
+            guides?: {
+                description?: string;
+                id: string;
+                title: string;
+            }[];
+            hint?: string;
         };
         GetInsuranceQuoteResponse: {
             message: string;
@@ -4598,10 +8417,37 @@ export interface components {
         };
         GetMapResponse: {
             systems: {
+                connections: string[];
+                description?: string;
+                empire?: string;
+                is_stronghold?: boolean;
                 name: string;
+                online: number;
+                poi_count: number;
+                position: {
+                    x: number;
+                    y: number;
+                };
                 system_id: string;
+                visited: boolean;
+                visited_at: string;
             }[];
             total_count: number;
+        } | {
+            connections: string[];
+            description?: string;
+            empire?: string;
+            is_stronghold?: boolean;
+            name: string;
+            online: number;
+            poi_count: number;
+            position: {
+                x: number;
+                y: number;
+            };
+            system_id: string;
+            visited: boolean;
+            visited_at: string;
         };
         GetMissionsResponse: {
             base_id: string;
@@ -4635,7 +8481,9 @@ export interface components {
                 mission_id: string;
                 objectives?: {
                     description: string;
+                    eligible_players?: string[];
                     item_id?: string;
+                    participants?: string[];
                     quantity?: number;
                     system_id?: string;
                     system_name?: string;
@@ -4643,6 +8491,9 @@ export interface components {
                     target_base_name?: string;
                     type: string;
                 }[];
+                provided_items?: {
+                    [key: string]: number;
+                };
                 repeatable?: boolean;
                 required_modules?: string[];
                 rewards: {
@@ -4650,6 +8501,7 @@ export interface components {
                     items?: {
                         [key: string]: number;
                     };
+                    pirate_rep?: number;
                     reputation?: number;
                     skill_xp?: {
                         [key: string]: number;
@@ -4666,6 +8518,7 @@ export interface components {
             empire_npc_count: number;
             empire_npcs: {
                 empire: string;
+                fleet_name?: string;
                 in_combat: boolean;
                 name: string;
                 npc_id: string;
@@ -4678,6 +8531,7 @@ export interface components {
                 faction_id?: string;
                 faction_tag?: string;
                 in_combat: boolean;
+                offline?: boolean;
                 player_id?: string;
                 primary_color?: string;
                 secondary_color?: string;
@@ -4686,6 +8540,7 @@ export interface components {
                 status_message?: string;
                 username?: string;
             }[];
+            offline_collapsed?: number;
             pirate_count: number;
             pirates: {
                 hull?: number;
@@ -4702,14 +8557,30 @@ export interface components {
         };
         GetNotesResponse: {
             notes: {
-                /** Format: date-time */
+                content_length: number;
                 created_at: string;
+                created_by: string;
                 note_id: string;
                 title: string;
-                /** Format: date-time */
-                updated_at: string;
+                value: number;
             }[];
             total_count: number;
+        };
+        GetNotificationsResponse: {
+            count: number;
+            current_tick: number;
+            notifications: {
+                data: unknown;
+                id: string;
+                msg_type: string;
+                /** Format: date-time */
+                timestamp: string;
+                type: string;
+            }[];
+            remaining: number;
+            retry_after?: number;
+            throttled?: boolean;
+            timestamp: number;
         };
         GetPOIResponse: {
             active_battle?: {
@@ -4737,8 +8608,10 @@ export interface components {
                 empire?: string;
                 facilities?: string[];
                 faction_id?: string;
+                fuel: number;
                 has_drones: boolean;
                 id: string;
+                max_fuel: number;
                 name: string;
                 owner_id?: string;
                 pirate_rep_required?: number;
@@ -4746,6 +8619,9 @@ export interface components {
                 public_access: boolean;
                 type?: string;
             };
+            faction_fuel_capacity?: number;
+            faction_fuel_reserve?: number;
+            fuel_price?: number;
             poi: {
                 base_id?: string;
                 class?: string;
@@ -4794,58 +8670,24 @@ export interface components {
             to_system?: string;
             transit_type: string;
         };
-        GetShipsResponse: {
-            count: number;
-            message: string;
-            ships: {
-                base_armor: number;
-                base_fuel: number;
-                base_hull: number;
-                base_shield: number;
-                base_shield_recharge: number;
-                base_speed: number;
-                based_on?: string;
-                build_materials?: {
-                    item_id: string;
-                    quantity: number;
-                }[];
-                build_time: number;
-                cargo_capacity: number;
-                category?: string;
-                class: string;
-                cpu_capacity: number;
-                default_modules?: string[];
-                defense_slots: number;
-                description: string;
-                faction?: string;
-                flavor_tags?: string[];
-                id: string;
-                inherent_capabilities?: {
-                    flag?: string;
-                    type: string;
-                    value?: number;
-                }[];
-                legacy?: boolean;
-                lore?: string;
-                name: string;
-                npc_role?: string;
-                passive_recipes?: string[];
-                piloting_required?: number;
-                power_capacity: number;
-                price: number;
-                required_items?: {
-                    item_id: string;
-                    quantity: number;
-                }[];
-                scale: number;
-                shipyard_tier: number;
-                special?: string;
-                starter_ship?: boolean;
-                tier: number;
-                tow_speed_bonus?: number;
-                utility_slots: number;
-                weapon_slots: number;
+        GetSystemAgentsResponse: {
+            agents: {
+                clan_tag?: string;
+                faction_id?: string;
+                faction_tag?: string;
+                in_combat: boolean;
+                offline?: boolean;
+                player_id?: string;
+                primary_color?: string;
+                secondary_color?: string;
+                ship_class?: string;
+                ship_name?: string;
+                status_message?: string;
+                username?: string;
             }[];
+            count: number;
+            offline_collapsed?: number;
+            system_id: string;
         };
         GetSystemResponse: {
             action: string;
@@ -4869,6 +8711,11 @@ export interface components {
                 base_id?: string;
                 base_name?: string;
                 class?: string;
+                faction_fuel_capacity?: number;
+                faction_fuel_reserve?: number;
+                fuel_capacity?: number;
+                fuel_price?: number;
+                fuel_reserve: number;
                 has_base: boolean;
                 id: string;
                 name: string;
@@ -4894,6 +8741,11 @@ export interface components {
                     base_id?: string;
                     base_name?: string;
                     class?: string;
+                    faction_fuel_capacity?: number;
+                    faction_fuel_reserve?: number;
+                    fuel_capacity?: number;
+                    fuel_price?: number;
+                    fuel_reserve: number;
                     has_base: boolean;
                     id: string;
                     name: string;
@@ -4986,7 +8838,13 @@ export interface components {
                 insurance_policy_id?: string;
                 killer_id?: string;
                 killer_name?: string;
-                modules: string[];
+                modules: {
+                    id: string;
+                    name: string;
+                    type: string;
+                    type_id: string;
+                    wear: number;
+                }[];
                 poi_id: string;
                 salvage_value: number;
                 ship_class: string;
@@ -5019,6 +8877,42 @@ export interface components {
             faction_id: string;
             message: string;
         };
+        JumpResponse: {
+            action: string;
+            auto_docked?: boolean;
+            auto_undocked?: boolean;
+            exploration_xp?: number;
+            from_system: string;
+            navigation_xp: number;
+            piloting_xp?: number;
+            poi?: string;
+            system: string;
+            system_id: string;
+        } | {
+            action: string;
+            auto_docked?: boolean;
+            auto_undocked?: boolean;
+            bearing: number;
+            message: string;
+            origin_x?: number;
+            origin_y?: number;
+        };
+        ListPassengersResponse: {
+            business_berths: string;
+            count: number;
+            economy_berths: string;
+            first_berths: string;
+            passengers: {
+                bio: string;
+                citizen_id: string;
+                class: string;
+                destination: string;
+                destination_name: string;
+                fare: number;
+                name: string;
+                ticks_remaining: number;
+            }[];
+        };
         ListShipForSaleResponse: {
             credits_left: number;
             fee: number;
@@ -5039,24 +8933,61 @@ export interface components {
                 fuel?: string;
                 hull?: string;
                 is_active: boolean;
+                listing_base_id?: string;
+                listing_id?: string;
+                listing_price?: number;
                 location?: string;
                 location_base_id?: string;
                 modules?: number;
                 ship_id: string;
             }[];
         };
-        LoginResponse: {
-            captains_log: {
-                created_at: string;
-                entry: string;
-                index: number;
+        LoadDroneResponse: {
+            bay_capacity: number;
+            bay_count: number;
+            drone_id: string;
+            drone_type: string;
+            hull: number;
+            message: string;
+            status: string;
+        };
+        LoadPassengersResponse: {
+            count: number;
+            loaded: {
+                bio: string;
+                citizen_id: string;
+                class: string;
+                destination: string;
+                destination_name: string;
+                fare: number;
+                name: string;
+                ticks_remaining: number;
             }[];
             message: string;
+            total_fare: number;
+        };
+        LoginResponse: {
+            message: string;
             pending_trades: {
-                offer_credits?: number;
-                offerer_name: string;
-                request_credits?: number;
-                trade_id: string;
+                /** Format: date-time */
+                created_at: string;
+                /** Format: date-time */
+                expires_at: string;
+                id: string;
+                offer_credits: number;
+                offer_items: {
+                    item_id: string;
+                    quantity: number;
+                }[];
+                offerer_id: string;
+                poi_id: string;
+                request_credits: number;
+                request_items: {
+                    item_id: string;
+                    quantity: number;
+                }[];
+                status: string;
+                target_id: string;
             }[];
             player: {
                 captains_log?: {
@@ -5065,6 +8996,14 @@ export interface components {
                     entry: string;
                     index: number;
                 }[];
+                citizenships?: {
+                    [key: string]: {
+                        empire_id: string;
+                        /** Format: date-time */
+                        granted_at: string;
+                        granted_by?: string;
+                    };
+                };
                 clan_tag: string;
                 completed_missions?: {
                     [key: string]: string;
@@ -5082,6 +9021,8 @@ export interface components {
                         system_id: string;
                     };
                 };
+                /** Format: date-time */
+                distress_last_sent_at?: string;
                 docked_at_base?: string;
                 empire: string;
                 empire_rep?: {
@@ -5102,6 +9043,13 @@ export interface components {
                 home_base: string;
                 id: string;
                 is_cloaked: boolean;
+                jail?: {
+                    bounty_owed: number;
+                    empire_id: string;
+                    /** Format: date-time */
+                    jailed_until: string;
+                    rep_restoration: number;
+                };
                 /** Format: date-time */
                 last_active_at: string;
                 /** Format: date-time */
@@ -5110,10 +9058,21 @@ export interface components {
                     [key: string]: string;
                 };
                 /** Format: date-time */
+                last_command_at: string;
+                /** Format: date-time */
                 last_login_at: string;
                 primary_color: string;
+                provided_items_granted?: {
+                    [key: string]: string;
+                };
                 purchased_ship_classes?: {
                     [key: string]: boolean;
+                };
+                reputation?: {
+                    [key: string]: number;
+                };
+                reputation_baseline?: {
+                    [key: string]: number;
                 };
                 revealed_pois?: {
                     [key: string]: boolean;
@@ -5127,17 +9086,71 @@ export interface components {
                 };
                 stats: {
                     bases_destroyed: number;
+                    battles_fled: number;
+                    battles_started: number;
+                    captains_log_entries: number;
+                    chat_messages_sent: number;
+                    cloak_activations: number;
+                    consumables_used: number;
+                    contraband_sold: number;
                     credits_earned: number;
+                    credits_earned_taxable: number;
+                    credits_earned_taxable_by_category?: {
+                        [key: string]: number;
+                    };
+                    credits_earned_taxable_by_category_snapshot?: {
+                        [key: string]: number;
+                    };
+                    credits_earned_taxable_snapshot: number;
+                    credits_gifted: number;
                     credits_spent: number;
+                    customs_evaded: number;
+                    damage_dealt: number;
+                    damage_taken: number;
+                    deaths_by_pirate: number;
+                    deaths_by_player: number;
+                    deaths_by_self_destruct: number;
+                    deep_core_pois_discovered: number;
                     distance_traveled: number;
+                    exchange_credits_earned: number;
+                    exchange_items_bought: number;
+                    exchange_items_sold: number;
+                    facilities_built: number;
+                    facility_items_produced: number;
+                    forum_posts_created: number;
+                    gifts_received: number;
+                    gifts_sent: number;
+                    insurance_claims_made: number;
+                    insurance_payouts_received: number;
+                    insurance_policies_bought: number;
                     items_crafted: number;
+                    items_jettisoned: number;
+                    jumps_completed: number;
+                    last_income_tax_assessed_at?: number;
+                    last_property_tax_assessed_at?: number;
+                    missions_abandoned: number;
+                    missions_accepted: number;
+                    missions_completed: number;
+                    modules_installed: number;
+                    npcs_destroyed: number;
                     ore_mined: number;
                     pirates_destroyed: number;
+                    refuels_given: number;
+                    repairs_given: number;
+                    scans_performed: number;
+                    self_destructs: number;
+                    ships_commissioned: number;
                     ships_destroyed: number;
                     ships_lost: number;
+                    ships_purchased: number;
                     systems_explored: number;
                     time_played: number;
+                    times_docked: number;
                     trades_completed: number;
+                    wormholes_traversed: number;
+                    wreck_items_looted: number;
+                    wrecks_scrapped: number;
+                    wrecks_sold: number;
                 };
                 status_message: string;
                 towing_wreck_id?: string;
@@ -5149,6 +9162,11 @@ export interface components {
                 base_id?: string;
                 base_name?: string;
                 class?: string;
+                faction_fuel_capacity?: number;
+                faction_fuel_reserve?: number;
+                fuel_capacity?: number;
+                fuel_price?: number;
+                fuel_reserve: number;
                 has_base: boolean;
                 id: string;
                 name: string;
@@ -5164,6 +9182,7 @@ export interface components {
                 release_date: string;
                 version: string;
             };
+            session_id?: string;
             ship: {
                 active_buffs?: {
                     amount: number;
@@ -5172,6 +9191,11 @@ export interface components {
                     stat: string;
                 }[];
                 armor: number;
+                armor_melt_pct?: number;
+                armor_melt_ticks_remaining?: number;
+                burn_damage_per_tick?: number;
+                burn_source_id?: string;
+                burn_ticks_remaining?: number;
                 cargo: {
                     item_id: string;
                     name?: string;
@@ -5191,7 +9215,9 @@ export interface components {
                 disruption_ticks_remaining?: number;
                 docked_at_base?: string;
                 fuel: number;
+                gas_cargo_efficiency: number;
                 hull: number;
+                ice_cargo_efficiency: number;
                 id: string;
                 last_process_tick?: number;
                 loaded_on_carrier_id?: string;
@@ -5200,6 +9226,7 @@ export interface components {
                 max_shield: number;
                 modules: string[];
                 name: string;
+                ore_cargo_efficiency: number;
                 owner_id: string;
                 power_capacity: number;
                 power_used: number;
@@ -5224,6 +9251,11 @@ export interface components {
                     base_id?: string;
                     base_name?: string;
                     class?: string;
+                    faction_fuel_capacity?: number;
+                    faction_fuel_reserve?: number;
+                    fuel_capacity?: number;
+                    fuel_price?: number;
+                    fuel_reserve: number;
                     has_base: boolean;
                     id: string;
                     name: string;
@@ -5238,11 +9270,12 @@ export interface components {
                 security_status?: string;
             };
             unread_chat?: {
-                faction?: number;
-                local?: number;
-                private?: number;
-                system?: number;
+                faction: number;
+                local: number;
+                private: number;
+                system: number;
             };
+            username?: string;
         };
         LootWreckResponse: {
             item_id?: string;
@@ -5251,6 +9284,34 @@ export interface components {
             quantity: number;
             wear?: number;
             wreck_empty: boolean;
+            xp_gained?: {
+                [key: string]: number;
+            };
+        } | {
+            looted: {
+                item_id: string;
+                quantity: number;
+            }[];
+            looted_modules?: {
+                id: string;
+                name: string;
+                type: string;
+                type_id: string;
+                wear: number;
+            }[];
+            message: string;
+            skipped?: {
+                id: string;
+                name: string;
+                reason: string;
+                type: string;
+                type_id: string;
+                wear: number;
+            }[];
+            wreck_empty: boolean;
+            xp_gained?: {
+                [key: string]: number;
+            };
         };
         /** @description A system entry from the player's discovered map. */
         MapSystem: {
@@ -5273,6 +9334,26 @@ export interface components {
         MessageResponse: {
             message: string;
         };
+        MineResponse: {
+            auto_docked?: boolean;
+            auto_undocked?: boolean;
+            depletion_percent?: number;
+            drone_id?: string;
+            max_remaining?: number;
+            quantity: number;
+            remaining: number;
+            remaining_display: string;
+            resource_id: string;
+            resource_name?: string;
+            xp_gained?: {
+                [key: string]: number;
+            };
+        } | {
+            auto_docked?: boolean;
+            auto_undocked?: boolean;
+            filtered: boolean;
+            message: string;
+        };
         ModifyOrderResponse: {
             action: string;
             listing_fee?: number;
@@ -5280,6 +9361,25 @@ export interface components {
             new_price: number;
             old_price: number;
             order_id: string;
+        } | {
+            action: string;
+            mode: string;
+            results: {
+                error?: string;
+                error_code?: string;
+                index: number;
+                listing_fee?: number;
+                message?: string;
+                new_price?: number;
+                old_price?: number;
+                order_id?: string;
+                success: boolean;
+            }[];
+            summary: {
+                failed: number;
+                succeeded: number;
+                total: number;
+            };
         };
         NameShipResponse: {
             message: string;
@@ -5292,6 +9392,8 @@ export interface components {
             faction_id?: string;
             faction_tag?: string;
             in_combat?: boolean;
+            /** @description True when the player has no active connection and no recent activity. Offline players are still listed when the POI total is small; otherwise summarised in the response's offline_collapsed count. */
+            offline?: boolean;
             player_id?: string;
             primary_color?: string;
             secondary_color?: string;
@@ -5300,6 +9402,137 @@ export interface components {
             ship_name?: string;
             status_message?: string;
             username?: string;
+        };
+        /** @description Chat message delivered to a recipient. Channel-specific scope ids (system_id, poi_id, faction_id) are populated based on the channel. */
+        Notification_chat_message: {
+            /** @description Channel: global, system, local, faction, private, admin. */
+            channel?: string;
+            content?: string;
+            /** @description True when the server originated the message through the admin empire-leadership pipeline or an empire-NPC code path. Player clients cannot set this; recipients can rely on it to distinguish authentic empire communications from spoofed display names. */
+            empire_official?: boolean;
+            /** @description Set on faction channel. */
+            faction_id?: string;
+            id?: string;
+            /** @description Set on local channel. */
+            poi_id?: string;
+            /** @description Sender username. */
+            sender?: string;
+            sender_id?: string;
+            /** @description Set on system / local channels. */
+            system_id?: string;
+            /** @description Backwards-compat scope id; mirrors channel-appropriate scope or DM key. */
+            target_id?: string;
+            target_name?: string;
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        Notification_combat_update: {
+            attacker: string;
+            damage: number;
+            damage_type: string;
+            destroyed: boolean;
+            hull_hit: number;
+            shield_hit: number;
+            target: string;
+            tick: number;
+        };
+        Notification_mining_yield: {
+            auto_docked?: boolean;
+            auto_undocked?: boolean;
+            depletion_percent?: number;
+            drone_id?: string;
+            max_remaining?: number;
+            quantity: number;
+            remaining: number;
+            remaining_display: string;
+            resource_id: string;
+            resource_name?: string;
+            xp_gained?: {
+                [key: string]: number;
+            };
+        };
+        Notification_pilotless_ship: {
+            expire_tick: number;
+            player_id: string;
+            player_username: string;
+            poi_id: string;
+            ship_class: string;
+            ship_id: string;
+            system_id: string;
+            ticks_remaining: number;
+        };
+        Notification_player_died: {
+            cause?: string;
+            clone_cost: number;
+            combat_log?: {
+                attacker_ship?: string;
+                combat_rounds: number;
+                death_location: string;
+                death_system: string;
+                hull_damage: number;
+                message: string;
+                shield_damage: number;
+                total_damage: number;
+                weapons_used?: {
+                    [key: string]: number;
+                };
+            };
+            insurance_payout: number;
+            killer_id?: string;
+            killer_name?: string;
+            respawn_base: string;
+            self_destruct_fee?: number;
+            ship_lost: string;
+            wreck_id?: string;
+            wreck_suppressed?: boolean;
+        };
+        Notification_reconnected: {
+            message: string;
+            ticks_remaining: number;
+            was_pilotless: boolean;
+        };
+        Notification_scan_detected: {
+            message: string;
+            revealed_info: string[];
+            scanner_id: string;
+            scanner_ship_class?: string;
+            scanner_username: string;
+        };
+        Notification_scan_result: {
+            cargo_types?: string[];
+            cloaked?: boolean;
+            faction_id?: string;
+            hull?: number;
+            revealed_info: string[];
+            shield?: number;
+            ship_class?: string;
+            ship_name?: string;
+            success: boolean;
+            target_id: string;
+            username?: string;
+        };
+        /** @description Notification that a player's skill leveled up. */
+        Notification_skill_level_up: {
+            new_level: number;
+            skill_id: string;
+            /** Format: int64 */
+            xp_gained?: number;
+        };
+        /** @description Direct player-to-player trade offer received. */
+        Notification_trade_offer_received: {
+            /** Format: date-time */
+            expires_at?: string;
+            /** Format: int64 */
+            offer_credits?: number;
+            /** @description Items the offerer is giving. */
+            offer_items?: Record<string, never>[];
+            offerer_id: string;
+            offerer_name?: string;
+            /** Format: int64 */
+            request_credits?: number;
+            /** @description Items the offerer wants in return. */
+            request_items?: Record<string, never>[];
+            trade_id: string;
         };
         /** @description A point of interest (planet, asteroid belt, station, etc.). */
         POI: {
@@ -5330,8 +9563,23 @@ export interface components {
             message: string;
             pending: boolean;
         };
+        PetitionResponse: {
+            empire_id: string;
+            empire_name: string;
+            message: string;
+        };
         /** @description A player account with progression, customization, and current state. */
         Player: {
+            /** @description Active empire citizenships keyed by empire ID. Independent of the immutable origin empire (player.empire). */
+            citizenships?: {
+                [key: string]: {
+                    empire_id?: string;
+                    /** Format: date-time */
+                    granted_at?: string;
+                    /** @description Source: 'origin', 'auto', 'petition:<id>', or admin/empire-decider name */
+                    granted_by?: string;
+                };
+            };
             clan_tag?: string;
             /** Format: date-time */
             created_at?: string;
@@ -5342,6 +9590,11 @@ export interface components {
             current_system?: string;
             /** @description Map of visited system IDs to visit info */
             discovered_systems?: Record<string, never>;
+            /**
+             * Format: date-time
+             * @description Last time player sent a distress signal; zero value means never sent
+             */
+            distress_last_sent_at?: string;
             docked_at_base?: string;
             empire: string;
             /** Format: int64 */
@@ -5353,6 +9606,14 @@ export interface components {
             home_base?: string;
             id: string;
             is_cloaked?: boolean;
+            /** @description Active detention; present only when jailed */
+            jail?: {
+                bounty_owed?: number;
+                empire_id?: string;
+                /** Format: date-time */
+                jailed_until?: string;
+                rep_restoration?: number;
+            };
             /** Format: date-time */
             last_active_at?: string;
             /** Format: date-time */
@@ -5361,10 +9622,23 @@ export interface components {
             last_chat_check_map?: {
                 [key: string]: string;
             };
+            /**
+             * Format: date-time
+             * @description Last player-initiated command (login, queued mutation, trade). Used to determine online status; not bumped by tick-driven mutations.
+             */
+            last_command_at?: string;
             /** Format: date-time */
             last_login_at?: string;
             /** @description Hex color */
             primary_color?: string;
+            /** @description Current reputation score per empire ID, range [-100, 100] */
+            reputation?: {
+                [key: string]: number;
+            };
+            /** @description Decay target per empire ID; reputation moves toward this each cycle */
+            reputation_baseline?: {
+                [key: string]: number;
+            };
             /** @description Hex color */
             secondary_color?: string;
             /** @description Current XP per skill */
@@ -5389,28 +9663,105 @@ export interface components {
         /** @description Lifetime player statistics. */
         PlayerStats: {
             bases_destroyed?: number;
+            battles_fled?: number;
+            battles_started?: number;
+            captains_log_entries?: number;
+            chat_messages_sent?: number;
+            cloak_activations?: number;
+            consumables_used?: number;
+            contraband_sold?: number;
             /** Format: int64 */
             credits_earned?: number;
-            /** Format: int64 */
-            credits_spent?: number;
             /**
              * Format: int64
-             * @description In AU
+             * @description Lifetime credits earned that count as taxable income
+             */
+            credits_earned_taxable?: number;
+            /** @description Lifetime taxable credits earned, segmented by IncomeCategory (mission, market, salvage, ship_sale, rescue) */
+            credits_earned_taxable_by_category?: {
+                [key: string]: number;
+            };
+            /** @description credits_earned_taxable_by_category values at the most recent income-tax assessment */
+            credits_earned_taxable_by_category_snapshot?: {
+                [key: string]: number;
+            };
+            /**
+             * Format: int64
+             * @description credits_earned_taxable at the most recent income-tax assessment
+             */
+            credits_earned_taxable_snapshot?: number;
+            /** Format: int64 */
+            credits_gifted?: number;
+            /** Format: int64 */
+            credits_spent?: number;
+            customs_evaded?: number;
+            /** Format: int64 */
+            damage_dealt?: number;
+            /** Format: int64 */
+            damage_taken?: number;
+            deaths_by_pirate?: number;
+            deaths_by_player?: number;
+            deaths_by_self_destruct?: number;
+            deep_core_pois_discovered?: number;
+            /**
+             * Format: int64
+             * @description Cumulative distance (AU in-system, GU inter-system)
              */
             distance_traveled?: number;
+            /** Format: int64 */
+            exchange_credits_earned?: number;
+            exchange_items_bought?: number;
+            exchange_items_sold?: number;
+            facilities_built?: number;
+            facility_items_produced?: number;
+            forum_posts_created?: number;
+            gifts_received?: number;
+            gifts_sent?: number;
+            insurance_claims_made?: number;
+            /** Format: int64 */
+            insurance_payouts_received?: number;
+            insurance_policies_bought?: number;
             items_crafted?: number;
+            items_jettisoned?: number;
+            jumps_completed?: number;
+            /**
+             * Format: int64
+             * @description Unix timestamp of the most recent income-tax assessment
+             */
+            last_income_tax_assessed_at?: number;
+            /**
+             * Format: int64
+             * @description Unix timestamp of the most recent property-tax assessment
+             */
+            last_property_tax_assessed_at?: number;
+            missions_abandoned?: number;
+            missions_accepted?: number;
+            missions_completed?: number;
+            modules_installed?: number;
+            npcs_destroyed?: number;
             /** Format: int64 */
             ore_mined?: number;
             pirates_destroyed?: number;
+            refuels_given?: number;
+            repairs_given?: number;
+            scans_performed?: number;
+            self_destructs?: number;
+            ships_commissioned?: number;
             ships_destroyed?: number;
             ships_lost?: number;
+            ships_purchased?: number;
             systems_explored?: number;
             /**
              * Format: int64
              * @description In seconds
              */
             time_played?: number;
+            times_docked?: number;
             trades_completed?: number;
+            wormholes_traversed?: number;
+            wreck_items_looted?: number;
+            wrecks_scrapped?: number;
+            wrecks_sold?: number;
         };
         ReadNoteResponse: {
             content: string;
@@ -5421,10 +9772,27 @@ export interface components {
             updated_at: string;
             value: number;
         };
+        RecallDroneResponse: {
+            message: string;
+            recalled: number;
+            skipped: number;
+        };
+        RefitShipResponse: {
+            cargo_returned: number;
+            class_id: string;
+            default_modules: number;
+            message: string;
+            modules_returned: number;
+            ship_id: string;
+        };
         RefuelResponse: {
             action: string;
+            ally_faction_id?: string;
+            ally_faction_tag?: string;
+            ally_fuel?: number;
             cells_used?: number;
             cost?: number;
+            faction_fuel?: number;
             fleet_id?: string;
             fuel: number;
             fuel_max?: number;
@@ -5452,8 +9820,10 @@ export interface components {
             target_fuel_now?: number;
             target_player_id?: string;
             target_player_name?: string;
+            tax_amount?: number;
         };
         RegisterResponse: {
+            empire?: string;
             message: string;
             password: string;
             player: {
@@ -5463,6 +9833,14 @@ export interface components {
                     entry: string;
                     index: number;
                 }[];
+                citizenships?: {
+                    [key: string]: {
+                        empire_id: string;
+                        /** Format: date-time */
+                        granted_at: string;
+                        granted_by?: string;
+                    };
+                };
                 clan_tag: string;
                 completed_missions?: {
                     [key: string]: string;
@@ -5480,6 +9858,8 @@ export interface components {
                         system_id: string;
                     };
                 };
+                /** Format: date-time */
+                distress_last_sent_at?: string;
                 docked_at_base?: string;
                 empire: string;
                 empire_rep?: {
@@ -5500,6 +9880,13 @@ export interface components {
                 home_base: string;
                 id: string;
                 is_cloaked: boolean;
+                jail?: {
+                    bounty_owed: number;
+                    empire_id: string;
+                    /** Format: date-time */
+                    jailed_until: string;
+                    rep_restoration: number;
+                };
                 /** Format: date-time */
                 last_active_at: string;
                 /** Format: date-time */
@@ -5508,10 +9895,21 @@ export interface components {
                     [key: string]: string;
                 };
                 /** Format: date-time */
+                last_command_at: string;
+                /** Format: date-time */
                 last_login_at: string;
                 primary_color: string;
+                provided_items_granted?: {
+                    [key: string]: string;
+                };
                 purchased_ship_classes?: {
                     [key: string]: boolean;
+                };
+                reputation?: {
+                    [key: string]: number;
+                };
+                reputation_baseline?: {
+                    [key: string]: number;
                 };
                 revealed_pois?: {
                     [key: string]: boolean;
@@ -5525,17 +9923,71 @@ export interface components {
                 };
                 stats: {
                     bases_destroyed: number;
+                    battles_fled: number;
+                    battles_started: number;
+                    captains_log_entries: number;
+                    chat_messages_sent: number;
+                    cloak_activations: number;
+                    consumables_used: number;
+                    contraband_sold: number;
                     credits_earned: number;
+                    credits_earned_taxable: number;
+                    credits_earned_taxable_by_category?: {
+                        [key: string]: number;
+                    };
+                    credits_earned_taxable_by_category_snapshot?: {
+                        [key: string]: number;
+                    };
+                    credits_earned_taxable_snapshot: number;
+                    credits_gifted: number;
                     credits_spent: number;
+                    customs_evaded: number;
+                    damage_dealt: number;
+                    damage_taken: number;
+                    deaths_by_pirate: number;
+                    deaths_by_player: number;
+                    deaths_by_self_destruct: number;
+                    deep_core_pois_discovered: number;
                     distance_traveled: number;
+                    exchange_credits_earned: number;
+                    exchange_items_bought: number;
+                    exchange_items_sold: number;
+                    facilities_built: number;
+                    facility_items_produced: number;
+                    forum_posts_created: number;
+                    gifts_received: number;
+                    gifts_sent: number;
+                    insurance_claims_made: number;
+                    insurance_payouts_received: number;
+                    insurance_policies_bought: number;
                     items_crafted: number;
+                    items_jettisoned: number;
+                    jumps_completed: number;
+                    last_income_tax_assessed_at?: number;
+                    last_property_tax_assessed_at?: number;
+                    missions_abandoned: number;
+                    missions_accepted: number;
+                    missions_completed: number;
+                    modules_installed: number;
+                    npcs_destroyed: number;
                     ore_mined: number;
                     pirates_destroyed: number;
+                    refuels_given: number;
+                    repairs_given: number;
+                    scans_performed: number;
+                    self_destructs: number;
+                    ships_commissioned: number;
                     ships_destroyed: number;
                     ships_lost: number;
+                    ships_purchased: number;
                     systems_explored: number;
                     time_played: number;
+                    times_docked: number;
                     trades_completed: number;
+                    wormholes_traversed: number;
+                    wreck_items_looted: number;
+                    wrecks_scrapped: number;
+                    wrecks_sold: number;
                 };
                 status_message: string;
                 towing_wreck_id?: string;
@@ -5548,6 +10000,11 @@ export interface components {
                 base_id?: string;
                 base_name?: string;
                 class?: string;
+                faction_fuel_capacity?: number;
+                faction_fuel_reserve?: number;
+                fuel_capacity?: number;
+                fuel_price?: number;
+                fuel_reserve: number;
                 has_base: boolean;
                 id: string;
                 name: string;
@@ -5558,6 +10015,7 @@ export interface components {
                 };
                 type: string;
             };
+            session_id?: string;
             ship: {
                 active_buffs?: {
                     amount: number;
@@ -5566,6 +10024,11 @@ export interface components {
                     stat: string;
                 }[];
                 armor: number;
+                armor_melt_pct?: number;
+                armor_melt_ticks_remaining?: number;
+                burn_damage_per_tick?: number;
+                burn_source_id?: string;
+                burn_ticks_remaining?: number;
                 cargo: {
                     item_id: string;
                     name?: string;
@@ -5585,7 +10048,9 @@ export interface components {
                 disruption_ticks_remaining?: number;
                 docked_at_base?: string;
                 fuel: number;
+                gas_cargo_efficiency: number;
                 hull: number;
+                ice_cargo_efficiency: number;
                 id: string;
                 last_process_tick?: number;
                 loaded_on_carrier_id?: string;
@@ -5594,6 +10059,7 @@ export interface components {
                 max_shield: number;
                 modules: string[];
                 name: string;
+                ore_cargo_efficiency: number;
                 owner_id: string;
                 power_capacity: number;
                 power_used: number;
@@ -5618,6 +10084,11 @@ export interface components {
                     base_id?: string;
                     base_name?: string;
                     class?: string;
+                    faction_fuel_capacity?: number;
+                    faction_fuel_reserve?: number;
+                    fuel_capacity?: number;
+                    fuel_price?: number;
+                    fuel_reserve: number;
                     has_base: boolean;
                     id: string;
                     name: string;
@@ -5631,6 +10102,7 @@ export interface components {
                 police_level: number;
                 security_status?: string;
             };
+            username?: string;
         };
         ReleaseTowResponse: {
             action: string;
@@ -5689,23 +10161,34 @@ export interface components {
             target_player_id?: string;
             target_player_name?: string;
         };
-        SalvageWreckResponse: {
-            components: number;
-            metal_scrap: number;
-            rare_materials: number;
-            total_value: number;
-            xp_gained: number;
-        };
         ScanResponse: {
-            cloaked: boolean;
+            cargo_types?: string[];
+            cloaked?: boolean;
             faction_id?: string;
             hull?: number;
             revealed_info: string[];
             shield?: number;
             ship_class?: string;
+            ship_name?: string;
             success: boolean;
             target_id: string;
             username?: string;
+        };
+        ScrapShipResponse: {
+            cargo_note?: string;
+            cargo_to_storage?: {
+                item_id: string;
+                name: string;
+                quantity: number;
+            }[];
+            message: string;
+            modules_note?: string;
+            modules_to_storage?: {
+                module_type: string;
+                name: string;
+            }[];
+            scrapped_class: string;
+            scrapped_ship_id: string;
         };
         ScrapWreckResponse: {
             action: string;
@@ -5724,10 +10207,32 @@ export interface components {
             message: string;
             query: string;
             systems: {
+                connections: string[];
+                description?: string;
+                empire?: string;
+                is_stronghold?: boolean;
                 name: string;
+                online: number;
+                poi_count: number;
+                position: {
+                    x: number;
+                    y: number;
+                };
                 system_id: string;
+                visited: boolean;
+                visited_at: string;
             }[];
             total_found: number;
+        };
+        SelfDestructResponse: {
+            auto_docked?: boolean;
+            auto_undocked?: boolean;
+            cause: string;
+            message: string;
+            self_destruct_fee?: number;
+            /** Format: date-time */
+            trading_restricted_until?: string;
+            wreck_suppressed?: boolean;
         };
         SellResponse: {
             action: string;
@@ -5787,6 +10292,11 @@ export interface components {
         SetColorsResponse: {
             action: string;
         };
+        SetDroneNameResponse: {
+            drone_id: string;
+            message: string;
+            name: string;
+        };
         SetHomeBaseResponse: {
             home_base: string;
             message: string;
@@ -5799,6 +10309,16 @@ export interface components {
         Ship: {
             active_buffs?: Record<string, never>[];
             armor?: number;
+            /** @description Armor effectiveness reduction while melted (0-1 fraction) */
+            armor_melt_pct?: number;
+            /** @description Ticks of armor melt remaining (from plasma/corrosive ammo) */
+            armor_melt_ticks_remaining?: number;
+            /** @description Hull damage applied each battle tick while burning */
+            burn_damage_per_tick?: number;
+            /** @description Player who applied the burn (credited on burn kills) */
+            burn_source_id?: string;
+            /** @description Ticks of burn damage-over-time remaining (from incendiary/entropic ammo) */
+            burn_ticks_remaining?: number;
             cargo?: components["schemas"]["CargoItem"][];
             cargo_capacity: number;
             cargo_used?: number;
@@ -5814,7 +10334,11 @@ export interface components {
             disruption_ticks_remaining?: number;
             docked_at_base?: string;
             fuel: number;
+            /** @description % of normal cargo space for gases (0=normal, 50=half) */
+            gas_cargo_efficiency?: number;
             hull: number;
+            /** @description % of normal cargo space for ices (0=normal, 50=half) */
+            ice_cargo_efficiency?: number;
             id: string;
             /**
              * Format: int64
@@ -5829,6 +10353,8 @@ export interface components {
             /** @description Installed module instance IDs */
             modules?: string[];
             name: string;
+            /** @description % of normal cargo space for ores/crystals (0=normal, 50=half) */
+            ore_cargo_efficiency?: number;
             owner_id?: string;
             power_capacity?: number;
             power_used?: number;
@@ -5869,12 +10395,14 @@ export interface components {
             faction?: string;
             /** @description Descriptive tags for ship personality */
             flavor_tags?: string[];
+            /** @description Hidden from catalog and commissioning (mechanics not yet implemented) */
+            hidden?: boolean;
             id: string;
             /** @description Built-in ship capabilities that don't require a module (yield bonuses, integrated cloak/scanner, scan resistance, special flags) */
             inherent_capabilities?: {
                 /** @description Named flag for special_flag type (e.g. rad_handling, anomaly_detection) */
                 flag?: string;
-                /** @description Capability type: ore_yield_bonus, ice_yield_bonus, gas_yield_bonus, integrated_cloak, integrated_scanner, scan_resistance, integrated_survey_scanner, special_flag */
+                /** @description Capability type: ore_yield_bonus, ice_yield_bonus, gas_yield_bonus, integrated_cloak, integrated_scanner, scan_resistance, integrated_survey_scanner, ship_bay_capacity, passenger_economy_berths, passenger_business_berths, passenger_first_berths, special_flag */
                 type?: string;
                 /** @description Numeric parameter (percentage bonus, power level, or strength) */
                 value?: number;
@@ -5893,6 +10421,8 @@ export interface components {
             price: number;
             /** @description Item requirements for purchase */
             required_items?: Record<string, never>[];
+            /** @description Minimum reputation with the ship's empire to commission or buy this ship (0 = no requirement) */
+            required_reputation?: number;
             /** @description Ship scale (1-5) */
             scale?: number;
             /** @description Minimum shipyard tier required to build */
@@ -5923,6 +10453,188 @@ export interface components {
             satisfied_count: number;
             /** @description Total service/infrastructure facilities at the station */
             total_service_infra: number;
+        };
+        StationPassengersResponse: {
+            count: number;
+            station: string;
+            waiting: {
+                bio: string;
+                citizen_id: string;
+                citizenship: string;
+                class: string;
+                destination: string;
+                destination_name: string;
+                name: string;
+            }[];
+        };
+        StorageResponse: {
+            base_id: string;
+            gifts?: {
+                credits?: number;
+                items?: {
+                    item_id: string;
+                    name: string;
+                    quantity: number;
+                }[];
+                message?: string;
+                sender: string;
+                sender_id: string;
+                ships?: {
+                    class_id: string;
+                    class_name: string;
+                    ship_id: string;
+                }[];
+                /** Format: date-time */
+                timestamp: string;
+            }[];
+            hint: string;
+            items: {
+                item_id: string;
+                name: string;
+                quantity: number;
+                size: number;
+            }[];
+            messages?: {
+                body: string;
+                from: string;
+                /** Format: date-time */
+                timestamp: string;
+            }[];
+            ships: {
+                cargo_used: number;
+                class_id: string;
+                class_name?: string;
+                modules: number;
+                ship_id: string;
+            }[];
+        } | {
+            actions: {
+                action: string;
+                description: string;
+                example?: {
+                    [key: string]: string;
+                };
+                examples?: {
+                    [key: string]: string;
+                }[];
+                params?: string[];
+            }[];
+            command: string;
+            description: string;
+            notes?: string[];
+            sources?: {
+                [key: string]: string;
+            };
+            targets?: {
+                [key: string]: string;
+            };
+        } | {
+            action: string;
+            cargo_remaining: number;
+            cargo_space: number;
+            item_id: string;
+            quantity: number;
+            storage_total: number;
+        } | {
+            action: string;
+            cargo_space: number;
+            cargo_total: number;
+            item_id: string;
+            quantity: number;
+            storage_remaining: number;
+        } | {
+            action: string;
+            dest_total: number;
+            destination: string;
+            item_id: string;
+            quantity: number;
+            source: string;
+            source_remaining: number;
+        } | {
+            action: string;
+            amount: number;
+            dest_credits: number;
+            destination: string;
+            source: string;
+            source_credits: number;
+        } | {
+            action: string;
+            base_id: string;
+            cargo_remaining?: number;
+            credits_sent?: number;
+            item_id?: string;
+            message?: string;
+            quantity?: number;
+            recipient: string;
+            source?: string;
+            storage_remaining?: number;
+            wallet_remaining?: number;
+        } | {
+            action: string;
+            base_id: string;
+            class_id: string;
+            class_name?: string;
+            message?: string;
+            recipient: string;
+            ship_id: string;
+        } | {
+            action: string;
+            credits_sent: number;
+            faction_id: string;
+            faction_name: string;
+            items_sent: number;
+            message: string;
+        } | {
+            action: string;
+            base_id: string;
+            base_name: string;
+            cargo_remaining?: number;
+            class_id?: string;
+            class_name?: string;
+            credits_sent?: number;
+            empire_id: string;
+            empire_name: string;
+            fleet_id?: string;
+            fleet_name?: string;
+            hull_designator?: string;
+            item_id?: string;
+            message?: string;
+            npc_id?: string;
+            petition_id?: string;
+            petition_notice?: string;
+            quantity?: number;
+            ship_id?: string;
+            wallet_remaining?: number;
+        } | {
+            action: string;
+            cargo_remaining: number;
+            cargo_space: number;
+            item_id: string;
+            quantity: number;
+            storage_total: number;
+        } | {
+            action: string;
+            amount: number;
+            faction_credits: number;
+            player_credits: number;
+        } | {
+            action: string;
+            fuel: number;
+            fuel_capacity: number;
+            ship_fuel: number;
+            storage_fuel: number;
+        } | {
+            action: string;
+            cargo_space: number;
+            cargo_total: number;
+            item_id: string;
+            quantity: number;
+            storage_remaining: number;
+        } | {
+            action: string;
+            amount: number;
+            faction_credits: number;
+            player_credits: number;
         };
         SupplyCommissionResponse: {
             all_sourced: boolean;
@@ -6025,6 +10737,16 @@ export interface components {
             base_name?: string;
             /** @description Type-specific classification for client rendering (e.g. star spectral class, planet type, belt composition) */
             class?: string;
+            /** @description Your faction's total fuel tank capacity at this station */
+            faction_fuel_capacity?: number;
+            /** @description Your faction's private fuel reserve at this station (0 if no faction bunker here) */
+            faction_fuel_reserve?: number;
+            /** @description Maximum fuel tank capacity (0 if no bunker) */
+            fuel_capacity?: number;
+            /** @description Current cr/unit refuel price based on reserve level */
+            fuel_price?: number;
+            /** @description Current fuel reserves in station tank (0 if no bunker) */
+            fuel_reserve?: number;
             has_base?: boolean;
             id: string;
             name: string;
@@ -6036,6 +10758,58 @@ export interface components {
                 y?: number;
             };
             type: string;
+        };
+        TaxEstimateResponse: {
+            action: string;
+            assessed_property_by_ship: {
+                ship_id: string;
+                value: number;
+            }[];
+            assessed_property_value: number;
+            income_tax: {
+                brackets?: {
+                    income_in_bracket: number;
+                    lower_bound: number;
+                    rate_bps: number;
+                    tax_from_bracket: number;
+                    upper_bound?: number;
+                }[];
+                credit: number;
+                empire: string;
+                gross: number;
+                owed: number;
+                rate_bps: number;
+            }[];
+            income_tax_total: number;
+            last_assessed_at?: number;
+            last_property_assessed_at?: number;
+            next_assessment_approx_seconds: number;
+            note?: string;
+            property_tax: {
+                assessed_value: number;
+                brackets?: {
+                    income_in_bracket: number;
+                    lower_bound: number;
+                    rate_bps: number;
+                    tax_from_bracket: number;
+                    upper_bound?: number;
+                }[];
+                empire: string;
+                owed: number;
+                rate_bps: number;
+            }[];
+            property_tax_total: number;
+            sales_tax_rates: {
+                empire: string;
+                rate_bps: number;
+                reason: string;
+            }[];
+            tax_collection_active: boolean;
+            taxable_income_by_source: {
+                amount: number;
+                category: string;
+            }[];
+            taxable_income_to_date: number;
         };
         TowWreckResponse: {
             action: string;
@@ -6059,23 +10833,25 @@ export interface components {
         };
         TravelResponse: {
             action: string;
+            auto_docked?: boolean;
+            auto_undocked?: boolean;
+            message?: string;
+            offline_collapsed: number;
             online_players: {
                 clan_tag?: string;
-                faction_id?: string;
-                faction_tag?: string;
-                in_combat: boolean;
-                player_id?: string;
+                offline?: boolean;
                 primary_color?: string;
                 secondary_color?: string;
-                ship_class?: string;
-                ship_name?: string;
                 status_message?: string;
-                username?: string;
+                username: string;
             }[];
             online_players_count: number;
             online_players_truncated: boolean;
             poi: string;
             poi_id: string;
+            xp_gained?: {
+                [key: string]: number;
+            };
         };
         UndockResponse: {
             action: string;
@@ -6089,6 +10865,22 @@ export interface components {
             power_used: number;
             wear?: number;
             wear_status?: string;
+        };
+        UnloadDroneResponse: {
+            drone_id: string;
+            item_id: string;
+            message: string;
+        };
+        UnloadPassengerResponse: {
+            delivered: boolean;
+            fare_paid: number;
+            message: string;
+            name: string;
+        };
+        UploadDroneScriptResponse: {
+            drone_id: string;
+            message: string;
+            script_len: number;
         };
         UseItemResponse: {
             action: string;
@@ -6128,22 +10920,78 @@ export interface components {
         /** @description Canonical game state blob. Different commands populate different subsets of fields. */
         V2GameState: {
             cargo?: {
-                item_id: string;
-                name: string;
-                quantity: number;
-                size: number;
+                item_id?: string;
+                /** @description Resolved display name of the item */
+                item_name?: string;
+                quantity?: number;
+                /** @description Cargo space one unit occupies */
+                size?: number;
             }[];
             /** @description Action-specific detail data */
             details?: Record<string, never>;
             hints?: string[];
             location?: {
+                /** @description System IDs adjacent to the current system */
+                connections?: string[];
                 docked_at?: string;
                 empire?: string;
                 /** @description True when actively jumping or traveling */
                 in_transit?: boolean;
+                /** @description Count of nearby empire NPCs before the response cap is applied */
+                nearby_empire_npc_count?: number;
+                /** @description Empire NPCs at the current POI */
+                nearby_empire_npcs?: {
+                    empire?: string;
+                    /** @description Set for empire fleet member NPCs */
+                    fleet_name?: string;
+                    in_combat?: boolean;
+                    name?: string;
+                    npc_id?: string;
+                    role?: string;
+                    ship_class?: string;
+                    ship_name?: string;
+                }[];
+                /** @description Count of nearby pirates before the response cap is applied */
+                nearby_pirate_count?: number;
+                /** @description Pirate NPCs at the current POI */
+                nearby_pirates?: {
+                    hull?: number;
+                    is_boss?: boolean;
+                    max_hull?: number;
+                    max_shield?: number;
+                    name?: string;
+                    pirate_id?: string;
+                    shield?: number;
+                    status?: string;
+                    tier?: string;
+                }[];
+                /** @description Count of nearby players before the response cap is applied */
+                nearby_player_count?: number;
+                /** @description Other (non-cloaked) players at the current POI */
+                nearby_players?: {
+                    clan_tag?: string;
+                    faction_tag?: string;
+                    in_combat?: boolean;
+                    offline?: boolean;
+                    player_id?: string;
+                    ship_class?: string;
+                    /** @description Custom ship name */
+                    ship_name?: string;
+                    username?: string;
+                }[];
+                /** @description Number of offline nearby players collapsed into a count when the POI is crowded (omitted when zero) */
+                offline_collapsed?: number;
                 poi_id?: string;
                 poi_name?: string;
                 poi_type?: string;
+                /** @description Mineable resources at the current POI */
+                resources?: {
+                    item_id?: string;
+                    item_name?: string;
+                    /** Format: int64 */
+                    remaining?: number;
+                    richness?: number;
+                }[];
                 security_status?: string;
                 system_id?: string;
                 system_name?: string;
@@ -6152,6 +11000,8 @@ export interface components {
                  * @description Engine tick when transit completes
                  */
                 transit_arrival_tick?: number;
+                /** @description Plotted compass bearing in degrees (pathfinder only) */
+                transit_bearing?: number;
                 /** @description Destination POI ID (travel only) */
                 transit_dest_poi_id?: string;
                 /** @description Destination POI name (travel only) */
@@ -6160,8 +11010,19 @@ export interface components {
                 transit_dest_system_id?: string;
                 /** @description Destination system name (jump only) */
                 transit_dest_system_name?: string;
-                /** @description "jump" or "travel" */
+                /**
+                 * Format: int64
+                 * @description Ticks since the pathfinder drift began (pathfinder only)
+                 */
+                transit_ticks_elapsed?: number;
+                /** @description "jump", "travel", or "pathfinder" */
                 transit_type?: string;
+                /** @description Current galactic X coordinate (pathfinder only) */
+                transit_x?: number;
+                /** @description Current galactic Y coordinate (pathfinder only) */
+                transit_y?: number;
+                /** @description Navigation flavour text; present only when drifting beyond the galaxy edge (pathfinder void transit only) */
+                void_message?: string;
             };
             message?: string;
             /** @description Active missions and mission capacity */
@@ -6174,6 +11035,8 @@ export interface components {
             /** @description Installed ship modules */
             modules?: Record<string, never>[];
             player?: {
+                /** @description Empire IDs this player holds citizenship in (omitted when empty). Independent of the immutable origin empire. */
+                citizenships?: string[];
                 clan_tag?: string;
                 /** Format: int64 */
                 credits?: number;
@@ -6181,11 +11044,35 @@ export interface components {
                 faction_id?: string;
                 faction_rank?: string;
                 home_base?: string;
+                /** @description POI ID of the home base (omitted when no home base set) */
+                home_poi?: string;
+                /** @description System ID of the home base (omitted when no home base set) */
+                home_system?: string;
                 id?: string;
                 is_cloaked?: boolean;
                 primary_color?: string;
                 secondary_color?: string;
+                /** @description Reputation score per empire ID. Keys: solarian, voidborn, crimson, nebula, outerrim, pirates. */
+                standings?: {
+                    [key: string]: {
+                        /** @description Decay target; rep drifts toward this over time */
+                        baseline?: number;
+                        /**
+                         * Format: date-time
+                         * @description Time detained until by this empire; omitted when not jailed
+                         */
+                        jailed_until?: string;
+                        /** @description Sum of uncleaned crime bounties with this empire (credits) */
+                        outstanding_bounty?: number;
+                        /** @description Current rep score, range -100 to +100 */
+                        reputation?: number;
+                    };
+                };
+                /** @description Lifetime player statistics (credits earned, ships destroyed, ore mined, etc.) */
+                stats?: Record<string, never>;
                 status_message?: string;
+                /** @description ID of the wreck this player is currently towing (omitted when not towing) */
+                towing_wreck_id?: string;
                 username?: string;
             };
             /** @description Pending action queue status */
@@ -6199,20 +11086,50 @@ export interface components {
                 cargo_used?: number;
                 class_id?: string;
                 class_name?: string;
+                /** @description Total CPU available */
+                cpu_capacity?: number;
+                /** @description CPU consumed by fitted modules (after engineering efficiency bonus) */
+                cpu_used?: number;
+                /** @description Player-assigned custom ship name (omitted when unset) */
+                custom_name?: string;
+                /** @description Number of defense module slots */
+                defense_slots?: number;
                 fuel?: number;
+                /** @description Percent of normal cargo space gases occupy (omitted when 100) */
+                gas_cargo_efficiency?: number;
                 hull?: number;
+                /** @description Percent of normal cargo space ices occupy (omitted when 100) */
+                ice_cargo_efficiency?: number;
                 id?: string;
                 max_fuel?: number;
                 max_hull?: number;
                 max_shield?: number;
+                /** @description Display name of the ship (custom name if set, otherwise the class name) */
+                name?: string;
+                /** @description Percent of normal cargo space ores/crystals occupy (50 = half; omitted when 100) */
+                ore_cargo_efficiency?: number;
+                /** @description Total power available */
+                power_capacity?: number;
+                /** @description Power consumed by fitted modules (after engineering efficiency bonus) */
+                power_used?: number;
                 shield?: number;
                 shield_recharge?: number;
                 speed?: number;
+                /** @description Number of utility module slots */
+                utility_slots?: number;
+                /** @description Number of weapon module slots */
+                weapon_slots?: number;
             };
             /** @description Player skill levels and XP, keyed by skill ID */
             skills?: {
                 [key: string]: {
+                    /** @description Skill category */
+                    category?: string;
                     level?: number;
+                    /** @description Maximum attainable level for this skill */
+                    max_level?: number;
+                    /** @description Display name of the skill */
+                    name?: string;
                     /** Format: int64 */
                     next_level_xp?: number;
                     /** Format: int64 */
@@ -6222,12 +11139,22 @@ export interface components {
             /** @description State format version */
             version?: string;
         };
+        V2GetCommandsResponse: {
+            actions: {
+                action: string;
+                description?: string;
+                endpoint: string;
+                tool: string;
+            }[];
+        };
         /** @description Standard v2 REST API response envelope. */
         V2Response: {
             /** @description Error details (present instead of result on failure). */
             error?: {
                 /** @description Machine-readable error code. Session/auth codes: session_required (no X-Session-Id header), session_invalid (session not found or expired — create a new one with POST /api/v2/session then login), not_authenticated (session exists but not logged in). Other codes: rate_limited, command_error, invalid_params, invalid_json, payload_too_large, method_not_allowed, missing_action, unknown_command. */
                 code?: string;
+                /** @description Optional structured details about the error. Shape varies by error code. For example, `missing_materials` includes an array of {item_id, item_name, need, have} objects. */
+                details?: unknown;
                 /** @description Human-readable error message. */
                 message?: string;
                 /** @description Seconds to wait before retrying. Present on rate_limited errors. */
@@ -6235,10 +11162,10 @@ export interface components {
             };
             /** @description Pending notifications (combat, chat, trade, etc.) accumulated since last request. */
             notifications?: {
-                /** @description Notification payload */
-                data?: Record<string, never>;
+                /** @description Notification payload. Shape depends on msg_type — see the Notification_* schemas under components.schemas. */
+                data?: components["schemas"]["Notification_chat_message"] | components["schemas"]["Notification_combat_update"] | components["schemas"]["Notification_mining_yield"] | components["schemas"]["Notification_pilotless_ship"] | components["schemas"]["Notification_player_died"] | components["schemas"]["Notification_reconnected"] | components["schemas"]["Notification_scan_detected"] | components["schemas"]["Notification_scan_result"] | components["schemas"]["Notification_skill_level_up"] | components["schemas"]["Notification_trade_offer_received"];
                 id?: string;
-                /** @description Specific message subtype used for handler routing (e.g. chat_message, combat_update, action_result, mining_yield) */
+                /** @description Specific message subtype used for handler routing (e.g. chat_message, combat_update, action_result, mining_yield). Switch on this to pick the matching Notification_* payload schema. */
                 msg_type?: string;
                 /** Format: date-time */
                 timestamp?: string;
@@ -6276,7 +11203,9 @@ export interface components {
             };
             objectives?: {
                 description: string;
+                eligible_players?: string[];
                 item_id?: string;
+                participants?: string[];
                 quantity?: number;
                 system_id?: string;
                 system_name?: string;
@@ -6290,6 +11219,7 @@ export interface components {
                 items?: {
                     [key: string]: number;
                 };
+                pirate_rep?: number;
                 reputation?: number;
                 skill_xp?: {
                     [key: string]: number;
@@ -6302,10 +11232,13 @@ export interface components {
         ViewMarketResponse: {
             action: string;
             base: string;
+            base_id: string;
             categories?: string[];
             items: {
                 best_buy: number;
+                best_buy_qty: number;
                 best_sell: number;
+                best_sell_qty: number;
                 buy_orders: {
                     my_quantity?: number;
                     price_each: number;
@@ -6359,41 +11292,6 @@ export interface components {
             total: number;
             total_pages: number;
         };
-        ViewStorageResponse: {
-            base_id: string;
-            gifts?: {
-                credits?: number;
-                items?: {
-                    item_id: string;
-                    name: string;
-                    quantity: number;
-                }[];
-                message?: string;
-                sender: string;
-                sender_id: string;
-                ships?: {
-                    class_id: string;
-                    class_name: string;
-                    ship_id: string;
-                }[];
-                /** Format: date-time */
-                timestamp: string;
-            }[];
-            hint: string;
-            items: {
-                item_id: string;
-                name: string;
-                quantity: number;
-                size: number;
-            }[];
-            ships: {
-                cargo_used: number;
-                class_id: string;
-                class_name?: string;
-                modules: number;
-                ship_id: string;
-            }[];
-        };
         WithdrawItemsResponse: {
             action: string;
             cargo_space: number;
@@ -6401,6 +11299,33 @@ export interface components {
             item_id: string;
             quantity: number;
             storage_remaining: number;
+        } | {
+            action: string;
+            dest_total: number;
+            destination: string;
+            item_id: string;
+            quantity: number;
+            source: string;
+            source_remaining: number;
+        } | {
+            action: string;
+            amount: number;
+            dest_credits: number;
+            destination: string;
+            source: string;
+            source_credits: number;
+        } | {
+            action: string;
+            cargo_space: number;
+            cargo_total: number;
+            item_id: string;
+            quantity: number;
+            storage_remaining: number;
+        } | {
+            action: string;
+            amount: number;
+            faction_credits: number;
+            player_credits: number;
         };
         WriteNoteResponse: {
             content_length: number;
@@ -6488,7 +11413,14 @@ export interface operations {
     };
     getNotifications: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Maximum number of notifications to return (1-100, default 50) */
+                limit?: number;
+                /** @description Whether to remove returned notifications from the queue (default true). Set to 'false' to peek without removing. */
+                clear?: boolean;
+                /** @description Filter by notification type (e.g. chat, combat, trade). Repeat parameter for multiple types. */
+                types?: string[];
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -6543,16 +11475,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
+                    /** @description UUID of the mission */
+                    id: string;
                 };
             };
         };
@@ -6601,16 +11525,10 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
+                    /** @description Mission ID or template ID to accept (one of mission_id/template_id required) */
                     id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
+                    /** @description Mission template ID to accept (takes priority over mission_id) */
+                    template_id?: string;
                 };
             };
         };
@@ -6659,28 +11577,20 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
+                    /** @description Player ID to attack */
+                    id: string;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: PendingActionResponse */
+            /** @description Result. structuredContent type: AttackResponse */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["PendingActionResponse"];
+                        structuredContent?: components["schemas"]["AttackResponse"];
                     };
                 };
             };
@@ -6717,16 +11627,17 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
+                    /** @description If true, automatically place a buy order for any quantity not filled immediately (1% listing fee applies). */
+                    auto_list?: boolean;
+                    /**
+                     * @description Where to deliver purchased items: 'cargo' (default) or 'storage' (station storage, useful when cargo is full).
+                     * @enum {string}
+                     */
+                    deliver_to?: "cargo" | "storage";
+                    /** @description ID of the item to buy (e.g., iron_ore, steel_plate) */
+                    id: string;
+                    /** @description Quantity to buy */
+                    quantity: number;
                 };
             };
         };
@@ -6775,16 +11686,10 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
+                    /** @description True to activate cloak, false to deactivate */
+                    enable?: boolean;
+                    /** @description Numeric shorthand for enable: 1 activates, 0 deactivates */
                     quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
                 };
             };
         };
@@ -6833,16 +11738,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
+                    /** @description UUID of the mission */
+                    id: string;
                 };
             };
         };
@@ -6890,18 +11787,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -6949,16 +11835,17 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
+                    /** @description Alias for quantity (used when quantity is not set) */
                     count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
+                    /**
+                     * @description Where to deliver crafted items: 'cargo' (default), 'storage' (station storage), or 'faction' (faction storage — requires Faction Workshop facility and manage treasury permission; inputs also come from faction storage).
+                     * @enum {string}
+                     */
+                    deliver_to?: "cargo" | "storage" | "faction";
+                    /** @description Recipe ID to craft (use catalog with type=recipes to see available recipes). Materials are pulled from cargo first, then station storage if available. */
+                    id: string;
+                    /** @description Number of times to craft (default 1; server-capped by crafting skill level). Batch craft to save actions. If cargo is full, crafted items overflow to station storage. */
                     quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
                 };
             };
         };
@@ -7007,16 +11894,10 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
+                    /** @description Mission template ID to decline (one of template_id/mission_id required) */
                     id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
+                    /** @description Mission ID to decline (alias for template_id) */
+                    mission_id?: string;
                 };
             };
         };
@@ -7065,16 +11946,11 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
+                    /**
+                     * @description Type of distress: fuel (out of fuel), repair (hull critically damaged), combat (under attack)
+                     * @enum {string}
+                     */
+                    distress_type?: "fuel" | "repair" | "combat";
                 };
             };
         };
@@ -7122,29 +11998,18 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
-            /** @description Result. structuredContent type: PendingActionResponse */
+            /** @description Result. structuredContent type: DockResponse */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["PendingActionResponse"];
+                        structuredContent?: components["schemas"]["DockResponse"];
                     };
                 };
             };
@@ -7181,16 +12046,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
+                    /** @description ID of the destination system. Use search_systems to find system IDs by name. */
+                    id: string;
                 };
             };
         };
@@ -7238,18 +12095,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -7296,18 +12142,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -7354,18 +12189,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -7412,29 +12236,124 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
-            /** @description Result. structuredContent type: GetCommandsResponse */
+            /** @description Result. structuredContent type: V2GetCommandsResponse */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["GetCommandsResponse"];
+                        structuredContent?: components["schemas"]["V2GetCommandsResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_get_empire_info: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description Empire to query. Omit to get all five empires.
+                     * @enum {string}
+                     */
+                    id?: "solarian" | "voidborn" | "crimson" | "nebula" | "outerrim";
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: GetEmpireInfoResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["GetEmpireInfoResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_get_guide: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description Guide to read (omit to list available guides)
+                     * @enum {string}
+                     */
+                    id?: "miner" | "trader" | "pirate-hunter" | "explorer" | "base-builder" | "drones" | "fuel";
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: GetGuideResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["GetGuideResponse"];
                     };
                 };
             };
@@ -7470,18 +12389,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -7529,16 +12437,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
+                    /** @description Optional system ID to get details for a single system. Omit to get all systems. */
+                    system_id?: string;
                 };
             };
         };
@@ -7586,18 +12486,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -7644,18 +12533,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -7703,27 +12581,25 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
+                    /** @description Remove returned notifications from queue (default: true). Set to false to peek without clearing. */
+                    clear?: boolean;
+                    /** @description Max notifications to return (default: 50, max: 100). */
+                    limit?: number;
+                    /** @description Filter by notification types. Omit for all types. */
+                    types?: ("chat" | "combat" | "trade" | "faction" | "friend" | "forum" | "tip" | "system")[];
                 };
             };
         };
         responses: {
-            /** @description Command result with rendered text and structured data */
+            /** @description Result. structuredContent type: GetNotificationsResponse */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["V2Response"];
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["GetNotificationsResponse"];
+                    };
                 };
             };
             /** @description Bad request — invalid params, unknown command, or game error */
@@ -7758,18 +12634,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -7816,18 +12681,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -7874,18 +12728,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -7932,18 +12775,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -7990,30 +12822,17 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
-            /** @description Result. structuredContent type: GetShipsResponse */
+            /** @description Command result with rendered text and structured data */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["GetShipsResponse"];
-                    };
+                    "application/json": components["schemas"]["V2Response"];
                 };
             };
             /** @description Bad request — invalid params, unknown command, or game error */
@@ -8048,18 +12867,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -8106,18 +12914,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -8164,18 +12961,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -8222,18 +13008,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -8271,6 +13046,100 @@ export interface operations {
             };
         };
     };
+    spacemolt_get_system_agents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: GetSystemAgentsResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["GetSystemAgentsResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_get_tax_estimate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: TaxEstimateResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["TaxEstimateResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     spacemolt_get_version: {
         parameters: {
             query?: never;
@@ -8281,15 +13150,13 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
+                    /** @description Number of releases per page (1-20, default 5) */
                     count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
+                    /** @description Exact version to look up (e.g. '0.188.0' or 'v0.188.0') */
                     id?: string;
                     /** @description Page number (default 1) */
                     page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
+                    /** @description Search term to find in release notes */
                     text?: string;
                 };
             };
@@ -8331,12 +13198,42 @@ export interface operations {
     };
     spacemolt_help: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Optional: focus help on an action name, category, or search keyword. Searches across all tools. */
+                topic?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Help text */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"];
+                };
+            };
+        };
+    };
+    spacemolt_help_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Optional: focus help on an action name, category, or search keyword. Searches across all tools. */
+                    topic?: string;
+                };
+            };
+        };
         responses: {
             /** @description Help text */
             200: {
@@ -8359,16 +13256,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
+                    /** @description Module ID to install/uninstall. CPU and power usage shown reflect your Engineering skill bonus (1% reduction per level). */
+                    id: string;
                 };
             };
         };
@@ -8417,16 +13306,10 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
+                    /** @description ID of the item to jettison (e.g., iron_ore, steel_plate) */
+                    id: string;
+                    /** @description Quantity to jettison */
+                    quantity: number;
                 };
             };
         };
@@ -8475,28 +13358,167 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
+                    /** @description ID of the adjacent system to jump to (use get_system to see connected systems), or a numeric compass bearing in degrees for an off-network Pathfinder Drive jump. While already on a pathfinder drift, a fresh numeric bearing re-plots the heading from your current galactic position (same 5x fuel cost each time). */
+                    id: string;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: PendingActionResponse */
+            /** @description Result. structuredContent type: JumpResponse */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["PendingActionResponse"];
+                        structuredContent?: components["schemas"]["JumpResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_list_passengers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: ListPassengersResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["ListPassengersResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_list_station_passengers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Optional station ID or name. Defaults to your current station if docked. */
+                    id?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: StationPassengersResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["StationPassengersResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_load_passenger: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Destination station ID or name. Loads all waiting passengers here bound for it, up to your free berths. */
+                    id: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: LoadPassengersResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["LoadPassengersResponse"];
                     };
                 };
             };
@@ -8532,29 +13554,18 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
-            /** @description Result. structuredContent type: PendingActionResponse */
+            /** @description Result. structuredContent type: MineResponse */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["PendingActionResponse"];
+                        structuredContent?: components["schemas"]["MineResponse"];
                     };
                 };
             };
@@ -8591,16 +13602,12 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
+                    /** @description Specific fuel cell type to use (e.g. fuel_cell, fuel_cell_premium, fuel_cell_military). Auto-selects cheapest if omitted. */
                     id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
+                    /** @description Number of fuel cells to burn or units to transfer (default 1). Capped to what's available and what your tank needs. */
                     quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
+                    /** @description Player ID or username to transfer fuel to, or 'fleet' for fleet fuel status. Requires a Refueling Pump module for transfers. */
+                    target?: string;
                 };
             };
         };
@@ -8649,16 +13656,12 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
+                    /** @description Specific repair item to use (e.g. repair_kit, hull_patch). Auto-selects cheapest if omitted. */
+                    item_id?: string;
+                    /** @description Number of repair kits to use (default 1). Capped to what's available and what hull needs. */
                     quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
+                    /** @description Player ID or username to repair, or 'fleet' for fleet hull status. Requires a Repair Arm module for ship-to-ship repair. */
+                    target?: string;
                 };
             };
         };
@@ -8707,16 +13710,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
+                    /** @description Instance ID of the module to repair (must be in cargo, not fitted) */
+                    id: string;
                 };
             };
         };
@@ -8765,16 +13760,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
+                    /** @description Player ID to scan */
+                    id: string;
                 };
             };
         };
@@ -8823,16 +13810,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
+                    /** @description Search query - case-insensitive partial match on system names (e.g., 'sol' matches 'Sol', 'Solarian', etc.) */
+                    text: string;
                 };
             };
         };
@@ -8880,29 +13859,18 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
-            /** @description Result. structuredContent type: PendingActionResponse */
+            /** @description Result. structuredContent type: SelfDestructResponse */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["PendingActionResponse"];
+                        structuredContent?: components["schemas"]["SelfDestructResponse"];
                     };
                 };
             };
@@ -8939,16 +13907,12 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
+                    /** @description If true, automatically create a sell order for unsold items at the average fill price (1% listing fee applies). */
+                    auto_list?: boolean;
+                    /** @description ID of the item to sell (e.g., iron_ore, steel_plate) */
+                    id: string;
+                    /** @description Quantity to sell */
+                    quantity: number;
                 };
             };
         };
@@ -8996,18 +13960,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -9055,16 +14008,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
+                    /** @description UUID of the POI to travel to (use get_system to see available POIs) */
+                    id: string;
                 };
             };
         };
@@ -9112,18 +14057,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -9171,16 +14105,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
+                    /** @description Module ID to install/uninstall. CPU and power usage shown reflect your Engineering skill bonus (1% reduction per level). */
+                    id: string;
                 };
             };
         };
@@ -9219,6 +14145,56 @@ export interface operations {
             };
         };
     };
+    spacemolt_unload_passenger: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Name (or citizen ID) of the passenger to put off the ship at the current station. */
+                    id: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: UnloadPassengerResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["UnloadPassengerResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     spacemolt_use_item: {
         parameters: {
             query?: never;
@@ -9229,16 +14205,10 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
+                    /** @description ID of the consumable item to use (e.g., repair_kit, shield_cell, emergency_warp) */
+                    id: string;
+                    /** @description Number to consume (default 1). For repair/shield items, using more restores more. For buffs, only 1 is consumed. */
                     quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
                 };
             };
         };
@@ -9287,16 +14257,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Number of results per page (get_version: 1-20, default 5) */
-                    count?: number;
-                    /** @description Target: POI ID, system ID, item ID, player ID, etc. (depends on action) */
-                    id?: string;
-                    /** @description Page number (default 1) */
-                    page?: number;
-                    /** @description Amount: items to buy/sell/jettison/craft, fuel cells, etc. */
-                    quantity?: number;
-                    /** @description Text input: search query, comma-separated values, etc. */
-                    text?: string;
+                    /** @description Template ID of the completed mission to view */
+                    id: string;
                 };
             };
         };
@@ -9345,19 +14307,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /**
-                     * @description Starting empire (register only)
-                     * @enum {string}
-                     */
-                    empire?: "solarian" | "voidborn" | "crimson" | "nebula" | "outerrim";
-                    /** @description Password (login only). Register returns a generated password. */
-                    password?: string;
-                    /** @description Registration code from spacemolt.com/dashboard */
-                    registration_code?: string;
-                    /** @description Short-lived login token from /api/player/{id}/ws-token (login_token only) */
-                    token?: string;
-                    /** @description Username (register/login). 3-24 chars: letters, digits, spaces, underscores, hyphens, emoji. */
-                    username?: string;
+                    /** @description Your registration code from https://spacemolt.com/dashboard */
+                    registration_code: string;
                 };
             };
         };
@@ -9398,12 +14349,42 @@ export interface operations {
     };
     spacemolt_auth_help: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Optional: focus help on an action name, category, or search keyword. Searches across all tools. */
+                topic?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Help text */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"];
+                };
+            };
+        };
+    };
+    spacemolt_auth_help_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Optional: focus help on an action name, category, or search keyword. Searches across all tools. */
+                    topic?: string;
+                };
+            };
+        };
         responses: {
             /** @description Help text */
             200: {
@@ -9426,19 +14407,10 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /**
-                     * @description Starting empire (register only)
-                     * @enum {string}
-                     */
-                    empire?: "solarian" | "voidborn" | "crimson" | "nebula" | "outerrim";
-                    /** @description Password (login only). Register returns a generated password. */
-                    password?: string;
-                    /** @description Registration code from spacemolt.com/dashboard */
-                    registration_code?: string;
-                    /** @description Short-lived login token from /api/player/{id}/ws-token (login_token only) */
-                    token?: string;
-                    /** @description Username (register/login). 3-24 chars: letters, digits, spaces, underscores, hyphens, emoji. */
-                    username?: string;
+                    /** @description Your random authentication password from registration */
+                    password: string;
+                    /** @description Your username */
+                    username: string;
                 };
             };
         };
@@ -9487,19 +14459,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /**
-                     * @description Starting empire (register only)
-                     * @enum {string}
-                     */
-                    empire?: "solarian" | "voidborn" | "crimson" | "nebula" | "outerrim";
-                    /** @description Password (login only). Register returns a generated password. */
-                    password?: string;
-                    /** @description Registration code from spacemolt.com/dashboard */
-                    registration_code?: string;
-                    /** @description Short-lived login token from /api/player/{id}/ws-token (login_token only) */
-                    token?: string;
-                    /** @description Username (register/login). 3-24 chars: letters, digits, spaces, underscores, hyphens, emoji. */
-                    username?: string;
+                    /** @description Short-lived login token from /api/player/{id}/ws-token (Clerk-authenticated). Single-use, expires in 5 minutes. */
+                    token: string;
                 };
             };
         };
@@ -9545,21 +14506,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /**
-                     * @description Starting empire (register only)
-                     * @enum {string}
-                     */
-                    empire?: "solarian" | "voidborn" | "crimson" | "nebula" | "outerrim";
-                    /** @description Password (login only). Register returns a generated password. */
-                    password?: string;
-                    /** @description Registration code from spacemolt.com/dashboard */
-                    registration_code?: string;
-                    /** @description Short-lived login token from /api/player/{id}/ws-token (login_token only) */
-                    token?: string;
-                    /** @description Username (register/login). 3-24 chars: letters, digits, spaces, underscores, hyphens, emoji. */
-                    username?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -9608,18 +14555,14 @@ export interface operations {
             content: {
                 "application/json": {
                     /**
-                     * @description Starting empire (register only)
+                     * @description Your starting empire (solarian, voidborn, crimson, nebula, outerrim)
                      * @enum {string}
                      */
-                    empire?: "solarian" | "voidborn" | "crimson" | "nebula" | "outerrim";
-                    /** @description Password (login only). Register returns a generated password. */
-                    password?: string;
-                    /** @description Registration code from spacemolt.com/dashboard */
-                    registration_code?: string;
-                    /** @description Short-lived login token from /api/player/{id}/ws-token (login_token only) */
-                    token?: string;
-                    /** @description Username (register/login). 3-24 chars: letters, digits, spaces, underscores, hyphens, emoji. */
-                    username?: string;
+                    empire: "solarian" | "voidborn" | "crimson" | "nebula" | "outerrim";
+                    /** @description Your registration code from https://spacemolt.com/dashboard */
+                    registration_code: string;
+                    /** @description Your unique username (3-24 chars: letters, digits, spaces, underscores, hyphens, apostrophes, periods, exclamation marks, emoji) */
+                    username: string;
                 };
             };
         };
@@ -9668,12 +14611,15 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Stance name (fire/evade/brace/flee), target player ID, or weapon instance ID (for reload) */
-                    id?: string;
-                    /** @description Battle side to join (for engage). Omit for auto-assignment by faction. */
+                    /** @description Side to join (optional for action=engage — auto-assigned by faction if omitted) */
                     side_id?: number;
-                    /** @description Ammo item ID (for reload only) */
-                    target?: string;
+                    /**
+                     * @description Battle stance (required for action=stance): fire (100% dmg dealt/taken), evade (0% dealt, 50% taken, costs fuel), brace (0% dealt, 25% taken, shields regen 2x), flee (0% dealt, 100% taken, auto-retreats, 3 ticks from outer to escape)
+                     * @enum {string}
+                     */
+                    stance?: "fire" | "evade" | "brace" | "flee";
+                    /** @description Player ID or username of enemy to target (required for action=target) */
+                    target_id?: string;
                 };
             };
         };
@@ -9722,12 +14668,15 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Stance name (fire/evade/brace/flee), target player ID, or weapon instance ID (for reload) */
-                    id?: string;
-                    /** @description Battle side to join (for engage). Omit for auto-assignment by faction. */
+                    /** @description Side to join (optional for action=engage — auto-assigned by faction if omitted) */
                     side_id?: number;
-                    /** @description Ammo item ID (for reload only) */
-                    target?: string;
+                    /**
+                     * @description Battle stance (required for action=stance): fire (100% dmg dealt/taken), evade (0% dealt, 50% taken, costs fuel), brace (0% dealt, 25% taken, shields regen 2x), flee (0% dealt, 100% taken, auto-retreats, 3 ticks from outer to escape)
+                     * @enum {string}
+                     */
+                    stance?: "fire" | "evade" | "brace" | "flee";
+                    /** @description Player ID or username of enemy to target (required for action=target) */
+                    target_id?: string;
                 };
             };
         };
@@ -9768,12 +14717,42 @@ export interface operations {
     };
     spacemolt_battle_help: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Optional: focus help on an action name, category, or search keyword. Searches across all tools. */
+                topic?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Help text */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"];
+                };
+            };
+        };
+    };
+    spacemolt_battle_help_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Optional: focus help on an action name, category, or search keyword. Searches across all tools. */
+                    topic?: string;
+                };
+            };
+        };
         responses: {
             /** @description Help text */
             200: {
@@ -9796,12 +14775,10 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Stance name (fire/evade/brace/flee), target player ID, or weapon instance ID (for reload) */
-                    id?: string;
-                    /** @description Battle side to join (for engage). Omit for auto-assignment by faction. */
-                    side_id?: number;
-                    /** @description Ammo item ID (for reload only) */
-                    target?: string;
+                    /** @description Instance ID of the fitted weapon to reload (use get_ship to see weapon instance IDs) */
+                    id: string;
+                    /** @description Item ID of ammo to load from cargo (must match the weapon's ammo type) */
+                    target: string;
                 };
             };
         };
@@ -9850,12 +14827,15 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Stance name (fire/evade/brace/flee), target player ID, or weapon instance ID (for reload) */
-                    id?: string;
-                    /** @description Battle side to join (for engage). Omit for auto-assignment by faction. */
+                    /** @description Side to join (optional for action=engage — auto-assigned by faction if omitted) */
                     side_id?: number;
-                    /** @description Ammo item ID (for reload only) */
-                    target?: string;
+                    /**
+                     * @description Battle stance (required for action=stance): fire (100% dmg dealt/taken), evade (0% dealt, 50% taken, costs fuel), brace (0% dealt, 25% taken, shields regen 2x), flee (0% dealt, 100% taken, auto-retreats, 3 ticks from outer to escape)
+                     * @enum {string}
+                     */
+                    stance?: "fire" | "evade" | "brace" | "flee";
+                    /** @description Player ID or username of enemy to target (required for action=target) */
+                    target_id?: string;
                 };
             };
         };
@@ -9904,12 +14884,15 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Stance name (fire/evade/brace/flee), target player ID, or weapon instance ID (for reload) */
-                    id?: string;
-                    /** @description Battle side to join (for engage). Omit for auto-assignment by faction. */
+                    /**
+                     * @description Battle stance (required for action=stance): fire (100% dmg dealt/taken), evade (0% dealt, 50% taken, costs fuel), brace (0% dealt, 25% taken, shields regen 2x), flee (0% dealt, 100% taken, auto-retreats, 3 ticks from outer to escape)
+                     * @enum {string}
+                     */
+                    id?: "fire" | "evade" | "brace" | "flee";
+                    /** @description Side to join (optional for action=engage — auto-assigned by faction if omitted) */
                     side_id?: number;
-                    /** @description Ammo item ID (for reload only) */
-                    target?: string;
+                    /** @description Player ID or username of enemy to target (required for action=target) */
+                    target_id?: string;
                 };
             };
         };
@@ -9957,14 +14940,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Stance name (fire/evade/brace/flee), target player ID, or weapon instance ID (for reload) */
-                    id?: string;
-                    /** @description Battle side to join (for engage). Omit for auto-assignment by faction. */
-                    side_id?: number;
-                    /** @description Ammo item ID (for reload only) */
-                    target?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -10012,12 +14988,15 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Stance name (fire/evade/brace/flee), target player ID, or weapon instance ID (for reload) */
+                    /** @description Player ID or username of enemy to target (required for action=target) */
                     id?: string;
-                    /** @description Battle side to join (for engage). Omit for auto-assignment by faction. */
+                    /** @description Side to join (optional for action=engage — auto-assigned by faction if omitted) */
                     side_id?: number;
-                    /** @description Ammo item ID (for reload only) */
-                    target?: string;
+                    /**
+                     * @description Battle stance (required for action=stance): fire (100% dmg dealt/taken), evade (0% dealt, 50% taken, costs fuel), brace (0% dealt, 25% taken, shields regen 2x), flee (0% dealt, 100% taken, auto-retreats, 3 ticks from outer to escape)
+                     * @enum {string}
+                     */
+                    stance?: "fire" | "evade" | "brace" | "flee";
                 };
             };
         };
@@ -10129,7 +15108,10 @@ export interface operations {
     };
     spacemolt_catalog_help: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Optional: focus help on an action name, category, or search keyword. Searches across all tools. */
+                topic?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -10147,6 +15129,841 @@ export interface operations {
             };
         };
     };
+    spacemolt_catalog_help_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Optional: focus help on an action name, category, or search keyword. Searches across all tools. */
+                    topic?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Help text */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"];
+                };
+            };
+        };
+    };
+    spacemolt_citizenship_apply: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description Empire to act on. Required for apply, renounce, withdraw; ignored for list.
+                     * @enum {string}
+                     */
+                    target?: "solarian" | "voidborn" | "crimson" | "nebula" | "outerrim";
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: CitizenshipResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["CitizenshipResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_citizenship_help: {
+        parameters: {
+            query?: {
+                /** @description Optional: focus help on an action name, category, or search keyword. Searches across all tools. */
+                topic?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Help text */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"];
+                };
+            };
+        };
+    };
+    spacemolt_citizenship_help_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Optional: focus help on an action name, category, or search keyword. Searches across all tools. */
+                    topic?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Help text */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"];
+                };
+            };
+        };
+    };
+    spacemolt_citizenship_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description Empire to act on. Required for apply, renounce, withdraw; ignored for list.
+                     * @enum {string}
+                     */
+                    empire_id?: "solarian" | "voidborn" | "crimson" | "nebula" | "outerrim";
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: CitizenshipResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["CitizenshipResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_citizenship_renounce: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description Empire to act on. Required for apply, renounce, withdraw; ignored for list.
+                     * @enum {string}
+                     */
+                    target?: "solarian" | "voidborn" | "crimson" | "nebula" | "outerrim";
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: CitizenshipResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["CitizenshipResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_citizenship_withdraw: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description Empire to act on. Required for apply, renounce, withdraw; ignored for list.
+                     * @enum {string}
+                     */
+                    target?: "solarian" | "voidborn" | "crimson" | "nebula" | "outerrim";
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: CitizenshipResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["CitizenshipResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_drone_deploy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Set to true to deploy every in-bay drone in a single tick. Drones that would exceed remaining bandwidth are skipped. */
+                    all?: boolean;
+                    /** @description ID of a specific drone to deploy from your bay (see get_drones) */
+                    id?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: DeployDroneResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["DeployDroneResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_drone_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description ID of the drone to inspect */
+                    id: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: GetDroneResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["GetDroneResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_drone_help: {
+        parameters: {
+            query?: {
+                /** @description Optional: focus help on an action name, category, or search keyword. Searches across all tools. */
+                topic?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Help text */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"];
+                };
+            };
+        };
+    };
+    spacemolt_drone_help_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Optional: focus help on an action name, category, or search keyword. Searches across all tools. */
+                    topic?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Help text */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"];
+                };
+            };
+        };
+    };
+    spacemolt_drone_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: GetDronesResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["GetDronesResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_drone_load: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Drone item ID from cargo (combat_drone, mining_drone, repair_drone, salvage_drone, scout_drone) */
+                    id: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: LoadDroneResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["LoadDroneResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_drone_name: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description ID of the drone to rename (you must own it) */
+                    id: string;
+                    /** @description Display name (max 32 chars; same rules as ship names). Pass empty string to clear. */
+                    text: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: SetDroneNameResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["SetDroneNameResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_drone_recall: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Set to true to recall all drones at your current location */
+                    all?: boolean;
+                    /** @description ID of a specific drone to recall */
+                    id?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: RecallDroneResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["RecallDroneResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_drone_unload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description ID of the drone to return to cargo (must be in bay, not deployed) */
+                    id: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: UnloadDroneResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["UnloadDroneResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_drone_upload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description ID of the drone to program */
+                    id: string;
+                    /** @description DroneLang script source (max 2000 chars). Pass empty string to clear. */
+                    text: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: UploadDroneScriptResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["UploadDroneScriptResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_facility_browse_for_sale: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description For 'personal_decorate': who can visit your quarters.
+                     * @enum {string}
+                     */
+                    access?: "private" | "public";
+                    /**
+                     * @description Filter for 'types' action: show only this category.
+                     * @enum {string}
+                     */
+                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
+                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
+                    description?: string;
+                    /**
+                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
+                     * @enum {string}
+                     */
+                    direction?: "to_faction" | "to_player";
+                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
+                    facility_id?: string;
+                    /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
+                    facility_type?: string;
+                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
+                    faction?: boolean;
+                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
+                    level?: number;
+                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
+                    listing_id?: string;
+                    /** @description For 'browse_for_sale': optional maximum price filter. */
+                    max_price?: number;
+                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
+                    name?: string;
+                    /** @description Page number for 'types' action results (default: 1). */
+                    page?: number;
+                    /** @description Results per page for 'types' action (default: 20, max: 50). */
+                    per_page?: number;
+                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
+                    player_id?: string;
+                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
+                    price?: number;
+                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
+                    recipe_id?: string;
+                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
+                    username?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: FacilityResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["FacilityResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     spacemolt_facility_build: {
         parameters: {
             query?: never;
@@ -10157,22 +15974,334 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Facility ID (for toggle, upgrade, transfer) */
+                    /**
+                     * @description For 'personal_decorate': who can visit your quarters.
+                     * @enum {string}
+                     */
+                    access?: "private" | "public";
+                    /**
+                     * @description Filter for 'types' action: show only this category.
+                     * @enum {string}
+                     */
+                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
+                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
+                    description?: string;
+                    /**
+                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
+                     * @enum {string}
+                     */
+                    direction?: "to_faction" | "to_player";
+                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
                     facility_id?: string;
-                    /** @description Facility type ID (for build, upgrade, faction_build, types detail view) */
+                    /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
                     facility_type?: string;
+                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
+                    faction?: boolean;
+                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
+                    level?: number;
+                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
+                    listing_id?: string;
+                    /** @description For 'browse_for_sale': optional maximum price filter. */
+                    max_price?: number;
+                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
+                    name?: string;
+                    /** @description Page number for 'types' action results (default: 1). */
+                    page?: number;
+                    /** @description Results per page for 'types' action (default: 20, max: 50). */
+                    per_page?: number;
+                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
+                    player_id?: string;
+                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
+                    price?: number;
+                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
+                    recipe_id?: string;
+                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
+                    username?: string;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FacilityListResponse */
+            /** @description Result. structuredContent type: FacilityResponse */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FacilityListResponse"];
+                        structuredContent?: components["schemas"]["FacilityResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_facility_buy_listing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description For 'personal_decorate': who can visit your quarters.
+                     * @enum {string}
+                     */
+                    access?: "private" | "public";
+                    /**
+                     * @description Filter for 'types' action: show only this category.
+                     * @enum {string}
+                     */
+                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
+                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
+                    description?: string;
+                    /**
+                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
+                     * @enum {string}
+                     */
+                    direction?: "to_faction" | "to_player";
+                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
+                    facility_id?: string;
+                    /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
+                    facility_type?: string;
+                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
+                    faction?: boolean;
+                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
+                    level?: number;
+                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
+                    listing_id?: string;
+                    /** @description For 'browse_for_sale': optional maximum price filter. */
+                    max_price?: number;
+                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
+                    name?: string;
+                    /** @description Page number for 'types' action results (default: 1). */
+                    page?: number;
+                    /** @description Results per page for 'types' action (default: 20, max: 50). */
+                    per_page?: number;
+                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
+                    player_id?: string;
+                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
+                    price?: number;
+                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
+                    recipe_id?: string;
+                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
+                    username?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: FacilityResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["FacilityResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_facility_cancel_listing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description For 'personal_decorate': who can visit your quarters.
+                     * @enum {string}
+                     */
+                    access?: "private" | "public";
+                    /**
+                     * @description Filter for 'types' action: show only this category.
+                     * @enum {string}
+                     */
+                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
+                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
+                    description?: string;
+                    /**
+                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
+                     * @enum {string}
+                     */
+                    direction?: "to_faction" | "to_player";
+                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
+                    facility_id?: string;
+                    /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
+                    facility_type?: string;
+                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
+                    faction?: boolean;
+                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
+                    level?: number;
+                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
+                    listing_id?: string;
+                    /** @description For 'browse_for_sale': optional maximum price filter. */
+                    max_price?: number;
+                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
+                    name?: string;
+                    /** @description Page number for 'types' action results (default: 1). */
+                    page?: number;
+                    /** @description Results per page for 'types' action (default: 20, max: 50). */
+                    per_page?: number;
+                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
+                    player_id?: string;
+                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
+                    price?: number;
+                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
+                    recipe_id?: string;
+                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
+                    username?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: FacilityResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["FacilityResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_facility_configure_recycler: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description For 'personal_decorate': who can visit your quarters.
+                     * @enum {string}
+                     */
+                    access?: "private" | "public";
+                    /**
+                     * @description Filter for 'types' action: show only this category.
+                     * @enum {string}
+                     */
+                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
+                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
+                    description?: string;
+                    /**
+                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
+                     * @enum {string}
+                     */
+                    direction?: "to_faction" | "to_player";
+                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
+                    facility_id?: string;
+                    /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
+                    facility_type?: string;
+                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
+                    faction?: boolean;
+                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
+                    level?: number;
+                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
+                    listing_id?: string;
+                    /** @description For 'browse_for_sale': optional maximum price filter. */
+                    max_price?: number;
+                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
+                    name?: string;
+                    /** @description Page number for 'types' action results (default: 1). */
+                    page?: number;
+                    /** @description Results per page for 'types' action (default: 20, max: 50). */
+                    per_page?: number;
+                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
+                    player_id?: string;
+                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
+                    price?: number;
+                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
+                    recipe_id?: string;
+                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
+                    username?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: FacilityResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["FacilityResponse"];
                     };
                 };
             };
@@ -10209,22 +16338,61 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Facility ID (for toggle, upgrade, transfer) */
+                    /**
+                     * @description For 'personal_decorate': who can visit your quarters.
+                     * @enum {string}
+                     */
+                    access?: "private" | "public";
+                    /**
+                     * @description Filter for 'types' action: show only this category.
+                     * @enum {string}
+                     */
+                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
+                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
+                    description?: string;
+                    /**
+                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
+                     * @enum {string}
+                     */
+                    direction?: "to_faction" | "to_player";
+                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
                     facility_id?: string;
-                    /** @description Facility type ID (for build, upgrade, faction_build, types detail view) */
+                    /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
                     facility_type?: string;
+                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
+                    faction?: boolean;
+                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
+                    level?: number;
+                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
+                    listing_id?: string;
+                    /** @description For 'browse_for_sale': optional maximum price filter. */
+                    max_price?: number;
+                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
+                    name?: string;
+                    /** @description Page number for 'types' action results (default: 1). */
+                    page?: number;
+                    /** @description Results per page for 'types' action (default: 20, max: 50). */
+                    per_page?: number;
+                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
+                    player_id?: string;
+                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
+                    price?: number;
+                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
+                    recipe_id?: string;
+                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
+                    username?: string;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FacilityListResponse */
+            /** @description Result. structuredContent type: FacilityResponse */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FacilityListResponse"];
+                        structuredContent?: components["schemas"]["FacilityResponse"];
                     };
                 };
             };
@@ -10261,22 +16429,152 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Facility ID (for toggle, upgrade, transfer) */
+                    /**
+                     * @description For 'personal_decorate': who can visit your quarters.
+                     * @enum {string}
+                     */
+                    access?: "private" | "public";
+                    /**
+                     * @description Filter for 'types' action: show only this category.
+                     * @enum {string}
+                     */
+                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
+                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
+                    description?: string;
+                    /**
+                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
+                     * @enum {string}
+                     */
+                    direction?: "to_faction" | "to_player";
+                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
                     facility_id?: string;
-                    /** @description Facility type ID (for build, upgrade, faction_build, types detail view) */
+                    /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
                     facility_type?: string;
+                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
+                    faction?: boolean;
+                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
+                    level?: number;
+                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
+                    listing_id?: string;
+                    /** @description For 'browse_for_sale': optional maximum price filter. */
+                    max_price?: number;
+                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
+                    name?: string;
+                    /** @description Page number for 'types' action results (default: 1). */
+                    page?: number;
+                    /** @description Results per page for 'types' action (default: 20, max: 50). */
+                    per_page?: number;
+                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
+                    player_id?: string;
+                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
+                    price?: number;
+                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
+                    recipe_id?: string;
+                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
+                    username?: string;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FacilityListResponse */
+            /** @description Result. structuredContent type: FacilityResponse */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FacilityListResponse"];
+                        structuredContent?: components["schemas"]["FacilityResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_facility_faction_owned: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description For 'personal_decorate': who can visit your quarters.
+                     * @enum {string}
+                     */
+                    access?: "private" | "public";
+                    /**
+                     * @description Filter for 'types' action: show only this category.
+                     * @enum {string}
+                     */
+                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
+                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
+                    description?: string;
+                    /**
+                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
+                     * @enum {string}
+                     */
+                    direction?: "to_faction" | "to_player";
+                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
+                    facility_id?: string;
+                    /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
+                    facility_type?: string;
+                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
+                    faction?: boolean;
+                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
+                    level?: number;
+                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
+                    listing_id?: string;
+                    /** @description For 'browse_for_sale': optional maximum price filter. */
+                    max_price?: number;
+                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
+                    name?: string;
+                    /** @description Page number for 'types' action results (default: 1). */
+                    page?: number;
+                    /** @description Results per page for 'types' action (default: 20, max: 50). */
+                    per_page?: number;
+                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
+                    player_id?: string;
+                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
+                    price?: number;
+                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
+                    recipe_id?: string;
+                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
+                    username?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: FacilityResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["FacilityResponse"];
                     };
                 };
             };
@@ -10313,22 +16611,61 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Facility ID (for toggle, upgrade, transfer) */
+                    /**
+                     * @description For 'personal_decorate': who can visit your quarters.
+                     * @enum {string}
+                     */
+                    access?: "private" | "public";
+                    /**
+                     * @description Filter for 'types' action: show only this category.
+                     * @enum {string}
+                     */
+                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
+                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
+                    description?: string;
+                    /**
+                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
+                     * @enum {string}
+                     */
+                    direction?: "to_faction" | "to_player";
+                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
                     facility_id?: string;
-                    /** @description Facility type ID (for build, upgrade, faction_build, types detail view) */
+                    /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
                     facility_type?: string;
+                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
+                    faction?: boolean;
+                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
+                    level?: number;
+                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
+                    listing_id?: string;
+                    /** @description For 'browse_for_sale': optional maximum price filter. */
+                    max_price?: number;
+                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
+                    name?: string;
+                    /** @description Page number for 'types' action results (default: 1). */
+                    page?: number;
+                    /** @description Results per page for 'types' action (default: 20, max: 50). */
+                    per_page?: number;
+                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
+                    player_id?: string;
+                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
+                    price?: number;
+                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
+                    recipe_id?: string;
+                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
+                    username?: string;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FacilityListResponse */
+            /** @description Result. structuredContent type: FacilityResponse */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FacilityListResponse"];
+                        structuredContent?: components["schemas"]["FacilityResponse"];
                     };
                 };
             };
@@ -10365,22 +16702,61 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Facility ID (for toggle, upgrade, transfer) */
+                    /**
+                     * @description For 'personal_decorate': who can visit your quarters.
+                     * @enum {string}
+                     */
+                    access?: "private" | "public";
+                    /**
+                     * @description Filter for 'types' action: show only this category.
+                     * @enum {string}
+                     */
+                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
+                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
+                    description?: string;
+                    /**
+                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
+                     * @enum {string}
+                     */
+                    direction?: "to_faction" | "to_player";
+                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
                     facility_id?: string;
-                    /** @description Facility type ID (for build, upgrade, faction_build, types detail view) */
+                    /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
                     facility_type?: string;
+                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
+                    faction?: boolean;
+                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
+                    level?: number;
+                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
+                    listing_id?: string;
+                    /** @description For 'browse_for_sale': optional maximum price filter. */
+                    max_price?: number;
+                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
+                    name?: string;
+                    /** @description Page number for 'types' action results (default: 1). */
+                    page?: number;
+                    /** @description Results per page for 'types' action (default: 20, max: 50). */
+                    per_page?: number;
+                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
+                    player_id?: string;
+                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
+                    price?: number;
+                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
+                    recipe_id?: string;
+                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
+                    username?: string;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FacilityListResponse */
+            /** @description Result. structuredContent type: FacilityResponse */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FacilityListResponse"];
+                        structuredContent?: components["schemas"]["FacilityResponse"];
                     };
                 };
             };
@@ -10409,12 +16785,42 @@ export interface operations {
     };
     spacemolt_facility_help: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Optional: focus help on an action name, category, or search keyword. Searches across all tools. */
+                topic?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Help text */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"];
+                };
+            };
+        };
+    };
+    spacemolt_facility_help_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Optional: focus help on an action name, category, or search keyword. Searches across all tools. */
+                    topic?: string;
+                };
+            };
+        };
         responses: {
             /** @description Help text */
             200: {
@@ -10437,22 +16843,243 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Facility ID (for toggle, upgrade, transfer) */
+                    /**
+                     * @description For 'personal_decorate': who can visit your quarters.
+                     * @enum {string}
+                     */
+                    access?: "private" | "public";
+                    /**
+                     * @description Filter for 'types' action: show only this category.
+                     * @enum {string}
+                     */
+                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
+                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
+                    description?: string;
+                    /**
+                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
+                     * @enum {string}
+                     */
+                    direction?: "to_faction" | "to_player";
+                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
                     facility_id?: string;
-                    /** @description Facility type ID (for build, upgrade, faction_build, types detail view) */
+                    /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
                     facility_type?: string;
+                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
+                    faction?: boolean;
+                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
+                    level?: number;
+                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
+                    listing_id?: string;
+                    /** @description For 'browse_for_sale': optional maximum price filter. */
+                    max_price?: number;
+                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
+                    name?: string;
+                    /** @description Page number for 'types' action results (default: 1). */
+                    page?: number;
+                    /** @description Results per page for 'types' action (default: 20, max: 50). */
+                    per_page?: number;
+                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
+                    player_id?: string;
+                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
+                    price?: number;
+                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
+                    recipe_id?: string;
+                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
+                    username?: string;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FacilityListResponse */
+            /** @description Result. structuredContent type: FacilityResponse */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FacilityListResponse"];
+                        structuredContent?: components["schemas"]["FacilityResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_facility_list_for_sale: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description For 'personal_decorate': who can visit your quarters.
+                     * @enum {string}
+                     */
+                    access?: "private" | "public";
+                    /**
+                     * @description Filter for 'types' action: show only this category.
+                     * @enum {string}
+                     */
+                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
+                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
+                    description?: string;
+                    /**
+                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
+                     * @enum {string}
+                     */
+                    direction?: "to_faction" | "to_player";
+                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
+                    facility_id?: string;
+                    /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
+                    facility_type?: string;
+                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
+                    faction?: boolean;
+                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
+                    level?: number;
+                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
+                    listing_id?: string;
+                    /** @description For 'browse_for_sale': optional maximum price filter. */
+                    max_price?: number;
+                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
+                    name?: string;
+                    /** @description Page number for 'types' action results (default: 1). */
+                    page?: number;
+                    /** @description Results per page for 'types' action (default: 20, max: 50). */
+                    per_page?: number;
+                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
+                    player_id?: string;
+                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
+                    price?: number;
+                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
+                    recipe_id?: string;
+                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
+                    username?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: FacilityResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["FacilityResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_facility_owned: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description For 'personal_decorate': who can visit your quarters.
+                     * @enum {string}
+                     */
+                    access?: "private" | "public";
+                    /**
+                     * @description Filter for 'types' action: show only this category.
+                     * @enum {string}
+                     */
+                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
+                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
+                    description?: string;
+                    /**
+                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
+                     * @enum {string}
+                     */
+                    direction?: "to_faction" | "to_player";
+                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
+                    facility_id?: string;
+                    /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
+                    facility_type?: string;
+                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
+                    faction?: boolean;
+                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
+                    level?: number;
+                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
+                    listing_id?: string;
+                    /** @description For 'browse_for_sale': optional maximum price filter. */
+                    max_price?: number;
+                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
+                    name?: string;
+                    /** @description Page number for 'types' action results (default: 1). */
+                    page?: number;
+                    /** @description Results per page for 'types' action (default: 20, max: 50). */
+                    per_page?: number;
+                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
+                    player_id?: string;
+                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
+                    price?: number;
+                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
+                    recipe_id?: string;
+                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
+                    username?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: FacilityResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["FacilityResponse"];
                     };
                 };
             };
@@ -10489,22 +17116,61 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Facility ID (for toggle, upgrade, transfer) */
+                    /**
+                     * @description For 'personal_decorate': who can visit your quarters.
+                     * @enum {string}
+                     */
+                    access?: "private" | "public";
+                    /**
+                     * @description Filter for 'types' action: show only this category.
+                     * @enum {string}
+                     */
+                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
+                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
+                    description?: string;
+                    /**
+                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
+                     * @enum {string}
+                     */
+                    direction?: "to_faction" | "to_player";
+                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
                     facility_id?: string;
-                    /** @description Facility type ID (for build, upgrade, faction_build, types detail view) */
+                    /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
                     facility_type?: string;
+                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
+                    faction?: boolean;
+                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
+                    level?: number;
+                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
+                    listing_id?: string;
+                    /** @description For 'browse_for_sale': optional maximum price filter. */
+                    max_price?: number;
+                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
+                    name?: string;
+                    /** @description Page number for 'types' action results (default: 1). */
+                    page?: number;
+                    /** @description Results per page for 'types' action (default: 20, max: 50). */
+                    per_page?: number;
+                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
+                    player_id?: string;
+                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
+                    price?: number;
+                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
+                    recipe_id?: string;
+                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
+                    username?: string;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FacilityListResponse */
+            /** @description Result. structuredContent type: FacilityResponse */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FacilityListResponse"];
+                        structuredContent?: components["schemas"]["FacilityResponse"];
                     };
                 };
             };
@@ -10541,22 +17207,61 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Facility ID (for toggle, upgrade, transfer) */
+                    /**
+                     * @description For 'personal_decorate': who can visit your quarters.
+                     * @enum {string}
+                     */
+                    access?: "private" | "public";
+                    /**
+                     * @description Filter for 'types' action: show only this category.
+                     * @enum {string}
+                     */
+                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
+                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
+                    description?: string;
+                    /**
+                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
+                     * @enum {string}
+                     */
+                    direction?: "to_faction" | "to_player";
+                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
                     facility_id?: string;
-                    /** @description Facility type ID (for build, upgrade, faction_build, types detail view) */
+                    /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
                     facility_type?: string;
+                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
+                    faction?: boolean;
+                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
+                    level?: number;
+                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
+                    listing_id?: string;
+                    /** @description For 'browse_for_sale': optional maximum price filter. */
+                    max_price?: number;
+                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
+                    name?: string;
+                    /** @description Page number for 'types' action results (default: 1). */
+                    page?: number;
+                    /** @description Results per page for 'types' action (default: 20, max: 50). */
+                    per_page?: number;
+                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
+                    player_id?: string;
+                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
+                    price?: number;
+                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
+                    recipe_id?: string;
+                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
+                    username?: string;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FacilityListResponse */
+            /** @description Result. structuredContent type: FacilityResponse */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FacilityListResponse"];
+                        structuredContent?: components["schemas"]["FacilityResponse"];
                     };
                 };
             };
@@ -10593,22 +17298,61 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Facility ID (for toggle, upgrade, transfer) */
+                    /**
+                     * @description For 'personal_decorate': who can visit your quarters.
+                     * @enum {string}
+                     */
+                    access?: "private" | "public";
+                    /**
+                     * @description Filter for 'types' action: show only this category.
+                     * @enum {string}
+                     */
+                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
+                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
+                    description?: string;
+                    /**
+                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
+                     * @enum {string}
+                     */
+                    direction?: "to_faction" | "to_player";
+                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
                     facility_id?: string;
-                    /** @description Facility type ID (for build, upgrade, faction_build, types detail view) */
+                    /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
                     facility_type?: string;
+                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
+                    faction?: boolean;
+                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
+                    level?: number;
+                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
+                    listing_id?: string;
+                    /** @description For 'browse_for_sale': optional maximum price filter. */
+                    max_price?: number;
+                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
+                    name?: string;
+                    /** @description Page number for 'types' action results (default: 1). */
+                    page?: number;
+                    /** @description Results per page for 'types' action (default: 20, max: 50). */
+                    per_page?: number;
+                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
+                    player_id?: string;
+                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
+                    price?: number;
+                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
+                    recipe_id?: string;
+                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
+                    username?: string;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FacilityListResponse */
+            /** @description Result. structuredContent type: FacilityResponse */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FacilityListResponse"];
+                        structuredContent?: components["schemas"]["FacilityResponse"];
                     };
                 };
             };
@@ -10645,22 +17389,61 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Facility ID (for toggle, upgrade, transfer) */
+                    /**
+                     * @description For 'personal_decorate': who can visit your quarters.
+                     * @enum {string}
+                     */
+                    access?: "private" | "public";
+                    /**
+                     * @description Filter for 'types' action: show only this category.
+                     * @enum {string}
+                     */
+                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
+                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
+                    description?: string;
+                    /**
+                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
+                     * @enum {string}
+                     */
+                    direction?: "to_faction" | "to_player";
+                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
                     facility_id?: string;
-                    /** @description Facility type ID (for build, upgrade, faction_build, types detail view) */
+                    /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
                     facility_type?: string;
+                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
+                    faction?: boolean;
+                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
+                    level?: number;
+                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
+                    listing_id?: string;
+                    /** @description For 'browse_for_sale': optional maximum price filter. */
+                    max_price?: number;
+                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
+                    name?: string;
+                    /** @description Page number for 'types' action results (default: 1). */
+                    page?: number;
+                    /** @description Results per page for 'types' action (default: 20, max: 50). */
+                    per_page?: number;
+                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
+                    player_id?: string;
+                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
+                    price?: number;
+                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
+                    recipe_id?: string;
+                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
+                    username?: string;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FacilityListResponse */
+            /** @description Result. structuredContent type: FacilityResponse */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FacilityListResponse"];
+                        structuredContent?: components["schemas"]["FacilityResponse"];
                     };
                 };
             };
@@ -10697,22 +17480,61 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Facility ID (for toggle, upgrade, transfer) */
+                    /**
+                     * @description For 'personal_decorate': who can visit your quarters.
+                     * @enum {string}
+                     */
+                    access?: "private" | "public";
+                    /**
+                     * @description Filter for 'types' action: show only this category.
+                     * @enum {string}
+                     */
+                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
+                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
+                    description?: string;
+                    /**
+                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
+                     * @enum {string}
+                     */
+                    direction?: "to_faction" | "to_player";
+                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
                     facility_id?: string;
-                    /** @description Facility type ID (for build, upgrade, faction_build, types detail view) */
+                    /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
                     facility_type?: string;
+                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
+                    faction?: boolean;
+                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
+                    level?: number;
+                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
+                    listing_id?: string;
+                    /** @description For 'browse_for_sale': optional maximum price filter. */
+                    max_price?: number;
+                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
+                    name?: string;
+                    /** @description Page number for 'types' action results (default: 1). */
+                    page?: number;
+                    /** @description Results per page for 'types' action (default: 20, max: 50). */
+                    per_page?: number;
+                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
+                    player_id?: string;
+                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
+                    price?: number;
+                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
+                    recipe_id?: string;
+                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
+                    username?: string;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FacilityListResponse */
+            /** @description Result. structuredContent type: FacilityResponse */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FacilityListResponse"];
+                        structuredContent?: components["schemas"]["FacilityResponse"];
                     };
                 };
             };
@@ -10749,22 +17571,61 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Facility ID (for toggle, upgrade, transfer) */
+                    /**
+                     * @description For 'personal_decorate': who can visit your quarters.
+                     * @enum {string}
+                     */
+                    access?: "private" | "public";
+                    /**
+                     * @description Filter for 'types' action: show only this category.
+                     * @enum {string}
+                     */
+                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
+                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
+                    description?: string;
+                    /**
+                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
+                     * @enum {string}
+                     */
+                    direction?: "to_faction" | "to_player";
+                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
                     facility_id?: string;
-                    /** @description Facility type ID (for build, upgrade, faction_build, types detail view) */
+                    /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
                     facility_type?: string;
+                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
+                    faction?: boolean;
+                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
+                    level?: number;
+                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
+                    listing_id?: string;
+                    /** @description For 'browse_for_sale': optional maximum price filter. */
+                    max_price?: number;
+                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
+                    name?: string;
+                    /** @description Page number for 'types' action results (default: 1). */
+                    page?: number;
+                    /** @description Results per page for 'types' action (default: 20, max: 50). */
+                    per_page?: number;
+                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
+                    player_id?: string;
+                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
+                    price?: number;
+                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
+                    recipe_id?: string;
+                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
+                    username?: string;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FacilityListResponse */
+            /** @description Result. structuredContent type: FacilityResponse */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FacilityListResponse"];
+                        structuredContent?: components["schemas"]["FacilityResponse"];
                     };
                 };
             };
@@ -10801,22 +17662,61 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Facility ID (for toggle, upgrade, transfer) */
+                    /**
+                     * @description For 'personal_decorate': who can visit your quarters.
+                     * @enum {string}
+                     */
+                    access?: "private" | "public";
+                    /**
+                     * @description Filter for 'types' action: show only this category.
+                     * @enum {string}
+                     */
+                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
+                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
+                    description?: string;
+                    /**
+                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
+                     * @enum {string}
+                     */
+                    direction?: "to_faction" | "to_player";
+                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
                     facility_id?: string;
-                    /** @description Facility type ID (for build, upgrade, faction_build, types detail view) */
+                    /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
                     facility_type?: string;
+                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
+                    faction?: boolean;
+                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
+                    level?: number;
+                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
+                    listing_id?: string;
+                    /** @description For 'browse_for_sale': optional maximum price filter. */
+                    max_price?: number;
+                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
+                    name?: string;
+                    /** @description Page number for 'types' action results (default: 1). */
+                    page?: number;
+                    /** @description Results per page for 'types' action (default: 20, max: 50). */
+                    per_page?: number;
+                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
+                    player_id?: string;
+                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
+                    price?: number;
+                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
+                    recipe_id?: string;
+                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
+                    username?: string;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FacilityListResponse */
+            /** @description Result. structuredContent type: FacilityResponse */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FacilityListResponse"];
+                        structuredContent?: components["schemas"]["FacilityResponse"];
                     };
                 };
             };
@@ -10853,22 +17753,161 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Facility ID (for toggle, upgrade, transfer) */
+                    /**
+                     * @description For 'personal_decorate': who can visit your quarters.
+                     * @enum {string}
+                     */
+                    access?: "private" | "public";
+                    /**
+                     * @description Filter for 'types' action: show only this category.
+                     * @enum {string}
+                     */
+                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
+                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
+                    description?: string;
+                    /**
+                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
+                     * @enum {string}
+                     */
+                    direction?: "to_faction" | "to_player";
+                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
                     facility_id?: string;
-                    /** @description Facility type ID (for build, upgrade, faction_build, types detail view) */
+                    /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
                     facility_type?: string;
+                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
+                    faction?: boolean;
+                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
+                    level?: number;
+                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
+                    listing_id?: string;
+                    /** @description For 'browse_for_sale': optional maximum price filter. */
+                    max_price?: number;
+                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
+                    name?: string;
+                    /** @description Page number for 'types' action results (default: 1). */
+                    page?: number;
+                    /** @description Results per page for 'types' action (default: 20, max: 50). */
+                    per_page?: number;
+                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
+                    player_id?: string;
+                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
+                    price?: number;
+                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
+                    recipe_id?: string;
+                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
+                    username?: string;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FacilityListResponse */
+            /** @description Result. structuredContent type: FacilityResponse */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FacilityListResponse"];
+                        structuredContent?: components["schemas"]["FacilityResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_faction_accept_ally: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Target faction ID or 4-character faction tag (e.g. NOVA) */
+                    id: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: FactionAcceptAllyResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["FactionAcceptAllyResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_faction_accept_invite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description UUID of faction to join (must have pending invite) */
+                    id: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: JoinFactionResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["JoinFactionResponse"];
                     };
                 };
             };
@@ -10905,10 +17944,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Target: faction ID, player ID, role ID, room ID, etc. */
-                    id?: string;
-                    /** @description Text: faction name, war reason, peace terms, etc. */
-                    text?: string;
+                    /** @description Faction ID or 4-character tag of peace proposer */
+                    id: string;
                 };
             };
         };
@@ -10957,10 +17994,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Target: faction ID, player ID, role ID, room ID, etc. */
-                    id?: string;
-                    /** @description Text: faction name, war reason, peace terms, etc. */
-                    text?: string;
+                    /** @description ID of the faction mission template to cancel */
+                    id: string;
                 };
             };
         };
@@ -11009,10 +18044,10 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Target: faction ID, player ID, role ID, room ID, etc. */
-                    id?: string;
-                    /** @description Text: faction name, war reason, peace terms, etc. */
-                    text?: string;
+                    /** @description Faction tag (2-4 characters) */
+                    id: string;
+                    /** @description Faction name (must be unique) */
+                    text: string;
                 };
             };
         };
@@ -11061,9 +18096,9 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Target: faction ID, player ID, role ID, room ID, etc. */
-                    id?: string;
-                    /** @description Text: faction name, war reason, peace terms, etc. */
+                    /** @description Target faction ID or 4-character faction tag (e.g. NOVA) */
+                    id: string;
+                    /** @description Reason for war (optional casus belli) */
                     text?: string;
                 };
             };
@@ -11113,10 +18148,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Target: faction ID, player ID, role ID, room ID, etc. */
-                    id?: string;
-                    /** @description Text: faction name, war reason, peace terms, etc. */
-                    text?: string;
+                    /** @description Faction ID to decline invitation from */
+                    id: string;
                 };
             };
         };
@@ -11165,10 +18198,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Target: faction ID, player ID, role ID, room ID, etc. */
-                    id?: string;
-                    /** @description Text: faction name, war reason, peace terms, etc. */
-                    text?: string;
+                    /** @description ID of the role to delete. Members with this role are reassigned to 'member'. */
+                    id: string;
                 };
             };
         };
@@ -11217,10 +18248,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Target: faction ID, player ID, role ID, room ID, etc. */
-                    id?: string;
-                    /** @description Text: faction name, war reason, peace terms, etc. */
-                    text?: string;
+                    /** @description ID of the room to delete */
+                    id: string;
                 };
             };
         };
@@ -11268,12 +18297,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Target: faction ID, player ID, role ID, room ID, etc. */
-                    id?: string;
-                    /** @description Text: faction name, war reason, peace terms, etc. */
-                    text?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -11313,12 +18337,42 @@ export interface operations {
     };
     spacemolt_faction_help: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Optional: focus help on an action name, category, or search keyword. Searches across all tools. */
+                topic?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Help text */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"];
+                };
+            };
+        };
+    };
+    spacemolt_faction_help_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Optional: focus help on an action name, category, or search keyword. Searches across all tools. */
+                    topic?: string;
+                };
+            };
+        };
         responses: {
             /** @description Help text */
             200: {
@@ -11341,10 +18395,12 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Target: faction ID, player ID, role ID, room ID, etc. */
+                    /** @description Faction ID (optional - omit for your own faction) */
                     id?: string;
-                    /** @description Text: faction name, war reason, peace terms, etc. */
-                    text?: string;
+                    /** @description Max members to return (default 50, max 100) */
+                    limit?: number;
+                    /** @description Pagination offset for member list (default 0) */
+                    offset?: number;
                 };
             };
         };
@@ -11393,10 +18449,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Target: faction ID, player ID, role ID, room ID, etc. */
-                    id?: string;
-                    /** @description Text: faction name, war reason, peace terms, etc. */
-                    text?: string;
+                    /** @description Player ID or username */
+                    id: string;
                 };
             };
         };
@@ -11445,10 +18499,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Target: faction ID, player ID, role ID, room ID, etc. */
-                    id?: string;
-                    /** @description Text: faction name, war reason, peace terms, etc. */
-                    text?: string;
+                    /** @description UUID of faction to join (must have pending invite) */
+                    id: string;
                 };
             };
         };
@@ -11497,10 +18549,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Target: faction ID, player ID, role ID, room ID, etc. */
-                    id?: string;
-                    /** @description Text: faction name, war reason, peace terms, etc. */
-                    text?: string;
+                    /** @description Player ID or username */
+                    id: string;
                 };
             };
         };
@@ -11548,12 +18598,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Target: faction ID, player ID, role ID, room ID, etc. */
-                    id?: string;
-                    /** @description Text: faction name, war reason, peace terms, etc. */
-                    text?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -11601,10 +18646,10 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Target: faction ID, player ID, role ID, room ID, etc. */
-                    id?: string;
-                    /** @description Text: faction name, war reason, peace terms, etc. */
-                    text?: string;
+                    /** @description Max results (default 50, max 100) */
+                    limit?: number;
+                    /** @description Pagination offset */
+                    offset?: number;
                 };
             };
         };
@@ -11652,12 +18697,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Target: faction ID, player ID, role ID, room ID, etc. */
-                    id?: string;
-                    /** @description Text: faction name, war reason, peace terms, etc. */
-                    text?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -11695,6 +18735,56 @@ export interface operations {
             };
         };
     };
+    spacemolt_faction_propose_ally: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Target faction ID or 4-character faction tag (e.g. NOVA) */
+                    id: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: FactionProposeAllyResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["FactionProposeAllyResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     spacemolt_faction_propose_peace: {
         parameters: {
             query?: never;
@@ -11705,9 +18795,9 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Target: faction ID, player ID, role ID, room ID, etc. */
-                    id?: string;
-                    /** @description Text: faction name, war reason, peace terms, etc. */
+                    /** @description Target faction ID or 4-character faction tag (must be at war) */
+                    id: string;
+                    /** @description Peace terms (optional) */
                     text?: string;
                 };
             };
@@ -11747,7 +18837,7 @@ export interface operations {
             };
         };
     };
-    spacemolt_faction_rooms: {
+    spacemolt_faction_remove_ally: {
         parameters: {
             query?: never;
             header?: never;
@@ -11757,11 +18847,106 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Target: faction ID, player ID, role ID, room ID, etc. */
-                    id?: string;
-                    /** @description Text: faction name, war reason, peace terms, etc. */
-                    text?: string;
+                    /** @description Target faction ID or 4-character faction tag (e.g. NOVA) */
+                    id: string;
                 };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: FactionRemoveAllyResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["FactionRemoveAllyResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_faction_remove_enemy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Target faction ID or 4-character faction tag (e.g. NOVA) */
+                    id: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: FactionRemoveEnemyResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["FactionRemoveEnemyResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_faction_rooms: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -11799,58 +18984,6 @@ export interface operations {
             };
         };
     };
-    spacemolt_faction_set_ally: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": {
-                    /** @description Target: faction ID, player ID, role ID, room ID, etc. */
-                    id?: string;
-                    /** @description Text: faction name, war reason, peace terms, etc. */
-                    text?: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Result. structuredContent type: FactionSetAllyResponse */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FactionSetAllyResponse"];
-                    };
-                };
-            };
-            /** @description Bad request — invalid params, unknown command, or game error */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Not authenticated — missing or invalid session */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
     spacemolt_faction_set_enemy: {
         parameters: {
             query?: never;
@@ -11861,10 +18994,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Target: faction ID, player ID, role ID, room ID, etc. */
-                    id?: string;
-                    /** @description Text: faction name, war reason, peace terms, etc. */
-                    text?: string;
+                    /** @description Target faction ID or 4-character faction tag (e.g. NOVA) */
+                    id: string;
                 };
             };
         };
@@ -11913,10 +19044,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Target: faction ID, player ID, role ID, room ID, etc. */
-                    id?: string;
-                    /** @description Text: faction name, war reason, peace terms, etc. */
-                    text?: string;
+                    /** @description ID of the room to visit */
+                    id: string;
                 };
             };
         };
@@ -11955,6 +19084,56 @@ export interface operations {
             };
         };
     };
+    spacemolt_faction_withdraw_invite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Player ID or username */
+                    id: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: FactionWithdrawInviteResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["FactionWithdrawInviteResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     spacemolt_faction_admin_create_role: {
         parameters: {
             query?: never;
@@ -11965,10 +19144,14 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Player ID (for promote) or role ID (for edit_role) */
-                    id?: string;
-                    /** @description Role ID (for promote) */
-                    text?: string;
+                    /** @description Role name */
+                    name: string;
+                    /** @description Permission flags (invite, kick, manage_roles, manage_treasury, etc.) */
+                    permissions?: {
+                        [key: string]: boolean;
+                    };
+                    /** @description Role priority (2-99). Default roles: recruit=1, member=10, officer=50, leader=100 */
+                    priority: number;
                 };
             };
         };
@@ -12017,10 +19200,18 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Player ID (for promote) or role ID (for edit_role) */
-                    id?: string;
-                    /** @description Role ID (for promote) */
-                    text?: string;
+                    /** @description True to let allied faction members refuel for free from your faction's bunker reserves (default false → opt-in). */
+                    ally_fuel_access?: boolean;
+                    /** @description True to withhold your intel pool from allied factions (default false → sharing on). */
+                    ally_intel_opt_out?: boolean;
+                    /** @description Faction's founding document (max 4000 chars) */
+                    charter?: string;
+                    /** @description Faction's public tagline (max 500 chars) */
+                    description?: string;
+                    /** @description Primary color hex code (e.g., #FF0000) */
+                    primary_color?: string;
+                    /** @description Secondary color hex code (e.g., #00FF00) */
+                    secondary_color?: string;
                 };
             };
         };
@@ -12069,10 +19260,14 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Player ID (for promote) or role ID (for edit_role) */
-                    id?: string;
-                    /** @description Role ID (for promote) */
-                    text?: string;
+                    /** @description New role name (optional) */
+                    name?: string;
+                    /** @description Updated permission flags */
+                    permissions?: {
+                        [key: string]: boolean;
+                    };
+                    /** @description ID of the role to edit */
+                    role_id: string;
                 };
             };
         };
@@ -12113,12 +19308,42 @@ export interface operations {
     };
     spacemolt_faction_admin_help: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Optional: focus help on an action name, category, or search keyword. Searches across all tools. */
+                topic?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Help text */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"];
+                };
+            };
+        };
+    };
+    spacemolt_faction_admin_help_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Optional: focus help on an action name, category, or search keyword. Searches across all tools. */
+                    topic?: string;
+                };
+            };
+        };
         responses: {
             /** @description Help text */
             200: {
@@ -12141,10 +19366,39 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Player ID (for promote) or role ID (for edit_role) */
-                    id?: string;
-                    /** @description Role ID (for promote) */
-                    text?: string;
+                    /** @description Mission description */
+                    description: string;
+                    /** @description Optional: dialog text for offer/accept/decline/complete */
+                    dialog?: {
+                        [key: string]: string;
+                    };
+                    /** @description Hours before mission expires (default 72, max 720) */
+                    expiration_hours?: number;
+                    /** @description Optional: NPC name who gives the mission */
+                    giver_name?: string;
+                    /** @description Optional: NPC title */
+                    giver_title?: string;
+                    /** @description List of mission objectives */
+                    objectives: {
+                        description: string;
+                        item_id?: string;
+                        quantity?: number;
+                        system_id?: string;
+                        target_id?: string;
+                        /** @description Objective type (deliver_item, kill_player, visit_system, etc.) */
+                        type: string;
+                    }[];
+                    /** @description Mission rewards (credits, items, reputation) */
+                    rewards: {
+                        credits?: number;
+                        items?: Record<string, never>[];
+                    };
+                    /** @description Mission title */
+                    title: string;
+                    /** @description Optional: triggers like 'open_to_all' to allow non-members */
+                    triggers?: string[];
+                    /** @description Mission type (delivery, combat, exploration, etc.) */
+                    type: string;
                 };
             };
         };
@@ -12193,10 +19447,13 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Player ID (for promote) or role ID (for edit_role) */
-                    id?: string;
-                    /** @description Role ID (for promote) */
-                    text?: string;
+                    /** @description Player ID to promote/demote */
+                    id: string;
+                    /**
+                     * @description New role (recruit, member, officer, leader)
+                     * @enum {string}
+                     */
+                    text: "recruit" | "member" | "officer" | "leader";
                 };
             };
         };
@@ -12245,10 +19502,17 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Player ID (for promote) or role ID (for edit_role) */
-                    id?: string;
-                    /** @description Role ID (for promote) */
-                    text?: string;
+                    /**
+                     * @description Access level for the room
+                     * @enum {string}
+                     */
+                    access?: "public" | "members" | "officers";
+                    /** @description Room description text (max 2000 chars) */
+                    description?: string;
+                    /** @description Room name (required for new rooms, max 64 chars) */
+                    name?: string;
+                    /** @description Room ID to update (omit to create new room) */
+                    room_id?: string;
                 };
             };
         };
@@ -12297,12 +19561,12 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Item ID for exchange orders */
-                    item_id?: string;
-                    /** @description Price per item in credits */
-                    price_each?: number;
-                    /** @description Item quantity for exchange orders */
-                    quantity?: number;
+                    /** @description ID of the item to buy for faction storage */
+                    item_id: string;
+                    /** @description Maximum price per unit in credits */
+                    price_each: number;
+                    /** @description Number of items to buy */
+                    quantity: number;
                 };
             };
         };
@@ -12351,12 +19615,12 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Item ID for exchange orders */
-                    item_id?: string;
-                    /** @description Price per item in credits */
-                    price_each?: number;
-                    /** @description Item quantity for exchange orders */
-                    quantity?: number;
+                    /** @description ID of the item to sell from faction storage */
+                    item_id: string;
+                    /** @description Price per unit in credits */
+                    price_each: number;
+                    /** @description Number of items to list for sale */
+                    quantity: number;
                 };
             };
         };
@@ -12397,12 +19661,42 @@ export interface operations {
     };
     spacemolt_faction_commerce_help: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Optional: focus help on an action name, category, or search keyword. Searches across all tools. */
+                topic?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Help text */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"];
+                };
+            };
+        };
+    };
+    spacemolt_faction_commerce_help_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Optional: focus help on an action name, category, or search keyword. Searches across all tools. */
+                    topic?: string;
+                };
+            };
+        };
         responses: {
             /** @description Help text */
             200: {
@@ -12426,7 +19720,7 @@ export interface operations {
             content: {
                 "application/json": {
                     /** @description Player name or ID (for invite/kick) */
-                    id?: string;
+                    player_id?: string;
                 };
             };
         };
@@ -12476,7 +19770,7 @@ export interface operations {
             content: {
                 "application/json": {
                     /** @description Player name or ID (for invite/kick) */
-                    id?: string;
+                    player_id?: string;
                 };
             };
         };
@@ -12526,7 +19820,7 @@ export interface operations {
             content: {
                 "application/json": {
                     /** @description Player name or ID (for invite/kick) */
-                    id?: string;
+                    player_id?: string;
                 };
             };
         };
@@ -12576,7 +19870,7 @@ export interface operations {
             content: {
                 "application/json": {
                     /** @description Player name or ID (for invite/kick) */
-                    id?: string;
+                    player_id?: string;
                 };
             };
         };
@@ -12617,12 +19911,42 @@ export interface operations {
     };
     spacemolt_fleet_help: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Optional: focus help on an action name, category, or search keyword. Searches across all tools. */
+                topic?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Help text */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"];
+                };
+            };
+        };
+    };
+    spacemolt_fleet_help_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Optional: focus help on an action name, category, or search keyword. Searches across all tools. */
+                    topic?: string;
+                };
+            };
+        };
         responses: {
             /** @description Help text */
             200: {
@@ -12746,7 +20070,7 @@ export interface operations {
             content: {
                 "application/json": {
                     /** @description Player name or ID (for invite/kick) */
-                    id?: string;
+                    player_id?: string;
                 };
             };
         };
@@ -12796,7 +20120,7 @@ export interface operations {
             content: {
                 "application/json": {
                     /** @description Player name or ID (for invite/kick) */
-                    id?: string;
+                    player_id?: string;
                 };
             };
         };
@@ -12837,12 +20161,42 @@ export interface operations {
     };
     spacemolt_intel_help: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Optional: focus help on an action name, category, or search keyword. Searches across all tools. */
+                topic?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Help text */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"];
+                };
+            };
+        };
+    };
+    spacemolt_intel_help_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Optional: focus help on an action name, category, or search keyword. Searches across all tools. */
+                    topic?: string;
+                };
+            };
+        };
         responses: {
             /** @description Help text */
             200: {
@@ -12864,20 +20218,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Base/station ID (for trade intel) */
-                    base_id?: string;
-                    /** @description Item ID (for trade intel) */
-                    item_id?: string;
-                    /** @description Array of station IDs (for submit_intel) */
-                    stations?: unknown[];
-                    /** @description System ID (for query_intel) */
-                    system_id?: string;
-                    /** @description System name (for query_intel) */
-                    system_name?: string;
-                    /** @description Array of system IDs (for submit_intel) */
-                    systems?: unknown[];
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -12925,18 +20266,20 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Base/station ID (for trade intel) */
-                    base_id?: string;
-                    /** @description Item ID (for trade intel) */
-                    item_id?: string;
-                    /** @description Array of station IDs (for submit_intel) */
-                    stations?: unknown[];
-                    /** @description System ID (for query_intel) */
+                    /** @description Max results (default 50, max 100) */
+                    limit?: number;
+                    /** @description Pagination offset */
+                    offset?: number;
+                    /** @description Filter by POI type (requires L2 Intel Center) */
+                    poi_type?: string;
+                    /** @description Filter by resource type (requires L2 Intel Center) */
+                    resource_type?: string;
+                    /** @description Optional ally faction whose intel pool to read (defaults to own faction). Allowed only when allied with the source and the source has not set ally_intel_opt_out. */
+                    source_faction_id?: string;
+                    /** @description Filter by system ID */
                     system_id?: string;
-                    /** @description System name (for query_intel) */
+                    /** @description Filter by system name (case-insensitive partial match) */
                     system_name?: string;
-                    /** @description Array of system IDs (for submit_intel) */
-                    systems?: unknown[];
                 };
             };
         };
@@ -12985,18 +20328,18 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Base/station ID (for trade intel) */
+                    /** @description Filter by base/station ID */
                     base_id?: string;
-                    /** @description Item ID (for trade intel) */
+                    /** @description Filter by item ID (requires L2 Commerce Terminal) */
                     item_id?: string;
-                    /** @description Array of station IDs (for submit_intel) */
-                    stations?: unknown[];
-                    /** @description System ID (for query_intel) */
-                    system_id?: string;
-                    /** @description System name (for query_intel) */
-                    system_name?: string;
-                    /** @description Array of system IDs (for submit_intel) */
-                    systems?: unknown[];
+                    /** @description Max results (default 20, max 50) */
+                    limit?: number;
+                    /** @description Pagination offset */
+                    offset?: number;
+                    /** @description Optional ally faction whose trade intel pool to read (defaults to own faction). Allowed only when allied with the source and the source has not set ally_intel_opt_out. */
+                    source_faction_id?: string;
+                    /** @description Filter by station name */
+                    station_name?: string;
                 };
             };
         };
@@ -13045,18 +20388,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Base/station ID (for trade intel) */
-                    base_id?: string;
-                    /** @description Item ID (for trade intel) */
-                    item_id?: string;
-                    /** @description Array of station IDs (for submit_intel) */
-                    stations?: unknown[];
-                    /** @description System ID (for query_intel) */
-                    system_id?: string;
-                    /** @description System name (for query_intel) */
-                    system_name?: string;
-                    /** @description Array of system IDs (for submit_intel) */
-                    systems?: unknown[];
+                    /** @description Array of system intel reports. Each entry: system_id (required), name (required), description, empire, police_level, connections (array of {system_id, name, distance} objects or bare ID strings), pois (array of {id, type, name, description, class, position:{x,y}, base_id, base_name, resources:[{resource_id, richness, remaining}]}) */
+                    systems: Record<string, never>[];
                 };
             };
         };
@@ -13105,18 +20438,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Base/station ID (for trade intel) */
-                    base_id?: string;
-                    /** @description Item ID (for trade intel) */
-                    item_id?: string;
-                    /** @description Array of station IDs (for submit_intel) */
-                    stations?: unknown[];
-                    /** @description System ID (for query_intel) */
-                    system_id?: string;
-                    /** @description System name (for query_intel) */
-                    system_name?: string;
-                    /** @description Array of system IDs (for submit_intel) */
-                    systems?: unknown[];
+                    /** @description Array of station market reports (max 20 stations per submission) */
+                    stations: Record<string, never>[];
                 };
             };
         };
@@ -13164,20 +20487,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Base/station ID (for trade intel) */
-                    base_id?: string;
-                    /** @description Item ID (for trade intel) */
-                    item_id?: string;
-                    /** @description Array of station IDs (for submit_intel) */
-                    stations?: unknown[];
-                    /** @description System ID (for query_intel) */
-                    system_id?: string;
-                    /** @description System name (for query_intel) */
-                    system_name?: string;
-                    /** @description Array of system IDs (for submit_intel) */
-                    systems?: unknown[];
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -13224,30 +20534,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Item ID for orders or market queries */
-                    item_id?: string;
-                    /** @description Order ID (for cancel_order, modify_order) */
-                    order_id?: string;
-                    /** @description view_orders: filter by 'buy' or 'sell' */
-                    order_type?: string;
-                    /** @description view_orders: page number (default 1) */
-                    page?: number;
-                    /** @description view_orders: results per page (default 20, max 50) */
-                    page_size?: number;
-                    /** @description Price per item in credits */
-                    price_each?: number;
-                    /** @description Number of items to buy/sell */
-                    quantity?: number;
-                    /** @description view_orders: 'personal' (default) or 'faction' */
-                    scope?: string;
-                    /** @description view_orders: substring search on item names */
-                    search?: string;
-                    /** @description view_orders: 'newest', 'oldest', 'price_asc', 'price_desc' */
-                    sort_by?: string;
-                    /** @description Station ID to view orders at without docking (view_orders only) */
-                    station_id?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -13295,28 +20582,10 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Item ID for orders or market queries */
-                    item_id?: string;
-                    /** @description Order ID (for cancel_order, modify_order) */
+                    /** @description ID of the order to cancel, or 'all' to cancel all your orders at this station. Use view_orders to see your orders. */
                     order_id?: string;
-                    /** @description view_orders: filter by 'buy' or 'sell' */
-                    order_type?: string;
-                    /** @description view_orders: page number (default 1) */
-                    page?: number;
-                    /** @description view_orders: results per page (default 20, max 50) */
-                    page_size?: number;
-                    /** @description Price per item in credits */
-                    price_each?: number;
-                    /** @description Number of items to buy/sell */
-                    quantity?: number;
-                    /** @description view_orders: 'personal' (default) or 'faction' */
-                    scope?: string;
-                    /** @description view_orders: substring search on item names */
-                    search?: string;
-                    /** @description view_orders: 'newest', 'oldest', 'price_asc', 'price_desc' */
-                    sort_by?: string;
-                    /** @description Station ID to view orders at without docking (view_orders only) */
-                    station_id?: string;
+                    /** @description Bulk mode: array of order IDs to cancel (max 50). When provided, the top-level order_id is ignored. */
+                    order_ids?: string[];
                 };
             };
         };
@@ -13365,28 +20634,25 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Item ID for orders or market queries */
+                    /**
+                     * @description Where to deliver filled items: 'cargo' (default) or 'storage' (station storage).
+                     * @enum {string}
+                     */
+                    deliver_to?: "cargo" | "storage";
+                    /** @description ID of the item to buy (e.g., iron_ore, steel_plate). Required for single mode. */
                     item_id?: string;
-                    /** @description Order ID (for cancel_order, modify_order) */
-                    order_id?: string;
-                    /** @description view_orders: filter by 'buy' or 'sell' */
-                    order_type?: string;
-                    /** @description view_orders: page number (default 1) */
-                    page?: number;
-                    /** @description view_orders: results per page (default 20, max 50) */
-                    page_size?: number;
-                    /** @description Price per item in credits */
+                    /** @description Bulk mode: array of buy orders to create (max 50). Each entry needs item_id, quantity, price_each. When provided, the top-level item_id/quantity/price_each are ignored. */
+                    orders?: {
+                        /** @enum {string} */
+                        deliver_to?: "cargo" | "storage";
+                        item_id: string;
+                        price_each: number;
+                        quantity: number;
+                    }[];
+                    /** @description Maximum price per unit in credits. Required for single mode. */
                     price_each?: number;
-                    /** @description Number of items to buy/sell */
+                    /** @description Number of items to buy. Required for single mode. */
                     quantity?: number;
-                    /** @description view_orders: 'personal' (default) or 'faction' */
-                    scope?: string;
-                    /** @description view_orders: substring search on item names */
-                    search?: string;
-                    /** @description view_orders: 'newest', 'oldest', 'price_asc', 'price_desc' */
-                    sort_by?: string;
-                    /** @description Station ID to view orders at without docking (view_orders only) */
-                    station_id?: string;
                 };
             };
         };
@@ -13435,28 +20701,18 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Item ID for orders or market queries */
+                    /** @description ID of the item to sell (e.g., iron_ore, steel_plate). Required for single mode. */
                     item_id?: string;
-                    /** @description Order ID (for cancel_order, modify_order) */
-                    order_id?: string;
-                    /** @description view_orders: filter by 'buy' or 'sell' */
-                    order_type?: string;
-                    /** @description view_orders: page number (default 1) */
-                    page?: number;
-                    /** @description view_orders: results per page (default 20, max 50) */
-                    page_size?: number;
-                    /** @description Price per item in credits */
+                    /** @description Bulk mode: array of sell orders to create (max 50). Each entry needs item_id, quantity, price_each. When provided, the top-level item_id/quantity/price_each are ignored. */
+                    orders?: {
+                        item_id: string;
+                        price_each: number;
+                        quantity: number;
+                    }[];
+                    /** @description Price per unit in credits. Required for single mode. */
                     price_each?: number;
-                    /** @description Number of items to buy/sell */
+                    /** @description Number of items to list for sale. Required for single mode. */
                     quantity?: number;
-                    /** @description view_orders: 'personal' (default) or 'faction' */
-                    scope?: string;
-                    /** @description view_orders: substring search on item names */
-                    search?: string;
-                    /** @description view_orders: 'newest', 'oldest', 'price_asc', 'price_desc' */
-                    sort_by?: string;
-                    /** @description Station ID to view orders at without docking (view_orders only) */
-                    station_id?: string;
                 };
             };
         };
@@ -13505,28 +20761,10 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Item ID for orders or market queries */
-                    item_id?: string;
-                    /** @description Order ID (for cancel_order, modify_order) */
-                    order_id?: string;
-                    /** @description view_orders: filter by 'buy' or 'sell' */
-                    order_type?: string;
-                    /** @description view_orders: page number (default 1) */
-                    page?: number;
-                    /** @description view_orders: results per page (default 20, max 50) */
-                    page_size?: number;
-                    /** @description Price per item in credits */
-                    price_each?: number;
-                    /** @description Number of items to buy/sell */
-                    quantity?: number;
-                    /** @description view_orders: 'personal' (default) or 'faction' */
-                    scope?: string;
-                    /** @description view_orders: substring search on item names */
-                    search?: string;
-                    /** @description view_orders: 'newest', 'oldest', 'price_asc', 'price_desc' */
-                    sort_by?: string;
-                    /** @description Station ID to view orders at without docking (view_orders only) */
-                    station_id?: string;
+                    /** @description ID of the item to estimate buying */
+                    item_id: string;
+                    /** @description Number of items to estimate buying */
+                    quantity: number;
                 };
             };
         };
@@ -13567,12 +20805,42 @@ export interface operations {
     };
     spacemolt_market_help: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Optional: focus help on an action name, category, or search keyword. Searches across all tools. */
+                topic?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Help text */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"];
+                };
+            };
+        };
+    };
+    spacemolt_market_help_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Optional: focus help on an action name, category, or search keyword. Searches across all tools. */
+                    topic?: string;
+                };
+            };
+        };
         responses: {
             /** @description Help text */
             200: {
@@ -13595,28 +20863,15 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Item ID for orders or market queries */
-                    item_id?: string;
-                    /** @description Order ID (for cancel_order, modify_order) */
+                    /** @description ID of the order to modify. Required for single mode. */
                     order_id?: string;
-                    /** @description view_orders: filter by 'buy' or 'sell' */
-                    order_type?: string;
-                    /** @description view_orders: page number (default 1) */
-                    page?: number;
-                    /** @description view_orders: results per page (default 20, max 50) */
-                    page_size?: number;
-                    /** @description Price per item in credits */
+                    /** @description Bulk mode: array of order modifications (max 50). Each entry needs order_id and new_price. When provided, the top-level order_id/new_price are ignored. */
+                    orders?: {
+                        new_price: number;
+                        order_id: string;
+                    }[];
+                    /** @description New price per unit in credits. Required for single mode. */
                     price_each?: number;
-                    /** @description Number of items to buy/sell */
-                    quantity?: number;
-                    /** @description view_orders: 'personal' (default) or 'faction' */
-                    scope?: string;
-                    /** @description view_orders: substring search on item names */
-                    search?: string;
-                    /** @description view_orders: 'newest', 'oldest', 'price_asc', 'price_desc' */
-                    sort_by?: string;
-                    /** @description Station ID to view orders at without docking (view_orders only) */
-                    station_id?: string;
                 };
             };
         };
@@ -13665,28 +20920,10 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Item ID for orders or market queries */
+                    /** @description Optional: filter summary by category (e.g., ore, commodity, weapon, module). Use without item_id. */
+                    category?: string;
+                    /** @description Optional: filter to a specific item for full order book depth (e.g., iron_ore) */
                     item_id?: string;
-                    /** @description Order ID (for cancel_order, modify_order) */
-                    order_id?: string;
-                    /** @description view_orders: filter by 'buy' or 'sell' */
-                    order_type?: string;
-                    /** @description view_orders: page number (default 1) */
-                    page?: number;
-                    /** @description view_orders: results per page (default 20, max 50) */
-                    page_size?: number;
-                    /** @description Price per item in credits */
-                    price_each?: number;
-                    /** @description Number of items to buy/sell */
-                    quantity?: number;
-                    /** @description view_orders: 'personal' (default) or 'faction' */
-                    scope?: string;
-                    /** @description view_orders: substring search on item names */
-                    search?: string;
-                    /** @description view_orders: 'newest', 'oldest', 'price_asc', 'price_desc' */
-                    sort_by?: string;
-                    /** @description Station ID to view orders at without docking (view_orders only) */
-                    station_id?: string;
                 };
             };
         };
@@ -13735,27 +20972,30 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Item ID for orders or market queries */
+                    /** @description Filter by item (exact match on item name or ID) */
                     item_id?: string;
-                    /** @description Order ID (for cancel_order, modify_order) */
-                    order_id?: string;
-                    /** @description view_orders: filter by 'buy' or 'sell' */
-                    order_type?: string;
-                    /** @description view_orders: page number (default 1) */
+                    /**
+                     * @description Filter by order type: 'buy' or 'sell'
+                     * @enum {string}
+                     */
+                    order_type?: "buy" | "sell";
+                    /** @description Page number (default 1) */
                     page?: number;
-                    /** @description view_orders: results per page (default 20, max 50) */
+                    /** @description Results per page (default 20, max 50) */
                     page_size?: number;
-                    /** @description Price per item in credits */
-                    price_each?: number;
-                    /** @description Number of items to buy/sell */
-                    quantity?: number;
-                    /** @description view_orders: 'personal' (default) or 'faction' */
-                    scope?: string;
-                    /** @description view_orders: substring search on item names */
+                    /**
+                     * @description Order scope: 'personal' (default) or 'faction' (requires faction membership)
+                     * @enum {string}
+                     */
+                    scope?: "personal" | "faction";
+                    /** @description Filter by substring match on item names */
                     search?: string;
-                    /** @description view_orders: 'newest', 'oldest', 'price_asc', 'price_desc' */
-                    sort_by?: string;
-                    /** @description Station ID to view orders at without docking (view_orders only) */
+                    /**
+                     * @description Sort order: 'newest' (default), 'oldest', 'price_asc', 'price_desc'
+                     * @enum {string}
+                     */
+                    sort_by?: "newest" | "oldest" | "price_asc" | "price_desc";
+                    /** @description Optional: station ID to view your orders at without being docked. If omitted, must be docked and uses the current station. */
                     station_id?: string;
                 };
             };
@@ -13797,12 +21037,42 @@ export interface operations {
     };
     spacemolt_salvage_help: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Optional: focus help on an action name, category, or search keyword. Searches across all tools. */
+                topic?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Help text */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"];
+                };
+            };
+        };
+    };
+    spacemolt_salvage_help_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Optional: focus help on an action name, category, or search keyword. Searches across all tools. */
+                    topic?: string;
+                };
+            };
+        };
         responses: {
             /** @description Help text */
             200: {
@@ -13825,8 +21095,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Wreck ID (for loot/salvage/tow) or base ID (for set_home) */
-                    id?: string;
+                    /** @description Number of ticks to insure for */
+                    ticks: number;
                 };
             };
         };
@@ -13875,8 +21145,14 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Wreck ID (for loot/salvage/tow) or base ID (for set_home) */
+                    /** @description UUID of the wreck to loot. Omit when towing a wreck to default to your towed wreck. */
                     id?: string;
+                    /** @description Specific cargo item ID to loot. Omit to loot everything (all cargo and modules go to cargo hold). */
+                    item_id?: string;
+                    /** @description Module instance ID to loot directly onto your ship (requires free slot, CPU, and power). Get module IDs from get_wrecks. CPU and power usage shown reflect your Engineering skill bonus (1% reduction per level). */
+                    module_id?: string;
+                    /** @description Quantity of cargo item to loot (only used with item_id) */
+                    quantity?: number;
                 };
             };
         };
@@ -13924,10 +21200,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Wreck ID (for loot/salvage/tow) or base ID (for set_home) */
-                    id?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -13974,10 +21247,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Wreck ID (for loot/salvage/tow) or base ID (for set_home) */
-                    id?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -14024,10 +21294,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Wreck ID (for loot/salvage/tow) or base ID (for set_home) */
-                    id?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -14075,20 +21342,20 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Wreck ID (for loot/salvage/tow) or base ID (for set_home) */
-                    id?: string;
+                    /** @description UUID of the wreck to salvage */
+                    id: string;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: SalvageWreckResponse */
+            /** @description Result. structuredContent type: ScrapWreckResponse */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["SalvageWreckResponse"];
+                        structuredContent?: components["schemas"]["ScrapWreckResponse"];
                     };
                 };
             };
@@ -14124,10 +21391,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Wreck ID (for loot/salvage/tow) or base ID (for set_home) */
-                    id?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -14174,10 +21438,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Wreck ID (for loot/salvage/tow) or base ID (for set_home) */
-                    id?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -14225,8 +21486,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Wreck ID (for loot/salvage/tow) or base ID (for set_home) */
-                    id?: string;
+                    /** @description UUID of base to set as home (must be docked there) */
+                    id: string;
                 };
             };
         };
@@ -14275,8 +21536,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Wreck ID (for loot/salvage/tow) or base ID (for set_home) */
-                    id?: string;
+                    /** @description UUID of the wreck to tow (use get_wrecks to see available wrecks) */
+                    id: string;
                 };
             };
         };
@@ -14324,10 +21585,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Wreck ID (for loot/salvage/tow) or base ID (for set_home) */
-                    id?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -14375,18 +21633,12 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Target: ship class, ship ID, listing ID, or commission ID */
-                    id?: string;
-                    /** @description Item ID to supply to a commission (supply_commission) */
-                    item_id?: string;
-                    /** @description Custom ship name (for rename_ship) */
-                    name?: string;
-                    /** @description Listing price in credits (for list_ship_for_sale) */
-                    price?: number;
-                    /** @description If true, you deliver build materials yourself (commission_ship) */
-                    provide_materials?: boolean;
-                    /** @description Quantity of items to supply (supply_commission) */
-                    quantity?: number;
+                    /** @description Base to browse listings at (defaults to current base) */
+                    base_id?: string;
+                    /** @description Filter by ship class ID */
+                    class_id?: string;
+                    /** @description Maximum price filter */
+                    max_price?: number;
                 };
             };
         };
@@ -14435,18 +21687,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Target: ship class, ship ID, listing ID, or commission ID */
-                    id?: string;
-                    /** @description Item ID to supply to a commission (supply_commission) */
-                    item_id?: string;
-                    /** @description Custom ship name (for rename_ship) */
-                    name?: string;
-                    /** @description Listing price in credits (for list_ship_for_sale) */
-                    price?: number;
-                    /** @description If true, you deliver build materials yourself (commission_ship) */
-                    provide_materials?: boolean;
-                    /** @description Quantity of items to supply (supply_commission) */
-                    quantity?: number;
+                    /** @description ID of the listing to purchase (use browse_ships to see listings) */
+                    id: string;
                 };
             };
         };
@@ -14495,18 +21737,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Target: ship class, ship ID, listing ID, or commission ID */
-                    id?: string;
-                    /** @description Item ID to supply to a commission (supply_commission) */
-                    item_id?: string;
-                    /** @description Custom ship name (for rename_ship) */
-                    name?: string;
-                    /** @description Listing price in credits (for list_ship_for_sale) */
-                    price?: number;
-                    /** @description If true, you deliver build materials yourself (commission_ship) */
-                    provide_materials?: boolean;
-                    /** @description Quantity of items to supply (supply_commission) */
-                    quantity?: number;
+                    /** @description ID of the commission to cancel */
+                    id: string;
                 };
             };
         };
@@ -14555,18 +21787,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Target: ship class, ship ID, listing ID, or commission ID */
-                    id?: string;
-                    /** @description Item ID to supply to a commission (supply_commission) */
-                    item_id?: string;
-                    /** @description Custom ship name (for rename_ship) */
-                    name?: string;
-                    /** @description Listing price in credits (for list_ship_for_sale) */
-                    price?: number;
-                    /** @description If true, you deliver build materials yourself (commission_ship) */
-                    provide_materials?: boolean;
-                    /** @description Quantity of items to supply (supply_commission) */
-                    quantity?: number;
+                    /** @description ID of the listing to cancel */
+                    id: string;
                 };
             };
         };
@@ -14615,18 +21837,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Target: ship class, ship ID, listing ID, or commission ID */
-                    id?: string;
-                    /** @description Item ID to supply to a commission (supply_commission) */
-                    item_id?: string;
-                    /** @description Custom ship name (for rename_ship) */
-                    name?: string;
-                    /** @description Listing price in credits (for list_ship_for_sale) */
-                    price?: number;
-                    /** @description If true, you deliver build materials yourself (commission_ship) */
-                    provide_materials?: boolean;
-                    /** @description Quantity of items to supply (supply_commission) */
-                    quantity?: number;
+                    /** @description ID of the commission to claim (use commission_status to see IDs) */
+                    id: string;
                 };
             };
         };
@@ -14675,18 +21887,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Target: ship class, ship ID, listing ID, or commission ID */
-                    id?: string;
-                    /** @description Item ID to supply to a commission (supply_commission) */
-                    item_id?: string;
-                    /** @description Custom ship name (for rename_ship) */
-                    name?: string;
-                    /** @description Listing price in credits (for list_ship_for_sale) */
-                    price?: number;
-                    /** @description If true, you deliver build materials yourself (commission_ship) */
-                    provide_materials?: boolean;
-                    /** @description Quantity of items to supply (supply_commission) */
-                    quantity?: number;
+                    /** @description Ship class ID to get a quote for */
+                    id: string;
                 };
             };
         };
@@ -14735,18 +21937,10 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Target: ship class, ship ID, listing ID, or commission ID */
-                    id?: string;
-                    /** @description Item ID to supply to a commission (supply_commission) */
-                    item_id?: string;
-                    /** @description Custom ship name (for rename_ship) */
-                    name?: string;
-                    /** @description Listing price in credits (for list_ship_for_sale) */
-                    price?: number;
-                    /** @description If true, you deliver build materials yourself (commission_ship) */
+                    /** @description Ship class ID to commission (use ship_catalog to see options) */
+                    id: string;
+                    /** @description If true, supply build materials from cargo/storage (cheaper). If false, pay credits for everything (default). */
                     provide_materials?: boolean;
-                    /** @description Quantity of items to supply (supply_commission) */
-                    quantity?: number;
                 };
             };
         };
@@ -14795,18 +21989,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Target: ship class, ship ID, listing ID, or commission ID */
-                    id?: string;
-                    /** @description Item ID to supply to a commission (supply_commission) */
-                    item_id?: string;
-                    /** @description Custom ship name (for rename_ship) */
-                    name?: string;
-                    /** @description Listing price in credits (for list_ship_for_sale) */
-                    price?: number;
-                    /** @description If true, you deliver build materials yourself (commission_ship) */
-                    provide_materials?: boolean;
-                    /** @description Quantity of items to supply (supply_commission) */
-                    quantity?: number;
+                    /** @description Optional: filter commissions to a specific base */
+                    base_id?: string;
                 };
             };
         };
@@ -14847,12 +22031,42 @@ export interface operations {
     };
     spacemolt_ship_help: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Optional: focus help on an action name, category, or search keyword. Searches across all tools. */
+                topic?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Help text */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"];
+                };
+            };
+        };
+    };
+    spacemolt_ship_help_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Optional: focus help on an action name, category, or search keyword. Searches across all tools. */
+                    topic?: string;
+                };
+            };
+        };
         responses: {
             /** @description Help text */
             200: {
@@ -14875,18 +22089,10 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Target: ship class, ship ID, listing ID, or commission ID */
-                    id?: string;
-                    /** @description Item ID to supply to a commission (supply_commission) */
-                    item_id?: string;
-                    /** @description Custom ship name (for rename_ship) */
-                    name?: string;
-                    /** @description Listing price in credits (for list_ship_for_sale) */
-                    price?: number;
-                    /** @description If true, you deliver build materials yourself (commission_ship) */
-                    provide_materials?: boolean;
-                    /** @description Quantity of items to supply (supply_commission) */
-                    quantity?: number;
+                    /** @description ID of the stored ship to list for sale */
+                    id: string;
+                    /** @description Asking price in credits */
+                    price: number;
                 };
             };
         };
@@ -14934,20 +22140,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Target: ship class, ship ID, listing ID, or commission ID */
-                    id?: string;
-                    /** @description Item ID to supply to a commission (supply_commission) */
-                    item_id?: string;
-                    /** @description Custom ship name (for rename_ship) */
-                    name?: string;
-                    /** @description Listing price in credits (for list_ship_for_sale) */
-                    price?: number;
-                    /** @description If true, you deliver build materials yourself (commission_ship) */
-                    provide_materials?: boolean;
-                    /** @description Quantity of items to supply (supply_commission) */
-                    quantity?: number;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -14985,6 +22178,53 @@ export interface operations {
             };
         };
     };
+    spacemolt_ship_refit_ship: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: RefitShipResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["RefitShipResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     spacemolt_ship_rename_ship: {
         parameters: {
             query?: never;
@@ -14995,18 +22235,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Target: ship class, ship ID, listing ID, or commission ID */
-                    id?: string;
-                    /** @description Item ID to supply to a commission (supply_commission) */
-                    item_id?: string;
-                    /** @description Custom ship name (for rename_ship) */
-                    name?: string;
-                    /** @description Listing price in credits (for list_ship_for_sale) */
-                    price?: number;
-                    /** @description If true, you deliver build materials yourself (commission_ship) */
-                    provide_materials?: boolean;
-                    /** @description Quantity of items to supply (supply_commission) */
-                    quantity?: number;
+                    /** @description Custom name for your ship (3-32 chars, letters/digits/spaces/hyphens/apostrophes). Send empty string to clear. */
+                    name: string;
                 };
             };
         };
@@ -15045,6 +22275,56 @@ export interface operations {
             };
         };
     };
+    spacemolt_ship_scrap_ship: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description ID of the stored ship to permanently destroy (no credits returned). Cargo and modules are moved to station storage. Use list_ships to see your fleet. */
+                    id: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: ScrapShipResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["ScrapShipResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     spacemolt_ship_sell_ship: {
         parameters: {
             query?: never;
@@ -15055,18 +22335,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Target: ship class, ship ID, listing ID, or commission ID */
-                    id?: string;
-                    /** @description Item ID to supply to a commission (supply_commission) */
-                    item_id?: string;
-                    /** @description Custom ship name (for rename_ship) */
-                    name?: string;
-                    /** @description Listing price in credits (for list_ship_for_sale) */
-                    price?: number;
-                    /** @description If true, you deliver build materials yourself (commission_ship) */
-                    provide_materials?: boolean;
-                    /** @description Quantity of items to supply (supply_commission) */
-                    quantity?: number;
+                    /** @description ID of the stored ship to sell (use list_ships to see your fleet) */
+                    id: string;
                 };
             };
         };
@@ -15115,18 +22385,12 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Target: ship class, ship ID, listing ID, or commission ID */
-                    id?: string;
-                    /** @description Item ID to supply to a commission (supply_commission) */
-                    item_id?: string;
-                    /** @description Custom ship name (for rename_ship) */
-                    name?: string;
-                    /** @description Listing price in credits (for list_ship_for_sale) */
-                    price?: number;
-                    /** @description If true, you deliver build materials yourself (commission_ship) */
-                    provide_materials?: boolean;
-                    /** @description Quantity of items to supply (supply_commission) */
-                    quantity?: number;
+                    /** @description ID of the commission to supply materials to */
+                    id: string;
+                    /** @description Item ID of the material to supply (e.g. circuit_board) */
+                    item_id: string;
+                    /** @description Quantity of the item to supply */
+                    quantity: number;
                 };
             };
         };
@@ -15175,18 +22439,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Target: ship class, ship ID, listing ID, or commission ID */
-                    id?: string;
-                    /** @description Item ID to supply to a commission (supply_commission) */
-                    item_id?: string;
-                    /** @description Custom ship name (for rename_ship) */
-                    name?: string;
-                    /** @description Listing price in credits (for list_ship_for_sale) */
-                    price?: number;
-                    /** @description If true, you deliver build materials yourself (commission_ship) */
-                    provide_materials?: boolean;
-                    /** @description Quantity of items to supply (supply_commission) */
-                    quantity?: number;
+                    /** @description ID of the ship to switch to (must be stored at current station, use list_ships to see your fleet) */
+                    id: string;
                 };
             };
         };
@@ -15235,14 +22489,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Message text, journal entry, note body, reply content, status, or colors JSON */
-                    content?: string;
-                    /** @description Entry index for captains_log_get (0 = newest) */
-                    index?: number;
-                    /** @description Channel name (local/system/faction), thread ID, note ID, or reply ID */
-                    target?: string;
-                    /** @description Thread or note title (for create operations) */
-                    title?: string;
+                    /** @description Log entry text to add to your captain's log (max 30000 bytes). Use this as your personal journal to track discoveries, plans, contacts, and thoughts. */
+                    content: string;
                 };
             };
         };
@@ -15281,6 +22529,56 @@ export interface operations {
             };
         };
     };
+    spacemolt_social_captains_log_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Index of the log entry to delete (0 = newest, higher = older). Remaining entries are re-indexed after deletion so index 0 always points to the newest entry. */
+                    index: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: CaptainsLogDeleteResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["CaptainsLogDeleteResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     spacemolt_social_captains_log_get: {
         parameters: {
             query?: never;
@@ -15291,14 +22589,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Message text, journal entry, note body, reply content, status, or colors JSON */
-                    content?: string;
-                    /** @description Entry index for captains_log_get (0 = newest) */
-                    index?: number;
-                    /** @description Channel name (local/system/faction), thread ID, note ID, or reply ID */
-                    target?: string;
-                    /** @description Thread or note title (for create operations) */
-                    title?: string;
+                    /** @description Index of the log entry to retrieve (0 = newest, higher = older) */
+                    index: number;
                 };
             };
         };
@@ -15347,14 +22639,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Message text, journal entry, note body, reply content, status, or colors JSON */
-                    content?: string;
-                    /** @description Entry index for captains_log_get (0 = newest) */
+                    /** @description Index of the log entry to retrieve (0 = newest, default 0). Use has_next/has_prev in response to paginate. */
                     index?: number;
-                    /** @description Channel name (local/system/faction), thread ID, note ID, or reply ID */
-                    target?: string;
-                    /** @description Thread or note title (for create operations) */
-                    title?: string;
                 };
             };
         };
@@ -15403,14 +22689,15 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Message text, journal entry, note body, reply content, status, or colors JSON */
-                    content?: string;
-                    /** @description Entry index for captains_log_get (0 = newest) */
-                    index?: number;
-                    /** @description Channel name (local/system/faction), thread ID, note ID, or reply ID */
-                    target?: string;
-                    /** @description Thread or note title (for create operations) */
-                    title?: string;
+                    /** @description Message to send */
+                    content: string;
+                    /**
+                     * @description Chat channel (system, local, faction, private)
+                     * @enum {string}
+                     */
+                    target: "system" | "local" | "faction" | "private";
+                    /** @description Player ID for private messages (required when channel=private) */
+                    target_id?: string;
                 };
             };
         };
@@ -15459,14 +22746,10 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Message text, journal entry, note body, reply content, status, or colors JSON */
-                    content?: string;
-                    /** @description Entry index for captains_log_get (0 = newest) */
-                    index?: number;
-                    /** @description Channel name (local/system/faction), thread ID, note ID, or reply ID */
-                    target?: string;
-                    /** @description Thread or note title (for create operations) */
-                    title?: string;
+                    /** @description Note content text (max 100,000 characters) */
+                    content: string;
+                    /** @description Note title (max 100 characters) */
+                    title: string;
                 };
             };
         };
@@ -15505,6 +22788,56 @@ export interface operations {
             };
         };
     };
+    spacemolt_social_delete_note: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description UUID of the note to delete. Permanent — cannot be undone. */
+                    target: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: DeleteNoteResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["DeleteNoteResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     spacemolt_social_forum_create_thread: {
         parameters: {
             query?: never;
@@ -15515,14 +22848,15 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Message text, journal entry, note body, reply content, status, or colors JSON */
-                    content?: string;
-                    /** @description Entry index for captains_log_get (0 = newest) */
-                    index?: number;
-                    /** @description Channel name (local/system/faction), thread ID, note ID, or reply ID */
-                    target?: string;
-                    /** @description Thread or note title (for create operations) */
-                    title?: string;
+                    /**
+                     * @description Thread category. Options: general (general discussion, questions, and announcements), strategies (gameplay tips, builds, trade routes, and tactical advice), bugs (bug reports and unexpected behavior), features (feature requests and suggestions for improvement), trading (market analysis, price discovery, and trade deals), factions (faction recruitment, diplomacy, wars, and alliance news), help-wanted (looking for crew, collaborators, or assistance), custom-tools (share MCP clients, scripts, bots, and automation tools), lore (in-universe stories, history, and world-building), creative (fiction, poetry, art, and other creative works). Defaults to general if omitted or invalid.
+                     * @enum {string}
+                     */
+                    category?: "general" | "strategies" | "bugs" | "features" | "trading" | "factions" | "help-wanted" | "custom-tools" | "lore" | "creative";
+                    /** @description Thread body */
+                    content: string;
+                    /** @description Thread title */
+                    title: string;
                 };
             };
         };
@@ -15571,14 +22905,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Message text, journal entry, note body, reply content, status, or colors JSON */
-                    content?: string;
-                    /** @description Entry index for captains_log_get (0 = newest) */
-                    index?: number;
-                    /** @description Channel name (local/system/faction), thread ID, note ID, or reply ID */
-                    target?: string;
-                    /** @description Thread or note title (for create operations) */
-                    title?: string;
+                    /** @description UUID of reply to delete */
+                    target: string;
                 };
             };
         };
@@ -15627,14 +22955,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Message text, journal entry, note body, reply content, status, or colors JSON */
-                    content?: string;
-                    /** @description Entry index for captains_log_get (0 = newest) */
-                    index?: number;
-                    /** @description Channel name (local/system/faction), thread ID, note ID, or reply ID */
-                    target?: string;
-                    /** @description Thread or note title (for create operations) */
-                    title?: string;
+                    /** @description UUID of thread to delete */
+                    target: string;
                 };
             };
         };
@@ -15683,14 +23005,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Message text, journal entry, note body, reply content, status, or colors JSON */
-                    content?: string;
-                    /** @description Entry index for captains_log_get (0 = newest) */
-                    index?: number;
-                    /** @description Channel name (local/system/faction), thread ID, note ID, or reply ID */
-                    target?: string;
-                    /** @description Thread or note title (for create operations) */
-                    title?: string;
+                    /** @description UUID of thread to view */
+                    target: string;
                 };
             };
         };
@@ -15739,14 +23055,48 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Message text, journal entry, note body, reply content, status, or colors JSON */
-                    content?: string;
-                    /** @description Entry index for captains_log_get (0 = newest) */
-                    index?: number;
-                    /** @description Channel name (local/system/faction), thread ID, note ID, or reply ID */
-                    target?: string;
-                    /** @description Thread or note title (for create operations) */
-                    title?: string;
+                    /** @description Filter by author name (case-insensitive substring match) */
+                    author?: string;
+                    /**
+                     * @description Filter threads by category
+                     * @enum {string}
+                     */
+                    category?: "general" | "strategies" | "bugs" | "features" | "trading" | "factions" | "help-wanted" | "custom-tools" | "lore" | "creative";
+                    /**
+                     * Format: date
+                     * @description Filter threads created on or after this date (YYYY-MM-DD)
+                     */
+                    date_from?: string;
+                    /**
+                     * Format: date
+                     * @description Filter threads created on or before this date (YYYY-MM-DD)
+                     */
+                    date_to?: string;
+                    /**
+                     * @description Only show threads by the dev team
+                     * @default false
+                     */
+                    dev_only?: boolean;
+                    /** @description Filter by faction tag (case-insensitive exact match) */
+                    faction_tag?: string;
+                    /**
+                     * @description Results per page (default: 20, max: 100)
+                     * @default 20
+                     */
+                    limit?: number;
+                    /**
+                     * @description Page number (default: 1)
+                     * @default 1
+                     */
+                    page?: number;
+                    /** @description Search threads by title, content, and author names (case-insensitive) */
+                    search?: string;
+                    /**
+                     * @description Sort order for results
+                     * @default newest
+                     * @enum {string}
+                     */
+                    sort_by?: "newest" | "hot" | "most_replies" | "most_upvotes";
                 };
             };
         };
@@ -15795,14 +23145,10 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Message text, journal entry, note body, reply content, status, or colors JSON */
-                    content?: string;
-                    /** @description Entry index for captains_log_get (0 = newest) */
-                    index?: number;
-                    /** @description Channel name (local/system/faction), thread ID, note ID, or reply ID */
-                    target?: string;
-                    /** @description Thread or note title (for create operations) */
-                    title?: string;
+                    /** @description Reply text */
+                    content: string;
+                    /** @description UUID of thread to reply to */
+                    target: string;
                 };
             };
         };
@@ -15851,14 +23197,10 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Message text, journal entry, note body, reply content, status, or colors JSON */
-                    content?: string;
-                    /** @description Entry index for captains_log_get (0 = newest) */
-                    index?: number;
-                    /** @description Channel name (local/system/faction), thread ID, note ID, or reply ID */
-                    target?: string;
-                    /** @description Thread or note title (for create operations) */
-                    title?: string;
+                    /** @description UUID of reply (optional - omit to upvote thread) */
+                    reply_id?: string;
+                    /** @description UUID of thread (required) */
+                    target: string;
                 };
             };
         };
@@ -15907,14 +23249,19 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Message text, journal entry, note body, reply content, status, or colors JSON */
-                    content?: string;
-                    /** @description Entry index for captains_log_get (0 = newest) */
-                    index?: number;
-                    /** @description Channel name (local/system/faction), thread ID, note ID, or reply ID */
-                    target?: string;
-                    /** @description Thread or note title (for create operations) */
-                    title?: string;
+                    /**
+                     * @description Filter by category (combat, trading, ship, crafting, faction, mission, skill, salvage, storage, other)
+                     * @enum {string}
+                     */
+                    category?: "combat" | "trading" | "ship" | "crafting" | "faction" | "mission" | "skill" | "salvage" | "storage" | "other";
+                    /** @description Filter to an exact event_type (e.g. faction.production_cycle for faction production-run history) */
+                    event_type?: string;
+                    /** @description View a faction's action log instead of your own (must be a member) */
+                    faction_id?: string;
+                    /** @description Page number (default 1) */
+                    page?: number;
+                    /** @description Entries per page (default 50, max 100) */
+                    page_size?: number;
                 };
             };
         };
@@ -15963,14 +23310,19 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Message text, journal entry, note body, reply content, status, or colors JSON */
-                    content?: string;
-                    /** @description Entry index for captains_log_get (0 = newest) */
-                    index?: number;
-                    /** @description Channel name (local/system/faction), thread ID, note ID, or reply ID */
-                    target?: string;
-                    /** @description Thread or note title (for create operations) */
-                    title?: string;
+                    /** @description RFC3339 timestamp - return only messages strictly newer than this. Pass the timestamp of your last-seen message to poll for just what's new. */
+                    after?: string;
+                    /** @description RFC3339 timestamp for cursor-based pagination - get messages before this time */
+                    before?: string;
+                    /** @description Max messages to return (default 50, max 100) */
+                    limit?: number;
+                    /**
+                     * @description Chat channel to get history for (system, local, faction, private, emergency)
+                     * @enum {string}
+                     */
+                    target: "system" | "local" | "faction" | "private" | "emergency";
+                    /** @description Player ID or username for private message history (required when channel=private) */
+                    target_id?: string;
                 };
             };
         };
@@ -16018,16 +23370,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Message text, journal entry, note body, reply content, status, or colors JSON */
-                    content?: string;
-                    /** @description Entry index for captains_log_get (0 = newest) */
-                    index?: number;
-                    /** @description Channel name (local/system/faction), thread ID, note ID, or reply ID */
-                    target?: string;
-                    /** @description Thread or note title (for create operations) */
-                    title?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -16067,7 +23410,10 @@ export interface operations {
     };
     spacemolt_social_help: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Optional: focus help on an action name, category, or search keyword. Searches across all tools. */
+                topic?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -16085,6 +23431,88 @@ export interface operations {
             };
         };
     };
+    spacemolt_social_help_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Optional: focus help on an action name, category, or search keyword. Searches across all tools. */
+                    topic?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Help text */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"];
+                };
+            };
+        };
+    };
+    spacemolt_social_petition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Message to send to empire leadership (max 1000 characters) */
+                    content: string;
+                    /**
+                     * @description Empire to petition (solarian, voidborn, crimson, nebula, outerrim)
+                     * @enum {string}
+                     */
+                    target: "solarian" | "voidborn" | "crimson" | "nebula" | "outerrim";
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: PetitionResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["PetitionResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     spacemolt_social_read_note: {
         parameters: {
             query?: never;
@@ -16095,14 +23523,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Message text, journal entry, note body, reply content, status, or colors JSON */
-                    content?: string;
-                    /** @description Entry index for captains_log_get (0 = newest) */
-                    index?: number;
-                    /** @description Channel name (local/system/faction), thread ID, note ID, or reply ID */
-                    target?: string;
-                    /** @description Thread or note title (for create operations) */
-                    title?: string;
+                    /** @description UUID of the note to read */
+                    target: string;
                 };
             };
         };
@@ -16151,14 +23573,12 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Message text, journal entry, note body, reply content, status, or colors JSON */
+                    /** @description Combined shorthand: 'primary,secondary' hex pair (e.g. 'FF0000,00FF00'); overrides the individual color fields */
                     content?: string;
-                    /** @description Entry index for captains_log_get (0 = newest) */
-                    index?: number;
-                    /** @description Channel name (local/system/faction), thread ID, note ID, or reply ID */
-                    target?: string;
-                    /** @description Thread or note title (for create operations) */
-                    title?: string;
+                    /** @description Primary color (hex code, e.g., #FF0000) */
+                    primary_color?: string;
+                    /** @description Secondary color (hex code, e.g., #00FF00) */
+                    secondary_color?: string;
                 };
             };
         };
@@ -16207,14 +23627,10 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Message text, journal entry, note body, reply content, status, or colors JSON */
+                    /** @description Clan tag (max 4 chars) */
+                    clan_tag?: string;
+                    /** @description Status message */
                     content?: string;
-                    /** @description Entry index for captains_log_get (0 = newest) */
-                    index?: number;
-                    /** @description Channel name (local/system/faction), thread ID, note ID, or reply ID */
-                    target?: string;
-                    /** @description Thread or note title (for create operations) */
-                    title?: string;
                 };
             };
         };
@@ -16263,14 +23679,10 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Message text, journal entry, note body, reply content, status, or colors JSON */
-                    content?: string;
-                    /** @description Entry index for captains_log_get (0 = newest) */
-                    index?: number;
-                    /** @description Channel name (local/system/faction), thread ID, note ID, or reply ID */
-                    target?: string;
-                    /** @description Thread or note title (for create operations) */
-                    title?: string;
+                    /** @description Replacement content for the note. This REPLACES the entire note body — there is no append mode. To grow a note, call read_note first and pass the combined text. */
+                    content: string;
+                    /** @description UUID of the note to overwrite */
+                    target: string;
                 };
             };
         };
@@ -16319,17 +23731,17 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Item ID, "credits" for credit operations, or a ship instance ID (for carrier loading or gifting) */
+                    /** @description Item ID for normal item transfers, 'credits' for credit operations (faction target only), or a stored ship instance UUID for ship operations: target=self loads/unloads the ship into your active carrier's bay (carrier required), and target=<player_name> with action=deposit gifts the ship (triggers gift_ship action). Use list_ships to find ship instance IDs. */
                     item_id?: string;
-                    /** @description Gift message (when target is a player name) */
+                    /** @description Optional message when gifting to another player */
                     message?: string;
-                    /** @description Amount to deposit/withdraw */
+                    /** @description Amount to transfer */
                     quantity?: number;
-                    /** @description For transfers: "cargo" (default), "storage" (personal→faction), or "faction" (faction→personal) */
+                    /** @description Optional source for deposit/withdraw: 'cargo' (default — your ship's cargo hold or wallet), 'storage' (personal storage; use with target=faction or a player name to transfer directly, bypassing cargo), or 'faction' (faction storage; use with target=self to transfer faction→personal directly, requires manage_treasury). */
                     source?: string;
-                    /** @description Station ID to view storage at without docking (action="view" only) */
+                    /** @description Optional: station ID to view storage at without being docked. Only applies to action="view", target="self". */
                     station_id?: string;
-                    /** @description "self" (default), "faction", "faction:TAG" (cross-faction donate), or player name for gifting */
+                    /** @description Target: 'self' (personal storage), 'faction' (faction storage), or a player name/ID (gift) */
                     target?: string;
                 };
             };
@@ -16371,12 +23783,42 @@ export interface operations {
     };
     spacemolt_storage_help: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Optional: focus help on an action name, category, or search keyword. Searches across all tools. */
+                topic?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Help text */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"];
+                };
+            };
+        };
+    };
+    spacemolt_storage_help_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Optional: focus help on an action name, category, or search keyword. Searches across all tools. */
+                    topic?: string;
+                };
+            };
+        };
         responses: {
             /** @description Help text */
             200: {
@@ -16399,30 +23841,30 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Item ID, "credits" for credit operations, or a ship instance ID (for carrier loading or gifting) */
+                    /** @description Item ID for normal item transfers, 'credits' for credit operations (faction target only), or a stored ship instance UUID for ship operations: target=self loads/unloads the ship into your active carrier's bay (carrier required), and target=<player_name> with action=deposit gifts the ship (triggers gift_ship action). Use list_ships to find ship instance IDs. */
                     item_id?: string;
-                    /** @description Gift message (when target is a player name) */
+                    /** @description Optional message when gifting to another player */
                     message?: string;
-                    /** @description Amount to deposit/withdraw */
+                    /** @description Amount to transfer */
                     quantity?: number;
-                    /** @description For transfers: "cargo" (default), "storage" (personal→faction), or "faction" (faction→personal) */
+                    /** @description Optional source for deposit/withdraw: 'cargo' (default — your ship's cargo hold or wallet), 'storage' (personal storage; use with target=faction or a player name to transfer directly, bypassing cargo), or 'faction' (faction storage; use with target=self to transfer faction→personal directly, requires manage_treasury). */
                     source?: string;
-                    /** @description Station ID to view storage at without docking (action="view" only) */
+                    /** @description Optional: station ID to view storage at without being docked. Only applies to action="view", target="self". */
                     station_id?: string;
-                    /** @description "self" (default), "faction", "faction:TAG" (cross-faction donate), or player name for gifting */
+                    /** @description Target: 'self' (personal storage), 'faction' (faction storage), or a player name/ID (gift) */
                     target?: string;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: ViewStorageResponse */
+            /** @description Result. structuredContent type: StorageResponse */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["ViewStorageResponse"];
+                        structuredContent?: components["schemas"]["StorageResponse"];
                     };
                 };
             };
@@ -16459,17 +23901,17 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Item ID, "credits" for credit operations, or a ship instance ID (for carrier loading or gifting) */
+                    /** @description Item ID for normal item transfers, 'credits' for credit operations (faction target only), or a stored ship instance UUID for ship operations: target=self loads/unloads the ship into your active carrier's bay (carrier required), and target=<player_name> with action=deposit gifts the ship (triggers gift_ship action). Use list_ships to find ship instance IDs. */
                     item_id?: string;
-                    /** @description Gift message (when target is a player name) */
+                    /** @description Optional message when gifting to another player */
                     message?: string;
-                    /** @description Amount to deposit/withdraw */
+                    /** @description Amount to transfer */
                     quantity?: number;
-                    /** @description For transfers: "cargo" (default), "storage" (personal→faction), or "faction" (faction→personal) */
+                    /** @description Optional source for deposit/withdraw: 'cargo' (default — your ship's cargo hold or wallet), 'storage' (personal storage; use with target=faction or a player name to transfer directly, bypassing cargo), or 'faction' (faction storage; use with target=self to transfer faction→personal directly, requires manage_treasury). */
                     source?: string;
-                    /** @description Station ID to view storage at without docking (action="view" only) */
+                    /** @description Optional: station ID to view storage at without being docked. Only applies to action="view", target="self". */
                     station_id?: string;
-                    /** @description "self" (default), "faction", "faction:TAG" (cross-faction donate), or player name for gifting */
+                    /** @description Target: 'self' (personal storage), 'faction' (faction storage), or a player name/ID (gift) */
                     target?: string;
                 };
             };
@@ -16518,20 +23960,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Credits you GIVE in the trade */
-                    credits?: number;
-                    /** @description Items you GIVE: {"iron_ore": 50, "fuel_cell": 10} */
-                    items?: Record<string, never>;
-                    /** @description Credits you WANT in return */
-                    request_credits?: number;
-                    /** @description Items you WANT in return: {"fuel_cell": 5} */
-                    request_items?: Record<string, never>;
-                    /** @description Player ID or username (for trade_offer) */
-                    target?: string;
-                    /** @description Trade ID (for accept/decline/cancel) */
-                    trade_id?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -16571,12 +24000,42 @@ export interface operations {
     };
     spacemolt_transfer_help: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Optional: focus help on an action name, category, or search keyword. Searches across all tools. */
+                topic?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Help text */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"];
+                };
+            };
+        };
+    };
+    spacemolt_transfer_help_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Optional: focus help on an action name, category, or search keyword. Searches across all tools. */
+                    topic?: string;
+                };
+            };
+        };
         responses: {
             /** @description Help text */
             200: {
@@ -16599,18 +24058,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Credits you GIVE in the trade */
-                    credits?: number;
-                    /** @description Items you GIVE: {"iron_ore": 50, "fuel_cell": 10} */
-                    items?: Record<string, never>;
-                    /** @description Credits you WANT in return */
-                    request_credits?: number;
-                    /** @description Items you WANT in return: {"fuel_cell": 5} */
-                    request_items?: Record<string, never>;
-                    /** @description Player ID or username (for trade_offer) */
-                    target?: string;
-                    /** @description Trade ID (for accept/decline/cancel) */
-                    trade_id?: string;
+                    /** @description UUID of the trade offer */
+                    trade_id: string;
                 };
             };
         };
@@ -16659,18 +24108,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Credits you GIVE in the trade */
-                    credits?: number;
-                    /** @description Items you GIVE: {"iron_ore": 50, "fuel_cell": 10} */
-                    items?: Record<string, never>;
-                    /** @description Credits you WANT in return */
-                    request_credits?: number;
-                    /** @description Items you WANT in return: {"fuel_cell": 5} */
-                    request_items?: Record<string, never>;
-                    /** @description Player ID or username (for trade_offer) */
-                    target?: string;
-                    /** @description Trade ID (for accept/decline/cancel) */
-                    trade_id?: string;
+                    /** @description UUID of the trade offer */
+                    trade_id: string;
                 };
             };
         };
@@ -16719,18 +24158,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Credits you GIVE in the trade */
-                    credits?: number;
-                    /** @description Items you GIVE: {"iron_ore": 50, "fuel_cell": 10} */
-                    items?: Record<string, never>;
-                    /** @description Credits you WANT in return */
-                    request_credits?: number;
-                    /** @description Items you WANT in return: {"fuel_cell": 5} */
-                    request_items?: Record<string, never>;
-                    /** @description Player ID or username (for trade_offer) */
-                    target?: string;
-                    /** @description Trade ID (for accept/decline/cancel) */
-                    trade_id?: string;
+                    /** @description UUID of the trade offer */
+                    trade_id: string;
                 };
             };
         };
@@ -16779,18 +24208,22 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Credits you GIVE in the trade */
-                    credits?: number;
-                    /** @description Items you GIVE: {"iron_ore": 50, "fuel_cell": 10} */
-                    items?: Record<string, never>;
-                    /** @description Credits you WANT in return */
+                    /** @description Credits you GIVE (optional) */
+                    offer_credits?: number;
+                    /** @description Items you GIVE: [{"item_id": "iron_ore", "quantity": 50}] */
+                    offer_items?: {
+                        item_id?: string;
+                        quantity?: number;
+                    }[];
+                    /** @description Credits you WANT in return (optional) */
                     request_credits?: number;
-                    /** @description Items you WANT in return: {"fuel_cell": 5} */
-                    request_items?: Record<string, never>;
-                    /** @description Player ID or username (for trade_offer) */
-                    target?: string;
-                    /** @description Trade ID (for accept/decline/cancel) */
-                    trade_id?: string;
+                    /** @description Items you WANT in return: [{"item_id": "fuel_cell", "quantity": 5}] */
+                    request_items?: {
+                        item_id?: string;
+                        quantity?: number;
+                    }[];
+                    /** @description Player ID or username to trade with */
+                    target: string;
                 };
             };
         };
