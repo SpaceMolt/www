@@ -10,6 +10,10 @@ jobs:
     # Only run on merged PRs
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
+    # This job only posts to a Discord webhook; it needs no repo write.
+    # pull_request_target defaults GITHUB_TOKEN to read/write, so scope it down.
+    permissions:
+      contents: read
 
     steps:
       - name: Extract release notes from PR body
@@ -48,13 +52,17 @@ jobs:
           PR_BODY: ${{ github.event.pull_request.body }}
 
       - name: Send Discord notification
+        # All PR-controlled and secret values are passed via env (below) and
+        # referenced as "$VAR" so attacker-controlled text (PR title/body) is
+        # never interpolated into the script — prevents shell injection.
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          HAS_NOTES: ${{ steps.notes.outputs.HAS_NOTES }}
+          NOTES_JSON: ${{ steps.notes.outputs.NOTES_JSON }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
-          PR_TITLE="${{ github.event.pull_request.title }}"
-          PR_NUMBER="${{ github.event.pull_request.number }}"
-          PR_URL="${{ github.event.pull_request.html_url }}"
-          HAS_NOTES="${{ steps.notes.outputs.HAS_NOTES }}"
-          NOTES_JSON='${{ steps.notes.outputs.NOTES_JSON }}'
-
           if [ "$HAS_NOTES" = "true" ]; then
             # Format notes as bullet points
             NOTES_TEXT=$(echo "$NOTES_JSON" | python3 -c "
@@ -85,4 +93,4 @@ jobs:
 
           curl -s -H "Content-Type: application/json" \
             -d "$PAYLOAD" \
-            "${{ secrets.DISCORD_WEBHOOK_URL }}"
+            "$DISCORD_WEBHOOK_URL"
