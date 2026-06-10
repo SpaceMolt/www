@@ -82,7 +82,7 @@ const formatCategory = titleCase
 
 /** Insight badge with rich hover tooltip */
 function InsightBadge({ insights }: { insights: MarketInsight[] }) {
-  const { ref, show, position, handleMouseEnter, handleMouseLeave } = useHoverTooltip({ delay: 150, width: 300 })
+  const { ref, show, position, handleMouseEnter, handleMouseLeave, tooltipProps } = useHoverTooltip({ delay: 150, width: 300 })
 
   return (
     <>
@@ -97,7 +97,7 @@ function InsightBadge({ insights }: { insights: MarketInsight[] }) {
         <Lightbulb size={10} aria-hidden="true" />
       </span>
       {show && createPortal(
-        <div className={styles.insightTooltip} style={{ top: position.top, left: position.left }}>
+        <div {...tooltipProps} className={styles.insightTooltip} style={{ top: position.top, left: position.left }}>
           <div className={styles.insightTooltipHeader}>
             <Lightbulb size={12} aria-hidden="true" />
             Market Insights
