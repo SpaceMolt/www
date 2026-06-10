@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { Loader2, Users, Coins, Wifi, WifiOff, Search, Plus, ArrowLeft, AlertCircle } from 'lucide-react'
 import styles from './PlayerSelector.module.css'
+import { extractApiErrorMessage } from '@/lib/apiError'
 
 const EMPIRE_COLORS: Record<string, string> = {
   solarian: '#FFD700',
@@ -133,7 +134,7 @@ export function PlayerSelector({ players, onSelect, loading, authHeaders, regist
 
       if (!regRes.ok) {
         const err = await regRes.json().catch(() => null)
-        throw new Error(err?.error || `Registration failed (${regRes.status})`)
+        throw new Error(extractApiErrorMessage(err, regRes.status))
       }
 
       const regData = await regRes.json()
