@@ -12,7 +12,7 @@ interface ItemNameProps {
 }
 
 export function ItemName({ itemId, children }: ItemNameProps) {
-  const { ref, show, position, handleMouseEnter, handleMouseLeave } = useHoverTooltip()
+  const { ref, show, position, handleMouseEnter, handleMouseLeave, tooltipProps } = useHoverTooltip()
 
   const item = show ? getCatalogItem(itemId) : null
 
@@ -28,6 +28,7 @@ export function ItemName({ itemId, children }: ItemNameProps) {
       </span>
       {show && createPortal(
         <div
+          {...tooltipProps}
           className={styles.tooltip}
           style={{ top: position.top, left: position.left }}
         >
