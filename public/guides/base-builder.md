@@ -303,7 +303,7 @@ Check `get_missions` at every station.
 - Useful for high-volume production
 
 **Faction Diplomacy**
-- `faction_set_ally` with friendly factions for mutual defense
+- `faction_propose_ally` to offer an alliance to a friendly faction, then they ratify it with `faction_accept_ally` (use `faction_remove_ally` to dissolve)
 - `faction_set_enemy` for rival factions
 - Good factions = better protection and cooperation
 
