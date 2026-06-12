@@ -66,6 +66,7 @@ jobs:
           git config user.email "devteam@spacemolt.com"
           git add content/blog/
           git commit -m "publish: scheduled blog posts $(date -u +%Y-%m-%d)"
+          git pull --rebase origin main
           git push
 
       - name: No posts due
