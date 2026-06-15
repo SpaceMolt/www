@@ -1,0 +1,455 @@
+/* Achievement share card — an "intercepted commendation" from the Crustacean
+   Cosmos. --accent is set per-pilot (empire colour) on .page. */
+
+.page {
+  --accent: #00d4ff;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.75rem;
+  padding: 7rem 1.25rem 5rem;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+}
+
+/* Empire-coloured glow blooming behind the card */
+.ambient {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 50% at 50% 38%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%),
+    radial-gradient(40% 40% at 50% 70%, rgba(255, 107, 53, 0.08), transparent 70%);
+}
+
+.stars {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1.5px 1.5px at 12% 22%, var(--star-white), transparent),
+    radial-gradient(1px 1px at 78% 16%, var(--chrome-silver), transparent),
+    radial-gradient(1.5px 1.5px at 64% 72%, var(--accent), transparent),
+    radial-gradient(1px 1px at 28% 84%, var(--star-white), transparent),
+    radial-gradient(1px 1px at 90% 56%, var(--chrome-silver), transparent);
+  background-size: 100% 100%;
+  opacity: 0.55;
+  animation: twinkle 5s ease-in-out infinite alternate;
+}
+
+/* === The card === */
+.card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 580px;
+  padding: 2.5rem 2.25rem 2rem;
+  background:
+    linear-gradient(165deg, rgba(20, 31, 56, 0.92), rgba(10, 14, 23, 0.96));
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--dim-grey));
+  border-radius: 14px;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.4),
+    0 30px 80px rgba(0, 0, 0, 0.6),
+    0 0 60px color-mix(in srgb, var(--accent) 18%, transparent);
+  backdrop-filter: blur(8px);
+  animation: cardIn 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* Faint scanline texture */
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(255, 255, 255, 0.02) 0px,
+    rgba(255, 255, 255, 0.02) 1px,
+    transparent 1px,
+    transparent 4px
+  );
+  mix-blend-mode: overlay;
+  opacity: 0.5;
+}
+
+/* HUD corner brackets */
+.bracket {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--accent);
+  opacity: 0.7;
+}
+.btl { top: 10px; left: 10px; border-right: none; border-bottom: none; }
+.btr { top: 10px; right: 10px; border-left: none; border-bottom: none; }
+.bbl { bottom: 10px; left: 10px; border-right: none; border-top: none; }
+.bbr { bottom: 10px; right: 10px; border-left: none; border-top: none; }
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+}
+
+.pulse {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+  animation: pulse 1.8s ease-in-out infinite;
+}
+
+.category {
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.62rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--hull-grey);
+  border: 1px solid var(--dim-grey);
+  border-radius: 999px;
+  padding: 0.25rem 0.7rem;
+}
+
+/* === Emblem medallion === */
+.emblem {
+  position: relative;
+  width: 124px;
+  height: 124px;
+  margin: 0.5rem auto 1.5rem;
+  animation: emblemIn 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) 0.15s both;
+}
+
+.emblemRing {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent,
+    var(--accent),
+    var(--shell-orange),
+    var(--accent),
+    transparent 75%
+  );
+  filter: drop-shadow(0 0 14px color-mix(in srgb, var(--accent) 60%, transparent));
+  animation: spin 7s linear infinite;
+  mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 4px));
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 4px));
+}
+
+.emblemCore {
+  position: absolute;
+  inset: 9px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.12), rgba(10, 14, 23, 0.95) 70%);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  box-shadow: inset 0 0 24px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.emblemCore span {
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: 2.8rem;
+  font-weight: 800;
+  color: var(--star-white);
+  text-shadow: 0 0 18px color-mix(in srgb, var(--accent) 75%, transparent);
+}
+
+/* === Title / desc === */
+.name {
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: clamp(1.7rem, 5vw, 2.4rem);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: 0.01em;
+  color: var(--star-white);
+  text-shadow: 0 0 30px color-mix(in srgb, var(--accent) 35%, transparent);
+  animation: fadeUp 0.6s ease 0.3s both;
+}
+
+.desc {
+  margin: 0.9rem auto 0;
+  max-width: 42ch;
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--chrome-silver);
+  animation: fadeUp 0.6s ease 0.4s both;
+}
+
+/* === Rarity hook === */
+.rarity {
+  margin: 1.8rem auto 0;
+  max-width: 420px;
+  animation: fadeUp 0.6s ease 0.5s both;
+}
+
+.rarityHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.rarityPct {
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: 2.1rem;
+  font-weight: 800;
+  color: var(--accent);
+  text-shadow: 0 0 22px color-mix(in srgb, var(--accent) 55%, transparent);
+  line-height: 1;
+}
+
+.rarityLabel {
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--chrome-silver);
+}
+
+.meter {
+  margin-top: 0.85rem;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.meterFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--shell-orange));
+  box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 60%, transparent);
+  transform-origin: left;
+  animation: meterGrow 1s cubic-bezier(0.2, 0.8, 0.2, 1) 0.7s both;
+}
+
+/* === Pilot footer === */
+.pilot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 2rem;
+  padding-top: 1.4rem;
+  border-top: 1px solid var(--dim-grey);
+  text-align: left;
+  animation: fadeUp 0.6s ease 0.6s both;
+}
+
+.pilotId {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.pilotName {
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--star-white);
+}
+
+.pilotEmpire {
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+}
+
+.pilotMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.factionChip,
+.points {
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 0.3rem 0.65rem;
+  border-radius: 6px;
+}
+
+.factionChip {
+  color: var(--chrome-silver);
+  border: 1px solid var(--dim-grey);
+}
+
+.points {
+  color: var(--space-black);
+  background: var(--accent);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+/* === Actions === */
+.actions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  animation: fadeUp 0.6s ease 0.75s both;
+}
+
+.ctaPrimary {
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  color: var(--star-white);
+  background: linear-gradient(135deg, var(--shell-orange), var(--claw-red));
+  padding: 0.95rem 2.4rem;
+  border-radius: 8px;
+  border: 1px solid var(--shell-orange);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ctaPrimary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--glow-orange), inset 0 0 20px rgba(255, 255, 255, 0.15);
+}
+
+.shareRow {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.ctaSecondary,
+.ctaGhost {
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.78rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  cursor: pointer;
+  padding: 0.6rem 1.1rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.ctaSecondary {
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+.ctaSecondary:hover {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.ctaGhost {
+  color: var(--hull-grey);
+  background: transparent;
+  border: 1px solid var(--dim-grey);
+}
+
+.ctaGhost:hover {
+  color: var(--star-white);
+  border-color: var(--hull-grey);
+}
+
+.tagline {
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  color: var(--hull-grey);
+  animation: fadeUp 0.6s ease 0.9s both;
+}
+
+/* === Locked state === */
+.lockedCard {
+  position: relative;
+  z-index: 1;
+  max-width: 480px;
+  padding: 2.5rem;
+  border: 1px solid var(--dim-grey);
+  border-radius: 14px;
+  background: rgba(13, 19, 33, 0.9);
+}
+
+.lockedName {
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--chrome-silver);
+  margin: 0.5rem 0 1rem;
+}
+
+/* === Animations === */
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(28px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes emblemIn {
+  from { opacity: 0; transform: scale(0.6) rotate(-30deg); }
+  to { opacity: 1; transform: scale(1) rotate(0); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes meterGrow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes twinkle {
+  0% { opacity: 0.35; }
+  100% { opacity: 0.7; }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card, .emblem, .name, .desc, .rarity, .pilot, .actions, .tagline,
+  .meterFill, .emblemRing, .pulse, .stars { animation: none; }
+}
+
+@media (max-width: 600px) {
+  .card { padding: 2rem 1.4rem 1.6rem; }
+  .pilot { flex-direction: column; align-items: flex-start; }
+}
