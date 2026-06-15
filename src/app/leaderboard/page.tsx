@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from '@/i18n'
 import styles from './page.module.css'
+import { AchievementsBoard } from './AchievementsBoard'
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 
@@ -50,7 +51,7 @@ interface LeaderboardData {
   }
 }
 
-type Tab = 'players' | 'factions' | 'exchange'
+type Tab = 'players' | 'factions' | 'exchange' | 'achievements'
 
 const EMPIRE_COLORS: Record<string, string> = {
   solarian: '#ffd700',
@@ -190,49 +191,55 @@ export default function LeaderboardPage() {
       </div>
 
       <div className={styles.tabs}>
-        {(['players', 'factions', 'exchange'] as Tab[]).map(tab => (
+        {(['players', 'factions', 'exchange', 'achievements'] as Tab[]).map(tab => (
           <button
             key={tab}
             className={`${styles.tabBtn} ${activeTab === tab ? styles.tabBtnActive : ''}`}
             onClick={() => setActiveTab(tab)}
           >
-            {tab === 'players' ? t('leaderboard.tabPlayers') : tab === 'factions' ? t('leaderboard.tabFactions') : t('leaderboard.tabExchange')}
+            {tab === 'players' ? t('leaderboard.tabPlayers') : tab === 'factions' ? t('leaderboard.tabFactions') : tab === 'exchange' ? t('leaderboard.tabExchange') : 'Achievements'}
           </button>
         ))}
       </div>
 
-      <div className={styles.categories}>
-        {categories.map(cat => (
-          <button
-            key={cat.key}
-            className={`${styles.catBtn} ${activeCategory === cat.key ? styles.catBtnActive : ''}`}
-            onClick={() => setCategory(cat.key)}
-          >
-            {t(cat.labelKey)}
-          </button>
-        ))}
-      </div>
+      {activeTab === 'achievements' ? (
+        <AchievementsBoard />
+      ) : (
+        <>
+          <div className={styles.categories}>
+            {categories.map(cat => (
+              <button
+                key={cat.key}
+                className={`${styles.catBtn} ${activeCategory === cat.key ? styles.catBtnActive : ''}`}
+                onClick={() => setCategory(cat.key)}
+              >
+                {t(cat.labelKey)}
+              </button>
+            ))}
+          </div>
 
-      {loading && (
-        <div className={styles.loading}>{t('leaderboard.loading')}</div>
-      )}
+          {loading && (
+            <div className={styles.loading}>{t('leaderboard.loading')}</div>
+          )}
 
-      {error && (
-        <div className={styles.error}>{t('leaderboard.error')}</div>
-      )}
+          {error && (
+            <div className={styles.error}>{t('leaderboard.error')}</div>
+          )}
 
-      {!loading && !error && data && activeTab === 'factions' && (
-        <FactionTable entries={getFactionEntries()} format={currentFormat} />
-      )}
+          {!loading && !error && data && activeTab === 'factions' && (
+            <FactionTable entries={getFactionEntries()} format={currentFormat} />
+          )}
 
-      {!loading && !error && data && activeTab !== 'factions' && (
-        <PlayerTable entries={getPlayerEntries()} format={currentFormat} />
-      )}
+          {!loading && !error && data && activeTab !== 'factions' && (
+            <PlayerTable entries={getPlayerEntries()} format={currentFormat} />
+          )}
 
-      {!loading && !error && data && (
-        <div className={styles.updatedAt}>
-          {t('leaderboard.updated', { time: relativeTime(data.generated_at) })}
-        </div>
+          {!loading && !error && data && (
+            <div className={styles.updatedAt}>
+              {t('leaderboard.updated', { time: relativeTime(data.generated_at) })}
+            </div>
+          )}
+        </>
       )}
     </main>
   )
