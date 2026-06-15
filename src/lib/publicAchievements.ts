@@ -1,6 +1,8 @@
 // Client for the gameserver's public achievements API (the shareable-profile
 // data source). See gameserver internal/server/achievements_api.go.
 
+import emblemManifest from '@/data/achievement-emblems.json'
+
 export interface PublicAchievementEntry {
   id: string
   name: string
@@ -102,6 +104,28 @@ export function empireLabel(empire?: string): string {
     outerrim: 'Outer Rim',
   }
   return m[empire.toLowerCase()] || empire
+}
+
+// Emblem art: which achievements have a generated medallion (the rest fall back
+// to a letter glyph). The manifest is written by gen-achievement-emblems.ts.
+const EMBLEM_IDS = new Set(emblemManifest as string[])
+
+export function hasEmblem(id: string): boolean {
+  return EMBLEM_IDS.has(id)
+}
+
+export function emblemSrc(id: string): string {
+  return `/images/achievements/${id}.webp`
+}
+
+// Prestige tier from points — drives the medallion's frame metal (and any
+// tier styling on the card). Mirrors gen-achievement-emblems.ts.
+export type EmblemTier = 'bronze' | 'silver' | 'gold' | 'legendary'
+export function tierFor(points: number): EmblemTier {
+  if (points >= 50) return 'legendary'
+  if (points >= 30) return 'gold'
+  if (points >= 15) return 'silver'
+  return 'bronze'
 }
 
 // Human phrasing for the rarity hook — the share card's pull.

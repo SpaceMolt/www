@@ -5,6 +5,8 @@ import {
   accentFor,
   empireLabel,
   rarityLabel,
+  hasEmblem,
+  emblemSrc,
 } from '@/lib/publicAchievements'
 import styles from './AchievementCabinet.module.css'
 
@@ -78,7 +80,16 @@ export function AchievementCabinet({
           const inner = (
             <>
               <div className={styles.tEmblem} aria-hidden>
-                {a.earned ? glyph : a.hidden ? '?' : '🔒'}
+                {a.earned && hasEmblem(a.id) ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img className={styles.tEmblemImg} src={emblemSrc(a.id)} alt="" />
+                ) : a.earned ? (
+                  glyph
+                ) : a.hidden ? (
+                  '?'
+                ) : (
+                  '🔒'
+                )}
               </div>
               <div className={styles.tBody}>
                 <p className={styles.tName}>{a.name}</p>

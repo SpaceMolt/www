@@ -206,6 +206,24 @@ a.tile.earned:hover {
   box-shadow: inset 0 0 16px color-mix(in srgb, var(--accent) 25%, transparent), 0 0 16px color-mix(in srgb, var(--accent) 22%, transparent);
 }
 
+/* When a real medallion is present it carries its own rim/glow — drop the
+   placeholder ring so the two don't double up. */
+.tEmblemImg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.tEmblem:has(.tEmblemImg) {
+  border: none;
+  background: none;
+  box-shadow: none;
+}
+
+.earned .tEmblem:has(.tEmblemImg) {
+  box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
 .locked .tEmblem {
   font-size: 1rem;
   color: var(--hull-grey);

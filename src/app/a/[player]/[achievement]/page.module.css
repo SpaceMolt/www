@@ -141,6 +141,15 @@
   animation: emblemIn 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) 0.15s both;
 }
 
+.emblemImg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 16px color-mix(in srgb, var(--accent) 45%, transparent));
+}
+
 .emblemRing {
   position: absolute;
   inset: 0;

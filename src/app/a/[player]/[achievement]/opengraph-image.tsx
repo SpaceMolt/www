@@ -1,4 +1,6 @@
 import { ImageResponse } from 'next/og'
+import { readFile } from 'node:fs/promises'
+import { join } from 'node:path'
 import {
   fetchPlayerAchievements,
   findAchievement,
@@ -6,12 +8,27 @@ import {
   empireLabel,
   rarityLabel,
   safeDecode,
+  hasEmblem,
 } from '@/lib/publicAchievements'
 
-export const runtime = 'edge'
+// nodejs (not edge) so we can read the emblem PNG off disk — Satori can't decode
+// the WebP the site uses, so the OG card embeds a PNG sibling instead.
+export const runtime = 'nodejs'
 export const alt = 'SpaceMolt achievement unlocked'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
+
+// Load an emblem's OG PNG as a data URI for Satori; null if absent.
+async function loadEmblem(id: string): Promise<string | null> {
+  if (!hasEmblem(id)) return null
+  try {
+    const path = join(process.cwd(), 'public', 'images', 'achievements', `${id}.og.png`)
+    const buf = await readFile(path)
+    return `data:image/png;base64,${buf.toString('base64')}`
+  } catch {
+    return null
+  }
+}
 
 // Pull a single weight of a Google font as an ArrayBuffer for Satori. Returns
 // null on any failure so the card still renders with a default face.
@@ -43,8 +60,9 @@ export default async function Image({ params }: { params: Params }) {
   const empire = empireLabel(data?.subject.empire)
   const rarity = ach && ach.earned ? rarityLabel(ach.rarity_pct).toUpperCase() : 'CRUSTACEAN COSMOS'
   const glyph = ((ach?.emblem || name).charAt(0) || 'S').toUpperCase()
+  const emblem = ach && ach.earned ? await loadEmblem(ach.id) : null
 
-  const charset = `${name}${desc}${pilot}${empire}${rarity}ACHIEVEMENT UNLOCKEDSPACEMOLTspacemolt.com·PLAY FREE${glyph}`
+  const charset = `${name}${pilot}${empire}${rarity}ACHIEVEMENT UNLOCKEDSPACEMOLTspacemolt.com·PLAY FREE${glyph}`
   const [orbitron, orbitronBlack, jet] = await Promise.all([
     loadFont('Orbitron', 700, charset),
     loadFont('Orbitron', 800, charset),
@@ -77,13 +95,16 @@ export default async function Image({ params }: { params: Params }) {
           <div
             style={{
               display: 'flex',
+              alignItems: 'center',
+              gap: 12,
               fontFamily: 'JetBrains',
               fontSize: 22,
               letterSpacing: 4,
               color: accent,
             }}
           >
-            ◆ ACHIEVEMENT UNLOCKED
+            <div style={{ display: 'flex', width: 12, height: 12, background: accent, transform: 'rotate(45deg)' }} />
+            ACHIEVEMENT UNLOCKED
           </div>
           <div style={{ display: 'flex', fontFamily: 'Orbitron', fontWeight: 800, fontSize: 30, letterSpacing: 2 }}>
             SPACEMOLT
@@ -92,24 +113,34 @@ export default async function Image({ params }: { params: Params }) {
 
         {/* middle: emblem + text */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 48 }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 200,
-              height: 200,
-              borderRadius: 100,
-              border: `3px solid ${accent}`,
-              background: `radial-gradient(circle at 35% 30%, #ffffff1f, #0a0e17 72%)`,
-              boxShadow: `0 0 60px ${accent}66`,
-              flexShrink: 0,
-            }}
-          >
-            <div style={{ display: 'flex', fontFamily: 'Orbitron', fontWeight: 800, fontSize: 96, color: '#e8f4f8' }}>
-              {glyph}
+          {emblem ? (
+            <img
+              src={emblem}
+              width={216}
+              height={216}
+              style={{ flexShrink: 0, filter: `drop-shadow(0 0 50px ${accent}66)` }}
+              alt=""
+            />
+          ) : (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 200,
+                height: 200,
+                borderRadius: 100,
+                border: `3px solid ${accent}`,
+                background: `radial-gradient(circle at 35% 30%, #ffffff1f, #0a0e17 72%)`,
+                boxShadow: `0 0 60px ${accent}66`,
+                flexShrink: 0,
+              }}
+            >
+              <div style={{ display: 'flex', fontFamily: 'Orbitron', fontWeight: 800, fontSize: 96, color: '#e8f4f8' }}>
+                {glyph}
+              </div>
             </div>
-          </div>
+          )}
 
           <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
             <div

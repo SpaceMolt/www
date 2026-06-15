@@ -9,6 +9,8 @@ import {
   empireLabel,
   rarityLabel,
   safeDecode,
+  hasEmblem,
+  emblemSrc,
 } from '@/lib/publicAchievements'
 import { ShareActions } from './ShareActions'
 import styles from './page.module.css'
@@ -90,10 +92,17 @@ export default async function AchievementSharePage({
         </header>
 
         <div className={styles.emblem} aria-hidden>
-          <div className={styles.emblemRing} />
-          <div className={styles.emblemCore}>
-            <span>{emblemGlyph}</span>
-          </div>
+          {hasEmblem(ach.id) ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img className={styles.emblemImg} src={emblemSrc(ach.id)} alt="" />
+          ) : (
+            <>
+              <div className={styles.emblemRing} />
+              <div className={styles.emblemCore}>
+                <span>{emblemGlyph}</span>
+              </div>
+            </>
+          )}
         </div>
 
         <h1 className={styles.name}>{ach.name}</h1>
