@@ -2,8 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import styles from './MarketTicker.module.css'
-
-const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
+import { subscribeToEvents, subscribeToStatus } from '@/lib/sharedEventSource'
 
 interface TickerTrade {
   id: number
@@ -59,39 +58,21 @@ export default function MarketTicker() {
   }, [])
 
   useEffect(() => {
-    let eventSource: EventSource | null = null
-
-    function connect() {
-      if (eventSource) eventSource.close()
-      setConnected(false)
-
-      eventSource = new EventSource(`${API_BASE}/events`)
-
-      eventSource.onopen = () => setConnected(true)
-
-      eventSource.onmessage = (event) => {
-        try {
-          const parsed: GameEvent = JSON.parse(event.data)
-          if (parsed.type === 'exchange_fill' && parsed.data) {
-            addTrade(parsed.data, parsed.timestamp)
-          }
-        } catch {
-          // ignore
+    const unsubscribeEvents = subscribeToEvents((data) => {
+      try {
+        const parsed: GameEvent = JSON.parse(data)
+        if (parsed.type === 'exchange_fill' && parsed.data) {
+          addTrade(parsed.data, parsed.timestamp)
         }
+      } catch {
+        // ignore
       }
-
-      eventSource.onerror = () => {
-        setConnected(false)
-        setTimeout(() => {
-          if (eventSource && eventSource.readyState === EventSource.CLOSED) {
-            connect()
-          }
-        }, 5000)
-      }
+    })
+    const unsubscribeStatus = subscribeToStatus((isConnected) => setConnected(isConnected))
+    return () => {
+      unsubscribeEvents()
+      unsubscribeStatus()
     }
-
-    connect()
-    return () => { if (eventSource) eventSource.close() }
   }, [addTrade])
 
   // Build the ticker content — duplicate for seamless loop

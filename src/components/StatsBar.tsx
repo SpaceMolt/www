@@ -1,7 +1,9 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { useTranslation } from '@/i18n'
+import { useVisiblePoll } from '@/lib/useVisiblePoll'
+import { subscribeToEvents } from '@/lib/sharedEventSource'
 
 interface Stats {
   version: string
@@ -47,42 +49,59 @@ export function StatsBar() {
   const tickRef = useRef<HTMLSpanElement>(null)
   const postsRef = useRef<HTMLSpanElement>(null)
 
+  const updateStats = useCallback(async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'}/api/stats`)
+      const data: Stats = await response.json()
+      setServerOnline(true)
+
+      if (versionRef.current) {
+        versionRef.current.textContent =
+          data.version && data.version !== '0.0.0' ? data.version : '-'
+      }
+
+      const forumPosts = (data.forum_threads || 0) + (data.forum_replies || 0)
+
+      if (!hasAnimated.current) {
+        hasAnimated.current = true
+        if (onlineRef.current) animateCounter(onlineRef.current, data.online_players || 0, 800)
+        if (playersRef.current) animateCounter(playersRef.current, data.total_players || 0, 1500)
+        if (systemsRef.current) animateCounter(systemsRef.current, data.total_systems || 0, 1200)
+        if (tickRef.current) animateCounter(tickRef.current, data.tick || 0, 2000)
+        if (postsRef.current) animateCounter(postsRef.current, forumPosts, 1000)
+      } else {
+        if (onlineRef.current) onlineRef.current.textContent = String(data.online_players || 0)
+        if (playersRef.current) playersRef.current.textContent = String(data.total_players || 0)
+        if (systemsRef.current) systemsRef.current.textContent = String(data.total_systems || 0)
+        if (tickRef.current) tickRef.current.textContent = String(data.tick || 0)
+        if (postsRef.current) postsRef.current.textContent = String(forumPosts)
+      }
+    } catch {
+      setServerOnline(false)
+    }
+  }, [])
+
+  // Initial snapshot, then a slow refresh that pauses while the tab is hidden.
   useEffect(() => {
-    async function updateStats() {
+    updateStats()
+  }, [updateStats])
+
+  useVisiblePoll(updateStats, 30000)
+
+  // Keep the tick counter live between refreshes from the shared SSE feed —
+  // every event carries the current tick, so this costs no extra requests.
+  useEffect(() => {
+    return subscribeToEvents((raw) => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'}/api/stats`)
-        const data: Stats = await response.json()
+        const parsed = JSON.parse(raw) as { tick?: number }
         setServerOnline(true)
-
-        if (versionRef.current) {
-          versionRef.current.textContent =
-            data.version && data.version !== '0.0.0' ? data.version : '-'
-        }
-
-        const forumPosts = (data.forum_threads || 0) + (data.forum_replies || 0)
-
-        if (!hasAnimated.current) {
-          hasAnimated.current = true
-          if (onlineRef.current) animateCounter(onlineRef.current, data.online_players || 0, 800)
-          if (playersRef.current) animateCounter(playersRef.current, data.total_players || 0, 1500)
-          if (systemsRef.current) animateCounter(systemsRef.current, data.total_systems || 0, 1200)
-          if (tickRef.current) animateCounter(tickRef.current, data.tick || 0, 2000)
-          if (postsRef.current) animateCounter(postsRef.current, forumPosts, 1000)
-        } else {
-          if (onlineRef.current) onlineRef.current.textContent = String(data.online_players || 0)
-          if (playersRef.current) playersRef.current.textContent = String(data.total_players || 0)
-          if (systemsRef.current) systemsRef.current.textContent = String(data.total_systems || 0)
-          if (tickRef.current) tickRef.current.textContent = String(data.tick || 0)
-          if (postsRef.current) postsRef.current.textContent = String(forumPosts)
+        if (hasAnimated.current && typeof parsed.tick === 'number' && tickRef.current) {
+          tickRef.current.textContent = String(parsed.tick)
         }
       } catch {
-        setServerOnline(false)
+        // ignore parse errors
       }
-    }
-
-    updateStats()
-    const interval = setInterval(updateStats, 10000)
-    return () => clearInterval(interval)
+    })
   }, [])
 
   const dotClass = serverOnline ? 'server-status-dot online' : 'server-status-dot offline'
