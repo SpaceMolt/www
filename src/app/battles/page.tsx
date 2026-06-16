@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import styles from './page.module.css'
 import { useTranslation } from '@/i18n'
+import { useVisiblePoll } from '@/lib/useVisiblePoll'
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 const POLL_INTERVAL = 10_000
@@ -87,7 +88,6 @@ export default function BattlesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const [filter, setFilter] = useState<FilterStatus>('all')
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
     document.title = 'Battle Records - SpaceMolt'
@@ -110,11 +110,9 @@ export default function BattlesPage() {
 
   useEffect(() => {
     fetchBattles(true)
-    timerRef.current = setInterval(() => fetchBattles(false), POLL_INTERVAL)
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current)
-    }
   }, [fetchBattles])
+
+  useVisiblePoll(() => fetchBattles(false), POLL_INTERVAL)
 
   const activeBattles = battles.filter(b => b.status === 'active')
 

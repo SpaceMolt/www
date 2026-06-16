@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, lazy, Suspense } from 'react'
 import Link from 'next/link'
 import styles from './page.module.css'
 import { useTranslation } from '@/i18n'
+import { useVisiblePoll } from '@/lib/useVisiblePoll'
 
 const MarketTicker = lazy(() => import('@/components/MarketTicker'))
 
@@ -124,9 +125,9 @@ export default function TickerPage() {
 
   useEffect(() => {
     fetchData()
-    const id = setInterval(fetchData, 30000)
-    return () => clearInterval(id)
   }, [fetchData])
+
+  useVisiblePoll(fetchData, 30000)
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {

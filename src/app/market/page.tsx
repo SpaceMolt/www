@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef, Fragment } from 'react'
+import { useState, useEffect, useCallback, Fragment } from 'react'
 import Link from 'next/link'
 import styles from './page.module.css'
 import { ItemDetail, type CatalogItem, type CatalogResponse } from '@/components/ItemDetail'
 import { useTranslation } from '@/i18n'
+import { useVisiblePoll } from '@/lib/useVisiblePoll'
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 const POLL_INTERVAL = 30_000
@@ -112,7 +113,6 @@ export default function MarketPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Item catalog state (fetched once, not polled)
   const [catalog, setCatalog] = useState<Record<string, CatalogItem>>({})
@@ -147,17 +147,9 @@ export default function MarketPage() {
 
   useEffect(() => {
     fetchMarket(true)
-
-    timerRef.current = setInterval(() => {
-      fetchMarket(false)
-    }, POLL_INTERVAL)
-
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current)
-      }
-    }
   }, [fetchMarket])
+
+  useVisiblePoll(() => fetchMarket(false), POLL_INTERVAL)
 
   // Fetch item catalog once on mount
   useEffect(() => {

@@ -7,6 +7,7 @@ import {
   Pickaxe, Handshake, Skull, UserCircle, ShoppingCart, Receipt, BarChart3, BookOpen,
 } from 'lucide-react'
 import styles from './LiveFeed.module.css'
+import { subscribeToEvents, subscribeToStatus } from '@/lib/sharedEventSource'
 
 interface EventData {
   [key: string]: string | number | undefined
@@ -389,57 +390,26 @@ export function LiveFeed({ onClose, onStatusChange }: LiveFeedProps) {
   }, [])
 
   useEffect(() => {
-    let eventSource: EventSource | null = null
-
-    function connect() {
-      if (eventSource) {
-        eventSource.close()
-      }
-
-      setStatusText('Connecting...')
-      setIsConnected(false)
-      onStatusChange?.(false, 'Connecting...')
-
-      eventSource = new EventSource(`${process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'}/events`)
-
-      eventSource.onopen = () => {
-        setStatusText('Connected')
-        setIsConnected(true)
-        onStatusChange?.(true, 'Connected')
-      }
-
-      eventSource.onmessage = (event) => {
-        try {
-          const parsed: GameEvent = JSON.parse(event.data)
-          if (parsed.type && parsed.data && parsed.type !== 'tick' && parsed.type !== 'player_stats') {
-            addEvent(parsed.type, parsed.data, parsed.timestamp, parsed.player_info)
-          }
-        } catch {
-          // ignore parse errors
+    const unsubscribeEvents = subscribeToEvents((raw) => {
+      try {
+        const parsed: GameEvent = JSON.parse(raw)
+        if (parsed.type && parsed.data && parsed.type !== 'tick' && parsed.type !== 'player_stats') {
+          addEvent(parsed.type, parsed.data, parsed.timestamp, parsed.player_info)
         }
+      } catch {
+        // ignore parse errors
       }
-
-      eventSource.onerror = () => {
-        setStatusText('Reconnecting...')
-        setIsConnected(false)
-        onStatusChange?.(false, 'Reconnecting...')
-
-        setTimeout(() => {
-          if (eventSource && eventSource.readyState === EventSource.CLOSED) {
-            connect()
-          }
-        }, 5000)
-      }
-    }
-
-    connect()
-
+    })
+    const unsubscribeStatus = subscribeToStatus((connected, text) => {
+      setIsConnected(connected)
+      setStatusText(text)
+      onStatusChange?.(connected, text)
+    })
     return () => {
-      if (eventSource) {
-        eventSource.close()
-      }
+      unsubscribeEvents()
+      unsubscribeStatus()
     }
-  }, [addEvent])
+  }, [addEvent, onStatusChange])
 
   return (
     <div className={styles.liveFeedContainer}>

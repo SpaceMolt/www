@@ -7,6 +7,7 @@ import {
   Sparkles, Satellite, Compass,
 } from 'lucide-react'
 import styles from './GalaxyMap.module.css'
+import { subscribeToEvents } from '@/lib/sharedEventSource'
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -58,6 +59,11 @@ interface SystemDetailData {
   is_stronghold?: boolean
   pois: POIData[]
 }
+
+// System detail (description, security, POIs) is effectively static, so cache it
+// per session. Re-selecting a system then costs no request against the per-IP
+// public API rate limit.
+const systemDetailCache = new Map<string, SystemDetailData>()
 
 interface Star {
   x: number
@@ -1295,11 +1301,15 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
       }
 
       try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'}/api/map/system/${system.id}`,
-        )
-        if (!response.ok) throw new Error('Failed to fetch')
-        const data: SystemDetailData = await response.json()
+        let data = systemDetailCache.get(system.id)
+        if (!data) {
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'}/api/map/system/${system.id}`,
+          )
+          if (!response.ok) throw new Error('Failed to fetch')
+          data = await response.json() as SystemDetailData
+          systemDetailCache.set(system.id, data)
+        }
 
         if (data.description && poiPanelDescRef.current) {
           poiPanelDescRef.current.textContent = data.description
@@ -1723,6 +1733,9 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
     // Poll only activity data every 15 seconds (matches max-age=15 cache header)
     async function fetchActivityData() {
       if (!s.mapData) return
+      // Don't poll while the tab is backgrounded — it shares the server's
+      // per-IP rate-limit budget with the foreground tab.
+      if (document.visibilityState === 'hidden') return
       try {
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'}/api/map/activity`,
@@ -1740,8 +1753,6 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
     const activityPollInterval = setInterval(fetchActivityData, 15000)
 
     // ── SSE Activity Feed ────────────────────────────────────────
-    let eventSource: EventSource | null = null
-    let sseReconnectTimeout: ReturnType<typeof setTimeout> | null = null
     const playerLastSystem = new Map<string, string>()
 
     function trackPlayerSystem(player: string, systemName: string) {
@@ -1765,40 +1776,25 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
       }
     }
 
-    function connectActivityFeed() {
+    const unsubscribeActivityFeed = subscribeToEvents((raw) => {
       try {
-        eventSource = new EventSource(
-          `${process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'}/events`,
-        )
-        eventSource.onmessage = (event) => {
-          try {
-            const data = JSON.parse(event.data) as ActivityEvent
+        const data = JSON.parse(raw) as ActivityEvent
 
-            // Track player system changes for travel paths
-            const player = data.data?.player
-            if (player) {
-              const sysName = data.type === 'jump'
-                ? data.data?.to_system_name
-                : data.data?.system_name
-              if (sysName) {
-                trackPlayerSystem(String(player), String(sysName))
-              }
-            }
-            handleActivityEvent(data)
-          } catch {
-            // ignore parse errors
+        // Track player system changes for travel paths
+        const player = data.data?.player
+        if (player) {
+          const sysName = data.type === 'jump'
+            ? data.data?.to_system_name
+            : data.data?.system_name
+          if (sysName) {
+            trackPlayerSystem(String(player), String(sysName))
           }
         }
-        eventSource.onerror = () => {
-          if (eventSource) eventSource.close()
-          sseReconnectTimeout = setTimeout(connectActivityFeed, 5000)
-        }
+        handleActivityEvent(data)
       } catch {
-        // SSE not supported
+        // ignore parse errors
       }
-    }
-
-    connectActivityFeed()
+    })
 
     // ── Travel History Sync ───────────────────────────────────────
     let lastTravelKeys = ''
@@ -2089,8 +2085,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
       cancelAnimationFrame(animFrameId)
       clearInterval(activityPollInterval)
       clearInterval(travelSyncInterval)
-      if (eventSource) eventSource.close()
-      if (sseReconnectTimeout) clearTimeout(sseReconnectTimeout)
+      unsubscribeActivityFeed()
       if (s.urlUpdateTimeout) clearTimeout(s.urlUpdateTimeout)
       if (s.activityToastTimeout) clearTimeout(s.activityToastTimeout)
     }
