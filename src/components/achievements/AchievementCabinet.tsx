@@ -76,7 +76,10 @@ export function AchievementCabinet({
       <ul className={styles.grid}>
         {achievements.map((a) => {
           const glyph = (a.emblem || a.name).charAt(0).toUpperCase()
-          const href = a.earned && shareHref ? shareHref(a.id) : undefined
+          // Link earned and ordinary locked tiles to their detail page; keep
+          // unearned SECRET tiles unlinked so the real id stays out of the URL.
+          const secretLocked = a.hidden && !a.earned
+          const href = shareHref && !secretLocked ? shareHref(a.id) : undefined
           const inner = (
             <>
               <div className={styles.tEmblem} aria-hidden>
@@ -94,7 +97,7 @@ export function AchievementCabinet({
               <div className={styles.tBody}>
                 <p className={styles.tName}>{a.name}</p>
                 <p className={styles.tCategory}>{a.category}</p>
-                <p className={styles.tRarity}>{rarityLabel(a.rarity_pct)}</p>
+                <p className={styles.tRarity}>{rarityLabel(a.rarity_pct, isFaction ? 'factions' : 'pilots')}</p>
               </div>
               <div className={styles.tMeta}>
                 <span className={styles.tPoints}>{a.points}</span>
@@ -108,7 +111,7 @@ export function AchievementCabinet({
               {href ? (
                 <Link href={href} className={cls}>
                   {inner}
-                  <span className={styles.tShare}>Share ↗</span>
+                  <span className={styles.tShare}>{a.earned ? 'Share ↗' : 'Details →'}</span>
                 </Link>
               ) : (
                 <div className={cls}>{inner}</div>

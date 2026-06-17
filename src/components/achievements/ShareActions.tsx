@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import styles from './page.module.css'
+import styles from './AchievementDetailCard.module.css'
 
 export function ShareActions({
   name,
