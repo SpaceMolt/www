@@ -19,5 +19,11 @@ export default async function FactionAchievementsPage({ params }: { params: Para
   const { tag: raw } = await params
   const data = await fetchFactionAchievements(safeDecode(raw))
   if (!data) notFound()
-  return <AchievementCabinet data={data} />
+  const tag = data.subject.faction_tag || safeDecode(raw)
+  return (
+    <AchievementCabinet
+      data={data}
+      shareHref={(id) => `/faction/${encodeURIComponent(tag)}/achievements/${id}`}
+    />
+  )
 }

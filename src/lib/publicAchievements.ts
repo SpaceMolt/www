@@ -128,11 +128,12 @@ export function tierFor(points: number): EmblemTier {
   return 'bronze'
 }
 
-// Human phrasing for the rarity hook — the share card's pull.
-export function rarityLabel(pct: number): string {
+// Human phrasing for the rarity hook — the share card's pull. `noun` is the
+// population the percentage is measured against ("pilots" or "factions").
+export function rarityLabel(pct: number, noun: 'pilots' | 'factions' = 'pilots'): string {
   if (pct <= 0) return 'Unclaimed in the galaxy'
-  if (pct < 0.1) return 'Top 0.1% of pilots'
-  if (pct < 1) return `Top ${pct.toFixed(1)}% of pilots`
-  if (pct < 10) return `Earned by ${pct.toFixed(1)}% of pilots`
-  return `Earned by ${Math.round(pct)}% of pilots`
+  if (pct < 0.1) return `Top 0.1% of ${noun}`
+  if (pct < 1) return `Top ${pct.toFixed(1)}% of ${noun}`
+  if (pct < 10) return `Earned by ${pct.toFixed(1)}% of ${noun}`
+  return `Earned by ${Math.round(pct)}% of ${noun}`
 }
