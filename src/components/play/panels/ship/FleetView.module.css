@@ -1,5 +1,32 @@
 /* === FleetView === */
 
+/* Rename row */
+.renameRow {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.renameInput {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  color: var(--star-white);
+  background: rgba(10, 14, 23, 0.8);
+  border: 1px solid var(--hull-grey);
+  border-radius: 4px;
+  padding: 0.4rem 0.55rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.renameInput::placeholder {
+  color: var(--hull-grey);
+}
+.renameInput:focus {
+  border-color: var(--plasma-cyan);
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.15);
+}
+
 /* Summary */
 .summary {
   display: flex;

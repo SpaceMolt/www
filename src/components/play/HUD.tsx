@@ -20,6 +20,7 @@ import { FactionPanel } from './panels/FactionPanel'
 import { MissionsPanel } from './panels/MissionsPanel'
 import { InfoPanel } from './panels/InfoPanel'
 import { SkillsPanel } from './panels/SkillsPanel'
+import { AchievementsPanel } from './panels/AchievementsPanel'
 import { SettingsPanel } from './panels/SettingsPanel'
 import { FacilitiesPanel } from './panels/FacilitiesPanel'
 import { SalvagePanel } from './panels/SalvagePanel'
@@ -34,6 +35,7 @@ const PANELS: Record<string, React.ComponentType> = {
   shipyard: ShipyardPanel,
   crafting: CraftingPanel,
   skills: SkillsPanel,
+  achievements: AchievementsPanel,
   facilities: FacilitiesPanel,
   faction: FactionPanel,
   missions: MissionsPanel,

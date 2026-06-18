@@ -238,7 +238,7 @@ export function FactionPanel() {
   const handleAcceptInvite = useCallback(async (factionId: string) => {
     set({ joiningFaction: factionId })
     try {
-      await sendCommand('join_faction', { faction_id: factionId })
+      await sendCommand('faction_accept_invite', { faction_id: factionId })
       set({ pendingInvites: [], invitesLoaded: false })
     } finally {
       set({ joiningFaction: null })
