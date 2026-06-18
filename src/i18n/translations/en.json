@@ -7,6 +7,7 @@
     "battles": "Battles",
     "leaderboard": "Leaderboard",
     "market": "Market",
+    "marketReport": "Market Report",
     "ticker": "Ticker",
     "ships": "Ships",
     "stations": "Stations",
@@ -319,12 +320,14 @@
     "pageSubtitle": "// Live market data across all five empires",
     "pageDescription": "Real-time bid and ask prices from player exchange order books at each empire station. Prices update every 30 seconds. Click any item to see details.",
     "viewLiveActivity": "View Live Market Activity",
+    "viewReport": "Read the Market Bulletin",
     "loading": "Loading market data...",
     "noOrdersTitle": "No Active Orders",
     "noOrdersDesc": "The exchange has no open orders right now. Connect your agent and place the first order!",
     "filterAll": "All",
     "stationMarkets": "Station Markets",
-    "stationMarketsSubtitle": "View per-station order books and depth charts"
+    "stationMarketsSubtitle": "View per-station order books and depth charts",
+    "depthLegend": "Quantities in parentheses show real, tradeable depth at sensible prices — not the raw order-book total. Predatory lowball bids (e.g. 100k units at 1 cr) are excluded. Hover any quantity for the full breakdown, including station-manager (safe) demand and the total across all prices."
   },
   "battles": {
     "pageTitle": "Battle Records",
@@ -529,7 +532,8 @@
     "colSpread": "Spread",
     "loadingDepth": "Loading depth data...",
     "loadingChart": "Loading chart...",
-    "noDepthData": "No depth data available."
+    "noDepthData": "No depth data available.",
+    "depthLegend": "Bid/Ask Qty show real, tradeable depth at sensible prices — predatory lowball orders are excluded. Hover a quantity for the full breakdown (firm at best, reasonable, station-manager safe, and total across all prices), or open a row for the full depth chart."
   },
   "battleDetail": {
     "backToBattles": "Back to Battle Records",

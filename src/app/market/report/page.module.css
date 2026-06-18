@@ -1,0 +1,285 @@
+.main {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+/* === Header === */
+.header {
+  border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.75rem;
+}
+
+.title {
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: 2.2rem;
+  margin: 0;
+  background: linear-gradient(135deg, var(--plasma-cyan), var(--shell-orange));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+  font-family: var(--font-jetbrains), monospace;
+  color: var(--chrome-silver);
+  font-size: 0.9rem;
+  margin: 0.4rem 0 0;
+}
+
+.meta {
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.78rem;
+  color: var(--hull-grey);
+  margin: 0.75rem 0 0;
+}
+
+.metaLink {
+  color: var(--plasma-cyan);
+  text-decoration: none;
+}
+
+.metaLink:hover {
+  text-decoration: underline;
+}
+
+.status {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--chrome-silver);
+  font-family: var(--font-jetbrains), monospace;
+}
+
+/* === Lede / takeaways === */
+.lede {
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.08), rgba(255, 140, 0, 0.05));
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  border-radius: 6px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 2.25rem;
+}
+
+.ledeHeading {
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: 1.1rem;
+  color: var(--star-white);
+  margin: 0 0 0.75rem;
+}
+
+.ledeList {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--chrome-silver);
+  line-height: 1.6;
+}
+
+.ledeList li {
+  margin-bottom: 0.5rem;
+}
+
+.ledeList strong {
+  color: var(--star-white);
+}
+
+.ledeList em {
+  color: var(--plasma-cyan);
+  font-style: normal;
+}
+
+/* === Sections === */
+.section {
+  margin-bottom: 2.5rem;
+}
+
+.sectionHeading {
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: 1.3rem;
+  color: var(--shell-orange);
+  margin: 0 0 0.3rem;
+}
+
+.sectionNote {
+  font-size: 0.82rem;
+  color: var(--chrome-silver);
+  opacity: 0.8;
+  margin: 0 0 1rem;
+  max-width: 70ch;
+}
+
+/* === Arbitrage route cards === */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.9rem;
+}
+
+.routeCard {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(0, 212, 255, 0.18);
+  border-radius: 6px;
+  padding: 0.9rem 1rem;
+}
+
+.routeHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.5rem;
+}
+
+.routeItem {
+  font-family: var(--font-orbitron), sans-serif;
+  color: var(--star-white);
+  font-size: 0.95rem;
+}
+
+.routeMargin {
+  font-family: var(--font-jetbrains), monospace;
+  color: var(--bio-green);
+  font-weight: 700;
+}
+
+.routeBody {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.buyLeg {
+  color: var(--plasma-cyan);
+}
+
+.sellLeg {
+  color: var(--bio-green);
+}
+
+.arrow {
+  color: var(--hull-grey);
+}
+
+.routeFoot {
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.72rem;
+  color: var(--hull-grey);
+}
+
+/* === Tables === */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.82rem;
+}
+
+.table th {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  color: var(--chrome-silver);
+  border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+  font-weight: 600;
+}
+
+.table td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--chrome-silver);
+}
+
+.table tbody tr:nth-child(even) {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.itemCell {
+  color: var(--star-white);
+}
+
+.surgeCell {
+  color: var(--shell-orange);
+  font-weight: 700;
+}
+
+.up {
+  color: var(--bio-green);
+}
+
+.down {
+  color: var(--claw-red);
+}
+
+/* === Movers columns === */
+.moverColumns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.moverColHeading {
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.9rem;
+  color: var(--chrome-silver);
+  margin: 0 0 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.moverList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.82rem;
+}
+
+.moverList li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: 'name pct' 'price price';
+  gap: 0.1rem 0.5rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.moverList li .itemCell {
+  grid-area: name;
+}
+
+.moverList li .up,
+.moverList li .down {
+  grid-area: pct;
+  text-align: right;
+  font-weight: 700;
+}
+
+.moverPrice {
+  grid-area: price;
+  color: var(--hull-grey);
+  font-size: 0.72rem;
+}
+
+.emptyCol {
+  color: var(--hull-grey);
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+.footnote {
+  margin-top: 2rem;
+  font-size: 0.75rem;
+  color: var(--hull-grey);
+  line-height: 1.5;
+  max-width: 75ch;
+}
+
+@media (max-width: 640px) {
+  .moverColumns {
+    grid-template-columns: 1fr;
+  }
+  .title {
+    font-size: 1.7rem;
+  }
+}

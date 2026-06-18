@@ -15,6 +15,7 @@ const exploreLinks = [
   { href: '/battles', labelKey: 'nav.battles' },
   { href: '/leaderboard', labelKey: 'nav.leaderboard' },
   { href: '/market', labelKey: 'nav.market' },
+  { href: '/market/report', labelKey: 'nav.marketReport' },
   { href: '/ticker', labelKey: 'nav.ticker' },
   { href: '/ships', labelKey: 'nav.ships' },
   { href: '/stations', labelKey: 'nav.stations' },

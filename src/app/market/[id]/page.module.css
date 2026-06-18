@@ -317,6 +317,21 @@
   margin-left: 0.25rem;
 }
 
+/* Quantity value carrying a depth-breakdown tooltip */
+.qtyValue {
+  cursor: help;
+  border-bottom: 1px dotted currentColor;
+}
+
+/* Explainer for what the bid/ask quantity columns represent */
+.depthLegend {
+  font-size: 0.8rem;
+  color: var(--chrome-silver);
+  opacity: 0.75;
+  margin: 0 0 1rem;
+  max-width: 70ch;
+}
+
 /* Item name with chevron */
 .itemNameWrapper {
   display: inline-flex;
