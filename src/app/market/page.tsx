@@ -249,6 +249,9 @@ export default function MarketPage() {
         <Link href="/ticker" className={styles.activityLink}>
           {t('market.viewLiveActivity')} &rarr;
         </Link>
+        <Link href="/market/report" className={styles.activityLink}>
+          {t('market.viewReport')} &rarr;
+        </Link>
       </div>
 
       {loading && (
