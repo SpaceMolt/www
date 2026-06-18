@@ -60,11 +60,6 @@ interface SystemDetailData {
   pois: POIData[]
 }
 
-// System detail (description, security, POIs) is effectively static, so cache it
-// per session. Re-selecting a system then costs no request against the per-IP
-// public API rate limit.
-const systemDetailCache = new Map<string, SystemDetailData>()
-
 interface Star {
   x: number
   y: number
@@ -1301,15 +1296,16 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
       }
 
       try {
-        let data = systemDetailCache.get(system.id)
-        if (!data) {
-          const response = await fetch(
-            `${process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'}/api/map/system/${system.id}`,
-          )
-          if (!response.ok) throw new Error('Failed to fetch')
-          data = await response.json() as SystemDetailData
-          systemDetailCache.set(system.id, data)
-        }
+        // POI presence (online counts, player lists) is live data computed
+        // per-request, so always fetch fresh — re-selecting a system must show
+        // the current occupants. The endpoint sends Cache-Control: max-age=60,
+        // so rapid re-selects are served from the browser's HTTP cache without
+        // hitting the per-IP rate limit.
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'}/api/map/system/${system.id}`,
+        )
+        if (!response.ok) throw new Error('Failed to fetch')
+        const data = await response.json() as SystemDetailData
 
         if (data.description && poiPanelDescRef.current) {
           poiPanelDescRef.current.textContent = data.description
