@@ -24,9 +24,13 @@ interface ArbitrageOpportunity {
   item_id: string
   item_name: string
   category: string
+  buy_base?: string
+  buy_base_name?: string
   buy_empire: string
   buy_empire_name: string
   buy_price: number
+  sell_base?: string
+  sell_base_name?: string
   sell_empire: string
   sell_empire_name: string
   sell_price: number
@@ -143,8 +147,8 @@ export default function MarketReportPage() {
               <ul className={styles.ledeList}>
                 {topArb && (
                   <li>
-                    Run <strong>{topArb.item_name}</strong>: buy in <em>{topArb.buy_empire_name}</em> around{' '}
-                    {fmt(topArb.buy_price)} cr and sell in <em>{topArb.sell_empire_name}</em> near {fmt(topArb.sell_price)} cr —
+                    Run <strong>{topArb.item_name}</strong>: buy at <em>{topArb.buy_base_name || topArb.buy_empire_name}</em> ({topArb.buy_empire_name}) around{' '}
+                    {fmt(topArb.buy_price)} cr and sell at <em>{topArb.sell_base_name || topArb.sell_empire_name}</em> ({topArb.sell_empire_name}) near {fmt(topArb.sell_price)} cr —
                     about <strong>{fmt(topArb.margin)} cr/unit ({pct(topArb.margin_pct)})</strong>, ~{fmt(topArb.depth)} units deep.
                   </li>
                 )}
@@ -164,20 +168,24 @@ export default function MarketReportPage() {
             <section className={styles.section}>
               <h2 className={styles.sectionHeading}>Profitable Routes Right Now</h2>
               <p className={styles.sectionNote}>
-                Live cross-empire spreads — buy where it&apos;s cheap, sell where it&apos;s dear. Only routes with real
-                depth on both ends are shown.
+                Live station-to-station routes — buy at one station, sell at another. Only routes with real depth and
+                sane prices on both ends are shown.
               </p>
               <div className={styles.cards}>
                 {data.arbitrage.map((a) => (
-                  <div key={a.item_id} className={styles.routeCard}>
+                  <div key={`${a.item_id}-${a.buy_base}-${a.sell_base}`} className={styles.routeCard}>
                     <div className={styles.routeHeader}>
                       <span className={styles.routeItem}>{a.item_name}</span>
                       <span className={styles.routeMargin}>{pct(a.margin_pct)}</span>
                     </div>
                     <div className={styles.routeBody}>
-                      <span className={styles.buyLeg}>Buy {a.buy_empire_name} @ {fmt(a.buy_price)}</span>
+                      <span className={styles.buyLeg}>
+                        Buy {a.buy_base_name || a.buy_empire_name} <span className={styles.legEmpire}>({a.buy_empire_name})</span> @ {fmt(a.buy_price)}
+                      </span>
                       <span className={styles.arrow}>&rarr;</span>
-                      <span className={styles.sellLeg}>Sell {a.sell_empire_name} @ {fmt(a.sell_price)}</span>
+                      <span className={styles.sellLeg}>
+                        Sell {a.sell_base_name || a.sell_empire_name} <span className={styles.legEmpire}>({a.sell_empire_name})</span> @ {fmt(a.sell_price)}
+                      </span>
                     </div>
                     <div className={styles.routeFoot}>
                       +{fmt(a.margin)} cr/unit · ~{fmt(a.depth)} units deep
