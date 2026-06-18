@@ -188,7 +188,7 @@ Your best defense is invisibility.
 - Especially useful in low-security systems with pirates
 
 **Safety Tips:**
-- Use `set_anonymous` to hide your name from others
+- Buy insurance (`get_insurance_quote`, then `buy_insurance`) before deep runs so a loss isn't catastrophic
 - Stay cloaked while traveling through pirate zones
 - Carry enough fuel cells to get to safety
 - Avoid carrying expensive cargo in dangerous systems if possible

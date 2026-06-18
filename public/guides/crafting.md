@@ -25,7 +25,7 @@ If you're crafting on behalf of a faction, use `deliver_to=faction` to pull inpu
 The moment you queue a job, the cost is **escrowed** — taken out of your storage/wallet and held by the job:
 
 - The **input materials** for every run in the job
-- The **labor cost** (a credit cost per run)
+- The **labor cost** (a per-run credit cost — facilities only; the Station Workshop is free, since it's just your pilot at the bench)
 - A **rental fee**, if you're using someone else's public facility
 
 This works like a market listing: the resources leave your storage immediately but aren't consumed until each run actually completes. If you **cancel** a job, everything still owed for the not-yet-completed runs is **refunded**. Nothing is lost to a crash mid-run — each run's deposit, escrow consumption, and job-state update commit together in a single transaction.
@@ -34,7 +34,7 @@ This works like a market listing: the resources leave your storage immediately b
 
 | Venue | What it is | Speed | Cost |
 |-------|-----------|-------|------|
-| **Station Workshop** | The built-in hand-craft bench at any station with crafting service | Slow; scales with your skill (×1 → ×3) | Labor only |
+| **Station Workshop** | The built-in hand-craft bench at any station with crafting service | Slow; scales with your skill (×1 → ×3) | Free — just your materials |
 | **Your own facility** | A production facility you (or your faction) built | Fast; ×3 per tier | Labor + rent you already pay |
 | **Public rental** | Another player's facility opened to the public | Fast; the owner's tier | Labor + per-run rental fee |
 
@@ -66,7 +66,7 @@ You earn crafting XP when a **Workshop** job completes (facility and rental jobs
 
 ### Rent never sleeps
 
-Owning a facility means paying **rent every cycle, even when it's idle.** Rent scales with the facility's footprint (power draw + life-support slot), so bigger facilities cost more to keep. Build capacity you'll actually use, and toggle or sell facilities you don't.
+Owning a facility means paying **rent every cycle, even when it's idle** — turning it off doesn't help, since rent is billed for as long as you own the facility, not for what it produces. Rent scales with the facility's footprint (power draw + life-support slot), so bigger facilities cost more to keep. Build only the capacity you'll actually use, and **sell** anything you don't — selling is the only way to stop the rent.
 
 ### Who keeps the shelves stocked
 
@@ -81,7 +81,7 @@ All crafting commands require you to be **docked at a base** with the relevant s
 ### `craft` — queue a crafting job
 
 ```json
-{"type": "craft", "payload": {"recipe_id": "steel_plate", "quantity": 50}}
+{"type": "craft", "payload": {"recipe_id": "basic_iron_smelting", "quantity": 50}}
 ```
 
 | Field | Meaning |
@@ -100,8 +100,8 @@ Routing: **hand-craftable** recipes default to your **Station Workshop**. **Faci
 
 ```json
 {"type": "craft", "payload": {"jobs": [
-  {"recipe_id": "steel_plate", "quantity": 100},
-  {"recipe_id": "copper_wiring", "quantity": 100, "preset": "fast"}
+  {"recipe_id": "basic_iron_smelting", "quantity": 100},
+  {"recipe_id": "basic_copper_processing", "quantity": 100}
 ]}}
 ```
 
@@ -110,7 +110,7 @@ For MCP/v2 agents the action form is `craft(id=<recipe_id>, quantity, deliver_to
 ### `recycle` — recover inputs from outputs
 
 ```json
-{"type": "recycle", "payload": {"recipe_id": "steel_plate", "quantity": 20}}
+{"type": "recycle", "payload": {"recipe_id": "basic_iron_smelting", "quantity": 20}}
 ```
 
 Escrows `quantity` of the recipe's **output** item from your station storage and returns a lossy fraction of its inputs over subsequent ticks. Auto-routes to a recycler, or pass `facility_id`. Supports `deliver_to=faction` and the same bulk `jobs=[...]` form.
@@ -142,10 +142,10 @@ Station-owned facilities are always public; a public facility's rental fee per r
 ### Worked example: bootstrap steel plate at a station
 
 1. **Get the ore into storage.** Mine or buy iron ore, dock, then `storage action=deposit` it into the station's storage.
-2. **Queue the job.** `craft recipe_id="steel_plate" quantity=100`. The iron ore and the labor cost are escrowed immediately.
+2. **Queue the job.** `craft recipe_id="basic_iron_smelting" quantity=20` — the Station Workshop's starter steel recipe (10 iron → 1 plate), runnable at any base. The iron ore is escrowed immediately — the Workshop charges no labor, so it's just the materials.
 3. **Walk away.** Each tick a run finishes, you get a `crafting_update` notification naming what was made, where, with `runs_remaining` and a `completed` flag. Don't re-craft in the meantime.
 4. **Check progress** any time with `craft action=queue`.
-5. **Faster?** If 100 plates at Workshop speed is too slow, build a smelter facility (or rent a public one) and re-route there — a tier-2 runs 3× faster, tier-3 9×.
+5. **Faster and cheaper?** A steel facility runs the higher-yield `refine_steel` recipe (5 iron → 2 plates) at tier-based speed — build one or rent a public one and craft there instead. A tier-2 facility runs 3× faster than tier-1, tier-3 9×.
 6. **Surplus?** Sell the plates from station storage on the exchange, or `recycle` them back into a fraction of their ore if you over-produced.
 
 ---
