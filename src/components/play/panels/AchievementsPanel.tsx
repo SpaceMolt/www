@@ -23,23 +23,38 @@ export function AchievementsPanel() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const [filter, setFilter] = useState<FilterMode>('all')
+  const [reloadKey, setReloadKey] = useState(0)
 
-  const load = useCallback(() => {
-    if (!username) return
-    setLoading(true)
+  const reload = useCallback(() => setReloadKey((k) => k + 1), [])
+
+  // Fetch on mount, whenever the logged-in player changes, and on manual reload.
+  // A cancellation flag prevents a stale in-flight response (e.g. after the
+  // player changes) from overwriting fresher state.
+  useEffect(() => {
+    let cancelled = false
+    setData(null)
     setError(false)
+    if (!username) {
+      setLoading(false)
+      return
+    }
+    setLoading(true)
     fetchPlayerAchievements(username)
       .then((res) => {
-        if (res) setData(res)
-        else setError(true)
+        if (cancelled) return
+        setData(res ?? null)
+        setError(!res)
       })
-      .catch(() => setError(true))
-      .finally(() => setLoading(false))
-  }, [username])
-
-  useEffect(() => {
-    load()
-  }, [load])
+      .catch(() => {
+        if (!cancelled) setError(true)
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [username, reloadKey])
 
   const visible = useMemo(() => {
     if (!data) return []
@@ -51,7 +66,7 @@ export function AchievementsPanel() {
   }, [data, filter])
 
   const refreshButton = (
-    <button className={shared.refreshBtn} onClick={load} title="Refresh achievements" type="button">
+    <button className={shared.refreshBtn} onClick={reload} title="Refresh achievements" type="button">
       <RefreshCw size={14} />
     </button>
   )
@@ -86,11 +101,12 @@ export function AchievementsPanel() {
             </div>
           </div>
 
-          <div className={styles.filters}>
+          <div className={shared.tabs} role="group" aria-label="Filter achievements">
             {(['all', 'earned', 'locked'] as FilterMode[]).map((mode) => (
               <button
                 key={mode}
-                className={filter === mode ? styles.filterActive : styles.filter}
+                className={filter === mode ? shared.tabActive : shared.tab}
+                aria-pressed={filter === mode}
                 onClick={() => setFilter(mode)}
                 type="button"
               >
@@ -117,7 +133,10 @@ export function AchievementsPanel() {
 function AchievementTile({ a }: { a: PublicAchievementEntry }) {
   const secretLocked = a.hidden && !a.earned
   const glyph = (a.emblem || a.name).charAt(0).toUpperCase()
-  const cls = `${styles.tile} ${a.earned ? styles.earned : styles.locked} ${secretLocked ? styles.secret : ''}`
+  const cls = [styles.tile, a.earned ? styles.earned : styles.locked, secretLocked ? styles.secret : '']
+    .filter(Boolean)
+    .join(' ')
+  const statusText = a.earned ? 'Earned' : secretLocked ? 'Secret, locked' : 'Locked'
 
   return (
     <li className={cls}>
@@ -140,6 +159,7 @@ function AchievementTile({ a }: { a: PublicAchievementEntry }) {
       </div>
       <div className={styles.tMeta}>
         <span className={styles.tPoints}>{a.points}</span>
+        <span className={styles.srOnly}>{statusText}</span>
         {a.earned && <span className={styles.tCheck} aria-hidden>✓</span>}
       </div>
     </li>

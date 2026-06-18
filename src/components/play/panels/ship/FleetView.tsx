@@ -168,7 +168,7 @@ function FleetCard({
 
   const [renaming, setRenaming] = useState(false)
   const [renameValue, setRenameValue] = useState(ship.custom_name || '')
-  const [confirm, setConfirm] = useState<'scrap' | 'refit' | null>(null)
+  const [confirm, setConfirm] = useState<'scrap' | 'refit' | 'sell' | null>(null)
 
   const cardClass = ship.is_active ? styles.fleetCardActive : styles.fleetCard
 
@@ -230,7 +230,7 @@ function FleetCard({
               </button>
               <button
                 className={shared.dangerBtn}
-                onClick={() => onSell(ship.ship_id)}
+                onClick={() => setConfirm('sell')}
                 title="Sell this ship"
                 type="button"
               >
@@ -258,6 +258,7 @@ function FleetCard({
             type="text"
             value={renameValue}
             placeholder="Ship name (empty to clear)"
+            aria-label="Ship name"
             maxLength={32}
             autoFocus
             onChange={(e) => setRenameValue(e.target.value)}
@@ -271,6 +272,14 @@ function FleetCard({
         </div>
       )}
 
+      {confirm === 'sell' && (
+        <ConfirmAction
+          message="Sell this ship? Irreversible."
+          icon={<AlertTriangle size={14} style={{ color: 'var(--claw-red)', flexShrink: 0 }} />}
+          onConfirm={() => { onSell(ship.ship_id); setConfirm(null) }}
+          onCancel={() => setConfirm(null)}
+        />
+      )}
       {confirm === 'scrap' && (
         <ConfirmAction
           message="Scrap this ship for materials? Irreversible."
