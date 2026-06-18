@@ -6,6 +6,7 @@ import Link from 'next/link'
 import styles from './page.module.css'
 import { ItemDetailContent, type CatalogItem, type CatalogResponse } from '@/components/ItemDetail'
 import { useTranslation } from '@/i18n'
+import { firmDepth, depthBreakdownTitle, type DepthQuantities } from '@/lib/depth'
 
 const DepthChart = lazy(() => import('@/components/DepthChart'))
 
@@ -20,6 +21,12 @@ interface StationMarketItem {
   best_ask: number
   bid_quantity: number
   ask_quantity: number
+  bid_quantity_at_best?: number
+  ask_quantity_at_best?: number
+  bid_quantity_reasonable?: number
+  ask_quantity_reasonable?: number
+  bid_quantity_station_mgr?: number
+  ask_quantity_station_mgr?: number
   spread: number
   spread_pct: number
 }
@@ -64,6 +71,24 @@ const TABLE_COL_COUNT = 8
 
 function formatNumber(n: number): string {
   return n.toLocaleString('en-US')
+}
+
+function bidDepthOf(item: StationMarketItem): DepthQuantities {
+  return {
+    total: item.bid_quantity,
+    atBest: item.bid_quantity_at_best,
+    reasonable: item.bid_quantity_reasonable,
+    stationMgr: item.bid_quantity_station_mgr,
+  }
+}
+
+function askDepthOf(item: StationMarketItem): DepthQuantities {
+  return {
+    total: item.ask_quantity,
+    atBest: item.ask_quantity_at_best,
+    reasonable: item.ask_quantity_reasonable,
+    stationMgr: item.ask_quantity_station_mgr,
+  }
 }
 
 export default function StationMarketPage() {
@@ -248,6 +273,13 @@ export default function StationMarketPage() {
         case 'category':
           cmp = a.category.localeCompare(b.category)
           break
+        case 'bid_quantity':
+          // Sort by the same trap-resistant figure the cell displays.
+          cmp = firmDepth(bidDepthOf(a)) - firmDepth(bidDepthOf(b))
+          break
+        case 'ask_quantity':
+          cmp = firmDepth(askDepthOf(a)) - firmDepth(askDepthOf(b))
+          break
         default:
           cmp = (a[sortKey] as number) - (b[sortKey] as number)
       }
@@ -271,6 +303,7 @@ export default function StationMarketPage() {
         <p className={styles.pageHeaderDescription}>
           {hasCatalog ? t('marketDetail.clickRowHintWithDetails') : t('marketDetail.clickRowHint')}
         </p>
+        <p className={styles.depthLegend}>{t('marketDetail.depthLegend')}</p>
       </div>
 
       {data.categories.length > 1 && (
@@ -391,13 +424,21 @@ export default function StationMarketPage() {
                         {item.best_bid > 0 ? formatNumber(item.best_bid) : '\u2014'}
                       </td>
                       <td className={styles.cellBidQty}>
-                        {item.bid_quantity > 0 ? formatNumber(item.bid_quantity) : '\u2014'}
+                        {item.bid_quantity > 0 ? (
+                          <span className={styles.qtyValue} title={depthBreakdownTitle(bidDepthOf(item), 'bid')}>
+                            {formatNumber(firmDepth(bidDepthOf(item)))}
+                          </span>
+                        ) : '\u2014'}
                       </td>
                       <td className={styles.cellAsk}>
                         {item.best_ask > 0 ? formatNumber(item.best_ask) : '\u2014'}
                       </td>
                       <td className={styles.cellAskQty}>
-                        {item.ask_quantity > 0 ? formatNumber(item.ask_quantity) : '\u2014'}
+                        {item.ask_quantity > 0 ? (
+                          <span className={styles.qtyValue} title={depthBreakdownTitle(askDepthOf(item), 'ask')}>
+                            {formatNumber(firmDepth(askDepthOf(item)))}
+                          </span>
+                        ) : '\u2014'}
                       </td>
                       <td className={styles.cellSpread}>
                         {item.spread > 0 ? (

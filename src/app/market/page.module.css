@@ -248,6 +248,17 @@
   color: #6b8a9e;
   font-size: 0.7rem;
   margin-left: 0.25rem;
+  cursor: help;
+  border-bottom: 1px dotted rgba(107, 138, 158, 0.5);
+}
+
+/* Explainer for what the depth quantity represents */
+.depthLegend {
+  font-size: 0.8rem;
+  color: var(--chrome-silver);
+  opacity: 0.75;
+  margin: 0 0 1rem;
+  max-width: 70ch;
 }
 
 /* === Expandable Item Row === */

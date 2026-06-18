@@ -6,6 +6,7 @@ import styles from './page.module.css'
 import { ItemDetail, type CatalogItem, type CatalogResponse } from '@/components/ItemDetail'
 import { useTranslation } from '@/i18n'
 import { useVisiblePoll } from '@/lib/useVisiblePoll'
+import { firmDepth, depthBreakdownTitle, type DepthQuantities } from '@/lib/depth'
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 const POLL_INTERVAL = 30_000
@@ -20,6 +21,12 @@ interface MarketItem {
   best_ask: number
   bid_quantity: number
   ask_quantity: number
+  bid_quantity_at_best?: number
+  ask_quantity_at_best?: number
+  bid_quantity_reasonable?: number
+  ask_quantity_reasonable?: number
+  bid_quantity_station_mgr?: number
+  ask_quantity_station_mgr?: number
   spread: number
   spread_pct: number
 }
@@ -35,13 +42,26 @@ interface MarketResponse {
   empires: EmpireInfo[]
 }
 
+interface EmpireCell {
+  bid: number
+  ask: number
+  bidQty: number
+  askQty: number
+  bidQtyAtBest?: number
+  askQtyAtBest?: number
+  bidQtyReasonable?: number
+  askQtyReasonable?: number
+  bidQtyStationMgr?: number
+  askQtyStationMgr?: number
+}
+
 /** Data for one item pivoted across empires */
 interface PivotRow {
   item_id: string
   item_name: string
   category: string
   base_value: number
-  empires: Record<string, { bid: number; ask: number; bidQty: number; askQty: number } | undefined>
+  empires: Record<string, EmpireCell | undefined>
 }
 
 /** Station info from /api/stations */
@@ -93,6 +113,12 @@ function pivotItems(items: MarketItem[]): PivotRow[] {
       ask: item.best_ask,
       bidQty: item.bid_quantity,
       askQty: item.ask_quantity,
+      bidQtyAtBest: item.bid_quantity_at_best,
+      askQtyAtBest: item.ask_quantity_at_best,
+      bidQtyReasonable: item.bid_quantity_reasonable,
+      askQtyReasonable: item.ask_quantity_reasonable,
+      bidQtyStationMgr: item.bid_quantity_station_mgr,
+      askQtyStationMgr: item.ask_quantity_station_mgr,
     }
   }
 
@@ -300,6 +326,8 @@ export default function MarketPage() {
             </div>
           )}
 
+          <p className={styles.depthLegend}>{t('market.depthLegend')}</p>
+
           <div className={styles.tableContainer}>
             <table className={styles.table}>
               <thead>
@@ -359,6 +387,12 @@ export default function MarketPage() {
                           const data = row.empires[emp.id]
                           const hasBid = data && data.bid > 0
                           const hasAsk = data && data.ask > 0
+                          const bidDepth: DepthQuantities | null = data
+                            ? { total: data.bidQty, atBest: data.bidQtyAtBest, reasonable: data.bidQtyReasonable, stationMgr: data.bidQtyStationMgr }
+                            : null
+                          const askDepth: DepthQuantities | null = data
+                            ? { total: data.askQty, atBest: data.askQtyAtBest, reasonable: data.askQtyReasonable, stationMgr: data.askQtyStationMgr }
+                            : null
                           return (
                             <Fragment key={emp.id}>
                               <td
@@ -366,11 +400,11 @@ export default function MarketPage() {
                                   hasBid ? styles.cellBid : styles.cellDash
                                 }`}
                               >
-                                {hasBid ? (
+                                {hasBid && bidDepth ? (
                                   <>
                                     {formatNumber(data.bid)}
-                                    <span className={styles.quantity}>
-                                      ({formatNumber(data.bidQty)})
+                                    <span className={styles.quantity} title={depthBreakdownTitle(bidDepth, 'bid')}>
+                                      ({formatNumber(firmDepth(bidDepth))})
                                     </span>
                                   </>
                                 ) : (
@@ -380,11 +414,11 @@ export default function MarketPage() {
                               <td
                                 className={hasAsk ? styles.cellAsk : styles.cellDash}
                               >
-                                {hasAsk ? (
+                                {hasAsk && askDepth ? (
                                   <>
                                     {formatNumber(data.ask)}
-                                    <span className={styles.quantity}>
-                                      ({formatNumber(data.askQty)})
+                                    <span className={styles.quantity} title={depthBreakdownTitle(askDepth, 'ask')}>
+                                      ({formatNumber(firmDepth(askDepth))})
                                     </span>
                                   </>
                                 ) : (
