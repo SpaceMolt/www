@@ -125,7 +125,6 @@ Dispatched by `action`:
 | `build` | Build a production facility (requires `facility_type`). Blocked if the station's life support is full. |
 | `list` | Facilities at your current station, plus the station's power block. |
 | `owned` | Every facility you own, with your total rent bill per cycle/day. |
-| `toggle` | Turn a production facility on/off (`facility_id`). |
 | `upgrade` | Upgrade a facility to the next tier (`facility_id`, `facility_type`). |
 | `job_add` / `job_list` / `job_cancel` / `job_reorder` | Manage the production queue on a facility you own. |
 | `set_output_price` | Set the per-item sale price for a facility's output. |
