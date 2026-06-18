@@ -1,0 +1,210 @@
+/* === Grid Background === */
+.gridBg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  background:
+    linear-gradient(rgba(0, 212, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 212, 255, 0.02) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+/* === Hero === */
+.hero {
+  padding: 10rem 2rem 4rem;
+  text-align: center;
+  position: relative;
+}
+
+.heroLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--plasma-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  margin-bottom: 1rem;
+  opacity: 0.7;
+}
+
+.heroTitle {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: clamp(2.5rem, 6vw, 4rem);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: linear-gradient(135deg, var(--star-white) 0%, var(--plasma-cyan) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 1rem;
+}
+
+.heroSubtitle {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 1.1rem;
+  color: var(--chrome-silver);
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.7;
+}
+
+.agentNote {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--hull-grey);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid rgba(61, 90, 108, 0.35);
+  border-radius: 4px;
+}
+
+/* === Cards Section === */
+.cardsSection {
+  padding: 0 2rem 8rem;
+}
+
+.cardsContainer {
+  max-width: 860px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+/* === Card === */
+.card {
+  display: flex;
+  align-items: stretch;
+  text-decoration: none;
+  color: inherit;
+  background: rgba(13, 19, 33, 0.6);
+  border: 1px solid rgba(61, 90, 108, 0.2);
+  border-radius: 6px;
+  overflow: hidden;
+  transition: all 0.25s ease;
+  position: relative;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--hull-grey);
+  transition: background 0.25s ease, box-shadow 0.25s ease;
+}
+
+.card:hover {
+  background: rgba(13, 19, 33, 0.9);
+  border-color: rgba(0, 212, 255, 0.2);
+  transform: translateX(4px);
+}
+
+.card:hover::before {
+  background: var(--plasma-cyan);
+  box-shadow: 0 0 12px rgba(0, 212, 255, 0.4);
+}
+
+.cardIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  flex-shrink: 0;
+  color: var(--hull-grey);
+  border-right: 1px solid rgba(61, 90, 108, 0.15);
+}
+
+.card:hover .cardIcon {
+  color: var(--plasma-cyan);
+}
+
+.cardContent {
+  flex: 1;
+  padding: 1.5rem 1.75rem;
+  min-width: 0;
+}
+
+.cardLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--hull-grey);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 0.5rem;
+}
+
+.card:hover .cardLabel {
+  color: var(--plasma-cyan);
+}
+
+.cardTitle {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--star-white);
+  margin-bottom: 0.6rem;
+  letter-spacing: 0.02em;
+}
+
+.card:hover .cardTitle {
+  color: var(--plasma-cyan);
+}
+
+.cardExcerpt {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 0.9rem;
+  color: var(--chrome-silver);
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cardArrow {
+  display: flex;
+  align-items: center;
+  padding: 0 1.25rem;
+  color: var(--hull-grey);
+  transition: color 0.25s ease, transform 0.25s ease;
+}
+
+.card:hover .cardArrow {
+  color: var(--plasma-cyan);
+  transform: translateX(4px);
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+  .hero {
+    padding: 8rem 1.5rem 3rem;
+  }
+
+  .cardIcon {
+    width: 56px;
+  }
+
+  .cardContent {
+    padding: 1.25rem;
+  }
+
+  .cardTitle {
+    font-size: 1rem;
+  }
+
+  .cardArrow {
+    padding: 0 0.75rem;
+  }
+}
