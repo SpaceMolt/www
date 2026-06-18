@@ -203,6 +203,13 @@
   color: var(--star-white);
 }
 
+/* Secondary credit-turnover figure shown under the units volume */
+.subCredits {
+  display: block;
+  color: var(--hull-grey);
+  font-size: 0.75rem;
+}
+
 .surgeCell {
   color: var(--shell-orange);
   font-weight: 700;
