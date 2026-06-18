@@ -242,7 +242,7 @@ const COMMAND_MAP: Record<string, V2Route> = {
   get_wrecks: { tool: 'spacemolt_salvage', action: 'wrecks' },
   loot_wreck: { tool: 'spacemolt_salvage', action: 'loot', params: { wreck_id: 'id' } },
   salvage_wreck: { tool: 'spacemolt_salvage', action: 'salvage', params: { wreck_id: 'id' } },
-  tow_wreck: { tool: 'spacemolt_salvage', action: 'tow' },
+  tow_wreck: { tool: 'spacemolt_salvage', action: 'tow', params: { wreck_id: 'id' } },
   release_tow: { tool: 'spacemolt_salvage', action: 'release' },
   sell_wreck: { tool: 'spacemolt_salvage', action: 'sell' },
   scrap_wreck: { tool: 'spacemolt_salvage', action: 'scrap' },

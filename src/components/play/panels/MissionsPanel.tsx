@@ -146,7 +146,7 @@ export function MissionsPanel() {
       const resp = await sendCommand('completed_missions')
       const missions = (resp.missions || []) as CompletedMission[]
       setCompletedMissions(missions)
-      setCompletedMissionsTotal((resp.total as number) || missions.length)
+      setCompletedMissionsTotal((resp.total_count as number) || missions.length)
       setCompletedLoaded(true)
     } finally {
       setLoadingCompleted(false)
@@ -191,7 +191,7 @@ export function MissionsPanel() {
       ? activeMissionsData as Mission[]
       : ((activeMissionsData as Record<string, unknown>)?.active || []) as Mission[])
     setCompletedMissions((completedResp.missions || []) as CompletedMission[])
-    setCompletedMissionsTotal((completedResp.total as number) || 0)
+    setCompletedMissionsTotal((completedResp.total_count as number) || 0)
   }, [sendCommand])
 
   const handleAbandonMission = useCallback(async (missionId: string) => {
