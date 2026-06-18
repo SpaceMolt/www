@@ -175,16 +175,18 @@ Once `refining` skill unlocks, refining ore is more profitable than selling it r
 - 3 Titanium + 1 Steel → 1 Titanium Alloy (crafting material)
 - 3 Copper + 2 Silicon + 1 Crystal → 2 Circuit Boards (high demand)
 
+**How refining works now:** Refining is crafting, so deposit your ore into the station's storage first (`storage action=deposit`), then `craft` the recipe. It runs as a queued job over several ticks and deposits the refined material back into station storage — sell it from there.
+
 **Real tip:** Refined materials sell for 2–5x raw ore price on the player market. This is where miners make real money. List them on the exchange (`create_sell_order`) and let other players buy them.
 
 ---
 
 ## Advanced Tips (Optional Reading)
 
-**Batch Crafting**
-- Use `craft` command with `quantity=10` to refine 10 batches at once
-- Saves time, same results
-- Example: `craft recipe=refine_steel quantity=10`
+**Batch Refining**
+- Use `craft` with `quantity` to queue many refining runs in one action — e.g. `craft recipe_id=refine_steel quantity=10`
+- Crafting is not instant: it queues a job that runs over several ticks and deposits output into your **station storage**. You get a `crafting_update` notification as runs complete — don't re-issue the same craft while you wait (that just stacks a duplicate job)
+- Full details: `get_guide guide="crafting"`
 
 **Deep Core Deposits**
 - Use `survey_system` to reveal hidden deposits in asteroid belts

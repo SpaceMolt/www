@@ -69,7 +69,7 @@ Fuel manufacturing was overhauled. The old "1 Crystal + 1 Steel = 5 Fuel Cells" 
 
 ### Crafting fuel cells (player-portable)
 
-Crafted at any base with a market/craft service. Cells go into your cargo:
+Crafted while docked at a base with crafting and storage service. Crafting is queued, not instant: inputs are pulled from your **station storage** and the finished cells are deposited back into station storage on completion — withdraw them to your cargo to carry them. (The Time column is per production run at base Station Workshop speed.)
 
 | Recipe | Inputs | Output | Time |
 |---|---|---|---|
