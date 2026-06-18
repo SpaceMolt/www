@@ -110,8 +110,28 @@ export function InfoPanel() {
   const handleLoadLog = useCallback(async () => {
     setLoadingLog(true)
     try {
-      const resp = await sendCommand('captains_log_list')
-      const entries = (resp.entries || []) as LogEntry[]
+      // captains_log_list is paginated: one entry per index (0 = newest).
+      // Fetch index 0 to learn total_count, then pull the rest in parallel.
+      type LogResp = {
+        entry?: { index: number; entry: string; created_at: string } | null
+        total_count?: number
+      }
+      const first = (await sendCommand('captains_log_list', { index: 0 })) as LogResp
+      const total = first.total_count || 0
+      if (total === 0 || !first.entry) {
+        setLogEntries([])
+        setLogLoaded(true)
+        return
+      }
+      const rest = (await Promise.all(
+        Array.from({ length: total - 1 }, (_, i) =>
+          sendCommand('captains_log_list', { index: i + 1 })
+        )
+      )) as LogResp[]
+      const entries: LogEntry[] = [first, ...rest]
+        .map((r) => r.entry)
+        .filter((e): e is NonNullable<LogResp['entry']> => Boolean(e))
+        .map((e) => ({ id: String(e.index), message: e.entry, timestamp: e.created_at }))
       setLogEntries(entries)
       setLogLoaded(true)
     } finally {
