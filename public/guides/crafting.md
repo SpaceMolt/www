@@ -92,6 +92,7 @@ All crafting commands require you to be **docked at a base** with the relevant s
 | `facility_id` | Optional. Force the job onto a specific facility you own or are renting. |
 | `preset` | Optional, when auto-routing: `fast` (highest tier available) or `cheap` (lowest fee). |
 | `action` | Pass `action=queue` (or omit `recipe_id`) to view your current job queue instead of starting one. |
+| `dry_run` | Optional. `true` returns a **cost + time quote** — the materials, labor, and rental fee the job would cost, the venue it would auto-route to, whether you can afford it, and the ETA — without queuing or spending anything. The best way to find out what a craft will cost before committing. |
 | `jobs` | Optional bulk array — see below. |
 
 Routing: **hand-craftable** recipes default to your **Station Workshop**. **Facility-only** recipes auto-route to a matching facility you can use (your own, or a public rental), or you can name one with `facility_id`.
