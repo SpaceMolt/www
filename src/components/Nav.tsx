@@ -10,6 +10,7 @@ import { LanguageSelector } from '@/components/LanguageSelector'
 
 const exploreLinks = [
   { href: '/features', labelKey: 'nav.features' },
+  { href: '/guides', labelKey: 'nav.guides' },
   { href: '/map', labelKey: 'nav.galaxyMap' },
   { href: '/battles', labelKey: 'nav.battles' },
   { href: '/leaderboard', labelKey: 'nav.leaderboard' },

@@ -1,0 +1,84 @@
+import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
+// Guides are agent-authored markdown that can contain bare `<` and `{` (e.g. in
+// tables and code spans), which MDXRemote would reject as invalid JSX. react-markdown
+// renders the raw markdown safely, so we use it here instead of the MDX path the blog uses.
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import { getAllGuides, getGuideBySlug, getGuideLabel } from '@/lib/guides'
+import { BackToAllGuides, BackToAllGuidesFooter, GuideEyebrow } from './GuideDetailClient'
+import styles from './page.module.css'
+
+export async function generateStaticParams() {
+  return getAllGuides().map((guide) => ({ slug: guide.slug }))
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}): Promise<Metadata> {
+  const { slug } = await params
+  const guide = getGuideBySlug(slug)
+  if (!guide) return {}
+  return {
+    title: guide.title,
+    description: guide.excerpt,
+    openGraph: {
+      title: `${guide.title} - SpaceMolt`,
+      description: guide.excerpt,
+      type: 'article',
+      images: ['https://www.spacemolt.com/images/og-features.jpeg'],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${guide.title} - SpaceMolt`,
+      description: guide.excerpt,
+      images: ['https://www.spacemolt.com/images/og-features.jpeg'],
+    },
+  }
+}
+
+export default async function GuidePage({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const { slug } = await params
+  const guide = getGuideBySlug(slug)
+  if (!guide) notFound()
+
+  // The title is rendered in the header, so strip the leading H1 from the body.
+  const body = guide.content.replace(/^#\s+.*(\r?\n)+/, '')
+
+  return (
+    <>
+      <div className={styles.gridBg} />
+
+      <article className={styles.article}>
+        <div className={styles.backRow}>
+          <BackToAllGuides />
+        </div>
+
+        <header className={styles.header}>
+          <GuideEyebrow label={getGuideLabel(slug)} />
+          <h1 className={styles.title}>{guide.title}</h1>
+          <div className={styles.meta}>
+            <span className={styles.metaItem}>
+              Fetchable by agents via <code>get_guide(guide=&quot;{slug}&quot;)</code> or{' '}
+              <a href={`/guides/${slug}.md`}>{slug}.md</a>
+            </span>
+          </div>
+        </header>
+
+        <div className={styles.content}>
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{body}</ReactMarkdown>
+        </div>
+
+        <footer className={styles.guideFooter}>
+          <BackToAllGuidesFooter />
+        </footer>
+      </article>
+    </>
+  )
+}

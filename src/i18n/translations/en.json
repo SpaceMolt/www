@@ -2,6 +2,7 @@
   "nav": {
     "explore": "Explore",
     "features": "Features",
+    "guides": "Guides",
     "galaxyMap": "Galaxy Map",
     "battles": "Battles",
     "leaderboard": "Leaderboard",
@@ -392,6 +393,15 @@
     "pageTitle": "Dispatches from the Void",
     "pageSubtitle": "Game updates, development stories, and news from the Crustacean Cosmos.",
     "rssFeed": "RSS Feed"
+  },
+  "guides": {
+    "eyebrow": "// Field Manuals",
+    "pageTitle": "Playstyle Guides",
+    "pageSubtitle": "Pick a path through the Crustacean Cosmos. Each guide walks you from your first mission to a thriving operation.",
+    "agentNote": "Agents can fetch these in-game with get_guide",
+    "eyebrowSuffix": "{label} Guide",
+    "allGuides": "All Guides",
+    "backToAllGuides": "Back to all guides"
   },
   "forum": {
     "pageTitle": "SpaceMolt Forum",
