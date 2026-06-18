@@ -167,8 +167,11 @@ const COMMAND_MAP: Record<string, V2Route> = {
   commission_ship: { tool: 'spacemolt_ship', action: 'commission_ship', params: { ship_class: 'id' } },
   commission_quote: { tool: 'spacemolt_ship', action: 'commission_quote', params: { ship_class: 'id' } },
   commission_status: { tool: 'spacemolt_ship', action: 'commission_status' },
-  claim_commission: { tool: 'spacemolt_ship', action: 'claim_commission', params: { commission_id: 'id' } },
   cancel_commission: { tool: 'spacemolt_ship', action: 'cancel_commission', params: { commission_id: 'id' } },
+  supply_commission: { tool: 'spacemolt_ship', action: 'supply_commission', params: { commission_id: 'id' } },
+  rename_ship: { tool: 'spacemolt_ship', action: 'rename_ship' },
+  scrap_ship: { tool: 'spacemolt_ship', action: 'scrap_ship', params: { ship_id: 'id' } },
+  refit_ship: { tool: 'spacemolt_ship', action: 'refit_ship' },
 
   // battle
   get_battle_status: { tool: 'spacemolt_battle', action: 'status' },
@@ -205,19 +208,24 @@ const COMMAND_MAP: Record<string, V2Route> = {
   forum_upvote: { tool: 'spacemolt_social', action: 'forum_upvote' },
 
   // faction
-  create_faction: { tool: 'spacemolt_faction', action: 'create', params: { name: 'id', tag: 'text' } },
+  // Server `create` expects id=tag, text=name (see v2CommandMap on the gameserver).
+  create_faction: { tool: 'spacemolt_faction', action: 'create', params: { tag: 'id', name: 'text' } },
   join_faction: { tool: 'spacemolt_faction', action: 'join', params: { faction_id: 'id' } },
-  leave_faction: { tool: 'spacemolt_fleet', action: 'leave' },
+  leave_faction: { tool: 'spacemolt_faction', action: 'leave' },
   faction_info: { tool: 'spacemolt_faction', action: 'info', params: { faction_id: 'id' } },
   faction_list: { tool: 'spacemolt_faction', action: 'list' },
-  faction_invite: { tool: 'spacemolt_fleet', action: 'invite', params: { player_id: 'id' } },
-  faction_kick: { tool: 'spacemolt_fleet', action: 'kick', params: { player_id: 'id' } },
+  faction_invite: { tool: 'spacemolt_faction', action: 'invite', params: { player_id: 'id' } },
+  faction_kick: { tool: 'spacemolt_faction', action: 'kick', params: { player_id: 'id' } },
   faction_promote: { tool: 'spacemolt_faction_admin', action: 'promote', params: { player_id: 'id', role: 'text' } },
   faction_get_invites: { tool: 'spacemolt_faction', action: 'get_invites' },
+  faction_accept_invite: { tool: 'spacemolt_faction', action: 'accept_invite', params: { faction_id: 'id' } },
   faction_decline_invite: { tool: 'spacemolt_faction', action: 'decline_invite', params: { faction_id: 'id' } },
+  faction_withdraw_invite: { tool: 'spacemolt_faction', action: 'withdraw_invite', params: { player_id: 'id' } },
   faction_propose_ally: { tool: 'spacemolt_faction', action: 'propose_ally', params: { faction_id: 'id' } },
   faction_accept_ally: { tool: 'spacemolt_faction', action: 'accept_ally', params: { faction_id: 'id' } },
+  faction_remove_ally: { tool: 'spacemolt_faction', action: 'remove_ally', params: { faction_id: 'id' } },
   faction_set_enemy: { tool: 'spacemolt_faction', action: 'set_enemy', params: { faction_id: 'id' } },
+  faction_remove_enemy: { tool: 'spacemolt_faction', action: 'remove_enemy', params: { faction_id: 'id' } },
   faction_declare_war: { tool: 'spacemolt_faction', action: 'declare_war', params: { faction_id: 'id', reason: 'text' } },
   faction_propose_peace: { tool: 'spacemolt_faction', action: 'propose_peace', params: { faction_id: 'id', terms: 'text' } },
   faction_accept_peace: { tool: 'spacemolt_faction', action: 'accept_peace', params: { faction_id: 'id' } },
@@ -240,6 +248,7 @@ const COMMAND_MAP: Record<string, V2Route> = {
   scrap_wreck: { tool: 'spacemolt_salvage', action: 'scrap' },
   get_insurance_quote: { tool: 'spacemolt_salvage', action: 'quote' },
   buy_insurance: { tool: 'spacemolt_salvage', action: 'insure' },
+  view_insurance: { tool: 'spacemolt_salvage', action: 'policies' },
   set_home_base: { tool: 'spacemolt_salvage', action: 'set_home' },
 
   // P2P trading
@@ -278,13 +287,13 @@ const COMMAND_MAP: Record<string, V2Route> = {
 
 export const MUTATION_COMMANDS = new Set([
   'accept_mission', 'attack', 'buy', 'buy_insurance', 'buy_listed_ship',
-  'cancel_commission', 'cancel_order', 'cancel_ship_listing', 'claim_commission',
+  'cancel_commission', 'cancel_order', 'cancel_ship_listing',
   'cloak', 'commission_ship', 'complete_mission', 'craft', 'create_buy_order',
   'create_faction', 'create_sell_order', 'deposit_items', 'dock',
   'faction_accept_peace', 'faction_declare_war', 'faction_invite', 'faction_kick',
   'faction_post_mission', 'faction_promote', 'faction_propose_peace',
   'faction_propose_ally', 'faction_accept_ally', 'faction_set_enemy',
-  'faction_submit_intel',
+  'faction_submit_intel', 'refit_ship', 'rename_ship', 'scrap_ship',
   'install_mod', 'jettison', 'join_faction', 'jump', 'leave_faction',
   'list_ship_for_sale', 'loot_wreck', 'mine', 'modify_order', 'refuel',
   'release_tow', 'reload', 'repair', 'repair_module', 'salvage_wreck', 'scan',

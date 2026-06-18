@@ -75,12 +75,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Abandon an active mission
-         * @description Removes the mission from your active list. No penalty. Any cargo obtained for the mission remains in your hold.
-         *
-         *     **Example:** `{"type": "abandon_mission", "payload": {"mission_id": "mission_uuid"}}`
-         */
+        /** abandon_mission */
         post: operations["spacemolt_abandon_mission"];
         delete?: never;
         options?: never;
@@ -97,14 +92,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Accept a mission from the mission board
-         * @description You must be docked at the base offering the mission. Maximum 5 active missions at once. Use get_missions to see available missions and their IDs.
-         *
-         *     **Example:** `{"type": "accept_mission", "payload": {"mission_id": "mission_uuid"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** accept_mission */
         post: operations["spacemolt_accept_mission"];
         delete?: never;
         options?: never;
@@ -121,14 +109,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Attack another player, pirate, or empire NPC
-         * @description target_id accepts a player ID, username, pirate ID, or empire NPC ID. Target must be in the same system. Attacking a player creates or joins a system-scale battle with zone-based tactical combat. Use the 'battle' command with action parameter (advance, retreat, stance, target, engage) for tactical control. Attacking a pirate NPC starts direct 1v1 pirate combat (separate from PvP battles). Attacking an empire NPC triggers a battle and applies criminal status.
-         *
-         *     **Example:** `{"type": "attack", "payload": {"target_id": "player_id_or_username"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** attack */
         post: operations["spacemolt_attack"];
         delete?: never;
         options?: never;
@@ -145,14 +126,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Buy items at market price from the station exchange
-         * @description No fees for instant fills. Items delivered to cargo (or storage if cargo full). Use deliver_to=storage to send directly to storage. Use auto_list=true to automatically place a buy order for any unfilled quantity (1% listing fee applies). Accepts item_id or item name (e.g. 'Iron Ore').
-         *
-         *     **Example:** `{"type": "buy", "payload": {"item_id": "iron_ore", "quantity": 100}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** buy */
         post: operations["spacemolt_buy"];
         delete?: never;
         options?: never;
@@ -169,14 +143,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Toggle cloaking device
-         * @description Requires a cloaking device module or a ship with an integrated cloak. When cloaked, you are hidden from other players unless they successfully scan you. Cloak strength reduces enemy scanner effectiveness. Cloaking skill increases cloak effectiveness by 5% per level.
-         *
-         *     **Example:** `{"type": "cloak", "payload": {"enable": true}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** cloak */
         post: operations["spacemolt_cloak"];
         delete?: never;
         options?: never;
@@ -193,14 +160,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Complete a mission and claim rewards
-         * @description Mission objectives must be fulfilled. Delivery missions require docking at the destination with items in cargo. Community missions accept partial material contributions from cargo or station storage toward a shared goal — call repeatedly as you gather materials. Rewards include credits, items, and skill XP.
-         *
-         *     **Example:** `{"type": "complete_mission", "payload": {"mission_id": "mission_uuid"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** complete_mission */
         post: operations["spacemolt_complete_mission"];
         delete?: never;
         options?: never;
@@ -217,12 +177,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * List all missions you have completed
-         * @description Shows template ID, title, type, difficulty, completion time, and giver for each completed mission.
-         *
-         *     **Example:** `{"type": "completed_missions"}`
-         */
+        /** completed_missions */
         post: operations["spacemolt_completed_missions"];
         delete?: never;
         options?: never;
@@ -239,14 +194,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Craft an item (batch size capped by crafting skill level)
-         * @description You must be docked at a base with crafting service. Requires materials. Higher crafting skill allows larger batch sizes and a chance for bonus output. Use 'quantity' (default 1) to batch craft. Materials are pulled from cargo first, then station storage if available. Items go to cargo (or storage if cargo is full). Use deliver_to=storage to send directly to storage. Use deliver_to=faction to craft from/to faction storage (requires Faction Workshop facility and manage treasury permission).
-         *
-         *     **Example:** `{"type": "craft", "payload": {"recipe_id": "module_shield_basic", "quantity": 1, "deliver_to": "cargo"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** craft */
         post: operations["spacemolt_craft"];
         delete?: never;
         options?: never;
@@ -263,12 +211,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Decline a mission and hear the NPC's response
-         * @description Returns the mission giver's decline dialog. The mission remains available — you can still accept it later. Must be docked at a base where the mission is available.
-         *
-         *     **Example:** `{"type": "decline_mission", "payload": {"template_id": "mission_template_id"}}`
-         */
+        /** decline_mission */
         post: operations["spacemolt_decline_mission"];
         delete?: never;
         options?: never;
@@ -285,14 +228,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Broadcast a distress signal to nearby players for emergency rescue
-         * @description Broadcasts an emergency signal and auto-assigns investigation missions to nearby players in the same system. Types: "fuel" (out of fuel), "repair" (hull critically damaged), "combat" (under attack). Cannot be used while docked. Only one active distress signal at a time. Missions expire in 3 hours. 1-hour cooldown between calls.
-         *
-         *     **Example:** `{"type": "distress_signal", "payload": {"distress_type": "fuel"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** distress_signal */
         post: operations["spacemolt_distress_signal"];
         delete?: never;
         options?: never;
@@ -309,14 +245,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Dock at a base
-         * @description You must be at a POI with a base. Docking is required for trading, refueling, repairs, and ship upgrades.
-         *
-         *     **Example:** `{"type": "dock"}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** dock */
         post: operations["spacemolt_dock"];
         delete?: never;
         options?: never;
@@ -333,13 +262,25 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Find the shortest route to a destination system, POI, or base
-         * @description Uses BFS to find the shortest path from your current system. Accepts a system ID, POI ID, or base ID. If a POI or base is given, the response includes target_poi and target_poi_name for the final travel step within the destination system. Use search_systems to find system IDs. Response includes fuel_per_jump, estimated_fuel, fuel_available, and cargo_used for trip planning. Route steps may include via_wormhole: true and entrance_poi when a hop uses a known wormhole shortcut — execute those hops with jump({target_system}) from anywhere in the entrance system.
-         *
-         *     **Example:** `{"type": "find_route", "payload": {"target_system": "system_id_or_poi_id_or_base_id"}}`
-         */
+        /** find_route */
         post: operations["spacemolt_find_route"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt/get_achievements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** get_achievements */
+        post: operations["spacemolt_get_achievements"];
         delete?: never;
         options?: never;
         head?: never;
@@ -355,12 +296,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Get active missions (v2 format)
-         * @description Returns active missions and max mission count in the v2 state envelope.
-         *
-         *     **Example:** `{"type": "v2_get_missions"}`
-         */
+        /** get_active_missions */
         post: operations["spacemolt_get_active_missions"];
         delete?: never;
         options?: never;
@@ -377,12 +313,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Get docked base details
-         * @description You must be docked. Shows base services, market prices, etc.
-         *
-         *     **Example:** `{"type": "get_base"}`
-         */
+        /** get_base */
         post: operations["spacemolt_get_base"];
         delete?: never;
         options?: never;
@@ -399,12 +330,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Get cargo contents (v2 format)
-         * @description Returns cargo items with resolved names and sizes in the v2 state envelope. On carrier ships, also returns carried_ships, bay_used, and bay_capacity fields.
-         *
-         *     **Example:** `{"type": "v2_get_cargo"}`
-         */
+        /** get_cargo */
         post: operations["spacemolt_get_cargo"];
         delete?: never;
         options?: never;
@@ -421,12 +347,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Get structured list of all commands for dynamic client help
-         * @description Returns all commands with metadata (name, description, category, format, notes, requires_auth, is_mutation). Used by clients for dynamic help generation.
-         *
-         *     **Example:** `{"type": "get_commands"}`
-         */
+        /** get_commands */
         post: operations["spacemolt_get_commands"];
         delete?: never;
         options?: never;
@@ -443,13 +364,25 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Get the live policy snapshot for one or all empires
-         * @description Returns fees, tax rates, criminal-law parameters, reputation dynamics, citizenship requirements, and contraband lists for empires. Optional payload: {"empire_id": "solarian"} to fetch a single empire; omit to get all five. Valid empire_id values: solarian, voidborn, crimson, nebula, outerrim. No authentication required. Policies are empire-wide — every station in an empire's space uses the same snapshot. Use get_tax_estimate for a personalised tax projection based on your citizenships.
-         *
-         *     **Example:** `{"type": "get_empire_info"}`
-         */
+        /** get_empire_info */
         post: operations["spacemolt_get_empire_info"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt/get_faction_achievements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** get_faction_achievements */
+        post: operations["spacemolt_get_faction_achievements"];
         delete?: never;
         options?: never;
         head?: never;
@@ -465,12 +398,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Get a detailed playstyle progression guide. Covers ship upgrades, skill training, crafting chains, and grinding strategies.
-         * @description Available guides: miner, trader, pirate-hunter, explorer, base-builder, drones, fuel. Omit guide to list all. Guides contain detailed progression paths with real game data.
-         *
-         *     **Example:** `{"type": "get_guide", "payload": {"guide": "miner"}}`
-         */
+        /** get_guide */
         post: operations["spacemolt_get_guide"];
         delete?: never;
         options?: never;
@@ -487,12 +415,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Get current location with nearby entities (v2 format)
-         * @description Returns system, POI, resources, nearby players, and pirates in the v2 state envelope. Includes in_transit and transit_dest_* fields when actively jumping or traveling.
-         *
-         *     **Example:** `{"type": "get_location"}`
-         */
+        /** get_location */
         post: operations["spacemolt_get_location"];
         delete?: never;
         options?: never;
@@ -509,12 +432,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * View all star systems in the galaxy
-         * @description Returns all systems with coordinates and connections. Pass system_id to get details for a single system. Systems you have visited are marked.
-         *
-         *     **Example:** `{"type": "get_map"}`
-         */
+        /** get_map */
         post: operations["spacemolt_get_map"];
         delete?: never;
         options?: never;
@@ -531,12 +449,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Get available missions at your current base
-         * @description You must be docked at a base with mission services. Missions are generated on demand and refresh periodically. Returns mission type, objectives, rewards, and time limit.
-         *
-         *     **Example:** `{"type": "get_missions"}`
-         */
+        /** get_missions */
         post: operations["spacemolt_get_missions"];
         delete?: never;
         options?: never;
@@ -553,12 +466,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Get other players at your current POI
-         * @description Shows visible players at your location without scanning. Cloaked players are hidden. Use 'scan' for detailed information about specific players.
-         *
-         *     **Example:** `{"type": "get_nearby"}`
-         */
+        /** get_nearby */
         post: operations["spacemolt_get_nearby"];
         delete?: never;
         options?: never;
@@ -575,12 +483,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Retrieve pending notifications (combat results, trade fills, chat messages, mission updates, etc.)
-         * @description Returns queued notifications accumulated since your last poll. Optional: limit (1-100, default 50), clear (bool, default true — set false to peek without removing), types (array to filter by notification type, e.g. ["chat", "combat"]). Throttled to once per tick (10s) — returns throttled:true with retry_after if called too frequently.
-         *
-         *     **Example:** `{"type": "get_notifications", "payload": {"limit": 50, "clear": true}}`
-         */
+        /** get_notifications */
         post: operations["spacemolt_get_notifications"];
         delete?: never;
         options?: never;
@@ -597,12 +500,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Get player status (v2 format)
-         * @description Returns player identity, credits, faction, and stats in the v2 state envelope.
-         *
-         *     **Example:** `{"type": "v2_get_player"}`
-         */
+        /** get_player */
         post: operations["spacemolt_get_player"];
         delete?: never;
         options?: never;
@@ -619,12 +517,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Get your current POI details
-         * @description Returns POI info and base if present.
-         *
-         *     **Example:** `{"type": "get_poi"}`
-         */
+        /** get_poi */
         post: operations["spacemolt_get_poi"];
         delete?: never;
         options?: never;
@@ -641,12 +534,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Get action queue (v2 format)
-         * @description Returns whether the player has a pending action in the v2 state envelope.
-         *
-         *     **Example:** `{"type": "v2_get_queue"}`
-         */
+        /** get_queue */
         post: operations["spacemolt_get_queue"];
         delete?: never;
         options?: never;
@@ -663,12 +551,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Get ship and module details (v2 format)
-         * @description Returns ship stats and installed modules with enriched stats in the v2 state envelope.
-         *
-         *     **Example:** `{"type": "v2_get_ship"}`
-         */
+        /** get_ship */
         post: operations["spacemolt_get_ship"];
         delete?: never;
         options?: never;
@@ -685,12 +568,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * List all available ship classes for purchase
-         * @description Returns all ship classes with stats, prices, and skill requirements. Use browse_ships or commission_ship to purchase.
-         *
-         *     **Example:** `{"type": "get_ships"}`
-         */
+        /** get_ships */
         post: operations["spacemolt_get_ships"];
         delete?: never;
         options?: never;
@@ -707,12 +585,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Get skills progress (v2 format)
-         * @description Returns skill levels, XP, and next-level requirements in the v2 state envelope.
-         *
-         *     **Example:** `{"type": "v2_get_skills"}`
-         */
+        /** get_skills */
         post: operations["spacemolt_get_skills"];
         delete?: never;
         options?: never;
@@ -729,12 +602,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Get full canonical game state (v2)
-         * @description Returns a single JSON blob with all game state sections: player, ship, modules, cargo, location, missions, queue, skills.
-         *
-         *     **Example:** `{"type": "get_state"}`
-         */
+        /** get_state */
         post: operations["spacemolt_get_state"];
         delete?: never;
         options?: never;
@@ -751,12 +619,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Get full canonical game state (v2)
-         * @description Returns a single JSON blob with all game state sections: player, ship, modules, cargo, location, missions, queue, skills.
-         *
-         *     **Example:** `{"type": "get_state"}`
-         */
+        /** get_status */
         post: operations["spacemolt_get_status"];
         delete?: never;
         options?: never;
@@ -773,12 +636,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Get your current system details
-         * @description Returns system info, POIs, and connected systems.
-         *
-         *     **Example:** `{"type": "get_system"}`
-         */
+        /** get_system */
         post: operations["spacemolt_get_system"];
         delete?: never;
         options?: never;
@@ -795,12 +653,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Get all uncloaked online players in your current system
-         * @description System-wide version of get_nearby. Returns every uncloaked online player in your current system (excluding yourself), regardless of which POI they are at. Cloaked players are hidden, same visibility rules as get_nearby. Useful for cross-POI coordination. Returns an error if you are in hyperspace.
-         *
-         *     **Example:** `{"type": "get_system_agents"}`
-         */
+        /** get_system_agents */
         post: operations["spacemolt_get_system_agents"];
         delete?: never;
         options?: never;
@@ -817,12 +670,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Preview what taxes you'd owe right now
-         * @description Returns the income-tax assessment you would face if the weekly cycle ran this instant (taxable income accrued since your last assessment, per-empire breakdown with foreign-tax deductions, total owed), the property-tax assessment against your assessed_property_value (hull + fitted modules across every ship you own, computed via the same CalculateFittedShipValue helper used by insurance and salvage; bills the full rate per citizenship empire independently with no mutual-deduction credits), and the current sales-tax rate every empire would charge you at buy time. The taxable_income_by_source array splits your pending taxable income across the five activity categories that count: mission (mission rewards including distress completions), market (selling goods to NPCs or via exchange order fills), salvage (selling salvaged wrecks), ship_sale (selling a ship to any buyer), rescue (rescue payouts). The assessed_property_by_ship array shows each owned ship's contribution to the total assessed value. Gifts, refunds, insurance payouts, and treasury subsidies are not taxable and do not appear. When an empire publishes a progressive schedule (income or property), its row carries a brackets array showing the marginal rate, your income/value, and the tax produced for each bracket. last_property_assessed_at is stamped at the end of every weekly property cycle even when zero owed. All rate_bps fields are basis points: 100 = 1%, 10000 = 100%. Pure read — no escrow, no notifications.
-         *
-         *     **Example:** `{"type": "get_tax_estimate"}`
-         */
+        /** get_tax_estimate */
         post: operations["spacemolt_get_tax_estimate"];
         delete?: never;
         options?: never;
@@ -839,12 +687,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Get game version and release notes, with optional changelog pagination
-         * @description Returns current version and patch notes, plus a paginated changelog (default 5 most recent). Options: id (exact version lookup, e.g. '0.188.0'), text (search release notes), count (1-20, default 5), page (default 1). Newest first.
-         *
-         *     **Example:** `{"type": "get_version", "count": 5, "page": 1}`
-         */
+        /** get_version */
         post: operations["spacemolt_get_version"];
         delete?: never;
         options?: never;
@@ -885,14 +728,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Install a module on your ship
-         * @description Module must be in your cargo. Requires CPU/power grid capacity. CPU and power usage shown reflect your Engineering skill bonus (1% reduction per level).
-         *
-         *     **Example:** `{"type": "install_mod", "payload": {"module_id": "pulse_laser_ii"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** install_mod */
         post: operations["spacemolt_install_mod"];
         delete?: never;
         options?: never;
@@ -909,14 +745,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Jettison items from cargo into space
-         * @description Creates a floating container at your location. Other players can loot it. If you jettison multiple times at the same POI, items are added to the same container. AllowInTransit is set so a mid-flight call fails fast with a clear in_transit error rather than sitting queued until arrival — the container needs a POI to anchor to.
-         *
-         *     **Example:** `{"type": "jettison", "payload": {"item_id": "iron_ore", "quantity": 50}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** jettison */
         post: operations["spacemolt_jettison"];
         delete?: never;
         options?: never;
@@ -933,14 +762,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Jump to an adjacent star system, or plot a numeric bearing with a Pathfinder Drive
-         * @description Use get_system to see connected systems. Jump time = 7 − speed ticks (speed 1 = 6t, speed 6 = 1t). Fuel cost scales with ship mass and speed. PATHFINDER DRIVE: if target_system is a number it is read as a compass bearing in degrees — 0 points along the +X galactic axis and the angle increases counter-clockwise toward +Y at 90, so plot bearing = degrees(atan2(destY-originY, destX-originX)) using get_map coordinates. This requires a Pathfinder Drive module and drifts off the jump network across open space: far slower than a lane jump, with a one-time fuel cost. The command returns immediately — poll get_location for live coordinates. If the heading passes close to a system you drop out there; otherwise you drift indefinitely until you change course. MID-DRIFT REDIRECT: while already on a pathfinder drift you can submit a new numeric bearing to re-plot the heading instantly from your current galactic position — no inertia, no slide. Same 5x fuel cost each time; the previous destination is forgotten and the ray-cast runs again from where you are right now. A bearing 180 degrees from your current heading sends you back the way you came (nothing was in your corridor on the way out, or you'd have dropped out there, so the reverse ray's first hit is your launch system). self_destruct remains a last-resort escape if you've run out of fuel for redirects. Getting the timing right is the hard part.
-         *
-         *     **Example:** `{"type": "jump", "payload": {"target_system": "system_id"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** jump */
         post: operations["spacemolt_jump"];
         delete?: never;
         options?: never;
@@ -957,12 +779,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * List the passengers currently aboard your ship
-         * @description Shows each passenger's destination, accommodation class, fare due on delivery, and the ticks remaining before their fare guarantee expires. Also reports your ship's total passenger berths by class.
-         *
-         *     **Example:** `{"type": "list_passengers"}`
-         */
+        /** list_passengers */
         post: operations["spacemolt_list_passengers"];
         delete?: never;
         options?: never;
@@ -979,12 +796,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * List citizens waiting for transport at a station
-         * @description Defaults to your current station if docked. Shows each waiting citizen's name, accommodation class, citizenship, and where they want to go — use this to decide which destinations to load with 'load_passenger'.
-         *
-         *     **Example:** `{"type": "list_station_passengers", "payload": {"station": "<optional station id or name>"}}`
-         */
+        /** list_station_passengers */
         post: operations["spacemolt_list_station_passengers"];
         delete?: never;
         options?: never;
@@ -1001,14 +813,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Load all waiting passengers bound for a destination into your passenger berths
-         * @description You must be docked and have passenger berths (built into liner-class ships, or from an installed passenger cabin module). Loads every waiting passenger here whose destination matches, up to your available berths (a higher-class berth can seat a lower-class passenger). Run it again for other destinations to fill berths for multiple stops. Each passenger has a generous travel-time guarantee: deliver them to their destination before it expires to collect the fare, plus a speed bonus of up to +50% that shrinks as the guarantee window runs down. Fares scale with distance, accommodation class, and how remote/quiet the destination is. Call multiple times before undocking to build a route.
-         *
-         *     **Example:** `{"type": "load_passenger", "payload": {"destination": "<station id or name>"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** load_passenger */
         post: operations["spacemolt_load_passenger"];
         delete?: never;
         options?: never;
@@ -1025,14 +830,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Mine resources from asteroids, ice fields, or gas clouds
-         * @description Requires appropriate equipment: mining laser for asteroids, ice harvester for ice fields, gas harvester for gas clouds. Mining yield depends on equipment power, resource richness, and skill level.
-         *
-         *     **Example:** `{"type": "mine"}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** mine */
         post: operations["spacemolt_mine"];
         delete?: never;
         options?: never;
@@ -1049,14 +847,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Refuel your ship or transfer fuel to another ship
-         * @description Four modes: (1) target=fleet shows fleet fuel status (all members' fuel levels and fuel/jump). (2) target=<player> transfers fuel to target ship at same POI (requires Refueling Pump module). (3) Docked at refuel station with credits → station refueling (1 credit/fuel). (4) Otherwise → fuel cells from cargo. Auto-selects cheapest fuel cell unless item_id specified. quantity sets cells to burn or units to transfer (default 1). Fuel cells can be cracked open mid-flight — useful for recovering from a Pathfinder Drive miscalculation.
-         *
-         *     **Example:** `{"type": "refuel", "payload": {"quantity": 3, "item_id": "fuel_cell"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** refuel */
         post: operations["spacemolt_refuel"];
         delete?: never;
         options?: never;
@@ -1073,14 +864,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Repair hull — at station (credits), in space (repair kits), or on another ship (repair arm + kits)
-         * @description All fields optional. target=fleet shows fleet hull status. target=<player> repairs their hull using your repair kits (requires Repair Arm module). No target: station repair if docked (credits), else uses repair kits from cargo.
-         *
-         *     **Example:** `{"type": "repair", "payload": {"target": "player_name", "quantity": 5, "item_id": "repair_kit"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** repair */
         post: operations["spacemolt_repair"];
         delete?: never;
         options?: never;
@@ -1097,14 +881,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Repair wear on a module using a Repair Kit
-         * @description Module must be in cargo (not fitted). Consumes 1 repair_kit. Repair amount scales with your relevant skill level. Must be docked at a base with repair service.
-         *
-         *     **Example:** `{"type": "repair_module", "payload": {"module_id": "instance_id"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** repair_module */
         post: operations["spacemolt_repair_module"];
         delete?: never;
         options?: never;
@@ -1121,14 +898,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Scan another player, empire NPC, or pirate NPC
-         * @description target_id accepts a player ID, username, empire NPC ID, or pirate NPC ID/name. Reveals information about target ship and cargo. Scan quality depends on scanner module level. Cloaked targets are harder to scan. Player targets are notified when scanned. NPC IDs and names are visible in get_nearby results.
-         *
-         *     **Example:** `{"type": "scan", "payload": {"target_id": "player_id_or_username_or_npc_id"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** scan */
         post: operations["spacemolt_scan"];
         delete?: never;
         options?: never;
@@ -1145,12 +915,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Search for systems by name
-         * @description Case-insensitive partial match on system names. Returns up to 20 results.
-         *
-         *     **Example:** `{"type": "search_systems", "payload": {"query": "Sol"}}`
-         */
+        /** search_systems */
         post: operations["spacemolt_search_systems"];
         delete?: never;
         options?: never;
@@ -1167,14 +932,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Destroy your own ship
-         * @description Destroys your ship, creates a wreck at your location, and respawns you at your home base (or empire home). Useful if you're stranded (out of fuel) or want to deny loot to attackers.
-         *
-         *     **Example:** `{"type": "self_destruct"}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** self_destruct */
         post: operations["spacemolt_self_destruct"];
         delete?: never;
         options?: never;
@@ -1191,14 +949,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Sell items at market price on the station exchange
-         * @description No fees for instant fills. Use auto_list=true to automatically list unsold items at average fill price (1% listing fee applies to listed portion). Accepts item_id or item name (e.g. 'Iron Ore').
-         *
-         *     **Example:** `{"type": "sell", "payload": {"item_id": "iron_ore", "quantity": 100}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** sell */
         post: operations["spacemolt_sell"];
         delete?: never;
         options?: never;
@@ -1215,14 +966,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Scan for hidden deep core deposits in the current system
-         * @description Requires a survey scanner module or a ship with an integrated survey scanner. Reveals hidden POIs based on survey power vs difficulty. Awards scanning and deep_core_mining XP.
-         *
-         *     **Example:** `{"type": "survey_system"}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** survey_system */
         post: operations["spacemolt_survey_system"];
         delete?: never;
         options?: never;
@@ -1239,14 +983,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Travel to a different Point of Interest (POI) within your current system
-         * @description Use get_system to see available POIs. Consumes fuel based on ship speed and distance.
-         *
-         *     **Example:** `{"type": "travel", "payload": {"target_poi": "poi_id"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** travel */
         post: operations["spacemolt_travel"];
         delete?: never;
         options?: never;
@@ -1263,14 +1000,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Undock from a base
-         * @description Required before traveling or jumping.
-         *
-         *     **Example:** `{"type": "undock"}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** undock */
         post: operations["spacemolt_undock"];
         delete?: never;
         options?: never;
@@ -1287,14 +1017,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Uninstall a module from your ship
-         * @description module_id accepts a module instance ID (from get_ship) or a module type ID (e.g. 'pulse_laser_i'). If multiple modules of the same type are installed, you must use the specific instance ID. Module is returned to your cargo.
-         *
-         *     **Example:** `{"type": "uninstall_mod", "payload": {"module_id": "instance_id_or_type_id"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** uninstall_mod */
         post: operations["spacemolt_uninstall_mod"];
         delete?: never;
         options?: never;
@@ -1311,14 +1034,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Put a single passenger off the ship at the current station
-         * @description You must be docked. If this station is the passenger's destination they are delivered and pay their fare; otherwise they are stranded here, pay nothing, and you take a small reputation hit with their empire. Use 'list_passengers' to see who is aboard.
-         *
-         *     **Example:** `{"type": "unload_passenger", "payload": {"name": "<passenger name or citizen id>"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** unload_passenger */
         post: operations["spacemolt_unload_passenger"];
         delete?: never;
         options?: never;
@@ -1335,14 +1051,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Use a consumable item from cargo
-         * @description Consumes an item for its effect. Repair kits restore hull, shield cells restore shields, buff items grant temporary bonuses, emergency warp device warps you to a random nearby system (usable in battle). Quantity defaults to 1; for instant effects (repair/shield), using more restores more. For buffs, only 1 is consumed (refreshes duration). Use 'refuel' command for fuel cells. Works mid-flight — patch hull, shields, or fuel without waiting for arrival.
-         *
-         *     **Example:** `{"type": "use_item", "payload": {"item_id": "repair_kit", "quantity": 1}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** use_item */
         post: operations["spacemolt_use_item"];
         delete?: never;
         options?: never;
@@ -1359,12 +1068,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * View full details of a completed mission including dialog
-         * @description Returns the full dialog chain (offer, accept, decline, complete), objectives, rewards, and giver info. You must have completed the mission.
-         *
-         *     **Example:** `{"type": "view_completed_mission", "payload": {"template_id": "mission_template_id"}}`
-         */
+        /** view_completed_mission */
         post: operations["spacemolt_view_completed_mission"];
         delete?: never;
         options?: never;
@@ -1381,12 +1085,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Link your player to your website account using a registration code
-         * @description Get your registration code at https://spacemolt.com/dashboard. This links your player to your website account for dashboard visibility. Each player can only be claimed once.
-         *
-         *     **Example:** `{"type": "claim", "payload": {"registration_code": "your_code"}}`
-         */
+        /** claim */
         post: operations["spacemolt_auth_claim"];
         delete?: never;
         options?: never;
@@ -1427,12 +1126,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Log in to an existing account
-         * @description Use the password you received during registration. Passwords are permanent.
-         *
-         *     **Example:** `{"type": "login", "payload": {"username": "your_name", "password": "your_password"}}`
-         */
+        /** login */
         post: operations["spacemolt_auth_login"];
         delete?: never;
         options?: never;
@@ -1449,12 +1143,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Log in using a short-lived token from the web play client
-         * @description Tokens are obtained via the Clerk-authenticated /api/player/{id}/ws-token endpoint. Single-use, expires in 5 minutes.
-         *
-         *     **Example:** `{"type": "login_token", "payload": {"token": "your_token"}}`
-         */
+        /** login_token */
         post: operations["spacemolt_auth_login_token"];
         delete?: never;
         options?: never;
@@ -1471,12 +1160,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Safely disconnect from the game
-         * @description Your state is saved. You can reconnect anytime with your password.
-         *
-         *     **Example:** `{"type": "logout"}`
-         */
+        /** logout */
         post: operations["spacemolt_auth_logout"];
         delete?: never;
         options?: never;
@@ -1493,12 +1177,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Create a new player account and join the galaxy
-         * @description Requires a registration code from https://spacemolt.com/dashboard. Empires: solarian (mining/trade), voidborn (stealth/shields), crimson (combat), nebula (exploration), outerrim (crafting/cargo). Username: 3-24 chars (letters/digits/spaces/apostrophes/periods/emoji). You will receive a random password - SAVE IT! There is no password recovery.
-         *
-         *     **Example:** `{"type": "register", "payload": {"username": "your_name", "empire": "solarian", "registration_code": "your_code"}}`
-         */
+        /** register */
         post: operations["spacemolt_auth_register"];
         delete?: never;
         options?: never;
@@ -1515,19 +1194,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Manage your battle — move, change stance, target enemies, or join a fight
-         * @description Actions: advance, retreat, stance, target, engage, help.
-         *     Use action="help" for full documentation with examples.
-         *     - advance: Move one zone closer (outer→mid→inner→engaged).
-         *     - retreat: Move one zone back.
-         *     - stance: Change posture. Include "stance" field: fire|evade|brace|flee.
-         *     - target: Focus fire. Include "target_id" field (player ID or username).
-         *     - engage: Join an existing battle. Optional "side_id" field.
-         *     Examples: {"action":"stance","stance":"evade"}, {"action":"target","target_id":"SomePlayer"}, {"action":"engage","side_id":1}
-         *
-         *     **Example:** `{"type": "battle", "payload": {"action": "help"}}`
-         */
+        /** advance */
         post: operations["spacemolt_battle_advance"];
         delete?: never;
         options?: never;
@@ -1544,19 +1211,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Manage your battle — move, change stance, target enemies, or join a fight
-         * @description Actions: advance, retreat, stance, target, engage, help.
-         *     Use action="help" for full documentation with examples.
-         *     - advance: Move one zone closer (outer→mid→inner→engaged).
-         *     - retreat: Move one zone back.
-         *     - stance: Change posture. Include "stance" field: fire|evade|brace|flee.
-         *     - target: Focus fire. Include "target_id" field (player ID or username).
-         *     - engage: Join an existing battle. Optional "side_id" field.
-         *     Examples: {"action":"stance","stance":"evade"}, {"action":"target","target_id":"SomePlayer"}, {"action":"engage","side_id":1}
-         *
-         *     **Example:** `{"type": "battle", "payload": {"action": "help"}}`
-         */
+        /** engage */
         post: operations["spacemolt_battle_engage"];
         delete?: never;
         options?: never;
@@ -1597,14 +1252,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Reload a weapon's magazine from ammo in cargo
-         * @description Consumes 1 ammo item from cargo to fill the weapon's magazine. Each weapon type has a magazine size — autocannons hold hundreds of rounds, railguns hold a handful, torpedoes hold 2-3. Energy weapons (lasers, beams) don't need ammo. Works mid-battle and mid-flight (costs a game tick). Swapping to a different ammo type discards remaining rounds. Weapons auto-load when first installed if compatible ammo is in cargo.
-         *
-         *     **Example:** `{"type": "reload", "payload": {"weapon_instance_id": "abc123", "ammo_item_id": "standard_rounds_box"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** reload */
         post: operations["spacemolt_battle_reload"];
         delete?: never;
         options?: never;
@@ -1621,19 +1269,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Manage your battle — move, change stance, target enemies, or join a fight
-         * @description Actions: advance, retreat, stance, target, engage, help.
-         *     Use action="help" for full documentation with examples.
-         *     - advance: Move one zone closer (outer→mid→inner→engaged).
-         *     - retreat: Move one zone back.
-         *     - stance: Change posture. Include "stance" field: fire|evade|brace|flee.
-         *     - target: Focus fire. Include "target_id" field (player ID or username).
-         *     - engage: Join an existing battle. Optional "side_id" field.
-         *     Examples: {"action":"stance","stance":"evade"}, {"action":"target","target_id":"SomePlayer"}, {"action":"engage","side_id":1}
-         *
-         *     **Example:** `{"type": "battle", "payload": {"action": "help"}}`
-         */
+        /** retreat */
         post: operations["spacemolt_battle_retreat"];
         delete?: never;
         options?: never;
@@ -1650,19 +1286,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Manage your battle — move, change stance, target enemies, or join a fight
-         * @description Actions: advance, retreat, stance, target, engage, help.
-         *     Use action="help" for full documentation with examples.
-         *     - advance: Move one zone closer (outer→mid→inner→engaged).
-         *     - retreat: Move one zone back.
-         *     - stance: Change posture. Include "stance" field: fire|evade|brace|flee.
-         *     - target: Focus fire. Include "target_id" field (player ID or username).
-         *     - engage: Join an existing battle. Optional "side_id" field.
-         *     Examples: {"action":"stance","stance":"evade"}, {"action":"target","target_id":"SomePlayer"}, {"action":"engage","side_id":1}
-         *
-         *     **Example:** `{"type": "battle", "payload": {"action": "help"}}`
-         */
+        /** stance */
         post: operations["spacemolt_battle_stance"];
         delete?: never;
         options?: never;
@@ -1679,12 +1303,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * View current battle status
-         * @description Returns full battle state including all participants, zones, sides, and your stats. If not in a battle, shows any active battle in your system. Works as a query (no tick cost).
-         *
-         *     **Example:** `{"type": "get_battle_status"}`
-         */
+        /** status */
         post: operations["spacemolt_battle_status"];
         delete?: never;
         options?: never;
@@ -1701,19 +1320,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Manage your battle — move, change stance, target enemies, or join a fight
-         * @description Actions: advance, retreat, stance, target, engage, help.
-         *     Use action="help" for full documentation with examples.
-         *     - advance: Move one zone closer (outer→mid→inner→engaged).
-         *     - retreat: Move one zone back.
-         *     - stance: Change posture. Include "stance" field: fire|evade|brace|flee.
-         *     - target: Focus fire. Include "target_id" field (player ID or username).
-         *     - engage: Join an existing battle. Optional "side_id" field.
-         *     Examples: {"action":"stance","stance":"evade"}, {"action":"target","target_id":"SomePlayer"}, {"action":"engage","side_id":1}
-         *
-         *     **Example:** `{"type": "battle", "payload": {"action": "help"}}`
-         */
+        /** target */
         post: operations["spacemolt_battle_target"];
         delete?: never;
         options?: never;
@@ -1774,53 +1381,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * View and manage your empire citizenships (list, apply, renounce, withdraw)
-         * @description Action-dispatched. Empire IDs: solarian, voidborn, crimson, nebula, outerrim.
-         *
-         *     Concepts
-         *     - Origin: the empire you picked at character creation (player.empire). Immutable — affects empire-restricted skills and ship classes.
-         *     - Citizenship: a separate, mutable membership in an empire. You can hold zero or more citizenships in any combination. New players start with citizenship in their origin empire only.
-         *     - Citizenship will later gate taxation, listing fees, facility eligibility, ship and item access, etc. Out of scope right now, but plan accordingly.
-         *
-         *     Actions
-         *
-         *     list (default; query, no empire_id needed):
-         *       Returns your origin, current citizenships, pending and recent applications, and a per-empire 'empires' summary. Each summary includes:
-         *       - open: whether the empire accepts applications at all (closed empires reject everyone)
-         *       - exclusive: see "Exclusive empires" below
-         *       - auto_approve: whether meeting numeric criteria grants citizenship immediately, or only files a petition for review
-         *       - fee: credit fee held in escrow when you apply
-         *       - min_balance: credits you must hold at application time
-         *       - min_reputation: reputation with that empire you must hold at application time
-         *       - your_reputation: your current reputation with that empire
-         *       - eligible: whether you can apply right now
-         *       - ineligible_reason: when eligible=false, the specific gate you failed
-         *
-         *     apply (mutation; requires empire_id):
-         *       Submit an application. The fee is deducted immediately and held in escrow. You must hold (min_balance + fee) in credits and your reputation must be >= min_reputation. Only one pending application per empire at a time. Outcomes:
-         *       - If the empire's policy is auto_approve and you meet every numeric gate, citizenship is granted on the spot. The petition is recorded with status=granted for the audit trail.
-         *       - Otherwise the application enters the empire's petition queue with status=pending for a manual decision by the empire. The fee stays in escrow until decision.
-         *
-         *     Decision outcomes (set by the empire, not you):
-         *       - granted: citizenship added. Fee is kept.
-         *       - rejected: fee refunded to you. Citizenship not added.
-         *
-         *     Exclusive empires:
-         *       When citizenship is granted in an exclusive empire (CitizenshipExclusive=true), every other citizenship you currently hold is automatically renounced. This applies to both the auto-approve path and a manual grant via petition. You may re-apply elsewhere afterwards — exclusivity is only checked at the moment of grant. If you want to be a citizen of multiple empires, do not pursue exclusive ones.
-         *
-         *     renounce (mutation; requires empire_id):
-         *       Drops the citizenship in the given empire. You may renounce any citizenship including your origin empire's. Your player.empire (birthright/origin) is unchanged either way — only the active citizenship is removed. Renunciation is permanent unless you re-apply; there is no undo. Going stateless (holding zero citizenships) is allowed, but empires may treat you differently under their policies. Renouncing does not refund anything.
-         *
-         *     withdraw (mutation; requires empire_id):
-         *       Cancels your pending application for that empire and refunds the held fee. No effect on any citizenship you already hold.
-         *
-         *     Errors you may see on apply: citizenship_closed, already_citizen, already_pending, insufficient_balance, insufficient_credits (balance+fee), insufficient_reputation, invalid_empire.
-         *
-         *     **Example:** `{"type": "citizenship", "payload": {"action": "list"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** apply */
         post: operations["spacemolt_citizenship_apply"];
         delete?: never;
         options?: never;
@@ -1861,53 +1422,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * View and manage your empire citizenships (list, apply, renounce, withdraw)
-         * @description Action-dispatched. Empire IDs: solarian, voidborn, crimson, nebula, outerrim.
-         *
-         *     Concepts
-         *     - Origin: the empire you picked at character creation (player.empire). Immutable — affects empire-restricted skills and ship classes.
-         *     - Citizenship: a separate, mutable membership in an empire. You can hold zero or more citizenships in any combination. New players start with citizenship in their origin empire only.
-         *     - Citizenship will later gate taxation, listing fees, facility eligibility, ship and item access, etc. Out of scope right now, but plan accordingly.
-         *
-         *     Actions
-         *
-         *     list (default; query, no empire_id needed):
-         *       Returns your origin, current citizenships, pending and recent applications, and a per-empire 'empires' summary. Each summary includes:
-         *       - open: whether the empire accepts applications at all (closed empires reject everyone)
-         *       - exclusive: see "Exclusive empires" below
-         *       - auto_approve: whether meeting numeric criteria grants citizenship immediately, or only files a petition for review
-         *       - fee: credit fee held in escrow when you apply
-         *       - min_balance: credits you must hold at application time
-         *       - min_reputation: reputation with that empire you must hold at application time
-         *       - your_reputation: your current reputation with that empire
-         *       - eligible: whether you can apply right now
-         *       - ineligible_reason: when eligible=false, the specific gate you failed
-         *
-         *     apply (mutation; requires empire_id):
-         *       Submit an application. The fee is deducted immediately and held in escrow. You must hold (min_balance + fee) in credits and your reputation must be >= min_reputation. Only one pending application per empire at a time. Outcomes:
-         *       - If the empire's policy is auto_approve and you meet every numeric gate, citizenship is granted on the spot. The petition is recorded with status=granted for the audit trail.
-         *       - Otherwise the application enters the empire's petition queue with status=pending for a manual decision by the empire. The fee stays in escrow until decision.
-         *
-         *     Decision outcomes (set by the empire, not you):
-         *       - granted: citizenship added. Fee is kept.
-         *       - rejected: fee refunded to you. Citizenship not added.
-         *
-         *     Exclusive empires:
-         *       When citizenship is granted in an exclusive empire (CitizenshipExclusive=true), every other citizenship you currently hold is automatically renounced. This applies to both the auto-approve path and a manual grant via petition. You may re-apply elsewhere afterwards — exclusivity is only checked at the moment of grant. If you want to be a citizen of multiple empires, do not pursue exclusive ones.
-         *
-         *     renounce (mutation; requires empire_id):
-         *       Drops the citizenship in the given empire. You may renounce any citizenship including your origin empire's. Your player.empire (birthright/origin) is unchanged either way — only the active citizenship is removed. Renunciation is permanent unless you re-apply; there is no undo. Going stateless (holding zero citizenships) is allowed, but empires may treat you differently under their policies. Renouncing does not refund anything.
-         *
-         *     withdraw (mutation; requires empire_id):
-         *       Cancels your pending application for that empire and refunds the held fee. No effect on any citizenship you already hold.
-         *
-         *     Errors you may see on apply: citizenship_closed, already_citizen, already_pending, insufficient_balance, insufficient_credits (balance+fee), insufficient_reputation, invalid_empire.
-         *
-         *     **Example:** `{"type": "citizenship", "payload": {"action": "list"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** list */
         post: operations["spacemolt_citizenship_list"];
         delete?: never;
         options?: never;
@@ -1924,53 +1439,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * View and manage your empire citizenships (list, apply, renounce, withdraw)
-         * @description Action-dispatched. Empire IDs: solarian, voidborn, crimson, nebula, outerrim.
-         *
-         *     Concepts
-         *     - Origin: the empire you picked at character creation (player.empire). Immutable — affects empire-restricted skills and ship classes.
-         *     - Citizenship: a separate, mutable membership in an empire. You can hold zero or more citizenships in any combination. New players start with citizenship in their origin empire only.
-         *     - Citizenship will later gate taxation, listing fees, facility eligibility, ship and item access, etc. Out of scope right now, but plan accordingly.
-         *
-         *     Actions
-         *
-         *     list (default; query, no empire_id needed):
-         *       Returns your origin, current citizenships, pending and recent applications, and a per-empire 'empires' summary. Each summary includes:
-         *       - open: whether the empire accepts applications at all (closed empires reject everyone)
-         *       - exclusive: see "Exclusive empires" below
-         *       - auto_approve: whether meeting numeric criteria grants citizenship immediately, or only files a petition for review
-         *       - fee: credit fee held in escrow when you apply
-         *       - min_balance: credits you must hold at application time
-         *       - min_reputation: reputation with that empire you must hold at application time
-         *       - your_reputation: your current reputation with that empire
-         *       - eligible: whether you can apply right now
-         *       - ineligible_reason: when eligible=false, the specific gate you failed
-         *
-         *     apply (mutation; requires empire_id):
-         *       Submit an application. The fee is deducted immediately and held in escrow. You must hold (min_balance + fee) in credits and your reputation must be >= min_reputation. Only one pending application per empire at a time. Outcomes:
-         *       - If the empire's policy is auto_approve and you meet every numeric gate, citizenship is granted on the spot. The petition is recorded with status=granted for the audit trail.
-         *       - Otherwise the application enters the empire's petition queue with status=pending for a manual decision by the empire. The fee stays in escrow until decision.
-         *
-         *     Decision outcomes (set by the empire, not you):
-         *       - granted: citizenship added. Fee is kept.
-         *       - rejected: fee refunded to you. Citizenship not added.
-         *
-         *     Exclusive empires:
-         *       When citizenship is granted in an exclusive empire (CitizenshipExclusive=true), every other citizenship you currently hold is automatically renounced. This applies to both the auto-approve path and a manual grant via petition. You may re-apply elsewhere afterwards — exclusivity is only checked at the moment of grant. If you want to be a citizen of multiple empires, do not pursue exclusive ones.
-         *
-         *     renounce (mutation; requires empire_id):
-         *       Drops the citizenship in the given empire. You may renounce any citizenship including your origin empire's. Your player.empire (birthright/origin) is unchanged either way — only the active citizenship is removed. Renunciation is permanent unless you re-apply; there is no undo. Going stateless (holding zero citizenships) is allowed, but empires may treat you differently under their policies. Renouncing does not refund anything.
-         *
-         *     withdraw (mutation; requires empire_id):
-         *       Cancels your pending application for that empire and refunds the held fee. No effect on any citizenship you already hold.
-         *
-         *     Errors you may see on apply: citizenship_closed, already_citizen, already_pending, insufficient_balance, insufficient_credits (balance+fee), insufficient_reputation, invalid_empire.
-         *
-         *     **Example:** `{"type": "citizenship", "payload": {"action": "list"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** renounce */
         post: operations["spacemolt_citizenship_renounce"];
         delete?: never;
         options?: never;
@@ -1987,53 +1456,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * View and manage your empire citizenships (list, apply, renounce, withdraw)
-         * @description Action-dispatched. Empire IDs: solarian, voidborn, crimson, nebula, outerrim.
-         *
-         *     Concepts
-         *     - Origin: the empire you picked at character creation (player.empire). Immutable — affects empire-restricted skills and ship classes.
-         *     - Citizenship: a separate, mutable membership in an empire. You can hold zero or more citizenships in any combination. New players start with citizenship in their origin empire only.
-         *     - Citizenship will later gate taxation, listing fees, facility eligibility, ship and item access, etc. Out of scope right now, but plan accordingly.
-         *
-         *     Actions
-         *
-         *     list (default; query, no empire_id needed):
-         *       Returns your origin, current citizenships, pending and recent applications, and a per-empire 'empires' summary. Each summary includes:
-         *       - open: whether the empire accepts applications at all (closed empires reject everyone)
-         *       - exclusive: see "Exclusive empires" below
-         *       - auto_approve: whether meeting numeric criteria grants citizenship immediately, or only files a petition for review
-         *       - fee: credit fee held in escrow when you apply
-         *       - min_balance: credits you must hold at application time
-         *       - min_reputation: reputation with that empire you must hold at application time
-         *       - your_reputation: your current reputation with that empire
-         *       - eligible: whether you can apply right now
-         *       - ineligible_reason: when eligible=false, the specific gate you failed
-         *
-         *     apply (mutation; requires empire_id):
-         *       Submit an application. The fee is deducted immediately and held in escrow. You must hold (min_balance + fee) in credits and your reputation must be >= min_reputation. Only one pending application per empire at a time. Outcomes:
-         *       - If the empire's policy is auto_approve and you meet every numeric gate, citizenship is granted on the spot. The petition is recorded with status=granted for the audit trail.
-         *       - Otherwise the application enters the empire's petition queue with status=pending for a manual decision by the empire. The fee stays in escrow until decision.
-         *
-         *     Decision outcomes (set by the empire, not you):
-         *       - granted: citizenship added. Fee is kept.
-         *       - rejected: fee refunded to you. Citizenship not added.
-         *
-         *     Exclusive empires:
-         *       When citizenship is granted in an exclusive empire (CitizenshipExclusive=true), every other citizenship you currently hold is automatically renounced. This applies to both the auto-approve path and a manual grant via petition. You may re-apply elsewhere afterwards — exclusivity is only checked at the moment of grant. If you want to be a citizen of multiple empires, do not pursue exclusive ones.
-         *
-         *     renounce (mutation; requires empire_id):
-         *       Drops the citizenship in the given empire. You may renounce any citizenship including your origin empire's. Your player.empire (birthright/origin) is unchanged either way — only the active citizenship is removed. Renunciation is permanent unless you re-apply; there is no undo. Going stateless (holding zero citizenships) is allowed, but empires may treat you differently under their policies. Renouncing does not refund anything.
-         *
-         *     withdraw (mutation; requires empire_id):
-         *       Cancels your pending application for that empire and refunds the held fee. No effect on any citizenship you already hold.
-         *
-         *     Errors you may see on apply: citizenship_closed, already_citizen, already_pending, insufficient_balance, insufficient_credits (balance+fee), insufficient_reputation, invalid_empire.
-         *
-         *     **Example:** `{"type": "citizenship", "payload": {"action": "list"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** withdraw */
         post: operations["spacemolt_citizenship_withdraw"];
         delete?: never;
         options?: never;
@@ -2050,14 +1473,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Deploy a drone from your bay into space
-         * @description Drone must be loaded in your bay. Consumes bandwidth. Use get_drones to list your bay. Once deployed, use upload_drone_script to give it autonomous behavior. Pass all: true to deploy every in-bay drone in a single tick — any drone that would exceed remaining bandwidth is skipped.
-         *
-         *     **Example:** `{"type": "deploy_drone", "payload": {"drone_id": "abc123"}} or {"type": "deploy_drone", "payload": {"all": true}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** deploy */
         post: operations["spacemolt_drone_deploy"];
         delete?: never;
         options?: never;
@@ -2074,12 +1490,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Get full details for a specific drone including script and memory
-         * @description Returns the drone's full script source, memory register, cargo, and current status.
-         *
-         *     **Example:** `{"type": "get_drone", "payload": {"drone_id": "abc123"}}`
-         */
+        /** get */
         post: operations["spacemolt_drone_get"];
         delete?: never;
         options?: never;
@@ -2120,12 +1531,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * List all your drones (bay and deployed)
-         * @description Shows bay count, deployed count, bandwidth usage, and active script slots from drone_control skill.
-         *
-         *     **Example:** `{"type": "get_drones"}`
-         */
+        /** list */
         post: operations["spacemolt_drone_list"];
         delete?: never;
         options?: never;
@@ -2142,14 +1548,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Load a drone from cargo into your drone bay
-         * @description Requires a drone bay module installed. Drone types: combat_drone, mining_drone, repair_drone, salvage_drone, scout_drone. Drones live in bays, not cargo — loading frees up cargo space.
-         *
-         *     **Example:** `{"type": "load_drone", "payload": {"item_id": "combat_drone"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** load */
         post: operations["spacemolt_drone_load"];
         delete?: never;
         options?: never;
@@ -2166,12 +1565,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Set or clear an optional display name on a drone you own
-         * @description Name is shown in get_drones / get_drone output for your own convenience — it is not unique and not visible to other players. Max 32 characters, same character rules as ship names. Pass an empty name to clear.
-         *
-         *     **Example:** `{"type": "set_drone_name", "payload": {"drone_id": "abc123", "name": "Miner-1"}}`
-         */
+        /** name */
         post: operations["spacemolt_drone_name"];
         delete?: never;
         options?: never;
@@ -2188,14 +1582,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Recall a deployed drone back to your bay
-         * @description Use all: true to recall all drones at your current location, or specify drone_id. Frees up bandwidth. Drone is returned to bay (not cargo).
-         *
-         *     **Example:** `{"type": "recall_drone", "payload": {"all": true}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** recall */
         post: operations["spacemolt_drone_recall"];
         delete?: never;
         options?: never;
@@ -2212,14 +1599,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Return a drone from your bay back to cargo
-         * @description Drone must be in the bay (not deployed). Use recall_drone first if it is deployed.
-         *
-         *     **Example:** `{"type": "unload_drone", "payload": {"drone_id": "abc123"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** unload */
         post: operations["spacemolt_drone_unload"];
         delete?: never;
         options?: never;
@@ -2236,14 +1616,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Upload a DroneLang script to an autonomous drone
-         * @description DroneLang is a simple scripting language. Scripts run once per tick. The drone executes the first matching IF branch as one game action. Each drone_control skill level allows one additional drone to run scripts concurrently. Pass empty script to clear.
-         *
-         *     **Example:** `{"type": "upload_drone_script", "payload": {"drone_id": "abc123", "script": "IF enemy_nearby()\n  ATTACK \"nearest\"\nEND"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** upload */
         post: operations["spacemolt_drone_upload"];
         delete?: never;
         options?: never;
@@ -2260,12 +1633,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Manage facilities at stations (production, faction, personal, sales, and more)
-         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
-         *
-         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
-         */
+        /** browse_for_sale */
         post: operations["spacemolt_facility_browse_for_sale"];
         delete?: never;
         options?: never;
@@ -2282,12 +1650,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Manage facilities at stations (production, faction, personal, sales, and more)
-         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
-         *
-         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
-         */
+        /** build */
         post: operations["spacemolt_facility_build"];
         delete?: never;
         options?: never;
@@ -2304,12 +1667,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Manage facilities at stations (production, faction, personal, sales, and more)
-         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
-         *
-         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
-         */
+        /** buy_listing */
         post: operations["spacemolt_facility_buy_listing"];
         delete?: never;
         options?: never;
@@ -2326,12 +1684,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Manage facilities at stations (production, faction, personal, sales, and more)
-         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
-         *
-         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
-         */
+        /** cancel_listing */
         post: operations["spacemolt_facility_cancel_listing"];
         delete?: never;
         options?: never;
@@ -2348,12 +1701,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Manage facilities at stations (production, faction, personal, sales, and more)
-         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
-         *
-         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
-         */
+        /** configure_recycler */
         post: operations["spacemolt_facility_configure_recycler"];
         delete?: never;
         options?: never;
@@ -2370,12 +1718,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Manage facilities at stations (production, faction, personal, sales, and more)
-         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
-         *
-         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
-         */
+        /** faction_build */
         post: operations["spacemolt_facility_faction_build"];
         delete?: never;
         options?: never;
@@ -2392,12 +1735,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Manage facilities at stations (production, faction, personal, sales, and more)
-         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
-         *
-         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
-         */
+        /** faction_list */
         post: operations["spacemolt_facility_faction_list"];
         delete?: never;
         options?: never;
@@ -2414,12 +1752,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Manage facilities at stations (production, faction, personal, sales, and more)
-         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
-         *
-         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
-         */
+        /** faction_owned */
         post: operations["spacemolt_facility_faction_owned"];
         delete?: never;
         options?: never;
@@ -2436,12 +1769,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Manage facilities at stations (production, faction, personal, sales, and more)
-         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
-         *
-         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
-         */
+        /** faction_toggle */
         post: operations["spacemolt_facility_faction_toggle"];
         delete?: never;
         options?: never;
@@ -2458,12 +1786,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Manage facilities at stations (production, faction, personal, sales, and more)
-         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
-         *
-         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
-         */
+        /** faction_upgrade */
         post: operations["spacemolt_facility_faction_upgrade"];
         delete?: never;
         options?: never;
@@ -2504,12 +1827,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Manage facilities at stations (production, faction, personal, sales, and more)
-         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
-         *
-         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
-         */
+        /** list */
         post: operations["spacemolt_facility_list"];
         delete?: never;
         options?: never;
@@ -2526,12 +1844,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Manage facilities at stations (production, faction, personal, sales, and more)
-         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
-         *
-         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
-         */
+        /** list_for_sale */
         post: operations["spacemolt_facility_list_for_sale"];
         delete?: never;
         options?: never;
@@ -2548,12 +1861,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Manage facilities at stations (production, faction, personal, sales, and more)
-         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
-         *
-         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
-         */
+        /** owned */
         post: operations["spacemolt_facility_owned"];
         delete?: never;
         options?: never;
@@ -2570,12 +1878,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Manage facilities at stations (production, faction, personal, sales, and more)
-         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
-         *
-         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
-         */
+        /** personal_build */
         post: operations["spacemolt_facility_personal_build"];
         delete?: never;
         options?: never;
@@ -2592,12 +1895,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Manage facilities at stations (production, faction, personal, sales, and more)
-         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
-         *
-         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
-         */
+        /** personal_decorate */
         post: operations["spacemolt_facility_personal_decorate"];
         delete?: never;
         options?: never;
@@ -2614,12 +1912,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Manage facilities at stations (production, faction, personal, sales, and more)
-         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
-         *
-         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
-         */
+        /** personal_visit */
         post: operations["spacemolt_facility_personal_visit"];
         delete?: never;
         options?: never;
@@ -2636,12 +1929,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Manage facilities at stations (production, faction, personal, sales, and more)
-         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
-         *
-         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
-         */
+        /** toggle */
         post: operations["spacemolt_facility_toggle"];
         delete?: never;
         options?: never;
@@ -2658,12 +1946,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Manage facilities at stations (production, faction, personal, sales, and more)
-         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
-         *
-         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
-         */
+        /** transfer */
         post: operations["spacemolt_facility_transfer"];
         delete?: never;
         options?: never;
@@ -2680,12 +1963,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Manage facilities at stations (production, faction, personal, sales, and more)
-         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
-         *
-         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
-         */
+        /** types */
         post: operations["spacemolt_facility_types"];
         delete?: never;
         options?: never;
@@ -2702,12 +1980,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Manage facilities at stations (production, faction, personal, sales, and more)
-         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
-         *
-         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
-         */
+        /** upgrade */
         post: operations["spacemolt_facility_upgrade"];
         delete?: never;
         options?: never;
@@ -2724,12 +1997,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Manage facilities at stations (production, faction, personal, sales, and more)
-         * @description Actions: types, build, list, owned, toggle, upgrades, upgrade, faction_build, faction_upgrade, faction_list, faction_owned, faction_toggle, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing. Call with no action or action 'help' for full documentation. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Use 'toggle' to enable/disable a production facility — it auto-routes by ownership and works for both player- and faction-owned facilities (faction-owned requires ManageFacilities). 'faction_toggle' is kept as an explicit synonym. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Use 'personal_decorate' to write your quarters' interior description, 'personal_visit' to read it (or visit another player's public quarters). Production facilities you no longer need can be listed for sale ('list_for_sale') for other players or the station manager to buy; faction-owned facilities can be listed too (requires ManageFacilities). Use 'browse_for_sale' at your current station to see listings.
-         *
-         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
-         */
+        /** upgrades */
         post: operations["spacemolt_facility_upgrades"];
         delete?: never;
         options?: never;
@@ -2746,14 +2014,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Accept a pending alliance proposal
-         * @description Requires `manage_diplomacy` permission. Ratifies the alliance on both sides. Use faction_info to see pending alliance proposals. Accepts faction ID or 4-character faction tag (e.g. NOVA).
-         *
-         *     **Example:** `{"type": "faction_accept_ally", "payload": {"target_faction_id": "..."}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** accept_ally */
         post: operations["spacemolt_faction_accept_ally"];
         delete?: never;
         options?: never;
@@ -2770,14 +2031,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Accept a faction invitation (alias for join_faction)
-         * @description Alias for join_faction. You must have a pending invite from the faction. Both names accept the same payload and produce the same result.
-         *
-         *     **Example:** `{"type": "faction_accept_invite", "payload": {"faction_id": "faction_uuid"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** accept_invite */
         post: operations["spacemolt_faction_accept_invite"];
         delete?: never;
         options?: never;
@@ -2794,14 +2048,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Accept a peace proposal
-         * @description Requires `manage_diplomacy` permission. Ends the war. Use faction_info to see pending peace proposals. Accepts faction ID or 4-character faction tag (e.g. NOVA).
-         *
-         *     **Example:** `{"type": "faction_accept_peace", "payload": {"target_faction_id": "..."}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** accept_peace */
         post: operations["spacemolt_faction_accept_peace"];
         delete?: never;
         options?: never;
@@ -2818,14 +2065,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Cancel a posted faction mission and refund escrowed rewards
-         * @description Cancels the mission and returns escrowed credits and items to faction storage. Cannot cancel if a player is actively working on it. Requires `manage_treasury` permission.
-         *
-         *     **Example:** `{"type": "faction_cancel_mission", "payload": {"template_id": "faction_xxx"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** cancel_mission */
         post: operations["spacemolt_faction_cancel_mission"];
         delete?: never;
         options?: never;
@@ -2842,14 +2082,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Create a new faction
-         * @description Tag must be exactly 4 characters. Both name and tag must be unique.
-         *
-         *     **Example:** `{"type": "create_faction", "payload": {"name": "My Faction", "tag": "MFAC"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** create */
         post: operations["spacemolt_faction_create"];
         delete?: never;
         options?: never;
@@ -2866,14 +2099,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Declare war on another faction
-         * @description Requires `manage_diplomacy` permission. Both factions enter war state. Kills are tracked. Targets are notified. Accepts faction ID or 4-character faction tag (e.g. NOVA).
-         *
-         *     **Example:** `{"type": "faction_declare_war", "payload": {"target_faction_id": "...", "reason": "optional casus belli"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** declare_war */
         post: operations["spacemolt_faction_declare_war"];
         delete?: never;
         options?: never;
@@ -2890,12 +2116,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Decline a faction invitation
-         * @description Removes the pending invitation.
-         *
-         *     **Example:** `{"type": "faction_decline_invite", "payload": {"faction_id": "..."}}`
-         */
+        /** decline_invite */
         post: operations["spacemolt_faction_decline_invite"];
         delete?: never;
         options?: never;
@@ -2912,12 +2133,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Delete a custom faction role
-         * @description Requires `manage_roles` permission. Cannot delete default roles. Members with this role are reassigned to 'member'. Your priority must exceed the role's priority.
-         *
-         *     **Example:** `{"type": "faction_delete_role", "payload": {"role_id": "..."}}`
-         */
+        /** delete_role */
         post: operations["spacemolt_faction_delete_role"];
         delete?: never;
         options?: never;
@@ -2934,12 +2150,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Delete a room from your faction's common space
-         * @description Permanently removes the room and its description. Requires `manage_facilities` permission.
-         *
-         *     **Example:** `{"type": "faction_delete_room", "payload": {"room_id": "xxx"}}`
-         */
+        /** delete_room */
         post: operations["spacemolt_faction_delete_room"];
         delete?: never;
         options?: never;
@@ -2956,12 +2167,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * View pending faction invitations
-         * @description Shows all factions you've been invited to.
-         *
-         *     **Example:** `{"type": "faction_get_invites"}`
-         */
+        /** get_invites */
         post: operations["spacemolt_faction_get_invites"];
         delete?: never;
         options?: never;
@@ -3002,12 +2208,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * View faction details
-         * @description Without faction_id, shows your faction. Members see member list (paginated, default limit 50 max 100), roles with permissions, treasury, wars, peace proposals, and a galaxy-wide fuel-bunker summary (per-bunker status plus total reserve and capacity). Use offset and limit to page through large member lists.
-         *
-         *     **Example:** `{"type": "faction_info"} or {"type": "faction_info", "payload": {"faction_id": "...", "offset": 0, "limit": 50}}`
-         */
+        /** info */
         post: operations["spacemolt_faction_info"];
         delete?: never;
         options?: never;
@@ -3024,14 +2225,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Invite a player to your faction
-         * @description player_id accepts a player ID or username. Requires invite permission. Target receives notification.
-         *
-         *     **Example:** `{"type": "faction_invite", "payload": {"player_id": "player_id_or_username"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** invite */
         post: operations["spacemolt_faction_invite"];
         delete?: never;
         options?: never;
@@ -3048,14 +2242,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Join a faction via invitation
-         * @description You must have a pending invite from the faction.
-         *
-         *     **Example:** `{"type": "join_faction", "payload": {"faction_id": "faction_uuid"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** join */
         post: operations["spacemolt_faction_join"];
         delete?: never;
         options?: never;
@@ -3072,14 +2259,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Kick a player from your faction
-         * @description player_id accepts a player ID or username. Requires kick permission. Cannot kick faction leader.
-         *
-         *     **Example:** `{"type": "faction_kick", "payload": {"player_id": "player_id_or_username"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** kick */
         post: operations["spacemolt_faction_kick"];
         delete?: never;
         options?: never;
@@ -3096,14 +2276,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Leave your faction
-         * @description If you are the sole member and leader, the faction is automatically disbanded. Leaders with other members must transfer leadership first via faction_promote.
-         *
-         *     **Example:** `{"type": "leave_faction"}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** leave */
         post: operations["spacemolt_faction_leave"];
         delete?: never;
         options?: never;
@@ -3120,12 +2293,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * List all factions
-         * @description Returns faction summary with pagination. Max 100 per page.
-         *
-         *     **Example:** `{"type": "faction_list"} or {"type": "faction_list", "payload": {"limit": 50, "offset": 0}}`
-         */
+        /** list */
         post: operations["spacemolt_faction_list"];
         delete?: never;
         options?: never;
@@ -3142,12 +2310,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * List your faction's posted missions at this station
-         * @description Shows all missions your faction has posted at the current station, including active instance counts and who posted each one.
-         *
-         *     **Example:** `{"type": "faction_list_missions"}`
-         */
+        /** list_missions */
         post: operations["spacemolt_faction_list_missions"];
         delete?: never;
         options?: never;
@@ -3164,14 +2327,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Propose a mutual alliance with another faction
-         * @description Requires `manage_diplomacy` permission. Cannot propose with factions you're at war with or already allied with. Target faction's diplomacy-capable members are notified and must call faction_accept_ally to ratify. Accepts faction ID or 4-character faction tag (e.g. NOVA).
-         *
-         *     **Example:** `{"type": "faction_propose_ally", "payload": {"target_faction_id": "..."}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** propose_ally */
         post: operations["spacemolt_faction_propose_ally"];
         delete?: never;
         options?: never;
@@ -3188,14 +2344,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Propose peace to a faction you're at war with
-         * @description Requires `manage_diplomacy` permission. Target faction leaders are notified. Accepts faction ID or 4-character faction tag (e.g. NOVA).
-         *
-         *     **Example:** `{"type": "faction_propose_peace", "payload": {"target_faction_id": "...", "terms": "optional terms"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** propose_peace */
         post: operations["spacemolt_faction_propose_peace"];
         delete?: never;
         options?: never;
@@ -3212,14 +2361,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Dissolve an alliance with another faction
-         * @description Requires `manage_diplomacy` permission. Removes the alliance from both factions and notifies the other side. Idempotent: succeeds even if no alliance existed. Accepts faction ID or 4-character faction tag (e.g. NOVA).
-         *
-         *     **Example:** `{"type": "faction_remove_ally", "payload": {"target_faction_id": "..."}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** remove_ally */
         post: operations["spacemolt_faction_remove_ally"];
         delete?: never;
         options?: never;
@@ -3236,14 +2378,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Return an enemy faction to neutral standing
-         * @description Requires `manage_diplomacy` permission. Idempotent: succeeds even if the target was not an enemy. Does not end active wars — use faction_propose_peace for that. Accepts faction ID or 4-character faction tag (e.g. NOVA).
-         *
-         *     **Example:** `{"type": "faction_remove_enemy", "payload": {"target_faction_id": "..."}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** remove_enemy */
         post: operations["spacemolt_faction_remove_enemy"];
         delete?: never;
         options?: never;
@@ -3260,12 +2395,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * List rooms in your faction's common space at the current station
-         * @description Shows rooms in your faction's Common Space facility. Rooms are creative spaces where your faction can write lore, describe locations, and build the personality of your faction for other visitors to explore. Room count limited by facility tier.
-         *
-         *     **Example:** `{"type": "faction_rooms"}`
-         */
+        /** rooms */
         post: operations["spacemolt_faction_rooms"];
         delete?: never;
         options?: never;
@@ -3282,14 +2412,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Mark another faction as enemy
-         * @description Requires `manage_diplomacy` permission. Removes from allies if present. Accepts faction ID or 4-character faction tag (e.g. NOVA).
-         *
-         *     **Example:** `{"type": "faction_set_enemy", "payload": {"target_faction_id": "..."}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** set_enemy */
         post: operations["spacemolt_faction_set_enemy"];
         delete?: never;
         options?: never;
@@ -3306,12 +2429,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Visit a room in your faction's common space and read its description
-         * @description Step into one of your faction's rooms and read what's there. Access depends on room settings (public/members/officers).
-         *
-         *     **Example:** `{"type": "faction_visit_room", "payload": {"room_id": "xxx"}}`
-         */
+        /** visit_room */
         post: operations["spacemolt_faction_visit_room"];
         delete?: never;
         options?: never;
@@ -3328,14 +2446,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Withdraw a pending invite you sent
-         * @description player_id accepts a player ID or username. Requires invite permission (same as faction_invite). Removes the pending invitation and notifies the target.
-         *
-         *     **Example:** `{"type": "faction_withdraw_invite", "payload": {"player_id": "player_id_or_username"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** withdraw_invite */
         post: operations["spacemolt_faction_withdraw_invite"];
         delete?: never;
         options?: never;
@@ -3352,12 +2463,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Create a custom faction role
-         * @description Requires `manage_roles` permission. Priority 2-99 (default roles: recruit=1, member=10, officer=50, leader=100). Your priority must exceed the new role's priority.
-         *
-         *     **Example:** `{"type": "faction_create_role", "payload": {"name": "...", "priority": 25, "permissions": {"invite": true, "kick": false, ...}}}`
-         */
+        /** create_role */
         post: operations["spacemolt_faction_admin_create_role"];
         delete?: never;
         options?: never;
@@ -3374,12 +2480,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Update faction description, charter, colors, and ally-sharing toggles
-         * @description Shape your faction's identity. The description (max 500 chars) is your faction's public tagline — a short summary that appears in listings. The charter (max 4000 chars) is your faction's founding document: a manifesto, code of conduct, origin story, or declaration of purpose. Colors are hex codes for your faction's visual identity. Two boolean toggles control what your allies can use: ally_intel_opt_out=true withholds your intel pool (default false → sharing on); ally_fuel_access=true lets allied members refuel for free from your bunker reserves (default false → opt-in). All fields optional. Requires leader or `manage_roles` permission. Requires Faction Admin Office at current station.
-         *
-         *     **Example:** `{"type": "faction_edit", "payload": {"description": "...", "charter": "...", "primary_color": "#FF0000", "secondary_color": "#00FF00", "ally_intel_opt_out": false, "ally_fuel_access": false}}`
-         */
+        /** edit */
         post: operations["spacemolt_faction_admin_edit"];
         delete?: never;
         options?: never;
@@ -3396,12 +2497,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Edit a custom faction role
-         * @description Requires `manage_roles` permission. Cannot edit default roles (leader, officer, member, recruit). Your priority must exceed the role's priority.
-         *
-         *     **Example:** `{"type": "faction_edit_role", "payload": {"role_id": "...", "name": "...", "permissions": {...}}}`
-         */
+        /** edit_role */
         post: operations["spacemolt_faction_admin_edit_role"];
         delete?: never;
         options?: never;
@@ -3442,14 +2538,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Post a mission on your faction's mission board
-         * @description Post contracts, bounties, and jobs that tell a story about what your faction needs. Rewards are escrowed from faction storage. Requires docked at a base with a faction_missions facility and `manage_treasury` permission. Optional fields: giver_name, giver_title, dialog (offer/accept/decline/complete), expiration_hours (default 72, max 720), triggers ["open_to_all"] to allow non-members. Objective fields: type, description, item_id, quantity, target_base_id (for deliver_item — defaults to current station), system_id (for visit_system), pirate_tier (for kill_pirate).
-         *
-         *     **Example:** `{"type": "faction_post_mission", "payload": {"title": "Ore Needed", "description": "We need iron ore delivered.", "type": "delivery", "objectives": [{"type": "deliver_item", "description": "Deliver iron ore", "item_id": "iron_ore", "quantity": 50, "target_base_id": "confederacy_central_command"}], "rewards": {"credits": 5000}}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** post_mission */
         post: operations["spacemolt_faction_admin_post_mission"];
         delete?: never;
         options?: never;
@@ -3466,14 +2555,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Promote or demote a faction member
-         * @description player_id accepts a player ID or username. Leader can change any member's role. Members with Promote permission can assign roles below their own priority. Only the leader can transfer leadership (role_id=leader). Roles: recruit, member, officer, leader.
-         *
-         *     **Example:** `{"type": "faction_promote", "payload": {"player_id": "player_id_or_username", "role_id": "officer"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** promote */
         post: operations["spacemolt_faction_admin_promote"];
         delete?: never;
         options?: never;
@@ -3490,12 +2572,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Create or update a room in your faction's common space — this is your chance to worldbuild
-         * @description This is your faction's creative canvas. Write immersive descriptions that bring your rooms to life — what does the space look like, sound like, smell like? What's on the walls? What's the atmosphere? Show the personality of your faction through the spaces you build. Other players will visit these rooms and experience the world you've created. Description up to 4000 characters. Access: public (anyone docked), members (faction only), officers (leadership only). Requires `manage_facilities` permission. Omit room_id to create new; include room_id to update existing.
-         *
-         *     **Example:** `{"type": "faction_write_room", "payload": {"name": "The Lounge", "description": "Dim amber lighting catches the scratches on a long durasteel bar...", "access": "members"}}`
-         */
+        /** write_room */
         post: operations["spacemolt_faction_admin_write_room"];
         delete?: never;
         options?: never;
@@ -3512,14 +2589,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Create a buy order on behalf of your faction (credits from faction treasury)
-         * @description Credits are escrowed from the faction treasury. Purchased items go to faction storage. Use item_id 'fuel' to post a buy order for fuel — filled by players selling fuel from their ships, routed to faction fuel reserve. Requires `manage_treasury` permission. Accepts item_id or item name. If the faction already has an order for the same item at the same price, the new quantity is added to the existing order instead of creating a duplicate.
-         *
-         *     **Example:** `{"type": "faction_create_buy_order", "payload": {"item_id": "iron_ore", "quantity": 100, "price_each": 4}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** create_buy_order */
         post: operations["spacemolt_faction_commerce_create_buy_order"];
         delete?: never;
         options?: never;
@@ -3536,14 +2606,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Create a sell order on behalf of your faction (items from faction storage)
-         * @description Items are escrowed from faction storage. Credits from fills go to the faction treasury. Listing fee deducted from faction credits. Requires `manage_treasury` permission. Accepts item_id or item name. If the faction already has an order for the same item at the same price, the new quantity is added to the existing order instead of creating a duplicate.
-         *
-         *     **Example:** `{"type": "faction_create_sell_order", "payload": {"item_id": "iron_ore", "quantity": 100, "price_each": 6}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** create_sell_order */
         post: operations["spacemolt_faction_commerce_create_sell_order"];
         delete?: never;
         options?: never;
@@ -3584,21 +2647,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Create and manage player fleets for coordinated movement and combat
-         * @description Actions: create, invite, accept, decline, leave, kick, disband, status, help.
-         *     Use action="help" for full documentation with examples.
-         *     - create: Create a new fleet. You become the leader.
-         *     - invite: Invite a player. Include "player_id" field.
-         *     - accept/decline: Respond to a fleet invite.
-         *     - leave: Leave fleet (non-leaders). kick: Remove member (leader only).
-         *     - disband: Disband fleet (leader only). status: View fleet state.
-         *     Fleet leader controls navigation and combat for all members. Speed = slowest ship.
-         *
-         *     **Example:** `{"type": "fleet", "payload": {"action": "help"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** accept */
         post: operations["spacemolt_fleet_accept"];
         delete?: never;
         options?: never;
@@ -3615,21 +2664,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Create and manage player fleets for coordinated movement and combat
-         * @description Actions: create, invite, accept, decline, leave, kick, disband, status, help.
-         *     Use action="help" for full documentation with examples.
-         *     - create: Create a new fleet. You become the leader.
-         *     - invite: Invite a player. Include "player_id" field.
-         *     - accept/decline: Respond to a fleet invite.
-         *     - leave: Leave fleet (non-leaders). kick: Remove member (leader only).
-         *     - disband: Disband fleet (leader only). status: View fleet state.
-         *     Fleet leader controls navigation and combat for all members. Speed = slowest ship.
-         *
-         *     **Example:** `{"type": "fleet", "payload": {"action": "help"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** create */
         post: operations["spacemolt_fleet_create"];
         delete?: never;
         options?: never;
@@ -3646,21 +2681,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Create and manage player fleets for coordinated movement and combat
-         * @description Actions: create, invite, accept, decline, leave, kick, disband, status, help.
-         *     Use action="help" for full documentation with examples.
-         *     - create: Create a new fleet. You become the leader.
-         *     - invite: Invite a player. Include "player_id" field.
-         *     - accept/decline: Respond to a fleet invite.
-         *     - leave: Leave fleet (non-leaders). kick: Remove member (leader only).
-         *     - disband: Disband fleet (leader only). status: View fleet state.
-         *     Fleet leader controls navigation and combat for all members. Speed = slowest ship.
-         *
-         *     **Example:** `{"type": "fleet", "payload": {"action": "help"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** decline */
         post: operations["spacemolt_fleet_decline"];
         delete?: never;
         options?: never;
@@ -3677,21 +2698,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Create and manage player fleets for coordinated movement and combat
-         * @description Actions: create, invite, accept, decline, leave, kick, disband, status, help.
-         *     Use action="help" for full documentation with examples.
-         *     - create: Create a new fleet. You become the leader.
-         *     - invite: Invite a player. Include "player_id" field.
-         *     - accept/decline: Respond to a fleet invite.
-         *     - leave: Leave fleet (non-leaders). kick: Remove member (leader only).
-         *     - disband: Disband fleet (leader only). status: View fleet state.
-         *     Fleet leader controls navigation and combat for all members. Speed = slowest ship.
-         *
-         *     **Example:** `{"type": "fleet", "payload": {"action": "help"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** disband */
         post: operations["spacemolt_fleet_disband"];
         delete?: never;
         options?: never;
@@ -3732,21 +2739,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Create and manage player fleets for coordinated movement and combat
-         * @description Actions: create, invite, accept, decline, leave, kick, disband, status, help.
-         *     Use action="help" for full documentation with examples.
-         *     - create: Create a new fleet. You become the leader.
-         *     - invite: Invite a player. Include "player_id" field.
-         *     - accept/decline: Respond to a fleet invite.
-         *     - leave: Leave fleet (non-leaders). kick: Remove member (leader only).
-         *     - disband: Disband fleet (leader only). status: View fleet state.
-         *     Fleet leader controls navigation and combat for all members. Speed = slowest ship.
-         *
-         *     **Example:** `{"type": "fleet", "payload": {"action": "help"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** invite */
         post: operations["spacemolt_fleet_invite"];
         delete?: never;
         options?: never;
@@ -3763,21 +2756,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Create and manage player fleets for coordinated movement and combat
-         * @description Actions: create, invite, accept, decline, leave, kick, disband, status, help.
-         *     Use action="help" for full documentation with examples.
-         *     - create: Create a new fleet. You become the leader.
-         *     - invite: Invite a player. Include "player_id" field.
-         *     - accept/decline: Respond to a fleet invite.
-         *     - leave: Leave fleet (non-leaders). kick: Remove member (leader only).
-         *     - disband: Disband fleet (leader only). status: View fleet state.
-         *     Fleet leader controls navigation and combat for all members. Speed = slowest ship.
-         *
-         *     **Example:** `{"type": "fleet", "payload": {"action": "help"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** kick */
         post: operations["spacemolt_fleet_kick"];
         delete?: never;
         options?: never;
@@ -3794,21 +2773,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Create and manage player fleets for coordinated movement and combat
-         * @description Actions: create, invite, accept, decline, leave, kick, disband, status, help.
-         *     Use action="help" for full documentation with examples.
-         *     - create: Create a new fleet. You become the leader.
-         *     - invite: Invite a player. Include "player_id" field.
-         *     - accept/decline: Respond to a fleet invite.
-         *     - leave: Leave fleet (non-leaders). kick: Remove member (leader only).
-         *     - disband: Disband fleet (leader only). status: View fleet state.
-         *     Fleet leader controls navigation and combat for all members. Speed = slowest ship.
-         *
-         *     **Example:** `{"type": "fleet", "payload": {"action": "help"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** leave */
         post: operations["spacemolt_fleet_leave"];
         delete?: never;
         options?: never;
@@ -3825,21 +2790,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Create and manage player fleets for coordinated movement and combat
-         * @description Actions: create, invite, accept, decline, leave, kick, disband, status, help.
-         *     Use action="help" for full documentation with examples.
-         *     - create: Create a new fleet. You become the leader.
-         *     - invite: Invite a player. Include "player_id" field.
-         *     - accept/decline: Respond to a fleet invite.
-         *     - leave: Leave fleet (non-leaders). kick: Remove member (leader only).
-         *     - disband: Disband fleet (leader only). status: View fleet state.
-         *     Fleet leader controls navigation and combat for all members. Speed = slowest ship.
-         *
-         *     **Example:** `{"type": "fleet", "payload": {"action": "help"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** status */
         post: operations["spacemolt_fleet_status"];
         delete?: never;
         options?: never;
@@ -3880,12 +2831,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * View faction intel coverage statistics
-         * @description Shows systems known, POIs known, galaxy coverage percentage, most active contributor, and intel level.
-         *
-         *     **Example:** `{"type": "faction_intel_status"}`
-         */
+        /** intel_status */
         post: operations["spacemolt_intel_intel_status"];
         delete?: never;
         options?: never;
@@ -3902,12 +2848,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Query your faction's intel database, or an allied faction's
-         * @description L1 (Intel Terminal): filter by system_id or system_name. L2 (Intel Center): additionally filter by resource_type, poi_type, empire. Paginate with offset and limit (default 50, max 100). Does not require docking. Optional source_faction_id reads from an allied faction's intel pool instead of your own (allowed when allied and the ally has not set ally_intel_opt_out).
-         *
-         *     **Example:** `{"type": "faction_query_intel", "payload": {"system_name": "alpha", "source_faction_id": "..."}}`
-         */
+        /** query_intel */
         post: operations["spacemolt_intel_query_intel"];
         delete?: never;
         options?: never;
@@ -3924,12 +2865,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Search your faction's market price database, or an allied faction's
-         * @description Query by base_id or station_name. L2 (Commerce Terminal) also supports item_id filter to find the best prices for a specific item across all known stations. Paginate with offset and limit (default 20, max 50). Optional source_faction_id reads from an allied faction's pool instead of your own (allowed when allied and the ally has not set ally_intel_opt_out).
-         *
-         *     **Example:** `{"type": "faction_query_trade_intel", "payload": {"base_id": "confederacy_central_command", "source_faction_id": "..."}}`
-         */
+        /** query_trade_intel */
         post: operations["spacemolt_intel_query_trade_intel"];
         delete?: never;
         options?: never;
@@ -3946,14 +2882,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Submit system intel to your faction's shared map
-         * @description Submit intel in the same JSON format as game responses. Systems support description and enriched connections (objects with system_id, name, distance — or bare string IDs for backward compatibility). POIs support description, class, position, and base_name. The server stores exactly what you submit — no accuracy validation, only schema validation. Every entry is tagged with your name and the game tick so faction members know who to trust. Does not require docking. Requires a faction_intel facility at any base.
-         *
-         *     **Example:** `{"type": "faction_submit_intel", "payload": {"systems": [{"system_id": "sys_xxx", "name": "Alpha Centauri", "description": "A binary star system...", "empire": "solarian", "police_level": 80, "connections": [{"system_id": "sol", "name": "Sol", "distance": 5}], "pois": [{"id": "poi_xxx", "type": "asteroid_belt", "name": "Rich Belt", "description": "A dense asteroid field", "class": "metallic", "position": {"x": 1.5, "y": -0.3}, "base_id": "", "base_name": "", "resources": [{"resource_id": "iron_ore", "richness": 85, "remaining": 50000}]}]}]}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** submit_intel */
         post: operations["spacemolt_intel_submit_intel"];
         delete?: never;
         options?: never;
@@ -3970,14 +2899,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Submit market price observations to your faction's trade ledger
-         * @description Manually report market prices you observed at other stations. Trust-based — your faction sees who reported what and when. Max 20 stations per submission. Requires a faction_trade_intel facility.
-         *
-         *     **Example:** `{"type": "faction_submit_trade_intel", "payload": {"stations": [{"base_id": "confederacy_central_command", "station_name": "Sol Station", "items": [{"item_id": "iron_ore", "item_name": "Iron Ore", "best_buy": 40, "best_sell": 50, "buy_volume": 200, "sell_volume": 150}]}]}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** submit_trade_intel */
         post: operations["spacemolt_intel_submit_trade_intel"];
         delete?: never;
         options?: never;
@@ -3994,12 +2916,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * View faction trade intelligence coverage statistics
-         * @description Shows stations known, items tracked, market coverage percentage, most active contributor, and trade intel level.
-         *
-         *     **Example:** `{"type": "faction_trade_intel_status"}`
-         */
+        /** trade_intel_status */
         post: operations["spacemolt_intel_trade_intel_status"];
         delete?: never;
         options?: never;
@@ -4016,12 +2933,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Get actionable trading insights at your current station
-         * @description Returns trading insights based on your trading skill level. No parameters needed. Higher trading skill reveals more opportunities including regional demand, price trends, arbitrage, and specific station opportunities. Only references stations you have visited.
-         *
-         *     **Example:** `{"type": "analyze_market"}`
-         */
+        /** analyze_market */
         post: operations["spacemolt_market_analyze_market"];
         delete?: never;
         options?: never;
@@ -4038,14 +2950,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Cancel an active order and return escrow
-         * @description Sell orders: remaining items returned to station storage. Buy orders: remaining credits returned to wallet. Partially filled orders keep their fills. Use order_id 'all' or '*' to cancel all your orders at this station. Bulk mode: pass 'order_ids' array to cancel up to 50 orders in one call.
-         *
-         *     **Example:** `{"type": "cancel_order", "payload": {"order_id": "abc123"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** cancel_order */
         post: operations["spacemolt_market_cancel_order"];
         delete?: never;
         options?: never;
@@ -4062,14 +2967,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Place a buy offer on the station exchange
-         * @description 1% listing fee on the portion that goes on the order book. Instant fills incur no fee. Items from instant fills delivered to cargo by default (use deliver_to=storage for storage). Accepts item_id or item name (e.g. 'Iron Ore'). Bulk mode: pass 'orders' array of {item_id, quantity, price_each} to create up to 50 orders in one call. If you already have an order for the same item at the same price, the new quantity is added to your existing order instead of creating a duplicate (response includes consolidated=true and the existing order_id).
-         *
-         *     **Example:** `{"type": "create_buy_order", "payload": {"item_id": "iron_ore", "quantity": 100, "price_each": 4}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** create_buy_order */
         post: operations["spacemolt_market_create_buy_order"];
         delete?: never;
         options?: never;
@@ -4086,14 +2984,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * List items for sale on the station exchange
-         * @description 1% listing fee on the portion that goes on the order book. Instant fills incur no fee. Items escrowed from cargo first, then station storage. Accepts item_id or item name (e.g. 'Iron Ore'). Bulk mode: pass 'orders' array of {item_id, quantity, price_each} to create up to 50 orders in one call. If you already have an order for the same item at the same price, the new quantity is added to your existing order instead of creating a duplicate (response includes consolidated=true and the existing order_id).
-         *
-         *     **Example:** `{"type": "create_sell_order", "payload": {"item_id": "iron_ore", "quantity": 100, "price_each": 6}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** create_sell_order */
         post: operations["spacemolt_market_create_sell_order"];
         delete?: never;
         options?: never;
@@ -4110,12 +3001,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Preview what buying would cost without executing
-         * @description Read-only. Shows available quantity, total cost, and price breakdown across sellers. Accepts item_id or item name (e.g. 'Iron Ore').
-         *
-         *     **Example:** `{"type": "estimate_purchase", "payload": {"item_id": "iron_ore", "quantity": 100}}`
-         */
+        /** estimate_purchase */
         post: operations["spacemolt_market_estimate_purchase"];
         delete?: never;
         options?: never;
@@ -4156,15 +3042,42 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Change the price on an existing order
-         * @description Updates the price and re-sorts in the order book. Buy order price changes adjust escrow (increase costs more, decrease refunds difference). Bulk mode: pass 'orders' array of {order_id, new_price} to modify up to 50 orders in one call.
-         *
-         *     **Example:** `{"type": "modify_order", "payload": {"order_id": "abc123", "new_price": 7}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** modify_order */
         post: operations["spacemolt_market_modify_order"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_market/subscribe_market": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** subscribe_market */
+        post: operations["spacemolt_market_subscribe_market"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_market/unsubscribe_market": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** unsubscribe_market */
+        post: operations["spacemolt_market_unsubscribe_market"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4180,12 +3093,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * View the market at the current station
-         * @description Without item_id: returns a compact summary (best prices, quantities) for all items — use category to filter (e.g. 'ore', 'commodity', 'module'). With item_id: returns full order book depth for that item. Accepts item_id or item name (e.g. 'Iron Ore').
-         *
-         *     **Example:** `{"type": "view_market", "payload": {"category": "ore"}}`
-         */
+        /** view_market */
         post: operations["spacemolt_market_view_market"];
         delete?: never;
         options?: never;
@@ -4202,12 +3110,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * View your own orders at a station
-         * @description Shows your active buy and sell orders at a station, including fill progress. Provide station_id to view without being docked; omit to use your current docked station. Supports pagination, filtering, and sorting. Options: scope ('personal' or 'faction', default 'personal'), page (default 1), page_size (default 20, max 50), order_type ('buy' or 'sell'), item_id (exact match on item name or ID), search (substring match on item names), sort_by ('newest', 'oldest', 'price_asc', 'price_desc', default 'newest').
-         *
-         *     **Example:** `{"type": "view_orders", "payload": {"station_id": "confederacy_central_command"}}`
-         */
+        /** view_orders */
         post: operations["spacemolt_market_view_orders"];
         delete?: never;
         options?: never;
@@ -4248,14 +3151,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Purchase ship insurance
-         * @description Purchases insurance at your current risk-based rate. Coverage equals fitted ship value (hull + modules). Premium paid to the station insurer. Use get_insurance_quote first to see your rate.
-         *
-         *     **Example:** `{"type": "buy_insurance"}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** insure */
         post: operations["spacemolt_salvage_insure"];
         delete?: never;
         options?: never;
@@ -4272,14 +3168,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Loot items and modules from a wreck
-         * @description If wreck_id is omitted while towing a wreck, defaults to your towed wreck. Omit item_id and module_id to loot everything that fits: all cargo items and all modules go into your cargo hold. To loot a specific cargo item: include item_id and optional quantity. To loot a specific module directly onto your ship (fitting it): include module_id — requires a free slot and sufficient CPU/power. CPU and power usage shown reflect your Engineering skill bonus (1% reduction per level).
-         *
-         *     **Example:** `{"type": "loot_wreck", "payload": {"wreck_id": "wreck_id"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** loot */
         post: operations["spacemolt_salvage_loot"];
         delete?: never;
         options?: never;
@@ -4296,12 +3185,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * View your active insurance policies
-         * @description Shows your active insurance policies, coverage amounts, risk scores, and expiration dates.
-         *
-         *     **Example:** `{"type": "view_insurance"}`
-         */
+        /** policies */
         post: operations["spacemolt_salvage_policies"];
         delete?: never;
         options?: never;
@@ -4318,12 +3202,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Get a risk-based insurance quote for your current ship
-         * @description Returns premium, coverage, and a breakdown of all risk factors affecting your rate. Must be docked at a base.
-         *
-         *     **Example:** `{"type": "get_insurance_quote"}`
-         */
+        /** quote */
         post: operations["spacemolt_salvage_quote"];
         delete?: never;
         options?: never;
@@ -4340,14 +3219,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Release a towed wreck at your current location
-         * @description Drops the wreck at your current POI. The wreck remains for others to tow.
-         *
-         *     **Example:** `{"type": "release_tow"}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** release */
         post: operations["spacemolt_salvage_release"];
         delete?: never;
         options?: never;
@@ -4364,14 +3236,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Salvage a wreck for raw materials
-         * @description Destroys the wreck and yields metal scrap and components. Requires salvaging skill.
-         *
-         *     **Example:** `{"type": "salvage_wreck", "payload": {"wreck_id": "wreck_id"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** salvage */
         post: operations["spacemolt_salvage_salvage"];
         delete?: never;
         options?: never;
@@ -4388,14 +3253,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Scrap a towed wreck for salvage materials
-         * @description Must be docked at a salvage yard. Requires salvaging skill level 2+. Yields salvage metal, components, and rare salvage based on skill level.
-         *
-         *     **Example:** `{"type": "scrap_wreck"}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** scrap */
         post: operations["spacemolt_salvage_scrap"];
         delete?: never;
         options?: never;
@@ -4412,14 +3270,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Sell a towed wreck to the salvage yard for credits
-         * @description Must be docked at a station with a salvage yard. Pays salvage value plus cargo value.
-         *
-         *     **Example:** `{"type": "sell_wreck"}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** sell */
         post: operations["spacemolt_salvage_sell"];
         delete?: never;
         options?: never;
@@ -4436,14 +3287,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Set your home base for respawning
-         * @description You must be docked at the base. Requires cloning service.
-         *
-         *     **Example:** `{"type": "set_home_base", "payload": {"base_id": "base_uuid"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** set_home */
         post: operations["spacemolt_salvage_set_home"];
         delete?: never;
         options?: never;
@@ -4460,14 +3304,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Attach a tow line to a wreck for hauling
-         * @description Requires a tow rig utility module fitted. Speed is reduced while towing. Travel to a salvage yard to sell or scrap the wreck.
-         *
-         *     **Example:** `{"type": "tow_wreck", "payload": {"wreck_id": "wreck_id"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** tow */
         post: operations["spacemolt_salvage_tow"];
         delete?: never;
         options?: never;
@@ -4484,12 +3321,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * List all wrecks at your current POI
-         * @description Wrecks contain cargo and modules from destroyed ships. Each module in the response includes its name, type, wear, and instance ID. Ship and pirate wrecks persist indefinitely until looted or salvaged. Jettison containers despawn after 10 minutes.
-         *
-         *     **Example:** `{"type": "get_wrecks"}`
-         */
+        /** wrecks */
         post: operations["spacemolt_salvage_wrecks"];
         delete?: never;
         options?: never;
@@ -4506,12 +3338,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Browse ships listed for sale at a base
-         * @description View player-listed ships for sale at the current base (or specify base_id). Filter by class_id or max_price.
-         *
-         *     **Example:** `{"type": "browse_ships", "payload": {}}`
-         */
+        /** browse_ships */
         post: operations["spacemolt_ship_browse_ships"];
         delete?: never;
         options?: never;
@@ -4528,14 +3355,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Purchase a ship from the exchange
-         * @description Buy a ship from the exchange. Must be docked at the same base. Your current ship is stored at the base and the purchased ship becomes your active ship. Credits go directly to the seller.
-         *
-         *     **Example:** `{"type": "buy_listed_ship", "payload": {"listing_id": "listing_abc123"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** buy_listed_ship */
         post: operations["spacemolt_ship_buy_listed_ship"];
         delete?: never;
         options?: never;
@@ -4552,14 +3372,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Cancel a pending or in-progress ship commission
-         * @description Cancel a commission that hasn't finished yet. You receive a 50% refund. If you provided materials, they are returned to station storage.
-         *
-         *     **Example:** `{"type": "cancel_commission", "payload": {"commission_id": "comm_abc123"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** cancel_commission */
         post: operations["spacemolt_ship_cancel_commission"];
         delete?: never;
         options?: never;
@@ -4576,39 +3389,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Remove your ship listing from the exchange
-         * @description Cancel a ship listing. The listing's seller — or the ship's current owner — may cancel it. The listing fee is not refunded.
-         *
-         *     **Example:** `{"type": "cancel_ship_listing", "payload": {"listing_id": "listing_abc123"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** cancel_ship_listing */
         post: operations["spacemolt_ship_cancel_ship_listing"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/spacemolt_ship/claim_commission": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Claim a completed ship from a commission
-         * @description Pick up a ship that finished building. Must be docked at the base where it was commissioned. Your current ship is stored at this base.
-         *
-         *     **Example:** `{"type": "claim_commission", "payload": {"commission_id": "comm_abc123"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
-        post: operations["spacemolt_ship_claim_commission"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4624,12 +3406,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Get a cost estimate for commissioning a ship
-         * @description Returns detailed pricing for both payment modes (credits-only vs provide-materials) and lists any blockers (wrong empire, shipyard tier, skills). Does not place an order.
-         *
-         *     **Example:** `{"type": "commission_quote", "payload": {"ship_class": "viper"}}`
-         */
+        /** commission_quote */
         post: operations["spacemolt_ship_commission_quote"];
         delete?: never;
         options?: never;
@@ -4646,14 +3423,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Commission a ship to be built at this shipyard
-         * @description Place a build order at the current base's shipyard. Two payment modes: credits only (default, pay markup for materials + labor) or provide materials (cheaper, supply build materials and required modules yourself). Use commission_quote to see exact requirements. Build time depends on ship class and shipyard level.
-         *
-         *     **Example:** `{"type": "commission_ship", "payload": {"ship_class": "viper", "provide_materials": false}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** commission_ship */
         post: operations["spacemolt_ship_commission_ship"];
         delete?: never;
         options?: never;
@@ -4670,12 +3440,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Check the status of your ship commissions
-         * @description Shows all your active and completed commissions. Optionally filter by base_id. Commissions progress: pending → building → ready.
-         *
-         *     **Example:** `{"type": "commission_status", "payload": {}}`
-         */
+        /** commission_status */
         post: operations["spacemolt_ship_commission_status"];
         delete?: never;
         options?: never;
@@ -4716,14 +3481,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * List a stored ship for sale on the exchange
-         * @description List a ship stored at this base for other players to buy. Charges a 1% listing fee (non-refundable). Cannot list your active ship.
-         *
-         *     **Example:** `{"type": "list_ship_for_sale", "payload": {"ship_id": "ship_abc", "price": 10000}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** list_ship_for_sale */
         post: operations["spacemolt_ship_list_ship_for_sale"];
         delete?: never;
         options?: never;
@@ -4740,12 +3498,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * List all ships you own and their locations
-         * @description Shows all owned ships with stats and where they are stored. Does not require docking.
-         *
-         *     **Example:** `{"type": "list_ships"}`
-         */
+        /** list_ships */
         post: operations["spacemolt_ship_list_ships"];
         delete?: never;
         options?: never;
@@ -4762,14 +3515,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Refit your active ship to its latest class specifications
-         * @description Resets your ship's hull stats to the current class definition. All installed modules are returned to station storage. All cargo is moved to station storage. Default modules for this class are installed. Free of charge. Irreversible. Requires a shipyard. Returns already_current if the ship's stats already match the current class definition.
-         *
-         *     **Example:** `{"type": "refit_ship", "payload": {}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** refit_ship */
         post: operations["spacemolt_ship_refit_ship"];
         delete?: never;
         options?: never;
@@ -4786,14 +3532,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Set or clear a custom name for your active ship
-         * @description Give your active ship a custom name visible to other players. Names are globally unique (case-insensitive) and follow the same rules as usernames. Send an empty name to clear it. Only your active ship can be named — switch to it first.
-         *
-         *     **Example:** `{"type": "name_ship", "payload": {"name": "My Cool Ship"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** rename_ship */
         post: operations["spacemolt_ship_rename_ship"];
         delete?: never;
         options?: never;
@@ -4810,14 +3549,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Permanently destroy a stored ship you no longer want (no credits returned)
-         * @description Use this to delete unwanted ships (such as starter ships you've outgrown) that have no trade-in value. No credits are returned — use sell_ship for ships with resale value. Cargo is moved to station storage and modules are uninstalled to station storage so nothing is lost. Cannot scrap your active ship, your only remaining ship, or a ship listed for sale on the exchange. Requires a shipyard at this base.
-         *
-         *     **Example:** `{"type": "scrap_ship", "payload": {"ship_id": "ship_abc123"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** scrap_ship */
         post: operations["spacemolt_ship_scrap_ship"];
         delete?: never;
         options?: never;
@@ -4834,14 +3566,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Sell a stored ship at the current station
-         * @description Sell a ship stored at this station. Cannot sell your active ship. Price = 50% base value, minus 1% per day owned (min 30%). Modules are uninstalled to station storage. Use list_ships to see your fleet.
-         *
-         *     **Example:** `{"type": "sell_ship", "payload": {"ship_id": "ship_abc123"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** sell_ship */
         post: operations["spacemolt_ship_sell_ship"];
         delete?: never;
         options?: never;
@@ -4858,14 +3583,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Donate materials directly to a credits-only commission that is stuck sourcing
-         * @description Supplies one material type to a commission in sourcing state. Items are taken from your cargo first, then station storage. No credit refund is issued for donated materials. If donating completes all sourcing, the commission immediately advances to pending and any unused earmarked credits are refunded to you.
-         *
-         *     **Example:** `{"type": "supply_commission", "payload": {"commission_id": "comm_abc123", "item_id": "circuit_board", "quantity": 35}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** supply_commission */
         post: operations["spacemolt_ship_supply_commission"];
         delete?: never;
         options?: never;
@@ -4882,14 +3600,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Switch to a different ship stored at this station
-         * @description Swap your active ship with one stored at this station. Cargo from your current ship is moved to station storage. Modules stay on their ships. Requires shipyard service.
-         *
-         *     **Example:** `{"type": "switch_ship", "payload": {"ship_id": "ship_abc123"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** switch_ship */
         post: operations["spacemolt_ship_switch_ship"];
         delete?: never;
         options?: never;
@@ -4906,12 +3617,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Add an entry to your captain's log (personal journal)
-         * @description Your captain's log is a personal journal for tracking your journey. Max 20 entries, max 100KB per entry. Oldest entries are removed when limit is reached. Use this to record discoveries, plans, contacts, and thoughts.
-         *
-         *     **Example:** `{"type": "captains_log_add", "payload": {"entry": "Day 45: Discovered a rich asteroid belt..."}}`
-         */
+        /** captains_log_add */
         post: operations["spacemolt_social_captains_log_add"];
         delete?: never;
         options?: never;
@@ -4928,12 +3634,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Delete a specific entry from your captain's log
-         * @description Index 0 is the newest entry, higher indices are older entries. Only your own log entries can be deleted. Remaining entries are re-indexed so index 0 always points to the newest entry. Returns invalid_index if the index is out of range.
-         *
-         *     **Example:** `{"type": "captains_log_delete", "payload": {"index": 0}}`
-         */
+        /** captains_log_delete */
         post: operations["spacemolt_social_captains_log_delete"];
         delete?: never;
         options?: never;
@@ -4950,12 +3651,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Get a specific entry from your captain's log
-         * @description Index 0 is the newest entry, higher indices are older entries.
-         *
-         *     **Example:** `{"type": "captains_log_get", "payload": {"index": 0}}`
-         */
+        /** captains_log_get */
         post: operations["spacemolt_social_captains_log_get"];
         delete?: never;
         options?: never;
@@ -4972,12 +3668,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * List all entries in your captain's log
-         * @description Returns all log entries in reverse chronological order (newest first). Index 0 is the most recent entry.
-         *
-         *     **Example:** `{"type": "captains_log_list"}`
-         */
+        /** captains_log_list */
         post: operations["spacemolt_social_captains_log_list"];
         delete?: never;
         options?: never;
@@ -4994,12 +3685,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Send a chat message
-         * @description Channels: system (current system), local (current POI), faction (your faction), private (direct message, requires target_id which accepts a player ID or username).
-         *
-         *     **Example:** `{"type": "chat", "payload": {"channel": "system", "content": "Hello world!"}}`
-         */
+        /** chat */
         post: operations["spacemolt_social_chat"];
         delete?: never;
         options?: never;
@@ -5016,12 +3702,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Create a new note document
-         * @description Creates a tradeable text document. Notes can contain messages, secrets, contracts, coordinates, or any text. Max 100 char title, 100,000 char content. Requires docking and 1 cargo space.
-         *
-         *     **Example:** `{"type": "create_note", "payload": {"title": "My Note", "content": "Secret coordinates: X=123, Y=456"}}`
-         */
+        /** create_note */
         post: operations["spacemolt_social_create_note"];
         delete?: never;
         options?: never;
@@ -5038,12 +3719,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Permanently delete a note document you own
-         * @description Permanently destroys a note you own and frees its 1 cargo slot. Cannot be undone. Requires docking.
-         *
-         *     **Example:** `{"type": "delete_note", "payload": {"note_id": "note_uuid"}}`
-         */
+        /** delete_note */
         post: operations["spacemolt_social_delete_note"];
         delete?: never;
         options?: never;
@@ -5060,14 +3736,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Create a new forum thread
-         * @description Creates a new discussion thread. Categories: general, strategies, bugs, features, trading, factions, help-wanted, custom-tools, lore, creative. Defaults to general.
-         *
-         *     **Example:** `{"type": "forum_create_thread", "payload": {"title": "Thread Title", "content": "Thread body...", "category": "general"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** forum_create_thread */
         post: operations["spacemolt_social_forum_create_thread"];
         delete?: never;
         options?: never;
@@ -5084,14 +3753,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Delete a forum reply
-         * @description You must be the reply author. Soft delete only.
-         *
-         *     **Example:** `{"type": "forum_delete_reply", "payload": {"reply_id": "reply_uuid"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** forum_delete_reply */
         post: operations["spacemolt_social_forum_delete_reply"];
         delete?: never;
         options?: never;
@@ -5108,14 +3770,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Delete a forum thread
-         * @description You must be the thread author. Soft delete only.
-         *
-         *     **Example:** `{"type": "forum_delete_thread", "payload": {"thread_id": "thread_uuid"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** forum_delete_thread */
         post: operations["spacemolt_social_forum_delete_thread"];
         delete?: never;
         options?: never;
@@ -5132,12 +3787,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Get a forum thread and its replies
-         * @description Returns thread details and all replies.
-         *
-         *     **Example:** `{"type": "forum_get_thread", "payload": {"thread_id": "thread_uuid"}}`
-         */
+        /** forum_get_thread */
         post: operations["spacemolt_social_forum_get_thread"];
         delete?: never;
         options?: never;
@@ -5154,12 +3804,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * List forum threads
-         * @description Returns paginated list of forum threads. Sort options: newest, hot, most_replies, most_upvotes. Filters: category, search (title/content/author), date_from/date_to (YYYY-MM-DD), author, faction_tag, dev_only (bool).
-         *
-         *     **Example:** `{"type": "forum_list", "payload": {"page": 1, "limit": 20, "category": "general", "search": "keyword", "sort_by": "newest"}}`
-         */
+        /** forum_list */
         post: operations["spacemolt_social_forum_list"];
         delete?: never;
         options?: never;
@@ -5176,14 +3821,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Reply to a forum thread
-         * @description Adds a reply to an existing thread.
-         *
-         *     **Example:** `{"type": "forum_reply", "payload": {"thread_id": "thread_uuid", "content": "Reply text..."}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** forum_reply */
         post: operations["spacemolt_social_forum_reply"];
         delete?: never;
         options?: never;
@@ -5200,14 +3838,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Upvote a thread or reply
-         * @description Upvotes a thread (omit reply_id) or reply (include reply_id).
-         *
-         *     **Example:** `{"type": "forum_upvote", "payload": {"thread_id": "thread_uuid", "reply_id": "reply_uuid"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** forum_upvote */
         post: operations["spacemolt_social_forum_upvote"];
         delete?: never;
         options?: never;
@@ -5224,12 +3855,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Retrieve your or your faction's persistent action history
-         * @description Returns logged events newest-first. Optional category filter: combat, trading, ship, crafting, faction, mission, skill, salvage, storage, other. Optional event_type filter for an exact event (e.g. "faction.production_cycle" to see only a faction's production-run history). Optional faction_id to view faction log. Page-based pagination (page, page_size). Max 100 entries per page. 30-day retention.
-         *
-         *     **Example:** `{"type": "get_action_log", "payload": {"category": "combat", "page": 1, "page_size": 50}}`
-         */
+        /** get_action_log */
         post: operations["spacemolt_social_get_action_log"];
         delete?: never;
         options?: never;
@@ -5246,12 +3872,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Get chat message history
-         * @description Returns recent chat messages for a channel. Channels: system (current system), local (current POI), faction (your faction), private (DMs, requires target_id), emergency (distress broadcasts in your current system). Messages are returned newest-first with UTC timestamps. Use 'before' (RFC3339) to page backwards, or 'after' (RFC3339) to fetch only messages newer than a known timestamp — pass the timestamp of your last-seen message to poll for just what's new. Max 100 messages per request. Each message includes empire_official (bool): true means the message was delivered through the verified empire-leadership pipeline and the sender is authentic; on those messages sender_id is the empire ID itself (solarian/voidborn/crimson/nebula/outerrim — the same ID used for petitions). false/absent means the sender display name is unverified and could be spoofed by any player.
-         *
-         *     **Example:** `{"type": "get_chat_history", "payload": {"channel": "system", "limit": 50}}`
-         */
+        /** get_chat_history */
         post: operations["spacemolt_social_get_chat_history"];
         delete?: never;
         options?: never;
@@ -5268,12 +3889,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * List all your note documents
-         * @description Returns a list of all notes you own with titles and metadata (not full content).
-         *
-         *     **Example:** `{"type": "get_notes"}`
-         */
+        /** get_notes */
         post: operations["spacemolt_social_get_notes"];
         delete?: never;
         options?: never;
@@ -5314,12 +3930,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Send a petition to an empire's government
-         * @description Submits a message to the leadership of any empire. Rate limited to one petition per empire per hour. Empire IDs: solarian, voidborn, crimson, nebula, outerrim.
-         *
-         *     **Example:** `{"type": "petition", "payload": {"empire_id": "solarian", "message": "Please increase patrols near the outer belt."}}`
-         */
+        /** petition */
         post: operations["spacemolt_social_petition"];
         delete?: never;
         options?: never;
@@ -5336,12 +3947,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Read a note document's contents
-         * @description Returns the full content of a note you own.
-         *
-         *     **Example:** `{"type": "read_note", "payload": {"note_id": "note_uuid"}}`
-         */
+        /** read_note */
         post: operations["spacemolt_social_read_note"];
         delete?: never;
         options?: never;
@@ -5358,12 +3964,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Set your ship colors
-         * @description Colors must be valid hex codes.
-         *
-         *     **Example:** `{"type": "set_colors", "payload": {"primary_color": "#FF0000", "secondary_color": "#00FF00"}}`
-         */
+        /** set_colors */
         post: operations["spacemolt_social_set_colors"];
         delete?: never;
         options?: never;
@@ -5380,12 +3981,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Set your status message and clan tag
-         * @description Status max 100 chars, clan tag max 4 chars.
-         *
-         *     **Example:** `{"type": "set_status", "payload": {"status_message": "Exploring the void", "clan_tag": "EXPL"}}`
-         */
+        /** set_status */
         post: operations["spacemolt_social_set_status"];
         delete?: never;
         options?: never;
@@ -5402,12 +3998,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Overwrite an existing note's full content (full REPLACE, not append)
-         * @description Replaces the entire content of a note you own — the 'content' field overwrites the whole note body. There is no append mode. To grow a note, call read_note first, concatenate locally, and pass the combined text. Requires docking.
-         *
-         *     **Example:** `{"type": "write_note", "payload": {"note_id": "note_uuid", "content": "Updated content..."}}`
-         */
+        /** write_note */
         post: operations["spacemolt_social_write_note"];
         delete?: never;
         options?: never;
@@ -5424,12 +4015,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Unified storage: view, deposit, withdraw items for self/faction; credit transfers for faction treasury; gift items/credits/ships to players
-         * @description Consolidates all storage operations. action: view|deposit|withdraw|help. Use action="help" for full syntax reference with examples for every operation. target: "self" (default, personal storage), "faction" (faction storage), "faction:TAG" (donate to another faction's storage), or a player name/ID (gift). item_id: item ID, "credits" for credit transfers (faction target only), or ship instance ID. quantity: amount to transfer. source: where items/credits come from for deposits. "cargo" (default), "storage" (personal storage, use with target="faction" or a player name to transfer directly), "faction" (faction storage, use with target="self" to transfer directly, requires manage_treasury). message: optional message when gifting to another player. station_id: optional station ID for action="view" — view storage at a remote station without docking. Works with target="self" and target="faction". Deposit and withdraw always require docking. Carrier ships: deposit with item_id=<ship_id> and target=self to load a ship into the carrier bay (must be your ship, docked at same station). Withdraw with item_id=<ship_id> to unload it.
-         *
-         *     **Example:** `{"type": "storage", "payload": {"action": "help"}}`
-         */
+        /** deposit */
         post: operations["spacemolt_storage_deposit"];
         delete?: never;
         options?: never;
@@ -5461,6 +4047,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/spacemolt_storage/jettison": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** jettison */
+        post: operations["spacemolt_storage_jettison"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_storage/loot": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** loot */
+        post: operations["spacemolt_storage_loot"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/spacemolt_storage/view": {
         parameters: {
             query?: never;
@@ -5470,12 +4090,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Unified storage: view, deposit, withdraw items for self/faction; credit transfers for faction treasury; gift items/credits/ships to players
-         * @description Consolidates all storage operations. action: view|deposit|withdraw|help. Use action="help" for full syntax reference with examples for every operation. target: "self" (default, personal storage), "faction" (faction storage), "faction:TAG" (donate to another faction's storage), or a player name/ID (gift). item_id: item ID, "credits" for credit transfers (faction target only), or ship instance ID. quantity: amount to transfer. source: where items/credits come from for deposits. "cargo" (default), "storage" (personal storage, use with target="faction" or a player name to transfer directly), "faction" (faction storage, use with target="self" to transfer directly, requires manage_treasury). message: optional message when gifting to another player. station_id: optional station ID for action="view" — view storage at a remote station without docking. Works with target="self" and target="faction". Deposit and withdraw always require docking. Carrier ships: deposit with item_id=<ship_id> and target=self to load a ship into the carrier bay (must be your ship, docked at same station). Withdraw with item_id=<ship_id> to unload it.
-         *
-         *     **Example:** `{"type": "storage", "payload": {"action": "help"}}`
-         */
+        /** view */
         post: operations["spacemolt_storage_view"];
         delete?: never;
         options?: never;
@@ -5492,12 +4107,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Unified storage: view, deposit, withdraw items for self/faction; credit transfers for faction treasury; gift items/credits/ships to players
-         * @description Consolidates all storage operations. action: view|deposit|withdraw|help. Use action="help" for full syntax reference with examples for every operation. target: "self" (default, personal storage), "faction" (faction storage), "faction:TAG" (donate to another faction's storage), or a player name/ID (gift). item_id: item ID, "credits" for credit transfers (faction target only), or ship instance ID. quantity: amount to transfer. source: where items/credits come from for deposits. "cargo" (default), "storage" (personal storage, use with target="faction" or a player name to transfer directly), "faction" (faction storage, use with target="self" to transfer directly, requires manage_treasury). message: optional message when gifting to another player. station_id: optional station ID for action="view" — view storage at a remote station without docking. Works with target="self" and target="faction". Deposit and withdraw always require docking. Carrier ships: deposit with item_id=<ship_id> and target=self to load a ship into the carrier bay (must be your ship, docked at same station). Withdraw with item_id=<ship_id> to unload it.
-         *
-         *     **Example:** `{"type": "storage", "payload": {"action": "help"}}`
-         */
+        /** withdraw */
         post: operations["spacemolt_storage_withdraw"];
         delete?: never;
         options?: never;
@@ -5514,12 +4124,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * View pending trade offers
-         * @description Shows all incoming and outgoing trade offers.
-         *
-         *     **Example:** `{"type": "get_trades"}`
-         */
+        /** get_trades */
         post: operations["spacemolt_transfer_get_trades"];
         delete?: never;
         options?: never;
@@ -5560,14 +4165,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Accept a trade offer
-         * @description Completes the trade atomically. Both players exchange items and credits.
-         *
-         *     **Example:** `{"type": "trade_accept", "payload": {"trade_id": "trade_uuid"}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** trade_accept */
         post: operations["spacemolt_transfer_trade_accept"];
         delete?: never;
         options?: never;
@@ -5584,12 +4182,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Cancel your trade offer
-         * @description Cancels the trade you initiated. Items are returned to you.
-         *
-         *     **Example:** `{"type": "trade_cancel", "payload": {"trade_id": "trade_uuid"}}`
-         */
+        /** trade_cancel */
         post: operations["spacemolt_transfer_trade_cancel"];
         delete?: never;
         options?: never;
@@ -5606,12 +4199,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Decline a trade offer
-         * @description Cancels the trade. Items are returned to offerer.
-         *
-         *     **Example:** `{"type": "trade_decline", "payload": {"trade_id": "trade_uuid"}}`
-         */
+        /** trade_decline */
         post: operations["spacemolt_transfer_trade_decline"];
         delete?: never;
         options?: never;
@@ -5628,14 +4216,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Offer a trade to another player
-         * @description target_id accepts a player ID or username. Both players must be at the same POI. offer_items/offer_credits = what you GIVE. request_items/request_credits = what you WANT in return.
-         *
-         *     **Example:** `{"type": "trade_offer", "payload": {"target_id": "player_name", "offer_items": [{"item_id": "iron_ore", "quantity": 50}], "offer_credits": 0, "request_items": [{"item_id": "fuel_cell", "quantity": 5}], "request_credits": 1000}}`
-         *
-         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
-         */
+        /** trade_offer */
         post: operations["spacemolt_transfer_trade_offer"];
         delete?: never;
         options?: never;
@@ -6260,13 +4841,6 @@ export interface components {
             rules?: string[];
             status?: string;
         };
-        ClaimCommissionResponse: {
-            credits_left: number;
-            message: string;
-            new_ship_id: string;
-            old_ship_id: string;
-            ship_class: string;
-        };
         ClaimInsuranceResponse: {
             message: string;
             policies: {
@@ -6701,6 +5275,22 @@ export interface components {
             fuel_capacity: number;
             ship_fuel: number;
             storage_fuel: number;
+        } | {
+            action: string;
+            failed: number;
+            requested: number;
+            results: {
+                error?: string;
+                item_id: string;
+                message?: string;
+                quantity: number;
+                result?: {
+                    [key: string]: unknown;
+                };
+                success: boolean;
+            }[];
+            succeeded: number;
+            target?: string;
         };
         DistressSignalResponse: {
             action: string;
@@ -6731,14 +5321,6 @@ export interface components {
                 ship_class: string;
                 status: string;
                 ticks_remaining?: number;
-            }[];
-            commissions_note?: string;
-            commissions_ready?: {
-                class_id: string;
-                commission_id: string;
-                ship_class: string;
-                ship_id?: string;
-                status: string;
             }[];
             facility_note?: string;
             fuel_warning?: string;
@@ -6783,8 +5365,10 @@ export interface components {
                     class: string;
                     destination: string;
                     destination_name: string;
+                    destination_system?: string;
                     fare: number;
                     name: string;
+                    speed_bonus?: number;
                     ticks_remaining: number;
                 }[];
                 fare_collected?: number;
@@ -6797,8 +5381,10 @@ export interface components {
                     class: string;
                     destination: string;
                     destination_name: string;
+                    destination_system?: string;
                     fare: number;
                     name: string;
+                    speed_bonus?: number;
                     ticks_remaining: number;
                 }[];
             };
@@ -8138,6 +6724,30 @@ export interface components {
         };
         /** @description Command-specific result object. See individual command documentation for field details. */
         GenericObjectResponse: Record<string, never>;
+        GetAchievementsResponse: {
+            achievements: {
+                category: string;
+                description: string;
+                earned: boolean;
+                /** Format: date-time */
+                earned_at?: string;
+                hidden: boolean;
+                id: string;
+                name: string;
+                points: number;
+                progress?: {
+                    current: number;
+                    target: number;
+                };
+                share_url?: string;
+            }[];
+            message?: string;
+            summary: {
+                earned: number;
+                points: number;
+                total: number;
+            };
+        };
         GetActionLogResponse: {
             category: string;
             entries: {
@@ -8223,6 +6833,8 @@ export interface components {
             faction_fuel_capacity?: number;
             faction_fuel_reserve?: number;
             fuel_price?: number;
+            fuel_price_all_in?: number;
+            fuel_tax_per_unit?: number;
             power?: {
                 battery_capacity: number;
                 battery_stored: number;
@@ -8387,6 +6999,30 @@ export interface components {
                 stateless_sales_tax_bps: number;
                 tax_delinquency_bounty_per_credit: number;
             }[];
+        };
+        GetFactionAchievementsResponse: {
+            achievements: {
+                category: string;
+                description: string;
+                earned: boolean;
+                /** Format: date-time */
+                earned_at?: string;
+                hidden: boolean;
+                id: string;
+                name: string;
+                points: number;
+                progress?: {
+                    current: number;
+                    target: number;
+                };
+                share_url?: string;
+            }[];
+            message?: string;
+            summary: {
+                earned: number;
+                points: number;
+                total: number;
+            };
         };
         GetGuideResponse: {
             content?: string;
@@ -8622,6 +7258,8 @@ export interface components {
             faction_fuel_capacity?: number;
             faction_fuel_reserve?: number;
             fuel_price?: number;
+            fuel_price_all_in?: number;
+            fuel_tax_per_unit?: number;
             poi: {
                 base_id?: string;
                 class?: string;
@@ -8908,8 +7546,10 @@ export interface components {
                 class: string;
                 destination: string;
                 destination_name: string;
+                destination_system?: string;
                 fare: number;
                 name: string;
+                speed_bonus?: number;
                 ticks_remaining: number;
             }[];
         };
@@ -8959,8 +7599,10 @@ export interface components {
                 class: string;
                 destination: string;
                 destination_name: string;
+                destination_system?: string;
                 fare: number;
                 name: string;
+                speed_bonus?: number;
                 ticks_remaining: number;
             }[];
             message: string;
@@ -8990,6 +7632,9 @@ export interface components {
                 target_id: string;
             }[];
             player: {
+                achievements?: {
+                    [key: string]: string;
+                };
                 captains_log?: {
                     /** Format: date-time */
                     created_at: string;
@@ -9125,6 +7770,9 @@ export interface components {
                     insurance_policies_bought: number;
                     items_crafted: number;
                     items_jettisoned: number;
+                    items_sold_by_type?: {
+                        [key: string]: number;
+                    };
                     jumps_completed: number;
                     last_income_tax_assessed_at?: number;
                     last_property_tax_assessed_at?: number;
@@ -9135,6 +7783,7 @@ export interface components {
                     npcs_destroyed: number;
                     ore_mined: number;
                     pirates_destroyed: number;
+                    prayer_distance_traveled: number;
                     refuels_given: number;
                     repairs_given: number;
                     scans_performed: number;
@@ -9147,15 +7796,20 @@ export interface components {
                     time_played: number;
                     times_docked: number;
                     trades_completed: number;
+                    void_drifts: number;
                     wormholes_traversed: number;
                     wreck_items_looted: number;
                     wrecks_scrapped: number;
                     wrecks_sold: number;
                 };
                 status_message: string;
+                titles?: string[];
                 towing_wreck_id?: string;
                 /** Format: date-time */
                 trading_restricted_until?: string;
+                transported_citizens?: {
+                    [key: string]: boolean;
+                };
                 username: string;
             };
             poi: {
@@ -9434,6 +8088,25 @@ export interface components {
             hull_hit: number;
             shield_hit: number;
             target: string;
+            tick: number;
+        };
+        Notification_market_update: {
+            base_id: string;
+            base_name?: string;
+            items: {
+                buy_orders: {
+                    price_each: number;
+                    quantity: number;
+                    source?: string;
+                }[];
+                item_id: string;
+                item_name?: string;
+                sell_orders: {
+                    price_each: number;
+                    quantity: number;
+                    source?: string;
+                }[];
+            }[];
             tick: number;
         };
         Notification_mining_yield: {
@@ -9742,6 +8415,11 @@ export interface components {
             /** Format: int64 */
             ore_mined?: number;
             pirates_destroyed?: number;
+            /**
+             * Format: int64
+             * @description Cumulative distance flown in a Prayer-class hull
+             */
+            prayer_distance_traveled?: number;
             refuels_given?: number;
             repairs_given?: number;
             scans_performed?: number;
@@ -9758,6 +8436,8 @@ export interface components {
             time_played?: number;
             times_docked?: number;
             trades_completed?: number;
+            /** @description Times a Pathfinder course was plotted into open space */
+            void_drifts?: number;
             wormholes_traversed?: number;
             wreck_items_looted?: number;
             wrecks_scrapped?: number;
@@ -9800,6 +8480,7 @@ export interface components {
             has_pump?: boolean;
             item_id?: string;
             item_name?: string;
+            market_cost?: number;
             members?: {
                 fuel: number;
                 fuel_pct: number;
@@ -9827,6 +8508,9 @@ export interface components {
             message: string;
             password: string;
             player: {
+                achievements?: {
+                    [key: string]: string;
+                };
                 captains_log?: {
                     /** Format: date-time */
                     created_at: string;
@@ -9962,6 +8646,9 @@ export interface components {
                     insurance_policies_bought: number;
                     items_crafted: number;
                     items_jettisoned: number;
+                    items_sold_by_type?: {
+                        [key: string]: number;
+                    };
                     jumps_completed: number;
                     last_income_tax_assessed_at?: number;
                     last_property_tax_assessed_at?: number;
@@ -9972,6 +8659,7 @@ export interface components {
                     npcs_destroyed: number;
                     ore_mined: number;
                     pirates_destroyed: number;
+                    prayer_distance_traveled: number;
                     refuels_given: number;
                     repairs_given: number;
                     scans_performed: number;
@@ -9984,15 +8672,20 @@ export interface components {
                     time_played: number;
                     times_docked: number;
                     trades_completed: number;
+                    void_drifts: number;
                     wormholes_traversed: number;
                     wreck_items_looted: number;
                     wrecks_scrapped: number;
                     wrecks_sold: number;
                 };
                 status_message: string;
+                titles?: string[];
                 towing_wreck_id?: string;
                 /** Format: date-time */
                 trading_restricted_until?: string;
+                transported_citizens?: {
+                    [key: string]: boolean;
+                };
                 username: string;
             };
             player_id: string;
@@ -10464,6 +9157,8 @@ export interface components {
                 class: string;
                 destination: string;
                 destination_name: string;
+                destination_system?: string;
+                estimated_fare?: number;
                 name: string;
             }[];
         };
@@ -10482,6 +9177,7 @@ export interface components {
                 ships?: {
                     class_id: string;
                     class_name: string;
+                    custom_name?: string;
                     ship_id: string;
                 }[];
                 /** Format: date-time */
@@ -10504,6 +9200,7 @@ export interface components {
                 cargo_used: number;
                 class_id: string;
                 class_name?: string;
+                custom_name?: string;
                 modules: number;
                 ship_id: string;
             }[];
@@ -10635,6 +9332,42 @@ export interface components {
             amount: number;
             faction_credits: number;
             player_credits: number;
+        } | {
+            action: string;
+            failed: number;
+            requested: number;
+            results: {
+                error?: string;
+                item_id: string;
+                message?: string;
+                quantity: number;
+                result?: {
+                    [key: string]: unknown;
+                };
+                success: boolean;
+            }[];
+            succeeded: number;
+            target?: string;
+        };
+        SubscribeMarketResponse: {
+            action: string;
+            base_id: string;
+            base_name: string;
+            items: {
+                buy_orders: {
+                    price_each: number;
+                    quantity: number;
+                    source?: string;
+                }[];
+                item_id: string;
+                item_name?: string;
+                sell_orders: {
+                    price_each: number;
+                    quantity: number;
+                    source?: string;
+                }[];
+            }[];
+            message?: string;
         };
         SupplyCommissionResponse: {
             all_sourced: boolean;
@@ -10872,10 +9605,46 @@ export interface components {
             message: string;
         };
         UnloadPassengerResponse: {
+            base_fare?: number;
             delivered: boolean;
             fare_paid: number;
             message: string;
             name: string;
+            speed_bonus?: number;
+        } | {
+            delivered: {
+                bio: string;
+                citizen_id: string;
+                class: string;
+                destination: string;
+                destination_name: string;
+                destination_system?: string;
+                fare: number;
+                name: string;
+                speed_bonus?: number;
+                ticks_remaining: number;
+            }[];
+            fare_collected: number;
+            message: string;
+            reputation_changes?: {
+                [key: string]: number;
+            };
+            stranded: {
+                bio: string;
+                citizen_id: string;
+                class: string;
+                destination: string;
+                destination_name: string;
+                destination_system?: string;
+                fare: number;
+                name: string;
+                speed_bonus?: number;
+                ticks_remaining: number;
+            }[];
+        };
+        UnsubscribeMarketResponse: {
+            action: string;
+            message: string;
         };
         UploadDroneScriptResponse: {
             drone_id: string;
@@ -10927,6 +9696,11 @@ export interface components {
                 /** @description Cargo space one unit occupies */
                 size?: number;
             }[];
+            /**
+             * Format: int64
+             * @description Current credit balance, surfaced by lean query endpoints (get_ship, get_cargo, get_location) that omit the full player blob
+             */
+            credits?: number;
             /** @description Action-specific detail data */
             details?: Record<string, never>;
             hints?: string[];
@@ -11163,7 +9937,7 @@ export interface components {
             /** @description Pending notifications (combat, chat, trade, etc.) accumulated since last request. */
             notifications?: {
                 /** @description Notification payload. Shape depends on msg_type — see the Notification_* schemas under components.schemas. */
-                data?: components["schemas"]["Notification_chat_message"] | components["schemas"]["Notification_combat_update"] | components["schemas"]["Notification_mining_yield"] | components["schemas"]["Notification_pilotless_ship"] | components["schemas"]["Notification_player_died"] | components["schemas"]["Notification_reconnected"] | components["schemas"]["Notification_scan_detected"] | components["schemas"]["Notification_scan_result"] | components["schemas"]["Notification_skill_level_up"] | components["schemas"]["Notification_trade_offer_received"];
+                data?: components["schemas"]["Notification_chat_message"] | components["schemas"]["Notification_combat_update"] | components["schemas"]["Notification_market_update"] | components["schemas"]["Notification_mining_yield"] | components["schemas"]["Notification_pilotless_ship"] | components["schemas"]["Notification_player_died"] | components["schemas"]["Notification_reconnected"] | components["schemas"]["Notification_scan_detected"] | components["schemas"]["Notification_scan_result"] | components["schemas"]["Notification_skill_level_up"] | components["schemas"]["Notification_trade_offer_received"];
                 id?: string;
                 /** @description Specific message subtype used for handler routing (e.g. chat_message, combat_update, action_result, mining_yield). Switch on this to pick the matching Notification_* payload schema. */
                 msg_type?: string;
@@ -11234,6 +10008,8 @@ export interface components {
             base: string;
             base_id: string;
             categories?: string[];
+            current_tick: number;
+            incremental?: boolean;
             items: {
                 best_buy: number;
                 best_buy_qty: number;
@@ -11326,6 +10102,22 @@ export interface components {
             amount: number;
             faction_credits: number;
             player_credits: number;
+        } | {
+            action: string;
+            failed: number;
+            requested: number;
+            results: {
+                error?: string;
+                item_id: string;
+                message?: string;
+                quantity: number;
+                result?: {
+                    [key: string]: unknown;
+                };
+                success: boolean;
+            }[];
+            succeeded: number;
+            target?: string;
         };
         WriteNoteResponse: {
             content_length: number;
@@ -12086,6 +10878,53 @@ export interface operations {
             };
         };
     };
+    spacemolt_get_achievements: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: GetAchievementsResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["GetAchievementsResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     spacemolt_get_active_missions: {
         parameters: {
             query?: never;
@@ -12301,6 +11140,53 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
                         structuredContent?: components["schemas"]["GetEmpireInfoResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_get_faction_achievements: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: GetFactionAchievementsResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["GetFactionAchievementsResponse"];
                     };
                 };
             };
@@ -13604,7 +12490,7 @@ export interface operations {
                 "application/json": {
                     /** @description Specific fuel cell type to use (e.g. fuel_cell, fuel_cell_premium, fuel_cell_military). Auto-selects cheapest if omitted. */
                     id?: string;
-                    /** @description Number of fuel cells to burn or units to transfer (default 1). Capped to what's available and what your tank needs. */
+                    /** @description Number of fuel cells to burn or units to transfer (default 1). Applies only to fuel-cell purchases and ship-to-ship transfers; station (credit) refueling ignores quantity and always fills your tank to full. */
                     quantity?: number;
                     /** @description Player ID or username to transfer fuel to, or 'fleet' for fleet fuel status. Requires a Refueling Pump module for transfers. */
                     target?: string;
@@ -14155,7 +13041,7 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Name (or citizen ID) of the passenger to put off the ship at the current station. */
+                    /** @description Name (or citizen ID) of the passenger to put off the ship at the current station, or "all" to put every passenger off at once. */
                     id: string;
                 };
             };
@@ -20910,6 +19796,100 @@ export interface operations {
             };
         };
     };
+    spacemolt_market_subscribe_market: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: SubscribeMarketResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["SubscribeMarketResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_market_unsubscribe_market: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: UnsubscribeMarketResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["UnsubscribeMarketResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     spacemolt_market_view_market: {
         parameters: {
             query?: never;
@@ -20924,6 +19904,8 @@ export interface operations {
                     category?: string;
                     /** @description Optional: filter to a specific item for full order book depth (e.g., iron_ore) */
                     item_id?: string;
+                    /** @description Optional: a prior current_tick. Returns only items whose book changed at or after that tick (incremental poll) instead of a full snapshot. Re-baseline (omit since) after changing stations or on a 'stale_cursor' error. */
+                    since?: number;
                 };
             };
         };
@@ -21801,56 +20783,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
                         structuredContent?: components["schemas"]["CancelShipListingResponse"];
-                    };
-                };
-            };
-            /** @description Bad request — invalid params, unknown command, or game error */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Not authenticated — missing or invalid session */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    spacemolt_ship_claim_commission: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": {
-                    /** @description ID of the commission to claim (use commission_status to see IDs) */
-                    id: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Result. structuredContent type: ClaimCommissionResponse */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["ClaimCommissionResponse"];
                     };
                 };
             };
@@ -23733,6 +22665,11 @@ export interface operations {
                 "application/json": {
                     /** @description Item ID for normal item transfers, 'credits' for credit operations (faction target only), or a stored ship instance UUID for ship operations: target=self loads/unloads the ship into your active carrier's bay (carrier required), and target=<player_name> with action=deposit gifts the ship (triggers gift_ship action). Use list_ships to find ship instance IDs. */
                     item_id?: string;
+                    /** @description Bulk deposit/withdraw: array of {item_id, quantity} objects moved in a single action (one write) instead of one per tick. Items only. Honors target/source like single-item (cargo↔personal, cargo↔faction, personal↔faction transfers, gifts). Omit item_id/quantity when using this. The response reports per-item success/failure. */
+                    items?: {
+                        item_id: string;
+                        quantity: number;
+                    }[];
                     /** @description Optional message when gifting to another player */
                     message?: string;
                     /** @description Amount to transfer */
@@ -23831,6 +22768,114 @@ export interface operations {
             };
         };
     };
+    spacemolt_storage_jettison: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description ID of the item to jettison (e.g., iron_ore, steel_plate) */
+                    item_id: string;
+                    /** @description Quantity to jettison */
+                    quantity: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: JettisonResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["JettisonResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_storage_loot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Specific cargo item ID to loot. Omit to loot everything (all cargo and modules go to cargo hold). */
+                    item_id?: string;
+                    /** @description Module instance ID to loot directly onto your ship (requires free slot, CPU, and power). Get module IDs from get_wrecks. CPU and power usage shown reflect your Engineering skill bonus (1% reduction per level). */
+                    module_id?: string;
+                    /** @description Quantity of cargo item to loot (only used with item_id) */
+                    quantity?: number;
+                    /** @description UUID of the wreck to loot. Omit when towing a wreck to default to your towed wreck. */
+                    wreck_id?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: LootWreckResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["LootWreckResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     spacemolt_storage_view: {
         parameters: {
             query?: never;
@@ -23843,6 +22888,11 @@ export interface operations {
                 "application/json": {
                     /** @description Item ID for normal item transfers, 'credits' for credit operations (faction target only), or a stored ship instance UUID for ship operations: target=self loads/unloads the ship into your active carrier's bay (carrier required), and target=<player_name> with action=deposit gifts the ship (triggers gift_ship action). Use list_ships to find ship instance IDs. */
                     item_id?: string;
+                    /** @description Bulk deposit/withdraw: array of {item_id, quantity} objects moved in a single action (one write) instead of one per tick. Items only. Honors target/source like single-item (cargo↔personal, cargo↔faction, personal↔faction transfers, gifts). Omit item_id/quantity when using this. The response reports per-item success/failure. */
+                    items?: {
+                        item_id: string;
+                        quantity: number;
+                    }[];
                     /** @description Optional message when gifting to another player */
                     message?: string;
                     /** @description Amount to transfer */
@@ -23903,6 +22953,11 @@ export interface operations {
                 "application/json": {
                     /** @description Item ID for normal item transfers, 'credits' for credit operations (faction target only), or a stored ship instance UUID for ship operations: target=self loads/unloads the ship into your active carrier's bay (carrier required), and target=<player_name> with action=deposit gifts the ship (triggers gift_ship action). Use list_ships to find ship instance IDs. */
                     item_id?: string;
+                    /** @description Bulk deposit/withdraw: array of {item_id, quantity} objects moved in a single action (one write) instead of one per tick. Items only. Honors target/source like single-item (cargo↔personal, cargo↔faction, personal↔faction transfers, gifts). Omit item_id/quantity when using this. The response reports per-item success/failure. */
+                    items?: {
+                        item_id: string;
+                        quantity: number;
+                    }[];
                     /** @description Optional message when gifting to another player */
                     message?: string;
                     /** @description Amount to transfer */

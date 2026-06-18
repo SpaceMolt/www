@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useState } from 'react'
 import {
   Ship,
   RefreshCw,
@@ -11,9 +11,12 @@ import {
   MapPin,
   ArrowRightLeft,
   Trash2,
+  Pencil,
+  Hammer,
+  AlertTriangle,
 } from 'lucide-react'
 import { useGame } from '../../GameProvider'
-import { Loading, Panel, shared } from '../../shared'
+import { Loading, Panel, ConfirmAction, shared } from '../../shared'
 import type { FleetShip } from '../../types'
 import styles from './FleetView.module.css'
 
@@ -50,6 +53,36 @@ export function FleetView() {
     },
     [sendCommand]
   )
+
+  // scrap_ship: break down a docked ship for partial materials (irreversible).
+  const handleScrap = useCallback(
+    (shipId: string) => {
+      sendCommand('scrap_ship', { ship_id: shipId }).then(() => {
+        sendCommand('list_ships')
+      })
+    },
+    [sendCommand]
+  )
+
+  // rename_ship operates on the active ship only (server: name_ship).
+  const handleRename = useCallback(
+    (name: string) => {
+      sendCommand('rename_ship', { name }).then(() => {
+        sendCommand('get_status')
+        sendCommand('list_ships')
+      })
+    },
+    [sendCommand]
+  )
+
+  // refit_ship resets the active ship to its current class spec; modules and
+  // cargo are moved to station storage. Requires a shipyard.
+  const handleRefit = useCallback(() => {
+    sendCommand('refit_ship').then(() => {
+      sendCommand('get_status')
+      sendCommand('list_ships')
+    })
+  }, [sendCommand])
 
   const refreshButton = (
     <button
@@ -94,6 +127,9 @@ export function FleetView() {
                   currentBaseId={currentBaseId}
                   onSwitch={handleSwitch}
                   onSell={handleSell}
+                  onScrap={handleScrap}
+                  onRename={handleRename}
+                  onRefit={handleRefit}
                 />
               ))}
             </div>
@@ -109,6 +145,9 @@ interface FleetCardProps {
   currentBaseId?: string
   onSwitch: (shipId: string) => void
   onSell: (shipId: string) => void
+  onScrap: (shipId: string) => void
+  onRename: (name: string) => void
+  onRefit: () => void
 }
 
 function FleetCard({
@@ -117,12 +156,26 @@ function FleetCard({
   currentBaseId,
   onSwitch,
   onSell,
+  onScrap,
+  onRename,
+  onRefit,
 }: FleetCardProps) {
   const isAtCurrentBase =
     isDocked && currentBaseId && ship.location_base_id === currentBaseId
   const canManage = !ship.is_active && isAtCurrentBase
+  // The active ship can be renamed/refitted while docked at a base.
+  const canManageActive = ship.is_active && isDocked
+
+  const [renaming, setRenaming] = useState(false)
+  const [renameValue, setRenameValue] = useState(ship.custom_name || '')
+  const [confirm, setConfirm] = useState<'scrap' | 'refit' | null>(null)
 
   const cardClass = ship.is_active ? styles.fleetCardActive : styles.fleetCard
+
+  const submitRename = () => {
+    onRename(renameValue.trim())
+    setRenaming(false)
+  }
 
   return (
     <div className={cardClass}>
@@ -135,13 +188,35 @@ function FleetCard({
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
           />
           <span className={styles.fleetCardName}>
-            {ship.class_name || ship.class_id}
+            {ship.custom_name || ship.class_name || ship.class_id}
           </span>
           {ship.is_active && (
             <span className={styles.activeIndicator}>Active</span>
           )}
         </div>
         <div className={styles.fleetCardActions}>
+          {canManageActive && (
+            <>
+              <button
+                className={shared.actionBtn}
+                onClick={() => { setRenameValue(ship.custom_name || ''); setRenaming(true) }}
+                title="Rename this ship"
+                type="button"
+              >
+                <Pencil size={11} />
+                Rename
+              </button>
+              <button
+                className={shared.actionBtn}
+                onClick={() => setConfirm('refit')}
+                title="Refit to current class spec (modules & cargo moved to storage)"
+                type="button"
+              >
+                <Hammer size={11} />
+                Refit
+              </button>
+            </>
+          )}
           {canManage && (
             <>
               <button
@@ -162,10 +237,56 @@ function FleetCard({
                 <Trash2 size={11} />
                 Sell
               </button>
+              <button
+                className={shared.dangerBtn}
+                onClick={() => setConfirm('scrap')}
+                title="Scrap this ship for materials"
+                type="button"
+              >
+                <Hammer size={11} />
+                Scrap
+              </button>
             </>
           )}
         </div>
       </div>
+
+      {renaming && (
+        <div className={styles.renameRow}>
+          <input
+            className={styles.renameInput}
+            type="text"
+            value={renameValue}
+            placeholder="Ship name (empty to clear)"
+            maxLength={32}
+            autoFocus
+            onChange={(e) => setRenameValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') submitRename()
+              if (e.key === 'Escape') setRenaming(false)
+            }}
+          />
+          <button className={shared.confirmBtn} onClick={submitRename} type="button">Save</button>
+          <button className={shared.subtleBtn} onClick={() => setRenaming(false)} type="button">Cancel</button>
+        </div>
+      )}
+
+      {confirm === 'scrap' && (
+        <ConfirmAction
+          message="Scrap this ship for materials? Irreversible."
+          icon={<AlertTriangle size={14} style={{ color: 'var(--claw-red)', flexShrink: 0 }} />}
+          onConfirm={() => { onScrap(ship.ship_id); setConfirm(null) }}
+          onCancel={() => setConfirm(null)}
+        />
+      )}
+      {confirm === 'refit' && (
+        <ConfirmAction
+          message="Refit to current class spec? Modules and cargo move to station storage."
+          icon={<AlertTriangle size={14} style={{ color: 'var(--claw-red)', flexShrink: 0 }} />}
+          onConfirm={() => { onRefit(); setConfirm(null) }}
+          onCancel={() => setConfirm(null)}
+        />
+      )}
 
       {/* Ship meta */}
       <div className={styles.fleetCardMeta}>

@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import {
-  Hammer,
   Clock,
   Check,
   X,
@@ -11,14 +10,8 @@ import {
 } from 'lucide-react'
 import { useGame } from '../../GameProvider'
 import { Loading, ConfirmAction, shared } from '../../shared'
+import { formatItemId } from '@/data/catalog'
 import styles from './CommissionsView.module.css'
-
-interface MaterialProgress {
-  item_id: string
-  name: string
-  have: number
-  need: number
-}
 
 interface Commission {
   commission_id: string
@@ -28,7 +21,9 @@ interface Commission {
   base_name: string
   ticks_remaining: number
   built_ship_id?: string
-  materials_gathered?: MaterialProgress[]
+  // sourcing state: how much of each build material the shipyard has acquired
+  materials_gathered?: Record<string, number>
+  required_materials?: Record<string, number>
 }
 
 export function CommissionsView() {
@@ -51,8 +46,10 @@ export function CommissionsView() {
     fetchStatus()
   }, [fetchStatus])
 
-  const handleClaim = useCallback((commissionId: string) => {
-    sendCommand('claim_commission', { commission_id: commissionId }).then(() => fetchStatus())
+  // Finished ships are delivered straight into your fleet (docked at the build
+  // station). Switching to the built ship is how you take the helm.
+  const handleSwitchTo = useCallback((shipId: string) => {
+    sendCommand('switch_ship', { ship_id: shipId }).then(() => fetchStatus())
   }, [sendCommand, fetchStatus])
 
   const handleCancel = useCallback((commissionId: string) => {
@@ -82,12 +79,12 @@ export function CommissionsView() {
         {commissions.map((c) => {
           const isReady = c.status === 'ready'
           const isBuilding = c.status === 'building'
-          const isGathering = c.status === 'gathering_materials'
+          const isSourcing = c.status === 'sourcing'
 
-          const statusLabel = isReady ? 'Ready' : isGathering ? 'Gathering' : 'Building'
+          const statusLabel = isReady ? 'Ready' : isSourcing ? 'Sourcing' : c.status === 'pending' ? 'Queued' : 'Building'
           const statusClass = isReady
             ? styles.statusReady
-            : isGathering
+            : isSourcing
               ? styles.statusGathering
               : styles.statusBuilding
 
@@ -99,14 +96,14 @@ export function CommissionsView() {
                   <span className={statusClass}>{statusLabel}</span>
                 </div>
                 <div className={styles.commissionActions}>
-                  {isReady && (
+                  {isReady && c.built_ship_id && (
                     <button
                       className={shared.confirmBtn}
-                      onClick={() => handleClaim(c.commission_id)}
+                      onClick={() => handleSwitchTo(c.built_ship_id!)}
                       type="button"
                     >
                       <Check size={11} />
-                      Claim
+                      Take the helm
                     </button>
                   )}
                   {!isReady && cancelConfirm !== c.commission_id && (
@@ -157,17 +154,28 @@ export function CommissionsView() {
                 </div>
               )}
 
-              {/* Materials progress */}
-              {isGathering && c.materials_gathered && c.materials_gathered.length > 0 && (
+              {isReady && (
+                <div className={styles.commissionMeta}>
+                  <span className={styles.materialProgressName}>
+                    Delivered to your fleet, docked here. Switch to it to fly.
+                  </span>
+                </div>
+              )}
+
+              {/* Materials progress (sourcing state, credits-only commissions) */}
+              {isSourcing && c.required_materials && Object.keys(c.required_materials).length > 0 && (
                 <div className={styles.materialsProgress}>
-                  {c.materials_gathered.map((mat) => (
-                    <div key={mat.item_id} className={styles.materialProgressRow}>
-                      <span className={styles.materialProgressName}>{mat.name}</span>
-                      <span className={mat.have >= mat.need ? styles.materialProgressComplete : styles.materialProgressValue}>
-                        {mat.have}/{mat.need}
-                      </span>
-                    </div>
-                  ))}
+                  {Object.entries(c.required_materials).map(([itemId, need]) => {
+                    const have = c.materials_gathered?.[itemId] ?? 0
+                    return (
+                      <div key={itemId} className={styles.materialProgressRow}>
+                        <span className={styles.materialProgressName}>{formatItemId(itemId)}</span>
+                        <span className={have >= need ? styles.materialProgressComplete : styles.materialProgressValue}>
+                          {have}/{need}
+                        </span>
+                      </div>
+                    )
+                  })}
                 </div>
               )}
             </div>
