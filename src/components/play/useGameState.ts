@@ -4,6 +4,7 @@ import { useReducer } from 'react'
 import type {
   GameState, GameAction, StateUpdate, ChatMessage,
   Player, Ship, SystemInfo, POI, TradeOffer,
+  BattleState, BattleSideState, BattleParticipantState,
   initialGameState as _init,
 } from './types'
 import { titleCase } from '@/lib/format'
@@ -277,6 +278,71 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return addEvent(state, 'combat', msg)
     }
 
+    case 'BATTLE_PUSH': {
+      // Derive combat state from the server's battle_* WebSocket pushes.
+      // The server streams these to participants every tick (battle_update),
+      // so there is no self "in_combat" flag to poll — we track it here.
+      const { kind, payload } = action
+      const myId = state.player?.id
+      switch (kind) {
+        case 'battle_started':
+        case 'battle_update': {
+          const battleStatus: BattleState = {
+            battle_id: (payload.battle_id as string) || state.battleStatus?.battle_id || '',
+            system_id: (payload.system_id as string) || state.battleStatus?.system_id,
+            your_side_id: payload.your_side_id as number | undefined,
+            your_zone: payload.your_zone as string | undefined,
+            your_stance: payload.your_stance as string | undefined,
+            your_target_id: payload.your_target_id as string | undefined,
+            auto_pilot: payload.auto_pilot as boolean | undefined,
+            sides: (payload.sides as BattleSideState[]) || [],
+            participants: (payload.participants as BattleParticipantState[]) || [],
+          }
+          let s: GameState = { ...state, inCombat: true, battleStatus }
+          if (kind === 'battle_started') {
+            s = addEvent(s, 'combat', (payload.message as string) || 'Battle started!')
+          }
+          return s
+        }
+        case 'battle_joined': {
+          const joinedId = payload.player_id as string | undefined
+          const s = myId && joinedId === myId ? { ...state, inCombat: true } : state
+          return addEvent(s, 'combat', (payload.message as string) || `${payload.username || 'A pilot'} joined the battle`)
+        }
+        case 'battle_left': {
+          const leftId = payload.player_id as string | undefined
+          const isMe = !!myId && leftId === myId
+          const s = isMe ? { ...state, inCombat: false, battleStatus: null } : state
+          return addEvent(s, 'combat', (payload.message as string) || `${payload.username || 'A pilot'} left the battle`)
+        }
+        case 'battle_ended':
+          return addEvent({ ...state, inCombat: false, battleStatus: null }, 'combat', (payload.message as string) || 'Battle ended')
+        case 'battle_damage': {
+          // Per-tick damage push. Keep combat live; only log hits that involve us.
+          const s: GameState = { ...state, inCombat: true }
+          const attackerId = payload.attacker_id as string | undefined
+          const targetId = payload.target_id as string | undefined
+          if (!myId || (attackerId !== myId && targetId !== myId)) return s
+          const dmg = (payload.total_damage as number) || 0
+          const sh = (payload.shield_hit as number) || 0
+          const hl = (payload.hull_hit as number) || 0
+          const hit = payload.hit_success as boolean
+          let dmgMsg: string
+          if (attackerId === myId) {
+            const tname = (payload.target_name as string) || 'target'
+            dmgMsg = hit ? `Hit ${tname} for ${dmg} (${sh} shield, ${hl} hull)` : `Missed ${tname}`
+          } else {
+            const aname = (payload.attacker_name as string) || 'enemy'
+            dmgMsg = hit ? `${aname} hit you for ${dmg} (${sh} shield, ${hl} hull)` : `${aname} missed you`
+          }
+          return addEvent(s, 'combat', dmgMsg)
+        }
+        case 'battle_alert':
+        default:
+          return addEvent(state, 'combat', (payload.message as string) || kind.replace(/_/g, ' '))
+      }
+    }
+
     case 'PLAYER_DIED': {
       const p = action.payload
       const cause = p.cause as string || ''
@@ -306,6 +372,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return addEvent({
         ...state,
         inCombat: false,
+        battleStatus: null,
         isDocked: false,
         fleetData: null,
         storageData: null,
@@ -428,6 +495,7 @@ const _initState: GameState = {
   poi: null,
   nearby: [],
   inCombat: false,
+  battleStatus: null,
   isDocked: false,
   travelProgress: null,
   travelDestination: null,

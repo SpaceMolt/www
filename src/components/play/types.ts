@@ -113,6 +113,38 @@ export interface StateUpdate {
   travel_arrival_tick?: number
 }
 
+// Battle state — derived from the server's battle_started / battle_update
+// WebSocket pushes (which the server streams to participants every tick).
+export interface BattleSideState {
+  side_id: number
+  player_count: number
+  faction_id?: string
+}
+
+export interface BattleParticipantState {
+  player_id: string
+  username: string
+  side_id: number
+  zone?: string
+  ship_class?: string
+  ship_name?: string
+  hull_pct?: number
+  shield_pct?: number
+  stance?: string
+}
+
+export interface BattleState {
+  battle_id: string
+  system_id?: string
+  your_side_id?: number
+  your_zone?: string
+  your_stance?: string
+  your_target_id?: string
+  auto_pilot?: boolean
+  sides: BattleSideState[]
+  participants: BattleParticipantState[]
+}
+
 export interface ChatMessage {
   id: string
   channel: string
@@ -253,6 +285,8 @@ export interface GameState {
   poi: POI | null
   nearby: NearbyPlayer[]
   inCombat: boolean
+  /** Live battle snapshot from battle_started/battle_update pushes; null when not in a battle */
+  battleStatus: BattleState | null
   isDocked: boolean
   travelProgress: number | null
   travelDestination: string | null
@@ -287,6 +321,7 @@ export const initialGameState: GameState = {
   poi: null,
   nearby: [],
   inCombat: false,
+  battleStatus: null,
   isDocked: false,
   travelProgress: null,
   travelDestination: null,
@@ -326,6 +361,7 @@ export type GameAction =
   | { type: 'OK'; payload: Record<string, unknown> }
   | { type: 'ERROR'; payload: { code: string; message: string } }
   | { type: 'COMBAT_UPDATE'; payload: Record<string, unknown> }
+  | { type: 'BATTLE_PUSH'; kind: string; payload: Record<string, unknown> }
   | { type: 'PLAYER_DIED'; payload: Record<string, unknown> }
   | { type: 'MINING_YIELD'; payload: Record<string, unknown> }
   | { type: 'CHAT_MESSAGE'; payload: ChatMessage }

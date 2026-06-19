@@ -199,7 +199,7 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
           timestamp: Date.now(),
         }})
         break
-      // Battle notifications
+      // Battle notifications — drive combat state (inCombat + live battle snapshot)
       case 'battle_started':
       case 'battle_joined':
       case 'battle_update':
@@ -207,12 +207,7 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
       case 'battle_left':
       case 'battle_ended':
       case 'battle_alert':
-        d({ type: 'ADD_EVENT', entry: {
-          id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-          type: 'combat',
-          message: (p.message as string) || msg.type.replace(/_/g, ' '),
-          timestamp: Date.now(),
-        }})
+        d({ type: 'BATTLE_PUSH', kind: msg.type, payload: p })
         break
       // Pirate encounters
       case 'pirate_radio':
