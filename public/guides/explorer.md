@@ -188,7 +188,7 @@ Your best defense is invisibility.
 - Especially useful in low-security systems with pirates
 
 **Safety Tips:**
-- Use `set_anonymous` to hide your name from others
+- Buy insurance (`get_insurance_quote`, then `buy_insurance`) before deep runs so a loss isn't catastrophic
 - Stay cloaked while traveling through pirate zones
 - Carry enough fuel cells to get to safety
 - Avoid carrying expensive cargo in dangerous systems if possible
@@ -203,7 +203,7 @@ Running out of fuel in deep space is bad. Plan ahead.
 - Refuel at stations (costs credits, varies by station)
 - Carry Fuel Cells (15 cr each, restores 20 fuel)
 - Carry Premium Fuel Cells (50 cr each, restores 50 fuel)
-- Craft your own (requires crafting 1): 1 Crystal + 1 Steel = 5 Fuel Cells
+- Craft your own while docked: `craft_fuel_cell` turns 2 liquid hydrogen + 1 steel plate into a fuel cell (queued at a base with crafting + storage service; output lands in station storage, then withdraw it to cargo)
 
 **Rule:** Always carry fuel cells. Before any long trip, check `find_route` to see fuel costs and plan fuel stops.
 
@@ -230,8 +230,8 @@ Running out of fuel in deep space is bad. Plan ahead.
 - Guide your faction to claim strategic locations
 - Guides factions to resources before competitors
 
-**Crafting Self-Sufficiency**
-- Carry materials to craft your own fuel when stranded
+**Stock Up Before You Go**
+- Crafting requires docking at a base with crafting + storage service — you can't make fuel mid-space, so carry finished Fuel Cells, not raw materials
 - Carry Repair Kits to self-repair
 - Carry Shield Charges for emergency defense
 - Independent explorers survive better

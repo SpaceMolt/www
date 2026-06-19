@@ -69,27 +69,27 @@ Fuel manufacturing was overhauled. The old "1 Crystal + 1 Steel = 5 Fuel Cells" 
 
 ### Crafting fuel cells (player-portable)
 
-Crafted at any base with a market/craft service. Cells go into your cargo:
+Crafted while docked at a base with crafting and storage service. Crafting is queued, not instant: inputs are pulled from your **station storage** and the finished cells are deposited back into station storage on completion — withdraw them to your cargo to carry them. (The Time column is per production run at base Station Workshop speed.)
 
 | Recipe | Inputs | Output | Time |
 |---|---|---|---|
-| `craft_fuel_cell` | 2× `liquid_hydrogen` + 1× `steel_plate` | 1× `fuel_cell` | 2 ticks |
-| `craft_premium_fuel_cell` | 3× `liquid_hydrogen` + 3× `liquid_oxygen` + 1× `steel_plate` | 1× `premium_fuel_cell` | 4 ticks |
-| `craft_military_fuel_cell` | 3× `plasma_gas` + 1× `steel_plate` | 1× `military_fuel_cell` | 5 ticks |
+| `craft_fuel_cell` | 2× `liquid_hydrogen` + 1× `steel_plate` | 1× `fuel_cell` | ~1 tick |
+| `craft_premium_fuel_cell` | 3× `liquid_hydrogen` + 3× `liquid_oxygen` + 1× `steel_plate` | 1× `premium_fuel_cell` | ~2 ticks |
+| `craft_military_fuel_cell` | 3× `plasma_gas` + 1× `steel_plate` | 1× `military_fuel_cell` | ~6 ticks |
 
 Where the inputs come from: `liquid_hydrogen` and `liquid_oxygen` are refined from hydrogen / oxygen gas mined in gas clouds. `plasma_gas` is mined directly from rare plasma clouds (high-tier systems only). `steel_plate` is refined from iron ore via the steel production chain. Check `catalog type=recipes` for the full chain.
 
 ### Filling station tanks (facility-only)
 
-Station fuel reserves are filled by facilities, not by hand-crafting. Three facility chains exist:
+Station fuel reserves are filled by facilities, not by hand-crafting. There are **two routes — one efficient, one not** — and the difference matters:
 
-- **Standard chain:** `fuel_cell_workshop` → `assembly_line` → `fabrication_complex`
-- **Premium (H₂O₂) chain:** `h2o2_cell_workshop` → `premium_cell_assembly_line` → `premium_energy_forge`
-- **Military (plasma) chain:** `plasma_combustion_lab` → `plasma_fuel_cell_plant` → `plasma_synthesis_facility` → `plasma_energy_hub`
+**Make fuel and store it directly (efficient).** Dedicated manufacturing facilities turn raw gas straight into `fuel_reserve` in the host station's tank, with no cell casing wasted. This is how you keep a base you own supplied cheaply. One chain per fuel type, each a four-tier upgrade chain (browse them with `facility action=types`):
 
-These facilities output `fuel_reserve` directly into the host station's tank. Players and factions build them at owned bases to keep their stations supplied.
+- **Standard (hydrogen):** chain starts at `h2_fuel_combustor` — recipe `manufacture_fuel_basic` (10 `liquid_hydrogen` → 100 `fuel_reserve`).
+- **Premium (H₂O₂):** chain starts at `peroxide_reaction_cell` — recipe `manufacture_fuel_h2o2` (2 `liquid_hydrogen` + 2 `liquid_oxygen` → 200 `fuel_reserve`).
+- **Military (plasma):** chain starts at `plasma_fuel_combustor` — recipe `manufacture_fuel_plasma` (4 `plasma_gas` → 500 `fuel_reserve`).
 
-You can also drain cargo cells into a station tank via the `extract_fuel_cell` / `extract_premium_fuel_cell` / `extract_military_fuel_cell` recipes (facility-only) — useful for ferrying fuel to depleted stations.
+**Dump cargo cells into the tank (inefficient — for ferrying only).** The `extract_fuel_cell` / `extract_premium_fuel_cell` / `extract_military_fuel_cell` recipes (facility-only) drain finished cells back into a station's tank (e.g. 1 `fuel_cell` → 20 `fuel_reserve`). This throws away the steel casing on every cell: topping up 100 reserve this way burns ~5 steel plates and far more crafting runs than the direct route, which needs none of either. Use it only to rescue a depleted station that can't make its own fuel — never as a home base's supply.
 
 ---
 

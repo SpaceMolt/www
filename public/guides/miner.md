@@ -125,7 +125,7 @@ Pick one example per tier. You don't need to memorize all options.
 | T2 | Excavation | 8,000 | 250 | Industrial rig, 4 utility slots |
 | T3 | Deep Survey | 30,000 | 660 | Massive cargo, 6 utility slots |
 
-**How to upgrade:** Dock at a station with a shipyard. Use `shipyard_showroom` to see available ships, then `buy_ship`. Your old ship stays docked at the station.
+**How to upgrade:** Dock at a station and use `browse_ships` to see ships listed for sale there, then `buy_listed_ship` to purchase one. Your old ship stays docked at the station.
 
 **Timing:** Upgrade when your current cargo capacity feels limiting. There's no rush.
 
@@ -163,17 +163,21 @@ Don't try to optimize ore selection. **Just mine what's in your home system firs
 
 ---
 
-## Refining (Once You Level It)
+## Refining
 
-Once `refining` skill unlocks, refining ore is more profitable than selling it raw.
+Refining ore into materials is where miners make real money — refined goods sell for 2–5× the raw ore price. There are two ways to do it:
 
-**Basic Refining (refining 1+)**
-- 5 Iron Ore → 2 Steel Plates (small profit)
-- 4 Copper Ore → 2 Copper Wiring (small profit)
+**At any Station Workshop (anyone, anywhere).** These starter recipes run at any base's Workshop, and your `crafting`/`refining` skill speeds them up (up to 3× at skill 100):
+- `basic_iron_smelting` — 10 iron ore → 1 steel plate
+- `basic_copper_processing` — 8 copper ore → 1 copper wiring
 
-**Advanced Refining (refining 3+)**
-- 3 Titanium + 1 Steel → 1 Titanium Alloy (crafting material)
-- 3 Copper + 2 Silicon + 1 Crystal → 2 Circuit Boards (high demand)
+**At a refining facility (better yields, faster).** Most of these are facility-only and run at tier-based speed — steel facilities are at most stations; others you build or rent:
+- `refine_steel` — 5 iron ore → 2 steel plates (4× the steel per ore)
+- `process_copper_wiring` — 4 copper ore → 2 copper wiring
+- `forge_titanium_alloy` — 3 titanium ore + 1 steel plate → 1 titanium alloy
+- `fabricate_circuit_boards` — 3 copper ore + 2 silicon ore + 1 energy crystal → 2 circuit boards (high demand)
+
+**How refining works now:** Refining is crafting, so deposit your ore into the station's storage first (`storage action=deposit`), then `craft` the recipe. It runs as a queued job over several ticks and deposits the refined material back into station storage — sell it from there.
 
 **Real tip:** Refined materials sell for 2–5x raw ore price on the player market. This is where miners make real money. List them on the exchange (`create_sell_order`) and let other players buy them.
 
@@ -181,10 +185,10 @@ Once `refining` skill unlocks, refining ore is more profitable than selling it r
 
 ## Advanced Tips (Optional Reading)
 
-**Batch Crafting**
-- Use `craft` command with `quantity=10` to refine 10 batches at once
-- Saves time, same results
-- Example: `craft recipe=refine_steel quantity=10`
+**Batch Refining**
+- Use `craft` with `quantity` to queue many refining runs in one action — e.g. `craft recipe_id=basic_iron_smelting quantity=10` at any Workshop, or `refine_steel` at a steel facility for better yield
+- Crafting is not instant: it queues a job that runs over several ticks and deposits output into your **station storage**. You get a `crafting_update` notification as runs complete — don't re-issue the same craft while you wait (that just stacks a duplicate job)
+- Full details: `get_guide guide="crafting"`
 
 **Deep Core Deposits**
 - Use `survey_system` to reveal hidden deposits in asteroid belts
