@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback } from 'react'
 import {
   Swords,
   Search,
@@ -8,83 +8,33 @@ import {
   EyeOff,
   Skull,
   Shield,
+  ShieldHalf,
   RefreshCw,
   Target,
   ChevronUp,
   ChevronDown,
   RotateCw,
+  Flame,
+  Wind,
+  Rabbit,
 } from 'lucide-react'
 import { useGame } from '../GameProvider'
 import { Panel, Modal, shared } from '../shared'
 import styles from './CombatPanel.module.css'
 
-interface BattleParticipant {
-  player_id: string
-  username: string
-  side_id: number
-  zone: string
-  ship_class: string
-  hull_pct: number
-  shield_pct: number
-  stance: string
-  target_id: string
-}
+type Stance = 'fire' | 'evade' | 'brace' | 'flee'
 
-interface BattleSide {
-  side_id: number
-  player_count: number
-  faction_name: string
-  faction_tag: string
-}
-
-interface BattleStatus {
-  battle_id: string
-  system_id: string
-  is_participant: boolean
-  tick_duration: number
-  sides: BattleSide[]
-  participants: BattleParticipant[]
-}
+const STANCES: { id: Stance; label: string; icon: typeof Swords; title: string }[] = [
+  { id: 'fire', label: 'Fire', icon: Flame, title: 'Fire weapons: 100% damage dealt and taken' },
+  { id: 'evade', label: 'Evade', icon: Wind, title: 'Evade: no damage dealt, 50% taken (costs fuel)' },
+  { id: 'brace', label: 'Brace', icon: ShieldHalf, title: 'Brace: no damage dealt, 25% taken, shields regen faster' },
+  { id: 'flee', label: 'Flee', icon: Rabbit, title: 'Flee: retreat to outer zone, then 3 ticks to escape' },
+]
 
 export function CombatPanel() {
   const { state, sendCommand } = useGame()
   const [confirmSelfDestruct, setConfirmSelfDestruct] = useState(false)
-  const [battleStatus, setBattleStatus] = useState<BattleStatus | null>(null)
   const [selectedAmmo, setSelectedAmmo] = useState<Record<string, string>>({})
-
-  // Auto-fetch battle status every 5 seconds when in combat
-  useEffect(() => {
-    if (!state.inCombat) {
-      setBattleStatus(null)
-      return
-    }
-
-    const fetchBattleStatus = () => {
-      sendCommand('get_battle_status')
-    }
-
-    // Fetch immediately on entering combat
-    fetchBattleStatus()
-
-    const interval = setInterval(fetchBattleStatus, 5000)
-    return () => clearInterval(interval)
-  }, [state.inCombat])
-
-  // Listen for battle status responses via custom DOM events.
-  // GameProvider dispatches 'spacemolt:ok' events for OK responses;
-  // we filter for get_battle_status to populate local state.
-  useEffect(() => {
-    if (!state.inCombat) return
-
-    const handler = (e: Event) => {
-      const detail = (e as CustomEvent).detail
-      if (detail?.action === 'get_battle_status' && detail?.battle_id) {
-        setBattleStatus(detail as unknown as BattleStatus)
-      }
-    }
-    window.addEventListener('spacemolt:ok', handler)
-    return () => window.removeEventListener('spacemolt:ok', handler)
-  }, [state.inCombat])
 
   const handleAttack = useCallback(
     (playerId: string) => {
@@ -115,7 +65,7 @@ export function CombatPanel() {
 
   // Tactical controls
   const handleStance = useCallback(
-    (stance: 'aggressive' | 'balanced' | 'defensive') => {
+    (stance: Stance) => {
       sendCommand('battle', { action: 'stance', stance })
     },
     [sendCommand]
@@ -127,10 +77,6 @@ export function CombatPanel() {
 
   const handleRetreat = useCallback(() => {
     sendCommand('battle', { action: 'retreat' })
-  }, [sendCommand])
-
-  const handleEngage = useCallback(() => {
-    sendCommand('battle', { action: 'engage' })
   }, [sendCommand])
 
   // Reload handler
@@ -148,8 +94,9 @@ export function CombatPanel() {
 
   const isCloaked = state.player?.is_cloaked ?? false
   const nearby = state.nearby || []
-  // ship.modules is string[] (module instance IDs); no weapon filtering available from this field
-  const moduleIds = state.ship?.modules || []
+  const battleStatus = state.battleStatus
+  const yourStance = battleStatus?.your_stance
+  const weapons = (state.shipModules || []).filter((m) => m.type === 'weapon')
   const cargoItems = state.ship?.cargo || []
 
   return (
@@ -206,15 +153,21 @@ export function CombatPanel() {
           </div>
           {battleStatus ? (
             <div className={styles.battleInfo}>
+              {/* Your posture */}
+              {(battleStatus.your_zone || yourStance) && (
+                <div className={styles.sideCount}>
+                  {battleStatus.your_zone ? `Zone: ${battleStatus.your_zone}` : ''}
+                  {battleStatus.your_zone && yourStance ? ' · ' : ''}
+                  {yourStance ? `Stance: ${yourStance}` : ''}
+                  {battleStatus.auto_pilot ? ' · auto-pilot' : ''}
+                </div>
+              )}
+
               {/* Sides */}
               <div className={styles.sidesRow}>
                 {battleStatus.sides.map((side) => (
                   <div key={side.side_id} className={styles.sideCard}>
-                    <span className={styles.sideName}>
-                      {side.faction_tag
-                        ? `[${side.faction_tag}] ${side.faction_name}`
-                        : `Side ${side.side_id}`}
-                    </span>
+                    <span className={styles.sideName}>Side {side.side_id}</span>
                     <span className={styles.sideCount}>
                       {side.player_count}{' '}
                       {side.player_count === 1 ? 'pilot' : 'pilots'}
@@ -244,11 +197,11 @@ export function CombatPanel() {
                         <div className={styles.barTrack}>
                           <div
                             className={styles.barFillShield}
-                            style={{ width: `${p.shield_pct}%` }}
+                            style={{ width: `${p.shield_pct ?? 0}%` }}
                           />
                         </div>
                         <span className={styles.barValue}>
-                          {p.shield_pct}%
+                          {p.shield_pct ?? 0}%
                         </span>
                       </div>
                       <div className={styles.barRow}>
@@ -256,11 +209,11 @@ export function CombatPanel() {
                         <div className={styles.barTrack}>
                           <div
                             className={styles.barFillHull}
-                            style={{ width: `${p.hull_pct}%` }}
+                            style={{ width: `${p.hull_pct ?? 0}%` }}
                           />
                         </div>
                         <span className={styles.barValue}>
-                          {p.hull_pct}%
+                          {p.hull_pct ?? 0}%
                         </span>
                       </div>
                     </div>
@@ -282,41 +235,26 @@ export function CombatPanel() {
 
             {/* Stance Selector */}
             <div className={styles.stanceRow}>
-              <button
-                className={styles.stanceBtn}
-                onClick={() => handleStance('aggressive')}
-                title="Aggressive stance: max damage, less defense"
-                type="button"
-              >
-                <Swords size={12} />
-                Aggressive
-              </button>
-              <button
-                className={styles.stanceBtn}
-                onClick={() => handleStance('balanced')}
-                title="Balanced stance: equal offense and defense"
-                type="button"
-              >
-                <Target size={12} />
-                Balanced
-              </button>
-              <button
-                className={styles.stanceBtn}
-                onClick={() => handleStance('defensive')}
-                title="Defensive stance: max defense, less damage"
-                type="button"
-              >
-                <Shield size={12} />
-                Defensive
-              </button>
+              {STANCES.map(({ id, label, icon: Icon, title }) => (
+                <button
+                  key={id}
+                  className={`${styles.stanceBtn} ${yourStance === id ? styles.stanceActive : ''}`}
+                  onClick={() => handleStance(id)}
+                  title={title}
+                  type="button"
+                >
+                  <Icon size={12} />
+                  {label}
+                </button>
+              ))}
             </div>
 
-            {/* Movement + Engage */}
+            {/* Movement */}
             <div className={styles.tacticalRow}>
               <button
                 className={styles.tacticalBtn}
                 onClick={handleAdvance}
-                title="Advance toward target"
+                title="Advance one zone toward the enemy (higher hit chance)"
                 type="button"
               >
                 <ChevronUp size={14} />
@@ -325,20 +263,11 @@ export function CombatPanel() {
               <button
                 className={styles.tacticalBtn}
                 onClick={handleRetreat}
-                title="Retreat from battle"
+                title="Retreat one zone from the enemy (harder to hit)"
                 type="button"
               >
                 <ChevronDown size={14} />
                 Retreat
-              </button>
-              <button
-                className={styles.engageBtn}
-                onClick={handleEngage}
-                title="Engage enemy"
-                type="button"
-              >
-                <Swords size={14} />
-                Engage
               </button>
             </div>
           </div>
@@ -413,46 +342,58 @@ export function CombatPanel() {
       </div>
 
       {/* Reload Section */}
-      {moduleIds.length > 0 && (
+      {weapons.length > 0 && (
         <div>
           <div className={shared.sectionTitle}>
             <RotateCw size={12} /> Weapon Reload
           </div>
           <div className={styles.reloadList}>
-            {moduleIds.map((instanceId) => (
-              <div key={instanceId} className={styles.reloadCard}>
-                <div className={styles.reloadWeaponName}>{instanceId}</div>
-                <div className={styles.reloadControls}>
-                  <select
-                    className={shared.selectInput}
-                    value={selectedAmmo[instanceId] || ''}
-                    onChange={(e) =>
-                      setSelectedAmmo((prev) => ({
-                        ...prev,
-                        [instanceId]: e.target.value,
-                      }))
-                    }
-                  >
-                    <option value="">Select ammo</option>
-                    {cargoItems.map((item) => (
-                      <option key={item.item_id} value={item.item_id}>
-                        {item.name} (x{item.quantity})
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    className={styles.reloadBtn}
-                    onClick={() => handleReload(instanceId)}
-                    disabled={!selectedAmmo[instanceId]}
-                    title={`Reload ${instanceId}`}
-                    type="button"
-                  >
-                    <RotateCw size={12} />
-                    Reload
-                  </button>
+            {weapons.map((weapon) => {
+              const instanceId = weapon.module_id || weapon.id || ''
+              const ammoStatus =
+                weapon.magazine_size !== undefined
+                  ? `${weapon.current_ammo ?? 0}/${weapon.magazine_size}${weapon.loaded_ammo_name ? ` · ${weapon.loaded_ammo_name}` : ''}`
+                  : null
+              return (
+                <div key={instanceId} className={styles.reloadCard}>
+                  <div className={styles.reloadWeaponName}>
+                    {weapon.name}
+                    {ammoStatus && (
+                      <span className={styles.participantShip}> {ammoStatus}</span>
+                    )}
+                  </div>
+                  <div className={styles.reloadControls}>
+                    <select
+                      className={shared.selectInput}
+                      value={selectedAmmo[instanceId] || ''}
+                      onChange={(e) =>
+                        setSelectedAmmo((prev) => ({
+                          ...prev,
+                          [instanceId]: e.target.value,
+                        }))
+                      }
+                    >
+                      <option value="">Select ammo</option>
+                      {cargoItems.map((item) => (
+                        <option key={item.item_id} value={item.item_id}>
+                          {item.name} (x{item.quantity})
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      className={styles.reloadBtn}
+                      onClick={() => handleReload(instanceId)}
+                      disabled={!selectedAmmo[instanceId]}
+                      title={`Reload ${weapon.name}`}
+                      type="button"
+                    >
+                      <RotateCw size={12} />
+                      Reload
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       )}

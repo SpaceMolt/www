@@ -387,6 +387,13 @@
   box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
 }
 
+.stanceActive {
+  background: rgba(0, 212, 255, 0.22);
+  border-color: var(--plasma-cyan);
+  color: var(--star-white);
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+}
+
 .tacticalRow {
   display: flex;
   gap: 0.25rem;

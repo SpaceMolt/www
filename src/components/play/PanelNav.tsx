@@ -34,8 +34,8 @@ interface PanelDef {
   id: string
   icon: React.ComponentType<{ size?: number; className?: string }>
   label: string
-  /** 'always' | 'docked' | 'combat' */
-  visibility: 'always' | 'docked' | 'combat'
+  /** 'always' | 'docked' | 'undocked' | 'combat' */
+  visibility: 'always' | 'docked' | 'undocked' | 'combat'
   /** Right-justify this tab (pushes to far right) */
   right?: boolean
 }
@@ -56,8 +56,9 @@ const ALL_PANELS: PanelDef[] = [
   { id: 'achievements', icon: Trophy, label: 'Achievements', visibility: 'always' },
   // Salvage — always visible (panel itself shows "no wrecks" empty state)
   { id: 'salvage', icon: Skull, label: 'Salvage', visibility: 'always' },
-  // Combat tab — only when in battle
-  { id: 'combat', icon: Swords, label: 'Combat', visibility: 'combat' },
+  // Combat tab — available whenever undocked (so you can scan/attack to start a
+  // fight, not just once a battle is already underway)
+  { id: 'combat', icon: Swords, label: 'Combat', visibility: 'undocked' },
   // Right-justified
   { id: 'info', icon: Info, label: 'Info', visibility: 'always', right: true },
   { id: 'settings', icon: Settings, label: 'Settings', visibility: 'always', right: true },
@@ -71,6 +72,7 @@ export function PanelNav({ activePanel, onPanelChange, badges, isDocked, inComba
     return ALL_PANELS.filter((p) => {
       if (p.visibility === 'always') return true
       if (p.visibility === 'docked') return isDocked
+      if (p.visibility === 'undocked') return !isDocked
       if (p.visibility === 'combat') return inCombat
       return false
     })
