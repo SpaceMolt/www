@@ -12,8 +12,8 @@ interface MoverItem {
   item_id: string
   item_name: string
   category: string
+  recent_units?: number
   recent_volume: number
-  baseline_volume: number
   surge_ratio: number
   recent_vwap: number
   previous_vwap: number
@@ -59,6 +59,18 @@ function fmtVolume(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
   if (n >= 1000) return `${(n / 1000).toFixed(1)}k`
   return String(Math.round(n))
+}
+
+/** Volume cell: units headline with credit turnover beneath. Falls back to
+ *  credits-only if an older server hasn't sent unit counts yet. */
+function volumeCell(m: MoverItem) {
+  if (m.recent_units == null) return <>{fmtVolume(m.recent_volume)} cr</>
+  return (
+    <>
+      {fmtVolume(m.recent_units)} units
+      <span className={styles.subCredits}>{fmtVolume(m.recent_volume)} cr</span>
+    </>
+  )
 }
 
 function pct(n: number): string {
@@ -205,7 +217,7 @@ export default function MarketReportPage() {
                   <tr>
                     <th>Item</th>
                     <th>Surge</th>
-                    <th>Volume (recent)</th>
+                    <th>Volume (units)</th>
                     <th>Price</th>
                   </tr>
                 </thead>
@@ -214,7 +226,7 @@ export default function MarketReportPage() {
                     <tr key={m.item_id}>
                       <td className={styles.itemCell}>{m.item_name}</td>
                       <td className={styles.surgeCell}>{m.surge_ratio.toFixed(1)}×</td>
-                      <td>{fmtVolume(m.recent_volume)} cr</td>
+                      <td>{volumeCell(m)}</td>
                       <td className={m.price_change_pct >= 0 ? styles.up : styles.down}>
                         {fmt(m.recent_vwap)} ({pct(m.price_change_pct)})
                       </td>
@@ -233,7 +245,7 @@ export default function MarketReportPage() {
                 <thead>
                   <tr>
                     <th>Item</th>
-                    <th>Volume (recent)</th>
+                    <th>Volume (units)</th>
                     <th>Avg Price</th>
                   </tr>
                 </thead>
@@ -241,7 +253,7 @@ export default function MarketReportPage() {
                   {data.new_demand.map((m) => (
                     <tr key={m.item_id}>
                       <td className={styles.itemCell}>{m.item_name}</td>
-                      <td>{fmtVolume(m.recent_volume)} cr</td>
+                      <td>{volumeCell(m)}</td>
                       <td>{fmt(m.recent_vwap)}</td>
                     </tr>
                   ))}
