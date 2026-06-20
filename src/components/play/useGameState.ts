@@ -192,9 +192,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (actionName === 'jump') {
         return addEvent(state, 'travel', `Jumping to ${p.destination || 'system'}...`)
       }
-      if (actionName === 'craft') {
-        let msg = `Crafted ${p.recipe || 'item'}`
-        if (p.level_up) msg += ' -- Level up!'
+      if (actionName === 'craft' || actionName === 'recycle') {
+        // dry_run is a cost/time quote — nothing queued, handled inline by the
+        // panel, so don't spam the event log.
+        if (p.dry_run) return state
+        // queue view (craft with no recipe) carries no message — the panel
+        // renders the job list; nothing to log.
+        if (!p.message && !p.recipe) return state
+        const verb = actionName === 'recycle' ? 'recycle' : 'craft'
+        const msg = (p.message as string) || `Queued ${verb}: ${p.recipe || 'item'}`
         return addEvent(state, 'crafting', msg)
       }
       if (actionName === 'attack') {

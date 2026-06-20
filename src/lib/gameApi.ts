@@ -117,6 +117,7 @@ const COMMAND_MAP: Record<string, V2Route> = {
   refuel: { tool: 'spacemolt', action: 'refuel' },
   repair: { tool: 'spacemolt', action: 'repair' },
   craft: { tool: 'spacemolt', action: 'craft', params: { recipe_id: 'id' } },
+  recycle: { tool: 'spacemolt', action: 'recycle', params: { recipe_id: 'id' } },
 
   // queries
   get_status: { tool: 'spacemolt', action: 'get_status' },
@@ -288,7 +289,7 @@ const COMMAND_MAP: Record<string, V2Route> = {
 export const MUTATION_COMMANDS = new Set([
   'accept_mission', 'attack', 'buy', 'buy_insurance', 'buy_listed_ship',
   'cancel_commission', 'cancel_order', 'cancel_ship_listing',
-  'cloak', 'commission_ship', 'complete_mission', 'craft', 'create_buy_order',
+  'cloak', 'commission_ship', 'complete_mission', 'craft', 'recycle', 'create_buy_order',
   'create_faction', 'create_sell_order', 'deposit_items', 'dock',
   'faction_accept_peace', 'faction_declare_war', 'faction_invite', 'faction_kick',
   'faction_post_mission', 'faction_promote', 'faction_propose_peace',
