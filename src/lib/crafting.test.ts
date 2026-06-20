@@ -14,52 +14,37 @@ const purifyArgon: Recipe = {
 }
 
 describe('canCraftRecipe', () => {
-  // Regression: GH#794 — recipes with inputs in station storage must be
-  // marked craftable, since the gameserver craft handler accepts inputs from
-  // cargo + station storage combined.
-  it('treats station storage as available inventory (gh#794: Purify Argon)', () => {
-    const cargo: { item_id: string; quantity: number }[] = []
+  // Crafting is station-storage-centric: the gameserver escrows inputs from
+  // station storage, NOT ship cargo (see gameserver crafting.go). Craftability
+  // must be judged against storage alone.
+  it('treats station storage as the available inventory', () => {
     const storage = [{ item_id: 'argon_gas', quantity: 5 }]
-
-    const { craftable, reasons } = canCraftRecipe(purifyArgon, {}, cargo, storage)
-
+    const { craftable, reasons } = canCraftRecipe(purifyArgon, {}, storage)
     expect(reasons).toEqual([])
     expect(craftable).toBe(true)
   })
 
-  it('still marks recipe craftable when materials live in cargo', () => {
-    const cargo = [{ item_id: 'argon_gas', quantity: 5 }]
-    const { craftable } = canCraftRecipe(purifyArgon, {}, cargo, [])
-    expect(craftable).toBe(true)
+  it('does NOT count ship cargo — only station storage is eligible', () => {
+    // Materials present but not deposited into storage: the server would reject
+    // the craft, so the client must mark it not craftable.
+    const { craftable, reasons } = canCraftRecipe(purifyArgon, {}, [])
+    expect(craftable).toBe(false)
+    expect(reasons[0]).toContain('Need 5')
+    expect(reasons[0]).toContain('have 0')
   })
 
-  it('combines cargo + storage when neither alone is sufficient', () => {
-    const cargo = [{ item_id: 'argon_gas', quantity: 2 }]
-    const storage = [{ item_id: 'argon_gas', quantity: 3 }]
-    const { craftable } = canCraftRecipe(purifyArgon, {}, cargo, storage)
-    expect(craftable).toBe(true)
-  })
-
-  it('reports missing materials when neither cargo nor storage covers the recipe', () => {
-    const cargo = [{ item_id: 'argon_gas', quantity: 1 }]
-    const storage = [{ item_id: 'argon_gas', quantity: 1 }]
-    const { craftable, reasons } = canCraftRecipe(purifyArgon, {}, cargo, storage)
+  it('reports missing materials when storage is short', () => {
+    const storage = [{ item_id: 'argon_gas', quantity: 2 }]
+    const { craftable, reasons } = canCraftRecipe(purifyArgon, {}, storage)
     expect(craftable).toBe(false)
     expect(reasons.length).toBe(1)
     expect(reasons[0]).toContain('Need 5')
     expect(reasons[0]).toContain('have 2')
   })
 
-  it('still works with no storage argument (undocked / not yet fetched)', () => {
-    const cargo = [{ item_id: 'argon_gas', quantity: 5 }]
-    const { craftable } = canCraftRecipe(purifyArgon, {}, cargo)
-    expect(craftable).toBe(true)
-  })
-
-  it('treats null storage the same as missing storage', () => {
-    const cargo = [{ item_id: 'argon_gas', quantity: 5 }]
-    const { craftable } = canCraftRecipe(purifyArgon, {}, cargo, null)
-    expect(craftable).toBe(true)
+  it('treats null/undefined storage as no materials (undocked / not yet fetched)', () => {
+    expect(canCraftRecipe(purifyArgon, {}, null).craftable).toBe(false)
+    expect(canCraftRecipe(purifyArgon, {}).craftable).toBe(false)
   })
 
   it('blocks craft when required skills are unmet, even with materials in storage', () => {
@@ -71,7 +56,6 @@ describe('canCraftRecipe', () => {
     const { craftable, reasons } = canCraftRecipe(
       recipe,
       { refining: { level: 3, xp: 0, next_level_xp: 100 } },
-      [],
       storage,
     )
     expect(craftable).toBe(false)
@@ -80,19 +64,17 @@ describe('canCraftRecipe', () => {
 })
 
 describe('availableQuantity', () => {
-  it('sums cargo and storage for the same item id', () => {
-    const cargo = [{ item_id: 'argon_gas', quantity: 2 }]
+  it('returns the quantity held in station storage', () => {
     const storage = [{ item_id: 'argon_gas', quantity: 3 }]
-    expect(availableQuantity('argon_gas', cargo, storage)).toBe(5)
+    expect(availableQuantity('argon_gas', storage)).toBe(3)
   })
 
-  it('returns 0 for items that exist in neither pool', () => {
-    expect(availableQuantity('phlogiston', [], [])).toBe(0)
+  it('returns 0 for items not in storage', () => {
+    expect(availableQuantity('phlogiston', [])).toBe(0)
   })
 
   it('handles missing storage', () => {
-    const cargo = [{ item_id: 'argon_gas', quantity: 4 }]
-    expect(availableQuantity('argon_gas', cargo)).toBe(4)
-    expect(availableQuantity('argon_gas', cargo, null)).toBe(4)
+    expect(availableQuantity('argon_gas')).toBe(0)
+    expect(availableQuantity('argon_gas', null)).toBe(0)
   })
 })

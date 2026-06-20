@@ -237,6 +237,32 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
           timestamp: Date.now(),
         }})
         break
+      // Crafting completions — each tick a queued job deposits output, the
+      // server pushes a crafting_update naming what was made and where. Surface
+      // it in the event log so async crafting is visible without polling.
+      case 'crafting_update': {
+        const jobs = (p.jobs as Array<Record<string, unknown>>) || []
+        for (const j of jobs) {
+          const recipe = (j.recipe as string) || 'job'
+          const mode = (j.mode as string) === 'recycle' ? 'Recycled' : 'Crafted'
+          const deposited = ((j.deposited as Array<Record<string, unknown>>) || [])
+            .map((dItem) => `${dItem.quantity}x ${dItem.item_name || dItem.item_id}`)
+            .join(', ')
+          const completed = !!j.completed
+          const remaining = (j.runs_remaining as number) ?? 0
+          let message = `${mode} ${recipe}`
+          if (deposited) message += ` → ${deposited}`
+          if (completed) message += ' (job complete)'
+          else if (remaining > 0) message += ` (${remaining} run${remaining === 1 ? '' : 's'} left)`
+          d({ type: 'ADD_EVENT', entry: {
+            id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+            type: 'crafting',
+            message,
+            timestamp: Date.now(),
+          }})
+        }
+        break
+      }
       // Skill XP gain
       case 'skill_xp_gain':
         d({ type: 'ADD_EVENT', entry: {

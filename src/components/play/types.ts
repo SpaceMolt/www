@@ -197,6 +197,53 @@ export interface RecipesData {
   page?: number
 }
 
+// Crafting is queued, not instant: a `craft`/`recycle` enqueues a job that runs
+// over ticks. These mirror the gameserver apiresponses for craft jobs/quotes
+// (internal/apiresponses/facility_jobs.go).
+export interface CraftStorageItem {
+  item_id: string
+  name?: string
+  quantity: number
+}
+
+// One job in the player's queue (craft action=queue → CraftQueueResponse.jobs).
+export interface CraftJobView {
+  job_id: string
+  venue?: string
+  recipe: string
+  mode: string // "craft" | "recycle"
+  produces?: CraftStorageItem[]
+  runs_total: number
+  runs_done: number
+  runs_remaining: number
+  progress: number // 0..1 of the in-flight run
+  eta_ticks: number
+  position: number
+  orderer: string
+  external?: boolean
+  status: string
+  facility_id: string
+}
+
+// Result of a dry_run craft/recycle: a cost + time quote, nothing queued.
+export interface CraftQuote {
+  recipe: string
+  mode: string
+  quantity: number
+  runs: number
+  venue: string
+  venue_type: string // "workshop" | "facility"
+  external?: boolean
+  produces?: CraftStorageItem[]
+  cost: { inputs?: CraftStorageItem[]; labor?: number; fee?: number }
+  credits_total: number
+  have_inputs: boolean
+  have_credits: boolean
+  effective_time_per_run: number
+  est_completion_tick: number
+  message: string
+}
+
 export interface SkillsData {
   skills: Record<string, { level: number; xp: number; next_level_xp: number }>
   message?: string
