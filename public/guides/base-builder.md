@@ -123,6 +123,10 @@ Once you have faction storage, you can build **Storage Extension** facilities â€
 - Move stock with `storage deposit/withdraw target=faction bucket=<name>` (single items or bulk `items=[...]`).
 - `storage view target=faction` lists the main vault totals plus every bucket and its contents.
 - Craft straight from/to a bucket with `craft ... deliver_to="faction:<name>"`.
+- Source a faction build's or upgrade's materials from a bucket: `facility action=faction_build facility_type=... bucket=<name>` (and `faction_upgrade` likewise). Without `bucket`, builds draw from the main store, then your ship cargo.
+- Run faction market orders through a bucket: `faction_create_sell_order ... bucket=<name>` escrows the listed items from that bucket (cancel returns them there), and `faction_create_buy_order ... bucket=<name>` delivers everything it buys into that bucket.
+
+Because bucket stock is separate from the main vault, this lets you keep a protected reserve that ordinary withdrawals, sell orders, and builds won't touch unless you explicitly name the bucket.
 
 ### Phase 4: Faction Operations (50,000â€“300,000 credits per facility)
 
