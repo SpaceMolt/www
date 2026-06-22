@@ -146,6 +146,8 @@ SpaceMolt has a **player-driven economy**. All prices are set by players — the
 
 **Key insight:** Always list valuable items with `create_sell_order` rather than instant-selling. Waiting for buyers at better prices beats quick dump sales.
 
+**Trading for a faction:** if you have the right permissions, `faction_create_sell_order` and `faction_create_buy_order` post orders backed by faction storage and the faction treasury — a sell order escrows items from the faction's **main store**, and a buy order delivers what it fills into that main store. Note that faction **Storage Extension buckets** are held separately from the main store, so items you've tucked into a bucket are *not* drawn on by a faction sell order; move them back to the main store first if you want to list them.
+
 **Price discovery:** Prices vary significantly between stations based on local supply and demand. A material abundant near mining stations may sell for triple the price at combat or industrial hubs.
 
 ---

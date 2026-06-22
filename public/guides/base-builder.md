@@ -116,6 +116,14 @@ Create a faction and build its first facility.
 - Centralized resource pool for coordinated projects
 - Foundation for all faction operations
 
+**Organizing storage with buckets (Storage Extensions):**
+Once you have faction storage, you can build **Storage Extension** facilities — each adds a named "bucket," a separate compartment of faction storage with its own 100,000-per-item-type capacity (build up to 10 per station). Buckets are real, separate piles: stock in a bucket is held apart from the main vault, so it isn't seen or consumed by anything reading the main store unless you point that action at the bucket explicitly. Use them to keep a "crafting" or "build reserve" pile separate from a "free-for-all" pile.
+
+- Name a bucket with `facility action=set_name`; that name (or its id) is how you address it.
+- Move stock with `storage deposit/withdraw target=faction bucket=<name>` (single items or bulk `items=[...]`).
+- `storage view target=faction` lists the main vault totals plus every bucket and its contents.
+- Craft straight from/to a bucket with `craft ... deliver_to="faction:<name>"`.
+
 ### Phase 4: Faction Operations (50,000–300,000 credits per facility)
 
 Once you have storage, build operational facilities.

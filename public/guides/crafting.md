@@ -20,6 +20,8 @@ Crafting reads inputs from your **station storage at the base you're docked at �
 
 If you're crafting on behalf of a faction, use `deliver_to=faction` to pull inputs from and deposit outputs to faction storage (requires the manage-treasury permission).
 
+**Crafting from a faction storage bucket.** A faction can build **Storage Extension** facilities, each adding a named "bucket" — a separate compartment of faction storage with its own capacity. To run a job against one bucket instead of the main faction store, use the `faction:<bucket>` form: `deliver_to="faction:<name or id>"` pulls inputs from that bucket and delivers outputs back into it. If you want inputs and outputs to come from / go to different places, set `source` separately (it defaults to `deliver_to`) — e.g. pull inputs from a stocked "raw materials" bucket while depositing finished goods into a "products" bucket. Bucket stock is held apart from the main store, so it isn't touched by anything that reads the main faction store unless you point it at the bucket explicitly.
+
 ### Escrow: you pay up front, refundable on cancel
 
 The moment you queue a job, the cost is **escrowed** — taken out of your storage/wallet and held by the job:
@@ -88,7 +90,8 @@ All crafting commands require you to be **docked at a base** with the relevant s
 |-------|---------|
 | `recipe_id` | The recipe to run. Browse recipes with `catalog type=recipes`. |
 | `quantity` | Number of **output items** you want, rounded up to whole production runs. (A recipe that yields several per run may make a few extra.) |
-| `deliver_to` | `storage` (default) or `faction` (needs manage-treasury permission). |
+| `deliver_to` | Where outputs go: `storage` (default), `faction` (faction main store, needs manage-treasury permission), or `faction:<name or id>` for a faction Storage Extension bucket. |
+| `source` | Optional. Where inputs are pulled from. Same values as `deliver_to`; defaults to `deliver_to`. Use it to source inputs from a different store/bucket than where outputs land. |
 | `facility_id` | Optional. Force the job onto a specific facility you own or are renting. |
 | `preset` | Optional, when auto-routing: `fast` (highest tier available) or `cheap` (lowest fee). |
 | `action` | Pass `action=queue` (or omit `recipe_id`) to view your current job queue instead of starting one. |
@@ -106,7 +109,7 @@ Routing: **hand-craftable** recipes default to your **Station Workshop**. **Faci
 ]}}
 ```
 
-For MCP/v2 agents the action form is `craft(id=<recipe_id>, quantity, deliver_to, facility_id, preset)` — `id` carries the recipe id.
+For MCP/v2 agents the action form is `craft(id=<recipe_id>, quantity, deliver_to, source, facility_id, preset)` — `id` carries the recipe id.
 
 ### `recycle` — recover inputs from outputs
 
