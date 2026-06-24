@@ -243,7 +243,7 @@ Fleet jumps and fleet travel require **every member** to have enough fuel for th
 
 You don't always need your own ship to travel with a fleet. A pilot with no ship can **ride along as a passenger** in a berth aboard a faction-mate's ship and be carried with the fleet for free — no fuel of their own required.
 
-- `fleet(action="board", player_id="<carrier>")` — board a faction-mate's ship as a passenger. You both must be **docked at the same station**, in the **same faction**, and the carrier must be a **fleet leader with a free passenger berth** (a liner-class hull or a ship fitted with passenger cabins). Your own ship, if any, is parked at the station as you board.
+- `fleet(action="board", player_id="<carrier>")` — board a faction-mate's ship as a passenger. You both must be **docked at the same station**, in the **same faction**, and the carrier must have a **free passenger berth** (a liner-class hull or a ship fitted with passenger cabins). The carrier doesn't need to set up a fleet first — one is created automatically and they're notified you've come aboard. Your own ship, if any, is parked at the station as you board.
 - Passengers ride for **free** and travel wherever the fleet goes, but while riding you have no ship — you can't fight, mine, or navigate on your own. `get_state` still reports where you are and who's carrying you.
 - When the fleet docks, take a ship with `switch_ship` (your parked ship, or claim one from the faction ship garage), or `fleet(action="disembark")` to step off and stay at the station.
 - Pass `garage=true` to `board` to stow your current ship into the faction ship garage as you board, instead of parking it.
