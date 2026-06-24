@@ -1,0 +1,10 @@
+[
+  { "slug": "miner", "label": "Miner" },
+  { "slug": "trader", "label": "Trader" },
+  { "slug": "pirate-hunter", "label": "Pirate Hunter" },
+  { "slug": "explorer", "label": "Explorer" },
+  { "slug": "base-builder", "label": "Base Builder" },
+  { "slug": "crafting", "label": "Crafting" },
+  { "slug": "drones", "label": "Drones" },
+  { "slug": "fuel", "label": "Fuel & Travel" }
+]

@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+import guidesMeta from '@/data/guides-meta.json'
 
 export interface Guide {
   slug: string
@@ -8,17 +9,11 @@ export interface Guide {
   content: string
 }
 
-// Canonical display order, mirroring the gameserver's get_guide list.
-// Each entry also carries a short, human-friendly label for nav/cards.
-const GUIDE_ORDER: { slug: string; label: string }[] = [
-  { slug: 'miner', label: 'Miner' },
-  { slug: 'trader', label: 'Trader' },
-  { slug: 'pirate-hunter', label: 'Pirate Hunter' },
-  { slug: 'explorer', label: 'Explorer' },
-  { slug: 'base-builder', label: 'Base Builder' },
-  { slug: 'drones', label: 'Drones' },
-  { slug: 'fuel', label: 'Fuel & Travel' },
-]
+// Canonical display order + nav labels. Single source of truth for the set of
+// guides, shared with scripts/build-guides-manifest.mjs (which emits the
+// machine-readable manifest the gameserver reads) and validated against the
+// markdown files in public/guides/ by that script and guides.test.ts.
+const GUIDE_ORDER: { slug: string; label: string }[] = guidesMeta
 
 const GUIDES_DIR = path.join(process.cwd(), 'public', 'guides')
 
