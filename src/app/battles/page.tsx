@@ -12,6 +12,7 @@ const POLL_INTERVAL = 10_000
 interface BattleSide {
   side_id: number
   faction_id?: string
+  faction_tag?: string
   participants: string[]
 }
 
@@ -191,8 +192,8 @@ export default function BattlesPage() {
                       style={{ backgroundColor: SIDE_COLORS[i % SIDE_COLORS.length] }}
                     />
                     <span className={styles.sideParticipants}>
-                      {side.faction_id && (
-                        <span className={styles.factionTag}>[{side.faction_id}]</span>
+                      {(side.faction_tag || side.faction_id) && (
+                        <span className={styles.factionTag}>[{side.faction_tag || side.faction_id}]</span>
                       )}
                       {side.participants.join(', ')}
                     </span>

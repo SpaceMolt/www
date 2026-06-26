@@ -13,7 +13,9 @@ const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemo
 interface FittedModule {
   name: string
   category: string
-  quality: number
+  loaded_ammo?: string
+  current_ammo?: number
+  magazine_size?: number
 }
 
 interface ParticipantSnapshot {
@@ -35,6 +37,14 @@ interface ParticipantSnapshot {
   damage_dealt: number
   damage_taken: number
   kill_count: number
+  // Active status effects (debuffs) at the start of this tick
+  disruption_ticks?: number
+  speed_penalty_pct?: number
+  damage_penalty_pct?: number
+  burn_ticks?: number
+  burn_damage_per_tick?: number
+  armor_melt_ticks?: number
+  armor_melt_pct?: number
   x: number
   y: number
   modules?: FittedModule[]
@@ -52,6 +62,7 @@ interface WeaponFireDetail {
   damage: number
   damage_type: string
   ammo_used?: string
+  ammo_mod?: number
 }
 
 interface AttackLogEntry {
@@ -79,6 +90,7 @@ interface AttackLogEntry {
   hull_damage: number
   damage_type: string
   disrupted?: boolean
+  splash?: boolean
 }
 
 interface KillLogEntry {
@@ -113,10 +125,18 @@ interface RegenLogEntry {
   player_id: string
   shield_regen: number
   armor_repair: number
+  remote_repair?: number
   shield_before: number
   shield_after: number
   hull_before: number
   hull_after: number
+}
+
+interface BurnLogEntry {
+  target_id: string
+  damage: number
+  ticks_remaining: number
+  destroyed?: boolean
 }
 
 interface JoinLogEntry {
@@ -143,6 +163,7 @@ interface BattleLogEntry {
   autopilot?: { player_id: string; chosen_target?: string; reason: string }[]
   zone_moves?: ZoneMoveLogEntry[]
   attacks?: AttackLogEntry[]
+  burns?: BurnLogEntry[]
   regen?: RegenLogEntry[]
   fuel?: { player_id: string; fuel_burned: number; fuel_before: number; fuel_after: number; forced_fire: boolean }[]
   flee?: FleeLogEntry[]
@@ -158,16 +179,6 @@ interface BattleLogResponse {
   has_more: boolean
 }
 
-interface SystemPOI {
-  id: string
-  name: string
-  type: string
-  position: { x: number; y: number }
-  has_base: boolean
-  base_id?: string
-  online: number
-}
-
 // --- Constants ---
 
 const SIDE_COLORS = ['#00d4ff', '#e63946', '#2dd4bf', '#ffd93d', '#9b59b6', '#ff6b35']
@@ -175,15 +186,15 @@ const SIDE_COLORS_DIM = ['rgba(0,212,255,0.3)', 'rgba(230,57,70,0.3)', 'rgba(45,
 const ZONE_NAMES = ['outer', 'mid', 'inner', 'engaged']
 const PLAYBACK_SPEEDS = [0.5, 1, 2, 5]
 
-const POI_ICONS: Record<string, { icon: string; color: string }> = {
-  asteroid_belt: { icon: '\u2b50', color: '#ffa500' },
-  gas_cloud: { icon: '\u2601', color: '#9b59b6' },
-  ice_field: { icon: '\u2744', color: '#4dabf7' },
-  station: { icon: '\u25a0', color: '#2dd4bf' },
-  jump_gate: { icon: '\u25c6', color: '#00d4ff' },
-  debris_field: { icon: '\u25cb', color: '#5a6a7a' },
-  anomaly: { icon: '?', color: '#e63946' },
-}
+// Each side advances through 4 rings (outer\u2192mid\u2192inner\u2192engaged); the server places
+// a ring at radius (3 - ringIndex) * 0.3 AU from the battle centre. Two opposing
+// ships' separation is the sum of their ring distances from the centre, running
+// 0 (both engaged, point blank) to 6 (both on opposite rims) \u2014 the axis weapon
+// reach and hit chance map onto.
+const RING_LABELS = ['engaged', 'inner', 'mid', 'outer']
+const ZONE_SCALE_AU = 0.3
+const RING_RADII_AU = [0, 1, 2, 3].map(r => r * ZONE_SCALE_AU) // engaged..outer
+const RING_BOUNDARIES_AU = [0.5, 1.5, 2.5].map(b => b * ZONE_SCALE_AU)
 
 // --- Event formatting ---
 
@@ -226,9 +237,26 @@ function formatEvents(entry: BattleLogEntry, usernameMap: Map<string, string>): 
         if (a.shield_damage > 0) dmgParts.push(`${a.shield_damage} shield`)
         if (a.hull_damage > 0) dmgParts.push(`${a.hull_damage} hull`)
         const dmgStr = dmgParts.length > 0 ? dmgParts.join(' + ') : `${a.final_damage}`
-        events.push({ tick: entry.tick, type: 'attack', color: '#ff6b35', text: `${name(a.attacker_id)} hit ${name(a.target_id)} for ${dmgStr} ${a.damage_type}` })
+        const ammo = a.weapons?.find(w => w.ammo_used)?.ammo_used
+        const ammoStr = ammo ? ` [${ammo}]` : ''
+        if (a.splash) {
+          events.push({ tick: entry.tick, type: 'splash', color: '#c77dff', text: `${name(a.target_id)} caught ${dmgStr} ${a.damage_type} splash from ${name(a.attacker_id)}${ammoStr}` })
+        } else {
+          events.push({ tick: entry.tick, type: 'attack', color: '#ff6b35', text: `${name(a.attacker_id)} hit ${name(a.target_id)} for ${dmgStr} ${a.damage_type} (range ${a.zone_distance})${ammoStr}` })
+        }
       } else {
-        events.push({ tick: entry.tick, type: 'miss', color: '#3d5a6c', text: `${name(a.attacker_id)} missed ${name(a.target_id)} (${Math.round(a.hit_chance * 100)}% chance)` })
+        events.push({ tick: entry.tick, type: 'miss', color: '#3d5a6c', text: `${name(a.attacker_id)} missed ${name(a.target_id)} (range ${a.zone_distance}, ${Math.round(a.hit_chance * 100)}% chance)` })
+      }
+    }
+  }
+
+  if (entry.burns) {
+    for (const b of entry.burns) {
+      const remaining = b.ticks_remaining > 0 ? ` (${b.ticks_remaining} ticks left)` : ''
+      if (b.destroyed) {
+        events.push({ tick: entry.tick, type: 'burn', color: '#e63946', text: `${name(b.target_id)} burned to destruction (${b.damage} damage)` })
+      } else {
+        events.push({ tick: entry.tick, type: 'burn', color: '#ff9551', text: `${name(b.target_id)} took ${b.damage} burn damage${remaining}` })
       }
     }
   }
@@ -237,6 +265,12 @@ function formatEvents(entry: BattleLogEntry, usernameMap: Map<string, string>): 
     for (const r of entry.regen) {
       if (r.shield_regen > 0) {
         events.push({ tick: entry.tick, type: 'regen', color: '#4dabf7', text: `${name(r.player_id)} regenerated ${r.shield_regen} shields` })
+      }
+      if (r.armor_repair > 0) {
+        events.push({ tick: entry.tick, type: 'regen', color: '#2dd4bf', text: `${name(r.player_id)} repaired ${r.armor_repair} armor` })
+      }
+      if (r.remote_repair && r.remote_repair > 0) {
+        events.push({ tick: entry.tick, type: 'repair', color: '#5ee6a8', text: `${name(r.player_id)} received ${r.remote_repair} remote hull repair` })
       }
     }
   }
@@ -287,9 +321,8 @@ function renderBattle(
   hoveredPlayer: string | null,
   animProgress: number,
   viewBounds: ViewBounds,
-  pois: SystemPOI[],
   battleCenter: { x: number; y: number },
-  originPoi?: string,
+  battleAxis: { x: number; y: number },
 ) {
   ctx.fillStyle = '#050810'
   ctx.fillRect(0, 0, width, height)
@@ -328,86 +361,46 @@ function renderBattle(
     ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(width, gy); ctx.stroke()
   }
 
-  // Draw POIs as background landmarks
-  for (const poi of pois) {
-    const [px, py] = toScreen(poi.position.x, poi.position.y)
-    const isOrigin = poi.id === originPoi
-    const typeInfo = POI_ICONS[poi.type] || { icon: '\u25cb', color: '#5a6a7a' }
-
-    // POI marker circle
-    const poiRadius = isOrigin ? 8 : 6
-    ctx.beginPath()
-    ctx.arc(px, py, poiRadius, 0, Math.PI * 2)
-    ctx.fillStyle = isOrigin ? typeInfo.color + '40' : typeInfo.color + '20'
-    ctx.fill()
-    ctx.strokeStyle = isOrigin ? typeInfo.color + 'aa' : typeInfo.color + '50'
-    ctx.lineWidth = isOrigin ? 2 : 1
-    ctx.setLineDash(isOrigin ? [] : [3, 3])
-    ctx.stroke()
-    ctx.setLineDash([])
-
-    // Station/base: filled square instead
-    if (poi.has_base) {
-      const sz = 5
-      ctx.fillStyle = typeInfo.color + '60'
-      ctx.fillRect(px - sz, py - sz, sz * 2, sz * 2)
-      ctx.strokeStyle = typeInfo.color + '90'
-      ctx.lineWidth = 1
-      ctx.strokeRect(px - sz, py - sz, sz * 2, sz * 2)
-    }
-
-    // POI name label
-    ctx.fillStyle = isOrigin ? 'rgba(168, 197, 214, 0.9)' : 'rgba(168, 197, 214, 0.5)'
-    ctx.font = `${isOrigin ? '11' : '9'}px "JetBrains Mono", monospace`
-    ctx.textAlign = 'center'
-    ctx.fillText(poi.name, px, py + poiRadius + 12)
-
-    // POI type sublabel
-    ctx.fillStyle = 'rgba(61, 90, 108, 0.6)'
-    ctx.font = '8px "JetBrains Mono", monospace'
-    ctx.fillText(poi.type.replace(/_/g, ' '), px, py + poiRadius + 22)
-
-    // Origin POI: "BATTLE" badge
-    if (isOrigin) {
-      ctx.fillStyle = 'rgba(230, 57, 70, 0.8)'
-      ctx.font = 'bold 8px "JetBrains Mono", monospace'
-      ctx.fillText('BATTLE', px, py - poiRadius - 6)
-    }
-  }
-
-  // Zone bands — vertical dividers showing distance zones along the battle axis
-  // Centered on the battle origin (not the view center), since POIs may shift the view
+  // Zone rings along the battle axis. The server lays each side out along an
+  // arbitrary axis (battleAxis), so bands and labels are drawn perpendicular to
+  // that axis rather than assuming a horizontal layout. The axis runs through 7
+  // ring positions — outer/mid/inner/engaged/inner/mid/outer — and the
+  // separation between two opposing ships (0–6) is what weapon reach maps onto.
   const bcx = battleCenter.x, bcy = battleCenter.y
-  const zoneBoundaries = [0.5, 1.5, 2.5] // between engaged/inner, inner/mid, mid/outer
-  const zoneLabels = ['engaged', 'inner', 'mid', 'outer']
-  const zoneScale_render = 0.3
+  const ax = battleAxis.x, ay = battleAxis.y       // unit vector along the axis
+  const perpX = -ay, perpY = ax                    // unit vector perpendicular to it
 
-  // Draw zone background tints (subtle alternating bands)
+  // Half-length (world units) of the perpendicular extent, big enough to span the canvas.
+  const spanWorld = Math.max(viewBounds.maxX - viewBounds.minX, viewBounds.maxY - viewBounds.minY) * 1.5
+  // A world point at signed along-axis distance d and perpendicular offset t.
+  const onAxis = (d: number, t: number): [number, number] => [bcx + ax * d + perpX * t, bcy + ay * d + perpY * t]
+
+  // Alternating band tints, one ring at a time, mirrored on both sides of centre.
   for (let z = 0; z < 4; z++) {
-    const leftBound = z === 0 ? 0 : zoneBoundaries[z - 1] * zoneScale_render
-    const rightBound = z < 3 ? zoneBoundaries[z] * zoneScale_render : (viewBounds.maxX - viewBounds.minX) / 2
-
-    // Both sides of battle center (mirrored)
+    if (z % 2 !== 0) continue
+    const inner = z === 0 ? 0 : RING_BOUNDARIES_AU[z - 1]
+    const outer = z < 3 ? RING_BOUNDARIES_AU[z] : spanWorld
     for (const dir of [-1, 1]) {
-      const [lx] = toScreen(bcx + leftBound * dir, bcy)
-      const [rx] = toScreen(bcx + rightBound * dir, bcy)
-      const x1 = Math.min(lx, rx)
-      const x2 = Math.max(lx, rx)
-      if (z % 2 === 0) {
-        ctx.fillStyle = 'rgba(61, 90, 108, 0.04)'
-        ctx.fillRect(x1, 0, x2 - x1, height)
-      }
+      const corners = [onAxis(dir * inner, -spanWorld), onAxis(dir * outer, -spanWorld), onAxis(dir * outer, spanWorld), onAxis(dir * inner, spanWorld)]
+      ctx.beginPath()
+      corners.forEach(([wx, wy], i) => {
+        const [sx, sy] = toScreen(wx, wy)
+        if (i === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy)
+      })
+      ctx.closePath()
+      ctx.fillStyle = 'rgba(61, 90, 108, 0.04)'
+      ctx.fill()
     }
   }
 
-  // Draw zone boundary lines
-  for (const boundary of zoneBoundaries) {
-    const dist = boundary * zoneScale_render
+  // Ring boundary lines, perpendicular to the axis, mirrored on both sides.
+  for (const boundary of RING_BOUNDARIES_AU) {
     for (const dir of [-1, 1]) {
-      const [bx] = toScreen(bcx + dist * dir, bcy)
+      const [e1x, e1y] = toScreen(...onAxis(dir * boundary, -spanWorld))
+      const [e2x, e2y] = toScreen(...onAxis(dir * boundary, spanWorld))
       ctx.beginPath()
-      ctx.moveTo(bx, 0)
-      ctx.lineTo(bx, height)
+      ctx.moveTo(e1x, e1y)
+      ctx.lineTo(e2x, e2y)
       ctx.strokeStyle = 'rgba(61, 90, 108, 0.2)'
       ctx.lineWidth = 1
       ctx.setLineDash([4, 8])
@@ -416,24 +409,34 @@ function renderBattle(
     }
   }
 
-  // Zone labels at top — both sides, readable color
+  // Ring labels, placed where each ring's perpendicular line crosses the top edge
+  // of the canvas (so they stay on-screen and aligned with the bands at any axis
+  // orientation). Each ring is labelled at its actual radius from the centre.
+  ctx.fillStyle = 'rgba(168, 197, 214, 0.7)'
+  ctx.font = '10px "JetBrains Mono", monospace'
+  ctx.textAlign = 'center'
+  const [oScreenX, oScreenY] = toScreen(bcx, bcy)
+  const [pScreenX, pScreenY] = toScreen(bcx + perpX, bcy + perpY)
+  let dpx = pScreenX - oScreenX, dpy = pScreenY - oScreenY
+  const dpl = Math.hypot(dpx, dpy) || 1
+  dpx /= dpl; dpy /= dpl
+  const targetY = 14
   for (let z = 0; z < 4; z++) {
-    const leftBound = z === 0 ? 0 : zoneBoundaries[z - 1] * zoneScale_render
-    const rightBound = z < 3 ? zoneBoundaries[z] * zoneScale_render : (viewBounds.maxX - viewBounds.minX) / 2
-    const mid_zone = (leftBound + rightBound) / 2
-
-    ctx.fillStyle = 'rgba(168, 197, 214, 0.7)'
-    ctx.font = '10px "JetBrains Mono", monospace'
-    ctx.textAlign = 'center'
-
-    // Positive side (right)
-    const [rx] = toScreen(bcx + mid_zone, bcy)
-    ctx.fillText(zoneLabels[z], rx, 16)
-
-    // Negative side (left) — skip engaged (z=0) since it's centered
-    if (z > 0) {
-      const [lx] = toScreen(bcx - mid_zone, bcy)
-      ctx.fillText(zoneLabels[z], lx, 16)
+    const dirs = z === 0 ? [1] : [-1, 1] // engaged is centred — label once
+    for (const dir of dirs) {
+      const [s0x, s0y] = toScreen(...onAxis(dir * RING_RADII_AU[z], 0))
+      let lx: number, ly: number
+      if (Math.abs(dpy) > 0.01) {
+        const tEdge = (targetY - s0y) / dpy
+        lx = s0x + dpx * tEdge
+        ly = targetY
+      } else {
+        // Axis is near-vertical (ring lines run horizontally) — offset upward a little.
+        lx = s0x
+        ly = Math.max(targetY, s0y - 20)
+      }
+      lx = Math.max(24, Math.min(width - 24, lx))
+      ctx.fillText(RING_LABELS[z], lx, ly)
     }
   }
 
@@ -451,8 +454,15 @@ function renderBattle(
       ctx.moveTo(ax, ay)
       ctx.lineTo(tx, ty)
       if (atk.hit_success) {
-        ctx.strokeStyle = `rgba(255, 107, 53, ${0.6 * (1 - animProgress * 0.5)})`
-        ctx.lineWidth = 2
+        if (atk.splash) {
+          ctx.strokeStyle = `rgba(199, 125, 255, ${0.5 * (1 - animProgress * 0.5)})`
+          ctx.lineWidth = 1.5
+          ctx.setLineDash([2, 4])
+        } else {
+          ctx.strokeStyle = `rgba(255, 107, 53, ${0.6 * (1 - animProgress * 0.5)})`
+          ctx.lineWidth = 2
+          ctx.setLineDash([])
+        }
       } else {
         ctx.strokeStyle = `rgba(61, 90, 108, ${0.3 * (1 - animProgress * 0.5)})`
         ctx.lineWidth = 1
@@ -464,7 +474,7 @@ function renderBattle(
       // Damage number floats up from target
       if (atk.hit_success && atk.final_damage > 0) {
         const floatY = ty - 20 - animProgress * 15
-        ctx.fillStyle = 'rgba(255, 220, 100, 0.95)'
+        ctx.fillStyle = atk.splash ? 'rgba(199, 125, 255, 0.95)' : 'rgba(255, 220, 100, 0.95)'
         ctx.font = 'bold 13px "JetBrains Mono", monospace'
         ctx.textAlign = 'center'
         ctx.fillText(`-${atk.final_damage}`, tx, floatY)
@@ -518,9 +528,12 @@ function renderBattle(
     ctx.save()
     ctx.translate(sx, sy)
 
-    // Rotate ship to face the opposing side along horizontal axis
-    // Side 1 (right of center) faces left (-π/2), side 2 (left of center) faces right (π/2)
-    const facing = snap.side_id === 1 ? -Math.PI / 2 : Math.PI / 2
+    // Rotate ship to face along the battle axis toward the centre, where the
+    // opposing side closes in. The chevron's local "up" (0,-1) is aimed at the
+    // facing vector via atan2(fx, -fy).
+    const relAlong = (drawX - bcx) * ax + (drawY - bcy) * ay
+    const faceSign = relAlong >= 0 ? -1 : 1
+    const facing = Math.atan2(faceSign * ax, -(faceSign * ay))
     ctx.rotate(facing)
 
     // Glow behind hovered ship
@@ -549,6 +562,26 @@ function renderBattle(
 
     // Reset rotation for bars and labels (they should stay horizontal)
     ctx.rotate(-facing)
+
+    // Status-effect indicators: small colored dots above the ship
+    const statusColors: string[] = []
+    if (snap.disruption_ticks) statusColors.push('#c77dff')
+    if (snap.burn_ticks) statusColors.push('#ff9551')
+    if (snap.armor_melt_ticks) statusColors.push('#e63946')
+    if (statusColors.length > 0) {
+      const dotR = 3
+      const gap = 3
+      const totalW = statusColors.length * (dotR * 2) + (statusColors.length - 1) * gap
+      let dx = -totalW / 2 + dotR
+      const dy = -shipSize - 8
+      for (const c of statusColors) {
+        ctx.beginPath()
+        ctx.arc(dx, dy, dotR, 0, Math.PI * 2)
+        ctx.fillStyle = c
+        ctx.fill()
+        dx += dotR * 2 + gap
+      }
+    }
 
     // Hull/shield bars below ship
     const barWidth = 40
@@ -610,10 +643,6 @@ export default function BattleDetailPage() {
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null)
   const animProgressRef = useRef(0)
   const animFrameRef = useRef<number>(0)
-
-  // System POIs
-  const [pois, setPois] = useState<SystemPOI[]>([])
-  const [originPoi, setOriginPoi] = useState<string | undefined>()
 
   // Event feed
   const feedRef = useRef<HTMLDivElement>(null)
@@ -686,23 +715,46 @@ export default function BattleDetailPage() {
     }
   }, [entries])
 
-  // Battle center: origin POI position, or centroid of first-tick participants
-  const battleCenter = useMemo<{ x: number; y: number }>(() => {
-    // Prefer the origin POI position
-    if (originPoi && pois.length > 0) {
-      const origin = pois.find(p => p.id === originPoi)
-      if (origin) return { x: origin.position.x, y: origin.position.y }
-    }
-    // Fallback: centroid of all participant positions
-    if (entries.length > 0) {
-      let sx = 0, sy = 0, n = 0
-      for (const snap of entries[0].snapshots) {
-        sx += snap.x; sy += snap.y; n++
+  // Battle geometry: the centre of the arena and the unit axis the two sides are
+  // laid out along. The server places each side along an arbitrary axis (derived
+  // from the origin POI direction or a battle-ID seed), so we recover it from the
+  // data: for a 2-side fight it is the line between the side centroids (robust to
+  // the perpendicular spread); otherwise we fall back to the principal axis of all
+  // ship positions via a 2D PCA. Computed once over every tick so it stays stable.
+  const battleGeometry = useMemo<{ center: { x: number; y: number }; axis: { x: number; y: number } }>(() => {
+    const sideSums = new Map<number, { x: number; y: number; n: number }>()
+    let gx = 0, gy = 0, gn = 0
+    for (const entry of entries) {
+      for (const s of entry.snapshots) {
+        const acc = sideSums.get(s.side_id) || { x: 0, y: 0, n: 0 }
+        acc.x += s.x; acc.y += s.y; acc.n++
+        sideSums.set(s.side_id, acc)
+        gx += s.x; gy += s.y; gn++
       }
-      if (n > 0) return { x: sx / n, y: sy / n }
     }
-    return { x: 0, y: 0 }
-  }, [entries, pois, originPoi])
+    if (gn === 0) return { center: { x: 0, y: 0 }, axis: { x: 1, y: 0 } }
+    const center = { x: gx / gn, y: gy / gn }
+
+    let axis = { x: 1, y: 0 }
+    const centroids = [...sideSums.values()].map(s => ({ x: s.x / s.n, y: s.y / s.n }))
+    if (centroids.length === 2) {
+      axis = { x: centroids[1].x - centroids[0].x, y: centroids[1].y - centroids[0].y }
+    } else {
+      // 2D PCA: principal eigenvector of the position covariance matrix.
+      let sxx = 0, sxy = 0, syy = 0
+      for (const entry of entries) {
+        for (const s of entry.snapshots) {
+          const dx = s.x - center.x, dy = s.y - center.y
+          sxx += dx * dx; sxy += dx * dy; syy += dy * dy
+        }
+      }
+      const theta = 0.5 * Math.atan2(2 * sxy, sxx - syy)
+      axis = { x: Math.cos(theta), y: Math.sin(theta) }
+    }
+    const len = Math.hypot(axis.x, axis.y)
+    if (len < 1e-9) return { center, axis: { x: 1, y: 0 } }
+    return { center, axis: { x: axis.x / len, y: axis.y / len } }
+  }, [entries])
 
   // --- Page title ---
   useEffect(() => {
@@ -777,7 +829,7 @@ export default function BattleDetailPage() {
         const h = canvas.height / window.devicePixelRatio
         const entry = entries[currentTickIndex] || null
         const prevEntry = currentTickIndex > 0 ? entries[currentTickIndex - 1] : null
-        renderBattle(ctx, w, h, entry, prevEntry, hoveredPlayer || selectedPlayer, animProgressRef.current, viewBounds, pois, battleCenter, originPoi)
+        renderBattle(ctx, w, h, entry, prevEntry, hoveredPlayer || selectedPlayer, animProgressRef.current, viewBounds, battleGeometry.center, battleGeometry.axis)
       }
 
       animFrameRef.current = requestAnimationFrame(animate)
@@ -789,7 +841,7 @@ export default function BattleDetailPage() {
       cancelAnimationFrame(animFrameRef.current)
       resizeObserver.disconnect()
     }
-  }, [entries, currentTickIndex, isPlaying, playbackSpeed, hoveredPlayer, selectedPlayer, viewBounds, pois, battleCenter, originPoi])
+  }, [entries, currentTickIndex, isPlaying, playbackSpeed, hoveredPlayer, selectedPlayer, viewBounds, battleGeometry])
 
   // --- Mouse interaction on canvas ---
   const handleCanvasMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -845,7 +897,11 @@ export default function BattleDetailPage() {
 
   // --- Derived data ---
   const currentEntry = entries[currentTickIndex] || null
-  const allEvents = entries.slice(0, currentTickIndex + 1).flatMap(e => formatEvents(e, usernameMap.current))
+  // Memoised so the per-tick event list isn't rebuilt on hover/mouse-move renders.
+  const allEvents = useMemo(
+    () => entries.slice(0, currentTickIndex + 1).flatMap(e => formatEvents(e, usernameMap.current)),
+    [entries, currentTickIndex],
+  )
   const inspectedPlayer = selectedPlayer || hoveredPlayer
   const inspectedSnap = currentEntry?.snapshots.find(s => s.player_id === inspectedPlayer) || null
 
@@ -947,6 +1003,8 @@ export default function BattleDetailPage() {
             <canvas
               ref={canvasRef}
               className={styles.canvas}
+              role="img"
+              aria-label="Battle replay visualization showing ship positions, zones, and attacks"
               onMouseMove={handleCanvasMouseMove}
               onClick={handleCanvasClick}
               onMouseLeave={() => setHoveredPlayer(null)}
@@ -1000,17 +1058,37 @@ export default function BattleDetailPage() {
                   <span>{t('battleDetail.dmgTaken')}: {inspectedSnap.damage_taken}</span>
                   {inspectedSnap.kill_count > 0 && <span>{t('battleDetail.kills')}: {inspectedSnap.kill_count}</span>}
                 </div>
+                {(() => {
+                  const badges: { label: string; color: string }[] = []
+                  if (inspectedSnap.disruption_ticks) {
+                    badges.push({ label: t('battleDetail.statusDisrupted', { ticks: String(inspectedSnap.disruption_ticks), spd: String(inspectedSnap.speed_penalty_pct ?? 0), dmg: String(inspectedSnap.damage_penalty_pct ?? 0) }), color: '#c77dff' })
+                  }
+                  if (inspectedSnap.burn_ticks) {
+                    badges.push({ label: t('battleDetail.statusBurning', { dps: String(inspectedSnap.burn_damage_per_tick ?? 0), ticks: String(inspectedSnap.burn_ticks) }), color: '#ff9551' })
+                  }
+                  if (inspectedSnap.armor_melt_ticks) {
+                    badges.push({ label: t('battleDetail.statusArmorMelt', { pct: String(inspectedSnap.armor_melt_pct ?? 0), ticks: String(inspectedSnap.armor_melt_ticks) }), color: '#e63946' })
+                  }
+                  if (badges.length === 0) return null
+                  return (
+                    <div className={styles.shipInfoStatus}>
+                      {badges.map((b, i) => (
+                        <span key={i} className={styles.statusBadge} style={{ color: b.color, borderColor: b.color }}>{b.label}</span>
+                      ))}
+                    </div>
+                  )
+                })()}
                 {inspectedSnap.modules && inspectedSnap.modules.length > 0 && (
                   <div className={styles.shipInfoModules}>
                     <div className={styles.shipInfoModulesLabel}>{t('battleDetail.loadout')}</div>
                     {inspectedSnap.modules.map((mod, i) => (
                       <div key={i} className={styles.moduleRow}>
                         <span className={styles.moduleName}>{mod.name}</span>
-                        {mod.quality !== 1.0 && (
-                          <span className={styles.moduleQuality} style={{ color: mod.quality > 1.0 ? '#2dd4bf' : '#ffd93d' }}>
-                            {mod.quality > 1.0 ? '+' : ''}{Math.round((mod.quality - 1) * 100)}%
+                        {mod.magazine_size ? (
+                          <span className={styles.moduleQuality} style={{ color: (mod.current_ammo ?? 0) > 0 ? '#a8c5d6' : '#e63946' }}>
+                            {mod.loaded_ammo ? `${mod.loaded_ammo} ` : ''}{mod.current_ammo ?? 0}/{mod.magazine_size}
                           </span>
-                        )}
+                        ) : null}
                       </div>
                     ))}
                   </div>
