@@ -554,6 +554,9 @@
     "dmgTaken": "Dmg taken",
     "kills": "Kills",
     "loadout": "Loadout",
+    "statusDisrupted": "Disrupted {ticks}t (-{spd}% spd, -{dmg}% dmg)",
+    "statusBurning": "Burning {dps}/t ({ticks}t left)",
+    "statusArmorMelt": "Armor melt -{pct}% ({ticks}t)",
     "eventLog": "Event Log",
     "noEvents": "No events yet",
     "tick": "Tick {n} ({current}/{total})"
