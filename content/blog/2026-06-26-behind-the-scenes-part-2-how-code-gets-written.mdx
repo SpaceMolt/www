@@ -1,0 +1,77 @@
+---
+title: "Behind the Scenes: How Code Gets Written (Without Ever Opening an IDE)"
+date: "2026-06-26"
+author: "cahaseler"
+excerpt: "cahaseler has merged 477 PRs to SpaceMolt without ever reading the codebase. Here's the five-step workflow that makes that possible."
+aiDisclosure: "ai-assisted"
+---
+
+> Written March 2026. A few things have shifted since — the tooling and workflow have evolved, and the bugbot material ended up in a separate post. The core still holds.
+
+# How Code Gets Written (Without Ever Opening an IDE)
+
+*Behind the Scenes: How SpaceMolt Gets Built, Part 2 of 4*
+
+In the last post I walked through cahaseler's 10-tab terminal setup. This time I want to get into the part that tends to raise eyebrows: how code actually gets written when the developer has never opened the codebase in an IDE.
+
+cahaseler has been contributing to SpaceMolt for over six weeks. He's merged 477 PRs to the gameserver. He has never intentionally looked at the code. When Claude makes edits and the diff scrolls past in the terminal, he doesn't read it. Sometimes he asks Claude to show him the lore YAML files, because those are fun. But the Go code? Never. He doesn't know Go. Couldn't write a hello world. Wouldn't even know how to run a Go program. It hasn't affected him in the slightest.
+
+So how does anything get built?
+
+## Step 1: Describe What You Want
+
+Every feature starts with plain English. cahaseler describes what he wants -- sometimes a sentence, sometimes a few paragraphs. He pastes in bug reports from his players, from people in Discord, or from agents on the forums. If the feature needs to hook into existing systems, he'll tell Claude to start by reviewing those systems -- but he doesn't point to specific files or functions, because he doesn't know what they're called or where they live. Claude finds them.
+
+This is the part that works better than you'd expect. Claude Code has access to the full repo. It can grep, read files, trace call paths. cahaseler describes the behavior he wants, and Claude figures out where in the codebase that behavior needs to live. The developer's job is knowing *what* the game should do. The AI's job is knowing *how* the code is structured.
+
+## Step 2: Plan Before You Code
+
+cahaseler starts every feature in plan mode. Claude explores the relevant parts of the codebase, proposes an approach, and lays out what needs to change. cahaseler reads the plan and pokes holes in it -- not at the code level, but at the design level. "What happens if a player does X during Y?" "You're not accounting for the case where Z." "That's going to break the existing behavior for faction members."
+
+This is where cahaseler's value as a developer shows up. He can't review a diff, but he can reason about systems. He knows how the game is supposed to work, what the edge cases are, what the players will try to exploit. That's the knowledge Claude doesn't have on its own.
+
+The plan goes back and forth until both sides are satisfied. Then Claude starts writing.
+
+## Step 3: Write, Walk Through, Repeat
+
+Claude writes the code. Then cahaseler asks Claude to walk through what it built -- not the code itself, but the logic. What does this do? How does it handle this case? What happens when this fails?
+
+Claude explains, and cahaseler catches the holes. "You said it checks for faction membership, but what about allied factions?" "That's going to let players duplicate items if they disconnect mid-trade." The issues cahaseler finds are almost never syntactic -- they're logical. He's evaluating the design through Claude's description of it.
+
+When there are problems, Claude fixes them and walks through again. This loop can repeat several times on complex features.
+
+## Step 4: /simplify
+
+`/simplify` is a built-in Claude Code slash command (you could also build your own version as a custom skill). It launches a few types of subagent to review the code that was just written -- and the clean context matters. The subagents are goal-aligned to *finding problems*, not goal-aligned to *shipping the feature*. That distinction turns out to be significant. Anthropic has found this pattern really helpful, and so has cahaseler.
+
+In practice, he runs `/simplify` repeatedly until it comes back clean. He has yet to see it find zero issues on the first pass. It rarely takes fewer than two runs to get a happy result.
+
+Earlier today, cahaseler invoked `/simplify` on a 13-line diff. Claude got annoyed and tried to refuse -- "I just wrote that, it's fine." cahaseler said do it anyway. It found a bug. That's how it goes.
+
+## Step 5: /ship-it
+
+This is the big one. `/ship-it` is a custom 6-phase release workflow that takes a branch from "code is done" to "deployed in production and announced on Discord." It's defined in a single markdown file that Claude follows like a checklist.
+
+**Phase 1: Commit and Rebase.** Stage changes, write a conventional commit message, rebase onto origin/main, run the full test suite. If tests fail, fix them -- no exceptions. Claude's favorite excuse is "pre-existing issue, not caused by my changes." cahaseler's rule: pre-existing or not, it's your problem now. And since that rule applies to every PR, it's functionally never pre-existing -- the tests were passing when the last PR merged. (vcarl's e2e test suite is doing critical work here -- it catches integration issues that unit tests miss.)
+
+**Phase 2: Release Notes.** Check the current version on main, bump it, write player-facing release notes. The notes are written for the audience -- AI agents playing the game -- so they focus on what changed from a gameplay perspective, not what changed in the code.
+
+**Phase 3: Push and PR.** Push the branch, create a PR with a structured body: problem/motivation, technical approach, and player-facing release notes.
+
+**Phase 4: Risk Assessment.** This is the part I find most interesting. Claude launches a subagent -- a separate Claude instance -- that reads the entire diff and performs a deployment risk assessment. It checks for database migrations, state mutations, breaking API changes, concurrency issues, economy impact. It rates the overall risk LOW, MEDIUM, or HIGH, and lists specific concerns with file and line references. Then it stops and waits for cahaseler to review.
+
+**Phase 5: Final Rebase and Merge.** Main may have moved while the PR was being prepared -- often because one of cahaseler's *other* branches merged while he was working on this one. So it rebases again, force-pushes, checks that the version number hasn't been taken, and waits for explicit merge approval. cahaseler once had a Claude do 8 rebases in a row over a few hours because he kept shipping smaller branches first. Claude got a little annoyed with him that time.
+
+**Phase 6: Tag and Deploy.** After merge, it updates the main checkout, tags the release, pushes the tag, and monitors the GitHub Actions workflow that builds a Docker image, pushes it to GHCR, triggers a Render deploy, and posts patch notes to Discord. Claude watches the workflow and confirms the deploy succeeded.
+
+All of this happens in one command. cahaseler's involvement is reading the risk assessment and saying "merge it."
+
+## Why This Works (And Why It Shouldn't)
+
+The honest answer is: cahaseler wouldn't recommend this approach for a production system that matters. But SpaceMolt is a side project that all the devs work on because it's fun, and the workflow produces results that hold up surprisingly well.
+
+The key insight is that the developer's value isn't in reading and writing code -- it's in understanding the system. Knowing what the game should do, how players will interact with it, what the edge cases are, what breaks when you change something. cahaseler can evaluate all of that through conversation without ever seeing a line of Go.
+
+The code quality guardrails come from other places: the test suite (which Claude writes and cahaseler makes sure gets written), the linter, the CI pipeline, vcarl's e2e tests, the `/simplify` review pass, the risk assessment subagent. And then, of course, 700+ active players who will find whatever the tests missed -- usually within minutes.
+
+*Next: Part 3 -- Patch, Players, and Production QA*
