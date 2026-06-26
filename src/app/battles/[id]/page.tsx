@@ -335,9 +335,19 @@ function renderBattle(
     return
   }
 
-  // Use pre-computed stable bounds (passed in via viewBounds)
-  const { minX, maxX, minY, maxY } = viewBounds
+  // The server lays each side out along an arbitrary axis (battleAxis). Project
+  // every position onto that axis so the battle always renders horizontally:
+  // along-axis -> screen X (the two sides left vs right), perpendicular -> screen Y.
+  const bcx = battleCenter.x, bcy = battleCenter.y
+  const ax = battleAxis.x, ay = battleAxis.y
+  const perpX = -ay, perpY = ax
+  const project = (x: number, y: number): [number, number] => {
+    const dx = x - bcx, dy = y - bcy
+    return [dx * ax + dy * ay, dx * perpX + dy * perpY]
+  }
 
+  // Stable bounds, already in the projected (battle) frame.
+  const { minX, maxX, minY, maxY } = viewBounds
   const rangeX = maxX - minX || 1
   const rangeY = maxY - minY || 1
   const scale = Math.min(width / rangeX, height / rangeY) * 0.85
@@ -345,10 +355,8 @@ function renderBattle(
   const cy = height / 2
   const midX = (minX + maxX) / 2
   const midY = (minY + maxY) / 2
-
-  const toScreen = (x: number, y: number): [number, number] => {
-    return [cx + (x - midX) * scale, cy + (y - midY) * scale]
-  }
+  const frameToScreen = (fx: number, fy: number): [number, number] => [cx + (fx - midX) * scale, cy + (fy - midY) * scale]
+  const toScreen = (x: number, y: number): [number, number] => frameToScreen(...project(x, y))
 
   // Subtle grid for spatial context
   ctx.strokeStyle = 'rgba(61, 90, 108, 0.08)'
@@ -361,46 +369,31 @@ function renderBattle(
     ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(width, gy); ctx.stroke()
   }
 
-  // Zone rings along the battle axis. The server lays each side out along an
-  // arbitrary axis (battleAxis), so bands and labels are drawn perpendicular to
-  // that axis rather than assuming a horizontal layout. The axis runs through 7
-  // ring positions — outer/mid/inner/engaged/inner/mid/outer — and the
-  // separation between two opposing ships (0–6) is what weapon reach maps onto.
-  const bcx = battleCenter.x, bcy = battleCenter.y
-  const ax = battleAxis.x, ay = battleAxis.y       // unit vector along the axis
-  const perpX = -ay, perpY = ax                    // unit vector perpendicular to it
+  // Zone rings. In the projected frame the axis is horizontal, running through 7
+  // ring positions (outer/mid/inner/engaged/inner/mid/outer). The separation
+  // between two opposing ships (0–6) is what weapon reach maps onto.
+  const alongToX = (d: number): number => frameToScreen(d, 0)[0]
 
-  // Half-length (world units) of the perpendicular extent, big enough to span the canvas.
-  const spanWorld = Math.max(viewBounds.maxX - viewBounds.minX, viewBounds.maxY - viewBounds.minY) * 1.5
-  // A world point at signed along-axis distance d and perpendicular offset t.
-  const onAxis = (d: number, t: number): [number, number] => [bcx + ax * d + perpX * t, bcy + ay * d + perpY * t]
-
-  // Alternating band tints, one ring at a time, mirrored on both sides of centre.
+  // Alternating band tints (engaged + mid), mirrored on both sides of centre.
   for (let z = 0; z < 4; z++) {
     if (z % 2 !== 0) continue
     const inner = z === 0 ? 0 : RING_BOUNDARIES_AU[z - 1]
-    const outer = z < 3 ? RING_BOUNDARIES_AU[z] : spanWorld
+    const outer = RING_BOUNDARIES_AU[z]
     for (const dir of [-1, 1]) {
-      const corners = [onAxis(dir * inner, -spanWorld), onAxis(dir * outer, -spanWorld), onAxis(dir * outer, spanWorld), onAxis(dir * inner, spanWorld)]
-      ctx.beginPath()
-      corners.forEach(([wx, wy], i) => {
-        const [sx, sy] = toScreen(wx, wy)
-        if (i === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy)
-      })
-      ctx.closePath()
+      const x1 = alongToX(dir * inner)
+      const x2 = alongToX(dir * outer)
       ctx.fillStyle = 'rgba(61, 90, 108, 0.04)'
-      ctx.fill()
+      ctx.fillRect(Math.min(x1, x2), 0, Math.abs(x2 - x1), height)
     }
   }
 
-  // Ring boundary lines, perpendicular to the axis, mirrored on both sides.
+  // Ring boundary lines (vertical).
   for (const boundary of RING_BOUNDARIES_AU) {
     for (const dir of [-1, 1]) {
-      const [e1x, e1y] = toScreen(...onAxis(dir * boundary, -spanWorld))
-      const [e2x, e2y] = toScreen(...onAxis(dir * boundary, spanWorld))
+      const bx = alongToX(dir * boundary)
       ctx.beginPath()
-      ctx.moveTo(e1x, e1y)
-      ctx.lineTo(e2x, e2y)
+      ctx.moveTo(bx, 0)
+      ctx.lineTo(bx, height)
       ctx.strokeStyle = 'rgba(61, 90, 108, 0.2)'
       ctx.lineWidth = 1
       ctx.setLineDash([4, 8])
@@ -409,34 +402,14 @@ function renderBattle(
     }
   }
 
-  // Ring labels, placed where each ring's perpendicular line crosses the top edge
-  // of the canvas (so they stay on-screen and aligned with the bands at any axis
-  // orientation). Each ring is labelled at its actual radius from the centre.
+  // Ring labels along the top edge, at each ring's actual radius from centre.
   ctx.fillStyle = 'rgba(168, 197, 214, 0.7)'
   ctx.font = '10px "JetBrains Mono", monospace'
   ctx.textAlign = 'center'
-  const [oScreenX, oScreenY] = toScreen(bcx, bcy)
-  const [pScreenX, pScreenY] = toScreen(bcx + perpX, bcy + perpY)
-  let dpx = pScreenX - oScreenX, dpy = pScreenY - oScreenY
-  const dpl = Math.hypot(dpx, dpy) || 1
-  dpx /= dpl; dpy /= dpl
-  const targetY = 14
   for (let z = 0; z < 4; z++) {
     const dirs = z === 0 ? [1] : [-1, 1] // engaged is centred — label once
     for (const dir of dirs) {
-      const [s0x, s0y] = toScreen(...onAxis(dir * RING_RADII_AU[z], 0))
-      let lx: number, ly: number
-      if (Math.abs(dpy) > 0.01) {
-        const tEdge = (targetY - s0y) / dpy
-        lx = s0x + dpx * tEdge
-        ly = targetY
-      } else {
-        // Axis is near-vertical (ring lines run horizontally) — offset upward a little.
-        lx = s0x
-        ly = Math.max(targetY, s0y - 20)
-      }
-      lx = Math.max(24, Math.min(width - 24, lx))
-      ctx.fillText(RING_LABELS[z], lx, ly)
+      ctx.fillText(RING_LABELS[z], alongToX(dir * RING_RADII_AU[z]), 14)
     }
   }
 
@@ -447,12 +420,12 @@ function renderBattle(
       const target = entry.snapshots.find(s => s.player_id === atk.target_id)
       if (!attacker || !target) continue
 
-      const [ax, ay] = toScreen(attacker.x, attacker.y)
-      const [tx, ty] = toScreen(target.x, target.y)
+      const [asx, asy] = toScreen(attacker.x, attacker.y)
+      const [tsx, tsy] = toScreen(target.x, target.y)
 
       ctx.beginPath()
-      ctx.moveTo(ax, ay)
-      ctx.lineTo(tx, ty)
+      ctx.moveTo(asx, asy)
+      ctx.lineTo(tsx, tsy)
       if (atk.hit_success) {
         if (atk.splash) {
           ctx.strokeStyle = `rgba(199, 125, 255, ${0.5 * (1 - animProgress * 0.5)})`
@@ -473,11 +446,11 @@ function renderBattle(
 
       // Damage number floats up from target
       if (atk.hit_success && atk.final_damage > 0) {
-        const floatY = ty - 20 - animProgress * 15
+        const floatY = tsy - 20 - animProgress * 15
         ctx.fillStyle = atk.splash ? 'rgba(199, 125, 255, 0.95)' : 'rgba(255, 220, 100, 0.95)'
         ctx.font = 'bold 13px "JetBrains Mono", monospace'
         ctx.textAlign = 'center'
-        ctx.fillText(`-${atk.final_damage}`, tx, floatY)
+        ctx.fillText(`-${atk.final_damage}`, tsx, floatY)
       }
     }
   }
@@ -528,12 +501,10 @@ function renderBattle(
     ctx.save()
     ctx.translate(sx, sy)
 
-    // Rotate ship to face along the battle axis toward the centre, where the
-    // opposing side closes in. The chevron's local "up" (0,-1) is aimed at the
-    // facing vector via atan2(fx, -fy).
-    const relAlong = (drawX - bcx) * ax + (drawY - bcy) * ay
-    const faceSign = relAlong >= 0 ? -1 : 1
-    const facing = Math.atan2(faceSign * ax, -(faceSign * ay))
+    // Face toward the centre, where the opposing side closes in. In the projected
+    // frame that's simply left (sides past centre) or right.
+    const alongPos = project(drawX, drawY)[0]
+    const facing = alongPos >= 0 ? -Math.PI / 2 : Math.PI / 2
     ctx.rotate(facing)
 
     // Glow behind hovered ship
@@ -695,26 +666,6 @@ export default function BattleDetailPage() {
     loadBattle()
   }, [battleId])
 
-  // --- Stable view bounds from battle participants only (POIs render if in view) ---
-  const viewBounds = useMemo<ViewBounds>(() => {
-    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
-    for (const entry of entries) {
-      for (const s of entry.snapshots) {
-        minX = Math.min(minX, s.x)
-        maxX = Math.max(maxX, s.x)
-        minY = Math.min(minY, s.y)
-        maxY = Math.max(maxY, s.y)
-      }
-    }
-    const pad = 0.5
-    return {
-      minX: minX === Infinity ? -1 : minX - pad,
-      maxX: maxX === -Infinity ? 1 : maxX + pad,
-      minY: minY === Infinity ? -1 : minY - pad,
-      maxY: maxY === -Infinity ? 1 : maxY + pad,
-    }
-  }, [entries])
-
   // Battle geometry: the centre of the arena and the unit axis the two sides are
   // laid out along. The server places each side along an arbitrary axis (derived
   // from the origin POI direction or a battle-ID seed), so we recover it from the
@@ -755,6 +706,30 @@ export default function BattleDetailPage() {
     if (len < 1e-9) return { center, axis: { x: 1, y: 0 } }
     return { center, axis: { x: axis.x / len, y: axis.y / len } }
   }, [entries])
+
+  // --- Stable view bounds, in the projected (battle) frame so the engagement
+  // always renders horizontally regardless of the server's arbitrary axis. ---
+  const viewBounds = useMemo<ViewBounds>(() => {
+    const { center, axis } = battleGeometry
+    const px = -axis.y, py = axis.x
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
+    for (const entry of entries) {
+      for (const s of entry.snapshots) {
+        const dx = s.x - center.x, dy = s.y - center.y
+        const fx = dx * axis.x + dy * axis.y
+        const fy = dx * px + dy * py
+        minX = Math.min(minX, fx); maxX = Math.max(maxX, fx)
+        minY = Math.min(minY, fy); maxY = Math.max(maxY, fy)
+      }
+    }
+    const pad = 0.5
+    return {
+      minX: minX === Infinity ? -1 : minX - pad,
+      maxX: maxX === -Infinity ? 1 : maxX + pad,
+      minY: minY === Infinity ? -1 : minY - pad,
+      maxY: maxY === -Infinity ? 1 : maxY + pad,
+    }
+  }, [entries, battleGeometry])
 
   // --- Page title ---
   useEffect(() => {
@@ -855,8 +830,10 @@ export default function BattleDetailPage() {
     const entry = entries[currentTickIndex]
     if (!entry) return
 
-    // Use same stable bounds as render
+    // Use the same stable bounds and projection as render.
     const { minX, maxX, minY, maxY } = viewBounds
+    const { center, axis } = battleGeometry
+    const px = -axis.y, py = axis.x
     const w = rect.width, h = rect.height
     const rangeX = maxX - minX || 1
     const rangeY = maxY - minY || 1
@@ -864,12 +841,15 @@ export default function BattleDetailPage() {
     const cx = w / 2, cy = h / 2
     const midX = (minX + maxX) / 2, midY = (minY + maxY) / 2
 
-    // Find closest ship
+    // Find closest ship (positions projected onto the battle axis, as in render)
     let closest: string | null = null
     let closestDist = 25 // pixel threshold
     for (const snap of entry.snapshots) {
-      const sx = cx + (snap.x - midX) * scale
-      const sy = cy + (snap.y - midY) * scale
+      const dx = snap.x - center.x, dy = snap.y - center.y
+      const fx = dx * axis.x + dy * axis.y
+      const fy = dx * px + dy * py
+      const sx = cx + (fx - midX) * scale
+      const sy = cy + (fy - midY) * scale
       const dist = Math.sqrt((mx - sx) ** 2 + (my - sy) ** 2)
       if (dist < closestDist) {
         closestDist = dist
@@ -878,7 +858,7 @@ export default function BattleDetailPage() {
     }
 
     setHoveredPlayer(closest)
-  }, [entries, currentTickIndex, viewBounds])
+  }, [entries, currentTickIndex, viewBounds, battleGeometry])
 
   const handleCanvasClick = useCallback(() => {
     if (hoveredPlayer) {
