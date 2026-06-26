@@ -461,6 +461,7 @@ function renderBattle(
         } else {
           ctx.strokeStyle = `rgba(255, 107, 53, ${0.6 * (1 - animProgress * 0.5)})`
           ctx.lineWidth = 2
+          ctx.setLineDash([])
         }
       } else {
         ctx.strokeStyle = `rgba(61, 90, 108, ${0.3 * (1 - animProgress * 0.5)})`
@@ -896,7 +897,11 @@ export default function BattleDetailPage() {
 
   // --- Derived data ---
   const currentEntry = entries[currentTickIndex] || null
-  const allEvents = entries.slice(0, currentTickIndex + 1).flatMap(e => formatEvents(e, usernameMap.current))
+  // Memoised so the per-tick event list isn't rebuilt on hover/mouse-move renders.
+  const allEvents = useMemo(
+    () => entries.slice(0, currentTickIndex + 1).flatMap(e => formatEvents(e, usernameMap.current)),
+    [entries, currentTickIndex],
+  )
   const inspectedPlayer = selectedPlayer || hoveredPlayer
   const inspectedSnap = currentEntry?.snapshots.find(s => s.player_id === inspectedPlayer) || null
 
@@ -998,6 +1003,8 @@ export default function BattleDetailPage() {
             <canvas
               ref={canvasRef}
               className={styles.canvas}
+              role="img"
+              aria-label="Battle replay visualization showing ship positions, zones, and attacks"
               onMouseMove={handleCanvasMouseMove}
               onClick={handleCanvasClick}
               onMouseLeave={() => setHoveredPlayer(null)}
