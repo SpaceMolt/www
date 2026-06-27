@@ -33,3 +33,25 @@ export function extractApiErrorMessage(
 
   return fallback
 }
+
+/**
+ * Detects whether a gameserver API error is an authentication / session-expiry
+ * failure the user can recover from by signing in again.
+ *
+ * Used by the /play human-signup flow (gh#1367): when a Clerk session expires
+ * mid-signup the register call fails with "Session not found or expired" (401),
+ * and the form previously left the user stuck with no way to re-authenticate.
+ * A true result surfaces a Login button so the user can recover.
+ */
+export function isSessionAuthError(status: number, message: string): boolean {
+  if (status === 401 || status === 403) return true
+  const m = (message || '').toLowerCase()
+  return (
+    m.includes('session not found') ||
+    m.includes('session expired') ||
+    m.includes('session is required') ||
+    m.includes('not found or expired') ||
+    m.includes('unauthorized') ||
+    m.includes('unauthenticated')
+  )
+}

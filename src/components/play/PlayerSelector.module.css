@@ -432,6 +432,36 @@
   border-radius: 4px;
 }
 
+/* Re-authenticate button shown when a session expires mid-signup (gh#1367) */
+.reauthBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--star-white);
+  background: linear-gradient(135deg, var(--plasma-cyan), #0088aa);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: box-shadow 0.2s, opacity 0.2s;
+  width: 100%;
+}
+
+.reauthBtn:hover:not(:disabled) {
+  box-shadow: 0 0 16px rgba(0, 212, 255, 0.3);
+}
+
+.reauthBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Mobile */
 @media (max-width: 768px) {
   .container { padding: 1rem 0.5rem 0.5rem; }
@@ -448,4 +478,5 @@
   .empireCard { padding: 0.65rem 0.75rem; min-height: 44px; }
   .cancelBtn { min-height: 44px; }
   .createBtn { min-height: 44px; font-size: 0.78rem; }
+  .reauthBtn { min-height: 44px; font-size: 0.78rem; }
 }
