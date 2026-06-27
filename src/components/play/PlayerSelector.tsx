@@ -1,9 +1,10 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
-import { Loader2, Users, Coins, Wifi, WifiOff, Search, Plus, ArrowLeft, AlertCircle } from 'lucide-react'
+import { Loader2, Users, Coins, Wifi, WifiOff, Search, Plus, ArrowLeft, AlertCircle, LogIn } from 'lucide-react'
+import { useClerk } from '@clerk/nextjs'
 import styles from './PlayerSelector.module.css'
-import { extractApiErrorMessage } from '@/lib/apiError'
+import { extractApiErrorMessage, isSessionAuthError } from '@/lib/apiError'
 
 const EMPIRE_COLORS: Record<string, string> = {
   solarian: '#FFD700',
@@ -49,9 +50,22 @@ export function PlayerSelector({ players, onSelect, loading, authHeaders, regist
   const [username, setUsername] = useState('')
   const [selectedEmpire, setSelectedEmpire] = useState('')
   const [createError, setCreateError] = useState('')
+  const [authExpired, setAuthExpired] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const { signOut } = useClerk()
 
   const GAME_SERVER = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
+
+  // Recovery for an expired auth session mid-signup (gh#1367): clear the stale
+  // Clerk session and return to /play, where the sign-in screen lets the user
+  // re-authenticate and retry. Falls back to a hard reload if signOut fails.
+  async function handleReauth() {
+    try {
+      await signOut({ redirectUrl: '/play' })
+    } catch {
+      window.location.href = '/play'
+    }
+  }
 
   // Fetch player details sequentially to avoid bursting the shared per-IP
   // rate limit (publicAPI bucket) that MCP connections also use.
@@ -108,6 +122,7 @@ export function PlayerSelector({ players, onSelect, loading, authHeaders, regist
 
     setSubmitting(true)
     setCreateError('')
+    setAuthExpired(false)
 
     try {
       // 1. Create a session
@@ -134,7 +149,10 @@ export function PlayerSelector({ players, onSelect, loading, authHeaders, regist
 
       if (!regRes.ok) {
         const err = await regRes.json().catch(() => null)
-        throw new Error(extractApiErrorMessage(err, regRes.status))
+        const message = extractApiErrorMessage(err, regRes.status)
+        // Clerk session expired mid-signup → offer a re-auth path (gh#1367)
+        if (isSessionAuthError(regRes.status, message)) setAuthExpired(true)
+        throw new Error(message)
       }
 
       const regData = await regRes.json()
@@ -203,6 +221,17 @@ export function PlayerSelector({ players, onSelect, loading, authHeaders, regist
               <AlertCircle size={12} />
               {createError}
             </div>
+          )}
+          {authExpired && (
+            <button
+              className={styles.reauthBtn}
+              type="button"
+              onClick={handleReauth}
+              disabled={submitting}
+            >
+              <LogIn size={14} />
+              Log In Again
+            </button>
           )}
           <div className={styles.formActions}>
             <button

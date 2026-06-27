@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'bun:test'
-import { extractApiErrorMessage } from './apiError'
+import { extractApiErrorMessage, isSessionAuthError } from './apiError'
 
 describe('extractApiErrorMessage', () => {
   it('extracts the message from the gameserver { error: { code, message } } shape', () => {
@@ -38,5 +38,29 @@ describe('extractApiErrorMessage', () => {
 
   it('uses a top-level message field if present', () => {
     expect(extractApiErrorMessage({ message: 'top level' }, 400)).toBe('top level')
+  })
+})
+
+describe('isSessionAuthError', () => {
+  it('treats the reporter "Session not found or expired" message as recoverable (gh#1367)', () => {
+    // rsned hit this during human signup; the form must offer a Login path.
+    expect(isSessionAuthError(401, 'Session not found or expired')).toBe(true)
+  })
+
+  it('treats 401/403 statuses as auth errors regardless of message', () => {
+    expect(isSessionAuthError(401, '')).toBe(true)
+    expect(isSessionAuthError(403, 'forbidden')).toBe(true)
+  })
+
+  it('matches session-required and unauthorized messages', () => {
+    expect(isSessionAuthError(400, 'A session is required. Create one first.')).toBe(true)
+    expect(isSessionAuthError(400, 'Unauthorized')).toBe(true)
+    expect(isSessionAuthError(400, 'unauthenticated request')).toBe(true)
+  })
+
+  it('does not flag ordinary validation errors as auth errors', () => {
+    expect(isSessionAuthError(422, 'Username already taken')).toBe(false)
+    expect(isSessionAuthError(400, 'Username must be 3-24 characters')).toBe(false)
+    expect(isSessionAuthError(500, 'Internal server error')).toBe(false)
   })
 })
