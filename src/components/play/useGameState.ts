@@ -22,7 +22,7 @@ function addEvent(state: GameState, type: string, message: string, data?: Record
   return { ...state, eventLog }
 }
 
-function gameReducer(state: GameState, action: GameAction): GameState {
+export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'SET_CONNECTED':
       return { ...state, connected: action.connected }
@@ -130,6 +130,18 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         // Rich POI data (description, resources) from get_poi
         const poiData = p.poi as POI | undefined
         if (poiData) {
+          // Defensive merge (dc#380900): a get_poi refresh fired after travel/jump
+          // arrival can return the same POI without base_id. Don't clobber a known
+          // base_id on the same POI, or the Dock button (gated on poi.base_id)
+          // would vanish until a manual page refresh.
+          if (
+            state.poi &&
+            state.poi.id === poiData.id &&
+            poiData.base_id == null &&
+            state.poi.base_id != null
+          ) {
+            return { ...state, poi: { ...poiData, base_id: state.poi.base_id } }
+          }
           return { ...state, poi: poiData }
         }
         return state
