@@ -35,13 +35,20 @@ interface LeaderboardData {
     items_crafted: PlayerRankEntry[]
     ore_mined: PlayerRankEntry[]
     facilities_built: PlayerRankEntry[]
+    facility_items_produced: PlayerRankEntry[]
     trades_completed: PlayerRankEntry[]
     systems_explored: PlayerRankEntry[]
     distance_traveled: PlayerRankEntry[]
     missions_completed: PlayerRankEntry[]
+    wormholes_traversed: PlayerRankEntry[]
     ship_value: PlayerRankEntry[]
+    ships_commissioned: PlayerRankEntry[]
     facility_investment: PlayerRankEntry[]
     storage_value: PlayerRankEntry[]
+    refuels_given: PlayerRankEntry[]
+    items_jettisoned: PlayerRankEntry[]
+    customs_evaded: PlayerRankEntry[]
+    contraband_sold: PlayerRankEntry[]
   }
   factions: {
     total_wealth: FactionRankEntry[]
@@ -49,6 +56,11 @@ interface LeaderboardData {
     ship_value: FactionRankEntry[]
     facility_investment: FactionRankEntry[]
     storage_value: FactionRankEntry[]
+    ships_destroyed: FactionRankEntry[]
+    damage_dealt: FactionRankEntry[]
+    ore_mined: FactionRankEntry[]
+    items_crafted: FactionRankEntry[]
+    missions_completed: FactionRankEntry[]
   }
   exchange: {
     items_listed: PlayerRankEntry[]
@@ -129,6 +141,12 @@ const PLAYER_CATEGORY_GROUPS: CategoryGroup[] = [
           'Current fleet value: each ship\'s hull price plus the production cost of installed modules. Module cost uses the fair market production price when available, otherwise falls back to base item value.',
       },
       {
+        key: 'ships_commissioned',
+        labelKey: 'leaderboard.shipsCommissioned',
+        format: 'number',
+        description: 'Total ships ever commissioned from a shipyard. Does not count ships purchased second-hand.',
+      },
+      {
         key: 'ships_destroyed',
         labelKey: 'leaderboard.shipsDestroyed',
         format: 'number',
@@ -172,6 +190,12 @@ const PLAYER_CATEGORY_GROUPS: CategoryGroup[] = [
           'Sum of the one-time build cost of all owned facilities. Reflects total capital deployed into infrastructure.',
       },
       {
+        key: 'facility_items_produced',
+        labelKey: 'leaderboard.facilityItemsProduced',
+        format: 'number',
+        description: 'Total items produced by facilities you own. Each facility cycle that outputs an item increments this counter.',
+      },
+      {
         key: 'items_crafted',
         labelKey: 'leaderboard.itemsCrafted',
         format: 'number',
@@ -189,6 +213,18 @@ const PLAYER_CATEGORY_GROUPS: CategoryGroup[] = [
         format: 'number',
         description: 'Total number of facilities ever constructed.',
       },
+      {
+        key: 'refuels_given',
+        labelKey: 'leaderboard.refuelsGiven',
+        format: 'number',
+        description: 'Total number of times you have refueled another player\'s ship.',
+      },
+      {
+        key: 'items_jettisoned',
+        labelKey: 'leaderboard.itemsJettisoned',
+        format: 'number',
+        description: 'Total items dropped into space as floating wrecks or cargo pods.',
+      },
     ],
   },
   {
@@ -199,6 +235,12 @@ const PLAYER_CATEGORY_GROUPS: CategoryGroup[] = [
         labelKey: 'leaderboard.systemsExplored',
         format: 'number',
         description: 'Number of unique star systems visited.',
+      },
+      {
+        key: 'wormholes_traversed',
+        labelKey: 'leaderboard.wormholesTraversed',
+        format: 'number',
+        description: 'Total wormhole transits completed. Wormholes are one-way passages to distant systems with no jump-drive alternative.',
       },
       {
         key: 'distance_traveled',
@@ -215,11 +257,28 @@ const PLAYER_CATEGORY_GROUPS: CategoryGroup[] = [
       },
     ],
   },
+  {
+    label: 'Smuggling',
+    categories: [
+      {
+        key: 'customs_evaded',
+        labelKey: 'leaderboard.customsEvaded',
+        format: 'number',
+        description: 'Total successful customs scans evaded while carrying contraband.',
+      },
+      {
+        key: 'contraband_sold',
+        labelKey: 'leaderboard.contrabandSold',
+        format: 'number',
+        description: 'Total contraband items sold on the black market.',
+      },
+    ],
+  },
 ]
 
 const FACTION_CATEGORY_GROUPS: CategoryGroup[] = [
   {
-    label: '',
+    label: 'Wealth',
     categories: [
       {
         key: 'total_wealth',
@@ -229,11 +288,22 @@ const FACTION_CATEGORY_GROUPS: CategoryGroup[] = [
           'Faction treasury credits plus the sum of all member wallet balances. Does not include member ships, stored items, or facilities.',
       },
       {
-        key: 'member_count',
-        labelKey: 'leaderboard.members',
-        format: 'number',
-        description: 'Current number of faction members.',
+        key: 'storage_value',
+        labelKey: 'leaderboard.storageValue',
+        format: 'credits',
+        description: 'Total value of items in faction storage across all bases, at base market price.',
       },
+      {
+        key: 'facility_investment',
+        labelKey: 'leaderboard.facilityInvestment',
+        format: 'credits',
+        description: 'Sum of the build cost of all faction-owned facilities.',
+      },
+    ],
+  },
+  {
+    label: 'Fleet',
+    categories: [
       {
         key: 'ship_value',
         labelKey: 'leaderboard.shipValue',
@@ -242,16 +312,45 @@ const FACTION_CATEGORY_GROUPS: CategoryGroup[] = [
           'Combined fleet value of all member ships: hull price plus installed module production costs.',
       },
       {
-        key: 'facility_investment',
-        labelKey: 'leaderboard.facilityInvestment',
-        format: 'credits',
-        description: 'Sum of the build cost of all faction-owned facilities.',
+        key: 'ships_destroyed',
+        labelKey: 'leaderboard.shipsDestroyed',
+        format: 'number',
+        description: 'Total enemy player ships destroyed by faction members combined.',
       },
       {
-        key: 'storage_value',
-        labelKey: 'leaderboard.storageValue',
-        format: 'credits',
-        description: 'Total value of items in faction storage across all bases, at base market price.',
+        key: 'damage_dealt',
+        labelKey: 'leaderboard.damageDealt',
+        format: 'number',
+        description: 'Cumulative damage dealt by all faction members across all combat encounters.',
+      },
+    ],
+  },
+  {
+    label: 'Operations',
+    categories: [
+      {
+        key: 'member_count',
+        labelKey: 'leaderboard.members',
+        format: 'number',
+        description: 'Current number of faction members.',
+      },
+      {
+        key: 'ore_mined',
+        labelKey: 'leaderboard.oreMined',
+        format: 'number',
+        description: 'Total ore and raw resources extracted by all faction members combined.',
+      },
+      {
+        key: 'missions_completed',
+        labelKey: 'leaderboard.missionsCompleted',
+        format: 'number',
+        description: 'Total missions completed by all faction members combined.',
+      },
+      {
+        key: 'items_crafted',
+        labelKey: 'leaderboard.itemsCrafted',
+        format: 'number',
+        description: 'Total items crafted by all faction members combined.',
       },
     ],
   },
