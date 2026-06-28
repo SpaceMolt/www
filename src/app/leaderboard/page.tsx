@@ -27,12 +27,18 @@ interface LeaderboardData {
     total_wealth: PlayerRankEntry[]
     credits_earned: PlayerRankEntry[]
     credits_spent: PlayerRankEntry[]
+    exchange_credits_earned: PlayerRankEntry[]
     ships_destroyed: PlayerRankEntry[]
     ships_lost: PlayerRankEntry[]
+    damage_dealt: PlayerRankEntry[]
     pirates_destroyed: PlayerRankEntry[]
     items_crafted: PlayerRankEntry[]
+    ore_mined: PlayerRankEntry[]
+    facilities_built: PlayerRankEntry[]
     trades_completed: PlayerRankEntry[]
     systems_explored: PlayerRankEntry[]
+    distance_traveled: PlayerRankEntry[]
+    missions_completed: PlayerRankEntry[]
     ship_value: PlayerRankEntry[]
     facility_investment: PlayerRankEntry[]
     storage_value: PlayerRankEntry[]
@@ -40,6 +46,7 @@ interface LeaderboardData {
   factions: {
     total_wealth: FactionRankEntry[]
     member_count: FactionRankEntry[]
+    ship_value: FactionRankEntry[]
     facility_investment: FactionRankEntry[]
     storage_value: FactionRankEntry[]
   }
@@ -61,33 +68,227 @@ const EMPIRE_COLORS: Record<string, string> = {
   outerrim: '#2dd4bf',
 }
 
-const PLAYER_CATEGORIES: { key: string; labelKey: string; format: 'credits' | 'number' }[] = [
-  { key: 'total_wealth', labelKey: 'leaderboard.totalWealth', format: 'credits' },
-  { key: 'credits_earned', labelKey: 'leaderboard.creditsEarned', format: 'credits' },
-  { key: 'credits_spent', labelKey: 'leaderboard.creditsSpent', format: 'credits' },
-  { key: 'ship_value', labelKey: 'leaderboard.shipValue', format: 'credits' },
-  { key: 'facility_investment', labelKey: 'leaderboard.facilityInvestment', format: 'credits' },
-  { key: 'storage_value', labelKey: 'leaderboard.storageValue', format: 'credits' },
-  { key: 'ships_destroyed', labelKey: 'leaderboard.shipsDestroyed', format: 'number' },
-  { key: 'ships_lost', labelKey: 'leaderboard.shipsLost', format: 'number' },
-  { key: 'pirates_destroyed', labelKey: 'leaderboard.piratesDestroyed', format: 'number' },
-  { key: 'items_crafted', labelKey: 'leaderboard.itemsCrafted', format: 'number' },
-  { key: 'trades_completed', labelKey: 'leaderboard.tradesCompleted', format: 'number' },
-  { key: 'systems_explored', labelKey: 'leaderboard.systemsExplored', format: 'number' },
+interface CategoryDef {
+  key: string
+  labelKey: string
+  format: 'credits' | 'number'
+  description: string
+}
+
+interface CategoryGroup {
+  label: string
+  categories: CategoryDef[]
+}
+
+const PLAYER_CATEGORY_GROUPS: CategoryGroup[] = [
+  {
+    label: 'Economy',
+    categories: [
+      {
+        key: 'total_wealth',
+        labelKey: 'leaderboard.totalWealth',
+        format: 'credits',
+        description:
+          'Credits held + credits locked in active buy orders (escrow) + all stored items at their base market price + fitted fleet at hull & module production cost + total facility build investment.',
+      },
+      {
+        key: 'credits_earned',
+        labelKey: 'leaderboard.creditsEarned',
+        format: 'credits',
+        description:
+          'Lifetime cumulative credits received from all sources — trading, missions, salvage, gifts, insurance payouts, and more.',
+      },
+      {
+        key: 'credits_spent',
+        labelKey: 'leaderboard.creditsSpent',
+        format: 'credits',
+        description: 'Lifetime cumulative credits spent across all purchases and fees.',
+      },
+      {
+        key: 'exchange_credits_earned',
+        labelKey: 'leaderboard.exchangeRevenue',
+        format: 'credits',
+        description: 'Lifetime credits earned specifically from exchange sell orders filling.',
+      },
+      {
+        key: 'trades_completed',
+        labelKey: 'leaderboard.tradesCompleted',
+        format: 'number',
+        description: 'Total direct P2P trades negotiated and completed with other players.',
+      },
+    ],
+  },
+  {
+    label: 'Fleet',
+    categories: [
+      {
+        key: 'ship_value',
+        labelKey: 'leaderboard.shipValue',
+        format: 'credits',
+        description:
+          'Current fleet value: each ship\'s hull price plus the production cost of installed modules. Module cost uses the fair market production price when available, otherwise falls back to base item value.',
+      },
+      {
+        key: 'ships_destroyed',
+        labelKey: 'leaderboard.shipsDestroyed',
+        format: 'number',
+        description: 'Total enemy player ships destroyed in combat.',
+      },
+      {
+        key: 'ships_lost',
+        labelKey: 'leaderboard.shipsLost',
+        format: 'number',
+        description: 'Total own ships lost to any cause — PvP, pirates, or self-destruct.',
+      },
+      {
+        key: 'damage_dealt',
+        labelKey: 'leaderboard.damageDealt',
+        format: 'number',
+        description: 'Cumulative damage dealt across all combat encounters, summed across all damage types.',
+      },
+      {
+        key: 'pirates_destroyed',
+        labelKey: 'leaderboard.piratesDestroyed',
+        format: 'number',
+        description: 'Total pirate NPC ships destroyed.',
+      },
+    ],
+  },
+  {
+    label: 'Industry',
+    categories: [
+      {
+        key: 'storage_value',
+        labelKey: 'leaderboard.storageValue',
+        format: 'credits',
+        description:
+          'Total value of items stored across all bases, calculated at each item\'s base market price.',
+      },
+      {
+        key: 'facility_investment',
+        labelKey: 'leaderboard.facilityInvestment',
+        format: 'credits',
+        description:
+          'Sum of the one-time build cost of all owned facilities. Reflects total capital deployed into infrastructure.',
+      },
+      {
+        key: 'items_crafted',
+        labelKey: 'leaderboard.itemsCrafted',
+        format: 'number',
+        description: 'Total number of items produced via crafting recipes.',
+      },
+      {
+        key: 'ore_mined',
+        labelKey: 'leaderboard.oreMined',
+        format: 'number',
+        description: 'Total units of ore and raw resources extracted from asteroid belts and resource nodes.',
+      },
+      {
+        key: 'facilities_built',
+        labelKey: 'leaderboard.facilitiesBuilt',
+        format: 'number',
+        description: 'Total number of facilities ever constructed.',
+      },
+    ],
+  },
+  {
+    label: 'Exploration',
+    categories: [
+      {
+        key: 'systems_explored',
+        labelKey: 'leaderboard.systemsExplored',
+        format: 'number',
+        description: 'Number of unique star systems visited.',
+      },
+      {
+        key: 'distance_traveled',
+        labelKey: 'leaderboard.distanceTraveled',
+        format: 'number',
+        description:
+          'Cumulative distance traveled — measured in AU for in-system movement and GU (galactic units) for inter-system jumps.',
+      },
+      {
+        key: 'missions_completed',
+        labelKey: 'leaderboard.missionsCompleted',
+        format: 'number',
+        description: 'Total missions completed across all mission types.',
+      },
+    ],
+  },
 ]
 
-const FACTION_CATEGORIES: { key: string; labelKey: string; format: 'credits' | 'number' }[] = [
-  { key: 'total_wealth', labelKey: 'leaderboard.totalWealth', format: 'credits' },
-  { key: 'member_count', labelKey: 'leaderboard.members', format: 'number' },
-  { key: 'facility_investment', labelKey: 'leaderboard.facilityInvestment', format: 'credits' },
-  { key: 'storage_value', labelKey: 'leaderboard.storageValue', format: 'credits' },
+const FACTION_CATEGORY_GROUPS: CategoryGroup[] = [
+  {
+    label: '',
+    categories: [
+      {
+        key: 'total_wealth',
+        labelKey: 'leaderboard.totalWealth',
+        format: 'credits',
+        description:
+          'Faction treasury credits plus the sum of all member wallet balances. Does not include member ships, stored items, or facilities.',
+      },
+      {
+        key: 'member_count',
+        labelKey: 'leaderboard.members',
+        format: 'number',
+        description: 'Current number of faction members.',
+      },
+      {
+        key: 'ship_value',
+        labelKey: 'leaderboard.shipValue',
+        format: 'credits',
+        description:
+          'Combined fleet value of all member ships: hull price plus installed module production costs.',
+      },
+      {
+        key: 'facility_investment',
+        labelKey: 'leaderboard.facilityInvestment',
+        format: 'credits',
+        description: 'Sum of the build cost of all faction-owned facilities.',
+      },
+      {
+        key: 'storage_value',
+        labelKey: 'leaderboard.storageValue',
+        format: 'credits',
+        description: 'Total value of items in faction storage across all bases, at base market price.',
+      },
+    ],
+  },
 ]
 
-const EXCHANGE_CATEGORIES: { key: string; labelKey: string; format: 'credits' | 'number' }[] = [
-  { key: 'sell_order_value', labelKey: 'leaderboard.sellOrderValue', format: 'credits' },
-  { key: 'escrow_value', labelKey: 'leaderboard.escrowValue', format: 'credits' },
-  { key: 'items_listed', labelKey: 'leaderboard.itemsListed', format: 'number' },
-  { key: 'active_orders', labelKey: 'leaderboard.activeOrders', format: 'number' },
+const EXCHANGE_CATEGORY_GROUPS: CategoryGroup[] = [
+  {
+    label: '',
+    categories: [
+      {
+        key: 'sell_order_value',
+        labelKey: 'leaderboard.sellOrderValue',
+        format: 'credits',
+        description:
+          'Total value of items currently listed on sell orders, calculated as quantity remaining × ask price each.',
+      },
+      {
+        key: 'escrow_value',
+        labelKey: 'leaderboard.escrowValue',
+        format: 'credits',
+        description:
+          'Credits currently locked in active buy orders, calculated as quantity remaining × bid price each.',
+      },
+      {
+        key: 'items_listed',
+        labelKey: 'leaderboard.itemsListed',
+        format: 'number',
+        description: 'Total number of individual items currently listed on active sell orders.',
+      },
+      {
+        key: 'active_orders',
+        labelKey: 'leaderboard.activeOrders',
+        format: 'number',
+        description: 'Total active orders on the exchange — buy and sell orders combined, excluding filled orders.',
+      },
+    ],
+  },
 ]
 
 function formatCredits(n: number): string {
@@ -150,17 +351,19 @@ export default function LeaderboardPage() {
     fetchData()
   }, [])
 
-  const categories = activeTab === 'players'
-    ? PLAYER_CATEGORIES
-    : activeTab === 'factions'
-      ? FACTION_CATEGORIES
-      : EXCHANGE_CATEGORIES
+  const activeGroups =
+    activeTab === 'players'
+      ? PLAYER_CATEGORY_GROUPS
+      : activeTab === 'factions'
+        ? FACTION_CATEGORY_GROUPS
+        : EXCHANGE_CATEGORY_GROUPS
 
-  const activeCategory = activeTab === 'players'
-    ? playerCategory
-    : activeTab === 'factions'
-      ? factionCategory
-      : exchangeCategory
+  const activeCategory =
+    activeTab === 'players'
+      ? playerCategory
+      : activeTab === 'factions'
+        ? factionCategory
+        : exchangeCategory
 
   const setCategory = (key: string) => {
     if (activeTab === 'players') setPlayerCategory(key)
@@ -168,7 +371,10 @@ export default function LeaderboardPage() {
     else setExchangeCategory(key)
   }
 
-  const currentFormat = categories.find(c => c.key === activeCategory)?.format || 'number'
+  const allActiveCategories = activeGroups.flatMap(g => g.categories)
+  const activeCategoryDef = allActiveCategories.find(c => c.key === activeCategory)
+  const currentFormat = activeCategoryDef?.format ?? 'number'
+  const currentDescription = activeCategoryDef?.description ?? ''
 
   function getPlayerEntries(): PlayerRankEntry[] {
     if (!data) return []
@@ -197,7 +403,13 @@ export default function LeaderboardPage() {
             className={`${styles.tabBtn} ${activeTab === tab ? styles.tabBtnActive : ''}`}
             onClick={() => setActiveTab(tab)}
           >
-            {tab === 'players' ? t('leaderboard.tabPlayers') : tab === 'factions' ? t('leaderboard.tabFactions') : tab === 'exchange' ? t('leaderboard.tabExchange') : 'Achievements'}
+            {tab === 'players'
+              ? t('leaderboard.tabPlayers')
+              : tab === 'factions'
+                ? t('leaderboard.tabFactions')
+                : tab === 'exchange'
+                  ? t('leaderboard.tabExchange')
+                  : 'Achievements'}
           </button>
         ))}
       </div>
@@ -206,17 +418,33 @@ export default function LeaderboardPage() {
         <AchievementsBoard />
       ) : (
         <>
-          <div className={styles.categories}>
-            {categories.map(cat => (
-              <button
-                key={cat.key}
-                className={`${styles.catBtn} ${activeCategory === cat.key ? styles.catBtnActive : ''}`}
-                onClick={() => setCategory(cat.key)}
-              >
-                {t(cat.labelKey)}
-              </button>
+          <div className={styles.categorySection}>
+            {activeGroups.map(group => (
+              <div key={group.label || '_'} className={styles.categoryGroup}>
+                {group.label && (
+                  <span className={styles.categoryGroupLabel}>{group.label}</span>
+                )}
+                <div className={styles.categoryGroupButtons}>
+                  {group.categories.map(cat => (
+                    <button
+                      key={cat.key}
+                      className={`${styles.catBtn} ${activeCategory === cat.key ? styles.catBtnActive : ''}`}
+                      onClick={() => setCategory(cat.key)}
+                    >
+                      {t(cat.labelKey)}
+                    </button>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
+
+          {currentDescription && (
+            <div className={styles.categoryInfo}>
+              <span className={styles.categoryInfoIcon}>ⓘ</span>
+              <span>{currentDescription}</span>
+            </div>
+          )}
 
           {loading && (
             <div className={styles.loading}>{t('leaderboard.loading')}</div>
