@@ -26,11 +26,11 @@
   font-size: 0.9rem;
 }
 
-/* Tab bar (Players / Factions / Exchange) */
+/* Tab bar (Players / Factions / Exchange / Achievements) */
 .tabs {
   display: flex;
   gap: 0.5rem;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .tabBtn {
@@ -57,14 +57,37 @@
   background: rgba(0, 212, 255, 0.15);
 }
 
-/* Category buttons (sub-filter within a tab) */
-.categories {
+/* Category section — wraps all groups */
+.categorySection {
   display: flex;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-  margin-bottom: 1.5rem;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
 }
 
+/* One group: optional label + row of buttons */
+.categoryGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.categoryGroupLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--chrome-silver);
+  opacity: 0.45;
+}
+
+.categoryGroupButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+/* Category buttons */
 .catBtn {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
   font-size: 0.75rem;
@@ -85,6 +108,30 @@
 
 .catBtnActive {
   background: rgba(0, 212, 255, 0.08);
+}
+
+/* Description / formula info box */
+.categoryInfo {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.6rem 0.9rem;
+  background: rgba(0, 212, 255, 0.04);
+  border: 1px solid rgba(0, 212, 255, 0.12);
+  border-radius: 6px;
+  margin-bottom: 1.25rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--chrome-silver);
+  line-height: 1.55;
+}
+
+.categoryInfoIcon {
+  color: var(--plasma-cyan);
+  font-size: 0.8rem;
+  flex-shrink: 0;
+  opacity: 0.8;
+  margin-top: 0.1rem;
 }
 
 /* States */
@@ -121,7 +168,7 @@
   position: sticky;
   top: 0;
   z-index: 2;
-  padding: 0.75rem 0.75rem;
+  padding: 0.8rem 0.9rem;
   text-align: left;
   background: var(--nebula-blue);
   color: var(--chrome-silver);
@@ -144,7 +191,7 @@
 }
 
 .table td {
-  padding: 0.6rem 0.75rem;
+  padding: 0.7rem 0.9rem;
   border-bottom: 1px solid rgba(61, 90, 108, 0.3);
   color: var(--star-white);
 }
@@ -209,20 +256,37 @@
 }
 
 /* Top 3 medal highlights */
+.rank1 {
+  background: rgba(255, 215, 0, 0.05) !important;
+}
+.rank2 {
+  background: rgba(192, 192, 192, 0.04) !important;
+}
+.rank3 {
+  background: rgba(205, 127, 50, 0.04) !important;
+}
+
 .rank1 .cellRank {
   color: #ffd700;
+  font-weight: 700;
 }
-
 .rank2 .cellRank {
   color: #c0c0c0;
+  font-weight: 700;
 }
-
 .rank3 .cellRank {
   color: #cd7f32;
+  font-weight: 700;
 }
 
 .rank1 .cellName {
   color: #ffd700;
+}
+.rank2 .cellName {
+  color: #c0c0c0;
+}
+.rank3 .cellName {
+  color: #cd7f32;
 }
 
 /* Updated at footer */
@@ -265,15 +329,19 @@
 
   .table thead th {
     font-size: 0.6rem;
-    padding: 0.5rem 0.5rem;
+    padding: 0.55rem 0.6rem;
   }
 
   .table td {
-    padding: 0.4rem 0.5rem;
+    padding: 0.5rem 0.6rem;
   }
 
   .colEmpire {
     min-width: 6rem;
+  }
+
+  .categoryInfo {
+    font-size: 0.67rem;
   }
 }
 
