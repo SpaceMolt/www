@@ -78,6 +78,7 @@ const EMPIRE_COLORS: Record<string, string> = {
   crimson: '#e63946',
   nebula: '#00d4ff',
   outerrim: '#2dd4bf',
+  pirate: '#cc3333',
 }
 
 interface CategoryDef {
@@ -138,7 +139,7 @@ const PLAYER_CATEGORY_GROUPS: CategoryGroup[] = [
         labelKey: 'leaderboard.shipValue',
         format: 'credits',
         description:
-          'Current fleet value: each ship\'s hull price plus the production cost of installed modules. Module cost uses the fair market production price when available, otherwise falls back to base item value.',
+          'Current fleet value: each ship\'s hull price plus the production cost of installed modules. Module cost uses the fair market production price when available, otherwise falls back to base item value. Empire and pirate NPC fleets are included as benchmark entries.',
       },
       {
         key: 'ships_commissioned',
@@ -419,6 +420,7 @@ function empireName(id: string): string {
     case 'crimson': return 'Crimson Fleet'
     case 'nebula': return 'Nebula Collective'
     case 'outerrim': return 'Outer Rim'
+    case 'pirate': return 'Pirate Fleet'
     default: return id
   }
 }
