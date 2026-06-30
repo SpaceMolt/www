@@ -278,7 +278,7 @@ function DashboardContent() {
   const [gameClientKey, setGameClientKey] = useState<string | null>(null)
   const [generatingKey, setGeneratingKey] = useState(false)
   const [keyCopied, setKeyCopied] = useState(false)
-  const [keyEverGenerated, setKeyEverGenerated] = useState(false)
+  const keyCopiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Patreon banner state
   const [patreonDismissed, setPatreonDismissed] = useState(() => {
@@ -530,9 +530,15 @@ function DashboardContent() {
   }
 
 
+  useEffect(() => {
+    return () => {
+      if (keyCopiedTimerRef.current) clearTimeout(keyCopiedTimerRef.current)
+    }
+  }, [])
+
   const handleGenerateClientKey = async () => {
     if (generatingKey) return
-    if (keyEverGenerated) {
+    if (gameClientKey !== null) {
       if (!confirm('This will invalidate your existing game client key. Any clients using it will need the new key to authenticate. Continue?')) return
     }
     setGeneratingKey(true)
@@ -545,7 +551,6 @@ function DashboardContent() {
       if (res.ok) {
         const data = await res.json()
         setGameClientKey(data.key)
-        setKeyEverGenerated(true)
       } else {
         const data = await res.json().catch(() => null)
         alert(data?.error || 'Failed to generate key')
@@ -560,8 +565,15 @@ function DashboardContent() {
   const handleCopyClientKey = () => {
     if (!gameClientKey) return
     const k = gameClientKey
+    const confirmCopy = () => {
+      if (keyCopiedTimerRef.current) clearTimeout(keyCopiedTimerRef.current)
+      setKeyCopied(true)
+      keyCopiedTimerRef.current = setTimeout(() => setKeyCopied(false), 2000)
+    }
     if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(k)
+      navigator.clipboard.writeText(k).then(confirmCopy).catch(() => {
+        alert('Copy failed — please select and copy the key manually')
+      })
     } else {
       const ta = document.createElement('textarea')
       ta.value = k
@@ -571,9 +583,8 @@ function DashboardContent() {
       ta.select()
       document.execCommand('copy')
       document.body.removeChild(ta)
+      confirmCopy()
     }
-    setKeyCopied(true)
-    setTimeout(() => setKeyCopied(false), 2000)
   }
 
   const handleToggleHide = async (playerId: string) => {
@@ -858,7 +869,11 @@ function DashboardContent() {
                   </div>
                   <div className={styles.registrationCodeRow}>
                     <code className={styles.registrationCode}>{gameClientKey}</code>
-                    <button className={styles.copyBtn} onClick={handleCopyClientKey}>
+                    <button
+                      className={styles.copyBtn}
+                      onClick={handleCopyClientKey}
+                      aria-label={keyCopied ? 'Copied game client API key' : 'Copy game client API key'}
+                    >
                       {keyCopied ? 'Copied' : 'Copy'}
                     </button>
                   </div>
@@ -873,11 +888,11 @@ function DashboardContent() {
                 >
                   {generatingKey
                     ? 'Generating...'
-                    : keyEverGenerated
+                    : gameClientKey !== null
                       ? 'Regenerate Key'
                       : 'Generate Game Client Key'}
                 </button>
-                {keyEverGenerated && (
+                {gameClientKey !== null && (
                   <span className={styles.rotateHint}>Invalidates the existing key</span>
                 )}
               </div>
