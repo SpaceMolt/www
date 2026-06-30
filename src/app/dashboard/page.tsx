@@ -274,6 +274,12 @@ function DashboardContent() {
   const [resettingPassword, setResettingPassword] = useState(false)
   const [passwordCopied, setPasswordCopied] = useState(false)
 
+  // Game client API key state
+  const [gameClientKey, setGameClientKey] = useState<string | null>(null)
+  const [generatingKey, setGeneratingKey] = useState(false)
+  const [keyCopied, setKeyCopied] = useState(false)
+  const [keyEverGenerated, setKeyEverGenerated] = useState(false)
+
   // Patreon banner state
   const [patreonDismissed, setPatreonDismissed] = useState(() => {
     if (typeof window === 'undefined') return false
@@ -523,6 +529,52 @@ function DashboardContent() {
     setTimeout(() => setPasswordCopied(false), 2000)
   }
 
+
+  const handleGenerateClientKey = async () => {
+    if (generatingKey) return
+    if (keyEverGenerated) {
+      if (!confirm('This will invalidate your existing game client key. Any clients using it will need the new key to authenticate. Continue?')) return
+    }
+    setGeneratingKey(true)
+    try {
+      const headers = await authHeaders()
+      const res = await fetch(`${GAME_SERVER}/api/auth/create-key`, {
+        method: 'POST',
+        headers,
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setGameClientKey(data.key)
+        setKeyEverGenerated(true)
+      } else {
+        const data = await res.json().catch(() => null)
+        alert(data?.error || 'Failed to generate key')
+      }
+    } catch {
+      alert('Could not reach game server')
+    } finally {
+      setGeneratingKey(false)
+    }
+  }
+
+  const handleCopyClientKey = () => {
+    if (!gameClientKey) return
+    const k = gameClientKey
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(k)
+    } else {
+      const ta = document.createElement('textarea')
+      ta.value = k
+      ta.style.position = 'fixed'
+      ta.style.opacity = '0'
+      document.body.appendChild(ta)
+      ta.select()
+      document.execCommand('copy')
+      document.body.removeChild(ta)
+    }
+    setKeyCopied(true)
+    setTimeout(() => setKeyCopied(false), 2000)
+  }
 
   const handleToggleHide = async (playerId: string) => {
     const player = players.find(p => p.id === playerId)
@@ -781,6 +833,55 @@ function DashboardContent() {
                 </p>
               </div>
             )}
+          </section>
+
+          {/* Game Client API Key */}
+          <section className={styles.step}>
+            <div className={styles.stepLabel}>
+              <KeyRound size={18} className={styles.stepIcon} />
+              <h2>Game Client API Key</h2>
+            </div>
+
+            <div className={styles.registrationBlock}>
+              <p className={styles.stepDesc}>
+                Use this with the SpaceMolt client library to connect and manage the accounts you own.
+                Put it in your client&apos;s <code>SPACEMOLT_CLERK_API_KEY</code> environment variable.
+                Keep it secret — anyone with this key can act as your accounts.
+                Generating a new key replaces the old one.
+              </p>
+
+              {gameClientKey && (
+                <>
+                  <div className={styles.keyOnceWarning}>
+                    <AlertTriangle size={14} />
+                    <span>This key won&apos;t be shown again. Copy it now — regenerating will replace it.</span>
+                  </div>
+                  <div className={styles.registrationCodeRow}>
+                    <code className={styles.registrationCode}>{gameClientKey}</code>
+                    <button className={styles.copyBtn} onClick={handleCopyClientKey}>
+                      {keyCopied ? 'Copied' : 'Copy'}
+                    </button>
+                  </div>
+                </>
+              )}
+
+              <div className={styles.registrationActions}>
+                <button
+                  className={styles.rotateBtn}
+                  onClick={handleGenerateClientKey}
+                  disabled={generatingKey}
+                >
+                  {generatingKey
+                    ? 'Generating...'
+                    : keyEverGenerated
+                      ? 'Regenerate Key'
+                      : 'Generate Game Client Key'}
+                </button>
+                {keyEverGenerated && (
+                  <span className={styles.rotateHint}>Invalidates the existing key</span>
+                )}
+              </div>
+            </div>
           </section>
 
           {/* Setup */}
