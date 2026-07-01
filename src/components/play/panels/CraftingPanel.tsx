@@ -3,7 +3,7 @@
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import {
   Hammer, RefreshCw, AlertTriangle, Lock, Check, ChevronDown, ChevronRight,
-  Search, Filter, Clock, RotateCcw, Trash2, Coins, Calculator, Package,
+  Search, Filter, Clock, RotateCcw, Trash2, Coins, Calculator, Package, Factory,
 } from 'lucide-react'
 import { useGame } from '../GameProvider'
 import { ActionButton } from '../ActionButton'
@@ -11,10 +11,12 @@ import { ProgressBar } from '../ProgressBar'
 import { Panel, shared } from '../shared'
 import { BugReportButton } from '../BugReportButton'
 import { buildRecipeContext } from '../bugReportContext'
-import type { Recipe, CraftJobView, CraftQuote } from '../types'
+import type { Recipe, CraftJobView, CraftQuote, FacilityWithProduction } from '../types'
 import { recipesById, formatItemId } from '@/data/catalog'
 import { titleCase } from '@/lib/format'
 import { canCraftRecipe, availableQuantity } from '@/lib/crafting'
+import { estimateJobProgress } from './craftProgress'
+import { FacilityVenuePicker } from './facilities/FacilityVenuePicker'
 import styles from './CraftingPanel.module.css'
 
 const HIDDEN_CATEGORIES = new Set(['facility only', 'ship passive'])
@@ -23,7 +25,7 @@ const HIDDEN_CATEGORIES = new Set(['facility only', 'ship passive'])
 type CraftMode = 'craft' | 'recycle'
 
 export function CraftingPanel() {
-  const { state, sendCommand } = useGame()
+  const { state, dispatch, sendCommand, api } = useGame()
   const [busyId, setBusyId] = useState<string | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [filter, setFilter] = useState<'all' | 'craftable'>('all')
@@ -33,8 +35,21 @@ export function CraftingPanel() {
   const [quantities, setQuantities] = useState<Record<string, number>>({})
   const [quotes, setQuotes] = useState<Record<string, CraftQuote | { error: string }>>({})
 
-  // Queued jobs across all venues (craft action=queue). null = not yet loaded.
-  const [jobs, setJobs] = useState<CraftJobView[] | null>(null)
+  // Venue (facility) selection per recipe — undefined = auto-route (Station
+  // Workshop unless a facility is a better fit). Facility list is fetched
+  // once per dock so the picker can show real backlog/pricing.
+  const [selectedVenue, setSelectedVenue] = useState<Record<string, string>>({})
+  const [venuePickerRecipeId, setVenuePickerRecipeId] = useState<string | null>(null)
+  const [facilities, setFacilities] = useState<{
+    own: FacilityWithProduction[]
+    faction: FacilityWithProduction[]
+    public: FacilityWithProduction[]
+  }>({ own: [], faction: [], public: [] })
+
+  // Queued jobs across all venues (craft action=queue). Lives in shared game
+  // state (not local) so a crafting_update push can patch it live even if
+  // this panel wasn't the one that queued the job. null = not yet loaded.
+  const jobs = state.craftJobs
   const [jobsLoading, setJobsLoading] = useState(false)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
 
@@ -42,6 +57,26 @@ export function CraftingPanel() {
   useEffect(() => {
     if (!state.skillsData) sendCommand('get_skills')
   }, [state.skillsData, sendCommand])
+
+  // Fetch the facility list once per dock — needed for the venue picker's
+  // backlog/pricing info. Read-only query, not a mutation.
+  useEffect(() => {
+    if (!state.isDocked || !api) return
+    let cancelled = false
+    api.callStructured<{
+      player_facilities?: FacilityWithProduction[]
+      faction_facilities?: FacilityWithProduction[]
+      public_facilities?: FacilityWithProduction[]
+    }>('spacemolt_facility', 'list', {}).then((data) => {
+      if (cancelled || !data) return
+      setFacilities({
+        own: data.player_facilities || [],
+        faction: data.faction_facilities || [],
+        public: data.public_facilities || [],
+      })
+    }).catch(() => {})
+    return () => { cancelled = true }
+  }, [state.isDocked, api])
 
   // When docked, fetch station storage — crafting escrows inputs from station
   // storage (NOT cargo), so the craftable filter and material counts read from
@@ -59,12 +94,12 @@ export function CraftingPanel() {
     setJobsLoading(true)
     const r = await sendCommand('craft', {})
     if (!r.error && Array.isArray(r.jobs)) {
-      setJobs(r.jobs as CraftJobView[])
+      dispatch({ type: 'SET_CRAFT_JOBS', payload: r.jobs as CraftJobView[] })
     } else if (!r.error) {
-      setJobs([])
+      dispatch({ type: 'SET_CRAFT_JOBS', payload: [] })
     }
     setJobsLoading(false)
-  }, [sendCommand])
+  }, [sendCommand, dispatch])
 
   useEffect(() => {
     if (jobs === null) fetchQueue()
@@ -77,8 +112,9 @@ export function CraftingPanel() {
 
   const handleCraft = useCallback(async (recipeId: string, mode: CraftMode) => {
     const quantity = getQty(recipeId)
+    const facilityId = selectedVenue[recipeId]
     setBusyId(recipeId)
-    const r = await sendCommand(mode, { recipe_id: recipeId, quantity })
+    const r = await sendCommand(mode, { recipe_id: recipeId, quantity, facility_id: facilityId })
     setBusyId(null)
     if (!r.error && r.job_id) {
       // Optimistically add the queued job (re-fetching would be rate-limited).
@@ -99,7 +135,7 @@ export function CraftingPanel() {
         status: 'queued',
         facility_id: (r.facility_id as string) || '',
       }
-      setJobs(prev => [...(prev ?? []), job])
+      dispatch({ type: 'ADD_CRAFT_JOB', job })
       // Clear any stale quote for this recipe.
       setQuotes(prev => {
         const next = { ...prev }
@@ -107,12 +143,13 @@ export function CraftingPanel() {
         return next
       })
     }
-  }, [getQty, sendCommand, state.currentTick, jobs])
+  }, [getQty, selectedVenue, sendCommand, state.currentTick, jobs, dispatch])
 
   const handleQuote = useCallback(async (recipeId: string, mode: CraftMode) => {
     const quantity = getQty(recipeId)
+    const facilityId = selectedVenue[recipeId]
     setBusyId(recipeId)
-    const r = await sendCommand(mode, { recipe_id: recipeId, quantity, dry_run: true })
+    const r = await sendCommand(mode, { recipe_id: recipeId, quantity, dry_run: true, facility_id: facilityId })
     setBusyId(null)
     setQuotes(prev => ({
       ...prev,
@@ -120,16 +157,16 @@ export function CraftingPanel() {
         ? { error: (r.message as string) || 'Quote failed' }
         : (r as unknown as CraftQuote),
     }))
-  }, [getQty, sendCommand])
+  }, [getQty, selectedVenue, sendCommand])
 
   const handleCancel = useCallback(async (jobId: string) => {
     setCancellingId(jobId)
     const r = await sendCommand('craft', { job_id: jobId })
     setCancellingId(null)
     if (!r.error) {
-      setJobs(prev => (prev ?? []).filter(j => j.job_id !== jobId))
+      dispatch({ type: 'REMOVE_CRAFT_JOB', jobId })
     }
-  }, [sendCommand])
+  }, [sendCommand, dispatch])
 
   const storageItems = useMemo(
     () => (state.isDocked ? state.storageData?.items ?? [] : []),
@@ -260,7 +297,7 @@ export function CraftingPanel() {
             <div className={styles.jobsList}>
               {activeJobs.map((job) => {
                 const total = Math.max(1, job.runs_total)
-                const done = job.runs_done + (job.progress || 0)
+                const done = estimateJobProgress(job, state.currentTick, ticksPerRunFor(job.facility_id, facilities))
                 return (
                   <div key={job.job_id} className={styles.jobCard}>
                     <div className={styles.jobTop}>
@@ -491,6 +528,14 @@ export function CraftingPanel() {
                             ))}
 
                             <div className={styles.craftControls}>
+                              <button
+                                type="button"
+                                className={styles.quoteBtn}
+                                onClick={() => setVenuePickerRecipeId(recipe.id)}
+                                title="Choose which facility (or Station Workshop) queues this craft"
+                              >
+                                <Factory size={11} /> {venueName(selectedVenue[recipe.id], facilities)}
+                              </button>
                               <div className={styles.qtyStepper}>
                                 <button
                                   type="button"
@@ -550,6 +595,51 @@ export function CraftingPanel() {
             </div>
           )
         })}
+
+        {venuePickerRecipeId && (
+          <FacilityVenuePicker
+            recipeName={recipesById[venuePickerRecipeId]?.name || venuePickerRecipeId}
+            ownFacilities={facilities.own.filter(f => f.production?.recipe === venuePickerRecipeId)}
+            factionFacilities={facilities.faction.filter(f => f.production?.recipe === venuePickerRecipeId)}
+            publicFacilities={facilities.public.filter(f => f.production?.recipe === venuePickerRecipeId)}
+            selected={selectedVenue[venuePickerRecipeId]}
+            onSelect={(facilityId) => {
+              setSelectedVenue(prev => {
+                const next = { ...prev }
+                if (facilityId) next[venuePickerRecipeId] = facilityId
+                else delete next[venuePickerRecipeId]
+                return next
+              })
+            }}
+            onClose={() => setVenuePickerRecipeId(null)}
+          />
+        )}
     </Panel>
   )
+}
+
+interface FacilityLists {
+  own: FacilityWithProduction[]
+  faction: FacilityWithProduction[]
+  public: FacilityWithProduction[]
+}
+
+/** Resolve a selected facility_id to a display label for the venue button. */
+function venueName(facilityId: string | undefined, facilities: FacilityLists): string {
+  if (!facilityId) return 'Station Workshop'
+  const all = [...facilities.own, ...facilities.faction, ...facilities.public]
+  const match = all.find(f => f.facility_id === facilityId)
+  return match ? (match.custom_name || match.name) : 'Station Workshop'
+}
+
+/**
+ * Look up a job's venue's own per-run duration for progress interpolation.
+ * Station Workshop (no facility_id) has no client-visible rate — its speed
+ * depends on player skills — so this returns undefined there rather than
+ * guessing.
+ */
+function ticksPerRunFor(facilityId: string, facilities: FacilityLists): number | undefined {
+  if (!facilityId) return undefined
+  const all = [...facilities.own, ...facilities.faction, ...facilities.public]
+  return all.find(f => f.facility_id === facilityId)?.production?.ticks_per_run
 }

@@ -3,6 +3,7 @@
 import { useState, useCallback, type ReactNode } from 'react'
 import { AlertTriangle, ChevronDown, ChevronRight, Loader2 } from 'lucide-react'
 import type { Facility } from '@/lib/gameTypes'
+import type { FacilityWithProduction } from '../../types'
 import { useGame } from '../../GameProvider'
 import { shared } from '../../shared'
 import { BugReportButton } from '../../BugReportButton'
@@ -37,6 +38,7 @@ type MaintenanceState =
 export function FacilityCard({ facility, children }: FacilityCardProps) {
   const { api } = useGame()
   const serviceLabel = facility.service || facility.personal_service || facility.faction_service
+  const production = (facility as FacilityWithProduction).production
 
   const [expanded, setExpanded] = useState(false)
   const [maintenance, setMaintenance] = useState<MaintenanceState>({ status: 'idle' })
@@ -112,6 +114,19 @@ export function FacilityCard({ facility, children }: FacilityCardProps) {
               Recipe: {formatLabel(facility.recipe_id)}
             </span>
           )}
+        </div>
+      )}
+
+      {production && (
+        <div className={styles.cardMeta}>
+          <span className={styles.metaItem}>
+            {production.queued_runs > 0
+              ? `Queue: ${production.queued_runs} run${production.queued_runs === 1 ? '' : 's'} (~${production.backlog_ticks} ticks)`
+              : 'Queue: empty'}
+          </span>
+          <span className={styles.metaItem}>
+            {production.public ? `Public — ${(production.rental_fee_per_run ?? 0).toLocaleString()} cr/run` : 'Private'}
+          </span>
         </div>
       )}
 

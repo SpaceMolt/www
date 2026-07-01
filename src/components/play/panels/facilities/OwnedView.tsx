@@ -7,12 +7,16 @@ import {
   ArrowRightLeft,
   Paintbrush,
   Loader2,
+  ListOrdered,
+  Tag,
 } from 'lucide-react'
 import { useGame } from '../../GameProvider'
 import { Modal, shared } from '../../shared'
 import type { FacilityListResponse, Facility } from '@/lib/gameTypes'
+import type { FacilityWithProduction } from '../../types'
 import { FacilityCard } from './FacilityCard'
 import { UpgradeModal, fetchUpgradeOptions, type UpgradeOption } from './UpgradeModal'
+import { FacilityQueueModal } from './FacilityQueueModal'
 import styles from './facilities.module.css'
 
 interface OwnedViewProps {
@@ -32,6 +36,8 @@ export function OwnedView({ facilityData, onRefresh }: OwnedViewProps) {
   const [decorateDesc, setDecorateDesc] = useState('')
   const [decorateAccess, setDecorateAccess] = useState('private')
   const [decorating, setDecorating] = useState(false)
+  const [queueModal, setQueueModal] = useState<Facility | null>(null)
+  const [pricingId, setPricingId] = useState<string | null>(null)
 
   // Server pre-filters player_facilities to only the requesting player's own
   // facilities, so we can render the list directly without further filtering.
@@ -73,6 +79,30 @@ export function OwnedView({ facilityData, onRefresh }: OwnedViewProps) {
     setTransferring(null)
   }, [sendCommand, onRefresh])
 
+  const handleToggleAccess = useCallback(async (facility: FacilityWithProduction) => {
+    if (!api) return
+    const nextAccess = facility.production?.public ? 'private' : 'public'
+    try {
+      await api.callStructured('spacemolt_facility', 'set_access', {
+        facility_id: facility.facility_id, access: nextAccess,
+      })
+      onRefresh()
+    } catch { /* handled by event log */ }
+  }, [api, onRefresh])
+
+  const handleSetOutputPrice = useCallback(async (facilityId: string, price: string) => {
+    if (!api) return
+    const parsed = Number(price)
+    if (!Number.isFinite(parsed) || parsed < 0) return
+    try {
+      await api.callStructured('spacemolt_facility', 'set_output_price', {
+        facility_id: facilityId, price: parsed,
+      })
+      onRefresh()
+    } catch { /* handled by event log */ }
+    setPricingId(null)
+  }, [api, onRefresh])
+
   const handleDecorate = useCallback(async () => {
     if (!decorateModal) return
     setDecorating(true)
@@ -106,7 +136,9 @@ export function OwnedView({ facilityData, onRefresh }: OwnedViewProps) {
             Your Facilities
             <span className={styles.sectionCount}>({myFacilities.length})</span>
           </div>
-          {myFacilities.map(f => (
+          {myFacilities.map(facility => {
+            const f = facility as FacilityWithProduction
+            return (
             <FacilityCard key={f.facility_id} facility={f}>
               {f.category === 'production' && (
                 <button
@@ -142,6 +174,51 @@ export function OwnedView({ facilityData, onRefresh }: OwnedViewProps) {
                   To Faction
                 </button>
               )}
+              {f.category === 'production' && (
+                <button
+                  className={shared.actionBtn}
+                  onClick={() => setQueueModal(f)}
+                  type="button"
+                >
+                  <ListOrdered size={11} /> Queue
+                </button>
+              )}
+              {f.category === 'production' && (
+                <button
+                  className={shared.subtleBtn}
+                  onClick={() => handleToggleAccess(f)}
+                  type="button"
+                  title="Toggle whether other players can rent this facility's spare capacity"
+                >
+                  <Tag size={11} /> {f.production?.public ? 'Public' : 'Private'}
+                </button>
+              )}
+              {f.category === 'production' && f.production?.public && (
+                pricingId === f.facility_id ? (
+                  <input
+                    className={shared.textInput}
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    autoFocus
+                    defaultValue={f.production?.rental_fee_per_run ?? 0}
+                    onBlur={(e) => handleSetOutputPrice(f.facility_id, e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleSetOutputPrice(f.facility_id, (e.target as HTMLInputElement).value)
+                      if (e.key === 'Escape') setPricingId(null)
+                    }}
+                    style={{ width: '5rem' }}
+                  />
+                ) : (
+                  <button
+                    className={shared.subtleBtn}
+                    onClick={() => setPricingId(f.facility_id)}
+                    type="button"
+                  >
+                    {(f.production?.rental_fee_per_run ?? 0).toLocaleString()} cr/run
+                  </button>
+                )
+              )}
               {f.personal_service === 'quarters' && (
                 <button
                   className={shared.subtleBtn}
@@ -152,7 +229,8 @@ export function OwnedView({ facilityData, onRefresh }: OwnedViewProps) {
                 </button>
               )}
             </FacilityCard>
-          ))}
+            )
+          })}
         </div>
       )}
 
@@ -217,6 +295,10 @@ export function OwnedView({ facilityData, onRefresh }: OwnedViewProps) {
             </div>
           </div>
         </Modal>
+      )}
+
+      {queueModal && (
+        <FacilityQueueModal facility={queueModal} onClose={() => setQueueModal(null)} />
       )}
     </>
   )

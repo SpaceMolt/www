@@ -278,6 +278,20 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
             timestamp: Date.now(),
           }})
         }
+        // Also patch the live job-queue state so progress bars update
+        // immediately instead of waiting for a manual refresh.
+        if (jobs.length > 0) {
+          d({
+            type: 'PATCH_CRAFT_JOBS',
+            tick: (p.tick as number) ?? 0,
+            jobs: jobs.map(j => ({
+              job_id: j.job_id as string,
+              runs_done_delta: (j.runs_done as number) ?? 0,
+              runs_remaining: (j.runs_remaining as number) ?? 0,
+              completed: !!j.completed,
+            })),
+          })
+        }
         break
       }
       // Skill XP gain
