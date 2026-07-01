@@ -37,6 +37,7 @@ import type {
   FactionMember,
   ShowroomShip,
   FactionDetail,
+  Facility,
 } from '@/lib/gameTypes'
 
 export type {
@@ -75,6 +76,7 @@ export type {
   FactionMember,
   ShowroomShip,
   FactionDetail,
+  Facility,
 }
 
 // Aliases for backward compat with panel imports
@@ -223,6 +225,11 @@ export interface CraftJobView {
   external?: boolean
   status: string
   facility_id: string
+  // last_sync_tick is client-only: the currentTick at the moment this job's
+  // runs_done/progress were last confirmed by the server (a fetch or a
+  // crafting_update push). Used to interpolate live progress between syncs —
+  // see estimateJobProgress in panels/facilities/craftProgress.ts.
+  last_sync_tick?: number
 }
 
 // Result of a dry_run craft/recycle: a cost + time quote, nothing queued.
@@ -356,6 +363,13 @@ export interface GameState {
   pendingAction: { command: string; startedAt: number; estimatedMs?: number } | null
   /** Enriched installed modules from get_status (separate from ship.modules which is just IDs) */
   shipModules: EnrichedShipModule[]
+  /**
+   * The player's queued craft/recycle jobs across all venues. Shared here
+   * (rather than local panel state) so a crafting_update push can patch it
+   * live even when CraftingPanel isn't the component that queued the job.
+   * null = not yet fetched.
+   */
+  craftJobs: CraftJobView[] | null
 }
 
 export const initialGameState: GameState = {
@@ -389,6 +403,7 @@ export const initialGameState: GameState = {
   skillsData: null,
   pendingAction: null,
   shipModules: [],
+  craftJobs: null,
 }
 
 // === WebSocket Message Types ===
@@ -434,4 +449,12 @@ export type GameAction =
   | { type: 'SET_NEARBY'; payload: NearbyPlayer[] }
   | { type: 'SET_PENDING_ACTION'; command: string; estimatedMs?: number }
   | { type: 'CLEAR_PENDING_ACTION' }
+  | { type: 'SET_CRAFT_JOBS'; payload: CraftJobView[] }
+  | { type: 'ADD_CRAFT_JOB'; job: CraftJobView }
+  | { type: 'REMOVE_CRAFT_JOB'; jobId: string }
+  | {
+      type: 'PATCH_CRAFT_JOBS'
+      tick: number
+      jobs: { job_id: string; runs_done_delta: number; runs_remaining: number; completed: boolean }[]
+    }
   | { type: 'RESET' }

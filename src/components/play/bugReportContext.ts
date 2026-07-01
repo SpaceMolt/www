@@ -153,7 +153,7 @@ export function buildFacilityContext(facility: Facility): string {
   lines.push(`- **ID:** \`${facility.facility_id}\``)
   lines.push(`- **Name:** ${facility.name}`)
   lines.push(`- **Category:** ${facility.category}`)
-  lines.push(`- **Active:** ${facility.active}`)
+  lines.push(`- **Under Construction:** ${facility.under_construction ?? false}`)
   lines.push(`- **Maintenance OK:** ${facility.maintenance_satisfied}`)
   if (facility.description) lines.push(`- **Description:** ${facility.description}`)
   if (facility.service) lines.push(`- **Service:** ${facility.service}`)

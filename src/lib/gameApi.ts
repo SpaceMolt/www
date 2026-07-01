@@ -266,8 +266,6 @@ const COMMAND_MAP: Record<string, V2Route> = {
   facility_build: { tool: 'spacemolt_facility', action: 'build' },
   facility_personal_build: { tool: 'spacemolt_facility', action: 'personal_build' },
   facility_faction_build: { tool: 'spacemolt_facility', action: 'faction_build' },
-  facility_toggle: { tool: 'spacemolt_facility', action: 'toggle' },
-  facility_faction_toggle: { tool: 'spacemolt_facility', action: 'faction_toggle' },
   facility_upgrade: { tool: 'spacemolt_facility', action: 'upgrade' },
   facility_faction_upgrade: { tool: 'spacemolt_facility', action: 'faction_upgrade' },
   facility_upgrades: { tool: 'spacemolt_facility', action: 'upgrades' },
@@ -304,7 +302,6 @@ export const MUTATION_COMMANDS = new Set([
   'undock', 'uninstall_mod', 'use_item', 'withdraw_items',
   // Facility mutations
   'facility_build', 'facility_personal_build', 'facility_faction_build',
-  'facility_toggle', 'facility_faction_toggle',
   'facility_upgrade', 'facility_faction_upgrade',
   'facility_transfer', 'facility_personal_decorate',
 ])

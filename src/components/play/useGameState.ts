@@ -495,6 +495,50 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case 'CLEAR_PENDING_ACTION':
       return { ...state, pendingAction: null }
 
+    case 'SET_CRAFT_JOBS':
+      // Full resync (a real queue fetch) — every job's snapshot is fresh, so
+      // stamping all of them is correct here (contrast ADD/REMOVE below,
+      // which must not disturb other jobs' sync baseline).
+      return {
+        ...state,
+        craftJobs: action.payload.map(job => ({ ...job, last_sync_tick: state.currentTick })),
+      }
+
+    case 'ADD_CRAFT_JOB':
+      return {
+        ...state,
+        craftJobs: [...(state.craftJobs ?? []), { ...action.job, last_sync_tick: state.currentTick }],
+      }
+
+    case 'REMOVE_CRAFT_JOB':
+      return {
+        ...state,
+        craftJobs: (state.craftJobs ?? []).filter(job => job.job_id !== action.jobId),
+      }
+
+    case 'PATCH_CRAFT_JOBS': {
+      // No-op if the queue hasn't been fetched yet (state.craftJobs is null)
+      // or if this push raced ahead of the ADD_CRAFT_JOB for a just-queued
+      // job — harmless: the next full queue fetch or crafting_update
+      // reconciles it.
+      if (!state.craftJobs) return state
+      const patches = new Map(action.jobs.map(j => [j.job_id, j]))
+      const craftJobs = state.craftJobs
+        .filter(job => !patches.get(job.job_id)?.completed)
+        .map(job => {
+          const patch = patches.get(job.job_id)
+          if (!patch) return job
+          return {
+            ...job,
+            runs_done: job.runs_done + patch.runs_done_delta,
+            runs_remaining: patch.runs_remaining,
+            progress: 0,
+            last_sync_tick: action.tick,
+          }
+        })
+      return { ...state, craftJobs }
+    }
+
     case 'RESET':
       return { ..._initState, connected: state.connected, welcome: state.welcome }
 
@@ -534,6 +578,7 @@ const _initState: GameState = {
   skillsData: null,
   pendingAction: null,
   shipModules: [],
+  craftJobs: null,
 }
 
 export function useGameState() {

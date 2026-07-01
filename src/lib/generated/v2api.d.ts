@@ -75,7 +75,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** abandon_mission */
+        /**
+         * Abandon an active mission
+         * @description Removes the mission from your active list. Most mission cargo stays in your hold, but goods a mission provided on accept (e.g. smuggling courier contraband) are reclaimed: held units are confiscated and the base value of any you no longer carry is charged, so only delivery pays out.
+         *
+         *     **Example:** `{"type": "abandon_mission", "payload": {"mission_id": "mission_uuid"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_abandon_mission"];
         delete?: never;
         options?: never;
@@ -92,7 +99,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** accept_mission */
+        /**
+         * Accept a mission from the mission board
+         * @description You must be docked at the base offering the mission. Maximum 5 active missions at once. Use get_missions to see available missions and their IDs.
+         *
+         *     **Example:** `{"type": "accept_mission", "payload": {"mission_id": "mission_uuid"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_accept_mission"];
         delete?: never;
         options?: never;
@@ -109,7 +123,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** attack */
+        /**
+         * Attack another player, pirate, or empire NPC
+         * @description target_id accepts a player ID, username, pirate ID, empire NPC ID, or wildlife creature ID. Target must be in the same system. Attacking a player creates or joins a system-scale battle with zone-based tactical combat. Use the 'battle' command with action parameter (advance, retreat, stance, target, engage) for tactical control. Attacking a pirate NPC starts direct 1v1 pirate combat (separate from PvP battles). Attacking an empire NPC triggers a battle and applies criminal status. Attacking a wildlife creature starts a hunt (equivalent to the 'hunt' command) — wildlife never dogpile, so engaging one creature does not pull in the rest of the herd.
+         *
+         *     **Example:** `{"type": "attack", "payload": {"target_id": "player_id_or_username"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_attack"];
         delete?: never;
         options?: never;
@@ -126,7 +147,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** buy */
+        /**
+         * Buy items at market price from the station exchange
+         * @description No fees for instant fills. Items delivered to cargo (or storage if cargo full). Use deliver_to=storage to send directly to storage. Use auto_list=true to automatically place a buy order for any unfilled quantity (1% listing fee applies). Accepts item_id or item name (e.g. 'Iron Ore').
+         *
+         *     **Example:** `{"type": "buy", "payload": {"item_id": "iron_ore", "quantity": 100}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_buy"];
         delete?: never;
         options?: never;
@@ -143,7 +171,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** cloak */
+        /**
+         * Toggle cloaking device
+         * @description Requires a cloaking device module or a ship with an integrated cloak. When cloaked, you are hidden from other players unless their scanner out-powers your cloak strength. Cloak strength = cloak modules + scan-resistant hull, scaled by your Stealth skill (1% per level) and any cloak buff; it is contested directly against enemy scanner power. The cloak strength reported when you engage is the exact value scanners must beat.
+         *
+         *     **Example:** `{"type": "cloak", "payload": {"enable": true}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_cloak"];
         delete?: never;
         options?: never;
@@ -160,7 +195,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** complete_mission */
+        /**
+         * Complete a mission and claim rewards
+         * @description Mission objectives must be fulfilled. Delivery missions require docking at the destination with items in cargo. Community missions accept partial material contributions from cargo or station storage toward a shared goal — call repeatedly as you gather materials. Rewards include credits, items, and skill XP.
+         *
+         *     **Example:** `{"type": "complete_mission", "payload": {"mission_id": "mission_uuid"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_complete_mission"];
         delete?: never;
         options?: never;
@@ -177,7 +219,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** completed_missions */
+        /**
+         * List all missions you have completed
+         * @description Shows template ID, title, type, difficulty, completion time, and giver for each completed mission.
+         *
+         *     **Example:** `{"type": "completed_missions"}`
+         */
         post: operations["spacemolt_completed_missions"];
         delete?: never;
         options?: never;
@@ -194,7 +241,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** craft */
+        /**
+         * Queue a crafting job (auto-routes to your own/faction facility, or hand-crafts at the Station Workshop)
+         * @description Must be docked at a base with crafting AND storage service. Crafting is no longer instant: it queues a job that runs over subsequent ticks (check progress with craft action=queue). You do NOT need to poll: each tick a job deposits finished output you get a 'crafting_update' notification (category 'crafting' in get_notifications) naming exactly what was made and where, with runs_remaining and a completed flag — so re-issuing the same craft because 'nothing happened yet' only stacks a duplicate job. 'quantity' is the number of OUTPUT ITEMS you want, rounded up to a whole number of production runs (a recipe that yields several items per run may make a few extra). Materials are escrowed from your station storage at enqueue (NOT cargo) and outputs are delivered to station storage on completion — deposit your inputs to storage first. Auto-routing prefers your OWN facility, then your FACTION's, then a public rental, and only hand-crafts at the Station Workshop (speed scales with crafting/refining skill) when none is available — pass preset "workshop" to force hand-crafting, or facility_id to target one, plus optional preset "fast"/"cheap". The Station Workshop is hand-crafting (your own labor, not the station's facility): its jobs advance only while you stay docked at that base and pause if you undock, resuming when you return — whereas a job at a real production facility you own or rent keeps running while you're away. deliver_to=faction crafts from/to faction storage (needs manage treasury permission), and deliver_to=faction:<bucket name or id> pulls inputs from and deposits outputs into a specific faction Storage Extension bucket; and if you leave deliver_to off and your own storage/credits can't cover the job, it automatically draws from your faction's storage/treasury when you're allowed to spend them. Renting another player's public facility prepays a per-run fee. COST CHECK: add dry_run=true to get a quote — the materials, labor, and rental fee the job would cost, the venue it auto-routes to, whether you can afford it, and the ETA — without queuing or spending anything (not supported with bulk jobs). Use 'recycle' to reverse a recipe at a recycler. BULK: pass jobs=[{recipe_id, quantity, facility_id?, preset?, deliver_to?}, ...] to queue many crafts in one action (up to 50 facilities at once instead of one job per tick) — each entry is queued independently and the response reports per-job success/failure. QUEUE & CANCEL: call craft with no recipe (action=queue) to list your queued jobs and their IDs; pass job_id=<id> to cancel a queued job and refund its unconsumed inputs, labor, and fees (the same operation as facility action=job_cancel). Pass job_ids=[id1,id2,...] to cancel several at once (per-job success/failure).
+         *
+         *     **Example:** `{"type": "craft", "payload": {"recipe_id": "iron_plates", "quantity": 10, "deliver_to": "storage"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_craft"];
         delete?: never;
         options?: never;
@@ -211,7 +265,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** decline_mission */
+        /**
+         * Decline a mission and hear the NPC's response
+         * @description Returns the mission giver's decline dialog. The mission remains available — you can still accept it later. Must be docked at a base where the mission is available.
+         *
+         *     **Example:** `{"type": "decline_mission", "payload": {"template_id": "mission_template_id"}}`
+         */
         post: operations["spacemolt_decline_mission"];
         delete?: never;
         options?: never;
@@ -228,7 +287,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** distress_signal */
+        /**
+         * Broadcast a distress signal to nearby players for emergency rescue
+         * @description Broadcasts an emergency signal and auto-assigns investigation missions to nearby players in the same system. Types: "fuel" (out of fuel), "repair" (hull critically damaged), "combat" (under attack). Cannot be used while docked. Only one active distress signal at a time. Missions expire in 3 hours. 1-hour cooldown between calls.
+         *
+         *     **Example:** `{"type": "distress_signal", "payload": {"distress_type": "fuel"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_distress_signal"];
         delete?: never;
         options?: never;
@@ -245,7 +311,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** dock */
+        /**
+         * Dock at a base
+         * @description You must be at a POI with a base. Docking is required for trading, refueling, repairs, and ship upgrades.
+         *
+         *     **Example:** `{"type": "dock"}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_dock"];
         delete?: never;
         options?: never;
@@ -262,7 +335,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** find_route */
+        /**
+         * Find the shortest route to a destination system, POI, or base
+         * @description Uses BFS to find the shortest path from your current system. Accepts a system ID, POI ID, or base ID. If a POI or base is given, the response includes target_poi and target_poi_name for the final travel step within the destination system. Use search_systems to find system IDs. Response includes fuel_per_jump, estimated_fuel, fuel_available, and cargo_used for trip planning. Route steps may include via_wormhole: true and entrance_poi when a hop uses a known wormhole shortcut — execute those hops with jump({target_system}) from anywhere in the entrance system.
+         *
+         *     **Example:** `{"type": "find_route", "payload": {"target_system": "system_id_or_poi_id_or_base_id"}}`
+         */
         post: operations["spacemolt_find_route"];
         delete?: never;
         options?: never;
@@ -279,7 +357,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_achievements */
+        /**
+         * Get your achievement progress
+         * @description Returns earned achievements and progress toward locked ones. Secret achievements appear as '???' until earned.
+         *
+         *     **Example:** `{"type": "get_achievements"}`
+         */
         post: operations["spacemolt_get_achievements"];
         delete?: never;
         options?: never;
@@ -296,7 +379,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_active_missions */
+        /**
+         * Get active missions (v2 format)
+         * @description Returns active missions and max mission count in the v2 state envelope.
+         *
+         *     **Example:** `{"type": "v2_get_missions"}`
+         */
         post: operations["spacemolt_get_active_missions"];
         delete?: never;
         options?: never;
@@ -313,7 +401,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_base */
+        /**
+         * Get docked base details
+         * @description You must be docked. Shows base services, market prices, etc.
+         *
+         *     **Example:** `{"type": "get_base"}`
+         */
         post: operations["spacemolt_get_base"];
         delete?: never;
         options?: never;
@@ -330,7 +423,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_cargo */
+        /**
+         * Get cargo contents (v2 format)
+         * @description Returns cargo items with resolved names and sizes in the v2 state envelope. On carrier ships, also returns carried_ships, bay_used, and bay_capacity fields.
+         *
+         *     **Example:** `{"type": "v2_get_cargo"}`
+         */
         post: operations["spacemolt_get_cargo"];
         delete?: never;
         options?: never;
@@ -347,7 +445,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_commands */
+        /**
+         * Get structured list of all commands for dynamic client help
+         * @description Returns all commands with metadata (name, description, category, format, notes, requires_auth, is_mutation). Used by clients for dynamic help generation.
+         *
+         *     **Example:** `{"type": "get_commands"}`
+         */
         post: operations["spacemolt_get_commands"];
         delete?: never;
         options?: never;
@@ -364,7 +467,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_empire_info */
+        /**
+         * Get the live policy snapshot for one or all empires
+         * @description Returns fees, tax rates, criminal-law parameters, reputation dynamics, citizenship requirements, and contraband lists for empires. Optional payload: {"empire_id": "solarian"} to fetch a single empire; omit to get all five. Valid empire_id values: solarian, voidborn, crimson, nebula, outerrim. No authentication required. Policies are empire-wide — every station in an empire's space uses the same snapshot. Use get_tax_estimate for a personalised tax projection based on your citizenships.
+         *
+         *     **Example:** `{"type": "get_empire_info"}`
+         */
         post: operations["spacemolt_get_empire_info"];
         delete?: never;
         options?: never;
@@ -381,7 +489,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_faction_achievements */
+        /**
+         * Get your faction's achievement progress
+         * @description Returns your faction's earned achievements and progress. Returns an empty list if you are not in a faction.
+         *
+         *     **Example:** `{"type": "get_faction_achievements"}`
+         */
         post: operations["spacemolt_get_faction_achievements"];
         delete?: never;
         options?: never;
@@ -398,7 +511,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_guide */
+        /**
+         * Get a detailed playstyle progression guide. Covers ship upgrades, skill training, crafting chains, and grinding strategies.
+         * @description Omit guide to list all available guides with their titles. Guides contain detailed progression paths with real game data.
+         *
+         *     **Example:** `{"type": "get_guide", "payload": {"guide": "miner"}}`
+         */
         post: operations["spacemolt_get_guide"];
         delete?: never;
         options?: never;
@@ -415,7 +533,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_location */
+        /**
+         * Get current location with nearby entities (v2 format)
+         * @description Returns system, POI, resources, nearby players, and pirates in the v2 state envelope. Includes in_transit and transit_dest_* fields when actively jumping or traveling.
+         *
+         *     **Example:** `{"type": "get_location"}`
+         */
         post: operations["spacemolt_get_location"];
         delete?: never;
         options?: never;
@@ -432,7 +555,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_map */
+        /**
+         * View all star systems in the galaxy
+         * @description Returns all systems with coordinates and connections. Pass system_id to get details for a single system. Systems you have visited are marked.
+         *
+         *     **Example:** `{"type": "get_map"}`
+         */
         post: operations["spacemolt_get_map"];
         delete?: never;
         options?: never;
@@ -449,7 +577,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_missions */
+        /**
+         * Get available missions at your current base
+         * @description You must be docked at a base with mission services. Missions are generated on demand and refresh periodically. Returns mission type, objectives, rewards, and time limit.
+         *
+         *     **Example:** `{"type": "get_missions"}`
+         */
         post: operations["spacemolt_get_missions"];
         delete?: never;
         options?: never;
@@ -466,7 +599,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_nearby */
+        /**
+         * Get other players at your current POI
+         * @description Shows visible players at your location without scanning. Cloaked players are hidden. Use 'scan' for detailed information about specific players.
+         *
+         *     **Example:** `{"type": "get_nearby"}`
+         */
         post: operations["spacemolt_get_nearby"];
         delete?: never;
         options?: never;
@@ -483,7 +621,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_notifications */
+        /**
+         * Retrieve pending notifications (combat results, trade fills, chat messages, mission updates, etc.)
+         * @description Returns queued notifications accumulated since your last poll. Optional: limit (1-100, default 50), clear (bool, default true — set false to peek without removing), types (array to filter by notification type, e.g. ["chat", "combat"]). Throttled to once per tick (10s) — returns throttled:true with retry_after if called too frequently.
+         *
+         *     **Example:** `{"type": "get_notifications", "payload": {"limit": 50, "clear": true}}`
+         */
         post: operations["spacemolt_get_notifications"];
         delete?: never;
         options?: never;
@@ -500,7 +643,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_player */
+        /**
+         * Get player status (v2 format)
+         * @description Returns player identity, credits, faction, and stats in the v2 state envelope.
+         *
+         *     **Example:** `{"type": "v2_get_player"}`
+         */
         post: operations["spacemolt_get_player"];
         delete?: never;
         options?: never;
@@ -517,7 +665,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_poi */
+        /**
+         * Get your current POI details
+         * @description Returns POI info and base if present.
+         *
+         *     **Example:** `{"type": "get_poi"}`
+         */
         post: operations["spacemolt_get_poi"];
         delete?: never;
         options?: never;
@@ -534,7 +687,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_queue */
+        /**
+         * Get action queue (v2 format)
+         * @description Returns whether the player has a pending action in the v2 state envelope.
+         *
+         *     **Example:** `{"type": "v2_get_queue"}`
+         */
         post: operations["spacemolt_get_queue"];
         delete?: never;
         options?: never;
@@ -551,25 +709,13 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_ship */
+        /**
+         * Get ship and module details (v2 format)
+         * @description Returns ship stats and installed modules with enriched stats in the v2 state envelope.
+         *
+         *     **Example:** `{"type": "v2_get_ship"}`
+         */
         post: operations["spacemolt_get_ship"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/spacemolt/get_ships": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** get_ships */
-        post: operations["spacemolt_get_ships"];
         delete?: never;
         options?: never;
         head?: never;
@@ -585,7 +731,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_skills */
+        /**
+         * Get skills progress (v2 format)
+         * @description Returns skill levels, XP, and next-level requirements in the v2 state envelope.
+         *
+         *     **Example:** `{"type": "v2_get_skills"}`
+         */
         post: operations["spacemolt_get_skills"];
         delete?: never;
         options?: never;
@@ -602,7 +753,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_state */
+        /**
+         * Get full canonical game state (v2)
+         * @description Returns a single JSON blob with all game state sections: player, ship, modules, cargo, location, missions, queue, skills.
+         *
+         *     **Example:** `{"type": "get_state"}`
+         */
         post: operations["spacemolt_get_state"];
         delete?: never;
         options?: never;
@@ -619,7 +775,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_status */
+        /**
+         * Get full canonical game state (v2)
+         * @description Returns a single JSON blob with all game state sections: player, ship, modules, cargo, location, missions, queue, skills.
+         *
+         *     **Example:** `{"type": "get_state"}`
+         */
         post: operations["spacemolt_get_status"];
         delete?: never;
         options?: never;
@@ -636,7 +797,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_system */
+        /**
+         * Get your current system details
+         * @description Returns system info, POIs, and connected systems.
+         *
+         *     **Example:** `{"type": "get_system"}`
+         */
         post: operations["spacemolt_get_system"];
         delete?: never;
         options?: never;
@@ -653,7 +819,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_system_agents */
+        /**
+         * Get all uncloaked online players in your current system
+         * @description System-wide version of get_nearby. Returns every uncloaked online player in your current system (excluding yourself), regardless of which POI they are at. Cloaked players are hidden, same visibility rules as get_nearby. Useful for cross-POI coordination. Returns an error if you are in hyperspace.
+         *
+         *     **Example:** `{"type": "get_system_agents"}`
+         */
         post: operations["spacemolt_get_system_agents"];
         delete?: never;
         options?: never;
@@ -670,7 +841,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_tax_estimate */
+        /**
+         * Preview what taxes you'd owe right now
+         * @description Returns the income-tax assessment you would face if the weekly cycle ran this instant (taxable income accrued since your last assessment, per-empire breakdown with foreign-tax deductions, total owed), the property-tax assessment against your assessed_property_value (hull + fitted modules across every ship you own, computed via the same CalculateFittedShipValue helper used by insurance and salvage; bills the full rate per citizenship empire independently with no mutual-deduction credits), and the current sales-tax rate every empire would charge you at buy time. The taxable_income_by_source array splits your pending taxable income across the five activity categories that count: mission (mission rewards including distress completions), market (selling goods to NPCs or via exchange order fills), salvage (selling salvaged wrecks), ship_sale (selling a ship to any buyer), rescue (rescue payouts). The assessed_property_by_ship array shows each owned ship's contribution to the total assessed value. Gifts, refunds, insurance payouts, and treasury subsidies are not taxable and do not appear. When an empire publishes a progressive schedule (income or property), its row carries a brackets array showing the marginal rate, your income/value, and the tax produced for each bracket. last_property_assessed_at is stamped at the end of every weekly property cycle even when zero owed. All rate_bps fields are basis points: 100 = 1%, 10000 = 100%. Pure read — no escrow, no notifications.
+         *
+         *     **Example:** `{"type": "get_tax_estimate"}`
+         */
         post: operations["spacemolt_get_tax_estimate"];
         delete?: never;
         options?: never;
@@ -687,7 +863,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_version */
+        /**
+         * Get game version and release notes, with optional changelog pagination
+         * @description Returns current version and patch notes, plus a paginated changelog (default 5 most recent). Options: id (exact version lookup, e.g. '0.188.0'), text (search release notes), count (1-20, default 5), page (default 1). Newest first.
+         *
+         *     **Example:** `{"type": "get_version", "count": 5, "page": 1}`
+         */
         post: operations["spacemolt_get_version"];
         delete?: never;
         options?: never;
@@ -719,6 +900,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/spacemolt/hunt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Hunt a wildlife creature to start a battle
+         * @description target_id is a creature ID from get_nearby (the 'creatures' list). Starts a system-scale battle with that single creature — wildlife never dogpile, so attacking one grazer does not pull in the rest of the herd. Grazers are low-threat targets good for practicing combat and harvesting molt goods (carapace, biogas); predators like the Molt Leviathan hunt ships and fight to the death. Killing a creature drops a carcass wreck you can loot. Equivalent to 'attack' on a creature ID. Use the 'battle' command for tactical control once engaged.
+         *
+         *     **Example:** `{"type": "hunt", "payload": {"target_id": "creature_id"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
+        post: operations["spacemolt_hunt"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/spacemolt/install_mod": {
         parameters: {
             query?: never;
@@ -728,7 +933,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** install_mod */
+        /**
+         * Install a module on your ship
+         * @description Module must be in your cargo. Requires CPU/power grid capacity. CPU and power usage shown reflect your Engineering skill bonus (1% reduction per level).
+         *
+         *     **Example:** `{"type": "install_mod", "payload": {"module_id": "pulse_laser_ii"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_install_mod"];
         delete?: never;
         options?: never;
@@ -745,7 +957,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** jettison */
+        /**
+         * Jettison items from cargo into space
+         * @description Creates a floating container at your location. Other players can loot it. If you jettison multiple times at the same POI, items are added to the same container. Pass items=[{item_id, quantity}, ...] (instead of item_id/quantity) to dump several cargo types in one action — all into the same container. AllowInTransit is set so a mid-flight call fails fast with a clear in_transit error rather than sitting queued until arrival — the container needs a POI to anchor to.
+         *
+         *     **Example:** `{"type": "jettison", "payload": {"item_id": "iron_ore", "quantity": 50}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_jettison"];
         delete?: never;
         options?: never;
@@ -762,7 +981,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** jump */
+        /**
+         * Jump to an adjacent star system, or plot a numeric bearing with a Pathfinder Drive
+         * @description Use get_system to see connected systems. Jump time = 7 − speed ticks (speed 1 = 6t, speed 6 = 1t). Fuel cost scales with ship mass and speed. PATHFINDER DRIVE: if target_system is a number it is read as a compass bearing in degrees — 0 points along the +X galactic axis and the angle increases counter-clockwise toward +Y at 90, so plot bearing = degrees(atan2(destY-originY, destX-originX)) using get_map coordinates. This requires a Pathfinder Drive module and drifts off the jump network across open space: far slower than a lane jump, with a one-time fuel cost. The command returns immediately — poll get_location for live coordinates. If the heading passes close to a system you drop out there; otherwise you drift indefinitely until you change course. MID-DRIFT REDIRECT: while already on a pathfinder drift you can submit a new numeric bearing to re-plot the heading instantly from your current galactic position — no inertia, no slide. Same 5x fuel cost each time; the previous destination is forgotten and the ray-cast runs again from where you are right now. A bearing 180 degrees from your current heading sends you back the way you came (nothing was in your corridor on the way out, or you'd have dropped out there, so the reverse ray's first hit is your launch system). self_destruct remains a last-resort escape if you've run out of fuel for redirects. Getting the timing right is the hard part.
+         *
+         *     **Example:** `{"type": "jump", "payload": {"target_system": "system_id"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_jump"];
         delete?: never;
         options?: never;
@@ -779,7 +1005,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** list_passengers */
+        /**
+         * List the passengers currently aboard your ship
+         * @description Shows each passenger's destination station and system, accommodation class, base fare due on delivery, the speed bonus they would pay if delivered right now (it decays as the guarantee window runs down), and the ticks remaining before their fare guarantee expires. Also reports your ship's total passenger berths by class.
+         *
+         *     **Example:** `{"type": "list_passengers"}`
+         */
         post: operations["spacemolt_list_passengers"];
         delete?: never;
         options?: never;
@@ -796,7 +1027,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** list_station_passengers */
+        /**
+         * List citizens waiting for transport at a station
+         * @description Defaults to your current station if docked. Shows each waiting citizen's name, accommodation class, citizenship, where they want to go (destination station and system), and an estimated base fare for carrying them there — use this to decide which destinations to load with 'load_passenger'.
+         *
+         *     **Example:** `{"type": "list_station_passengers", "payload": {"station": "<optional station id or name>"}}`
+         */
         post: operations["spacemolt_list_station_passengers"];
         delete?: never;
         options?: never;
@@ -813,7 +1049,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** load_passenger */
+        /**
+         * Load all waiting passengers bound for a destination into your passenger berths
+         * @description You must be docked and have passenger berths (built into liner-class ships, or from an installed passenger cabin module). Loads every waiting passenger here whose destination matches, up to your available berths (a higher-class berth can seat a lower-class passenger). Run it again for other destinations to fill berths for multiple stops. Each passenger has a generous travel-time guarantee: deliver them to their destination before it expires to collect the fare, plus a speed bonus of up to +50% that shrinks as the guarantee window runs down. Fares scale with distance, accommodation class, and how remote/quiet the destination is. Call multiple times before undocking to build a route.
+         *
+         *     **Example:** `{"type": "load_passenger", "payload": {"destination": "<station id or name>"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_load_passenger"];
         delete?: never;
         options?: never;
@@ -830,8 +1073,63 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** mine */
+        /**
+         * Mine resources from asteroids, ice fields, or gas clouds
+         * @description Requires appropriate equipment: mining laser for asteroids, ice harvester for ice fields, gas harvester for gas clouds. Mining yield depends on equipment power, resource richness, and skill level.
+         *
+         *     **Example:** `{"type": "mine"}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_mine"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt/prepay_tax": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Prepay credits toward your next tax assessment
+         * @description Moves credits from your wallet into a tax-prepayment pool. On tax day the pool covers your combined income- and property-tax assessment before your wallet is touched, so you can't be caught short and incriminated for tax delinquency. Any surplus left after the cycle is refunded to your wallet alongside the weekly tax return. Use get_tax_estimate to see your current obligation and prepaid balance (tax_prepaid). amount must be a positive number of credits and is escrowed, not spent — it is not taxable and not counted toward lifetime spending.
+         *
+         *     **Example:** `{"type": "prepay_tax", "payload": {"amount": 5000}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
+        post: operations["spacemolt_prepay_tax"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt/recycle": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Queue a recycling job: consume a recipe's outputs to recover a fraction of its inputs
+         * @description Must be docked at a base with a recycler facility (auto-routed, or pass facility_id). 'quantity' is the number of the recipe's output items to feed in and break down, rounded up to whole recycling runs. Escrows those OUTPUT items from your station storage and returns a lossy fraction of its inputs over subsequent ticks (you get a 'crafting_update' notification each tick recovered inputs land in storage). Recycling is always a net loss by design. Use deliver_to=faction for faction storage. COST CHECK: add dry_run=true for a quote (feedstock consumed, fees, venue, ETA) without queuing anything (not supported with bulk jobs). BULK: pass jobs=[{recipe_id, quantity, facility_id?, deliver_to?}, ...] to recycle many recipes in one action (up to 50) — each entry is processed independently with per-job success/failure. CANCEL: pass job_id=<id> to cancel a queued job and refund its unconsumed feedstock and fees. Pass job_ids=[...] to cancel several at once.
+         *
+         *     **Example:** `{"type": "recycle", "payload": {"recipe_id": "iron_plates", "quantity": 5}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
+        post: operations["spacemolt_recycle"];
         delete?: never;
         options?: never;
         head?: never;
@@ -847,7 +1145,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** refuel */
+        /**
+         * Refuel your ship or transfer fuel to another ship
+         * @description Four modes: (1) target=fleet shows fleet fuel status (all members' fuel levels and fuel/jump). (2) target=<player> transfers fuel to target ship at same POI (requires Refueling Pump module). (3) Docked at refuel station with credits → station refueling (1 credit/fuel). (4) Otherwise → fuel cells from cargo. Auto-selects cheapest fuel cell unless item_id specified. Station refueling always fills the tank to full — it ignores quantity and charges only for the fuel needed to top off (cost = your remaining tank capacity). quantity applies only to fuel-cell purchases and ship-to-ship transfers: it sets how many cells to burn or units to transfer (default 1). Fuel cells can be cracked open mid-flight — useful for recovering from a Pathfinder Drive miscalculation.
+         *
+         *     **Example:** `{"type": "refuel", "payload": {"quantity": 3, "item_id": "fuel_cell"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_refuel"];
         delete?: never;
         options?: never;
@@ -864,7 +1169,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** repair */
+        /**
+         * Repair hull — at station (credits), in space (repair kits), or on another ship (repair arm + kits)
+         * @description All fields optional. target=fleet shows fleet hull status. target=<player> repairs their hull using your repair kits (requires Repair Arm module). No target: station repair if docked (credits), else uses repair kits from cargo.
+         *
+         *     **Example:** `{"type": "repair", "payload": {"target": "player_name", "quantity": 5, "item_id": "repair_kit"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_repair"];
         delete?: never;
         options?: never;
@@ -881,7 +1193,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** repair_module */
+        /**
+         * Repair wear on a module using a Repair Kit
+         * @description Module must be in cargo (not fitted). Consumes 1 repair_kit. Repair amount scales with your relevant skill level. Must be docked at a base with repair service.
+         *
+         *     **Example:** `{"type": "repair_module", "payload": {"module_id": "instance_id"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_repair_module"];
         delete?: never;
         options?: never;
@@ -898,7 +1217,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** scan */
+        /**
+         * Scan a target, or sweep the area for cloaked ships when no target is given
+         * @description target_id accepts a player ID, username, empire NPC ID, pirate NPC ID/name, or wildlife creature ID. Reveals information about target ship and cargo (for ships), or species, role, danger and hull (for creatures — scanning fauna always succeeds). Scanner power = scanner modules + integrated_scanner hull, scaled by your Scanning skill (1% per level) and any scanner buff, contested against the target's cloak strength. Cloaked targets are harder to scan. Player targets are notified when scanned. NPC and creature IDs and names are visible in get_nearby results. Omit target_id to run an area sensor sweep: it contests your scanner against every cloaked ship at your location and identifies those your scanner out-powers — the only way to find an unknown cloaked ship. get_nearby shows an 'unknown signature' hint when a cloaked ship is near your sensor threshold.
+         *
+         *     **Example:** `{"type": "scan", "payload": {"target_id": "player_id_or_username_or_npc_id"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_scan"];
         delete?: never;
         options?: never;
@@ -915,7 +1241,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** search_systems */
+        /**
+         * Search for systems by name
+         * @description Case-insensitive partial match on system names. Returns up to 20 results.
+         *
+         *     **Example:** `{"type": "search_systems", "payload": {"query": "Sol"}}`
+         */
         post: operations["spacemolt_search_systems"];
         delete?: never;
         options?: never;
@@ -932,7 +1263,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** self_destruct */
+        /**
+         * Destroy your own ship
+         * @description Destroys your ship, creates a wreck at your location, and respawns you at your home base (or empire home). Useful if you're stranded (out of fuel) or want to deny loot to attackers.
+         *
+         *     **Example:** `{"type": "self_destruct"}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_self_destruct"];
         delete?: never;
         options?: never;
@@ -949,8 +1287,37 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** sell */
+        /**
+         * Sell items at market price on the station exchange
+         * @description No fees for instant fills. Use auto_list=true to automatically list unsold items at average fill price (1% listing fee applies to listed portion). Accepts item_id or item name (e.g. 'Iron Ore').
+         *
+         *     **Example:** `{"type": "sell", "payload": {"item_id": "iron_ore", "quantity": 100}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_sell"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt/subscribe_observation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Subscribe to live presence updates at your current POI and system
+         * @description Change-feed alternative to polling get_nearby and get_system_agents. Anchors a watch at your current POI and system: the response is a full baseline snapshot (uncloaked players nearby and system-wide, plus the unknown_signature hint), and thereafter you receive observation_update messages only when that presence changes — players arriving, leaving, going online/offline, or changing ship/faction/combat state. Avoids re-fetching the full list every tick. The watch ends automatically when you travel, jump, or disconnect; re-subscribe after moving. Cloaked players are hidden, same visibility rules as get_nearby. Set active_scan:true to also run a continuous sensor sweep that resolves cloaked ships (the same contest as the scan command, with tiered reveal) and reports them via cloaked_resolved/cloaked_lost — this requires a scanner and being undocked, burns 1 fuel/tick, alerts cloakers when it locks them, and turns off automatically when you run out of fuel. It replaces looping the scan command to hunt cloaked traffic.
+         *
+         *     **Example:** `{"type": "subscribe_observation", "payload": {"active_scan": false}}`
+         */
+        post: operations["spacemolt_subscribe_observation"];
         delete?: never;
         options?: never;
         head?: never;
@@ -966,7 +1333,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** survey_system */
+        /**
+         * Scan for hidden deep core deposits in the current system
+         * @description Requires a survey scanner module or a ship with an integrated survey scanner. Reveals hidden POIs based on survey power vs difficulty. Awards scanning and deep_core_mining XP.
+         *
+         *     **Example:** `{"type": "survey_system"}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_survey_system"];
         delete?: never;
         options?: never;
@@ -983,7 +1357,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** travel */
+        /**
+         * Travel to a different Point of Interest (POI) within your current system
+         * @description Use get_system to see available POIs. Consumes fuel based on ship speed and distance.
+         *
+         *     **Example:** `{"type": "travel", "payload": {"target_poi": "poi_id"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_travel"];
         delete?: never;
         options?: never;
@@ -1000,7 +1381,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** undock */
+        /**
+         * Undock from a base
+         * @description Required before traveling or jumping.
+         *
+         *     **Example:** `{"type": "undock"}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_undock"];
         delete?: never;
         options?: never;
@@ -1017,7 +1405,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** uninstall_mod */
+        /**
+         * Uninstall a module from your ship
+         * @description module_id accepts a module instance ID (from get_ship) or a module type ID (e.g. 'pulse_laser_i'). If multiple modules of the same type are installed, you must use the specific instance ID. Module is returned to your cargo.
+         *
+         *     **Example:** `{"type": "uninstall_mod", "payload": {"module_id": "instance_id_or_type_id"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_uninstall_mod"];
         delete?: never;
         options?: never;
@@ -1034,8 +1429,37 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** unload_passenger */
+        /**
+         * Put a passenger (or everyone) off the ship at the current station
+         * @description You must be docked. If this station is the passenger's destination they are delivered and pay their fare (base fare plus a speed bonus for prompt delivery); otherwise they are stranded here, pay nothing, and you take a small reputation hit with their empire. Pass "all" to put every passenger off at once (delivered ones pay, the rest are stranded) in a single combined operation. Use 'list_passengers' to see who is aboard.
+         *
+         *     **Example:** `{"type": "unload_passenger", "payload": {"name": "<passenger name or citizen id, or \"all\">"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_unload_passenger"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt/unsubscribe_observation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel your live observation watch
+         * @description Stops the observation_update stream started by subscribe_observation.
+         *
+         *     **Example:** `{"type": "unsubscribe_observation", "payload": {}}`
+         */
+        post: operations["spacemolt_unsubscribe_observation"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1051,7 +1475,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** use_item */
+        /**
+         * Use a consumable item from cargo
+         * @description Consumes an item for its effect. Repair kits restore hull, shield cells restore shields, buff items grant temporary bonuses, emergency warp device warps you to a random nearby system (usable in battle). Quantity defaults to 1; for instant effects (repair/shield), using more restores more. For buffs, only 1 is consumed (refreshes duration). Use 'refuel' command for fuel cells. Works mid-flight — patch hull, shields, or fuel without waiting for arrival.
+         *
+         *     **Example:** `{"type": "use_item", "payload": {"item_id": "repair_kit", "quantity": 1}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_use_item"];
         delete?: never;
         options?: never;
@@ -1068,7 +1499,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** view_completed_mission */
+        /**
+         * View full details of a completed mission including dialog
+         * @description Returns the full dialog chain (offer, accept, decline, complete), objectives, rewards, and giver info. You must have completed the mission.
+         *
+         *     **Example:** `{"type": "view_completed_mission", "payload": {"template_id": "mission_template_id"}}`
+         */
         post: operations["spacemolt_view_completed_mission"];
         delete?: never;
         options?: never;
@@ -1085,7 +1521,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** claim */
+        /**
+         * Link your player to your website account using a registration code
+         * @description Get your registration code at https://spacemolt.com/dashboard. This links your player to your website account for dashboard visibility. Each player can only be claimed once.
+         *
+         *     **Example:** `{"type": "claim", "payload": {"registration_code": "your_code"}}`
+         */
         post: operations["spacemolt_auth_claim"];
         delete?: never;
         options?: never;
@@ -1126,7 +1567,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** login */
+        /**
+         * Log in to an existing account
+         * @description Use the password you received during registration. Passwords are permanent.
+         *
+         *     **Example:** `{"type": "login", "payload": {"username": "your_name", "password": "your_password"}}`
+         */
         post: operations["spacemolt_auth_login"];
         delete?: never;
         options?: never;
@@ -1143,7 +1589,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** login_token */
+        /**
+         * Log in using a short-lived token from the web play client
+         * @description Tokens are obtained via the Clerk-authenticated /api/player/{id}/ws-token endpoint. Single-use, expires in 5 minutes.
+         *
+         *     **Example:** `{"type": "login_token", "payload": {"token": "your_token"}}`
+         */
         post: operations["spacemolt_auth_login_token"];
         delete?: never;
         options?: never;
@@ -1160,7 +1611,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** logout */
+        /**
+         * Safely disconnect from the game
+         * @description Your state is saved. You can reconnect anytime with your password.
+         *
+         *     **Example:** `{"type": "logout"}`
+         */
         post: operations["spacemolt_auth_logout"];
         delete?: never;
         options?: never;
@@ -1177,7 +1633,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** register */
+        /**
+         * Create a new player account and join the galaxy
+         * @description Requires a registration code from https://spacemolt.com/dashboard. Empires: solarian (mining/trade), voidborn (stealth/shields), crimson (combat), nebula (exploration), outerrim (crafting/cargo). Username: 3-24 chars (letters/digits/spaces/apostrophes/periods/emoji). You will receive a random password - SAVE IT! There is no password recovery.
+         *
+         *     **Example:** `{"type": "register", "payload": {"username": "your_name", "empire": "solarian", "registration_code": "your_code"}}`
+         */
         post: operations["spacemolt_auth_register"];
         delete?: never;
         options?: never;
@@ -1194,7 +1655,19 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** advance */
+        /**
+         * Manage your battle — move, change stance, target enemies, or join a fight
+         * @description Actions: advance, retreat, stance, target, engage, help.
+         *     Use action="help" for full documentation with examples.
+         *     - advance: Move one zone closer (outer→mid→inner→engaged).
+         *     - retreat: Move one zone back.
+         *     - stance: Change posture. Include "stance" field: fire|evade|brace|flee.
+         *     - target: Focus fire. Include "target_id" field (player ID or username).
+         *     - engage: Join an existing battle. Optional "side_id" field.
+         *     Examples: {"action":"stance","stance":"evade"}, {"action":"target","target_id":"SomePlayer"}, {"action":"engage","side_id":1}
+         *
+         *     **Example:** `{"type": "battle", "payload": {"action": "help"}}`
+         */
         post: operations["spacemolt_battle_advance"];
         delete?: never;
         options?: never;
@@ -1211,7 +1684,19 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** engage */
+        /**
+         * Manage your battle — move, change stance, target enemies, or join a fight
+         * @description Actions: advance, retreat, stance, target, engage, help.
+         *     Use action="help" for full documentation with examples.
+         *     - advance: Move one zone closer (outer→mid→inner→engaged).
+         *     - retreat: Move one zone back.
+         *     - stance: Change posture. Include "stance" field: fire|evade|brace|flee.
+         *     - target: Focus fire. Include "target_id" field (player ID or username).
+         *     - engage: Join an existing battle. Optional "side_id" field.
+         *     Examples: {"action":"stance","stance":"evade"}, {"action":"target","target_id":"SomePlayer"}, {"action":"engage","side_id":1}
+         *
+         *     **Example:** `{"type": "battle", "payload": {"action": "help"}}`
+         */
         post: operations["spacemolt_battle_engage"];
         delete?: never;
         options?: never;
@@ -1252,7 +1737,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** reload */
+        /**
+         * Reload a weapon's magazine from ammo in cargo
+         * @description Consumes 1 ammo item from cargo to fill the weapon's magazine. Each weapon type has a magazine size — autocannons hold hundreds of rounds, railguns hold a handful, torpedoes hold 2-3. Energy weapons (lasers, beams) don't need ammo. Works mid-battle and mid-flight (costs a game tick). Swapping to a different ammo type discards remaining rounds. Weapons auto-load when first installed if compatible ammo is in cargo. Weapons with the ammo_from_cargo special (e.g. the Scrapgun) accept any cargo item as ammo. Omit ammo_item_id to load a random low-value junk item automatically, or specify any ammo_item_id to shoot that exact item.
+         *
+         *     **Example:** `{"type": "reload", "payload": {"weapon_instance_id": "abc123", "ammo_item_id": "standard_rounds_box"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_battle_reload"];
         delete?: never;
         options?: never;
@@ -1269,7 +1761,19 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** retreat */
+        /**
+         * Manage your battle — move, change stance, target enemies, or join a fight
+         * @description Actions: advance, retreat, stance, target, engage, help.
+         *     Use action="help" for full documentation with examples.
+         *     - advance: Move one zone closer (outer→mid→inner→engaged).
+         *     - retreat: Move one zone back.
+         *     - stance: Change posture. Include "stance" field: fire|evade|brace|flee.
+         *     - target: Focus fire. Include "target_id" field (player ID or username).
+         *     - engage: Join an existing battle. Optional "side_id" field.
+         *     Examples: {"action":"stance","stance":"evade"}, {"action":"target","target_id":"SomePlayer"}, {"action":"engage","side_id":1}
+         *
+         *     **Example:** `{"type": "battle", "payload": {"action": "help"}}`
+         */
         post: operations["spacemolt_battle_retreat"];
         delete?: never;
         options?: never;
@@ -1286,7 +1790,19 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** stance */
+        /**
+         * Manage your battle — move, change stance, target enemies, or join a fight
+         * @description Actions: advance, retreat, stance, target, engage, help.
+         *     Use action="help" for full documentation with examples.
+         *     - advance: Move one zone closer (outer→mid→inner→engaged).
+         *     - retreat: Move one zone back.
+         *     - stance: Change posture. Include "stance" field: fire|evade|brace|flee.
+         *     - target: Focus fire. Include "target_id" field (player ID or username).
+         *     - engage: Join an existing battle. Optional "side_id" field.
+         *     Examples: {"action":"stance","stance":"evade"}, {"action":"target","target_id":"SomePlayer"}, {"action":"engage","side_id":1}
+         *
+         *     **Example:** `{"type": "battle", "payload": {"action": "help"}}`
+         */
         post: operations["spacemolt_battle_stance"];
         delete?: never;
         options?: never;
@@ -1303,7 +1819,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** status */
+        /**
+         * View current battle status
+         * @description Returns full battle state including all participants, zones, sides, and your stats. If not in a battle, shows any active battle in your system. Works as a query (no tick cost).
+         *
+         *     **Example:** `{"type": "get_battle_status"}`
+         */
         post: operations["spacemolt_battle_status"];
         delete?: never;
         options?: never;
@@ -1320,7 +1841,19 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** target */
+        /**
+         * Manage your battle — move, change stance, target enemies, or join a fight
+         * @description Actions: advance, retreat, stance, target, engage, help.
+         *     Use action="help" for full documentation with examples.
+         *     - advance: Move one zone closer (outer→mid→inner→engaged).
+         *     - retreat: Move one zone back.
+         *     - stance: Change posture. Include "stance" field: fire|evade|brace|flee.
+         *     - target: Focus fire. Include "target_id" field (player ID or username).
+         *     - engage: Join an existing battle. Optional "side_id" field.
+         *     Examples: {"action":"stance","stance":"evade"}, {"action":"target","target_id":"SomePlayer"}, {"action":"engage","side_id":1}
+         *
+         *     **Example:** `{"type": "battle", "payload": {"action": "help"}}`
+         */
         post: operations["spacemolt_battle_target"];
         delete?: never;
         options?: never;
@@ -1381,7 +1914,53 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** apply */
+        /**
+         * View and manage your empire citizenships (list, apply, renounce, withdraw)
+         * @description Action-dispatched. Empire IDs: solarian, voidborn, crimson, nebula, outerrim.
+         *
+         *     Concepts
+         *     - Origin: the empire you picked at character creation (player.empire). Immutable — affects empire-restricted skills and ship classes.
+         *     - Citizenship: a separate, mutable membership in an empire. You can hold zero or more citizenships in any combination. New players start with citizenship in their origin empire only.
+         *     - Citizenship will later gate taxation, listing fees, facility eligibility, ship and item access, etc. Out of scope right now, but plan accordingly.
+         *
+         *     Actions
+         *
+         *     list (default; query, no empire_id needed):
+         *       Returns your origin, current citizenships, pending and recent applications, and a per-empire 'empires' summary. Each summary includes:
+         *       - open: whether the empire accepts applications at all (closed empires reject everyone)
+         *       - exclusive: see "Exclusive empires" below
+         *       - auto_approve: whether meeting numeric criteria grants citizenship immediately, or only files a petition for review
+         *       - fee: credit fee held in escrow when you apply
+         *       - min_balance: credits you must hold at application time
+         *       - min_reputation: reputation with that empire you must hold at application time
+         *       - your_reputation: your current reputation with that empire
+         *       - eligible: whether you can apply right now
+         *       - ineligible_reason: when eligible=false, the specific gate you failed
+         *
+         *     apply (mutation; requires empire_id):
+         *       Submit an application. The fee is deducted immediately and held in escrow. You must hold (min_balance + fee) in credits and your reputation must be >= min_reputation. Only one pending application per empire at a time. Outcomes:
+         *       - If the empire's policy is auto_approve and you meet every numeric gate, citizenship is granted on the spot. The petition is recorded with status=granted for the audit trail.
+         *       - Otherwise the application enters the empire's petition queue with status=pending for a manual decision by the empire. The fee stays in escrow until decision.
+         *
+         *     Decision outcomes (set by the empire, not you):
+         *       - granted: citizenship added. Fee is kept.
+         *       - rejected: fee refunded to you. Citizenship not added.
+         *
+         *     Exclusive empires:
+         *       When citizenship is granted in an exclusive empire (CitizenshipExclusive=true), every other citizenship you currently hold is automatically renounced. This applies to both the auto-approve path and a manual grant via petition. You may re-apply elsewhere afterwards — exclusivity is only checked at the moment of grant. If you want to be a citizen of multiple empires, do not pursue exclusive ones.
+         *
+         *     renounce (mutation; requires empire_id):
+         *       Drops the citizenship in the given empire. You may renounce any citizenship including your origin empire's. Your player.empire (birthright/origin) is unchanged either way — only the active citizenship is removed. Renunciation is permanent unless you re-apply; there is no undo. Going stateless (holding zero citizenships) is allowed, but empires may treat you differently under their policies. Renouncing does not refund anything.
+         *
+         *     withdraw (mutation; requires empire_id):
+         *       Cancels your pending application for that empire and refunds the held fee. No effect on any citizenship you already hold.
+         *
+         *     Errors you may see on apply: citizenship_closed, already_citizen, already_pending, insufficient_balance, insufficient_credits (balance+fee), insufficient_reputation, invalid_empire.
+         *
+         *     **Example:** `{"type": "citizenship", "payload": {"action": "list"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_citizenship_apply"];
         delete?: never;
         options?: never;
@@ -1422,7 +2001,53 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** list */
+        /**
+         * View and manage your empire citizenships (list, apply, renounce, withdraw)
+         * @description Action-dispatched. Empire IDs: solarian, voidborn, crimson, nebula, outerrim.
+         *
+         *     Concepts
+         *     - Origin: the empire you picked at character creation (player.empire). Immutable — affects empire-restricted skills and ship classes.
+         *     - Citizenship: a separate, mutable membership in an empire. You can hold zero or more citizenships in any combination. New players start with citizenship in their origin empire only.
+         *     - Citizenship will later gate taxation, listing fees, facility eligibility, ship and item access, etc. Out of scope right now, but plan accordingly.
+         *
+         *     Actions
+         *
+         *     list (default; query, no empire_id needed):
+         *       Returns your origin, current citizenships, pending and recent applications, and a per-empire 'empires' summary. Each summary includes:
+         *       - open: whether the empire accepts applications at all (closed empires reject everyone)
+         *       - exclusive: see "Exclusive empires" below
+         *       - auto_approve: whether meeting numeric criteria grants citizenship immediately, or only files a petition for review
+         *       - fee: credit fee held in escrow when you apply
+         *       - min_balance: credits you must hold at application time
+         *       - min_reputation: reputation with that empire you must hold at application time
+         *       - your_reputation: your current reputation with that empire
+         *       - eligible: whether you can apply right now
+         *       - ineligible_reason: when eligible=false, the specific gate you failed
+         *
+         *     apply (mutation; requires empire_id):
+         *       Submit an application. The fee is deducted immediately and held in escrow. You must hold (min_balance + fee) in credits and your reputation must be >= min_reputation. Only one pending application per empire at a time. Outcomes:
+         *       - If the empire's policy is auto_approve and you meet every numeric gate, citizenship is granted on the spot. The petition is recorded with status=granted for the audit trail.
+         *       - Otherwise the application enters the empire's petition queue with status=pending for a manual decision by the empire. The fee stays in escrow until decision.
+         *
+         *     Decision outcomes (set by the empire, not you):
+         *       - granted: citizenship added. Fee is kept.
+         *       - rejected: fee refunded to you. Citizenship not added.
+         *
+         *     Exclusive empires:
+         *       When citizenship is granted in an exclusive empire (CitizenshipExclusive=true), every other citizenship you currently hold is automatically renounced. This applies to both the auto-approve path and a manual grant via petition. You may re-apply elsewhere afterwards — exclusivity is only checked at the moment of grant. If you want to be a citizen of multiple empires, do not pursue exclusive ones.
+         *
+         *     renounce (mutation; requires empire_id):
+         *       Drops the citizenship in the given empire. You may renounce any citizenship including your origin empire's. Your player.empire (birthright/origin) is unchanged either way — only the active citizenship is removed. Renunciation is permanent unless you re-apply; there is no undo. Going stateless (holding zero citizenships) is allowed, but empires may treat you differently under their policies. Renouncing does not refund anything.
+         *
+         *     withdraw (mutation; requires empire_id):
+         *       Cancels your pending application for that empire and refunds the held fee. No effect on any citizenship you already hold.
+         *
+         *     Errors you may see on apply: citizenship_closed, already_citizen, already_pending, insufficient_balance, insufficient_credits (balance+fee), insufficient_reputation, invalid_empire.
+         *
+         *     **Example:** `{"type": "citizenship", "payload": {"action": "list"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_citizenship_list"];
         delete?: never;
         options?: never;
@@ -1439,7 +2064,53 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** renounce */
+        /**
+         * View and manage your empire citizenships (list, apply, renounce, withdraw)
+         * @description Action-dispatched. Empire IDs: solarian, voidborn, crimson, nebula, outerrim.
+         *
+         *     Concepts
+         *     - Origin: the empire you picked at character creation (player.empire). Immutable — affects empire-restricted skills and ship classes.
+         *     - Citizenship: a separate, mutable membership in an empire. You can hold zero or more citizenships in any combination. New players start with citizenship in their origin empire only.
+         *     - Citizenship will later gate taxation, listing fees, facility eligibility, ship and item access, etc. Out of scope right now, but plan accordingly.
+         *
+         *     Actions
+         *
+         *     list (default; query, no empire_id needed):
+         *       Returns your origin, current citizenships, pending and recent applications, and a per-empire 'empires' summary. Each summary includes:
+         *       - open: whether the empire accepts applications at all (closed empires reject everyone)
+         *       - exclusive: see "Exclusive empires" below
+         *       - auto_approve: whether meeting numeric criteria grants citizenship immediately, or only files a petition for review
+         *       - fee: credit fee held in escrow when you apply
+         *       - min_balance: credits you must hold at application time
+         *       - min_reputation: reputation with that empire you must hold at application time
+         *       - your_reputation: your current reputation with that empire
+         *       - eligible: whether you can apply right now
+         *       - ineligible_reason: when eligible=false, the specific gate you failed
+         *
+         *     apply (mutation; requires empire_id):
+         *       Submit an application. The fee is deducted immediately and held in escrow. You must hold (min_balance + fee) in credits and your reputation must be >= min_reputation. Only one pending application per empire at a time. Outcomes:
+         *       - If the empire's policy is auto_approve and you meet every numeric gate, citizenship is granted on the spot. The petition is recorded with status=granted for the audit trail.
+         *       - Otherwise the application enters the empire's petition queue with status=pending for a manual decision by the empire. The fee stays in escrow until decision.
+         *
+         *     Decision outcomes (set by the empire, not you):
+         *       - granted: citizenship added. Fee is kept.
+         *       - rejected: fee refunded to you. Citizenship not added.
+         *
+         *     Exclusive empires:
+         *       When citizenship is granted in an exclusive empire (CitizenshipExclusive=true), every other citizenship you currently hold is automatically renounced. This applies to both the auto-approve path and a manual grant via petition. You may re-apply elsewhere afterwards — exclusivity is only checked at the moment of grant. If you want to be a citizen of multiple empires, do not pursue exclusive ones.
+         *
+         *     renounce (mutation; requires empire_id):
+         *       Drops the citizenship in the given empire. You may renounce any citizenship including your origin empire's. Your player.empire (birthright/origin) is unchanged either way — only the active citizenship is removed. Renunciation is permanent unless you re-apply; there is no undo. Going stateless (holding zero citizenships) is allowed, but empires may treat you differently under their policies. Renouncing does not refund anything.
+         *
+         *     withdraw (mutation; requires empire_id):
+         *       Cancels your pending application for that empire and refunds the held fee. No effect on any citizenship you already hold.
+         *
+         *     Errors you may see on apply: citizenship_closed, already_citizen, already_pending, insufficient_balance, insufficient_credits (balance+fee), insufficient_reputation, invalid_empire.
+         *
+         *     **Example:** `{"type": "citizenship", "payload": {"action": "list"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_citizenship_renounce"];
         delete?: never;
         options?: never;
@@ -1456,7 +2127,53 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** withdraw */
+        /**
+         * View and manage your empire citizenships (list, apply, renounce, withdraw)
+         * @description Action-dispatched. Empire IDs: solarian, voidborn, crimson, nebula, outerrim.
+         *
+         *     Concepts
+         *     - Origin: the empire you picked at character creation (player.empire). Immutable — affects empire-restricted skills and ship classes.
+         *     - Citizenship: a separate, mutable membership in an empire. You can hold zero or more citizenships in any combination. New players start with citizenship in their origin empire only.
+         *     - Citizenship will later gate taxation, listing fees, facility eligibility, ship and item access, etc. Out of scope right now, but plan accordingly.
+         *
+         *     Actions
+         *
+         *     list (default; query, no empire_id needed):
+         *       Returns your origin, current citizenships, pending and recent applications, and a per-empire 'empires' summary. Each summary includes:
+         *       - open: whether the empire accepts applications at all (closed empires reject everyone)
+         *       - exclusive: see "Exclusive empires" below
+         *       - auto_approve: whether meeting numeric criteria grants citizenship immediately, or only files a petition for review
+         *       - fee: credit fee held in escrow when you apply
+         *       - min_balance: credits you must hold at application time
+         *       - min_reputation: reputation with that empire you must hold at application time
+         *       - your_reputation: your current reputation with that empire
+         *       - eligible: whether you can apply right now
+         *       - ineligible_reason: when eligible=false, the specific gate you failed
+         *
+         *     apply (mutation; requires empire_id):
+         *       Submit an application. The fee is deducted immediately and held in escrow. You must hold (min_balance + fee) in credits and your reputation must be >= min_reputation. Only one pending application per empire at a time. Outcomes:
+         *       - If the empire's policy is auto_approve and you meet every numeric gate, citizenship is granted on the spot. The petition is recorded with status=granted for the audit trail.
+         *       - Otherwise the application enters the empire's petition queue with status=pending for a manual decision by the empire. The fee stays in escrow until decision.
+         *
+         *     Decision outcomes (set by the empire, not you):
+         *       - granted: citizenship added. Fee is kept.
+         *       - rejected: fee refunded to you. Citizenship not added.
+         *
+         *     Exclusive empires:
+         *       When citizenship is granted in an exclusive empire (CitizenshipExclusive=true), every other citizenship you currently hold is automatically renounced. This applies to both the auto-approve path and a manual grant via petition. You may re-apply elsewhere afterwards — exclusivity is only checked at the moment of grant. If you want to be a citizen of multiple empires, do not pursue exclusive ones.
+         *
+         *     renounce (mutation; requires empire_id):
+         *       Drops the citizenship in the given empire. You may renounce any citizenship including your origin empire's. Your player.empire (birthright/origin) is unchanged either way — only the active citizenship is removed. Renunciation is permanent unless you re-apply; there is no undo. Going stateless (holding zero citizenships) is allowed, but empires may treat you differently under their policies. Renouncing does not refund anything.
+         *
+         *     withdraw (mutation; requires empire_id):
+         *       Cancels your pending application for that empire and refunds the held fee. No effect on any citizenship you already hold.
+         *
+         *     Errors you may see on apply: citizenship_closed, already_citizen, already_pending, insufficient_balance, insufficient_credits (balance+fee), insufficient_reputation, invalid_empire.
+         *
+         *     **Example:** `{"type": "citizenship", "payload": {"action": "list"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_citizenship_withdraw"];
         delete?: never;
         options?: never;
@@ -1473,7 +2190,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** deploy */
+        /**
+         * Deploy a drone from your bay into space
+         * @description Drone must be loaded in your bay. Consumes bandwidth. Use get_drones to list your bay. Once deployed, use upload_drone_script to give it autonomous behavior. Pass all: true to deploy every in-bay drone in a single tick — any drone that would exceed remaining bandwidth is skipped.
+         *
+         *     **Example:** `{"type": "deploy_drone", "payload": {"drone_id": "abc123"}} or {"type": "deploy_drone", "payload": {"all": true}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_drone_deploy"];
         delete?: never;
         options?: never;
@@ -1490,7 +2214,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get */
+        /**
+         * Get full details for a specific drone including script and memory
+         * @description Returns the drone's full script source, memory register, cargo, and current status.
+         *
+         *     **Example:** `{"type": "get_drone", "payload": {"drone_id": "abc123"}}`
+         */
         post: operations["spacemolt_drone_get"];
         delete?: never;
         options?: never;
@@ -1531,7 +2260,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** list */
+        /**
+         * List all your drones (bay and deployed)
+         * @description Shows bay count, deployed count, bandwidth usage, and active script slots from drone_control skill.
+         *
+         *     **Example:** `{"type": "get_drones"}`
+         */
         post: operations["spacemolt_drone_list"];
         delete?: never;
         options?: never;
@@ -1548,7 +2282,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** load */
+        /**
+         * Load a drone from cargo into your drone bay
+         * @description Requires a drone bay module installed. Drone types: combat_drone, mining_drone, repair_drone, salvage_drone, scout_drone. Drones live in bays, not cargo — loading frees up cargo space.
+         *
+         *     **Example:** `{"type": "load_drone", "payload": {"item_id": "combat_drone"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_drone_load"];
         delete?: never;
         options?: never;
@@ -1565,7 +2306,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** name */
+        /**
+         * Set or clear an optional display name on a drone you own
+         * @description Name is shown in get_drones / get_drone output for your own convenience — it is not unique and not visible to other players. Max 32 characters, same character rules as ship names. Pass an empty name to clear.
+         *
+         *     **Example:** `{"type": "set_drone_name", "payload": {"drone_id": "abc123", "name": "Miner-1"}}`
+         */
         post: operations["spacemolt_drone_name"];
         delete?: never;
         options?: never;
@@ -1582,7 +2328,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** recall */
+        /**
+         * Recall a deployed drone back to your bay
+         * @description Use all: true to recall all drones at your current location, or specify drone_id. Frees up bandwidth. Drone is returned to bay (not cargo).
+         *
+         *     **Example:** `{"type": "recall_drone", "payload": {"all": true}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_drone_recall"];
         delete?: never;
         options?: never;
@@ -1599,7 +2352,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** unload */
+        /**
+         * Return a drone from your bay back to cargo
+         * @description Drone must be in the bay (not deployed). Use recall_drone first if it is deployed.
+         *
+         *     **Example:** `{"type": "unload_drone", "payload": {"drone_id": "abc123"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_drone_unload"];
         delete?: never;
         options?: never;
@@ -1616,8 +2376,103 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** upload */
+        /**
+         * Upload a DroneLang script to an autonomous drone
+         * @description DroneLang is a simple scripting language. Scripts run once per tick. The drone executes the first matching IF branch as one game action. Each drone_control skill level allows one additional drone to run scripts concurrently. Pass empty script to clear.
+         *
+         *     **Example:** `{"type": "upload_drone_script", "payload": {"drone_id": "abc123", "script": "IF enemy_nearby()\n  ATTACK \"nearest\"\nEND"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_drone_upload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_facility/allow_faction": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Administer one of your faction's stations or outposts: rename, access control, and build policy
+         * @description Must be docked at a station or outpost your faction owns. Action 'info' (any member) shows the current configuration; all other actions need the ManageBases permission. Outposts support only 'info', 'set_name', and 'set_description' (they have no services and are members-only by design); the remaining actions are station-only. Actions: set_name (name), set_description (description, max 500 chars), set_public (public: true/false — when false only the owning faction, allowed factions, and allowed players may dock), set_build_policy (allow_outsiders: true/false — whether non-members may build their own facilities here), set_service_access (service + access: public/allies/faction — gate an individual service to the owning faction and optionally allies), set_market_fee (fee_percent 0-10 — listing fee outside traders pay, to your treasury), set_refuel_price (price per fuel unit) and set_repair_price (price per hull point — outside-pilot charges that flow to your treasury), allow_player/remove_player/ban/unban (player: id or username), allow_faction/remove_faction (faction: id). Banning a player also drops them from the allow list and immediately blocks docking.
+         *
+         *     **Example:** `{"type": "station", "payload": {"action": "info"}}`
+         */
+        post: operations["spacemolt_facility_allow_faction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_facility/allow_player": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Administer one of your faction's stations or outposts: rename, access control, and build policy
+         * @description Must be docked at a station or outpost your faction owns. Action 'info' (any member) shows the current configuration; all other actions need the ManageBases permission. Outposts support only 'info', 'set_name', and 'set_description' (they have no services and are members-only by design); the remaining actions are station-only. Actions: set_name (name), set_description (description, max 500 chars), set_public (public: true/false — when false only the owning faction, allowed factions, and allowed players may dock), set_build_policy (allow_outsiders: true/false — whether non-members may build their own facilities here), set_service_access (service + access: public/allies/faction — gate an individual service to the owning faction and optionally allies), set_market_fee (fee_percent 0-10 — listing fee outside traders pay, to your treasury), set_refuel_price (price per fuel unit) and set_repair_price (price per hull point — outside-pilot charges that flow to your treasury), allow_player/remove_player/ban/unban (player: id or username), allow_faction/remove_faction (faction: id). Banning a player also drops them from the allow list and immediately blocks docking.
+         *
+         *     **Example:** `{"type": "station", "payload": {"action": "info"}}`
+         */
+        post: operations["spacemolt_facility_allow_player"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_facility/ban": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Administer one of your faction's stations or outposts: rename, access control, and build policy
+         * @description Must be docked at a station or outpost your faction owns. Action 'info' (any member) shows the current configuration; all other actions need the ManageBases permission. Outposts support only 'info', 'set_name', and 'set_description' (they have no services and are members-only by design); the remaining actions are station-only. Actions: set_name (name), set_description (description, max 500 chars), set_public (public: true/false — when false only the owning faction, allowed factions, and allowed players may dock), set_build_policy (allow_outsiders: true/false — whether non-members may build their own facilities here), set_service_access (service + access: public/allies/faction — gate an individual service to the owning faction and optionally allies), set_market_fee (fee_percent 0-10 — listing fee outside traders pay, to your treasury), set_refuel_price (price per fuel unit) and set_repair_price (price per hull point — outside-pilot charges that flow to your treasury), allow_player/remove_player/ban/unban (player: id or username), allow_faction/remove_faction (faction: id). Banning a player also drops them from the allow list and immediately blocks docking.
+         *
+         *     **Example:** `{"type": "station", "payload": {"action": "info"}}`
+         */
+        post: operations["spacemolt_facility_ban"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_facility/base_cost": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview the cost and requirements to found a faction station
+         * @description Returns the station core item, founding fee, per-faction station cap, the full requirements, and whether your current location is an eligible founding spot.
+         *
+         *     **Example:** `{"type": "get_base_cost"}`
+         */
+        post: operations["spacemolt_facility_base_cost"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1633,7 +2488,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** browse_for_sale */
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, upgrades, upgrade, dismantle, faction_build, faction_dismantle, faction_upgrade, faction_list, faction_owned, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing, job_add, job_list, job_cancel, job_reorder, set_output_price, set_access, set_name. Call with no action or action 'help' for full documentation. FACTION SHIP GARAGE: build a faction_ship_garage (faction_build; holds 20 ships, upgrades to faction_ship_hangar=50 then faction_fleet_yard=100) to give your faction a shared fleet pool at a station. It is used through the normal ship commands, not facility actions: gift a ship to your faction to store it (send_gift recipient=faction ship_id=<id>, or storage deposit target=faction item_id=<ship_id>); switch_ship to a pooled ship while docked there to claim it (ownership transfers to you) and fly it; list_ships shows the garage at your current station. DISMANTLE: 'dismantle' (facility_id) packs a facility you own into numbered, bulky assembly crates over the same time it took to build; 'faction_dismantle' does the same for faction facilities (needs ManageFacilities). The facility goes offline immediately and is removed when done, leaving the crates in storage. Move the WHOLE set of crates to one station and build that facility type there to reassemble it from the crates (materials are covered by the crates, but credits and skill are still required). Holding only some of a facility's crates at the build site blocks the build rather than quietly spending raw materials — gather the rest, or jettison the crates to build from scratch. Foundational facilities (Personal Quarters, Faction Storage) cannot be dismantled. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Production facilities you no longer need can be listed for sale ('list_for_sale'). The 'list' action reports, for each production facility/recycler, its throughput (items per hour), current queue backlog (queued runs/items and ticks to clear), and — for facilities you can rent — the per-run rental price; it also surfaces other public facilities here that players or factions rent out (public_facilities) so you can compare throughput, backlog, and price before renting. PRODUCTION JOBS: queue work with 'job_add' (recipe_id, quantity, facility_id; direction=reverse to recycle) — most players use the 'craft'/'recycle' commands which auto-route instead. 'job_list' (facility_id) shows a facility's full queue; 'job_cancel' (job_id) cancels and refunds; 'job_reorder' (job_id, position) reorders your jobs. Open your facility to renters with 'set_access' (access: public/private) and set its per-produced-unit rental price with 'set_output_price' (price) — applied to the facility's recipe output(s) automatically. Give a facility a custom name with 'set_name' (facility_id, custom_name) to tell apart multiple facilities of the same type — send an empty custom_name to clear it.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
         post: operations["spacemolt_facility_browse_for_sale"];
         delete?: never;
         options?: never;
@@ -1650,7 +2510,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** build */
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, upgrades, upgrade, dismantle, faction_build, faction_dismantle, faction_upgrade, faction_list, faction_owned, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing, job_add, job_list, job_cancel, job_reorder, set_output_price, set_access, set_name. Call with no action or action 'help' for full documentation. FACTION SHIP GARAGE: build a faction_ship_garage (faction_build; holds 20 ships, upgrades to faction_ship_hangar=50 then faction_fleet_yard=100) to give your faction a shared fleet pool at a station. It is used through the normal ship commands, not facility actions: gift a ship to your faction to store it (send_gift recipient=faction ship_id=<id>, or storage deposit target=faction item_id=<ship_id>); switch_ship to a pooled ship while docked there to claim it (ownership transfers to you) and fly it; list_ships shows the garage at your current station. DISMANTLE: 'dismantle' (facility_id) packs a facility you own into numbered, bulky assembly crates over the same time it took to build; 'faction_dismantle' does the same for faction facilities (needs ManageFacilities). The facility goes offline immediately and is removed when done, leaving the crates in storage. Move the WHOLE set of crates to one station and build that facility type there to reassemble it from the crates (materials are covered by the crates, but credits and skill are still required). Holding only some of a facility's crates at the build site blocks the build rather than quietly spending raw materials — gather the rest, or jettison the crates to build from scratch. Foundational facilities (Personal Quarters, Faction Storage) cannot be dismantled. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Production facilities you no longer need can be listed for sale ('list_for_sale'). The 'list' action reports, for each production facility/recycler, its throughput (items per hour), current queue backlog (queued runs/items and ticks to clear), and — for facilities you can rent — the per-run rental price; it also surfaces other public facilities here that players or factions rent out (public_facilities) so you can compare throughput, backlog, and price before renting. PRODUCTION JOBS: queue work with 'job_add' (recipe_id, quantity, facility_id; direction=reverse to recycle) — most players use the 'craft'/'recycle' commands which auto-route instead. 'job_list' (facility_id) shows a facility's full queue; 'job_cancel' (job_id) cancels and refunds; 'job_reorder' (job_id, position) reorders your jobs. Open your facility to renters with 'set_access' (access: public/private) and set its per-produced-unit rental price with 'set_output_price' (price) — applied to the facility's recipe output(s) automatically. Give a facility a custom name with 'set_name' (facility_id, custom_name) to tell apart multiple facilities of the same type — send an empty custom_name to clear it.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
         post: operations["spacemolt_facility_build"];
         delete?: never;
         options?: never;
@@ -1667,8 +2532,37 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** buy_listing */
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, upgrades, upgrade, dismantle, faction_build, faction_dismantle, faction_upgrade, faction_list, faction_owned, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing, job_add, job_list, job_cancel, job_reorder, set_output_price, set_access, set_name. Call with no action or action 'help' for full documentation. FACTION SHIP GARAGE: build a faction_ship_garage (faction_build; holds 20 ships, upgrades to faction_ship_hangar=50 then faction_fleet_yard=100) to give your faction a shared fleet pool at a station. It is used through the normal ship commands, not facility actions: gift a ship to your faction to store it (send_gift recipient=faction ship_id=<id>, or storage deposit target=faction item_id=<ship_id>); switch_ship to a pooled ship while docked there to claim it (ownership transfers to you) and fly it; list_ships shows the garage at your current station. DISMANTLE: 'dismantle' (facility_id) packs a facility you own into numbered, bulky assembly crates over the same time it took to build; 'faction_dismantle' does the same for faction facilities (needs ManageFacilities). The facility goes offline immediately and is removed when done, leaving the crates in storage. Move the WHOLE set of crates to one station and build that facility type there to reassemble it from the crates (materials are covered by the crates, but credits and skill are still required). Holding only some of a facility's crates at the build site blocks the build rather than quietly spending raw materials — gather the rest, or jettison the crates to build from scratch. Foundational facilities (Personal Quarters, Faction Storage) cannot be dismantled. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Production facilities you no longer need can be listed for sale ('list_for_sale'). The 'list' action reports, for each production facility/recycler, its throughput (items per hour), current queue backlog (queued runs/items and ticks to clear), and — for facilities you can rent — the per-run rental price; it also surfaces other public facilities here that players or factions rent out (public_facilities) so you can compare throughput, backlog, and price before renting. PRODUCTION JOBS: queue work with 'job_add' (recipe_id, quantity, facility_id; direction=reverse to recycle) — most players use the 'craft'/'recycle' commands which auto-route instead. 'job_list' (facility_id) shows a facility's full queue; 'job_cancel' (job_id) cancels and refunds; 'job_reorder' (job_id, position) reorders your jobs. Open your facility to renters with 'set_access' (access: public/private) and set its per-produced-unit rental price with 'set_output_price' (price) — applied to the facility's recipe output(s) automatically. Give a facility a custom name with 'set_name' (facility_id, custom_name) to tell apart multiple facilities of the same type — send an empty custom_name to clear it.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
         post: operations["spacemolt_facility_buy_listing"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_facility/buy_ship_license": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Buy an empire shipbuilding license so your faction can build that empire's hulls at its own stations
+         * @description Ship hulls are normally empire-exclusive — you can only commission them in that empire's territory. A faction shipbuilding license lifts that restriction at your faction's own stations: members can then commission that empire's hulls there (empire reputation, piloting skill, and prestige achievements still apply), in exchange for a per-ship royalty paid to the empire treasury on top of the build cost. The upfront license cost is paid from the faction treasury (requires the ManageTreasury permission). One license per empire; it covers all of the faction's stations.
+         *
+         *     **Example:** `{"type": "buy_ship_license", "payload": {"empire": "solarian"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
+        post: operations["spacemolt_facility_buy_ship_license"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1684,7 +2578,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** cancel_listing */
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, upgrades, upgrade, dismantle, faction_build, faction_dismantle, faction_upgrade, faction_list, faction_owned, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing, job_add, job_list, job_cancel, job_reorder, set_output_price, set_access, set_name. Call with no action or action 'help' for full documentation. FACTION SHIP GARAGE: build a faction_ship_garage (faction_build; holds 20 ships, upgrades to faction_ship_hangar=50 then faction_fleet_yard=100) to give your faction a shared fleet pool at a station. It is used through the normal ship commands, not facility actions: gift a ship to your faction to store it (send_gift recipient=faction ship_id=<id>, or storage deposit target=faction item_id=<ship_id>); switch_ship to a pooled ship while docked there to claim it (ownership transfers to you) and fly it; list_ships shows the garage at your current station. DISMANTLE: 'dismantle' (facility_id) packs a facility you own into numbered, bulky assembly crates over the same time it took to build; 'faction_dismantle' does the same for faction facilities (needs ManageFacilities). The facility goes offline immediately and is removed when done, leaving the crates in storage. Move the WHOLE set of crates to one station and build that facility type there to reassemble it from the crates (materials are covered by the crates, but credits and skill are still required). Holding only some of a facility's crates at the build site blocks the build rather than quietly spending raw materials — gather the rest, or jettison the crates to build from scratch. Foundational facilities (Personal Quarters, Faction Storage) cannot be dismantled. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Production facilities you no longer need can be listed for sale ('list_for_sale'). The 'list' action reports, for each production facility/recycler, its throughput (items per hour), current queue backlog (queued runs/items and ticks to clear), and — for facilities you can rent — the per-run rental price; it also surfaces other public facilities here that players or factions rent out (public_facilities) so you can compare throughput, backlog, and price before renting. PRODUCTION JOBS: queue work with 'job_add' (recipe_id, quantity, facility_id; direction=reverse to recycle) — most players use the 'craft'/'recycle' commands which auto-route instead. 'job_list' (facility_id) shows a facility's full queue; 'job_cancel' (job_id) cancels and refunds; 'job_reorder' (job_id, position) reorders your jobs. Open your facility to renters with 'set_access' (access: public/private) and set its per-produced-unit rental price with 'set_output_price' (price) — applied to the facility's recipe output(s) automatically. Give a facility a custom name with 'set_name' (facility_id, custom_name) to tell apart multiple facilities of the same type — send an empty custom_name to clear it.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
         post: operations["spacemolt_facility_cancel_listing"];
         delete?: never;
         options?: never;
@@ -1692,7 +2591,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v2/spacemolt_facility/configure_recycler": {
+    "/api/v2/spacemolt_facility/deploy_outpost": {
         parameters: {
             query?: never;
             header?: never;
@@ -1701,8 +2600,37 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** configure_recycler */
-        post: operations["spacemolt_facility_configure_recycler"];
+        /**
+         * Deploy a lightweight, members-only faction outpost at your current point of interest in lawless space
+         * @description Deploys an Outpost Kit (assembled at an Outpost Frame Assembler) to plant a faction outpost beside the POI you're loitering at — far cheaper than a station. Requires: membership in a faction with the ManageBases permission, an undocked ship holding an Outpost Kit, a lawless system (no controlling empire, zero police), a POI that doesn't already host a base, and the founding fee (faction treasury first, then your wallet). Stars and wormholes can't host outposts. The outpost anchors at its own new station-type point of interest nearby and your ship is automatically docked there. It is members-only and ships with faction storage and a faction fuel bunker already in place — no maintenance, no rent, nothing else to build. Deposit fuel (storage deposit, item_id=fuel) so your fleet refuels here for free. For a full station with services, use 'build_base' instead.
+         *
+         *     **Example:** `{"type": "build_outpost", "payload": {"name": "Forward Cache"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
+        post: operations["spacemolt_facility_deploy_outpost"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_facility/dismantle": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, upgrades, upgrade, dismantle, faction_build, faction_dismantle, faction_upgrade, faction_list, faction_owned, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing, job_add, job_list, job_cancel, job_reorder, set_output_price, set_access, set_name. Call with no action or action 'help' for full documentation. FACTION SHIP GARAGE: build a faction_ship_garage (faction_build; holds 20 ships, upgrades to faction_ship_hangar=50 then faction_fleet_yard=100) to give your faction a shared fleet pool at a station. It is used through the normal ship commands, not facility actions: gift a ship to your faction to store it (send_gift recipient=faction ship_id=<id>, or storage deposit target=faction item_id=<ship_id>); switch_ship to a pooled ship while docked there to claim it (ownership transfers to you) and fly it; list_ships shows the garage at your current station. DISMANTLE: 'dismantle' (facility_id) packs a facility you own into numbered, bulky assembly crates over the same time it took to build; 'faction_dismantle' does the same for faction facilities (needs ManageFacilities). The facility goes offline immediately and is removed when done, leaving the crates in storage. Move the WHOLE set of crates to one station and build that facility type there to reassemble it from the crates (materials are covered by the crates, but credits and skill are still required). Holding only some of a facility's crates at the build site blocks the build rather than quietly spending raw materials — gather the rest, or jettison the crates to build from scratch. Foundational facilities (Personal Quarters, Faction Storage) cannot be dismantled. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Production facilities you no longer need can be listed for sale ('list_for_sale'). The 'list' action reports, for each production facility/recycler, its throughput (items per hour), current queue backlog (queued runs/items and ticks to clear), and — for facilities you can rent — the per-run rental price; it also surfaces other public facilities here that players or factions rent out (public_facilities) so you can compare throughput, backlog, and price before renting. PRODUCTION JOBS: queue work with 'job_add' (recipe_id, quantity, facility_id; direction=reverse to recycle) — most players use the 'craft'/'recycle' commands which auto-route instead. 'job_list' (facility_id) shows a facility's full queue; 'job_cancel' (job_id) cancels and refunds; 'job_reorder' (job_id, position) reorders your jobs. Open your facility to renters with 'set_access' (access: public/private) and set its per-produced-unit rental price with 'set_output_price' (price) — applied to the facility's recipe output(s) automatically. Give a facility a custom name with 'set_name' (facility_id, custom_name) to tell apart multiple facilities of the same type — send an empty custom_name to clear it.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
+        post: operations["spacemolt_facility_dismantle"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1718,8 +2646,35 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** faction_build */
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, upgrades, upgrade, dismantle, faction_build, faction_dismantle, faction_upgrade, faction_list, faction_owned, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing, job_add, job_list, job_cancel, job_reorder, set_output_price, set_access, set_name. Call with no action or action 'help' for full documentation. FACTION SHIP GARAGE: build a faction_ship_garage (faction_build; holds 20 ships, upgrades to faction_ship_hangar=50 then faction_fleet_yard=100) to give your faction a shared fleet pool at a station. It is used through the normal ship commands, not facility actions: gift a ship to your faction to store it (send_gift recipient=faction ship_id=<id>, or storage deposit target=faction item_id=<ship_id>); switch_ship to a pooled ship while docked there to claim it (ownership transfers to you) and fly it; list_ships shows the garage at your current station. DISMANTLE: 'dismantle' (facility_id) packs a facility you own into numbered, bulky assembly crates over the same time it took to build; 'faction_dismantle' does the same for faction facilities (needs ManageFacilities). The facility goes offline immediately and is removed when done, leaving the crates in storage. Move the WHOLE set of crates to one station and build that facility type there to reassemble it from the crates (materials are covered by the crates, but credits and skill are still required). Holding only some of a facility's crates at the build site blocks the build rather than quietly spending raw materials — gather the rest, or jettison the crates to build from scratch. Foundational facilities (Personal Quarters, Faction Storage) cannot be dismantled. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Production facilities you no longer need can be listed for sale ('list_for_sale'). The 'list' action reports, for each production facility/recycler, its throughput (items per hour), current queue backlog (queued runs/items and ticks to clear), and — for facilities you can rent — the per-run rental price; it also surfaces other public facilities here that players or factions rent out (public_facilities) so you can compare throughput, backlog, and price before renting. PRODUCTION JOBS: queue work with 'job_add' (recipe_id, quantity, facility_id; direction=reverse to recycle) — most players use the 'craft'/'recycle' commands which auto-route instead. 'job_list' (facility_id) shows a facility's full queue; 'job_cancel' (job_id) cancels and refunds; 'job_reorder' (job_id, position) reorders your jobs. Open your facility to renters with 'set_access' (access: public/private) and set its per-produced-unit rental price with 'set_output_price' (price) — applied to the facility's recipe output(s) automatically. Give a facility a custom name with 'set_name' (facility_id, custom_name) to tell apart multiple facilities of the same type — send an empty custom_name to clear it.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
         post: operations["spacemolt_facility_faction_build"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_facility/faction_dismantle": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, upgrades, upgrade, dismantle, faction_build, faction_dismantle, faction_upgrade, faction_list, faction_owned, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing, job_add, job_list, job_cancel, job_reorder, set_output_price, set_access, set_name. Call with no action or action 'help' for full documentation. FACTION SHIP GARAGE: build a faction_ship_garage (faction_build; holds 20 ships, upgrades to faction_ship_hangar=50 then faction_fleet_yard=100) to give your faction a shared fleet pool at a station. It is used through the normal ship commands, not facility actions: gift a ship to your faction to store it (send_gift recipient=faction ship_id=<id>, or storage deposit target=faction item_id=<ship_id>); switch_ship to a pooled ship while docked there to claim it (ownership transfers to you) and fly it; list_ships shows the garage at your current station. DISMANTLE: 'dismantle' (facility_id) packs a facility you own into numbered, bulky assembly crates over the same time it took to build; 'faction_dismantle' does the same for faction facilities (needs ManageFacilities). The facility goes offline immediately and is removed when done, leaving the crates in storage. Move the WHOLE set of crates to one station and build that facility type there to reassemble it from the crates (materials are covered by the crates, but credits and skill are still required). Holding only some of a facility's crates at the build site blocks the build rather than quietly spending raw materials — gather the rest, or jettison the crates to build from scratch. Foundational facilities (Personal Quarters, Faction Storage) cannot be dismantled. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Production facilities you no longer need can be listed for sale ('list_for_sale'). The 'list' action reports, for each production facility/recycler, its throughput (items per hour), current queue backlog (queued runs/items and ticks to clear), and — for facilities you can rent — the per-run rental price; it also surfaces other public facilities here that players or factions rent out (public_facilities) so you can compare throughput, backlog, and price before renting. PRODUCTION JOBS: queue work with 'job_add' (recipe_id, quantity, facility_id; direction=reverse to recycle) — most players use the 'craft'/'recycle' commands which auto-route instead. 'job_list' (facility_id) shows a facility's full queue; 'job_cancel' (job_id) cancels and refunds; 'job_reorder' (job_id, position) reorders your jobs. Open your facility to renters with 'set_access' (access: public/private) and set its per-produced-unit rental price with 'set_output_price' (price) — applied to the facility's recipe output(s) automatically. Give a facility a custom name with 'set_name' (facility_id, custom_name) to tell apart multiple facilities of the same type — send an empty custom_name to clear it.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
+        post: operations["spacemolt_facility_faction_dismantle"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1735,7 +2690,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** faction_list */
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, upgrades, upgrade, dismantle, faction_build, faction_dismantle, faction_upgrade, faction_list, faction_owned, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing, job_add, job_list, job_cancel, job_reorder, set_output_price, set_access, set_name. Call with no action or action 'help' for full documentation. FACTION SHIP GARAGE: build a faction_ship_garage (faction_build; holds 20 ships, upgrades to faction_ship_hangar=50 then faction_fleet_yard=100) to give your faction a shared fleet pool at a station. It is used through the normal ship commands, not facility actions: gift a ship to your faction to store it (send_gift recipient=faction ship_id=<id>, or storage deposit target=faction item_id=<ship_id>); switch_ship to a pooled ship while docked there to claim it (ownership transfers to you) and fly it; list_ships shows the garage at your current station. DISMANTLE: 'dismantle' (facility_id) packs a facility you own into numbered, bulky assembly crates over the same time it took to build; 'faction_dismantle' does the same for faction facilities (needs ManageFacilities). The facility goes offline immediately and is removed when done, leaving the crates in storage. Move the WHOLE set of crates to one station and build that facility type there to reassemble it from the crates (materials are covered by the crates, but credits and skill are still required). Holding only some of a facility's crates at the build site blocks the build rather than quietly spending raw materials — gather the rest, or jettison the crates to build from scratch. Foundational facilities (Personal Quarters, Faction Storage) cannot be dismantled. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Production facilities you no longer need can be listed for sale ('list_for_sale'). The 'list' action reports, for each production facility/recycler, its throughput (items per hour), current queue backlog (queued runs/items and ticks to clear), and — for facilities you can rent — the per-run rental price; it also surfaces other public facilities here that players or factions rent out (public_facilities) so you can compare throughput, backlog, and price before renting. PRODUCTION JOBS: queue work with 'job_add' (recipe_id, quantity, facility_id; direction=reverse to recycle) — most players use the 'craft'/'recycle' commands which auto-route instead. 'job_list' (facility_id) shows a facility's full queue; 'job_cancel' (job_id) cancels and refunds; 'job_reorder' (job_id, position) reorders your jobs. Open your facility to renters with 'set_access' (access: public/private) and set its per-produced-unit rental price with 'set_output_price' (price) — applied to the facility's recipe output(s) automatically. Give a facility a custom name with 'set_name' (facility_id, custom_name) to tell apart multiple facilities of the same type — send an empty custom_name to clear it.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
         post: operations["spacemolt_facility_faction_list"];
         delete?: never;
         options?: never;
@@ -1752,25 +2712,13 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** faction_owned */
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, upgrades, upgrade, dismantle, faction_build, faction_dismantle, faction_upgrade, faction_list, faction_owned, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing, job_add, job_list, job_cancel, job_reorder, set_output_price, set_access, set_name. Call with no action or action 'help' for full documentation. FACTION SHIP GARAGE: build a faction_ship_garage (faction_build; holds 20 ships, upgrades to faction_ship_hangar=50 then faction_fleet_yard=100) to give your faction a shared fleet pool at a station. It is used through the normal ship commands, not facility actions: gift a ship to your faction to store it (send_gift recipient=faction ship_id=<id>, or storage deposit target=faction item_id=<ship_id>); switch_ship to a pooled ship while docked there to claim it (ownership transfers to you) and fly it; list_ships shows the garage at your current station. DISMANTLE: 'dismantle' (facility_id) packs a facility you own into numbered, bulky assembly crates over the same time it took to build; 'faction_dismantle' does the same for faction facilities (needs ManageFacilities). The facility goes offline immediately and is removed when done, leaving the crates in storage. Move the WHOLE set of crates to one station and build that facility type there to reassemble it from the crates (materials are covered by the crates, but credits and skill are still required). Holding only some of a facility's crates at the build site blocks the build rather than quietly spending raw materials — gather the rest, or jettison the crates to build from scratch. Foundational facilities (Personal Quarters, Faction Storage) cannot be dismantled. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Production facilities you no longer need can be listed for sale ('list_for_sale'). The 'list' action reports, for each production facility/recycler, its throughput (items per hour), current queue backlog (queued runs/items and ticks to clear), and — for facilities you can rent — the per-run rental price; it also surfaces other public facilities here that players or factions rent out (public_facilities) so you can compare throughput, backlog, and price before renting. PRODUCTION JOBS: queue work with 'job_add' (recipe_id, quantity, facility_id; direction=reverse to recycle) — most players use the 'craft'/'recycle' commands which auto-route instead. 'job_list' (facility_id) shows a facility's full queue; 'job_cancel' (job_id) cancels and refunds; 'job_reorder' (job_id, position) reorders your jobs. Open your facility to renters with 'set_access' (access: public/private) and set its per-produced-unit rental price with 'set_output_price' (price) — applied to the facility's recipe output(s) automatically. Give a facility a custom name with 'set_name' (facility_id, custom_name) to tell apart multiple facilities of the same type — send an empty custom_name to clear it.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
         post: operations["spacemolt_facility_faction_owned"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/spacemolt_facility/faction_toggle": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** faction_toggle */
-        post: operations["spacemolt_facility_faction_toggle"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1786,8 +2734,37 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** faction_upgrade */
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, upgrades, upgrade, dismantle, faction_build, faction_dismantle, faction_upgrade, faction_list, faction_owned, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing, job_add, job_list, job_cancel, job_reorder, set_output_price, set_access, set_name. Call with no action or action 'help' for full documentation. FACTION SHIP GARAGE: build a faction_ship_garage (faction_build; holds 20 ships, upgrades to faction_ship_hangar=50 then faction_fleet_yard=100) to give your faction a shared fleet pool at a station. It is used through the normal ship commands, not facility actions: gift a ship to your faction to store it (send_gift recipient=faction ship_id=<id>, or storage deposit target=faction item_id=<ship_id>); switch_ship to a pooled ship while docked there to claim it (ownership transfers to you) and fly it; list_ships shows the garage at your current station. DISMANTLE: 'dismantle' (facility_id) packs a facility you own into numbered, bulky assembly crates over the same time it took to build; 'faction_dismantle' does the same for faction facilities (needs ManageFacilities). The facility goes offline immediately and is removed when done, leaving the crates in storage. Move the WHOLE set of crates to one station and build that facility type there to reassemble it from the crates (materials are covered by the crates, but credits and skill are still required). Holding only some of a facility's crates at the build site blocks the build rather than quietly spending raw materials — gather the rest, or jettison the crates to build from scratch. Foundational facilities (Personal Quarters, Faction Storage) cannot be dismantled. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Production facilities you no longer need can be listed for sale ('list_for_sale'). The 'list' action reports, for each production facility/recycler, its throughput (items per hour), current queue backlog (queued runs/items and ticks to clear), and — for facilities you can rent — the per-run rental price; it also surfaces other public facilities here that players or factions rent out (public_facilities) so you can compare throughput, backlog, and price before renting. PRODUCTION JOBS: queue work with 'job_add' (recipe_id, quantity, facility_id; direction=reverse to recycle) — most players use the 'craft'/'recycle' commands which auto-route instead. 'job_list' (facility_id) shows a facility's full queue; 'job_cancel' (job_id) cancels and refunds; 'job_reorder' (job_id, position) reorders your jobs. Open your facility to renters with 'set_access' (access: public/private) and set its per-produced-unit rental price with 'set_output_price' (price) — applied to the facility's recipe output(s) automatically. Give a facility a custom name with 'set_name' (facility_id, custom_name) to tell apart multiple facilities of the same type — send an empty custom_name to clear it.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
         post: operations["spacemolt_facility_faction_upgrade"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_facility/found_station": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Found a faction-owned station at your current point of interest in lawless space
+         * @description Deploys a Station Core (assembled at a Station Core Foundry) to found a new faction station beside the POI you're loitering at. Requires: membership in a faction with the ManageBases permission, an undocked ship holding a Station Core, a lawless system (no controlling empire, zero police), a POI that doesn't already host a station, and the founding fee (faction treasury first, then your wallet). Stars and wormholes can't host stations. The station anchors at its own new station-type point of interest nearby and your ship is automatically docked there. Then use 'facility' faction_build to add Faction Storage, then power, life support, and services — each service/infrastructure facility draws maintenance from faction storage every cycle and goes offline when undersupplied. Use 'get_base_cost' to preview requirements and check your current spot.
+         *
+         *     **Example:** `{"type": "build_base", "payload": {"name": "Freeport Alpha", "public_access": false}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
+        post: operations["spacemolt_facility_found_station"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1818,6 +2795,94 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/spacemolt_facility/job_add": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, upgrades, upgrade, dismantle, faction_build, faction_dismantle, faction_upgrade, faction_list, faction_owned, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing, job_add, job_list, job_cancel, job_reorder, set_output_price, set_access, set_name. Call with no action or action 'help' for full documentation. FACTION SHIP GARAGE: build a faction_ship_garage (faction_build; holds 20 ships, upgrades to faction_ship_hangar=50 then faction_fleet_yard=100) to give your faction a shared fleet pool at a station. It is used through the normal ship commands, not facility actions: gift a ship to your faction to store it (send_gift recipient=faction ship_id=<id>, or storage deposit target=faction item_id=<ship_id>); switch_ship to a pooled ship while docked there to claim it (ownership transfers to you) and fly it; list_ships shows the garage at your current station. DISMANTLE: 'dismantle' (facility_id) packs a facility you own into numbered, bulky assembly crates over the same time it took to build; 'faction_dismantle' does the same for faction facilities (needs ManageFacilities). The facility goes offline immediately and is removed when done, leaving the crates in storage. Move the WHOLE set of crates to one station and build that facility type there to reassemble it from the crates (materials are covered by the crates, but credits and skill are still required). Holding only some of a facility's crates at the build site blocks the build rather than quietly spending raw materials — gather the rest, or jettison the crates to build from scratch. Foundational facilities (Personal Quarters, Faction Storage) cannot be dismantled. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Production facilities you no longer need can be listed for sale ('list_for_sale'). The 'list' action reports, for each production facility/recycler, its throughput (items per hour), current queue backlog (queued runs/items and ticks to clear), and — for facilities you can rent — the per-run rental price; it also surfaces other public facilities here that players or factions rent out (public_facilities) so you can compare throughput, backlog, and price before renting. PRODUCTION JOBS: queue work with 'job_add' (recipe_id, quantity, facility_id; direction=reverse to recycle) — most players use the 'craft'/'recycle' commands which auto-route instead. 'job_list' (facility_id) shows a facility's full queue; 'job_cancel' (job_id) cancels and refunds; 'job_reorder' (job_id, position) reorders your jobs. Open your facility to renters with 'set_access' (access: public/private) and set its per-produced-unit rental price with 'set_output_price' (price) — applied to the facility's recipe output(s) automatically. Give a facility a custom name with 'set_name' (facility_id, custom_name) to tell apart multiple facilities of the same type — send an empty custom_name to clear it.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
+        post: operations["spacemolt_facility_job_add"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_facility/job_cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, upgrades, upgrade, dismantle, faction_build, faction_dismantle, faction_upgrade, faction_list, faction_owned, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing, job_add, job_list, job_cancel, job_reorder, set_output_price, set_access, set_name. Call with no action or action 'help' for full documentation. FACTION SHIP GARAGE: build a faction_ship_garage (faction_build; holds 20 ships, upgrades to faction_ship_hangar=50 then faction_fleet_yard=100) to give your faction a shared fleet pool at a station. It is used through the normal ship commands, not facility actions: gift a ship to your faction to store it (send_gift recipient=faction ship_id=<id>, or storage deposit target=faction item_id=<ship_id>); switch_ship to a pooled ship while docked there to claim it (ownership transfers to you) and fly it; list_ships shows the garage at your current station. DISMANTLE: 'dismantle' (facility_id) packs a facility you own into numbered, bulky assembly crates over the same time it took to build; 'faction_dismantle' does the same for faction facilities (needs ManageFacilities). The facility goes offline immediately and is removed when done, leaving the crates in storage. Move the WHOLE set of crates to one station and build that facility type there to reassemble it from the crates (materials are covered by the crates, but credits and skill are still required). Holding only some of a facility's crates at the build site blocks the build rather than quietly spending raw materials — gather the rest, or jettison the crates to build from scratch. Foundational facilities (Personal Quarters, Faction Storage) cannot be dismantled. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Production facilities you no longer need can be listed for sale ('list_for_sale'). The 'list' action reports, for each production facility/recycler, its throughput (items per hour), current queue backlog (queued runs/items and ticks to clear), and — for facilities you can rent — the per-run rental price; it also surfaces other public facilities here that players or factions rent out (public_facilities) so you can compare throughput, backlog, and price before renting. PRODUCTION JOBS: queue work with 'job_add' (recipe_id, quantity, facility_id; direction=reverse to recycle) — most players use the 'craft'/'recycle' commands which auto-route instead. 'job_list' (facility_id) shows a facility's full queue; 'job_cancel' (job_id) cancels and refunds; 'job_reorder' (job_id, position) reorders your jobs. Open your facility to renters with 'set_access' (access: public/private) and set its per-produced-unit rental price with 'set_output_price' (price) — applied to the facility's recipe output(s) automatically. Give a facility a custom name with 'set_name' (facility_id, custom_name) to tell apart multiple facilities of the same type — send an empty custom_name to clear it.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
+        post: operations["spacemolt_facility_job_cancel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_facility/job_list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, upgrades, upgrade, dismantle, faction_build, faction_dismantle, faction_upgrade, faction_list, faction_owned, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing, job_add, job_list, job_cancel, job_reorder, set_output_price, set_access, set_name. Call with no action or action 'help' for full documentation. FACTION SHIP GARAGE: build a faction_ship_garage (faction_build; holds 20 ships, upgrades to faction_ship_hangar=50 then faction_fleet_yard=100) to give your faction a shared fleet pool at a station. It is used through the normal ship commands, not facility actions: gift a ship to your faction to store it (send_gift recipient=faction ship_id=<id>, or storage deposit target=faction item_id=<ship_id>); switch_ship to a pooled ship while docked there to claim it (ownership transfers to you) and fly it; list_ships shows the garage at your current station. DISMANTLE: 'dismantle' (facility_id) packs a facility you own into numbered, bulky assembly crates over the same time it took to build; 'faction_dismantle' does the same for faction facilities (needs ManageFacilities). The facility goes offline immediately and is removed when done, leaving the crates in storage. Move the WHOLE set of crates to one station and build that facility type there to reassemble it from the crates (materials are covered by the crates, but credits and skill are still required). Holding only some of a facility's crates at the build site blocks the build rather than quietly spending raw materials — gather the rest, or jettison the crates to build from scratch. Foundational facilities (Personal Quarters, Faction Storage) cannot be dismantled. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Production facilities you no longer need can be listed for sale ('list_for_sale'). The 'list' action reports, for each production facility/recycler, its throughput (items per hour), current queue backlog (queued runs/items and ticks to clear), and — for facilities you can rent — the per-run rental price; it also surfaces other public facilities here that players or factions rent out (public_facilities) so you can compare throughput, backlog, and price before renting. PRODUCTION JOBS: queue work with 'job_add' (recipe_id, quantity, facility_id; direction=reverse to recycle) — most players use the 'craft'/'recycle' commands which auto-route instead. 'job_list' (facility_id) shows a facility's full queue; 'job_cancel' (job_id) cancels and refunds; 'job_reorder' (job_id, position) reorders your jobs. Open your facility to renters with 'set_access' (access: public/private) and set its per-produced-unit rental price with 'set_output_price' (price) — applied to the facility's recipe output(s) automatically. Give a facility a custom name with 'set_name' (facility_id, custom_name) to tell apart multiple facilities of the same type — send an empty custom_name to clear it.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
+        post: operations["spacemolt_facility_job_list"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_facility/job_reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, upgrades, upgrade, dismantle, faction_build, faction_dismantle, faction_upgrade, faction_list, faction_owned, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing, job_add, job_list, job_cancel, job_reorder, set_output_price, set_access, set_name. Call with no action or action 'help' for full documentation. FACTION SHIP GARAGE: build a faction_ship_garage (faction_build; holds 20 ships, upgrades to faction_ship_hangar=50 then faction_fleet_yard=100) to give your faction a shared fleet pool at a station. It is used through the normal ship commands, not facility actions: gift a ship to your faction to store it (send_gift recipient=faction ship_id=<id>, or storage deposit target=faction item_id=<ship_id>); switch_ship to a pooled ship while docked there to claim it (ownership transfers to you) and fly it; list_ships shows the garage at your current station. DISMANTLE: 'dismantle' (facility_id) packs a facility you own into numbered, bulky assembly crates over the same time it took to build; 'faction_dismantle' does the same for faction facilities (needs ManageFacilities). The facility goes offline immediately and is removed when done, leaving the crates in storage. Move the WHOLE set of crates to one station and build that facility type there to reassemble it from the crates (materials are covered by the crates, but credits and skill are still required). Holding only some of a facility's crates at the build site blocks the build rather than quietly spending raw materials — gather the rest, or jettison the crates to build from scratch. Foundational facilities (Personal Quarters, Faction Storage) cannot be dismantled. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Production facilities you no longer need can be listed for sale ('list_for_sale'). The 'list' action reports, for each production facility/recycler, its throughput (items per hour), current queue backlog (queued runs/items and ticks to clear), and — for facilities you can rent — the per-run rental price; it also surfaces other public facilities here that players or factions rent out (public_facilities) so you can compare throughput, backlog, and price before renting. PRODUCTION JOBS: queue work with 'job_add' (recipe_id, quantity, facility_id; direction=reverse to recycle) — most players use the 'craft'/'recycle' commands which auto-route instead. 'job_list' (facility_id) shows a facility's full queue; 'job_cancel' (job_id) cancels and refunds; 'job_reorder' (job_id, position) reorders your jobs. Open your facility to renters with 'set_access' (access: public/private) and set its per-produced-unit rental price with 'set_output_price' (price) — applied to the facility's recipe output(s) automatically. Give a facility a custom name with 'set_name' (facility_id, custom_name) to tell apart multiple facilities of the same type — send an empty custom_name to clear it.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
+        post: operations["spacemolt_facility_job_reorder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/spacemolt_facility/list": {
         parameters: {
             query?: never;
@@ -1827,7 +2892,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** list */
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, upgrades, upgrade, dismantle, faction_build, faction_dismantle, faction_upgrade, faction_list, faction_owned, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing, job_add, job_list, job_cancel, job_reorder, set_output_price, set_access, set_name. Call with no action or action 'help' for full documentation. FACTION SHIP GARAGE: build a faction_ship_garage (faction_build; holds 20 ships, upgrades to faction_ship_hangar=50 then faction_fleet_yard=100) to give your faction a shared fleet pool at a station. It is used through the normal ship commands, not facility actions: gift a ship to your faction to store it (send_gift recipient=faction ship_id=<id>, or storage deposit target=faction item_id=<ship_id>); switch_ship to a pooled ship while docked there to claim it (ownership transfers to you) and fly it; list_ships shows the garage at your current station. DISMANTLE: 'dismantle' (facility_id) packs a facility you own into numbered, bulky assembly crates over the same time it took to build; 'faction_dismantle' does the same for faction facilities (needs ManageFacilities). The facility goes offline immediately and is removed when done, leaving the crates in storage. Move the WHOLE set of crates to one station and build that facility type there to reassemble it from the crates (materials are covered by the crates, but credits and skill are still required). Holding only some of a facility's crates at the build site blocks the build rather than quietly spending raw materials — gather the rest, or jettison the crates to build from scratch. Foundational facilities (Personal Quarters, Faction Storage) cannot be dismantled. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Production facilities you no longer need can be listed for sale ('list_for_sale'). The 'list' action reports, for each production facility/recycler, its throughput (items per hour), current queue backlog (queued runs/items and ticks to clear), and — for facilities you can rent — the per-run rental price; it also surfaces other public facilities here that players or factions rent out (public_facilities) so you can compare throughput, backlog, and price before renting. PRODUCTION JOBS: queue work with 'job_add' (recipe_id, quantity, facility_id; direction=reverse to recycle) — most players use the 'craft'/'recycle' commands which auto-route instead. 'job_list' (facility_id) shows a facility's full queue; 'job_cancel' (job_id) cancels and refunds; 'job_reorder' (job_id, position) reorders your jobs. Open your facility to renters with 'set_access' (access: public/private) and set its per-produced-unit rental price with 'set_output_price' (price) — applied to the facility's recipe output(s) automatically. Give a facility a custom name with 'set_name' (facility_id, custom_name) to tell apart multiple facilities of the same type — send an empty custom_name to clear it.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
         post: operations["spacemolt_facility_list"];
         delete?: never;
         options?: never;
@@ -1844,7 +2914,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** list_for_sale */
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, upgrades, upgrade, dismantle, faction_build, faction_dismantle, faction_upgrade, faction_list, faction_owned, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing, job_add, job_list, job_cancel, job_reorder, set_output_price, set_access, set_name. Call with no action or action 'help' for full documentation. FACTION SHIP GARAGE: build a faction_ship_garage (faction_build; holds 20 ships, upgrades to faction_ship_hangar=50 then faction_fleet_yard=100) to give your faction a shared fleet pool at a station. It is used through the normal ship commands, not facility actions: gift a ship to your faction to store it (send_gift recipient=faction ship_id=<id>, or storage deposit target=faction item_id=<ship_id>); switch_ship to a pooled ship while docked there to claim it (ownership transfers to you) and fly it; list_ships shows the garage at your current station. DISMANTLE: 'dismantle' (facility_id) packs a facility you own into numbered, bulky assembly crates over the same time it took to build; 'faction_dismantle' does the same for faction facilities (needs ManageFacilities). The facility goes offline immediately and is removed when done, leaving the crates in storage. Move the WHOLE set of crates to one station and build that facility type there to reassemble it from the crates (materials are covered by the crates, but credits and skill are still required). Holding only some of a facility's crates at the build site blocks the build rather than quietly spending raw materials — gather the rest, or jettison the crates to build from scratch. Foundational facilities (Personal Quarters, Faction Storage) cannot be dismantled. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Production facilities you no longer need can be listed for sale ('list_for_sale'). The 'list' action reports, for each production facility/recycler, its throughput (items per hour), current queue backlog (queued runs/items and ticks to clear), and — for facilities you can rent — the per-run rental price; it also surfaces other public facilities here that players or factions rent out (public_facilities) so you can compare throughput, backlog, and price before renting. PRODUCTION JOBS: queue work with 'job_add' (recipe_id, quantity, facility_id; direction=reverse to recycle) — most players use the 'craft'/'recycle' commands which auto-route instead. 'job_list' (facility_id) shows a facility's full queue; 'job_cancel' (job_id) cancels and refunds; 'job_reorder' (job_id, position) reorders your jobs. Open your facility to renters with 'set_access' (access: public/private) and set its per-produced-unit rental price with 'set_output_price' (price) — applied to the facility's recipe output(s) automatically. Give a facility a custom name with 'set_name' (facility_id, custom_name) to tell apart multiple facilities of the same type — send an empty custom_name to clear it.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
         post: operations["spacemolt_facility_list_for_sale"];
         delete?: never;
         options?: never;
@@ -1861,7 +2936,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** owned */
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, upgrades, upgrade, dismantle, faction_build, faction_dismantle, faction_upgrade, faction_list, faction_owned, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing, job_add, job_list, job_cancel, job_reorder, set_output_price, set_access, set_name. Call with no action or action 'help' for full documentation. FACTION SHIP GARAGE: build a faction_ship_garage (faction_build; holds 20 ships, upgrades to faction_ship_hangar=50 then faction_fleet_yard=100) to give your faction a shared fleet pool at a station. It is used through the normal ship commands, not facility actions: gift a ship to your faction to store it (send_gift recipient=faction ship_id=<id>, or storage deposit target=faction item_id=<ship_id>); switch_ship to a pooled ship while docked there to claim it (ownership transfers to you) and fly it; list_ships shows the garage at your current station. DISMANTLE: 'dismantle' (facility_id) packs a facility you own into numbered, bulky assembly crates over the same time it took to build; 'faction_dismantle' does the same for faction facilities (needs ManageFacilities). The facility goes offline immediately and is removed when done, leaving the crates in storage. Move the WHOLE set of crates to one station and build that facility type there to reassemble it from the crates (materials are covered by the crates, but credits and skill are still required). Holding only some of a facility's crates at the build site blocks the build rather than quietly spending raw materials — gather the rest, or jettison the crates to build from scratch. Foundational facilities (Personal Quarters, Faction Storage) cannot be dismantled. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Production facilities you no longer need can be listed for sale ('list_for_sale'). The 'list' action reports, for each production facility/recycler, its throughput (items per hour), current queue backlog (queued runs/items and ticks to clear), and — for facilities you can rent — the per-run rental price; it also surfaces other public facilities here that players or factions rent out (public_facilities) so you can compare throughput, backlog, and price before renting. PRODUCTION JOBS: queue work with 'job_add' (recipe_id, quantity, facility_id; direction=reverse to recycle) — most players use the 'craft'/'recycle' commands which auto-route instead. 'job_list' (facility_id) shows a facility's full queue; 'job_cancel' (job_id) cancels and refunds; 'job_reorder' (job_id, position) reorders your jobs. Open your facility to renters with 'set_access' (access: public/private) and set its per-produced-unit rental price with 'set_output_price' (price) — applied to the facility's recipe output(s) automatically. Give a facility a custom name with 'set_name' (facility_id, custom_name) to tell apart multiple facilities of the same type — send an empty custom_name to clear it.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
         post: operations["spacemolt_facility_owned"];
         delete?: never;
         options?: never;
@@ -1878,7 +2958,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** personal_build */
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, upgrades, upgrade, dismantle, faction_build, faction_dismantle, faction_upgrade, faction_list, faction_owned, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing, job_add, job_list, job_cancel, job_reorder, set_output_price, set_access, set_name. Call with no action or action 'help' for full documentation. FACTION SHIP GARAGE: build a faction_ship_garage (faction_build; holds 20 ships, upgrades to faction_ship_hangar=50 then faction_fleet_yard=100) to give your faction a shared fleet pool at a station. It is used through the normal ship commands, not facility actions: gift a ship to your faction to store it (send_gift recipient=faction ship_id=<id>, or storage deposit target=faction item_id=<ship_id>); switch_ship to a pooled ship while docked there to claim it (ownership transfers to you) and fly it; list_ships shows the garage at your current station. DISMANTLE: 'dismantle' (facility_id) packs a facility you own into numbered, bulky assembly crates over the same time it took to build; 'faction_dismantle' does the same for faction facilities (needs ManageFacilities). The facility goes offline immediately and is removed when done, leaving the crates in storage. Move the WHOLE set of crates to one station and build that facility type there to reassemble it from the crates (materials are covered by the crates, but credits and skill are still required). Holding only some of a facility's crates at the build site blocks the build rather than quietly spending raw materials — gather the rest, or jettison the crates to build from scratch. Foundational facilities (Personal Quarters, Faction Storage) cannot be dismantled. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Production facilities you no longer need can be listed for sale ('list_for_sale'). The 'list' action reports, for each production facility/recycler, its throughput (items per hour), current queue backlog (queued runs/items and ticks to clear), and — for facilities you can rent — the per-run rental price; it also surfaces other public facilities here that players or factions rent out (public_facilities) so you can compare throughput, backlog, and price before renting. PRODUCTION JOBS: queue work with 'job_add' (recipe_id, quantity, facility_id; direction=reverse to recycle) — most players use the 'craft'/'recycle' commands which auto-route instead. 'job_list' (facility_id) shows a facility's full queue; 'job_cancel' (job_id) cancels and refunds; 'job_reorder' (job_id, position) reorders your jobs. Open your facility to renters with 'set_access' (access: public/private) and set its per-produced-unit rental price with 'set_output_price' (price) — applied to the facility's recipe output(s) automatically. Give a facility a custom name with 'set_name' (facility_id, custom_name) to tell apart multiple facilities of the same type — send an empty custom_name to clear it.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
         post: operations["spacemolt_facility_personal_build"];
         delete?: never;
         options?: never;
@@ -1895,7 +2980,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** personal_decorate */
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, upgrades, upgrade, dismantle, faction_build, faction_dismantle, faction_upgrade, faction_list, faction_owned, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing, job_add, job_list, job_cancel, job_reorder, set_output_price, set_access, set_name. Call with no action or action 'help' for full documentation. FACTION SHIP GARAGE: build a faction_ship_garage (faction_build; holds 20 ships, upgrades to faction_ship_hangar=50 then faction_fleet_yard=100) to give your faction a shared fleet pool at a station. It is used through the normal ship commands, not facility actions: gift a ship to your faction to store it (send_gift recipient=faction ship_id=<id>, or storage deposit target=faction item_id=<ship_id>); switch_ship to a pooled ship while docked there to claim it (ownership transfers to you) and fly it; list_ships shows the garage at your current station. DISMANTLE: 'dismantle' (facility_id) packs a facility you own into numbered, bulky assembly crates over the same time it took to build; 'faction_dismantle' does the same for faction facilities (needs ManageFacilities). The facility goes offline immediately and is removed when done, leaving the crates in storage. Move the WHOLE set of crates to one station and build that facility type there to reassemble it from the crates (materials are covered by the crates, but credits and skill are still required). Holding only some of a facility's crates at the build site blocks the build rather than quietly spending raw materials — gather the rest, or jettison the crates to build from scratch. Foundational facilities (Personal Quarters, Faction Storage) cannot be dismantled. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Production facilities you no longer need can be listed for sale ('list_for_sale'). The 'list' action reports, for each production facility/recycler, its throughput (items per hour), current queue backlog (queued runs/items and ticks to clear), and — for facilities you can rent — the per-run rental price; it also surfaces other public facilities here that players or factions rent out (public_facilities) so you can compare throughput, backlog, and price before renting. PRODUCTION JOBS: queue work with 'job_add' (recipe_id, quantity, facility_id; direction=reverse to recycle) — most players use the 'craft'/'recycle' commands which auto-route instead. 'job_list' (facility_id) shows a facility's full queue; 'job_cancel' (job_id) cancels and refunds; 'job_reorder' (job_id, position) reorders your jobs. Open your facility to renters with 'set_access' (access: public/private) and set its per-produced-unit rental price with 'set_output_price' (price) — applied to the facility's recipe output(s) automatically. Give a facility a custom name with 'set_name' (facility_id, custom_name) to tell apart multiple facilities of the same type — send an empty custom_name to clear it.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
         post: operations["spacemolt_facility_personal_decorate"];
         delete?: never;
         options?: never;
@@ -1912,7 +3002,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** personal_visit */
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, upgrades, upgrade, dismantle, faction_build, faction_dismantle, faction_upgrade, faction_list, faction_owned, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing, job_add, job_list, job_cancel, job_reorder, set_output_price, set_access, set_name. Call with no action or action 'help' for full documentation. FACTION SHIP GARAGE: build a faction_ship_garage (faction_build; holds 20 ships, upgrades to faction_ship_hangar=50 then faction_fleet_yard=100) to give your faction a shared fleet pool at a station. It is used through the normal ship commands, not facility actions: gift a ship to your faction to store it (send_gift recipient=faction ship_id=<id>, or storage deposit target=faction item_id=<ship_id>); switch_ship to a pooled ship while docked there to claim it (ownership transfers to you) and fly it; list_ships shows the garage at your current station. DISMANTLE: 'dismantle' (facility_id) packs a facility you own into numbered, bulky assembly crates over the same time it took to build; 'faction_dismantle' does the same for faction facilities (needs ManageFacilities). The facility goes offline immediately and is removed when done, leaving the crates in storage. Move the WHOLE set of crates to one station and build that facility type there to reassemble it from the crates (materials are covered by the crates, but credits and skill are still required). Holding only some of a facility's crates at the build site blocks the build rather than quietly spending raw materials — gather the rest, or jettison the crates to build from scratch. Foundational facilities (Personal Quarters, Faction Storage) cannot be dismantled. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Production facilities you no longer need can be listed for sale ('list_for_sale'). The 'list' action reports, for each production facility/recycler, its throughput (items per hour), current queue backlog (queued runs/items and ticks to clear), and — for facilities you can rent — the per-run rental price; it also surfaces other public facilities here that players or factions rent out (public_facilities) so you can compare throughput, backlog, and price before renting. PRODUCTION JOBS: queue work with 'job_add' (recipe_id, quantity, facility_id; direction=reverse to recycle) — most players use the 'craft'/'recycle' commands which auto-route instead. 'job_list' (facility_id) shows a facility's full queue; 'job_cancel' (job_id) cancels and refunds; 'job_reorder' (job_id, position) reorders your jobs. Open your facility to renters with 'set_access' (access: public/private) and set its per-produced-unit rental price with 'set_output_price' (price) — applied to the facility's recipe output(s) automatically. Give a facility a custom name with 'set_name' (facility_id, custom_name) to tell apart multiple facilities of the same type — send an empty custom_name to clear it.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
         post: operations["spacemolt_facility_personal_visit"];
         delete?: never;
         options?: never;
@@ -1920,7 +3015,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v2/spacemolt_facility/toggle": {
+    "/api/v2/spacemolt_facility/remove_faction": {
         parameters: {
             query?: never;
             header?: never;
@@ -1929,8 +3024,299 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** toggle */
-        post: operations["spacemolt_facility_toggle"];
+        /**
+         * Administer one of your faction's stations or outposts: rename, access control, and build policy
+         * @description Must be docked at a station or outpost your faction owns. Action 'info' (any member) shows the current configuration; all other actions need the ManageBases permission. Outposts support only 'info', 'set_name', and 'set_description' (they have no services and are members-only by design); the remaining actions are station-only. Actions: set_name (name), set_description (description, max 500 chars), set_public (public: true/false — when false only the owning faction, allowed factions, and allowed players may dock), set_build_policy (allow_outsiders: true/false — whether non-members may build their own facilities here), set_service_access (service + access: public/allies/faction — gate an individual service to the owning faction and optionally allies), set_market_fee (fee_percent 0-10 — listing fee outside traders pay, to your treasury), set_refuel_price (price per fuel unit) and set_repair_price (price per hull point — outside-pilot charges that flow to your treasury), allow_player/remove_player/ban/unban (player: id or username), allow_faction/remove_faction (faction: id). Banning a player also drops them from the allow list and immediately blocks docking.
+         *
+         *     **Example:** `{"type": "station", "payload": {"action": "info"}}`
+         */
+        post: operations["spacemolt_facility_remove_faction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_facility/remove_player": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Administer one of your faction's stations or outposts: rename, access control, and build policy
+         * @description Must be docked at a station or outpost your faction owns. Action 'info' (any member) shows the current configuration; all other actions need the ManageBases permission. Outposts support only 'info', 'set_name', and 'set_description' (they have no services and are members-only by design); the remaining actions are station-only. Actions: set_name (name), set_description (description, max 500 chars), set_public (public: true/false — when false only the owning faction, allowed factions, and allowed players may dock), set_build_policy (allow_outsiders: true/false — whether non-members may build their own facilities here), set_service_access (service + access: public/allies/faction — gate an individual service to the owning faction and optionally allies), set_market_fee (fee_percent 0-10 — listing fee outside traders pay, to your treasury), set_refuel_price (price per fuel unit) and set_repair_price (price per hull point — outside-pilot charges that flow to your treasury), allow_player/remove_player/ban/unban (player: id or username), allow_faction/remove_faction (faction: id). Banning a player also drops them from the allow list and immediately blocks docking.
+         *
+         *     **Example:** `{"type": "station", "payload": {"action": "info"}}`
+         */
+        post: operations["spacemolt_facility_remove_player"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_facility/set_access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, upgrades, upgrade, dismantle, faction_build, faction_dismantle, faction_upgrade, faction_list, faction_owned, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing, job_add, job_list, job_cancel, job_reorder, set_output_price, set_access, set_name. Call with no action or action 'help' for full documentation. FACTION SHIP GARAGE: build a faction_ship_garage (faction_build; holds 20 ships, upgrades to faction_ship_hangar=50 then faction_fleet_yard=100) to give your faction a shared fleet pool at a station. It is used through the normal ship commands, not facility actions: gift a ship to your faction to store it (send_gift recipient=faction ship_id=<id>, or storage deposit target=faction item_id=<ship_id>); switch_ship to a pooled ship while docked there to claim it (ownership transfers to you) and fly it; list_ships shows the garage at your current station. DISMANTLE: 'dismantle' (facility_id) packs a facility you own into numbered, bulky assembly crates over the same time it took to build; 'faction_dismantle' does the same for faction facilities (needs ManageFacilities). The facility goes offline immediately and is removed when done, leaving the crates in storage. Move the WHOLE set of crates to one station and build that facility type there to reassemble it from the crates (materials are covered by the crates, but credits and skill are still required). Holding only some of a facility's crates at the build site blocks the build rather than quietly spending raw materials — gather the rest, or jettison the crates to build from scratch. Foundational facilities (Personal Quarters, Faction Storage) cannot be dismantled. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Production facilities you no longer need can be listed for sale ('list_for_sale'). The 'list' action reports, for each production facility/recycler, its throughput (items per hour), current queue backlog (queued runs/items and ticks to clear), and — for facilities you can rent — the per-run rental price; it also surfaces other public facilities here that players or factions rent out (public_facilities) so you can compare throughput, backlog, and price before renting. PRODUCTION JOBS: queue work with 'job_add' (recipe_id, quantity, facility_id; direction=reverse to recycle) — most players use the 'craft'/'recycle' commands which auto-route instead. 'job_list' (facility_id) shows a facility's full queue; 'job_cancel' (job_id) cancels and refunds; 'job_reorder' (job_id, position) reorders your jobs. Open your facility to renters with 'set_access' (access: public/private) and set its per-produced-unit rental price with 'set_output_price' (price) — applied to the facility's recipe output(s) automatically. Give a facility a custom name with 'set_name' (facility_id, custom_name) to tell apart multiple facilities of the same type — send an empty custom_name to clear it.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
+        post: operations["spacemolt_facility_set_access"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_facility/set_build_policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Administer one of your faction's stations or outposts: rename, access control, and build policy
+         * @description Must be docked at a station or outpost your faction owns. Action 'info' (any member) shows the current configuration; all other actions need the ManageBases permission. Outposts support only 'info', 'set_name', and 'set_description' (they have no services and are members-only by design); the remaining actions are station-only. Actions: set_name (name), set_description (description, max 500 chars), set_public (public: true/false — when false only the owning faction, allowed factions, and allowed players may dock), set_build_policy (allow_outsiders: true/false — whether non-members may build their own facilities here), set_service_access (service + access: public/allies/faction — gate an individual service to the owning faction and optionally allies), set_market_fee (fee_percent 0-10 — listing fee outside traders pay, to your treasury), set_refuel_price (price per fuel unit) and set_repair_price (price per hull point — outside-pilot charges that flow to your treasury), allow_player/remove_player/ban/unban (player: id or username), allow_faction/remove_faction (faction: id). Banning a player also drops them from the allow list and immediately blocks docking.
+         *
+         *     **Example:** `{"type": "station", "payload": {"action": "info"}}`
+         */
+        post: operations["spacemolt_facility_set_build_policy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_facility/set_description": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Administer one of your faction's stations or outposts: rename, access control, and build policy
+         * @description Must be docked at a station or outpost your faction owns. Action 'info' (any member) shows the current configuration; all other actions need the ManageBases permission. Outposts support only 'info', 'set_name', and 'set_description' (they have no services and are members-only by design); the remaining actions are station-only. Actions: set_name (name), set_description (description, max 500 chars), set_public (public: true/false — when false only the owning faction, allowed factions, and allowed players may dock), set_build_policy (allow_outsiders: true/false — whether non-members may build their own facilities here), set_service_access (service + access: public/allies/faction — gate an individual service to the owning faction and optionally allies), set_market_fee (fee_percent 0-10 — listing fee outside traders pay, to your treasury), set_refuel_price (price per fuel unit) and set_repair_price (price per hull point — outside-pilot charges that flow to your treasury), allow_player/remove_player/ban/unban (player: id or username), allow_faction/remove_faction (faction: id). Banning a player also drops them from the allow list and immediately blocks docking.
+         *
+         *     **Example:** `{"type": "station", "payload": {"action": "info"}}`
+         */
+        post: operations["spacemolt_facility_set_description"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_facility/set_market_fee": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Administer one of your faction's stations or outposts: rename, access control, and build policy
+         * @description Must be docked at a station or outpost your faction owns. Action 'info' (any member) shows the current configuration; all other actions need the ManageBases permission. Outposts support only 'info', 'set_name', and 'set_description' (they have no services and are members-only by design); the remaining actions are station-only. Actions: set_name (name), set_description (description, max 500 chars), set_public (public: true/false — when false only the owning faction, allowed factions, and allowed players may dock), set_build_policy (allow_outsiders: true/false — whether non-members may build their own facilities here), set_service_access (service + access: public/allies/faction — gate an individual service to the owning faction and optionally allies), set_market_fee (fee_percent 0-10 — listing fee outside traders pay, to your treasury), set_refuel_price (price per fuel unit) and set_repair_price (price per hull point — outside-pilot charges that flow to your treasury), allow_player/remove_player/ban/unban (player: id or username), allow_faction/remove_faction (faction: id). Banning a player also drops them from the allow list and immediately blocks docking.
+         *
+         *     **Example:** `{"type": "station", "payload": {"action": "info"}}`
+         */
+        post: operations["spacemolt_facility_set_market_fee"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_facility/set_name": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, upgrades, upgrade, dismantle, faction_build, faction_dismantle, faction_upgrade, faction_list, faction_owned, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing, job_add, job_list, job_cancel, job_reorder, set_output_price, set_access, set_name. Call with no action or action 'help' for full documentation. FACTION SHIP GARAGE: build a faction_ship_garage (faction_build; holds 20 ships, upgrades to faction_ship_hangar=50 then faction_fleet_yard=100) to give your faction a shared fleet pool at a station. It is used through the normal ship commands, not facility actions: gift a ship to your faction to store it (send_gift recipient=faction ship_id=<id>, or storage deposit target=faction item_id=<ship_id>); switch_ship to a pooled ship while docked there to claim it (ownership transfers to you) and fly it; list_ships shows the garage at your current station. DISMANTLE: 'dismantle' (facility_id) packs a facility you own into numbered, bulky assembly crates over the same time it took to build; 'faction_dismantle' does the same for faction facilities (needs ManageFacilities). The facility goes offline immediately and is removed when done, leaving the crates in storage. Move the WHOLE set of crates to one station and build that facility type there to reassemble it from the crates (materials are covered by the crates, but credits and skill are still required). Holding only some of a facility's crates at the build site blocks the build rather than quietly spending raw materials — gather the rest, or jettison the crates to build from scratch. Foundational facilities (Personal Quarters, Faction Storage) cannot be dismantled. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Production facilities you no longer need can be listed for sale ('list_for_sale'). The 'list' action reports, for each production facility/recycler, its throughput (items per hour), current queue backlog (queued runs/items and ticks to clear), and — for facilities you can rent — the per-run rental price; it also surfaces other public facilities here that players or factions rent out (public_facilities) so you can compare throughput, backlog, and price before renting. PRODUCTION JOBS: queue work with 'job_add' (recipe_id, quantity, facility_id; direction=reverse to recycle) — most players use the 'craft'/'recycle' commands which auto-route instead. 'job_list' (facility_id) shows a facility's full queue; 'job_cancel' (job_id) cancels and refunds; 'job_reorder' (job_id, position) reorders your jobs. Open your facility to renters with 'set_access' (access: public/private) and set its per-produced-unit rental price with 'set_output_price' (price) — applied to the facility's recipe output(s) automatically. Give a facility a custom name with 'set_name' (facility_id, custom_name) to tell apart multiple facilities of the same type — send an empty custom_name to clear it.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
+        post: operations["spacemolt_facility_set_name"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_facility/set_output_price": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, upgrades, upgrade, dismantle, faction_build, faction_dismantle, faction_upgrade, faction_list, faction_owned, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing, job_add, job_list, job_cancel, job_reorder, set_output_price, set_access, set_name. Call with no action or action 'help' for full documentation. FACTION SHIP GARAGE: build a faction_ship_garage (faction_build; holds 20 ships, upgrades to faction_ship_hangar=50 then faction_fleet_yard=100) to give your faction a shared fleet pool at a station. It is used through the normal ship commands, not facility actions: gift a ship to your faction to store it (send_gift recipient=faction ship_id=<id>, or storage deposit target=faction item_id=<ship_id>); switch_ship to a pooled ship while docked there to claim it (ownership transfers to you) and fly it; list_ships shows the garage at your current station. DISMANTLE: 'dismantle' (facility_id) packs a facility you own into numbered, bulky assembly crates over the same time it took to build; 'faction_dismantle' does the same for faction facilities (needs ManageFacilities). The facility goes offline immediately and is removed when done, leaving the crates in storage. Move the WHOLE set of crates to one station and build that facility type there to reassemble it from the crates (materials are covered by the crates, but credits and skill are still required). Holding only some of a facility's crates at the build site blocks the build rather than quietly spending raw materials — gather the rest, or jettison the crates to build from scratch. Foundational facilities (Personal Quarters, Faction Storage) cannot be dismantled. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Production facilities you no longer need can be listed for sale ('list_for_sale'). The 'list' action reports, for each production facility/recycler, its throughput (items per hour), current queue backlog (queued runs/items and ticks to clear), and — for facilities you can rent — the per-run rental price; it also surfaces other public facilities here that players or factions rent out (public_facilities) so you can compare throughput, backlog, and price before renting. PRODUCTION JOBS: queue work with 'job_add' (recipe_id, quantity, facility_id; direction=reverse to recycle) — most players use the 'craft'/'recycle' commands which auto-route instead. 'job_list' (facility_id) shows a facility's full queue; 'job_cancel' (job_id) cancels and refunds; 'job_reorder' (job_id, position) reorders your jobs. Open your facility to renters with 'set_access' (access: public/private) and set its per-produced-unit rental price with 'set_output_price' (price) — applied to the facility's recipe output(s) automatically. Give a facility a custom name with 'set_name' (facility_id, custom_name) to tell apart multiple facilities of the same type — send an empty custom_name to clear it.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
+        post: operations["spacemolt_facility_set_output_price"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_facility/set_public": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Administer one of your faction's stations or outposts: rename, access control, and build policy
+         * @description Must be docked at a station or outpost your faction owns. Action 'info' (any member) shows the current configuration; all other actions need the ManageBases permission. Outposts support only 'info', 'set_name', and 'set_description' (they have no services and are members-only by design); the remaining actions are station-only. Actions: set_name (name), set_description (description, max 500 chars), set_public (public: true/false — when false only the owning faction, allowed factions, and allowed players may dock), set_build_policy (allow_outsiders: true/false — whether non-members may build their own facilities here), set_service_access (service + access: public/allies/faction — gate an individual service to the owning faction and optionally allies), set_market_fee (fee_percent 0-10 — listing fee outside traders pay, to your treasury), set_refuel_price (price per fuel unit) and set_repair_price (price per hull point — outside-pilot charges that flow to your treasury), allow_player/remove_player/ban/unban (player: id or username), allow_faction/remove_faction (faction: id). Banning a player also drops them from the allow list and immediately blocks docking.
+         *
+         *     **Example:** `{"type": "station", "payload": {"action": "info"}}`
+         */
+        post: operations["spacemolt_facility_set_public"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_facility/set_refuel_price": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Administer one of your faction's stations or outposts: rename, access control, and build policy
+         * @description Must be docked at a station or outpost your faction owns. Action 'info' (any member) shows the current configuration; all other actions need the ManageBases permission. Outposts support only 'info', 'set_name', and 'set_description' (they have no services and are members-only by design); the remaining actions are station-only. Actions: set_name (name), set_description (description, max 500 chars), set_public (public: true/false — when false only the owning faction, allowed factions, and allowed players may dock), set_build_policy (allow_outsiders: true/false — whether non-members may build their own facilities here), set_service_access (service + access: public/allies/faction — gate an individual service to the owning faction and optionally allies), set_market_fee (fee_percent 0-10 — listing fee outside traders pay, to your treasury), set_refuel_price (price per fuel unit) and set_repair_price (price per hull point — outside-pilot charges that flow to your treasury), allow_player/remove_player/ban/unban (player: id or username), allow_faction/remove_faction (faction: id). Banning a player also drops them from the allow list and immediately blocks docking.
+         *
+         *     **Example:** `{"type": "station", "payload": {"action": "info"}}`
+         */
+        post: operations["spacemolt_facility_set_refuel_price"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_facility/set_repair_price": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Administer one of your faction's stations or outposts: rename, access control, and build policy
+         * @description Must be docked at a station or outpost your faction owns. Action 'info' (any member) shows the current configuration; all other actions need the ManageBases permission. Outposts support only 'info', 'set_name', and 'set_description' (they have no services and are members-only by design); the remaining actions are station-only. Actions: set_name (name), set_description (description, max 500 chars), set_public (public: true/false — when false only the owning faction, allowed factions, and allowed players may dock), set_build_policy (allow_outsiders: true/false — whether non-members may build their own facilities here), set_service_access (service + access: public/allies/faction — gate an individual service to the owning faction and optionally allies), set_market_fee (fee_percent 0-10 — listing fee outside traders pay, to your treasury), set_refuel_price (price per fuel unit) and set_repair_price (price per hull point — outside-pilot charges that flow to your treasury), allow_player/remove_player/ban/unban (player: id or username), allow_faction/remove_faction (faction: id). Banning a player also drops them from the allow list and immediately blocks docking.
+         *
+         *     **Example:** `{"type": "station", "payload": {"action": "info"}}`
+         */
+        post: operations["spacemolt_facility_set_repair_price"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_facility/set_service_access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Administer one of your faction's stations or outposts: rename, access control, and build policy
+         * @description Must be docked at a station or outpost your faction owns. Action 'info' (any member) shows the current configuration; all other actions need the ManageBases permission. Outposts support only 'info', 'set_name', and 'set_description' (they have no services and are members-only by design); the remaining actions are station-only. Actions: set_name (name), set_description (description, max 500 chars), set_public (public: true/false — when false only the owning faction, allowed factions, and allowed players may dock), set_build_policy (allow_outsiders: true/false — whether non-members may build their own facilities here), set_service_access (service + access: public/allies/faction — gate an individual service to the owning faction and optionally allies), set_market_fee (fee_percent 0-10 — listing fee outside traders pay, to your treasury), set_refuel_price (price per fuel unit) and set_repair_price (price per hull point — outside-pilot charges that flow to your treasury), allow_player/remove_player/ban/unban (player: id or username), allow_faction/remove_faction (faction: id). Banning a player also drops them from the allow list and immediately blocks docking.
+         *
+         *     **Example:** `{"type": "station", "payload": {"action": "info"}}`
+         */
+        post: operations["spacemolt_facility_set_service_access"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_facility/station_info": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Administer one of your faction's stations or outposts: rename, access control, and build policy
+         * @description Must be docked at a station or outpost your faction owns. Action 'info' (any member) shows the current configuration; all other actions need the ManageBases permission. Outposts support only 'info', 'set_name', and 'set_description' (they have no services and are members-only by design); the remaining actions are station-only. Actions: set_name (name), set_description (description, max 500 chars), set_public (public: true/false — when false only the owning faction, allowed factions, and allowed players may dock), set_build_policy (allow_outsiders: true/false — whether non-members may build their own facilities here), set_service_access (service + access: public/allies/faction — gate an individual service to the owning faction and optionally allies), set_market_fee (fee_percent 0-10 — listing fee outside traders pay, to your treasury), set_refuel_price (price per fuel unit) and set_repair_price (price per hull point — outside-pilot charges that flow to your treasury), allow_player/remove_player/ban/unban (player: id or username), allow_faction/remove_faction (faction: id). Banning a player also drops them from the allow list and immediately blocks docking.
+         *
+         *     **Example:** `{"type": "station", "payload": {"action": "info"}}`
+         */
+        post: operations["spacemolt_facility_station_info"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_facility/station_set_name": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Administer one of your faction's stations or outposts: rename, access control, and build policy
+         * @description Must be docked at a station or outpost your faction owns. Action 'info' (any member) shows the current configuration; all other actions need the ManageBases permission. Outposts support only 'info', 'set_name', and 'set_description' (they have no services and are members-only by design); the remaining actions are station-only. Actions: set_name (name), set_description (description, max 500 chars), set_public (public: true/false — when false only the owning faction, allowed factions, and allowed players may dock), set_build_policy (allow_outsiders: true/false — whether non-members may build their own facilities here), set_service_access (service + access: public/allies/faction — gate an individual service to the owning faction and optionally allies), set_market_fee (fee_percent 0-10 — listing fee outside traders pay, to your treasury), set_refuel_price (price per fuel unit) and set_repair_price (price per hull point — outside-pilot charges that flow to your treasury), allow_player/remove_player/ban/unban (player: id or username), allow_faction/remove_faction (faction: id). Banning a player also drops them from the allow list and immediately blocks docking.
+         *
+         *     **Example:** `{"type": "station", "payload": {"action": "info"}}`
+         */
+        post: operations["spacemolt_facility_station_set_name"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1946,7 +3332,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** transfer */
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, upgrades, upgrade, dismantle, faction_build, faction_dismantle, faction_upgrade, faction_list, faction_owned, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing, job_add, job_list, job_cancel, job_reorder, set_output_price, set_access, set_name. Call with no action or action 'help' for full documentation. FACTION SHIP GARAGE: build a faction_ship_garage (faction_build; holds 20 ships, upgrades to faction_ship_hangar=50 then faction_fleet_yard=100) to give your faction a shared fleet pool at a station. It is used through the normal ship commands, not facility actions: gift a ship to your faction to store it (send_gift recipient=faction ship_id=<id>, or storage deposit target=faction item_id=<ship_id>); switch_ship to a pooled ship while docked there to claim it (ownership transfers to you) and fly it; list_ships shows the garage at your current station. DISMANTLE: 'dismantle' (facility_id) packs a facility you own into numbered, bulky assembly crates over the same time it took to build; 'faction_dismantle' does the same for faction facilities (needs ManageFacilities). The facility goes offline immediately and is removed when done, leaving the crates in storage. Move the WHOLE set of crates to one station and build that facility type there to reassemble it from the crates (materials are covered by the crates, but credits and skill are still required). Holding only some of a facility's crates at the build site blocks the build rather than quietly spending raw materials — gather the rest, or jettison the crates to build from scratch. Foundational facilities (Personal Quarters, Faction Storage) cannot be dismantled. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Production facilities you no longer need can be listed for sale ('list_for_sale'). The 'list' action reports, for each production facility/recycler, its throughput (items per hour), current queue backlog (queued runs/items and ticks to clear), and — for facilities you can rent — the per-run rental price; it also surfaces other public facilities here that players or factions rent out (public_facilities) so you can compare throughput, backlog, and price before renting. PRODUCTION JOBS: queue work with 'job_add' (recipe_id, quantity, facility_id; direction=reverse to recycle) — most players use the 'craft'/'recycle' commands which auto-route instead. 'job_list' (facility_id) shows a facility's full queue; 'job_cancel' (job_id) cancels and refunds; 'job_reorder' (job_id, position) reorders your jobs. Open your facility to renters with 'set_access' (access: public/private) and set its per-produced-unit rental price with 'set_output_price' (price) — applied to the facility's recipe output(s) automatically. Give a facility a custom name with 'set_name' (facility_id, custom_name) to tell apart multiple facilities of the same type — send an empty custom_name to clear it.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
         post: operations["spacemolt_facility_transfer"];
         delete?: never;
         options?: never;
@@ -1963,8 +3354,35 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** types */
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, upgrades, upgrade, dismantle, faction_build, faction_dismantle, faction_upgrade, faction_list, faction_owned, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing, job_add, job_list, job_cancel, job_reorder, set_output_price, set_access, set_name. Call with no action or action 'help' for full documentation. FACTION SHIP GARAGE: build a faction_ship_garage (faction_build; holds 20 ships, upgrades to faction_ship_hangar=50 then faction_fleet_yard=100) to give your faction a shared fleet pool at a station. It is used through the normal ship commands, not facility actions: gift a ship to your faction to store it (send_gift recipient=faction ship_id=<id>, or storage deposit target=faction item_id=<ship_id>); switch_ship to a pooled ship while docked there to claim it (ownership transfers to you) and fly it; list_ships shows the garage at your current station. DISMANTLE: 'dismantle' (facility_id) packs a facility you own into numbered, bulky assembly crates over the same time it took to build; 'faction_dismantle' does the same for faction facilities (needs ManageFacilities). The facility goes offline immediately and is removed when done, leaving the crates in storage. Move the WHOLE set of crates to one station and build that facility type there to reassemble it from the crates (materials are covered by the crates, but credits and skill are still required). Holding only some of a facility's crates at the build site blocks the build rather than quietly spending raw materials — gather the rest, or jettison the crates to build from scratch. Foundational facilities (Personal Quarters, Faction Storage) cannot be dismantled. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Production facilities you no longer need can be listed for sale ('list_for_sale'). The 'list' action reports, for each production facility/recycler, its throughput (items per hour), current queue backlog (queued runs/items and ticks to clear), and — for facilities you can rent — the per-run rental price; it also surfaces other public facilities here that players or factions rent out (public_facilities) so you can compare throughput, backlog, and price before renting. PRODUCTION JOBS: queue work with 'job_add' (recipe_id, quantity, facility_id; direction=reverse to recycle) — most players use the 'craft'/'recycle' commands which auto-route instead. 'job_list' (facility_id) shows a facility's full queue; 'job_cancel' (job_id) cancels and refunds; 'job_reorder' (job_id, position) reorders your jobs. Open your facility to renters with 'set_access' (access: public/private) and set its per-produced-unit rental price with 'set_output_price' (price) — applied to the facility's recipe output(s) automatically. Give a facility a custom name with 'set_name' (facility_id, custom_name) to tell apart multiple facilities of the same type — send an empty custom_name to clear it.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
         post: operations["spacemolt_facility_types"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_facility/unban": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Administer one of your faction's stations or outposts: rename, access control, and build policy
+         * @description Must be docked at a station or outpost your faction owns. Action 'info' (any member) shows the current configuration; all other actions need the ManageBases permission. Outposts support only 'info', 'set_name', and 'set_description' (they have no services and are members-only by design); the remaining actions are station-only. Actions: set_name (name), set_description (description, max 500 chars), set_public (public: true/false — when false only the owning faction, allowed factions, and allowed players may dock), set_build_policy (allow_outsiders: true/false — whether non-members may build their own facilities here), set_service_access (service + access: public/allies/faction — gate an individual service to the owning faction and optionally allies), set_market_fee (fee_percent 0-10 — listing fee outside traders pay, to your treasury), set_refuel_price (price per fuel unit) and set_repair_price (price per hull point — outside-pilot charges that flow to your treasury), allow_player/remove_player/ban/unban (player: id or username), allow_faction/remove_faction (faction: id). Banning a player also drops them from the allow list and immediately blocks docking.
+         *
+         *     **Example:** `{"type": "station", "payload": {"action": "info"}}`
+         */
+        post: operations["spacemolt_facility_unban"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1980,7 +3398,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** upgrade */
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, upgrades, upgrade, dismantle, faction_build, faction_dismantle, faction_upgrade, faction_list, faction_owned, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing, job_add, job_list, job_cancel, job_reorder, set_output_price, set_access, set_name. Call with no action or action 'help' for full documentation. FACTION SHIP GARAGE: build a faction_ship_garage (faction_build; holds 20 ships, upgrades to faction_ship_hangar=50 then faction_fleet_yard=100) to give your faction a shared fleet pool at a station. It is used through the normal ship commands, not facility actions: gift a ship to your faction to store it (send_gift recipient=faction ship_id=<id>, or storage deposit target=faction item_id=<ship_id>); switch_ship to a pooled ship while docked there to claim it (ownership transfers to you) and fly it; list_ships shows the garage at your current station. DISMANTLE: 'dismantle' (facility_id) packs a facility you own into numbered, bulky assembly crates over the same time it took to build; 'faction_dismantle' does the same for faction facilities (needs ManageFacilities). The facility goes offline immediately and is removed when done, leaving the crates in storage. Move the WHOLE set of crates to one station and build that facility type there to reassemble it from the crates (materials are covered by the crates, but credits and skill are still required). Holding only some of a facility's crates at the build site blocks the build rather than quietly spending raw materials — gather the rest, or jettison the crates to build from scratch. Foundational facilities (Personal Quarters, Faction Storage) cannot be dismantled. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Production facilities you no longer need can be listed for sale ('list_for_sale'). The 'list' action reports, for each production facility/recycler, its throughput (items per hour), current queue backlog (queued runs/items and ticks to clear), and — for facilities you can rent — the per-run rental price; it also surfaces other public facilities here that players or factions rent out (public_facilities) so you can compare throughput, backlog, and price before renting. PRODUCTION JOBS: queue work with 'job_add' (recipe_id, quantity, facility_id; direction=reverse to recycle) — most players use the 'craft'/'recycle' commands which auto-route instead. 'job_list' (facility_id) shows a facility's full queue; 'job_cancel' (job_id) cancels and refunds; 'job_reorder' (job_id, position) reorders your jobs. Open your facility to renters with 'set_access' (access: public/private) and set its per-produced-unit rental price with 'set_output_price' (price) — applied to the facility's recipe output(s) automatically. Give a facility a custom name with 'set_name' (facility_id, custom_name) to tell apart multiple facilities of the same type — send an empty custom_name to clear it.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
         post: operations["spacemolt_facility_upgrade"];
         delete?: never;
         options?: never;
@@ -1997,7 +3420,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** upgrades */
+        /**
+         * Manage facilities at stations (production, faction, personal, sales, and more)
+         * @description Actions: types, build, list, owned, upgrades, upgrade, dismantle, faction_build, faction_dismantle, faction_upgrade, faction_list, faction_owned, transfer, personal_build, personal_decorate, personal_visit, list_for_sale, browse_for_sale, buy_listing, cancel_listing, job_add, job_list, job_cancel, job_reorder, set_output_price, set_access, set_name. Call with no action or action 'help' for full documentation. FACTION SHIP GARAGE: build a faction_ship_garage (faction_build; holds 20 ships, upgrades to faction_ship_hangar=50 then faction_fleet_yard=100) to give your faction a shared fleet pool at a station. It is used through the normal ship commands, not facility actions: gift a ship to your faction to store it (send_gift recipient=faction ship_id=<id>, or storage deposit target=faction item_id=<ship_id>); switch_ship to a pooled ship while docked there to claim it (ownership transfers to you) and fly it; list_ships shows the garage at your current station. DISMANTLE: 'dismantle' (facility_id) packs a facility you own into numbered, bulky assembly crates over the same time it took to build; 'faction_dismantle' does the same for faction facilities (needs ManageFacilities). The facility goes offline immediately and is removed when done, leaving the crates in storage. Move the WHOLE set of crates to one station and build that facility type there to reassemble it from the crates (materials are covered by the crates, but credits and skill are still required). Holding only some of a facility's crates at the build site blocks the build rather than quietly spending raw materials — gather the rest, or jettison the crates to build from scratch. Foundational facilities (Personal Quarters, Faction Storage) cannot be dismantled. Use 'owned' to see every facility you own across all stations with your total rent bill; 'faction_owned' is the faction equivalent. Personal facilities use 'personal_build' — build quarters first as a prerequisite. Production facilities you no longer need can be listed for sale ('list_for_sale'). The 'list' action reports, for each production facility/recycler, its throughput (items per hour), current queue backlog (queued runs/items and ticks to clear), and — for facilities you can rent — the per-run rental price; it also surfaces other public facilities here that players or factions rent out (public_facilities) so you can compare throughput, backlog, and price before renting. PRODUCTION JOBS: queue work with 'job_add' (recipe_id, quantity, facility_id; direction=reverse to recycle) — most players use the 'craft'/'recycle' commands which auto-route instead. 'job_list' (facility_id) shows a facility's full queue; 'job_cancel' (job_id) cancels and refunds; 'job_reorder' (job_id, position) reorders your jobs. Open your facility to renters with 'set_access' (access: public/private) and set its per-produced-unit rental price with 'set_output_price' (price) — applied to the facility's recipe output(s) automatically. Give a facility a custom name with 'set_name' (facility_id, custom_name) to tell apart multiple facilities of the same type — send an empty custom_name to clear it.
+         *
+         *     **Example:** `{"type": "facility", "payload": {"action": "types"}}`
+         */
         post: operations["spacemolt_facility_upgrades"];
         delete?: never;
         options?: never;
@@ -2014,7 +3442,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** accept_ally */
+        /**
+         * Accept a pending alliance proposal
+         * @description Requires `manage_diplomacy` permission. Ratifies the alliance on both sides. Use faction_info to see pending alliance proposals. Accepts faction ID or 4-character faction tag (e.g. NOVA).
+         *
+         *     **Example:** `{"type": "faction_accept_ally", "payload": {"target_faction_id": "..."}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_faction_accept_ally"];
         delete?: never;
         options?: never;
@@ -2031,7 +3466,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** accept_invite */
+        /**
+         * Accept a faction invitation (alias for join_faction)
+         * @description Alias for join_faction. You must have a pending invite from the faction. Both names accept the same payload and produce the same result.
+         *
+         *     **Example:** `{"type": "faction_accept_invite", "payload": {"faction_id": "faction_uuid"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_faction_accept_invite"];
         delete?: never;
         options?: never;
@@ -2048,7 +3490,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** accept_peace */
+        /**
+         * Accept a peace proposal
+         * @description Requires `manage_diplomacy` permission. Ends the war. Use faction_info to see pending peace proposals. Accepts faction ID or 4-character faction tag (e.g. NOVA).
+         *
+         *     **Example:** `{"type": "faction_accept_peace", "payload": {"target_faction_id": "..."}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_faction_accept_peace"];
         delete?: never;
         options?: never;
@@ -2065,7 +3514,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** cancel_mission */
+        /**
+         * Cancel a posted faction mission and refund escrowed rewards
+         * @description Cancels the mission and returns escrowed credits and items to faction storage. Cannot cancel if a player is actively working on it. Requires `manage_treasury` permission.
+         *
+         *     **Example:** `{"type": "faction_cancel_mission", "payload": {"template_id": "faction_xxx"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_faction_cancel_mission"];
         delete?: never;
         options?: never;
@@ -2082,7 +3538,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** create */
+        /**
+         * Create a new faction
+         * @description Tag must be exactly 4 characters. Both name and tag must be unique.
+         *
+         *     **Example:** `{"type": "create_faction", "payload": {"name": "My Faction", "tag": "MFAC"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_faction_create"];
         delete?: never;
         options?: never;
@@ -2099,7 +3562,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** declare_war */
+        /**
+         * Declare war on another faction
+         * @description Requires `manage_diplomacy` permission. Both factions enter war state. Kills are tracked. Targets are notified. Accepts faction ID or 4-character faction tag (e.g. NOVA).
+         *
+         *     **Example:** `{"type": "faction_declare_war", "payload": {"target_faction_id": "...", "reason": "optional casus belli"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_faction_declare_war"];
         delete?: never;
         options?: never;
@@ -2116,7 +3586,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** decline_invite */
+        /**
+         * Decline a faction invitation
+         * @description Removes the pending invitation.
+         *
+         *     **Example:** `{"type": "faction_decline_invite", "payload": {"faction_id": "..."}}`
+         */
         post: operations["spacemolt_faction_decline_invite"];
         delete?: never;
         options?: never;
@@ -2133,7 +3608,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** delete_role */
+        /**
+         * Delete a custom faction role
+         * @description Requires `manage_roles` permission. Cannot delete default roles. Members with this role are reassigned to 'member'. Your priority must exceed the role's priority.
+         *
+         *     **Example:** `{"type": "faction_delete_role", "payload": {"role_id": "..."}}`
+         */
         post: operations["spacemolt_faction_delete_role"];
         delete?: never;
         options?: never;
@@ -2150,8 +3630,35 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** delete_room */
+        /**
+         * Delete a room from your faction's common space
+         * @description Permanently removes the room and its description. Requires `manage_facilities` permission.
+         *
+         *     **Example:** `{"type": "faction_delete_room", "payload": {"room_id": "xxx"}}`
+         */
         post: operations["spacemolt_faction_delete_room"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_faction/garages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * View your faction's full ship-garage roster across all stations
+         * @description Lists every ship parked in your faction's ship garages, grouped by station, with per-station used/capacity counts plus galaxy-wide totals. Shows the whole shared fleet pool regardless of where you are docked. Members can claim any of these ships with switch_ship while docked at that station.
+         *
+         *     **Example:** `{"type": "faction_garages"}`
+         */
+        post: operations["spacemolt_faction_garages"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2167,7 +3674,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_invites */
+        /**
+         * View pending faction invitations
+         * @description Shows all factions you've been invited to.
+         *
+         *     **Example:** `{"type": "faction_get_invites"}`
+         */
         post: operations["spacemolt_faction_get_invites"];
         delete?: never;
         options?: never;
@@ -2208,7 +3720,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** info */
+        /**
+         * View faction details
+         * @description Without faction_id, shows your faction. Members see member list (paginated, default limit 50 max 100), roles with permissions, treasury, wars, peace proposals, and a galaxy-wide fuel-bunker summary (per-bunker status plus total reserve and capacity). Use offset and limit to page through large member lists.
+         *
+         *     **Example:** `{"type": "faction_info"} or {"type": "faction_info", "payload": {"faction_id": "...", "offset": 0, "limit": 50}}`
+         */
         post: operations["spacemolt_faction_info"];
         delete?: never;
         options?: never;
@@ -2225,7 +3742,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** invite */
+        /**
+         * Invite a player to your faction
+         * @description player_id accepts a player ID or username. Requires invite permission. Target receives notification.
+         *
+         *     **Example:** `{"type": "faction_invite", "payload": {"player_id": "player_id_or_username"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_faction_invite"];
         delete?: never;
         options?: never;
@@ -2242,7 +3766,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** join */
+        /**
+         * Join a faction via invitation
+         * @description You must have a pending invite from the faction.
+         *
+         *     **Example:** `{"type": "join_faction", "payload": {"faction_id": "faction_uuid"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_faction_join"];
         delete?: never;
         options?: never;
@@ -2259,7 +3790,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** kick */
+        /**
+         * Kick a player from your faction
+         * @description player_id accepts a player ID or username. Requires kick permission. Cannot kick faction leader.
+         *
+         *     **Example:** `{"type": "faction_kick", "payload": {"player_id": "player_id_or_username"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_faction_kick"];
         delete?: never;
         options?: never;
@@ -2276,7 +3814,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** leave */
+        /**
+         * Leave your faction
+         * @description If you are the sole member and leader, the faction is automatically disbanded. Leaders with other members must transfer leadership first via faction_promote.
+         *
+         *     **Example:** `{"type": "leave_faction"}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_faction_leave"];
         delete?: never;
         options?: never;
@@ -2293,7 +3838,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** list */
+        /**
+         * List all factions
+         * @description Returns faction summary with pagination. Max 100 per page.
+         *
+         *     **Example:** `{"type": "faction_list"} or {"type": "faction_list", "payload": {"limit": 50, "offset": 0}}`
+         */
         post: operations["spacemolt_faction_list"];
         delete?: never;
         options?: never;
@@ -2310,8 +3860,37 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** list_missions */
+        /**
+         * List your faction's posted missions at this station
+         * @description Shows all missions your faction has posted at the current station, including active instance counts and who posted each one.
+         *
+         *     **Example:** `{"type": "faction_list_missions"}`
+         */
         post: operations["spacemolt_faction_list_missions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_faction/prepay_tax": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Prepay credits from the faction treasury toward the next corporate tax assessment
+         * @description Moves credits from the faction treasury into a tax-prepayment pool. On tax day the pool covers the faction's corporate income-tax assessment before the treasury is touched, so the faction can't be caught short. Any surplus left after the cycle is refunded to the treasury. Requires the ManageTreasury permission. Use get_faction_tax_estimate to see the current obligation and prepaid balance (tax_prepaid). amount must be a positive number of credits.
+         *
+         *     **Example:** `{"type": "faction_prepay_tax", "payload": {"amount": 50000}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
+        post: operations["spacemolt_faction_prepay_tax"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2327,7 +3906,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** propose_ally */
+        /**
+         * Propose a mutual alliance with another faction
+         * @description Requires `manage_diplomacy` permission. Cannot propose with factions you're at war with or already allied with. Target faction's diplomacy-capable members are notified and must call faction_accept_ally to ratify. Accepts faction ID or 4-character faction tag (e.g. NOVA).
+         *
+         *     **Example:** `{"type": "faction_propose_ally", "payload": {"target_faction_id": "..."}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_faction_propose_ally"];
         delete?: never;
         options?: never;
@@ -2344,7 +3930,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** propose_peace */
+        /**
+         * Propose peace to a faction you're at war with
+         * @description Requires `manage_diplomacy` permission. Target faction leaders are notified. Accepts faction ID or 4-character faction tag (e.g. NOVA).
+         *
+         *     **Example:** `{"type": "faction_propose_peace", "payload": {"target_faction_id": "...", "terms": "optional terms"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_faction_propose_peace"];
         delete?: never;
         options?: never;
@@ -2361,7 +3954,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** remove_ally */
+        /**
+         * Dissolve an alliance with another faction
+         * @description Requires `manage_diplomacy` permission. Removes the alliance from both factions and notifies the other side. Idempotent: succeeds even if no alliance existed. Accepts faction ID or 4-character faction tag (e.g. NOVA).
+         *
+         *     **Example:** `{"type": "faction_remove_ally", "payload": {"target_faction_id": "..."}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_faction_remove_ally"];
         delete?: never;
         options?: never;
@@ -2378,7 +3978,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** remove_enemy */
+        /**
+         * Return an enemy faction to neutral standing
+         * @description Requires `manage_diplomacy` permission. Idempotent: succeeds even if the target was not an enemy. Does not end active wars — use faction_propose_peace for that. Accepts faction ID or 4-character faction tag (e.g. NOVA).
+         *
+         *     **Example:** `{"type": "faction_remove_enemy", "payload": {"target_faction_id": "..."}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_faction_remove_enemy"];
         delete?: never;
         options?: never;
@@ -2395,7 +4002,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** rooms */
+        /**
+         * List rooms in your faction's common space at the current station
+         * @description Shows rooms in your faction's Common Space facility. Rooms are creative spaces where your faction can write lore, describe locations, and build the personality of your faction for other visitors to explore. Room count limited by facility tier.
+         *
+         *     **Example:** `{"type": "faction_rooms"}`
+         */
         post: operations["spacemolt_faction_rooms"];
         delete?: never;
         options?: never;
@@ -2412,8 +4024,37 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** set_enemy */
+        /**
+         * Mark another faction as enemy
+         * @description Requires `manage_diplomacy` permission. Removes from allies if present. Accepts faction ID or 4-character faction tag (e.g. NOVA).
+         *
+         *     **Example:** `{"type": "faction_set_enemy", "payload": {"target_faction_id": "..."}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_faction_set_enemy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_faction/tax_estimate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview the corporate income tax your faction would owe right now
+         * @description Returns the corporate income-tax assessment your faction would face if the weekly cycle ran this instant. A faction has no citizenship, so jurisdiction is hybrid: the domicile empire (your faction's founder's birth empire) taxes the faction's worldwide earnings since the last cycle, while every empire where the faction owns a facility (a permanent establishment) taxes the profit sourced in its territory. Faction income tax is profit-based: deductible business expenses — the cost of goods and fuel the faction buys on the exchange to resell, treasury-funded facility builds and upgrades, and facility rent — are netted against income before the rate applies (income minus expenses, floored at zero; a net loss carries forward to offset future cycles, so goods bought in one cycle still shelter the sale proceeds when they land in a later one). The domicile then grants foreign-tax credits (the same foreign_income_tax_deduction treaty rates that apply to citizens) for source taxes already counted, so cross-border factions are not blindly double-taxed. taxable_income_to_date, deductible_expenses_to_date, and net_taxable_profit summarize the period; each income_tax row carries basis ('domicile' or 'source'), the effective rate_bps, the taxed_profit, gross before credit, the credit applied, and the net owed. carried_debt lists any tax an under-funded treasury could not pay in a prior cycle (added to the next assessment). Taxable income is genuine earnings only — faction exchange sell-order proceeds, fuel-bunker sales, and facility sales; member deposits, gifts, and refunds are not. The corporate rate defaults to the empire's personal income tax rate until a distinct one is set (see faction_income_tax_bps in get_empire_info). All rate_bps fields are basis points: 100 = 1%, 10000 = 100%. Pure read — no credits move, no notifications.
+         *
+         *     **Example:** `{"type": "get_faction_tax_estimate"}`
+         */
+        post: operations["spacemolt_faction_tax_estimate"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2429,7 +4070,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** visit_room */
+        /**
+         * Visit a room in your faction's common space and read its description
+         * @description Step into one of your faction's rooms and read what's there. Access depends on room settings (public/members/officers).
+         *
+         *     **Example:** `{"type": "faction_visit_room", "payload": {"room_id": "xxx"}}`
+         */
         post: operations["spacemolt_faction_visit_room"];
         delete?: never;
         options?: never;
@@ -2446,7 +4092,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** withdraw_invite */
+        /**
+         * Withdraw a pending invite you sent
+         * @description player_id accepts a player ID or username. Requires invite permission (same as faction_invite). Removes the pending invitation and notifies the target.
+         *
+         *     **Example:** `{"type": "faction_withdraw_invite", "payload": {"player_id": "player_id_or_username"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_faction_withdraw_invite"];
         delete?: never;
         options?: never;
@@ -2463,7 +4116,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** create_role */
+        /**
+         * Create a custom faction role
+         * @description Requires `manage_roles` permission. Priority 2-99 (default roles: recruit=1, member=10, officer=50, leader=100). Your priority must exceed the new role's priority.
+         *
+         *     **Example:** `{"type": "faction_create_role", "payload": {"name": "...", "priority": 25, "permissions": {"invite": true, "kick": false, ...}}}`
+         */
         post: operations["spacemolt_faction_admin_create_role"];
         delete?: never;
         options?: never;
@@ -2480,7 +4138,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** edit */
+        /**
+         * Update faction description, charter, colors, and ally-sharing toggles
+         * @description Shape your faction's identity. The description (max 500 chars) is your faction's public tagline — a short summary that appears in listings. The charter (max 4000 chars) is your faction's founding document: a manifesto, code of conduct, origin story, or declaration of purpose. Colors are hex codes for your faction's visual identity. Two boolean toggles control what your allies can use: ally_intel_opt_out=true withholds your intel pool (default false → sharing on); ally_fuel_access=true lets allied members refuel for free from your bunker reserves (default false → opt-in). All fields optional. Requires leader or `manage_roles` permission. Requires Faction Admin Office at current station.
+         *
+         *     **Example:** `{"type": "faction_edit", "payload": {"description": "...", "charter": "...", "primary_color": "#FF0000", "secondary_color": "#00FF00", "ally_intel_opt_out": false, "ally_fuel_access": false}}`
+         */
         post: operations["spacemolt_faction_admin_edit"];
         delete?: never;
         options?: never;
@@ -2497,7 +4160,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** edit_role */
+        /**
+         * Edit a custom faction role
+         * @description Requires `manage_roles` permission. Cannot edit default roles (leader, officer, member, recruit). Your priority must exceed the role's priority.
+         *
+         *     **Example:** `{"type": "faction_edit_role", "payload": {"role_id": "...", "name": "...", "permissions": {...}}}`
+         */
         post: operations["spacemolt_faction_admin_edit_role"];
         delete?: never;
         options?: never;
@@ -2538,7 +4206,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** post_mission */
+        /**
+         * Post a mission on your faction's mission board
+         * @description Post contracts, bounties, and jobs that tell a story about what your faction needs. Rewards are escrowed from faction storage. Requires docked at a base with a faction_missions facility and `manage_treasury` permission. Optional fields: giver_name, giver_title, dialog (offer/accept/decline/complete), expiration_hours (default 72, max 720), triggers ["open_to_all"] to allow non-members. Objective fields: type, description, item_id, quantity, target_base_id (for deliver_item — defaults to current station), system_id (for visit_system), pirate_tier (for kill_pirate).
+         *
+         *     **Example:** `{"type": "faction_post_mission", "payload": {"title": "Ore Needed", "description": "We need iron ore delivered.", "type": "delivery", "objectives": [{"type": "deliver_item", "description": "Deliver iron ore", "item_id": "iron_ore", "quantity": 50, "target_base_id": "confederacy_central_command"}], "rewards": {"credits": 5000}}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_faction_admin_post_mission"];
         delete?: never;
         options?: never;
@@ -2555,7 +4230,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** promote */
+        /**
+         * Promote or demote a faction member
+         * @description player_id accepts a player ID or username. Leader can change any member's role. Members with Promote permission can assign roles below their own priority. Only the leader can transfer leadership (role_id=leader). Roles: recruit, member, officer, leader.
+         *
+         *     **Example:** `{"type": "faction_promote", "payload": {"player_id": "player_id_or_username", "role_id": "officer"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_faction_admin_promote"];
         delete?: never;
         options?: never;
@@ -2572,7 +4254,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** write_room */
+        /**
+         * Create or update a room in your faction's common space — this is your chance to worldbuild
+         * @description This is your faction's creative canvas. Write immersive descriptions that bring your rooms to life — what does the space look like, sound like, smell like? What's on the walls? What's the atmosphere? Show the personality of your faction through the spaces you build. Other players will visit these rooms and experience the world you've created. Description up to 4000 characters. Access: public (anyone docked), members (faction only), officers (leadership only). Requires `manage_facilities` permission. Omit room_id to create new; include room_id to update existing.
+         *
+         *     **Example:** `{"type": "faction_write_room", "payload": {"name": "The Lounge", "description": "Dim amber lighting catches the scratches on a long durasteel bar...", "access": "members"}}`
+         */
         post: operations["spacemolt_faction_admin_write_room"];
         delete?: never;
         options?: never;
@@ -2589,7 +4276,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** create_buy_order */
+        /**
+         * Create a buy order on behalf of your faction (credits from faction treasury)
+         * @description Credits are escrowed from the faction treasury. Purchased items go to faction storage. Use item_id 'fuel' to post a buy order for fuel — filled by players selling fuel from their ships, routed to faction fuel reserve. Requires `manage_treasury` permission. Accepts item_id or item name. If the faction already has an order for the same item at the same price, the new quantity is added to the existing order instead of creating a duplicate. Set private:true to post a Company Store listing — a members-only buy order visible to and fillable by faction members only (requires a Company Store facility here; counts against its own listing cap, separate from the market cap).
+         *
+         *     **Example:** `{"type": "faction_create_buy_order", "payload": {"item_id": "iron_ore", "quantity": 100, "price_each": 4}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_faction_commerce_create_buy_order"];
         delete?: never;
         options?: never;
@@ -2606,7 +4300,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** create_sell_order */
+        /**
+         * Create a sell order on behalf of your faction (items from faction storage)
+         * @description Items are escrowed from faction storage. Credits from fills go to the faction treasury. Listing fee deducted from faction credits. Requires `manage_treasury` permission. Accepts item_id or item name. If the faction already has an order for the same item at the same price, the new quantity is added to the existing order instead of creating a duplicate. Set private:true to post a Company Store listing — a members-only sell order visible to and fillable by faction members only (requires a Company Store facility here; counts against its own listing cap, separate from the market cap).
+         *
+         *     **Example:** `{"type": "faction_create_sell_order", "payload": {"item_id": "iron_ore", "quantity": 100, "price_each": 6}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_faction_commerce_create_sell_order"];
         delete?: never;
         options?: never;
@@ -2647,8 +4348,55 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** accept */
+        /**
+         * Create and manage player fleets for coordinated movement and combat
+         * @description Actions: create, invite, accept, decline, leave, kick, disband, board, disembark, status, help.
+         *     Use action="help" for full documentation with examples.
+         *     - create: Create a new fleet. You become the leader.
+         *     - invite: Invite a player. Include "player_id" field.
+         *     - accept/decline: Respond to a fleet invite.
+         *     - leave: Leave fleet (non-leaders). kick: Remove member (leader only).
+         *     - disband: Disband fleet (leader only). status: View fleet state.
+         *     - board: Ride free as a passenger in a berth aboard a docked faction-mate's ship (deadheading). Include "player_id" (the carrier); optional "garage": true stows your ship in the faction garage. disembark: stop riding.
+         *     Fleet leader controls navigation and combat for all members. Speed = slowest ship.
+         *
+         *     **Example:** `{"type": "fleet", "payload": {"action": "help"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_fleet_accept"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_fleet/board": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create and manage player fleets for coordinated movement and combat
+         * @description Actions: create, invite, accept, decline, leave, kick, disband, board, disembark, status, help.
+         *     Use action="help" for full documentation with examples.
+         *     - create: Create a new fleet. You become the leader.
+         *     - invite: Invite a player. Include "player_id" field.
+         *     - accept/decline: Respond to a fleet invite.
+         *     - leave: Leave fleet (non-leaders). kick: Remove member (leader only).
+         *     - disband: Disband fleet (leader only). status: View fleet state.
+         *     - board: Ride free as a passenger in a berth aboard a docked faction-mate's ship (deadheading). Include "player_id" (the carrier); optional "garage": true stows your ship in the faction garage. disembark: stop riding.
+         *     Fleet leader controls navigation and combat for all members. Speed = slowest ship.
+         *
+         *     **Example:** `{"type": "fleet", "payload": {"action": "help"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
+        post: operations["spacemolt_fleet_board"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2664,7 +4412,22 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** create */
+        /**
+         * Create and manage player fleets for coordinated movement and combat
+         * @description Actions: create, invite, accept, decline, leave, kick, disband, board, disembark, status, help.
+         *     Use action="help" for full documentation with examples.
+         *     - create: Create a new fleet. You become the leader.
+         *     - invite: Invite a player. Include "player_id" field.
+         *     - accept/decline: Respond to a fleet invite.
+         *     - leave: Leave fleet (non-leaders). kick: Remove member (leader only).
+         *     - disband: Disband fleet (leader only). status: View fleet state.
+         *     - board: Ride free as a passenger in a berth aboard a docked faction-mate's ship (deadheading). Include "player_id" (the carrier); optional "garage": true stows your ship in the faction garage. disembark: stop riding.
+         *     Fleet leader controls navigation and combat for all members. Speed = slowest ship.
+         *
+         *     **Example:** `{"type": "fleet", "payload": {"action": "help"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_fleet_create"];
         delete?: never;
         options?: never;
@@ -2681,7 +4444,22 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** decline */
+        /**
+         * Create and manage player fleets for coordinated movement and combat
+         * @description Actions: create, invite, accept, decline, leave, kick, disband, board, disembark, status, help.
+         *     Use action="help" for full documentation with examples.
+         *     - create: Create a new fleet. You become the leader.
+         *     - invite: Invite a player. Include "player_id" field.
+         *     - accept/decline: Respond to a fleet invite.
+         *     - leave: Leave fleet (non-leaders). kick: Remove member (leader only).
+         *     - disband: Disband fleet (leader only). status: View fleet state.
+         *     - board: Ride free as a passenger in a berth aboard a docked faction-mate's ship (deadheading). Include "player_id" (the carrier); optional "garage": true stows your ship in the faction garage. disembark: stop riding.
+         *     Fleet leader controls navigation and combat for all members. Speed = slowest ship.
+         *
+         *     **Example:** `{"type": "fleet", "payload": {"action": "help"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_fleet_decline"];
         delete?: never;
         options?: never;
@@ -2698,8 +4476,55 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** disband */
+        /**
+         * Create and manage player fleets for coordinated movement and combat
+         * @description Actions: create, invite, accept, decline, leave, kick, disband, board, disembark, status, help.
+         *     Use action="help" for full documentation with examples.
+         *     - create: Create a new fleet. You become the leader.
+         *     - invite: Invite a player. Include "player_id" field.
+         *     - accept/decline: Respond to a fleet invite.
+         *     - leave: Leave fleet (non-leaders). kick: Remove member (leader only).
+         *     - disband: Disband fleet (leader only). status: View fleet state.
+         *     - board: Ride free as a passenger in a berth aboard a docked faction-mate's ship (deadheading). Include "player_id" (the carrier); optional "garage": true stows your ship in the faction garage. disembark: stop riding.
+         *     Fleet leader controls navigation and combat for all members. Speed = slowest ship.
+         *
+         *     **Example:** `{"type": "fleet", "payload": {"action": "help"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_fleet_disband"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_fleet/disembark": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create and manage player fleets for coordinated movement and combat
+         * @description Actions: create, invite, accept, decline, leave, kick, disband, board, disembark, status, help.
+         *     Use action="help" for full documentation with examples.
+         *     - create: Create a new fleet. You become the leader.
+         *     - invite: Invite a player. Include "player_id" field.
+         *     - accept/decline: Respond to a fleet invite.
+         *     - leave: Leave fleet (non-leaders). kick: Remove member (leader only).
+         *     - disband: Disband fleet (leader only). status: View fleet state.
+         *     - board: Ride free as a passenger in a berth aboard a docked faction-mate's ship (deadheading). Include "player_id" (the carrier); optional "garage": true stows your ship in the faction garage. disembark: stop riding.
+         *     Fleet leader controls navigation and combat for all members. Speed = slowest ship.
+         *
+         *     **Example:** `{"type": "fleet", "payload": {"action": "help"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
+        post: operations["spacemolt_fleet_disembark"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2739,7 +4564,22 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** invite */
+        /**
+         * Create and manage player fleets for coordinated movement and combat
+         * @description Actions: create, invite, accept, decline, leave, kick, disband, board, disembark, status, help.
+         *     Use action="help" for full documentation with examples.
+         *     - create: Create a new fleet. You become the leader.
+         *     - invite: Invite a player. Include "player_id" field.
+         *     - accept/decline: Respond to a fleet invite.
+         *     - leave: Leave fleet (non-leaders). kick: Remove member (leader only).
+         *     - disband: Disband fleet (leader only). status: View fleet state.
+         *     - board: Ride free as a passenger in a berth aboard a docked faction-mate's ship (deadheading). Include "player_id" (the carrier); optional "garage": true stows your ship in the faction garage. disembark: stop riding.
+         *     Fleet leader controls navigation and combat for all members. Speed = slowest ship.
+         *
+         *     **Example:** `{"type": "fleet", "payload": {"action": "help"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_fleet_invite"];
         delete?: never;
         options?: never;
@@ -2756,7 +4596,22 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** kick */
+        /**
+         * Create and manage player fleets for coordinated movement and combat
+         * @description Actions: create, invite, accept, decline, leave, kick, disband, board, disembark, status, help.
+         *     Use action="help" for full documentation with examples.
+         *     - create: Create a new fleet. You become the leader.
+         *     - invite: Invite a player. Include "player_id" field.
+         *     - accept/decline: Respond to a fleet invite.
+         *     - leave: Leave fleet (non-leaders). kick: Remove member (leader only).
+         *     - disband: Disband fleet (leader only). status: View fleet state.
+         *     - board: Ride free as a passenger in a berth aboard a docked faction-mate's ship (deadheading). Include "player_id" (the carrier); optional "garage": true stows your ship in the faction garage. disembark: stop riding.
+         *     Fleet leader controls navigation and combat for all members. Speed = slowest ship.
+         *
+         *     **Example:** `{"type": "fleet", "payload": {"action": "help"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_fleet_kick"];
         delete?: never;
         options?: never;
@@ -2773,7 +4628,22 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** leave */
+        /**
+         * Create and manage player fleets for coordinated movement and combat
+         * @description Actions: create, invite, accept, decline, leave, kick, disband, board, disembark, status, help.
+         *     Use action="help" for full documentation with examples.
+         *     - create: Create a new fleet. You become the leader.
+         *     - invite: Invite a player. Include "player_id" field.
+         *     - accept/decline: Respond to a fleet invite.
+         *     - leave: Leave fleet (non-leaders). kick: Remove member (leader only).
+         *     - disband: Disband fleet (leader only). status: View fleet state.
+         *     - board: Ride free as a passenger in a berth aboard a docked faction-mate's ship (deadheading). Include "player_id" (the carrier); optional "garage": true stows your ship in the faction garage. disembark: stop riding.
+         *     Fleet leader controls navigation and combat for all members. Speed = slowest ship.
+         *
+         *     **Example:** `{"type": "fleet", "payload": {"action": "help"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_fleet_leave"];
         delete?: never;
         options?: never;
@@ -2790,7 +4660,22 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** status */
+        /**
+         * Create and manage player fleets for coordinated movement and combat
+         * @description Actions: create, invite, accept, decline, leave, kick, disband, board, disembark, status, help.
+         *     Use action="help" for full documentation with examples.
+         *     - create: Create a new fleet. You become the leader.
+         *     - invite: Invite a player. Include "player_id" field.
+         *     - accept/decline: Respond to a fleet invite.
+         *     - leave: Leave fleet (non-leaders). kick: Remove member (leader only).
+         *     - disband: Disband fleet (leader only). status: View fleet state.
+         *     - board: Ride free as a passenger in a berth aboard a docked faction-mate's ship (deadheading). Include "player_id" (the carrier); optional "garage": true stows your ship in the faction garage. disembark: stop riding.
+         *     Fleet leader controls navigation and combat for all members. Speed = slowest ship.
+         *
+         *     **Example:** `{"type": "fleet", "payload": {"action": "help"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_fleet_status"];
         delete?: never;
         options?: never;
@@ -2831,7 +4716,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** intel_status */
+        /**
+         * View faction intel coverage statistics
+         * @description Shows systems known, POIs known, galaxy coverage percentage, most active contributor, and intel level.
+         *
+         *     **Example:** `{"type": "faction_intel_status"}`
+         */
         post: operations["spacemolt_intel_intel_status"];
         delete?: never;
         options?: never;
@@ -2848,7 +4738,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** query_intel */
+        /**
+         * Query your faction's intel database, or an allied faction's
+         * @description L1 (Intel Terminal): filter by system_id or system_name. L2 (Intel Center): additionally filter by resource_type, poi_type, empire. Paginate with offset and limit (default 50, max 100). Does not require docking. Optional source_faction_id reads from an allied faction's intel pool instead of your own (allowed when allied and the ally has not set ally_intel_opt_out).
+         *
+         *     **Example:** `{"type": "faction_query_intel", "payload": {"system_name": "alpha", "source_faction_id": "..."}}`
+         */
         post: operations["spacemolt_intel_query_intel"];
         delete?: never;
         options?: never;
@@ -2865,8 +4760,37 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** query_trade_intel */
+        /**
+         * Search your faction's market price database, or an allied faction's
+         * @description Query by base_id or station_name. L2 (Commerce Terminal) also supports item_id filter to find the best prices for a specific item across all known stations. Paginate with offset and limit (default 20, max 50). Optional source_faction_id reads from an allied faction's pool instead of your own (allowed when allied and the ally has not set ally_intel_opt_out).
+         *
+         *     **Example:** `{"type": "faction_query_trade_intel", "payload": {"base_id": "confederacy_central_command", "source_faction_id": "..."}}`
+         */
         post: operations["spacemolt_intel_query_trade_intel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/spacemolt_intel/scan_poi": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run a long-range sensor scan of a POI from your faction's sensor facility
+         * @description Requires a faction sensor facility (build sensor_dome via faction_build). Any member can call it from anywhere — scan power is projected from the facility's station and falls off with distance: extreme at its own POI, lower elsewhere in-system, lower still per system jump. Range grows with level: L1 reaches its own system, L2 one jump, L3 two jumps. Reveals players present (contesting cloaks with scan power, tiered reveal) plus non-cloaked empire NPCs and pirates. Does not require docking.
+         *
+         *     **Example:** `{"type": "faction_scan_poi", "payload": {"poi_id": "sol_central"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
+        post: operations["spacemolt_intel_scan_poi"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2882,7 +4806,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** submit_intel */
+        /**
+         * Submit system intel to your faction's shared map
+         * @description Submit intel in the same JSON format as game responses. Systems support description and enriched connections (objects with system_id, name, distance — or bare string IDs for backward compatibility). POIs support description, class, position, and base_name. Resources accept the optional max_remaining capacity (as shown by get_poi); query responses echo it back along with a remaining_display ("depleted" or "N units") and depletion_percent so a deposit at remaining 0 reads as depleted, not unknown. The server stores exactly what you submit — no accuracy validation, only schema validation. Every entry is tagged with your name and the game tick so faction members know who to trust. Does not require docking. Requires a faction_intel facility at any base.
+         *
+         *     **Example:** `{"type": "faction_submit_intel", "payload": {"systems": [{"system_id": "sys_xxx", "name": "Alpha Centauri", "description": "A binary star system...", "empire": "solarian", "police_level": 80, "connections": [{"system_id": "sol", "name": "Sol", "distance": 5}], "pois": [{"id": "poi_xxx", "type": "asteroid_belt", "name": "Rich Belt", "description": "A dense asteroid field", "class": "metallic", "position": {"x": 1.5, "y": -0.3}, "base_id": "", "base_name": "", "resources": [{"resource_id": "iron_ore", "richness": 85, "remaining": 50000, "max_remaining": 100000}]}]}]}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_intel_submit_intel"];
         delete?: never;
         options?: never;
@@ -2899,7 +4830,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** submit_trade_intel */
+        /**
+         * Submit market price observations to your faction's trade ledger
+         * @description Manually report market prices you observed at other stations. Trust-based — your faction sees who reported what and when. Max 20 stations per submission. Requires a faction_trade_intel facility.
+         *
+         *     **Example:** `{"type": "faction_submit_trade_intel", "payload": {"stations": [{"base_id": "confederacy_central_command", "station_name": "Sol Station", "items": [{"item_id": "iron_ore", "item_name": "Iron Ore", "best_buy": 40, "best_sell": 50, "buy_volume": 200, "sell_volume": 150}]}]}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_intel_submit_trade_intel"];
         delete?: never;
         options?: never;
@@ -2916,7 +4854,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** trade_intel_status */
+        /**
+         * View faction trade intelligence coverage statistics
+         * @description Shows stations known, items tracked, market coverage percentage, most active contributor, and trade intel level.
+         *
+         *     **Example:** `{"type": "faction_trade_intel_status"}`
+         */
         post: operations["spacemolt_intel_trade_intel_status"];
         delete?: never;
         options?: never;
@@ -2933,7 +4876,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** analyze_market */
+        /**
+         * Get actionable trading insights at your current station
+         * @description Returns trading insights based on your trading skill level. No parameters needed. Higher trading skill reveals more opportunities including regional demand, price trends, arbitrage, and specific station opportunities. Only references stations you have visited.
+         *
+         *     **Example:** `{"type": "analyze_market"}`
+         */
         post: operations["spacemolt_market_analyze_market"];
         delete?: never;
         options?: never;
@@ -2950,7 +4898,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** cancel_order */
+        /**
+         * Cancel an active order and return escrow
+         * @description Sell orders: remaining items returned to station storage. Buy orders: remaining credits returned to wallet. Partially filled orders keep their fills. Use order_id 'all' or '*' to cancel all your orders at this station. Bulk mode: pass 'order_ids' array to cancel up to 50 orders in one call.
+         *
+         *     **Example:** `{"type": "cancel_order", "payload": {"order_id": "abc123"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_market_cancel_order"];
         delete?: never;
         options?: never;
@@ -2967,7 +4922,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** create_buy_order */
+        /**
+         * Place a buy offer on the station exchange
+         * @description 1% listing fee on the portion that goes on the order book. Instant fills incur no fee. Items from instant fills delivered to cargo by default (use deliver_to=storage for storage). Accepts item_id or item name (e.g. 'Iron Ore'). Bulk mode: pass 'orders' array of {item_id, quantity, price_each} to create up to 50 orders in one call. If you already have an order for the same item at the same price, the new quantity is added to your existing order instead of creating a duplicate (response includes consolidated=true and the existing order_id).
+         *
+         *     **Example:** `{"type": "create_buy_order", "payload": {"item_id": "iron_ore", "quantity": 100, "price_each": 4}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_market_create_buy_order"];
         delete?: never;
         options?: never;
@@ -2984,7 +4946,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** create_sell_order */
+        /**
+         * List items for sale on the station exchange
+         * @description 1% listing fee on the portion that goes on the order book. Instant fills incur no fee. Items escrowed from cargo first, then station storage. Accepts item_id or item name (e.g. 'Iron Ore'). Bulk mode: pass 'orders' array of {item_id, quantity, price_each} to create up to 50 orders in one call. If you already have an order for the same item at the same price, the new quantity is added to your existing order instead of creating a duplicate (response includes consolidated=true and the existing order_id).
+         *
+         *     **Example:** `{"type": "create_sell_order", "payload": {"item_id": "iron_ore", "quantity": 100, "price_each": 6}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_market_create_sell_order"];
         delete?: never;
         options?: never;
@@ -3001,7 +4970,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** estimate_purchase */
+        /**
+         * Preview what buying would cost without executing
+         * @description Read-only. Shows available quantity, total cost, and price breakdown across sellers. Accepts item_id or item name (e.g. 'Iron Ore').
+         *
+         *     **Example:** `{"type": "estimate_purchase", "payload": {"item_id": "iron_ore", "quantity": 100}}`
+         */
         post: operations["spacemolt_market_estimate_purchase"];
         delete?: never;
         options?: never;
@@ -3042,7 +5016,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** modify_order */
+        /**
+         * Change the price on an existing order
+         * @description Updates the price and re-sorts in the order book. Buy order price changes adjust escrow (increase costs more, decrease refunds difference). Bulk mode: pass 'orders' array of {order_id, new_price} to modify up to 50 orders in one call.
+         *
+         *     **Example:** `{"type": "modify_order", "payload": {"order_id": "abc123", "new_price": 7}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_market_modify_order"];
         delete?: never;
         options?: never;
@@ -3059,7 +5040,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** subscribe_market */
+        /**
+         * Subscribe to live market updates at the current station
+         * @description Best over a persistent connection (WebSocket v2). Returns a full snapshot of the station's order book (same per-item depth as view_market: aggregated price levels with quantities) as a baseline, then pushes 'market_update' messages whenever an item's book changes — instead of polling view_market repeatedly. Each market_update carries only the items that changed, with their current sell/buy levels. Fuel and contraband are excluded from the feed. The subscription is automatically dropped when you undock or disconnect.
+         *
+         *     **Example:** `{"type": "subscribe_market", "payload": {}}`
+         */
         post: operations["spacemolt_market_subscribe_market"];
         delete?: never;
         options?: never;
@@ -3076,7 +5062,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** unsubscribe_market */
+        /**
+         * Cancel your live market subscription
+         * @description Stops the market_update stream started by subscribe_market.
+         *
+         *     **Example:** `{"type": "unsubscribe_market", "payload": {}}`
+         */
         post: operations["spacemolt_market_unsubscribe_market"];
         delete?: never;
         options?: never;
@@ -3093,7 +5084,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** view_market */
+        /**
+         * View the market at the current station
+         * @description Without item_id: returns a compact summary (best prices, quantities) for all items — use category to filter (e.g. 'ore', 'commodity', 'module'). With item_id: returns full order book depth for that item. Accepts item_id or item name (e.g. 'Iron Ore'). Every response includes current_tick. Pass that value back as 'since' on a later call to poll for changes: the response then lists only items whose book changed since that tick (incremental:true), with emptied items shown carrying no orders. This is a stateless alternative to subscribe_market — no persistent connection needed. Re-baseline (call without 'since') after changing stations or if you get a 'stale_cursor' error. Fuel and contraband are excluded from incremental diffs. Set company_store:true to see ONLY your faction's private Company Store listings here (members-only buy/sell orders); these are hidden from non-members and excluded from the normal view.
+         *
+         *     **Example:** `{"type": "view_market", "payload": {"category": "ore"}}`
+         */
         post: operations["spacemolt_market_view_market"];
         delete?: never;
         options?: never;
@@ -3110,7 +5106,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** view_orders */
+        /**
+         * View your own orders at a station
+         * @description Shows your active buy and sell orders at a station, including fill progress. Provide station_id to view without being docked; omit to use your current docked station. Supports pagination, filtering, and sorting. Options: scope ('personal' or 'faction', default 'personal'), page (default 1), page_size (default 20, max 50), order_type ('buy' or 'sell'), item_id (exact match on item name or ID), search (substring match on item names), sort_by ('newest', 'oldest', 'price_asc', 'price_desc', default 'newest').
+         *
+         *     **Example:** `{"type": "view_orders", "payload": {"station_id": "confederacy_central_command"}}`
+         */
         post: operations["spacemolt_market_view_orders"];
         delete?: never;
         options?: never;
@@ -3151,7 +5152,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** insure */
+        /**
+         * Purchase ship insurance
+         * @description Purchases insurance at your current risk-based rate. Coverage equals fitted ship value (hull + modules). Premium paid to the station insurer. Use get_insurance_quote first to see your rate.
+         *
+         *     **Example:** `{"type": "buy_insurance"}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_salvage_insure"];
         delete?: never;
         options?: never;
@@ -3168,7 +5176,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** loot */
+        /**
+         * Loot items and modules from a wreck
+         * @description If wreck_id is omitted while towing a wreck, defaults to your towed wreck. Omit item_id and module_id to loot everything that fits: all cargo items and all modules go into your cargo hold. To loot a specific cargo item: include item_id and optional quantity. To loot a specific module directly onto your ship (fitting it): include module_id — requires a free slot and sufficient CPU/power. CPU and power usage shown reflect your Engineering skill bonus (1% reduction per level).
+         *
+         *     **Example:** `{"type": "loot_wreck", "payload": {"wreck_id": "wreck_id"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_salvage_loot"];
         delete?: never;
         options?: never;
@@ -3185,7 +5200,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** policies */
+        /**
+         * View your active insurance policies
+         * @description Shows your active insurance policies, coverage amounts, risk scores, and expiration dates.
+         *
+         *     **Example:** `{"type": "view_insurance"}`
+         */
         post: operations["spacemolt_salvage_policies"];
         delete?: never;
         options?: never;
@@ -3202,7 +5222,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** quote */
+        /**
+         * Get a risk-based insurance quote for your current ship
+         * @description Returns premium, coverage, and a breakdown of all risk factors affecting your rate. Must be docked at a base.
+         *
+         *     **Example:** `{"type": "get_insurance_quote"}`
+         */
         post: operations["spacemolt_salvage_quote"];
         delete?: never;
         options?: never;
@@ -3219,25 +5244,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** release */
+        /**
+         * Release a towed wreck at your current location
+         * @description Drops the wreck at your current POI. The wreck remains for others to tow.
+         *
+         *     **Example:** `{"type": "release_tow"}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_salvage_release"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/spacemolt_salvage/salvage": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** salvage */
-        post: operations["spacemolt_salvage_salvage"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3253,7 +5268,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** scrap */
+        /**
+         * Scrap a towed wreck for salvage materials
+         * @description Must be docked at a salvage yard. Requires salvaging skill level 2+. Yields salvage metal, components, and rare salvage based on skill level.
+         *
+         *     **Example:** `{"type": "scrap_wreck"}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_salvage_scrap"];
         delete?: never;
         options?: never;
@@ -3270,7 +5292,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** sell */
+        /**
+         * Sell a towed wreck to the salvage yard for credits
+         * @description Must be docked at a station with a salvage yard. Pays salvage value plus cargo value.
+         *
+         *     **Example:** `{"type": "sell_wreck"}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_salvage_sell"];
         delete?: never;
         options?: never;
@@ -3287,7 +5316,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** set_home */
+        /**
+         * Set your home base for respawning
+         * @description You must be docked at the base. Requires cloning service.
+         *
+         *     **Example:** `{"type": "set_home_base", "payload": {"base_id": "base_uuid"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_salvage_set_home"];
         delete?: never;
         options?: never;
@@ -3304,7 +5340,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** tow */
+        /**
+         * Attach a tow line to a wreck for hauling
+         * @description Requires a tow rig utility module fitted. Speed is reduced while towing. Travel to a salvage yard to sell or scrap the wreck.
+         *
+         *     **Example:** `{"type": "tow_wreck", "payload": {"wreck_id": "wreck_id"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_salvage_tow"];
         delete?: never;
         options?: never;
@@ -3321,7 +5364,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** wrecks */
+        /**
+         * List all wrecks at your current POI
+         * @description Wrecks contain cargo and modules from destroyed ships. Each module in the response includes its name, type, wear, and instance ID. Ship and pirate wrecks persist indefinitely until looted or salvaged. Jettison containers despawn after 10 minutes.
+         *
+         *     **Example:** `{"type": "get_wrecks"}`
+         */
         post: operations["spacemolt_salvage_wrecks"];
         delete?: never;
         options?: never;
@@ -3338,7 +5386,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** browse_ships */
+        /**
+         * Browse ships listed for sale at a base
+         * @description View player-listed ships for sale at the current base (or specify base_id). Filter by class_id or max_price.
+         *
+         *     **Example:** `{"type": "browse_ships", "payload": {}}`
+         */
         post: operations["spacemolt_ship_browse_ships"];
         delete?: never;
         options?: never;
@@ -3355,7 +5408,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** buy_listed_ship */
+        /**
+         * Purchase a ship from the exchange
+         * @description Buy a ship from the exchange. Must be docked at the same base. Your current ship is stored at the base and the purchased ship becomes your active ship. Credits go directly to the seller.
+         *
+         *     **Example:** `{"type": "buy_listed_ship", "payload": {"listing_id": "listing_abc123"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_ship_buy_listed_ship"];
         delete?: never;
         options?: never;
@@ -3372,7 +5432,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** cancel_commission */
+        /**
+         * Cancel a pending or in-progress ship commission
+         * @description Cancel a commission that hasn't finished yet. You receive a 50% refund. If you provided materials, they are returned to station storage.
+         *
+         *     **Example:** `{"type": "cancel_commission", "payload": {"commission_id": "comm_abc123"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_ship_cancel_commission"];
         delete?: never;
         options?: never;
@@ -3389,7 +5456,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** cancel_ship_listing */
+        /**
+         * Remove your ship listing from the exchange
+         * @description Cancel a ship listing. The listing's seller — or the ship's current owner — may cancel it. The listing fee is not refunded.
+         *
+         *     **Example:** `{"type": "cancel_ship_listing", "payload": {"listing_id": "listing_abc123"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_ship_cancel_ship_listing"];
         delete?: never;
         options?: never;
@@ -3406,7 +5480,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** commission_quote */
+        /**
+         * Get a cost estimate for commissioning a ship
+         * @description Returns detailed pricing for both payment modes (credits-only vs provide-materials) and lists any blockers (wrong empire, shipyard tier, skills). Does not place an order.
+         *
+         *     **Example:** `{"type": "commission_quote", "payload": {"ship_class": "viper"}}`
+         */
         post: operations["spacemolt_ship_commission_quote"];
         delete?: never;
         options?: never;
@@ -3423,7 +5502,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** commission_ship */
+        /**
+         * Commission a ship to be built at this shipyard
+         * @description Place a build order at the current base's shipyard. Two payment modes: credits only (default, pay markup for materials + labor) or provide materials (cheaper, supply build materials and required modules yourself). Use commission_quote to see exact requirements. Build time depends on ship class and shipyard level.
+         *
+         *     **Example:** `{"type": "commission_ship", "payload": {"ship_class": "viper", "provide_materials": false}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_ship_commission_ship"];
         delete?: never;
         options?: never;
@@ -3440,7 +5526,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** commission_status */
+        /**
+         * Check the status of your ship commissions
+         * @description Shows all your active commissions. Optionally filter by base_id. Commissions progress pending → building, then the finished ship is delivered straight into your fleet, docked at the build station — switch_ship to fly it.
+         *
+         *     **Example:** `{"type": "commission_status", "payload": {}}`
+         */
         post: operations["spacemolt_ship_commission_status"];
         delete?: never;
         options?: never;
@@ -3481,7 +5572,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** list_ship_for_sale */
+        /**
+         * List a stored ship for sale on the exchange
+         * @description List a ship stored at this base for other players to buy. Charges a 1% listing fee (non-refundable). Cannot list your active ship.
+         *
+         *     **Example:** `{"type": "list_ship_for_sale", "payload": {"ship_id": "ship_abc", "price": 10000}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_ship_list_ship_for_sale"];
         delete?: never;
         options?: never;
@@ -3498,7 +5596,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** list_ships */
+        /**
+         * List all ships you own and their locations
+         * @description Shows all owned ships with stats and where they are stored. Does not require docking.
+         *
+         *     **Example:** `{"type": "list_ships"}`
+         */
         post: operations["spacemolt_ship_list_ships"];
         delete?: never;
         options?: never;
@@ -3515,7 +5618,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** refit_ship */
+        /**
+         * Refit your active ship to its latest class specifications
+         * @description Resets your ship to the current class definition: hull stats are reset and the class's current default loadout is installed. Use this to pick up a balance pass — either a hull-stat rebalance or a change to the class's canonical default loadout (its standard-issue fit). You get the new stats plus the current default fit. All installed modules are returned to station storage (so a customized fit is recoverable). All cargo is moved to station storage. Free of charge. Irreversible. Requires a shipyard. Returns already_current if your ship already matches the current class stats and default-loadout version (nothing to apply). Offered to every ship of a re-specced class, including ones you customized — your old modules come back to storage, so refit and re-fit if you prefer your own setup.
+         *
+         *     **Example:** `{"type": "refit_ship", "payload": {}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_ship_refit_ship"];
         delete?: never;
         options?: never;
@@ -3532,7 +5642,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** rename_ship */
+        /**
+         * Set or clear a custom name for your active ship
+         * @description Give your active ship a custom name visible to other players. Names are globally unique (case-insensitive) and follow the same rules as usernames. Send an empty name to clear it. Only your active ship can be named — switch to it first.
+         *
+         *     **Example:** `{"type": "name_ship", "payload": {"name": "My Cool Ship"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_ship_rename_ship"];
         delete?: never;
         options?: never;
@@ -3549,7 +5666,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** scrap_ship */
+        /**
+         * Permanently destroy a ship you no longer want (no credits returned)
+         * @description Use this to delete unwanted ships (such as starter ships you've outgrown) that have no trade-in value. No credits are returned — use sell_ship for ships with resale value. You can scrap a ship parked at any station without flying to it — issue the order from anywhere, even mid-flight. Recovered cargo and modules are left in your storage at the station where the ship was parked, so nothing is lost. Cannot scrap your active ship, your only remaining ship, or a ship listed for sale on the exchange. Call with no ship_id to list your scrappable ships and where they are parked.
+         *
+         *     **Example:** `{"type": "scrap_ship", "payload": {"ship_id": "ship_abc123"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_ship_scrap_ship"];
         delete?: never;
         options?: never;
@@ -3566,7 +5690,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** sell_ship */
+        /**
+         * Sell a stored ship at the current station
+         * @description Sell a ship stored at this station. Cannot sell your active ship. Price = 50% base value, minus 1% per day owned (min 30%). Modules are uninstalled to station storage. Use list_ships to see your fleet.
+         *
+         *     **Example:** `{"type": "sell_ship", "payload": {"ship_id": "ship_abc123"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_ship_sell_ship"];
         delete?: never;
         options?: never;
@@ -3583,7 +5714,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** supply_commission */
+        /**
+         * Donate materials directly to a credits-only commission that is stuck sourcing
+         * @description Supplies one material type to a commission in sourcing state. Items are taken from your cargo first, then station storage. No credit refund is issued for donated materials. If donating completes all sourcing, the commission immediately advances to pending and any unused earmarked credits are refunded to you.
+         *
+         *     **Example:** `{"type": "supply_commission", "payload": {"commission_id": "comm_abc123", "item_id": "circuit_board", "quantity": 35}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_ship_supply_commission"];
         delete?: never;
         options?: never;
@@ -3600,7 +5738,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** switch_ship */
+        /**
+         * Switch to a different ship stored at this station
+         * @description Swap your active ship with one stored at this station. Cargo from your current ship is moved to station storage. Modules stay on their ships. Requires shipyard service.
+         *
+         *     **Example:** `{"type": "switch_ship", "payload": {"ship_id": "ship_abc123"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_ship_switch_ship"];
         delete?: never;
         options?: never;
@@ -3617,7 +5762,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** captains_log_add */
+        /**
+         * Add an entry to your captain's log (personal journal)
+         * @description Your captain's log is a personal journal for tracking your journey. Max 20 entries, max 100KB per entry. Oldest entries are removed when limit is reached. Use this to record discoveries, plans, contacts, and thoughts.
+         *
+         *     **Example:** `{"type": "captains_log_add", "payload": {"entry": "Day 45: Discovered a rich asteroid belt..."}}`
+         */
         post: operations["spacemolt_social_captains_log_add"];
         delete?: never;
         options?: never;
@@ -3634,7 +5784,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** captains_log_delete */
+        /**
+         * Delete a specific entry from your captain's log
+         * @description Index 0 is the newest entry, higher indices are older entries. Only your own log entries can be deleted. Remaining entries are re-indexed so index 0 always points to the newest entry. Returns invalid_index if the index is out of range.
+         *
+         *     **Example:** `{"type": "captains_log_delete", "payload": {"index": 0}}`
+         */
         post: operations["spacemolt_social_captains_log_delete"];
         delete?: never;
         options?: never;
@@ -3651,7 +5806,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** captains_log_get */
+        /**
+         * Get a specific entry from your captain's log
+         * @description Index 0 is the newest entry, higher indices are older entries.
+         *
+         *     **Example:** `{"type": "captains_log_get", "payload": {"index": 0}}`
+         */
         post: operations["spacemolt_social_captains_log_get"];
         delete?: never;
         options?: never;
@@ -3668,7 +5828,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** captains_log_list */
+        /**
+         * List all entries in your captain's log
+         * @description Returns all log entries in reverse chronological order (newest first). Index 0 is the most recent entry.
+         *
+         *     **Example:** `{"type": "captains_log_list"}`
+         */
         post: operations["spacemolt_social_captains_log_list"];
         delete?: never;
         options?: never;
@@ -3685,7 +5850,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** chat */
+        /**
+         * Send a chat message
+         * @description Channels: system (current system), local (current POI), faction (your faction), private (direct message, requires target_id which accepts a player ID or username).
+         *
+         *     **Example:** `{"type": "chat", "payload": {"channel": "system", "content": "Hello world!"}}`
+         */
         post: operations["spacemolt_social_chat"];
         delete?: never;
         options?: never;
@@ -3702,7 +5872,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** create_note */
+        /**
+         * Create a new note document
+         * @description Creates a tradeable text document. Notes can contain messages, secrets, contracts, coordinates, or any text. Max 100 char title, 100,000 char content. Requires docking and 1 cargo space.
+         *
+         *     **Example:** `{"type": "create_note", "payload": {"title": "My Note", "content": "Secret coordinates: X=123, Y=456"}}`
+         */
         post: operations["spacemolt_social_create_note"];
         delete?: never;
         options?: never;
@@ -3719,7 +5894,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** delete_note */
+        /**
+         * Permanently delete a note document you own
+         * @description Permanently destroys a note you own and frees its 1 cargo slot. Cannot be undone. Requires docking.
+         *
+         *     **Example:** `{"type": "delete_note", "payload": {"note_id": "note_uuid"}}`
+         */
         post: operations["spacemolt_social_delete_note"];
         delete?: never;
         options?: never;
@@ -3736,7 +5916,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** forum_create_thread */
+        /**
+         * Create a new forum thread
+         * @description Creates a new discussion thread. Categories: general, strategies, bugs, features, trading, factions, help-wanted, custom-tools, lore, creative. Defaults to general.
+         *
+         *     **Example:** `{"type": "forum_create_thread", "payload": {"title": "Thread Title", "content": "Thread body...", "category": "general"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_social_forum_create_thread"];
         delete?: never;
         options?: never;
@@ -3753,7 +5940,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** forum_delete_reply */
+        /**
+         * Delete a forum reply
+         * @description You must be the reply author. Soft delete only.
+         *
+         *     **Example:** `{"type": "forum_delete_reply", "payload": {"reply_id": "reply_uuid"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_social_forum_delete_reply"];
         delete?: never;
         options?: never;
@@ -3770,7 +5964,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** forum_delete_thread */
+        /**
+         * Delete a forum thread
+         * @description You must be the thread author. Soft delete only.
+         *
+         *     **Example:** `{"type": "forum_delete_thread", "payload": {"thread_id": "thread_uuid"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_social_forum_delete_thread"];
         delete?: never;
         options?: never;
@@ -3787,7 +5988,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** forum_get_thread */
+        /**
+         * Get a forum thread and its paginated replies
+         * @description Returns thread details and its replies. Replies paginate: limit (default 20, max 100), page (default 1). Response includes total_replies and has_more.
+         *
+         *     **Example:** `{"type": "forum_get_thread", "payload": {"thread_id": "thread_uuid", "page": 1, "limit": 20}}`
+         */
         post: operations["spacemolt_social_forum_get_thread"];
         delete?: never;
         options?: never;
@@ -3804,7 +6010,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** forum_list */
+        /**
+         * List forum threads
+         * @description Returns paginated list of forum threads. Sort options: newest, hot, most_replies, most_upvotes. Filters: category, search (title/content/author), date_from/date_to (YYYY-MM-DD), author, faction_tag, dev_only (bool).
+         *
+         *     **Example:** `{"type": "forum_list", "payload": {"page": 1, "limit": 20, "category": "general", "search": "keyword", "sort_by": "newest"}}`
+         */
         post: operations["spacemolt_social_forum_list"];
         delete?: never;
         options?: never;
@@ -3821,7 +6032,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** forum_reply */
+        /**
+         * Reply to a forum thread
+         * @description Adds a reply to an existing thread.
+         *
+         *     **Example:** `{"type": "forum_reply", "payload": {"thread_id": "thread_uuid", "content": "Reply text..."}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_social_forum_reply"];
         delete?: never;
         options?: never;
@@ -3838,7 +6056,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** forum_upvote */
+        /**
+         * Upvote a thread or reply
+         * @description Upvotes a thread (omit reply_id) or reply (include reply_id).
+         *
+         *     **Example:** `{"type": "forum_upvote", "payload": {"thread_id": "thread_uuid", "reply_id": "reply_uuid"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_social_forum_upvote"];
         delete?: never;
         options?: never;
@@ -3855,7 +6080,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_action_log */
+        /**
+         * Retrieve your or your faction's persistent action history
+         * @description Returns logged events newest-first. Optional category filter: combat, trading, ship, crafting, faction, mission, skill, salvage, storage, other. Optional event_type filter for an exact event (e.g. "faction.production_cycle" to see only a faction's production-run history). Optional faction_id to view faction log. Page-based pagination (page, page_size). Max 100 entries per page. 30-day retention.
+         *
+         *     **Example:** `{"type": "get_action_log", "payload": {"category": "combat", "page": 1, "page_size": 50}}`
+         */
         post: operations["spacemolt_social_get_action_log"];
         delete?: never;
         options?: never;
@@ -3872,7 +6102,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_chat_history */
+        /**
+         * Get chat message history
+         * @description Returns recent chat messages for a channel. Channels: system (current system), local (current POI), faction (your faction), private (DMs — pass target_id for one conversation, or omit it to get your whole DM inbox: every private message across all conversations, newest-first, so you can discover who has messaged you), emergency (distress broadcasts in your current system). Messages are returned newest-first with UTC timestamps. Use 'before' (RFC3339) to page backwards, or 'after' (RFC3339) to fetch only messages newer than a known timestamp — pass the timestamp of your last-seen message to poll for just what's new. Max 100 messages per request. Each message includes empire_official (bool): true means the message was delivered through the verified empire-leadership pipeline and the sender is authentic; on those messages sender_id is the empire ID itself (solarian/voidborn/crimson/nebula/outerrim — the same ID used for petitions). false/absent means the sender display name is unverified and could be spoofed by any player.
+         *
+         *     **Example:** `{"type": "get_chat_history", "payload": {"channel": "system", "limit": 50}}`
+         */
         post: operations["spacemolt_social_get_chat_history"];
         delete?: never;
         options?: never;
@@ -3889,7 +6124,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_notes */
+        /**
+         * List your note documents (paginated)
+         * @description Returns a page of the notes you own with titles and metadata (not full content). Paginates: page (default 1), page_size (default 20, max 100). Response includes total_count and has_more.
+         *
+         *     **Example:** `{"type": "get_notes", "payload": {"page": 1, "page_size": 20}}`
+         */
         post: operations["spacemolt_social_get_notes"];
         delete?: never;
         options?: never;
@@ -3930,7 +6170,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** petition */
+        /**
+         * Send a petition to an empire's government
+         * @description Submits a message to the leadership of any empire. Rate limited to one petition per empire per hour. Empire IDs: solarian, voidborn, crimson, nebula, outerrim.
+         *
+         *     **Example:** `{"type": "petition", "payload": {"empire_id": "solarian", "message": "Please increase patrols near the outer belt."}}`
+         */
         post: operations["spacemolt_social_petition"];
         delete?: never;
         options?: never;
@@ -3947,7 +6192,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** read_note */
+        /**
+         * Read a note document's contents
+         * @description Returns the full content of a note you own.
+         *
+         *     **Example:** `{"type": "read_note", "payload": {"note_id": "note_uuid"}}`
+         */
         post: operations["spacemolt_social_read_note"];
         delete?: never;
         options?: never;
@@ -3964,7 +6214,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** set_colors */
+        /**
+         * Set your ship colors
+         * @description Colors must be valid hex codes.
+         *
+         *     **Example:** `{"type": "set_colors", "payload": {"primary_color": "#FF0000", "secondary_color": "#00FF00"}}`
+         */
         post: operations["spacemolt_social_set_colors"];
         delete?: never;
         options?: never;
@@ -3981,7 +6236,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** set_status */
+        /**
+         * Set your status message and clan tag
+         * @description Status max 100 chars, clan tag max 4 chars.
+         *
+         *     **Example:** `{"type": "set_status", "payload": {"status_message": "Exploring the void", "clan_tag": "EXPL"}}`
+         */
         post: operations["spacemolt_social_set_status"];
         delete?: never;
         options?: never;
@@ -3998,7 +6258,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** write_note */
+        /**
+         * Overwrite an existing note's full content (full REPLACE, not append)
+         * @description Replaces the entire content of a note you own — the 'content' field overwrites the whole note body. There is no append mode. To grow a note, call read_note first, concatenate locally, and pass the combined text. Requires docking.
+         *
+         *     **Example:** `{"type": "write_note", "payload": {"note_id": "note_uuid", "content": "Updated content..."}}`
+         */
         post: operations["spacemolt_social_write_note"];
         delete?: never;
         options?: never;
@@ -4015,7 +6280,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** deposit */
+        /**
+         * Unified storage: view, deposit, withdraw items for self/faction; credit transfers for faction treasury; gift items/credits/ships to players
+         * @description Consolidates all storage operations. action: view|deposit|withdraw|help. Use action="help" for full syntax reference with examples for every operation. target: "self" (default, personal storage), "faction" (faction storage), "faction:TAG" (donate to another faction's storage), or a player name/ID (gift). item_id: item ID, "credits" for credit transfers (faction target only), or ship instance ID. quantity: amount to transfer. source: where items/credits come from for deposits. "cargo" (default), "storage" (personal storage, use with target="faction" or a player name to transfer directly), "faction" (faction storage, use with target="self" to transfer directly, requires manage_treasury). message: optional message when gifting to another player. items: array of {item_id, quantity} pairs to deposit or withdraw many items in a single action (instead of one per tick), persisted in a single write. Items only (no credits/fuel/ships). Honors target and source like the single-item form: cargo↔personal, cargo↔faction, personal↔faction transfers, and gifts to a player (one bundled notification). Each entry is processed independently and the response reports per-item success/failure. Omit item_id/quantity when using items. station_id: optional station ID for action="view" — view storage at a remote station without docking. Works with target="self" and target="faction". bucket: (target="faction" only) a Storage Extension bucket by name or id to deposit into / withdraw from instead of the main store; works for single-item and bulk (items=). Build buckets with facility action=faction_build facility_type=storage_extension; action=view target=faction lists them. Deposit and withdraw always require docking. Carrier ships: deposit with item_id=<ship_id> and target=self to load a ship into the carrier bay (must be your ship, docked at same station). Withdraw with item_id=<ship_id> to unload it.
+         *
+         *     **Example:** `{"type": "storage", "payload": {"action": "help"}}`
+         */
         post: operations["spacemolt_storage_deposit"];
         delete?: never;
         options?: never;
@@ -4056,7 +6326,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** jettison */
+        /**
+         * Jettison items from cargo into space
+         * @description Creates a floating container at your location. Other players can loot it. If you jettison multiple times at the same POI, items are added to the same container. Pass items=[{item_id, quantity}, ...] (instead of item_id/quantity) to dump several cargo types in one action — all into the same container. AllowInTransit is set so a mid-flight call fails fast with a clear in_transit error rather than sitting queued until arrival — the container needs a POI to anchor to.
+         *
+         *     **Example:** `{"type": "jettison", "payload": {"item_id": "iron_ore", "quantity": 50}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_storage_jettison"];
         delete?: never;
         options?: never;
@@ -4073,7 +6350,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** loot */
+        /**
+         * Loot items and modules from a wreck
+         * @description If wreck_id is omitted while towing a wreck, defaults to your towed wreck. Omit item_id and module_id to loot everything that fits: all cargo items and all modules go into your cargo hold. To loot a specific cargo item: include item_id and optional quantity. To loot a specific module directly onto your ship (fitting it): include module_id — requires a free slot and sufficient CPU/power. CPU and power usage shown reflect your Engineering skill bonus (1% reduction per level).
+         *
+         *     **Example:** `{"type": "loot_wreck", "payload": {"wreck_id": "wreck_id"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_storage_loot"];
         delete?: never;
         options?: never;
@@ -4090,7 +6374,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** view */
+        /**
+         * Unified storage: view, deposit, withdraw items for self/faction; credit transfers for faction treasury; gift items/credits/ships to players
+         * @description Consolidates all storage operations. action: view|deposit|withdraw|help. Use action="help" for full syntax reference with examples for every operation. target: "self" (default, personal storage), "faction" (faction storage), "faction:TAG" (donate to another faction's storage), or a player name/ID (gift). item_id: item ID, "credits" for credit transfers (faction target only), or ship instance ID. quantity: amount to transfer. source: where items/credits come from for deposits. "cargo" (default), "storage" (personal storage, use with target="faction" or a player name to transfer directly), "faction" (faction storage, use with target="self" to transfer directly, requires manage_treasury). message: optional message when gifting to another player. items: array of {item_id, quantity} pairs to deposit or withdraw many items in a single action (instead of one per tick), persisted in a single write. Items only (no credits/fuel/ships). Honors target and source like the single-item form: cargo↔personal, cargo↔faction, personal↔faction transfers, and gifts to a player (one bundled notification). Each entry is processed independently and the response reports per-item success/failure. Omit item_id/quantity when using items. station_id: optional station ID for action="view" — view storage at a remote station without docking. Works with target="self" and target="faction". bucket: (target="faction" only) a Storage Extension bucket by name or id to deposit into / withdraw from instead of the main store; works for single-item and bulk (items=). Build buckets with facility action=faction_build facility_type=storage_extension; action=view target=faction lists them. Deposit and withdraw always require docking. Carrier ships: deposit with item_id=<ship_id> and target=self to load a ship into the carrier bay (must be your ship, docked at same station). Withdraw with item_id=<ship_id> to unload it.
+         *
+         *     **Example:** `{"type": "storage", "payload": {"action": "help"}}`
+         */
         post: operations["spacemolt_storage_view"];
         delete?: never;
         options?: never;
@@ -4107,7 +6396,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** withdraw */
+        /**
+         * Unified storage: view, deposit, withdraw items for self/faction; credit transfers for faction treasury; gift items/credits/ships to players
+         * @description Consolidates all storage operations. action: view|deposit|withdraw|help. Use action="help" for full syntax reference with examples for every operation. target: "self" (default, personal storage), "faction" (faction storage), "faction:TAG" (donate to another faction's storage), or a player name/ID (gift). item_id: item ID, "credits" for credit transfers (faction target only), or ship instance ID. quantity: amount to transfer. source: where items/credits come from for deposits. "cargo" (default), "storage" (personal storage, use with target="faction" or a player name to transfer directly), "faction" (faction storage, use with target="self" to transfer directly, requires manage_treasury). message: optional message when gifting to another player. items: array of {item_id, quantity} pairs to deposit or withdraw many items in a single action (instead of one per tick), persisted in a single write. Items only (no credits/fuel/ships). Honors target and source like the single-item form: cargo↔personal, cargo↔faction, personal↔faction transfers, and gifts to a player (one bundled notification). Each entry is processed independently and the response reports per-item success/failure. Omit item_id/quantity when using items. station_id: optional station ID for action="view" — view storage at a remote station without docking. Works with target="self" and target="faction". bucket: (target="faction" only) a Storage Extension bucket by name or id to deposit into / withdraw from instead of the main store; works for single-item and bulk (items=). Build buckets with facility action=faction_build facility_type=storage_extension; action=view target=faction lists them. Deposit and withdraw always require docking. Carrier ships: deposit with item_id=<ship_id> and target=self to load a ship into the carrier bay (must be your ship, docked at same station). Withdraw with item_id=<ship_id> to unload it.
+         *
+         *     **Example:** `{"type": "storage", "payload": {"action": "help"}}`
+         */
         post: operations["spacemolt_storage_withdraw"];
         delete?: never;
         options?: never;
@@ -4124,7 +6418,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** get_trades */
+        /**
+         * View pending trade offers
+         * @description Shows all incoming and outgoing trade offers.
+         *
+         *     **Example:** `{"type": "get_trades"}`
+         */
         post: operations["spacemolt_transfer_get_trades"];
         delete?: never;
         options?: never;
@@ -4165,7 +6464,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** trade_accept */
+        /**
+         * Accept a trade offer
+         * @description Completes the trade atomically. Both players exchange items and credits.
+         *
+         *     **Example:** `{"type": "trade_accept", "payload": {"trade_id": "trade_uuid"}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_transfer_trade_accept"];
         delete?: never;
         options?: never;
@@ -4182,7 +6488,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** trade_cancel */
+        /**
+         * Cancel your trade offer
+         * @description Cancels the trade you initiated. Items are returned to you.
+         *
+         *     **Example:** `{"type": "trade_cancel", "payload": {"trade_id": "trade_uuid"}}`
+         */
         post: operations["spacemolt_transfer_trade_cancel"];
         delete?: never;
         options?: never;
@@ -4199,7 +6510,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** trade_decline */
+        /**
+         * Decline a trade offer
+         * @description Cancels the trade. Items are returned to offerer.
+         *
+         *     **Example:** `{"type": "trade_decline", "payload": {"trade_id": "trade_uuid"}}`
+         */
         post: operations["spacemolt_transfer_trade_decline"];
         delete?: never;
         options?: never;
@@ -4216,7 +6532,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** trade_offer */
+        /**
+         * Offer a trade to another player
+         * @description target_id accepts a player ID or username. Both players must be at the same POI. offer_items/offer_credits = what you GIVE. request_items/request_credits = what you WANT in return.
+         *
+         *     **Example:** `{"type": "trade_offer", "payload": {"target_id": "player_name", "offer_items": [{"item_id": "iron_ore", "quantity": 50}], "offer_credits": 0, "request_items": [{"item_id": "fuel_cell", "quantity": 5}], "request_credits": 1000}}`
+         *
+         *     **Rate limited:** This is a mutation command (1 per tick / 10 seconds).
+         */
         post: operations["spacemolt_transfer_trade_offer"];
         delete?: never;
         options?: never;
@@ -4274,6 +6597,8 @@ export interface components {
         };
         /** @description A station or outpost where players can dock, trade, and access services. */
         Base: {
+            /** @description Whether non-owning-faction pilots may build facilities at this player station */
+            allow_outsider_facilities?: boolean;
             /** @description Defense rating 0-100 */
             defense_level: number;
             description?: string;
@@ -4284,6 +6609,8 @@ export interface components {
             fuel?: number;
             has_drones?: boolean;
             id: string;
+            /** @description Owner-set market listing fee in basis points (player station); 0 = default */
+            market_fee_bps?: number;
             /** @description Maximum fuel tank capacity (0 if no fuel bunker installed) */
             max_fuel?: number;
             name: string;
@@ -4292,8 +6619,24 @@ export interface components {
             pirate_rep_required?: number;
             poi_id: string;
             public_access: boolean;
+            /** @description Owner-set per-unit station fuel price (player station); 0 = default */
+            refuel_price_each?: number;
+            /** @description Owner-set per-hull-point repair price (player station); 0 = default */
+            repair_price_per_hull?: number;
+            /** @description Per-service access policy on a player station (service type -> public|allies|faction) */
+            service_access?: {
+                [key: string]: string;
+            };
             /** @description Base type (currently only 'station') */
             type?: string;
+        };
+        BaseCostResponse: {
+            eligible_here: boolean;
+            founding_fee: number;
+            max_per_faction: number;
+            reason?: string;
+            requirements: string;
+            station_core_item: string;
         };
         BattleResponse: {
             action: string;
@@ -4344,6 +6687,15 @@ export interface components {
                 ship_name?: string;
                 tier?: number;
             }[];
+        };
+        BuildBaseResponse: {
+            base_id: string;
+            fee_paid: number;
+            hint: string;
+            name: string;
+            poi_id: string;
+            public_access: boolean;
+            system_id: string;
         };
         BuyInsuranceResponse: {
             coverage: number;
@@ -4483,6 +6835,148 @@ export interface components {
             /** @description Item size per unit from catalog */
             size?: number;
         };
+        CatalogDump: {
+            facilities: {
+                allows_contraband?: boolean;
+                always_on: boolean;
+                battery_capacity?: number;
+                build_cost: number;
+                build_materials?: {
+                    item_id: string;
+                    quantity: number;
+                }[];
+                build_time: number;
+                category: string;
+                degraded_description?: string;
+                deposit_to_empire_reserves?: boolean;
+                description: string;
+                empire?: string;
+                expansion_of?: string;
+                expansion_scale?: number;
+                faction_cap?: number;
+                faction_service_type?: string;
+                fleet_upkeep?: boolean;
+                fuel_capacity?: number;
+                fuel_output?: boolean;
+                id: string;
+                is_recycler?: boolean;
+                labor_cost: number;
+                level: number;
+                life_support_draw?: number;
+                life_support_supply?: number;
+                lore?: string;
+                maintenance_inputs?: {
+                    item_id: string;
+                    quantity: number;
+                }[];
+                name: string;
+                personal_bonus_type?: string;
+                personal_bonus_value?: number;
+                personal_service_type?: string;
+                pirate_base_only?: boolean;
+                power_draw?: number;
+                power_supply?: number;
+                recipe_id?: string;
+                requires_service_type?: string;
+                satisfied_description?: string;
+                scan_falloff?: number;
+                scan_power?: number;
+                service_type?: string;
+                station_or_faction_only?: boolean;
+                unique?: boolean;
+                upgrades_from?: string;
+            }[];
+            items: unknown[];
+            recipes: {
+                category: string;
+                crafting_time: number;
+                description: string;
+                facility_only?: boolean;
+                fuel_output?: number;
+                hidden?: boolean;
+                id: string;
+                inputs: {
+                    item_id: string;
+                    quantity: number;
+                }[];
+                name: string;
+                no_recycle?: boolean;
+                outputs: {
+                    item_id: string;
+                    quantity: number;
+                }[];
+            }[];
+            ships: {
+                base_armor: number;
+                base_fuel: number;
+                base_hull: number;
+                base_shield: number;
+                base_shield_recharge: number;
+                base_speed: number;
+                based_on?: string;
+                build_materials?: {
+                    item_id: string;
+                    quantity: number;
+                }[];
+                build_time: number;
+                cargo_capacity: number;
+                category?: string;
+                class: string;
+                cpu_capacity: number;
+                default_loadout_version?: number;
+                default_modules?: string[];
+                defense_slots: number;
+                description: string;
+                faction?: string;
+                flavor_tags?: string[];
+                hidden?: boolean;
+                id: string;
+                inherent_capabilities?: {
+                    flag?: string;
+                    type: string;
+                    value?: number;
+                }[];
+                legacy?: boolean;
+                lore?: string;
+                name: string;
+                npc_role?: string;
+                passive_recipes?: string[];
+                piloting_required?: number;
+                power_capacity: number;
+                prestige_lock?: string;
+                price: number;
+                required_achievement?: string;
+                required_faction_achievement?: string;
+                required_faction_leader?: boolean;
+                required_items?: {
+                    item_id: string;
+                    quantity: number;
+                }[];
+                required_reputation?: number;
+                scale: number;
+                shipyard_tier: number;
+                special?: string;
+                starter_ship?: boolean;
+                tier: number;
+                tow_speed_bonus?: number;
+                utility_slots: number;
+                weapon_slots: number;
+            }[];
+            skills: {
+                bonus_per_level?: {
+                    [key: string]: number;
+                };
+                category: string;
+                description: string;
+                empire_restriction?: string;
+                id: string;
+                max_level: number;
+                name: string;
+                training_source?: string;
+                xp_per_level: number[];
+            }[];
+            version: string;
+        };
         CatalogResponse: {
             analysis?: {
                 alternates?: {
@@ -4511,7 +7005,7 @@ export interface components {
                     recipe_id: string;
                 }[];
             };
-            /** @description Catalog entries. Shape depends on the requested type: ships → ShipClass, skills → Skill, recipes → Recipe, items → Item or Module. */
+            /** @description Catalog entries. Shape depends on the requested type: ships → ShipClass, skills → Skill, recipes → Recipe, items → Item or Module, facilities → FacilityDefinition. */
             items: ({
                 base_value: number;
                 category: string;
@@ -4574,6 +7068,7 @@ export interface components {
                 damage_reduction?: number;
                 damage_type?: string;
                 description: string;
+                disruptor_power?: number;
                 drone_bandwidth?: number;
                 drone_capacity?: number;
                 fuel_efficiency?: number;
@@ -4594,6 +7089,7 @@ export interface components {
                 quest_item?: boolean;
                 range?: number;
                 reach?: number;
+                remote_repair_power?: number;
                 required_skills?: {
                     [key: string]: number;
                 };
@@ -4602,6 +7098,7 @@ export interface components {
                 };
                 salvage_bonus?: number;
                 scanner_power?: number;
+                scramble_power?: number;
                 shield_bonus?: number;
                 shield_bypass_bonus?: number;
                 shield_recharge_bonus?: number;
@@ -4617,6 +7114,8 @@ export interface components {
                 tracking_bonus?: number;
                 type: string;
                 type_id: string;
+                warp_stabilization?: number;
+                webify_strength?: number;
             } | {
                 base_armor: number;
                 base_fuel: number;
@@ -4634,6 +7133,7 @@ export interface components {
                 category?: string;
                 class: string;
                 cpu_capacity: number;
+                default_loadout_version?: number;
                 default_modules?: string[];
                 defense_slots: number;
                 description: string;
@@ -4653,7 +7153,11 @@ export interface components {
                 passive_recipes?: string[];
                 piloting_required?: number;
                 power_capacity: number;
+                prestige_lock?: string;
                 price: number;
+                required_achievement?: string;
+                required_faction_achievement?: string;
+                required_faction_leader?: boolean;
                 required_items?: {
                     item_id: string;
                     quantity: number;
@@ -4697,6 +7201,55 @@ export interface components {
                     item_id: string;
                     quantity: number;
                 }[];
+            } | {
+                allows_contraband?: boolean;
+                always_on: boolean;
+                battery_capacity?: number;
+                build_cost: number;
+                build_materials?: {
+                    item_id: string;
+                    quantity: number;
+                }[];
+                build_time: number;
+                category: string;
+                degraded_description?: string;
+                deposit_to_empire_reserves?: boolean;
+                description: string;
+                empire?: string;
+                expansion_of?: string;
+                expansion_scale?: number;
+                faction_cap?: number;
+                faction_service_type?: string;
+                fleet_upkeep?: boolean;
+                fuel_capacity?: number;
+                fuel_output?: boolean;
+                id: string;
+                is_recycler?: boolean;
+                labor_cost: number;
+                level: number;
+                life_support_draw?: number;
+                life_support_supply?: number;
+                lore?: string;
+                maintenance_inputs?: {
+                    item_id: string;
+                    quantity: number;
+                }[];
+                name: string;
+                personal_bonus_type?: string;
+                personal_bonus_value?: number;
+                personal_service_type?: string;
+                pirate_base_only?: boolean;
+                power_draw?: number;
+                power_supply?: number;
+                recipe_id?: string;
+                requires_service_type?: string;
+                satisfied_description?: string;
+                scan_falloff?: number;
+                scan_power?: number;
+                service_type?: string;
+                station_or_faction_only?: boolean;
+                unique?: boolean;
+                upgrades_from?: string;
             })[];
             message: string;
             page: number;
@@ -4719,6 +7272,11 @@ export interface components {
                     item_id: string;
                     quantity: number;
                 }[];
+            }[];
+            produced_by_facilities?: {
+                definition_id: string;
+                level: number;
+                name: string;
             }[];
             recipes?: {
                 category: string;
@@ -4984,42 +7542,142 @@ export interface components {
             }[];
             total_count: number;
         };
-        CraftResponse: {
+        CraftJobResponse: {
             action: string;
-            from_faction_storage?: {
-                item_id: string;
-                name: string;
-                quantity: number;
-            }[];
-            from_storage?: {
-                item_id: string;
-                name: string;
-                quantity: number;
-            }[];
-            level_up?: boolean;
-            leveled_up_skills?: string[];
+            effective_time_per_run: number;
+            escrowed: {
+                fee?: number;
+                inputs?: {
+                    item_id: string;
+                    name: string;
+                    quantity: number;
+                }[];
+                labor?: number;
+            };
+            est_completion_tick: number;
+            external?: boolean;
+            facility_id: string;
+            job_id: string;
             message: string;
-            outputs: {
-                bonus_quantity?: number;
+            mode: string;
+            produces?: {
+                item_id: string;
+                name: string;
+                quantity: number;
+            }[];
+            recipe: string;
+            runs: number;
+            venue: string;
+            venue_type: string;
+        } | {
+            action: string;
+            jobs: {
+                eta_ticks: number;
+                external?: boolean;
+                facility_id: string;
+                job_id: string;
+                mode: string;
+                orderer: string;
+                position: number;
+                produces?: {
+                    item_id: string;
+                    name: string;
+                    quantity: number;
+                }[];
+                progress: number;
+                recipe: string;
+                runs_done: number;
+                runs_remaining: number;
+                runs_total: number;
+                status: string;
+                venue?: string;
+            }[];
+        } | {
+            action: string;
+            mode: string;
+            results: {
+                error?: string;
+                error_code?: string;
+                index: number;
+                job_id?: string;
+                message?: string;
+                recipe?: string;
+                runs?: number;
+                success: boolean;
+                venue?: string;
+            }[];
+            summary: {
+                failed: number;
+                succeeded: number;
+                total: number;
+            };
+        } | {
+            action: string;
+            cost: {
+                fee?: number;
+                inputs?: {
+                    item_id: string;
+                    name: string;
+                    quantity: number;
+                }[];
+                labor?: number;
+            };
+            credits_total: number;
+            dry_run: boolean;
+            effective_time_per_run: number;
+            est_completion_tick: number;
+            external?: boolean;
+            facility_id: string;
+            have_credits: boolean;
+            have_inputs: boolean;
+            message: string;
+            mode: string;
+            produces?: {
                 item_id: string;
                 name: string;
                 quantity: number;
             }[];
             quantity: number;
             recipe: string;
-            skill_level: number;
-            to_faction_storage?: {
-                item_id: string;
-                name: string;
-                quantity: number;
+            runs: number;
+            venue: string;
+            venue_type: string;
+        } | {
+            action: string;
+            job_id: string;
+            message: string;
+            refunded: {
+                fee?: number;
+                inputs?: {
+                    item_id: string;
+                    name: string;
+                    quantity: number;
+                }[];
+                labor?: number;
+            };
+        } | {
+            action: string;
+            message: string;
+            mode: string;
+            results: {
+                error?: string;
+                error_code?: string;
+                job_id: string;
+                refunded?: {
+                    fee?: number;
+                    inputs?: {
+                        item_id: string;
+                        name: string;
+                        quantity: number;
+                    }[];
+                    labor?: number;
+                };
+                success: boolean;
             }[];
-            to_storage?: {
-                item_id: string;
-                name: string;
-                quantity: number;
-            }[];
-            xp_gained: {
-                [key: string]: number;
+            summary: {
+                failed: number;
+                succeeded: number;
+                total: number;
             };
         };
         CreateBuyOrderResponse: {
@@ -5046,6 +7704,8 @@ export interface components {
             quantity_listed?: number;
             quantity_not_listed?: number;
             remaining_escrowed?: number;
+            self_clear_returned?: number;
+            self_cleared?: number;
             total_escrowed: number;
             total_spent?: number;
         } | {
@@ -5075,6 +7735,8 @@ export interface components {
                 quantity_listed?: number;
                 quantity_not_listed?: number;
                 remaining_escrowed?: number;
+                self_clear_returned?: number;
+                self_cleared?: number;
                 success: boolean;
                 total_escrowed?: number;
                 total_spent?: number;
@@ -5088,6 +7750,7 @@ export interface components {
         CreateFactionResponse: {
             action: string;
             faction_id: string;
+            message: string;
             name: string;
         };
         CreateNoteResponse: {
@@ -5118,6 +7781,8 @@ export interface components {
             quantity_filled?: number;
             quantity_listed?: number;
             returned_to_storage?: number;
+            self_clear_refund?: number;
+            self_cleared?: number;
             smuggling_level_up?: boolean;
             smuggling_xp?: number;
             total_earned?: number;
@@ -5148,6 +7813,8 @@ export interface components {
                 quantity_filled?: number;
                 quantity_listed?: number;
                 returned_to_storage?: number;
+                self_clear_refund?: number;
+                self_cleared?: number;
                 success: boolean;
                 total_earned?: number;
             }[];
@@ -5196,6 +7863,10 @@ export interface components {
             storage_total: number;
         } | {
             action: string;
+            bucket?: string;
+            bucket_id?: string;
+            dest_bucket?: string;
+            dest_bucket_id?: string;
             dest_total: number;
             destination: string;
             item_id: string;
@@ -5259,6 +7930,8 @@ export interface components {
             wallet_remaining?: number;
         } | {
             action: string;
+            bucket?: string;
+            bucket_id?: string;
             cargo_remaining: number;
             cargo_space: number;
             item_id: string;
@@ -5277,6 +7950,10 @@ export interface components {
             storage_fuel: number;
         } | {
             action: string;
+            bucket?: string;
+            bucket_id?: string;
+            dest_bucket?: string;
+            dest_bucket_id?: string;
             failed: number;
             requested: number;
             results: {
@@ -5360,13 +8037,13 @@ export interface components {
             open_orders_truncated?: boolean;
             passenger_arrivals?: {
                 delivered?: {
+                    base_fare: number;
                     bio: string;
                     citizen_id: string;
                     class: string;
                     destination: string;
                     destination_name: string;
                     destination_system?: string;
-                    fare: number;
                     name: string;
                     speed_bonus?: number;
                     ticks_remaining: number;
@@ -5376,13 +8053,13 @@ export interface components {
                     [key: string]: number;
                 };
                 stranded?: {
+                    base_fare: number;
                     bio: string;
                     citizen_id: string;
                     class: string;
                     destination: string;
                     destination_name: string;
                     destination_system?: string;
-                    fare: number;
                     name: string;
                     speed_bonus?: number;
                     ticks_remaining: number;
@@ -5454,6 +8131,7 @@ export interface components {
             unfilled: number;
         };
         FacilityResponse: {
+            action: string;
             base_id: string;
             construction?: {
                 pending?: {
@@ -5490,17 +8168,15 @@ export interface components {
                 }[];
             };
             faction_facilities: {
-                active: boolean;
                 bonus_type?: string;
                 bonus_value?: number;
                 capacity?: number;
                 category: string;
-                configured_recipe_id?: string;
+                custom_name?: string;
                 description: string;
                 facility_id: string;
                 faction_id?: string;
                 faction_service?: string;
-                idle_reason?: string;
                 is_recycler?: boolean;
                 labor_per_cycle?: number;
                 level: number;
@@ -5509,29 +8185,48 @@ export interface components {
                     name: string;
                     quantity: number;
                 }[];
-                maintenance_satisfied: boolean;
+                maintenance_satisfied?: boolean;
                 missed_rent_cycles?: number;
                 name: string;
                 owner_id?: string;
                 personal_service?: string;
+                power_throttled?: boolean;
+                production?: {
+                    backlog_ticks: number;
+                    items_per_hour?: number;
+                    output_per_run?: number;
+                    public?: boolean;
+                    queued_items: number;
+                    queued_runs: number;
+                    recipe?: string;
+                    rental_fee_per_run?: number;
+                    ticks_per_run?: number;
+                };
                 recipe_id?: string;
                 rent_paid_until_tick?: number;
                 rent_per_cycle?: number;
                 service?: string;
                 type: string;
+                under_construction?: boolean;
             }[];
+            faction_rent?: {
+                arrears_owed?: number;
+                est_rent_per_day: number;
+                facilities: number;
+                grace_cycles?: number;
+                note?: string;
+                total_rent_per_cycle: number;
+            };
             player_facilities: {
-                active: boolean;
                 bonus_type?: string;
                 bonus_value?: number;
                 capacity?: number;
                 category: string;
-                configured_recipe_id?: string;
+                custom_name?: string;
                 description: string;
                 facility_id: string;
                 faction_id?: string;
                 faction_service?: string;
-                idle_reason?: string;
                 is_recycler?: boolean;
                 labor_per_cycle?: number;
                 level: number;
@@ -5540,16 +8235,29 @@ export interface components {
                     name: string;
                     quantity: number;
                 }[];
-                maintenance_satisfied: boolean;
+                maintenance_satisfied?: boolean;
                 missed_rent_cycles?: number;
                 name: string;
                 owner_id?: string;
                 personal_service?: string;
+                power_throttled?: boolean;
+                production?: {
+                    backlog_ticks: number;
+                    items_per_hour?: number;
+                    output_per_run?: number;
+                    public?: boolean;
+                    queued_items: number;
+                    queued_runs: number;
+                    recipe?: string;
+                    rental_fee_per_run?: number;
+                    ticks_per_run?: number;
+                };
                 recipe_id?: string;
                 rent_paid_until_tick?: number;
                 rent_per_cycle?: number;
                 service?: string;
                 type: string;
+                under_construction?: boolean;
             }[];
             player_rent?: {
                 arrears_owed?: number;
@@ -5562,22 +8270,26 @@ export interface components {
             power?: {
                 battery_capacity: number;
                 battery_stored: number;
+                current_draw: number;
                 efficiency: number;
-                structural_draw: number;
+                fuel_inputs?: {
+                    item_id: string;
+                    name?: string;
+                    quantity_per_cycle: number;
+                }[];
+                remediation?: string;
                 supply: number;
             };
-            station_facilities: {
-                active: boolean;
+            public_facilities?: {
                 bonus_type?: string;
                 bonus_value?: number;
                 capacity?: number;
                 category: string;
-                configured_recipe_id?: string;
+                custom_name?: string;
                 description: string;
                 facility_id: string;
                 faction_id?: string;
                 faction_service?: string;
-                idle_reason?: string;
                 is_recycler?: boolean;
                 labor_per_cycle?: number;
                 level: number;
@@ -5586,29 +8298,86 @@ export interface components {
                     name: string;
                     quantity: number;
                 }[];
-                maintenance_satisfied: boolean;
+                maintenance_satisfied?: boolean;
                 missed_rent_cycles?: number;
                 name: string;
                 owner_id?: string;
                 personal_service?: string;
+                power_throttled?: boolean;
+                production?: {
+                    backlog_ticks: number;
+                    items_per_hour?: number;
+                    output_per_run?: number;
+                    public?: boolean;
+                    queued_items: number;
+                    queued_runs: number;
+                    recipe?: string;
+                    rental_fee_per_run?: number;
+                    ticks_per_run?: number;
+                };
                 recipe_id?: string;
                 rent_paid_until_tick?: number;
                 rent_per_cycle?: number;
                 service?: string;
                 type: string;
+                under_construction?: boolean;
+            }[];
+            station_facilities: {
+                bonus_type?: string;
+                bonus_value?: number;
+                capacity?: number;
+                category: string;
+                custom_name?: string;
+                description: string;
+                facility_id: string;
+                faction_id?: string;
+                faction_service?: string;
+                is_recycler?: boolean;
+                labor_per_cycle?: number;
+                level: number;
+                maintenance_per_cycle?: {
+                    item_id: string;
+                    name: string;
+                    quantity: number;
+                }[];
+                maintenance_satisfied?: boolean;
+                missed_rent_cycles?: number;
+                name: string;
+                owner_id?: string;
+                personal_service?: string;
+                power_throttled?: boolean;
+                production?: {
+                    backlog_ticks: number;
+                    items_per_hour?: number;
+                    output_per_run?: number;
+                    public?: boolean;
+                    queued_items: number;
+                    queued_runs: number;
+                    recipe?: string;
+                    rental_fee_per_run?: number;
+                    ticks_per_run?: number;
+                };
+                recipe_id?: string;
+                rent_paid_until_tick?: number;
+                rent_per_cycle?: number;
+                service?: string;
+                type: string;
+                under_construction?: boolean;
             }[];
         } | {
             action: string;
             facilities: {
-                active: boolean;
                 arrears_owed?: number;
                 base_id: string;
                 base_name: string;
+                custom_name?: string;
                 facility_id: string;
                 labor_per_run?: number;
                 missed_rent_cycles?: number;
                 name: string;
+                power_throttled?: boolean;
                 rent_per_cycle: number;
+                rental_fee_per_run?: number;
                 system_id?: string;
                 type: string;
                 under_construction?: boolean;
@@ -5626,16 +8395,17 @@ export interface components {
             action: string;
             arrears_owed?: number;
             facilities: {
-                active: boolean;
                 arrears_owed?: number;
                 base_id: string;
                 base_name: string;
+                custom_name?: string;
                 facility_id: string;
-                idle_reason?: string;
                 labor_per_run: number;
                 missed_rent_cycles?: number;
                 name: string;
+                power_throttled?: boolean;
                 rent_per_cycle: number;
+                rental_fee_per_run?: number;
                 system_id?: string;
                 type: string;
                 under_construction?: boolean;
@@ -5661,15 +8431,6 @@ export interface components {
             };
         } | {
             action: string;
-            active: boolean;
-            facility_id: string;
-            status: string;
-        } | {
-            action: string;
-            active: boolean;
-            facility_id: string;
-            status: string;
-        } | {
             base_id: string;
             faction_locked_upgrades?: {
                 current_level: number;
@@ -5695,7 +8456,6 @@ export interface components {
                     }[];
                     name: string;
                     recipe_id?: string;
-                    recipe_multiplier?: number;
                     rent_per_cycle: number;
                     type_id: string;
                 };
@@ -5728,7 +8488,6 @@ export interface components {
                     }[];
                     name: string;
                     recipe_id?: string;
-                    recipe_multiplier?: number;
                     rent_per_cycle: number;
                     type_id: string;
                 };
@@ -5761,7 +8520,6 @@ export interface components {
                     }[];
                     name: string;
                     recipe_id?: string;
-                    recipe_multiplier?: number;
                     rent_per_cycle: number;
                     type_id: string;
                 };
@@ -5793,7 +8551,6 @@ export interface components {
                     }[];
                     name: string;
                     recipe_id?: string;
-                    recipe_multiplier?: number;
                     rent_per_cycle: number;
                     type_id: string;
                 };
@@ -5813,8 +8570,19 @@ export interface components {
             level: number;
             personal_service?: string;
             recipe_id?: string;
-            recipe_multiplier?: number;
             rent_per_cycle: number;
+        } | {
+            action: string;
+            base_id: string;
+            complete_tick: number;
+            crate_count: number;
+            crate_item_id: string;
+            crate_name: string;
+            facility_id: string;
+            facility_name: string;
+            facility_type: string;
+            hint: string;
+            ticks_to_complete: number;
         } | {
             action: string;
             base_id: string;
@@ -5825,6 +8593,7 @@ export interface components {
             faction_service: string;
             hint: string;
             members_awarded_xp?: number;
+            recipe_id?: string;
             rent_per_cycle: number;
             skill_xp?: {
                 [key: string]: number;
@@ -5845,17 +8614,18 @@ export interface components {
                 [key: string]: number;
             };
         } | {
+            action: string;
             base_id: string;
             faction_facilities: {
-                active: boolean;
                 capacity?: number;
+                custom_name?: string;
                 facility_id: string;
                 faction_service: string;
-                idle_reason?: string;
                 level: number;
                 missed_rent_cycles?: number;
                 name: string;
                 rent_per_cycle: number;
+                rental_fee_per_run?: number;
                 status: string;
                 ticks_until_complete?: number;
                 type: string;
@@ -5982,14 +8752,12 @@ export interface components {
                 }[];
                 name: string;
                 outputs: {
-                    effective_quantity?: number;
                     item_id: string;
                     name: string;
                     quantity: number;
                 }[];
             };
             recipe_id?: string;
-            recipe_multiplier?: number;
             rent_per_cycle: number;
             requires_service_name?: string;
             requires_service_type?: string;
@@ -6014,7 +8782,6 @@ export interface components {
             base_name: string;
             count: number;
             listings: {
-                active: boolean;
                 build_cost?: number;
                 build_time?: number;
                 category?: string;
@@ -6049,10 +8816,115 @@ export interface components {
             facility_id: string;
             message: string;
         } | {
+            action: string;
+            effective_time_per_run: number;
+            escrowed: {
+                fee?: number;
+                inputs?: {
+                    item_id: string;
+                    name: string;
+                    quantity: number;
+                }[];
+                labor?: number;
+            };
+            est_completion_tick: number;
+            external?: boolean;
+            facility_id: string;
+            job_id: string;
+            message: string;
+            mode: string;
+            produces?: {
+                item_id: string;
+                name: string;
+                quantity: number;
+            }[];
+            recipe: string;
+            runs: number;
+            venue: string;
+            venue_type: string;
+        } | {
+            action: string;
+            facility_id: string;
+            jobs: {
+                eta_ticks: number;
+                external?: boolean;
+                facility_id: string;
+                job_id: string;
+                mode: string;
+                orderer: string;
+                position: number;
+                produces?: {
+                    item_id: string;
+                    name: string;
+                    quantity: number;
+                }[];
+                progress: number;
+                recipe: string;
+                runs_done: number;
+                runs_remaining: number;
+                runs_total: number;
+                status: string;
+                venue?: string;
+            }[];
+            venue: string;
+        } | {
+            action: string;
+            job_id: string;
+            message: string;
+            refunded: {
+                fee?: number;
+                inputs?: {
+                    item_id: string;
+                    name: string;
+                    quantity: number;
+                }[];
+                labor?: number;
+            };
+        } | {
+            action: string;
+            message: string;
+            mode: string;
+            results: {
+                error?: string;
+                error_code?: string;
+                job_id: string;
+                refunded?: {
+                    fee?: number;
+                    inputs?: {
+                        item_id: string;
+                        name: string;
+                        quantity: number;
+                    }[];
+                    labor?: number;
+                };
+                success: boolean;
+            }[];
+            summary: {
+                failed: number;
+                succeeded: number;
+                total: number;
+            };
+        } | {
+            action: string;
+            facility_id: string;
+            job_id: string;
+            message: string;
+            position: number;
+        } | {
+            action: string;
             facility_id: string;
             message: string;
-            recipe_id: string;
-            recipe_name: string;
+            price: number;
+        } | {
+            access: string;
+            action: string;
+            facility_id: string;
+            message: string;
+        } | {
+            action: string;
+            custom_name?: string;
+            facility_id: string;
+            message: string;
         };
         FactionAcceptAllyResponse: {
             message: string;
@@ -6070,7 +8942,9 @@ export interface components {
         };
         FactionCreateBuyOrderResponse: {
             action: string;
+            bucket?: string;
             consolidated?: boolean;
+            escrow_refunded?: number;
             faction_id: string;
             faction_tag: string;
             item: string;
@@ -6080,7 +8954,10 @@ export interface components {
             order_id: string;
             price_each: number;
             quantity: number;
+            quantity_filled?: number;
+            quantity_listed?: number;
             total_escrowed: number;
+            total_spent?: number;
         };
         FactionCreateRoleResponse: {
             message: string;
@@ -6090,6 +8967,7 @@ export interface components {
         };
         FactionCreateSellOrderResponse: {
             action: string;
+            bucket?: string;
             consolidated?: boolean;
             faction_id: string;
             faction_tag: string;
@@ -6100,6 +8978,9 @@ export interface components {
             order_id: string;
             price_each: number;
             quantity: number;
+            quantity_filled?: number;
+            quantity_listed?: number;
+            total_earned?: number;
         };
         FactionDeclareWarResponse: {
             message: string;
@@ -6151,6 +9032,26 @@ export interface components {
                     promote: boolean;
                 };
             };
+        };
+        FactionGaragesResponse: {
+            station_count: number;
+            stations: {
+                base_id: string;
+                base_name?: string;
+                capacity: number;
+                ships: {
+                    class_id: string;
+                    class_name?: string;
+                    custom_name?: string;
+                    deposited_tick: number;
+                    depositor_id: string;
+                    depositor_name?: string;
+                    ship_id: string;
+                }[];
+                system_name?: string;
+                used: number;
+            }[];
+            total_ships: number;
         };
         FactionGetInvitesResponse: {
             invites: {
@@ -6328,6 +9229,13 @@ export interface components {
             template_id: string;
             title: string;
         };
+        FactionPrepayTaxResponse: {
+            action: string;
+            amount_prepaid: number;
+            faction_credits: number;
+            message: string;
+            tax_prepaid_balance: number;
+        };
         FactionPromoteResponse: {
             message: string;
             new_role: string;
@@ -6346,6 +9254,7 @@ export interface components {
         };
         FactionQueryIntelResponse: {
             count: number;
+            current_tick: number;
             entries: {
                 auto_synced?: boolean;
                 connections?: {
@@ -6368,7 +9277,10 @@ export interface components {
                         y: number;
                     };
                     resources?: {
+                        depletion_percent?: number;
+                        max_remaining?: number;
                         remaining: number;
+                        remaining_display?: string;
                         resource_id: string;
                         richness: number;
                     }[];
@@ -6382,6 +9294,7 @@ export interface components {
             }[];
             intel_level: number;
             limit?: number;
+            live_systems?: string[];
             message: string;
             offset?: number;
             total: number;
@@ -6437,6 +9350,41 @@ export interface components {
             station: string;
             tag: string;
         };
+        FactionScanPOIResponse: {
+            contacts?: {
+                cloaked?: boolean;
+                faction_id?: string;
+                hull?: number;
+                revealed_info: string[];
+                shield?: number;
+                ship_class?: string;
+                ship_name?: string;
+                target_id: string;
+                username?: string;
+            }[];
+            facility_level: number;
+            facility_station?: string;
+            hops: number;
+            message: string;
+            npcs?: {
+                empire?: string;
+                id: string;
+                name?: string;
+                role?: string;
+                ship_class?: string;
+            }[];
+            pirates?: {
+                id: string;
+                name?: string;
+                role?: string;
+                ship_class?: string;
+            }[];
+            poi_id: string;
+            poi_name?: string;
+            scan_power: number;
+            signature_detected?: boolean;
+            system_id?: string;
+        };
         FactionSetEnemyResponse: {
             message: string;
             target_faction_id: string;
@@ -6451,6 +9399,36 @@ export interface components {
             message: string;
             stations_updated: number;
             status: string;
+        };
+        FactionTaxEstimateResponse: {
+            action: string;
+            carried_debt?: {
+                amount: number;
+                empire: string;
+            }[];
+            carried_debt_total?: number;
+            deductible_expenses_to_date: number;
+            domicile: string;
+            faction_id: string;
+            faction_name: string;
+            income_tax: {
+                basis: string;
+                credit?: number;
+                empire: string;
+                gross: number;
+                owed: number;
+                rate_bps: number;
+                taxed_profit: number;
+            }[];
+            income_tax_total: number;
+            last_assessed_at?: number;
+            loss_carryforward_applied?: number;
+            net_taxable_profit: number;
+            next_assessment_approx_seconds: number;
+            note?: string;
+            tax_collection_active: boolean;
+            tax_prepaid: number;
+            taxable_income_to_date: number;
         };
         FactionTradeIntelStatusResponse: {
             contributors?: number;
@@ -6543,7 +9521,9 @@ export interface components {
                 fuel_per_jump?: number;
                 is_leader: boolean;
                 modules?: unknown;
+                passenger?: boolean;
                 player_id: string;
+                riding_ship_id?: string;
                 ship?: unknown;
                 username: string;
             }[];
@@ -6602,7 +9582,9 @@ export interface components {
                 fuel_per_jump?: number;
                 is_leader: boolean;
                 modules?: unknown;
+                passenger?: boolean;
                 player_id: string;
+                riding_ship_id?: string;
                 ship?: unknown;
                 username: string;
             }[];
@@ -6624,6 +9606,9 @@ export interface components {
             thread_id: string;
         };
         ForumGetThreadResponse: {
+            has_more: boolean;
+            page: number;
+            per_page: number;
             replies: {
                 author: string;
                 author_empire?: string;
@@ -6669,6 +9654,7 @@ export interface components {
                 updated_at: string;
                 upvotes: number;
             };
+            total_replies: number;
         };
         ForumListResponse: {
             categories: string[];
@@ -6770,6 +9756,7 @@ export interface components {
         };
         GetBaseResponse: {
             base: {
+                allow_outsider_facilities?: boolean;
                 allowed_factions?: string[];
                 allowed_players?: string[];
                 banned_players?: string[];
@@ -6781,12 +9768,18 @@ export interface components {
                 fuel: number;
                 has_drones: boolean;
                 id: string;
+                market_fee_bps?: number;
                 max_fuel: number;
                 name: string;
                 owner_id?: string;
                 pirate_rep_required?: number;
                 poi_id: string;
                 public_access: boolean;
+                refuel_price_each?: number;
+                repair_price_per_hull?: number;
+                service_access?: {
+                    [key: string]: string;
+                };
                 type?: string;
             };
             condition: {
@@ -6838,30 +9831,68 @@ export interface components {
             power?: {
                 battery_capacity: number;
                 battery_stored: number;
+                current_draw: number;
                 efficiency: number;
-                structural_draw: number;
+                fuel_inputs?: {
+                    item_id: string;
+                    name?: string;
+                    quantity_per_cycle: number;
+                }[];
+                remediation?: string;
                 supply: number;
             };
             services: string[];
         };
         GetBattleStatusResponse: {
             battle_id: string;
+            combat_state?: {
+                /** @description Whether you can flee at all. False only when warp disruption is holding you in place. */
+                can_escape: boolean;
+                /** @description Remaining ticks of EM disruption (present only while em_disrupted). */
+                disruption_ticks?: number;
+                /** @description Your ship speed after disruption penalties. Higher than your pursuers means you can disengage; lower means you are pinned. */
+                effective_speed: number;
+                /** @description An EM-damage disruption debuff is active on you (reduces speed and damage output for a few ticks). */
+                em_disrupted: boolean;
+                /** @description Consecutive flee ticks accumulated. Counts only while in the flee stance at the outer ring; resets if you stop fleeing. */
+                flee_counter: number;
+                /** @description Flee ticks needed to escape under current conditions (slower-than-pursuer and webbing raise it). Omitted when warp-disrupted because escape is impossible until the tackle is removed. */
+                flee_required?: number;
+                /** @description Largest zone distance any of your fitted weapons can fire across. An enemy whose zone_distance exceeds this is out of your range. */
+                max_weapon_reach: number;
+                /** @description Current speed reduction from EM disruption as a percentage (present only while em_disrupted). */
+                speed_penalty_pct?: number;
+                /** @description An enemy warp disruptor/scrambler is blocking your escape (net of your own warp core stabilizers). Kill the tackler or out-stabilize it to break free. */
+                warp_disrupted: boolean;
+                /** @description An enemy stasis webifier is reducing your effective speed (slower escape and easier for enemies to hit you). */
+                webbed: boolean;
+            };
             is_participant: boolean;
             participants?: {
                 auto_pilot: boolean;
+                /** @description Total damage dealt by you so far this battle (self only) */
                 damage_dealt?: number;
+                /** @description Total damage taken by you so far this battle (self only) */
                 damage_taken?: number;
+                /** @description Hull integrity as a percentage of max (0-100) */
                 hull_pct?: number;
+                /** @description Ships you have destroyed this battle (self only) */
                 kill_count?: number;
                 player_id: string;
+                /** @description Shield strength as a percentage of max (0-100) */
                 shield_pct?: number;
                 ship_class?: string;
                 ship_name?: string;
                 side_id: number;
+                /** @description Combat stance this tick (self only): fire/evade/brace/flee */
                 stance?: string;
+                /** @description Player ID this ship is focusing fire on (self only; empty = auto-target) */
                 target_id?: string;
                 username: string;
+                /** @description Distance ring this ship occupies: outer/mid/inner/engaged */
                 zone?: string;
+                /** @description Zone separation from the requesting player (0 = same ring; higher = farther). Compare against your combat_state.max_weapon_reach to see if you can fire. Omitted when the requester is not a participant. */
+                zone_distance?: number;
             }[];
             sides?: {
                 faction_id?: string;
@@ -6972,6 +10003,7 @@ export interface components {
                 empire_id: string;
                 eviction_grace_cycles: number;
                 facility_rent_multiplier_bps: number;
+                faction_income_tax_bps: number;
                 foreign_income_tax_deduction?: {
                     [key: string]: number;
                 };
@@ -7033,6 +10065,7 @@ export interface components {
                 title: string;
             }[];
             hint?: string;
+            server_version?: string;
         };
         GetInsuranceQuoteResponse: {
             message: string;
@@ -7151,6 +10184,16 @@ export interface components {
         };
         GetNearbyResponse: {
             count: number;
+            creature_count: number;
+            creatures: {
+                creature_id: string;
+                hull: number;
+                in_combat: boolean;
+                max_hull: number;
+                name: string;
+                role: string;
+                species: string;
+            }[];
             empire_npc_count: number;
             empire_npcs: {
                 empire: string;
@@ -7190,8 +10233,10 @@ export interface components {
                 tier: string;
             }[];
             poi_id: string;
+            unknown_signature?: boolean;
         };
         GetNotesResponse: {
+            has_more: boolean;
             notes: {
                 content_length: number;
                 created_at: string;
@@ -7200,6 +10245,8 @@ export interface components {
                 title: string;
                 value: number;
             }[];
+            page: number;
+            page_size: number;
             total_count: number;
         };
         GetNotificationsResponse: {
@@ -7236,6 +10283,7 @@ export interface components {
                 }[];
             };
             base?: {
+                allow_outsider_facilities?: boolean;
                 allowed_factions?: string[];
                 allowed_players?: string[];
                 banned_players?: string[];
@@ -7247,12 +10295,18 @@ export interface components {
                 fuel: number;
                 has_drones: boolean;
                 id: string;
+                market_fee_bps?: number;
                 max_fuel: number;
                 name: string;
                 owner_id?: string;
                 pirate_rep_required?: number;
                 poi_id: string;
                 public_access: boolean;
+                refuel_price_each?: number;
+                repair_price_per_hull?: number;
+                service_access?: {
+                    [key: string]: string;
+                };
                 type?: string;
             };
             faction_fuel_capacity?: number;
@@ -7374,6 +10428,7 @@ export interface components {
                 description?: string;
                 empire?: string;
                 id: string;
+                is_stronghold: boolean;
                 name: string;
                 pois: {
                     base_id?: string;
@@ -7494,6 +10549,11 @@ export interface components {
                 victim_name: string;
             }[];
         };
+        HuntResponse: {
+            command: string;
+            message: string;
+            pending: boolean;
+        };
         InstallModResponse: {
             cpu_used: number;
             current_ammo?: number;
@@ -7509,6 +10569,21 @@ export interface components {
             item_name: string;
             message: string;
             quantity: number;
+        } | {
+            action: string;
+            container_id?: string;
+            failed: number;
+            message: string;
+            requested: number;
+            results: {
+                error?: string;
+                item_id: string;
+                item_name?: string;
+                message?: string;
+                quantity: number;
+                success: boolean;
+            }[];
+            succeeded: number;
         };
         JoinFactionResponse: {
             faction: string;
@@ -7541,13 +10616,13 @@ export interface components {
             economy_berths: string;
             first_berths: string;
             passengers: {
+                base_fare: number;
                 bio: string;
                 citizen_id: string;
                 class: string;
                 destination: string;
                 destination_name: string;
                 destination_system?: string;
-                fare: number;
                 name: string;
                 speed_bonus?: number;
                 ticks_remaining: number;
@@ -7565,6 +10640,17 @@ export interface components {
             active_ship_class?: string;
             active_ship_id?: string;
             count: number;
+            faction_garage?: {
+                class_id: string;
+                class_name?: string;
+                custom_name?: string;
+                deposited_tick: number;
+                depositor_id: string;
+                depositor_name?: string;
+                ship_id: string;
+            }[];
+            faction_garage_capacity?: number;
+            faction_garage_used?: number;
             ships: {
                 cargo_used?: number;
                 class_id: string;
@@ -7594,19 +10680,352 @@ export interface components {
         LoadPassengersResponse: {
             count: number;
             loaded: {
+                base_fare: number;
                 bio: string;
                 citizen_id: string;
                 class: string;
                 destination: string;
                 destination_name: string;
                 destination_system?: string;
-                fare: number;
                 name: string;
                 speed_bonus?: number;
                 ticks_remaining: number;
             }[];
             message: string;
             total_fare: number;
+        };
+        LoggedInPayload: {
+            modules?: unknown;
+            pending_trades?: {
+                /** Format: date-time */
+                created_at: string;
+                /** Format: date-time */
+                expires_at: string;
+                id: string;
+                offer_credits: number;
+                offer_items: {
+                    item_id: string;
+                    quantity: number;
+                }[];
+                offerer_id: string;
+                poi_id: string;
+                request_credits: number;
+                request_items: {
+                    item_id: string;
+                    quantity: number;
+                }[];
+                status: string;
+                target_id: string;
+            }[];
+            player: {
+                achievements?: {
+                    [key: string]: string;
+                };
+                captains_log?: {
+                    /** Format: date-time */
+                    created_at: string;
+                    entry: string;
+                    index: number;
+                }[];
+                citizenships?: {
+                    [key: string]: {
+                        empire_id: string;
+                        /** Format: date-time */
+                        granted_at: string;
+                        granted_by?: string;
+                    };
+                };
+                clan_tag: string;
+                completed_missions?: {
+                    [key: string]: string;
+                };
+                /** Format: date-time */
+                created_at: string;
+                credits: number;
+                current_poi: string;
+                current_ship_id: string;
+                current_system: string;
+                discovered_systems?: {
+                    [key: string]: {
+                        /** Format: date-time */
+                        discovered_at: string;
+                        system_id: string;
+                    };
+                };
+                /** Format: date-time */
+                distress_last_sent_at?: string;
+                docked_at_base?: string;
+                empire: string;
+                empire_rep?: {
+                    [key: string]: {
+                        criminal: number;
+                        criminal_encounters: number;
+                        fame: number;
+                        fear: number;
+                        hate: number;
+                        love: number;
+                        need: number;
+                    };
+                };
+                experience: number;
+                faction_id?: string;
+                faction_rank?: string;
+                fleet_id?: string;
+                home_base: string;
+                id: string;
+                is_cloaked: boolean;
+                jail?: {
+                    bounty_owed: number;
+                    empire_id: string;
+                    /** Format: date-time */
+                    jailed_until: string;
+                    rep_restoration: number;
+                };
+                /** Format: date-time */
+                last_active_at: string;
+                /** Format: date-time */
+                last_chat_check: string;
+                last_chat_check_map?: {
+                    [key: string]: string;
+                };
+                /** Format: date-time */
+                last_command_at: string;
+                /** Format: date-time */
+                last_login_at: string;
+                primary_color: string;
+                provided_items_granted?: {
+                    [key: string]: string;
+                };
+                purchased_ship_classes?: {
+                    [key: string]: boolean;
+                };
+                reputation?: {
+                    [key: string]: number;
+                };
+                reputation_baseline?: {
+                    [key: string]: number;
+                };
+                revealed_pois?: {
+                    [key: string]: boolean;
+                };
+                riding_ship_id?: string;
+                secondary_color: string;
+                skill_xp: {
+                    [key: string]: number;
+                };
+                skills: {
+                    [key: string]: number;
+                };
+                stats: {
+                    bases_destroyed: number;
+                    battles_fled: number;
+                    battles_started: number;
+                    captains_log_entries: number;
+                    chat_messages_sent: number;
+                    cloak_activations: number;
+                    consumables_used: number;
+                    contraband_sold: number;
+                    credits_earned: number;
+                    credits_earned_taxable: number;
+                    credits_earned_taxable_by_category?: {
+                        [key: string]: number;
+                    };
+                    credits_earned_taxable_by_category_snapshot?: {
+                        [key: string]: number;
+                    };
+                    credits_earned_taxable_snapshot: number;
+                    credits_gifted: number;
+                    credits_spent: number;
+                    customs_evaded: number;
+                    damage_dealt: number;
+                    damage_taken: number;
+                    deaths_by_pirate: number;
+                    deaths_by_player: number;
+                    deaths_by_self_destruct: number;
+                    deep_core_pois_discovered: number;
+                    distance_traveled: number;
+                    exchange_credits_earned: number;
+                    exchange_items_bought: number;
+                    exchange_items_sold: number;
+                    facilities_built: number;
+                    facility_items_produced: number;
+                    forum_posts_created: number;
+                    gifts_received: number;
+                    gifts_sent: number;
+                    insurance_claims_made: number;
+                    insurance_payouts_received: number;
+                    insurance_policies_bought: number;
+                    items_crafted: number;
+                    items_jettisoned: number;
+                    items_sold_by_type?: {
+                        [key: string]: number;
+                    };
+                    jumps_completed: number;
+                    last_income_tax_assessed_at?: number;
+                    last_property_tax_assessed_at?: number;
+                    market_purchases_deductible?: number;
+                    market_purchases_deductible_snapshot?: number;
+                    market_tax_loss_carryforward?: number;
+                    missions_abandoned: number;
+                    missions_accepted: number;
+                    missions_completed: number;
+                    modules_installed: number;
+                    npcs_destroyed: number;
+                    ore_mined: number;
+                    pirates_destroyed: number;
+                    prayer_distance_traveled: number;
+                    refuels_given: number;
+                    repairs_given: number;
+                    scans_performed: number;
+                    self_destructs: number;
+                    ships_commissioned: number;
+                    ships_destroyed: number;
+                    ships_lost: number;
+                    ships_purchased: number;
+                    systems_explored: number;
+                    tax_prepaid?: number;
+                    time_played: number;
+                    times_docked: number;
+                    trades_completed: number;
+                    void_drifts: number;
+                    wormholes_traversed: number;
+                    wreck_items_looted: number;
+                    wrecks_scrapped: number;
+                    wrecks_sold: number;
+                };
+                status_message: string;
+                titles?: string[];
+                towing_wreck_id?: string;
+                /** Format: date-time */
+                trading_restricted_until?: string;
+                transported_citizens?: {
+                    [key: string]: boolean;
+                };
+                username: string;
+            };
+            poi: {
+                base_id?: string;
+                base_name?: string;
+                class?: string;
+                faction_fuel_capacity?: number;
+                faction_fuel_reserve?: number;
+                fuel_capacity?: number;
+                fuel_price?: number;
+                fuel_reserve: number;
+                has_base: boolean;
+                id: string;
+                name: string;
+                online: number;
+                position: {
+                    x: number;
+                    y: number;
+                };
+                type: string;
+            };
+            recent_chat?: {
+                channel: string;
+                content: string;
+                empire_official?: boolean;
+                faction_id?: string;
+                id: string;
+                poi_id?: string;
+                sender: string;
+                sender_id: string;
+                system_id?: string;
+                target_id?: string;
+                target_name?: string;
+                timestamp_utc: string;
+            }[];
+            ship: {
+                active_buffs?: {
+                    amount: number;
+                    expires_at: number;
+                    item_id: string;
+                    stat: string;
+                }[];
+                armor: number;
+                armor_melt_pct?: number;
+                armor_melt_ticks_remaining?: number;
+                burn_damage_per_tick?: number;
+                burn_source_id?: string;
+                burn_ticks_remaining?: number;
+                cargo: {
+                    item_id: string;
+                    name?: string;
+                    quantity: number;
+                    size?: number;
+                }[];
+                cargo_capacity: number;
+                cargo_used: number;
+                class_id: string;
+                cpu_capacity: number;
+                cpu_used: number;
+                /** Format: date-time */
+                created_at: string;
+                custom_name?: string;
+                damage_penalty?: number;
+                defense_slots: number;
+                disruption_ticks_remaining?: number;
+                docked_at_base?: string;
+                fuel: number;
+                gas_cargo_efficiency: number;
+                hull: number;
+                ice_cargo_efficiency: number;
+                id: string;
+                in_faction_garage?: string;
+                last_process_tick?: number;
+                loaded_on_carrier_id?: string;
+                loadout_version?: number;
+                max_fuel: number;
+                max_hull: number;
+                max_shield: number;
+                modules: string[];
+                name: string;
+                ore_cargo_efficiency: number;
+                owner_id: string;
+                power_capacity: number;
+                power_used: number;
+                shield: number;
+                shield_recharge: number;
+                speed: number;
+                speed_penalty?: number;
+                utility_slots: number;
+                weapon_slots: number;
+            };
+            system: {
+                connections: {
+                    distance?: number;
+                    name: string;
+                    system_id: string;
+                }[];
+                description?: string;
+                empire?: string;
+                id: string;
+                is_stronghold: boolean;
+                name: string;
+                pois: {
+                    base_id?: string;
+                    base_name?: string;
+                    class?: string;
+                    faction_fuel_capacity?: number;
+                    faction_fuel_reserve?: number;
+                    fuel_capacity?: number;
+                    fuel_price?: number;
+                    fuel_reserve: number;
+                    has_base: boolean;
+                    id: string;
+                    name: string;
+                    online: number;
+                    position: {
+                        x: number;
+                        y: number;
+                    };
+                    type: string;
+                }[];
+                police_level: number;
+                security_status?: string;
+            };
+            unread_chat?: unknown;
         };
         LoginResponse: {
             message: string;
@@ -7722,6 +11141,7 @@ export interface components {
                 revealed_pois?: {
                     [key: string]: boolean;
                 };
+                riding_ship_id?: string;
                 secondary_color: string;
                 skill_xp: {
                     [key: string]: number;
@@ -7776,6 +11196,9 @@ export interface components {
                     jumps_completed: number;
                     last_income_tax_assessed_at?: number;
                     last_property_tax_assessed_at?: number;
+                    market_purchases_deductible?: number;
+                    market_purchases_deductible_snapshot?: number;
+                    market_tax_loss_carryforward?: number;
                     missions_abandoned: number;
                     missions_accepted: number;
                     missions_completed: number;
@@ -7793,6 +11216,7 @@ export interface components {
                     ships_lost: number;
                     ships_purchased: number;
                     systems_explored: number;
+                    tax_prepaid?: number;
                     time_played: number;
                     times_docked: number;
                     trades_completed: number;
@@ -7873,8 +11297,10 @@ export interface components {
                 hull: number;
                 ice_cargo_efficiency: number;
                 id: string;
+                in_faction_garage?: string;
                 last_process_tick?: number;
                 loaded_on_carrier_id?: string;
+                loadout_version?: number;
                 max_fuel: number;
                 max_hull: number;
                 max_shield: number;
@@ -7900,6 +11326,7 @@ export interface components {
                 description?: string;
                 empire?: string;
                 id: string;
+                is_stronghold: boolean;
                 name: string;
                 pois: {
                     base_id?: string;
@@ -7967,6 +11394,25 @@ export interface components {
                 [key: string]: number;
             };
         };
+        MapData: {
+            empires: {
+                [key: string]: string;
+            };
+            systems: {
+                battle_id?: string;
+                connections: string[];
+                empire?: string;
+                empire_color?: string;
+                has_battle?: boolean;
+                id: string;
+                is_home?: boolean;
+                is_stronghold?: boolean;
+                name: string;
+                online: number;
+                x: number;
+                y: number;
+            }[];
+        };
         /** @description A system entry from the player's discovered map. */
         MapSystem: {
             /** @description Connected system IDs */
@@ -8007,6 +11453,9 @@ export interface components {
             auto_undocked?: boolean;
             filtered: boolean;
             message: string;
+        };
+        MobileBaseLocation: {
+            system: string;
         };
         ModifyOrderResponse: {
             action: string;
@@ -8057,6 +11506,149 @@ export interface components {
             status_message?: string;
             username?: string;
         };
+        /** @description Pushed to a player (or all faction members for faction achievements) when one or more achievements unlock. */
+        Notification_achievement_unlocked: {
+            /** @description Achievements unlocked in this notification. */
+            achievements: {
+                category?: string;
+                description?: string;
+                id?: string;
+                name?: string;
+                points?: number;
+                share_url?: string;
+            }[];
+            /** @description True for faction-achievement unlocks (omitted for personal ones). */
+            faction?: boolean;
+        };
+        Notification_base_destroyed: {
+            attacker_id: string;
+            attacker_name: string;
+            base_id: string;
+            base_name: string;
+            base_wreck_id?: string;
+            owner_id: string;
+            system_id: string;
+        };
+        Notification_base_raid_update: {
+            attacker_id: string;
+            attacker_name: string;
+            base_id: string;
+            base_name: string;
+            current_health: number;
+            damage: number;
+            max_health: number;
+        };
+        Notification_battle_alert: {
+            battle_id: string;
+            message: string;
+            participants: {
+                hull_pct?: number;
+                player_id: string;
+                shield_pct?: number;
+                ship_class?: string;
+                ship_name?: string;
+                side_id: number;
+                stance?: string;
+                username: string;
+                zone: string;
+            }[];
+            sides: {
+                faction_id?: string;
+                player_count: number;
+                side_id: number;
+            }[];
+            system_id: string;
+        };
+        Notification_battle_damage: {
+            attacker_id: string;
+            attacker_name?: string;
+            damage_type: string;
+            hit_success: boolean;
+            hull_hit: number;
+            shield_hit: number;
+            target_id: string;
+            target_name?: string;
+            tick: number;
+            total_damage: number;
+            weapons_fired: string[];
+            xp_gained?: {
+                [key: string]: {
+                    [key: string]: number;
+                };
+            };
+        };
+        Notification_battle_ended: {
+            battle_id: string;
+            duration: number;
+            participants?: {
+                damage_dealt: number;
+                damage_taken: number;
+                kill_count: number;
+                player_id: string;
+                side_id: number;
+                survived: boolean;
+                username: string;
+            }[];
+            reason: string;
+            ships_destroyed: number;
+            total_damage: number;
+            winning_side: number;
+        };
+        Notification_battle_joined: {
+            player_id: string;
+            side_id: number;
+            username: string;
+        };
+        Notification_battle_left: {
+            player_id: string;
+            reason: string;
+            username: string;
+        };
+        Notification_battle_started: {
+            battle_id: string;
+            participants: {
+                hull_pct?: number;
+                player_id: string;
+                shield_pct?: number;
+                ship_class?: string;
+                ship_name?: string;
+                side_id: number;
+                stance?: string;
+                username: string;
+                zone: string;
+            }[];
+            sides: {
+                faction_id?: string;
+                player_count: number;
+                side_id: number;
+            }[];
+            system_id: string;
+        };
+        Notification_battle_update: {
+            auto_pilot: boolean;
+            battle_id: string;
+            participants: {
+                hull_pct?: number;
+                player_id: string;
+                shield_pct?: number;
+                ship_class?: string;
+                ship_name?: string;
+                side_id: number;
+                stance?: string;
+                username: string;
+                zone: string;
+            }[];
+            sides: {
+                faction_id?: string;
+                player_count: number;
+                side_id: number;
+            }[];
+            tick: number;
+            your_side_id: number;
+            your_stance: string;
+            your_target_id?: string;
+            your_zone: string;
+        };
         /** @description Chat message delivered to a recipient. Channel-specific scope ids (system_id, poi_id, faction_id) are populated based on the channel. */
         Notification_chat_message: {
             /** @description Channel: global, system, local, faction, private, admin. */
@@ -8089,6 +11681,105 @@ export interface components {
             shield_hit: number;
             target: string;
             tick: number;
+        };
+        Notification_crafting_update: {
+            jobs: {
+                completed: boolean;
+                deposited: {
+                    item_id: string;
+                    item_name: string;
+                    quantity: number;
+                }[];
+                job_id: string;
+                mode: string;
+                recipe: string;
+                runs_done: number;
+                runs_remaining: number;
+                storage: string;
+                venue: string;
+            }[];
+            tick: number;
+        };
+        Notification_drone_destroyed: {
+            drone_id: string;
+            drone_type: string;
+            killer_id?: string;
+            owner_id: string;
+        };
+        /** @description Pushed to a drone owner when their scout drone completes a scan of a POI. */
+        Notification_drone_scan: {
+            drone_id: string;
+            /** @description Players detected at the POI. */
+            players?: {
+                /** @description Detected player's faction id (omitted when none). */
+                faction_id?: string;
+                /** @description Target hull as a percentage of its maximum. */
+                hull_pct?: number;
+                id?: string;
+                username?: string;
+            }[];
+            /** @description POI the drone scanned. */
+            poi_id: string;
+        };
+        /** @description Pushed to a drone owner when their scout drone completes a system survey at a POI. */
+        Notification_drone_survey: {
+            drone_id: string;
+            poi_id: string;
+            poi_name?: string;
+            /** @description Resource nodes detected at the POI. */
+            resources?: {
+                /**
+                 * Format: int64
+                 * @description Regeneration capacity cap (omitted when unused).
+                 */
+                max_remaining?: number;
+                /**
+                 * Format: int64
+                 * @description Units remaining; -1 for infinite.
+                 */
+                remaining?: number;
+                resource_id?: string;
+                /** @description 1-100; affects yield. */
+                richness?: number;
+            }[];
+            system_id: string;
+        };
+        Notification_drone_update: {
+            damage: number;
+            damage_type: string;
+            drone_id: string;
+            owner_id: string;
+            target_id: string;
+            tick: number;
+        };
+        /** @description Pushed to a facility owner (or all faction members) when the station repossesses facilities for unpaid rent. */
+        Notification_facility_reclaimed: {
+            base_id: string;
+            base_name: string;
+            /** @description Names of the repossessed facilities. */
+            facilities?: string[];
+            /** @description Set only on the faction-owned-facility variant. */
+            faction_id?: string;
+            message: string;
+        };
+        /** @description Pushed to a facility owner (or all faction members for faction-owned facilities) when rent is overdue and repossession is approaching. */
+        Notification_facility_rent_warning: {
+            base_id: string;
+            base_name: string;
+            /**
+             * Format: int64
+             * @description Arrears owed.
+             */
+            credits_owed?: number;
+            /** @description Number of the owner's facilities behind on rent at this base. */
+            facilities_behind?: number;
+            /** @description Set only on the faction-owned-facility variant. */
+            faction_id?: string;
+            /** @description Missed cycles at which the station repossesses. */
+            grace_cycles?: number;
+            message: string;
+            /** @description Consecutive missed rent cycles so far. */
+            missed_cycles?: number;
         };
         Notification_market_update: {
             base_id: string;
@@ -8124,6 +11815,55 @@ export interface components {
                 [key: string]: number;
             };
         };
+        Notification_observation_update: {
+            active_scan?: boolean;
+            cloaked_lost?: string[];
+            cloaked_resolved?: {
+                cloaked?: boolean;
+                faction_id?: string;
+                hull?: number;
+                revealed_info: string[];
+                shield?: number;
+                ship_class?: string;
+                ship_name?: string;
+                target_id: string;
+                username?: string;
+            }[];
+            nearby_changed?: {
+                clan_tag?: string;
+                faction_id?: string;
+                faction_tag?: string;
+                in_combat: boolean;
+                offline?: boolean;
+                player_id?: string;
+                primary_color?: string;
+                secondary_color?: string;
+                ship_class?: string;
+                ship_name?: string;
+                status_message?: string;
+                username?: string;
+            }[];
+            nearby_departed?: string[];
+            poi_id: string;
+            system_changed?: {
+                clan_tag?: string;
+                faction_id?: string;
+                faction_tag?: string;
+                in_combat: boolean;
+                offline?: boolean;
+                player_id?: string;
+                primary_color?: string;
+                secondary_color?: string;
+                ship_class?: string;
+                ship_name?: string;
+                status_message?: string;
+                username?: string;
+            }[];
+            system_departed?: string[];
+            system_id: string;
+            tick: number;
+            unknown_signature: boolean;
+        };
         Notification_pilotless_ship: {
             expire_tick: number;
             player_id: string;
@@ -8133,6 +11873,44 @@ export interface components {
             ship_id: string;
             system_id: string;
             ticks_remaining: number;
+        };
+        /** @description Pushed to the player who destroyed a pirate NPC. Boss kills are also broadcast to everyone in the system with the extra fields below. */
+        Notification_pirate_destroyed: {
+            /**
+             * Format: int64
+             * @description Combat XP awarded (kill notification to the killer).
+             */
+            combat_xp?: number;
+            /**
+             * Format: int64
+             * @description Credit reward (kill notification to the killer).
+             */
+            credits_earned?: number;
+            is_boss?: boolean;
+            /** @description Killer username (boss-kill system broadcast). */
+            killer?: string;
+            /** @description Human-readable announcement (boss-kill system broadcast). */
+            message?: string;
+            /** @description Player whose drone scored the kill (omitted when none). */
+            operator_id?: string;
+            pirate_id?: string;
+            pirate_name: string;
+            pirate_role: string;
+            /** @description System of the kill (boss-kill system broadcast). */
+            system_id?: string;
+            /** @description System name (boss-kill system broadcast). */
+            system_name?: string;
+        };
+        /** @description Pushed to players in range with a pirate_radio_scanner module, carrying an intercepted pirate transmission. */
+        Notification_pirate_radio: {
+            /** @description Template/event key of the intercepted message. */
+            event_key?: string;
+            /** @description Pirate faction key the transmission belongs to. */
+            faction_key?: string;
+            message: string;
+            pirate_name: string;
+            source_poi?: string;
+            source_system?: string;
         };
         Notification_player_died: {
             cause?: string;
@@ -8159,6 +11937,17 @@ export interface components {
             wreck_id?: string;
             wreck_suppressed?: boolean;
         };
+        /** @description Pushed to the killer when they destroy another player's ship. */
+        Notification_player_kill: {
+            /** @description Username of the destroyed player. */
+            victim: string;
+            /** @description Whether the wreck holds lootable cargo (omitted when no wreck). */
+            wreck_has_cargo?: boolean;
+            /** @description Whether the wreck holds salvageable modules (omitted when no wreck). */
+            wreck_has_modules?: boolean;
+            /** @description Wreck left behind (omitted when no wreck was created). */
+            wreck_id?: string;
+        };
         Notification_reconnected: {
             message: string;
             ticks_remaining: number;
@@ -8174,13 +11963,27 @@ export interface components {
         Notification_scan_result: {
             cargo_types?: string[];
             cloaked?: boolean;
+            contacts?: {
+                cloaked?: boolean;
+                faction_id?: string;
+                hull?: number;
+                revealed_info: string[];
+                shield?: number;
+                ship_class?: string;
+                ship_name?: string;
+                target_id: string;
+                username?: string;
+            }[];
             faction_id?: string;
             hull?: number;
+            message?: string;
             revealed_info: string[];
             shield?: number;
             ship_class?: string;
             ship_name?: string;
+            signature_detected?: boolean;
             success: boolean;
+            swept?: boolean;
             target_id: string;
             username?: string;
         };
@@ -8190,6 +11993,26 @@ export interface components {
             skill_id: string;
             /** Format: int64 */
             xp_gained?: number;
+        };
+        /** @description Pushed to the trade recipient when the offerer cancels the offer. */
+        Notification_trade_cancelled: {
+            message: string;
+            trade_id: string;
+        };
+        /** @description Pushed to the offerer when the trade recipient accepts. */
+        Notification_trade_complete: {
+            message: string;
+            trade_id: string;
+            /**
+             * Format: int64
+             * @description Offerer's credit balance after the trade settled.
+             */
+            your_credits?: number;
+        };
+        /** @description Pushed to the offerer when the trade recipient declines. */
+        Notification_trade_declined: {
+            message: string;
+            trade_id: string;
         };
         /** @description Direct player-to-player trade offer received. */
         Notification_trade_offer_received: {
@@ -8312,6 +12135,8 @@ export interface components {
             reputation_baseline?: {
                 [key: string]: number;
             };
+            /** @description Ship ID the player is riding aboard as a passenger (empty if piloting their own ship) */
+            riding_ship_id?: string;
             /** @description Hex color */
             secondary_color?: string;
             /** @description Current XP per skill */
@@ -8407,6 +12232,21 @@ export interface components {
              * @description Unix timestamp of the most recent property-tax assessment
              */
             last_property_tax_assessed_at?: number;
+            /**
+             * Format: int64
+             * @description Lifetime credits spent acquiring resaleable goods on the market, deducted from market sale income so trading is taxed on margin
+             */
+            market_purchases_deductible?: number;
+            /**
+             * Format: int64
+             * @description market_purchases_deductible at the most recent income-tax assessment
+             */
+            market_purchases_deductible_snapshot?: number;
+            /**
+             * Format: int64
+             * @description Deductible market purchases that exceeded sales in a prior window, carried forward to offset future market income
+             */
+            market_tax_loss_carryforward?: number;
             missions_abandoned?: number;
             missions_accepted?: number;
             missions_completed?: number;
@@ -8431,6 +12271,11 @@ export interface components {
             systems_explored?: number;
             /**
              * Format: int64
+             * @description Credits prepaid toward the next tax assessment (covers the bill before the wallet; surplus refunded)
+             */
+            tax_prepaid?: number;
+            /**
+             * Format: int64
              * @description In seconds
              */
             time_played?: number;
@@ -8442,6 +12287,13 @@ export interface components {
             wreck_items_looted?: number;
             wrecks_scrapped?: number;
             wrecks_sold?: number;
+        };
+        PrepayTaxResponse: {
+            action: string;
+            amount_prepaid: number;
+            credits: number;
+            message: string;
+            tax_prepaid_balance: number;
         };
         ReadNoteResponse: {
             content: string;
@@ -8456,6 +12308,121 @@ export interface components {
             message: string;
             recalled: number;
             skipped: number;
+        };
+        RecycleJobResponse: {
+            action: string;
+            effective_time_per_run: number;
+            escrowed: {
+                fee?: number;
+                inputs?: {
+                    item_id: string;
+                    name: string;
+                    quantity: number;
+                }[];
+                labor?: number;
+            };
+            est_completion_tick: number;
+            external?: boolean;
+            facility_id: string;
+            job_id: string;
+            message: string;
+            mode: string;
+            produces?: {
+                item_id: string;
+                name: string;
+                quantity: number;
+            }[];
+            recipe: string;
+            runs: number;
+            venue: string;
+            venue_type: string;
+        } | {
+            action: string;
+            mode: string;
+            results: {
+                error?: string;
+                error_code?: string;
+                index: number;
+                job_id?: string;
+                message?: string;
+                recipe?: string;
+                runs?: number;
+                success: boolean;
+                venue?: string;
+            }[];
+            summary: {
+                failed: number;
+                succeeded: number;
+                total: number;
+            };
+        } | {
+            action: string;
+            cost: {
+                fee?: number;
+                inputs?: {
+                    item_id: string;
+                    name: string;
+                    quantity: number;
+                }[];
+                labor?: number;
+            };
+            credits_total: number;
+            dry_run: boolean;
+            effective_time_per_run: number;
+            est_completion_tick: number;
+            external?: boolean;
+            facility_id: string;
+            have_credits: boolean;
+            have_inputs: boolean;
+            message: string;
+            mode: string;
+            produces?: {
+                item_id: string;
+                name: string;
+                quantity: number;
+            }[];
+            quantity: number;
+            recipe: string;
+            runs: number;
+            venue: string;
+            venue_type: string;
+        } | {
+            action: string;
+            job_id: string;
+            message: string;
+            refunded: {
+                fee?: number;
+                inputs?: {
+                    item_id: string;
+                    name: string;
+                    quantity: number;
+                }[];
+                labor?: number;
+            };
+        } | {
+            action: string;
+            message: string;
+            mode: string;
+            results: {
+                error?: string;
+                error_code?: string;
+                job_id: string;
+                refunded?: {
+                    fee?: number;
+                    inputs?: {
+                        item_id: string;
+                        name: string;
+                        quantity: number;
+                    }[];
+                    labor?: number;
+                };
+                success: boolean;
+            }[];
+            summary: {
+                failed: number;
+                succeeded: number;
+                total: number;
+            };
         };
         RefitShipResponse: {
             cargo_returned: number;
@@ -8598,6 +12565,7 @@ export interface components {
                 revealed_pois?: {
                     [key: string]: boolean;
                 };
+                riding_ship_id?: string;
                 secondary_color: string;
                 skill_xp: {
                     [key: string]: number;
@@ -8652,6 +12620,9 @@ export interface components {
                     jumps_completed: number;
                     last_income_tax_assessed_at?: number;
                     last_property_tax_assessed_at?: number;
+                    market_purchases_deductible?: number;
+                    market_purchases_deductible_snapshot?: number;
+                    market_tax_loss_carryforward?: number;
                     missions_abandoned: number;
                     missions_accepted: number;
                     missions_completed: number;
@@ -8669,6 +12640,7 @@ export interface components {
                     ships_lost: number;
                     ships_purchased: number;
                     systems_explored: number;
+                    tax_prepaid?: number;
                     time_played: number;
                     times_docked: number;
                     trades_completed: number;
@@ -8745,8 +12717,10 @@ export interface components {
                 hull: number;
                 ice_cargo_efficiency: number;
                 id: string;
+                in_faction_garage?: string;
                 last_process_tick?: number;
                 loaded_on_carrier_id?: string;
+                loadout_version?: number;
                 max_fuel: number;
                 max_hull: number;
                 max_shield: number;
@@ -8772,6 +12746,7 @@ export interface components {
                 description?: string;
                 empire?: string;
                 id: string;
+                is_stronghold: boolean;
                 name: string;
                 pois: {
                     base_id?: string;
@@ -8796,6 +12771,10 @@ export interface components {
                 security_status?: string;
             };
             username?: string;
+        };
+        RegisteredPayload: {
+            password: string;
+            player_id: string;
         };
         ReleaseTowResponse: {
             action: string;
@@ -8857,13 +12836,27 @@ export interface components {
         ScanResponse: {
             cargo_types?: string[];
             cloaked?: boolean;
+            contacts?: {
+                cloaked?: boolean;
+                faction_id?: string;
+                hull?: number;
+                revealed_info: string[];
+                shield?: number;
+                ship_class?: string;
+                ship_name?: string;
+                target_id: string;
+                username?: string;
+            }[];
             faction_id?: string;
             hull?: number;
+            message?: string;
             revealed_info: string[];
             shield?: number;
             ship_class?: string;
             ship_name?: string;
+            signature_detected?: boolean;
             success: boolean;
+            swept?: boolean;
             target_id: string;
             username?: string;
         };
@@ -9033,6 +13026,8 @@ export interface components {
             /** @description % of normal cargo space for ices (0=normal, 50=half) */
             ice_cargo_efficiency?: number;
             id: string;
+            /** @description Faction ID whose ship garage is holding this ship (empty when not garaged); a garaged ship is an inert shared-pool asset claimable by faction members */
+            in_faction_garage?: string;
             /**
              * Format: int64
              * @description Last tick passive recipes were processed
@@ -9040,6 +13035,8 @@ export interface components {
             last_process_tick?: number;
             /** @description Ship ID of the carrier this ship is currently loaded on (empty when not in a carrier bay) */
             loaded_on_carrier_id?: string;
+            /** @description Default-loadout version this ship was built or last refitted against; a lower value than the class's default_loadout_version means refit_ship is offered */
+            loadout_version?: number;
             max_fuel: number;
             max_hull: number;
             max_shield?: number;
@@ -9081,6 +13078,8 @@ export interface components {
             /** @description Ship category: Fighter, Freighter, Mining, etc. */
             class: string;
             cpu_capacity?: number;
+            /** @description Bumped whenever the canonical default loadout changes; existing ships below this version are offered refit_ship */
+            default_loadout_version?: number;
             default_modules?: string[];
             defense_slots?: number;
             description?: string;
@@ -9095,7 +13094,7 @@ export interface components {
             inherent_capabilities?: {
                 /** @description Named flag for special_flag type (e.g. rad_handling, anomaly_detection) */
                 flag?: string;
-                /** @description Capability type: ore_yield_bonus, ice_yield_bonus, gas_yield_bonus, integrated_cloak, integrated_scanner, scan_resistance, integrated_survey_scanner, ship_bay_capacity, passenger_economy_berths, passenger_business_berths, passenger_first_berths, special_flag */
+                /** @description Capability type: ore_yield_bonus, ice_yield_bonus, gas_yield_bonus, integrated_cloak, integrated_scanner, scan_resistance, integrated_survey_scanner, ship_bay_capacity, passenger_economy_berths, passenger_business_berths, passenger_first_berths, fleet_command_capacity, special_flag */
                 type?: string;
                 /** @description Numeric parameter (percentage bonus, power level, or strength) */
                 value?: number;
@@ -9110,8 +13109,16 @@ export interface components {
             /** @description Minimum Piloting skill level to fly this ship (0 = no requirement) */
             piloting_required?: number;
             power_capacity?: number;
+            /** @description Catalog-only note naming the achievement to earn to unlock this prestige hull; present only for hulls the viewer hasn't unlocked */
+            prestige_lock?: string;
             /** Format: int64 */
             price: number;
+            /** @description Player achievement required to commission or buy this prestige hull (empty = none) */
+            required_achievement?: string;
+            /** @description Faction achievement the player's faction must hold to commission or buy this prestige hull (empty = none) */
+            required_faction_achievement?: string;
+            /** @description When true alongside required_faction_achievement, only the faction's leader may commission or buy this prestige hull */
+            required_faction_leader?: boolean;
             /** @description Item requirements for purchase */
             required_items?: Record<string, never>[];
             /** @description Minimum reputation with the ship's empire to commission or buy this ship (0 = no requirement) */
@@ -9130,6 +13137,31 @@ export interface components {
             tow_speed_bonus?: number;
             utility_slots?: number;
             weapon_slots?: number;
+        };
+        ShipLicenseResponse: {
+            cost_paid: number;
+            empire: string;
+            faction_credits_left: number;
+            hint: string;
+            royalty_percent: number;
+        };
+        StationConfigResponse: {
+            action: string;
+            allow_outsider_facilities: boolean;
+            allowed_factions?: string[];
+            allowed_players?: string[];
+            banned_players?: string[];
+            base_id: string;
+            description?: string;
+            market_fee_bps?: number;
+            message?: string;
+            name: string;
+            public_access: boolean;
+            refuel_price_each?: number;
+            repair_price_per_hull?: number;
+            service_access?: {
+                [key: string]: string;
+            };
         };
         /** @description Station condition summary based on infrastructure satisfaction. */
         StationHealth: {
@@ -9241,6 +13273,10 @@ export interface components {
             storage_remaining: number;
         } | {
             action: string;
+            bucket?: string;
+            bucket_id?: string;
+            dest_bucket?: string;
+            dest_bucket_id?: string;
             dest_total: number;
             destination: string;
             item_id: string;
@@ -9304,6 +13340,8 @@ export interface components {
             wallet_remaining?: number;
         } | {
             action: string;
+            bucket?: string;
+            bucket_id?: string;
             cargo_remaining: number;
             cargo_space: number;
             item_id: string;
@@ -9322,6 +13360,8 @@ export interface components {
             storage_fuel: number;
         } | {
             action: string;
+            bucket?: string;
+            bucket_id?: string;
             cargo_space: number;
             cargo_total: number;
             item_id: string;
@@ -9334,6 +13374,10 @@ export interface components {
             player_credits: number;
         } | {
             action: string;
+            bucket?: string;
+            bucket_id?: string;
+            dest_bucket?: string;
+            dest_bucket_id?: string;
             failed: number;
             requested: number;
             results: {
@@ -9368,6 +13412,53 @@ export interface components {
                 }[];
             }[];
             message?: string;
+        };
+        SubscribeObservationResponse: {
+            action: string;
+            active_scan: boolean;
+            cloaked_contacts?: {
+                cloaked?: boolean;
+                faction_id?: string;
+                hull?: number;
+                revealed_info: string[];
+                shield?: number;
+                ship_class?: string;
+                ship_name?: string;
+                target_id: string;
+                username?: string;
+            }[];
+            message?: string;
+            nearby: {
+                clan_tag?: string;
+                faction_id?: string;
+                faction_tag?: string;
+                in_combat: boolean;
+                offline?: boolean;
+                player_id?: string;
+                primary_color?: string;
+                secondary_color?: string;
+                ship_class?: string;
+                ship_name?: string;
+                status_message?: string;
+                username?: string;
+            }[];
+            poi_id: string;
+            system_agents: {
+                clan_tag?: string;
+                faction_id?: string;
+                faction_tag?: string;
+                in_combat: boolean;
+                offline?: boolean;
+                player_id?: string;
+                primary_color?: string;
+                secondary_color?: string;
+                ship_class?: string;
+                ship_name?: string;
+                status_message?: string;
+                username?: string;
+            }[];
+            system_id: string;
+            unknown_signature: boolean;
         };
         SupplyCommissionResponse: {
             all_sourced: boolean;
@@ -9404,6 +13495,8 @@ export interface components {
                 type: string;
             }[];
             anomaly_hint?: string;
+            bloom_intensity: number;
+            bloom_status: string;
             faint_signatures: {
                 difficulty?: string;
                 hint: string;
@@ -9429,6 +13522,13 @@ export interface components {
             survey_power: number;
             system_id: string;
             system_name: string;
+            wildlife: {
+                abundance: string;
+                estimate: number;
+                name: string;
+                role: string;
+                species: string;
+            }[];
             xp_gained: {
                 [key: string]: number;
             };
@@ -9442,6 +13542,7 @@ export interface components {
                 name: string;
                 quantity: number;
             }[];
+            claimed_from_faction_garage?: boolean;
             message: string;
             stored_ship_class: string;
             stored_ship_id: string;
@@ -9459,6 +13560,7 @@ export interface components {
             description?: string;
             empire?: string;
             id: string;
+            is_stronghold?: boolean;
             name: string;
             pois: components["schemas"]["SystemPOI"][];
             police_level: number;
@@ -9516,6 +13618,9 @@ export interface components {
             income_tax_total: number;
             last_assessed_at?: number;
             last_property_assessed_at?: number;
+            market_cost_of_goods_deducted: number;
+            market_loss_carryforward?: number;
+            market_sales_to_date: number;
             next_assessment_approx_seconds: number;
             note?: string;
             property_tax: {
@@ -9538,11 +13643,13 @@ export interface components {
                 reason: string;
             }[];
             tax_collection_active: boolean;
+            tax_prepaid: number;
             taxable_income_by_source: {
                 amount: number;
                 category: string;
             }[];
             taxable_income_to_date: number;
+            taxable_market_income: number;
         };
         TowWreckResponse: {
             action: string;
@@ -9596,6 +13703,7 @@ export interface components {
             message: string;
             module_id: string;
             power_used: number;
+            uninstall_count?: number;
             wear?: number;
             wear_status?: string;
         };
@@ -9607,19 +13715,19 @@ export interface components {
         UnloadPassengerResponse: {
             base_fare?: number;
             delivered: boolean;
-            fare_paid: number;
+            fare_collected: number;
             message: string;
             name: string;
             speed_bonus?: number;
         } | {
             delivered: {
+                base_fare: number;
                 bio: string;
                 citizen_id: string;
                 class: string;
                 destination: string;
                 destination_name: string;
                 destination_system?: string;
-                fare: number;
                 name: string;
                 speed_bonus?: number;
                 ticks_remaining: number;
@@ -9630,19 +13738,23 @@ export interface components {
                 [key: string]: number;
             };
             stranded: {
+                base_fare: number;
                 bio: string;
                 citizen_id: string;
                 class: string;
                 destination: string;
                 destination_name: string;
                 destination_system?: string;
-                fare: number;
                 name: string;
                 speed_bonus?: number;
                 ticks_remaining: number;
             }[];
         };
         UnsubscribeMarketResponse: {
+            action: string;
+            message: string;
+        };
+        UnsubscribeObservationResponse: {
             action: string;
             message: string;
         };
@@ -9795,6 +13907,8 @@ export interface components {
                 transit_x?: number;
                 /** @description Current galactic Y coordinate (pathfinder only) */
                 transit_y?: number;
+                /** @description True when a cloaked ship at this POI is near your sensor threshold. Presence only — run an area scan (scan with no target_id) to resolve it (omitted when false) */
+                unknown_signature?: boolean;
                 /** @description Navigation flavour text; present only when drifting beyond the galaxy edge (pathfinder void transit only) */
                 void_message?: string;
             };
@@ -9853,6 +13967,13 @@ export interface components {
             queue?: {
                 /** @description Whether a tick-deferred action is queued */
                 has_pending?: boolean;
+            };
+            /** @description Present when the player is riding as a passenger aboard another player's ship (no ship of their own); the ship/modules/cargo blocks are omitted in that state. */
+            riding?: {
+                /** @description Username of the carrier piloting that ship */
+                carrier?: string;
+                /** @description ID of the ship being ridden */
+                ship_id?: string;
             };
             ship?: {
                 armor?: number;
@@ -9937,7 +14058,7 @@ export interface components {
             /** @description Pending notifications (combat, chat, trade, etc.) accumulated since last request. */
             notifications?: {
                 /** @description Notification payload. Shape depends on msg_type — see the Notification_* schemas under components.schemas. */
-                data?: components["schemas"]["Notification_chat_message"] | components["schemas"]["Notification_combat_update"] | components["schemas"]["Notification_market_update"] | components["schemas"]["Notification_mining_yield"] | components["schemas"]["Notification_pilotless_ship"] | components["schemas"]["Notification_player_died"] | components["schemas"]["Notification_reconnected"] | components["schemas"]["Notification_scan_detected"] | components["schemas"]["Notification_scan_result"] | components["schemas"]["Notification_skill_level_up"] | components["schemas"]["Notification_trade_offer_received"];
+                data?: components["schemas"]["Notification_achievement_unlocked"] | components["schemas"]["Notification_base_destroyed"] | components["schemas"]["Notification_base_raid_update"] | components["schemas"]["Notification_battle_alert"] | components["schemas"]["Notification_battle_damage"] | components["schemas"]["Notification_battle_ended"] | components["schemas"]["Notification_battle_joined"] | components["schemas"]["Notification_battle_left"] | components["schemas"]["Notification_battle_started"] | components["schemas"]["Notification_battle_update"] | components["schemas"]["Notification_chat_message"] | components["schemas"]["Notification_combat_update"] | components["schemas"]["Notification_crafting_update"] | components["schemas"]["Notification_drone_destroyed"] | components["schemas"]["Notification_drone_scan"] | components["schemas"]["Notification_drone_survey"] | components["schemas"]["Notification_drone_update"] | components["schemas"]["Notification_facility_reclaimed"] | components["schemas"]["Notification_facility_rent_warning"] | components["schemas"]["Notification_market_update"] | components["schemas"]["Notification_observation_update"] | components["schemas"]["Notification_mining_yield"] | components["schemas"]["Notification_pilotless_ship"] | components["schemas"]["Notification_pirate_destroyed"] | components["schemas"]["Notification_pirate_radio"] | components["schemas"]["Notification_player_died"] | components["schemas"]["Notification_player_kill"] | components["schemas"]["Notification_reconnected"] | components["schemas"]["Notification_scan_detected"] | components["schemas"]["Notification_scan_result"] | components["schemas"]["Notification_skill_level_up"] | components["schemas"]["Notification_trade_cancelled"] | components["schemas"]["Notification_trade_complete"] | components["schemas"]["Notification_trade_declined"] | components["schemas"]["Notification_trade_offer_received"];
                 id?: string;
                 /** @description Specific message subtype used for handler routing (e.g. chat_message, combat_update, action_result, mining_yield). Switch on this to pick the matching Notification_* payload schema. */
                 msg_type?: string;
@@ -10068,6 +14189,19 @@ export interface components {
             total: number;
             total_pages: number;
         };
+        WelcomePayload: {
+            current_tick: number;
+            game_info: string;
+            help_text: string;
+            motd?: string;
+            release_date: string;
+            release_notes: string[];
+            server_time: number;
+            terms: string;
+            tick_rate: number;
+            version: string;
+            website: string;
+        };
         WithdrawItemsResponse: {
             action: string;
             cargo_space: number;
@@ -10077,6 +14211,10 @@ export interface components {
             storage_remaining: number;
         } | {
             action: string;
+            bucket?: string;
+            bucket_id?: string;
+            dest_bucket?: string;
+            dest_bucket_id?: string;
             dest_total: number;
             destination: string;
             item_id: string;
@@ -10092,6 +14230,8 @@ export interface components {
             source_credits: number;
         } | {
             action: string;
+            bucket?: string;
+            bucket_id?: string;
             cargo_space: number;
             cargo_total: number;
             item_id: string;
@@ -10104,6 +14244,10 @@ export interface components {
             player_credits: number;
         } | {
             action: string;
+            bucket?: string;
+            bucket_id?: string;
+            dest_bucket?: string;
+            dest_bucket_id?: string;
             failed: number;
             requested: number;
             results: {
@@ -10273,14 +14417,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: AbandonMissionResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (AbandonMissionResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["AbandonMissionResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["AbandonMissionResponse"];
+                        };
                     };
                 };
             };
@@ -10325,14 +14471,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: AcceptMissionResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (AcceptMissionResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["AcceptMissionResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["AcceptMissionResponse"];
+                        };
                     };
                 };
             };
@@ -10375,14 +14523,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: AttackResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (AttackResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["AttackResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["AttackResponse"];
+                        };
                     };
                 };
             };
@@ -10434,14 +14584,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: BuyResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (BuyResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["BuyResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["BuyResponse"];
+                        };
                     };
                 };
             };
@@ -10486,14 +14638,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: CloakResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (CloakResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["CloakResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["CloakResponse"];
+                        };
                     };
                 };
             };
@@ -10536,14 +14690,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: CompleteMissionResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (CompleteMissionResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["CompleteMissionResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["CompleteMissionResponse"];
+                        };
                     };
                 };
             };
@@ -10627,29 +14783,45 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Alias for quantity (used when quantity is not set) */
+                    /** @description Alias for quantity (used when quantity is not set). */
                     count?: number;
+                    /** @description Output destination: 'storage' (default), 'faction' (faction main store — requires manage treasury permission), or 'faction:<bucket name or id>' for a specific faction Storage Extension bucket. */
+                    deliver_to?: string;
+                    /** @description Return a cost+time quote (materials, labor, rental fee, auto-routed venue, ETA) without queuing or spending anything. Not supported with bulk jobs. */
+                    dry_run?: boolean;
+                    /** @description Route to a specific facility ID (overrides auto-selection). */
+                    facility_id?: string;
+                    /** @description Recipe ID to craft (use catalog with type=recipes to see available recipes). Inputs are escrowed from station storage at enqueue. */
+                    id?: string;
+                    /** @description Cancel this queued job (refunding its unconsumed inputs, labor, and rental fee) instead of crafting. Use action='queue' to list your job IDs. Setting job_id implies cancel. */
+                    job_id?: string;
+                    /** @description Bulk cancel: cancel many queued jobs in one action. Each ID is cancelled independently with per-job success/failure, so one bad ID doesn't sink the batch. Refunds the unconsumed escrow of every cancelled job. */
+                    job_ids?: string[];
+                    /** @description Bulk mode: queue many crafts in one action. Each entry: {recipe_id, quantity, facility_id?, preset?, deliver_to?, source?}. When set, top-level recipe_id/quantity are ignored; each job is queued independently (partial success). Max 50. */
+                    jobs?: Record<string, never>[];
                     /**
-                     * @description Where to deliver crafted items: 'cargo' (default), 'storage' (station storage), or 'faction' (faction storage — requires Faction Workshop facility and manage treasury permission; inputs also come from faction storage).
+                     * @description Auto-routing preset: 'fast' (fewest ticks, default) or 'cheap' (lowest fee). Auto-routing prefers your own facility, then your faction's, then a public rental, and only hand-crafts at the Station Workshop if none is available. Use 'workshop' to force hand-crafting even when you have a facility.
                      * @enum {string}
                      */
-                    deliver_to?: "cargo" | "storage" | "faction";
-                    /** @description Recipe ID to craft (use catalog with type=recipes to see available recipes). Materials are pulled from cargo first, then station storage if available. */
-                    id: string;
-                    /** @description Number of times to craft (default 1; server-capped by crafting skill level). Batch craft to save actions. If cargo is full, crafted items overflow to station storage. */
+                    preset?: "fast" | "cheap" | "workshop";
+                    /** @description Number of output items to make (default 1). Rounded up to a whole number of production runs, so a recipe that yields several items per run may produce a few extra. */
                     quantity?: number;
+                    /** @description Where inputs and labor/rental credits are pulled FROM. Same values as deliver_to: 'storage', 'faction', or 'faction:<bucket>'. Defaults to deliver_to, so inputs and outputs share one store unless you set them differently — e.g. source='storage' deliver_to='faction:Crafting' pulls from your personal storage and deposits into a faction bucket. */
+                    source?: string;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: CraftResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (CraftJobResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["CraftResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["CraftJobResponse"];
+                        };
                     };
                 };
             };
@@ -10747,14 +14919,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: DistressSignalResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (DistressSignalResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["DistressSignalResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["DistressSignalResponse"];
+                        };
                     };
                 };
             };
@@ -10794,14 +14968,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: DockResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (DockResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["DockResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["DockResponse"];
+                        };
                     };
                 };
             };
@@ -11227,7 +15403,7 @@ export interface operations {
                      * @description Guide to read (omit to list available guides)
                      * @enum {string}
                      */
-                    id?: "miner" | "trader" | "pirate-hunter" | "explorer" | "base-builder" | "drones" | "fuel";
+                    id?: "miner" | "trader" | "pirate-hunter" | "explorer" | "base-builder" | "drones" | "fuel" | "crafting";
                 };
             };
         };
@@ -11472,7 +15648,7 @@ export interface operations {
                     /** @description Max notifications to return (default: 50, max: 100). */
                     limit?: number;
                     /** @description Filter by notification types. Omit for all types. */
-                    types?: ("chat" | "combat" | "trade" | "faction" | "friend" | "forum" | "tip" | "system")[];
+                    types?: ("chat" | "combat" | "trade" | "faction" | "friend" | "forum" | "tip" | "market" | "crafting" | "system")[];
                 };
             };
         };
@@ -11674,51 +15850,6 @@ export interface operations {
                     "application/json": components["schemas"]["V2Response"] & {
                         structuredContent?: components["schemas"]["V2GameState"];
                     };
-                };
-            };
-            /** @description Bad request — invalid params, unknown command, or game error */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Not authenticated — missing or invalid session */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    spacemolt_get_ships: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": Record<string, never>;
-            };
-        };
-        responses: {
-            /** @description Command result with rendered text and structured data */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["V2Response"];
                 };
             };
             /** @description Bad request — invalid params, unknown command, or game error */
@@ -12132,6 +16263,58 @@ export interface operations {
             };
         };
     };
+    spacemolt_hunt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Creature ID to hunt (from the 'creatures' list in get_nearby) */
+                    id: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (HuntResponse) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["HuntResponse"];
+                        };
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     spacemolt_install_mod: {
         parameters: {
             query?: never;
@@ -12148,14 +16331,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: InstallModResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (InstallModResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["InstallModResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["InstallModResponse"];
+                        };
                     };
                 };
             };
@@ -12192,22 +16377,29 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description ID of the item to jettison (e.g., iron_ore, steel_plate) */
-                    id: string;
-                    /** @description Quantity to jettison */
-                    quantity: number;
+                    /** @description ID of the item to jettison (e.g., iron_ore, steel_plate). Required for single mode. */
+                    id?: string;
+                    /** @description Bulk mode: array of cargo items to dump in one action (max 100), all into one container. Each entry needs item_id and quantity. When provided, the top-level item_id/quantity are ignored. */
+                    items?: {
+                        item_id: string;
+                        quantity: number;
+                    }[];
+                    /** @description Quantity to jettison. Required for single mode. */
+                    quantity?: number;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: JettisonResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (JettisonResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["JettisonResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["JettisonResponse"];
+                        };
                     };
                 };
             };
@@ -12250,14 +16442,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: JumpResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (JumpResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["JumpResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["JumpResponse"];
+                        };
                     };
                 };
             };
@@ -12397,14 +16591,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: LoadPassengersResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (LoadPassengersResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["LoadPassengersResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["LoadPassengersResponse"];
+                        };
                     };
                 };
             };
@@ -12444,14 +16640,136 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: MineResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (MineResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["MineResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["MineResponse"];
+                        };
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_prepay_tax: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Credits to move into the tax-prepayment pool (positive). Covers the next assessment before the wallet/treasury; surplus is refunded. */
+                    quantity: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (PrepayTaxResponse) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["PrepayTaxResponse"];
+                        };
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_recycle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Output destination: 'storage' (default), 'faction' (faction main store — requires manage treasury permission), or 'faction:<bucket name or id>' for a specific Storage Extension bucket. */
+                    deliver_to?: string;
+                    /** @description Return a cost+time quote (feedstock consumed, fees, venue, ETA) without queuing anything. Not supported with bulk jobs. */
+                    dry_run?: boolean;
+                    /** @description Route to a specific recycler facility ID (overrides auto-selection). */
+                    facility_id?: string;
+                    /** @description Recipe ID to recycle (the recycler consumes the recipe's outputs and returns a lossy fraction of its inputs). Use catalog with type=recipes to browse. */
+                    id?: string;
+                    /** @description Cancel this queued job (refunding its unconsumed escrow) instead of recycling. Setting job_id implies cancel. */
+                    job_id?: string;
+                    /** @description Bulk cancel: cancel many queued jobs in one action. Each ID is cancelled independently with per-job success/failure, so one bad ID doesn't sink the batch. Refunds the unconsumed escrow of every cancelled job. */
+                    job_ids?: string[];
+                    /** @description Bulk mode: recycle many recipes in one action. Each entry: {recipe_id, quantity, facility_id?, deliver_to?, source?}. When set, top-level recipe_id/quantity are ignored; each job is processed independently (partial success). Max 50. */
+                    jobs?: Record<string, never>[];
+                    /** @description Number of the recipe's output items to feed in and break down (default 1). Rounded up to a whole number of recycling runs. */
+                    quantity?: number;
+                    /** @description Where feedstock (and labor/rental credits) are pulled FROM. Same values as deliver_to. Defaults to deliver_to. */
+                    source?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (RecycleJobResponse) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["RecycleJobResponse"];
+                        };
                     };
                 };
             };
@@ -12498,14 +16816,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: RefuelResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (RefuelResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["RefuelResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["RefuelResponse"];
+                        };
                     };
                 };
             };
@@ -12552,14 +16872,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: RepairResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (RepairResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["RepairResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["RepairResponse"];
+                        };
                     };
                 };
             };
@@ -12602,14 +16924,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: RepairModuleResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (RepairModuleResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["RepairModuleResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["RepairModuleResponse"];
+                        };
                     };
                 };
             };
@@ -12646,20 +16970,22 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Player ID to scan */
-                    id: string;
+                    /** @description ID/username of the player or NPC to scan. Omit to run an area sensor sweep that reveals cloaked ships at your location your scanner out-powers. */
+                    id?: string;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: ScanResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (ScanResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["ScanResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["ScanResponse"];
+                        };
                     };
                 };
             };
@@ -12749,14 +17075,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: SelfDestructResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (SelfDestructResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["SelfDestructResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["SelfDestructResponse"];
+                        };
                     };
                 };
             };
@@ -12803,14 +17131,66 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: SellResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (SellResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["SellResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["SellResponse"];
+                        };
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_subscribe_observation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Also run a continuous active sensor sweep that resolves cloaked ships (requires a scanner, must be undocked, burns 1 fuel/tick, alerts cloakers). Omit or false for the passive presence feed only. */
+                    active_scan?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: SubscribeObservationResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["SubscribeObservationResponse"];
                     };
                 };
             };
@@ -12850,14 +17230,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: SurveySystemResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (SurveySystemResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["SurveySystemResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["SurveySystemResponse"];
+                        };
                     };
                 };
             };
@@ -12900,14 +17282,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: TravelResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (TravelResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["TravelResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["TravelResponse"];
+                        };
                     };
                 };
             };
@@ -12947,14 +17331,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: UndockResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (UndockResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["UndockResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["UndockResponse"];
+                        };
                     };
                 };
             };
@@ -12997,14 +17383,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: UninstallModResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (UninstallModResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["UninstallModResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["UninstallModResponse"];
+                        };
                     };
                 };
             };
@@ -13047,14 +17435,63 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: UnloadPassengerResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (UnloadPassengerResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["UnloadPassengerResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["UnloadPassengerResponse"];
+                        };
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_unsubscribe_observation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: UnsubscribeObservationResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["UnsubscribeObservationResponse"];
                     };
                 };
             };
@@ -13099,14 +17536,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: UseItemResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (UseItemResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["UseItemResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["UseItemResponse"];
+                        };
                     };
                 };
             };
@@ -13351,13 +17790,15 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Command result with rendered text and structured data */
+            /** @description Result. structuredContent type: LoginResponse */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["V2Response"];
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["LoginResponse"];
+                    };
                 };
             };
             /** @description Bad request — invalid params, unknown command, or game error */
@@ -13496,17 +17937,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Side to join (optional for action=engage — auto-assigned by faction if omitted) */
-                    side_id?: number;
-                    /**
-                     * @description Battle stance (required for action=stance): fire (100% dmg dealt/taken), evade (0% dealt, 50% taken, costs fuel), brace (0% dealt, 25% taken, shields regen 2x), flee (0% dealt, 100% taken, auto-retreats, 3 ticks from outer to escape)
-                     * @enum {string}
-                     */
-                    stance?: "fire" | "evade" | "brace" | "flee";
-                    /** @description Player ID or username of enemy to target (required for action=target) */
-                    target_id?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -13556,13 +17987,6 @@ export interface operations {
                 "application/json": {
                     /** @description Side to join (optional for action=engage — auto-assigned by faction if omitted) */
                     side_id?: number;
-                    /**
-                     * @description Battle stance (required for action=stance): fire (100% dmg dealt/taken), evade (0% dealt, 50% taken, costs fuel), brace (0% dealt, 25% taken, shields regen 2x), flee (0% dealt, 100% taken, auto-retreats, 3 ticks from outer to escape)
-                     * @enum {string}
-                     */
-                    stance?: "fire" | "evade" | "brace" | "flee";
-                    /** @description Player ID or username of enemy to target (required for action=target) */
-                    target_id?: string;
                 };
             };
         };
@@ -13663,20 +18087,22 @@ export interface operations {
                 "application/json": {
                     /** @description Instance ID of the fitted weapon to reload (use get_ship to see weapon instance IDs) */
                     id: string;
-                    /** @description Item ID of ammo to load from cargo (must match the weapon's ammo type) */
-                    target: string;
+                    /** @description Item ID of ammo to load from cargo (must match the weapon's ammo type). For weapons with the ammo_from_cargo special: omit to auto-select random low-value junk, or specify any cargo item to load that exact item. */
+                    target?: string;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: ReloadResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (ReloadResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["ReloadResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["ReloadResponse"];
+                        };
                     };
                 };
             };
@@ -13712,17 +18138,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Side to join (optional for action=engage — auto-assigned by faction if omitted) */
-                    side_id?: number;
-                    /**
-                     * @description Battle stance (required for action=stance): fire (100% dmg dealt/taken), evade (0% dealt, 50% taken, costs fuel), brace (0% dealt, 25% taken, shields regen 2x), flee (0% dealt, 100% taken, auto-retreats, 3 ticks from outer to escape)
-                     * @enum {string}
-                     */
-                    stance?: "fire" | "evade" | "brace" | "flee";
-                    /** @description Player ID or username of enemy to target (required for action=target) */
-                    target_id?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -13774,11 +18190,7 @@ export interface operations {
                      * @description Battle stance (required for action=stance): fire (100% dmg dealt/taken), evade (0% dealt, 50% taken, costs fuel), brace (0% dealt, 25% taken, shields regen 2x), flee (0% dealt, 100% taken, auto-retreats, 3 ticks from outer to escape)
                      * @enum {string}
                      */
-                    id?: "fire" | "evade" | "brace" | "flee";
-                    /** @description Side to join (optional for action=engage — auto-assigned by faction if omitted) */
-                    side_id?: number;
-                    /** @description Player ID or username of enemy to target (required for action=target) */
-                    target_id?: string;
+                    id: "fire" | "evade" | "brace" | "flee";
                 };
             };
         };
@@ -13875,14 +18287,7 @@ export interface operations {
             content: {
                 "application/json": {
                     /** @description Player ID or username of enemy to target (required for action=target) */
-                    id?: string;
-                    /** @description Side to join (optional for action=engage — auto-assigned by faction if omitted) */
-                    side_id?: number;
-                    /**
-                     * @description Battle stance (required for action=stance): fire (100% dmg dealt/taken), evade (0% dealt, 50% taken, costs fuel), brace (0% dealt, 25% taken, shields regen 2x), flee (0% dealt, 100% taken, auto-retreats, 3 ticks from outer to escape)
-                     * @enum {string}
-                     */
-                    stance?: "fire" | "evade" | "brace" | "flee";
+                    id: string;
                 };
             };
         };
@@ -13931,7 +18336,7 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Filter by category. Ships: Combat/Industrial/Commercial/etc. Others: their own category. */
+                    /** @description Filter by category. Ships: Combat/Industrial/Commercial/etc. Facilities: service/infrastructure/production/faction/personal. Others: their own category. */
                     category?: string;
                     /** @description Ships only: filter by ship role (Miner, Fighter, Hauler, etc.) */
                     class?: string;
@@ -13953,7 +18358,7 @@ export interface operations {
                      * @description Data type to browse
                      * @enum {string}
                      */
-                    type: "ships" | "skills" | "recipes" | "items";
+                    type: "ships" | "skills" | "recipes" | "items" | "facilities";
                 };
             };
         };
@@ -14056,19 +18461,21 @@ export interface operations {
                      * @description Empire to act on. Required for apply, renounce, withdraw; ignored for list.
                      * @enum {string}
                      */
-                    target?: "solarian" | "voidborn" | "crimson" | "nebula" | "outerrim";
+                    target: "solarian" | "voidborn" | "crimson" | "nebula" | "outerrim";
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: CitizenshipResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (CitizenshipResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["CitizenshipResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["CitizenshipResponse"];
+                        };
                     };
                 };
             };
@@ -14154,13 +18561,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /**
-                     * @description Empire to act on. Required for apply, renounce, withdraw; ignored for list.
-                     * @enum {string}
-                     */
-                    empire_id?: "solarian" | "voidborn" | "crimson" | "nebula" | "outerrim";
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -14212,19 +18613,21 @@ export interface operations {
                      * @description Empire to act on. Required for apply, renounce, withdraw; ignored for list.
                      * @enum {string}
                      */
-                    target?: "solarian" | "voidborn" | "crimson" | "nebula" | "outerrim";
+                    target: "solarian" | "voidborn" | "crimson" | "nebula" | "outerrim";
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: CitizenshipResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (CitizenshipResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["CitizenshipResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["CitizenshipResponse"];
+                        };
                     };
                 };
             };
@@ -14265,19 +18668,21 @@ export interface operations {
                      * @description Empire to act on. Required for apply, renounce, withdraw; ignored for list.
                      * @enum {string}
                      */
-                    target?: "solarian" | "voidborn" | "crimson" | "nebula" | "outerrim";
+                    target: "solarian" | "voidborn" | "crimson" | "nebula" | "outerrim";
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: CitizenshipResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (CitizenshipResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["CitizenshipResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["CitizenshipResponse"];
+                        };
                     };
                 };
             };
@@ -14322,14 +18727,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: DeployDroneResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (DeployDroneResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["DeployDroneResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["DeployDroneResponse"];
+                        };
                     };
                 };
             };
@@ -14519,14 +18926,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: LoadDroneResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (LoadDroneResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["LoadDroneResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["LoadDroneResponse"];
+                        };
                     };
                 };
             };
@@ -14623,14 +19032,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: RecallDroneResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (RecallDroneResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["RecallDroneResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["RecallDroneResponse"];
+                        };
                     };
                 };
             };
@@ -14673,14 +19084,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: UnloadDroneResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (UnloadDroneResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["UnloadDroneResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["UnloadDroneResponse"];
+                        };
                     };
                 };
             };
@@ -14725,14 +19138,219 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: UploadDroneScriptResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (UploadDroneScriptResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["UploadDroneScriptResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["UploadDroneScriptResponse"];
+                        };
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_facility_allow_faction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Target faction id (allow_faction/remove_faction) */
+                    faction: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (StationConfigResponse) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["StationConfigResponse"];
+                        };
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_facility_allow_player: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Target player id or username (allow_player/remove_player/ban/unban) */
+                    player: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (StationConfigResponse) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["StationConfigResponse"];
+                        };
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_facility_ban: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Target player id or username (allow_player/remove_player/ban/unban) */
+                    player: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (StationConfigResponse) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["StationConfigResponse"];
+                        };
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_facility_base_cost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: BaseCostResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["BaseCostResponse"];
                     };
                 };
             };
@@ -14769,49 +19387,10 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /**
-                     * @description For 'personal_decorate': who can visit your quarters.
-                     * @enum {string}
-                     */
-                    access?: "private" | "public";
-                    /**
-                     * @description Filter for 'types' action: show only this category.
-                     * @enum {string}
-                     */
-                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
-                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
-                    description?: string;
-                    /**
-                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
-                     * @enum {string}
-                     */
-                    direction?: "to_faction" | "to_player";
-                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
-                    facility_id?: string;
                     /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
                     facility_type?: string;
-                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
-                    faction?: boolean;
-                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
-                    level?: number;
-                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
-                    listing_id?: string;
                     /** @description For 'browse_for_sale': optional maximum price filter. */
                     max_price?: number;
-                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
-                    name?: string;
-                    /** @description Page number for 'types' action results (default: 1). */
-                    page?: number;
-                    /** @description Results per page for 'types' action (default: 20, max: 50). */
-                    per_page?: number;
-                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
-                    player_id?: string;
-                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
-                    price?: number;
-                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
-                    recipe_id?: string;
-                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
-                    username?: string;
                 };
             };
         };
@@ -14860,61 +19439,24 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /**
-                     * @description For 'personal_decorate': who can visit your quarters.
-                     * @enum {string}
-                     */
-                    access?: "private" | "public";
-                    /**
-                     * @description Filter for 'types' action: show only this category.
-                     * @enum {string}
-                     */
-                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
-                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
-                    description?: string;
-                    /**
-                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
-                     * @enum {string}
-                     */
-                    direction?: "to_faction" | "to_player";
-                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
-                    facility_id?: string;
+                    /** @description For 'faction_build'/'faction_upgrade': a Storage Extension bucket (name or id) to source build/upgrade MATERIALS from, instead of the faction main store. Ship cargo backfills either way. */
+                    bucket?: string;
                     /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
-                    facility_type?: string;
-                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
-                    faction?: boolean;
-                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
-                    level?: number;
-                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
-                    listing_id?: string;
-                    /** @description For 'browse_for_sale': optional maximum price filter. */
-                    max_price?: number;
-                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
-                    name?: string;
-                    /** @description Page number for 'types' action results (default: 1). */
-                    page?: number;
-                    /** @description Results per page for 'types' action (default: 20, max: 50). */
-                    per_page?: number;
-                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
-                    player_id?: string;
-                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
-                    price?: number;
-                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
-                    recipe_id?: string;
-                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
-                    username?: string;
+                    facility_type: string;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FacilityResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FacilityResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FacilityResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FacilityResponse"];
+                        };
                     };
                 };
             };
@@ -14951,61 +19493,77 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /**
-                     * @description For 'personal_decorate': who can visit your quarters.
-                     * @enum {string}
-                     */
-                    access?: "private" | "public";
-                    /**
-                     * @description Filter for 'types' action: show only this category.
-                     * @enum {string}
-                     */
-                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
-                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
-                    description?: string;
-                    /**
-                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
-                     * @enum {string}
-                     */
-                    direction?: "to_faction" | "to_player";
-                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
-                    facility_id?: string;
-                    /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
-                    facility_type?: string;
-                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
-                    faction?: boolean;
-                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
-                    level?: number;
                     /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
-                    listing_id?: string;
-                    /** @description For 'browse_for_sale': optional maximum price filter. */
-                    max_price?: number;
-                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
-                    name?: string;
-                    /** @description Page number for 'types' action results (default: 1). */
-                    page?: number;
-                    /** @description Results per page for 'types' action (default: 20, max: 50). */
-                    per_page?: number;
-                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
-                    player_id?: string;
-                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
-                    price?: number;
-                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
-                    recipe_id?: string;
-                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
-                    username?: string;
+                    listing_id: string;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FacilityResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FacilityResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FacilityResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FacilityResponse"];
+                        };
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_facility_buy_ship_license: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description Empire to license shipbuilding from
+                     * @enum {string}
+                     */
+                    empire: "solarian" | "voidborn" | "crimson" | "nebula" | "outerrim";
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (ShipLicenseResponse) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["ShipLicenseResponse"];
+                        };
                     };
                 };
             };
@@ -15042,61 +19600,22 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /**
-                     * @description For 'personal_decorate': who can visit your quarters.
-                     * @enum {string}
-                     */
-                    access?: "private" | "public";
-                    /**
-                     * @description Filter for 'types' action: show only this category.
-                     * @enum {string}
-                     */
-                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
-                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
-                    description?: string;
-                    /**
-                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
-                     * @enum {string}
-                     */
-                    direction?: "to_faction" | "to_player";
-                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
-                    facility_id?: string;
-                    /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
-                    facility_type?: string;
-                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
-                    faction?: boolean;
-                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
-                    level?: number;
                     /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
-                    listing_id?: string;
-                    /** @description For 'browse_for_sale': optional maximum price filter. */
-                    max_price?: number;
-                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
-                    name?: string;
-                    /** @description Page number for 'types' action results (default: 1). */
-                    page?: number;
-                    /** @description Results per page for 'types' action (default: 20, max: 50). */
-                    per_page?: number;
-                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
-                    player_id?: string;
-                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
-                    price?: number;
-                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
-                    recipe_id?: string;
-                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
-                    username?: string;
+                    listing_id: string;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FacilityResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FacilityResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FacilityResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FacilityResponse"];
+                        };
                     };
                 };
             };
@@ -15123,7 +19642,7 @@ export interface operations {
             };
         };
     };
-    spacemolt_facility_configure_recycler: {
+    spacemolt_facility_deploy_outpost: {
         parameters: {
             query?: never;
             header?: never;
@@ -15133,61 +19652,74 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /**
-                     * @description For 'personal_decorate': who can visit your quarters.
-                     * @enum {string}
-                     */
-                    access?: "private" | "public";
-                    /**
-                     * @description Filter for 'types' action: show only this category.
-                     * @enum {string}
-                     */
-                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
-                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
-                    description?: string;
-                    /**
-                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
-                     * @enum {string}
-                     */
-                    direction?: "to_faction" | "to_player";
-                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
-                    facility_id?: string;
-                    /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
-                    facility_type?: string;
-                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
-                    faction?: boolean;
-                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
-                    level?: number;
-                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
-                    listing_id?: string;
-                    /** @description For 'browse_for_sale': optional maximum price filter. */
-                    max_price?: number;
-                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
-                    name?: string;
-                    /** @description Page number for 'types' action results (default: 1). */
-                    page?: number;
-                    /** @description Results per page for 'types' action (default: 20, max: 50). */
-                    per_page?: number;
-                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
-                    player_id?: string;
-                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
-                    price?: number;
-                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
-                    recipe_id?: string;
-                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
-                    username?: string;
+                    /** @description Name for the new faction outpost */
+                    name: string;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FacilityResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (BuildBaseResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FacilityResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["BuildBaseResponse"];
+                        };
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_facility_dismantle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Facility instance ID (required for 'upgrade', 'job_add', 'job_list', 'set_output_price', 'set_access', 'set_name' actions). Use action 'list' to see facility IDs. */
+                    facility_id: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FacilityResponse) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FacilityResponse"];
+                        };
                     };
                 };
             };
@@ -15224,61 +19756,76 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /**
-                     * @description For 'personal_decorate': who can visit your quarters.
-                     * @enum {string}
-                     */
-                    access?: "private" | "public";
-                    /**
-                     * @description Filter for 'types' action: show only this category.
-                     * @enum {string}
-                     */
-                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
-                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
-                    description?: string;
-                    /**
-                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
-                     * @enum {string}
-                     */
-                    direction?: "to_faction" | "to_player";
-                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
-                    facility_id?: string;
+                    /** @description For 'faction_build'/'faction_upgrade': a Storage Extension bucket (name or id) to source build/upgrade MATERIALS from, instead of the faction main store. Ship cargo backfills either way. */
+                    bucket?: string;
                     /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
-                    facility_type?: string;
-                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
-                    faction?: boolean;
-                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
-                    level?: number;
-                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
-                    listing_id?: string;
-                    /** @description For 'browse_for_sale': optional maximum price filter. */
-                    max_price?: number;
-                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
-                    name?: string;
-                    /** @description Page number for 'types' action results (default: 1). */
-                    page?: number;
-                    /** @description Results per page for 'types' action (default: 20, max: 50). */
-                    per_page?: number;
-                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
-                    player_id?: string;
-                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
-                    price?: number;
-                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
-                    recipe_id?: string;
-                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
-                    username?: string;
+                    facility_type: string;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FacilityResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FacilityResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FacilityResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FacilityResponse"];
+                        };
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_facility_faction_dismantle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Facility instance ID (required for 'upgrade', 'job_add', 'job_list', 'set_output_price', 'set_access', 'set_name' actions). Use action 'list' to see facility IDs. */
+                    facility_id: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FacilityResponse) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FacilityResponse"];
+                        };
                     };
                 };
             };
@@ -15314,51 +19861,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /**
-                     * @description For 'personal_decorate': who can visit your quarters.
-                     * @enum {string}
-                     */
-                    access?: "private" | "public";
-                    /**
-                     * @description Filter for 'types' action: show only this category.
-                     * @enum {string}
-                     */
-                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
-                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
-                    description?: string;
-                    /**
-                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
-                     * @enum {string}
-                     */
-                    direction?: "to_faction" | "to_player";
-                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
-                    facility_id?: string;
-                    /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
-                    facility_type?: string;
-                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
-                    faction?: boolean;
-                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
-                    level?: number;
-                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
-                    listing_id?: string;
-                    /** @description For 'browse_for_sale': optional maximum price filter. */
-                    max_price?: number;
-                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
-                    name?: string;
-                    /** @description Page number for 'types' action results (default: 1). */
-                    page?: number;
-                    /** @description Results per page for 'types' action (default: 20, max: 50). */
-                    per_page?: number;
-                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
-                    player_id?: string;
-                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
-                    price?: number;
-                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
-                    recipe_id?: string;
-                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
-                    username?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -15405,142 +19908,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /**
-                     * @description For 'personal_decorate': who can visit your quarters.
-                     * @enum {string}
-                     */
-                    access?: "private" | "public";
-                    /**
-                     * @description Filter for 'types' action: show only this category.
-                     * @enum {string}
-                     */
-                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
-                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
-                    description?: string;
-                    /**
-                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
-                     * @enum {string}
-                     */
-                    direction?: "to_faction" | "to_player";
-                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
-                    facility_id?: string;
-                    /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
-                    facility_type?: string;
-                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
-                    faction?: boolean;
-                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
-                    level?: number;
-                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
-                    listing_id?: string;
-                    /** @description For 'browse_for_sale': optional maximum price filter. */
-                    max_price?: number;
-                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
-                    name?: string;
-                    /** @description Page number for 'types' action results (default: 1). */
-                    page?: number;
-                    /** @description Results per page for 'types' action (default: 20, max: 50). */
-                    per_page?: number;
-                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
-                    player_id?: string;
-                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
-                    price?: number;
-                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
-                    recipe_id?: string;
-                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
-                    username?: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Result. structuredContent type: FacilityResponse */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FacilityResponse"];
-                    };
-                };
-            };
-            /** @description Bad request — invalid params, unknown command, or game error */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Not authenticated — missing or invalid session */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    spacemolt_facility_faction_toggle: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": {
-                    /**
-                     * @description For 'personal_decorate': who can visit your quarters.
-                     * @enum {string}
-                     */
-                    access?: "private" | "public";
-                    /**
-                     * @description Filter for 'types' action: show only this category.
-                     * @enum {string}
-                     */
-                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
-                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
-                    description?: string;
-                    /**
-                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
-                     * @enum {string}
-                     */
-                    direction?: "to_faction" | "to_player";
-                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
-                    facility_id?: string;
-                    /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
-                    facility_type?: string;
-                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
-                    faction?: boolean;
-                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
-                    level?: number;
-                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
-                    listing_id?: string;
-                    /** @description For 'browse_for_sale': optional maximum price filter. */
-                    max_price?: number;
-                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
-                    name?: string;
-                    /** @description Page number for 'types' action results (default: 1). */
-                    page?: number;
-                    /** @description Results per page for 'types' action (default: 20, max: 50). */
-                    per_page?: number;
-                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
-                    player_id?: string;
-                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
-                    price?: number;
-                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
-                    recipe_id?: string;
-                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
-                    username?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -15588,61 +19956,80 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /**
-                     * @description For 'personal_decorate': who can visit your quarters.
-                     * @enum {string}
-                     */
-                    access?: "private" | "public";
-                    /**
-                     * @description Filter for 'types' action: show only this category.
-                     * @enum {string}
-                     */
-                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
-                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
-                    description?: string;
-                    /**
-                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
-                     * @enum {string}
-                     */
-                    direction?: "to_faction" | "to_player";
-                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
-                    facility_id?: string;
+                    /** @description For 'faction_build'/'faction_upgrade': a Storage Extension bucket (name or id) to source build/upgrade MATERIALS from, instead of the faction main store. Ship cargo backfills either way. */
+                    bucket?: string;
+                    /** @description Facility instance ID (required for 'upgrade', 'job_add', 'job_list', 'set_output_price', 'set_access', 'set_name' actions). Use action 'list' to see facility IDs. */
+                    facility_id: string;
                     /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
-                    facility_type?: string;
-                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
-                    faction?: boolean;
-                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
-                    level?: number;
-                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
-                    listing_id?: string;
-                    /** @description For 'browse_for_sale': optional maximum price filter. */
-                    max_price?: number;
-                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
-                    name?: string;
-                    /** @description Page number for 'types' action results (default: 1). */
-                    page?: number;
-                    /** @description Results per page for 'types' action (default: 20, max: 50). */
-                    per_page?: number;
-                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
-                    player_id?: string;
-                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
-                    price?: number;
-                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
-                    recipe_id?: string;
-                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
-                    username?: string;
+                    facility_type: string;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FacilityResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FacilityResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FacilityResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FacilityResponse"];
+                        };
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_facility_found_station: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Name for the new faction station */
+                    name: string;
+                    /** @description Whether any pilot may dock (default false — faction/allowed only) */
+                    public_access?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (BuildBaseResponse) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["BuildBaseResponse"];
+                        };
                     };
                 };
             };
@@ -15719,7 +20106,7 @@ export interface operations {
             };
         };
     };
-    spacemolt_facility_list: {
+    spacemolt_facility_job_add: {
         parameters: {
             query?: never;
             header?: never;
@@ -15729,50 +20116,231 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
+                    /** @description Output destination for 'job_add': 'storage' (default), 'faction' (faction main store), or 'faction:<bucket name or id>' for a Storage Extension bucket. */
+                    deliver_to?: string;
                     /**
-                     * @description For 'personal_decorate': who can visit your quarters.
+                     * @description Job direction: 'forward' runs the recipe normally (craft); 'reverse' recycles existing items back to inputs.
                      * @enum {string}
                      */
-                    access?: "private" | "public";
-                    /**
-                     * @description Filter for 'types' action: show only this category.
-                     * @enum {string}
-                     */
-                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
-                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
-                    description?: string;
-                    /**
-                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
-                     * @enum {string}
-                     */
-                    direction?: "to_faction" | "to_player";
-                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
-                    facility_id?: string;
-                    /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
-                    facility_type?: string;
-                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
-                    faction?: boolean;
-                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
-                    level?: number;
-                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
-                    listing_id?: string;
-                    /** @description For 'browse_for_sale': optional maximum price filter. */
-                    max_price?: number;
-                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
-                    name?: string;
-                    /** @description Page number for 'types' action results (default: 1). */
-                    page?: number;
-                    /** @description Results per page for 'types' action (default: 20, max: 50). */
-                    per_page?: number;
-                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
-                    player_id?: string;
-                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
-                    price?: number;
-                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
-                    recipe_id?: string;
-                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
-                    username?: string;
+                    direction?: "forward" | "reverse";
+                    /** @description Facility instance ID (required for 'upgrade', 'job_add', 'job_list', 'set_output_price', 'set_access', 'set_name' actions). Use action 'list' to see facility IDs. */
+                    facility_id: string;
+                    /** @description For 'job_add': number of runs to queue. */
+                    quantity?: number;
+                    /** @description Recipe ID to run (for 'job_add' action). */
+                    recipe_id: string;
+                    /** @description Input source for 'job_add': where inputs/credits are pulled from. Same values as deliver_to; defaults to deliver_to. */
+                    source?: string;
                 };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FacilityResponse) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FacilityResponse"];
+                        };
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_facility_job_cancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Job ID (for 'job_cancel', 'job_reorder'). Use action 'job_list' to see job IDs. */
+                    job_id?: string;
+                    /** @description For 'job_cancel': cancel multiple jobs in a single action. When provided, 'job_id' is ignored. Use action 'job_list' to see job IDs. */
+                    job_ids?: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FacilityResponse) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FacilityResponse"];
+                        };
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_facility_job_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Facility instance ID (required for 'upgrade', 'job_add', 'job_list', 'set_output_price', 'set_access', 'set_name' actions). Use action 'list' to see facility IDs. */
+                    facility_id: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: FacilityResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["FacilityResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_facility_job_reorder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Facility instance ID (required for 'upgrade', 'job_add', 'job_list', 'set_output_price', 'set_access', 'set_name' actions). Use action 'list' to see facility IDs. */
+                    facility_id: string;
+                    /** @description Job ID (for 'job_cancel', 'job_reorder'). Use action 'job_list' to see job IDs. */
+                    job_id: string;
+                    /** @description New queue position for 'job_reorder' (1-based). */
+                    position?: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FacilityResponse) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FacilityResponse"];
+                        };
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_facility_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -15820,61 +20388,26 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /**
-                     * @description For 'personal_decorate': who can visit your quarters.
-                     * @enum {string}
-                     */
-                    access?: "private" | "public";
-                    /**
-                     * @description Filter for 'types' action: show only this category.
-                     * @enum {string}
-                     */
-                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
-                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
-                    description?: string;
-                    /**
-                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
-                     * @enum {string}
-                     */
-                    direction?: "to_faction" | "to_player";
-                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
-                    facility_id?: string;
-                    /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
-                    facility_type?: string;
+                    /** @description Facility instance ID (required for 'upgrade', 'job_add', 'job_list', 'set_output_price', 'set_access', 'set_name' actions). Use action 'list' to see facility IDs. */
+                    facility_id: string;
                     /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
                     faction?: boolean;
-                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
-                    level?: number;
-                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
-                    listing_id?: string;
-                    /** @description For 'browse_for_sale': optional maximum price filter. */
-                    max_price?: number;
-                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
-                    name?: string;
-                    /** @description Page number for 'types' action results (default: 1). */
-                    page?: number;
-                    /** @description Results per page for 'types' action (default: 20, max: 50). */
-                    per_page?: number;
-                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
-                    player_id?: string;
-                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
-                    price?: number;
-                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
-                    recipe_id?: string;
-                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
-                    username?: string;
+                    /** @description For 'list_for_sale': asking price in whole credits. For 'set_output_price': per-produced-unit rental price others pay, applied to the facility's recipe output(s) automatically — may be fractional (e.g. 0.25), the per-run fee is price × output quantity rounded to a whole credit. Used literally: 0 rents the facility out for free; negative is rejected. */
+                    price: number;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FacilityResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FacilityResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FacilityResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FacilityResponse"];
+                        };
                     };
                 };
             };
@@ -15910,51 +20443,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /**
-                     * @description For 'personal_decorate': who can visit your quarters.
-                     * @enum {string}
-                     */
-                    access?: "private" | "public";
-                    /**
-                     * @description Filter for 'types' action: show only this category.
-                     * @enum {string}
-                     */
-                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
-                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
-                    description?: string;
-                    /**
-                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
-                     * @enum {string}
-                     */
-                    direction?: "to_faction" | "to_player";
-                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
-                    facility_id?: string;
-                    /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
-                    facility_type?: string;
-                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
-                    faction?: boolean;
-                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
-                    level?: number;
-                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
-                    listing_id?: string;
-                    /** @description For 'browse_for_sale': optional maximum price filter. */
-                    max_price?: number;
-                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
-                    name?: string;
-                    /** @description Page number for 'types' action results (default: 1). */
-                    page?: number;
-                    /** @description Results per page for 'types' action (default: 20, max: 50). */
-                    per_page?: number;
-                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
-                    player_id?: string;
-                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
-                    price?: number;
-                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
-                    recipe_id?: string;
-                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
-                    username?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -16002,61 +20491,22 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /**
-                     * @description For 'personal_decorate': who can visit your quarters.
-                     * @enum {string}
-                     */
-                    access?: "private" | "public";
-                    /**
-                     * @description Filter for 'types' action: show only this category.
-                     * @enum {string}
-                     */
-                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
-                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
-                    description?: string;
-                    /**
-                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
-                     * @enum {string}
-                     */
-                    direction?: "to_faction" | "to_player";
-                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
-                    facility_id?: string;
                     /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
-                    facility_type?: string;
-                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
-                    faction?: boolean;
-                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
-                    level?: number;
-                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
-                    listing_id?: string;
-                    /** @description For 'browse_for_sale': optional maximum price filter. */
-                    max_price?: number;
-                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
-                    name?: string;
-                    /** @description Page number for 'types' action results (default: 1). */
-                    page?: number;
-                    /** @description Results per page for 'types' action (default: 20, max: 50). */
-                    per_page?: number;
-                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
-                    player_id?: string;
-                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
-                    price?: number;
-                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
-                    recipe_id?: string;
-                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
-                    username?: string;
+                    facility_type: string;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FacilityResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FacilityResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FacilityResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FacilityResponse"];
+                        };
                     };
                 };
             };
@@ -16094,60 +20544,26 @@ export interface operations {
             content: {
                 "application/json": {
                     /**
-                     * @description For 'personal_decorate': who can visit your quarters.
+                     * @description For 'personal_decorate': who can visit your quarters. For 'set_access': 'public' opens your facility to renters, 'private' closes it.
                      * @enum {string}
                      */
                     access?: "private" | "public";
-                    /**
-                     * @description Filter for 'types' action: show only this category.
-                     * @enum {string}
-                     */
-                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
                     /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
                     description?: string;
-                    /**
-                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
-                     * @enum {string}
-                     */
-                    direction?: "to_faction" | "to_player";
-                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
-                    facility_id?: string;
-                    /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
-                    facility_type?: string;
-                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
-                    faction?: boolean;
-                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
-                    level?: number;
-                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
-                    listing_id?: string;
-                    /** @description For 'browse_for_sale': optional maximum price filter. */
-                    max_price?: number;
-                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
-                    name?: string;
-                    /** @description Page number for 'types' action results (default: 1). */
-                    page?: number;
-                    /** @description Results per page for 'types' action (default: 20, max: 50). */
-                    per_page?: number;
-                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
-                    player_id?: string;
-                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
-                    price?: number;
-                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
-                    recipe_id?: string;
-                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
-                    username?: string;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FacilityResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FacilityResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FacilityResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FacilityResponse"];
+                        };
                     };
                 };
             };
@@ -16184,47 +20600,6 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /**
-                     * @description For 'personal_decorate': who can visit your quarters.
-                     * @enum {string}
-                     */
-                    access?: "private" | "public";
-                    /**
-                     * @description Filter for 'types' action: show only this category.
-                     * @enum {string}
-                     */
-                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
-                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
-                    description?: string;
-                    /**
-                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
-                     * @enum {string}
-                     */
-                    direction?: "to_faction" | "to_player";
-                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
-                    facility_id?: string;
-                    /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
-                    facility_type?: string;
-                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
-                    faction?: boolean;
-                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
-                    level?: number;
-                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
-                    listing_id?: string;
-                    /** @description For 'browse_for_sale': optional maximum price filter. */
-                    max_price?: number;
-                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
-                    name?: string;
-                    /** @description Page number for 'types' action results (default: 1). */
-                    page?: number;
-                    /** @description Results per page for 'types' action (default: 20, max: 50). */
-                    per_page?: number;
-                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
-                    player_id?: string;
-                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
-                    price?: number;
-                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
-                    recipe_id?: string;
                     /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
                     username?: string;
                 };
@@ -16265,7 +20640,111 @@ export interface operations {
             };
         };
     };
-    spacemolt_facility_toggle: {
+    spacemolt_facility_remove_faction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Target faction id (allow_faction/remove_faction) */
+                    faction: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (StationConfigResponse) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["StationConfigResponse"];
+                        };
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_facility_remove_player: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Target player id or username (allow_player/remove_player/ban/unban) */
+                    player: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (StationConfigResponse) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["StationConfigResponse"];
+                        };
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_facility_set_access: {
         parameters: {
             query?: never;
             header?: never;
@@ -16276,60 +20755,600 @@ export interface operations {
             content: {
                 "application/json": {
                     /**
-                     * @description For 'personal_decorate': who can visit your quarters.
+                     * @description For 'personal_decorate': who can visit your quarters. For 'set_access': 'public' opens your facility to renters, 'private' closes it.
                      * @enum {string}
                      */
-                    access?: "private" | "public";
-                    /**
-                     * @description Filter for 'types' action: show only this category.
-                     * @enum {string}
-                     */
-                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
-                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
-                    description?: string;
-                    /**
-                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
-                     * @enum {string}
-                     */
-                    direction?: "to_faction" | "to_player";
-                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
-                    facility_id?: string;
-                    /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
-                    facility_type?: string;
-                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
-                    faction?: boolean;
-                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
-                    level?: number;
-                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
-                    listing_id?: string;
-                    /** @description For 'browse_for_sale': optional maximum price filter. */
-                    max_price?: number;
-                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
-                    name?: string;
-                    /** @description Page number for 'types' action results (default: 1). */
-                    page?: number;
-                    /** @description Results per page for 'types' action (default: 20, max: 50). */
-                    per_page?: number;
-                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
-                    player_id?: string;
-                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
-                    price?: number;
-                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
-                    recipe_id?: string;
-                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
-                    username?: string;
+                    access: "private" | "public";
+                    /** @description Facility instance ID (required for 'upgrade', 'job_add', 'job_list', 'set_output_price', 'set_access', 'set_name' actions). Use action 'list' to see facility IDs. */
+                    facility_id: string;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FacilityResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FacilityResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FacilityResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FacilityResponse"];
+                        };
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_facility_set_build_policy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Whether non-members may build facilities here (set_build_policy) */
+                    allow_outsiders?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (StationConfigResponse) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["StationConfigResponse"];
+                        };
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_facility_set_description: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description New station description (set_description) */
+                    description?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (StationConfigResponse) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["StationConfigResponse"];
+                        };
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_facility_set_market_fee: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Market listing fee percent 0-10 (set_market_fee) */
+                    fee_percent?: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (StationConfigResponse) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["StationConfigResponse"];
+                        };
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_facility_set_name: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description For 'set_name': a custom name for the facility (3-32 chars) so multiple facilities of the same type stand out. Send empty to clear it. */
+                    custom_name?: string;
+                    /** @description Facility instance ID (required for 'upgrade', 'job_add', 'job_list', 'set_output_price', 'set_access', 'set_name' actions). Use action 'list' to see facility IDs. */
+                    facility_id: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FacilityResponse) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FacilityResponse"];
+                        };
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_facility_set_output_price: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Facility instance ID (required for 'upgrade', 'job_add', 'job_list', 'set_output_price', 'set_access', 'set_name' actions). Use action 'list' to see facility IDs. */
+                    facility_id: string;
+                    /** @description For 'list_for_sale': asking price in whole credits. For 'set_output_price': per-produced-unit rental price others pay, applied to the facility's recipe output(s) automatically — may be fractional (e.g. 0.25), the per-run fee is price × output quantity rounded to a whole credit. Used literally: 0 rents the facility out for free; negative is rejected. */
+                    price?: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FacilityResponse) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FacilityResponse"];
+                        };
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_facility_set_public: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Whether anyone may dock (set_public) */
+                    public?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (StationConfigResponse) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["StationConfigResponse"];
+                        };
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_facility_set_refuel_price: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Price for set_refuel_price (per unit) or set_repair_price (per hull point) */
+                    price?: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (StationConfigResponse) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["StationConfigResponse"];
+                        };
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_facility_set_repair_price: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Price for set_refuel_price (per unit) or set_repair_price (per hull point) */
+                    price?: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (StationConfigResponse) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["StationConfigResponse"];
+                        };
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_facility_set_service_access: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /**
+                     * @description Access level for set_service_access
+                     * @enum {string}
+                     */
+                    access: "public" | "allies" | "faction";
+                    /** @description Service type for set_service_access (market, refuel, repair, shipyard, crafting, salvage_yard) */
+                    service: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (StationConfigResponse) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["StationConfigResponse"];
+                        };
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_facility_station_info: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: StationConfigResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["StationConfigResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_facility_station_set_name: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description New station name (set_name) */
+                    name: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: StationConfigResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["StationConfigResponse"];
                     };
                 };
             };
@@ -16367,60 +21386,28 @@ export interface operations {
             content: {
                 "application/json": {
                     /**
-                     * @description For 'personal_decorate': who can visit your quarters.
+                     * @description Transfer direction: 'to_faction' moves the facility to faction ownership; 'to_player' transfers it to a specific player.
                      * @enum {string}
                      */
-                    access?: "private" | "public";
-                    /**
-                     * @description Filter for 'types' action: show only this category.
-                     * @enum {string}
-                     */
-                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
-                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
-                    description?: string;
-                    /**
-                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
-                     * @enum {string}
-                     */
-                    direction?: "to_faction" | "to_player";
-                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
-                    facility_id?: string;
-                    /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
-                    facility_type?: string;
-                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
-                    faction?: boolean;
-                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
-                    level?: number;
-                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
-                    listing_id?: string;
-                    /** @description For 'browse_for_sale': optional maximum price filter. */
-                    max_price?: number;
-                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
-                    name?: string;
-                    /** @description Page number for 'types' action results (default: 1). */
-                    page?: number;
-                    /** @description Results per page for 'types' action (default: 20, max: 50). */
-                    per_page?: number;
+                    direction: "to_faction" | "to_player";
+                    /** @description Facility instance ID (required for 'upgrade', 'job_add', 'job_list', 'set_output_price', 'set_access', 'set_name' actions). Use action 'list' to see facility IDs. */
+                    facility_id: string;
                     /** @description Target player ID for 'transfer' action with direction 'to_player'. */
                     player_id?: string;
-                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
-                    price?: number;
-                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
-                    recipe_id?: string;
-                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
-                    username?: string;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FacilityResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FacilityResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FacilityResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FacilityResponse"];
+                        };
                     };
                 };
             };
@@ -16458,48 +21445,20 @@ export interface operations {
             content: {
                 "application/json": {
                     /**
-                     * @description For 'personal_decorate': who can visit your quarters.
-                     * @enum {string}
-                     */
-                    access?: "private" | "public";
-                    /**
                      * @description Filter for 'types' action: show only this category.
                      * @enum {string}
                      */
                     category?: "infrastructure" | "service" | "production" | "faction" | "personal";
-                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
-                    description?: string;
-                    /**
-                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
-                     * @enum {string}
-                     */
-                    direction?: "to_faction" | "to_player";
-                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
-                    facility_id?: string;
                     /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
                     facility_type?: string;
-                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
-                    faction?: boolean;
                     /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
                     level?: number;
-                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
-                    listing_id?: string;
-                    /** @description For 'browse_for_sale': optional maximum price filter. */
-                    max_price?: number;
                     /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
                     name?: string;
                     /** @description Page number for 'types' action results (default: 1). */
                     page?: number;
                     /** @description Results per page for 'types' action (default: 20, max: 50). */
                     per_page?: number;
-                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
-                    player_id?: string;
-                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
-                    price?: number;
-                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
-                    recipe_id?: string;
-                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
-                    username?: string;
                 };
             };
         };
@@ -16512,6 +21471,58 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
                         structuredContent?: components["schemas"]["FacilityResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_facility_unban: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Target player id or username (allow_player/remove_player/ban/unban) */
+                    player: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (StationConfigResponse) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["StationConfigResponse"];
+                        };
                     };
                 };
             };
@@ -16548,61 +21559,26 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /**
-                     * @description For 'personal_decorate': who can visit your quarters.
-                     * @enum {string}
-                     */
-                    access?: "private" | "public";
-                    /**
-                     * @description Filter for 'types' action: show only this category.
-                     * @enum {string}
-                     */
-                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
-                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
-                    description?: string;
-                    /**
-                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
-                     * @enum {string}
-                     */
-                    direction?: "to_faction" | "to_player";
-                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
-                    facility_id?: string;
+                    /** @description For 'faction_build'/'faction_upgrade': a Storage Extension bucket (name or id) to source build/upgrade MATERIALS from, instead of the faction main store. Ship cargo backfills either way. */
+                    bucket?: string;
+                    /** @description Facility instance ID (required for 'upgrade', 'job_add', 'job_list', 'set_output_price', 'set_access', 'set_name' actions). Use action 'list' to see facility IDs. */
+                    facility_id: string;
                     /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
-                    facility_type?: string;
-                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
-                    faction?: boolean;
-                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
-                    level?: number;
-                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
-                    listing_id?: string;
-                    /** @description For 'browse_for_sale': optional maximum price filter. */
-                    max_price?: number;
-                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
-                    name?: string;
-                    /** @description Page number for 'types' action results (default: 1). */
-                    page?: number;
-                    /** @description Results per page for 'types' action (default: 20, max: 50). */
-                    per_page?: number;
-                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
-                    player_id?: string;
-                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
-                    price?: number;
-                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
-                    recipe_id?: string;
-                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
-                    username?: string;
+                    facility_type: string;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FacilityResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FacilityResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FacilityResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FacilityResponse"];
+                        };
                     };
                 };
             };
@@ -16638,51 +21614,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /**
-                     * @description For 'personal_decorate': who can visit your quarters.
-                     * @enum {string}
-                     */
-                    access?: "private" | "public";
-                    /**
-                     * @description Filter for 'types' action: show only this category.
-                     * @enum {string}
-                     */
-                    category?: "infrastructure" | "service" | "production" | "faction" | "personal";
-                    /** @description For 'personal_decorate': a text description of your personal quarters (what visitors see, hear, and feel). */
-                    description?: string;
-                    /**
-                     * @description Transfer direction for 'transfer' action: 'to_faction' or 'to_player'.
-                     * @enum {string}
-                     */
-                    direction?: "to_faction" | "to_player";
-                    /** @description Facility instance ID (required for 'toggle', 'upgrade' and 'configure_recycler' actions). Use action 'list' to see facility IDs. */
-                    facility_id?: string;
-                    /** @description Facility type ID. For 'types' action: get full details for this specific type. For 'build'/'upgrade': the type to build/upgrade to. */
-                    facility_type?: string;
-                    /** @description For 'list_for_sale': set true to list a faction-owned facility (requires manage_facilities permission). */
-                    faction?: boolean;
-                    /** @description Filter for 'types' action: show only this tier level (1, 2, 3, etc.). */
-                    level?: number;
-                    /** @description For 'buy_listing' and 'cancel_listing': the facility listing ID. Use action 'browse_for_sale' to see listings. */
-                    listing_id?: string;
-                    /** @description For 'browse_for_sale': optional maximum price filter. */
-                    max_price?: number;
-                    /** @description Filter for 'types' action: case-insensitive name search (e.g. 'refinery'). */
-                    name?: string;
-                    /** @description Page number for 'types' action results (default: 1). */
-                    page?: number;
-                    /** @description Results per page for 'types' action (default: 20, max: 50). */
-                    per_page?: number;
-                    /** @description Target player ID for 'transfer' action with direction 'to_player'. */
-                    player_id?: string;
-                    /** @description For 'list_for_sale': asking price in credits. Listing fee is 1% (non-refundable, paid to local station). */
-                    price?: number;
-                    /** @description For 'configure_recycler': the recipe this recycler will run in reverse (required). */
-                    recipe_id?: string;
-                    /** @description For 'personal_visit': username of the player whose quarters to visit. Omit to visit your own. */
-                    username?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -16736,14 +21668,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FactionAcceptAllyResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FactionAcceptAllyResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FactionAcceptAllyResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FactionAcceptAllyResponse"];
+                        };
                     };
                 };
             };
@@ -16786,14 +21720,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: JoinFactionResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (JoinFactionResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["JoinFactionResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["JoinFactionResponse"];
+                        };
                     };
                 };
             };
@@ -16836,14 +21772,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FactionAcceptPeaceResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FactionAcceptPeaceResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FactionAcceptPeaceResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FactionAcceptPeaceResponse"];
+                        };
                     };
                 };
             };
@@ -16886,14 +21824,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FactionCancelMissionResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FactionCancelMissionResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FactionCancelMissionResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FactionCancelMissionResponse"];
+                        };
                     };
                 };
             };
@@ -16938,14 +21878,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: CreateFactionResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (CreateFactionResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["CreateFactionResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["CreateFactionResponse"];
+                        };
                     };
                 };
             };
@@ -16990,14 +21932,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FactionDeclareWarResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FactionDeclareWarResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FactionDeclareWarResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FactionDeclareWarResponse"];
+                        };
                     };
                 };
             };
@@ -17148,6 +22092,53 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
                         structuredContent?: components["schemas"]["FactionDeleteRoomResponse"];
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_faction_garages: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: FactionGaragesResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["FactionGaragesResponse"];
                     };
                 };
             };
@@ -17341,14 +22332,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FactionInviteResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FactionInviteResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FactionInviteResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FactionInviteResponse"];
+                        };
                     };
                 };
             };
@@ -17391,14 +22384,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: JoinFactionResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (JoinFactionResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["JoinFactionResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["JoinFactionResponse"];
+                        };
                     };
                 };
             };
@@ -17441,14 +22436,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FactionKickResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FactionKickResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FactionKickResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FactionKickResponse"];
+                        };
                     };
                 };
             };
@@ -17488,14 +22485,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: MessageResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (MessageResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["MessageResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["MessageResponse"];
+                        };
                     };
                 };
             };
@@ -17621,6 +22620,58 @@ export interface operations {
             };
         };
     };
+    spacemolt_faction_prepay_tax: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description Credits to move into the tax-prepayment pool (positive). Covers the next assessment before the wallet/treasury; surplus is refunded. */
+                    amount: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FactionPrepayTaxResponse) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FactionPrepayTaxResponse"];
+                        };
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     spacemolt_faction_propose_ally: {
         parameters: {
             query?: never;
@@ -17637,14 +22688,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FactionProposeAllyResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FactionProposeAllyResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FactionProposeAllyResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FactionProposeAllyResponse"];
+                        };
                     };
                 };
             };
@@ -17689,14 +22742,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FactionProposePeaceResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FactionProposePeaceResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FactionProposePeaceResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FactionProposePeaceResponse"];
+                        };
                     };
                 };
             };
@@ -17739,14 +22794,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FactionRemoveAllyResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FactionRemoveAllyResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FactionRemoveAllyResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FactionRemoveAllyResponse"];
+                        };
                     };
                 };
             };
@@ -17789,14 +22846,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FactionRemoveEnemyResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FactionRemoveEnemyResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FactionRemoveEnemyResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FactionRemoveEnemyResponse"];
+                        };
                     };
                 };
             };
@@ -17886,14 +22945,63 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FactionSetEnemyResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FactionSetEnemyResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FactionSetEnemyResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FactionSetEnemyResponse"];
+                        };
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_faction_tax_estimate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent type: FactionTaxEstimateResponse */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["FactionTaxEstimateResponse"];
                     };
                 };
             };
@@ -17986,14 +23094,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FactionWithdrawInviteResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FactionWithdrawInviteResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FactionWithdrawInviteResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FactionWithdrawInviteResponse"];
+                        };
                     };
                 };
             };
@@ -18289,14 +23399,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FactionPostMissionResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FactionPostMissionResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FactionPostMissionResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FactionPostMissionResponse"];
+                        };
                     };
                 };
             };
@@ -18334,24 +23446,26 @@ export interface operations {
             content: {
                 "application/json": {
                     /** @description Player ID to promote/demote */
-                    id: string;
+                    player_id: string;
                     /**
                      * @description New role (recruit, member, officer, leader)
                      * @enum {string}
                      */
-                    text: "recruit" | "member" | "officer" | "leader";
+                    role_id: "recruit" | "member" | "officer" | "leader";
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FactionPromoteResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FactionPromoteResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FactionPromoteResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FactionPromoteResponse"];
+                        };
                     };
                 };
             };
@@ -18447,24 +23561,30 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
+                    /** @description Optional: a Storage Extension bucket (name or id) to deliver filled items into instead of the faction main store. Not valid for fuel orders. */
+                    bucket?: string;
                     /** @description ID of the item to buy for faction storage */
                     item_id: string;
                     /** @description Maximum price per unit in credits */
                     price_each: number;
+                    /** @description Optional: post a Company Store listing — a members-only buy order visible to and fillable by faction members only. Requires a Company Store facility at this station; counts against its own listing cap, separate from the market cap. */
+                    private?: boolean;
                     /** @description Number of items to buy */
                     quantity: number;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FactionCreateBuyOrderResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FactionCreateBuyOrderResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FactionCreateBuyOrderResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FactionCreateBuyOrderResponse"];
+                        };
                     };
                 };
             };
@@ -18501,24 +23621,30 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
+                    /** @description Optional: a Storage Extension bucket (name or id) to escrow the listed items from instead of the faction main store. A cancellation returns them there. Not valid for fuel orders. */
+                    bucket?: string;
                     /** @description ID of the item to sell from faction storage */
                     item_id: string;
                     /** @description Price per unit in credits */
                     price_each: number;
+                    /** @description Optional: post a Company Store listing — a members-only sell order visible to and fillable by faction members only. Requires a Company Store facility at this station; counts against its own listing cap, separate from the market cap. */
+                    private?: boolean;
                     /** @description Number of items to list for sale */
                     quantity: number;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FactionCreateSellOrderResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FactionCreateSellOrderResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FactionCreateSellOrderResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FactionCreateSellOrderResponse"];
+                        };
                     };
                 };
             };
@@ -18604,21 +23730,74 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Player name or ID (for invite/kick) */
-                    player_id?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FleetResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FleetResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FleetResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FleetResponse"];
+                        };
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_fleet_board: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description For 'board': stow your current ship in the station's faction garage as you board the carrier, instead of leaving it docked (requires a faction garage at the station). */
+                    garage?: boolean;
+                    /** @description Player name or ID (for invite/kick/board) */
+                    id: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FleetResponse) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FleetResponse"];
+                        };
                     };
                 };
             };
@@ -18654,21 +23833,20 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Player name or ID (for invite/kick) */
-                    player_id?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FleetCreateResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FleetCreateResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FleetCreateResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FleetCreateResponse"];
+                        };
                     };
                 };
             };
@@ -18704,21 +23882,20 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Player name or ID (for invite/kick) */
-                    player_id?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FleetResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FleetResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FleetResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FleetResponse"];
+                        };
                     };
                 };
             };
@@ -18754,21 +23931,69 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Player name or ID (for invite/kick) */
-                    player_id?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FleetResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FleetResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FleetResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FleetResponse"];
+                        };
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    spacemolt_fleet_disembark: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FleetResponse) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FleetResponse"];
+                        };
                     };
                 };
             };
@@ -18855,20 +24080,22 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Player name or ID (for invite/kick) */
-                    id?: string;
+                    /** @description Player name or ID (for invite/kick/board) */
+                    id: string;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FleetResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FleetResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FleetResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FleetResponse"];
+                        };
                     };
                 };
             };
@@ -18905,20 +24132,22 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Player name or ID (for invite/kick) */
-                    id?: string;
+                    /** @description Player name or ID (for invite/kick/board) */
+                    id: string;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FleetResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FleetResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FleetResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FleetResponse"];
+                        };
                     };
                 };
             };
@@ -18954,21 +24183,20 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Player name or ID (for invite/kick) */
-                    player_id?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FleetResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FleetResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FleetResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FleetResponse"];
+                        };
                     };
                 };
             };
@@ -19004,10 +24232,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
-                    /** @description Player name or ID (for invite/kick) */
-                    player_id?: string;
-                };
+                "application/json": Record<string, never>;
             };
         };
         responses: {
@@ -19264,6 +24489,58 @@ export interface operations {
             };
         };
     };
+    spacemolt_intel_scan_poi: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** @description ID of the POI to scan. The faction's sensor facility must be in range (L1 same system, L2 one jump, L3 two jumps). */
+                    poi_id: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FactionScanPOIResponse) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V2Response"] & {
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FactionScanPOIResponse"];
+                        };
+                    };
+                };
+            };
+            /** @description Bad request — invalid params, unknown command, or game error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated — missing or invalid session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     spacemolt_intel_submit_intel: {
         parameters: {
             query?: never;
@@ -19274,20 +24551,22 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Array of system intel reports. Each entry: system_id (required), name (required), description, empire, police_level, connections (array of {system_id, name, distance} objects or bare ID strings), pois (array of {id, type, name, description, class, position:{x,y}, base_id, base_name, resources:[{resource_id, richness, remaining}]}) */
+                    /** @description Array of system intel reports. Each entry: system_id (required), name (required), description, empire, police_level, connections (array of {system_id, name, distance} objects or bare ID strings), pois (array of {id, type, name, description, class, position:{x,y}, base_id, base_name, resources:[{resource_id, richness, remaining, max_remaining}]}) */
                     systems: Record<string, never>[];
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FactionSubmitIntelResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FactionSubmitIntelResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FactionSubmitIntelResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FactionSubmitIntelResponse"];
+                        };
                     };
                 };
             };
@@ -19330,14 +24609,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: FactionSubmitTradeIntelResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (FactionSubmitTradeIntelResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["FactionSubmitTradeIntelResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["FactionSubmitTradeIntelResponse"];
+                        };
                     };
                 };
             };
@@ -19476,14 +24757,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: CancelOrderResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (CancelOrderResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["CancelOrderResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["CancelOrderResponse"];
+                        };
                     };
                 };
             };
@@ -19543,14 +24826,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: CreateBuyOrderResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (CreateBuyOrderResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["CreateBuyOrderResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["CreateBuyOrderResponse"];
+                        };
                     };
                 };
             };
@@ -19603,14 +24888,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: CreateSellOrderResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (CreateSellOrderResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["CreateSellOrderResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["CreateSellOrderResponse"];
+                        };
                     };
                 };
             };
@@ -19762,14 +25049,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: ModifyOrderResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (ModifyOrderResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["ModifyOrderResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["ModifyOrderResponse"];
+                        };
                     };
                 };
             };
@@ -19902,6 +25191,8 @@ export interface operations {
                 "application/json": {
                     /** @description Optional: filter summary by category (e.g., ore, commodity, weapon, module). Use without item_id. */
                     category?: string;
+                    /** @description Optional: show ONLY your faction's private Company Store listings (members-only buy/sell orders, hidden from non-members). Requires faction membership. */
+                    company_store?: boolean;
                     /** @description Optional: filter to a specific item for full order book depth (e.g., iron_ore) */
                     item_id?: string;
                     /** @description Optional: a prior current_tick. Returns only items whose book changed at or after that tick (incremental poll) instead of a full snapshot. Re-baseline (omit since) after changing stations or on a 'stale_cursor' error. */
@@ -20083,14 +25374,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: BuyInsuranceResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (BuyInsuranceResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["BuyInsuranceResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["BuyInsuranceResponse"];
+                        };
                     };
                 };
             };
@@ -20139,14 +25432,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: LootWreckResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (LootWreckResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["LootWreckResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["LootWreckResponse"];
+                        };
                     };
                 };
             };
@@ -20280,64 +25575,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: ReleaseTowResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (ReleaseTowResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["ReleaseTowResponse"];
-                    };
-                };
-            };
-            /** @description Bad request — invalid params, unknown command, or game error */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Not authenticated — missing or invalid session */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Rate limited — mutations allow 1 per tick (10 seconds) */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    spacemolt_salvage_salvage: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": {
-                    /** @description UUID of the wreck to salvage */
-                    id: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Result. structuredContent type: ScrapWreckResponse */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["ScrapWreckResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["ReleaseTowResponse"];
+                        };
                     };
                 };
             };
@@ -20377,14 +25624,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: ScrapWreckResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (ScrapWreckResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["ScrapWreckResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["ScrapWreckResponse"];
+                        };
                     };
                 };
             };
@@ -20424,14 +25673,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: SellWreckResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (SellWreckResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["SellWreckResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["SellWreckResponse"];
+                        };
                     };
                 };
             };
@@ -20474,14 +25725,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: SetHomeBaseResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (SetHomeBaseResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["SetHomeBaseResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["SetHomeBaseResponse"];
+                        };
                     };
                 };
             };
@@ -20524,14 +25777,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: TowWreckResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (TowWreckResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["TowWreckResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["TowWreckResponse"];
+                        };
                     };
                 };
             };
@@ -20675,14 +25930,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: BuyListedShipResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (BuyListedShipResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["BuyListedShipResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["BuyListedShipResponse"];
+                        };
                     };
                 };
             };
@@ -20725,14 +25982,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: CancelCommissionResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (CancelCommissionResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["CancelCommissionResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["CancelCommissionResponse"];
+                        };
                     };
                 };
             };
@@ -20775,14 +26034,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: CancelShipListingResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (CancelShipListingResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["CancelShipListingResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["CancelShipListingResponse"];
+                        };
                     };
                 };
             };
@@ -20877,14 +26138,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: CommissionShipResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (CommissionShipResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["CommissionShipResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["CommissionShipResponse"];
+                        };
                     };
                 };
             };
@@ -21029,14 +26292,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: ListShipForSaleResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (ListShipForSaleResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["ListShipForSaleResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["ListShipForSaleResponse"];
+                        };
                     };
                 };
             };
@@ -21123,14 +26388,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: RefitShipResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (RefitShipResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["RefitShipResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["RefitShipResponse"];
+                        };
                     };
                 };
             };
@@ -21173,14 +26440,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: NameShipResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (NameShipResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["NameShipResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["NameShipResponse"];
+                        };
                     };
                 };
             };
@@ -21217,20 +26486,22 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description ID of the stored ship to permanently destroy (no credits returned). Cargo and modules are moved to station storage. Use list_ships to see your fleet. */
+                    /** @description ID of the ship to permanently destroy (no credits returned). Remote order: works from anywhere on a ship parked at any station; cargo and modules are recovered to your storage at the station where the ship was parked. Use list_ships to see your fleet. */
                     id: string;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: ScrapShipResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (ScrapShipResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["ScrapShipResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["ScrapShipResponse"];
+                        };
                     };
                 };
             };
@@ -21273,14 +26544,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: SellShipResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (SellShipResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["SellShipResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["SellShipResponse"];
+                        };
                     };
                 };
             };
@@ -21327,14 +26600,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: SupplyCommissionResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (SupplyCommissionResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["SupplyCommissionResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["SupplyCommissionResponse"];
+                        };
                     };
                 };
             };
@@ -21377,14 +26652,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: SwitchShipResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (SwitchShipResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["SwitchShipResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["SwitchShipResponse"];
+                        };
                     };
                 };
             };
@@ -21793,14 +27070,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: ForumCreateThreadResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (ForumCreateThreadResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["ForumCreateThreadResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["ForumCreateThreadResponse"];
+                        };
                     };
                 };
             };
@@ -21843,14 +27122,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: ForumDeleteReplyResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (ForumDeleteReplyResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["ForumDeleteReplyResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["ForumDeleteReplyResponse"];
+                        };
                     };
                 };
             };
@@ -21893,14 +27174,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: ForumDeleteThreadResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (ForumDeleteThreadResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["ForumDeleteThreadResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["ForumDeleteThreadResponse"];
+                        };
                     };
                 };
             };
@@ -21937,6 +27220,10 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
+                    /** @description Replies per page (default 20, max 100) */
+                    limit?: number;
+                    /** @description Reply page number (default 1) */
+                    page?: number;
                     /** @description UUID of thread to view */
                     target: string;
                 };
@@ -22085,14 +27372,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: ForumReplyResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (ForumReplyResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["ForumReplyResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["ForumReplyResponse"];
+                        };
                     };
                 };
             };
@@ -22137,14 +27426,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: ForumUpvoteResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (ForumUpvoteResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["ForumUpvoteResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["ForumUpvoteResponse"];
+                        };
                     };
                 };
             };
@@ -22182,10 +27473,10 @@ export interface operations {
             content: {
                 "application/json": {
                     /**
-                     * @description Filter by category (combat, trading, ship, crafting, faction, mission, skill, salvage, storage, other)
+                     * @description Filter by category (combat, trading, ship, crafting, faction, mission, skill, salvage, storage, achievement, mining, navigation, exploration, reputation, drone, session, other)
                      * @enum {string}
                      */
-                    category?: "combat" | "trading" | "ship" | "crafting" | "faction" | "mission" | "skill" | "salvage" | "storage" | "other";
+                    category?: "combat" | "trading" | "ship" | "crafting" | "faction" | "mission" | "skill" | "salvage" | "storage" | "achievement" | "mining" | "navigation" | "exploration" | "reputation" | "drone" | "session" | "other";
                     /** @description Filter to an exact event_type (e.g. faction.production_cycle for faction production-run history) */
                     event_type?: string;
                     /** @description View a faction's action log instead of your own (must be a member) */
@@ -22253,7 +27544,7 @@ export interface operations {
                      * @enum {string}
                      */
                     target: "system" | "local" | "faction" | "private" | "emergency";
-                    /** @description Player ID or username for private message history (required when channel=private) */
+                    /** @description Player ID or username for a specific conversation when channel=private. Omit it to get your whole DM inbox: every private message across all conversations, newest first — use this to discover who has messaged you. */
                     target_id?: string;
                 };
             };
@@ -22302,7 +27593,12 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": Record<string, never>;
+                "application/json": {
+                    /** @description Page number (default 1) */
+                    page?: number;
+                    /** @description Notes per page (default 20, max 100) */
+                    page_size?: number;
+                };
             };
         };
         responses: {
@@ -22663,6 +27959,12 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
+                    /** @description Optional (target=faction only): a Storage Extension bucket by name or id to deposit into / withdraw from instead of the main store. For an intra-faction move (source=faction target=faction) this is the SOURCE compartment. Empty means the main store. See bucket names in action=view target=faction. */
+                    bucket?: string;
+                    /** @description For 'deposit' with target=<player name/id>: the amount of credits to gift that player. (Faction credit deposits use item_id='credits' with quantity instead.) */
+                    credits?: number;
+                    /** @description Optional destination compartment for an intra-faction move (source=faction target=faction): items go from 'bucket' into 'dest_bucket'. Either may be empty to mean the main store, so this covers main↔bucket and bucket↔bucket moves. Requires manage_treasury. */
+                    dest_bucket?: string;
                     /** @description Item ID for normal item transfers, 'credits' for credit operations (faction target only), or a stored ship instance UUID for ship operations: target=self loads/unloads the ship into your active carrier's bay (carrier required), and target=<player_name> with action=deposit gifts the ship (triggers gift_ship action). Use list_ships to find ship instance IDs. */
                     item_id?: string;
                     /** @description Bulk deposit/withdraw: array of {item_id, quantity} objects moved in a single action (one write) instead of one per tick. Items only. Honors target/source like single-item (cargo↔personal, cargo↔faction, personal↔faction transfers, gifts). Omit item_id/quantity when using this. The response reports per-item success/failure. */
@@ -22674,24 +27976,24 @@ export interface operations {
                     message?: string;
                     /** @description Amount to transfer */
                     quantity?: number;
-                    /** @description Optional source for deposit/withdraw: 'cargo' (default — your ship's cargo hold or wallet), 'storage' (personal storage; use with target=faction or a player name to transfer directly, bypassing cargo), or 'faction' (faction storage; use with target=self to transfer faction→personal directly, requires manage_treasury). */
+                    /** @description Optional source for deposit/withdraw: 'cargo' (default — your ship's cargo hold or wallet), 'storage' (personal storage; use with target=faction or a player name to transfer directly, bypassing cargo), or 'faction' (faction storage; use with target=self to transfer faction→personal, or with target=faction to move items between faction compartments — both require manage_treasury). */
                     source?: string;
-                    /** @description Optional: station ID to view storage at without being docked. Only applies to action="view", target="self". */
-                    station_id?: string;
                     /** @description Target: 'self' (personal storage), 'faction' (faction storage), or a player name/ID (gift) */
                     target?: string;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: DepositItemsResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (DepositItemsResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["DepositItemsResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["DepositItemsResponse"];
+                        };
                     };
                 };
             };
@@ -22778,22 +28080,29 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description ID of the item to jettison (e.g., iron_ore, steel_plate) */
-                    item_id: string;
-                    /** @description Quantity to jettison */
-                    quantity: number;
+                    /** @description ID of the item to jettison (e.g., iron_ore, steel_plate). Required for single mode. */
+                    item_id?: string;
+                    /** @description Bulk mode: array of cargo items to dump in one action (max 100), all into one container. Each entry needs item_id and quantity. When provided, the top-level item_id/quantity are ignored. */
+                    items?: {
+                        item_id: string;
+                        quantity: number;
+                    }[];
+                    /** @description Quantity to jettison. Required for single mode. */
+                    quantity?: number;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: JettisonResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (JettisonResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["JettisonResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["JettisonResponse"];
+                        };
                     };
                 };
             };
@@ -22842,14 +28151,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: LootWreckResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (LootWreckResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["LootWreckResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["LootWreckResponse"];
+                        };
                     };
                 };
             };
@@ -22886,19 +28197,6 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
-                    /** @description Item ID for normal item transfers, 'credits' for credit operations (faction target only), or a stored ship instance UUID for ship operations: target=self loads/unloads the ship into your active carrier's bay (carrier required), and target=<player_name> with action=deposit gifts the ship (triggers gift_ship action). Use list_ships to find ship instance IDs. */
-                    item_id?: string;
-                    /** @description Bulk deposit/withdraw: array of {item_id, quantity} objects moved in a single action (one write) instead of one per tick. Items only. Honors target/source like single-item (cargo↔personal, cargo↔faction, personal↔faction transfers, gifts). Omit item_id/quantity when using this. The response reports per-item success/failure. */
-                    items?: {
-                        item_id: string;
-                        quantity: number;
-                    }[];
-                    /** @description Optional message when gifting to another player */
-                    message?: string;
-                    /** @description Amount to transfer */
-                    quantity?: number;
-                    /** @description Optional source for deposit/withdraw: 'cargo' (default — your ship's cargo hold or wallet), 'storage' (personal storage; use with target=faction or a player name to transfer directly, bypassing cargo), or 'faction' (faction storage; use with target=self to transfer faction→personal directly, requires manage_treasury). */
-                    source?: string;
                     /** @description Optional: station ID to view storage at without being docked. Only applies to action="view", target="self". */
                     station_id?: string;
                     /** @description Target: 'self' (personal storage), 'faction' (faction storage), or a player name/ID (gift) */
@@ -22951,6 +28249,10 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": {
+                    /** @description Optional (target=faction only): a Storage Extension bucket by name or id to deposit into / withdraw from instead of the main store. For an intra-faction move (source=faction target=faction) this is the SOURCE compartment. Empty means the main store. See bucket names in action=view target=faction. */
+                    bucket?: string;
+                    /** @description Optional destination compartment for an intra-faction move (source=faction target=faction): items go from 'bucket' into 'dest_bucket'. Either may be empty to mean the main store, so this covers main↔bucket and bucket↔bucket moves. Requires manage_treasury. */
+                    dest_bucket?: string;
                     /** @description Item ID for normal item transfers, 'credits' for credit operations (faction target only), or a stored ship instance UUID for ship operations: target=self loads/unloads the ship into your active carrier's bay (carrier required), and target=<player_name> with action=deposit gifts the ship (triggers gift_ship action). Use list_ships to find ship instance IDs. */
                     item_id?: string;
                     /** @description Bulk deposit/withdraw: array of {item_id, quantity} objects moved in a single action (one write) instead of one per tick. Items only. Honors target/source like single-item (cargo↔personal, cargo↔faction, personal↔faction transfers, gifts). Omit item_id/quantity when using this. The response reports per-item success/failure. */
@@ -22958,28 +28260,26 @@ export interface operations {
                         item_id: string;
                         quantity: number;
                     }[];
-                    /** @description Optional message when gifting to another player */
-                    message?: string;
                     /** @description Amount to transfer */
                     quantity?: number;
-                    /** @description Optional source for deposit/withdraw: 'cargo' (default — your ship's cargo hold or wallet), 'storage' (personal storage; use with target=faction or a player name to transfer directly, bypassing cargo), or 'faction' (faction storage; use with target=self to transfer faction→personal directly, requires manage_treasury). */
+                    /** @description Optional source for deposit/withdraw: 'cargo' (default — your ship's cargo hold or wallet), 'storage' (personal storage; use with target=faction or a player name to transfer directly, bypassing cargo), or 'faction' (faction storage; use with target=self to transfer faction→personal, or with target=faction to move items between faction compartments — both require manage_treasury). */
                     source?: string;
-                    /** @description Optional: station ID to view storage at without being docked. Only applies to action="view", target="self". */
-                    station_id?: string;
                     /** @description Target: 'self' (personal storage), 'faction' (faction storage), or a player name/ID (gift) */
                     target?: string;
                 };
             };
         };
         responses: {
-            /** @description Result. structuredContent type: WithdrawItemsResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (WithdrawItemsResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["WithdrawItemsResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["WithdrawItemsResponse"];
+                        };
                     };
                 };
             };
@@ -23119,14 +28419,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: TradeAcceptResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (TradeAcceptResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["TradeAcceptResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["TradeAcceptResponse"];
+                        };
                     };
                 };
             };
@@ -23283,14 +28585,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Result. structuredContent type: TradeOfferResponse */
+            /** @description Result. structuredContent: V2GameState post-mutation delta (changed ship/cargo/location/queue sections); the command result is under `details` (TradeOfferResponse) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["V2Response"] & {
-                        structuredContent?: components["schemas"]["TradeOfferResponse"];
+                        structuredContent?: components["schemas"]["V2GameState"] & {
+                            details?: components["schemas"]["TradeOfferResponse"];
+                        };
                     };
                 };
             };

@@ -37,6 +37,7 @@ type MaintenanceState =
 export function FacilityCard({ facility, children }: FacilityCardProps) {
   const { api } = useGame()
   const serviceLabel = facility.service || facility.personal_service || facility.faction_service
+  const production = facility.production
 
   const [expanded, setExpanded] = useState(false)
   const [maintenance, setMaintenance] = useState<MaintenanceState>({ status: 'idle' })
@@ -73,7 +74,7 @@ export function FacilityCard({ facility, children }: FacilityCardProps) {
   return (
     <div className={styles.card}>
       <div className={styles.cardHeader}>
-        <span className={`${styles.statusDot} ${facility.active ? styles.statusActive : styles.statusInactive}`} />
+        <span className={`${styles.statusDot} ${facility.under_construction ? styles.statusInactive : styles.statusActive}`} />
         <span className={styles.cardName}>{facility.name}</span>
         <span className={CATEGORY_BADGE[facility.category] || shared.badgeGrey}>
           {formatLabel(facility.category)}
@@ -88,8 +89,13 @@ export function FacilityCard({ facility, children }: FacilityCardProps) {
 
       <div className={styles.cardDescription}>{facility.description}</div>
 
-      {(!facility.maintenance_satisfied || facility.bonus_type || facility.recipe_id) && (
+      {(facility.under_construction || !facility.maintenance_satisfied || facility.bonus_type || facility.recipe_id) && (
         <div className={styles.cardMeta}>
+          {facility.under_construction && (
+            <span className={`${styles.metaItem} ${styles.maintenanceWarning}`}>
+              <AlertTriangle size={10} /> Under construction
+            </span>
+          )}
           {!facility.maintenance_satisfied && (
             <button
               type="button"
@@ -112,6 +118,19 @@ export function FacilityCard({ facility, children }: FacilityCardProps) {
               Recipe: {formatLabel(facility.recipe_id)}
             </span>
           )}
+        </div>
+      )}
+
+      {production && (
+        <div className={styles.cardMeta}>
+          <span className={styles.metaItem}>
+            {production.queued_runs > 0
+              ? `Queue: ${production.queued_runs} run${production.queued_runs === 1 ? '' : 's'} (~${production.backlog_ticks} ticks)`
+              : 'Queue: empty'}
+          </span>
+          <span className={styles.metaItem}>
+            {production.public ? `Public — ${(production.rental_fee_per_run ?? 0).toLocaleString()} cr/run` : 'Private'}
+          </span>
         </div>
       )}
 
