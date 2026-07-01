@@ -2,15 +2,15 @@
 
 import { Warehouse, Factory, Users, Globe, Check } from 'lucide-react'
 import { Modal, shared } from '../../shared'
-import type { FacilityWithProduction } from '../../types'
+import type { Facility } from '../../types'
 import styles from './facilities.module.css'
 
 interface FacilityVenuePickerProps {
   recipeName: string
   /** Candidate facilities already filtered to ones that produce this recipe. */
-  ownFacilities: FacilityWithProduction[]
-  factionFacilities: FacilityWithProduction[]
-  publicFacilities: FacilityWithProduction[]
+  ownFacilities: Facility[]
+  factionFacilities: Facility[]
+  publicFacilities: Facility[]
   selected?: string
   onSelect: (facilityId: string | undefined) => void
   onClose: () => void
@@ -50,7 +50,7 @@ export function FacilityVenuePicker({
     onClose()
   }
 
-  const groups: { icon: React.ReactNode; suffix: string; facilities: FacilityWithProduction[] }[] = [
+  const groups: { icon: React.ReactNode; suffix: string; facilities: Facility[] }[] = [
     { icon: <Factory size={12} />, suffix: '', facilities: ownFacilities },
     { icon: <Users size={12} />, suffix: ' (faction)', facilities: factionFacilities },
     { icon: <Globe size={12} />, suffix: ' (rental)', facilities: publicFacilities },
@@ -86,7 +86,7 @@ export function FacilityVenuePicker({
   )
 }
 
-function facilityMeta(f: FacilityWithProduction): string[] {
+function facilityMeta(f: Facility): string[] {
   const p = f.production
   if (!p) return [`Level ${f.level}`]
   const lines: string[] = []

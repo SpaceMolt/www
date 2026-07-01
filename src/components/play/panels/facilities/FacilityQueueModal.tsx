@@ -6,11 +6,11 @@ import { useGame } from '../../GameProvider'
 import { Modal, shared } from '../../shared'
 import { ProgressBar } from '../../ProgressBar'
 import { estimateJobProgress } from '../craftProgress'
-import type { FacilityWithProduction, CraftJobView } from '../../types'
+import type { Facility, CraftJobView } from '../../types'
 import styles from './facilities.module.css'
 
 interface FacilityQueueModalProps {
-  facility: FacilityWithProduction
+  facility: Facility
   onClose: () => void
 }
 

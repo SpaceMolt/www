@@ -2,7 +2,6 @@
 
 import { useState, useCallback } from 'react'
 import {
-  Power,
   ArrowUpCircle,
   ArrowRightLeft,
   Paintbrush,
@@ -13,7 +12,6 @@ import {
 import { useGame } from '../../GameProvider'
 import { Modal, shared } from '../../shared'
 import type { FacilityListResponse, Facility } from '@/lib/gameTypes'
-import type { FacilityWithProduction } from '../../types'
 import { FacilityCard } from './FacilityCard'
 import { UpgradeModal, fetchUpgradeOptions, type UpgradeOption } from './UpgradeModal'
 import { FacilityQueueModal } from './FacilityQueueModal'
@@ -27,7 +25,6 @@ interface OwnedViewProps {
 export function OwnedView({ facilityData, onRefresh }: OwnedViewProps) {
   const { sendCommand, api } = useGame()
 
-  const [toggling, setToggling] = useState<string | null>(null)
   const [upgradeModal, setUpgradeModal] = useState<{ facility: Facility; options: UpgradeOption[] } | null>(null)
   const [upgradeLoading, setUpgradeLoading] = useState(false)
   const [upgrading, setUpgrading] = useState(false)
@@ -42,15 +39,6 @@ export function OwnedView({ facilityData, onRefresh }: OwnedViewProps) {
   // Server pre-filters player_facilities to only the requesting player's own
   // facilities, so we can render the list directly without further filtering.
   const myFacilities = facilityData.player_facilities
-
-  const handleToggle = useCallback(async (facilityId: string) => {
-    setToggling(facilityId)
-    try {
-      await sendCommand('facility_toggle', { facility_id: facilityId })
-      onRefresh()
-    } catch { /* handled by event log */ }
-    setToggling(null)
-  }, [sendCommand, onRefresh])
 
   const handleShowUpgrades = useCallback(async (facility: Facility) => {
     if (!api) return
@@ -79,7 +67,7 @@ export function OwnedView({ facilityData, onRefresh }: OwnedViewProps) {
     setTransferring(null)
   }, [sendCommand, onRefresh])
 
-  const handleToggleAccess = useCallback(async (facility: FacilityWithProduction) => {
+  const handleToggleAccess = useCallback(async (facility: Facility) => {
     if (!api) return
     const nextAccess = facility.production?.public ? 'private' : 'public'
     try {
@@ -136,23 +124,8 @@ export function OwnedView({ facilityData, onRefresh }: OwnedViewProps) {
             Your Facilities
             <span className={styles.sectionCount}>({myFacilities.length})</span>
           </div>
-          {myFacilities.map(facility => {
-            const f = facility as FacilityWithProduction
-            return (
+          {myFacilities.map(f => (
             <FacilityCard key={f.facility_id} facility={f}>
-              {f.category === 'production' && (
-                <button
-                  className={f.active ? shared.warningBtn : shared.confirmBtn}
-                  onClick={() => handleToggle(f.facility_id)}
-                  disabled={toggling === f.facility_id}
-                  type="button"
-                >
-                  {toggling === f.facility_id
-                    ? <Loader2 size={11} className={shared.spinner} />
-                    : <Power size={11} />}
-                  {f.active ? 'Disable' : 'Enable'}
-                </button>
-              )}
               <button
                 className={shared.actionBtn}
                 onClick={() => handleShowUpgrades(f)}
@@ -229,8 +202,7 @@ export function OwnedView({ facilityData, onRefresh }: OwnedViewProps) {
                 </button>
               )}
             </FacilityCard>
-            )
-          })}
+          ))}
         </div>
       )}
 

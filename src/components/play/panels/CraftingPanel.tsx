@@ -11,7 +11,7 @@ import { ProgressBar } from '../ProgressBar'
 import { Panel, shared } from '../shared'
 import { BugReportButton } from '../BugReportButton'
 import { buildRecipeContext } from '../bugReportContext'
-import type { Recipe, CraftJobView, CraftQuote, FacilityWithProduction } from '../types'
+import type { Recipe, CraftJobView, CraftQuote, Facility } from '../types'
 import { recipesById, formatItemId } from '@/data/catalog'
 import { titleCase } from '@/lib/format'
 import { canCraftRecipe, availableQuantity } from '@/lib/crafting'
@@ -41,9 +41,9 @@ export function CraftingPanel() {
   const [selectedVenue, setSelectedVenue] = useState<Record<string, string>>({})
   const [venuePickerRecipeId, setVenuePickerRecipeId] = useState<string | null>(null)
   const [facilities, setFacilities] = useState<{
-    own: FacilityWithProduction[]
-    faction: FacilityWithProduction[]
-    public: FacilityWithProduction[]
+    own: Facility[]
+    faction: Facility[]
+    public: Facility[]
   }>({ own: [], faction: [], public: [] })
 
   // Queued jobs across all venues (craft action=queue). Lives in shared game
@@ -64,9 +64,9 @@ export function CraftingPanel() {
     if (!state.isDocked || !api) return
     let cancelled = false
     api.callStructured<{
-      player_facilities?: FacilityWithProduction[]
-      faction_facilities?: FacilityWithProduction[]
-      public_facilities?: FacilityWithProduction[]
+      player_facilities?: Facility[]
+      faction_facilities?: Facility[]
+      public_facilities?: Facility[]
     }>('spacemolt_facility', 'list', {}).then((data) => {
       if (cancelled || !data) return
       setFacilities({
@@ -619,9 +619,9 @@ export function CraftingPanel() {
 }
 
 interface FacilityLists {
-  own: FacilityWithProduction[]
-  faction: FacilityWithProduction[]
-  public: FacilityWithProduction[]
+  own: Facility[]
+  faction: Facility[]
+  public: Facility[]
 }
 
 /** Resolve a selected facility_id to a display label for the venue button. */

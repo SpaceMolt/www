@@ -232,30 +232,6 @@ export interface CraftJobView {
   last_sync_tick?: number
 }
 
-// FacilityEntry.production (internal/apiresponses/facility.go) — the
-// throughput/backlog/rental snapshot needed to pick a crafting venue and to
-// manage a facility's job queue. Not yet in the cached OpenAPI spec
-// (src/lib/openapi-v2.json), so typed locally rather than via gameTypes.ts
-// until that's refreshed.
-export interface FacilityProduction {
-  recipe?: string
-  output_per_run?: number
-  ticks_per_run?: number
-  items_per_hour?: number
-  queued_runs: number
-  queued_items: number
-  backlog_ticks: number
-  public?: boolean
-  rental_fee_per_run?: number
-}
-
-export type FacilityWithProduction = Facility & {
-  production?: FacilityProduction
-  // custom_name is the owner-assigned name (facility.go); also not yet in
-  // the cached spec.
-  custom_name?: string
-}
-
 // Result of a dry_run craft/recycle: a cost + time quote, nothing queued.
 export interface CraftQuote {
   recipe: string

@@ -2,7 +2,6 @@
 
 import { useState, useCallback } from 'react'
 import {
-  Power,
   ArrowUpCircle,
   ArrowRightLeft,
   Loader2,
@@ -22,22 +21,12 @@ interface FactionViewProps {
 export function FactionView({ facilityData, onRefresh }: FactionViewProps) {
   const { sendCommand, api } = useGame()
 
-  const [toggling, setToggling] = useState<string | null>(null)
   const [upgradeModal, setUpgradeModal] = useState<{ facility: Facility; options: UpgradeOption[] } | null>(null)
   const [upgradeLoading, setUpgradeLoading] = useState(false)
   const [upgrading, setUpgrading] = useState(false)
   const [transferring, setTransferring] = useState<string | null>(null)
 
   const factionFacilities = facilityData.faction_facilities
-
-  const handleToggle = useCallback(async (facilityId: string) => {
-    setToggling(facilityId)
-    try {
-      await sendCommand('facility_faction_toggle', { facility_id: facilityId })
-      onRefresh()
-    } catch { /* handled by event log */ }
-    setToggling(null)
-  }, [sendCommand, onRefresh])
 
   const handleShowUpgrades = useCallback(async (facility: Facility) => {
     if (!api) return
@@ -83,19 +72,6 @@ export function FactionView({ facilityData, onRefresh }: FactionViewProps) {
         </div>
         {factionFacilities.map(f => (
           <FacilityCard key={f.facility_id} facility={f}>
-            {f.category === 'production' && (
-              <button
-                className={f.active ? shared.warningBtn : shared.confirmBtn}
-                onClick={() => handleToggle(f.facility_id)}
-                disabled={toggling === f.facility_id}
-                type="button"
-              >
-                {toggling === f.facility_id
-                  ? <Loader2 size={11} className={shared.spinner} />
-                  : <Power size={11} />}
-                {f.active ? 'Disable' : 'Enable'}
-              </button>
-            )}
             <button
               className={shared.actionBtn}
               onClick={() => handleShowUpgrades(f)}

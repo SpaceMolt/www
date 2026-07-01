@@ -96,7 +96,6 @@ export type CompletedMissionsResponse = Schema['CompletedMissionsResponse']
 export type ViewCompletedMissionResponse = Schema['ViewCompletedMissionResponse']
 
 // Crafting
-export type CraftResponse = Schema['CraftResponse']
 export type CatalogResponse = Schema['CatalogResponse']
 
 // Social
