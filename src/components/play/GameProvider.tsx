@@ -27,6 +27,23 @@ interface GameContextValue {
   onSwitchPlayer?: () => void
 }
 
+// HTTP v2 mutations opt every request into v2 state deltas (see gameserver's
+// WrapWithDelta/buildArrivalDelta), so ANY mutation response that isn't a bare
+// `{queued: true}` ack — a completed dock/mine/craft/salvage/etc. just as much
+// as a deferred travel/jump arrival delivered later over WS — comes back as a
+// V2GameState with the original typed response (action, poi, base, message,
+// recipe, xp_gained, ...) nested entirely under `details` instead of at the
+// top level. Merge `details` back over the top level so callers keep seeing
+// the flat shape they did before v2 deltas existed, while still keeping any
+// delta-only fields (player/ship/location/etc.) that have no top-level
+// equivalent in `details`.
+export function unwrapActionResult(rawResult: Record<string, unknown>): Record<string, unknown> {
+  const details = rawResult.details
+  return details && typeof details === 'object'
+    ? { ...rawResult, ...(details as Record<string, unknown>) }
+    : rawResult
+}
+
 const GameContext = createContext<GameContextValue | null>(null)
 
 export function useGame() {
@@ -71,7 +88,7 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
         const arTick = p.tick as number
         if (arTick > 0) d({ type: 'TICK', tick: arTick })
 
-        const result = (p.result || {}) as Record<string, unknown>
+        const result = unwrapActionResult((p.result || {}) as Record<string, unknown>)
         d({ type: 'OK', payload: result })
 
         const arAction = result.action as string | undefined
@@ -416,7 +433,7 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
     }
 
     return api.command(type, payload).then((result) => {
-      const r = (result || {}) as Record<string, unknown>
+      const r = unwrapActionResult((result || {}) as Record<string, unknown>)
       const d = dispatchRef.current
 
       // Dispatch typed actions for data-setting commands
