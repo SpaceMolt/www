@@ -27,6 +27,17 @@ interface GameContextValue {
   onSwitchPlayer?: () => void
 }
 
+// HTTP v2 mutations opt every request into v2 state deltas, so a multi-tick
+// arrival delivered later via WS (travel/jump) arrives wrapped in a
+// V2GameState with the typed action response nested under `details` (see
+// gameserver's WrapWithDelta/buildArrivalDelta) instead of at the top level.
+// Unwrap it so action-name handling (arrived/jumped/dock/etc.) sees
+// `action`/`poi`/etc. where it expects them.
+export function unwrapActionResult(rawResult: Record<string, unknown>): Record<string, unknown> {
+  const details = rawResult.details
+  return details && typeof details === 'object' ? (details as Record<string, unknown>) : rawResult
+}
+
 const GameContext = createContext<GameContextValue | null>(null)
 
 export function useGame() {
@@ -71,7 +82,7 @@ export function GameProvider({ children, onSwitchPlayer }: GameProviderProps) {
         const arTick = p.tick as number
         if (arTick > 0) d({ type: 'TICK', tick: arTick })
 
-        const result = (p.result || {}) as Record<string, unknown>
+        const result = unwrapActionResult((p.result || {}) as Record<string, unknown>)
         d({ type: 'OK', payload: result })
 
         const arAction = result.action as string | undefined
