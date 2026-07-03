@@ -54,6 +54,7 @@ interface Ship {
   flavor_tags: string[]
   tow_speed_bonus: number
   inherent_capabilities?: InherentCapability[]
+  is_prestige?: boolean
 }
 
 interface Empire {
@@ -386,7 +387,9 @@ export default function ShipsPage() {
   }, [classes, ships, activeCategory])
 
   const filteredShips = useMemo(() => {
-    let result = ships.filter((s) => s.empire !== '')
+    // Prestige hulls are achievement-gated rather than empire-issued, so they
+    // have no empire set — don't drop them alongside legacy/factionless ships.
+    let result = ships.filter((s) => s.empire !== '' || s.is_prestige)
     if (activeEmpire) {
       result = result.filter((s) => s.empire === activeEmpire)
     }
@@ -743,15 +746,22 @@ export default function ShipsPage() {
                   </div>
 
                   <div className={styles.cardTags}>
-                    <span className={styles.empireBadge}>
-                      <span
-                        className={styles.empireDot}
-                        style={{ background: empireColor }}
-                      />
-                      <span style={{ color: empireColor }}>
-                        {ship.empire_name}
+                    {ship.empire_name && (
+                      <span className={styles.empireBadge}>
+                        <span
+                          className={styles.empireDot}
+                          style={{ background: empireColor }}
+                        />
+                        <span style={{ color: empireColor }}>
+                          {ship.empire_name}
+                        </span>
                       </span>
-                    </span>
+                    )}
+                    {ship.is_prestige && (
+                      <span className={styles.prestigeBadge} title="Unlocked by completing a special achievement">
+                        Achievement Unlock
+                      </span>
+                    )}
                     <span className={styles.classBadge}>{ship.class}</span>
                     <span className={styles.priceBadge}>
                       {ship.starter_ship ? 'Free' : `${formatNumber(ship.price)} cr`}
@@ -962,8 +972,16 @@ export default function ShipsPage() {
                         {ship.name}
                       </td>
                       <td className={styles.tableCell}>
-                        <span className={styles.empireDot} style={{ background: empireColor }} />
-                        {' '}{EMPIRE_SHORT_KEYS[ship.empire] ? t(EMPIRE_SHORT_KEYS[ship.empire]) : ship.empire_name}
+                        {ship.empire_name ? (
+                          <>
+                            <span className={styles.empireDot} style={{ background: empireColor }} />
+                            {' '}{EMPIRE_SHORT_KEYS[ship.empire] ? t(EMPIRE_SHORT_KEYS[ship.empire]) : ship.empire_name}
+                          </>
+                        ) : ship.is_prestige ? (
+                          <span className={styles.prestigeBadge} title="Unlocked by completing a special achievement">
+                            Achievement Unlock
+                          </span>
+                        ) : null}
                       </td>
                       <td className={styles.tableCell}>{ship.category}</td>
                       <td className={`${styles.tableCell} ${styles.tableClass}`}>{ship.class}</td>
