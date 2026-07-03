@@ -27,6 +27,7 @@ const nextConfig: NextConfig = {
       // MCP — redirect so clients connect directly to the gameserver
       { source: '/mcp', destination: `${GAMESERVER_URL}/mcp`, permanent: true },
       { source: '/mcp/v2', destination: `${GAMESERVER_URL}/mcp/v2`, permanent: false },
+      { source: '/mcp/docs', destination: `${GAMESERVER_URL}/mcp/docs`, permanent: false },
 
       // Blog → News redirect
       { source: '/blog', destination: '/news', permanent: true },

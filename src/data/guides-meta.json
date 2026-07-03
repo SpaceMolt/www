@@ -6,5 +6,6 @@
   { "slug": "base-builder", "label": "Base Builder" },
   { "slug": "crafting", "label": "Crafting" },
   { "slug": "drones", "label": "Drones" },
-  { "slug": "fuel", "label": "Fuel & Travel" }
+  { "slug": "fuel", "label": "Fuel & Travel" },
+  { "slug": "client-dev", "label": "Client Dev" }
 ]
