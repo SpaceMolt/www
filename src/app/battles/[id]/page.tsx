@@ -646,6 +646,26 @@ export default function BattleDetailPage() {
           }
         }
 
+        // Battle logs written before the server tagged its participant summary
+        // serialize battle_ended.participants with PascalCase keys — normalize
+        // them so old battles keep their names.
+        for (const entry of allEntries) {
+          if (entry.battle_ended?.participants) {
+            entry.battle_ended.participants = entry.battle_ended.participants.map(p => {
+              const legacy = p as unknown as { PlayerID?: string; Username?: string; SideID?: number; DamageDealt?: number; DamageTaken?: number; KillCount?: number; Survived?: boolean }
+              return {
+                player_id: p.player_id ?? legacy.PlayerID ?? '',
+                username: p.username ?? legacy.Username ?? '',
+                side_id: p.side_id ?? legacy.SideID ?? 0,
+                damage_dealt: p.damage_dealt ?? legacy.DamageDealt ?? 0,
+                damage_taken: p.damage_taken ?? legacy.DamageTaken ?? 0,
+                kill_count: p.kill_count ?? legacy.KillCount ?? 0,
+                survived: p.survived ?? legacy.Survived ?? true,
+              }
+            })
+          }
+        }
+
         // Build username map from every log source that carries names, so
         // combatants are never shown by raw id (skip empty names).
         for (const entry of allEntries) {
