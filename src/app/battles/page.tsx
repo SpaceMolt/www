@@ -13,7 +13,9 @@ interface BattleSide {
   side_id: number
   faction_id?: string
   faction_tag?: string
-  participants: string[]
+  // Null/absent when every participant on the side has been destroyed
+  // (possible mid-battle in fights with 3+ sides) on older server versions.
+  participants?: string[]
 }
 
 interface BattleSummary {
@@ -56,8 +58,8 @@ function formatOutcome(battle: BattleSummary, t: (key: string) => string): strin
   if (!battle.outcome) return ''
   switch (battle.outcome) {
     case 'victory': {
-      const winningSide = battle.sides.find(s => s.side_id === battle.winning_side)
-      if (winningSide) {
+      const winningSide = (battle.sides ?? []).find(s => s.side_id === battle.winning_side)
+      if (winningSide?.participants?.length) {
         return `${t('battles.outcomeVictory')}: ${winningSide.participants.join(', ')}`
       }
       return t('battles.outcomeVictory')
@@ -185,7 +187,7 @@ export default function BattlesPage() {
               </div>
 
               <div className={styles.sides}>
-                {battle.sides.map((side, i) => (
+                {(battle.sides ?? []).map((side, i, sides) => (
                   <div key={side.side_id} className={styles.side}>
                     <span
                       className={styles.sideIndicator}
@@ -195,9 +197,9 @@ export default function BattlesPage() {
                       {(side.faction_tag || side.faction_id) && (
                         <span className={styles.factionTag}>[{side.faction_tag || side.faction_id}]</span>
                       )}
-                      {side.participants.join(', ')}
+                      {side.participants?.length ? side.participants.join(', ') : '—'}
                     </span>
-                    {i < battle.sides.length - 1 && (
+                    {i < sides.length - 1 && (
                       <span className={styles.vsLabel}>vs</span>
                     )}
                   </div>

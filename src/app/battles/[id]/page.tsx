@@ -287,7 +287,7 @@ function formatEvents(entry: BattleLogEntry, usernameMap: Map<string, string>): 
 
   if (entry.kills) {
     for (const k of entry.kills) {
-      events.push({ tick: entry.tick, type: 'kill', color: '#e63946', text: `${k.victim_username} destroyed by ${k.killer_username}` })
+      events.push({ tick: entry.tick, type: 'kill', color: '#e63946', text: `${k.victim_username || name(k.victim_id)} destroyed by ${k.killer_username || name(k.killer_id)}` })
     }
   }
 
@@ -295,8 +295,8 @@ function formatEvents(entry: BattleLogEntry, usernameMap: Map<string, string>): 
     const e = entry.battle_ended
     let outcomeText = 'Battle ended'
     if (e.outcome === 'victory') {
-      const winner = e.participants.filter(p => p.side_id === e.winning_side).map(p => p.username).join(', ')
-      outcomeText = `Victory! ${winner} won`
+      const winner = (e.participants ?? []).filter(p => p.side_id === e.winning_side).map(p => p.username || name(p.player_id)).join(', ')
+      outcomeText = winner ? `Victory! ${winner} won` : 'Victory!'
     } else if (e.outcome === 'stalemate') {
       outcomeText = 'Battle ended in a stalemate'
     } else if (e.outcome === 'mutual_destruction') {
@@ -646,10 +646,41 @@ export default function BattleDetailPage() {
           }
         }
 
-        // Build username map
+        // Battle logs written before the server tagged its participant summary
+        // serialize battle_ended.participants with PascalCase keys — normalize
+        // them so old battles keep their names.
+        for (const entry of allEntries) {
+          if (entry.battle_ended?.participants) {
+            entry.battle_ended.participants = entry.battle_ended.participants.map(p => {
+              const legacy = p as unknown as { PlayerID?: string; Username?: string; SideID?: number; DamageDealt?: number; DamageTaken?: number; KillCount?: number; Survived?: boolean }
+              return {
+                player_id: p.player_id ?? legacy.PlayerID ?? '',
+                username: p.username ?? legacy.Username ?? '',
+                side_id: p.side_id ?? legacy.SideID ?? 0,
+                damage_dealt: p.damage_dealt ?? legacy.DamageDealt ?? 0,
+                damage_taken: p.damage_taken ?? legacy.DamageTaken ?? 0,
+                kill_count: p.kill_count ?? legacy.KillCount ?? 0,
+                survived: p.survived ?? legacy.Survived ?? true,
+              }
+            })
+          }
+        }
+
+        // Build username map from every log source that carries names, so
+        // combatants are never shown by raw id (skip empty names).
         for (const entry of allEntries) {
           for (const snap of entry.snapshots) {
-            usernameMap.current.set(snap.player_id, snap.username)
+            if (snap.username) usernameMap.current.set(snap.player_id, snap.username)
+          }
+          for (const j of entry.joins ?? []) {
+            if (j.username) usernameMap.current.set(j.player_id, j.username)
+          }
+          for (const k of entry.kills ?? []) {
+            if (k.killer_username) usernameMap.current.set(k.killer_id, k.killer_username)
+            if (k.victim_username) usernameMap.current.set(k.victim_id, k.victim_username)
+          }
+          for (const p of entry.battle_ended?.participants ?? []) {
+            if (p.username) usernameMap.current.set(p.player_id, p.username)
           }
         }
 
@@ -890,7 +921,7 @@ export default function BattleDetailPage() {
   if (entries.length > 0) {
     for (const snap of entries[0].snapshots) {
       if (!sides.has(snap.side_id)) sides.set(snap.side_id, { participants: [] })
-      sides.get(snap.side_id)!.participants.push(snap.username)
+      sides.get(snap.side_id)!.participants.push(snap.username || usernameMap.current.get(snap.player_id) || snap.player_id.slice(0, 8))
     }
     // Also add late joiners
     for (const entry of entries) {
