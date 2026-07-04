@@ -207,7 +207,7 @@ interface FormattedEvent {
 
 function formatEvents(entry: BattleLogEntry, usernameMap: Map<string, string>): FormattedEvent[] {
   const events: FormattedEvent[] = []
-  const name = (id: string) => usernameMap.get(id) || id.slice(0, 8)
+  const name = (id: string) => usernameMap.get(id) || 'Unknown'
 
   if (entry.joins) {
     for (const j of entry.joins) {
@@ -287,7 +287,7 @@ function formatEvents(entry: BattleLogEntry, usernameMap: Map<string, string>): 
 
   if (entry.kills) {
     for (const k of entry.kills) {
-      events.push({ tick: entry.tick, type: 'kill', color: '#e63946', text: `${k.victim_username} destroyed by ${k.killer_username}` })
+      events.push({ tick: entry.tick, type: 'kill', color: '#e63946', text: `${k.victim_username || name(k.victim_id)} destroyed by ${k.killer_username || name(k.killer_id)}` })
     }
   }
 
@@ -295,8 +295,8 @@ function formatEvents(entry: BattleLogEntry, usernameMap: Map<string, string>): 
     const e = entry.battle_ended
     let outcomeText = 'Battle ended'
     if (e.outcome === 'victory') {
-      const winner = e.participants.filter(p => p.side_id === e.winning_side).map(p => p.username).join(', ')
-      outcomeText = `Victory! ${winner} won`
+      const winner = (e.participants ?? []).filter(p => p.side_id === e.winning_side).map(p => p.username || name(p.player_id)).join(', ')
+      outcomeText = winner ? `Victory! ${winner} won` : 'Victory!'
     } else if (e.outcome === 'stalemate') {
       outcomeText = 'Battle ended in a stalemate'
     } else if (e.outcome === 'mutual_destruction') {
@@ -646,10 +646,21 @@ export default function BattleDetailPage() {
           }
         }
 
-        // Build username map
+        // Build username map from every log source that carries names, so
+        // combatants are never shown by raw id (skip empty names).
         for (const entry of allEntries) {
           for (const snap of entry.snapshots) {
-            usernameMap.current.set(snap.player_id, snap.username)
+            if (snap.username) usernameMap.current.set(snap.player_id, snap.username)
+          }
+          for (const j of entry.joins ?? []) {
+            if (j.username) usernameMap.current.set(j.player_id, j.username)
+          }
+          for (const k of entry.kills ?? []) {
+            if (k.killer_username) usernameMap.current.set(k.killer_id, k.killer_username)
+            if (k.victim_username) usernameMap.current.set(k.victim_id, k.victim_username)
+          }
+          for (const p of entry.battle_ended?.participants ?? []) {
+            if (p.username) usernameMap.current.set(p.player_id, p.username)
           }
         }
 
@@ -890,7 +901,7 @@ export default function BattleDetailPage() {
   if (entries.length > 0) {
     for (const snap of entries[0].snapshots) {
       if (!sides.has(snap.side_id)) sides.set(snap.side_id, { participants: [] })
-      sides.get(snap.side_id)!.participants.push(snap.username)
+      sides.get(snap.side_id)!.participants.push(snap.username || usernameMap.current.get(snap.player_id) || 'Unknown')
     }
     // Also add late joiners
     for (const entry of entries) {
@@ -1033,7 +1044,7 @@ export default function BattleDetailPage() {
                 <div className={styles.shipInfoDetails}>
                   <span>{t('battleDetail.zone')}: {inspectedSnap.zone}</span>
                   <span>{t('battleDetail.stance')}: {inspectedSnap.stance}</span>
-                  {inspectedSnap.target_id && <span>{t('battleDetail.target')}: {usernameMap.current.get(inspectedSnap.target_id) || inspectedSnap.target_id.slice(0, 8)}</span>}
+                  {inspectedSnap.target_id && <span>{t('battleDetail.target')}: {usernameMap.current.get(inspectedSnap.target_id) || 'Unknown'}</span>}
                   <span>{t('battleDetail.dmgDealt')}: {inspectedSnap.damage_dealt}</span>
                   <span>{t('battleDetail.dmgTaken')}: {inspectedSnap.damage_taken}</span>
                   {inspectedSnap.kill_count > 0 && <span>{t('battleDetail.kills')}: {inspectedSnap.kill_count}</span>}
