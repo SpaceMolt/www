@@ -207,7 +207,7 @@ interface FormattedEvent {
 
 function formatEvents(entry: BattleLogEntry, usernameMap: Map<string, string>): FormattedEvent[] {
   const events: FormattedEvent[] = []
-  const name = (id: string) => usernameMap.get(id) || 'Unknown'
+  const name = (id: string) => usernameMap.get(id) || id.slice(0, 8)
 
   if (entry.joins) {
     for (const j of entry.joins) {
@@ -921,7 +921,7 @@ export default function BattleDetailPage() {
   if (entries.length > 0) {
     for (const snap of entries[0].snapshots) {
       if (!sides.has(snap.side_id)) sides.set(snap.side_id, { participants: [] })
-      sides.get(snap.side_id)!.participants.push(snap.username || usernameMap.current.get(snap.player_id) || 'Unknown')
+      sides.get(snap.side_id)!.participants.push(snap.username || usernameMap.current.get(snap.player_id) || snap.player_id.slice(0, 8))
     }
     // Also add late joiners
     for (const entry of entries) {
@@ -1064,7 +1064,7 @@ export default function BattleDetailPage() {
                 <div className={styles.shipInfoDetails}>
                   <span>{t('battleDetail.zone')}: {inspectedSnap.zone}</span>
                   <span>{t('battleDetail.stance')}: {inspectedSnap.stance}</span>
-                  {inspectedSnap.target_id && <span>{t('battleDetail.target')}: {usernameMap.current.get(inspectedSnap.target_id) || 'Unknown'}</span>}
+                  {inspectedSnap.target_id && <span>{t('battleDetail.target')}: {usernameMap.current.get(inspectedSnap.target_id) || inspectedSnap.target_id.slice(0, 8)}</span>}
                   <span>{t('battleDetail.dmgDealt')}: {inspectedSnap.damage_dealt}</span>
                   <span>{t('battleDetail.dmgTaken')}: {inspectedSnap.damage_taken}</span>
                   {inspectedSnap.kill_count > 0 && <span>{t('battleDetail.kills')}: {inspectedSnap.kill_count}</span>}
