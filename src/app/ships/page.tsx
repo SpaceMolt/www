@@ -31,7 +31,6 @@ interface Ship {
   tier: number
   starter_ship?: boolean
   scale: number
-  price: number
   lore: string
   special: string
   base_hull: number
@@ -763,9 +762,9 @@ export default function ShipsPage() {
                       </span>
                     )}
                     <span className={styles.classBadge}>{ship.class}</span>
-                    <span className={styles.priceBadge}>
-                      {ship.starter_ship ? 'Free' : `${formatNumber(ship.price)} cr`}
-                    </span>
+                    {ship.starter_ship && (
+                      <span className={styles.priceBadge}>Free</span>
+                    )}
                   </div>
 
                   <p className={styles.shipDescription}>{ship.description}</p>
