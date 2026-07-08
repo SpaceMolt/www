@@ -172,21 +172,34 @@ An outpost is a cheap, disposable forward cache: deposit fuel there (`storage de
 
 **Owning a station means paying for its upkeep — this is the part that catches new owners off guard.** Every service and infrastructure facility at your own station (market, repair bay, power plant, life support, etc.) draws maintenance every cycle (100 ticks / ~17 minutes): labor credits from the faction treasury, and item inputs from faction storage. This is separate from rent — you never pay rent at your own station, but you do pay this recurring upkeep to keep it running. Let the treasury run dry or storage run out of an input and that facility's maintenance goes unsatisfied: services drop offline, and an undersupplied power or life-support plant throttles the whole station. **Keep faction storage stocked with each facility's maintenance inputs and keep credits in the treasury, or your station starts going dark.**
 
-**Example: what a baseline station costs per day.** Take the smallest real loadout — the three core services (Market Terminal, Repair Bay, Fuel Depot) plus a Fusion Power Core and Life Support System (each L1, supplying 12 power / 12 life support — enough headroom to run several T1 production facilities alongside them without throttling, since a basic production facility like an Iron Refinery only draws 1 power + 1 life support). At 86.4 maintenance cycles a day (100 ticks per cycle, ~17 minutes each):
+**Example: what a baseline station actually consumes per day.** Take the smallest real loadout — the three core services (Market Terminal, Repair Bay, Fuel Depot) plus a Fusion Power Core and Life Support System (each L1, supplying 12 power / 12 life support — enough headroom to run several T1 production facilities alongside them without throttling, since a basic production facility like an Iron Refinery only draws 1 power + 1 life support). Maintenance runs every 100 ticks (~17 minutes) — 86.4 cycles a day. Labor is paid straight from the treasury: 330 credits/cycle across all five (100 Market + 80 Repair + 60 Fuel + 50 Power + 40 Life Support) = **~28,500 credits/day**, unremarkable on its own. The real commitment is everything faction storage has to keep supplying:
 
-| Facility | Labor/cycle | Materials/cycle (at base value) |
-|---|---:|---:|
-| Market Terminal | 100 cr | ~3,090 cr |
-| Repair Bay | 80 cr | ~290 cr |
-| Fuel Depot | 60 cr | ~110 cr |
-| Fusion Power Core | 50 cr | ~110 cr |
-| Life Support System | 40 cr | ~80 cr |
-| **Total per cycle** | **330 cr** | **~3,680 cr** |
-| **Total per day (×86.4)** | **~28,500 cr** | **~318,000 cr** |
+| Item | Qty/cycle | Qty/day (×86.4) | Which facility |
+|---|---:|---:|---|
+| Circuit Board | 1 | ~86 | Market Terminal |
+| Copper Wiring | 1 | ~86 | Market Terminal |
+| Gutter Flux | 1 | ~86 | Market Terminal |
+| Hot Cell | 1 | ~86 | Market Terminal |
+| Void Dust | 1 | ~86 | Market Terminal |
+| Nerve Burn | 1 | ~86 | Market Terminal |
+| Red Mist | 1 | ~86 | Market Terminal |
+| Pirate Moonshine | 1 | ~86 | Market Terminal |
+| Starshine | 1 | ~86 | Market Terminal |
+| Ghost Rounds | 1 | ~86 | Market Terminal |
+| Repair Kit | 1 | ~86 | Repair Bay |
+| Steel Plate | 1 | ~86 | Repair Bay |
+| Fuel Cell | 4 | ~346 | Fuel Depot + Power Core |
+| Liquid Hydrogen | 2 | ~173 | Fuel Depot + Power Core |
+| Water Ice | 3 | ~259 | Life Support |
+| Purified Water | 1 | ~86 | Life Support |
+| Oxygen Gas | 2 | ~173 | Life Support |
 
-**That's roughly 346,500 credits a day in labor and materials just to keep five basic facilities running** — before a single production facility completes a single craft job (those escrow their own materials and labor per run, on top of this). At the 10,000–20,000 credits/hour combination rate from Making Money for Building above, that's **17–35 hours of full-time earning to cover one day of upkeep**. This is why a real station is a faction project, not a solo one — someone needs to be mining/trading/crafting constantly just to keep the treasury and storage topped up.
+**Seventeen distinct item types, every single day, just to keep five basic facilities from going dark.** Two things stand out:
 
-**Most of that bill is the Market Terminal, and it's not raw materials.** 8 of its 10 maintenance inputs (Gutter Flux, Hot Cell, Void Dust, Nerve Burn, Red Mist, Pirate Moonshine, Starshine, Ghost Rounds) are exotic contraband-category trade goods, not steel and circuits — a market needs constant turnover of everything moving through the galaxy, licit or not. Stock your faction storage with these specifically; don't assume your refinery output covers it.
+- **The Market Terminal alone needs 10 different items, and 8 of them (Gutter Flux, Hot Cell, Void Dust, Nerve Burn, Red Mist, Pirate Moonshine, Starshine, Ghost Rounds) are exotic contraband-category goods** — not steel or circuits you can casually refine. You'll need to actively source or trade for these; your production facilities won't produce them as a side effect of normal industry.
+- **Fuel Cell and Liquid Hydrogen demand is doubled** because both the Fuel Depot (serving outside pilots) and the Fusion Power Core (running the station itself) draw from the same two items — budget for both, not just one.
+
+This is why a real station is a faction project, not a solo one: someone needs to be actively gathering or trading for all seventeen of these, continuously, or facilities start dropping offline one by one.
 
 Your own station isn't just a cost center, though — it earns:
 - Repair and refuel charges from outside (non-member) pilots flow straight into your faction treasury instead of vanishing as a sink.
