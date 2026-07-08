@@ -44,7 +44,6 @@ interface POIData {
   base_id?: string
   station_name?: string
   station_empire?: string
-  station_faction_id?: string
   station_faction_name?: string
   station_faction_tag?: string
   station_faction_color?: string
