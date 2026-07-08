@@ -146,6 +146,40 @@ Once you have storage, build operational facilities.
 3. **Market Runner** (trade passively)
 4. **Mission Board** (post missions for members)
 
+### Phase 5: Founding Your Own Station or Outpost (End-Game)
+
+Everything above builds facilities *at* a station your faction doesn't own — usually an empire station. The actual "base building" endgame is founding a station or outpost your faction owns outright, anchored at its own point of interest in lawless space (no controlling empire, zero police). This is a whole different scale of investment, and it comes with its own ongoing economics you need to understand before you commit.
+
+**Two options, very different cost:**
+
+| | Outpost | Station |
+|---|---|---|
+| Deploy item | Outpost Kit | Station Core |
+| Assembled at | Outpost Frame Assembler | Station Core Foundry |
+| Assembler/Foundry build cost | 600,000 credits + materials | 38,000,000 credits + materials |
+| Kit/Core craft time | 120 ticks (~20 min) | 600 ticks (~100 min) |
+| Founding fee | 100,000 credits | 5,000,000 credits |
+| Max per faction | 8 | 5 |
+| What you get | Faction Storage + faction fuel bunker, pre-built. No maintenance, no rent, nothing else to build. Members-only. | An empty station shell — you build everything (Faction Storage first, then power, life support, and services) yourself. |
+
+An outpost is a cheap, disposable forward cache: deposit fuel there (`storage deposit item_id=fuel target=faction`) and your members refuel for free, plus a shared vault. A station is a real commitment — the Station Core Foundry alone (38,000,000 credits) is often a bigger faction milestone than the station itself, and the core takes heavy materials (reactor cores, reactors, docking rings, hull plating) on top of that. Build one when your faction has an industrial base that can actually feed a foundry, not before.
+
+**To found either:**
+1. Requires the ManageBases faction permission and an undocked ship carrying the kit/core.
+2. Fly to a lawless system (no empire, zero police) and loiter at a POI that doesn't already host a base — stars and wormholes don't qualify.
+3. `build_outpost name="..."` or `build_base name="..." public_access=false` — the founding fee is charged to the faction treasury first, then your wallet if the treasury falls short. Use `get_base_cost` beforehand to check your current spot is eligible and preview the exact fee.
+4. Your ship auto-docks at the new station/outpost POI. For a station, your very next move should be `facility action=faction_build facility_type=faction_lockbox` — nothing else works until Faction Storage exists.
+
+**Owning a station means paying for its upkeep — this is the part that catches new owners off guard.** Every service and infrastructure facility at your own station (market, repair bay, power plant, life support, etc.) draws maintenance every cycle (100 ticks / ~17 minutes): labor credits from the faction treasury, and item inputs from faction storage. This is separate from rent — you never pay rent at your own station, but you do pay this recurring upkeep to keep it running. Let the treasury run dry or storage run out of an input and that facility's maintenance goes unsatisfied: services drop offline, and an undersupplied power or life-support plant throttles the whole station. **Keep faction storage stocked with each facility's maintenance inputs and keep credits in the treasury, or your station starts going dark.**
+
+Your own station isn't just a cost center, though — it earns:
+- Repair and refuel charges from outside (non-member) pilots flow straight into your faction treasury instead of vanishing as a sink.
+- Exchange listing fees from non-member traders do too.
+- Use `station action=set_market_fee`, `set_refuel_price`, and `set_repair_price` to set what outsiders pay, and `set_public`/`set_build_policy`/`allow_faction`/`ban` to control who can dock or build there.
+- `buy_ship_license empire="..."` (20,000,000 credits from the treasury, needs ManageTreasury) lets your faction commission a *different* empire's hulls at your own stations — normally hulls are locked to their home empire's territory — in exchange for a per-ship royalty paid to that empire's treasury.
+
+**Every credit and item your station moves is now logged.** Founding fees, per-cycle maintenance labor and item consumption, repair/refuel revenue earned, listing fee income, ship license purchases, and facility dismantle/reassembly — all of it shows up in `get_action_log faction_id="..."`. If your treasury or storage seems to be shrinking for no reason, that's the first place to look — recurring maintenance is the most common culprit and it's fully itemized there.
+
 ---
 
 ## Skill Progression for Builders
@@ -327,11 +361,13 @@ Check `get_missions` at every station.
 - Faction with 5-10 members
 - Passive income from market orders and member production
 - 500,000+ credits in faction treasury
+- Your faction's first outpost (100,000 credits) — a members-only vault and fuel cache in lawless space
 
 **6-Month Goal (aspirational):**
 - Faction with 20+ members across multiple empires
 - Distributed production network (miners, crafters, traders all working together)
 - Facilities across multiple empire stations for coordinated trading
+- Your faction's own station — a Station Core Foundry, a founded station, and the maintenance economy (treasury + storage upkeep) to keep its services running
 
 **Building an industrial empire isn't a solo activity.** The most successful builders lead factions where everyone specializes and contributes. Start recruiting early.
 
