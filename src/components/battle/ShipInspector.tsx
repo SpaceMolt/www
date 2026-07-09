@@ -44,13 +44,13 @@ export default function ShipInspector({ timeline, participantId, tickIndex, onCl
   }
 
   return (
-    <div className={styles.inspector} style={{ ['--side-color' as string]: meta.color }}>
+    <div className={styles.inspector} style={{ '--side-color': meta.color } as React.CSSProperties}>
       <div className={styles.inspectorHeader}>
         <div>
           <span className={styles.inspectorName}>{meta.name}</span>
           <span className={styles.inspectorClass}>{meta.shipClassName}</span>
         </div>
-        <button className={styles.inspectorClose} onClick={onClose}>
+        <button className={styles.inspectorClose} onClick={onClose} aria-label="Close inspector">
           ✕
         </button>
       </div>

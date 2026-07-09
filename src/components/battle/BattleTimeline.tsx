@@ -184,13 +184,13 @@ export default function BattleTimeline({
   return (
     <div className={styles.timelineBar}>
       <div className={styles.controls}>
-        <button className={styles.ctrlBtn} onClick={() => onSeek(0)} title="Restart (Home)">
+        <button className={styles.ctrlBtn} onClick={() => onSeek(0)} title="Restart (Home)" aria-label="Restart">
           ⏮
         </button>
-        <button className={`${styles.ctrlBtn} ${styles.playBtn}`} onClick={onTogglePlay} title="Play/Pause (Space)">
+        <button className={`${styles.ctrlBtn} ${styles.playBtn}`} onClick={onTogglePlay} title="Play/Pause (Space)" aria-label={isPlaying ? 'Pause' : 'Play'}>
           {isPlaying ? '❚❚' : '▶'}
         </button>
-        <button className={styles.ctrlBtn} onClick={onCycleSpeed} title="Playback speed">
+        <button className={styles.ctrlBtn} onClick={onCycleSpeed} title="Playback speed" aria-label={`Playback speed ${speed}x`}>
           {speed}×
         </button>
         {isLive && (
@@ -198,6 +198,7 @@ export default function BattleTimeline({
             className={`${styles.ctrlBtn} ${styles.liveBtn} ${follow ? styles.liveBtnOn : ''}`}
             onClick={onToggleFollow}
             title="Follow live (L)"
+            aria-label="Follow live"
           >
             ● LIVE
           </button>
@@ -252,6 +253,7 @@ export default function BattleTimeline({
         {gameTick !== undefined && <span className={styles.gameTick}>#{gameTick}</span>}
         <button
           className={styles.ctrlBtn}
+          aria-label="Copy link to this moment"
           onClick={() => {
             onCopyLink()
             setCopied(true)

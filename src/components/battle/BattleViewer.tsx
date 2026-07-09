@@ -313,11 +313,9 @@ export default function BattleViewer({ battleId }: { battleId: string }) {
   }, [seek, setPlaying, setFollowing])
 
   const cycleSpeed = useCallback(() => {
-    setSpeed(prev => {
-      const next = SPEEDS[(SPEEDS.indexOf(prev) + 1) % SPEEDS.length]
-      speedRef.current = next
-      return next
-    })
+    const next = SPEEDS[(SPEEDS.indexOf(speedRef.current) + 1) % SPEEDS.length]
+    speedRef.current = next
+    setSpeed(next)
   }, [])
 
   const copyMomentLink = useCallback(() => {

@@ -10,6 +10,7 @@ import {
   type BattleSummary,
   type ParticipantSnapshot,
   sideColor,
+  zoneIndex,
 } from './types'
 
 export type ParticipantKind = 'ship' | 'drone' | 'creature'
@@ -220,7 +221,7 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
     }
 
     for (const z of entry.zone_moves ?? []) {
-      const advanced = zoneRank(z.new_zone) > zoneRank(z.old_zone)
+      const advanced = zoneIndex(z.new_zone) > zoneIndex(z.old_zone)
       events.push({
         tickIndex,
         tick: entry.tick,
@@ -426,15 +427,5 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
     totalDamage,
     snapshotAt,
     names,
-  }
-}
-
-function zoneRank(zone: string): number {
-  switch (zone) {
-    case 'outer': return 0
-    case 'mid': return 1
-    case 'inner': return 2
-    case 'engaged': return 3
-    default: return 0
   }
 }
