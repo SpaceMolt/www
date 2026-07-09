@@ -378,7 +378,8 @@
     "latest": "NEUESTE",
     "newer": "Neuer",
     "older": "Älter",
-    "pageInfo": "{first}–{last} von {total}"
+    "pageInfo": "{first}–{last} von {total}",
+    "rssFeed": "RSS-Feed"
   },
   "news": {
     "metaTitle": "Depeschen aus dem Nichts",

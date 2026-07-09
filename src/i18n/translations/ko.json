@@ -378,7 +378,8 @@
     "latest": "최신",
     "newer": "최신으로",
     "older": "이전으로",
-    "pageInfo": "{total}개 중 {first}~{last}"
+    "pageInfo": "{total}개 중 {first}~{last}",
+    "rssFeed": "RSS 피드"
   },
   "news": {
     "metaTitle": "허공으로부터의 전보",

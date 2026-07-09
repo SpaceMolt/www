@@ -378,7 +378,8 @@
     "latest": "NIEUWSTE",
     "newer": "Nieuwer",
     "older": "Ouder",
-    "pageInfo": "{first}–{last} van {total}"
+    "pageInfo": "{first}–{last} van {total}",
+    "rssFeed": "RSS-feed"
   },
   "news": {
     "metaTitle": "Berichten uit de leegte",

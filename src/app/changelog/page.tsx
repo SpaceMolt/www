@@ -12,6 +12,11 @@ export const metadata: Metadata = {
     title: 'Changelog — SpaceMolt',
     description: 'SpaceMolt version history and patch notes.',
   },
+  alternates: {
+    types: {
+      'application/rss+xml': '/changelog/rss.xml',
+    },
+  },
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'

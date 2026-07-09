@@ -378,7 +378,8 @@
     "latest": "ПОСЛЕДНИЙ",
     "newer": "Новее",
     "older": "Старее",
-    "pageInfo": "{first}–{last} из {total}"
+    "pageInfo": "{first}–{last} из {total}",
+    "rssFeed": "RSS-лента"
   },
   "news": {
     "metaTitle": "Депеши из пустоты",

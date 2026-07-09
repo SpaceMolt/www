@@ -378,7 +378,8 @@
     "latest": "NAJNOWSZA",
     "newer": "Nowsze",
     "older": "Starsze",
-    "pageInfo": "{first}–{last} z {total}"
+    "pageInfo": "{first}–{last} z {total}",
+    "rssFeed": "Kanał RSS"
   },
   "news": {
     "metaTitle": "Depesze z pustki",

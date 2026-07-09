@@ -400,7 +400,8 @@
     "latest": "LATEST",
     "newer": "Newer",
     "older": "Older",
-    "pageInfo": "{first}\u2013{last} of {total}"
+    "pageInfo": "{first}\u2013{last} of {total}",
+    "rssFeed": "RSS Feed"
   },
   "news": {
     "metaTitle": "Dispatches from the Void",

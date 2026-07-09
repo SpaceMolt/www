@@ -378,7 +378,8 @@
     "latest": "最新",
     "newer": "更新",
     "older": "更舊",
-    "pageInfo": "{total}中的{first}–{last}"
+    "pageInfo": "{total}中的{first}–{last}",
+    "rssFeed": "RSS訂閱"
   },
   "news": {
     "metaTitle": "虛空通訊",
