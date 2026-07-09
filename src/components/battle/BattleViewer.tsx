@@ -373,7 +373,7 @@ export default function BattleViewer({ battleId }: { battleId: string }) {
           </Link>
           <div>
             <h1 className={styles.title}>
-              {summary?.system_name || entry?.system_id || 'Unknown System'}
+              {summary?.system_name || entry?.system_id || t('battles.unknownSystem')}
             </h1>
             <div className={styles.subtitle}>
               {timeline.sides.map((s, i) => (
@@ -394,7 +394,7 @@ export default function BattleViewer({ battleId }: { battleId: string }) {
                 borderColor: BATTLE_CATEGORY_META[summary.category].color,
               }}
             >
-              {BATTLE_CATEGORY_META[summary.category].glyph} {BATTLE_CATEGORY_META[summary.category].label}
+              {BATTLE_CATEGORY_META[summary.category].glyph} {t(BATTLE_CATEGORY_META[summary.category].labelKey)}
             </span>
           )}
           {isLive ? (
@@ -407,7 +407,7 @@ export default function BattleViewer({ battleId }: { battleId: string }) {
           )}
           <div className={styles.metaStats}>
             <span>
-              <b>{timeline.entries.length}</b> ticks
+              <b>{timeline.entries.length}</b> {t('battles.ticks')}
             </span>
             <span>
               <b>{timeline.participants.size}</b> {t('battles.participants')}
@@ -469,7 +469,7 @@ export default function BattleViewer({ battleId }: { battleId: string }) {
                   {endEntry.ships_destroyed} {t('battles.destroyed')}
                 </span>
                 <button className={styles.replayBtn} onClick={() => { seek(0); setPlaying(true) }}>
-                  ⟲ Replay
+                  ⟲ {t('battles.replay')}
                 </button>
               </div>
             </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import styles from './BattleViewer.module.css'
+import { useTranslation } from '@/i18n'
 import type { BattleTimeline, BattleEventKind } from '@/lib/battle/timeline'
 
 type FilterKey = 'all' | 'combat' | 'kills' | 'movement' | 'support'
@@ -26,6 +27,7 @@ interface Props {
  * replay to that moment (and select the ship involved).
  */
 export default function EventFeed({ timeline, tickIndex, isPlaying, onJump }: Props) {
+  const { t } = useTranslation()
   const [filter, setFilter] = useState<FilterKey>('all')
   const listRef = useRef<HTMLDivElement>(null)
   const pinnedToEnd = useRef(true)
@@ -48,7 +50,7 @@ export default function EventFeed({ timeline, tickIndex, isPlaying, onJump }: Pr
   return (
     <aside className={styles.feed}>
       <div className={styles.feedHeader}>
-        <span className={styles.feedTitle}>COMBAT LOG</span>
+        <span className={styles.feedTitle}>{t('battles.combatLog')}</span>
         <div className={styles.feedFilters}>
           {(Object.keys(FILTERS) as FilterKey[]).map(key => (
             <button
@@ -56,7 +58,7 @@ export default function EventFeed({ timeline, tickIndex, isPlaying, onJump }: Pr
               className={`${styles.feedFilterBtn} ${filter === key ? styles.feedFilterOn : ''}`}
               onClick={() => setFilter(key)}
             >
-              {key}
+              {t(`battles.feedFilter${key.charAt(0).toUpperCase()}${key.slice(1)}`)}
             </button>
           ))}
         </div>
@@ -70,7 +72,7 @@ export default function EventFeed({ timeline, tickIndex, isPlaying, onJump }: Pr
           pinnedToEnd.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40
         }}
       >
-        {visible.length === 0 && <div className={styles.feedEmpty}>No events yet</div>}
+        {visible.length === 0 && <div className={styles.feedEmpty}>{t('battles.noEvents')}</div>}
         {visible.map((ev, i) => (
           <button
             key={`${ev.tickIndex}-${i}`}

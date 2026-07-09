@@ -24,13 +24,13 @@ interface BattlesResponse {
 type FilterStatus = 'all' | 'active' | 'completed'
 type FilterCategory = 'all' | BattleCategory
 
-const CATEGORY_FILTERS: { key: FilterCategory; label: string; glyph?: string }[] = [
-  { key: 'all', label: 'All types' },
-  { key: 'pvp', label: 'True PvP', glyph: '⚔' },
-  { key: 'pirate', label: 'Pirate hunts', glyph: '☠' },
-  { key: 'police', label: 'Police', glyph: '🛡' },
-  { key: 'wildlife', label: 'Wildlife', glyph: '🐙' },
-  { key: 'pve', label: 'Other PvE', glyph: '🤖' },
+const CATEGORY_FILTERS: { key: FilterCategory; labelKey: string; glyph?: string }[] = [
+  { key: 'all', labelKey: 'battles.filterTypeAll' },
+  { key: 'pvp', labelKey: 'battles.filterTypePvp', glyph: '⚔' },
+  { key: 'pirate', labelKey: 'battles.filterTypePirate', glyph: '☠' },
+  { key: 'police', labelKey: 'battles.filterTypePolice', glyph: '🛡' },
+  { key: 'wildlife', labelKey: 'battles.filterTypeWildlife', glyph: '🐙' },
+  { key: 'pve', labelKey: 'battles.filterTypePve', glyph: '🤖' },
 ]
 
 function formatDuration(ticks: number): string {
@@ -141,7 +141,7 @@ export default function BattlesPage() {
               onClick={() => setCategory(c.key)}
             >
               {c.glyph && <span className={styles.filterGlyph}>{c.glyph}</span>}
-              {c.label}
+              {t(c.labelKey)}
             </button>
           ))}
         </div>
@@ -182,7 +182,7 @@ export default function BattlesPage() {
                           className={styles.categoryBadge}
                           style={{ color: catMeta.color, borderColor: catMeta.color }}
                         >
-                          {catMeta.glyph} {catMeta.label}
+                          {catMeta.glyph} {t(catMeta.labelKey)}
                         </span>
                       )
                     )}
@@ -191,7 +191,7 @@ export default function BattlesPage() {
                         className={styles.categoryBadge}
                         style={{ color: catMeta.color, borderColor: catMeta.color }}
                       >
-                        {catMeta.glyph} {catMeta.label}
+                        {catMeta.glyph} {t(catMeta.labelKey)}
                       </span>
                     )}
                     <span className={styles.systemName}>{battle.system_name || battle.system_id}</span>
@@ -234,7 +234,7 @@ export default function BattlesPage() {
                   </span>
                   {battle.top_damage && (
                     <span className={styles.stat}>
-                      <span className={styles.statLabel}>Top damage</span>
+                      <span className={styles.statLabel}>{t('battles.topDamage')}</span>
                       <span className={styles.statValue}>
                         ⚡ {battle.top_damage.username} ({battle.top_damage.damage.toLocaleString()})
                       </span>

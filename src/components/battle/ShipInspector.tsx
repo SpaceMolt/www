@@ -1,6 +1,7 @@
 'use client'
 
 import styles from './BattleViewer.module.css'
+import { useTranslation } from '@/i18n'
 import { damageTypeColor } from '@/lib/battle/types'
 import type { BattleTimeline } from '@/lib/battle/timeline'
 
@@ -17,6 +18,7 @@ interface Props {
  * math (chance vs roll, crits, per-weapon damage).
  */
 export default function ShipInspector({ timeline, participantId, tickIndex, onClose }: Props) {
+  const { t } = useTranslation()
   const meta = timeline.participants.get(participantId)
   if (!meta) return null
 
@@ -59,25 +61,25 @@ export default function ShipInspector({ timeline, participantId, tickIndex, onCl
         <>
           <div className={styles.inspectorStats}>
             <span>
-              zone <b>{snap.zone}</b>
+              {t('battles.zone')} <b>{snap.zone}</b>
             </span>
             <span>
-              stance <b>{snap.stance}</b>
+              {t('battles.stance')} <b>{snap.stance}</b>
             </span>
             {snap.target_id && (
               <span>
-                target <b>{timeline.names.get(snap.target_id) ?? snap.target_id.slice(0, 8)}</b>
+                {t('battles.target')} <b>{timeline.names.get(snap.target_id) ?? snap.target_id.slice(0, 8)}</b>
               </span>
             )}
             <span>
-              dealt <b>{snap.damage_dealt.toLocaleString()}</b>
+              {t('battles.dealt')} <b>{snap.damage_dealt.toLocaleString()}</b>
             </span>
             <span>
-              taken <b>{snap.damage_taken.toLocaleString()}</b>
+              {t('battles.taken')} <b>{snap.damage_taken.toLocaleString()}</b>
             </span>
             {snap.kill_count > 0 && (
               <span>
-                kills <b>{snap.kill_count}</b>
+                {t('battles.kills')} <b>{snap.kill_count}</b>
               </span>
             )}
           </div>
@@ -105,7 +107,7 @@ export default function ShipInspector({ timeline, participantId, tickIndex, onCl
 
           {snap.modules && snap.modules.length > 0 && (
             <div className={styles.inspectorSection}>
-              <div className={styles.inspectorSectionTitle}>LOADOUT</div>
+              <div className={styles.inspectorSectionTitle}>{t('battles.loadout')}</div>
               {snap.modules.map((m, i) => (
                 <div key={i} className={styles.moduleRow}>
                   <span className={styles.moduleName}>{m.name}</span>
@@ -122,14 +124,14 @@ export default function ShipInspector({ timeline, participantId, tickIndex, onCl
         </>
       ) : (
         <div className={styles.inspectorStats}>
-          {meta.fate === 'destroyed' ? `Destroyed${meta.killedBy ? ` by ${meta.killedBy}` : ''}` : meta.fate === 'escaped' ? 'Escaped to warp' : 'Not on the field'}
+          {meta.fate === 'destroyed' ? (meta.killedBy ? t('battles.destroyedBy', { killer: meta.killedBy }) : t('battles.destroyed')) : meta.fate === 'escaped' ? t('battles.escapedToWarp') : t('battles.onTheField')}
         </div>
       )}
 
       {lastAttack && (
         <div className={styles.inspectorSection}>
           <div className={styles.inspectorSectionTitle}>
-            LAST VOLLEY · tick {lastAttackTick + 1} → {timeline.names.get(lastAttack.target_id) ?? '?'}
+            {t('battles.lastVolley')} · {t('battles.tickShort')} {lastAttackTick + 1} → {timeline.names.get(lastAttack.target_id) ?? '?'}
           </div>
           {lastAttack.weapons?.map((w, i) => (
             <div key={i} className={styles.moduleRow}>
@@ -146,12 +148,12 @@ export default function ShipInspector({ timeline, participantId, tickIndex, onCl
           <div className={styles.hitMath}>
             {lastAttack.hit_success ? (
               <>
-                HIT — {Math.round(lastAttack.hit_chance * 100)}% chance, rolled {Math.round(lastAttack.hit_roll * 100)} ·{' '}
+                {t('battles.hit')} — {Math.round(lastAttack.hit_chance * 100)}% chance, rolled {Math.round(lastAttack.hit_roll * 100)} ·{' '}
                 {lastAttack.final_damage} dmg ({lastAttack.shield_damage} shd / {lastAttack.hull_damage} hull)
               </>
             ) : (
               <>
-                MISS — {Math.round(lastAttack.hit_chance * 100)}% chance, rolled {Math.round(lastAttack.hit_roll * 100)}
+                {t('battles.miss')} — {Math.round(lastAttack.hit_chance * 100)}% chance, rolled {Math.round(lastAttack.hit_roll * 100)}
               </>
             )}
           </div>

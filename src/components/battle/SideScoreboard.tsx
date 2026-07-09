@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import styles from './BattleViewer.module.css'
+import { useTranslation } from '@/i18n'
 import type { BattleTimeline, SideMeta } from '@/lib/battle/timeline'
 
 interface Props {
@@ -18,6 +19,7 @@ interface Props {
  * dealt and kills per ship. Docked to the side's flank of the arena.
  */
 export default function SideScoreboard({ side, timeline, tickIndex, selectedId, onSelect, winner }: Props) {
+  const { t } = useTranslation()
   const [collapsed, setCollapsed] = useState(false)
   const snaps = timeline.snapshotAt[tickIndex]
 
@@ -51,10 +53,10 @@ export default function SideScoreboard({ side, timeline, tickIndex, selectedId, 
         <span className={styles.sideSwatch} style={{ background: side.color }} />
         <span className={styles.sideLabel}>
           {side.label}
-          {winner && <span className={styles.winnerTag}> ★ WINNER</span>}
+          {winner && <span className={styles.winnerTag}> ★ {t('battles.winner')}</span>}
         </span>
         <span className={styles.sideTotals}>
-          {sideDamage.toLocaleString()} dmg · {sideKills} kills{sideLosses > 0 ? ` · ${sideLosses} lost` : ''}
+          {sideDamage.toLocaleString()} {t('battles.damage')} · {sideKills} {t('battles.kills')}{sideLosses > 0 ? ` · ${sideLosses} ${t('battles.lost')}` : ''}
         </span>
         <span className={styles.collapseChevron}>{collapsed ? '▸' : '▾'}</span>
       </button>
@@ -101,7 +103,7 @@ export default function SideScoreboard({ side, timeline, tickIndex, selectedId, 
                 ) : (
                   <div className={styles.scoreRowBars}>
                     <span className={styles.scoreFate}>
-                      {dead ? `destroyed${meta.killedBy ? ` by ${meta.killedBy}` : ''}` : escaped ? 'escaped' : notYet ? 'not yet engaged' : ''}
+                      {dead ? (meta.killedBy ? t('battles.destroyedBy', { killer: meta.killedBy }) : t('battles.destroyed')) : escaped ? t('battles.escaped') : notYet ? t('battles.notEngaged') : ''}
                     </span>
                   </div>
                 )}

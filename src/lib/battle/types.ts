@@ -43,14 +43,18 @@ export interface BattleSummary {
   ended_at?: string
 }
 
-/** Display metadata for battle categories (label, glyph, accent color). */
-export const BATTLE_CATEGORY_META: Record<BattleCategory, { label: string; glyph: string; color: string }> = {
-  pvp: { label: 'PvP', glyph: '⚔', color: '#e63946' },
-  pirate: { label: 'Pirates', glyph: '☠', color: '#ff6b35' },
-  police: { label: 'Police', glyph: '🛡', color: '#4dabf7' },
-  wildlife: { label: 'Wildlife', glyph: '🐙', color: '#2dd4bf' },
-  pve: { label: 'PvE', glyph: '🤖', color: '#a8c5d6' },
-  npc: { label: 'NPC', glyph: '🤖', color: '#6b8fa3' },
+/**
+ * Display metadata for battle categories (glyph, accent color, and the i18n
+ * key for the label). The label itself is resolved via useTranslation at the
+ * call site so it stays localizable.
+ */
+export const BATTLE_CATEGORY_META: Record<BattleCategory, { labelKey: string; glyph: string; color: string }> = {
+  pvp: { labelKey: 'battles.categoryPvp', glyph: '⚔', color: '#e63946' },
+  pirate: { labelKey: 'battles.categoryPirate', glyph: '☠', color: '#ff6b35' },
+  police: { labelKey: 'battles.categoryPolice', glyph: '🛡', color: '#4dabf7' },
+  wildlife: { labelKey: 'battles.categoryWildlife', glyph: '🐙', color: '#2dd4bf' },
+  pve: { labelKey: 'battles.categoryPve', glyph: '🤖', color: '#a8c5d6' },
+  npc: { labelKey: 'battles.categoryNpc', glyph: '🤖', color: '#6b8fa3' },
 }
 
 // --- Battle log (per-tick replay entries) ---

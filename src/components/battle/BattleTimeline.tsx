@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import styles from './BattleViewer.module.css'
+import { useTranslation } from '@/i18n'
 import type { BattleTimeline as Timeline } from '@/lib/battle/timeline'
 
 interface Props {
@@ -36,6 +37,7 @@ export default function BattleTimeline({
   onCycleSpeed,
   onCopyLink,
 }: Props) {
+  const { t } = useTranslation()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
   const scrubbing = useRef(false)
@@ -184,13 +186,13 @@ export default function BattleTimeline({
   return (
     <div className={styles.timelineBar}>
       <div className={styles.controls}>
-        <button className={styles.ctrlBtn} onClick={() => onSeek(0)} title="Restart (Home)" aria-label="Restart">
+        <button className={styles.ctrlBtn} onClick={() => onSeek(0)} title="Restart (Home)" aria-label={t('battles.restart')}>
           ⏮
         </button>
-        <button className={`${styles.ctrlBtn} ${styles.playBtn}`} onClick={onTogglePlay} title="Play/Pause (Space)" aria-label={isPlaying ? 'Pause' : 'Play'}>
+        <button className={`${styles.ctrlBtn} ${styles.playBtn}`} onClick={onTogglePlay} title="Play/Pause (Space)" aria-label={isPlaying ? t('battles.pause') : t('battles.play')}>
           {isPlaying ? '❚❚' : '▶'}
         </button>
-        <button className={styles.ctrlBtn} onClick={onCycleSpeed} title="Playback speed" aria-label={`Playback speed ${speed}x`}>
+        <button className={styles.ctrlBtn} onClick={onCycleSpeed} title="Playback speed" aria-label={`${t('battles.playbackSpeed')} ${speed}x`}>
           {speed}×
         </button>
         {isLive && (
@@ -198,7 +200,7 @@ export default function BattleTimeline({
             className={`${styles.ctrlBtn} ${styles.liveBtn} ${follow ? styles.liveBtnOn : ''}`}
             onClick={onToggleFollow}
             title="Follow live (L)"
-            aria-label="Follow live"
+            aria-label={t('battles.followLive')}
           >
             ● LIVE
           </button>
@@ -223,7 +225,7 @@ export default function BattleTimeline({
             style={{ left: Math.min(Math.max(hoverInfo.x, 70), (wrapRef.current?.clientWidth ?? 200) - 70) }}
           >
             <div className={styles.scrubTooltipTitle}>
-              Tick {hoverInfo.tickIndex + 1}/{n}
+              {t('battles.tickShort')} {hoverInfo.tickIndex + 1}/{n}
             </div>
             {hoverDamage.total > 0 ? (
               hoverDamage.bySide.map((dmg, si) =>
@@ -235,7 +237,7 @@ export default function BattleTimeline({
                 ) : null,
               )
             ) : (
-              <div className={styles.scrubTooltipRow}>no damage</div>
+              <div className={styles.scrubTooltipRow}>{t('battles.noDamage')}</div>
             )}
             {hoverEvents.map((ev, i) => (
               <div key={i} className={styles.scrubTooltipRow} style={{ color: ev.color }}>
@@ -253,7 +255,7 @@ export default function BattleTimeline({
         {gameTick !== undefined && <span className={styles.gameTick}>#{gameTick}</span>}
         <button
           className={styles.ctrlBtn}
-          aria-label="Copy link to this moment"
+          aria-label={t('battles.copyMoment')}
           onClick={() => {
             onCopyLink()
             setCopied(true)
