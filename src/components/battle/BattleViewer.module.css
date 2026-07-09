@@ -146,6 +146,18 @@
   50% { opacity: 0.35; box-shadow: none; }
 }
 
+.categoryBadge {
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid;
+  border-radius: 4px;
+  padding: 0.25rem 0.55rem;
+  white-space: nowrap;
+}
+
 .finalBadge {
   font-family: var(--font-jetbrains), monospace;
   font-size: 0.72rem;

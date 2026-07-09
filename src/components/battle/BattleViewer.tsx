@@ -13,7 +13,7 @@ import {
   sampleShips,
   type ViewState,
 } from '@/lib/battle/render'
-import { SIDE_COLORS } from '@/lib/battle/types'
+import { BATTLE_CATEGORY_META, SIDE_COLORS } from '@/lib/battle/types'
 import BattleTimeline from './BattleTimeline'
 import EventFeed from './EventFeed'
 import SideScoreboard from './SideScoreboard'
@@ -388,6 +388,17 @@ export default function BattleViewer({ battleId }: { battleId: string }) {
           </div>
         </div>
         <div className={styles.headerRight}>
+          {summary?.category && BATTLE_CATEGORY_META[summary.category] && (
+            <span
+              className={styles.categoryBadge}
+              style={{
+                color: BATTLE_CATEGORY_META[summary.category].color,
+                borderColor: BATTLE_CATEGORY_META[summary.category].color,
+              }}
+            >
+              {BATTLE_CATEGORY_META[summary.category].glyph} {BATTLE_CATEGORY_META[summary.category].label}
+            </span>
+          )}
           {isLive ? (
             <span className={styles.liveBadge}>
               <span className={styles.liveDot} />

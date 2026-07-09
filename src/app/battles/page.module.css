@@ -27,11 +27,26 @@
 }
 
 /* Filters */
+.filterBars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 1.5rem;
+}
+
 .filters {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
-  margin-bottom: 1.5rem;
+}
+
+.categoryBtn {
+  font-size: 0.72rem;
+  padding: 0.35rem 0.7rem;
+}
+
+.filterGlyph {
+  font-size: 0.85em;
 }
 
 .filterBtn {
@@ -94,11 +109,17 @@
   text-decoration: none;
 }
 
-/* Battle List */
-.battleList {
-  display: flex;
-  flex-direction: column;
+/* Battle Grid */
+.battleGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
   gap: 1rem;
+}
+
+@media (max-width: 900px) {
+  .battleGrid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .battleCard {
@@ -179,10 +200,23 @@
   color: var(--star-white);
 }
 
-.duration {
+.cardWhen {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.8rem;
-  color: var(--chrome-silver);
+  font-size: 0.75rem;
+  color: var(--hull-grey);
+  white-space: nowrap;
+}
+
+.categoryBadge {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border: 1px solid;
+  border-radius: 4px;
+  padding: 0.14rem 0.45rem;
+  white-space: nowrap;
 }
 
 /* Sides */
@@ -258,6 +292,28 @@
 
 .outcome {
   color: var(--warning-yellow);
+}
+
+/* Outcome footer */
+.cardOutcome {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 0.6rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+}
+
+.winnerLine {
+  color: var(--warning-yellow);
+}
+
+.destroyedLine {
+  color: var(--claw-red);
+}
+
+.neutralLine {
+  color: var(--chrome-silver);
 }
 
 /* Responsive */

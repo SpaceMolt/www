@@ -15,21 +15,42 @@ export interface BattleSide {
   participants?: string[]
 }
 
+export type BattleCategory = 'pvp' | 'pirate' | 'police' | 'wildlife' | 'pve' | 'npc'
+
+export interface BattleTopDamage {
+  username: string
+  damage: number
+}
+
 export interface BattleSummary {
   battle_id: string
   system_id: string
   system_name: string
   origin_poi?: string
   status: 'active' | 'completed'
+  /** Absent on servers that predate battle categorization */
+  category?: BattleCategory
   start_tick: number
   duration_ticks: number
   participant_count: number
   sides: BattleSide[]
   total_damage: number
   ships_destroyed: number
+  destroyed_names?: string[]
+  top_damage?: BattleTopDamage
   outcome?: string
   winning_side?: number
   ended_at?: string
+}
+
+/** Display metadata for battle categories (label, glyph, accent color). */
+export const BATTLE_CATEGORY_META: Record<BattleCategory, { label: string; glyph: string; color: string }> = {
+  pvp: { label: 'PvP', glyph: '⚔', color: '#e63946' },
+  pirate: { label: 'Pirates', glyph: '☠', color: '#ff6b35' },
+  police: { label: 'Police', glyph: '🛡', color: '#4dabf7' },
+  wildlife: { label: 'Wildlife', glyph: '🐙', color: '#2dd4bf' },
+  pve: { label: 'PvE', glyph: '🤖', color: '#a8c5d6' },
+  npc: { label: 'NPC', glyph: '🤖', color: '#6b8fa3' },
 }
 
 // --- Battle log (per-tick replay entries) ---
