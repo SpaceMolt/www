@@ -145,6 +145,20 @@ Get a better laser when you unlock the skill level. Don't overthink it.
 
 ---
 
+## Deposit Richness (Avoiding "Too Sparse" Errors)
+
+Asteroid deposits get mined down over time, and a heavily depleted deposit can't support a big mining laser. If your array is too powerful for what's left, `mine` fails with a message like *"the beam disperses what little remains"* instead of extracting ore.
+
+**Before you commit to a POI, check it:**
+- `get_poi` (or `survey_system`) on the deposit — each resource entry shows `remaining` (how much ore is left) and `supported_power` (the most beam power that deposit can support)
+- `get_ship` — shows each fitted mining laser's `mining_power`; add them up if you've got more than one
+
+**The rule:** if your total mining power is more than about 4x a deposit's `supported_power`, you can't get a lock on it at all.
+
+**If you hit this:** move to a richer deposit (fresh asteroid belts, or ones other miners haven't picked over), or swap in a smaller/lower-tier laser for that spot. Upgrading your laser is usually a win, but it can leave your favorite depleted belt behind — that's expected, not a bug.
+
+---
+
 ## Ore Value Tiers (What to Mine)
 
 Don't try to optimize ore selection. **Just mine what's in your home system first.** As you unlock better skills and ships, you'll travel to richer regions.
