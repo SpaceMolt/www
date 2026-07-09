@@ -21,6 +21,9 @@ interface SystemData {
   is_home?: boolean
   is_stronghold?: boolean
   has_station?: boolean
+  has_faction_station?: boolean
+  faction_station_color?: string
+  faction_station_tag?: string
   has_battle?: boolean
   battle_id?: string
   online: number
@@ -41,6 +44,9 @@ interface POIData {
   base_id?: string
   station_name?: string
   station_empire?: string
+  station_faction_name?: string
+  station_faction_tag?: string
+  station_faction_color?: string
   station_condition?: string
   station_services?: string[]
 }
@@ -834,9 +840,16 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
           )
           ctx.stroke()
         } else if (system.has_station) {
-          // Non-capital station: single ring indicator
-          ctx.strokeStyle = color + 'aa'
+          // Non-capital station: single ring indicator. Player-faction-owned
+          // stations get a dashed ring in the faction's color instead of a
+          // solid ring in the system's empire color, so ownership reads at
+          // a glance.
+          const stationRingColor = system.faction_station_color || color
+          ctx.strokeStyle = stationRingColor + 'aa'
           ctx.lineWidth = 1.5
+          if (system.has_faction_station) {
+            ctx.setLineDash([3, 2])
+          }
           ctx.beginPath()
           ctx.arc(
             pos.x,
@@ -846,6 +859,9 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
             Math.PI * 2,
           )
           ctx.stroke()
+          if (system.has_faction_station) {
+            ctx.setLineDash([])
+          }
         }
 
         // Bright center
@@ -1116,6 +1132,18 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
         baseBadge.className = styles.poiBaseBadge
         baseBadge.textContent = 'Base'
         meta.appendChild(baseBadge)
+      }
+
+      if (poi.station_faction_tag) {
+        const factionBadge = document.createElement('span')
+        factionBadge.className = styles.poiFactionBadge
+        const factionColor = poi.station_faction_color || 'var(--chrome-silver)'
+        factionBadge.style.color = factionColor
+        factionBadge.style.borderColor = factionColor
+        factionBadge.textContent = `[${poi.station_faction_tag}]`
+        if (poi.station_faction_name)
+          factionBadge.title = poi.station_faction_name
+        meta.appendChild(factionBadge)
       }
 
       if (poi.station_condition) {
@@ -1673,15 +1701,32 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
         ])
         const data: MapData = await mapResponse.json()
 
-        // Mark systems that have stations
+        // Mark systems that have stations, and separately flag ones with a
+        // player-faction-owned station so they can be highlighted distinctly
+        // from NPC/empire stations.
         try {
           const stationsData = await stationsResponse.json()
-          stationSystemIds = new Set(
-            (stationsData.stations || []).map((st: { system_id: string }) => st.system_id),
+          const stations = (stationsData.stations || []) as Array<{
+            system_id: string
+            faction_id?: string
+            faction_tag?: string
+            faction_color?: string
+          }>
+          stationSystemIds = new Set(stations.map((st) => st.system_id))
+          const factionStationBySystem = new Map(
+            stations
+              .filter((st) => st.faction_id)
+              .map((st) => [st.system_id, st]),
           )
           for (const system of data.systems) {
             if (stationSystemIds.has(system.id)) {
               system.has_station = true
+            }
+            const factionStation = factionStationBySystem.get(system.id)
+            if (factionStation) {
+              system.has_faction_station = true
+              system.faction_station_color = factionStation.faction_color
+              system.faction_station_tag = factionStation.faction_tag
             }
           }
         } catch {
@@ -2171,6 +2216,16 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
             }}
           />
           <span className={styles.legendLabel}>Pirate Stronghold</span>
+        </div>
+        <div className={styles.legendItem}>
+          <div
+            className={styles.legendDot}
+            style={{
+              background: 'transparent',
+              border: '1.5px dashed #ffffff',
+            }}
+          />
+          <span className={styles.legendLabel}>Faction Station</span>
         </div>
       </div>
 
