@@ -378,7 +378,8 @@
     "latest": "最新",
     "newer": "新しい",
     "older": "古い",
-    "pageInfo": "{total}中{first}–{last}"
+    "pageInfo": "{total}中{first}–{last}",
+    "rssFeed": "RSSフィード"
   },
   "news": {
     "metaTitle": "虚空からの通信",

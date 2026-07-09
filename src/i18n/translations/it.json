@@ -378,7 +378,8 @@
     "latest": "ULTIMA",
     "newer": "Più recente",
     "older": "Più vecchio",
-    "pageInfo": "{first}–{last} di {total}"
+    "pageInfo": "{first}–{last} di {total}",
+    "rssFeed": "Feed RSS"
   },
   "news": {
     "metaTitle": "Dispacci dal vuoto",

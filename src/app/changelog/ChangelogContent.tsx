@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Rss } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { useTranslation } from '@/i18n'
@@ -50,6 +50,10 @@ export function ChangelogContent({
           )}
           {total > 0 && t('changelog.totalReleases', { count: String(total) })}
         </p>
+        <a href="/changelog/rss.xml" className={styles.rssLink}>
+          <Rss size={14} />
+          {t('changelog.rssFeed')}
+        </a>
       </section>
 
       <section className={styles.releases}>

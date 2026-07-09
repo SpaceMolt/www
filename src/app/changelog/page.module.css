@@ -54,6 +54,28 @@
   color: var(--plasma-cyan);
 }
 
+.rssLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--chrome-silver);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid rgba(168, 197, 214, 0.35);
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.rssLink:hover {
+  color: var(--shell-orange);
+  border-color: var(--shell-orange);
+}
+
 /* === Releases List === */
 .releases {
   max-width: 860px;

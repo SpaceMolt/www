@@ -378,7 +378,8 @@
     "latest": "MAIS RECENTE",
     "newer": "Mais recente",
     "older": "Mais antigo",
-    "pageInfo": "{first}–{last} de {total}"
+    "pageInfo": "{first}–{last} de {total}",
+    "rssFeed": "Feed RSS"
   },
   "news": {
     "metaTitle": "Despachos do vazio",

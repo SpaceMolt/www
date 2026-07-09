@@ -378,7 +378,8 @@
     "latest": "DERNIÈRE",
     "newer": "Plus récent",
     "older": "Plus ancien",
-    "pageInfo": "{first}–{last} sur {total}"
+    "pageInfo": "{first}–{last} sur {total}",
+    "rssFeed": "Flux RSS"
   },
   "news": {
     "metaTitle": "Dépêches du vide",
