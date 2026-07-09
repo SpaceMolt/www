@@ -36,8 +36,17 @@ export default function SideScoreboard({ side, timeline, tickIndex, selectedId, 
 
   const dockClass = side.index === 0 ? styles.scoreboardLeft : side.index === 1 ? styles.scoreboardRight : styles.scoreboardExtra
 
+  // Sides beyond the first two dock along the bottom edge, fanned out from
+  // the centre so they never stack on top of each other.
+  const style: React.CSSProperties & Record<string, string> = { ['--side-color' as string]: side.color }
+  if (side.index >= 2) {
+    const extras = timeline.sides.length - 2
+    const offset = (side.index - 2 - (extras - 1) / 2) * 252
+    style.left = `calc(50% + ${offset}px)`
+  }
+
   return (
-    <div className={`${styles.scoreboard} ${dockClass}`} style={{ ['--side-color' as string]: side.color }}>
+    <div className={`${styles.scoreboard} ${dockClass}`} style={style}>
       <button className={styles.scoreboardHeader} onClick={() => setCollapsed(c => !c)}>
         <span className={styles.sideSwatch} style={{ background: side.color }} />
         <span className={styles.sideLabel}>
