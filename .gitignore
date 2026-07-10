@@ -25,9 +25,11 @@ next-env.d.ts
 # clerk configuration (can include secrets)
 /.clerk/
 
-# claude code (keep commands/ tracked, ignore everything else)
+# claude code (keep commands/, settings, and worktree hook tracked, ignore everything else)
 .claude/*
 !.claude/commands/
+!.claude/settings.json
+!.claude/hooks/
 
 # generated catalog data (fetched at build time)
 src/data/catalog.json
