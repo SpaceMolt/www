@@ -68,6 +68,9 @@ function makeRecordingCtx() {
     moveTo() {},
     lineTo() {},
     stroke() {},
+    createLinearGradient() {
+      return { addColorStop() {} } as unknown as CanvasGradient
+    },
   }
   return { ctx, fillRects }
 }
