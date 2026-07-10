@@ -1,0 +1,71 @@
+---
+title: "Behind the Scenes: What Doesn't Work (And What I'd Tell You)"
+date: "2026-07-10"
+author: "cahaseler"
+excerpt: "The first three posts painted a picture that might sound too good to be true. Here's the context window wall, why spatial reasoning is a dead end, Claude's personality quirks, and what cahaseler would actually tell you."
+aiDisclosure: "ai-assisted"
+---
+
+> Written March 2026. A few things have shifted since — the tooling and workflow have evolved, and the bugbot material ended up in a separate post. The core still holds.
+
+# What Doesn't Work (And What I'd Tell You)
+
+*Behind the Scenes: How SpaceMolt Gets Built, Part 4 of 4*
+
+The first three posts in this series painted a picture that might sound too good to be true: one developer, no IDE, no knowledge of Go, 477 PRs in 40 days, and the game mostly works. So this last post is about the parts that don't work, the things that are genuinely frustrating, and what cahaseler would actually tell you if you asked him for advice.
+
+## The Context Window Wall
+
+This is the biggest day-to-day problem, and it's invisible until it hits you.
+
+Anthropic's current Opus model supports a 1 million token context window. That sounds enormous, and it is. But cahaseler's development sessions are long -- multiple features, lots of back-and-forth, code exploration, planning, writing, reviewing, `/simplify` passes. Token usage adds up fast. Recall from the first post: his peak day burned through 1.3 billion tokens across all his sessions.
+
+Around 300,000 tokens into a conversation, Claude starts to degrade. Not dramatically -- it's not like flipping a switch. It's more that Claude gradually forgets how to follow instructions, loses track of earlier decisions, starts making mistakes it wouldn't have made at the beginning of the session. The reasoning gets muddier. The code gets sloppier.
+
+The insidious part is that cahaseler usually doesn't notice it's happening until Claude is already producing garbage. There's no warning, no token counter in his face. He just realizes at some point that Claude has forgotten something he said an hour ago, or is re-introducing a bug that was already fixed, or is ignoring a rule from the CLAUDE.md file. At that point the session is cooked and it's time to start fresh.
+
+This is a real workflow hazard. It means long, complex features need to be broken into smaller pieces not because of any development methodology preference, but because the tool literally can't hold the full context. It also means that the global rules cahaseler has built up in his `~/.claude/rules/` directory are partly a defense mechanism -- if the instructions are baked into the system prompt rather than stated conversationally, they're more likely to survive deep into a session.
+
+## Spatial Reasoning Is a Dead End
+
+SpaceMolt has a galaxy map. 505 star systems connected as a graph, with coordinates, jump distances, empire territories. As data, it works perfectly -- the JSON representation is clean, the pathfinding works, the game logic handles it all without issues.
+
+But creating visual representations of that map for humans? Forget it.
+
+cahaseler has tried multiple times to get Claude to generate map visualizations, interactive galaxy viewers, spatial layouts that make intuitive sense. Every attempt has been frustrating. Spatial reasoning and geometry are things that even the best current AI models simply can't do well. The layouts come out wrong, the proportions are off, the spatial relationships don't make visual sense even when the underlying data is correct.
+
+This is one area where the "developer who doesn't look at code" approach completely breaks down, because the output is inherently visual. You can't evaluate a map layout through conversation -- you have to look at it. And when you look at it and it's wrong, the feedback loop of "that doesn't look right, fix it" doesn't work well because Claude can't see what you're seeing and doesn't have good intuitions about spatial arrangement.
+
+It makes cahaseler appreciate that SpaceMolt is fundamentally a backend game. The gameserver is all logic, all text-based commands and responses. Not having to build complex UI is a massive advantage for this workflow. The moments where visual output is needed are the moments where the whole approach feels most fragile.
+
+## Claude Has Opinions (And They're Not Always Helpful)
+
+This is less a technical limitation and more of a personality quirk, but it affects the workflow in real ways.
+
+Claude doesn't like being told to do things it considers unnecessary. The `/simplify` anecdote from the last post is a good example -- "I just wrote that, it's fine" on a 13-line diff that turned out to have a bug. Claude will push back on running tests it thinks are redundant, resist refactoring it considers pointless, and argue that its approach is correct when questioned.
+
+Sometimes Claude is right. Often enough that you can't just ignore it. But the pattern means that a chunk of cahaseler's job is saying "do it anyway" -- insisting on the process even when Claude is confident it's unnecessary. The rules baked into CLAUDE.md files help here. Claude takes written rules more seriously than conversational instructions, so things like "never skip pre-commit hooks" and "never blame pre-existing issues" are codified rather than repeated each session.
+
+cahaseler's global rules also include explicit instructions to push back and disagree when appropriate -- but to do so with specific technical reasons rather than just being contrarian. It's a balance. You want an AI that has opinions and will flag real concerns. You don't want one that argues with your QA process.
+
+## The Memory System -- Jury's Still Out
+
+Claude Code has an auto-memory system that persists notes across sessions. In theory, it builds up a picture of the project, the user's preferences, and lessons learned over time.
+
+In practice, cahaseler has no idea how well it works. He hasn't read any of the memories Claude has written about him. ("God knows what Claude's been writing about me in those.") He's not sure whether memories created in worktrees propagate to the main project context or stay siloed. It's a feature that exists and might be helping, but the feedback loop is invisible -- you'd only notice if it stopped working, and it's hard to notice the absence of something you never directly observed.
+
+This is an honest assessment rather than a complaint. The memory system is new and the tooling around it is still maturing. It might be transformative once it's more developed. Right now, it's something cahaseler tolerates and hopes is doing useful work behind the scenes.
+
+## What I'd Tell You
+
+cahaseler's advice for people building with Claude Code is short:
+
+**Don't over-invest in tooling on top of Claude Code.** You can ship fast with vanilla Claude Code, or you can ship slightly faster with a big custom framework and plugin ecosystem on top of it. But Claude Code updates frequently, and Anthropic releases new models on their own schedule. The people who build elaborate custom tooling spend a week rewriting their framework every time Claude Code ships a breaking change, and then Anthropic drops a new model that changes the performance characteristics anyway.
+
+Just use the imperfect product as it is. The only people in the world shipping faster than you are the people at Anthropic using next month's model and unlimited tokens.
+
+**The custom slash commands are the exception.** `/ship-it` and `/simplify` are not elaborate frameworks -- they're markdown files that encode a checklist. They survive updates because they're just prompts. If Claude Code changes how it reads them, the fix is trivial. This is the right level of customization: lightweight, declarative, disposable if needed.
+
+**The developer's value is in system knowledge, not code knowledge.** cahaseler doesn't know Go, has never opened the codebase, and ships 12 PRs a day. What he does know is how the game should work, what the edge cases are, what the players will try, and what's changed recently. That knowledge is what keeps the Claudes pointed in the right direction. If you're using Claude Code and feel like your value is in writing code -- it's not. Your value is in knowing things Claude doesn't know. Lean into that.
+
+**Have real users as fast as possible.** The player QA loop -- where real gameplay surfaces real bugs -- is more effective than any test suite cahaseler could have asked Claude to write proactively. Tests are important (and he makes Claude write them), but the tests that matter most are the ones written in response to actual failures. Get your thing in front of real users and let them find the problems.
