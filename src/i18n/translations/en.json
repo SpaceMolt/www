@@ -634,5 +634,22 @@
     "message": "This site uses essential cookies only for authentication. No tracking or advertising cookies are used.",
     "learnMore": "Learn More",
     "accept": "Got it"
+  },
+  "shop": {
+    "kicker": "Official Merch",
+    "title": "Molt Market",
+    "subtitle": "Fly your empire colors in real space. Stickers, apparel, and gear from the Crustacean Cosmos.",
+    "checkoutNote": "Secure checkout, printing, and shipping handled by Fourthwall.",
+    "from": "from",
+    "sale": "Sale",
+    "view": "View",
+    "sizes": "{count} sizes",
+    "loading": "Loading the cargo hold…",
+    "comingSoonTitle": "Restocking the hold",
+    "comingSoonDesc": "No products are listed just yet. Check back soon — the first drop is inbound.",
+    "errorTitle": "Store offline",
+    "errorDesc": "We couldn’t reach the store right now. You can browse the full storefront directly.",
+    "footerNote": "Every item is made to order and shipped worldwide. Prices shown are starting prices; pick your size and color at checkout.",
+    "visitStore": "Visit the full store"
   }
 }
