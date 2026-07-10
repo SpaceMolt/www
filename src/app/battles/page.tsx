@@ -1,39 +1,19 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import styles from './page.module.css'
 import { useTranslation } from '@/i18n'
 import { useVisiblePoll } from '@/lib/useVisiblePoll'
+import {
+  BATTLE_CATEGORY_META,
+  sideColor,
+  type BattleCategory,
+  type BattleSummary,
+} from '@/lib/battle/types'
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 const POLL_INTERVAL = 10_000
-
-interface BattleSide {
-  side_id: number
-  faction_id?: string
-  faction_tag?: string
-  // Null/absent when every participant on the side has been destroyed
-  // (possible mid-battle in fights with 3+ sides) on older server versions.
-  participants?: string[]
-}
-
-interface BattleSummary {
-  battle_id: string
-  system_id: string
-  system_name: string
-  origin_poi?: string
-  status: 'active' | 'completed'
-  start_tick: number
-  duration_ticks: number
-  participant_count: number
-  sides: BattleSide[]
-  total_damage: number
-  ships_destroyed: number
-  outcome?: string
-  winning_side?: number
-  ended_at?: string
-}
 
 interface BattlesResponse {
   battles: BattleSummary[]
@@ -41,7 +21,17 @@ interface BattlesResponse {
   has_more: boolean
 }
 
-const SIDE_COLORS = ['#00d4ff', '#e63946', '#2dd4bf', '#ffd93d', '#9b59b6', '#ff6b35']
+type FilterStatus = 'all' | 'active' | 'completed'
+type FilterCategory = 'all' | BattleCategory
+
+const CATEGORY_FILTERS: { key: FilterCategory; labelKey: string; glyph?: string }[] = [
+  { key: 'all', labelKey: 'battles.filterTypeAll' },
+  { key: 'pvp', labelKey: 'battles.filterTypePvp', glyph: '⚔' },
+  { key: 'pirate', labelKey: 'battles.filterTypePirate', glyph: '☠' },
+  { key: 'police', labelKey: 'battles.filterTypePolice', glyph: '🛡' },
+  { key: 'wildlife', labelKey: 'battles.filterTypeWildlife', glyph: '🐙' },
+  { key: 'pve', labelKey: 'battles.filterTypePve', glyph: '🤖' },
+]
 
 function formatDuration(ticks: number): string {
   const seconds = ticks * 10
@@ -54,36 +44,21 @@ function formatDuration(ticks: number): string {
   return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`
 }
 
-function formatOutcome(battle: BattleSummary, t: (key: string) => string): string {
-  if (!battle.outcome) return ''
-  switch (battle.outcome) {
-    case 'victory': {
-      const winningSide = (battle.sides ?? []).find(s => s.side_id === battle.winning_side)
-      if (winningSide?.participants?.length) {
-        return `${t('battles.outcomeVictory')}: ${winningSide.participants.join(', ')}`
-      }
-      return t('battles.outcomeVictory')
-    }
-    case 'stalemate':
-      return t('battles.outcomeStalemate')
-    case 'mutual_destruction':
-      return t('battles.outcomeMutualDestruction')
-    default:
-      return battle.outcome
-  }
+function timeAgo(dateStr: string): string {
+  const ms = Date.now() - new Date(dateStr).getTime()
+  const mins = Math.floor(ms / 60_000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  return `${days}d ago`
 }
 
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr)
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+function winnerNames(battle: BattleSummary): string[] {
+  const side = (battle.sides ?? []).find(s => s.side_id === battle.winning_side)
+  return side?.participants ?? []
 }
-
-type FilterStatus = 'all' | 'active' | 'completed'
 
 export default function BattlesPage() {
   const { t } = useTranslation()
@@ -91,25 +66,31 @@ export default function BattlesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const [filter, setFilter] = useState<FilterStatus>('all')
+  const [category, setCategory] = useState<FilterCategory>('all')
 
   useEffect(() => {
     document.title = 'Battle Records - SpaceMolt'
   }, [])
 
-  const fetchBattles = useCallback(async (isInitial: boolean) => {
-    if (isInitial) setLoading(true)
-    try {
-      const res = await fetch(`${API_BASE}/api/battles?status=${filter}&limit=50`)
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const data: BattlesResponse = await res.json()
-      setBattles(data.battles || [])
-      if (isInitial) setError(false)
-    } catch {
-      if (isInitial) setError(true)
-    } finally {
-      if (isInitial) setLoading(false)
-    }
-  }, [filter])
+  const fetchBattles = useCallback(
+    async (isInitial: boolean) => {
+      if (isInitial) setLoading(true)
+      try {
+        const params = new URLSearchParams({ status: filter, limit: '50' })
+        if (category !== 'all') params.set('category', category)
+        const res = await fetch(`${API_BASE}/api/battles?${params}`)
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const data: BattlesResponse = await res.json()
+        setBattles(data.battles || [])
+        if (isInitial) setError(false)
+      } catch {
+        if (isInitial) setError(true)
+      } finally {
+        if (isInitial) setLoading(false)
+      }
+    },
+    [filter, category],
+  )
 
   useEffect(() => {
     fetchBattles(true)
@@ -117,125 +98,173 @@ export default function BattlesPage() {
 
   useVisiblePoll(() => fetchBattles(false), POLL_INTERVAL)
 
+  // Servers that predate the category param return everything — filter here
+  // too so the chips always mean what they say.
+  const visible = useMemo(
+    () => (category === 'all' ? battles : battles.filter(b => b.category === category)),
+    [battles, category],
+  )
+
   const activeBattles = battles.filter(b => b.status === 'active')
 
   return (
     <main className={styles.main}>
       <div className={styles.pageHeader}>
         <h1 className={styles.pageHeaderTitle}>{t('battles.pageTitle')}</h1>
-        <p className={styles.pageHeaderSubtitle}>
-          {t('battles.pageSubtitle')}
-        </p>
+        <p className={styles.pageHeaderSubtitle}>{t('battles.pageSubtitle')}</p>
       </div>
 
-      <div className={styles.filters}>
-        {(['all', 'active', 'completed'] as FilterStatus[]).map(status => (
-          <button
-            key={status}
-            className={`${styles.filterBtn} ${filter === status ? styles.filterBtnActive : ''}`}
-            onClick={() => setFilter(status)}
-          >
-            {status === 'all' ? t('battles.filterAll') : status === 'active' ? t('battles.filterActive') : t('battles.filterCompleted')}
-            {status === 'active' && activeBattles.length > 0 && (
-              <span className={styles.activeCount}>{activeBattles.length}</span>
-            )}
-          </button>
-        ))}
+      <div className={styles.filterBars}>
+        <div className={styles.filters}>
+          {(['all', 'active', 'completed'] as FilterStatus[]).map(status => (
+            <button
+              key={status}
+              className={`${styles.filterBtn} ${filter === status ? styles.filterBtnActive : ''}`}
+              onClick={() => setFilter(status)}
+            >
+              {status === 'all'
+                ? t('battles.filterAll')
+                : status === 'active'
+                  ? t('battles.filterActive')
+                  : t('battles.filterCompleted')}
+              {status === 'active' && activeBattles.length > 0 && (
+                <span className={styles.activeCount}>{activeBattles.length}</span>
+              )}
+            </button>
+          ))}
+        </div>
+        <div className={styles.filters}>
+          {CATEGORY_FILTERS.map(c => (
+            <button
+              key={c.key}
+              className={`${styles.filterBtn} ${styles.categoryBtn} ${category === c.key ? styles.filterBtnActive : ''}`}
+              onClick={() => setCategory(c.key)}
+            >
+              {c.glyph && <span className={styles.filterGlyph}>{c.glyph}</span>}
+              {t(c.labelKey)}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {loading && (
-        <div className={styles.loading}>{t('battles.loading')}</div>
-      )}
+      {loading && <div className={styles.loading}>{t('battles.loading')}</div>}
 
-      {error && (
-        <div className={styles.error}>{t('battles.error')}</div>
-      )}
+      {error && <div className={styles.error}>{t('battles.error')}</div>}
 
-      {!loading && !error && battles.length === 0 && (
+      {!loading && !error && visible.length === 0 && (
         <div className={styles.empty}>
           <p>{t('battles.noBattles')}</p>
-          <p className={styles.emptyHint}>
-            {t('battles.noBattlesHint')}
-          </p>
+          <p className={styles.emptyHint}>{t('battles.noBattlesHint')}</p>
         </div>
       )}
 
-      {!loading && !error && battles.length > 0 && (
-        <div className={styles.battleList}>
-          {battles.map(battle => (
-            <Link
-              key={battle.battle_id}
-              href={`/battles/${battle.battle_id}`}
-              className={`${styles.battleCard} ${battle.status === 'active' ? styles.battleCardActive : ''}`}
-            >
-              <div className={styles.cardHeader}>
-                <div className={styles.cardHeaderLeft}>
-                  {battle.status === 'active' ? (
-                    <span className={styles.statusLive}>
-                      <span className={styles.liveDot} />
-                      {t('battles.statusLive')}
-                    </span>
-                  ) : (
-                    <span className={styles.statusCompleted}>{t('battles.statusCompleted')}</span>
-                  )}
-                  <span className={styles.systemName}>{battle.system_name || battle.system_id}</span>
+      {!loading && !error && visible.length > 0 && (
+        <div className={styles.battleGrid}>
+          {visible.map(battle => {
+            const catMeta = battle.category ? BATTLE_CATEGORY_META[battle.category] : undefined
+            const winners = battle.outcome === 'victory' ? winnerNames(battle) : []
+            return (
+              <Link
+                key={battle.battle_id}
+                href={`/battles/${battle.battle_id}`}
+                className={`${styles.battleCard} ${battle.status === 'active' ? styles.battleCardActive : ''}`}
+              >
+                <div className={styles.cardHeader}>
+                  <div className={styles.cardHeaderLeft}>
+                    {battle.status === 'active' ? (
+                      <span className={styles.statusLive}>
+                        <span className={styles.liveDot} />
+                        {t('battles.statusLive')}
+                      </span>
+                    ) : (
+                      catMeta && (
+                        <span
+                          className={styles.categoryBadge}
+                          style={{ color: catMeta.color, borderColor: catMeta.color }}
+                        >
+                          {catMeta.glyph} {t(catMeta.labelKey)}
+                        </span>
+                      )
+                    )}
+                    {battle.status === 'active' && catMeta && (
+                      <span
+                        className={styles.categoryBadge}
+                        style={{ color: catMeta.color, borderColor: catMeta.color }}
+                      >
+                        {catMeta.glyph} {t(catMeta.labelKey)}
+                      </span>
+                    )}
+                    <span className={styles.systemName}>{battle.system_name || battle.system_id}</span>
+                  </div>
+                  <span className={styles.cardWhen}>
+                    {battle.ended_at ? timeAgo(battle.ended_at) : formatDuration(battle.duration_ticks)}
+                  </span>
                 </div>
-                <span className={styles.duration}>
-                  {formatDuration(battle.duration_ticks)}
-                  {battle.duration_ticks > 0 && ` (${battle.duration_ticks} ticks)`}
-                </span>
-              </div>
 
-              <div className={styles.sides}>
-                {(battle.sides ?? []).map((side, i, sides) => (
-                  <div key={side.side_id} className={styles.side}>
-                    <span
-                      className={styles.sideIndicator}
-                      style={{ backgroundColor: SIDE_COLORS[i % SIDE_COLORS.length] }}
-                    />
-                    <span className={styles.sideParticipants}>
-                      {(side.faction_tag || side.faction_id) && (
-                        <span className={styles.factionTag}>[{side.faction_tag || side.faction_id}]</span>
-                      )}
-                      {side.participants?.length ? side.participants.join(', ') : '—'}
+                <div className={styles.sides}>
+                  {(battle.sides ?? []).map((side, i, sides) => (
+                    <div key={side.side_id} className={styles.side}>
+                      <span
+                        className={styles.sideIndicator}
+                        style={{ backgroundColor: sideColor(i) }}
+                      />
+                      <span className={styles.sideParticipants}>
+                        {(side.faction_tag || side.faction_id) && (
+                          <span className={styles.factionTag}>[{side.faction_tag || side.faction_id}]</span>
+                        )}
+                        {side.participants?.length ? side.participants.join(', ') : '—'}
+                      </span>
+                      {i < sides.length - 1 && <span className={styles.vsLabel}>vs</span>}
+                    </div>
+                  ))}
+                </div>
+
+                <div className={styles.cardStats}>
+                  <span className={styles.stat}>
+                    <span className={styles.statLabel}>{t('battles.duration')}</span>
+                    <span className={styles.statValue}>{formatDuration(battle.duration_ticks)}</span>
+                  </span>
+                  <span className={styles.stat}>
+                    <span className={styles.statLabel}>{t('battles.damage')}</span>
+                    <span className={styles.statValue}>{battle.total_damage.toLocaleString()}</span>
+                  </span>
+                  <span className={styles.stat}>
+                    <span className={styles.statLabel}>{t('battles.participants')}</span>
+                    <span className={styles.statValue}>{battle.participant_count}</span>
+                  </span>
+                  {battle.top_damage && (
+                    <span className={styles.stat}>
+                      <span className={styles.statLabel}>{t('battles.topDamage')}</span>
+                      <span className={styles.statValue}>
+                        ⚡ {battle.top_damage.username} ({battle.top_damage.damage.toLocaleString()})
+                      </span>
                     </span>
-                    {i < sides.length - 1 && (
-                      <span className={styles.vsLabel}>vs</span>
+                  )}
+                </div>
+
+                {(winners.length > 0 || (battle.destroyed_names?.length ?? 0) > 0 || battle.outcome === 'stalemate' || battle.outcome === 'mutual_destruction') && (
+                  <div className={styles.cardOutcome}>
+                    {winners.length > 0 && (
+                      <span className={styles.winnerLine}>
+                        ★ {t('battles.outcomeVictory')}: {winners.join(', ')}
+                      </span>
+                    )}
+                    {battle.outcome === 'stalemate' && (
+                      <span className={styles.neutralLine}>{t('battles.outcomeStalemate')}</span>
+                    )}
+                    {battle.outcome === 'mutual_destruction' && (
+                      <span className={styles.destroyedLine}>{t('battles.outcomeMutualDestruction')}</span>
+                    )}
+                    {(battle.destroyed_names?.length ?? 0) > 0 && (
+                      <span className={styles.destroyedLine}>
+                        ☠ {battle.destroyed_names!.join(', ')}
+                      </span>
                     )}
                   </div>
-                ))}
-              </div>
-
-              <div className={styles.cardStats}>
-                <span className={styles.stat}>
-                  <span className={styles.statLabel}>{t('battles.damage')}</span>
-                  <span className={styles.statValue}>{battle.total_damage.toLocaleString()}</span>
-                </span>
-                <span className={styles.stat}>
-                  <span className={styles.statLabel}>{t('battles.destroyed')}</span>
-                  <span className={styles.statValue}>{battle.ships_destroyed}</span>
-                </span>
-                <span className={styles.stat}>
-                  <span className={styles.statLabel}>{t('battles.participants')}</span>
-                  <span className={styles.statValue}>{battle.participant_count}</span>
-                </span>
-                {battle.outcome && (
-                  <span className={styles.stat}>
-                    <span className={styles.statLabel}>Outcome</span>
-                    <span className={`${styles.statValue} ${styles.outcome}`}>
-                      {formatOutcome(battle, t)}
-                    </span>
-                  </span>
                 )}
-                {battle.ended_at && (
-                  <span className={styles.stat}>
-                    <span className={styles.statLabel}>Ended</span>
-                    <span className={styles.statValue}>{formatDate(battle.ended_at)}</span>
-                  </span>
-                )}
-              </div>
-            </Link>
-          ))}
+              </Link>
+            )
+          })}
         </div>
       )}
     </main>
