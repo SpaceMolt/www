@@ -67,16 +67,18 @@ export function drawStaticFrame(ctx: StarfieldCtx, stars: Star[], width: number,
   }
 }
 
-// Longest per-frame motion streak, in pixels. Near-camera stars can jump
-// much further than this in one frame; the streak is shortened toward the
-// star's current position so its head stays put.
-const MAX_STREAK = 24
+// How far back in time (in frames of motion) the trail's tail reaches, and
+// the longest trail in pixels. Near-camera stars can cover much more than
+// this cap; the trail is shortened toward the star's current position so
+// its head stays put.
+const TRAIL_FRAMES = 30
+const MAX_STREAK = 140
 
 // One animated frame: opaque clear, then advance every star toward the
-// camera and draw a short round-capped streak from its previous projected
-// position to its current one. The opaque clear fully erases the previous
-// frame — a translucent fade fill never converges back to the background
-// in 8-bit compositing and leaves permanent ghost trails.
+// camera and draw a round-capped trail from where it was TRAIL_FRAMES ago
+// to its current position. The trail is recomputed from scratch every
+// frame — an accumulated translucent fade fill never converges back to the
+// background in 8-bit compositing and leaves permanent ghost trails.
 export function drawAnimatedFrame(
   ctx: StarfieldCtx,
   stars: Star[],
@@ -92,7 +94,6 @@ export function drawAnimatedFrame(
   const cy = height / 2
 
   for (const star of stars) {
-    const prevZ = star.z
     star.z -= speed
     if (star.z <= 0) {
       star.x = Math.random() * width - cx
@@ -107,8 +108,11 @@ export function drawAnimatedFrame(
     const sy = (star.y / star.z) * height + cy
     if (sx < 0 || sx > width || sy < 0 || sy > height) continue
 
-    const px = (star.x / prevZ) * width + cx
-    const py = (star.y / prevZ) * height + cy
+    // Tail reaches back along the star's actual path, clamped to its
+    // spawn depth so trails never predate the star.
+    const tailZ = Math.min(star.z + speed * TRAIL_FRAMES, width)
+    const px = (star.x / tailZ) * width + cx
+    const py = (star.y / tailZ) * height + cy
     let dx = px - sx
     let dy = py - sy
     const len = Math.sqrt(dx * dx + dy * dy)
