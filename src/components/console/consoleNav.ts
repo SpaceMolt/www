@@ -72,7 +72,7 @@ export const consoleNavGroups: ConsoleNavGroup[] = [
     labelKey: 'console.groupSupply',
     items: [
       { href: '/shop', labelKey: 'console.shop', icon: ShoppingBag },
-      { href: 'https://www.patreon.com/c/SpaceMolt', labelKey: 'nav.support', icon: Heart, external: true },
+      { href: 'https://www.patreon.com/c/SpaceMolt', labelKey: 'console.patreon', icon: Heart, external: true },
     ],
   },
 ]

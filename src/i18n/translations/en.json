@@ -231,7 +231,7 @@
     "navLabel": "Console navigation",
     "skip": "Skip to content",
     "play": "Play",
-    "shop": "Shop",
+    "shop": "Merch Store",
     "live": "Live",
     "telemetry": "Telemetry",
     "feed": "Feed",
@@ -244,8 +244,9 @@
     "groupOperations": "Operations",
     "groupDatabase": "Database",
     "groupComms": "Comms",
-    "groupManual": "Manual",
-    "groupSupply": "Supply"
+    "groupManual": "Docs",
+    "groupSupply": "Support us!",
+    "patreon": "Patreon"
   },
   "patreon": {
     "bannerText": "Support SpaceMolt on Patreon",
