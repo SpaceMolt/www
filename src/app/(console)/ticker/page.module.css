@@ -1,0 +1,460 @@
+/* === Ticker tape strip ===
+   Pinned to the top of the console scroll container. The MarketTicker
+   component styles itself sticky against the old fixed site nav
+   (top: 84px, width: 100vw); neutralize that from the wrapper so it
+   sits flush inside the shell instead. */
+.tickerBar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.tickerBar > * {
+  position: static !important;
+  top: auto !important;
+  width: 100% !important;
+}
+
+.tickerPlaceholder {
+  height: 42px;
+  background: var(--deep-void);
+  border-bottom: 1px solid var(--hull-grey);
+}
+
+/* === Page === */
+.page {
+  padding-top: 1.1rem;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--plasma-cyan);
+  text-decoration: none;
+  margin-bottom: 1rem;
+  transition: color 0.15s ease;
+}
+
+.backLink:hover {
+  color: var(--star-white);
+}
+
+.backLink:focus-visible {
+  outline: 1px solid var(--plasma-cyan);
+  outline-offset: 2px;
+}
+
+/* === Stat readouts === */
+.statCards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.statCard {
+  position: relative;
+  background: rgba(13, 19, 33, 0.6);
+  border: 1px solid rgba(0, 212, 255, 0.14);
+  padding: 0.7rem 0.85rem 0.6rem;
+  transition: border-color 0.2s ease;
+}
+
+.statCard::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  width: 8px;
+  height: 8px;
+  border-top: 1px solid rgba(0, 212, 255, 0.55);
+  border-left: 1px solid rgba(0, 212, 255, 0.55);
+  pointer-events: none;
+}
+
+.statCard:hover {
+  border-color: rgba(0, 212, 255, 0.4);
+}
+
+.statLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--chrome-silver);
+  margin-bottom: 0.45rem;
+}
+
+.statValue {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1.45rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--plasma-cyan);
+  text-shadow: 0 0 12px rgba(0, 212, 255, 0.35);
+  line-height: 1.15;
+}
+
+.statUnit {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(160, 174, 192, 0.6);
+  margin-top: 0.3rem;
+}
+
+/* === Panels === */
+.panelSection {
+  margin-bottom: 1rem;
+}
+
+.panelIcon {
+  color: var(--plasma-cyan);
+  flex-shrink: 0;
+}
+
+.panelTitle {
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  margin: 0;
+}
+
+/* === Top Items === */
+.topItems {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.5rem 0.9rem;
+}
+
+.topItem {
+  display: grid;
+  grid-template-columns: 1.6rem minmax(10rem, 1fr) 2fr auto auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.06);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.76rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.topItem:last-child {
+  border-bottom: none;
+}
+
+.topRank {
+  color: rgba(0, 212, 255, 0.5);
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+.topName {
+  color: var(--shell-orange);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topBarWrap {
+  height: 5px;
+  background: rgba(0, 212, 255, 0.07);
+  border: 1px solid rgba(0, 212, 255, 0.1);
+  overflow: hidden;
+  min-width: 60px;
+}
+
+.topBar {
+  height: 100%;
+  background: linear-gradient(90deg, rgba(0, 212, 255, 0.45), var(--plasma-cyan));
+  box-shadow: 0 0 6px rgba(0, 212, 255, 0.4);
+  transition: width 0.5s ease;
+}
+
+.topVolume {
+  color: var(--bio-green);
+  font-weight: 600;
+  white-space: nowrap;
+  min-width: 60px;
+  text-align: right;
+}
+
+.topTrades {
+  color: rgba(160, 174, 192, 0.55);
+  font-size: 0.66rem;
+  white-space: nowrap;
+  min-width: 70px;
+  text-align: right;
+}
+
+/* === Recent trades header + search === */
+.tradesHeader {
+  flex-wrap: wrap;
+}
+
+.searchWrap {
+  position: relative;
+  margin-left: auto;
+  flex: 0 1 260px;
+  min-width: 160px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 0.55rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(0, 212, 255, 0.5);
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  padding: 0.3rem 0.6rem 0.3rem 1.7rem;
+  background: rgba(10, 14, 23, 0.8);
+  border: 1px solid rgba(0, 212, 255, 0.18);
+  border-radius: 0;
+  color: var(--star-white);
+  letter-spacing: 0.03em;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.searchInput::placeholder {
+  color: rgba(160, 174, 192, 0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.62rem;
+}
+
+.searchInput:focus-visible {
+  border-color: var(--plasma-cyan);
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.25);
+}
+
+/* === Table === */
+.tableContainer {
+  overflow-x: auto;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.76rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 0.55rem 0.6rem;
+  text-align: right;
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--chrome-silver);
+  background: rgba(10, 14, 23, 0.97);
+  border-bottom: 1px solid rgba(0, 212, 255, 0.3);
+  user-select: none;
+  white-space: nowrap;
+}
+
+.sortable {
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.sortable:hover {
+  color: var(--plasma-cyan);
+}
+
+.table tbody tr {
+  transition: background 0.1s ease;
+}
+
+.table tbody tr:nth-child(even) {
+  background: rgba(0, 212, 255, 0.025);
+}
+
+.table tbody tr:hover {
+  background: rgba(0, 212, 255, 0.07);
+}
+
+.table td {
+  padding: 0.35rem 0.6rem;
+  text-align: right;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.06);
+  color: var(--star-white);
+  white-space: nowrap;
+}
+
+/* Column styles */
+.colTime {
+  text-align: left !important;
+}
+
+.colItem {
+  text-align: left !important;
+}
+
+.colQty {}
+
+.colPrice {}
+
+.colTotal {}
+
+.colBuyer {
+  text-align: left !important;
+}
+
+.colSeller {
+  text-align: left !important;
+}
+
+.colStation {
+  text-align: left !important;
+}
+
+/* Cell styles */
+.cellTime {
+  text-align: left;
+  color: rgba(160, 174, 192, 0.55);
+  font-size: 0.68rem;
+}
+
+.cellItem {
+  text-align: left;
+  color: var(--shell-orange);
+  font-weight: 500;
+}
+
+.cellQty {
+  color: var(--star-white);
+}
+
+.cellPrice {
+  color: var(--bio-green);
+}
+
+.cellTotal {
+  color: var(--bio-green);
+  font-weight: 600;
+}
+
+.cellBuyer {
+  text-align: left;
+  color: var(--plasma-cyan);
+}
+
+.cellSeller {
+  text-align: left;
+  color: var(--plasma-cyan);
+}
+
+.cellStation {
+  text-align: left;
+  color: var(--chrome-silver);
+}
+
+/* === States === */
+.loading,
+.error,
+.emptyState {
+  text-align: center;
+  padding: 3rem 2rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+.loading {
+  color: var(--chrome-silver);
+}
+
+.error {
+  color: var(--claw-red);
+  border: 1px solid rgba(255, 71, 87, 0.25);
+  background: rgba(255, 71, 87, 0.04);
+}
+
+.emptyState {
+  color: var(--chrome-silver);
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+  .statCards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .statValue {
+    font-size: 1.15rem;
+  }
+
+  .topItem {
+    grid-template-columns: 1.6rem 1fr auto;
+    font-size: 0.72rem;
+  }
+
+  .topBarWrap {
+    display: none;
+  }
+
+  .topTrades {
+    display: none;
+  }
+
+  .searchWrap {
+    flex: 1 1 100%;
+    margin-left: 0;
+  }
+
+  .table {
+    font-size: 0.68rem;
+  }
+
+  .table thead th {
+    font-size: 0.56rem;
+    padding: 0.45rem 0.35rem;
+  }
+
+  .table td {
+    padding: 0.3rem 0.35rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .statCards {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem;
+  }
+
+  .statCard {
+    padding: 0.55rem 0.6rem 0.5rem;
+  }
+
+  .statValue {
+    font-size: 1rem;
+  }
+}

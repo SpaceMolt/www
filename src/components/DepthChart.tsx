@@ -9,6 +9,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
+import { X } from 'lucide-react'
 import styles from './DepthChart.module.css'
 
 interface DepthLevel {
@@ -104,7 +105,9 @@ export default function DepthChart({ bids, asks, itemName, onClose }: DepthChart
       <div className={styles.container}>
         <div className={styles.header}>
           <span className={styles.title}>{itemName} — Order Book Depth</span>
-          <button className={styles.closeBtn} onClick={onClose}>{'\u2715'}</button>
+          <button className={styles.closeBtn} onClick={onClose} aria-label="Close depth chart">
+            <X size={13} aria-hidden />
+          </button>
         </div>
         <div className={styles.empty}>No orders to display.</div>
       </div>
@@ -135,7 +138,9 @@ export default function DepthChart({ bids, asks, itemName, onClose }: DepthChart
             <span className={styles.statSpread}>Spread: {spread.toLocaleString()}</span>
           )}
         </div>
-        <button className={styles.closeBtn} onClick={onClose}>{'\u2715'}</button>
+        <button className={styles.closeBtn} onClick={onClose} aria-label="Close depth chart">
+          <X size={13} aria-hidden />
+        </button>
       </div>
       <div className={styles.splitChart}>
         {/* Bid side — own x-axis range */}

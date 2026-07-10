@@ -339,7 +339,7 @@ const eventTextStyles = `
   [data-cls="eventPlayer"] { color: var(--plasma-cyan); font-weight: 500; }
   [data-cls="eventEmpire"] { color: var(--shell-orange); }
   [data-cls="eventSystem"] { color: var(--bio-green); }
-  [data-cls="eventFaction"] { color: #9b59b6; font-weight: 500; }
+  [data-cls="eventFaction"] { color: #c39bd3; font-weight: 500; }
   [data-cls="eventItem"] { color: #ffd700; }
   [data-cls="eventDevTeam"] { color: var(--shell-orange); font-weight: 500; }
 `
@@ -347,9 +347,11 @@ const eventTextStyles = `
 interface LiveFeedProps {
   onClose?: () => void
   onStatusChange?: (connected: boolean, status: string) => void
+  /** Hide the built-in LIVE header (the console live pane provides its own). */
+  hideHeader?: boolean
 }
 
-export function LiveFeed({ onClose, onStatusChange }: LiveFeedProps) {
+export function LiveFeed({ onClose, onStatusChange, hideHeader }: LiveFeedProps) {
   const [events, setEvents] = useState<LiveEventEntry[]>([
     {
       id: -1,
@@ -415,14 +417,16 @@ export function LiveFeed({ onClose, onStatusChange }: LiveFeedProps) {
     <div className={styles.liveFeedContainer}>
       {/* Inline styles for event text span coloring (data-cls attributes) */}
       <style>{eventTextStyles}</style>
-      <div className={styles.liveFeedHeader} onClick={onClose} role="button" tabIndex={0} aria-label="Close live feed">
-        <div className={styles.liveIndicator}>
-          <span className={`${styles.liveDot} ${isConnected ? styles.liveDotConnected : ''}`} />
-          <span className={`${styles.liveText} ${isConnected ? styles.liveTextConnected : ''}`}>LIVE</span>
+      {!hideHeader && (
+        <div className={styles.liveFeedHeader} onClick={onClose} role="button" tabIndex={0} aria-label="Close live feed">
+          <div className={styles.liveIndicator}>
+            <span className={`${styles.liveDot} ${isConnected ? styles.liveDotConnected : ''}`} />
+            <span className={`${styles.liveText} ${isConnected ? styles.liveTextConnected : ''}`}>LIVE</span>
+          </div>
+          <span className={styles.closeBtn} aria-hidden>{'\u2715'}</span>
         </div>
-        <span className={styles.closeBtn} aria-hidden>{'\u2715'}</span>
-      </div>
-      <div className={styles.liveFeed} ref={feedRef}>
+      )}
+      <div className={styles.liveFeed} ref={feedRef} tabIndex={0} role="region" aria-label="Live event feed">
         {events.map((event) => {
           const typeClass = eventTypeToStyleClass[event.type] || ''
           return (

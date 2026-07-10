@@ -1,0 +1,256 @@
+/* === Changelog — console log layout === */
+
+.rssLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.4rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--chrome-silver);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid rgba(168, 197, 214, 0.35);
+  border-radius: 3px;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.rssLink:hover {
+  color: var(--shell-orange);
+  border-color: var(--shell-orange);
+}
+
+/* === Releases List === */
+.releases {
+  max-width: 860px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+/* === Release Log Entry === */
+.release {
+  background: rgba(13, 19, 33, 0.6);
+  border: 1px solid rgba(61, 90, 108, 0.2);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.release::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--hull-grey);
+}
+
+.release:first-child::before {
+  background: var(--plasma-cyan);
+  box-shadow: 0 0 12px rgba(0, 212, 255, 0.4);
+}
+
+.releaseHeader {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border-bottom: 1px solid rgba(61, 90, 108, 0.15);
+  background: linear-gradient(90deg, rgba(26, 39, 68, 0.35), transparent);
+}
+
+.releaseIndex {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  flex-shrink: 0;
+  padding: 0.8rem 0;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--hull-grey);
+  letter-spacing: 0.1em;
+  border-right: 1px solid rgba(61, 90, 108, 0.15);
+  align-self: stretch;
+}
+
+.release:first-child .releaseIndex {
+  color: var(--plasma-cyan);
+}
+
+.releaseMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.75rem 1.25rem;
+  flex-wrap: wrap;
+}
+
+/* Mono version chip */
+.releaseVersion {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--star-white);
+  letter-spacing: 0.05em;
+  background: rgba(0, 212, 255, 0.07);
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  border-radius: 3px;
+  padding: 0.15rem 0.55rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.release:first-child .releaseVersion {
+  color: var(--plasma-cyan);
+  border-color: rgba(0, 212, 255, 0.5);
+}
+
+.releaseDate {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--hull-grey);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.latestBadge {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--bio-green);
+  background: rgba(74, 222, 128, 0.08);
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  border-radius: 3px;
+  padding: 0.15rem 0.5rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* === Release Notes === */
+.releaseNotes {
+  margin: 0;
+  padding: 1rem 1.25rem 1rem calc(64px + 1.25rem);
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.releaseNote {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 0.9rem;
+  color: var(--chrome-silver);
+  line-height: 1.6;
+  padding-left: 1rem;
+  position: relative;
+}
+
+.releaseNote::before {
+  content: '>';
+  position: absolute;
+  left: 0;
+  color: var(--hull-grey);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+}
+
+.releaseNote strong {
+  color: var(--star-white);
+  font-weight: 600;
+}
+
+.releaseNote em {
+  color: var(--chrome-silver);
+  font-style: italic;
+}
+
+.releaseNote code {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.82em;
+  color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.08);
+  border: 1px solid rgba(0, 212, 255, 0.15);
+  border-radius: 3px;
+  padding: 0.1em 0.35em;
+}
+
+/* === Pagination === */
+.pagination {
+  max-width: 860px;
+  margin: 1.5rem 0 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.pageBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--chrome-silver);
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border: 1px solid rgba(61, 90, 108, 0.4);
+  border-radius: 3px;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.pageBtn:hover {
+  color: var(--plasma-cyan);
+  border-color: var(--plasma-cyan);
+}
+
+.pageBtnDisabled {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--hull-grey);
+  padding: 0.5rem 1rem;
+  border: 1px solid rgba(61, 90, 108, 0.2);
+  border-radius: 3px;
+  opacity: 0.4;
+  cursor: default;
+}
+
+.pageInfo {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--hull-grey);
+  letter-spacing: 0.05em;
+}
+
+/* === Empty === */
+.empty {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--hull-grey);
+  padding: 3rem 0;
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+  .releaseIndex {
+    display: none;
+  }
+
+  .releaseNotes {
+    padding: 1rem 1.1rem;
+  }
+
+  .releaseMeta {
+    padding: 0.7rem 1.1rem;
+  }
+}

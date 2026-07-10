@@ -14,6 +14,7 @@ import {
   type ViewState,
 } from '@/lib/battle/render'
 import { BATTLE_CATEGORY_META, SIDE_COLORS } from '@/lib/battle/types'
+import { CategoryIcon } from './CategoryIcon'
 import BattleTimeline from './BattleTimeline'
 import EventFeed from './EventFeed'
 import SideScoreboard from './SideScoreboard'
@@ -394,7 +395,7 @@ export default function BattleViewer({ battleId }: { battleId: string }) {
                 borderColor: BATTLE_CATEGORY_META[summary.category].color,
               }}
             >
-              {BATTLE_CATEGORY_META[summary.category].glyph} {t(BATTLE_CATEGORY_META[summary.category].labelKey)}
+              <CategoryIcon category={summary.category} size={11} /> {t(BATTLE_CATEGORY_META[summary.category].labelKey)}
             </span>
           )}
           {isLive ? (

@@ -820,8 +820,123 @@ footer {
   }
 }
 
-/* Ensure page content isn't hidden behind fixed stats bar */
-body {
+/* === Console Page Primitives ===
+   Shared building blocks for pages rendered inside the (console) shell.
+   Pages use these instead of full-bleed marketing heroes. */
+
+.console-page {
+  width: 100%;
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 1.4rem clamp(1rem, 2.5vw, 2.2rem) 3rem;
+}
+
+.console-page-wide {
+  max-width: none;
+}
+
+.console-page-header {
+  margin-bottom: 1.6rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.18);
+  position: relative;
+}
+
+.console-page-header::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 72px;
+  height: 1px;
+  background: var(--plasma-cyan);
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.7);
+}
+
+.console-page-kicker {
+  display: block;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--shell-orange);
+  margin-bottom: 0.4rem;
+}
+
+.console-page-kicker::before {
+  content: '// ';
+  color: rgba(255, 107, 53, 0.5);
+}
+
+.console-page-title {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: clamp(1.25rem, 2.6vw, 1.7rem);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--star-white);
+  margin: 0;
+}
+
+.console-page-sub {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  color: var(--chrome-silver);
+  margin-top: 0.45rem;
+  max-width: 70ch;
+}
+
+.console-panel {
+  position: relative;
+  background: rgba(13, 19, 33, 0.6);
+  border: 1px solid rgba(0, 212, 255, 0.14);
+}
+
+.console-panel::before,
+.console-panel::after {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-style: solid;
+  border-color: rgba(0, 212, 255, 0.55);
+  pointer-events: none;
+}
+
+.console-panel::before {
+  top: -1px;
+  left: -1px;
+  border-width: 1px 0 0 1px;
+}
+
+.console-panel::after {
+  bottom: -1px;
+  right: -1px;
+  border-width: 0 1px 1px 0;
+}
+
+.console-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.9rem;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.14);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--chrome-silver);
+  background: linear-gradient(90deg, rgba(26, 39, 68, 0.5), transparent);
+}
+
+.console-panel-body {
+  padding: 0.9rem;
+}
+
+/* Ensure page content isn't hidden behind the fixed stats bar (site chrome only) */
+.site-chrome {
   padding-bottom: 60px;
 }
 
@@ -831,7 +946,7 @@ body.map-page {
   overflow: hidden !important;
 }
 
-body.map-page > footer,
+body.map-page footer,
 body.map-page .patreon-banner-wrapper {
   display: none !important;
 }
@@ -840,15 +955,18 @@ body.map-page .patreon-banner-wrapper {
 /* The play page adds .play-page to <body> to hide shared layout elements */
 body.play-page {
   overflow: hidden !important;
+}
+
+body.play-page .site-chrome {
   padding-bottom: 0 !important;
 }
 
-body.play-page > nav,
-body.play-page > footer,
-body.play-page > .mobile-overlay,
-body.play-page > .mobile-menu,
-body.play-page > .stats-bar,
-body.play-page > .live-feed-popup,
+body.play-page nav.site-nav,
+body.play-page .site-chrome footer,
+body.play-page .mobile-overlay,
+body.play-page .mobile-menu,
+body.play-page .stats-bar,
+body.play-page .live-feed-popup,
 body.play-page .patreon-banner-wrapper {
   display: none !important;
 }

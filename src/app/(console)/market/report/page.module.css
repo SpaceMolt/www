@@ -1,0 +1,326 @@
+/* === Market Bulletin — ops console chrome === */
+
+/* Keep the bulletin at a readable column width inside the console page */
+.inner {
+  max-width: 1020px;
+  margin: 0 auto;
+}
+
+.meta {
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  color: var(--hull-grey);
+  margin: 0.6rem 0 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.metaLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  vertical-align: bottom;
+  color: var(--plasma-cyan);
+  text-decoration: none;
+}
+
+.metaLink:hover {
+  color: var(--star-white);
+  text-decoration: underline;
+}
+
+.status {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--chrome-silver);
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px dashed rgba(0, 212, 255, 0.2);
+}
+
+/* Heading inside a .console-panel-header — inherits the panel-header type */
+.panelHeading {
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  margin: 0;
+}
+
+/* === Lede / takeaways === */
+.lede {
+  margin-bottom: 1.1rem;
+  border-color: rgba(0, 212, 255, 0.3);
+  background:
+    linear-gradient(135deg, rgba(0, 212, 255, 0.07), rgba(255, 107, 53, 0.04)),
+    rgba(13, 19, 33, 0.6);
+}
+
+.ledeList {
+  margin: 0;
+  padding: 0.9rem 1.1rem 0.9rem 2.1rem;
+  color: var(--chrome-silver);
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+.ledeList li {
+  margin-bottom: 0.5rem;
+}
+
+.ledeList li:last-child {
+  margin-bottom: 0;
+}
+
+.ledeList strong {
+  color: var(--star-white);
+}
+
+.ledeList em {
+  color: var(--plasma-cyan);
+  font-style: normal;
+}
+
+/* === Sections === */
+.section {
+  margin-bottom: 1.1rem;
+}
+
+.sectionNote {
+  font-size: 0.76rem;
+  color: var(--chrome-silver);
+  opacity: 0.75;
+  margin: 0 0 0.9rem;
+  max-width: 78ch;
+}
+
+/* === Arbitrage route cards === */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.7rem;
+}
+
+.routeCard {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(0, 212, 255, 0.14);
+  border-radius: 2px;
+  padding: 0.8rem 0.9rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.routeCard:hover {
+  border-color: rgba(0, 212, 255, 0.4);
+  box-shadow: 0 0 12px rgba(0, 212, 255, 0.1);
+}
+
+.routeHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.5rem;
+}
+
+.routeItem {
+  font-family: var(--font-orbitron), sans-serif;
+  color: var(--star-white);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.routeMargin {
+  font-family: var(--font-jetbrains), monospace;
+  color: var(--bio-green);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.routeBody {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.76rem;
+  margin-bottom: 0.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.buyLeg {
+  color: var(--plasma-cyan);
+}
+
+.sellLeg {
+  color: var(--bio-green);
+}
+
+.legEmpire {
+  color: var(--hull-grey);
+  font-size: 0.92em;
+}
+
+.arrow {
+  display: inline-flex;
+  align-items: center;
+  color: var(--hull-grey);
+}
+
+.routeFoot {
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  color: var(--hull-grey);
+  font-variant-numeric: tabular-nums;
+}
+
+/* === Tables === */
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.table th {
+  position: sticky;
+  top: 0;
+  text-align: left;
+  padding: 0.45rem 0.75rem;
+  color: var(--chrome-silver);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  background: #0b101b;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.28);
+}
+
+.table td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.07);
+  color: var(--chrome-silver);
+}
+
+.table tbody tr:nth-child(even) {
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.table tbody tr:hover {
+  background: rgba(0, 212, 255, 0.06);
+}
+
+.itemCell {
+  color: var(--star-white);
+}
+
+/* Secondary credit-turnover figure shown under the units volume */
+.subCredits {
+  display: block;
+  color: var(--hull-grey);
+  font-size: 0.7rem;
+}
+
+.surgeCell {
+  color: var(--shell-orange);
+  font-weight: 700;
+}
+
+.up {
+  color: var(--bio-green);
+}
+
+.down {
+  color: var(--claw-red);
+}
+
+.trendIcon {
+  vertical-align: -2px;
+  margin-right: 0.3rem;
+}
+
+.priceArrow {
+  vertical-align: -1px;
+  margin: 0 0.3rem;
+  color: var(--hull-grey);
+}
+
+/* === Movers columns === */
+.moverColumns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.moverColHeading {
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--chrome-silver);
+  margin: 0 0 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+.moverList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.moverList li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: 'name pct' 'price price';
+  gap: 0.1rem 0.5rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.07);
+}
+
+.moverList li .itemCell {
+  grid-area: name;
+}
+
+.moverList li .up,
+.moverList li .down {
+  grid-area: pct;
+  text-align: right;
+  font-weight: 700;
+}
+
+.moverPrice {
+  grid-area: price;
+  color: var(--hull-grey);
+  font-size: 0.7rem;
+}
+
+.emptyCol {
+  color: var(--hull-grey);
+  font-size: 0.76rem;
+  font-style: italic;
+}
+
+.footnote {
+  margin-top: 1.5rem;
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.68rem;
+  color: var(--hull-grey);
+  line-height: 1.6;
+  max-width: 84ch;
+}
+
+@media (max-width: 640px) {
+  .moverColumns {
+    grid-template-columns: 1fr;
+  }
+}

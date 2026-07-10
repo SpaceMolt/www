@@ -1,15 +1,15 @@
-/* === Map Page - Full-screen galaxy canvas === */
+/* === Map Page - fills the console main viewport === */
 
-/* Page wrapper - override body padding and hide footer/statsbar */
+/* Page wrapper — fills the parent (the console shell's scroll area). All
+   overlays are absolutely positioned INSIDE this wrapper, never fixed to
+   the browser viewport, so the console topbar/sidebar/live pane stay
+   visible and usable. */
 .mapPage {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  position: relative;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
   background: var(--deep-void);
-  z-index: 1;
 }
 
 /*
@@ -35,10 +35,39 @@
   cursor: grabbing;
 }
 
+/* Title chip (fullPage only) — small overlay identifier, no page header */
+.titleChip {
+  position: absolute;
+  top: 0.9rem;
+  left: 1rem;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.3rem 0.65rem;
+  background: rgba(10, 14, 23, 0.85);
+  border: 1px solid rgba(0, 212, 255, 0.35);
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--plasma-cyan);
+  pointer-events: none;
+}
+
+.titleChip::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: var(--plasma-cyan);
+  box-shadow: 0 0 6px rgba(0, 212, 255, 0.8);
+}
+
 /* Control Hint (floating) */
 .controlHint {
-  position: fixed;
-  top: 5rem;
+  position: absolute;
+  top: 0.95rem;
   left: 50%;
   transform: translateX(-50%);
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
@@ -72,9 +101,9 @@
   opacity: 1;
 }
 
-/* Tooltip */
+/* Tooltip — positioned in canvas-local coordinates */
 .tooltip {
-  position: fixed;
+  position: absolute;
   pointer-events: none;
   background: rgba(10, 14, 23, 0.95);
   border: 1px solid var(--hull-grey);
@@ -125,9 +154,9 @@
 
 /* Activity Toast */
 .activityToast {
-  position: fixed;
+  position: absolute;
   left: 50%;
-  bottom: 150px;
+  bottom: 5.5rem;
   transform: translateX(-50%);
   background: rgba(10, 14, 23, 0.95);
   border: 1px solid var(--hull-grey);
@@ -165,8 +194,8 @@
 
 /* Legend */
 .legend {
-  position: fixed;
-  bottom: 4.5rem;
+  position: absolute;
+  bottom: 1rem;
   left: 1rem;
   background: rgba(10, 14, 23, 0.85);
   border: 1px solid var(--hull-grey);
@@ -202,10 +231,10 @@
   color: var(--chrome-silver);
 }
 
-/* Stats panel (top-left) */
+/* Stats panel (top-left, below the title chip) */
 .stats {
-  position: fixed;
-  top: 80px;
+  position: absolute;
+  top: 3.4rem;
   left: 1rem;
   background: rgba(10, 14, 23, 0.85);
   border: 1px solid var(--hull-grey);
@@ -218,8 +247,8 @@
 
 /* Zoom Controls */
 .zoomControls {
-  position: fixed;
-  bottom: 4.5rem;
+  position: absolute;
+  bottom: 1rem;
   right: 1rem;
   display: flex;
   flex-direction: column;
@@ -311,11 +340,11 @@
 
 /* POI Panel */
 .poiPanel {
-  position: fixed;
-  top: 85px;
+  position: absolute;
+  top: 1rem;
   right: -380px;
   width: 360px;
-  max-height: calc(100vh - 80px);
+  max-height: calc(100% - 2rem);
   background: linear-gradient(135deg, rgba(5, 8, 16, 0.98) 0%, rgba(10, 20, 35, 0.98) 100%);
   border: 1px solid rgba(0, 212, 255, 0.2);
   border-radius: 2px;
@@ -815,7 +844,7 @@
 
 /* Loading */
 .loading {
-  position: fixed;
+  position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
@@ -840,8 +869,8 @@
 
 /* Search */
 .searchContainer {
-  position: fixed;
-  bottom: calc(4.5rem + 115px + 0.5rem);
+  position: absolute;
+  bottom: calc(1rem + 115px + 0.5rem);
   right: 1rem;
   z-index: 100;
   display: flex;
@@ -977,8 +1006,8 @@
 
 /* Travel Tracker */
 .travelTracker {
-  position: fixed;
-  top: 80px;
+  position: absolute;
+  top: 1rem;
   right: 1rem;
   z-index: 100;
 }
@@ -1149,13 +1178,13 @@
   }
 
   .stats {
-    top: 110px;
+    top: 3.2rem;
     padding: 0.5rem 0.75rem;
     font-size: 0.75rem;
   }
 
   .zoomControls {
-    bottom: 8rem;
+    bottom: 1rem;
   }
 
   .poiPanel {
@@ -1167,7 +1196,7 @@
     right: 0;
     transform: translateY(100%);
     transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    max-height: 50vh;
+    max-height: 50%;
   }
 
   .poiPanelVisible {
@@ -1175,13 +1204,13 @@
   }
 
   .activityToast {
-    bottom: 140px;
+    bottom: 8rem;
     padding: 0.75rem 1rem;
     font-size: 0.8rem;
   }
 
   .travelTracker {
-    top: 160px;
+    top: 3.2rem;
     right: 0.5rem;
   }
 

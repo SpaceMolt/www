@@ -1,0 +1,383 @@
+/* === Stations List — station registry / database screen === */
+
+.headerDesc {
+  font-size: 0.8rem;
+  color: var(--chrome-silver);
+  margin-top: 0.45rem;
+  opacity: 0.75;
+  max-width: 78ch;
+  line-height: 1.55;
+}
+
+/* === Filter Bar === */
+.filterBar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.1rem;
+}
+
+.filterLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--chrome-silver);
+  opacity: 0.7;
+  margin-right: 0.3rem;
+}
+
+.filterBtn {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.32rem 0.7rem;
+  background: rgba(13, 19, 33, 0.7);
+  border: 1px solid rgba(0, 212, 255, 0.18);
+  color: var(--chrome-silver);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.filterBtn:hover,
+.filterBtnActive {
+  border-color: var(--plasma-cyan);
+  color: var(--plasma-cyan);
+}
+
+.filterBtnActive {
+  background: rgba(0, 212, 255, 0.08);
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.12) inset;
+}
+
+.filterBtn:focus-visible {
+  outline: 2px solid var(--plasma-cyan);
+  outline-offset: 1px;
+}
+
+.empireDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.recordCount {
+  margin-left: auto;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--chrome-silver);
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* === Panels === */
+.panelSection {
+  margin-bottom: 1.4rem;
+}
+
+.panelTitle {
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  margin: 0;
+}
+
+.panelCount {
+  margin-left: auto;
+  color: var(--plasma-cyan);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+}
+
+/* === Capitals === */
+.capitalSectionSubtitle {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  color: var(--chrome-silver);
+  font-size: 0.72rem;
+  margin: 0 0 0.9rem;
+  opacity: 0.7;
+}
+
+.capitalGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 0.75rem;
+}
+
+.capitalCard {
+  background: rgba(26, 39, 68, 0.35);
+  border: 1px solid rgba(0, 212, 255, 0.14);
+  border-left: 2px solid var(--empire-color, var(--hull-grey));
+  border-radius: 2px;
+  padding: 0.8rem 0.9rem;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.capitalCard:hover {
+  border-color: color-mix(in srgb, var(--empire-color, var(--plasma-cyan)) 60%, transparent);
+  border-left-color: var(--empire-color, var(--plasma-cyan));
+  background: rgba(26, 39, 68, 0.55);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--empire-color, var(--plasma-cyan)) 12%, transparent);
+}
+
+.capitalCard:focus-visible {
+  outline: 2px solid var(--plasma-cyan);
+  outline-offset: 1px;
+}
+
+.capitalHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.capitalName {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--star-white);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.empireBadge {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.55rem;
+}
+
+.capitalDescription {
+  font-size: 0.78rem;
+  color: var(--chrome-silver);
+  line-height: 1.55;
+  margin: 0 0 0.7rem;
+  flex: 1;
+}
+
+.capitalFooter {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(0, 212, 255, 0.1);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.05em;
+  font-variant-numeric: tabular-nums;
+}
+
+.capitalViewLink {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  color: var(--empire-color, var(--plasma-cyan));
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.cardMeta {
+  color: var(--chrome-silver);
+  white-space: nowrap;
+}
+
+.conditionBadge {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+/* === Registry Table === */
+.tableWrap {
+  overflow-x: auto;
+}
+
+.registryTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.74rem;
+}
+
+.registryTable th {
+  text-align: left;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--chrome-silver);
+  opacity: 0.8;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+  white-space: nowrap;
+}
+
+.registryTable td {
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.07);
+  vertical-align: top;
+}
+
+.registryRow {
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.registryRow:hover {
+  background: rgba(0, 212, 255, 0.05);
+}
+
+.registryRow:last-child td {
+  border-bottom: none;
+}
+
+.nameCell {
+  min-width: 220px;
+  max-width: 380px;
+}
+
+.stationNameLink {
+  display: block;
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--star-white);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.2rem;
+}
+
+.registryRow:hover .stationNameLink {
+  color: var(--plasma-cyan);
+}
+
+.stationNameLink:focus-visible {
+  outline: 2px solid var(--plasma-cyan);
+  outline-offset: 1px;
+}
+
+.stationDesc {
+  display: block;
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.72rem;
+  color: var(--chrome-silver);
+  opacity: 0.75;
+  line-height: 1.45;
+}
+
+.empireCell {
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.68rem;
+}
+
+.empireCell .empireDot {
+  margin-right: 0.35rem;
+}
+
+.systemCell {
+  white-space: nowrap;
+  color: var(--chrome-silver);
+}
+
+.numCol {
+  text-align: right;
+}
+
+.numCell {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--chrome-silver);
+  white-space: nowrap;
+}
+
+.chevronCol {
+  width: 2rem;
+}
+
+.chevronCell {
+  color: rgba(0, 212, 255, 0.4);
+  text-align: right;
+}
+
+.registryRow:hover .chevronCell {
+  color: var(--plasma-cyan);
+}
+
+/* === Loading === */
+.loading {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--chrome-silver);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* === Empty State === */
+.emptyState {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  color: var(--chrome-silver);
+  border: 1px dashed rgba(0, 212, 255, 0.2);
+}
+
+.emptyStateTitle {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.6rem;
+  color: var(--star-white);
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+  .capitalGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .recordCount {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .nameCell {
+    min-width: 180px;
+  }
+}

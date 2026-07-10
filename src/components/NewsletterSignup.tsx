@@ -36,10 +36,19 @@ export function NewsletterSignup({ variant = 'section' }: { variant?: Variant })
     script.async = true
     script.setAttribute('data-beehiiv-form', BEEHIIV_FORM_ID)
     host.appendChild(script)
+    // The beehiiv loader injects an untitled iframe; title it for screen readers.
+    const observer = new MutationObserver(() => {
+      const frame = host.querySelector('iframe')
+      if (frame && !frame.title) frame.title = 'Newsletter signup form'
+    })
+    observer.observe(host, { childList: true, subtree: true })
     // On unmount, drop the loader script we added so client-side navigation
     // re-injects cleanly. The injected form iframe is a child of `host`, which
     // React removes with the component, so no orphaned forms remain.
-    return () => { script.remove() }
+    return () => {
+      observer.disconnect()
+      script.remove()
+    }
   }, [])
 
   if (variant === 'compact') {

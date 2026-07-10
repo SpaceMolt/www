@@ -2,7 +2,7 @@
 .widget {
   background: linear-gradient(135deg, rgba(255, 107, 53, 0.04), rgba(13, 19, 33, 0.95));
   border: 1px solid rgba(255, 107, 53, 0.15);
-  border-radius: 16px;
+  border-radius: 0;
   padding: 2.5rem;
   width: 100%;
   max-width: 900px;
@@ -53,7 +53,7 @@
 .tierColumn {
   display: flex;
   flex-direction: column;
-  border-radius: 10px;
+  border-radius: 0;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.06);
   background: rgba(255, 255, 255, 0.02);
@@ -291,7 +291,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  border-radius: 10px;
+  border-radius: 0;
   text-decoration: none;
   transition: box-shadow 0.3s ease, transform 0.2s ease;
   align-self: stretch;

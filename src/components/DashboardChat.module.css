@@ -313,7 +313,7 @@
   color: var(--void-black);
   background: var(--plasma-cyan);
   padding: 0.1rem 0.35rem;
-  border-radius: 8px;
+  border-radius: 0;
   margin-left: 0.4rem;
 }
 
