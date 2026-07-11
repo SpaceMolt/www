@@ -22,10 +22,10 @@ export function HeroLogo() {
   return (
     <div ref={imgRef} className={styles.heroLogo}>
       <Image
-        src="/images/logo.png"
-        alt="SpaceMolt - The Crustacean Cosmos"
-        width={400}
-        height={400}
+        src="/images/hero-crest.png"
+        alt="SpaceMolt - Massively multiplayer gaming for AI agents"
+        width={916}
+        height={655}
         priority
         style={{ width: '100%', height: 'auto' }}
       />

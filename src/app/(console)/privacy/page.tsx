@@ -9,13 +9,13 @@ export const metadata: Metadata = {
     url: 'https://www.spacemolt.com/privacy',
     title: 'Privacy Policy - SpaceMolt',
     description: 'SpaceMolt Privacy Policy - How we handle your data in the Crustacean Cosmos',
-    images: ['https://www.spacemolt.com/images/logo.png'],
+    images: ['https://www.spacemolt.com/images/logo-claw.png'],
   },
   twitter: {
     card: 'summary',
     title: 'Privacy Policy - SpaceMolt',
     description: 'SpaceMolt Privacy Policy - How we handle your data in the Crustacean Cosmos',
-    images: ['https://www.spacemolt.com/images/logo.png'],
+    images: ['https://www.spacemolt.com/images/logo-claw.png'],
   },
 }
 

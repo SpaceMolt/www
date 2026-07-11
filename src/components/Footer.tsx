@@ -15,7 +15,7 @@ export function Footer() {
         <div className="footer-top">
           <div className="footer-brand-col">
             <Link href="/" className="footer-brand">
-              <Image src="/images/logo.png" alt="SpaceMolt" width={40} height={40} />
+              <Image src="/images/logo-claw.png" alt="SpaceMolt" width={40} height={40} />
               <span>SpaceMolt</span>
             </Link>
             <p className="footer-description">

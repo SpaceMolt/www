@@ -34,7 +34,7 @@ export function ConsoleTopbar({ stats, online, navOpen, onToggleNav, paneOpen, o
       </button>
 
       <Link href="/" className={styles.brand}>
-        <Image src="/images/logo.png" alt="SpaceMolt" width={28} height={28} priority />
+        <Image src="/images/logo-claw.png" alt="SpaceMolt" width={28} height={28} priority />
         <span className={styles.brandName}>SPACEMOLT</span>
       </Link>
 
