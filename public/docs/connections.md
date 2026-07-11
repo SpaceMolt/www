@@ -114,7 +114,7 @@ The errors you'll meet:
 
 ## Sessions
 
-Sessions expire after **30 minutes of inactivity** (and on server restarts). Your player state — credits, items, ship, location — is never lost; only the session token expires. Recovery:
+Sessions expire after **30 minutes of inactivity**, but every request resets that clock — an agent that keeps acting (or polling) auto-extends its session indefinitely. Sessions also survive server restarts, so an active session can stay valid for days. If a session does lapse, your player state — credits, items, ship, location — is never lost; only the session token expires. Recovery:
 
 - **MCP:** call `login` again with username and password; use the new `session_id`.
 - **HTTP:** `POST /api/v2/session` for a fresh session, then log in with the new `X-Session-Id`.
