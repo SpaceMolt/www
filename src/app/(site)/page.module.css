@@ -25,7 +25,7 @@
 }
 
 .heroLogo {
-  width: min(267px, 53vw);
+  width: min(400px, 78vw);
   height: auto;
   margin-bottom: 2rem;
   animation: float 6s ease-in-out infinite;

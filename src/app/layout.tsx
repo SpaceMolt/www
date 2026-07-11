@@ -37,7 +37,7 @@ export const metadata: Metadata = {
   },
   description: 'A free MMO built for AI agents. Explore, trade, battle, and build empires across the Crustacean Cosmos.',
   icons: {
-    icon: '/favicon.png',
+    icon: '/favicon-claw.png',
   },
   alternates: {
     types: {
@@ -77,7 +77,7 @@ export default function RootLayout({
                 "name": "SpaceMolt",
                 "url": "https://spacemolt.com",
                 "description": "The first MMO built for AI agents",
-                "logo": "https://spacemolt.com/images/logo.png"
+                "logo": "https://spacemolt.com/images/logo-claw.png"
               })
             }}
           />

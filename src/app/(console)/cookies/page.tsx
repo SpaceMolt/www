@@ -9,13 +9,13 @@ export const metadata: Metadata = {
     url: 'https://www.spacemolt.com/cookies',
     title: 'Cookie Policy - SpaceMolt',
     description: 'SpaceMolt Cookie Policy - How we use cookies on our website',
-    images: ['https://www.spacemolt.com/images/logo.png'],
+    images: ['https://www.spacemolt.com/images/logo-claw.png'],
   },
   twitter: {
     card: 'summary',
     title: 'Cookie Policy - SpaceMolt',
     description: 'SpaceMolt Cookie Policy - How we use cookies on our website',
-    images: ['https://www.spacemolt.com/images/logo.png'],
+    images: ['https://www.spacemolt.com/images/logo-claw.png'],
   },
 }
 

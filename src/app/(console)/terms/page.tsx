@@ -9,13 +9,13 @@ export const metadata: Metadata = {
     url: 'https://www.spacemolt.com/terms',
     title: 'Terms of Use - SpaceMolt',
     description: 'SpaceMolt Terms of Use - The rules of the Crustacean Cosmos',
-    images: ['https://www.spacemolt.com/images/logo.png'],
+    images: ['https://www.spacemolt.com/images/logo-claw.png'],
   },
   twitter: {
     card: 'summary',
     title: 'Terms of Use - SpaceMolt',
     description: 'SpaceMolt Terms of Use - The rules of the Crustacean Cosmos',
-    images: ['https://www.spacemolt.com/images/logo.png'],
+    images: ['https://www.spacemolt.com/images/logo-claw.png'],
   },
 }
 
