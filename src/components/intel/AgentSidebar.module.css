@@ -1,0 +1,288 @@
+/* === Intel Map — agent roster sidebar === */
+
+.sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: rgba(10, 14, 23, 0.92);
+  border-right: 1px solid rgba(0, 212, 255, 0.15);
+  overflow: hidden;
+}
+
+.sidebarCollapsed {
+  width: 44px;
+  align-items: center;
+  padding-top: 0.5rem;
+  gap: 0.75rem;
+}
+
+.collapsedLabel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--chrome-silver);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0.75rem 0.5rem;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+}
+
+.headerTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--plasma-cyan);
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.fleetCount {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--chrome-silver);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.collapseBtn {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--chrome-silver);
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.collapseBtn:hover {
+  color: var(--plasma-cyan);
+  border-color: rgba(0, 212, 255, 0.3);
+}
+
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+}
+
+.searchBox {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 0.5rem;
+  color: var(--hull-grey);
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 0.4rem 0.5rem 0.4rem 1.7rem;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(107, 143, 163, 0.3);
+  border-radius: 4px;
+  color: var(--star-white);
+  font-size: 0.8rem;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.searchInput::placeholder {
+  color: var(--hull-grey);
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--plasma-cyan);
+}
+
+.factionSelect {
+  width: 100%;
+  padding: 0.35rem 0.5rem;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(107, 143, 163, 0.3);
+  border-radius: 4px;
+  color: var(--star-white);
+  font-size: 0.8rem;
+  font-family: inherit;
+}
+
+.factionSelect:focus {
+  outline: none;
+  border-color: var(--plasma-cyan);
+}
+
+.hiddenToggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--chrome-silver);
+  cursor: pointer;
+  user-select: none;
+}
+
+.hiddenToggle input {
+  accent-color: var(--plasma-cyan);
+  cursor: pointer;
+}
+
+.list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.25rem 0 0.75rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 212, 255, 0.25) transparent;
+}
+
+.emptyList {
+  padding: 1.5rem 0.75rem;
+  text-align: center;
+  color: var(--hull-grey);
+  font-size: 0.8rem;
+}
+
+.group {
+  margin-top: 0.25rem;
+}
+
+.groupHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  width: 100%;
+  padding: 0.35rem 0.75rem;
+  background: none;
+  border: none;
+  color: var(--chrome-silver);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.groupHeader:hover {
+  color: var(--plasma-cyan);
+}
+
+.groupLabel {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.groupCount {
+  color: var(--hull-grey);
+}
+
+.agentRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.35rem 0.75rem 0.35rem 1.25rem;
+  background: none;
+  border: none;
+  border-left: 2px solid transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.agentRow:hover {
+  background: rgba(0, 212, 255, 0.06);
+}
+
+.agentRowActive {
+  background: rgba(0, 212, 255, 0.1);
+  border-left-color: var(--plasma-cyan);
+}
+
+.onlineDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--hull-grey);
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
+.onlineDotActive {
+  background: #2dd4bf;
+  opacity: 1;
+  box-shadow: 0 0 4px #2dd4bf;
+}
+
+.agentInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.agentName {
+  font-size: 0.8rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.agentMeta {
+  font-size: 0.7rem;
+  color: var(--chrome-silver);
+  opacity: 0.75;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.agentBadges {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+.badgeIcon {
+  color: var(--chrome-silver);
+  opacity: 0.8;
+}
+
+.hiddenBadge {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--hull-grey);
+  border: 1px solid rgba(107, 143, 163, 0.4);
+  border-radius: 3px;
+  padding: 0 0.25rem;
+  text-transform: uppercase;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 230px;
+  }
+}
