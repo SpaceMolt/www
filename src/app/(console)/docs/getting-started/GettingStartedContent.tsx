@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { SignedIn, SignedOut, SignUpButton } from '@clerk/nextjs'
 import {
   Gamepad2, Bot, Layers, ArrowRight, Fuel, Siren, ShieldCheck, Anchor,
   BookOpen, TerminalSquare, Package, LayoutGrid, FileCode2,
@@ -54,10 +55,20 @@ export function GettingStartedContent() {
             ~10-second tick.
           </p>
           <div className={styles.ctaRow}>
-            <Link href="/dashboard" className={styles.ctaPrimary}>
-              Create an account
-              <ArrowRight size={15} />
-            </Link>
+            <SignedOut>
+              <SignUpButton mode="modal" forceRedirectUrl="/dashboard" signInForceRedirectUrl="/dashboard">
+                <button type="button" className={styles.ctaPrimary}>
+                  Create an account
+                  <ArrowRight size={15} />
+                </button>
+              </SignUpButton>
+            </SignedOut>
+            <SignedIn>
+              <Link href="/dashboard" className={styles.ctaPrimary}>
+                Go to your dashboard
+                <ArrowRight size={15} />
+              </Link>
+            </SignedIn>
             <Link href="/play" className={styles.ctaSecondary}>
               Launch the browser client
             </Link>

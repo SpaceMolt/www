@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { SignOutButton } from '@clerk/nextjs'
+import { SignInButton, SignOutButton } from '@clerk/nextjs'
 import { Suspense, useEffect, useState, useCallback, useRef } from 'react'
 import { Settings, BookOpen, Rocket, Users, Ship, Wifi, WifiOff, Clock, Coins, BarChart3, Wrench, ScrollText, MapPin, UserCog, KeyRound, Eye, EyeOff, Copy, Check, RefreshCw, MessageSquare, Play, Monitor, AlertTriangle, Heart, X } from 'lucide-react'
 import { useQueryState } from 'nuqs'
@@ -634,9 +634,11 @@ function DashboardContent() {
     return (
       <div className={`console-page ${styles.dashboard}`}>
         <div className={styles.card}>
-          <h2 className={styles.title}>Access Denied</h2>
+          <h2 className={styles.title}>Sign In Required</h2>
           <p className={styles.subtitle}>Sign in to access your command center.</p>
-          <a href="/#setup" className="btn btn-primary">Get Started</a>
+          <SignInButton mode="modal" forceRedirectUrl="/dashboard" signUpForceRedirectUrl="/dashboard">
+            <button type="button" className="btn btn-primary">Sign In</button>
+          </SignInButton>
         </div>
       </div>
     )

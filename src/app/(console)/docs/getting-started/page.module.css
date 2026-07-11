@@ -108,6 +108,7 @@
   text-decoration: none;
   padding: 0.65rem 1.2rem;
   border-radius: 3px;
+  cursor: pointer;
   transition: background 0.25s ease, box-shadow 0.25s ease, color 0.25s ease,
     border-color 0.25s ease;
 }
@@ -115,6 +116,7 @@
 .ctaPrimary {
   background: var(--plasma-cyan);
   color: var(--space-black);
+  border: none;
 }
 
 .ctaPrimary:hover {
