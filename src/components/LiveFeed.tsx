@@ -314,6 +314,8 @@ interface LiveEventEntry {
   html: string
   icon: ReactNode
   time: number
+  /** Entry is still playing its enter animation. */
+  fresh?: boolean
 }
 
 function formatTime(timestamp?: string) {
@@ -385,20 +387,39 @@ export function LiveFeed({ onClose, onStatusChange, hideHeader }: LiveFeedProps)
     })
   }, [])
 
-  // Drain queued events one at a time so bursts read as a rolling feed rather
-  // than appearing all at once. Falls behind gracefully: with a large backlog
-  // it releases several per beat to catch up.
+  // Drain queued events strictly one at a time so the feed rolls instead of
+  // repainting in chunks. The very first batch (the replay burst on connect)
+  // fills the feed instantly with no animation; after that, one row per beat,
+  // dropping the oldest under a firehose rather than falling behind.
+  const initialFlushRef = useRef(false)
   useEffect(() => {
     const id = setInterval(() => {
       const pending = pendingRef.current
       if (pending.length === 0) return
-      const batch = pending.splice(0, Math.max(1, Math.ceil(pending.length / 8)))
+      if (!initialFlushRef.current) {
+        initialFlushRef.current = true
+        const batch = pending.splice(0, pending.length)
+        setEvents((prev) => {
+          const filtered = prev.filter((e) => e.id !== -1)
+          return [...batch.reverse(), ...filtered].slice(0, MAX_EVENTS)
+        })
+        return
+      }
+      if (pending.length > 25) pending.splice(0, pending.length - 25)
+      const entry = pending.shift()!
+      entry.fresh = true
       setEvents((prev) => {
         const filtered = prev.filter((e) => e.id !== -1)
-        return [...batch.reverse(), ...filtered].slice(0, MAX_EVENTS)
+        return [entry, ...filtered].slice(0, MAX_EVENTS)
       })
-    }, 300)
+    }, 250)
     return () => clearInterval(id)
+  }, [])
+
+  // Drop the enter-animation class once it finishes so the animation does not
+  // replay for every row when the pane is re-shown after being display:none.
+  const settle = useCallback((id: number) => {
+    setEvents((prev) => prev.map((e) => (e.id === id && e.fresh ? { ...e, fresh: false } : e)))
   }, [])
 
   useEffect(() => {
@@ -442,7 +463,8 @@ export function LiveFeed({ onClose, onStatusChange, hideHeader }: LiveFeedProps)
           return (
             <div
               key={event.id}
-              className={`${styles.liveEvent} ${typeClass}`}
+              className={`${styles.liveEvent} ${typeClass} ${event.fresh ? styles.liveEventEnter : ''}`}
+              onAnimationEnd={event.fresh ? () => settle(event.id) : undefined}
             >
               <span className={styles.eventIcon}>{event.icon}</span>
               {/* Event HTML contains only hardcoded span tags with escaped user data */}

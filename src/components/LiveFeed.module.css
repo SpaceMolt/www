@@ -112,6 +112,13 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* Applied only while a row plays its enter animation; overflow must stay
+   visible otherwise (with it hidden, rows in a fixed-height flex column get
+   an automatic minimum size of 0 and squash instead of scrolling). */
+.liveEventEnter {
   overflow: hidden;
   animation: slideIn 0.35s ease-out;
 }
@@ -197,7 +204,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .liveEvent {
+  .liveEventEnter {
     animation: none;
   }
 }
