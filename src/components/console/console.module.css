@@ -75,9 +75,7 @@
 .brand img {
   width: 28px;
   height: 28px;
-  border-radius: 50%;
-  border: 1px solid rgba(0, 212, 255, 0.6);
-  box-shadow: 0 0 12px rgba(0, 212, 255, 0.35);
+  filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.35));
 }
 
 .brandName {
