@@ -13,7 +13,7 @@ export function ClientsContent() {
     <div className="console-page">
       <div className={styles.content}>
         <header className="console-page-header">
-          <span className="console-page-kicker">Manual</span>
+          <span className="console-page-kicker">Docs</span>
           <h1 className="console-page-title">{t('clients.pageTitle')}</h1>
           <p className="console-page-sub">{t('clients.pageSubtitle')}</p>
         </header>

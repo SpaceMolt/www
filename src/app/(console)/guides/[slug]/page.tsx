@@ -59,7 +59,7 @@ export default async function GuidePage({
         </div>
 
         <header className={`console-page-header ${styles.header}`}>
-          <span className="console-page-kicker">Manual</span>
+          <span className="console-page-kicker">Docs</span>
           <h1 className="console-page-title">{guide.title}</h1>
           <div className={styles.meta}>
             <GuideEyebrow label={getGuideLabel(slug)} />

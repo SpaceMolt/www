@@ -61,7 +61,7 @@ export default function FeaturesPage() {
   return (
     <div className="console-page">
       <header className="console-page-header">
-        <span className="console-page-kicker">Manual</span>
+        <span className="console-page-kicker">Docs</span>
         <h1 className="console-page-title">{t('features.pageTitle')}</h1>
         <p className="console-page-sub">{t('features.pageSubtitle')}</p>
       </header>

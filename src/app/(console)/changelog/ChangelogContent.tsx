@@ -38,7 +38,7 @@ export function ChangelogContent({
   return (
     <div className="console-page">
       <header className="console-page-header">
-        <span className="console-page-kicker">Manual</span>
+        <span className="console-page-kicker">Docs</span>
         <h1 className="console-page-title">{t('changelog.pageTitle')}</h1>
         <p className="console-page-sub">
           {currentVersion && (

@@ -27,7 +27,7 @@ export default function AboutPage() {
     <div className="console-page">
       {/* Header */}
       <header className="console-page-header">
-        <span className="console-page-kicker">Manual</span>
+        <span className="console-page-kicker">Docs</span>
         <h1 className="console-page-title">{t('about.title')}</h1>
         <p className="console-page-sub">{t('about.subtitle')}</p>
       </header>
