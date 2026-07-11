@@ -4,7 +4,8 @@
  * per-tick damage totals for the timeline intensity chart.
  */
 
-import { getShip } from '@/data/catalog'
+import { getShip, type RawShip } from '@/data/catalog'
+import { archetypeForShip, type GlyphArchetype } from './shipGlyphs'
 import {
   type BattleLogEntry,
   type BattleSummary,
@@ -25,6 +26,12 @@ export interface ParticipantMeta {
   kind: ParticipantKind
   shipClassId: string
   shipClassName: string
+  /** Catalog class string, e.g. "Heavy Fighter" (empty for drones/creatures/unknown) */
+  shipClass: string
+  /** Glyph silhouette family, resolved once at timeline build */
+  archetype: GlyphArchetype
+  /** Whether the hull mounts weapons (catalog weapon slots; unknown hulls count as armed) */
+  armed: boolean
   /** Ship scale 1 (personal) … 5 (capital); drives glyph size */
   scale: number
   category: string
@@ -110,6 +117,16 @@ const EVENT_COLORS: Record<BattleEventKind, string> = {
   end: '#ffd93d',
 }
 
+// Drones shoot and creatures bite; for ships, weapon capability comes from the
+// hull's catalog weapon slots. A catalog miss (stale build-time catalog) counts
+// as armed — battle participants overwhelmingly shoot, and falsely advertising
+// an unknown combatant as a soft target is the worse failure.
+function resolveArmed(kind: ParticipantKind, ship: RawShip | undefined): boolean {
+  if (kind !== 'ship') return true
+  if (!ship) return true
+  return (ship.weapon_slots ?? 0) > 0
+}
+
 function detectKind(snap: ParticipantSnapshot): ParticipantKind {
   if (snap.ship_class) return 'ship'
   // Drones and creatures have no ship class; drones carry the owner's name
@@ -180,8 +197,11 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
           kind,
           shipClassId: snap.ship_class,
           shipClassName: ship?.name || (kind === 'ship' ? snap.ship_class : kind),
+          shipClass: ship?.class ?? '',
+          archetype: archetypeForShip(kind, ship?.class, ship?.category, ship?.scale ?? 1),
+          armed: resolveArmed(kind, ship),
           scale: ship?.scale ?? (kind === 'drone' ? 0 : 1),
-          category: ship?.category || kind,
+          category: (ship?.category || kind).toLowerCase(),
           factionId: snap.faction_id,
           slot,
           firstTickIndex: tickIndex,
