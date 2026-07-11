@@ -1,4 +1,4 @@
-/* === Guides index — console shell layout === */
+/* === Guides index — hero-image cards === */
 
 .agentNote {
   display: inline-flex;
@@ -15,133 +15,146 @@
   border-radius: 3px;
 }
 
-/* === Cards === */
-.cardsContainer {
-  max-width: 860px;
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
+.cardsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1rem;
+  max-width: 1360px;
   padding-bottom: 1rem;
 }
 
-.card {
+.heroCard {
   display: flex;
-  align-items: stretch;
+  flex-direction: column;
   text-decoration: none;
   color: inherit;
   background: rgba(13, 19, 33, 0.6);
   border: 1px solid rgba(61, 90, 108, 0.2);
   border-radius: 3px;
   overflow: hidden;
-  transition: background 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
   position: relative;
+  transition: background 0.25s ease, border-color 0.25s ease,
+    transform 0.25s ease, box-shadow 0.25s ease;
 }
 
-.card::before {
+.heroCard:hover {
+  background: rgba(13, 19, 33, 0.9);
+  border-color: rgba(0, 212, 255, 0.3);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+/* --- image --- */
+.heroThumb {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(61, 90, 108, 0.25);
+}
+
+.heroThumbImg {
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.heroCard:hover .heroThumbImg {
+  transform: scale(1.04);
+}
+
+.heroThumb::after {
   content: '';
   position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: var(--hull-grey);
-  transition: background 0.25s ease, box-shadow 0.25s ease;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(10, 14, 23, 0.75) 0%,
+    rgba(10, 14, 23, 0) 45%
+  );
+  pointer-events: none;
 }
 
-.card:hover {
-  background: rgba(13, 19, 33, 0.9);
-  border-color: rgba(0, 212, 255, 0.2);
-  transform: translateX(4px);
-}
-
-.card:hover::before {
-  background: var(--plasma-cyan);
-  box-shadow: 0 0 12px rgba(0, 212, 255, 0.4);
-}
-
-.cardIcon {
+.heroThumbEmpty {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 64px;
-  flex-shrink: 0;
   color: var(--hull-grey);
-  border-right: 1px solid rgba(61, 90, 108, 0.15);
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(0, 212, 255, 0.07), transparent 60%),
+    radial-gradient(ellipse at 75% 80%, rgba(255, 107, 53, 0.05), transparent 55%),
+    rgba(10, 14, 23, 0.8);
 }
 
-.card:hover .cardIcon {
-  color: var(--plasma-cyan);
-}
-
-.cardContent {
-  flex: 1;
-  padding: 1.2rem 1.5rem;
-  min-width: 0;
-}
-
-.cardLabel {
+.heroLabel {
+  position: absolute;
+  left: 0.9rem;
+  bottom: 0.7rem;
+  z-index: 1;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.66rem;
-  font-weight: 600;
+  font-size: 0.64rem;
+  font-weight: 700;
   color: var(--shell-orange);
   text-transform: uppercase;
-  letter-spacing: 0.14em;
-  margin-bottom: 0.45rem;
-  opacity: 0.85;
+  letter-spacing: 0.16em;
+  background: rgba(10, 14, 23, 0.8);
+  border: 1px solid rgba(255, 107, 53, 0.35);
+  border-radius: 2px;
+  padding: 0.22rem 0.55rem;
+}
+
+/* --- body --- */
+.heroBody {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 1.1rem 1.3rem 1.2rem;
 }
 
 .cardTitle {
   font-family: var(--font-orbitron), 'Orbitron', sans-serif;
-  font-size: 1.05rem;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--star-white);
   margin-bottom: 0.5rem;
   letter-spacing: 0.02em;
 }
 
-.card:hover .cardTitle {
+.heroCard:hover .cardTitle {
   color: var(--plasma-cyan);
 }
 
 .cardExcerpt {
   font-family: var(--font-space-grotesk), sans-serif;
-  font-size: 0.88rem;
+  font-size: 0.86rem;
   color: var(--chrome-silver);
   line-height: 1.6;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  margin-bottom: 0.9rem;
 }
 
-.cardArrow {
-  display: flex;
+.cardCta {
+  display: inline-flex;
   align-items: center;
-  padding: 0 1.1rem;
+  gap: 0.35rem;
+  margin-top: auto;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
   color: var(--hull-grey);
-  transition: color 0.25s ease, transform 0.25s ease;
+  transition: color 0.25s ease;
 }
 
-.card:hover .cardArrow {
+.heroCard:hover .cardCta {
   color: var(--plasma-cyan);
-  transform: translateX(4px);
 }
 
 /* === Responsive === */
-@media (max-width: 768px) {
-  .cardIcon {
-    width: 48px;
-  }
-
-  .cardContent {
-    padding: 1rem 1.1rem;
-  }
-
-  .cardTitle {
-    font-size: 0.95rem;
-  }
-
-  .cardArrow {
-    padding: 0 0.7rem;
+@media (max-width: 700px) {
+  .cardsGrid {
+    grid-template-columns: 1fr;
   }
 }

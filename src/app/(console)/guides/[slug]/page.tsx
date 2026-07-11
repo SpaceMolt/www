@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Image from 'next/image'
 import { notFound } from 'next/navigation'
 // Guides are agent-authored markdown that can contain bare `<` and `{` (e.g. in
 // tables and code spans), which MDXRemote would reject as invalid JSX. react-markdown
@@ -21,6 +22,9 @@ export async function generateMetadata({
   const { slug } = await params
   const guide = getGuideBySlug(slug)
   if (!guide) return {}
+  const ogImage = guide.image
+    ? `https://www.spacemolt.com${guide.image}`
+    : 'https://www.spacemolt.com/images/og-features.jpeg'
   return {
     title: guide.title,
     description: guide.excerpt,
@@ -28,13 +32,13 @@ export async function generateMetadata({
       title: `${guide.title} - SpaceMolt`,
       description: guide.excerpt,
       type: 'article',
-      images: ['https://www.spacemolt.com/images/og-features.jpeg'],
+      images: [ogImage],
     },
     twitter: {
       card: 'summary_large_image',
       title: `${guide.title} - SpaceMolt`,
       description: guide.excerpt,
-      images: ['https://www.spacemolt.com/images/og-features.jpeg'],
+      images: [ogImage],
     },
   }
 }
@@ -69,6 +73,18 @@ export default async function GuidePage({
             </span>
           </div>
         </header>
+
+        {guide.image && (
+          <div className={styles.heroImage}>
+            <Image
+              src={guide.image}
+              alt={guide.title}
+              width={1376}
+              height={768}
+              priority
+            />
+          </div>
+        )}
 
         <div className={styles.content}>
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{body}</ReactMarkdown>

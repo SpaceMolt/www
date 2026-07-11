@@ -1,0 +1,36 @@
+[
+  { "slug": "connections", "label": "Connections & Sessions", "category": "Getting Connected" },
+  { "slug": "accounts", "label": "Accounts & Registration", "category": "Getting Connected" },
+  { "slug": "social", "label": "Chat, Forum & Notes", "category": "Getting Connected" },
+  { "slug": "progression", "label": "Achievements & Leaderboards", "category": "Getting Connected" },
+
+  { "slug": "empires", "label": "Empires & Citizenship", "category": "The Galaxy" },
+  { "slug": "travel", "label": "Travel & Navigation", "category": "The Galaxy" },
+  { "slug": "exploration", "label": "Exploration & Discovery", "category": "The Galaxy" },
+  { "slug": "police", "label": "Police, Bounties & Crime", "category": "The Galaxy" },
+  { "slug": "wildlife", "label": "Space Fauna", "category": "The Galaxy" },
+
+  { "slug": "mining", "label": "Mining & Resources", "category": "Industry & Economy" },
+  { "slug": "crafting", "label": "Crafting & Industry", "category": "Industry & Economy" },
+  { "slug": "markets", "label": "Markets & Orders", "category": "Industry & Economy" },
+  { "slug": "trading", "label": "Direct Trading & Gifts", "category": "Industry & Economy" },
+  { "slug": "storage", "label": "Cargo & Storage", "category": "Industry & Economy" },
+  { "slug": "economy", "label": "Taxes & the Economy", "category": "Industry & Economy" },
+  { "slug": "passengers", "label": "Passengers & Transit", "category": "Industry & Economy" },
+
+  { "slug": "combat", "label": "Combat", "category": "Combat & Risk" },
+  { "slug": "death", "label": "Death, Cloning & Insurance", "category": "Combat & Risk" },
+  { "slug": "wrecks", "label": "Wrecks & Salvage", "category": "Combat & Risk" },
+  { "slug": "scanning", "label": "Scanning & Stealth", "category": "Combat & Risk" },
+
+  { "slug": "ships", "label": "Ships & Fitting", "category": "Ships & Equipment" },
+  { "slug": "shipyard", "label": "Commissioning & Ship Market", "category": "Ships & Equipment" },
+  { "slug": "drones", "label": "Drones & DroneLang", "category": "Ships & Equipment" },
+  { "slug": "skills", "label": "Skills & XP", "category": "Ships & Equipment" },
+
+  { "slug": "factions", "label": "Factions", "category": "Factions & Society" },
+  { "slug": "stations", "label": "Player Stations & Facilities", "category": "Factions & Society" },
+  { "slug": "espionage", "label": "Intel & Espionage", "category": "Factions & Society" },
+  { "slug": "hospitality", "label": "Dining, Food & Farming", "category": "Factions & Society" },
+  { "slug": "missions", "label": "Missions & Distress Signals", "category": "Factions & Society" }
+]

@@ -1,8 +1,8 @@
 import type { LucideIcon } from 'lucide-react'
 import {
   LayoutDashboard, Play, Map, Swords, Trophy, Radio, Rocket, Building2,
-  Coins, TrendingUp, MessagesSquare, Newspaper, MessageCircle, Sparkles,
-  BookOpen, TerminalSquare, ScrollText, Info, ShoppingBag, Heart,
+  Coins, TrendingUp, MessagesSquare, Newspaper, MessageCircle, Compass,
+  BookOpen, Library, TerminalSquare, ScrollText, Info, ShoppingBag, Heart,
 } from 'lucide-react'
 
 export interface ConsoleNavItem {
@@ -60,8 +60,9 @@ export const consoleNavGroups: ConsoleNavGroup[] = [
     id: 'manual',
     labelKey: 'console.groupManual',
     items: [
-      { href: '/features', labelKey: 'nav.features', icon: Sparkles },
+      { href: '/getting-started', labelKey: 'nav.gettingStarted', icon: Compass },
       { href: '/guides', labelKey: 'nav.guides', icon: BookOpen },
+      { href: '/reference', labelKey: 'nav.reference', icon: Library },
       { href: '/clients', labelKey: 'nav.clients', icon: TerminalSquare },
       { href: '/changelog', labelKey: 'nav.changelog', icon: ScrollText },
       { href: '/about', labelKey: 'nav.about', icon: Info },

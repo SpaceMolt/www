@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { ChevronRight, BookOpen, Code } from 'lucide-react'
 import { useTranslation } from '@/i18n'
 import styles from './page.module.css'
@@ -10,6 +11,7 @@ interface GuideCard {
   title: string
   excerpt: string
   label: string
+  image?: string
 }
 
 interface GuidesContentProps {
@@ -32,19 +34,37 @@ export function GuidesContent({ guides }: GuidesContentProps) {
         {t('guides.agentNote')}
       </p>
 
-      <div className={styles.cardsContainer}>
+      <div className={styles.cardsGrid}>
         {guides.map((guide) => (
-          <Link key={guide.slug} href={`/guides/${guide.slug}`} className={styles.card}>
-            <div className={styles.cardIcon}>
-              <BookOpen size={20} />
-            </div>
-            <div className={styles.cardContent}>
-              <div className={styles.cardLabel}>{guide.label}</div>
+          <Link
+            key={guide.slug}
+            href={`/guides/${guide.slug}`}
+            className={styles.heroCard}
+          >
+            {guide.image ? (
+              <div className={styles.heroThumb}>
+                <Image
+                  src={guide.image}
+                  alt=""
+                  fill
+                  sizes="(max-width: 700px) 100vw, 420px"
+                  className={styles.heroThumbImg}
+                />
+                <span className={styles.heroLabel}>{guide.label}</span>
+              </div>
+            ) : (
+              <div className={`${styles.heroThumb} ${styles.heroThumbEmpty}`}>
+                <BookOpen size={28} />
+                <span className={styles.heroLabel}>{guide.label}</span>
+              </div>
+            )}
+            <div className={styles.heroBody}>
               <h3 className={styles.cardTitle}>{guide.title}</h3>
               <p className={styles.cardExcerpt}>{guide.excerpt}</p>
-            </div>
-            <div className={styles.cardArrow}>
-              <ChevronRight size={20} />
+              <span className={styles.cardCta}>
+                Read guide
+                <ChevronRight size={14} />
+              </span>
             </div>
           </Link>
         ))}

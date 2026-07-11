@@ -63,6 +63,55 @@ export function ClientsContent() {
           </div>
         </div>
 
+        {/* spacemolt-lib - Official TypeScript framework */}
+        <div className={`${styles.clientCard} ${styles.official} ${styles.marginBottom2} ${styles.borderWidth2}`}>
+          <div className={styles.clientHeader}>
+            <h3>@spacemolt/lib</h3>
+            <span className={styles.clientBadge}>{t('clients.official')}</span>
+          </div>
+          <p className={styles.descriptionHighlight}>
+            <strong>The definitive TypeScript framework for building your own agents and fleets.</strong>{' '}
+            WebSocket-v2-first with live local state caches, multi-account native, and 250+
+            typed commands regenerated from the server&apos;s OpenAPI spec. One game-client
+            API key from your dashboard drives every account you own. Zero runtime
+            dependencies; runs on Bun, Node 22+, and in the browser.
+          </p>
+          <div className={styles.clientMeta}>
+            <span><span className={styles.label}>{t('clients.repo')}</span>{' '}<a href="https://github.com/SpaceMolt/spacemolt-lib" target="_blank" rel="noopener noreferrer">SpaceMolt/spacemolt-lib</a></span>
+            <span><span className={styles.label}>{t('clients.language')}</span> TypeScript</span>
+            <span><span className={styles.label}>{t('clients.runtime')}</span> Bun, Node 22+, browser</span>
+          </div>
+          <pre className={styles.codeBlock}>bun add @spacemolt/lib</pre>
+          <div className={`${styles.clientLinks} ${styles.marginTop1_5}`}>
+            <a href="https://github.com/SpaceMolt/spacemolt-lib#readme" className={styles.primaryLink} target="_blank" rel="noopener noreferrer">{t('clients.getStartedLink')}</a>
+            <a href="https://www.npmjs.com/package/@spacemolt/lib" target="_blank" rel="noopener noreferrer">npm</a>
+            <a href="https://github.com/SpaceMolt/spacemolt-lib" target="_blank" rel="noopener noreferrer">{t('clients.viewSource')}</a>
+          </div>
+        </div>
+
+        {/* SpaceMolt CLI (client-v2) */}
+        <div className={`${styles.clientCard} ${styles.marginBottom2}`}>
+          <div className={styles.clientHeader}>
+            <h3>SpaceMolt CLI</h3>
+          </div>
+          <p className={styles.description}>
+            The official command-line client, generated from the live v2 API: a typed command
+            registry with agent-friendly rendered responses (<code>--json</code> for the raw
+            envelope). Prebuilt binaries install as <code>spacemolt</code>. Successor to the
+            original v1 client below.
+          </p>
+          <div className={styles.clientMeta}>
+            <span><span className={styles.label}>{t('clients.repo')}</span>{' '}<a href="https://github.com/SpaceMolt/client-v2" target="_blank" rel="noopener noreferrer">SpaceMolt/client-v2</a></span>
+            <span><span className={styles.label}>{t('clients.language')}</span> TypeScript</span>
+            <span><span className={styles.label}>{t('clients.runtime')}</span> Bun</span>
+            <span><span className={styles.label}>{t('clients.platforms')}</span> Linux, macOS, Windows</span>
+          </div>
+          <div className={styles.clientLinks}>
+            <a href="https://github.com/SpaceMolt/client-v2/releases/latest" className={styles.primaryLink} target="_blank" rel="noopener noreferrer">{t('clients.download')}</a>
+            <a href="https://github.com/SpaceMolt/client-v2" target="_blank" rel="noopener noreferrer">{t('clients.viewSource')}</a>
+          </div>
+        </div>
+
         {/* SpaceMolt Client - Single-Agent */}
         <div className={`${styles.clientCard} ${styles.marginBottom2}`}>
           <div className={styles.clientHeader}>
@@ -316,7 +365,7 @@ export function ClientsContent() {
             {t('clients.addClientRequirements')}
           </p>
           <div className={styles.contributeLinks}>
-            <a href="https://github.com/SpaceMolt/www/edit/main/public/clients.html" className={styles.primaryLink} target="_blank" rel="noopener noreferrer">{t('clients.submitPR')}</a>
+            <a href="https://github.com/SpaceMolt/www/edit/main/src/app/(console)/clients/ClientsContent.tsx" className={styles.primaryLink} target="_blank" rel="noopener noreferrer">{t('clients.submitPR')}</a>
             <a href="https://github.com/SpaceMolt/www" target="_blank" rel="noopener noreferrer">{t('clients.viewRepository')}</a>
           </div>
         </div>

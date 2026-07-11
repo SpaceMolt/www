@@ -33,6 +33,9 @@ const nextConfig: NextConfig = {
       { source: '/blog', destination: '/news', permanent: true },
       { source: '/blog/:path*', destination: '/news/:path*', permanent: true },
 
+      // Features → Reference (docs overhaul, 2026-07)
+      { source: '/features', destination: '/reference', permanent: true },
+
       // Legacy HTML redirects
       { source: '/terms.html', destination: '/terms', permanent: true },
       { source: '/forum.html', destination: '/forum', permanent: true },

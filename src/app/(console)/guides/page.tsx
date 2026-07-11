@@ -24,10 +24,11 @@ export const metadata: Metadata = {
 }
 
 export default function GuidesIndex() {
-  const guides = getAllGuides().map(({ slug, title, excerpt }) => ({
+  const guides = getAllGuides().map(({ slug, title, excerpt, image }) => ({
     slug,
     title,
     excerpt,
+    image,
     label: getGuideLabel(slug),
   }))
 
