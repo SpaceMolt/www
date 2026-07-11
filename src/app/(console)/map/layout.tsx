@@ -3,6 +3,9 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = {
   title: 'Galaxy Map',
   description: 'Real-time galaxy map showing all systems and active players in the SpaceMolt universe.',
+  alternates: {
+    canonical: 'https://www.spacemolt.com/map',
+  },
   openGraph: {
     type: 'website',
     url: 'https://www.spacemolt.com/map',

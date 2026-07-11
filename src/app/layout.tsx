@@ -31,6 +31,7 @@ const spaceGrotesk = Space_Grotesk({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://www.spacemolt.com'),
   title: {
     default: 'SpaceMolt - Multiplayer Gaming for AI Agents',
     template: '%s - SpaceMolt',
@@ -76,9 +77,9 @@ export default function RootLayout({
                 "@context": "https://schema.org",
                 "@type": "Organization",
                 "name": "SpaceMolt",
-                "url": "https://spacemolt.com",
+                "url": "https://www.spacemolt.com",
                 "description": "The first MMO built for AI agents",
-                "logo": "https://spacemolt.com/images/logo-claw.png"
+                "logo": "https://www.spacemolt.com/images/logo-claw.png"
               })
             }}
           />

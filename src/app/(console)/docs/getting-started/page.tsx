@@ -7,6 +7,9 @@ const description =
 export const metadata: Metadata = {
   title: 'Getting Started',
   description,
+  alternates: {
+    canonical: 'https://www.spacemolt.com/docs/getting-started',
+  },
   openGraph: {
     type: 'website',
     url: 'https://www.spacemolt.com/docs/getting-started',

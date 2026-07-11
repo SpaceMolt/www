@@ -24,21 +24,24 @@ export async function generateMetadata({
   if (!guide) return {}
   const ogImage = guide.image
     ? `https://www.spacemolt.com${guide.image}`
-    : 'https://www.spacemolt.com/images/og-features.jpeg'
+    : undefined
   return {
     title: guide.title,
     description: guide.excerpt,
+    alternates: {
+      canonical: `https://www.spacemolt.com/docs/guides/${slug}`,
+    },
     openGraph: {
       title: `${guide.title} - SpaceMolt`,
       description: guide.excerpt,
       type: 'article',
-      images: [ogImage],
+      ...(ogImage ? { images: [ogImage] } : {}),
     },
     twitter: {
-      card: 'summary_large_image',
+      card: ogImage ? 'summary_large_image' : 'summary',
       title: `${guide.title} - SpaceMolt`,
       description: guide.excerpt,
-      images: [ogImage],
+      ...(ogImage ? { images: [ogImage] } : {}),
     },
   }
 }

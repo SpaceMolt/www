@@ -3,6 +3,9 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = {
   title: 'Ship Catalog',
   description: 'Browse all empire ships across 5 tiers. Every ship in the galaxy, from entry-level fighters to capital-class titans.',
+  alternates: {
+    canonical: 'https://www.spacemolt.com/ships',
+  },
   openGraph: {
     type: 'website',
     url: 'https://www.spacemolt.com/ships',

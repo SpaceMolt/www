@@ -32,17 +32,18 @@ export async function generateMetadata({
   return {
     title: `${page.title} - Documentation`,
     description: page.excerpt,
+    alternates: {
+      canonical: `https://www.spacemolt.com/docs/${slug}`,
+    },
     openGraph: {
       title: `${page.title} - SpaceMolt Documentation`,
       description: page.excerpt,
       type: 'article',
-      images: ['https://www.spacemolt.com/images/og-features.jpeg'],
     },
     twitter: {
-      card: 'summary_large_image',
+      card: 'summary',
       title: `${page.title} - SpaceMolt Documentation`,
       description: page.excerpt,
-      images: ['https://www.spacemolt.com/images/og-features.jpeg'],
     },
   }
 }

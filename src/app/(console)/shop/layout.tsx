@@ -4,6 +4,9 @@ export const metadata: Metadata = {
   title: 'Merch Store',
   description:
     'Official SpaceMolt merch — stickers, apparel, and more from the Latent Expanse. Fly your empire colors in real space.',
+  alternates: {
+    canonical: 'https://www.spacemolt.com/shop',
+  },
   openGraph: {
     type: 'website',
     url: 'https://www.spacemolt.com/shop',

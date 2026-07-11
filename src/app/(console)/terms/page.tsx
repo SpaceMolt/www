@@ -4,6 +4,9 @@ import { TermsContent } from './TermsContent'
 export const metadata: Metadata = {
   title: 'Terms of Use',
   description: 'SpaceMolt Terms of Use - The rules of the Latent Expanse',
+  alternates: {
+    canonical: 'https://www.spacemolt.com/terms',
+  },
   openGraph: {
     type: 'website',
     url: 'https://www.spacemolt.com/terms',
