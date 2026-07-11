@@ -1,12 +1,12 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Eye, Swords, Rocket, Monitor, MessageSquare, Megaphone, ArrowRight } from 'lucide-react'
 import { Starfield } from '@/components/Starfield'
 import { HeroLogo } from '@/components/HeroLogo'
 import { HeroStats } from '@/components/HeroStats'
-import { GetStartedButton } from '@/components/GetStartedButton'
 import { GalaxyMap } from '@/components/GalaxyMap'
 import { PatreonWidget } from '@/components/PatreonWidget'
 import { NewsletterSignup } from '@/components/NewsletterSignup'
@@ -52,6 +52,104 @@ const pillarCards = [
   { icon: MessageSquare, titleKey: 'home.pillarForumTitle', descKey: 'home.pillarForumDesc', href: '/forum' },
   { icon: Megaphone, titleKey: 'home.pillarDiscordTitle', descKey: 'home.pillarDiscordDesc', href: 'https://discord.gg/Jm4UdQPuNB' },
 ] as const
+
+const MARQUEE_AUTO_SPEED = 32 // px per second
+const MARQUEE_MAX_FLING = 2400 // px per second
+
+/**
+ * Auto-scrolling strip that can also be grabbed and flung. A rAF loop owns the
+ * track's translateX; releasing a drag hands its velocity to the loop, which
+ * eases back to the ambient auto-scroll speed. The track holds two copies of
+ * its content, so the offset wraps at half the scroll width for a seamless
+ * loop. Under prefers-reduced-motion the loop never starts and the CSS
+ * fallback (plain overflow-x scrolling) applies instead.
+ */
+function PilotsMarquee({ children }: { children: React.ReactNode }) {
+  const marqueeRef = useRef<HTMLDivElement>(null)
+  const trackRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const marquee = marqueeRef.current
+    const track = trackRef.current
+    if (!marquee || !track) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
+    let offset = 0
+    let velocity = MARQUEE_AUTO_SPEED
+    let dragging = false
+    let hovering = false
+    let lastX = 0
+    let lastMoveTime = 0
+    let dragVelocity = 0
+    let lastFrame = performance.now()
+
+    let raf = requestAnimationFrame(function frame(now: number) {
+      const dt = Math.min((now - lastFrame) / 1000, 0.05)
+      lastFrame = now
+      if (!dragging) {
+        const ambient = hovering ? 0 : MARQUEE_AUTO_SPEED
+        velocity += (ambient - velocity) * Math.min(1, dt * 1.6)
+        offset += velocity * dt
+      }
+      const half = track.scrollWidth / 2
+      if (half > 0) offset = ((offset % half) + half) % half
+      track.style.transform = `translate3d(${-offset}px, 0, 0)`
+      raf = requestAnimationFrame(frame)
+    })
+
+    const onPointerDown = (e: PointerEvent) => {
+      dragging = true
+      lastX = e.clientX
+      lastMoveTime = performance.now()
+      dragVelocity = 0
+      marquee.setPointerCapture(e.pointerId)
+      marquee.classList.add(styles.pilotsDragging)
+    }
+    const onPointerMove = (e: PointerEvent) => {
+      if (!dragging) return
+      const now = performance.now()
+      const dx = e.clientX - lastX
+      const dt = (now - lastMoveTime) / 1000
+      lastX = e.clientX
+      lastMoveTime = now
+      offset -= dx
+      if (dt > 0) dragVelocity = dragVelocity * 0.7 + (-dx / dt) * 0.3
+    }
+    const onPointerEnd = () => {
+      if (!dragging) return
+      dragging = false
+      velocity = Math.max(-MARQUEE_MAX_FLING, Math.min(MARQUEE_MAX_FLING, dragVelocity))
+      marquee.classList.remove(styles.pilotsDragging)
+    }
+    const onMouseEnter = () => { hovering = true }
+    const onMouseLeave = () => { hovering = false }
+
+    marquee.addEventListener('pointerdown', onPointerDown)
+    marquee.addEventListener('pointermove', onPointerMove)
+    marquee.addEventListener('pointerup', onPointerEnd)
+    marquee.addEventListener('pointercancel', onPointerEnd)
+    marquee.addEventListener('mouseenter', onMouseEnter)
+    marquee.addEventListener('mouseleave', onMouseLeave)
+
+    return () => {
+      cancelAnimationFrame(raf)
+      marquee.removeEventListener('pointerdown', onPointerDown)
+      marquee.removeEventListener('pointermove', onPointerMove)
+      marquee.removeEventListener('pointerup', onPointerEnd)
+      marquee.removeEventListener('pointercancel', onPointerEnd)
+      marquee.removeEventListener('mouseenter', onMouseEnter)
+      marquee.removeEventListener('mouseleave', onMouseLeave)
+    }
+  }, [])
+
+  return (
+    <div ref={marqueeRef} className={styles.pilotsMarquee}>
+      <div ref={trackRef} className={styles.pilotsTrack}>
+        {children}
+      </div>
+    </div>
+  )
+}
 
 export function HomeContent() {
   const { t } = useTranslation()
@@ -99,8 +197,7 @@ export function HomeContent() {
           {t('home.heroHelp')}
         </p>
         <div className={styles.heroCta}>
-          <GetStartedButton className="btn btn-primary" />
-          <Link href="/battles" className="btn btn-secondary">{t('home.watchLiveBattles')}</Link>
+          <Link href="/features" className="btn btn-primary">{t('home.exploreSpaceMolt')}</Link>
         </div>
       </section>
 
@@ -162,8 +259,9 @@ export function HomeContent() {
           </div>
           <div className={styles.empiresGrid}>
             {empireCards.map(({ key, image, color }) => (
-              <div
+              <Link
                 key={key}
+                href="/features#empires"
                 className={styles.empireCard}
                 style={{ '--empire-color': color } as React.CSSProperties}
               >
@@ -181,7 +279,7 @@ export function HomeContent() {
                   <span className={styles.empireSpec}>{t(`home.empire${key}Spec`)}</span>
                   <p>{t(`home.empire${key}Desc`)}</p>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -193,31 +291,30 @@ export function HomeContent() {
           <h2 className={styles.pilotsTitle}>{t('home.pilotsTitle')}</h2>
           <p className={styles.sectionSubtitle}>{t('home.pilotsSubtitle')}</p>
         </div>
-        <div className={styles.pilotsMarquee}>
-          <div className={styles.pilotsTrack}>
-            {[0, 1].map((copy) => (
-              <div key={copy} className={styles.pilotsRow} aria-hidden={copy === 1}>
-                {pilotCards.map(({ key, image, empire, color }) => (
-                  <figure key={`${copy}-${key}`} className={styles.pilotCard}>
-                    <Image
-                      src={image}
-                      alt={copy === 0 ? t(`home.pilot${key}Role`) : ''}
-                      width={400}
-                      height={400}
-                      style={{ width: '100%', height: 'auto', display: 'block' }}
-                    />
-                    <figcaption>
-                      <span className={styles.pilotRole}>{t(`home.pilot${key}Role`)}</span>
-                      <span className={styles.pilotEmpire} style={{ color }}>
-                        {t(`home.empire${empire}Name`)}
-                      </span>
-                    </figcaption>
-                  </figure>
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
+        <PilotsMarquee>
+          {[0, 1].map((copy) => (
+            <div key={copy} className={styles.pilotsRow} aria-hidden={copy === 1}>
+              {pilotCards.map(({ key, image, empire, color }) => (
+                <figure key={`${copy}-${key}`} className={styles.pilotCard}>
+                  <Image
+                    src={image}
+                    alt={copy === 0 ? t(`home.pilot${key}Role`) : ''}
+                    width={400}
+                    height={400}
+                    draggable={false}
+                    style={{ width: '100%', height: 'auto', display: 'block' }}
+                  />
+                  <figcaption>
+                    <span className={styles.pilotRole}>{t(`home.pilot${key}Role`)}</span>
+                    <span className={styles.pilotEmpire} style={{ color }}>
+                      {t(`home.empire${empire}Name`)}
+                    </span>
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+          ))}
+        </PilotsMarquee>
       </section>
 
       {/* Pillars Section */}

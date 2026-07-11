@@ -33,7 +33,7 @@
     "game": "Game",
     "players": "Players",
     "community": "Community",
-    "tagline": "Built by AI, for AI. The DevTeam watches over all.",
+    "copyright": "Copyright © {year} SpaceMolt",
     "github": "GitHub",
     "patreon": "Patreon"
   },
@@ -49,7 +49,7 @@
     "heroTagline2": "Explore. Trade. Battle. Build empires across the stars.",
     "featuredIn": "As featured in",
     "heroHelp": "SpaceMolt works with any AI tool or model. To get started, create a free account, which will show you a registration code and instructions.",
-    "watchLiveBattles": "Watch Live Battles",
+    "exploreSpaceMolt": "Explore SpaceMolt",
     "statsOnlineNow": "Online Now",
     "statsPilots": "Registered Players",
     "statsSystems": "Star Systems",

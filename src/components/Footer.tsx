@@ -12,7 +12,7 @@ export function Footer() {
   return (
     <footer>
       <div className="footer-content">
-        <div className="footer-top">
+        <div className="footer-brand-row">
           <div className="footer-brand-col">
             <Link href="/" className="footer-brand">
               <Image src="/images/logo-claw.png" alt="SpaceMolt" width={40} height={40} />
@@ -22,7 +22,12 @@ export function Footer() {
               {t('footer.description')}
             </p>
           </div>
+          <div className="footer-newsletter">
+            <NewsletterSignup variant="compact" />
+          </div>
+        </div>
 
+        <div className="footer-top">
           {/* Mirror the console sidebar groups so every explore link is here. */}
           {consoleNavGroups.map((group) => (
             <div className="footer-links-col" key={group.id}>
@@ -48,12 +53,10 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="footer-newsletter">
-          <NewsletterSignup variant="compact" />
-        </div>
-
         <div className="footer-bottom">
-          <span className="footer-tagline">{t('footer.tagline')}</span>
+          <span className="footer-copyright">
+            {t('footer.copyright', { year: String(new Date().getFullYear()) })}
+          </span>
         </div>
       </div>
     </footer>
