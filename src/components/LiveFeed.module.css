@@ -77,6 +77,9 @@
 .liveFeed {
   flex: 1;
   overflow-y: auto;
+  /* Scroll compensation for prepended rows is done manually in LiveFeed.tsx;
+     the browser's automatic anchoring would double-compensate. */
+  overflow-anchor: none;
   padding: 0.6rem;
   display: flex;
   flex-direction: column;
@@ -115,12 +118,10 @@
   flex-shrink: 0;
 }
 
-/* Applied only while a row plays its enter animation; overflow must stay
-   visible otherwise (with it hidden, rows in a fixed-height flex column get
-   an automatic minimum size of 0 and squash instead of scrolling). */
+/* Applied only while a row plays its enter animation (removed on
+   animationend so re-showing the pane doesn't replay every row). */
 .liveEventEnter {
-  overflow: hidden;
-  animation: slideIn 0.35s ease-out;
+  animation: feedFadeIn 0.4s ease both;
 }
 
 /* Event type colors (icon + border) */
@@ -176,31 +177,11 @@
   flex-shrink: 0;
 }
 
-/* New rows expand from the top edge, pushing older rows down so the feed
-   visibly rolls instead of repainting in place. */
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    max-height: 0;
-    padding-top: 0;
-    padding-bottom: 0;
-    margin-bottom: -0.35rem; /* collapse the flex gap while entering */
-    transform: translateY(-6px);
-  }
-  60% {
-    max-height: 5rem;
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
-    margin-bottom: 0;
-  }
-  to {
-    opacity: 1;
-    max-height: 5rem;
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
-    margin-bottom: 0;
-    transform: translateY(0);
-  }
+/* New rows fade in as a batch; the feed then smooth-scrolls them into view
+   (handled in LiveFeed.tsx via scroll anchoring + scrollTo). */
+@keyframes feedFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {

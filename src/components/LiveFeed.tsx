@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, useCallback, type ReactNode } from 'react'
 import {
   Hand, Bomb, Star, Flag, Swords, Coins, Hammer, Building2, Crosshair,
   Sparkles, Megaphone, Timer, Satellite, MessageSquare, Compass, Rocket,
@@ -387,34 +387,53 @@ export function LiveFeed({ onClose, onStatusChange, hideHeader }: LiveFeedProps)
     })
   }, [])
 
-  // Drain queued events strictly one at a time so the feed rolls instead of
-  // repainting in chunks. The very first batch (the replay burst on connect)
-  // fills the feed instantly with no animation; after that, one row per beat,
-  // dropping the oldest under a firehose rather than falling behind.
+  // Release queued events in batches: everything pending fades in together,
+  // then the feed smooth-scrolls the new block into view. The very first batch
+  // (the replay burst on connect) fills the feed instantly with no animation.
   const initialFlushRef = useRef(false)
+  const batchSizeRef = useRef(0)
+  const prevScrollTopRef = useRef(0)
   useEffect(() => {
     const id = setInterval(() => {
       const pending = pendingRef.current
       if (pending.length === 0) return
-      if (!initialFlushRef.current) {
-        initialFlushRef.current = true
-        const batch = pending.splice(0, pending.length)
-        setEvents((prev) => {
-          const filtered = prev.filter((e) => e.id !== -1)
-          return [...batch.reverse(), ...filtered].slice(0, MAX_EVENTS)
-        })
-        return
+      const initial = !initialFlushRef.current
+      initialFlushRef.current = true
+      const batch = pending.splice(0, pending.length)
+      if (!initial) {
+        for (const e of batch) e.fresh = true
+        batchSizeRef.current = batch.length
+        prevScrollTopRef.current = feedRef.current?.scrollTop ?? 0
       }
-      if (pending.length > 25) pending.splice(0, pending.length - 25)
-      const entry = pending.shift()!
-      entry.fresh = true
       setEvents((prev) => {
         const filtered = prev.filter((e) => e.id !== -1)
-        return [entry, ...filtered].slice(0, MAX_EVENTS)
+        return [...batch.reverse(), ...filtered].slice(0, MAX_EVENTS)
       })
-    }, 250)
+    }, 2000)
     return () => clearInterval(id)
   }, [])
+
+  // After a batch renders, keep the viewport anchored on the old content, then
+  // smooth-scroll up to reveal the new rows — but only when the reader was
+  // already at the top; if they scrolled down to read, don't yank them.
+  useLayoutEffect(() => {
+    const n = batchSizeRef.current
+    const el = feedRef.current
+    if (!n || !el) return
+    batchSizeRef.current = 0
+    const gap = parseFloat(getComputedStyle(el).rowGap) || 0
+    let added = 0
+    for (let i = 0; i < n && i < el.children.length; i++) {
+      added += (el.children[i] as HTMLElement).offsetHeight + gap
+    }
+    if (added <= 0) return
+    const prevTop = prevScrollTopRef.current
+    el.scrollTop = prevTop + added
+    if (prevTop < 8) {
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      el.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' })
+    }
+  }, [events])
 
   // Drop the enter-animation class once it finishes so the animation does not
   // replay for every row when the pane is re-shown after being display:none.

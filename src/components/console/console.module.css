@@ -132,6 +132,8 @@
   font-size: 0.72rem;
   min-width: 0;
   overflow: hidden;
+  /* room for the status LED's glow, which overflow:hidden would clip */
+  padding-left: 10px;
 }
 
 .readout {
