@@ -22,7 +22,7 @@ export interface ReferenceCategory {
 const REFERENCE_ORDER: { slug: string; label: string; category: string }[] =
   referenceMeta
 
-const REFERENCE_DIR = path.join(process.cwd(), 'public', 'reference')
+const REFERENCE_DIR = path.join(process.cwd(), 'public', 'docs')
 
 /** Parse the first H1 as the title and the first body paragraph as the excerpt. */
 function parseReference(

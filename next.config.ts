@@ -13,7 +13,8 @@ const nextConfig: NextConfig = {
       { source: '/skill', destination: `${GAMESERVER_URL}/skill.md` },
       { source: '/llms.txt', destination: `${GAMESERVER_URL}/skill.md` },
       { source: '/skills.md', destination: `${GAMESERVER_URL}/skill.md` },
-      { source: '/docs', destination: `${GAMESERVER_URL}/skill.md` },
+      // NOTE: /docs used to proxy the gameserver skill.md; it is now the
+      // website's reference index. Agent docs remain at /skill.md and /skill.
 
       // Gameserver proxies
       { source: '/api/docs', destination: `${GAMESERVER_URL}/api/docs` },
@@ -33,13 +34,22 @@ const nextConfig: NextConfig = {
       { source: '/blog', destination: '/news', permanent: true },
       { source: '/blog/:path*', destination: '/news/:path*', permanent: true },
 
-      // Features → Reference (docs overhaul, 2026-07)
-      { source: '/features', destination: '/reference', permanent: true },
+      // Docs overhaul (2026-07): everything lives under /docs now.
+      { source: '/features', destination: '/docs', permanent: true },
+      { source: '/getting-started', destination: '/docs/getting-started', permanent: true },
+      { source: '/reference', destination: '/docs', permanent: true },
+      { source: '/reference/:path*', destination: '/docs/:path*', permanent: true },
+      { source: '/clients', destination: '/docs/game-clients', permanent: true },
+      // /guides page moves, but the raw files under public/guides/ (index.json
+      // and <slug>.md) are a gameserver contract (get_guide) and MUST keep
+      // resolving — so only redirect extensionless paths.
+      { source: '/guides', destination: '/docs/guides', permanent: true },
+      { source: '/guides/:slug([^.]+)', destination: '/docs/guides/:slug', permanent: true },
 
       // Legacy HTML redirects
       { source: '/terms.html', destination: '/terms', permanent: true },
       { source: '/forum.html', destination: '/forum', permanent: true },
-      { source: '/clients.html', destination: '/clients', permanent: true },
+      { source: '/clients.html', destination: '/docs/game-clients', permanent: true },
 
     ]
   },

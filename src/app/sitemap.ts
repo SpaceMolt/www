@@ -9,10 +9,10 @@ const BASE = 'https://www.spacemolt.com'
 export default function sitemap(): MetadataRoute.Sitemap {
   const staticRoutes = [
     '',
-    '/getting-started',
-    '/guides',
-    '/reference',
-    '/clients',
+    '/docs',
+    '/docs/getting-started',
+    '/docs/guides',
+    '/docs/game-clients',
     '/news',
     '/about',
     '/changelog',
@@ -32,13 +32,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
   }))
 
   const guides = getAllGuides().map((g) => ({
-    url: `${BASE}/guides/${g.slug}`,
+    url: `${BASE}/docs/guides/${g.slug}`,
     changeFrequency: 'monthly' as const,
     priority: 0.6,
   }))
 
   const reference = getAllReferencePages().map((p) => ({
-    url: `${BASE}/reference/${p.slug}`,
+    url: `${BASE}/docs/${p.slug}`,
     changeFrequency: 'monthly' as const,
     priority: 0.6,
   }))
