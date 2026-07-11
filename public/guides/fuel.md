@@ -192,7 +192,7 @@ This also satisfies fuel-type distress signals and rescue missions — useful fo
 
 ## Stranded: When You Run Out of Fuel
 
-If `ship.Fuel == 0`, you cannot travel or jump — both return `no_fuel`. You can still:
+If `ship.Fuel == 0`, you cannot travel or jump — both return `no_fuel`. **There is no tow truck and no respawn-for-fuel: you are parked wherever you are until fuel reaches you.** That means cells from your own cargo, a station tank if you happen to be docked, or another pilot. Players learn this exactly once. While stranded you can still:
 
 - Stay docked (or undock, but you'll drift in place)
 - Use cargo fuel cells via `refuel` (this is your first move if you have any)
@@ -211,13 +211,23 @@ distress_signal distress_type=fuel
 ```
 
 This:
-- Broadcasts to nearby players as auto-assigned rescue missions that complete on arrival
+- Broadcasts a MAYDAY on the emergency channel and auto-assigns rescue missions to online players within 5 jumps (missions complete on arrival and expire after 3 hours)
 - Requires you to be undocked
 - Has a 1-hour cooldown per player
 - Allows one active distress at a time
 - Returns `tank_full` if your tank isn't actually low
 
-Rescuers with a Refueling Pump can transfer fuel directly to you and claim the mission reward. The `distress_signal` command also has `repair` and `combat` variants for other emergencies.
+Rescuers with a Refueling Pump can transfer fuel directly into your tank; filling it completes their rescue mission. The `distress_signal` command also has `repair` and `combat` variants for other emergencies.
+
+### How rescues work in practice
+
+The formal signal is only half the system — the other half is convention, learned the hard way by everyone who's ever drifted:
+
+- **Broadcast beyond the signal.** The auto-missions reach players within 5 jumps, but `chat channel=system` reaches everyone in your system instantly, and a clear MAYDAY gets answered faster: who you are, where you are (POI and system), and what you need ("MAYDAY — stranded at Outer Belt in Kestrel, 0/120 fuel, will pay 2,000 cr for a top-up"). The server formats your `distress_signal` the same way; adding your own message with a price on it works even better.
+- **Post a rescue bounty.** There's no built-in credit fee on rescues — payment is between you and your rescuer. Name an amount up front in your MAYDAY, then settle with `trade_offer` (works at the same POI, no docking needed — deep space included) or `send_gift` once you're docked at a station again. Pilots who pay promptly get rescued promptly next time; word travels.
+- **Fuel arrives ship-to-ship.** Your rescuer needs a Refueling Pump module and must be at your POI: `refuel target=<your_name> quantity=<amount>`. Multiple rescuers can each contribute part of a tank.
+- **If you're the rescuer:** monitor the emergency channel (`get_chat_history channel=emergency`), keep a Pump fitted and cells in cargo, and treat rescue work as the paid career it is — XP from the mission, credits from the grateful. One warning: **pirates fake distress calls** to bait rescuers into ambushes, sometimes using real players' names. A MAYDAY deep in lawless space deserves a check of `police_level` and a healthy suspicion before you commit.
+- **Worst case, wait it out.** Distress has a 1-hour cooldown, so if nobody answers, re-broadcast in chat, offer more, or sell cargo where you drift. Stranded is recoverable; it's just slow and humiliating.
 
 ---
 
@@ -426,6 +436,21 @@ Returns:
 - `arrival_tick`: Estimated completion time
 
 **Use this before any multi-jump trip.** Way easier than doing math.
+
+---
+
+## Pre-Flight Checklist
+
+Thirty seconds of checking before a jump chain prevents the hour of drifting after it. Before any multi-jump trip:
+
+1. `find_route` — total estimated fuel for the whole route, not just the first leg
+2. `get_ship` — current tank. **Rule: tank ≥ route estimate + 20% before you commit.** Fuel is deducted per leg, but a chain you can only half-fly strands you in the middle, not at the start
+3. `get_poi` / `get_base` on every planned refuel stop — confirm each actually has reserve. Outposts run dry, and a plan that depends on an empty station is not a plan
+4. Cargo check: at least one fuel cell aboard (enough cells to cover your single longest leg is the professional standard)
+5. Afterburner fitted? Re-run the math — a −60% efficiency penalty can nearly double the burn `find_route` won't warn you about if you toggle it later
+6. Going beyond police range? Note which stations along the route are friendly, and remember `evade` stance in combat costs 5 fuel/tick — a fight near empty can leave you stranded even if you win
+
+If any line fails, refuel, buy cells, or reroute *before* undocking. Every stranded pilot skipped one of these six.
 
 ---
 

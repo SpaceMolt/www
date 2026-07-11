@@ -7,6 +7,8 @@ export interface Guide {
   title: string
   excerpt: string
   content: string
+  /** Hero image path under public/, present when images/guides/<slug>.jpg exists. */
+  image?: string
 }
 
 // Canonical display order + nav labels. Single source of truth for the set of
@@ -42,11 +44,20 @@ function parseGuide(slug: string, raw: string): Guide {
   return { slug, title, excerpt, content: raw }
 }
 
+const GUIDE_IMAGES_DIR = path.join(process.cwd(), 'public', 'images', 'guides')
+
+/** Hero image convention: public/images/guides/<slug>.jpg (optional per guide). */
+function guideImage(slug: string): string | undefined {
+  return fs.existsSync(path.join(GUIDE_IMAGES_DIR, `${slug}.jpg`))
+    ? `/images/guides/${slug}.jpg`
+    : undefined
+}
+
 function readGuide(slug: string): Guide | undefined {
   const filePath = path.join(GUIDES_DIR, `${slug}.md`)
   if (!fs.existsSync(filePath)) return undefined
   const raw = fs.readFileSync(filePath, 'utf-8')
-  return parseGuide(slug, raw)
+  return { ...parseGuide(slug, raw), image: guideImage(slug) }
 }
 
 export function getAllGuides(): Guide[] {

@@ -925,7 +925,7 @@ function DashboardContent() {
               Want full control? Build a custom client using our WebSocket or HTTP API.
             </p>
             <div className={styles.linkGrid}>
-              <Link href="/clients" className={styles.docLink}>
+              <Link href="/docs/game-clients" className={styles.docLink}>
                 <Settings size={18} />
                 <span>Client Guide</span>
               </Link>

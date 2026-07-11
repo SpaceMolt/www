@@ -287,7 +287,7 @@ const FACTION_CATEGORY_GROUPS: CategoryGroup[] = [
         labelKey: 'leaderboard.totalWealth',
         format: 'credits',
         description:
-          'Faction treasury credits plus the sum of all member wallet balances. Does not include member ships, stored items, or facilities.',
+          'Faction treasury credits plus member wallet balances, faction storage value, facility investment, exchange escrow, and member fleet value.',
       },
       {
         key: 'storage_value',
