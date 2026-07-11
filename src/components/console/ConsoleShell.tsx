@@ -100,17 +100,19 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
         <main id="console-main" className={styles.main} tabIndex={-1}>
           {children}
         </main>
-        {paneOpen ? (
-          <LivePane
-            width={paneW}
-            height={paneH}
-            onWidthChange={onWidthChange}
-            onHeightChange={onHeightChange}
-            onClose={closePane}
-            stats={stats}
-            online={online}
-          />
-        ) : (
+        {/* The pane stays mounted while collapsed so the live feed keeps
+            accumulating events; it is only hidden visually. */}
+        <LivePane
+          hidden={!paneOpen}
+          width={paneW}
+          height={paneH}
+          onWidthChange={onWidthChange}
+          onHeightChange={onHeightChange}
+          onClose={closePane}
+          stats={stats}
+          online={online}
+        />
+        {!paneOpen && (
           <button className={styles.paneEdgeTab} onClick={togglePane} aria-controls="console-live-pane" aria-expanded={false}>
             <Activity size={13} aria-hidden />
             {t('console.live')}

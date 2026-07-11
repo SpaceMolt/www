@@ -365,6 +365,7 @@ export function LiveFeed({ onClose, onStatusChange, hideHeader }: LiveFeedProps)
   const [statusText, setStatusText] = useState('Connecting...')
   const [, setTick] = useState(0)
   const feedRef = useRef<HTMLDivElement>(null)
+  const pendingRef = useRef<LiveEventEntry[]>([])
 
   // Re-render every 10s to update relative timestamps
   useEffect(() => {
@@ -375,20 +376,29 @@ export function LiveFeed({ onClose, onStatusChange, hideHeader }: LiveFeedProps)
   const addEvent = useCallback((type: string, data: EventData, timestamp?: string, playerInfo?: Record<string, PlayerMeta>) => {
     const config = eventConfig[type]
 
-    const entry: LiveEventEntry = {
+    pendingRef.current.push({
       id: nextEventId++,
       type,
       html: config ? config.format(data, playerInfo) : formatFallback(type, data, playerInfo),
       icon: config ? config.icon : <Satellite size={SZ} />,
       time: formatTime(timestamp),
-    }
-
-    setEvents((prev) => {
-      // Remove placeholder
-      const filtered = prev.filter((e) => e.id !== -1)
-      const next = [entry, ...filtered]
-      return next.slice(0, MAX_EVENTS)
     })
+  }, [])
+
+  // Drain queued events one at a time so bursts read as a rolling feed rather
+  // than appearing all at once. Falls behind gracefully: with a large backlog
+  // it releases several per beat to catch up.
+  useEffect(() => {
+    const id = setInterval(() => {
+      const pending = pendingRef.current
+      if (pending.length === 0) return
+      const batch = pending.splice(0, Math.max(1, Math.ceil(pending.length / 8)))
+      setEvents((prev) => {
+        const filtered = prev.filter((e) => e.id !== -1)
+        return [...batch.reverse(), ...filtered].slice(0, MAX_EVENTS)
+      })
+    }, 300)
+    return () => clearInterval(id)
   }, [])
 
   useEffect(() => {

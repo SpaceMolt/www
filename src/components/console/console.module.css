@@ -456,6 +456,11 @@
   overflow: hidden;
 }
 
+/* Collapsed pane stays mounted (feeds keep accumulating) but is not shown. */
+.pane[hidden] {
+  display: none;
+}
+
 .paneHeader {
   display: flex;
   align-items: center;

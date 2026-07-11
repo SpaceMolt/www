@@ -14,6 +14,8 @@ export const PANE_MIN_H = 180
 export const PANE_MAX_H = 560
 
 interface LivePaneProps {
+  /** Collapsed: pane stays mounted (so feeds keep accumulating) but is not shown. */
+  hidden?: boolean
   width: number
   height: number
   onWidthChange: (w: number) => void
@@ -104,7 +106,7 @@ function LiveTrades() {
   )
 }
 
-export function LivePane({ width, height, onWidthChange, onHeightChange, onClose, stats, online }: LivePaneProps) {
+export function LivePane({ hidden, width, height, onWidthChange, onHeightChange, onClose, stats, online }: LivePaneProps) {
   const { t } = useTranslation()
   const [tab, setTab] = useState<'feed' | 'trades'>('feed')
   const [feedStatus, setFeedStatus] = useState('')
@@ -176,6 +178,7 @@ export function LivePane({ width, height, onWidthChange, onHeightChange, onClose
       <aside
         id="console-live-pane"
         className={styles.pane}
+        hidden={hidden}
         aria-label={t('console.telemetry')}
         style={{ '--pane-w': `${width}px`, '--pane-h': `${height}px` } as React.CSSProperties}
       >
