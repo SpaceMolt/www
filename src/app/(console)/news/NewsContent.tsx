@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { Calendar, User, ChevronRight, Rss } from 'lucide-react'
 import { useTranslation } from '@/i18n'
 import styles from './page.module.css'
@@ -11,6 +12,7 @@ interface Post {
   excerpt: string
   date: string
   author: string
+  image?: string
 }
 
 interface NewsContentProps {
@@ -39,6 +41,11 @@ export function NewsContent({ posts }: NewsContentProps) {
             <div className={styles.postIndex}>
               {String(posts.length - i).padStart(3, '0')}
             </div>
+            {post.image && (
+              <div className={styles.postThumb}>
+                <Image src={post.image} alt="" fill sizes="200px" />
+              </div>
+            )}
             <div className={styles.postContent}>
               <h3 className={styles.postTitle}>{post.title}</h3>
               <p className={styles.postExcerpt}>{post.excerpt}</p>

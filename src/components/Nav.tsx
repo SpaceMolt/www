@@ -7,22 +7,10 @@ import { useRef, useState, useEffect, useCallback } from 'react'
 import { SignedIn, SignedOut, SignUpButton } from '@clerk/nextjs'
 import { useTranslation } from '@/i18n'
 import { LanguageSelector } from '@/components/LanguageSelector'
+import { consoleNavGroups } from '@/components/console/consoleNav'
 
-const exploreLinks = [
-  { href: '/features', labelKey: 'nav.features' },
-  { href: '/guides', labelKey: 'nav.guides' },
-  { href: '/map', labelKey: 'nav.galaxyMap' },
-  { href: '/battles', labelKey: 'nav.battles' },
-  { href: '/leaderboard', labelKey: 'nav.leaderboard' },
-  { href: '/market', labelKey: 'nav.market' },
-  { href: '/market/report', labelKey: 'nav.marketReport' },
-  { href: '/ticker', labelKey: 'nav.ticker' },
-  { href: '/ships', labelKey: 'nav.ships' },
-  { href: '/stations', labelKey: 'nav.stations' },
-  { href: '/forum', labelKey: 'nav.forum' },
-  { href: '/changelog', labelKey: 'nav.changelog' },
-  { href: '/clients', labelKey: 'nav.clients' },
-]
+// The Explore menu mirrors the console sidebar (same groups, same order).
+const internalExploreLinks = consoleNavGroups.flatMap((g) => g.items.filter((i) => !i.external))
 
 export function Nav() {
   const pathname = usePathname()
@@ -33,7 +21,7 @@ export function Nav() {
 
   const { t } = useTranslation()
 
-  const isExploreActive = exploreLinks.some(
+  const isExploreActive = internalExploreLinks.some(
     ({ href }) => pathname === href || pathname.startsWith(href + '/'),
   )
 
@@ -123,15 +111,33 @@ export function Nav() {
               </svg>
             </button>
             <ul className="nav-dropdown-menu">
-              {exploreLinks.map(({ href, labelKey }) => (
-                <li key={href}>
-                  <Link
-                    href={href}
-                    className={pathname === href || pathname.startsWith(href + '/') ? 'active' : undefined}
-                    onClick={() => setDropdownOpen(false)}
-                  >
-                    {t(labelKey)}
-                  </Link>
+              {consoleNavGroups.map((group) => (
+                <li key={group.id} className="nav-dropdown-group">
+                  <span className="nav-dropdown-group-label">{t(group.labelKey)}</span>
+                  <ul className="nav-dropdown-group-links">
+                    {group.items.map(({ href, labelKey, external }) => (
+                      <li key={href}>
+                        {external ? (
+                          <a
+                            href={href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => setDropdownOpen(false)}
+                          >
+                            {t(labelKey)}
+                          </a>
+                        ) : (
+                          <Link
+                            href={href}
+                            className={pathname === href || pathname.startsWith(href + '/') ? 'active' : undefined}
+                            onClick={() => setDropdownOpen(false)}
+                          >
+                            {t(labelKey)}
+                          </Link>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
                 </li>
               ))}
             </ul>
@@ -145,22 +151,12 @@ export function Nav() {
             </Link>
           </li>
           <li>
-            <a href="https://discord.gg/Jm4UdQPuNB" target="_blank" rel="noopener noreferrer">
-              {t('nav.discord')}
-            </a>
-          </li>
-          <li>
             <Link
               href="/about"
               className={pathname === '/about' ? 'active' : undefined}
             >
               {t('nav.about')}
             </Link>
-          </li>
-          <li>
-            <a href="https://www.patreon.com/c/SpaceMolt" target="_blank" rel="noopener noreferrer">
-              {t('nav.support')}
-            </a>
           </li>
           <li>
             <LanguageSelector />
@@ -203,53 +199,37 @@ export function Nav() {
         <div className="mobile-menu-section">
           <LanguageSelector />
         </div>
-        <div className="mobile-menu-divider" />
-        <div className="mobile-menu-section">
-          <span className="mobile-menu-label">{t('nav.explore')}</span>
-          {exploreLinks.map(({ href, labelKey }) => (
-            <Link
-              key={href}
-              href={href}
-              className={`mobile-menu-link ${pathname === href || pathname.startsWith(href + '/') ? 'active' : ''}`}
-              onClick={closeMobileMenu}
-            >
-              {t(labelKey)}
-            </Link>
-          ))}
-        </div>
-        <div className="mobile-menu-divider" />
-        <Link
-          href="/news"
-          className={`mobile-menu-link ${pathname === '/news' || pathname.startsWith('/news/') ? 'active' : ''}`}
-          onClick={closeMobileMenu}
-        >
-          {t('nav.news')}
-        </Link>
-        <a
-          href="https://discord.gg/Jm4UdQPuNB"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mobile-menu-link"
-          onClick={closeMobileMenu}
-        >
-          {t('nav.joinDiscord')}
-        </a>
-        <Link
-          href="/about"
-          className={`mobile-menu-link ${pathname === '/about' ? 'active' : ''}`}
-          onClick={closeMobileMenu}
-        >
-          {t('nav.about')}
-        </Link>
-        <a
-          href="https://www.patreon.com/c/SpaceMolt"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mobile-menu-link"
-          onClick={closeMobileMenu}
-        >
-          {t('nav.support')}
-        </a>
+        {consoleNavGroups.map((group) => (
+          <div key={group.id}>
+            <div className="mobile-menu-divider" />
+            <div className="mobile-menu-section">
+              <span className="mobile-menu-label">{t(group.labelKey)}</span>
+              {group.items.map(({ href, labelKey, external }) =>
+                external ? (
+                  <a
+                    key={href}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mobile-menu-link"
+                    onClick={closeMobileMenu}
+                  >
+                    {t(labelKey)}
+                  </a>
+                ) : (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={`mobile-menu-link ${pathname === href || pathname.startsWith(href + '/') ? 'active' : ''}`}
+                    onClick={closeMobileMenu}
+                  >
+                    {t(labelKey)}
+                  </Link>
+                ),
+              )}
+            </div>
+          </div>
+        ))}
         <div className="mobile-menu-divider" />
         <div className="mobile-menu-section">
           <span className="mobile-menu-label">{t('nav.legal')}</span>

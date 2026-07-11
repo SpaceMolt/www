@@ -26,12 +26,13 @@ export const metadata: Metadata = {
 }
 
 export default function NewsIndex() {
-  const posts = getAllPosts().map(({ slug, title, excerpt, date, author }) => ({
+  const posts = getAllPosts().map(({ slug, title, excerpt, date, author, image }) => ({
     slug,
     title,
     excerpt,
     date,
     author,
+    image,
   }))
 
   return <NewsContent posts={posts} />

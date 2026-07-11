@@ -85,6 +85,23 @@
   color: var(--plasma-cyan);
 }
 
+.postThumb {
+  position: relative;
+  width: 180px;
+  flex-shrink: 0;
+  border-right: 1px solid rgba(61, 90, 108, 0.15);
+}
+
+.postThumb img {
+  object-fit: cover;
+  filter: saturate(0.85);
+  transition: filter 0.25s ease;
+}
+
+.postCard:hover .postThumb img {
+  filter: saturate(1.1);
+}
+
 .postContent {
   flex: 1;
   padding: 1.2rem 1.5rem;
@@ -150,6 +167,11 @@
 @media (max-width: 768px) {
   .postIndex {
     display: none;
+  }
+
+  .postThumb {
+    width: 96px;
+    border-right: none;
   }
 
   .postContent {

@@ -161,12 +161,15 @@ nav.site-nav {
   position: absolute;
   top: calc(100% + 0.5rem);
   left: 50%;
-  transform: translateX(-50%);
-  min-width: 180px;
+  /* Grouped mega-menu mirroring the console sidebar (3 columns of groups). */
+  display: grid;
+  grid-template-columns: repeat(3, minmax(130px, auto));
+  gap: 1.1rem 1.5rem;
+  max-width: calc(100vw - 2rem);
   background: rgba(13, 19, 33, 0.96);
   border: 1px solid var(--hull-grey);
   border-radius: 8px;
-  padding: 0.5rem 0;
+  padding: 1rem 1.25rem;
   list-style: none;
   backdrop-filter: blur(16px);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
@@ -187,12 +190,31 @@ nav.site-nav {
   padding: 0;
 }
 
+.nav-dropdown-group-label {
+  display: block;
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: var(--shell-orange);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  padding: 0 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.nav-dropdown-group-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
 .nav-dropdown-menu a {
   display: block;
-  padding: 0.55rem 1.25rem !important;
+  padding: 0.35rem 0.5rem !important;
   font-size: 0.8rem !important;
   white-space: nowrap;
   border: none !important;
+  border-radius: 4px;
   transition: background 0.15s ease, color 0.15s ease !important;
 }
 
@@ -386,9 +408,11 @@ footer {
 }
 
 .footer-top {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr;
-  gap: 3rem;
+  /* Wrapping flex: the brand block plus one column per console nav group
+     (and Legal), flowing onto extra rows as needed. */
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2.5rem 3rem;
   padding-bottom: 2rem;
   border-bottom: 1px solid rgba(61, 90, 108, 0.4);
 }
@@ -397,6 +421,8 @@ footer {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  /* Full first row; the link columns share the rows below. */
+  flex: 1 1 100%;
 }
 
 .footer-brand {
@@ -430,6 +456,7 @@ footer {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
+  flex: 1 0 110px;
 }
 
 .footer-col-title {
@@ -784,12 +811,12 @@ footer {
   }
 
   .footer-top {
-    grid-template-columns: 1fr 1fr;
-    gap: 2rem;
+    gap: 2rem 1.5rem;
   }
 
   .footer-brand-col {
-    grid-column: 1 / -1;
+    flex: 1 1 100%;
+    max-width: none;
     align-items: center;
     text-align: center;
   }
@@ -799,6 +826,7 @@ footer {
   }
 
   .footer-links-col {
+    flex: 1 1 40%;
     align-items: center;
     text-align: center;
   }

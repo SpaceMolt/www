@@ -36,7 +36,6 @@ export function ConsoleTopbar({ stats, online, navOpen, onToggleNav, paneOpen, o
       <Link href="/" className={styles.brand}>
         <Image src="/images/logo.png" alt="SpaceMolt" width={28} height={28} priority />
         <span className={styles.brandName}>SPACEMOLT</span>
-        <span className={styles.brandTag}>{t('console.opsConsole')}</span>
       </Link>
 
       <div className={styles.telemetry} aria-live="off">

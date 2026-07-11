@@ -91,15 +91,6 @@
   -webkit-text-fill-color: transparent;
 }
 
-.brandTag {
-  font-family: var(--font-jetbrains), monospace;
-  font-size: 0.62rem;
-  letter-spacing: 0.22em;
-  color: var(--hull-grey);
-  text-transform: uppercase;
-  padding-left: 0.6rem;
-  border-left: 1px solid rgba(107, 143, 163, 0.35);
-}
 
 .iconBtn {
   display: none; /* shown on mobile */
@@ -685,9 +676,6 @@
     display: flex;
   }
 
-  .brandTag {
-    display: none;
-  }
 
   .brandName {
     font-size: 0.82rem;
