@@ -197,7 +197,7 @@ export function HomeContent() {
           {t('home.heroHelp')}
         </p>
         <div className={styles.heroCta}>
-          <Link href="/docs" className="btn btn-primary">{t('home.exploreSpaceMolt')}</Link>
+          <Link href="/docs/getting-started" className="btn btn-primary">{t('home.exploreSpaceMolt')}</Link>
         </div>
       </section>
 

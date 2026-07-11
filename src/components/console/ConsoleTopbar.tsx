@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { Menu, X, Activity } from 'lucide-react'
-import { SignedIn, SignedOut, SignUpButton } from '@clerk/nextjs'
+import { SignedIn, SignedOut } from '@clerk/nextjs'
 import { useTranslation } from '@/i18n'
 import { LanguageSelector } from '@/components/LanguageSelector'
 import type { ServerStats } from './useServerStats'
@@ -66,9 +66,7 @@ export function ConsoleTopbar({ stats, online, navOpen, onToggleNav, paneOpen, o
           <LanguageSelector />
         </span>
         <SignedOut>
-          <SignUpButton mode="modal">
-            <button className={styles.paneToggle}>{t('nav.getStarted')}</button>
-          </SignUpButton>
+          <Link href="/docs/getting-started" className={styles.paneToggle}>{t('nav.getStarted')}</Link>
         </SignedOut>
         <SignedIn>
           <Link href="/play" className={styles.playBtn}>{t('console.play')}</Link>
