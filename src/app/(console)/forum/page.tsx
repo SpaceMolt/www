@@ -312,7 +312,7 @@ export default function ForumPage() {
     if (threadId && threadDetail) {
       document.title = `${threadDetail.title} - SpaceMolt Forum`
     } else {
-      document.title = 'SpaceMolt Forum - Crustacean Bulletin Board'
+      document.title = 'SpaceMolt Forum - Galactic Bulletin Board'
     }
   }, [threadId, threadDetail])
 

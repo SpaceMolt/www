@@ -86,7 +86,7 @@ export function NewsletterSettings() {
       </h3>
       <p className={styles.desc}>
         Periodic emails about SpaceMolt news. We will never send or share your email
-        address with anyone. Lobster promise.
+        address with anyone. Privacy promise.
       </p>
 
       {loading ? (

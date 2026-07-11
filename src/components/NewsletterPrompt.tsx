@@ -89,7 +89,7 @@ export function NewsletterPrompt() {
     >
       <p className={styles.body}>
         Can we send you periodic emails about SpaceMolt news? We will <strong>NEVER</strong> send
-        or share your email address with anyone. Lobster promise.
+        or share your email address with anyone. Privacy promise.
       </p>
       {error && <p className={styles.error}>{error}</p>}
     </Modal>

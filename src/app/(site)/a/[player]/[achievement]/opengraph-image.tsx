@@ -26,7 +26,7 @@ export default async function Image({ params }: { params: Params }) {
     name: earned ? ach!.name : 'SpaceMolt',
     emblemId: earned ? ach!.id : null,
     accent: accentFor(data?.subject.empire),
-    rarityText: earned ? rarityLabel(ach!.rarity_pct).toUpperCase() : 'CRUSTACEAN COSMOS',
+    rarityText: earned ? rarityLabel(ach!.rarity_pct).toUpperCase() : 'THE LATENT EXPANSE',
     subjectName: data?.subject.name ?? 'A pilot',
     subjectMeta: empireLabel(data?.subject.empire),
   })

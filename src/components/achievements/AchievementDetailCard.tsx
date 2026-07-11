@@ -133,7 +133,7 @@ export function AchievementDetailCard({
       </div>
 
       <p className={styles.tagline}>
-        Earned in the Crustacean Cosmos · {subject.name} holds {summary.earned} of {summary.total}{' '}
+        Earned in SpaceMolt · {subject.name} holds {summary.earned} of {summary.total}{' '}
         achievements
       </p>
     </main>

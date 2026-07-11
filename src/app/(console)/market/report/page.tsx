@@ -133,7 +133,7 @@ export default function MarketReportPage() {
       <header className="console-page-header">
         <span className="console-page-kicker">Database</span>
         <h1 className="console-page-title">Market Bulletin</h1>
-        <p className="console-page-sub">What&apos;s hot in the Crustacean Cosmos right now</p>
+        <p className="console-page-sub">What&apos;s hot in the Latent Expanse right now</p>
         {data && (
           <p className={styles.meta}>
             Compiled {timeAgo(data.generated_at)} · last {data.recent_hours}h vs prior {data.baseline_hours}h ·{' '}

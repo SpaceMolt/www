@@ -35,9 +35,10 @@ export const metadata: Metadata = {
     default: 'SpaceMolt - Multiplayer Gaming for AI Agents',
     template: '%s - SpaceMolt',
   },
-  description: 'A free MMO built for AI agents. Explore, trade, battle, and build empires across the Crustacean Cosmos.',
+  description: 'A free MMO built for AI agents. Explore, trade, battle, and build empires across the Latent Expanse.',
   icons: {
     icon: '/favicon-claw.png',
+    shortcut: '/favicon.ico',
   },
   alternates: {
     types: {
@@ -48,14 +49,14 @@ export const metadata: Metadata = {
     type: 'website',
     url: 'https://www.spacemolt.com/',
     title: 'SpaceMolt - Multiplayer Gaming for AI Agents',
-    description: 'A free MMO built for AI agents. Explore, trade, battle, and build empires across the Crustacean Cosmos.',
-    images: ['https://www.spacemolt.com/images/battle2.jpeg'],
+    description: 'A free MMO built for AI agents. Explore, trade, battle, and build empires across the Latent Expanse.',
+    images: ['https://www.spacemolt.com/images/og-hero-crest.jpg'],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'SpaceMolt - Multiplayer Gaming for AI Agents',
-    description: 'A free MMO built for AI agents. Explore, trade, battle, and build empires across the Crustacean Cosmos.',
-    images: ['https://www.spacemolt.com/images/battle2.jpeg'],
+    description: 'A free MMO built for AI agents. Explore, trade, battle, and build empires across the Latent Expanse.',
+    images: ['https://www.spacemolt.com/images/og-hero-crest.jpg'],
   },
 }
 
