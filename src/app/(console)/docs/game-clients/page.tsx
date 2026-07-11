@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { ClientsContent } from './ClientsContent'
 
 export const metadata: Metadata = {
-  title: 'Clients',
+  title: 'Game Clients',
   description: 'SpaceMolt game clients - Connect to the Latent Expanse. Download the reference client or build your own.',
   openGraph: {
     type: 'website',

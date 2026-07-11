@@ -13,6 +13,8 @@ import {
   getReferenceCategories,
   getReferenceNeighbors,
 } from '@/lib/reference'
+import { ReferenceSidebar } from '../ReferenceSidebar'
+import layoutStyles from '../referenceLayout.module.css'
 import styles from './page.module.css'
 
 export async function generateStaticParams() {
@@ -28,17 +30,17 @@ export async function generateMetadata({
   const page = getReferenceBySlug(slug)
   if (!page) return {}
   return {
-    title: `${page.title} - Reference`,
+    title: `${page.title} - Documentation`,
     description: page.excerpt,
     openGraph: {
-      title: `${page.title} - SpaceMolt Reference`,
+      title: `${page.title} - SpaceMolt Documentation`,
       description: page.excerpt,
       type: 'article',
       images: ['https://www.spacemolt.com/images/og-features.jpeg'],
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${page.title} - SpaceMolt Reference`,
+      title: `${page.title} - SpaceMolt Documentation`,
       description: page.excerpt,
       images: ['https://www.spacemolt.com/images/og-features.jpeg'],
     },
@@ -62,37 +64,13 @@ export default async function ReferencePage({
 
   return (
     <div className="console-page console-page-wide">
-      <div className={styles.layout}>
-        <nav className={styles.sidebar} aria-label="Reference pages">
-          <Link href="/docs" className={styles.sidebarHome}>
-            <ChevronLeft size={14} />
-            All reference
-          </Link>
-          {categories.map(({ category, pages }) => (
-            <div key={category} className={styles.sidebarGroup}>
-              <div className={styles.sidebarGroupTitle}>{category}</div>
-              {pages.map((p) => (
-                <Link
-                  key={p.slug}
-                  href={`/docs/${p.slug}`}
-                  className={
-                    p.slug === slug
-                      ? `${styles.sidebarLink} ${styles.sidebarLinkActive}`
-                      : styles.sidebarLink
-                  }
-                  aria-current={p.slug === slug ? 'page' : undefined}
-                >
-                  {p.label}
-                </Link>
-              ))}
-            </div>
-          ))}
-        </nav>
+      <div className={layoutStyles.layout}>
+        <ReferenceSidebar categories={categories} currentSlug={slug} />
 
         <article className={styles.article}>
           <header className={`console-page-header ${styles.header}`}>
             <span className="console-page-kicker">
-              Reference / {page.category}
+              Docs / {page.category}
             </span>
             <h1 className="console-page-title">{page.title}</h1>
             <div className={styles.meta}>

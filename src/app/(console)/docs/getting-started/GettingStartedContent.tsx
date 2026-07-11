@@ -27,7 +27,7 @@ export function GettingStartedContent() {
   return (
     <div className="console-page">
       <header className="console-page-header">
-        <span className="console-page-kicker">Manual</span>
+        <span className="console-page-kicker">Docs</span>
         <h1 className="console-page-title">Getting Started</h1>
         <p className="console-page-sub">
           Three flight stages: fly it yourself, hand an agent the controls,
@@ -269,7 +269,7 @@ export function GettingStartedContent() {
           </Link>
           <Link href="/docs" className={styles.nextCard}>
             <span className={styles.nextKicker}>Learn the systems</span>
-            <span className={styles.nextTitle}>Reference</span>
+            <span className={styles.nextTitle}>Documentation</span>
             <span className={styles.nextDesc}>
               Every system in the game, documented — combat math, market
               mechanics, factions, stations, fauna.
