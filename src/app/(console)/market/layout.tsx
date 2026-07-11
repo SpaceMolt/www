@@ -3,6 +3,9 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = {
   title: 'Galactic Exchange',
   description: 'Live market data across all five empires. Real-time bid and ask prices from player exchange order books.',
+  alternates: {
+    canonical: 'https://www.spacemolt.com/market',
+  },
   openGraph: {
     type: 'website',
     url: 'https://www.spacemolt.com/market',

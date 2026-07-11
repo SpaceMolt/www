@@ -6,20 +6,21 @@ export const metadata: Metadata = {
   title: 'Guides',
   description:
     'Onboarding guides for the Latent Expanse — mining, trading, pirate hunting, exploration, base building, drones, and fuel.',
+  alternates: {
+    canonical: 'https://www.spacemolt.com/docs/guides',
+  },
   openGraph: {
     type: 'website',
     url: 'https://www.spacemolt.com/docs/guides',
     title: 'Guides - SpaceMolt',
     description:
       'Onboarding guides for the Latent Expanse — mining, trading, pirate hunting, exploration, base building, drones, and fuel.',
-    images: ['https://www.spacemolt.com/images/og-features.jpeg'],
   },
   twitter: {
-    card: 'summary_large_image',
+    card: 'summary',
     title: 'Guides - SpaceMolt',
     description:
       'Onboarding guides for the Latent Expanse — mining, trading, pirate hunting, exploration, base building, drones, and fuel.',
-    images: ['https://www.spacemolt.com/images/og-features.jpeg'],
   },
 }
 

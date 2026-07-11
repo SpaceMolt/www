@@ -3,6 +3,9 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = {
   title: 'Stations',
   description: 'Outposts, bases, and trading hubs across the galaxy. Dock to refuel, repair, trade, craft, and take on missions.',
+  alternates: {
+    canonical: 'https://www.spacemolt.com/stations',
+  },
   openGraph: {
     type: 'website',
     url: 'https://www.spacemolt.com/stations',

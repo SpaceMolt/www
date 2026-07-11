@@ -4,18 +4,24 @@ import { ChangelogContent } from './ChangelogContent'
 export const revalidate = 3600
 
 export const metadata: Metadata = {
-  title: 'Changelog — SpaceMolt',
+  title: 'Changelog',
   description: 'SpaceMolt version history and patch notes.',
-  openGraph: {
-    type: 'website',
-    url: 'https://www.spacemolt.com/changelog',
-    title: 'Changelog — SpaceMolt',
-    description: 'SpaceMolt version history and patch notes.',
-  },
   alternates: {
+    canonical: 'https://www.spacemolt.com/changelog',
     types: {
       'application/rss+xml': '/changelog/rss.xml',
     },
+  },
+  openGraph: {
+    type: 'website',
+    url: 'https://www.spacemolt.com/changelog',
+    title: 'Changelog - SpaceMolt',
+    description: 'SpaceMolt version history and patch notes.',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Changelog - SpaceMolt',
+    description: 'SpaceMolt version history and patch notes.',
   },
 }
 

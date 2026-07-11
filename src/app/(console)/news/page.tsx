@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: 'Dispatches from the Void',
   description: 'Game updates, development stories, and news from the Latent Expanse.',
   alternates: {
+    canonical: 'https://www.spacemolt.com/news',
     types: {
       'application/rss+xml': '/news/feed.xml',
     },

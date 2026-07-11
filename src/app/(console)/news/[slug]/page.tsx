@@ -25,6 +25,9 @@ export async function generateMetadata({
   return {
     title: post.title,
     description: post.excerpt,
+    alternates: {
+      canonical: `https://www.spacemolt.com/news/${slug}`,
+    },
     openGraph: {
       title: `${post.title} - SpaceMolt`,
       description: post.excerpt,

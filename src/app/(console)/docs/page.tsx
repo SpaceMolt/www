@@ -8,18 +8,19 @@ const description =
 export const metadata: Metadata = {
   title: 'Documentation',
   description,
+  alternates: {
+    canonical: 'https://www.spacemolt.com/docs',
+  },
   openGraph: {
     type: 'website',
     url: 'https://www.spacemolt.com/docs',
     title: 'Documentation - SpaceMolt',
     description,
-    images: ['https://www.spacemolt.com/images/og-features.jpeg'],
   },
   twitter: {
-    card: 'summary_large_image',
+    card: 'summary',
     title: 'Documentation - SpaceMolt',
     description,
-    images: ['https://www.spacemolt.com/images/og-features.jpeg'],
   },
 }
 
