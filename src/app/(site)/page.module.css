@@ -151,6 +151,358 @@
   margin-bottom: 1.5rem;
 }
 
+/* === Shared section header === */
+.sectionHeader {
+  text-align: center;
+  margin-bottom: 3rem;
+  position: relative;
+  z-index: 1;
+}
+
+.sectionSubtitle {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: clamp(0.85rem, 2vw, 1rem);
+  color: #6b8a9e;
+}
+
+/* === What's New Section === */
+.whatsNewSection {
+  padding: 6rem 2rem;
+  position: relative;
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 0%, rgba(0, 212, 255, 0.07), transparent 70%),
+    linear-gradient(180deg, var(--space-black) 0%, var(--deep-void) 100%);
+}
+
+.whatsNewTitle {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: linear-gradient(135deg, var(--star-white) 0%, var(--plasma-cyan) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.5rem;
+}
+
+.whatsNewGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+}
+
+.whatsNewCard {
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, rgba(13, 25, 40, 0.85), rgba(10, 14, 23, 0.95));
+  border: 1px solid rgba(0, 212, 255, 0.14);
+  border-radius: 12px;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.whatsNewCard:hover {
+  transform: translateY(-4px);
+  border-color: rgba(0, 212, 255, 0.45);
+  box-shadow: 0 8px 32px rgba(0, 212, 255, 0.15);
+}
+
+.whatsNewImage {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}
+
+.whatsNewImage img {
+  transition: transform 0.5s ease;
+}
+
+.whatsNewCard:hover .whatsNewImage img {
+  transform: scale(1.05);
+}
+
+.whatsNewBadge {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--space-black);
+  background: var(--plasma-cyan);
+  padding: 0.25rem 0.55rem;
+  border-radius: 3px;
+  box-shadow: 0 0 14px rgba(0, 212, 255, 0.5);
+}
+
+.whatsNewBody {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 1.25rem 1.4rem 1.4rem;
+}
+
+.whatsNewBody h3 {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1rem;
+  color: var(--star-white);
+  margin-bottom: 0.6rem;
+}
+
+.whatsNewBody p {
+  color: var(--chrome-silver);
+  font-size: 0.85rem;
+  line-height: 1.6;
+  flex: 1;
+}
+
+.whatsNewMore {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 1rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--plasma-cyan);
+  transition: gap 0.2s ease;
+}
+
+.whatsNewCard:hover .whatsNewMore {
+  gap: 0.7rem;
+}
+
+.whatsNewFooter {
+  display: flex;
+  justify-content: center;
+  margin-top: 2.5rem;
+}
+
+.changelogLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--chrome-silver);
+  text-decoration: none;
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  border-radius: 6px;
+  padding: 0.7rem 1.4rem;
+  transition: color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.changelogLink:hover {
+  color: var(--plasma-cyan);
+  border-color: rgba(0, 212, 255, 0.6);
+  box-shadow: 0 0 18px rgba(0, 212, 255, 0.2);
+}
+
+/* === Empires Section === */
+.empiresSection {
+  padding: 6rem 2rem;
+  position: relative;
+  background:
+    radial-gradient(ellipse 60% 45% at 20% 30%, rgba(155, 89, 182, 0.06), transparent),
+    radial-gradient(ellipse 60% 45% at 80% 70%, rgba(230, 57, 70, 0.05), transparent),
+    var(--space-black);
+}
+
+.empiresTitle {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: linear-gradient(135deg, var(--star-white) 0%, var(--plasma-cyan) 50%, var(--shell-orange) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.5rem;
+}
+
+.empiresGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+}
+
+.empireCard {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  background: linear-gradient(180deg, rgba(13, 19, 33, 0.9), rgba(10, 14, 23, 0.95));
+  border: 1px solid color-mix(in srgb, var(--empire-color) 25%, transparent);
+  border-top: 3px solid var(--empire-color);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.empireCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 36px color-mix(in srgb, var(--empire-color) 22%, transparent);
+}
+
+.empireImage {
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+}
+
+.empireImage img {
+  transition: transform 0.5s ease;
+}
+
+.empireCard:hover .empireImage img {
+  transform: scale(1.05);
+}
+
+.empireBody {
+  padding: 1.1rem 1.2rem 1.3rem;
+}
+
+.empireBody h3 {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.92rem;
+  color: var(--star-white);
+  margin-bottom: 0.45rem;
+}
+
+.empireSpec {
+  display: inline-block;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--empire-color);
+  border: 1px solid color-mix(in srgb, var(--empire-color) 45%, transparent);
+  border-radius: 3px;
+  padding: 0.18rem 0.5rem;
+  margin-bottom: 0.7rem;
+}
+
+.empireBody p {
+  color: var(--chrome-silver);
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+/* === Pilots Marquee === */
+.pilotsSection {
+  padding: 6rem 0;
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 50%, rgba(155, 89, 182, 0.07), transparent 70%),
+    linear-gradient(180deg, var(--space-black) 0%, var(--deep-void) 50%, var(--space-black) 100%);
+}
+
+.pilotsTitle {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: linear-gradient(135deg, var(--star-white) 0%, #c084fc 60%, var(--plasma-cyan) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.5rem;
+}
+
+.pilotsMarquee {
+  position: relative;
+  overflow: hidden;
+  /* Vertical padding (offset by margin) gives hover lift + glow room to
+     render inside the overflow clip without shifting the layout. */
+  padding: 2.5rem 0;
+  margin: -2.5rem 0;
+  cursor: grab;
+  touch-action: pan-y;
+  -webkit-mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent);
+  mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent);
+}
+
+.pilotsDragging {
+  cursor: grabbing;
+}
+
+.pilotsDragging .pilotCard {
+  pointer-events: none;
+}
+
+.pilotsTrack {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+}
+
+.pilotsRow {
+  display: flex;
+  gap: 1.25rem;
+  padding-right: 1.25rem;
+}
+
+.pilotCard {
+  width: 190px;
+  margin: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  background: rgba(13, 19, 33, 0.85);
+  border: 1px solid rgba(168, 197, 214, 0.14);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.pilotCard:hover {
+  transform: translateY(-4px);
+  border-color: rgba(0, 212, 255, 0.4);
+  box-shadow: 0 8px 28px rgba(0, 212, 255, 0.12);
+}
+
+.pilotCard figcaption {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem 0.9rem 0.9rem;
+}
+
+.pilotRole {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.78rem;
+  color: var(--star-white);
+  line-height: 1.35;
+}
+
+.pilotEmpire {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The JS marquee never starts under reduced motion; fall back to a plain
+     scrollable strip. */
+  .pilotsMarquee {
+    overflow-x: auto;
+    cursor: auto;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}
+
 /* === Pillars Section === */
 .pillarsSection {
   background:
@@ -230,13 +582,31 @@
 }
 
 .pillarCard {
+  display: block;
   background: linear-gradient(135deg, rgba(40, 28, 12, 0.6), rgba(13, 19, 33, 0.8));
   border: 1px solid rgba(255, 165, 0, 0.15);
   border-radius: 12px;
   padding: 2rem;
   position: relative;
   overflow: hidden;
+  color: inherit;
+  text-decoration: none;
   transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.pillarMore {
+  position: absolute;
+  right: 1.25rem;
+  bottom: 1.1rem;
+  color: var(--shell-orange);
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.pillarCard:hover .pillarMore {
+  opacity: 1;
+  transform: translateX(0);
 }
 
 .pillarCard::before {
@@ -507,6 +877,12 @@
 }
 
 /* === Responsive === */
+@media (max-width: 1100px) {
+  .whatsNewGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 900px) {
   .pillarsGrid {
     grid-template-columns: repeat(2, 1fr);
@@ -529,6 +905,10 @@
 
 @media (max-width: 600px) {
   .pillarsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .whatsNewGrid {
     grid-template-columns: 1fr;
   }
 }

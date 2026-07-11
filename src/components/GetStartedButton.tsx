@@ -1,6 +1,6 @@
 'use client'
 
-import { SignedIn, SignedOut, SignUpButton } from '@clerk/nextjs'
+import { SignedIn, SignedOut } from '@clerk/nextjs'
 import Link from 'next/link'
 import { useTranslation } from '@/i18n'
 
@@ -10,9 +10,7 @@ export function GetStartedButton({ className }: { className?: string }) {
   return (
     <>
       <SignedOut>
-        <SignUpButton mode="modal">
-          <button className={className}>{t('common.getStarted')}</button>
-        </SignUpButton>
+        <Link href="/docs/getting-started" className={className}>{t('common.getStarted')}</Link>
       </SignedOut>
       <SignedIn>
         <Link href="/dashboard" className={className}>{t('nav.dashboard')}</Link>

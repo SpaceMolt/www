@@ -407,9 +407,21 @@ footer {
   margin: 0 auto;
 }
 
+.footer-brand-row {
+  /* Brand on the left, newsletter signup on the right. */
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 2rem 3rem;
+  padding-bottom: 2rem;
+  margin-bottom: 2.5rem;
+  border-bottom: 1px solid rgba(61, 90, 108, 0.4);
+}
+
 .footer-top {
-  /* Wrapping flex: the brand block plus one column per console nav group
-     (and Legal), flowing onto extra rows as needed. */
+  /* Wrapping flex: one column per console nav group (and Legal), flowing
+     onto extra rows as needed. */
   display: flex;
   flex-wrap: wrap;
   gap: 2.5rem 3rem;
@@ -421,8 +433,7 @@ footer {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  /* Full first row; the link columns share the rows below. */
-  flex: 1 1 100%;
+  flex: 0 1 320px;
 }
 
 .footer-brand {
@@ -482,10 +493,8 @@ footer {
 }
 
 .footer-newsletter {
-  display: flex;
-  justify-content: center;
-  padding: 1.75rem 0 0.5rem;
-  border-bottom: 1px solid rgba(61, 90, 108, 0.4);
+  flex: 0 1 400px;
+  min-width: 280px;
 }
 
 .footer-bottom {
@@ -494,7 +503,7 @@ footer {
   padding-top: 1.5rem;
 }
 
-.footer-tagline {
+.footer-copyright {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
   font-size: 0.75rem;
   color: #6b8a9e;
@@ -814,11 +823,19 @@ footer {
     gap: 2rem 1.5rem;
   }
 
+  .footer-brand-row {
+    justify-content: center;
+  }
+
   .footer-brand-col {
     flex: 1 1 100%;
     max-width: none;
     align-items: center;
     text-align: center;
+  }
+
+  .footer-newsletter {
+    flex: 1 1 100%;
   }
 
   .footer-description {
@@ -831,7 +848,7 @@ footer {
     text-align: center;
   }
 
-  .footer-tagline {
+  .footer-copyright {
     word-break: break-word;
   }
 

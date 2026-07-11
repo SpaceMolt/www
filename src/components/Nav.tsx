@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useRef, useState, useEffect, useCallback } from 'react'
-import { SignedIn, SignedOut, SignUpButton } from '@clerk/nextjs'
+import { SignedIn, SignedOut } from '@clerk/nextjs'
 import { useTranslation } from '@/i18n'
 import { LanguageSelector } from '@/components/LanguageSelector'
 import { consoleNavGroups } from '@/components/console/consoleNav'
@@ -163,9 +163,7 @@ export function Nav() {
           </li>
           <li>
             <SignedOut>
-              <SignUpButton mode="modal">
-                <button className="highlight">{t('nav.getStarted')}</button>
-              </SignUpButton>
+              <Link href="/docs/getting-started" className="highlight">{t('nav.getStarted')}</Link>
             </SignedOut>
             <SignedIn>
               <Link href="/dashboard" className="highlight">{t('nav.dashboard')}</Link>
@@ -187,9 +185,7 @@ export function Nav() {
       >
         <div className="mobile-menu-cta">
           <SignedOut>
-            <SignUpButton mode="modal">
-              <button className="highlight" onClick={closeMobileMenu}>{t('nav.getStarted')}</button>
-            </SignUpButton>
+            <Link href="/docs/getting-started" className="highlight" onClick={closeMobileMenu}>{t('nav.getStarted')}</Link>
           </SignedOut>
           <SignedIn>
             <Link href="/dashboard" className="highlight" onClick={closeMobileMenu}>{t('nav.dashboard')}</Link>

@@ -45,9 +45,13 @@
 .compact {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 0.6rem;
+  align-items: flex-start;
+  gap: 0.35rem;
   width: 100%;
+}
+
+.compact .embedHost {
+  margin: 0.25rem 0 0;
 }
 
 .compactLabel {
