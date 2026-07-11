@@ -1,0 +1,379 @@
+/* === Station Detail — station dossier readout === */
+
+/* === Back Link === */
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--plasma-cyan);
+  text-decoration: none;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 1rem;
+  transition: opacity 0.15s;
+}
+
+.backLink:hover {
+  opacity: 0.8;
+}
+
+.backLink:focus-visible {
+  outline: 2px solid var(--plasma-cyan);
+  outline-offset: 1px;
+}
+
+/* === Header title row === */
+.titleRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+}
+
+.titleBadges {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.empireBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.empireDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.conditionBadge {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  padding: 0.18rem 0.5rem;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+/* === Panels === */
+.panelSection {
+  margin-bottom: 1.1rem;
+}
+
+.panelTitle {
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  margin: 0;
+}
+
+.panelCount {
+  margin-left: auto;
+  color: var(--plasma-cyan);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+}
+
+/* === Overview === */
+.stationDescription {
+  font-size: 0.86rem;
+  color: var(--star-white);
+  line-height: 1.65;
+  margin: 0;
+}
+
+.conditionText {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--chrome-silver);
+  opacity: 0.8;
+  margin: 0.6rem 0 0;
+  padding-top: 0.55rem;
+  border-top: 1px dashed rgba(0, 212, 255, 0.12);
+}
+
+/* === Status readout === */
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.7rem 0.9rem;
+  border-right: 1px solid rgba(0, 212, 255, 0.1);
+}
+
+.statItem:last-child {
+  border-right: none;
+}
+
+.statLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--chrome-silver);
+  opacity: 0.7;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+.statValue {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.95rem;
+  color: var(--plasma-cyan);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.statValueLink {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.95rem;
+  color: var(--plasma-cyan);
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+
+.statValueLink:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+.statValueLink:focus-visible {
+  outline: 2px solid var(--plasma-cyan);
+  outline-offset: 1px;
+}
+
+/* === Facilities Section === */
+.facilitiesSection {
+  margin-top: 1.6rem;
+}
+
+.sectionTitle {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--star-white);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.8rem;
+}
+
+.facilityGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 0.7rem;
+  padding: 0.7rem;
+}
+
+/* === Facility Card === */
+.facilityCard {
+  background: rgba(26, 39, 68, 0.3);
+  border: 1px solid rgba(0, 212, 255, 0.1);
+  border-left: 2px solid var(--facility-color, var(--hull-grey));
+  border-radius: 2px;
+  padding: 0.75rem 0.85rem;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.facilityCard:hover {
+  border-color: rgba(0, 212, 255, 0.35);
+  border-left-color: var(--facility-color, var(--plasma-cyan));
+  background: rgba(26, 39, 68, 0.45);
+}
+
+.facilityHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.45rem;
+}
+
+.facilityName {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--star-white);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.uniqueBadge {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.56rem;
+  padding: 0.1rem 0.35rem;
+  background: rgba(255, 107, 53, 0.12);
+  border: 1px solid var(--shell-orange);
+  border-radius: 2px;
+  color: var(--shell-orange);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+}
+
+.maintenanceStatus {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  cursor: help;
+  line-height: 1;
+}
+
+.maintenanceOk {
+  color: var(--bio-green);
+}
+
+.maintenanceWarn {
+  color: var(--warning-yellow);
+}
+
+/* === Facility Meta === */
+.facilityMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 0.5rem;
+}
+
+.categoryBadge {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.56rem;
+  padding: 0.12rem 0.4rem;
+  background: rgba(58, 74, 92, 0.4);
+  border: 1px solid rgba(0, 212, 255, 0.12);
+  border-radius: 2px;
+  text-transform: uppercase;
+  color: var(--chrome-silver);
+  letter-spacing: 0.1em;
+}
+
+.facilityLevel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.64rem;
+  color: var(--chrome-silver);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-variant-numeric: tabular-nums;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.levelIndicator {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.levelSegmentFilled {
+  width: 5px;
+  height: 9px;
+  background: var(--plasma-cyan);
+  box-shadow: 0 0 4px rgba(0, 212, 255, 0.5);
+}
+
+.levelSegmentEmpty {
+  width: 5px;
+  height: 9px;
+  background: var(--hull-grey);
+  opacity: 0.4;
+}
+
+.facilityDescription {
+  font-size: 0.78rem;
+  color: var(--chrome-silver);
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* === Lore Section === */
+.loreSection {
+  margin-top: 0.55rem;
+  padding-top: 0.45rem;
+  border-top: 1px solid rgba(0, 212, 255, 0.08);
+}
+
+.loreToggle {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.64rem;
+  letter-spacing: 0.06em;
+  color: var(--chrome-silver);
+  opacity: 0.7;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s, opacity 0.15s;
+}
+
+.loreToggle:hover {
+  color: var(--plasma-cyan);
+  opacity: 1;
+}
+
+.loreToggle:focus-visible {
+  outline: 2px solid var(--plasma-cyan);
+  outline-offset: 1px;
+  opacity: 1;
+}
+
+.loreText {
+  font-size: 0.74rem;
+  color: var(--chrome-silver);
+  line-height: 1.55;
+  margin: 0.4rem 0 0;
+  font-style: italic;
+  opacity: 0.75;
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+  .titleRow {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .statGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .statItem:nth-child(2n) {
+    border-right: none;
+  }
+
+  .statItem {
+    border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+  }
+
+  .statItem:nth-last-child(-n + 2) {
+    border-bottom: none;
+  }
+
+  .facilityGrid {
+    grid-template-columns: 1fr;
+  }
+}

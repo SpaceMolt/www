@@ -1575,21 +1575,27 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
     const s = stateRef.current
 
     // ── Resize ───────────────────────────────────────────────────
+    // The map always fills its container (the console shell's main viewport
+    // in fullPage mode, or the embed box on the homepage) — never the window.
     let resizeObserver: ResizeObserver | null = null
 
     function resizeCanvas() {
       if (!canvas) return
-      if (fullPage) {
-        canvas.width = window.innerWidth
-        canvas.height = window.innerHeight
-      } else {
-        const container = containerRef.current
-        if (container) {
-          canvas.width = container.clientWidth
-          canvas.height = container.clientHeight
-        }
+      const container = containerRef.current
+      if (container) {
+        canvas.width = container.clientWidth
+        canvas.height = container.clientHeight
       }
       render(ctx)
+    }
+
+    // Convert viewport (client) coordinates to canvas-local coordinates.
+    // The canvas no longer sits at the viewport origin — it lives inside the
+    // console shell (topbar + sidebar offsets), so all hit-testing and
+    // zoom-focus math must be canvas-relative.
+    function toCanvas(clientX: number, clientY: number) {
+      const rect = canvas!.getBoundingClientRect()
+      return { x: clientX - rect.left, y: clientY - rect.top }
     }
 
     // ── URL State ────────────────────────────────────────────────
@@ -1864,12 +1870,13 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
         s.targetViewY = s.viewY
         render(ctx)
       } else {
-        const system = findSystemAt(e.clientX, e.clientY)
+        const pos = toCanvas(e.clientX, e.clientY)
+        const system = findSystemAt(pos.x, pos.y)
         if (system !== s.hoveredSystem) {
           s.hoveredSystem = system
           render(ctx)
         }
-        updateTooltip(system, e.clientX, e.clientY)
+        updateTooltip(system, pos.x, pos.y)
       }
     }
 
@@ -1879,7 +1886,8 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
       const wasDrag = Math.abs(dx) > 5 || Math.abs(dy) > 5
 
       if (!wasDrag) {
-        const system = findSystemAt(e.clientX, e.clientY)
+        const pos = toCanvas(e.clientX, e.clientY)
+        const system = findSystemAt(pos.x, pos.y)
         if (system) {
           if (fullPage) {
             showPOIPanel(system)
@@ -1927,16 +1935,17 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
         Math.min(MAX_ZOOM, s.targetZoom * zoomFactor),
       )
 
-      // Zoom toward mouse position
+      // Zoom toward mouse position (canvas-local coordinates)
+      const mouse = toCanvas(e.clientX, e.clientY)
       const cx = canvas!.width / 2
       const cy = canvas!.height / 2
-      const worldX = (e.clientX - cx) / s.zoom - s.viewX
-      const worldY = (e.clientY - cy) / s.zoom - s.viewY
+      const worldX = (mouse.x - cx) / s.zoom - s.viewX
+      const worldY = (mouse.y - cy) / s.zoom - s.viewY
 
       const tempZoom = s.zoom
       s.zoom = s.targetZoom
-      const newWorldX = (e.clientX - cx) / s.zoom - s.viewX
-      const newWorldY = (e.clientY - cy) / s.zoom - s.viewY
+      const newWorldX = (mouse.x - cx) / s.zoom - s.viewX
+      const newWorldY = (mouse.y - cy) / s.zoom - s.viewY
       s.zoom = tempZoom
 
       s.targetViewX = s.viewX + (newWorldX - worldX)
@@ -2007,10 +2016,11 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
 
         const scale = newDistance / s.lastTouchDistance
 
+        const center = toCanvas(newCenter.x, newCenter.y)
         const cx = canvas!.width / 2
         const cy = canvas!.height / 2
-        const worldX = (newCenter.x - cx) / s.zoom - s.viewX
-        const worldY = (newCenter.y - cy) / s.zoom - s.viewY
+        const worldX = (center.x - cx) / s.zoom - s.viewX
+        const worldY = (center.y - cy) / s.zoom - s.viewY
 
         const newZoom = Math.max(
           MIN_ZOOM,
@@ -2019,8 +2029,8 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
         s.zoom = newZoom
         s.targetZoom = newZoom
 
-        const newWorldX = (newCenter.x - cx) / s.zoom - s.viewX
-        const newWorldY = (newCenter.y - cy) / s.zoom - s.viewY
+        const newWorldX = (center.x - cx) / s.zoom - s.viewX
+        const newWorldY = (center.y - cy) / s.zoom - s.viewY
         s.viewX += newWorldX - worldX
         s.viewY += newWorldY - worldY
 
@@ -2056,10 +2066,8 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
         const wasMove = Math.abs(dx) > 10 || Math.abs(dy) > 10
 
         if (!wasMove) {
-          const system = findSystemAt(
-            touch.clientX,
-            touch.clientY,
-          )
+          const pos = toCanvas(touch.clientX, touch.clientY)
+          const system = findSystemAt(pos.x, pos.y)
           if (system) {
             if (fullPage) {
               showPOIPanel(system)
@@ -2102,9 +2110,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
     })
     canvas.addEventListener('touchend', onTouchEnd, { passive: false })
 
-    if (fullPage) {
-      window.addEventListener('resize', resizeCanvas)
-    } else if (containerRef.current) {
+    if (containerRef.current) {
       resizeObserver = new ResizeObserver(() => resizeCanvas())
       resizeObserver.observe(containerRef.current)
     }
@@ -2119,9 +2125,6 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
       canvas.removeEventListener('touchstart', onTouchStart)
       canvas.removeEventListener('touchmove', onTouchMove)
       canvas.removeEventListener('touchend', onTouchEnd)
-      if (fullPage) {
-        window.removeEventListener('resize', resizeCanvas)
-      }
       if (resizeObserver) resizeObserver.disconnect()
       cancelAnimationFrame(animFrameId)
       clearInterval(activityPollInterval)
@@ -2137,6 +2140,9 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
 
   return (
     <div ref={containerRef} className={fullPage ? styles.mapPage : styles.mapEmbed}>
+      {/* Title chip (fullPage only) */}
+      {fullPage && <div className={styles.titleChip}>Galaxy Map</div>}
+
       {/* Control hint (fullPage only) */}
       {fullPage && (
         <div className={styles.controlHint} ref={controlHintRef}>

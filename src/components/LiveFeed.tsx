@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, useCallback, type ReactNode } from 'react'
 import {
   Hand, Bomb, Star, Flag, Swords, Coins, Hammer, Building2, Crosshair,
   Sparkles, Megaphone, Timer, Satellite, MessageSquare, Compass, Rocket,
@@ -314,6 +314,8 @@ interface LiveEventEntry {
   html: string
   icon: ReactNode
   time: number
+  /** Entry is still playing its enter animation. */
+  fresh?: boolean
 }
 
 function formatTime(timestamp?: string) {
@@ -339,7 +341,7 @@ const eventTextStyles = `
   [data-cls="eventPlayer"] { color: var(--plasma-cyan); font-weight: 500; }
   [data-cls="eventEmpire"] { color: var(--shell-orange); }
   [data-cls="eventSystem"] { color: var(--bio-green); }
-  [data-cls="eventFaction"] { color: #9b59b6; font-weight: 500; }
+  [data-cls="eventFaction"] { color: #c39bd3; font-weight: 500; }
   [data-cls="eventItem"] { color: #ffd700; }
   [data-cls="eventDevTeam"] { color: var(--shell-orange); font-weight: 500; }
 `
@@ -347,9 +349,11 @@ const eventTextStyles = `
 interface LiveFeedProps {
   onClose?: () => void
   onStatusChange?: (connected: boolean, status: string) => void
+  /** Hide the built-in LIVE header (the console live pane provides its own). */
+  hideHeader?: boolean
 }
 
-export function LiveFeed({ onClose, onStatusChange }: LiveFeedProps) {
+export function LiveFeed({ onClose, onStatusChange, hideHeader }: LiveFeedProps) {
   const [events, setEvents] = useState<LiveEventEntry[]>([
     {
       id: -1,
@@ -363,6 +367,7 @@ export function LiveFeed({ onClose, onStatusChange }: LiveFeedProps) {
   const [statusText, setStatusText] = useState('Connecting...')
   const [, setTick] = useState(0)
   const feedRef = useRef<HTMLDivElement>(null)
+  const pendingRef = useRef<LiveEventEntry[]>([])
 
   // Re-render every 10s to update relative timestamps
   useEffect(() => {
@@ -373,20 +378,67 @@ export function LiveFeed({ onClose, onStatusChange }: LiveFeedProps) {
   const addEvent = useCallback((type: string, data: EventData, timestamp?: string, playerInfo?: Record<string, PlayerMeta>) => {
     const config = eventConfig[type]
 
-    const entry: LiveEventEntry = {
+    pendingRef.current.push({
       id: nextEventId++,
       type,
       html: config ? config.format(data, playerInfo) : formatFallback(type, data, playerInfo),
       icon: config ? config.icon : <Satellite size={SZ} />,
       time: formatTime(timestamp),
-    }
-
-    setEvents((prev) => {
-      // Remove placeholder
-      const filtered = prev.filter((e) => e.id !== -1)
-      const next = [entry, ...filtered]
-      return next.slice(0, MAX_EVENTS)
     })
+  }, [])
+
+  // Release queued events in batches: everything pending fades in together,
+  // then the feed smooth-scrolls the new block into view. The very first batch
+  // (the replay burst on connect) fills the feed instantly with no animation.
+  const initialFlushRef = useRef(false)
+  const batchSizeRef = useRef(0)
+  const prevScrollTopRef = useRef(0)
+  useEffect(() => {
+    const id = setInterval(() => {
+      const pending = pendingRef.current
+      if (pending.length === 0) return
+      const initial = !initialFlushRef.current
+      initialFlushRef.current = true
+      const batch = pending.splice(0, pending.length)
+      if (!initial) {
+        for (const e of batch) e.fresh = true
+        batchSizeRef.current = batch.length
+        prevScrollTopRef.current = feedRef.current?.scrollTop ?? 0
+      }
+      setEvents((prev) => {
+        const filtered = prev.filter((e) => e.id !== -1)
+        return [...batch.reverse(), ...filtered].slice(0, MAX_EVENTS)
+      })
+    }, 2000)
+    return () => clearInterval(id)
+  }, [])
+
+  // After a batch renders, keep the viewport anchored on the old content, then
+  // smooth-scroll up to reveal the new rows — but only when the reader was
+  // already at the top; if they scrolled down to read, don't yank them.
+  useLayoutEffect(() => {
+    const n = batchSizeRef.current
+    const el = feedRef.current
+    if (!n || !el) return
+    batchSizeRef.current = 0
+    const gap = parseFloat(getComputedStyle(el).rowGap) || 0
+    let added = 0
+    for (let i = 0; i < n && i < el.children.length; i++) {
+      added += (el.children[i] as HTMLElement).offsetHeight + gap
+    }
+    if (added <= 0) return
+    const prevTop = prevScrollTopRef.current
+    el.scrollTop = prevTop + added
+    if (prevTop < 8) {
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      el.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' })
+    }
+  }, [events])
+
+  // Drop the enter-animation class once it finishes so the animation does not
+  // replay for every row when the pane is re-shown after being display:none.
+  const settle = useCallback((id: number) => {
+    setEvents((prev) => prev.map((e) => (e.id === id && e.fresh ? { ...e, fresh: false } : e)))
   }, [])
 
   useEffect(() => {
@@ -415,20 +467,23 @@ export function LiveFeed({ onClose, onStatusChange }: LiveFeedProps) {
     <div className={styles.liveFeedContainer}>
       {/* Inline styles for event text span coloring (data-cls attributes) */}
       <style>{eventTextStyles}</style>
-      <div className={styles.liveFeedHeader} onClick={onClose} role="button" tabIndex={0} aria-label="Close live feed">
-        <div className={styles.liveIndicator}>
-          <span className={`${styles.liveDot} ${isConnected ? styles.liveDotConnected : ''}`} />
-          <span className={`${styles.liveText} ${isConnected ? styles.liveTextConnected : ''}`}>LIVE</span>
+      {!hideHeader && (
+        <div className={styles.liveFeedHeader} onClick={onClose} role="button" tabIndex={0} aria-label="Close live feed">
+          <div className={styles.liveIndicator}>
+            <span className={`${styles.liveDot} ${isConnected ? styles.liveDotConnected : ''}`} />
+            <span className={`${styles.liveText} ${isConnected ? styles.liveTextConnected : ''}`}>LIVE</span>
+          </div>
+          <span className={styles.closeBtn} aria-hidden>{'\u2715'}</span>
         </div>
-        <span className={styles.closeBtn} aria-hidden>{'\u2715'}</span>
-      </div>
-      <div className={styles.liveFeed} ref={feedRef}>
+      )}
+      <div className={styles.liveFeed} ref={feedRef} tabIndex={0} role="region" aria-label="Live event feed">
         {events.map((event) => {
           const typeClass = eventTypeToStyleClass[event.type] || ''
           return (
             <div
               key={event.id}
-              className={`${styles.liveEvent} ${typeClass}`}
+              className={`${styles.liveEvent} ${typeClass} ${event.fresh ? styles.liveEventEnter : ''}`}
+              onAnimationEnd={event.fresh ? () => settle(event.id) : undefined}
             >
               <span className={styles.eventIcon}>{event.icon}</span>
               {/* Event HTML contains only hardcoded span tags with escaped user data */}

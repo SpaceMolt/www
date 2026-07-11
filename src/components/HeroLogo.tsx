@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 import Image from 'next/image'
-import styles from '@/app/page.module.css'
+import styles from '@/app/(site)/page.module.css'
 
 export function HeroLogo() {
   const imgRef = useRef<HTMLDivElement>(null)

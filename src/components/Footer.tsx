@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useTranslation } from '@/i18n'
 import { NewsletterSignup } from './NewsletterSignup'
+import { consoleNavGroups } from '@/components/console/consoleNav'
 
 export function Footer() {
   const { t } = useTranslation()
@@ -22,31 +23,28 @@ export function Footer() {
             </p>
           </div>
 
-          <div className="footer-links-col">
-            <h4 className="footer-col-title">{t('footer.game')}</h4>
-            <Link href="/features">{t('nav.features')}</Link>
-            <Link href="/map">{t('nav.galaxyMap')}</Link>
-            <Link href="/market">{t('nav.market')}</Link>
-            <Link href="/stations">{t('nav.stations')}</Link>
-            <Link href="/forum">{t('nav.forum')}</Link>
-          </div>
+          {/* Mirror the console sidebar groups so every explore link is here. */}
+          {consoleNavGroups.map((group) => (
+            <div className="footer-links-col" key={group.id}>
+              <h4 className="footer-col-title">{t(group.labelKey)}</h4>
+              {group.items.map(({ href, labelKey, external }) =>
+                external ? (
+                  <a key={href} href={href} target="_blank" rel="noopener noreferrer">{t(labelKey)}</a>
+                ) : (
+                  <Link key={href} href={href}>{t(labelKey)}</Link>
+                ),
+              )}
+              {group.id === 'comms' && (
+                <a href="https://github.com/SpaceMolt" target="_blank" rel="noopener noreferrer">{t('footer.github')}</a>
+              )}
+            </div>
+          ))}
 
           <div className="footer-links-col">
-            <h4 className="footer-col-title">{t('footer.players')}</h4>
-            <Link href="/clients">{t('nav.clients')}</Link>
-            <Link href="/dashboard">{t('nav.dashboard')}</Link>
-            <Link href="/about">{t('nav.about')}</Link>
+            <h4 className="footer-col-title">{t('nav.legal')}</h4>
             <Link href="/terms">{t('nav.terms')}</Link>
             <Link href="/privacy">{t('nav.privacy')}</Link>
             <Link href="/cookies">{t('nav.cookies')}</Link>
-          </div>
-
-          <div className="footer-links-col">
-            <h4 className="footer-col-title">{t('footer.community')}</h4>
-            <Link href="/news">{t('nav.news')}</Link>
-            <a href="https://discord.gg/Jm4UdQPuNB" target="_blank" rel="noopener noreferrer">{t('nav.discord')}</a>
-            <a href="https://github.com/SpaceMolt" target="_blank" rel="noopener noreferrer">{t('footer.github')}</a>
-            <a href="https://www.patreon.com/c/SpaceMolt" target="_blank" rel="noopener noreferrer">{t('footer.patreon')}</a>
           </div>
         </div>
 

@@ -225,6 +225,28 @@
     "tick": "Tick",
     "posts": "Posts"
   },
+  "console": {
+    "menu": "Toggle navigation menu",
+    "navLabel": "Console navigation",
+    "skip": "Skip to content",
+    "play": "Play",
+    "shop": "Merch Store",
+    "live": "Live",
+    "telemetry": "Telemetry",
+    "feed": "Feed",
+    "trades": "Trades",
+    "waitingTrades": "Waiting for trades...",
+    "openLive": "Open live panel",
+    "closeLive": "Close live panel",
+    "resizeLive": "Resize live panel",
+    "groupCommand": "Command",
+    "groupOperations": "Operations",
+    "groupDatabase": "Database",
+    "groupComms": "Comms",
+    "groupManual": "Docs",
+    "groupSupply": "Support us!",
+    "patreon": "Patreon"
+  },
   "patreon": {
     "bannerText": "Support SpaceMolt on Patreon",
     "patronsKeeping": "{count} {patronLabel} keeping the galaxy running",

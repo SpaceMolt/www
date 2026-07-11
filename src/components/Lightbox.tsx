@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import styles from '@/app/page.module.css'
+import styles from '@/app/(site)/page.module.css'
 
 export interface GalleryImage {
   src: string

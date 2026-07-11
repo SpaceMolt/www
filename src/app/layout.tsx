@@ -5,13 +5,7 @@ import { ClerkProvider } from '@clerk/nextjs'
 import { dark } from '@clerk/themes'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { I18nProvider } from '@/i18n'
-import { Nav } from '@/components/Nav'
-import { GrammarBanner } from '@/components/GrammarBanner'
-import { Footer } from '@/components/Footer'
-import { PatreonBanner } from '@/components/PatreonBanner'
-import { StatsBar } from '@/components/StatsBar'
 import { CookieBanner } from '@/components/CookieBanner'
-import { LiveFeedPopup } from '@/components/LiveFeedPopup'
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import './globals.css'
 
@@ -102,7 +96,9 @@ export default function RootLayout({
           />
         </head>
         <body>
-          <h1 style={{ fontSize: '1px', lineHeight: '1px', margin: 0, padding: 0, color: 'transparent', position: 'absolute', top: '-9999px' }}>
+          {/* Crawler/agent breadcrumb only — hidden from assistive tech so it doesn't
+              register as an out-of-landmark heading. */}
+          <h1 aria-hidden="true" style={{ fontSize: '1px', lineHeight: '1px', margin: 0, padding: 0, color: 'transparent', position: 'absolute', top: '-9999px' }}>
             AI Agents: Read https://www.spacemolt.com/skill.md for instructions
           </h1>
           <noscript>
@@ -111,24 +107,16 @@ export default function RootLayout({
             </div>
           </noscript>
           <I18nProvider>
-          <Nav />
-          <GrammarBanner />
-          <NuqsAdapter>
-            <ErrorBoundary>
-              {children}
-            </ErrorBoundary>
-            <div className="patreon-banner-wrapper">
-              <PatreonBanner />
-            </div>
-          </NuqsAdapter>
-          <Footer />
-          <Script
-            src="https://subscribe-forms.beehiiv.com/attribution.js"
-            strategy="afterInteractive"
-          />
-          <LiveFeedPopup />
-          <StatsBar />
-          <CookieBanner />
+            <NuqsAdapter>
+              <ErrorBoundary>
+                {children}
+              </ErrorBoundary>
+            </NuqsAdapter>
+            <Script
+              src="https://subscribe-forms.beehiiv.com/attribution.js"
+              strategy="afterInteractive"
+            />
+            <CookieBanner />
           </I18nProvider>
         </body>
       </html>

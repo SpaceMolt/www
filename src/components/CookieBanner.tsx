@@ -28,7 +28,7 @@ export function CookieBanner() {
   }
 
   return (
-    <div className={styles.banner}>
+    <div className={styles.banner} role="region" aria-label="Cookie notice">
       <div className={styles.content}>
         <span className={styles.message}>
           {t('cookieBanner.message')}

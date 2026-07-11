@@ -1,5 +1,6 @@
 'use client'
 
+import { ArrowRight } from 'lucide-react'
 import styles from './ItemDetail.module.css'
 import { getItem as getRawItem, recipesById, formatItemId, isModule } from '@/data/catalog'
 import type { RawCatalogItem } from '@/data/catalog'
@@ -154,7 +155,7 @@ export function RecipeCard({ recipe, compact }: { recipe: CatalogRecipe; compact
             </span>
           ))}
         </div>
-        <span className={styles.recipeArrow}>{'\u2192'}</span>
+        <span className={styles.recipeArrow}><ArrowRight size={13} aria-hidden /></span>
         <div className={styles.recipeOutputs}>
           {recipe.outputs.map((output) => (
             <span key={output.item_id} className={styles.recipeItem}>

@@ -21,7 +21,7 @@ import {
   AlertTriangle,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import styles from '@/app/dashboard/page.module.css'
+import styles from '@/app/(console)/dashboard/page.module.css'
 import { CopyableCode } from './CopyableCode'
 
 interface SetupPanel {

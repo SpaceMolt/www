@@ -1,0 +1,1129 @@
+/* === Ship Catalog Page (console shell chrome) ===
+   Rendered inside the (console) shell: the shell owns the scroll container,
+   topbar, and nav. This file only styles page content. Square corners,
+   cyan hairlines, mono micro-labels, tabular numbers. */
+
+.page {
+  /* console-page-wide removes the global cap; re-cap locally for readability */
+  max-width: 1600px;
+}
+
+/* === Page Header extras === */
+.headerDesc {
+  font-size: 0.78rem;
+  color: var(--chrome-silver);
+  opacity: 0.75;
+  line-height: 1.55;
+  margin-top: 0.5rem;
+  max-width: 80ch;
+}
+
+.shipCount {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--plasma-cyan);
+  opacity: 0.75;
+  margin-top: 0.55rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* === Guide Section === */
+.guideSection {
+  margin-bottom: 1.1rem;
+}
+
+.guidePanel {
+  /* border/background/brackets come from the global .console-panel */
+  transition: border-color 0.2s ease;
+}
+
+.guidePanel:hover {
+  border-color: rgba(0, 212, 255, 0.32);
+}
+
+.guidePanelOpen {
+  border-color: rgba(0, 212, 255, 0.28);
+}
+
+.guidePanelToggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.55rem 0.9rem;
+  background: linear-gradient(90deg, rgba(26, 39, 68, 0.5), transparent);
+  border: none;
+  cursor: pointer;
+  color: var(--chrome-silver);
+  text-align: left;
+}
+
+.guidePanelToggle:focus-visible {
+  outline: 1px solid var(--plasma-cyan);
+  outline-offset: -1px;
+}
+
+.guidePanelTitle {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.guidePanelOpen .guidePanelTitle {
+  color: var(--plasma-cyan);
+}
+
+.guidePanelChevron {
+  color: var(--chrome-silver);
+  opacity: 0.5;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.guidePanelOpen .guidePanelChevron {
+  transform: rotate(180deg);
+}
+
+.guidePanelContent {
+  padding: 0.75rem 0.9rem 0.9rem;
+  border-top: 1px solid rgba(0, 212, 255, 0.14);
+  font-size: 0.8rem;
+  color: var(--chrome-silver);
+  line-height: 1.6;
+}
+
+.guidePanelContent p {
+  margin: 0 0 0.6rem;
+}
+
+.guidePanelContent p:last-child {
+  margin-bottom: 0;
+}
+
+.guideColumns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin: 0;
+}
+
+.guideColumn {
+  padding: 0.65rem 0.75rem;
+  background: rgba(0, 212, 255, 0.03);
+  border: 1px solid rgba(0, 212, 255, 0.1);
+}
+
+.guideColumn p {
+  margin: 0;
+}
+
+.guideColumnTitle {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.64rem;
+  color: var(--plasma-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  margin: 0 0 0.4rem;
+}
+
+/* === Filter Bar === */
+.filterSection {
+  margin-bottom: 1.1rem;
+  padding: 0.55rem 0.7rem;
+}
+
+.filterRow {
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.filterBtn {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.74rem;
+  padding: 0.38rem 0.7rem;
+  background: rgba(13, 19, 33, 0.75);
+  border: 1px solid rgba(0, 212, 255, 0.18);
+  color: var(--chrome-silver);
+  border-radius: 0;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.filterBtn:hover,
+.filterBtnActive {
+  border-color: var(--plasma-cyan);
+  color: var(--plasma-cyan);
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.18);
+}
+
+.filterBtnActive {
+  background: rgba(0, 212, 255, 0.1);
+}
+
+.filterBtn:focus-visible {
+  outline: 1px solid var(--plasma-cyan);
+  outline-offset: 1px;
+}
+
+.empireDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* === Filter Dropdowns === */
+.classDropdown {
+  position: relative;
+}
+
+.classDropdownToggle {
+  gap: 0.5rem;
+}
+
+.classDropdownChevron {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.classDropdownMenu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 50;
+  min-width: 220px;
+  max-height: 320px;
+  display: flex;
+  flex-direction: column;
+  background: var(--deep-void, #0d1321);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 12px rgba(0, 212, 255, 0.08);
+  overflow: hidden;
+}
+
+.classDropdownClear {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.64rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--plasma-cyan);
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.14);
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  text-align: left;
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+}
+
+.classDropdownClear:hover:not(:disabled) {
+  opacity: 1;
+}
+
+.classDropdownClear:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.classDropdownClear:focus-visible {
+  outline: 1px solid var(--plasma-cyan);
+  outline-offset: -1px;
+}
+
+.classDropdownList {
+  overflow-y: auto;
+  padding: 0.3rem 0;
+}
+
+.classDropdownItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.classDropdownItem:hover {
+  background: rgba(0, 212, 255, 0.08);
+}
+
+.classCheckbox {
+  accent-color: var(--plasma-cyan);
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.classCheckbox:focus-visible {
+  outline: 1px solid var(--plasma-cyan);
+  outline-offset: 1px;
+}
+
+.classDropdownLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.76rem;
+  color: var(--chrome-silver);
+}
+
+/* Single-select dropdown items (Empire, Tier, Category) */
+.filterDropdownItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.35rem 0.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.filterDropdownItem:hover {
+  background: rgba(0, 212, 255, 0.08);
+}
+
+.filterDropdownItem:focus-visible {
+  outline: 1px solid var(--plasma-cyan);
+  outline-offset: -1px;
+}
+
+.filterDropdownItemActive {
+  background: rgba(0, 212, 255, 0.12);
+}
+
+.filterDropdownItemActive .classDropdownLabel {
+  color: var(--plasma-cyan);
+}
+
+.searchInput {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.76rem;
+  padding: 0.38rem 0.7rem;
+  background: rgba(13, 19, 33, 0.75);
+  border: 1px solid rgba(0, 212, 255, 0.18);
+  color: var(--star-white);
+  border-radius: 0;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  flex: 1;
+  min-width: 120px;
+  max-width: 320px;
+}
+
+.searchInput::placeholder {
+  color: var(--chrome-silver);
+  opacity: 0.5;
+}
+
+.searchInput:focus {
+  border-color: var(--plasma-cyan);
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.18);
+}
+
+/* === View Toggle / right controls === */
+.filterRowRight {
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+  margin-left: auto;
+}
+
+.viewToggle {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.viewToggleBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  background: rgba(13, 19, 33, 0.75);
+  border: 1px solid rgba(0, 212, 255, 0.18);
+  border-radius: 0;
+  color: var(--chrome-silver);
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.viewToggleBtn:hover,
+.viewToggleBtnActive {
+  border-color: var(--plasma-cyan);
+  color: var(--plasma-cyan);
+}
+
+.viewToggleBtnActive {
+  background: rgba(0, 212, 255, 0.1);
+}
+
+.viewToggleBtn:focus-visible {
+  outline: 1px solid var(--plasma-cyan);
+  outline-offset: 1px;
+}
+
+/* === Ship Grid === */
+.shipGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 0.9rem;
+}
+
+/* === Ship Card === */
+.shipCard {
+  background: rgba(13, 19, 33, 0.6);
+  border: 1px solid rgba(0, 212, 255, 0.14);
+  border-radius: 0;
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+}
+
+.shipCard:hover {
+  border-color: var(--empire-color, var(--plasma-cyan));
+  box-shadow: 0 0 16px color-mix(in srgb, var(--empire-color, var(--plasma-cyan)) 18%, transparent);
+}
+
+.shipCardExpanded {
+  border-color: var(--empire-color, var(--plasma-cyan));
+  box-shadow: 0 0 16px color-mix(in srgb, var(--empire-color, var(--plasma-cyan)) 14%, transparent);
+  grid-column: 1 / -1;
+  flex-direction: row;
+}
+
+.shipCardExpanded .cardAccent {
+  width: 2px;
+  height: auto;
+}
+
+.cardLeft {
+  display: flex;
+  flex-direction: column;
+}
+
+.shipCardExpanded .cardLeft {
+  flex: 0 0 360px;
+  border-right: 1px solid rgba(0, 212, 255, 0.1);
+}
+
+.cardAccent {
+  height: 2px;
+  background: var(--empire-color, var(--hull-grey));
+  flex-shrink: 0;
+}
+
+.shipImageWrap {
+  overflow: hidden;
+  background: rgba(5, 8, 20, 0.8);
+  position: relative;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+}
+
+.shipImage {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.shipCard:hover .shipImage {
+  transform: scale(1.03);
+}
+
+.zoomBtn {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(13, 19, 33, 0.8);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 0;
+  color: var(--chrome-silver);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.shipImageWrap:hover .zoomBtn,
+.zoomBtn:focus-visible {
+  opacity: 1;
+}
+
+.zoomBtn:hover {
+  background: rgba(0, 212, 255, 0.15);
+  color: var(--plasma-cyan);
+  border-color: var(--plasma-cyan);
+}
+
+.zoomBtn:focus-visible {
+  outline: 1px solid var(--plasma-cyan);
+  outline-offset: 1px;
+}
+
+.cardBody {
+  padding: 0.9rem 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.45rem;
+}
+
+.shipName {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--star-white);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.tierBadge {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  padding: 0.18rem 0.45rem;
+  border-radius: 0;
+  background: rgba(0, 212, 255, 0.08);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  color: var(--plasma-cyan);
+  white-space: nowrap;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.cardTags {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.empireBadge {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.classBadge {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--chrome-silver);
+  opacity: 0.7;
+}
+
+.prestigeBadge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.18rem 0.45rem;
+  border-radius: 0;
+  background: rgba(255, 217, 61, 0.08);
+  border: 1px solid rgba(255, 217, 61, 0.35);
+  color: var(--warning-yellow);
+  white-space: nowrap;
+}
+
+.priceBadge {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--shell-orange);
+  margin-left: auto;
+}
+
+.shipDescription {
+  font-size: 0.82rem;
+  color: var(--chrome-silver);
+  line-height: 1.55;
+  margin-bottom: 0.7rem;
+}
+
+/* === Stats Row === */
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 0.7rem;
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.statLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.56rem;
+  color: var(--chrome-silver);
+  opacity: 0.6;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.statValue {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.84rem;
+  color: var(--star-white);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* === Slots Row === */
+.slotsRow {
+  display: flex;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(0, 212, 255, 0.12);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--chrome-silver);
+  font-variant-numeric: tabular-nums;
+}
+
+.slotItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.slotIcon {
+  display: inline-flex;
+  align-items: center;
+}
+
+.weaponSlot {
+  color: var(--claw-red);
+}
+
+.defenseSlot {
+  color: var(--plasma-cyan);
+}
+
+.utilitySlot {
+  color: var(--bio-green);
+}
+
+/* === Expanded Detail === */
+.expandedDetail {
+  padding: 1rem 1.1rem;
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0 1.5rem;
+  align-content: start;
+}
+
+.detailSection {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.detailSection:first-child {
+  grid-column: 1 / -1;
+}
+
+.detailSectionWide {
+  grid-column: 1 / -1;
+}
+
+.detailSectionTitle {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  color: var(--plasma-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  margin-bottom: 0.5rem;
+}
+
+.loreText {
+  font-size: 0.82rem;
+  color: var(--chrome-silver);
+  line-height: 1.65;
+  opacity: 0.9;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  min-width: 0;
+}
+
+/* === Full Stats Grid === */
+.fullStatsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4rem;
+}
+
+.fullStatItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.32rem 0.5rem;
+  background: rgba(0, 212, 255, 0.04);
+  border: 1px solid rgba(0, 212, 255, 0.08);
+  border-radius: 0;
+}
+
+.fullStatLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--chrome-silver);
+}
+
+.fullStatValue {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  color: var(--star-white);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* === Materials List === */
+.materialsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.materialItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.28rem 0.5rem;
+  background: rgba(255, 107, 53, 0.05);
+  border: 1px solid rgba(255, 107, 53, 0.12);
+  border-radius: 0;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.73rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.materialName {
+  color: var(--chrome-silver);
+}
+
+.materialQty {
+  color: var(--shell-orange);
+  font-weight: 600;
+}
+
+/* === Skills List === */
+.skillsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.skillItem {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  padding: 0.18rem 0.45rem;
+  background: rgba(0, 212, 255, 0.06);
+  border: 1px solid rgba(0, 212, 255, 0.18);
+  border-radius: 0;
+  color: var(--chrome-silver);
+}
+
+/* === Flavor Tags === */
+.flavorTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+  grid-column: 1 / -1;
+}
+
+.flavorTag {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  padding: 0.14rem 0.4rem;
+  background: rgba(168, 197, 214, 0.06);
+  border: 1px solid rgba(168, 197, 214, 0.14);
+  border-radius: 0;
+  color: var(--chrome-silver);
+  opacity: 0.75;
+}
+
+/* === Loading === */
+.loading {
+  text-align: center;
+  padding: 4rem;
+  color: var(--chrome-silver);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* === Empty State === */
+.emptyState {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--chrome-silver);
+  border: 1px dashed rgba(0, 212, 255, 0.18);
+}
+
+.emptyStateTitle {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1.15rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.75rem;
+  color: var(--star-white);
+}
+
+/* === Image Zoom Modal (intentional full-screen overlay) === */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(5, 8, 20, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  cursor: zoom-out;
+}
+
+.modalClose {
+  position: fixed;
+  top: 1.25rem;
+  right: 1.25rem;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(13, 19, 33, 0.85);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 0;
+  color: var(--chrome-silver);
+  cursor: pointer;
+  z-index: 1001;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.modalClose:hover {
+  color: var(--star-white);
+  border-color: var(--plasma-cyan);
+}
+
+.modalClose:focus-visible {
+  outline: 1px solid var(--plasma-cyan);
+  outline-offset: 1px;
+}
+
+.modalContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: min(1200px, 90vw);
+  cursor: default;
+}
+
+.modalImage {
+  width: 100%;
+  height: auto;
+  max-height: 78vh;
+  object-fit: contain;
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  border-radius: 0;
+  display: block;
+}
+
+.modalCaption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 1rem;
+  text-align: center;
+  max-width: 700px;
+}
+
+.modalShipName {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--star-white);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.modalShipDesc {
+  font-size: 0.85rem;
+  color: var(--chrome-silver);
+  line-height: 1.6;
+  opacity: 0.8;
+}
+
+/* === Ship Table (registry readout) === */
+.tablePanel {
+  /* console-panel supplies border + corner brackets; scrolling happens in
+     .tableWrap so the brackets stay pinned to the panel box */
+  overflow: visible;
+}
+
+.tableWrap {
+  overflow: auto;
+  max-height: min(72vh, 920px);
+}
+
+.shipTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.76rem;
+  min-width: 1100px;
+}
+
+.tableHeaderCell {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 0.55rem 0.6rem;
+  text-align: left;
+  color: var(--chrome-silver);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+  background: var(--deep-void, #0d1321);
+  box-shadow: 0 1px 0 rgba(0, 212, 255, 0.3);
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s ease;
+}
+
+.tableHeaderCell:hover {
+  color: var(--star-white);
+}
+
+.sortActive {
+  color: var(--plasma-cyan);
+}
+
+.sortIndicator {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: -2px;
+  opacity: 0.4;
+  margin-left: 0.25rem;
+}
+
+.sortActive .sortIndicator {
+  opacity: 1;
+}
+
+.tableRow {
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.tableRow:hover {
+  background: rgba(0, 212, 255, 0.05);
+}
+
+.tableRowExpanded {
+  background: rgba(0, 212, 255, 0.07);
+}
+
+.tableCell {
+  padding: 0.42rem 0.6rem;
+  color: var(--chrome-silver);
+  white-space: nowrap;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.07);
+}
+
+.tableRowExpanded .tableCell {
+  border-bottom-color: transparent;
+}
+
+.tableCellNum {
+  text-align: right;
+  color: var(--star-white);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.tableName {
+  color: var(--star-white);
+  font-weight: 600;
+  position: relative;
+  padding-left: 1rem;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tableClass {
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tableEmpireAccent {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 55%;
+}
+
+.tableExpandRow {
+  border-bottom: none;
+}
+
+.tableExpandCell {
+  padding: 0;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.25);
+}
+
+.tableExpandContent {
+  display: flex;
+  gap: 1.5rem;
+  padding: 1.1rem 1.25rem;
+  background: rgba(5, 8, 20, 0.6);
+}
+
+.tableExpandImageWrap {
+  position: relative;
+  flex-shrink: 0;
+  width: 280px;
+}
+
+.tableExpandImage {
+  width: 100%;
+  height: auto;
+  display: block;
+  border: 1px solid rgba(0, 212, 255, 0.18);
+  border-radius: 0;
+  object-fit: cover;
+}
+
+.tableExpandText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.tableExpandDescription {
+  font-size: 0.88rem;
+  color: var(--star-white);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.tableExpandLore {
+  font-size: 0.8rem;
+  color: var(--chrome-silver);
+  line-height: 1.7;
+  opacity: 0.85;
+  margin: 0;
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+  .shipGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .statsRow {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .fullStatsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .searchInput {
+    width: 100%;
+    max-width: none;
+  }
+
+  .filterRow {
+    gap: 0.35rem;
+  }
+
+  .filterBtn {
+    font-size: 0.68rem;
+    padding: 0.32rem 0.55rem;
+  }
+
+  .guideColumns {
+    grid-template-columns: 1fr;
+  }
+
+  .shipCardExpanded {
+    flex-direction: column;
+  }
+
+  .shipCardExpanded .cardAccent {
+    width: auto;
+    height: 2px;
+  }
+
+  .shipCardExpanded .cardLeft {
+    flex: none;
+    border-right: none;
+    border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+  }
+
+  .expandedDetail {
+    grid-template-columns: 1fr;
+  }
+
+  .tableExpandContent {
+    flex-direction: column;
+  }
+}

@@ -1,0 +1,73 @@
+/* === Privacy Policy Page (console Records) === */
+
+.docPanel {
+  max-width: 920px;
+}
+
+.content {
+  padding: 1.5rem 1.7rem 2rem;
+  max-width: 78ch;
+}
+
+.highlightBox {
+  background: rgba(0, 212, 255, 0.05);
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  border-left: 2px solid var(--plasma-cyan);
+  padding: 1rem 1.25rem;
+  margin: 0 0 1.75rem;
+}
+
+.highlightBox p {
+  margin-bottom: 0;
+  color: var(--star-white);
+  font-size: 0.98rem;
+  line-height: 1.7;
+}
+
+.content h2 {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--shell-orange);
+  margin-top: 2.2rem;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid rgba(255, 107, 53, 0.18);
+}
+
+.content p {
+  margin-bottom: 1rem;
+  color: var(--chrome-silver);
+  line-height: 1.75;
+  font-size: 0.95rem;
+}
+
+.content ul {
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+}
+
+.content li {
+  color: var(--chrome-silver);
+  margin-bottom: 0.5rem;
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+.content a {
+  color: var(--plasma-cyan);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.content a:hover {
+  color: var(--shell-orange);
+}
+
+@media (max-width: 640px) {
+  .content {
+    padding: 1.1rem 1rem 1.5rem;
+  }
+}

@@ -1,0 +1,472 @@
+/* === Station Market — ops console chrome === */
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--plasma-cyan);
+  text-decoration: none;
+  margin-bottom: 0.9rem;
+  transition: color 0.15s ease;
+}
+
+.backLink:hover {
+  color: var(--star-white);
+}
+
+.headerDescription {
+  font-size: 0.78rem;
+  color: var(--chrome-silver);
+  opacity: 0.75;
+  margin-top: 0.5rem;
+  max-width: 78ch;
+}
+
+/* Explainer for what the bid/ask quantity columns represent */
+.depthLegend {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--chrome-silver);
+  opacity: 0.7;
+  margin: 0.4rem 0 0;
+  max-width: 84ch;
+}
+
+/* Category Filter */
+.categories {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.9rem;
+}
+
+.categoryBtn {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  padding: 0.35rem 0.75rem;
+  background: rgba(13, 19, 33, 0.6);
+  border: 1px solid rgba(0, 212, 255, 0.16);
+  color: var(--chrome-silver);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+  text-transform: uppercase;
+}
+
+.categoryBtn:hover {
+  border-color: rgba(0, 212, 255, 0.55);
+  color: var(--plasma-cyan);
+}
+
+.categoryBtnActive {
+  border-color: var(--plasma-cyan);
+  color: var(--star-white);
+  background: rgba(0, 212, 255, 0.14);
+  box-shadow: inset 0 0 8px rgba(0, 212, 255, 0.12);
+}
+
+/* Search + Filter Toolbar */
+.toolbar {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.9rem;
+  align-items: stretch;
+}
+
+.searchInput {
+  flex: 1;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.76rem;
+  padding: 0.45rem 0.7rem;
+  background: rgba(11, 16, 27, 0.8);
+  border: 1px solid rgba(0, 212, 255, 0.18);
+  border-radius: 2px;
+  color: var(--star-white);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.searchInput::placeholder {
+  color: var(--hull-grey);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.68rem;
+}
+
+.searchInput:focus {
+  border-color: var(--plasma-cyan);
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.15);
+}
+
+/* Filter Dropdown */
+.filterWrapper {
+  position: relative;
+}
+
+.filterBtn {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.45rem 0.9rem;
+  background: rgba(13, 19, 33, 0.6);
+  border: 1px solid rgba(0, 212, 255, 0.18);
+  color: var(--chrome-silver);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+  white-space: nowrap;
+  height: 100%;
+}
+
+.filterBtn:hover {
+  border-color: rgba(0, 212, 255, 0.55);
+  color: var(--plasma-cyan);
+}
+
+.filterBtnActive {
+  border-color: var(--plasma-cyan);
+  color: var(--star-white);
+  background: rgba(0, 212, 255, 0.14);
+}
+
+.filterDropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.25rem;
+  background: #0b101b;
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 2px;
+  padding: 0.35rem;
+  z-index: 10;
+  min-width: 150px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55), 0 0 14px rgba(0, 212, 255, 0.08);
+}
+
+.filterOption {
+  display: block;
+  width: 100%;
+  padding: 0.4rem 0.7rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--chrome-silver);
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: background 0.15s ease, color 0.15s ease;
+  text-align: left;
+}
+
+.filterOption:hover {
+  background: rgba(0, 212, 255, 0.08);
+  color: var(--star-white);
+}
+
+.filterOptionActive {
+  color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.12);
+}
+
+/* Order book panel + scroll region */
+.tablePanel {
+  margin-bottom: 0.75rem;
+}
+
+.panelMeta {
+  margin-left: auto;
+  font-size: 0.62rem;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  color: var(--hull-grey);
+  font-variant-numeric: tabular-nums;
+}
+
+.tableScroll {
+  overflow: auto;
+  max-height: 660px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 0.6rem 0.5rem;
+  text-align: right;
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--chrome-silver);
+  background: #0b101b;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.28);
+  user-select: none;
+}
+
+.sortable {
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.sortable:hover {
+  color: var(--plasma-cyan);
+}
+
+/* Sort indicator icons rendered inline after the column label */
+.sortIcon,
+.sortIconActive {
+  vertical-align: -2px;
+  margin-left: 0.25rem;
+}
+
+.sortIcon {
+  color: var(--hull-grey);
+  opacity: 0.6;
+}
+
+.sortIconActive {
+  color: var(--plasma-cyan);
+}
+
+.table tbody tr {
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.table tbody tr:nth-child(even) {
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.table tbody tr:hover {
+  background: rgba(0, 212, 255, 0.07);
+}
+
+.table td {
+  padding: 0.5rem 0.5rem;
+  text-align: right;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.07);
+  color: var(--star-white);
+}
+
+/* Column-specific styles */
+.colItem {
+  text-align: left !important;
+  padding-left: 1rem !important;
+  min-width: 160px;
+}
+
+.colCategory {
+  text-align: left !important;
+  min-width: 80px;
+}
+
+.colValue {
+  min-width: 80px;
+  color: var(--warning-yellow) !important;
+}
+
+.colBid {
+  color: var(--bio-green) !important;
+}
+
+.colBidQty {
+  color: var(--bio-green) !important;
+  opacity: 0.7;
+}
+
+.colAsk {
+  color: var(--claw-red) !important;
+}
+
+.colAskQty {
+  color: var(--claw-red) !important;
+  opacity: 0.7;
+}
+
+.colSpread {
+  min-width: 90px;
+}
+
+/* Cell styles */
+.cellItem {
+  text-align: left;
+  padding-left: 1rem;
+  font-weight: 500;
+}
+
+.cellCategory {
+  text-align: left;
+  color: var(--chrome-silver);
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.cellValue {
+  color: var(--warning-yellow);
+  font-weight: 500;
+}
+
+.cellBid {
+  color: var(--bio-green);
+}
+
+.cellBidQty {
+  color: var(--bio-green);
+  opacity: 0.7;
+}
+
+.cellAsk {
+  color: var(--claw-red);
+}
+
+.cellAskQty {
+  color: var(--claw-red);
+  opacity: 0.7;
+}
+
+.cellSpread {
+  color: var(--chrome-silver);
+}
+
+.spreadPct {
+  font-size: 0.65rem;
+  opacity: 0.6;
+  margin-left: 0.25rem;
+}
+
+/* Quantity value carrying a depth-breakdown tooltip */
+.qtyValue {
+  cursor: help;
+  border-bottom: 1px dotted currentColor;
+}
+
+/* Item name with chevron */
+.itemNameWrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.chevron {
+  flex-shrink: 0;
+  color: var(--hull-grey);
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.chevronOpen {
+  transform: rotate(90deg);
+  color: var(--plasma-cyan);
+}
+
+/* Row states */
+.row {
+  cursor: pointer;
+}
+
+.rowExpanded {
+  background: rgba(0, 212, 255, 0.09) !important;
+}
+
+/* Depth chart expansion */
+.depthRow {
+  background: none !important;
+}
+
+.depthRow:hover {
+  background: none !important;
+}
+
+.depthCell {
+  padding: 0 !important;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.28) !important;
+}
+
+.depthLoading {
+  text-align: center;
+  padding: 2rem;
+  color: var(--chrome-silver);
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* States */
+.loading {
+  text-align: center;
+  padding: 4rem 1rem;
+  color: var(--chrome-silver);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.error {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--claw-red);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  border: 1px solid rgba(230, 57, 70, 0.3);
+  background: rgba(230, 57, 70, 0.05);
+}
+
+.error .backLink {
+  margin-top: 1rem;
+  margin-bottom: 0;
+  justify-content: center;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: var(--chrome-silver);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  border: 1px dashed rgba(0, 212, 255, 0.2);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .toolbar {
+    flex-direction: column;
+  }
+
+  .table {
+    font-size: 0.68rem;
+  }
+
+  .table thead th {
+    font-size: 0.56rem;
+    padding: 0.45rem 0.25rem;
+  }
+
+  .table td {
+    padding: 0.4rem 0.25rem;
+  }
+
+  .colItem {
+    min-width: 120px;
+  }
+}

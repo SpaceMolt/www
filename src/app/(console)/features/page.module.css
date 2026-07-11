@@ -1,0 +1,521 @@
+/* === Features (Codex) — console shell layout === */
+
+/* Two-column layout: sticky codex index + content. Sticky offsets are
+   relative to the console shell's scroll container (#console-main). */
+.layout {
+  display: grid;
+  grid-template-columns: 236px minmax(0, 1fr);
+  gap: 2rem;
+  align-items: start;
+}
+
+/* === Codex Index (sticky in-content panel, no fixed positioning) === */
+.indexPanel {
+  position: sticky;
+  top: 0.9rem;
+  max-height: calc(100dvh - 52px - 2.4rem);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 212, 255, 0.25) transparent;
+}
+
+.indexNav {
+  list-style: none;
+  margin: 0;
+  padding: 0.45rem 0;
+}
+
+.indexNav li {
+  margin: 0;
+}
+
+.indexLink {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.4rem 0.9rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--chrome-silver);
+  text-decoration: none;
+  border-left: 2px solid transparent;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.indexLink:hover {
+  background: rgba(0, 212, 255, 0.06);
+  color: var(--plasma-cyan);
+}
+
+.indexLinkActive {
+  background: linear-gradient(90deg, rgba(0, 212, 255, 0.12), rgba(0, 212, 255, 0.02));
+  color: var(--plasma-cyan);
+  border-left-color: var(--plasma-cyan);
+}
+
+.navIcon {
+  width: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+/* === Content column === */
+.sections {
+  min-width: 0;
+  max-width: 860px;
+  overflow-wrap: break-word;
+}
+
+/* === Section Styling === */
+.section {
+  margin-bottom: 3.5rem;
+  scroll-margin-top: 0.9rem;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.12);
+}
+
+.sectionIcon {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.15), rgba(255, 107, 53, 0.1));
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 4px;
+  color: var(--plasma-cyan);
+  flex-shrink: 0;
+}
+
+.section h2 {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--star-white);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.section h3 {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--plasma-cyan);
+  margin: 2rem 0 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.section p {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  color: var(--chrome-silver);
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  max-width: 70ch;
+}
+
+.section p strong {
+  color: var(--star-white);
+}
+
+/* === Info Cards === */
+.infoCard {
+  background: linear-gradient(135deg, rgba(26, 39, 68, 0.6), rgba(13, 19, 33, 0.8));
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  border-radius: 4px;
+  padding: 1.25rem 1.5rem;
+  margin: 1.5rem 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.infoCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--plasma-cyan), var(--shell-orange));
+}
+
+.infoCardWarning {
+  border-color: rgba(255, 217, 61, 0.3);
+}
+
+.infoCardWarning::before {
+  background: linear-gradient(90deg, var(--warning-yellow), var(--shell-orange));
+}
+
+.infoCard h3 {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.9rem;
+  margin-top: 0;
+  color: var(--star-white);
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* === Table Wrapper for horizontal scroll on mobile === */
+.tableWrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 1.5rem 0;
+}
+
+/* === Data Tables === */
+.dataTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.dataTable th,
+.dataTable td {
+  padding: 0.7rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+}
+
+.dataTable th {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--plasma-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  background: rgba(0, 212, 255, 0.05);
+}
+
+.dataTable td {
+  color: var(--chrome-silver);
+}
+
+.dataTable tr:hover td {
+  background: rgba(0, 212, 255, 0.03);
+}
+
+.highlight {
+  color: var(--plasma-cyan);
+  font-weight: 500;
+}
+
+/* === Empire Cards === */
+.empireGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.25rem;
+  margin: 1.5rem 0;
+}
+
+.empireCard {
+  background: linear-gradient(135deg, rgba(26, 39, 68, 0.5), rgba(13, 19, 33, 0.7));
+  border: 1px solid var(--hull-grey);
+  border-radius: 4px;
+  padding: 1.5rem;
+  transition: border-color 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.empireCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+}
+
+.solarian::before { background: linear-gradient(90deg, #ffd700, #ffaa00); }
+.voidborn::before { background: linear-gradient(90deg, #9b59b6, #6c3483); }
+.crimson::before { background: linear-gradient(90deg, #e63946, #c0392b); }
+.nebula::before { background: linear-gradient(90deg, #00d4ff, #0099cc); }
+.outerrim::before { background: linear-gradient(90deg, #2dd4bf, #14b8a6); }
+
+.empireCard:hover {
+  border-color: var(--plasma-cyan);
+}
+
+.empireCard .icon {
+  margin-bottom: 0.75rem;
+  line-height: 0;
+}
+
+.solarian .icon { color: #ffd700; }
+.voidborn .icon { color: #9b59b6; }
+.crimson .icon { color: #e63946; }
+.nebula .icon { color: #00d4ff; }
+.outerrim .icon { color: #2dd4bf; }
+
+.empireCard h3 {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1rem;
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+}
+
+.empireCard p {
+  font-size: 0.85rem;
+  margin-bottom: 0;
+}
+
+.bonus {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--bio-green);
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(0, 212, 255, 0.1);
+}
+
+.empireShipImage {
+  margin: 1rem -1.5rem 0;
+  line-height: 0;
+}
+
+.empireShipImage img {
+  opacity: 0.85;
+  transition: opacity 0.3s ease;
+}
+
+.empireCard:hover .empireShipImage img {
+  opacity: 1;
+}
+
+.empireShipLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--hull-grey);
+  text-align: right;
+  padding: 0.4rem 0 0;
+  margin: 0 0 -0.5rem;
+}
+
+/* === Stat Lists === */
+.statList {
+  list-style: none;
+  margin: 1rem 0;
+}
+
+.statList li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.08);
+  font-size: 0.9rem;
+}
+
+.statList .label {
+  color: var(--chrome-silver);
+}
+
+.statList .value {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  color: var(--plasma-cyan);
+  font-weight: 500;
+  text-align: right;
+}
+
+/* === Code Blocks === */
+.codeBlock {
+  background: var(--deep-void);
+  border: 1px solid var(--hull-grey);
+  border-radius: 3px;
+  padding: 1rem 1.25rem;
+  margin: 1rem 0;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  line-height: 1.7;
+  overflow-x: auto;
+}
+
+.codeBlock .command {
+  color: var(--plasma-cyan);
+}
+
+.codeBlock .comment {
+  color: var(--hull-grey);
+}
+
+/* === Inline Code === */
+.section code {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  background: rgba(0, 212, 255, 0.1);
+  color: var(--plasma-cyan);
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+  font-size: 0.85em;
+}
+
+/* === Feature Grid === */
+.featureGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.75rem;
+  margin: 1.5rem 0;
+}
+
+.featureItem {
+  background: rgba(0, 212, 255, 0.05);
+  border: 1px solid rgba(0, 212, 255, 0.15);
+  border-radius: 3px;
+  padding: 1rem;
+  text-align: center;
+}
+
+.featureItem .icon {
+  margin-bottom: 0.5rem;
+  line-height: 0;
+  color: var(--plasma-cyan);
+}
+
+.featureItem .name {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.75rem;
+  color: var(--star-white);
+  text-transform: uppercase;
+}
+
+/* === Ordered List Steps === */
+.stepsList {
+  list-style: decimal inside;
+  padding-left: 0;
+  margin: 1rem 0;
+}
+
+.stepsList li {
+  display: flex;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.08);
+  font-size: 0.9rem;
+  color: var(--chrome-silver);
+}
+
+/* === Disc List === */
+.discList {
+  list-style: disc inside;
+  padding-left: 0;
+  margin: 1rem 0;
+}
+
+.discList li {
+  display: flex;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.08);
+  font-size: 0.9rem;
+  color: var(--chrome-silver);
+}
+
+/* No margin-bottom on last paragraph in info cards */
+.noMarginBottom {
+  margin-bottom: 0 !important;
+}
+
+/* === Responsive === */
+@media (max-width: 1024px) {
+  /* Index collapses into a static wrap-chip panel above the content. */
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.25rem;
+  }
+
+  .indexPanel {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .indexNav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.15rem 0.3rem;
+    padding: 0.55rem 0.6rem;
+  }
+
+  .indexLink {
+    padding: 0.3rem 0.55rem;
+    border-left: none;
+    border: 1px solid transparent;
+    border-radius: 3px;
+  }
+
+  .indexLinkActive {
+    border-color: rgba(0, 212, 255, 0.4);
+  }
+
+  .navIcon {
+    width: 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  .empireGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .featureGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .dataTable {
+    font-size: 0.8rem;
+    min-width: 400px;
+  }
+
+  .dataTable th,
+  .dataTable td {
+    padding: 0.6rem 0.5rem;
+    white-space: nowrap;
+  }
+
+  .codeBlock {
+    font-size: 0.75rem;
+    padding: 0.75rem;
+  }
+
+  .section h2 {
+    font-size: 1.1rem;
+  }
+
+  .sectionHeader {
+    gap: 0.75rem;
+  }
+
+  .sectionIcon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .statList li {
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
+  .statList .value {
+    font-size: 0.8rem;
+  }
+}

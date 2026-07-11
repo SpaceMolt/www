@@ -95,7 +95,7 @@ export function StatsBar() {
       try {
         const parsed = JSON.parse(raw) as { tick?: number }
         setServerOnline(true)
-        if (hasAnimated.current && typeof parsed.tick === 'number' && tickRef.current) {
+        if (hasAnimated.current && typeof parsed.tick === 'number' && parsed.tick > 0 && tickRef.current) {
           tickRef.current.textContent = String(parsed.tick)
         }
       } catch {

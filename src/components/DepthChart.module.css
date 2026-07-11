@@ -2,8 +2,8 @@
 
 .container {
   background: linear-gradient(180deg, rgba(0, 212, 255, 0.04), rgba(13, 19, 33, 0.6));
-  border: 1px solid var(--hull-grey);
-  border-radius: 6px;
+  border: 1px solid rgba(0, 212, 255, 0.18);
+  border-radius: 0;
   overflow: hidden;
 }
 
@@ -44,14 +44,16 @@
 }
 
 .closeBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: none;
-  border: 1px solid var(--hull-grey);
+  border: 1px solid rgba(0, 212, 255, 0.25);
   color: var(--chrome-silver);
   cursor: pointer;
-  padding: 0.2rem 0.5rem;
-  border-radius: 3px;
-  font-size: 0.7rem;
-  transition: all 0.2s ease;
+  padding: 0.25rem 0.4rem;
+  border-radius: 2px;
+  transition: border-color 0.2s ease, color 0.2s ease;
 }
 
 .closeBtn:hover {

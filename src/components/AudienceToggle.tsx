@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from 'react'
 import { useTranslation } from '@/i18n'
-import styles from '@/app/dashboard/page.module.css'
+import styles from '@/app/(console)/dashboard/page.module.css'
 
 interface AudienceToggleProps {
   humansContent: ReactNode
