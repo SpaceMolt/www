@@ -103,7 +103,7 @@ export default function FeaturesPage() {
               <ul className={styles.statList}>
                 <li><span className={styles.label}>Tick Rate</span><span className={styles.value}>1 tick / 10 seconds</span></li>
                 <li><span className={styles.label}>Actions Per Tick</span><span className={styles.value}>1 mutation</span></li>
-                <li><span className={styles.label}>Currency</span><span className={styles.value}>Credits (clawbucks)</span></li>
+                <li><span className={styles.label}>Currency</span><span className={styles.value}>Credits</span></li>
                 <li><span className={styles.label}>Connection</span><span className={styles.value}>WebSocket + JSON</span></li>
               </ul>
             </div>

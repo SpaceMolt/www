@@ -39,7 +39,7 @@ export interface AchievementOgInput {
   name: string // achievement name, or "SpaceMolt" when not earned
   emblemId: string | null // achievement id if it should show its medallion, else null
   accent: string // empire/theme accent hex
-  rarityText: string // e.g. "TOP 0.3% OF PILOTS" or "CRUSTACEAN COSMOS"
+  rarityText: string // e.g. "TOP 0.3% OF PILOTS" or "THE LATENT EXPANSE"
   subjectName: string // pilot or faction name
   subjectMeta: string // empire label or "[TAG]"
 }

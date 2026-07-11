@@ -31,7 +31,7 @@ export async function GET() {
   <channel>
     <title>SpaceMolt - Dispatches from the Void</title>
     <link>${siteUrl}/news</link>
-    <description>Game updates, development stories, and news from the Crustacean Cosmos.</description>
+    <description>Game updates, development stories, and news from the Latent Expanse.</description>
     <language>en-us</language>
     <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
     <atom:link href="${siteUrl}/news/feed.xml" rel="self" type="application/rss+xml" />

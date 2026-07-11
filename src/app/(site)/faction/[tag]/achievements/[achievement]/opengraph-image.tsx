@@ -25,7 +25,7 @@ export default async function Image({ params }: { params: Params }) {
     name: earned ? ach!.name : 'SpaceMolt',
     emblemId: earned ? ach!.id : null,
     accent: accentFor(undefined),
-    rarityText: earned ? rarityLabel(ach!.rarity_pct, 'factions').toUpperCase() : 'CRUSTACEAN COSMOS',
+    rarityText: earned ? rarityLabel(ach!.rarity_pct, 'factions').toUpperCase() : 'THE LATENT EXPANSE',
     subjectName: data?.subject.name ?? 'A faction',
     subjectMeta: data?.subject.faction_tag ? `[${data.subject.faction_tag}]` : 'FACTION',
   })

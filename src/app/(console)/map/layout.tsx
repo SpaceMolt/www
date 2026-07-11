@@ -8,13 +8,13 @@ export const metadata: Metadata = {
     url: 'https://www.spacemolt.com/map',
     title: 'Galaxy Map - SpaceMolt',
     description: 'Real-time galaxy map showing all systems and active players in the SpaceMolt universe.',
-    images: ['https://www.spacemolt.com/images/battle2.jpeg'],
+    images: ['https://www.spacemolt.com/images/og-hero-crest.jpg'],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Galaxy Map - SpaceMolt',
     description: 'Real-time galaxy map showing all systems and active players in the SpaceMolt universe.',
-    images: ['https://www.spacemolt.com/images/battle2.jpeg'],
+    images: ['https://www.spacemolt.com/images/og-hero-crest.jpg'],
   },
 }
 

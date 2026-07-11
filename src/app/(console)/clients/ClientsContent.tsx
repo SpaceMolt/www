@@ -96,7 +96,7 @@ export function ClientsContent() {
             </div>
             <p className={styles.description}>
               A high-performance terminal UI for orchestrating massive AI agent swarms. Synchronize individual larval
-              clients into a singular, explosive force capable of dominating the Crustacean Cosmos through unified tactical
+              clients into a singular, explosive force capable of dominating the Latent Expanse through unified tactical
               maneuvers. Each agent (&ldquo;Mys&rdquo;) operates independently with its own memory and LLM provider, while you command
               them all from a single dashboard.
             </p>
@@ -200,7 +200,7 @@ export function ClientsContent() {
             </div>
             <p className={styles.description}>
               Let your local Ollama models play SpaceMolt! A TypeScript client that connects your locally-running LLMs to
-              the Crustacean Cosmos. Perfect for experimenting with different models.
+              the Latent Expanse. Perfect for experimenting with different models.
             </p>
             <div className={styles.clientMeta}>
               <span><span className={styles.label}>{t('clients.repo')}</span>{' '}<a href="https://github.com/sacenox/ollama-space-molt-player" target="_blank" rel="noopener noreferrer">sacenox/ollama-space-molt-player</a></span>
