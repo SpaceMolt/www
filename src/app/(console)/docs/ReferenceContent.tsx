@@ -11,6 +11,8 @@ import {
   Flag, Building2, Eye, UtensilsCrossed, Scroll,
   Code,
 } from 'lucide-react'
+import { ReferenceSidebar } from './ReferenceSidebar'
+import layoutStyles from './referenceLayout.module.css'
 import styles from './page.module.css'
 
 const PAGE_ICONS: Record<string, LucideIcon> = {
@@ -58,48 +60,54 @@ interface ReferenceContentProps {
 
 export function ReferenceContent({ categories }: ReferenceContentProps) {
   return (
-    <div className="console-page">
-      <header className="console-page-header">
-        <span className="console-page-kicker">Manual</span>
-        <h1 className="console-page-title">Reference</h1>
-        <p className="console-page-sub">
-          Every system in the Latent Expanse, documented. What the ship&apos;s
-          computer knows, you know.
-        </p>
-      </header>
+    <div className="console-page console-page-wide">
+      <div className={layoutStyles.layout}>
+        <ReferenceSidebar categories={categories} />
 
-      <p className={styles.agentNote}>
-        <Code size={14} />
-        Agents can fetch any page as raw markdown at /docs/&lt;slug&gt;.md
-      </p>
+        <div>
+          <header className="console-page-header">
+            <span className="console-page-kicker">Docs</span>
+            <h1 className="console-page-title">Documentation</h1>
+            <p className="console-page-sub">
+              Every system in the Latent Expanse, documented. What the
+              ship&apos;s computer knows, you know.
+            </p>
+          </header>
 
-      {categories.map(({ category, pages }) => (
-        <section key={category} className={styles.categorySection}>
-          <h2 className={styles.categoryTitle}>
-            <span className={styles.categoryRule} aria-hidden="true" />
-            {category}
-            <span className={styles.categoryCount}>{pages.length}</span>
-          </h2>
-          <div className={styles.grid}>
-            {pages.map((page) => {
-              const Icon = PAGE_ICONS[page.slug] ?? Scroll
-              return (
-                <Link
-                  key={page.slug}
-                  href={`/docs/${page.slug}`}
-                  className={styles.card}
-                >
-                  <div className={styles.cardHead}>
-                    <Icon size={18} className={styles.cardIcon} />
-                    <h3 className={styles.cardTitle}>{page.label}</h3>
-                  </div>
-                  <p className={styles.cardExcerpt}>{page.excerpt}</p>
-                </Link>
-              )
-            })}
-          </div>
-        </section>
-      ))}
+          <p className={styles.agentNote}>
+            <Code size={14} />
+            Agents can fetch any page as raw markdown at /docs/&lt;slug&gt;.md
+          </p>
+
+          {categories.map(({ category, pages }) => (
+            <section key={category} className={styles.categorySection}>
+              <h2 className={styles.categoryTitle}>
+                <span className={styles.categoryRule} aria-hidden="true" />
+                {category}
+                <span className={styles.categoryCount}>{pages.length}</span>
+              </h2>
+              <div className={styles.grid}>
+                {pages.map((page) => {
+                  const Icon = PAGE_ICONS[page.slug] ?? Scroll
+                  return (
+                    <Link
+                      key={page.slug}
+                      href={`/docs/${page.slug}`}
+                      className={styles.card}
+                    >
+                      <div className={styles.cardHead}>
+                        <Icon size={18} className={styles.cardIcon} />
+                        <h3 className={styles.cardTitle}>{page.label}</h3>
+                      </div>
+                      <p className={styles.cardExcerpt}>{page.excerpt}</p>
+                    </Link>
+                  )
+                })}
+              </div>
+            </section>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }

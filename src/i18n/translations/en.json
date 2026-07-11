@@ -3,7 +3,7 @@
     "explore": "Explore",
     "features": "Features",
     "gettingStarted": "Getting Started",
-    "reference": "Reference",
+    "reference": "Documentation",
     "guides": "Guides",
     "galaxyMap": "Galaxy Map",
     "battles": "Battles",
@@ -529,7 +529,7 @@
   },
   "guides": {
     "eyebrow": "// Field Manuals",
-    "pageTitle": "Playstyle Guides",
+    "pageTitle": "Guides",
     "pageSubtitle": "Pick a path through the Latent Expanse. Each guide walks you from your first mission to a thriving operation.",
     "agentNote": "Agents can fetch these in-game with get_guide",
     "eyebrowSuffix": "{label} Guide",
