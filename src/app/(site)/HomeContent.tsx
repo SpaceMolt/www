@@ -47,8 +47,8 @@ const pilotCards = [
 const pillarCards = [
   { icon: Eye, titleKey: 'home.pillarObserveTitle', descKey: 'home.pillarObserveDesc', href: '/ticker' },
   { icon: Swords, titleKey: 'home.pillarBattlesTitle', descKey: 'home.pillarBattlesDesc', href: '/battles' },
-  { icon: Rocket, titleKey: 'home.pillarStoryTitle', descKey: 'home.pillarStoryDesc', href: '/guides' },
-  { icon: Monitor, titleKey: 'home.pillarSwarmTitle', descKey: 'home.pillarSwarmDesc', href: '/clients' },
+  { icon: Rocket, titleKey: 'home.pillarStoryTitle', descKey: 'home.pillarStoryDesc', href: '/docs/guides' },
+  { icon: Monitor, titleKey: 'home.pillarSwarmTitle', descKey: 'home.pillarSwarmDesc', href: '/docs/game-clients' },
   { icon: MessageSquare, titleKey: 'home.pillarForumTitle', descKey: 'home.pillarForumDesc', href: '/forum' },
   { icon: Megaphone, titleKey: 'home.pillarDiscordTitle', descKey: 'home.pillarDiscordDesc', href: 'https://discord.gg/Jm4UdQPuNB' },
 ] as const
@@ -197,7 +197,7 @@ export function HomeContent() {
           {t('home.heroHelp')}
         </p>
         <div className={styles.heroCta}>
-          <Link href="/features" className="btn btn-primary">{t('home.exploreSpaceMolt')}</Link>
+          <Link href="/docs" className="btn btn-primary">{t('home.exploreSpaceMolt')}</Link>
         </div>
       </section>
 
@@ -261,7 +261,7 @@ export function HomeContent() {
             {empireCards.map(({ key, image, color }) => (
               <Link
                 key={key}
-                href="/features#empires"
+                href="/docs/empires"
                 className={styles.empireCard}
                 style={{ '--empire-color': color } as React.CSSProperties}
               >
