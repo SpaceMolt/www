@@ -67,22 +67,6 @@ const OUTPUTS = {
 /** Sections the paged fallback cannot supply — there is no endpoint for them. */
 const PAGED_CANNOT_SUPPLY = ['skills', 'facilities', 'achievements', 'faction_achievements']
 
-/**
- * Sections that may legitimately be empty on ANY source, including the dump.
- *
- * TEMPORARY. The gameserver change that adds `achievements` / `faction_achievements`
- * to /api/catalog.json has not shipped yet, so today's production dump carries
- * neither — and the zero-count guard in writeOutput() would fail the build (and
- * fall back to a stale file) for a section the server simply doesn't publish yet.
- * The codex achievements pages already degrade to a "temporarily unavailable"
- * state when the sections are missing, so an empty section is safe.
- *
- * TIGHTEN THIS once the gameserver dump carries achievements: drop both entries
- * so a truncated or garbage response fails the build again, exactly as it does
- * for skills and facilities.
- */
-const ALWAYS_ALLOW_EMPTY = ['achievements', 'faction_achievements']
-
 /** Hidden achievements are excluded from the dump; only these counts are published. */
 const HIDDEN_COUNT_KEYS = ['hidden_achievement_count', 'hidden_faction_achievement_count']
 
@@ -236,9 +220,7 @@ function writeOutput(filename, sections, dump, { fetchedAt, version, source, all
       if (!allowEmpty.includes(section)) {
         throw new Error(`catalog ${source} contained no ${section}`)
       }
-      // A section the server never publishes isn't a degraded build — don't
-      // flag the whole file partial for it.
-      if (!ALWAYS_ALLOW_EMPTY.includes(section)) partial = true
+      partial = true
     }
   }
 
@@ -263,19 +245,11 @@ function writeOutput(filename, sections, dump, { fetchedAt, version, source, all
   console.log(`  Written to src/data/${filename} (${size} KB) — ${summary}${partial ? ' [PARTIAL]' : ''}`)
 }
 
-/**
- * True if the file on disk already holds real data for every one of `sections`.
- * Sections the server may not publish at all (ALWAYS_ALLOW_EMPTY) don't count
- * against it — otherwise a file that is perfectly good apart from a section the
- * gameserver hasn't shipped yet would be judged worthless and overwritten with
- * an empty one on a degraded build.
- */
+/** True if the file on disk already holds real data for every one of `sections`. */
 function hasGoodData(filename, sections) {
   try {
     const existing = JSON.parse(readFileSync(dataPath(filename), 'utf8'))
-    return sections
-      .filter((s) => !ALWAYS_ALLOW_EMPTY.includes(s))
-      .every((s) => Object.keys(existing[s] ?? {}).length > 0)
+    return sections.every((s) => Object.keys(existing[s] ?? {}).length > 0)
   } catch {
     return false
   }
@@ -301,21 +275,14 @@ async function main() {
 
   const fetchedAt = new Date().toISOString()
   const version = dump.version ?? null
-  const allowEmpty = [
-    ...ALWAYS_ALLOW_EMPTY,
-    ...(source === 'paged' ? PAGED_CANNOT_SUPPLY : []),
-  ]
+  const allowEmpty = source === 'paged' ? PAGED_CANNOT_SUPPLY : []
 
   console.log(`  Source: ${source}${version ? `, game version: ${version}` : ''}`)
 
   for (const [filename, sections] of Object.entries(OUTPUTS)) {
-    // A degraded source has nothing to say about skills/facilities. If the last
-    // build left a complete file there, keep it — stale beats empty. (A section
-    // the server never publishes doesn't make a source degraded — the dump is
-    // still the best data we can get.)
-    const degrades = sections.some(
-      (s) => allowEmpty.includes(s) && !ALWAYS_ALLOW_EMPTY.includes(s),
-    )
+    // A degraded source has nothing to say about skills/facilities/achievements.
+    // If the last build left a complete file there, keep it — stale beats empty.
+    const degrades = sections.some((s) => allowEmpty.includes(s))
     if (degrades && hasGoodData(filename, sections)) {
       console.log(`  Keeping existing src/data/${filename} — the paged API cannot refresh it`)
       continue
