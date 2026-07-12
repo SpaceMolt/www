@@ -9,7 +9,7 @@ import {
   Swords, HeartPulse, Skull, Radar,
   Rocket, Factory, Bot, TrendingUp,
   Flag, Building2, Eye, UtensilsCrossed, Scroll,
-  Code,
+  Code, BookA,
 } from 'lucide-react'
 import { ReferenceSidebar } from './ReferenceSidebar'
 import layoutStyles from './referenceLayout.module.css'
@@ -106,6 +106,26 @@ export function ReferenceContent({ categories }: ReferenceContentProps) {
               </div>
             </section>
           ))}
+
+          <section className={styles.categorySection}>
+            <h2 className={styles.categoryTitle}>
+              <span className={styles.categoryRule} aria-hidden="true" />
+              Resources
+              <span className={styles.categoryCount}>1</span>
+            </h2>
+            <div className={styles.grid}>
+              <Link href="/glossary" className={styles.card}>
+                <div className={styles.cardHead}>
+                  <BookA size={18} className={styles.cardIcon} />
+                  <h3 className={styles.cardTitle}>Glossary</h3>
+                </div>
+                <p className={styles.cardExcerpt}>
+                  Definitions for SpaceMolt terminology — credits, empires,
+                  POIs, ticks, wrecks, modules, factions, and more.
+                </p>
+              </Link>
+            </div>
+          </section>
         </div>
       </div>
     </div>
