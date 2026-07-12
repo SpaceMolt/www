@@ -874,6 +874,16 @@ footer {
   padding: 1.4rem clamp(1rem, 2.5vw, 2.2rem) 3rem;
 }
 
+/* The marketing pages lean on the global `section { padding: 6rem 2rem }`; the
+   console pages own their spacing, so that padding only bloats them (and eats
+   ~64px of horizontal room on a phone).
+
+   `:where()` keeps this at zero specificity so it only overrides the global
+   default — a page that sets padding on its own section still wins. */
+:where(.console-page) section {
+  padding: 0;
+}
+
 .console-page-wide {
   max-width: none;
 }
@@ -928,6 +938,79 @@ footer {
   color: var(--chrome-silver);
   margin-top: 0.45rem;
   max-width: 70ch;
+}
+
+@media (max-width: 640px) {
+  .console-page {
+    padding: 1rem 0.9rem 2.2rem;
+  }
+
+  .console-page-header {
+    margin-bottom: 1.1rem;
+    padding-bottom: 0.7rem;
+  }
+}
+
+/* === Docs markdown: self-linking headings + scrollable tables ===
+   These live here rather than in the page CSS modules because they must out-
+   specify each module's `.content a` colour rule. */
+.docs-markdown h2,
+.docs-markdown h3,
+.docs-markdown h4 {
+  scroll-margin-top: 1.5rem;
+}
+
+.docs-markdown h2 a.heading-anchor,
+.docs-markdown h3 a.heading-anchor,
+.docs-markdown h4 a.heading-anchor {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.docs-markdown h2 a.heading-anchor:hover,
+.docs-markdown h3 a.heading-anchor:hover,
+.docs-markdown h4 a.heading-anchor:hover {
+  color: var(--plasma-cyan);
+  text-decoration: none;
+}
+
+.heading-anchor-hash {
+  margin-left: 0.4em;
+  color: var(--plasma-cyan);
+  font-weight: 400;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.docs-markdown a.heading-anchor:hover .heading-anchor-hash,
+.docs-markdown a.heading-anchor:focus-visible .heading-anchor-hash {
+  opacity: 0.75;
+}
+
+/* Nothing hovers on a touch screen, so keep the affordance visible there. */
+@media (hover: none) {
+  .heading-anchor-hash {
+    opacity: 0.4;
+  }
+}
+
+.docs-markdown .table-scroll {
+  overflow-x: auto;
+  margin-bottom: 1.4rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+.docs-markdown .table-scroll:focus-visible {
+  outline: 1px solid rgba(0, 212, 255, 0.5);
+  outline-offset: 2px;
+}
+
+/* A table squeezed to phone width wraps every cell to one word per line. Giving
+   it a floor and letting the wrapper scroll keeps the rows readable. */
+.docs-markdown .table-scroll table {
+  min-width: 32rem;
+  margin-bottom: 0;
 }
 
 .console-panel {

@@ -8,13 +8,22 @@
 }
 
 /* --- Sidebar --- */
-.sidebar {
+.sidebarWrap {
   position: sticky;
   top: 1.5rem;
+  min-width: 0;
+}
+
+.sidebar {
   max-height: calc(100vh - 3rem);
   overflow-y: auto;
   padding-right: 0.5rem;
   scrollbar-width: thin;
+}
+
+/* The toggle only exists on phones, where the page list is collapsed. */
+.sidebarToggle {
+  display: none;
 }
 
 .sidebarHome {
@@ -71,36 +80,88 @@
   background: rgba(0, 212, 255, 0.06);
 }
 
-/* --- Responsive --- */
+/* --- Responsive ---
+   Below the grid breakpoint the page list would push the article a full screen
+   down, so it becomes a collapsed disclosure that names the current page. */
 @media (max-width: 900px) {
   .layout {
     grid-template-columns: 1fr;
     gap: 1rem;
   }
 
-  .sidebar {
+  .sidebarWrap {
     position: static;
-    max-height: none;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem 1.4rem;
-    border-bottom: 1px solid rgba(61, 90, 108, 0.3);
-    padding-bottom: 1rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
   }
 
-  .sidebarHome {
+  /* The /docs index already lists every page as cards — a menu of the same
+     links above it is just noise on a phone. */
+  .sidebarWrap.sidebarWrapIndex {
+    display: none;
+  }
+
+  .sidebarToggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     width: 100%;
-    margin-bottom: 0.4rem;
+    min-height: 42px;
+    padding: 0.5rem 0.75rem;
+    background: rgba(13, 19, 33, 0.75);
+    border: 1px solid rgba(0, 212, 255, 0.25);
+    border-radius: 3px;
+    color: var(--chrome-silver);
+    font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .sidebarToggle svg:first-child {
+    color: var(--plasma-cyan);
+    flex-shrink: 0;
+  }
+
+  .sidebarToggleLabel {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--star-white);
+  }
+
+  .sidebarChevron,
+  .sidebarChevronOpen {
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+  }
+
+  .sidebarChevronOpen {
+    transform: rotate(180deg);
+  }
+
+  .sidebar {
+    display: none;
+    max-height: 60vh;
+    margin-top: 0.4rem;
+    padding: 0.9rem 0.75rem;
+    background: rgba(10, 14, 23, 0.9);
+    border: 1px solid rgba(61, 90, 108, 0.35);
+    border-radius: 3px;
+  }
+
+  .sidebar.sidebarExpanded {
+    display: block;
   }
 
   .sidebarGroup {
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.9rem;
   }
 
   .sidebarLink {
-    display: inline-block;
-    border-left: none;
-    padding: 0.15rem 0.4rem;
+    padding: 0.4rem 0.6rem;
   }
 }

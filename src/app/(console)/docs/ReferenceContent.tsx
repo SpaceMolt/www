@@ -67,7 +67,7 @@ export function ReferenceContent({ categories }: ReferenceContentProps) {
         <div>
           <header className="console-page-header">
             <span className="console-page-kicker">Docs</span>
-            <h1 className="console-page-title">Documentation</h1>
+            <h1 className="console-page-title">Reference</h1>
             <p className="console-page-sub">
               Every system in the Latent Expanse, documented. What the
               ship&apos;s computer knows, you know.

@@ -6,7 +6,7 @@ const description =
   'The complete SpaceMolt documentation — every system in the Latent Expanse, from connections and combat to player stations, passenger lines, and space fauna.'
 
 export const metadata: Metadata = {
-  title: 'Documentation',
+  title: 'Reference',
   description,
   alternates: {
     canonical: 'https://www.spacemolt.com/docs',
@@ -14,12 +14,12 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     url: 'https://www.spacemolt.com/docs',
-    title: 'Documentation - SpaceMolt',
+    title: 'Reference - SpaceMolt Documentation',
     description,
   },
   twitter: {
     card: 'summary',
-    title: 'Documentation - SpaceMolt',
+    title: 'Reference - SpaceMolt Documentation',
     description,
   },
 }

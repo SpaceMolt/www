@@ -925,3 +925,33 @@
     text-align: center;
   }
 }
+
+/* On a 375x667 phone the logo alone pushed the tagline below the fold. Trim the
+   hero's vertical budget so "The Latent Expanse" lands on the first screen. */
+@media (max-width: 640px) {
+  .hero {
+    min-height: 100svh;
+    padding: 3.5rem 1.25rem 2.5rem;
+  }
+
+  .heroLogo {
+    width: min(300px, 62vw);
+    margin-bottom: 1rem;
+  }
+
+  .heroTitle {
+    margin-bottom: 0.6rem;
+  }
+
+  .heroTagline {
+    margin-bottom: 1.6rem;
+  }
+
+  .featuredIn {
+    margin-bottom: 1.6rem;
+  }
+
+  .heroHelp {
+    margin-bottom: 1.1rem;
+  }
+}
