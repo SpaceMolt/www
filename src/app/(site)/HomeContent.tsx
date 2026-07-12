@@ -18,8 +18,8 @@ import { useTranslation } from '@/i18n'
 import styles from './page.module.css'
 
 const whatsNewCards = [
-  { key: 'Wildlife', image: '/images/home/feature-wildlife.jpg', href: '/changelog' },
-  { key: 'Culinary', image: '/images/home/feature-culinary.jpg', href: '/changelog' },
+  { key: 'Wildlife', image: '/images/home/feature-wildlife.jpg', href: '/docs/wildlife' },
+  { key: 'Culinary', image: '/images/home/feature-culinary.jpg', href: '/docs/hospitality' },
   { key: 'Stations', image: '/images/home/feature-stations.jpg', href: '/stations' },
   { key: 'Battles', image: '/images/home/feature-battles.jpg', href: '/battles' },
 ] as const

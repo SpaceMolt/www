@@ -58,7 +58,7 @@ export function ReferenceSidebar({
       >
         <BookOpen size={14} aria-hidden />
         <span className={styles.sidebarToggleLabel}>
-          {currentLabel ?? 'All documentation'}
+          {currentLabel ?? 'All reference'}
         </span>
         <ChevronDown
           size={15}
@@ -75,7 +75,7 @@ export function ReferenceSidebar({
         {currentSlug && (
           <Link href="/docs" className={styles.sidebarHome}>
             <ChevronLeft size={14} />
-            All documentation
+            All reference
           </Link>
         )}
         {categories.map(({ category, pages }) => (
