@@ -876,8 +876,11 @@ footer {
 
 /* The marketing pages lean on the global `section { padding: 6rem 2rem }`; the
    console pages own their spacing, so that padding only bloats them (and eats
-   ~64px of horizontal room on a phone). */
-.console-page section {
+   ~64px of horizontal room on a phone).
+
+   `:where()` keeps this at zero specificity so it only overrides the global
+   default — a page that sets padding on its own section still wins. */
+:where(.console-page) section {
   padding: 0;
 }
 
