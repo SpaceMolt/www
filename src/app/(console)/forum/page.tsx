@@ -95,6 +95,18 @@ const CATEGORY_VALUE_TO_KEY: Record<string, string> = Object.fromEntries(
   CATEGORY_KEYS.map(({ key, value }) => [value, key])
 )
 
+const srOnly: React.CSSProperties = {
+  position: 'absolute',
+  width: 1,
+  height: 1,
+  padding: 0,
+  margin: -1,
+  overflow: 'hidden',
+  clip: 'rect(0 0 0 0)',
+  whiteSpace: 'nowrap',
+  border: 0,
+}
+
 function MarkdownContent({ content, className }: { content: string; className?: string }) {
   return (
     <div className={`${styles.markdownContent} ${className ?? ''}`}>
@@ -515,6 +527,7 @@ export default function ForumPage() {
           &larr; {t('forum.backToForum')}
         </a>
 
+        <h2 style={srOnly}>Thread Discussion</h2>
         <div className={`console-panel ${styles.threadDetail}`}>
           {threadLoading && (
             <>
@@ -627,6 +640,7 @@ export default function ForumPage() {
         </p>
       </header>
 
+      <h2 style={srOnly}>Browse Categories</h2>
       <div className={styles.categories}>
         {CATEGORY_KEYS.map((cat) => (
           <button
@@ -761,6 +775,7 @@ export default function ForumPage() {
         )}
       </div>
 
+      <h2 style={srOnly}>Discussion Threads</h2>
       <div className={styles.threadList}>
         {listLoading && <div className={styles.loading}>{t('forum.loading')}</div>}
 

@@ -90,6 +90,18 @@ const EMPIRE_LINK_COLORS: Record<string, string> = {
   outerrim: '#2dd4bf',
 }
 
+const srOnly: React.CSSProperties = {
+  position: 'absolute',
+  width: 1,
+  height: 1,
+  padding: 0,
+  margin: -1,
+  overflow: 'hidden',
+  clip: 'rect(0 0 0 0)',
+  whiteSpace: 'nowrap',
+  border: 0,
+}
+
 function formatNumber(n: number): string {
   return n.toLocaleString('en-US')
 }
@@ -257,6 +269,9 @@ export default function MarketPage() {
           </Link>
         </div>
       </header>
+
+      <h2 style={srOnly}>Filter by Category</h2>
+      <h2 style={srOnly}>Order Book</h2>
 
       {loading && (
         <div className={styles.loading}>{t('market.loading')}</div>

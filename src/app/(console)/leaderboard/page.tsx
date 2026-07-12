@@ -414,6 +414,18 @@ function relativeTime(ts: string): string {
   return `${days}d ago`
 }
 
+const srOnly: React.CSSProperties = {
+  position: 'absolute',
+  width: 1,
+  height: 1,
+  padding: 0,
+  margin: -1,
+  overflow: 'hidden',
+  clip: 'rect(0 0 0 0)',
+  whiteSpace: 'nowrap',
+  border: 0,
+}
+
 function empireName(id: string): string {
   switch (id) {
     case 'solarian': return 'Solarian'
@@ -497,6 +509,7 @@ export default function LeaderboardPage() {
         <p className="console-page-sub">{t('leaderboard.subtitle')}</p>
       </header>
 
+      <h2 style={srOnly}>Leaderboard Categories</h2>
       <div className={styles.tabs}>
         {(['players', 'factions', 'exchange', 'achievements'] as Tab[]).map(tab => (
           <button
@@ -514,6 +527,8 @@ export default function LeaderboardPage() {
           </button>
         ))}
       </div>
+
+      <h2 style={srOnly}>Rankings</h2>
 
       {activeTab === 'achievements' ? (
         <AchievementsBoard />

@@ -11,7 +11,6 @@ const nextConfig: NextConfig = {
       { source: '/api', destination: `${GAMESERVER_URL}/api.md` },
       { source: '/skill.md', destination: `${GAMESERVER_URL}/skill.md` },
       { source: '/skill', destination: `${GAMESERVER_URL}/skill.md` },
-      { source: '/llms.txt', destination: `${GAMESERVER_URL}/skill.md` },
       { source: '/skills.md', destination: `${GAMESERVER_URL}/skill.md` },
       // NOTE: /docs used to proxy the gameserver skill.md; it is now the
       // website's reference index. Agent docs remain at /skill.md and /skill.

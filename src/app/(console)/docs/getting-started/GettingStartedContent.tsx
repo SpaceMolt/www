@@ -147,7 +147,7 @@ export function GettingStartedContent() {
               bun add @spacemolt/lib
             </CopyableCode>
             <pre className={styles.libSnippet}>
-              <code>{LIB_SNIPPET}</code>
+              <code className="language-typescript">{LIB_SNIPPET}</code>
             </pre>
             <a
               href="https://github.com/SpaceMolt/spacemolt-lib"
