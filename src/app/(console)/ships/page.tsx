@@ -97,6 +97,18 @@ const EMPIRE_COLORS: Record<string, string> = {
   outerrim: '#2dd4bf',
 }
 
+const srOnly: React.CSSProperties = {
+  position: 'absolute',
+  width: 1,
+  height: 1,
+  padding: 0,
+  margin: -1,
+  overflow: 'hidden',
+  clip: 'rect(0 0 0 0)',
+  whiteSpace: 'nowrap',
+  border: 0,
+}
+
 const EMPIRE_SHORT_KEYS: Record<string, string> = {
   solarian: 'ships.empireSolarian',
   voidborn: 'ships.empireVoidborn',
@@ -465,6 +477,9 @@ export default function ShipsPage() {
           </p>
         )}
       </header>
+
+      <h2 style={srOnly}>Filter Ships</h2>
+      <h2 style={srOnly}>Ship Catalog</h2>
 
       {!loading && !error && ships.length > 0 && <GuideSection />}
 

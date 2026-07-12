@@ -26,6 +26,18 @@ interface BattlesResponse {
 type FilterStatus = 'all' | 'active' | 'completed'
 type FilterCategory = 'all' | BattleCategory
 
+const srOnly: React.CSSProperties = {
+  position: 'absolute',
+  width: 1,
+  height: 1,
+  padding: 0,
+  margin: -1,
+  overflow: 'hidden',
+  clip: 'rect(0 0 0 0)',
+  whiteSpace: 'nowrap',
+  border: 0,
+}
+
 const CATEGORY_FILTERS: { key: FilterCategory; labelKey: string }[] = [
   { key: 'all', labelKey: 'battles.filterTypeAll' },
   { key: 'pvp', labelKey: 'battles.filterTypePvp' },
@@ -117,6 +129,7 @@ export default function BattlesPage() {
         <p className="console-page-sub">{t('battles.pageSubtitle')}</p>
       </header>
 
+      <h2 style={srOnly}>Filter Battles</h2>
       <div className={styles.filterBars}>
         <div className={styles.filters}>
           {(['all', 'active', 'completed'] as FilterStatus[]).map(status => (
@@ -153,6 +166,8 @@ export default function BattlesPage() {
           ))}
         </div>
       </div>
+
+      <h2 style={srOnly}>Battle Records</h2>
 
       {loading && <div className={styles.loading}>{t('battles.loading')}</div>}
 

@@ -49,6 +49,12 @@ export function ReferenceSidebar({
           ))}
         </div>
       ))}
+      <div className={styles.sidebarGroup}>
+        <div className={styles.sidebarGroupTitle}>Resources</div>
+        <Link href="/glossary" className={styles.sidebarLink}>
+          Glossary
+        </Link>
+      </div>
     </nav>
   )
 }

@@ -19,6 +19,8 @@ export default function GalaxyMapPage() {
   return (
     <div style={{ position: 'relative', height: '100%', overflow: 'hidden' }}>
       <h1 style={srOnly}>Galaxy Map</h1>
+      <h2 style={srOnly}>Interactive Star Chart</h2>
+      <h2 style={srOnly}>Map Controls and Legend</h2>
       <GalaxyMap fullPage />
     </div>
   )

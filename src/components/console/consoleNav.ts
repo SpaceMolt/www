@@ -3,6 +3,7 @@ import {
   LayoutDashboard, Play, Map, Swords, Trophy, Radio, Rocket, Building2,
   Coins, TrendingUp, MessagesSquare, Newspaper, MessageCircle, Compass,
   BookOpen, Library, TerminalSquare, ScrollText, Info, ShoppingBag, Heart,
+  BookA,
 } from 'lucide-react'
 
 export interface ConsoleNavItem {
@@ -63,6 +64,7 @@ export const consoleNavGroups: ConsoleNavGroup[] = [
       { href: '/docs/getting-started', labelKey: 'nav.gettingStarted', icon: Compass },
       { href: '/docs/guides', labelKey: 'nav.guides', icon: BookOpen },
       { href: '/docs', labelKey: 'nav.reference', icon: Library },
+      { href: '/glossary', labelKey: 'nav.glossary', icon: BookA },
       { href: '/docs/game-clients', labelKey: 'nav.clients', icon: TerminalSquare },
       { href: '/changelog', labelKey: 'nav.changelog', icon: ScrollText },
       { href: '/about', labelKey: 'nav.about', icon: Info },

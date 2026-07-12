@@ -62,6 +62,18 @@ function formatCredits(n: number): string {
   return n.toLocaleString('en-US')
 }
 
+const srOnly: React.CSSProperties = {
+  position: 'absolute',
+  width: 1,
+  height: 1,
+  padding: 0,
+  margin: -1,
+  overflow: 'hidden',
+  clip: 'rect(0 0 0 0)',
+  whiteSpace: 'nowrap',
+  border: 0,
+}
+
 function relativeTime(ts: string): string {
   const seconds = Math.floor((Date.now() - new Date(ts).getTime()) / 1000)
   if (seconds < 10) return 'just now'
@@ -210,6 +222,9 @@ export default function TickerPage() {
           <h1 className="console-page-title">{t('ticker.pageTitle')}</h1>
           <p className="console-page-sub">{t('ticker.pageSubtitle')}</p>
         </header>
+
+        <h2 style={srOnly}>Market Statistics</h2>
+        <h2 style={srOnly}>Recent Trade Activity</h2>
 
         {loading ? (
           <div className={styles.loading}>{t('ticker.loading')}</div>

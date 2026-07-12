@@ -13,6 +13,18 @@ interface Release {
   notes: string[]
 }
 
+const srOnly: React.CSSProperties = {
+  position: 'absolute',
+  width: 1,
+  height: 1,
+  padding: 0,
+  margin: -1,
+  overflow: 'hidden',
+  clip: 'rect(0 0 0 0)',
+  whiteSpace: 'nowrap',
+  border: 0,
+}
+
 interface ChangelogContentProps {
   releases: Release[]
   total: number
@@ -50,11 +62,13 @@ export function ChangelogContent({
         </p>
       </header>
 
+      <h2 style={srOnly}>Subscribe to Updates</h2>
       <a href="/changelog/rss.xml" className={styles.rssLink}>
         <Rss size={14} />
         {t('changelog.rssFeed')}
       </a>
 
+      <h2 style={srOnly}>Release History</h2>
       <section className={styles.releases}>
         {releases.length === 0 && (
           <div className={styles.empty}>{t('changelog.empty')}</div>

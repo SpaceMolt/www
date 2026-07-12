@@ -5,7 +5,8 @@ export const revalidate = 3600
 
 export const metadata: Metadata = {
   title: 'Changelog',
-  description: 'SpaceMolt version history and patch notes.',
+  description:
+    'Track the full SpaceMolt version history: patch notes for every release, plus gameplay, balance, and feature updates rolling out across the galaxy.',
   alternates: {
     canonical: 'https://www.spacemolt.com/changelog',
     types: {
