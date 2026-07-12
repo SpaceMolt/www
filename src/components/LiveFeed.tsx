@@ -346,6 +346,43 @@ const eventTextStyles = `
   [data-cls="eventDevTeam"] { color: var(--shell-orange); font-weight: 500; }
 `
 
+// The same recent-event buffer the SSE stream replays on connect, as plain JSON.
+// Fetching it on mount fills the feed a round-trip after hydration instead of
+// leaving it on "Waiting for events..." until the first live event shows up.
+const SEED_URL = `${process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'}/api/events`
+const SEED_TIMEOUT_MS = 2500
+
+// Identity of an event, used to drop duplicates. The gameserver replays its
+// recent-event buffer to every new SSE subscriber (and again after a reconnect),
+// so the same event reaches us from both the seed fetch and the stream.
+// Timestamps are nanosecond-precision, so type+timestamp is unique in practice.
+function eventKey(type: string, timestamp?: string): string | null {
+  if (!timestamp || timestamp.startsWith('0001-')) return null
+  return `${type}|${timestamp}`
+}
+
+// Bound the dedupe set well above MAX_EVENTS so a replay burst still matches
+// against rows that have already scrolled out of the feed.
+const MAX_SEEN_KEYS = 200
+
+// Event types the feed never renders (tick is noise, player_stats is not a feed row).
+const HIDDEN_TYPES = new Set(['tick', 'player_stats'])
+
+function isDisplayable(event?: GameEvent): boolean {
+  return Boolean(event?.type && event?.data && !HIDDEN_TYPES.has(event.type))
+}
+
+function toEntry(event: GameEvent): LiveEventEntry {
+  const config = eventConfig[event.type]
+  return {
+    id: nextEventId++,
+    type: event.type,
+    html: config ? config.format(event.data, event.player_info) : formatFallback(event.type, event.data, event.player_info),
+    icon: config ? config.icon : <Satellite size={SZ} />,
+    time: formatTime(event.timestamp),
+  }
+}
+
 interface LiveFeedProps {
   onClose?: () => void
   onStatusChange?: (connected: boolean, status: string) => void
@@ -353,38 +390,42 @@ interface LiveFeedProps {
   hideHeader?: boolean
 }
 
+const PLACEHOLDER: LiveEventEntry = {
+  id: -1,
+  type: 'system',
+  html: 'Waiting for events...',
+  icon: <Satellite size={SZ} />,
+  time: 0,
+}
+
 export function LiveFeed({ onClose, onStatusChange, hideHeader }: LiveFeedProps) {
-  const [events, setEvents] = useState<LiveEventEntry[]>([
-    {
-      id: -1,
-      type: 'system',
-      html: 'Waiting for events...',
-      icon: <Satellite size={SZ} />,
-      time: 0,
-    },
-  ])
+  const [events, setEvents] = useState<LiveEventEntry[]>([PLACEHOLDER])
   const [isConnected, setIsConnected] = useState(false)
   const [statusText, setStatusText] = useState('Connecting...')
   const [, setTick] = useState(0)
   const feedRef = useRef<HTMLDivElement>(null)
   const pendingRef = useRef<LiveEventEntry[]>([])
 
+  // Keys of everything already shown, so the seed fetch and the SSE replay burst
+  // (which overlap, and which the stream repeats after every reconnect) cannot
+  // put the same event on screen twice.
+  const seenRef = useRef<Set<string>>(new Set())
+  const seenOrderRef = useRef<string[]>([])
+
+  const remember = useCallback((key: string) => {
+    const seen = seenRef.current
+    seen.add(key)
+    seenOrderRef.current.push(key)
+    if (seenOrderRef.current.length > MAX_SEEN_KEYS) {
+      const evicted = seenOrderRef.current.splice(0, seenOrderRef.current.length - MAX_SEEN_KEYS)
+      for (const k of evicted) seen.delete(k)
+    }
+  }, [])
+
   // Re-render every 10s to update relative timestamps
   useEffect(() => {
     const id = setInterval(() => setTick(t => t + 1), 10000)
     return () => clearInterval(id)
-  }, [])
-
-  const addEvent = useCallback((type: string, data: EventData, timestamp?: string, playerInfo?: Record<string, PlayerMeta>) => {
-    const config = eventConfig[type]
-
-    pendingRef.current.push({
-      id: nextEventId++,
-      type,
-      html: config ? config.format(data, playerInfo) : formatFallback(type, data, playerInfo),
-      icon: config ? config.icon : <Satellite size={SZ} />,
-      time: formatTime(timestamp),
-    })
   }, [])
 
   // Release queued events in batches: everything pending fades in together,
@@ -393,25 +434,86 @@ export function LiveFeed({ onClose, onStatusChange, hideHeader }: LiveFeedProps)
   const initialFlushRef = useRef(false)
   const batchSizeRef = useRef(0)
   const prevScrollTopRef = useRef(0)
-  useEffect(() => {
-    const id = setInterval(() => {
-      const pending = pendingRef.current
-      if (pending.length === 0) return
-      const initial = !initialFlushRef.current
-      initialFlushRef.current = true
-      const batch = pending.splice(0, pending.length)
-      if (!initial) {
-        for (const e of batch) e.fresh = true
-        batchSizeRef.current = batch.length
-        prevScrollTopRef.current = feedRef.current?.scrollTop ?? 0
-      }
-      setEvents((prev) => {
-        const filtered = prev.filter((e) => e.id !== -1)
-        return [...batch.reverse(), ...filtered].slice(0, MAX_EVENTS)
-      })
-    }, 2000)
-    return () => clearInterval(id)
+  const firstFlushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const flush = useCallback(() => {
+    const pending = pendingRef.current
+    if (pending.length === 0) return
+    const initial = !initialFlushRef.current
+    initialFlushRef.current = true
+    const batch = pending.splice(0, pending.length)
+    if (!initial) {
+      for (const e of batch) e.fresh = true
+      batchSizeRef.current = batch.length
+      prevScrollTopRef.current = feedRef.current?.scrollTop ?? 0
+    }
+    setEvents((prev) => {
+      const filtered = prev.filter((e) => e.id !== -1)
+      return [...batch.reverse(), ...filtered].slice(0, MAX_EVENTS)
+    })
   }, [])
+
+  const addEvent = useCallback((type: string, data: EventData, timestamp?: string, playerInfo?: Record<string, PlayerMeta>) => {
+    const key = eventKey(type, timestamp)
+    if (key) {
+      if (seenRef.current.has(key)) return
+      remember(key)
+    }
+
+    pendingRef.current.push(toEntry({ type, data, timestamp, player_info: playerInfo }))
+
+    // The feed shows "Waiting for events..." until the first flush, so don't make
+    // it sit through the 2s batch tick — release the connect burst as soon as it
+    // stops arriving.
+    if (!initialFlushRef.current && !firstFlushTimerRef.current) {
+      firstFlushTimerRef.current = setTimeout(() => {
+        firstFlushTimerRef.current = null
+        flush()
+      }, 150)
+    }
+  }, [flush, remember])
+
+  useEffect(() => {
+    const id = setInterval(flush, 2000)
+    return () => {
+      clearInterval(id)
+      if (firstFlushTimerRef.current) clearTimeout(firstFlushTimerRef.current)
+    }
+  }, [flush])
+
+  // Seed the feed from the recent-event buffer on mount, in parallel with the SSE
+  // connect, so it fills a round-trip after hydration instead of waiting for the
+  // first live event. Seeded rows are older than anything the stream has already
+  // delivered, so they go below it. Anything the replay burst also carries is
+  // dropped by the dedupe above.
+  useEffect(() => {
+    let cancelled = false
+    fetch(SEED_URL, { signal: AbortSignal.timeout(SEED_TIMEOUT_MS) })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((body) => {
+        if (cancelled) return
+        const events: unknown = (body as { events?: unknown })?.events
+        if (!Array.isArray(events)) return
+        const fresh = (events as GameEvent[]).filter(isDisplayable).filter((event) => {
+          const key = eventKey(event.type, event.timestamp)
+          if (!key || seenRef.current.has(key)) return false
+          remember(key)
+          return true
+        })
+        if (fresh.length === 0) return
+        initialFlushRef.current = true
+        setEvents((prev) => [
+          ...prev.filter((e) => e.id !== -1),
+          ...fresh.slice(-MAX_EVENTS).map(toEntry).reverse(),
+        ].slice(0, MAX_EVENTS))
+      })
+      .catch(() => {
+        // The feed still fills in from SSE; nothing to recover.
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [remember])
 
   // After a batch renders, keep the viewport anchored on the old content, then
   // smooth-scroll up to reveal the new rows — but only when the reader was
@@ -445,7 +547,7 @@ export function LiveFeed({ onClose, onStatusChange, hideHeader }: LiveFeedProps)
     const unsubscribeEvents = subscribeToEvents((raw) => {
       try {
         const parsed: GameEvent = JSON.parse(raw)
-        if (parsed.type && parsed.data && parsed.type !== 'tick' && parsed.type !== 'player_stats') {
+        if (isDisplayable(parsed)) {
           addEvent(parsed.type, parsed.data, parsed.timestamp, parsed.player_info)
         }
       } catch {
