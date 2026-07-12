@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { Menu, X, Activity, MessageCircle, Heart } from 'lucide-react'
+import { Menu, X, Activity, MessageCircle, Heart, Rocket, Play } from 'lucide-react'
 import { SignedIn, SignedOut } from '@clerk/nextjs'
 import { useTranslation } from '@/i18n'
 import { LanguageSelector } from '@/components/LanguageSelector'
@@ -62,34 +62,9 @@ export function ConsoleTopbar({ stats, online, navOpen, onToggleNav, paneOpen, o
         </span>
       </div>
 
+      {/* Left→right: console utility, then community, then the primary CTA
+          anchored at the right edge where the eye lands. */}
       <div className={styles.topbarActions}>
-        <a
-          href={DISCORD_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={`${styles.socialBtn} ${styles.socialDiscord}`}
-        >
-          <MessageCircle size={13} aria-hidden />
-          <span className={styles.socialLabel}>{t('nav.discord')}</span>
-        </a>
-        <a
-          href={PATREON_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={`${styles.socialBtn} ${styles.socialPatreon}`}
-        >
-          <Heart size={13} aria-hidden />
-          <span className={styles.socialLabel}>{t('console.patreon')}</span>
-        </a>
-        <span className={styles.langDesktop}>
-          <LanguageSelector />
-        </span>
-        <SignedOut>
-          <Link href="/docs/getting-started" className={styles.paneToggle}>{t('nav.getStarted')}</Link>
-        </SignedOut>
-        <SignedIn>
-          <Link href="/play" className={styles.playBtn}>{t('console.play')}</Link>
-        </SignedIn>
         <button
           className={styles.paneToggle}
           onClick={onTogglePane}
@@ -98,8 +73,43 @@ export function ConsoleTopbar({ stats, online, navOpen, onToggleNav, paneOpen, o
           aria-label={paneOpen ? t('console.closeLive') : t('console.openLive')}
         >
           <Activity size={13} aria-hidden />
-          <span className={styles.paneToggleLabel}>{t('console.live')}</span>
+          <span className={styles.btnLabel}>{t('console.live')}</span>
         </button>
+        <span className={styles.langDesktop}>
+          <LanguageSelector />
+        </span>
+        <a
+          href={DISCORD_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`${styles.socialBtn} ${styles.socialDiscord}`}
+          aria-label={t('nav.discord')}
+        >
+          <MessageCircle size={13} aria-hidden />
+          <span className={styles.btnLabel}>{t('nav.discord')}</span>
+        </a>
+        <a
+          href={PATREON_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`${styles.socialBtn} ${styles.socialPatreon} ${styles.socialSecondary}`}
+          aria-label={t('console.patreon')}
+        >
+          <Heart size={13} aria-hidden />
+          <span className={styles.btnLabel}>{t('console.patreon')}</span>
+        </a>
+        <SignedOut>
+          <Link href="/docs/getting-started" className={styles.ctaBtn}>
+            <Rocket size={14} aria-hidden />
+            <span className={styles.ctaLabel}>{t('nav.getStarted')}</span>
+          </Link>
+        </SignedOut>
+        <SignedIn>
+          <Link href="/play" className={styles.ctaBtn}>
+            <Play size={14} aria-hidden />
+            <span className={styles.ctaLabel}>{t('console.play')}</span>
+          </Link>
+        </SignedIn>
       </div>
     </header>
   )

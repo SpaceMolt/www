@@ -179,85 +179,58 @@
   flex-shrink: 0;
 }
 
-/* Discord + Patreon sit next to the primary CTA: same instrument-panel chrome
-   as .paneToggle, tinted so they read as community rather than telemetry. */
-.socialBtn {
+/* Every button in the cluster shares one geometry — same height, radius, type
+   scale, icon size. Only the fill separates the tiers:
+     tier 1 (.ctaBtn)     — filled orange gradient, the one loud thing
+     tier 2 (.socialBtn)  — neutral chrome, brand colour carried by icon + text
+     tier 3 (.paneToggle) — neutral chrome, silver: console utility
+   Tier 2 deliberately does NOT get a brand-tinted fill, or it would outshout
+   the CTA. */
+.socialBtn,
+.paneToggle,
+.ctaBtn {
   display: flex;
   align-items: center;
   gap: 0.45rem;
+  height: 32px;
+  padding: 0 0.7rem;
   font-family: var(--font-jetbrains), monospace;
   font-size: 0.68rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  text-decoration: none;
   border-radius: 3px;
-  padding: 0.42rem 0.7rem;
-  white-space: nowrap;
-  transition: box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease;
-}
-
-.socialDiscord {
-  color: #b9c6ff;
-  background: rgba(88, 101, 242, 0.14);
-  border: 1px solid rgba(88, 101, 242, 0.5);
-}
-
-.socialDiscord:hover {
-  background: rgba(88, 101, 242, 0.26);
-  border-color: rgba(129, 140, 248, 0.9);
-  box-shadow: 0 0 14px rgba(88, 101, 242, 0.45);
-}
-
-.socialPatreon {
-  color: #ffb59b;
-  background: rgba(255, 107, 53, 0.12);
-  border: 1px solid rgba(255, 107, 53, 0.5);
-}
-
-.socialPatreon:hover {
-  background: rgba(255, 107, 53, 0.24);
-  border-color: var(--shell-orange);
-  box-shadow: 0 0 14px rgba(255, 107, 53, 0.45);
-}
-
-.playBtn {
-  font-family: var(--font-jetbrains), monospace;
-  font-size: 0.72rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--star-white);
   text-decoration: none;
-  padding: 0.42rem 0.9rem;
-  border-radius: 3px;
-  background: linear-gradient(135deg, var(--shell-orange), var(--claw-red));
-  border: 1px solid rgba(255, 107, 53, 0.7);
-  transition: box-shadow 0.2s ease;
   white-space: nowrap;
+  cursor: pointer;
+  transition: box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
-.playBtn:hover {
-  box-shadow: 0 0 18px rgba(255, 107, 53, 0.5);
-}
-
+.socialBtn,
 .paneToggle {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  font-family: var(--font-jetbrains), monospace;
-  font-size: 0.68rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
   color: var(--chrome-silver);
   background: rgba(0, 212, 255, 0.04);
   border: 1px solid rgba(107, 143, 163, 0.4);
-  border-radius: 3px;
-  padding: 0.42rem 0.7rem;
-  cursor: pointer;
-  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
-  white-space: nowrap;
+}
+
+.socialDiscord svg {
+  color: #8b9dff;
+}
+
+.socialDiscord:hover {
+  color: #b9c6ff;
+  background: rgba(88, 101, 242, 0.14);
+  border-color: rgba(129, 140, 248, 0.8);
+}
+
+.socialPatreon svg {
+  color: var(--shell-orange);
+}
+
+.socialPatreon:hover {
+  color: #ffb59b;
+  background: rgba(255, 107, 53, 0.12);
+  border-color: rgba(255, 107, 53, 0.7);
 }
 
 .paneToggle:hover {
@@ -269,6 +242,20 @@
   color: var(--plasma-cyan);
   border-color: rgba(0, 212, 255, 0.55);
   background: rgba(0, 212, 255, 0.1);
+}
+
+/* tier 1 — the only filled button in the topbar */
+.ctaBtn {
+  padding: 0 1rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--star-white);
+  background: linear-gradient(135deg, var(--shell-orange), var(--claw-red));
+  border: 1px solid rgba(255, 107, 53, 0.7);
+}
+
+.ctaBtn:hover {
+  box-shadow: 0 0 18px rgba(255, 107, 53, 0.5);
 }
 
 /* ------------------------------------------------------------
@@ -750,29 +737,35 @@
     display: none;
   }
 
+  /* Everything but the CTA goes icon-only; the labels reappear in the drawer.
+     Touch targets grow to 44px. */
+  .btnLabel {
+    display: none;
+  }
+
   .iconBtn,
-  .paneToggle {
-    min-height: 40px;
-    min-width: 40px;
+  .paneToggle,
+  .socialBtn,
+  .ctaBtn {
+    min-height: 44px;
+    height: 44px;
   }
 
-  .playBtn {
-    padding: 0.38rem 0.6rem;
-    font-size: 0.64rem;
-  }
-
-  .paneToggleLabel {
-    display: none;
-  }
-
-  /* icon-only community buttons — the labels reappear in the nav drawer */
-  .socialLabel {
-    display: none;
-  }
-
+  .iconBtn,
+  .paneToggle,
   .socialBtn {
-    min-height: 40px;
-    padding: 0.42rem 0.55rem;
+    min-width: 44px;
+    justify-content: center;
+    padding: 0 0.6rem;
+  }
+
+  .ctaBtn {
+    padding: 0 0.8rem;
+    font-size: 0.68rem;
+  }
+
+  .topbarActions {
+    gap: 0.4rem;
   }
 
   .body {
@@ -862,18 +855,30 @@
   }
 }
 
+/* Phone widths: shed the cluster in priority order rather than letting it clip.
+   Patreon goes first (lower frequency, weaker icon recognition at 13px); Discord
+   and the CTA survive to the narrowest screens. Anything that drops is still one
+   tap away in the nav drawer's Community group. */
+@media (max-width: 560px) {
+  .socialPatreon {
+    display: none;
+  }
+}
+
 @media (max-width: 400px) {
   .brandName {
     font-size: 0.74rem;
   }
 
-  .paneToggle {
-    padding: 0.42rem 0.5rem;
+  /* CTA keeps its rocket, loses its word */
+  .ctaLabel {
+    display: none;
   }
 
-  /* last thing to go: the drawer's community rail still carries both links */
-  .socialBtn {
-    display: none;
+  .ctaBtn {
+    min-width: 44px;
+    justify-content: center;
+    padding: 0 0.6rem;
   }
 }
 

@@ -4,10 +4,12 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useRef, useState, useEffect, useCallback } from 'react'
+import { Heart, MessageCircle } from 'lucide-react'
 import { SignedIn, SignedOut } from '@clerk/nextjs'
 import { useTranslation } from '@/i18n'
 import { LanguageSelector } from '@/components/LanguageSelector'
 import { consoleNavGroups } from '@/components/console/consoleNav'
+import { DISCORD_URL, PATREON_URL } from '@/lib/links'
 
 // The Explore menu mirrors the console sidebar (same groups, same order).
 const internalExploreLinks = consoleNavGroups.flatMap((g) => g.items.filter((i) => !i.external))
@@ -157,6 +159,30 @@ export function Nav() {
             >
               {t('nav.about')}
             </Link>
+          </li>
+          <li>
+            <a
+              href={DISCORD_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="nav-social nav-social-discord"
+              aria-label={t('nav.discord')}
+            >
+              <MessageCircle size={14} aria-hidden />
+              <span className="nav-social-label">{t('nav.discord')}</span>
+            </a>
+          </li>
+          <li>
+            <a
+              href={PATREON_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="nav-social nav-social-patreon"
+              aria-label={t('console.patreon')}
+            >
+              <Heart size={14} aria-hidden />
+              <span className="nav-social-label">{t('console.patreon')}</span>
+            </a>
           </li>
           <li>
             <LanguageSelector />

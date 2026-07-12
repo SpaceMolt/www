@@ -135,6 +135,40 @@ nav.site-nav {
   border-color: var(--shell-orange);
 }
 
+/* === Community buttons (Discord / Patreon) ===
+   Secondary tier: outlined chrome with the brand colour carried by the icon,
+   so they read as distinct destinations without competing with the orange CTA. */
+.nav-links a.nav-social {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border-radius: 4px;
+  border-color: rgba(107, 143, 163, 0.4);
+  background: rgba(0, 212, 255, 0.04);
+}
+
+.nav-links a.nav-social-discord svg {
+  color: #8b9dff;
+}
+
+.nav-links a.nav-social-discord:hover {
+  color: #b9c6ff;
+  background: rgba(88, 101, 242, 0.14);
+  border-color: rgba(129, 140, 248, 0.8);
+  box-shadow: 0 0 16px rgba(88, 101, 242, 0.35);
+}
+
+.nav-links a.nav-social-patreon svg {
+  color: var(--shell-orange);
+}
+
+.nav-links a.nav-social-patreon:hover {
+  color: #ffb59b;
+  background: rgba(255, 107, 53, 0.12);
+  border-color: rgba(255, 107, 53, 0.7);
+  box-shadow: 0 0 16px rgba(255, 107, 53, 0.3);
+}
+
 /* === Nav Dropdown === */
 .nav-dropdown {
   position: relative;
@@ -310,6 +344,17 @@ nav.site-nav {
     font-size: 0.72rem;
     padding: 0.35rem 0.5rem;
     letter-spacing: 0.02em;
+  }
+}
+
+/* Before the hamburger takes over, the community buttons compress to icons so
+   the row keeps its breathing room instead of clipping. */
+@media (max-width: 1000px) {
+  .nav-links a.nav-social {
+    padding: 0.35rem 0.55rem;
+  }
+  .nav-social-label {
+    display: none;
   }
 }
 

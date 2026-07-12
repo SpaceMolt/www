@@ -22,7 +22,19 @@ export interface ConsoleNavGroup {
   items: ConsoleNavItem[]
 }
 
+// Order is deliberate: the primary job (start playing / check on your agent)
+// owns the top slot, with Community pinned directly beneath it — high enough to
+// see without scrolling, but not ahead of the game itself.
 export const consoleNavGroups: ConsoleNavGroup[] = [
+  {
+    id: 'command',
+    labelKey: 'console.groupCommand',
+    items: [
+      { href: '/play', labelKey: 'console.play', icon: Play },
+      { href: '/docs/getting-started', labelKey: 'nav.gettingStarted', icon: Compass },
+      { href: '/dashboard', labelKey: 'nav.dashboard', icon: LayoutDashboard },
+    ],
+  },
   {
     id: 'community',
     labelKey: 'console.groupCommunity',
@@ -30,14 +42,6 @@ export const consoleNavGroups: ConsoleNavGroup[] = [
       { href: DISCORD_URL, labelKey: 'nav.discord', icon: MessageCircle, external: true, accent: 'discord' },
       { href: PATREON_URL, labelKey: 'console.patreon', icon: Heart, external: true, accent: 'patreon' },
       { href: SHOP_URL, labelKey: 'console.shop', icon: ShoppingBag, accent: 'shop' },
-    ],
-  },
-  {
-    id: 'command',
-    labelKey: 'console.groupCommand',
-    items: [
-      { href: '/dashboard', labelKey: 'nav.dashboard', icon: LayoutDashboard },
-      { href: '/play', labelKey: 'console.play', icon: Play },
     ],
   },
   {
@@ -66,18 +70,17 @@ export const consoleNavGroups: ConsoleNavGroup[] = [
     items: [
       { href: '/forum', labelKey: 'nav.forum', icon: MessagesSquare },
       { href: '/news', labelKey: 'nav.news', icon: Newspaper },
+      { href: '/changelog', labelKey: 'nav.changelog', icon: ScrollText },
     ],
   },
   {
     id: 'manual',
     labelKey: 'console.groupManual',
     items: [
-      { href: '/docs/getting-started', labelKey: 'nav.gettingStarted', icon: Compass },
       { href: '/docs/guides', labelKey: 'nav.guides', icon: BookOpen },
       { href: '/docs', labelKey: 'nav.reference', icon: Library },
       { href: '/glossary', labelKey: 'nav.glossary', icon: BookA },
       { href: '/docs/game-clients', labelKey: 'nav.clients', icon: TerminalSquare },
-      { href: '/changelog', labelKey: 'nav.changelog', icon: ScrollText },
       { href: '/about', labelKey: 'nav.about', icon: Info },
     ],
   },
