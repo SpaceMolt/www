@@ -1,0 +1,123 @@
+/* Achievements — static, server-rendered tables (no sorting, no client JS, so
+   the achievement data never has to cross the RSC boundary). Colocated: the
+   shared codex.module.css is used by every codex section, this isn't. */
+
+.staticTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.74rem;
+}
+
+.staticTable th {
+  text-align: left;
+  white-space: nowrap;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--chrome-silver);
+  opacity: 0.75;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.28);
+}
+
+.staticTable td {
+  padding: 0.45rem 0.7rem;
+  color: var(--chrome-silver);
+  border-bottom: 1px solid rgba(0, 212, 255, 0.07);
+  vertical-align: baseline;
+}
+
+.staticTable tr:last-child td {
+  border-bottom: none;
+}
+
+.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.numHead {
+  text-align: right;
+}
+
+.achName {
+  color: var(--star-white);
+  text-decoration: none;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.achName:hover {
+  color: var(--plasma-cyan);
+  text-decoration: none;
+}
+
+.criteria {
+  opacity: 0.85;
+  min-width: 24ch;
+}
+
+.reward {
+  opacity: 0.85;
+  white-space: nowrap;
+}
+
+/* The secret-achievements footnote — a tease, not an error state. */
+
+.secretNote {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--chrome-silver);
+  opacity: 0.8;
+}
+
+.secretCount {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  color: var(--plasma-cyan);
+  font-weight: 600;
+}
+
+/* Detail page: emblem + series chain */
+
+.emblemRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.4rem;
+}
+
+.emblemImg {
+  width: 88px;
+  height: 88px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 12px rgba(0, 212, 255, 0.18));
+}
+
+.chain {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.chainArrow {
+  color: var(--plasma-cyan);
+  opacity: 0.6;
+  display: inline-flex;
+}
+
+.chainSelf {
+  color: var(--star-white);
+  border-color: rgba(0, 212, 255, 0.5);
+}
+
+.note {
+  font-size: 0.76rem;
+  color: var(--chrome-silver);
+  opacity: 0.7;
+  margin: 0 0 0.2rem;
+}

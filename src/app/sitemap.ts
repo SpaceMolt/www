@@ -5,7 +5,12 @@ import { getAllGuides } from '@/lib/guides'
 import { getAllReferencePages } from '@/lib/reference'
 import { getAllPosts } from '@/lib/blog'
 import { allModules, allNonModuleItems, allRecipes, catalogMeta } from '@/data/catalog'
-import { allSkills, referenceMeta } from '@/data/catalogReference'
+import {
+  allAchievements,
+  allFactionAchievements,
+  allSkills,
+  referenceMeta,
+} from '@/data/catalogReference'
 import { allChains } from '@/app/(console)/codex/facilities/chains'
 
 const BASE = 'https://www.spacemolt.com'
@@ -75,7 +80,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 }
 
 /**
- * The codex: six list pages plus a detail page per catalog entry. These are
+ * The codex: seven list pages plus a detail page per catalog entry. These are
  * statically rendered from the build-time catalog dump, so `lastModified` is
  * when that dump was fetched — the data only moves when a game release moves it,
  * which is why everything here is 'monthly' rather than the 'weekly' the live
@@ -104,6 +109,7 @@ function codexRoutes(): MetadataRoute.Sitemap {
     { path: '/codex/recipes', lastModified: catalogFetched },
     { path: '/codex/skills', lastModified: referenceFetched },
     { path: '/codex/facilities', lastModified: referenceFetched },
+    { path: '/codex/achievements', lastModified: referenceFetched },
   ].map(({ path, lastModified }) => ({
     url: `${BASE}${path}`,
     lastModified,
@@ -131,5 +137,10 @@ function codexRoutes(): MetadataRoute.Sitemap {
     ...detail('/codex/recipes', allRecipes().map((r) => r.id), catalogFetched),
     ...detail('/codex/skills', allSkills().map((s) => s.id), referenceFetched),
     ...detail('/codex/facilities', allChains().map((c) => c.root.id), referenceFetched),
+    ...detail(
+      '/codex/achievements',
+      [...allAchievements(), ...allFactionAchievements()].map((a) => a.id),
+      referenceFetched,
+    ),
   ]
 }

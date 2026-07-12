@@ -1,10 +1,14 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import {
-  Boxes, Cpu, Hammer, GraduationCap, Rocket, Factory, Download, BookOpen,
+  Boxes, Cpu, Hammer, GraduationCap, Rocket, Factory, Trophy, Download, BookOpen,
 } from 'lucide-react'
 import { allModules, allNonModuleItems, catalogMeta } from '@/data/catalog'
-import { referenceMeta } from '@/data/catalogReference'
+import {
+  allAchievements,
+  allFactionAchievements,
+  referenceMeta,
+} from '@/data/catalogReference'
 import styles from './codex.module.css'
 
 const CATALOG_URL = 'https://game.spacemolt.com/api/catalog.json'
@@ -68,6 +72,13 @@ export default function CodexIndex() {
       title: 'Facilities',
       count: referenceMeta.counts.facilities,
       desc: 'Station modules and the recipes they unlock or accelerate.',
+    },
+    {
+      href: '/codex/achievements',
+      icon: Trophy,
+      title: 'Achievements',
+      count: allAchievements().length + allFactionAchievements().length,
+      desc: 'Pilot and faction achievements — what earns them, what they pay, and the prestige hulls they unlock.',
     },
   ]
 

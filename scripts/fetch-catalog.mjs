@@ -20,7 +20,8 @@
  *     bundle, so EVERY BYTE IN THIS FILE IS DOWNLOADED BY EVERY PLAYER loading
  *     the web client. Keep it to data /play actually uses.
  *
- *   src/data/catalog-reference.json { skills, facilities, _meta }      ~2.2 MB
+ *   src/data/catalog-reference.json { skills, facilities, achievements,
+ *                                     faction_achievements, _meta }     ~2.2 MB
  *     Consumed only by src/data/catalogReference.ts, which is marked
  *     `import 'server-only'`. Used by the /codex/* pages, which are
  *     server-rendered at build time — so this never reaches the browser.
@@ -60,11 +61,14 @@ const PAGE_SIZE = 50
 /** The two files we emit, and the dump sections that go into each. */
 const OUTPUTS = {
   'catalog.json': ['items', 'recipes', 'ships'],
-  'catalog-reference.json': ['skills', 'facilities'],
+  'catalog-reference.json': ['skills', 'facilities', 'achievements', 'faction_achievements'],
 }
 
 /** Sections the paged fallback cannot supply — there is no endpoint for them. */
-const PAGED_CANNOT_SUPPLY = ['skills', 'facilities']
+const PAGED_CANNOT_SUPPLY = ['skills', 'facilities', 'achievements', 'faction_achievements']
+
+/** Hidden achievements are excluded from the dump; only these counts are published. */
+const HIDDEN_COUNT_KEYS = ['hidden_achievement_count', 'hidden_faction_achievement_count']
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
@@ -171,7 +175,16 @@ async function fetchPaged() {
     fetchPaginated(sessionId, { type: 'ships' }),
   ])
 
-  return { version: null, items, recipes, ships, skills: [], facilities: [] }
+  return {
+    version: null,
+    items,
+    recipes,
+    ships,
+    skills: [],
+    facilities: [],
+    achievements: [],
+    faction_achievements: [],
+  }
 }
 
 // ── Writing ─────────────────────────────────────────────────────────────
@@ -193,6 +206,7 @@ function byId(entries) {
 function writeOutput(filename, sections, dump, { fetchedAt, version, source, allowEmpty }) {
   const data = {}
   const counts = {}
+  const meta = {}
   let partial = false
 
   for (const section of sections) {
@@ -210,9 +224,18 @@ function writeOutput(filename, sections, dump, { fetchedAt, version, source, all
     }
   }
 
+  // Hidden achievements are withheld from the dump by design; the server tells
+  // us how many there are so the codex total reconciles with the in-game one.
+  // Only meaningful in the file that carries the achievements themselves.
+  if (sections.includes('achievements')) {
+    for (const key of HIDDEN_COUNT_KEYS) {
+      if (typeof dump[key] === 'number') meta[key] = dump[key]
+    }
+  }
+
   const json = JSON.stringify({
     ...data,
-    _meta: { fetchedAt, server: GAME_SERVER, version, counts, source, partial },
+    _meta: { fetchedAt, server: GAME_SERVER, version, counts, source, partial, ...meta },
   })
 
   writeFileSync(dataPath(filename), json)
@@ -257,8 +280,8 @@ async function main() {
   console.log(`  Source: ${source}${version ? `, game version: ${version}` : ''}`)
 
   for (const [filename, sections] of Object.entries(OUTPUTS)) {
-    // A degraded source has nothing to say about skills/facilities. If the last
-    // build left a complete file there, keep it — stale beats empty.
+    // A degraded source has nothing to say about skills/facilities/achievements.
+    // If the last build left a complete file there, keep it — stale beats empty.
     const degrades = sections.some((s) => allowEmpty.includes(s))
     if (degrades && hasGoodData(filename, sections)) {
       console.log(`  Keeping existing src/data/${filename} — the paged API cannot refresh it`)
