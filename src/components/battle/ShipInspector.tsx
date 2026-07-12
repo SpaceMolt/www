@@ -39,6 +39,7 @@ export default function ShipInspector({ timeline, participantId, tickIndex, onCl
   }
 
   const statusBadges: { label: string; color: string }[] = []
+  if (!meta.armed) statusBadges.push({ label: 'UNARMED', color: '#6b8fa3' })
   if (snap) {
     if ((snap.disruption_ticks ?? 0) > 0) statusBadges.push({ label: `⚡ disrupted ${snap.disruption_ticks}t`, color: '#9b59b6' })
     if ((snap.burn_ticks ?? 0) > 0) statusBadges.push({ label: `🔥 burning ${snap.burn_damage_per_tick}/t ×${snap.burn_ticks}`, color: '#ff9551' })
@@ -50,7 +51,10 @@ export default function ShipInspector({ timeline, participantId, tickIndex, onCl
       <div className={styles.inspectorHeader}>
         <div>
           <span className={styles.inspectorName}>{meta.name}</span>
-          <span className={styles.inspectorClass}>{meta.shipClassName}</span>
+          <span className={styles.inspectorClass}>
+            {meta.shipClassName}
+            {meta.shipClass ? ` · ${meta.shipClass}` : ''}
+          </span>
         </div>
         <button className={styles.inspectorClose} onClick={onClose} aria-label="Close inspector">
           ✕
