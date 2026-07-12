@@ -1,0 +1,101 @@
+/* === Facilities-only styles ==========================================
+   Everything generic (.table, .td, .badge, .statGrid, …) comes from the shared
+   codex.module.css. This file only carries what the upgrade-chain view
+   needs: the level-by-level progression table and the maintenance flavour. */
+
+/* The tier the page is about, inside the chain table. */
+.rowActive {
+  background: rgba(0, 212, 255, 0.08);
+  box-shadow: inset 2px 0 0 var(--plasma-cyan);
+}
+
+.rowActive .levelCell {
+  color: var(--plasma-cyan);
+}
+
+/* Monospace "L3" gutter, so the progression reads as a ladder. */
+.levelCell {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  color: var(--chrome-silver);
+  opacity: 0.8;
+}
+
+/* The current tier is not a link — mark it as "you are here". */
+.selfName {
+  color: var(--star-white);
+  font-weight: 500;
+}
+
+.selfMark {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--plasma-cyan);
+  opacity: 0.8;
+  margin-left: 0.5rem;
+}
+
+.chainNote {
+  font-size: 0.72rem;
+  color: var(--chrome-silver);
+  opacity: 0.7;
+  margin: 0.7rem 0 0;
+}
+
+/* Maintenance satisfied / degraded flavour. */
+.flavor {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.9rem;
+}
+
+.flavorRow {
+  display: grid;
+  grid-template-columns: 6rem 1fr;
+  gap: 0.7rem;
+  align-items: baseline;
+}
+
+.flavorLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--chrome-silver);
+  opacity: 0.7;
+}
+
+.flavorSatisfied {
+  color: var(--plasma-cyan);
+  opacity: 0.85;
+}
+
+.flavorDegraded {
+  color: #ff9d5c;
+  opacity: 0.9;
+}
+
+.flavorText {
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: var(--chrome-silver);
+}
+
+.lore {
+  font-size: 0.82rem;
+  line-height: 1.7;
+  color: var(--chrome-silver);
+  font-style: italic;
+  margin: 0;
+  max-width: 76ch;
+}
+
+@media (max-width: 640px) {
+  .flavorRow {
+    grid-template-columns: 1fr;
+    gap: 0.15rem;
+  }
+}

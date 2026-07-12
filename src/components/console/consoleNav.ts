@@ -1,9 +1,9 @@
 import type { LucideIcon } from 'lucide-react'
 import {
-  LayoutDashboard, Play, Map, Swords, Trophy, Radio, Rocket, Building2,
+  LayoutDashboard, Play, Map, Swords, Trophy, Radio, Building2,
   Coins, TrendingUp, MessagesSquare, Newspaper, MessageCircle, Compass,
   BookOpen, Library, TerminalSquare, ScrollText, Info, ShoppingBag, Heart,
-  BookA,
+  BookA, Database,
 } from 'lucide-react'
 import { DISCORD_URL, PATREON_URL, SHOP_URL } from '@/lib/links'
 
@@ -58,7 +58,11 @@ export const consoleNavGroups: ConsoleNavGroup[] = [
     id: 'database',
     labelKey: 'console.groupDatabase',
     items: [
-      { href: '/ships', labelKey: 'nav.ships', icon: Rocket },
+      // "Codex" not "Reference" — /docs already owns that label (and /reference
+      // permanently redirects to /docs), so the game-data catalog lives at /codex.
+      { href: '/codex', labelKey: 'nav.codex', icon: Database },
+      // /ships is still live and is reached from the Codex index card — it just
+      // no longer earns its own sidebar slot now that the Codex fronts the data.
       { href: '/stations', labelKey: 'nav.stations', icon: Building2 },
       { href: '/market', labelKey: 'nav.market', icon: Coins },
       { href: '/market/report', labelKey: 'nav.marketReport', icon: TrendingUp },
