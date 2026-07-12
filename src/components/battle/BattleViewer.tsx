@@ -440,17 +440,22 @@ export default function BattleViewer({ battleId }: { battleId: string }) {
             }}
           />
 
-          {timeline.sides.map(side => (
-            <SideScoreboard
-              key={side.sideId}
-              side={side}
-              timeline={timeline}
-              tickIndex={Math.min(uiTick, timeline.entries.length - 1)}
-              selectedId={selectedId}
-              onSelect={id => setSelectedId(prev => (prev === id ? null : id))}
-              winner={endEntry?.winning_side === side.sideId && !!showOutcome}
-            />
-          ))}
+          {/* display:contents on desktop (panels dock to the arena flanks);
+              a stacked chip column on narrow screens so multi-side battles
+              never bury the arena under floating panels. */}
+          <div className={styles.scoreboardLayer}>
+            {timeline.sides.map(side => (
+              <SideScoreboard
+                key={side.sideId}
+                side={side}
+                timeline={timeline}
+                tickIndex={Math.min(uiTick, timeline.entries.length - 1)}
+                selectedId={selectedId}
+                onSelect={id => setSelectedId(prev => (prev === id ? null : id))}
+                winner={endEntry?.winning_side === side.sideId && !!showOutcome}
+              />
+            ))}
+          </div>
 
           {selectedId && (
             <ShipInspector

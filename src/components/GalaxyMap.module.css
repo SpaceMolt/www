@@ -205,13 +205,33 @@
   z-index: 100;
 }
 
+.legendToggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
 .legendTitle {
   font-family: var(--font-orbitron), 'Orbitron', sans-serif;
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 1px;
   color: var(--chrome-silver);
-  margin-bottom: 0.5rem;
+}
+
+.legendChevron {
+  color: var(--hull-grey);
+  font-size: 0.7rem;
+}
+
+.legendItems {
+  margin-top: 0.5rem;
 }
 
 .legendItem {
@@ -1166,6 +1186,11 @@
   .legend {
     padding: 0.5rem 0.75rem;
     font-size: 0.65rem;
+    /* collapsed by default on mobile — the toggle needs a real touch target */
+    min-height: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
 
   .legendTitle {
@@ -1177,14 +1202,46 @@
     height: 8px;
   }
 
+  /* Compact one-line telemetry pill instead of a tall panel */
   .stats {
-    top: 3.2rem;
-    padding: 0.5rem 0.75rem;
-    font-size: 0.75rem;
+    top: 3.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.7rem;
+  }
+
+  .statsHeader {
+    padding-bottom: 0;
+    margin-bottom: 0;
+    border-bottom: none;
+  }
+
+  .statRow {
+    gap: 0.3rem;
+    margin-bottom: 0;
   }
 
   .zoomControls {
     bottom: 1rem;
+  }
+
+  /* Bigger touch targets for the on-map buttons */
+  .zoomBtn,
+  .searchBtn {
+    width: 44px;
+    height: 44px;
+  }
+
+  /* Clear the taller zoom stack (reset view + zoom in/out at 44px each) */
+  .searchContainer {
+    bottom: calc(1rem + 150px + 0.5rem);
+    right: 1rem;
+  }
+
+  .searchDropdown {
+    width: min(300px, calc(100vw - 1.5rem));
   }
 
   .poiPanel {
@@ -1197,10 +1254,20 @@
     transform: translateY(100%);
     transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     max-height: 50%;
+    max-height: 52dvh;
   }
 
   .poiPanelVisible {
     transform: translateY(0);
+  }
+
+  .poiPanelClose {
+    width: 36px;
+    height: 36px;
+  }
+
+  .poiPanelContent {
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
   }
 
   .activityToast {
@@ -1210,17 +1277,36 @@
   }
 
   .travelTracker {
-    top: 3.2rem;
-    right: 0.5rem;
+    top: 0.9rem;
+    right: 1rem;
+  }
+
+  /* Icon-only compass button; the label eats too much map width */
+  .travelTrackerLabel {
+    display: none;
   }
 
   .travelTrackerBtn {
-    padding: 0.4rem 0.6rem;
+    position: relative;
+    padding: 0;
+    width: 44px;
+    height: 44px;
+    justify-content: center;
     font-size: 0.7rem;
   }
 
+  .travelTrackerBtn .travelTrackerIcon {
+    display: flex;
+  }
+
+  .travelTrackerBadge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+  }
+
   .travelDropdown {
-    width: 220px;
+    width: min(280px, calc(100vw - 1.5rem));
   }
 }
 

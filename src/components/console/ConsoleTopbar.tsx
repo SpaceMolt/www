@@ -55,7 +55,7 @@ export function ConsoleTopbar({ stats, online, navOpen, onToggleNav, paneOpen, o
             {stats ? stats.online_players.toLocaleString() : '-'}
           </span>
         </span>
-        <span className={styles.readout}>
+        <span className={`${styles.readout} ${styles.readoutTick}`}>
           <span className={styles.readoutLabel}>{t('statsBar.tick')}</span>
           <span className={styles.readoutValue}>{stats ? stats.tick.toLocaleString() : '-'}</span>
         </span>
