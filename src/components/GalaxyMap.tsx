@@ -2365,6 +2365,8 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
         <button
           className={`${styles.travelTrackerBtn}${travelDropdownOpen ? ` ${styles.travelTrackerBtnActive}` : ''}`}
           onClick={() => setTravelDropdownOpen((o) => !o)}
+          aria-label="Travel Tracker"
+          aria-expanded={travelDropdownOpen}
         >
           <span className={styles.travelTrackerIcon}><Compass size={16} /></span>
           <span className={styles.travelTrackerLabel}>Travel Tracker</span>

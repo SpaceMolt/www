@@ -1185,13 +1185,13 @@
   }
 
   .legend {
-    padding: 0.5rem 0.75rem;
+    padding: 0.25rem 0.75rem;
     font-size: 0.65rem;
-    /* collapsed by default on mobile — the toggle needs a real touch target */
+  }
+
+  /* collapsed by default on mobile — the toggle needs a real touch target */
+  .legendToggle {
     min-height: 40px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
   }
 
   .legendTitle {
