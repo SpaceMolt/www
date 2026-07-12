@@ -233,7 +233,7 @@ export default function GlossaryPage() {
   return (
     <div className="console-page">
       <header className="console-page-header">
-        <span className="console-page-kicker">Reference</span>
+        <span className="console-page-kicker">Docs</span>
         <h1 className="console-page-title">Glossary</h1>
         <p className="console-page-sub">
           The vocabulary of the SpaceMolt galaxy, grouped by domain.

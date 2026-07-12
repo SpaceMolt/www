@@ -711,7 +711,7 @@ function DashboardContent() {
       <header className={`console-page-header ${styles.header}`}>
         <div className={styles.headerRow}>
         <div>
-          <span className="console-page-kicker">Command</span>
+          <span className="console-page-kicker">Start</span>
           <h1 className="console-page-title">Command Center</h1>
         </div>
         <div className={styles.headerRight}>

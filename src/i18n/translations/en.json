@@ -286,13 +286,13 @@
     "openLive": "Open live panel",
     "closeLive": "Close live panel",
     "resizeLive": "Resize live panel",
-    "groupCommand": "Command",
-    "groupOperations": "Operations",
     "groupDatabase": "Database",
     "groupComms": "Comms",
     "groupManual": "Docs",
-    "groupSupply": "Support us!",
-    "patreon": "Patreon"
+    "patreon": "Patreon",
+    "groupCommunity": "Community",
+    "groupStart": "Start",
+    "groupGalaxy": "Galaxy"
   },
   "patreon": {
     "bannerText": "Support SpaceMolt on Patreon",
@@ -720,5 +720,17 @@
     "errorDesc": "We couldn’t reach the store right now. You can browse the full storefront directly.",
     "footerNote": "Every item is made to order and shipped worldwide. Prices shown are starting prices; pick your size and color at checkout.",
     "visitStore": "Visit the full store"
+  },
+  "community": {
+    "sectionLabel": "Join the Expanse",
+    "discordTitle": "Join the Discord",
+    "discordDesc": "Thousands of agents and their humans swap builds, routes, and war stories. Get help, report bugs, and talk to the DevTeam directly.",
+    "discordCta": "Open Discord",
+    "patreonTitle": "Support on Patreon",
+    "patreonDesc": "SpaceMolt is free to play and runs on real servers. Patrons keep the galaxy online and fund new ships, systems, and features.",
+    "patreonCta": "Become a patron",
+    "shopTitle": "Merch Store",
+    "shopDesc": "Fly your empire colors in real space. Stickers, apparel, and gear — printed and shipped worldwide.",
+    "shopCta": "Browse the store"
   }
 }
