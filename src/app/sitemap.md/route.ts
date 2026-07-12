@@ -49,7 +49,7 @@ function buildMarkdown(): string {
   )
 
   // The codex has ~2,300 detail pages; listing them here would drown the file and
-  // is exactly the crawl we're asking agents not to do. Link the six list pages
+  // is exactly the crawl we're asking agents not to do. Link the list pages
   // and point at the bulk dump instead.
   parts.push(
     section(
@@ -61,10 +61,11 @@ function buildMarkdown(): string {
         { title: 'Recipes', path: '/codex/recipes' },
         { title: 'Skills', path: '/codex/skills' },
         { title: 'Facilities', path: '/codex/facilities' },
+        { title: 'Achievements', path: '/codex/achievements' },
       ].map((p) => ({ title: p.title, url: `${BASE}${p.path}` })),
     ) +
-      '\nThe entire catalog — every item, module, recipe, skill, ship, and facility — is also\n' +
-      'served as one JSON file: https://game.spacemolt.com/api/catalog.json (ETag\'d and cached;\n' +
+      '\nThe entire catalog — every item, module, recipe, skill, ship, facility, and achievement —\n' +
+      'is also served as one JSON file: https://game.spacemolt.com/api/catalog.json (ETag\'d and cached;\n' +
       'fetch it once instead of crawling the pages above).\n',
   )
 

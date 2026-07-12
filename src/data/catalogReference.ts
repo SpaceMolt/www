@@ -1,5 +1,5 @@
 /**
- * Reference-only game catalog data — skills and facilities.
+ * Reference-only game catalog data — skills, facilities and achievements.
  * Fetched at build time by scripts/fetch-catalog.mjs into catalog-reference.json.
  *
  * ⚠️ SERVER-ONLY BY DESIGN. Do not remove the `server-only` import below.
@@ -104,10 +104,56 @@ export interface RawFacility {
   allows_contraband?: boolean
 }
 
+/**
+ * An achievement as published by the catalog dump.
+ *
+ * HIDDEN ACHIEVEMENTS ARE NOT IN HERE. The game server strips every entry
+ * flagged `hidden` — the secrets stay secret — and publishes only a count of
+ * them (`hiddenAchievementCount` below), so the codex total still reconciles
+ * with the total the game reports in-game.
+ *
+ * Everything after `criteria` is `omitempty` on the server: treat it as optional.
+ */
+export interface RawAchievement {
+  id: string
+  name: string
+  description: string
+  /** combat | commerce | collection | economy | exploration | industry | logistics | mastery | progression | salvage | smuggling | social */
+  category: string
+  points: number
+  /** Rendered, human-readable unlock condition, e.g. "Mine 1,000 units of ore" */
+  criteria: string
+  /** Chain this achievement belongs to, e.g. "prospector" */
+  series?: string
+  /** The achievement that must be earned before this one (chain predecessor) */
+  after?: string
+  /** Title granted on unlock (a faction title on faction achievements) */
+  title?: string
+  /** Emblem id — art lives at /images/achievements/<id>.webp */
+  emblem?: string
+  credits?: number
+  /** Skill XP granted on unlock, keyed by skill id */
+  skill_xp?: Record<string, number>
+  /** True on faction-tier achievements */
+  faction?: boolean
+}
+
 interface ReferenceData {
   skills: Record<string, RawSkill>
   facilities: Record<string, RawFacility>
-  _meta: CatalogMeta<{ skills: number; facilities: number }>
+  achievements: Record<string, RawAchievement>
+  faction_achievements: Record<string, RawAchievement>
+  _meta: CatalogMeta<{
+    skills: number
+    facilities: number
+    achievements: number
+    faction_achievements: number
+  }> & {
+    /** How many player achievements are secret (withheld from the dump) */
+    hidden_achievement_count?: number
+    /** How many faction achievements are secret (withheld from the dump) */
+    hidden_faction_achievement_count?: number
+  }
 }
 
 const reference = rawReference as unknown as ReferenceData
@@ -120,12 +166,44 @@ export const skillsById: Readonly<Record<string, RawSkill>> = reference.skills
 /** All facilities keyed by ID */
 export const facilitiesById: Readonly<Record<string, RawFacility>> = reference.facilities
 
+/**
+ * All (non-hidden) player achievements keyed by ID.
+ *
+ * Defaulted: the achievements sections are newer than the file on disk may be —
+ * a build running against a game server that doesn't publish them yet (or one
+ * that kept a stale reference file) sees `undefined` here, and the codex pages
+ * degrade to an "unavailable" state rather than crashing the build.
+ */
+export const achievementsById: Readonly<Record<string, RawAchievement>> =
+  reference.achievements ?? {}
+
+/** All (non-hidden) faction achievements keyed by ID */
+export const factionAchievementsById: Readonly<Record<string, RawAchievement>> =
+  reference.faction_achievements ?? {}
+
+/** How many player achievements are secret — published but not enumerated */
+export const hiddenAchievementCount: number = reference._meta?.hidden_achievement_count ?? 0
+
+/** How many faction achievements are secret */
+export const hiddenFactionAchievementCount: number =
+  reference._meta?.hidden_faction_achievement_count ?? 0
+
 /** Provenance: when this data was fetched, from which server, at which game version */
 export const referenceMeta: Readonly<ReferenceData['_meta']> = reference._meta
 
 /** Get a single skill by ID */
 export function getSkill(id: string): RawSkill | undefined {
   return reference.skills[id]
+}
+
+/** Get a single achievement by ID — player tier first, then faction tier */
+export function getAchievement(id: string): RawAchievement | undefined {
+  return achievementsById[id] ?? factionAchievementsById[id]
+}
+
+/** Get a single faction achievement by ID */
+export function getFactionAchievement(id: string): RawAchievement | undefined {
+  return factionAchievementsById[id]
 }
 
 /** Get a single facility by ID */
@@ -159,6 +237,36 @@ let _facilitiesByCategory: Record<string, RawFacility[]> | null = null
 export function facilitiesByCategory(): Readonly<Record<string, RawFacility[]>> {
   if (!_facilitiesByCategory) _facilitiesByCategory = groupBy(allFacilities(), f => f.category)
   return _facilitiesByCategory
+}
+
+/** All (non-hidden) player achievements as a flat array (cached) */
+let _achievements: RawAchievement[] | null = null
+export function allAchievements(): RawAchievement[] {
+  if (!_achievements) _achievements = Object.values(achievementsById)
+  return _achievements
+}
+
+/** All (non-hidden) faction achievements as a flat array (cached) */
+let _factionAchievements: RawAchievement[] | null = null
+export function allFactionAchievements(): RawAchievement[] {
+  if (!_factionAchievements) _factionAchievements = Object.values(factionAchievementsById)
+  return _factionAchievements
+}
+
+/** Player achievements grouped by category ("exploration", "mastery", ...) — cached */
+let _achievementsByCategory: Record<string, RawAchievement[]> | null = null
+export function achievementsByCategory(): Readonly<Record<string, RawAchievement[]>> {
+  if (!_achievementsByCategory) _achievementsByCategory = groupBy(allAchievements(), a => a.category)
+  return _achievementsByCategory
+}
+
+/** Faction achievements grouped by category — cached */
+let _factionAchievementsByCategory: Record<string, RawAchievement[]> | null = null
+export function factionAchievementsByCategory(): Readonly<Record<string, RawAchievement[]>> {
+  if (!_factionAchievementsByCategory) {
+    _factionAchievementsByCategory = groupBy(allFactionAchievements(), a => a.category)
+  }
+  return _factionAchievementsByCategory
 }
 
 /** Facilities that produce the given recipe (a facility runs at most one recipe) */
