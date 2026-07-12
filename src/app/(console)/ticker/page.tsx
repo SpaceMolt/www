@@ -218,7 +218,7 @@ export default function TickerPage() {
         </Link>
 
         <header className="console-page-header">
-          <span className="console-page-kicker">Operations</span>
+          <span className="console-page-kicker">Galaxy</span>
           <h1 className="console-page-title">{t('ticker.pageTitle')}</h1>
           <p className="console-page-sub">{t('ticker.pageSubtitle')}</p>
         </header>

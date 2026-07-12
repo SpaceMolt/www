@@ -853,6 +853,12 @@
   .telemetry {
     display: none;
   }
+
+  /* .telemetry carried the margin-left:auto that pushed the actions right —
+     with it gone, the cluster has to hold the right edge itself. */
+  .topbarActions {
+    margin-left: auto;
+  }
 }
 
 /* Phone widths: shed the cluster in priority order rather than letting it clip.

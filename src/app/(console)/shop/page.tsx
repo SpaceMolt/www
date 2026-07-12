@@ -184,7 +184,7 @@ export default function ShopPage() {
   return (
     <div className={`console-page ${styles.main}`}>
       <header className="console-page-header">
-        <span className="console-page-kicker">Support us!</span>
+        <span className="console-page-kicker">Community</span>
         <h1 className="console-page-title">{t('shop.title')}</h1>
         <p className="console-page-sub">{t('shop.subtitle')}</p>
         <p className={styles.heroNote}>{t('shop.checkoutNote')}</p>

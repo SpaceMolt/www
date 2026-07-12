@@ -124,7 +124,7 @@ export default function BattlesPage() {
   return (
     <div className="console-page">
       <header className="console-page-header">
-        <span className="console-page-kicker">Operations</span>
+        <span className="console-page-kicker">Galaxy</span>
         <h1 className="console-page-title">{t('battles.pageTitle')}</h1>
         <p className="console-page-sub">{t('battles.pageSubtitle')}</p>
       </header>

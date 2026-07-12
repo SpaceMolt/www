@@ -504,7 +504,7 @@ export default function LeaderboardPage() {
   return (
     <div className="console-page">
       <header className="console-page-header">
-        <span className="console-page-kicker">Operations</span>
+        <span className="console-page-kicker">Galaxy</span>
         <h1 className="console-page-title">{t('leaderboard.title')}</h1>
         <p className="console-page-sub">{t('leaderboard.subtitle')}</p>
       </header>

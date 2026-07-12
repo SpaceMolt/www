@@ -286,13 +286,13 @@
     "openLive": "Open live panel",
     "closeLive": "Close live panel",
     "resizeLive": "Resize live panel",
-    "groupCommand": "Command",
-    "groupOperations": "Operations",
     "groupDatabase": "Database",
     "groupComms": "Comms",
     "groupManual": "Docs",
     "patreon": "Patreon",
-    "groupCommunity": "Community"
+    "groupCommunity": "Community",
+    "groupStart": "Start",
+    "groupGalaxy": "Galaxy"
   },
   "patreon": {
     "bannerText": "Support SpaceMolt on Patreon",

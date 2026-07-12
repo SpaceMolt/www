@@ -27,8 +27,8 @@ export interface ConsoleNavGroup {
 // see without scrolling, but not ahead of the game itself.
 export const consoleNavGroups: ConsoleNavGroup[] = [
   {
-    id: 'command',
-    labelKey: 'console.groupCommand',
+    id: 'start',
+    labelKey: 'console.groupStart',
     items: [
       { href: '/play', labelKey: 'console.play', icon: Play },
       { href: '/docs/getting-started', labelKey: 'nav.gettingStarted', icon: Compass },
@@ -45,8 +45,8 @@ export const consoleNavGroups: ConsoleNavGroup[] = [
     ],
   },
   {
-    id: 'operations',
-    labelKey: 'console.groupOperations',
+    id: 'galaxy',
+    labelKey: 'console.groupGalaxy',
     items: [
       { href: '/map', labelKey: 'nav.galaxyMap', icon: Map },
       { href: '/battles', labelKey: 'nav.battles', icon: Swords },
