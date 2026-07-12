@@ -1,0 +1,88 @@
+/* Skills — static, server-rendered tables (no sorting, no client JS, so the
+   skill data never has to cross the RSC boundary). Colocated: the shared
+   codex.module.css is used by every codex section, this isn't. */
+
+.staticTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.74rem;
+}
+
+.staticTable th {
+  text-align: left;
+  white-space: nowrap;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--chrome-silver);
+  opacity: 0.75;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.28);
+}
+
+.staticTable td {
+  padding: 0.45rem 0.7rem;
+  color: var(--chrome-silver);
+  border-bottom: 1px solid rgba(0, 212, 255, 0.07);
+  vertical-align: baseline;
+}
+
+.staticTable tr:last-child td {
+  border-bottom: none;
+}
+
+.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.numHead {
+  text-align: right;
+}
+
+.skillName {
+  color: var(--star-white);
+  text-decoration: none;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.skillName:hover {
+  color: var(--plasma-cyan);
+  text-decoration: none;
+}
+
+.trainedBy {
+  opacity: 0.85;
+  min-width: 22ch;
+}
+
+/* Category grouping on the index */
+
+.categoryCount {
+  margin-left: auto;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.66rem;
+  color: var(--plasma-cyan);
+  opacity: 0.75;
+}
+
+.tableBody {
+  padding: 0;
+}
+
+/* XP curve */
+
+.curveNote {
+  font-size: 0.76rem;
+  color: var(--chrome-silver);
+  opacity: 0.7;
+  margin: 0 0 0.2rem;
+}
+
+.milestone td {
+  color: var(--star-white);
+}

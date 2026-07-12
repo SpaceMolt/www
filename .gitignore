@@ -33,6 +33,7 @@ next-env.d.ts
 
 # generated catalog data (fetched at build time)
 src/data/catalog.json
+src/data/catalog-reference.json
 
 # generated guides manifest (built from public/guides/*.md + guides-meta.json)
 public/guides/index.json

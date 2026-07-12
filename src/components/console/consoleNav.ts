@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Play, Map, Swords, Trophy, Radio, Rocket, Building2,
   Coins, TrendingUp, MessagesSquare, Newspaper, MessageCircle, Compass,
   BookOpen, Library, TerminalSquare, ScrollText, Info, ShoppingBag, Heart,
-  BookA,
+  BookA, Database,
 } from 'lucide-react'
 
 export interface ConsoleNavItem {
@@ -42,6 +42,9 @@ export const consoleNavGroups: ConsoleNavGroup[] = [
     id: 'database',
     labelKey: 'console.groupDatabase',
     items: [
+      // "Codex" not "Reference" — /docs already owns that label (and /reference
+      // permanently redirects to /docs), so the game-data catalog lives at /codex.
+      { href: '/codex', labelKey: 'nav.codex', icon: Database },
       { href: '/ships', labelKey: 'nav.ships', icon: Rocket },
       { href: '/stations', labelKey: 'nav.stations', icon: Building2 },
       { href: '/market', labelKey: 'nav.market', icon: Coins },
