@@ -480,6 +480,9 @@
 }
 
 .inspectorBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
   font-size: 0.6rem;
   border: 1px solid;
   border-radius: 3px;
@@ -571,6 +574,9 @@
 }
 
 .replayBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   margin-top: 0.4rem;
   font-family: var(--font-jetbrains), monospace;
   font-size: 0.75rem;
@@ -713,6 +719,9 @@
 }
 
 .ctrlBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-family: var(--font-jetbrains), monospace;
   font-size: 0.72rem;
   color: var(--chrome-silver);
@@ -720,6 +729,7 @@
   border: 1px solid var(--nebula-blue);
   border-radius: 4px;
   min-width: 34px;
+  min-height: 28px;
   padding: 0.32rem 0.45rem;
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s;
