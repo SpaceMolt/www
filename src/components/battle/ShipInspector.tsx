@@ -1,5 +1,7 @@
 'use client'
 
+import type { ReactNode } from 'react'
+import { Flame, ShieldOff, Zap } from 'lucide-react'
 import styles from './BattleViewer.module.css'
 import { useTranslation } from '@/i18n'
 import { damageTypeColor } from '@/lib/battle/types'
@@ -38,12 +40,12 @@ export default function ShipInspector({ timeline, participantId, tickIndex, onCl
     }
   }
 
-  const statusBadges: { label: string; color: string }[] = []
+  const statusBadges: { icon?: ReactNode; label: string; color: string }[] = []
   if (!meta.armed) statusBadges.push({ label: 'UNARMED', color: '#6b8fa3' })
   if (snap) {
-    if ((snap.disruption_ticks ?? 0) > 0) statusBadges.push({ label: `⚡ disrupted ${snap.disruption_ticks}t`, color: '#9b59b6' })
-    if ((snap.burn_ticks ?? 0) > 0) statusBadges.push({ label: `🔥 burning ${snap.burn_damage_per_tick}/t ×${snap.burn_ticks}`, color: '#ff9551' })
-    if ((snap.armor_melt_ticks ?? 0) > 0) statusBadges.push({ label: `🫠 armor melt −${snap.armor_melt_pct}%`, color: '#e63946' })
+    if ((snap.disruption_ticks ?? 0) > 0) statusBadges.push({ icon: <Zap size={10} aria-hidden />, label: `disrupted ${snap.disruption_ticks}t`, color: '#9b59b6' })
+    if ((snap.burn_ticks ?? 0) > 0) statusBadges.push({ icon: <Flame size={10} aria-hidden />, label: `burning ${snap.burn_damage_per_tick}/t ×${snap.burn_ticks}`, color: '#ff9551' })
+    if ((snap.armor_melt_ticks ?? 0) > 0) statusBadges.push({ icon: <ShieldOff size={10} aria-hidden />, label: `armor melt −${snap.armor_melt_pct}%`, color: '#e63946' })
   }
 
   return (
@@ -103,6 +105,7 @@ export default function ShipInspector({ timeline, participantId, tickIndex, onCl
             <div className={styles.inspectorBadges}>
               {statusBadges.map((b, i) => (
                 <span key={i} className={styles.inspectorBadge} style={{ borderColor: b.color, color: b.color }}>
+                  {b.icon}
                   {b.label}
                 </span>
               ))}

@@ -696,6 +696,12 @@
     display: none;
   }
 
+  .iconBtn,
+  .paneToggle {
+    min-height: 40px;
+    min-width: 40px;
+  }
+
   .playBtn {
     padding: 0.38rem 0.6rem;
     font-size: 0.64rem;
@@ -792,6 +798,14 @@
     border-radius: 4px 4px 0 0;
     border: 1px solid rgba(0, 212, 255, 0.3);
     border-bottom: none;
+  }
+}
+
+/* On the narrowest screens the tick counter gets clipped mid-number by the
+   telemetry overflow — a truncated tick is worse than none. */
+@media (max-width: 640px) {
+  .readoutTick {
+    display: none;
   }
 }
 

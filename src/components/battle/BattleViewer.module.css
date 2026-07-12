@@ -216,6 +216,12 @@
 
 /* --- Scoreboards --- */
 
+/* Desktop: the layer is transparent to layout; each panel docks itself
+   absolutely against the stage. On mobile it becomes a chip column. */
+.scoreboardLayer {
+  display: contents;
+}
+
 .scoreboard {
   position: absolute;
   top: 10px;
@@ -474,6 +480,9 @@
 }
 
 .inspectorBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
   font-size: 0.6rem;
   border: 1px solid;
   border-radius: 3px;
@@ -565,6 +574,9 @@
 }
 
 .replayBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   margin-top: 0.4rem;
   font-family: var(--font-jetbrains), monospace;
   font-size: 0.75rem;
@@ -707,6 +719,9 @@
 }
 
 .ctrlBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-family: var(--font-jetbrains), monospace;
   font-size: 0.72rem;
   color: var(--chrome-silver);
@@ -714,6 +729,7 @@
   border: 1px solid var(--nebula-blue);
   border-radius: 4px;
   min-width: 34px;
+  min-height: 28px;
   padding: 0.32rem 0.45rem;
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s;
@@ -812,51 +828,165 @@
     overflow: visible;
   }
 
+  .header {
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .headerLeft {
+    gap: 0.6rem;
+    width: 100%;
+  }
+
+  .headerLeft > div {
+    min-width: 0;
+  }
+
+  .title {
+    font-size: 1rem;
+  }
+
+  .subtitle {
+    white-space: normal;
+  }
+
+  .backLink {
+    /* comfortable touch target */
+    padding: 0.45rem 0.7rem;
+  }
+
+  .headerRight {
+    gap: 0.4rem;
+  }
+
   .stageRow {
     flex-direction: column;
   }
 
   .stage {
-    height: 58vh;
-    min-height: 380px;
+    height: 56vh;
+    height: 56dvh;
+    min-height: 340px;
     flex: none;
   }
 
-  .scoreboard {
-    width: 178px;
-    max-height: 45%;
-    font-size: 0.9em;
+  /* Rosters become a stacked column of full-width chips pinned to the top
+     of the arena. They start collapsed (header-only) so the arena stays
+     visible even with 3-4 sides; expanding one scrolls internally. */
+  .scoreboardLayer {
+    display: flex;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 4;
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px;
+    max-height: 75%;
+    pointer-events: none;
   }
 
+  .scoreboard {
+    position: static;
+    width: auto;
+    max-height: none;
+    min-height: 0;
+    font-size: 0.9em;
+    pointer-events: auto;
+    /* .scoreboardExtra centres itself with a transform; irrelevant here */
+    transform: none;
+  }
+
+  .scoreboardHeader {
+    padding: 0.55rem 0.6rem;
+  }
+
+  /* Full-width chips have room for totals; truncate rather than overflow. */
   .sideTotals {
-    display: none;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .scoreboardRows {
+    max-height: 24vh;
+    max-height: 24dvh;
+  }
+
+  .scoreRow {
+    padding: 0.45rem 0.35rem;
   }
 
   .inspector {
-    left: 10px;
-    right: 10px;
+    left: 0;
+    right: 0;
+    bottom: 0;
     width: auto;
-    max-height: 46%;
+    max-height: 52%;
+    border-radius: 8px 8px 0 0;
+    border-left: none;
+    border-bottom: none;
+    border-top: 2px solid var(--side-color, var(--plasma-cyan));
+  }
+
+  .inspectorClose {
+    font-size: 1rem;
+    padding: 0.35rem 0.6rem;
   }
 
   .feed {
     width: 100%;
     height: 280px;
+    max-height: 45dvh;
     border-left: none;
     border-top: 1px solid var(--nebula-blue);
   }
 
+  .feedRow {
+    padding: 0.3rem 0.6rem;
+  }
+
+  .feedFilterBtn {
+    padding: 0.3rem 0.55rem;
+  }
+
   .timelineBar {
     flex-wrap: wrap;
+    row-gap: 0.4rem;
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
+  }
+
+  .ctrlBtn {
+    min-width: 42px;
+    min-height: 40px;
+    font-size: 0.8rem;
   }
 
   .scrubber {
     order: -1;
     flex-basis: 100%;
-    height: 44px;
+    height: 48px;
+  }
+
+  .controls {
+    gap: 0.4rem;
+  }
+
+  .tickReadout {
+    margin-left: auto;
   }
 
   .metaStats {
     display: none;
+  }
+
+  .outcomeInner {
+    margin: 0 1rem;
+    padding: 1.1rem 1.4rem;
+  }
+
+  .outcomeLabel {
+    font-size: 1.05rem;
   }
 }

@@ -20,7 +20,12 @@ interface Props {
  */
 export default function SideScoreboard({ side, timeline, tickIndex, selectedId, onSelect, winner }: Props) {
   const { t } = useTranslation()
-  const [collapsed, setCollapsed] = useState(false)
+  // Rosters start collapsed on narrow screens where an expanded panel would
+  // cover the arena. Only rendered client-side (after battle data loads), so
+  // reading matchMedia in the initializer is safe.
+  const [collapsed, setCollapsed] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches,
+  )
   const snaps = timeline.snapshotAt[tickIndex]
 
   let sideDamage = 0
