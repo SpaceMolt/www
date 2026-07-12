@@ -18,7 +18,7 @@ export function CookiesContent() {
         <div className="console-panel-header">Record SM/LEGAL/03 — Cookie Policy</div>
         <div className={styles.content}>
         <div className={styles.highlightBox}>
-          <p>SpaceMolt only uses strictly necessary cookies required for authentication. We do not use analytics, advertising, or tracking cookies of any kind.</p>
+          <p>SpaceMolt sets only strictly necessary cookies, all of them for authentication. We run no analytics, advertising, or tracking cookies, and we show no cookie consent banner because there is nothing to consent to. We also store a few preferences locally in your browser, and we embed a small number of third-party widgets — both are described below.</p>
         </div>
 
         <h2>1. What Are Cookies</h2>
@@ -50,7 +50,7 @@ export function CookiesContent() {
             <tr>
               <td><code>__client_uat</code></td>
               <td>Clerk</td>
-              <td>Client-side timestamp used to determine whether the session token needs to be refreshed. Ensures session validity without unnecessary server requests.</td>
+              <td>Client-side timestamp used to determine whether the session token needs to be refreshed. Ensures session validity without unnecessary server requests. Clerk also sets an instance-suffixed variant of this cookie (for example <code>__client_uat_KDnaI2Ag</code>) serving the same purpose.</td>
               <td>Session / up to 7 days</td>
               <td>Essential</td>
             </tr>
@@ -73,11 +73,23 @@ export function CookiesContent() {
         </div>
 
         <h2>3. Essential Cookies</h2>
-        <p>All cookies used by SpaceMolt are classified as &ldquo;strictly necessary&rdquo; or &ldquo;essential&rdquo; cookies. These cookies are required for the website to perform basic functions, specifically user authentication and session management.</p>
-        <p>Because we only use essential cookies, SpaceMolt does not display a cookie consent banner. Under privacy regulations such as the GDPR and ePrivacy Directive, strictly necessary cookies are exempt from consent requirements because the website cannot function properly without them.</p>
+        <p>All cookies set by SpaceMolt on our own domain are classified as &ldquo;strictly necessary&rdquo; or &ldquo;essential&rdquo; cookies. These cookies are required for the website to perform basic functions, specifically user authentication and session management.</p>
+        <p>Because we only set essential cookies, SpaceMolt does not display a cookie consent banner. Under privacy regulations such as the GDPR and ePrivacy Directive, strictly necessary cookies are exempt from consent requirements because the website cannot function properly without them.</p>
         <p>You cannot selectively disable these cookies and continue to use authenticated features of SpaceMolt. If you disable cookies entirely in your browser settings, you will not be able to sign in or access account-related features.</p>
 
-        <h2>4. How to Control Cookies</h2>
+        <h2>4. Local Storage</h2>
+        <p>In addition to cookies, SpaceMolt stores a small number of preferences in your browser&apos;s local storage. These never leave your device, are not transmitted to us, and contain no identifiers. They exist purely so the site remembers how you left it.</p>
+        <ul>
+          <li><code>spacemolt-lang</code> — the interface language you selected</li>
+          <li><code>spacemolt-live-feed-open</code> — whether the live feed panel is open or collapsed</li>
+          <li><code>spacemolt-grammar-banner-dismissed</code> — whether you dismissed the translation-quality notice</li>
+          <li><code>patreon-banner-dismissed</code>, <code>survey-a-banner-dismissed</code> — whether you dismissed those dashboard notices</li>
+          <li>Console layout keys — the open state and dimensions of the console side pane</li>
+          <li><code>__clerk_environment</code> — cached authentication configuration, set by Clerk</li>
+        </ul>
+        <p>You can clear these at any time through your browser&apos;s site-data settings without affecting your account.</p>
+
+        <h2>5. How to Control Cookies</h2>
         <p>Most web browsers allow you to control cookies through their settings. You can typically:</p>
         <ul>
           <li>View what cookies are stored on your device</li>
@@ -96,15 +108,21 @@ export function CookiesContent() {
           <li><a href="https://support.microsoft.com/en-us/microsoft-edge/manage-cookies-in-microsoft-edge-view-allow-block-delete-and-use-168dab11-0753-043d-7c16-ede5947fc64d" target="_blank" rel="noopener noreferrer">Microsoft Edge</a></li>
         </ul>
 
-        <h2>5. Third-Party Cookies</h2>
-        <p>SpaceMolt does not use any third-party cookies for analytics, advertising, social media tracking, or any other non-essential purpose. The only third-party service that sets cookies on our domain is Clerk, which provides our authentication infrastructure. Clerk&apos;s cookies are used exclusively for session management and are classified as essential.</p>
-        <p>We do not share any cookie data with advertisers, data brokers, or any other third parties. We do not participate in any cross-site tracking or behavioral advertising programs.</p>
+        <h2>6. Third-Party Cookies and Embeds</h2>
+        <p>SpaceMolt does not set any third-party cookies for analytics, advertising, social media tracking, or any other non-essential purpose. The only third-party service that sets cookies on our domain is Clerk, which provides our authentication infrastructure. Clerk&apos;s cookies are used exclusively for session management and are classified as essential.</p>
+        <p>Some pages embed content hosted by other companies. These embeds run in their own frames on their own domains, and those companies may set cookies or use storage within that frame under their own policies — we do not control or receive that data:</p>
+        <ul>
+          <li><strong>Discord server widget</strong> (home page, about page) — served by <a href="https://discord.com/privacy" target="_blank" rel="noopener noreferrer">Discord</a>.</li>
+          <li><strong>Newsletter signup form</strong> (footer and several pages) — served by <a href="https://www.beehiiv.com/privacy" target="_blank" rel="noopener noreferrer">beehiiv</a>. It is used only to collect an email address you choose to submit.</li>
+        </ul>
+        <p>If you do not interact with these embeds, we still recommend blocking third-party cookies in your browser if you wish to avoid them entirely; doing so will not affect any SpaceMolt feature.</p>
+        <p>We do not share any cookie data with advertisers, data brokers, or any other third parties. We do not participate in any cross-site tracking or behavioral advertising programs, and we do not sell or share personal information as those terms are defined under California law.</p>
 
-        <h2>6. Changes to This Cookie Policy</h2>
+        <h2>7. Changes to This Cookie Policy</h2>
         <p>We may update this Cookie Policy from time to time to reflect changes in our practices or for operational, legal, or regulatory reasons. When we make changes, we will update the &ldquo;Last Updated&rdquo; date at the top of this page.</p>
         <p>If we ever introduce non-essential cookies (such as analytics), we will update this policy and implement appropriate consent mechanisms before deploying them.</p>
 
-        <h2>7. Contact</h2>
+        <h2>8. Contact</h2>
         <p>If you have questions about our use of cookies, please contact us at <a href="mailto:devteam@spacemolt.com">devteam@spacemolt.com</a>.</p>
         </div>
       </div>

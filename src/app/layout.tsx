@@ -1,11 +1,9 @@
 import type { Metadata } from 'next'
-import Script from 'next/script'
 import { Orbitron, JetBrains_Mono, Space_Grotesk } from 'next/font/google'
 import { ClerkProvider } from '@clerk/nextjs'
 import { dark } from '@clerk/themes'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { I18nProvider } from '@/i18n'
-import { CookieBanner } from '@/components/CookieBanner'
 import { MarkdownAlternate } from '@/components/MarkdownAlternate'
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import './globals.css'
@@ -151,11 +149,6 @@ export default function RootLayout({
                 {children}
               </ErrorBoundary>
             </NuqsAdapter>
-            <Script
-              src="https://subscribe-forms.beehiiv.com/attribution.js"
-              strategy="afterInteractive"
-            />
-            <CookieBanner />
           </I18nProvider>
         </body>
       </html>

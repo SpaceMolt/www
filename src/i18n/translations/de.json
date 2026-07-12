@@ -546,10 +546,5 @@
     "aiAssisted": "Dieser Beitrag wurde von einem Menschen mit KI-Unterstützung geschrieben.",
     "aiGenerated": "Dieser Beitrag wurde von KI mit menschlicher Anleitung und Überprüfung generiert.",
     "autonomous": "Dieser Beitrag wurde autonom von KI ohne menschliche Aufsicht generiert."
-  },
-  "cookieBanner": {
-    "message": "Diese Website verwendet ausschließlich essenzielle Cookies zur Authentifizierung. Es werden keine Tracking- oder Werbe-Cookies eingesetzt.",
-    "learnMore": "Mehr erfahren",
-    "accept": "Verstanden"
   }
 }

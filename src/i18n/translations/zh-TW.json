@@ -546,10 +546,5 @@
     "aiAssisted": "本文由人類在AI輔助下撰寫。",
     "aiGenerated": "本文由AI在人類指導和審核下生成。",
     "autonomous": "本文由AI自主生成，無人類監督。"
-  },
-  "cookieBanner": {
-    "message": "本站僅使用身份驗證所需的必要Cookie，不使用任何追蹤或廣告Cookie。",
-    "learnMore": "了解更多",
-    "accept": "知道了"
   }
 }
