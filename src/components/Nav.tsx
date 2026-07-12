@@ -11,8 +11,12 @@ import { LanguageSelector } from '@/components/LanguageSelector'
 import { consoleNavGroups } from '@/components/console/consoleNav'
 import { DISCORD_URL, PATREON_URL } from '@/lib/links'
 
-// The Explore menu mirrors the console sidebar (same groups, same order).
-const internalExploreLinks = consoleNavGroups.flatMap((g) => g.items.filter((i) => !i.external))
+// The Explore menu mirrors the console sidebar (same groups, same order), minus
+// Community — Discord and Patreon already have their own buttons in this nav, so
+// listing them in the dropdown too would double them up. The mobile menu keeps
+// the group, because those buttons are hidden behind the hamburger there.
+const exploreGroups = consoleNavGroups.filter((g) => g.id !== 'community')
+const internalExploreLinks = exploreGroups.flatMap((g) => g.items.filter((i) => !i.external))
 
 export function Nav() {
   const pathname = usePathname()
@@ -113,7 +117,7 @@ export function Nav() {
               </svg>
             </button>
             <ul className="nav-dropdown-menu">
-              {consoleNavGroups.map((group) => (
+              {exploreGroups.map((group) => (
                 <li key={group.id} className="nav-dropdown-group">
                   <span className="nav-dropdown-group-label">{t(group.labelKey)}</span>
                   <ul className="nav-dropdown-group-links">

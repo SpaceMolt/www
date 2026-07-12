@@ -92,20 +92,22 @@ export function ConsoleTopbar({ stats, online, navOpen, onToggleNav, paneOpen, o
           href={PATREON_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className={`${styles.socialBtn} ${styles.socialPatreon} ${styles.socialSecondary}`}
+          className={`${styles.socialBtn} ${styles.socialPatreon}`}
           aria-label={t('console.patreon')}
         >
           <Heart size={13} aria-hidden />
           <span className={styles.btnLabel}>{t('console.patreon')}</span>
         </a>
+        {/* aria-label on the anchor: the label span is display:none below 400px,
+            which takes it out of the accessibility tree with it. */}
         <SignedOut>
-          <Link href="/docs/getting-started" className={styles.ctaBtn}>
+          <Link href="/docs/getting-started" className={styles.ctaBtn} aria-label={t('nav.getStarted')}>
             <Rocket size={14} aria-hidden />
             <span className={styles.ctaLabel}>{t('nav.getStarted')}</span>
           </Link>
         </SignedOut>
         <SignedIn>
-          <Link href="/play" className={styles.ctaBtn}>
+          <Link href="/play" className={styles.ctaBtn} aria-label={t('console.play')}>
             <Play size={14} aria-hidden />
             <span className={styles.ctaLabel}>{t('console.play')}</span>
           </Link>
