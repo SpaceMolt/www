@@ -4,7 +4,7 @@ import { useEffect, useRef, useCallback, useState, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   UserCircle, Search, Skull, Swords, Crosshair, Rocket, Coins, Flag, Hammer,
-  Sparkles, Satellite, Compass,
+  Sparkles, Satellite, Compass, ChevronDown, ChevronRight,
 } from 'lucide-react'
 import styles from './GalaxyMap.module.css'
 import { subscribeToEvents } from '@/lib/sharedEventSource'
@@ -2201,7 +2201,9 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
           aria-expanded={legendOpen}
         >
           <span className={styles.legendTitle}>Empires</span>
-          <span className={styles.legendChevron}>{legendOpen ? '▾' : '▸'}</span>
+          <span className={styles.legendChevron}>
+            {legendOpen ? <ChevronDown size={12} aria-hidden /> : <ChevronRight size={12} aria-hidden />}
+          </span>
         </button>
         {legendOpen && (
         <div className={styles.legendItems}>

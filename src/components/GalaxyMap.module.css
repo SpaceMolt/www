@@ -226,8 +226,9 @@
 }
 
 .legendChevron {
+  display: inline-flex;
+  align-items: center;
   color: var(--hull-grey);
-  font-size: 0.7rem;
 }
 
 .legendItems {
