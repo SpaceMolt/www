@@ -578,11 +578,28 @@ a.refItem:hover {
   gap: 0.35rem;
 }
 
+/* Dimmed by colour rather than by `opacity`, so an inline link inside can render
+   at full cyan strength — a parent's opacity would drag the link down with it. */
 .emptyNote {
   font-size: 0.76rem;
-  color: var(--chrome-silver);
-  opacity: 0.65;
+  color: color-mix(in srgb, var(--chrome-silver) 65%, transparent);
   margin: 0;
+}
+
+/* House treatment for inline links in body copy (matches /docs): cyan, no rule
+   until hover. Without this they inherit the UA's default dark blue, which is
+   unreadable on the console's dark background. */
+.emptyNote a,
+.intro a,
+.provenance a {
+  color: var(--plasma-cyan);
+  text-decoration: none;
+}
+
+.emptyNote a:hover,
+.intro a:hover,
+.provenance a:hover {
+  text-decoration: underline;
 }
 
 .provenance {

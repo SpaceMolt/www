@@ -127,7 +127,11 @@ export default function CodexIndex() {
               <div className={styles.cardTop}>
                 <Icon size={15} aria-hidden />
                 <h2 className={styles.cardTitle}>{section.title}</h2>
-                <span className={styles.cardCount}>{section.count.toLocaleString('en-US')}</span>
+                {/* A count of 0 means the build fell back to the paged catalog API,
+                    which serves no skills and no facilities — show a dash, not a lie. */}
+                <span className={styles.cardCount}>
+                  {section.count > 0 ? section.count.toLocaleString('en-US') : '—'}
+                </span>
               </div>
               <p className={styles.cardDesc}>{section.desc}</p>
             </Link>

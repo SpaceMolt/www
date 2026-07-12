@@ -4,6 +4,9 @@ import type { MetadataRoute } from 'next'
 import { getAllGuides } from '@/lib/guides'
 import { getAllReferencePages } from '@/lib/reference'
 import { getAllPosts } from '@/lib/blog'
+import { allModules, allNonModuleItems, allRecipes, catalogMeta } from '@/data/catalog'
+import { allSkills, referenceMeta } from '@/data/catalogReference'
+import { allChains } from '@/app/(console)/codex/facilities/chains'
 
 const BASE = 'https://www.spacemolt.com'
 
@@ -68,5 +71,65 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.5,
   }))
 
-  return [...staticRoutes, ...guides, ...reference, ...posts]
+  return [...staticRoutes, ...guides, ...reference, ...posts, ...codexRoutes()]
+}
+
+/**
+ * The codex: six list pages plus a detail page per catalog entry. These are
+ * statically rendered from the build-time catalog dump, so `lastModified` is
+ * when that dump was fetched — the data only moves when a game release moves it,
+ * which is why everything here is 'monthly' rather than the 'weekly' the live
+ * pages claim.
+ *
+ * FACILITIES — chain roots only. The catalog has 2,652 facilities and every one
+ * of them has an addressable detail page, but they collapse into 859 upgrade
+ * chains, and each detail page renders its *whole* chain. So the ~1,800 non-root
+ * tiers are near-duplicates of their root's page: same category, same recipe,
+ * same chain table, differing only in which row is highlighted. Sitemapping all
+ * 2,652 would ask the crawler to index thousands of pages of overlapping content
+ * and split the ranking signal across each chain. The roots are the canonical
+ * entry points (they're what the list page links to); the upper tiers stay
+ * crawlable via the chain table on the root's page and self-canonicalise, they
+ * just don't get advertised. Well under the 50k URL cap either way — this is a
+ * quality call, not a size one.
+ */
+function codexRoutes(): MetadataRoute.Sitemap {
+  const catalogFetched = new Date(catalogMeta.fetchedAt)
+  const referenceFetched = new Date(referenceMeta.fetchedAt)
+
+  const lists = [
+    { path: '/codex', lastModified: catalogFetched },
+    { path: '/codex/items', lastModified: catalogFetched },
+    { path: '/codex/modules', lastModified: catalogFetched },
+    { path: '/codex/recipes', lastModified: catalogFetched },
+    { path: '/codex/skills', lastModified: referenceFetched },
+    { path: '/codex/facilities', lastModified: referenceFetched },
+  ].map(({ path, lastModified }) => ({
+    url: `${BASE}${path}`,
+    lastModified,
+    changeFrequency: 'monthly' as const,
+    // The codex index is a section landing page; the five catalogs sit below it.
+    priority: path === '/codex' ? 0.7 : 0.6,
+  }))
+
+  const detail = (
+    prefix: string,
+    ids: string[],
+    lastModified: Date,
+  ): MetadataRoute.Sitemap =>
+    ids.map((id) => ({
+      url: `${BASE}${prefix}/${encodeURIComponent(id)}`,
+      lastModified,
+      changeFrequency: 'monthly' as const,
+      priority: 0.4,
+    }))
+
+  return [
+    ...lists,
+    ...detail('/codex/items', allNonModuleItems().map((i) => i.id), catalogFetched),
+    ...detail('/codex/modules', allModules().map((m) => m.id), catalogFetched),
+    ...detail('/codex/recipes', allRecipes().map((r) => r.id), catalogFetched),
+    ...detail('/codex/skills', allSkills().map((s) => s.id), referenceFetched),
+    ...detail('/codex/facilities', allChains().map((c) => c.root.id), referenceFetched),
+  ]
 }

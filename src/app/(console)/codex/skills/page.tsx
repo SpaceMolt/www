@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { allSkills, skillsByCategory } from '@/data/catalogReference'
 import { titleCase } from '@/lib/format'
-import { BackLink, Section } from '../parts'
+import { BackLink, DataUnavailable, Section } from '../parts'
 import styles from '../codex.module.css'
 import local from './skills.module.css'
 
@@ -30,6 +30,21 @@ export default function SkillsIndex() {
   const byCategory = skillsByCategory()
   const categories = Object.keys(byCategory).sort()
   const total = allSkills().length
+
+  // Skills only come from the catalog dump; a build that fell back to the paged
+  // API has none. Say so rather than claiming the game has zero skills.
+  if (total === 0) {
+    return (
+      <div className={`console-page console-page-wide ${styles.page}`}>
+        <header className="console-page-header">
+          <BackLink href="/codex" label="Codex" />
+          <span className="console-page-kicker">Database</span>
+          <h1 className="console-page-title">Skills</h1>
+        </header>
+        <DataUnavailable noun="skills" />
+      </div>
+    )
+  }
 
   return (
     <div className={`console-page console-page-wide ${styles.page}`}>

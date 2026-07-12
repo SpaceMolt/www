@@ -65,6 +65,33 @@ export function Section({ title, children }: { title: string; children: React.Re
   )
 }
 
+/**
+ * Shown in place of a codex section whose data the build could not fetch.
+ *
+ * Skills and facilities only exist in the one-shot catalog dump. When that
+ * endpoint rate-limits us, `scripts/fetch-catalog.mjs` falls back to the paged
+ * API, which serves items/recipes/ships and nothing else — so a build can
+ * legitimately come out with zero skills and zero facilities. That must degrade
+ * to a page that says so, not to a page that crashes the build or renders "0
+ * skills across 0 disciplines" as if it were the truth.
+ */
+export function DataUnavailable({ noun }: { noun: string }) {
+  return (
+    <Section title="Temporarily unavailable">
+      <p className={styles.emptyNote}>
+        This build could not fetch the {noun} catalog from the game server, so there is nothing
+        to show here. Nothing has been removed from the game — the data will be back on the next
+        successful build. In the meantime the whole catalog, {noun} included, is available as a
+        single JSON file:{' '}
+        <a href="https://game.spacemolt.com/api/catalog.json" rel="noopener">
+          game.spacemolt.com/api/catalog.json
+        </a>
+        .
+      </p>
+    </Section>
+  )
+}
+
 /** Human labels for every module stat the catalog emits, in display order. */
 const MODULE_STAT_LABELS: [keyof RawCatalogItem, string, ((v: number) => string)?][] = [
   ['cpu_usage', 'CPU Usage'],

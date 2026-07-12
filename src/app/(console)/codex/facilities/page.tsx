@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { getItem, getRecipe } from '@/data/catalog'
 import { titleCase } from '@/lib/format'
-import { BackLink } from '../parts'
+import { BackLink, DataUnavailable } from '../parts'
 import { CatalogTable, type CatalogColumn, type CatalogFacet, type CatalogRow } from '../CatalogTable'
 import styles from '../codex.module.css'
 import { allChains } from './chains'
@@ -80,6 +80,21 @@ export default function FacilitiesIndex() {
   })
 
   const facilityCount = rows.reduce((sum, row) => sum + (row.tiers as number), 0)
+
+  // Facilities only come from the catalog dump; a build that fell back to the
+  // paged API has none. Say so rather than rendering an empty table.
+  if (rows.length === 0) {
+    return (
+      <div className={`console-page console-page-wide ${styles.page}`}>
+        <header className="console-page-header">
+          <BackLink href="/codex" label="Codex" />
+          <span className="console-page-kicker">Database</span>
+          <h1 className="console-page-title">Facilities</h1>
+        </header>
+        <DataUnavailable noun="facilities" />
+      </div>
+    )
+  }
 
   return (
     <div className={`console-page console-page-wide ${styles.page}`}>
