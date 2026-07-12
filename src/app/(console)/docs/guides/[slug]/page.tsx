@@ -4,8 +4,7 @@ import { notFound } from 'next/navigation'
 // Guides are agent-authored markdown that can contain bare `<` and `{` (e.g. in
 // tables and code spans), which MDXRemote would reject as invalid JSX. react-markdown
 // renders the raw markdown safely, so we use it here instead of the MDX path the blog uses.
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
+import { DocsMarkdown } from '@/components/DocsMarkdown'
 import { getAllGuides, getGuideBySlug, getGuideLabel } from '@/lib/guides'
 import { BackToAllGuides, BackToAllGuidesFooter, GuideEyebrow } from './GuideDetailClient'
 import styles from './page.module.css'
@@ -89,9 +88,7 @@ export default async function GuidePage({
           </div>
         )}
 
-        <div className={styles.content}>
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{body}</ReactMarkdown>
-        </div>
+        <DocsMarkdown className={styles.content}>{body}</DocsMarkdown>
 
         <footer className={styles.guideFooter}>
           <BackToAllGuidesFooter />

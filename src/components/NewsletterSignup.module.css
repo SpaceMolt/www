@@ -1,8 +1,11 @@
-/* === Section variant (homepage + marketing page bottoms) === */
+/* === Section variant (homepage + marketing page bottoms) ===
+   Padding is declared here rather than inherited from the global `section` rule,
+   which the console pages reset. */
 .section {
   background: linear-gradient(180deg, var(--space-black) 0%, var(--deep-void) 100%);
   position: relative;
   overflow: hidden;
+  padding: 6rem 2rem;
 }
 
 .section::before {
@@ -76,4 +79,10 @@
 .embedHost :global(iframe) {
   width: 100% !important;
   max-width: 480px;
+}
+
+@media (max-width: 640px) {
+  .section {
+    padding: 3rem 1.25rem;
+  }
 }

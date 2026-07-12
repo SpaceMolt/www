@@ -114,13 +114,17 @@
   background: rgba(255, 107, 53, 0.05);
 }
 
+/* The scroll container is the wrapper (see .table-scroll in globals.css), so the
+   table itself stays a real table and keeps its column sizing. */
 .content table {
   width: 100%;
   border-collapse: collapse;
   margin-bottom: 1.4rem;
   font-size: 0.86rem;
-  display: block;
-  overflow-x: auto;
+}
+
+.content td code {
+  white-space: nowrap;
 }
 
 .content th {

@@ -5,8 +5,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 // Reference pages are agent-authored markdown that can contain bare `<` and `{`
 // (tables, code spans), which MDXRemote would reject as invalid JSX — so we use
 // react-markdown here, same as the guides.
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
+import { DocsMarkdown } from '@/components/DocsMarkdown'
 import {
   getAllReferencePages,
   getReferenceBySlug,
@@ -80,9 +79,7 @@ export default async function ReferencePage({
             </div>
           </header>
 
-          <div className={styles.content}>
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{body}</ReactMarkdown>
-          </div>
+          <DocsMarkdown className={styles.content}>{body}</DocsMarkdown>
 
           <footer className={styles.pager}>
             {prev ? (
