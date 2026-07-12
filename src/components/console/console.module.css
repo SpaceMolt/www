@@ -179,6 +179,48 @@
   flex-shrink: 0;
 }
 
+/* Discord + Patreon sit next to the primary CTA: same instrument-panel chrome
+   as .paneToggle, tinted so they read as community rather than telemetry. */
+.socialBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  text-decoration: none;
+  border-radius: 3px;
+  padding: 0.42rem 0.7rem;
+  white-space: nowrap;
+  transition: box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+.socialDiscord {
+  color: #b9c6ff;
+  background: rgba(88, 101, 242, 0.14);
+  border: 1px solid rgba(88, 101, 242, 0.5);
+}
+
+.socialDiscord:hover {
+  background: rgba(88, 101, 242, 0.26);
+  border-color: rgba(129, 140, 248, 0.9);
+  box-shadow: 0 0 14px rgba(88, 101, 242, 0.45);
+}
+
+.socialPatreon {
+  color: #ffb59b;
+  background: rgba(255, 107, 53, 0.12);
+  border: 1px solid rgba(255, 107, 53, 0.5);
+}
+
+.socialPatreon:hover {
+  background: rgba(255, 107, 53, 0.24);
+  border-color: var(--shell-orange);
+  box-shadow: 0 0 14px rgba(255, 107, 53, 0.45);
+}
+
 .playBtn {
   font-family: var(--font-jetbrains), monospace;
   font-size: 0.72rem;
@@ -327,6 +369,50 @@
 .navExternal {
   margin-left: auto;
   opacity: 0.45;
+}
+
+/* --- community rail (pinned above the nav groups) --- */
+
+.navDiscord,
+.navPatreon,
+.navShop {
+  color: var(--star-white);
+}
+
+.navDiscord svg,
+.navPatreon svg,
+.navShop svg {
+  opacity: 1;
+}
+
+.navDiscord svg {
+  color: #8b9dff;
+}
+
+.navPatreon svg {
+  color: var(--shell-orange);
+}
+
+.navShop svg {
+  color: var(--bio-green);
+}
+
+.navDiscord:hover {
+  color: #b9c6ff;
+  background: rgba(88, 101, 242, 0.12);
+  border-left-color: #5865f2;
+}
+
+.navPatreon:hover {
+  color: #ffb59b;
+  background: rgba(255, 107, 53, 0.1);
+  border-left-color: var(--shell-orange);
+}
+
+.navShop:hover {
+  color: var(--bio-green);
+  background: rgba(45, 212, 191, 0.1);
+  border-left-color: var(--bio-green);
 }
 
 .sidebarFooter {
@@ -679,6 +765,16 @@
     display: none;
   }
 
+  /* icon-only community buttons — the labels reappear in the nav drawer */
+  .socialLabel {
+    display: none;
+  }
+
+  .socialBtn {
+    min-height: 40px;
+    padding: 0.42rem 0.55rem;
+  }
+
   .body {
     flex-direction: column;
   }
@@ -773,6 +869,11 @@
 
   .paneToggle {
     padding: 0.42rem 0.5rem;
+  }
+
+  /* last thing to go: the drawer's community rail still carries both links */
+  .socialBtn {
+    display: none;
   }
 }
 

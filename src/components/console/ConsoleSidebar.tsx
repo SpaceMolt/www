@@ -8,6 +8,12 @@ import { LanguageSelector } from '@/components/LanguageSelector'
 import { consoleNavGroups, findActiveHref } from './consoleNav'
 import styles from './console.module.css'
 
+const ACCENT_CLASS: Record<string, string> = {
+  discord: styles.navDiscord,
+  patreon: styles.navPatreon,
+  shop: styles.navShop,
+}
+
 interface ConsoleSidebarProps {
   open: boolean
   onClose: () => void
@@ -38,6 +44,7 @@ export function ConsoleSidebar({ open, onClose }: ConsoleSidebarProps) {
                 {group.items.map((item) => {
                   const Icon = item.icon
                   const active = !item.external && item.href === activeHref
+                  const accent = item.accent ? ACCENT_CLASS[item.accent] : ''
                   return (
                     <li key={item.href}>
                       {item.external ? (
@@ -45,7 +52,7 @@ export function ConsoleSidebar({ open, onClose }: ConsoleSidebarProps) {
                           href={item.href}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className={styles.navLink}
+                          className={`${styles.navLink} ${accent}`}
                         >
                           <Icon size={15} aria-hidden />
                           {t(item.labelKey)}
@@ -54,7 +61,7 @@ export function ConsoleSidebar({ open, onClose }: ConsoleSidebarProps) {
                       ) : (
                         <Link
                           href={item.href}
-                          className={`${styles.navLink} ${active ? styles.navActive : ''}`}
+                          className={`${styles.navLink} ${accent} ${active ? styles.navActive : ''}`}
                           aria-current={active ? 'page' : undefined}
                         >
                           <Icon size={15} aria-hidden />

@@ -5,12 +5,15 @@ import {
   BookOpen, Library, TerminalSquare, ScrollText, Info, ShoppingBag, Heart,
   BookA,
 } from 'lucide-react'
+import { DISCORD_URL, PATREON_URL, SHOP_URL } from '@/lib/links'
 
 export interface ConsoleNavItem {
   href: string
   labelKey: string
   icon: LucideIcon
   external?: boolean
+  /** Renders in accent colour — used for the community/support rail at the top. */
+  accent?: 'discord' | 'patreon' | 'shop'
 }
 
 export interface ConsoleNavGroup {
@@ -20,6 +23,15 @@ export interface ConsoleNavGroup {
 }
 
 export const consoleNavGroups: ConsoleNavGroup[] = [
+  {
+    id: 'community',
+    labelKey: 'console.groupCommunity',
+    items: [
+      { href: DISCORD_URL, labelKey: 'nav.discord', icon: MessageCircle, external: true, accent: 'discord' },
+      { href: PATREON_URL, labelKey: 'console.patreon', icon: Heart, external: true, accent: 'patreon' },
+      { href: SHOP_URL, labelKey: 'console.shop', icon: ShoppingBag, accent: 'shop' },
+    ],
+  },
   {
     id: 'command',
     labelKey: 'console.groupCommand',
@@ -54,7 +66,6 @@ export const consoleNavGroups: ConsoleNavGroup[] = [
     items: [
       { href: '/forum', labelKey: 'nav.forum', icon: MessagesSquare },
       { href: '/news', labelKey: 'nav.news', icon: Newspaper },
-      { href: 'https://discord.gg/Jm4UdQPuNB', labelKey: 'nav.discord', icon: MessageCircle, external: true },
     ],
   },
   {
@@ -68,14 +79,6 @@ export const consoleNavGroups: ConsoleNavGroup[] = [
       { href: '/docs/game-clients', labelKey: 'nav.clients', icon: TerminalSquare },
       { href: '/changelog', labelKey: 'nav.changelog', icon: ScrollText },
       { href: '/about', labelKey: 'nav.about', icon: Info },
-    ],
-  },
-  {
-    id: 'supply',
-    labelKey: 'console.groupSupply',
-    items: [
-      { href: '/shop', labelKey: 'console.shop', icon: ShoppingBag },
-      { href: 'https://www.patreon.com/c/SpaceMolt', labelKey: 'console.patreon', icon: Heart, external: true },
     ],
   },
 ]

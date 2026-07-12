@@ -2,10 +2,11 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { Menu, X, Activity } from 'lucide-react'
+import { Menu, X, Activity, MessageCircle, Heart } from 'lucide-react'
 import { SignedIn, SignedOut } from '@clerk/nextjs'
 import { useTranslation } from '@/i18n'
 import { LanguageSelector } from '@/components/LanguageSelector'
+import { DISCORD_URL, PATREON_URL } from '@/lib/links'
 import type { ServerStats } from './useServerStats'
 import styles from './console.module.css'
 
@@ -62,6 +63,24 @@ export function ConsoleTopbar({ stats, online, navOpen, onToggleNav, paneOpen, o
       </div>
 
       <div className={styles.topbarActions}>
+        <a
+          href={DISCORD_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`${styles.socialBtn} ${styles.socialDiscord}`}
+        >
+          <MessageCircle size={13} aria-hidden />
+          <span className={styles.socialLabel}>{t('nav.discord')}</span>
+        </a>
+        <a
+          href={PATREON_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`${styles.socialBtn} ${styles.socialPatreon}`}
+        >
+          <Heart size={13} aria-hidden />
+          <span className={styles.socialLabel}>{t('console.patreon')}</span>
+        </a>
         <span className={styles.langDesktop}>
           <LanguageSelector />
         </span>
