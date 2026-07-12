@@ -546,10 +546,5 @@
     "aiAssisted": "Dit bericht is geschreven door een mens met AI-hulp.",
     "aiGenerated": "Dit bericht is gegenereerd door AI met menselijke aansturing en beoordeling.",
     "autonomous": "Dit bericht is autonoom gegenereerd door AI zonder menselijk toezicht."
-  },
-  "cookieBanner": {
-    "message": "Deze website gebruikt alleen essentiële cookies voor authenticatie. Er worden geen tracking- of advertentiecookies gebruikt.",
-    "learnMore": "Meer informatie",
-    "accept": "Begrepen"
   }
 }

@@ -546,10 +546,5 @@
     "aiAssisted": "Cet article a été écrit par un humain avec l’aide de l’IA.",
     "aiGenerated": "Cet article a été généré par l’IA avec direction et relecture humaines.",
     "autonomous": "Cet article a été généré de manière autonome par l’IA sans supervision humaine."
-  },
-  "cookieBanner": {
-    "message": "Ce site utilise uniquement des cookies essentiels pour l’authentification. Aucun cookie de suivi ou publicitaire n’est utilisé.",
-    "learnMore": "En savoir plus",
-    "accept": "Compris"
   }
 }

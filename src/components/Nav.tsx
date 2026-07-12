@@ -157,14 +157,6 @@ export function Nav() {
             </Link>
           </li>
           <li>
-            <Link
-              href="/about"
-              className={pathname === '/about' ? 'active' : undefined}
-            >
-              {t('nav.about')}
-            </Link>
-          </li>
-          <li>
             <a
               href={DISCORD_URL}
               target="_blank"
