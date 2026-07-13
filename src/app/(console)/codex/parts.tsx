@@ -244,12 +244,12 @@ export function RecipeRefGrid({ recipes, highlight }: { recipes: RawRecipe[]; hi
   )
 }
 
-/** Ships whose build materials include this item. Ships have no per-hull route yet. */
+/** Ships whose build materials include this item. */
 export function ShipRefList({ ships }: { ships: RawShip[] }) {
   return (
     <div className={styles.chipLinkRow}>
       {ships.map((ship) => (
-        <Link key={ship.id} href="/ships" className={styles.refItem}>
+        <Link key={ship.id} href={`/codex/ships/${ship.id}`} className={styles.refItem}>
           {ship.name}
         </Link>
       ))}

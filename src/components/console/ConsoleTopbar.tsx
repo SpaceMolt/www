@@ -23,7 +23,7 @@ export function ConsoleTopbar({ stats, online, navOpen, onToggleNav, paneOpen, o
   const { t } = useTranslation()
 
   return (
-    <header className={styles.topbar}>
+    <header className={styles.topbar} data-pagefind-ignore>
       <button
         className={styles.iconBtn}
         onClick={onToggleNav}

@@ -12,6 +12,7 @@ import {
   referenceMeta,
 } from '@/data/catalogReference'
 import { allChains } from '@/app/(console)/codex/facilities/chains'
+import { listableShips } from '@/app/(console)/codex/ships/catalogShips'
 
 const BASE = 'https://www.spacemolt.com'
 
@@ -42,7 +43,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/battles',
     '/leaderboard',
     '/ticker',
-    '/ships',
     '/stations',
     '/market',
     '/forum',
@@ -80,7 +80,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 }
 
 /**
- * The codex: seven list pages plus a detail page per catalog entry. These are
+ * The codex: eight list pages plus a detail page per catalog entry. These are
  * statically rendered from the build-time catalog dump, so `lastModified` is
  * when that dump was fetched — the data only moves when a game release moves it,
  * which is why everything here is 'monthly' rather than the 'weekly' the live
@@ -107,6 +107,7 @@ function codexRoutes(): MetadataRoute.Sitemap {
     { path: '/codex/items', lastModified: catalogFetched },
     { path: '/codex/modules', lastModified: catalogFetched },
     { path: '/codex/recipes', lastModified: catalogFetched },
+    { path: '/codex/ships', lastModified: catalogFetched },
     { path: '/codex/skills', lastModified: referenceFetched },
     { path: '/codex/facilities', lastModified: referenceFetched },
     { path: '/codex/achievements', lastModified: referenceFetched },
@@ -135,6 +136,7 @@ function codexRoutes(): MetadataRoute.Sitemap {
     ...detail('/codex/items', allNonModuleItems().map((i) => i.id), catalogFetched),
     ...detail('/codex/modules', allModules().map((m) => m.id), catalogFetched),
     ...detail('/codex/recipes', allRecipes().map((r) => r.id), catalogFetched),
+    ...detail('/codex/ships', listableShips().map((s) => s.id), catalogFetched),
     ...detail('/codex/skills', allSkills().map((s) => s.id), referenceFetched),
     ...detail('/codex/facilities', allChains().map((c) => c.root.id), referenceFetched),
     ...detail(

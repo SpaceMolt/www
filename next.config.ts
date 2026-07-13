@@ -45,6 +45,9 @@ const nextConfig: NextConfig = {
       { source: '/guides', destination: '/docs/guides', permanent: true },
       { source: '/guides/:slug([^.]+)', destination: '/docs/guides/:slug', permanent: true },
 
+      // The ship browser moved into the codex alongside every other data section.
+      { source: '/ships', destination: '/codex/ships', permanent: true },
+
       // Legacy HTML redirects
       { source: '/terms.html', destination: '/terms', permanent: true },
       { source: '/forum.html', destination: '/forum', permanent: true },

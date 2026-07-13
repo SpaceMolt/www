@@ -5,6 +5,7 @@ import {
   Boxes, Cpu, Hammer, GraduationCap, Rocket, Factory, Trophy, Download, BookOpen,
 } from 'lucide-react'
 import { allModules, allNonModuleItems, catalogMeta } from '@/data/catalog'
+import { listableShips } from './ships/catalogShips'
 import {
   allAchievements,
   allFactionAchievements,
@@ -65,11 +66,11 @@ export default function CodexIndex() {
       desc: 'XP curves, per-level bonuses, and how each skill is trained.',
     },
     {
-      href: '/ships',
+      href: '/codex/ships',
       icon: Rocket,
       image: '/images/guides/drones.jpg',
       title: 'Ships',
-      count: catalogMeta.counts.ships,
+      count: listableShips().length,
       desc: 'Hulls by class, empire, and tier — slots, capacities, and build materials.',
     },
     {

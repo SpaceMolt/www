@@ -474,6 +474,28 @@
   margin-top: 0.7rem;
 }
 
+/* Hero art on a ship detail page. Capped so the stat block below stays on
+   screen; contained rather than cropped, because hull silhouettes matter. */
+.shipArt {
+  width: 100%;
+  height: clamp(220px, 38vh, 380px);
+  object-fit: contain;
+  background: rgba(5, 8, 20, 0.8);
+  border: 1px solid rgba(0, 212, 255, 0.18);
+  display: block;
+  margin-top: 1.1rem;
+}
+
+/* Lore ships from the catalog hard-wrapped at ~80 columns; let it reflow. */
+.lore {
+  font-size: 0.82rem;
+  color: var(--chrome-silver);
+  line-height: 1.7;
+  opacity: 0.9;
+  max-width: 80ch;
+  margin: 0;
+}
+
 .statGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));

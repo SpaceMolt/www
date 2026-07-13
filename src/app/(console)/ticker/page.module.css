@@ -9,6 +9,16 @@
   z-index: 40;
 }
 
+/* The site-search field is out of flow at the top-right of the scroll area, and
+   the tape runs the full width — start below the field's box so the scrolling
+   text never passes under it. Below 720px the field is in the flow and already
+   sits above the tape. */
+@media (min-width: 721px) {
+  .tickerBar {
+    margin-top: var(--console-search-clear);
+  }
+}
+
 .tickerBar > * {
   position: static !important;
   top: auto !important;

@@ -61,8 +61,8 @@ export const consoleNavGroups: ConsoleNavGroup[] = [
       // "Codex" not "Reference" — /docs already owns that label (and /reference
       // permanently redirects to /docs), so the game-data catalog lives at /codex.
       { href: '/codex', labelKey: 'nav.codex', icon: Database },
-      // /ships is still live and is reached from the Codex index card — it just
-      // no longer earns its own sidebar slot now that the Codex fronts the data.
+      // /codex/ships is reached from the Codex index card — it no longer earns
+      // its own sidebar slot now that the Codex fronts the data.
       { href: '/stations', labelKey: 'nav.stations', icon: Building2 },
       { href: '/market', labelKey: 'nav.market', icon: Coins },
       { href: '/market/report', labelKey: 'nav.marketReport', icon: TrendingUp },

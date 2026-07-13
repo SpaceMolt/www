@@ -180,6 +180,7 @@ export function LivePane({ hidden, width, height, onWidthChange, onHeightChange,
         className={styles.pane}
         hidden={hidden}
         aria-label={t('console.telemetry')}
+        data-pagefind-ignore
         style={{ '--pane-w': `${width}px`, '--pane-h': `${height}px` } as React.CSSProperties}
       >
         <div

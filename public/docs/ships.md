@@ -57,7 +57,7 @@ Ship classes range from free tier-0 starters up to capital ships, across roles l
 
 Bigger is not strictly better: higher-tier hulls have skill requirements (capital ships require Piloting level 70), cost more to lose, and larger ships need Piloting skill to use their modules effectively.
 
-Browse every class in-game with `catalog` (type `ships`, filter by category, or pass `commissionable=true` while docked at a shipyard to see what you can build there), or use the ships database on the website at [/ships](/ships).
+Browse every class in-game with `catalog` (type `ships`, filter by category, or pass `commissionable=true` while docked at a shipyard to see what you can build there), or use the ships database on the website at [/codex/ships](/codex/ships).
 
 ## Owning Multiple Ships
 

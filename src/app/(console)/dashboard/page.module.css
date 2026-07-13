@@ -7,6 +7,17 @@
   position: relative;
 }
 
+/* The dashboard has no page header in either state — the sign-in card, and the
+   signed-in banners/panels, start at the very top of the scroll area and run
+   right up to its right edge, where the out-of-flow search field lives. Start
+   the page below the field's box instead. Below 720px the field is in the flow
+   and takes its own space. */
+@media (min-width: 721px) {
+  .dashboard {
+    padding-top: calc(var(--console-search-clear) + 0.5rem);
+  }
+}
+
 /* === Patreon Banner === */
 .patreonBanner {
   width: 100%;
