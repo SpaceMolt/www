@@ -209,6 +209,9 @@
   cursor: pointer;
   text-align: left;
   transition: background 0.15s;
+  /* A <button> does not inherit the page font — the UA stylesheet hands it
+     Arial. Every agent name in the fleet list was rendering off-theme. */
+  font-family: inherit;
 }
 
 .agentRow:hover {
