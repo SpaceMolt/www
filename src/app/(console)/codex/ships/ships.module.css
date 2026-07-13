@@ -1,22 +1,8 @@
-/* === Ship Catalog Page (console shell chrome) ===
+/* === Ship browser (/codex/ships) ===
    Rendered inside the (console) shell: the shell owns the scroll container,
-   topbar, and nav. This file only styles page content. Square corners,
-   cyan hairlines, mono micro-labels, tabular numbers. */
-
-.page {
-  /* console-page-wide removes the global cap; re-cap locally for readability */
-  max-width: 1600px;
-}
-
-/* === Page Header extras === */
-.headerDesc {
-  font-size: 0.78rem;
-  color: var(--chrome-silver);
-  opacity: 0.75;
-  line-height: 1.55;
-  margin-top: 0.5rem;
-  max-width: 80ch;
-}
+   topbar, and nav. This file only styles the list UI — card gallery, filter
+   bar, and the wide stats table. Square corners, cyan hairlines, mono
+   micro-labels, tabular numbers. Detail pages use codex.module.css. */
 
 .shipCount {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
@@ -25,7 +11,7 @@
   text-transform: uppercase;
   color: var(--plasma-cyan);
   opacity: 0.75;
-  margin-top: 0.55rem;
+  margin: -0.4rem 0 0.9rem;
   font-variant-numeric: tabular-nums;
 }
 
@@ -385,15 +371,17 @@
 }
 
 /* === Ship Card === */
+/* An anchor, not a div: the whole card is the link to /codex/ships/<id>. */
 .shipCard {
   background: rgba(13, 19, 33, 0.6);
   border: 1px solid rgba(0, 212, 255, 0.14);
   border-radius: 0;
   overflow: hidden;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  cursor: pointer;
   display: flex;
   flex-direction: column;
+  color: inherit;
+  text-decoration: none;
 }
 
 .shipCard:hover {
@@ -434,40 +422,6 @@
 
 .shipCard:hover .shipImage {
   transform: scale(1.03);
-}
-
-.zoomBtn {
-  position: absolute;
-  bottom: 0.5rem;
-  right: 0.5rem;
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(13, 19, 33, 0.8);
-  border: 1px solid rgba(0, 212, 255, 0.3);
-  border-radius: 0;
-  color: var(--chrome-silver);
-  cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.2s ease, background 0.2s ease, color 0.2s ease;
-}
-
-.shipImageWrap:hover .zoomBtn,
-.zoomBtn:focus-visible {
-  opacity: 1;
-}
-
-.zoomBtn:hover {
-  background: rgba(0, 212, 255, 0.15);
-  color: var(--plasma-cyan);
-  border-color: var(--plasma-cyan);
-}
-
-.zoomBtn:focus-visible {
-  outline: 1px solid var(--plasma-cyan);
-  outline-offset: 1px;
 }
 
 .cardBody {
@@ -636,141 +590,6 @@
   color: var(--bio-green);
 }
 
-/* === Detail sections (ship modal + table expand row) === */
-.detailSection {
-  margin-top: 0;
-  margin-bottom: 1rem;
-}
-
-.detailSectionTitle {
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.62rem;
-  color: var(--plasma-cyan);
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  margin-bottom: 0.5rem;
-}
-
-.loreText {
-  font-size: 0.82rem;
-  color: var(--chrome-silver);
-  line-height: 1.65;
-  opacity: 0.9;
-  overflow-wrap: break-word;
-  word-break: break-word;
-  min-width: 0;
-}
-
-/* === Full Stats Grid === */
-.fullStatsGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.4rem;
-}
-
-.fullStatItem {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.32rem 0.5rem;
-  background: rgba(0, 212, 255, 0.04);
-  border: 1px solid rgba(0, 212, 255, 0.08);
-  border-radius: 0;
-}
-
-.fullStatLabel {
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.64rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--chrome-silver);
-}
-
-.fullStatValue {
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.78rem;
-  color: var(--star-white);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-/* === Materials List === */
-.materialsList {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-
-.materialItem {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.28rem 0.5rem;
-  background: rgba(255, 107, 53, 0.05);
-  border: 1px solid rgba(255, 107, 53, 0.12);
-  border-radius: 0;
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.73rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.materialName {
-  color: var(--chrome-silver);
-}
-
-.materialQty {
-  color: var(--shell-orange);
-  font-weight: 600;
-}
-
-/* === Skills List === */
-.skillsList {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-}
-
-.skillItem {
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.68rem;
-  padding: 0.18rem 0.45rem;
-  background: rgba(0, 212, 255, 0.06);
-  border: 1px solid rgba(0, 212, 255, 0.18);
-  border-radius: 0;
-  color: var(--chrome-silver);
-}
-
-/* === Flavor Tags === */
-.flavorTags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  margin-top: 0.75rem;
-  grid-column: 1 / -1;
-}
-
-.flavorTag {
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.62rem;
-  padding: 0.14rem 0.4rem;
-  background: rgba(168, 197, 214, 0.06);
-  border: 1px solid rgba(168, 197, 214, 0.14);
-  border-radius: 0;
-  color: var(--chrome-silver);
-  opacity: 0.75;
-}
-
-/* === Loading === */
-.loading {
-  text-align: center;
-  padding: 4rem;
-  color: var(--chrome-silver);
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.8rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
 /* === Empty State === */
 .emptyState {
   text-align: center;
@@ -786,130 +605,6 @@
   letter-spacing: 0.06em;
   margin-bottom: 0.75rem;
   color: var(--star-white);
-}
-
-/* === Ship Detail Modal (intentional full-screen overlay) === */
-.modalOverlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  background: rgba(5, 8, 20, 0.92);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-  cursor: pointer;
-}
-
-.modalContent {
-  display: flex;
-  flex-direction: column;
-  width: min(880px, 100%);
-  /* Bound the panel to the viewport so .modalBody, not the page, does the
-     scrolling — a capital hull's full detail is taller than most screens. */
-  max-height: min(86vh, 100%);
-  background: rgba(9, 14, 26, 0.98);
-  border: 1px solid var(--empire-color, rgba(0, 212, 255, 0.3));
-  border-radius: 0;
-  box-shadow: 0 0 40px color-mix(in srgb, var(--empire-color, var(--plasma-cyan)) 16%, transparent);
-  cursor: default;
-}
-
-.modalHeader {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1rem 1.1rem;
-  border-bottom: 1px solid rgba(0, 212, 255, 0.14);
-  background: rgba(13, 19, 33, 0.9);
-  flex-shrink: 0;
-}
-
-.modalTags {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.4rem;
-  margin-top: 0.45rem;
-}
-
-.modalClose {
-  width: 32px;
-  height: 32px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(13, 19, 33, 0.85);
-  border: 1px solid rgba(0, 212, 255, 0.3);
-  border-radius: 0;
-  color: var(--chrome-silver);
-  cursor: pointer;
-  transition: color 0.2s ease, border-color 0.2s ease;
-}
-
-.modalClose:hover {
-  color: var(--star-white);
-  border-color: var(--plasma-cyan);
-}
-
-.modalClose:focus-visible {
-  outline: 1px solid var(--plasma-cyan);
-  outline-offset: 1px;
-}
-
-.modalBody {
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: 1.1rem;
-}
-
-.modalBody:focus-visible {
-  outline: 1px solid var(--plasma-cyan);
-  outline-offset: -2px;
-}
-
-/* The panel takes focus on open purely to anchor the dialog — don't ring it */
-.modalContent:focus {
-  outline: none;
-}
-
-.modalImage {
-  width: 100%;
-  /* Cap the hero art so the stats below it are on-screen without scrolling */
-  height: clamp(200px, 34vh, 320px);
-  object-fit: contain;
-  border: 1px solid rgba(0, 212, 255, 0.18);
-  border-radius: 0;
-  display: block;
-  margin-bottom: 1rem;
-  background: rgba(5, 8, 20, 0.8);
-}
-
-.modalSlots {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-}
-
-.modalShipName {
-  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--star-white);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin: 0;
-}
-
-.modalShipDesc {
-  font-size: 0.85rem;
-  color: var(--chrome-silver);
-  line-height: 1.6;
-  opacity: 0.85;
-  margin: 0 0 1rem;
 }
 
 /* === Ship Table (registry readout) === */
@@ -980,19 +675,11 @@
   background: rgba(0, 212, 255, 0.05);
 }
 
-.tableRowExpanded {
-  background: rgba(0, 212, 255, 0.07);
-}
-
 .tableCell {
   padding: 0.42rem 0.6rem;
   color: var(--chrome-silver);
   white-space: nowrap;
   border-bottom: 1px solid rgba(0, 212, 255, 0.07);
-}
-
-.tableRowExpanded .tableCell {
-  border-bottom-color: transparent;
 }
 
 .tableCellNum {
@@ -1012,6 +699,20 @@
   text-overflow: ellipsis;
 }
 
+.tableNameLink {
+  color: var(--star-white);
+  text-decoration: none;
+}
+
+.tableNameLink:hover {
+  color: var(--plasma-cyan);
+}
+
+.tableNameLink:focus-visible {
+  outline: 1px solid var(--plasma-cyan);
+  outline-offset: 1px;
+}
+
 .tableClass {
   max-width: 90px;
   overflow: hidden;
@@ -1027,60 +728,6 @@
   height: 55%;
 }
 
-.tableExpandRow {
-  border-bottom: none;
-}
-
-.tableExpandCell {
-  padding: 0;
-  border-bottom: 1px solid rgba(0, 212, 255, 0.25);
-}
-
-.tableExpandContent {
-  display: flex;
-  gap: 1.5rem;
-  padding: 1.1rem 1.25rem;
-  background: rgba(5, 8, 20, 0.6);
-}
-
-.tableExpandImageWrap {
-  position: relative;
-  flex-shrink: 0;
-  width: 280px;
-}
-
-.tableExpandImage {
-  width: 100%;
-  height: auto;
-  display: block;
-  border: 1px solid rgba(0, 212, 255, 0.18);
-  border-radius: 0;
-  object-fit: cover;
-}
-
-.tableExpandText {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.tableExpandDescription {
-  font-size: 0.88rem;
-  color: var(--star-white);
-  line-height: 1.6;
-  margin: 0;
-}
-
-.tableExpandLore {
-  font-size: 0.8rem;
-  color: var(--chrome-silver);
-  line-height: 1.7;
-  opacity: 0.85;
-  margin: 0;
-}
-
 /* === Responsive === */
 @media (max-width: 768px) {
   .shipGrid {
@@ -1088,10 +735,6 @@
   }
 
   .statsRow {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .fullStatsGrid {
     grid-template-columns: repeat(2, 1fr);
   }
 
@@ -1111,9 +754,5 @@
 
   .guideColumns {
     grid-template-columns: 1fr;
-  }
-
-  .tableExpandContent {
-    flex-direction: column;
   }
 }

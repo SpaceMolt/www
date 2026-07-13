@@ -15,7 +15,7 @@ export function CommunityFooter() {
   const { t } = useTranslation()
 
   return (
-    <section className={styles.wrap} aria-label={t('community.sectionLabel')}>
+    <section className={styles.wrap} aria-label={t('community.sectionLabel')} data-pagefind-ignore>
       <div className={styles.rule}>
         <span className={styles.ruleLabel}>{t('community.sectionLabel')}</span>
       </div>

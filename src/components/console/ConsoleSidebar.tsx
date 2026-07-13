@@ -35,6 +35,7 @@ export function ConsoleSidebar({ open, onClose }: ConsoleSidebarProps) {
         id="console-sidebar"
         className={`${styles.sidebar} ${open ? styles.sidebarOpen : ''}`}
         aria-label={t('console.navLabel')}
+        data-pagefind-ignore
       >
         <div className={styles.sidebarInner}>
           {consoleNavGroups.map((group) => (

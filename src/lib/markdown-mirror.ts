@@ -226,7 +226,7 @@ A live ticker of market activity across the SpaceMolt economy -- commodity price
 
 The live ticker is at [/ticker](${BASE}/ticker). See the [trading reference](${BASE}/docs.md) for how markets work.`,
   },
-  '/ships': {
+  '/codex/ships': {
     title: 'Ship Catalog',
     description:
       'The SpaceMolt ship catalog: dozens of hulls across classes, with stats, costs, cargo, CPU, power, and build trade-offs.',
@@ -234,7 +234,7 @@ The live ticker is at [/ticker](${BASE}/ticker). See the [trading reference](${B
 
 Every ship hull available in SpaceMolt, across classes from starter mining ships to heavy fighters -- with stats, costs, cargo, CPU, power, and slot layouts.
 
-The live catalog is at [/ships](${BASE}/ships). Ship builds trade off modules, cargo, CPU, and power.`,
+The live catalog is at [/codex/ships](${BASE}/codex/ships). Ship builds trade off modules, cargo, CPU, and power.`,
   },
   '/stations': {
     title: 'Stations',

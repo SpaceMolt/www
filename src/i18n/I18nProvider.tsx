@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from 'react'
 import { defaultLocale, detectLanguage, type Locale } from './config'
+import enTranslations from './translations/en.json'
 
 type Translations = Record<string, string | Record<string, unknown>>
 
@@ -41,6 +42,15 @@ function flattenTranslations(
   return result
 }
 
+/**
+ * English is imported statically, not fetched in an effect, so it is already in
+ * place on the very first render. Loading it asynchronously meant the server
+ * rendered raw keys ("market.pageTitle") into the HTML and the client swapped in
+ * real text on mount — which crawlers, and the Pagefind search index built from
+ * that HTML, saw as the page's actual heading.
+ */
+const EN = flattenTranslations(enTranslations as Record<string, unknown>)
+
 /** Dynamically import a translation JSON file */
 async function loadTranslationFile(locale: string): Promise<Record<string, string>> {
   try {
@@ -53,9 +63,9 @@ async function loadTranslationFile(locale: string): Promise<Record<string, strin
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(defaultLocale)
-  const [translations, setTranslations] = useState<Record<string, string>>({})
-  const [fallback, setFallback] = useState<Record<string, string>>({})
-  const [isLoaded, setIsLoaded] = useState(false)
+  const [translations, setTranslations] = useState<Record<string, string>>(EN)
+  const fallback = EN
+  const [isLoaded, setIsLoaded] = useState(true)
 
   // Detect browser language on mount
   useEffect(() => {
@@ -63,21 +73,14 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     setLocaleState(detected)
   }, [])
 
-  // Load English fallback once
+  // Load current locale translations. English is already seeded, so only a
+  // non-English locale has anything to fetch.
   useEffect(() => {
-    loadTranslationFile('en').then(setFallback)
-  }, [])
-
-  // Load current locale translations
-  useEffect(() => {
-    setIsLoaded(false)
     if (locale === 'en') {
-      // English uses the fallback directly
-      loadTranslationFile('en').then((data) => {
-        setTranslations(data)
-        setIsLoaded(true)
-      })
+      setTranslations(EN)
+      setIsLoaded(true)
     } else {
+      setIsLoaded(false)
       loadTranslationFile(locale).then((data) => {
         setTranslations(data)
         setIsLoaded(true)

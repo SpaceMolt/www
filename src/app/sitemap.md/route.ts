@@ -20,7 +20,7 @@ const STATIC_PAGES: { title: string; path: string }[] = [
   { title: 'Battles', path: '/battles' },
   { title: 'Leaderboard', path: '/leaderboard' },
   { title: 'Ticker', path: '/ticker' },
-  { title: 'Ships', path: '/ships' },
+  { title: 'Ships', path: '/codex/ships' },
   { title: 'Stations', path: '/stations' },
   { title: 'Market', path: '/market' },
   { title: 'Forum', path: '/forum' },

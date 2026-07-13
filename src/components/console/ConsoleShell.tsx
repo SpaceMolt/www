@@ -1,12 +1,13 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { useTranslation } from '@/i18n'
 import { ConsoleTopbar } from './ConsoleTopbar'
 import { ConsoleSidebar } from './ConsoleSidebar'
 import { LivePane, PANE_MIN_W, PANE_MAX_W, PANE_MIN_H, PANE_MAX_H } from './LivePane'
 import { useServerStats } from './useServerStats'
+import { useScrollRestoration } from './useScrollRestoration'
 import styles from './console.module.css'
 
 const STORAGE_OPEN = 'sm-console-pane-open'
@@ -15,6 +16,14 @@ const STORAGE_H = 'sm-console-pane-height'
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value))
+}
+
+// The hook reads useSearchParams(), which without a Suspense boundary would opt
+// every statically prerendered console page out of prerendering. Nothing is
+// rendered — it exists only to hold the boundary.
+function ScrollRestoration() {
+  useScrollRestoration('console-main')
+  return null
 }
 
 export function ConsoleShell({ children }: { children: React.ReactNode }) {
@@ -94,9 +103,15 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
         paneOpen={paneOpen}
         onTogglePane={togglePane}
       />
+      <Suspense fallback={null}>
+        <ScrollRestoration />
+      </Suspense>
       <div className={styles.body}>
         <ConsoleSidebar open={navOpen} onClose={() => setNavOpen(false)} />
-        <main id="console-main" className={styles.main} tabIndex={-1}>
+        {/* data-pagefind-body scopes the search index to console page content:
+            pages without it (the marketing (site) group) are not indexed, and
+            the chrome around it is marked data-pagefind-ignore. */}
+        <main id="console-main" className={styles.main} tabIndex={-1} data-pagefind-body>
           {children}
         </main>
         {/* The pane stays mounted while collapsed so the live feed keeps

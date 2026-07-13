@@ -38,6 +38,9 @@ src/data/catalog-reference.json
 # generated guides manifest (built from public/guides/*.md + guides-meta.json)
 public/guides/index.json
 
+# pagefind search index (built from .next/server/app after next build)
+public/pagefind/
+
 # large binary assets
 *.7z
 

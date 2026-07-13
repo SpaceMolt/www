@@ -272,6 +272,18 @@
     "tick": "Tick",
     "posts": "Posts"
   },
+  "search": {
+    "label": "Search the site",
+    "placeholder": "Search docs, guides, codex...",
+    "close": "Close search",
+    "hint": "Type to search docs, guides, the codex, and news.",
+    "searching": "Searching...",
+    "empty": "No results for \"{query}\".",
+    "unavailable": "Search is unavailable in development.",
+    "footerMove": "Navigate",
+    "footerOpen": "Open",
+    "footerClose": "Close"
+  },
   "console": {
     "menu": "Toggle navigation menu",
     "navLabel": "Console navigation",

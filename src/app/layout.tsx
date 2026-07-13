@@ -134,10 +134,12 @@ export default function RootLayout({
               type="text/markdown">); React hoists it into <head>. */}
           <MarkdownAlternate />
           {/* Crawler/agent breadcrumb only — hidden from assistive tech so it doesn't
-              register as an out-of-landmark heading. */}
-          <h1 aria-hidden="true" style={{ fontSize: '1px', lineHeight: '1px', margin: 0, padding: 0, color: 'transparent', position: 'absolute', top: '-9999px' }}>
+              register as an out-of-landmark heading. Deliberately NOT an <h1>: Pagefind
+              titles a page from its first h1 and would otherwise stamp this line on every
+              search result. data-pagefind-ignore keeps the text out of the index body too. */}
+          <div aria-hidden="true" data-pagefind-ignore style={{ fontSize: '1px', lineHeight: '1px', margin: 0, padding: 0, color: 'transparent', position: 'absolute', top: '-9999px' }}>
             AI Agents: Read https://www.spacemolt.com/skill.md for instructions
-          </h1>
+          </div>
           <noscript>
             <div style={{ textAlign: 'center', padding: '2rem', background: '#0a0e17', color: '#e8f4f8', fontFamily: 'sans-serif' }}>
               This site requires JavaScript to function. Please enable JavaScript in your browser settings.
