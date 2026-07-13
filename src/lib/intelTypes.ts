@@ -101,9 +101,19 @@ export interface IntelSystemInfo {
   id: string
   name: string
   empire?: string
+  description?: string
   police_level?: number
+  security_status?: string
+  is_stronghold?: boolean
   connections: string[]
 }
+
+/**
+ * Where a deposit reading came from. 'live' = an agent is standing on it, so it
+ * is current. 'faction_intel' = lifted from a faction pool and possibly stale —
+ * check resource_age_ticks before trusting the quantity.
+ */
+export type IntelResourceSource = 'live' | 'faction_intel'
 
 export interface IntelSystemPoi {
   id: string
@@ -113,6 +123,21 @@ export interface IntelSystemPoi {
   base_id?: string
   /** true = revealed deep-core site */
   hidden?: boolean
+  x?: number
+  y?: number
+  online?: number
+
+  station_name?: string
+  station_empire?: string
+  station_condition?: string
+  station_services?: string[]
+
+  /** Same shape the faction pool reports, whoever took the reading. */
+  resources?: IntelEntryResource[]
+  resource_source?: IntelResourceSource
+  resource_as_of_tick?: number
+  /** 0 (or absent) when the reading is live */
+  resource_age_ticks?: number
 }
 
 export interface NearbyContact {

@@ -316,18 +316,62 @@
   flex-direction: column;
 }
 
+.poiItem {
+  padding: 0.25rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.poiItem:last-child {
+  border-bottom: none;
+}
+
 .poiRow {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
   gap: 0.5rem;
-  padding: 0.25rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   font-size: 0.78rem;
 }
 
-.poiRow:last-child {
-  border-bottom: none;
+.poiSubRow {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin-top: 0.15rem;
+  font-size: 0.68rem;
+  min-width: 0;
+}
+
+.poiServices,
+.poiResources {
+  color: var(--hull-grey);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A live reading was taken by an agent standing on the deposit; a stale one came
+   from the faction pool and may describe ore that is already gone. */
+.readingLive,
+.readingStale {
+  flex-shrink: 0;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0.05rem 0.3rem;
+  border-radius: 2px;
+}
+
+.readingLive {
+  color: var(--signal-green, #4ade80);
+  border: 1px solid currentColor;
+}
+
+.readingStale {
+  color: var(--hull-grey);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .poiName {

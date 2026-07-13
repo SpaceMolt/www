@@ -16,7 +16,9 @@ import {
 } from 'lucide-react'
 import type {
   IntelAgent,
+  IntelEntryResource,
   IntelSystemDetailResponse,
+  IntelSystemPoi,
   NearbyByPoi,
   SystemIntelEntry,
 } from '@/lib/intelTypes'
@@ -82,6 +84,74 @@ function ContactsSection({ poiId, contacts }: { poiId: string; contacts: NearbyB
         !contacts.unknown_signature && (
           <div className={styles.contactNote}>No other ships detected</div>
         )}
+    </div>
+  )
+}
+
+/** A tick is 10 seconds of game time. */
+const describeAge = (ticks: number) => {
+  const minutes = Math.round((ticks * 10) / 60)
+  if (minutes < 1) return 'moments ago'
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.round(minutes / 60)
+  return hours < 48 ? `${hours}h ago` : `${Math.round(hours / 24)}d ago`
+}
+
+const describeResource = ({
+  resource_id,
+  richness,
+  remaining_display,
+}: IntelEntryResource) =>
+  [
+    titleCase(resource_id),
+    richness ? `richness ${richness}` : '',
+    remaining_display,
+  ]
+    .filter(Boolean)
+    .join(' · ')
+
+/**
+ * One POI. Beyond the name and type it carries the station vitals the public map
+ * already shows, plus any deposit reading — badged with whether an agent is
+ * standing on it right now or it came second-hand from the faction pool, because
+ * a stale "full" reading on a mined-out deposit is worse than no reading.
+ */
+function PoiRow({ poi }: { poi: IntelSystemPoi }) {
+  const live = poi.resource_source === 'live'
+  const resources = poi.resources ?? []
+
+  return (
+    <div className={styles.poiItem}>
+      <div className={styles.poiRow}>
+        <span className={styles.poiName}>{poi.name}</span>
+        <span className={styles.poiType}>
+          {titleCase(poi.type)}
+          {poi.hidden ? ' · deep-core' : ''}
+          {poi.online ? ` · ${poi.online} here` : ''}
+        </span>
+      </div>
+
+      {poi.station_condition && (
+        <div className={styles.poiSubRow}>
+          <span className={styles.stationCondition}>{poi.station_condition}</span>
+          {poi.station_services?.length ? (
+            <span className={styles.poiServices}>
+              {poi.station_services.map(titleCase).join(' · ')}
+            </span>
+          ) : null}
+        </div>
+      )}
+
+      {resources.length > 0 && (
+        <div className={styles.poiSubRow}>
+          <span className={live ? styles.readingLive : styles.readingStale}>
+            {live ? 'live' : describeAge(poi.resource_age_ticks ?? 0)}
+          </span>
+          <span className={styles.poiResources}>
+            {resources.map(describeResource).join(', ')}
+          </span>
+        </div>
+      )}
     </div>
   )
 }
@@ -310,13 +380,7 @@ export function SystemDetailPanel({
                 </h3>
                 <div className={styles.poiList}>
                   {detail.pois.map((poi) => (
-                    <div key={poi.id} className={styles.poiRow}>
-                      <span className={styles.poiName}>{poi.name}</span>
-                      <span className={styles.poiType}>
-                        {titleCase(poi.type)}
-                        {poi.hidden ? ' · deep-core' : ''}
-                      </span>
-                    </div>
+                    <PoiRow key={poi.id} poi={poi} />
                   ))}
                 </div>
               </section>
