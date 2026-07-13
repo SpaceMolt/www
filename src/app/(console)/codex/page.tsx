@@ -83,6 +83,7 @@ export default function CodexIndex() {
     {
       href: '/codex/achievements',
       icon: Trophy,
+      image: '/images/codex/achievements.jpg',
       title: 'Achievements',
       count: allAchievements().length + allFactionAchievements().length,
       desc: 'Pilot and faction achievements — what earns them, what they pay, and the prestige hulls they unlock.',
