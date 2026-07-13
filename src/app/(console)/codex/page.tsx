@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Image from 'next/image'
 import Link from 'next/link'
 import {
   Boxes, Cpu, Hammer, GraduationCap, Rocket, Factory, Trophy, Download, BookOpen,
@@ -34,6 +35,7 @@ export default function CodexIndex() {
     {
       href: '/codex/items',
       icon: Boxes,
+      image: '/images/guides/trader.jpg',
       title: 'Items',
       count: allNonModuleItems().length,
       desc: 'Ores, refined goods, components, consumables, ammo, drones, and contraband — with the recipes that make and consume them.',
@@ -41,6 +43,7 @@ export default function CodexIndex() {
     {
       href: '/codex/modules',
       icon: Cpu,
+      image: '/images/codex/modules.jpg',
       title: 'Modules',
       count: allModules().length,
       desc: 'Every weapon, defense, mining and utility module: CPU and power draw, full stats, and skill requirements.',
@@ -48,6 +51,7 @@ export default function CodexIndex() {
     {
       href: '/codex/recipes',
       icon: Hammer,
+      image: '/images/guides/crafting.jpg',
       title: 'Recipes',
       count: catalogMeta.counts.recipes,
       desc: 'The full crafting tree — inputs, outputs, crafting time, and which recipes are facility-only.',
@@ -55,6 +59,7 @@ export default function CodexIndex() {
     {
       href: '/codex/skills',
       icon: GraduationCap,
+      image: '/images/codex/skills.jpg',
       title: 'Skills',
       count: referenceMeta.counts.skills,
       desc: 'XP curves, per-level bonuses, and how each skill is trained.',
@@ -62,6 +67,7 @@ export default function CodexIndex() {
     {
       href: '/ships',
       icon: Rocket,
+      image: '/images/guides/drones.jpg',
       title: 'Ships',
       count: catalogMeta.counts.ships,
       desc: 'Hulls by class, empire, and tier — slots, capacities, and build materials.',
@@ -69,6 +75,7 @@ export default function CodexIndex() {
     {
       href: '/codex/facilities',
       icon: Factory,
+      image: '/images/home/feature-stations.jpg',
       title: 'Facilities',
       count: referenceMeta.counts.facilities,
       desc: 'Station modules and the recipes they unlock or accelerate.',
@@ -76,6 +83,7 @@ export default function CodexIndex() {
     {
       href: '/codex/achievements',
       icon: Trophy,
+      image: '/images/codex/achievements.jpg',
       title: 'Achievements',
       count: allAchievements().length + allFactionAchievements().length,
       desc: 'Pilot and faction achievements — what earns them, what they pay, and the prestige hulls they unlock.',
@@ -135,16 +143,28 @@ export default function CodexIndex() {
           const Icon = section.icon
           return (
             <Link key={section.href} href={section.href} className={styles.card}>
-              <div className={styles.cardTop}>
-                <Icon size={15} aria-hidden />
-                <h2 className={styles.cardTitle}>{section.title}</h2>
-                {/* A count of 0 means the build fell back to the paged catalog API,
-                    which serves no skills and no facilities — show a dash, not a lie. */}
-                <span className={styles.cardCount}>
-                  {section.count > 0 ? section.count.toLocaleString('en-US') : '—'}
-                </span>
+              <div className={styles.cardImageWrap}>
+                <Image
+                  src={section.image}
+                  alt=""
+                  width={460}
+                  height={258}
+                  className={styles.cardImage}
+                  sizes="(max-width: 700px) 100vw, 320px"
+                />
               </div>
-              <p className={styles.cardDesc}>{section.desc}</p>
+              <div className={styles.cardBody}>
+                <div className={styles.cardTop}>
+                  <Icon size={15} aria-hidden />
+                  <h2 className={styles.cardTitle}>{section.title}</h2>
+                  {/* A count of 0 means the build fell back to the paged catalog API,
+                      which serves no skills and no facilities — show a dash, not a lie. */}
+                  <span className={styles.cardCount}>
+                    {section.count > 0 ? section.count.toLocaleString('en-US') : '—'}
+                  </span>
+                </div>
+                <p className={styles.cardDesc}>{section.desc}</p>
+              </div>
             </Link>
           )
         })}

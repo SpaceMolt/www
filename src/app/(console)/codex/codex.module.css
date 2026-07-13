@@ -31,10 +31,10 @@
 .card {
   display: block;
   position: relative;
-  padding: 0.9rem 1rem 1rem;
   background: rgba(13, 19, 33, 0.6);
   border: 1px solid rgba(0, 212, 255, 0.14);
   border-radius: 0;
+  overflow: hidden;
   text-decoration: none;
   color: inherit;
   transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
@@ -45,6 +45,45 @@
   background: rgba(13, 19, 33, 0.85);
   transform: translateY(-1px);
   text-decoration: none;
+}
+
+.cardImageWrap {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.5);
+  border-bottom: 1px solid rgba(0, 212, 255, 0.14);
+}
+
+/* Fade the art into the card body so the title row never fights the artwork. */
+.cardImageWrap::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(6, 10, 20, 0.15) 0%,
+    rgba(6, 10, 20, 0.45) 55%,
+    rgba(13, 19, 33, 0.92) 100%
+  );
+}
+
+.cardImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: saturate(0.9);
+  transition: transform 0.35s ease, filter 0.2s ease;
+}
+
+.card:hover .cardImage {
+  transform: scale(1.04);
+  filter: saturate(1.05);
+}
+
+.cardBody {
+  padding: 0.9rem 1rem 1rem;
 }
 
 .cardTop {
