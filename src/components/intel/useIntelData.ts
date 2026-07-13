@@ -88,6 +88,7 @@ export interface UseIntelDataResult {
   trailColors: Map<string, string>
   factionOptions: FactionOption[]
   currentTick: number | null
+  tickAnchorMs: number
   movementsTruncated: boolean
   loading: boolean
   error: string | null
@@ -105,6 +106,12 @@ export function useIntelData({
 }: UseIntelDataOptions): UseIntelDataResult {
   const [systems, setSystems] = useState<IntelMapSystem[]>([])
   const [intel, setIntel] = useState<IntelMapResponse | null>(null)
+  // Faction-scoped snapshot; null when no faction filter is active.
+  const [narrowed, setNarrowed] = useState<IntelMapResponse | null>(null)
+  // Client wall-clock at the moment current_tick was received. The canvas
+  // advances the tick off this to interpolate between 20s polls; anchoring on
+  // the server's generated_at instead would import any clock skew.
+  const [tickAnchorMs, setTickAnchorMs] = useState(() => Date.now())
   const [movements, setMovements] = useState<IntelMovement[]>([])
   const [movementsTruncated, setMovementsTruncated] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -146,6 +153,30 @@ export function useIntelData({
     setRateLimited(false)
     setError(null)
     setIntel(await res.json())
+    setTickAnchorMs(Date.now())
+  }, [noteResponse])
+
+  // A second, narrowed snapshot for the active faction. The unfiltered one stays
+  // the source of truth for the agent list and the faction dropdown — narrowing
+  // that would leave nothing to switch back to.
+  const fetchNarrowed = useCallback(async (playerIds: string) => {
+    if (!playerIds) {
+      setNarrowed(null)
+      return
+    }
+    if (Date.now() < backoffUntilRef.current) return
+    const headers = await authHeadersRef.current()
+    const res = await fetch(
+      `${GAME_SERVER}/api/intel-map?players=${encodeURIComponent(playerIds)}`,
+      { headers },
+    )
+    if (!res.ok) {
+      // An older gameserver ignores ?players and returns the full snapshot; a
+      // failure here just means the fog does not narrow. Never blank the map.
+      noteResponse(res.status)
+      return
+    }
+    setNarrowed(await res.json())
   }, [noteResponse])
 
   const fetchMovements = useCallback(async (hours: number, playerIds: string[] | null) => {
@@ -188,6 +219,21 @@ export function useIntelData({
     if (filteredAgents.length === agents.length) return ''
     return filteredAgents.map((a) => a.id).sort().join(',')
   }, [filteredAgents, agents])
+
+  // Scope for the *snapshot* refetch, which narrows the fog of war and the
+  // faction-intel overlay server-side — the parts the client cannot filter,
+  // because only the server knows which systems each agent explored.
+  //
+  // Keyed on the faction filter alone, deliberately: the text filter is a
+  // sidebar convenience, and folding it in here would refetch the whole galaxy
+  // snapshot on every keystroke.
+  const factionScopeKey = useMemo(() => {
+    if (factionFilter === FACTION_FILTER_ALL) return ''
+    const scoped = agents.filter((a) =>
+      factionFilter === FACTION_FILTER_INDEPENDENT ? !a.faction_id : a.faction_id === factionFilter,
+    )
+    return scoped.map((a) => a.id).sort().join(',')
+  }, [agents, factionFilter])
 
   // ── Initial load ─────────────────────────────────────────────────────
 
@@ -246,6 +292,23 @@ export function useIntelData({
       filteredIdsKeyRef.current ? filteredIdsKeyRef.current.split(',') : null,
     ).catch(() => {})
   }, MOVEMENTS_POLL_MS)
+
+  // Keep the faction-scoped snapshot fresh alongside the full one, so the fog of
+  // war under a faction filter does not freeze at whatever it was when the
+  // filter was applied.
+  const factionScopeKeyRef = useRef(factionScopeKey)
+  factionScopeKeyRef.current = factionScopeKey
+
+  useVisiblePoll(() => {
+    if (!enabled || !factionScopeKeyRef.current) return
+    fetchNarrowed(factionScopeKeyRef.current).catch(() => {})
+  }, INTEL_POLL_MS)
+
+  // Refetch immediately when the faction selection changes.
+  useEffect(() => {
+    if (!enabled || !initialLoadedRef.current) return
+    fetchNarrowed(factionScopeKey).catch(() => {})
+  }, [enabled, factionScopeKey, fetchNarrowed])
 
   // Refetch movements when the window or the active agent filter changes
   // (debounced — the text filter changes on every keystroke).
@@ -341,11 +404,17 @@ export function useIntelData({
 
   const systemsById = useMemo(() => new Map(systems.map((s) => [s.id, s])), [systems])
 
-  const exploredSet = useMemo(() => new Set(intel?.explored_systems ?? []), [intel])
+  // Everything derived from what the fleet *knows* reads the scoped snapshot, so
+  // selecting a faction narrows the fog of war and the intel overlay too — not
+  // just the agent list. Falls back to the full snapshot when nothing is scoped,
+  // and while the narrowed one is still in flight.
+  const scoped = narrowed ?? intel
+
+  const exploredSet = useMemo(() => new Set(scoped?.explored_systems ?? []), [scoped])
 
   const intelSet = useMemo(
-    () => new Set(Object.keys(intel?.faction_intel?.systems ?? {})),
-    [intel],
+    () => new Set(Object.keys(scoped?.faction_intel?.systems ?? {})),
+    [scoped],
   )
 
   const agentsBySystem = useMemo(() => {
@@ -364,7 +433,13 @@ export function useIntelData({
     () =>
       filteredAgents
         .filter((a) => a.in_transit?.type === 'jump')
-        .map((a) => ({ agentId: a.id, from: a.in_transit!.from, to: a.in_transit!.to })),
+        .map((a) => ({
+          agentId: a.id,
+          from: a.in_transit!.from,
+          to: a.in_transit!.to,
+          startTick: a.in_transit!.start_tick,
+          arrivalTick: a.in_transit!.arrival_tick,
+        })),
     [filteredAgents],
   )
 
@@ -421,6 +496,7 @@ export function useIntelData({
     trailColors,
     factionOptions,
     currentTick: intel?.current_tick ?? null,
+    tickAnchorMs,
     movementsTruncated,
     loading,
     error,

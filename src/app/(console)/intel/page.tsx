@@ -69,8 +69,12 @@ function IntelContent() {
   const handleAgentSelect = useCallback(
     (agent: IntelAgent) => {
       setSelectedAgentId(agent.id)
-      setSelectedSystem(agent.system)
-      mapRef.current?.panToSystem(agent.system)
+      // An agent mid-jump is in hyperspace: the server reports no current system
+      // for it, so fall back to the system it launched from. Otherwise clicking
+      // an in-flight agent pans nowhere at all.
+      const focus = agent.system || agent.in_transit?.from || ''
+      setSelectedSystem(focus)
+      if (focus) mapRef.current?.panToSystem(focus)
     },
     [setSelectedSystem],
   )
@@ -144,6 +148,8 @@ function IntelContent() {
           agentsBySystem={data.agentsBySystem}
           trails={data.trails}
           transits={data.transits}
+          currentTick={data.currentTick}
+          tickAnchorMs={data.tickAnchorMs}
           selectedSystemId={selectedSystem}
           layers={layers}
           onSystemSelect={handleSystemSelect}

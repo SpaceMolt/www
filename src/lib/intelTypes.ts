@@ -31,6 +31,8 @@ export interface IntelInTransit {
   type: 'jump' | 'travel'
   from: string
   to: string
+  /** Both ends of the flight — together they place the agent along it. */
+  start_tick: number
   arrival_tick: number
 }
 
@@ -293,6 +295,8 @@ export interface TransitMarker {
   agentId: string
   from: string
   to: string
+  startTick: number
+  arrivalTick: number
 }
 
 export interface IntelLayerState {
