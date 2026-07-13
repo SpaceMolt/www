@@ -401,6 +401,11 @@
   box-shadow: 0 0 16px color-mix(in srgb, var(--empire-color, var(--plasma-cyan)) 18%, transparent);
 }
 
+.shipCard:focus-visible {
+  outline: 1px solid var(--plasma-cyan);
+  outline-offset: 1px;
+}
+
 .cardLeft {
   display: flex;
   flex-direction: column;
@@ -858,6 +863,16 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 1.1rem;
+}
+
+.modalBody:focus-visible {
+  outline: 1px solid var(--plasma-cyan);
+  outline-offset: -2px;
+}
+
+/* The panel takes focus on open purely to anchor the dialog — don't ring it */
+.modalContent:focus {
+  outline: none;
 }
 
 .modalImage {

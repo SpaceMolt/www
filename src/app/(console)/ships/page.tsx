@@ -372,8 +372,18 @@ export default function ShipsPage() {
     document.title = 'Ship Catalog - SpaceMolt'
   }, [])
 
-  // While the detail modal is open, close on Escape and stop the page behind it
-  // from scrolling under the overlay.
+  // Captured when the modal is opened, not inside the effect below: the modal's
+  // own focus effect runs first (child effects precede parent effects), so by
+  // then document.activeElement is already the dialog, not the card.
+  const detailOpenerRef = useRef<HTMLElement | null>(null)
+
+  const openDetail = useCallback((ship: Ship) => {
+    detailOpenerRef.current = document.activeElement as HTMLElement | null
+    setDetailShip(ship)
+  }, [])
+
+  // While the detail modal is open, close on Escape, stop the page behind it
+  // from scrolling under the overlay, and hand focus back to whatever opened it.
   useEffect(() => {
     if (!detailShip) return
     const onKeyDown = (e: KeyboardEvent) => {
@@ -385,6 +395,7 @@ export default function ShipsPage() {
     return () => {
       document.removeEventListener('keydown', onKeyDown)
       document.body.style.overflow = prevOverflow
+      detailOpenerRef.current?.focus?.()
     }
   }, [detailShip])
 
@@ -694,13 +705,13 @@ export default function ShipsPage() {
                 key={ship.id}
                 className={styles.shipCard}
                 style={{ '--empire-color': empireColor } as React.CSSProperties}
-                onClick={() => setDetailShip(ship)}
+                onClick={() => openDetail(ship)}
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault()
-                    setDetailShip(ship)
+                    openDetail(ship)
                   }
                 }}
                 aria-label={`View ${ship.name} details`}
@@ -881,7 +892,7 @@ export default function ShipsPage() {
                                 />
                                 <button
                                   className={styles.zoomBtn}
-                                  onClick={(e) => { e.stopPropagation(); setDetailShip(ship) }}
+                                  onClick={(e) => { e.stopPropagation(); openDetail(ship) }}
                                   aria-label={`View ${ship.name} details`}
                                 >
                                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -947,12 +958,41 @@ function ShipDetailModal({
     (ship.required_skills && Object.keys(ship.required_skills).length > 0) ||
     (ship.piloting_required !== undefined && ship.piloting_required > 0)
 
+  const dialogRef = useRef<HTMLDivElement>(null)
+
+  // The modal is the only way to read a ship's full detail, so keyboard users
+  // must land inside it and stay inside it: focus the panel on open, and keep
+  // Tab cycling between the close button and the scrollable body.
+  useEffect(() => {
+    dialogRef.current?.focus()
+  }, [])
+
+  const onDialogKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== 'Tab') return
+    const dialog = dialogRef.current
+    if (!dialog) return
+    const focusable = dialog.querySelectorAll<HTMLElement>('button, [href], [tabindex]:not([tabindex="-1"])')
+    if (focusable.length === 0) return
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault()
+      last.focus()
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault()
+      first.focus()
+    }
+  }
+
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
       <div
+        ref={dialogRef}
+        tabIndex={-1}
         className={styles.modalContent}
         style={{ '--empire-color': empireColor } as React.CSSProperties}
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={onDialogKeyDown}
         role="dialog"
         aria-modal="true"
         aria-label={`${ship.name} details`}
@@ -984,7 +1024,9 @@ function ShipDetailModal({
           </button>
         </div>
 
-        <div className={styles.modalBody}>
+        {/* tabIndex makes the scroll region reachable, so keyboard users can
+            scroll the detail without a pointer */}
+        <div className={styles.modalBody} tabIndex={0}>
           {!imageBroken && (
             <Image
               src={`/images/ships/catalog/${ship.id}.webp`}
