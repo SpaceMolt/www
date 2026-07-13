@@ -275,6 +275,7 @@
   "search": {
     "label": "Search the site",
     "placeholder": "Search docs, guides, codex...",
+    "fieldPlaceholder": "Search the site",
     "close": "Close search",
     "hint": "Type to search docs, guides, the codex, and news.",
     "searching": "Searching...",

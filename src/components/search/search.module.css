@@ -6,18 +6,25 @@
    Docs field (a trigger, not an input)
    ------------------------------------------------------------ */
 
+/* Sits at the top-right of the scroll area, opposite the page header, rather than
+   in the flow above it (which centred it and pushed the page down). #console-main
+   is the positioning context; the gutter matches .console-page's own, so the field
+   lines up with the right edge of the page content on both the normal and the
+   -wide page widths that /docs uses. */
 .fieldWrap {
-  position: relative;
+  position: absolute;
+  top: 1.4rem;
+  right: 0;
+  z-index: 3;
   display: flex;
   align-items: center;
-  max-width: 520px;
-  margin: 1.2rem auto 0;
-  padding: 0 1.5rem;
+  width: min(320px, 100%);
+  padding-right: clamp(1rem, 2.5vw, 2.2rem);
 }
 
 .fieldIcon {
   position: absolute;
-  left: 2.2rem;
+  left: 0.7rem;
   color: var(--hull-grey);
   pointer-events: none;
 }
@@ -25,7 +32,7 @@
 .field {
   width: 100%;
   height: 38px;
-  padding: 0 5.4rem 0 2.4rem;
+  padding: 0 5.4rem 0 2.1rem;
   background: rgba(0, 212, 255, 0.04);
   border: 1px solid rgba(107, 143, 163, 0.4);
   border-radius: 4px;
@@ -49,10 +56,25 @@
 
 .fieldHint {
   position: absolute;
-  right: 2.1rem;
+  right: calc(clamp(1rem, 2.5vw, 2.2rem) + 0.6rem);
   display: flex;
   gap: 0.25rem;
   pointer-events: none;
+}
+
+/* Narrow viewports have no room beside the page title, so the field drops back
+   into the flow above it. */
+@media (max-width: 720px) {
+  .fieldWrap {
+    position: static;
+    width: auto;
+    margin: 1.1rem clamp(1rem, 2.5vw, 2.2rem) 0;
+    padding-right: 0;
+  }
+
+  .fieldHint {
+    right: 0.6rem;
+  }
 }
 
 .kbd {

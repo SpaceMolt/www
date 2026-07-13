@@ -61,11 +61,13 @@ export function ConsoleSearch() {
         <div className={styles.fieldWrap} data-pagefind-ignore>
           <Search size={14} className={styles.fieldIcon} aria-hidden />
           {/* A trigger dressed as a field: the real input lives in the dialog. */}
+          {/* Its own placeholder: the dialog's is too long for a 320px field and
+              clips mid-word. */}
           <input
             type="text"
             readOnly
             className={styles.field}
-            placeholder={t('search.placeholder')}
+            placeholder={t('search.fieldPlaceholder')}
             aria-label={t('search.label')}
             aria-haspopup="dialog"
             onClick={openFromField}
