@@ -396,20 +396,16 @@ function DashboardContent() {
     setChatPlayersLoading(true)
     try {
       const headers = await authHeaders()
-      const results: PlayerInfo[] = []
-      // Fetch sequentially to avoid bursting the shared per-IP rate limit
-      for (const p of players) {
-        try {
-          const res = await fetch(`${GAME_SERVER}/api/player/${p.id}`, {
-            headers,
-          })
-          if (res.ok) {
-            const info = await res.json() as PlayerInfo
-            results.push(info)
-          }
-        } catch { /* ignore */ }
-      }
-      setAllPlayerInfo(results)
+      // One request for the whole fleet. This used to be one request per agent,
+      // charged against a per-user budget of 120/min — so an operator with a few
+      // hundred agents rate-limited themselves just by opening this page. Pacing
+      // them did not help: the budget is per minute, not per burst.
+      const res = await fetch(`${GAME_SERVER}/api/players`, { headers })
+      if (!res.ok) return
+      const data = await res.json() as { players?: PlayerInfo[] }
+      setAllPlayerInfo(data.players ?? [])
+    } catch {
+      /* leave the last good fleet snapshot on screen */
     } finally {
       setChatPlayersLoading(false)
     }
