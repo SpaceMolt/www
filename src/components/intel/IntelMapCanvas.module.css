@@ -1,0 +1,101 @@
+/* === Intel Map Canvas — fleet intelligence galaxy view === */
+
+.mapContainer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #050810;
+}
+
+.canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.canvas:active {
+  cursor: grabbing;
+}
+
+/* Tooltip */
+.tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: rgba(10, 14, 23, 0.95);
+  border: 1px solid var(--hull-grey);
+  border-radius: 6px;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.85rem;
+  z-index: 200;
+  opacity: 0;
+  transition: opacity 0.15s;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.tooltipVisible {
+  opacity: 1;
+}
+
+.tooltipName {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.tooltipEmpire {
+  font-size: 0.75rem;
+  opacity: 0.7;
+  margin-bottom: 0.25rem;
+}
+
+.tooltipTags {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--plasma-cyan);
+  display: none;
+}
+
+/* Zoom Controls */
+.zoomControls {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  z-index: 100;
+}
+
+.zoomBtn {
+  width: 36px;
+  height: 36px;
+  background: rgba(10, 14, 23, 0.85);
+  border: 1px solid var(--hull-grey);
+  border-radius: 6px;
+  color: var(--plasma-cyan);
+  font-size: 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+}
+
+.zoomBtn:hover {
+  background: rgba(0, 212, 255, 0.15);
+  border-color: var(--plasma-cyan);
+}
+
+.zoomBtn:active {
+  background: rgba(0, 212, 255, 0.25);
+  transform: scale(0.95);
+}

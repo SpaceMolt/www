@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react'
 import {
-  LayoutDashboard, Play, Map, Swords, Trophy, Radio, Building2,
+  LayoutDashboard, Play, Map, Radar, Swords, Trophy, Radio, Building2,
   Coins, TrendingUp, MessagesSquare, Newspaper, MessageCircle, Compass,
   BookOpen, Library, TerminalSquare, ScrollText, Info, ShoppingBag, Heart,
   BookA, Database,
@@ -33,6 +33,7 @@ export const consoleNavGroups: ConsoleNavGroup[] = [
       { href: '/play', labelKey: 'console.play', icon: Play },
       { href: '/docs/getting-started', labelKey: 'nav.gettingStarted', icon: Compass },
       { href: '/dashboard', labelKey: 'nav.dashboard', icon: LayoutDashboard },
+      { href: '/intel', labelKey: 'nav.intel', icon: Radar },
     ],
   },
   {

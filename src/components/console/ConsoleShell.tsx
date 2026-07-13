@@ -31,6 +31,11 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation()
   const { stats, online } = useServerStats()
 
+  // The intel map is a workspace, not a dashboard: the galaxy-wide trade feed
+  // has nothing to do with your own fleet's intelligence, and it costs a third
+  // of the viewport that the map and the system panel need.
+  const showLivePane = pathname !== '/intel'
+
   const [navOpen, setNavOpen] = useState(false)
   const [paneOpen, setPaneOpen] = useState(true)
   const [paneW, setPaneW] = useState(340)
@@ -100,8 +105,9 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
         online={online}
         navOpen={navOpen}
         onToggleNav={() => setNavOpen((v) => !v)}
-        paneOpen={paneOpen}
+        paneOpen={paneOpen && showLivePane}
         onTogglePane={togglePane}
+        hidePaneToggle={!showLivePane}
       />
       <Suspense fallback={null}>
         <ScrollRestoration />
@@ -116,16 +122,18 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
         </main>
         {/* The pane stays mounted while collapsed so the live feed keeps
             accumulating events; it is only hidden visually. */}
-        <LivePane
-          hidden={!paneOpen}
-          width={paneW}
-          height={paneH}
-          onWidthChange={onWidthChange}
-          onHeightChange={onHeightChange}
-          onClose={closePane}
-          stats={stats}
-          online={online}
-        />
+        {showLivePane && (
+          <LivePane
+            hidden={!paneOpen}
+            width={paneW}
+            height={paneH}
+            onWidthChange={onWidthChange}
+            onHeightChange={onHeightChange}
+            onClose={closePane}
+            stats={stats}
+            online={online}
+          />
+        )}
       </div>
     </div>
   )
