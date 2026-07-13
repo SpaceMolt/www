@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { Activity } from 'lucide-react'
 import { useTranslation } from '@/i18n'
 import { ConsoleTopbar } from './ConsoleTopbar'
 import { ConsoleSidebar } from './ConsoleSidebar'
@@ -119,12 +118,6 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
             stats={stats}
             online={online}
           />
-        )}
-        {showLivePane && !paneOpen && (
-          <button className={styles.paneEdgeTab} onClick={togglePane} aria-controls="console-live-pane" aria-expanded={false}>
-            <Activity size={13} aria-hidden />
-            {t('console.live')}
-          </button>
         )}
       </div>
     </div>

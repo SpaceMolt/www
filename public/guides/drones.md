@@ -18,7 +18,7 @@ Three independent limits gate how many drones you can field. Understand all thre
 |-------|--------|----------|
 | **Bay capacity** | `droneCapacity` on bay modules | How many drones you can **carry** (in-bay + deployed) |
 | **Bandwidth** | `droneBandwidth` on bay modules | How many drones you can have **deployed simultaneously** |
-| **`drone_control` skill** | Player skill, max level 20 | Makes deployed drones **more effective** (damage, mining yield, repair rate) |
+| **`drone_control` skill** | Player skill, max level 100 | Makes deployed drones **more effective** (damage, mining yield, repair rate) |
 
 Bay slots and bandwidth come from hardware — install drone bay modules. Effectiveness comes from the skill. Skill does not raise either cap.
 
@@ -552,7 +552,7 @@ A typical mid-game build: Gestalt (T3, 5 utility slots) + 2× Combat Drone Bay =
 
 | Level | Effect |
 |-------|--------|
-| Per level | +2% drone damage, +2% mining yield, +2% repair rate |
+| Per level | +1% drone damage, +1% mining yield, +1% repair rate |
 | Max | 20 |
 
 At level 20: drones do 40% more damage, mine 40% faster, and repair 40% faster. Skill XP is generous — a fleet of mining drones working a belt for a few hours puts you at level 5+ trivially.

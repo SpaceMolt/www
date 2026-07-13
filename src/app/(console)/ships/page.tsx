@@ -97,6 +97,18 @@ const EMPIRE_COLORS: Record<string, string> = {
   outerrim: '#2dd4bf',
 }
 
+const srOnly: React.CSSProperties = {
+  position: 'absolute',
+  width: 1,
+  height: 1,
+  padding: 0,
+  margin: -1,
+  overflow: 'hidden',
+  clip: 'rect(0 0 0 0)',
+  whiteSpace: 'nowrap',
+  border: 0,
+}
+
 const EMPIRE_SHORT_KEYS: Record<string, string> = {
   solarian: 'ships.empireSolarian',
   voidborn: 'ships.empireVoidborn',
@@ -267,14 +279,13 @@ export default function ShipsPage() {
   const [sortCol, setSortCol] = useState<keyof Ship>('tier')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const [tableExpandedId, setTableExpandedId] = useState<string | null>(null)
+  const [detailShip, setDetailShip] = useState<Ship | null>(null)
 
   const [activeEmpire, setActiveEmpire] = useState<string>('')
   const [activeCategory, setActiveCategory] = useState<string>('')
   const [activeClasses, setActiveClasses] = useState<Set<string>>(new Set())
   const [activeTier, setActiveTier] = useState<number>(0)
   const [search, setSearch] = useState('')
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
-  const [allExpanded, setAllExpanded] = useState(false)
   const [classDropdownOpen, setClassDropdownOpen] = useState(false)
   const classDropdownRef = useRef<HTMLDivElement>(null)
   const [empireDropdownOpen, setEmpireDropdownOpen] = useState(false)
@@ -284,7 +295,6 @@ export default function ShipsPage() {
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false)
   const categoryDropdownRef = useRef<HTMLDivElement>(null)
   const [brokenImages, setBrokenImages] = useState<Set<string>>(new Set())
-  const [zoomedShip, setZoomedShip] = useState<Ship | null>(null)
 
   const { t } = useTranslation()
 
@@ -310,10 +320,7 @@ export default function ShipsPage() {
 
   const setView = useCallback((mode: 'grid' | 'table') => {
     setViewMode(mode)
-    if (mode === 'table') {
-      setExpandedIds(new Set())
-      setAllExpanded(false)
-    } else {
+    if (mode === 'grid') {
       setTableExpandedId(null)
     }
   }, [])
@@ -365,14 +372,32 @@ export default function ShipsPage() {
     document.title = 'Ship Catalog - SpaceMolt'
   }, [])
 
+  // Captured when the modal is opened, not inside the effect below: the modal's
+  // own focus effect runs first (child effects precede parent effects), so by
+  // then document.activeElement is already the dialog, not the card.
+  const detailOpenerRef = useRef<HTMLElement | null>(null)
+
+  const openDetail = useCallback((ship: Ship) => {
+    detailOpenerRef.current = document.activeElement as HTMLElement | null
+    setDetailShip(ship)
+  }, [])
+
+  // While the detail modal is open, close on Escape, stop the page behind it
+  // from scrolling under the overlay, and hand focus back to whatever opened it.
   useEffect(() => {
-    if (!zoomedShip) return
+    if (!detailShip) return
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setZoomedShip(null)
+      if (e.key === 'Escape') setDetailShip(null)
     }
     document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
-  }, [zoomedShip])
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      document.body.style.overflow = prevOverflow
+      detailOpenerRef.current?.focus?.()
+    }
+  }, [detailShip])
 
   const categories = useMemo(() => {
     const seen = new Set<string>()
@@ -429,29 +454,6 @@ export default function ShipsPage() {
     })
   }, [filteredShips, sortCol, sortDir])
 
-  const toggleExpand = (id: string) => {
-    setAllExpanded(false)
-    setExpandedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) {
-        next.delete(id)
-      } else {
-        next.add(id)
-      }
-      return next
-    })
-  }
-
-  const toggleExpandAll = () => {
-    if (allExpanded) {
-      setAllExpanded(false)
-      setExpandedIds(new Set())
-    } else {
-      setAllExpanded(true)
-      setExpandedIds(new Set(filteredShips.map((s) => s.id)))
-    }
-  }
-
   return (
     <div className={`console-page console-page-wide ${styles.page}`}>
       <header className="console-page-header">
@@ -465,6 +467,9 @@ export default function ShipsPage() {
           </p>
         )}
       </header>
+
+      <h2 style={srOnly}>Filter Ships</h2>
+      <h2 style={srOnly}>Ship Catalog</h2>
 
       {!loading && !error && ships.length > 0 && <GuideSection />}
 
@@ -641,14 +646,6 @@ export default function ShipsPage() {
 
             {/* Right-side controls */}
             <div className={styles.filterRowRight}>
-              {viewMode === 'grid' && (
-                <button
-                  className={`${styles.filterBtn} ${allExpanded ? styles.filterBtnActive : ''}`}
-                  onClick={toggleExpandAll}
-                >
-                  {allExpanded ? t('ships.collapseAll') : t('ships.expandAll')}
-                </button>
-              )}
               <div className={styles.viewToggle}>
                 <button
                   className={`${styles.viewToggleBtn} ${viewMode === 'grid' ? styles.viewToggleBtnActive : ''}`}
@@ -701,15 +698,23 @@ export default function ShipsPage() {
       {!loading && !error && filteredShips.length > 0 && viewMode === 'grid' && (
         <div className={styles.shipGrid}>
           {filteredShips.map((ship) => {
-            const isExpanded = expandedIds.has(ship.id)
             const empireColor = EMPIRE_COLORS[ship.empire] || '#888'
 
             return (
               <div
                 key={ship.id}
-                className={`${styles.shipCard} ${isExpanded ? styles.shipCardExpanded : ''}`}
+                className={styles.shipCard}
                 style={{ '--empire-color': empireColor } as React.CSSProperties}
-                onClick={() => toggleExpand(ship.id)}
+                onClick={() => openDetail(ship)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    openDetail(ship)
+                  }
+                }}
+                aria-label={`View ${ship.name} details`}
               >
                 <div className={styles.cardAccent} />
                 <div className={styles.cardLeft}>
@@ -723,15 +728,6 @@ export default function ShipsPage() {
                         className={styles.shipImage}
                         onError={() => handleImageError(ship.id)}
                       />
-                      <button
-                        className={styles.zoomBtn}
-                        onClick={(e) => { e.stopPropagation(); setZoomedShip(ship) }}
-                        aria-label={`View ${ship.name} full size`}
-                      >
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                          <path d="M1 5V1H5M9 1H13V5M13 9V13H9M5 13H1V9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </button>
                     </div>
                   )}
                 <div className={styles.cardBody}>
@@ -807,128 +803,9 @@ export default function ShipsPage() {
                     )}
                   </div>
 
-                  {isExpanded && ship.build_materials && ship.build_materials.length > 0 && (
-                    <div className={styles.detailSection}>
-                      <h3 className={styles.detailSectionTitle}>Build Materials</h3>
-                      <div className={styles.materialsList}>
-                        {ship.build_materials.map((mat) => (
-                          <div key={mat.item_id} className={styles.materialItem}>
-                            <span className={styles.materialName}>{mat.item_name}</span>
-                            <span className={styles.materialQty}>x{mat.quantity}</span>
-                          </div>
-                        ))}
-                      </div>
-                      {ship.shipyard_tier > 0 && (
-                        <p className={styles.skillItem} style={{ marginTop: '0.5rem' }}>
-                          Requires Shipyard Level {ship.shipyard_tier}
-                        </p>
-                      )}
-                    </div>
-                  )}
                 </div>
                 </div>
 
-                {isExpanded && (
-                  <div className={styles.expandedDetail}>
-                    <div className={styles.detailSection}>
-                      <h3 className={styles.detailSectionTitle}>Full Stats</h3>
-                      <div className={styles.fullStatsGrid}>
-                        <div className={styles.fullStatItem}>
-                          <span className={styles.fullStatLabel}>Hull</span>
-                          <span className={styles.fullStatValue}>{ship.base_hull}</span>
-                        </div>
-                        <div className={styles.fullStatItem}>
-                          <span className={styles.fullStatLabel}>Shield</span>
-                          <span className={styles.fullStatValue}>{ship.base_shield}</span>
-                        </div>
-                        <div className={styles.fullStatItem}>
-                          <span className={styles.fullStatLabel}>Shield Regen</span>
-                          <span className={styles.fullStatValue}>{ship.base_shield_recharge}/tick</span>
-                        </div>
-                        <div className={styles.fullStatItem}>
-                          <span className={styles.fullStatLabel}>Armor</span>
-                          <span className={styles.fullStatValue}>{ship.base_armor}</span>
-                        </div>
-                        <div className={styles.fullStatItem}>
-                          <span className={styles.fullStatLabel}>Speed</span>
-                          <span className={styles.fullStatValue}>{ship.base_speed} AU/tick</span>
-                        </div>
-                        <div className={styles.fullStatItem}>
-                          <span className={styles.fullStatLabel}>Fuel</span>
-                          <span className={styles.fullStatValue}>{ship.base_fuel}</span>
-                        </div>
-                        <div className={styles.fullStatItem}>
-                          <span className={styles.fullStatLabel}>Cargo</span>
-                          <span className={styles.fullStatValue}>{ship.cargo_capacity}</span>
-                        </div>
-                        <div className={styles.fullStatItem}>
-                          <span className={styles.fullStatLabel}>CPU</span>
-                          <span className={styles.fullStatValue}>{ship.cpu_capacity}</span>
-                        </div>
-                        <div className={styles.fullStatItem}>
-                          <span className={styles.fullStatLabel}>Power</span>
-                          <span className={styles.fullStatValue}>{ship.power_capacity}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {ship.inherent_capabilities && ship.inherent_capabilities.length > 0 && (
-                      <div className={styles.detailSection}>
-                        <h3 className={styles.detailSectionTitle}>Inherent Bonuses</h3>
-                        <div className={styles.fullStatsGrid}>
-                          {ship.inherent_capabilities.map((cap, i) => (
-                            <div key={`${cap.type}-${cap.flag ?? i}`} className={styles.fullStatItem}>
-                              <span className={styles.fullStatLabel}>{capabilityLabel(cap)}</span>
-                              <span className={styles.fullStatValue}>{capabilityValue(cap)}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {((ship.required_skills && Object.keys(ship.required_skills).length > 0) || (ship.piloting_required && ship.piloting_required > 0)) && (
-                      <div className={styles.detailSection}>
-                        <h3 className={styles.detailSectionTitle}>Required Skills</h3>
-                        <div className={styles.skillsList}>
-                          {ship.piloting_required && ship.piloting_required > 0 && (
-                            <span className={styles.skillItem}>
-                              Piloting Lv.{ship.piloting_required}
-                            </span>
-                          )}
-                          {ship.required_skills && Object.entries(ship.required_skills).map(([skill, level]) => (
-                            <span key={skill} className={styles.skillItem}>
-                              {formatSkillName(skill)} Lv.{level}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {ship.lore && (
-                      <div className={`${styles.detailSection} ${styles.detailSectionWide}`}>
-                        <h3 className={styles.detailSectionTitle}>Lore</h3>
-                        <p className={styles.loreText}>{ship.lore}</p>
-                      </div>
-                    )}
-
-                    {ship.special && (
-                      <div className={`${styles.detailSection} ${styles.detailSectionWide}`}>
-                        <h3 className={styles.detailSectionTitle}>Special</h3>
-                        <p className={styles.loreText}>{ship.special}</p>
-                      </div>
-                    )}
-
-                    {ship.flavor_tags && ship.flavor_tags.length > 0 && (
-                      <div className={styles.flavorTags}>
-                        {ship.flavor_tags.map((tag) => (
-                          <span key={tag} className={styles.flavorTag}>
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
             )
           })}
@@ -1015,8 +892,8 @@ export default function ShipsPage() {
                                 />
                                 <button
                                   className={styles.zoomBtn}
-                                  onClick={(e) => { e.stopPropagation(); setZoomedShip(ship) }}
-                                  aria-label={`View ${ship.name} full size`}
+                                  onClick={(e) => { e.stopPropagation(); openDetail(ship) }}
+                                  aria-label={`View ${ship.name} details`}
                                 >
                                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                                     <path d="M1 5V1H5M9 1H13V5M13 9V13H9M5 13H1V9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -1053,28 +930,251 @@ export default function ShipsPage() {
         </div>
       )}
 
-      {zoomedShip && (
-        <div className={styles.modalOverlay} onClick={() => setZoomedShip(null)}>
-          <button className={styles.modalClose} onClick={() => setZoomedShip(null)} aria-label="Close">
+      {detailShip && (
+        <ShipDetailModal
+          ship={detailShip}
+          imageBroken={brokenImages.has(detailShip.id)}
+          onImageError={handleImageError}
+          onClose={() => setDetailShip(null)}
+        />
+      )}
+    </div>
+  )
+}
+
+function ShipDetailModal({
+  ship,
+  imageBroken,
+  onImageError,
+  onClose,
+}: {
+  ship: Ship
+  imageBroken: boolean
+  onImageError: (id: string) => void
+  onClose: () => void
+}) {
+  const empireColor = EMPIRE_COLORS[ship.empire] || '#888'
+  const hasSkills =
+    (ship.required_skills && Object.keys(ship.required_skills).length > 0) ||
+    (ship.piloting_required !== undefined && ship.piloting_required > 0)
+
+  const dialogRef = useRef<HTMLDivElement>(null)
+
+  // The modal is the only way to read a ship's full detail, so keyboard users
+  // must land inside it and stay inside it: focus the panel on open, and keep
+  // Tab cycling between the close button and the scrollable body.
+  useEffect(() => {
+    dialogRef.current?.focus()
+  }, [])
+
+  const onDialogKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== 'Tab') return
+    const dialog = dialogRef.current
+    if (!dialog) return
+    const focusable = dialog.querySelectorAll<HTMLElement>('button, [href], [tabindex]:not([tabindex="-1"])')
+    if (focusable.length === 0) return
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault()
+      last.focus()
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault()
+      first.focus()
+    }
+  }
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div
+        ref={dialogRef}
+        tabIndex={-1}
+        className={styles.modalContent}
+        style={{ '--empire-color': empireColor } as React.CSSProperties}
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={onDialogKeyDown}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${ship.name} details`}
+      >
+        <div className={styles.modalHeader}>
+          <div>
+            <h2 className={styles.modalShipName}>{ship.name}</h2>
+            <div className={styles.modalTags}>
+              {ship.empire_name && (
+                <span className={styles.empireBadge}>
+                  <span className={styles.empireDot} style={{ background: empireColor }} />
+                  <span style={{ color: empireColor }}>{ship.empire_name}</span>
+                </span>
+              )}
+              {ship.is_prestige && (
+                <span className={styles.prestigeBadge} title="Unlocked by completing a special achievement">
+                  Achievement Unlock
+                </span>
+              )}
+              <span className={styles.classBadge}>{ship.class}</span>
+              <span className={styles.tierBadge}>T{ship.tier}</span>
+              {ship.starter_ship && <span className={styles.priceBadge}>Free</span>}
+            </div>
+          </div>
+          <button className={styles.modalClose} onClick={onClose} aria-label="Close">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-              <path d="M2 2L16 16M16 2L2 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              <path d="M2 2L16 16M16 2L2 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>
           </button>
-          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+        </div>
+
+        {/* tabIndex makes the scroll region reachable, so keyboard users can
+            scroll the detail without a pointer */}
+        <div className={styles.modalBody} tabIndex={0}>
+          {!imageBroken && (
             <Image
-              src={`/images/ships/catalog/${zoomedShip.id}.webp`}
-              alt={zoomedShip.name}
+              src={`/images/ships/catalog/${ship.id}.webp`}
+              alt={ship.name}
               width={1200}
               height={900}
               className={styles.modalImage}
+              onError={() => onImageError(ship.id)}
             />
-            <div className={styles.modalCaption}>
-              <span className={styles.modalShipName}>{zoomedShip.name}</span>
-              <span className={styles.modalShipDesc}>{zoomedShip.description}</span>
+          )}
+
+          <p className={styles.modalShipDesc}>{ship.description}</p>
+
+          <div className={styles.detailSection}>
+            <h3 className={styles.detailSectionTitle}>Full Stats</h3>
+            <div className={styles.fullStatsGrid}>
+              <div className={styles.fullStatItem}>
+                <span className={styles.fullStatLabel}>Hull</span>
+                <span className={styles.fullStatValue}>{ship.base_hull}</span>
+              </div>
+              <div className={styles.fullStatItem}>
+                <span className={styles.fullStatLabel}>Shield</span>
+                <span className={styles.fullStatValue}>{ship.base_shield}</span>
+              </div>
+              <div className={styles.fullStatItem}>
+                <span className={styles.fullStatLabel}>Shield Regen</span>
+                <span className={styles.fullStatValue}>{ship.base_shield_recharge}/tick</span>
+              </div>
+              <div className={styles.fullStatItem}>
+                <span className={styles.fullStatLabel}>Armor</span>
+                <span className={styles.fullStatValue}>{ship.base_armor}</span>
+              </div>
+              <div className={styles.fullStatItem}>
+                <span className={styles.fullStatLabel}>Speed</span>
+                <span className={styles.fullStatValue}>{ship.base_speed} AU/tick</span>
+              </div>
+              <div className={styles.fullStatItem}>
+                <span className={styles.fullStatLabel}>Fuel</span>
+                <span className={styles.fullStatValue}>{ship.base_fuel}</span>
+              </div>
+              <div className={styles.fullStatItem}>
+                <span className={styles.fullStatLabel}>Cargo</span>
+                <span className={styles.fullStatValue}>{ship.cargo_capacity}</span>
+              </div>
+              <div className={styles.fullStatItem}>
+                <span className={styles.fullStatLabel}>CPU</span>
+                <span className={styles.fullStatValue}>{ship.cpu_capacity}</span>
+              </div>
+              <div className={styles.fullStatItem}>
+                <span className={styles.fullStatLabel}>Power</span>
+                <span className={styles.fullStatValue}>{ship.power_capacity}</span>
+              </div>
             </div>
           </div>
+
+          <div className={styles.modalSlots}>
+            {ship.weapon_slots > 0 && (
+              <span className={styles.slotItem}>
+                <span className={`${styles.slotIcon} ${styles.weaponSlot}`}><Swords size={12} aria-hidden /></span>
+                {ship.weapon_slots} weapon
+              </span>
+            )}
+            {ship.defense_slots > 0 && (
+              <span className={styles.slotItem}>
+                <span className={`${styles.slotIcon} ${styles.defenseSlot}`}><Shield size={12} aria-hidden /></span>
+                {ship.defense_slots} defense
+              </span>
+            )}
+            {ship.utility_slots > 0 && (
+              <span className={styles.slotItem}>
+                <span className={`${styles.slotIcon} ${styles.utilitySlot}`}><Cog size={12} aria-hidden /></span>
+                {ship.utility_slots} utility
+              </span>
+            )}
+          </div>
+
+          {ship.inherent_capabilities && ship.inherent_capabilities.length > 0 && (
+            <div className={styles.detailSection}>
+              <h3 className={styles.detailSectionTitle}>Inherent Bonuses</h3>
+              <div className={styles.fullStatsGrid}>
+                {ship.inherent_capabilities.map((cap, i) => (
+                  <div key={`${cap.type}-${cap.flag ?? i}`} className={styles.fullStatItem}>
+                    <span className={styles.fullStatLabel}>{capabilityLabel(cap)}</span>
+                    <span className={styles.fullStatValue}>{capabilityValue(cap)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {hasSkills && (
+            <div className={styles.detailSection}>
+              <h3 className={styles.detailSectionTitle}>Required Skills</h3>
+              <div className={styles.skillsList}>
+                {ship.piloting_required !== undefined && ship.piloting_required > 0 && (
+                  <span className={styles.skillItem}>Piloting Lv.{ship.piloting_required}</span>
+                )}
+                {ship.required_skills && Object.entries(ship.required_skills).map(([skill, level]) => (
+                  <span key={skill} className={styles.skillItem}>
+                    {formatSkillName(skill)} Lv.{level}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {ship.build_materials && ship.build_materials.length > 0 && (
+            <div className={styles.detailSection}>
+              <h3 className={styles.detailSectionTitle}>Build Materials</h3>
+              <div className={styles.materialsList}>
+                {ship.build_materials.map((mat) => (
+                  <div key={mat.item_id} className={styles.materialItem}>
+                    <span className={styles.materialName}>{mat.item_name}</span>
+                    <span className={styles.materialQty}>x{mat.quantity}</span>
+                  </div>
+                ))}
+              </div>
+              {ship.shipyard_tier > 0 && (
+                <p className={styles.skillItem} style={{ marginTop: '0.5rem' }}>
+                  Requires Shipyard Level {ship.shipyard_tier}
+                </p>
+              )}
+            </div>
+          )}
+
+          {ship.special && (
+            <div className={styles.detailSection}>
+              <h3 className={styles.detailSectionTitle}>Special</h3>
+              <p className={styles.loreText}>{ship.special}</p>
+            </div>
+          )}
+
+          {ship.lore && (
+            <div className={styles.detailSection}>
+              <h3 className={styles.detailSectionTitle}>Lore</h3>
+              <p className={styles.loreText}>{ship.lore}</p>
+            </div>
+          )}
+
+          {ship.flavor_tags && ship.flavor_tags.length > 0 && (
+            <div className={styles.flavorTags}>
+              {ship.flavor_tags.map((tag) => (
+                <span key={tag} className={styles.flavorTag}>{tag}</span>
+              ))}
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   )
 }

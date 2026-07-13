@@ -1,0 +1,86 @@
+/* === Glossary Page (inside console shell) === */
+
+.intro {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: var(--chrome-silver);
+  max-width: 78ch;
+  margin: 0 0 2.5rem;
+}
+
+.section {
+  margin-bottom: 3rem;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.14);
+  position: relative;
+}
+
+.sectionHeader::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 48px;
+  height: 1px;
+  background: var(--plasma-cyan);
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.7);
+}
+
+.sectionIcon {
+  color: var(--plasma-cyan);
+  flex-shrink: 0;
+}
+
+.sectionTitle {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: clamp(1.1rem, 2.4vw, 1.4rem);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--star-white);
+  margin: 0;
+}
+
+.termGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.termCard {
+  background: rgba(13, 19, 33, 0.6);
+  border: 1px solid rgba(0, 212, 255, 0.14);
+  border-radius: 4px;
+  padding: 1rem 1.1rem;
+  transition: border-color 0.25s ease, transform 0.25s ease;
+}
+
+.termCard:hover {
+  border-color: rgba(0, 212, 255, 0.4);
+  transform: translateY(-2px);
+}
+
+.termName {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--plasma-cyan);
+  margin: 0 0 0.5rem;
+}
+
+.termDef {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: var(--chrome-silver);
+  margin: 0;
+}

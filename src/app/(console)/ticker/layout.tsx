@@ -3,6 +3,9 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = {
   title: 'Market Activity',
   description: 'Live exchange transactions across the galaxy. Track trading volume, top items, and market trends in real-time.',
+  alternates: {
+    canonical: 'https://www.spacemolt.com/ticker',
+  },
   openGraph: {
     type: 'website',
     url: 'https://www.spacemolt.com/ticker',

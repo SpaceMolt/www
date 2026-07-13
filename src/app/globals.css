@@ -65,9 +65,7 @@ nav.site-nav {
 .nav-logo img {
   width: 48px;
   height: 48px;
-  border-radius: 50%;
-  border: 2px solid var(--plasma-cyan);
-  box-shadow: var(--glow-cyan);
+  filter: drop-shadow(0 0 12px rgba(0, 212, 255, 0.5));
 }
 
 .nav-logo span {
@@ -135,6 +133,40 @@ nav.site-nav {
 .nav-links button.highlight:hover {
   box-shadow: var(--glow-orange);
   border-color: var(--shell-orange);
+}
+
+/* === Community buttons (Discord / Patreon) ===
+   Secondary tier: outlined chrome with the brand colour carried by the icon,
+   so they read as distinct destinations without competing with the orange CTA. */
+.nav-links a.nav-social {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border-radius: 4px;
+  border-color: rgba(107, 143, 163, 0.4);
+  background: rgba(0, 212, 255, 0.04);
+}
+
+.nav-links a.nav-social-discord svg {
+  color: #8b9dff;
+}
+
+.nav-links a.nav-social-discord:hover {
+  color: #b9c6ff;
+  background: rgba(88, 101, 242, 0.14);
+  border-color: rgba(129, 140, 248, 0.8);
+  box-shadow: 0 0 16px rgba(88, 101, 242, 0.35);
+}
+
+.nav-links a.nav-social-patreon svg {
+  color: var(--shell-orange);
+}
+
+.nav-links a.nav-social-patreon:hover {
+  color: #ffb59b;
+  background: rgba(255, 107, 53, 0.12);
+  border-color: rgba(255, 107, 53, 0.7);
+  box-shadow: 0 0 16px rgba(255, 107, 53, 0.3);
 }
 
 /* === Nav Dropdown === */
@@ -315,6 +347,17 @@ nav.site-nav {
   }
 }
 
+/* Before the hamburger takes over, the community buttons compress to icons so
+   the row keeps its breathing room instead of clipping. */
+@media (max-width: 1000px) {
+  .nav-links a.nav-social {
+    padding: 0.35rem 0.55rem;
+  }
+  .nav-social-label {
+    display: none;
+  }
+}
+
 /* === Buttons === */
 .btn {
   font-family: var(--font-orbitron), 'Orbitron', sans-serif;
@@ -328,6 +371,7 @@ nav.site-nav {
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
+  cursor: pointer;
 }
 
 .btn-primary {
@@ -407,9 +451,21 @@ footer {
   margin: 0 auto;
 }
 
+.footer-brand-row {
+  /* Brand on the left, newsletter signup on the right. */
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 2rem 3rem;
+  padding-bottom: 2rem;
+  margin-bottom: 2.5rem;
+  border-bottom: 1px solid rgba(61, 90, 108, 0.4);
+}
+
 .footer-top {
-  /* Wrapping flex: the brand block plus one column per console nav group
-     (and Legal), flowing onto extra rows as needed. */
+  /* Wrapping flex: one column per console nav group (and Legal), flowing
+     onto extra rows as needed. */
   display: flex;
   flex-wrap: wrap;
   gap: 2.5rem 3rem;
@@ -421,8 +477,7 @@ footer {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  /* Full first row; the link columns share the rows below. */
-  flex: 1 1 100%;
+  flex: 0 1 320px;
 }
 
 .footer-brand {
@@ -435,7 +490,6 @@ footer {
 .footer-brand img {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
 }
 
 .footer-brand span {
@@ -482,10 +536,8 @@ footer {
 }
 
 .footer-newsletter {
-  display: flex;
-  justify-content: center;
-  padding: 1.75rem 0 0.5rem;
-  border-bottom: 1px solid rgba(61, 90, 108, 0.4);
+  flex: 0 1 400px;
+  min-width: 280px;
 }
 
 .footer-bottom {
@@ -494,7 +546,7 @@ footer {
   padding-top: 1.5rem;
 }
 
-.footer-tagline {
+.footer-copyright {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
   font-size: 0.75rem;
   color: #6b8a9e;
@@ -814,11 +866,19 @@ footer {
     gap: 2rem 1.5rem;
   }
 
+  .footer-brand-row {
+    justify-content: center;
+  }
+
   .footer-brand-col {
     flex: 1 1 100%;
     max-width: none;
     align-items: center;
     text-align: center;
+  }
+
+  .footer-newsletter {
+    flex: 1 1 100%;
   }
 
   .footer-description {
@@ -831,7 +891,7 @@ footer {
     text-align: center;
   }
 
-  .footer-tagline {
+  .footer-copyright {
     word-break: break-word;
   }
 
@@ -857,6 +917,16 @@ footer {
   max-width: 1360px;
   margin: 0 auto;
   padding: 1.4rem clamp(1rem, 2.5vw, 2.2rem) 3rem;
+}
+
+/* The marketing pages lean on the global `section { padding: 6rem 2rem }`; the
+   console pages own their spacing, so that padding only bloats them (and eats
+   ~64px of horizontal room on a phone).
+
+   `:where()` keeps this at zero specificity so it only overrides the global
+   default — a page that sets padding on its own section still wins. */
+:where(.console-page) section {
+  padding: 0;
 }
 
 .console-page-wide {
@@ -913,6 +983,79 @@ footer {
   color: var(--chrome-silver);
   margin-top: 0.45rem;
   max-width: 70ch;
+}
+
+@media (max-width: 640px) {
+  .console-page {
+    padding: 1rem 0.9rem 2.2rem;
+  }
+
+  .console-page-header {
+    margin-bottom: 1.1rem;
+    padding-bottom: 0.7rem;
+  }
+}
+
+/* === Docs markdown: self-linking headings + scrollable tables ===
+   These live here rather than in the page CSS modules because they must out-
+   specify each module's `.content a` colour rule. */
+.docs-markdown h2,
+.docs-markdown h3,
+.docs-markdown h4 {
+  scroll-margin-top: 1.5rem;
+}
+
+.docs-markdown h2 a.heading-anchor,
+.docs-markdown h3 a.heading-anchor,
+.docs-markdown h4 a.heading-anchor {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.docs-markdown h2 a.heading-anchor:hover,
+.docs-markdown h3 a.heading-anchor:hover,
+.docs-markdown h4 a.heading-anchor:hover {
+  color: var(--plasma-cyan);
+  text-decoration: none;
+}
+
+.heading-anchor-hash {
+  margin-left: 0.4em;
+  color: var(--plasma-cyan);
+  font-weight: 400;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.docs-markdown a.heading-anchor:hover .heading-anchor-hash,
+.docs-markdown a.heading-anchor:focus-visible .heading-anchor-hash {
+  opacity: 0.75;
+}
+
+/* Nothing hovers on a touch screen, so keep the affordance visible there. */
+@media (hover: none) {
+  .heading-anchor-hash {
+    opacity: 0.4;
+  }
+}
+
+.docs-markdown .table-scroll {
+  overflow-x: auto;
+  margin-bottom: 1.4rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+.docs-markdown .table-scroll:focus-visible {
+  outline: 1px solid rgba(0, 212, 255, 0.5);
+  outline-offset: 2px;
+}
+
+/* A table squeezed to phone width wraps every cell to one word per line. Giving
+   it a floor and letting the wrapper scroll keeps the rows readable. */
+.docs-markdown .table-scroll table {
+  min-width: 32rem;
+  margin-bottom: 0;
 }
 
 .console-panel {

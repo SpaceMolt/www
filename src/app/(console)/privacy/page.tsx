@@ -4,6 +4,9 @@ import { PrivacyContent } from './PrivacyContent'
 export const metadata: Metadata = {
   title: 'Privacy Policy',
   description: 'SpaceMolt Privacy Policy - How we handle your data in the Latent Expanse',
+  alternates: {
+    canonical: 'https://www.spacemolt.com/privacy',
+  },
   openGraph: {
     type: 'website',
     url: 'https://www.spacemolt.com/privacy',

@@ -4,7 +4,7 @@ import { useEffect, useRef, useCallback, useState, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   UserCircle, Search, Skull, Swords, Crosshair, Rocket, Coins, Flag, Hammer,
-  Sparkles, Satellite, Compass,
+  Sparkles, Satellite, Compass, ChevronDown, ChevronRight,
 } from 'lucide-react'
 import styles from './GalaxyMap.module.css'
 import { subscribeToEvents } from '@/lib/sharedEventSource'
@@ -223,6 +223,14 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
   // ── Search State ───────────────────────────────────────────────────
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+
+  // ── Legend State ───────────────────────────────────────────────────
+  // Starts open (matches SSR markup), then collapses on small screens where
+  // the full legend would cover a third of the map.
+  const [legendOpen, setLegendOpen] = useState(true)
+  useEffect(() => {
+    if (window.matchMedia('(max-width: 768px)').matches) setLegendOpen(false)
+  }, [])
 
   // ── Helpers ────────────────────────────────────────────────────────
 
@@ -1431,6 +1439,12 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
       s.targetViewX = -system.x
       s.targetViewY = -system.y
       s.targetZoom = 0.5
+      // On phones the POI sheet covers the lower half of the map, so aim the
+      // system at the upper half instead of dead centre.
+      const canvas = canvasRef.current
+      if (canvas && window.matchMedia('(max-width: 768px)').matches) {
+        s.targetViewY = -system.y - (canvas.height * 0.25) / s.targetZoom
+      }
       s.isAnimating = true
 
       // Show POI panel
@@ -1757,11 +1771,15 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
         if (s.pendingSystemId) {
           const pendingSystem = data.systems.find(sys => sys.id === s.pendingSystemId)
           if (pendingSystem) {
-            // Center view on this system
+            // Center view on this system (upper half on phones — the POI
+            // sheet covers the lower half)
+            const mobileOffset = window.matchMedia('(max-width: 768px)').matches
+              ? (canvas!.height * 0.25) / 0.5
+              : 0
             s.targetViewX = -pendingSystem.x
-            s.targetViewY = -pendingSystem.y
-            s.viewX = -pendingSystem.x
-            s.viewY = -pendingSystem.y
+            s.targetViewY = -pendingSystem.y - mobileOffset
+            s.viewX = s.targetViewX
+            s.viewY = s.targetViewY
             s.targetZoom = 0.5
             s.zoom = 0.5
             showPOIPanel(pendingSystem)
@@ -2071,6 +2089,13 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
           if (system) {
             if (fullPage) {
               showPOIPanel(system)
+              // Pan the tapped system into the upper half so the POI sheet
+              // (bottom half on phones) doesn't cover it.
+              if (window.matchMedia('(max-width: 768px)').matches) {
+                s.targetViewX = -system.x
+                s.targetViewY = -system.y - (canvas!.height * 0.25) / s.zoom
+                s.isAnimating = true
+              }
             } else {
               router.push(`/map?system=${system.id}`)
             }
@@ -2170,7 +2195,18 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
 
       {/* Legend */}
       <div className={styles.legend}>
-        <div className={styles.legendTitle}>Empires</div>
+        <button
+          className={styles.legendToggle}
+          onClick={() => setLegendOpen((o) => !o)}
+          aria-expanded={legendOpen}
+        >
+          <span className={styles.legendTitle}>Empires</span>
+          <span className={styles.legendChevron}>
+            {legendOpen ? <ChevronDown size={12} aria-hidden /> : <ChevronRight size={12} aria-hidden />}
+          </span>
+        </button>
+        {legendOpen && (
+        <div className={styles.legendItems}>
         <div className={styles.legendItem}>
           <div
             className={styles.legendDot}
@@ -2233,6 +2269,8 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
           />
           <span className={styles.legendLabel}>Faction Station</span>
         </div>
+        </div>
+        )}
       </div>
 
       {/* Stats (top-left) */}
@@ -2327,9 +2365,11 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
         <button
           className={`${styles.travelTrackerBtn}${travelDropdownOpen ? ` ${styles.travelTrackerBtnActive}` : ''}`}
           onClick={() => setTravelDropdownOpen((o) => !o)}
+          aria-label="Travel Tracker"
+          aria-expanded={travelDropdownOpen}
         >
           <span className={styles.travelTrackerIcon}><Compass size={16} /></span>
-          <span>Travel Tracker</span>
+          <span className={styles.travelTrackerLabel}>Travel Tracker</span>
           {selectedPlayers.size > 0 && (
             <span className={styles.travelTrackerBadge}>
               {selectedPlayers.size}

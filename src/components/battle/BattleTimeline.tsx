@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Check, Copy, Pause, Play, SkipBack } from 'lucide-react'
 import styles from './BattleViewer.module.css'
 import { useTranslation } from '@/i18n'
 import type { BattleTimeline as Timeline } from '@/lib/battle/timeline'
@@ -187,10 +188,10 @@ export default function BattleTimeline({
     <div className={styles.timelineBar}>
       <div className={styles.controls}>
         <button className={styles.ctrlBtn} onClick={() => onSeek(0)} title="Restart (Home)" aria-label={t('battles.restart')}>
-          ⏮
+          <SkipBack size={13} aria-hidden />
         </button>
         <button className={`${styles.ctrlBtn} ${styles.playBtn}`} onClick={onTogglePlay} title="Play/Pause (Space)" aria-label={isPlaying ? t('battles.pause') : t('battles.play')}>
-          {isPlaying ? '❚❚' : '▶'}
+          {isPlaying ? <Pause size={13} aria-hidden /> : <Play size={13} aria-hidden />}
         </button>
         <button className={styles.ctrlBtn} onClick={onCycleSpeed} title="Playback speed" aria-label={`${t('battles.playbackSpeed')} ${speed}x`}>
           {speed}×
@@ -263,7 +264,7 @@ export default function BattleTimeline({
           }}
           title="Copy link to this moment"
         >
-          {copied ? '✓' : '⧉'}
+          {copied ? <Check size={13} aria-hidden /> : <Copy size={13} aria-hidden />}
         </button>
       </div>
     </div>

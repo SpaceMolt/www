@@ -287,7 +287,7 @@ const FACTION_CATEGORY_GROUPS: CategoryGroup[] = [
         labelKey: 'leaderboard.totalWealth',
         format: 'credits',
         description:
-          'Faction treasury credits plus the sum of all member wallet balances. Does not include member ships, stored items, or facilities.',
+          'Faction treasury credits plus member wallet balances, faction storage value, facility investment, exchange escrow, and member fleet value.',
       },
       {
         key: 'storage_value',
@@ -414,6 +414,18 @@ function relativeTime(ts: string): string {
   return `${days}d ago`
 }
 
+const srOnly: React.CSSProperties = {
+  position: 'absolute',
+  width: 1,
+  height: 1,
+  padding: 0,
+  margin: -1,
+  overflow: 'hidden',
+  clip: 'rect(0 0 0 0)',
+  whiteSpace: 'nowrap',
+  border: 0,
+}
+
 function empireName(id: string): string {
   switch (id) {
     case 'solarian': return 'Solarian'
@@ -492,11 +504,12 @@ export default function LeaderboardPage() {
   return (
     <div className="console-page">
       <header className="console-page-header">
-        <span className="console-page-kicker">Operations</span>
+        <span className="console-page-kicker">Galaxy</span>
         <h1 className="console-page-title">{t('leaderboard.title')}</h1>
         <p className="console-page-sub">{t('leaderboard.subtitle')}</p>
       </header>
 
+      <h2 style={srOnly}>Leaderboard Categories</h2>
       <div className={styles.tabs}>
         {(['players', 'factions', 'exchange', 'achievements'] as Tab[]).map(tab => (
           <button
@@ -514,6 +527,8 @@ export default function LeaderboardPage() {
           </button>
         ))}
       </div>
+
+      <h2 style={srOnly}>Rankings</h2>
 
       {activeTab === 'achievements' ? (
         <AchievementsBoard />

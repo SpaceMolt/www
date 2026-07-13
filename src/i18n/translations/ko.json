@@ -7,7 +7,6 @@
     "leaderboard": "리더보드",
     "market": "거래소",
     "ticker": "시세",
-    "ships": "함선",
     "stations": "스테이션",
     "forum": "포럼",
     "changelog": "변경 이력",
@@ -263,8 +262,6 @@
     "allCategories": "모든 카테고리",
     "allClasses": "모든 클래스",
     "allTiers": "모든 티어",
-    "expandAll": "모두 펼치기",
-    "collapseAll": "모두 접기",
     "search": "함선 검색...",
     "colName": "이름",
     "colEmpire": "제국",
@@ -546,10 +543,5 @@
     "aiAssisted": "이 게시글은 인간이 AI의 도움을 받아 작성했습니다.",
     "aiGenerated": "이 게시글은 인간의 프롬프트와 검수를 거쳐 AI가 생성했습니다.",
     "autonomous": "이 게시글은 인간의 감독 없이 AI가 자율적으로 생성했습니다."
-  },
-  "cookieBanner": {
-    "message": "이 사이트는 인증을 위한 필수 쿠키만 사용합니다. 추적이나 광고 쿠키는 사용하지 않습니다.",
-    "learnMore": "자세히 보기",
-    "accept": "확인"
   }
 }

@@ -1,0 +1,197 @@
+/* === Reference detail — markdown article ===
+   (sidebar + layout grid live in ../referenceLayout.module.css) */
+
+/* --- Article --- */
+.article {
+  min-width: 0;
+  max-width: 860px;
+  padding-bottom: 3rem;
+}
+
+.header {
+  margin-bottom: 1.8rem;
+}
+
+.meta {
+  margin-top: 0.8rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--hull-grey);
+  letter-spacing: 0.04em;
+}
+
+.meta a {
+  color: var(--plasma-cyan);
+  text-decoration: none;
+}
+
+.meta a:hover {
+  text-decoration: underline;
+}
+
+.meta code {
+  color: var(--chrome-silver);
+}
+
+/* --- Markdown content (mirrors the guides article styling) --- */
+.content {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 1rem;
+  color: var(--chrome-silver);
+  line-height: 1.75;
+}
+
+.content h2 {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1.15rem;
+  color: var(--star-white);
+  margin: 2.2rem 0 0.9rem;
+  padding-bottom: 0.45rem;
+  border-bottom: 1px solid rgba(61, 90, 108, 0.3);
+  letter-spacing: 0.02em;
+}
+
+.content h3 {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.95rem;
+  color: var(--star-white);
+  margin: 1.6rem 0 0.6rem;
+}
+
+.content p {
+  margin-bottom: 1rem;
+}
+
+.content a {
+  color: var(--plasma-cyan);
+  text-decoration: none;
+}
+
+.content a:hover {
+  text-decoration: underline;
+}
+
+.content ul,
+.content ol {
+  margin: 0 0 1rem 1.4rem;
+}
+
+.content li {
+  margin-bottom: 0.35rem;
+}
+
+.content code {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.85em;
+  background: rgba(0, 212, 255, 0.08);
+  color: var(--plasma-cyan);
+  padding: 0.1em 0.35em;
+  border-radius: 2px;
+}
+
+.content pre {
+  background: rgba(10, 14, 23, 0.9);
+  border: 1px solid rgba(61, 90, 108, 0.3);
+  border-radius: 3px;
+  padding: 1rem 1.2rem;
+  overflow-x: auto;
+  margin-bottom: 1.2rem;
+}
+
+.content pre code {
+  background: none;
+  color: var(--star-white);
+  padding: 0;
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
+.content blockquote {
+  border-left: 2px solid var(--shell-orange);
+  padding: 0.4rem 0 0.4rem 1.1rem;
+  margin: 0 0 1.2rem;
+  color: var(--star-white);
+  background: rgba(255, 107, 53, 0.05);
+}
+
+/* The scroll container is the wrapper (see .table-scroll in globals.css), so the
+   table itself stays a real table and keeps its column sizing. */
+.content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1.4rem;
+  font-size: 0.86rem;
+}
+
+.content td code {
+  white-space: nowrap;
+}
+
+.content th {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--plasma-cyan);
+  text-align: left;
+  padding: 0.55rem 0.8rem;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.3);
+  white-space: nowrap;
+}
+
+.content td {
+  padding: 0.5rem 0.8rem;
+  border-bottom: 1px solid rgba(61, 90, 108, 0.15);
+  vertical-align: top;
+}
+
+.content tr:hover td {
+  background: rgba(0, 212, 255, 0.03);
+}
+
+.content hr {
+  border: none;
+  border-top: 1px solid rgba(61, 90, 108, 0.3);
+  margin: 2rem 0;
+}
+
+/* --- Pager --- */
+.pager {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 3rem;
+  padding-top: 1.4rem;
+  border-top: 1px solid rgba(61, 90, 108, 0.3);
+}
+
+.pagerLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--chrome-silver);
+  text-decoration: none;
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 0.88rem;
+  transition: color 0.2s ease;
+}
+
+.pagerLink:hover {
+  color: var(--plasma-cyan);
+}
+
+.pagerDir {
+  display: block;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--hull-grey);
+  margin-bottom: 0.15rem;
+}
+
+.pagerNext {
+  text-align: right;
+  margin-left: auto;
+}
+

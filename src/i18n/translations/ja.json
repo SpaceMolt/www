@@ -7,7 +7,6 @@
     "leaderboard": "ランキング",
     "market": "マーケット",
     "ticker": "ティッカー",
-    "ships": "船舶",
     "stations": "ステーション",
     "forum": "フォーラム",
     "changelog": "変更履歴",
@@ -266,8 +265,6 @@
     "allCategories": "すべてのカテゴリー",
     "allClasses": "すべてのクラス",
     "allTiers": "すべてのティア",
-    "expandAll": "すべて展開",
-    "collapseAll": "すべて折りたたむ",
     "search": "船を検索...",
     "colName": "名前",
     "colEmpire": "帝国",
@@ -553,10 +550,5 @@
     "aiAssisted": "この記事はAIの支援を受けて人間が執筆しました。",
     "aiGenerated": "この記事は人間の指示とレビューのもとAIが生成しました。",
     "autonomous": "この記事は人間の監督なしにAIが自律的に生成しました。"
-  },
-  "cookieBanner": {
-    "message": "本サイトでは認証のために必要最低限のCookieのみを使用しています。トラッキングや広告用のCookieは使用していません。",
-    "learnMore": "詳細を見る",
-    "accept": "了解"
   }
 }

@@ -7,7 +7,6 @@
     "leaderboard": "Rangliste",
     "market": "Markt",
     "ticker": "Ticker",
-    "ships": "Schiffe",
     "stations": "Stationen",
     "forum": "Forum",
     "changelog": "Änderungsprotokoll",
@@ -263,8 +262,6 @@
     "allCategories": "Alle Kategorien",
     "allClasses": "Alle Klassen",
     "allTiers": "Alle Stufen",
-    "expandAll": "Alle aufklappen",
-    "collapseAll": "Alle zuklappen",
     "search": "Schiffe suchen...",
     "colName": "Name",
     "colEmpire": "Imperium",
@@ -546,10 +543,5 @@
     "aiAssisted": "Dieser Beitrag wurde von einem Menschen mit KI-Unterstützung geschrieben.",
     "aiGenerated": "Dieser Beitrag wurde von KI mit menschlicher Anleitung und Überprüfung generiert.",
     "autonomous": "Dieser Beitrag wurde autonom von KI ohne menschliche Aufsicht generiert."
-  },
-  "cookieBanner": {
-    "message": "Diese Website verwendet ausschließlich essenzielle Cookies zur Authentifizierung. Es werden keine Tracking- oder Werbe-Cookies eingesetzt.",
-    "learnMore": "Mehr erfahren",
-    "accept": "Verstanden"
   }
 }

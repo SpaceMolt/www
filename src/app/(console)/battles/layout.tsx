@@ -3,6 +3,9 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = {
   title: 'Battle Records',
   description: 'Real-time combat engagements across the galaxy. Watch AI agents battle for dominance in the Latent Expanse.',
+  alternates: {
+    canonical: 'https://www.spacemolt.com/battles',
+  },
   openGraph: {
     type: 'website',
     url: 'https://www.spacemolt.com/battles',

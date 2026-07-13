@@ -11,6 +11,7 @@
 import { damageTypeColor, zoneIndex } from './types'
 import type { ParticipantSnapshot } from './types'
 import type { BattleTimeline, ParticipantMeta } from './timeline'
+import { GLYPH_NOSE_X, strokeGlyphDetail, traceGlyphPath } from './shipGlyphs'
 
 // --- Deterministic pseudo-randomness (stable across frames) ---
 
@@ -246,12 +247,15 @@ export function makeTransform(width: number, height: number, view: ViewState): S
   }
 }
 
-function shipRadius(meta: ParticipantMeta, scale: number): number {
-  // Glyph size by ship scale (0 = drone … 5 = capital), in px at zoom 1
-  // (tf.scale ≈ 360px on a desktop viewport), clamped so extreme zoom or
-  // tiny viewports keep glyphs readable.
-  const base = meta.kind === 'drone' ? 5 : meta.kind === 'creature' ? 9 : 8 + meta.scale * 2.6
-  return base * Math.max(0.6, Math.min(1.8, scale / 360))
+/** Glyph radius per ship scale (1 = personal … 5 = capital), in px at zoom 1. */
+const SCALE_RADIUS = [9, 9, 12, 15.5, 20, 25.5]
+
+function shipRadius(meta: ParticipantMeta, pxScale: number): number {
+  // Glyph size by ship scale, in px at zoom 1 (tf.scale ≈ 360px on a desktop
+  // viewport), clamped so extreme zoom or tiny viewports keep glyphs readable.
+  const base =
+    meta.kind === 'drone' ? 5 : meta.kind === 'creature' ? 9 : SCALE_RADIUS[Math.max(1, Math.min(5, Math.round(meta.scale)))]
+  return base * Math.max(0.6, Math.min(1.8, pxScale / 360))
 }
 
 // --- Background (stars + nebula), drawn once per resize ---
@@ -598,52 +602,7 @@ function drawShipBody(
   ctx.save()
   ctx.translate(x, y)
   ctx.rotate(facing)
-  ctx.beginPath()
-  if (meta.kind === 'drone') {
-    ctx.moveTo(size, 0)
-    ctx.lineTo(-size * 0.8, size * 0.7)
-    ctx.lineTo(-size * 0.4, 0)
-    ctx.lineTo(-size * 0.8, -size * 0.7)
-    ctx.closePath()
-  } else if (meta.kind === 'creature') {
-    // Organic: lumpy blob.
-    for (let a = 0; a <= 12; a++) {
-      const t = (a / 12) * Math.PI * 2
-      const r = size * (0.75 + 0.25 * Math.sin(t * 3 + hashStr(meta.id)))
-      const px = Math.cos(t) * r
-      const py = Math.sin(t) * r
-      if (a === 0) ctx.moveTo(px, py)
-      else ctx.lineTo(px, py)
-    }
-    ctx.closePath()
-  } else if (meta.category === 'combat') {
-    // Sharp fighter: nose, swept wings, notched tail.
-    ctx.moveTo(size * 1.25, 0)
-    ctx.lineTo(-size * 0.35, size * 0.5)
-    ctx.lineTo(-size * 0.95, size * 0.95)
-    ctx.lineTo(-size * 0.6, size * 0.18)
-    ctx.lineTo(-size * 0.6, -size * 0.18)
-    ctx.lineTo(-size * 0.95, -size * 0.95)
-    ctx.lineTo(-size * 0.35, -size * 0.5)
-    ctx.closePath()
-  } else if (meta.category === 'industrial') {
-    // Boxy hauler/miner hull.
-    ctx.moveTo(size * 1.0, size * 0.32)
-    ctx.lineTo(size * 1.0, -size * 0.32)
-    ctx.lineTo(size * 0.35, -size * 0.62)
-    ctx.lineTo(-size * 0.95, -size * 0.62)
-    ctx.lineTo(-size * 0.95, size * 0.62)
-    ctx.lineTo(size * 0.35, size * 0.62)
-    ctx.closePath()
-  } else {
-    // Civilian/commercial/exploration: sleek teardrop.
-    ctx.moveTo(size * 1.15, 0)
-    ctx.quadraticCurveTo(size * 0.1, size * 0.75, -size * 0.9, size * 0.45)
-    ctx.lineTo(-size * 0.65, 0)
-    ctx.lineTo(-size * 0.9, -size * 0.45)
-    ctx.quadraticCurveTo(size * 0.1, -size * 0.75, size * 1.15, 0)
-    ctx.closePath()
-  }
+  traceGlyphPath(ctx, meta.archetype, size, hashStr(meta.id))
 
   if (ghost) {
     ctx.fillStyle = color
@@ -657,12 +616,16 @@ function drawShipBody(
     ctx.strokeStyle = 'rgba(232,244,248,0.65)'
     ctx.lineWidth = 0.8
     ctx.stroke()
-    // Capital ships get a dorsal spine highlight.
-    if (meta.scale >= 4) {
+    strokeGlyphDetail(ctx, meta.archetype, size)
+    // Armed cue: a short muzzle line off the nose — this thing shoots.
+    // Skipped on tiny glyphs where it would read as noise.
+    if (meta.armed && size >= 8) {
+      const nose = GLYPH_NOSE_X[meta.archetype]
       ctx.beginPath()
-      ctx.moveTo(size * 0.9, 0)
-      ctx.lineTo(-size * 0.7, 0)
-      ctx.strokeStyle = 'rgba(232,244,248,0.5)'
+      ctx.moveTo(size * nose, 0)
+      ctx.lineTo(size * (nose + 0.35), 0)
+      ctx.strokeStyle = 'rgba(232,244,248,0.85)'
+      ctx.lineWidth = 1.2
       ctx.stroke()
     }
   }

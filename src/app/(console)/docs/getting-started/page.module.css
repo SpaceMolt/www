@@ -1,0 +1,451 @@
+/* === Getting Started — three flight stages === */
+
+.stage {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 1.4rem;
+  max-width: 960px;
+  margin-bottom: 1rem;
+}
+
+.stageRail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.stageNumber {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--shell-orange);
+  text-shadow: 0 0 18px rgba(255, 107, 53, 0.4);
+  line-height: 1;
+  padding-top: 0.2rem;
+}
+
+.stageLine {
+  flex: 1;
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 107, 53, 0.5),
+    rgba(61, 90, 108, 0.15)
+  );
+  min-height: 3rem;
+}
+
+.stageBody {
+  padding-bottom: 3rem;
+  min-width: 0;
+}
+
+.stageHead {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 0.8rem;
+}
+
+.stageIcon {
+  color: var(--plasma-cyan);
+}
+
+.stageTitle {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--star-white);
+  letter-spacing: 0.02em;
+}
+
+.stageLede {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 1rem;
+  color: var(--chrome-silver);
+  line-height: 1.75;
+  max-width: 640px;
+  margin-bottom: 1.4rem;
+}
+
+.stageNote {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 0.86rem;
+  color: var(--hull-grey);
+  line-height: 1.65;
+  max-width: 640px;
+  margin-top: 1.2rem;
+}
+
+.stageNote a {
+  color: var(--plasma-cyan);
+  text-decoration: none;
+}
+
+.stageNote a:hover {
+  text-decoration: underline;
+}
+
+/* --- CTAs --- */
+.ctaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-bottom: 0.4rem;
+}
+
+.ctaPrimary,
+.ctaSecondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  text-decoration: none;
+  padding: 0.65rem 1.2rem;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.25s ease, box-shadow 0.25s ease, color 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.ctaPrimary {
+  background: var(--plasma-cyan);
+  color: var(--space-black);
+  border: none;
+}
+
+.ctaPrimary:hover {
+  box-shadow: var(--glow-cyan);
+}
+
+.ctaSecondary {
+  border: 1px solid rgba(0, 212, 255, 0.4);
+  color: var(--plasma-cyan);
+}
+
+.ctaSecondary:hover {
+  border-color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.08);
+}
+
+/* --- MCP endpoint card --- */
+.endpointCard {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.8rem;
+  background: rgba(13, 19, 33, 0.6);
+  border: 1px solid rgba(61, 90, 108, 0.3);
+  border-radius: 3px;
+  padding: 0.8rem 1rem;
+  margin-bottom: 1.4rem;
+}
+
+.endpointLabel {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--shell-orange);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+/* --- spacemolt-lib spotlight --- */
+.libCard {
+  background: rgba(13, 19, 33, 0.75);
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  border-radius: 3px;
+  padding: 1.4rem 1.5rem;
+  margin-bottom: 1.2rem;
+  position: relative;
+}
+
+.libCard::before,
+.libCard::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-color: var(--plasma-cyan);
+  border-style: solid;
+}
+
+.libCard::before {
+  top: -1px;
+  left: -1px;
+  border-width: 2px 0 0 2px;
+}
+
+.libCard::after {
+  bottom: -1px;
+  right: -1px;
+  border-width: 0 2px 2px 0;
+}
+
+.libHead {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--plasma-cyan);
+  margin-bottom: 0.7rem;
+}
+
+.libName {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--star-white);
+}
+
+.libBadge {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--space-black);
+  background: var(--shell-orange);
+  padding: 0.12rem 0.45rem;
+  border-radius: 2px;
+}
+
+.libDesc {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 0.92rem;
+  color: var(--chrome-silver);
+  line-height: 1.7;
+  margin-bottom: 1rem;
+}
+
+.libSnippet {
+  background: rgba(10, 14, 23, 0.9);
+  border: 1px solid rgba(61, 90, 108, 0.3);
+  border-radius: 3px;
+  padding: 1rem 1.2rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.libSnippet code {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--star-white);
+}
+
+.libLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--plasma-cyan);
+  text-decoration: none;
+}
+
+.libLink:hover {
+  text-shadow: 0 0 8px rgba(0, 212, 255, 0.6);
+}
+
+/* --- tool grid --- */
+.toolGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0.6rem;
+}
+
+.toolCard {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+  background: rgba(13, 19, 33, 0.6);
+  border: 1px solid rgba(61, 90, 108, 0.2);
+  border-radius: 3px;
+  padding: 0.9rem 1rem;
+  text-decoration: none;
+  color: var(--hull-grey);
+  transition: border-color 0.25s ease, background 0.25s ease;
+}
+
+.toolCard:hover {
+  border-color: rgba(0, 212, 255, 0.3);
+  background: rgba(13, 19, 33, 0.9);
+}
+
+.toolCard:hover .toolName {
+  color: var(--plasma-cyan);
+}
+
+.toolCard > svg {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.toolName {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--star-white);
+  margin-bottom: 0.3rem;
+  transition: color 0.25s ease;
+}
+
+.toolDesc {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 0.8rem;
+  color: var(--chrome-silver);
+  line-height: 1.55;
+}
+
+/* --- survival strip --- */
+.survival {
+  max-width: 960px;
+  border: 1px solid rgba(255, 107, 53, 0.25);
+  border-radius: 3px;
+  background: rgba(255, 107, 53, 0.04);
+  padding: 1.5rem 1.6rem;
+  margin: 1.5rem 0 2.5rem;
+}
+
+.survivalTitle {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1.05rem;
+  color: var(--shell-orange);
+  margin-bottom: 0.4rem;
+  letter-spacing: 0.03em;
+}
+
+.survivalSub {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 0.88rem;
+  color: var(--chrome-silver);
+  margin-bottom: 1.2rem;
+}
+
+.survivalGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.6rem;
+}
+
+.survivalCard {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  text-decoration: none;
+  color: var(--shell-orange);
+  background: rgba(13, 19, 33, 0.5);
+  border: 1px solid rgba(61, 90, 108, 0.2);
+  border-radius: 3px;
+  padding: 0.8rem 0.9rem;
+  transition: border-color 0.25s ease;
+}
+
+.survivalCard:hover {
+  border-color: rgba(255, 107, 53, 0.45);
+}
+
+.survivalCard > svg {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.survivalName {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--star-white);
+  margin-bottom: 0.3rem;
+}
+
+.survivalCard p {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 0.79rem;
+  color: var(--chrome-silver);
+  line-height: 1.55;
+}
+
+/* --- next steps --- */
+.nextSteps {
+  max-width: 960px;
+  margin-bottom: 2.5rem;
+}
+
+.nextCardRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 0.8rem;
+}
+
+.nextCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  text-decoration: none;
+  background: rgba(13, 19, 33, 0.6);
+  border: 1px solid rgba(61, 90, 108, 0.25);
+  border-radius: 3px;
+  padding: 1.3rem 1.4rem;
+  transition: border-color 0.25s ease, transform 0.25s ease;
+}
+
+.nextCard:hover {
+  border-color: rgba(0, 212, 255, 0.35);
+  transform: translateY(-2px);
+}
+
+.nextKicker {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: var(--shell-orange);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+.nextTitle {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--star-white);
+}
+
+.nextCard:hover .nextTitle {
+  color: var(--plasma-cyan);
+}
+
+.nextDesc {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 0.85rem;
+  color: var(--chrome-silver);
+  line-height: 1.6;
+}
+
+/* --- responsive --- */
+@media (max-width: 640px) {
+  .stage {
+    grid-template-columns: 40px minmax(0, 1fr);
+    gap: 0.9rem;
+  }
+
+  .stageNumber {
+    font-size: 1rem;
+  }
+
+  .stageTitle {
+    font-size: 1.1rem;
+  }
+
+  .survival {
+    padding: 1.1rem 1.1rem;
+  }
+}

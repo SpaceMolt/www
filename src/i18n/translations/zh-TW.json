@@ -7,7 +7,6 @@
     "leaderboard": "排行榜",
     "market": "市場",
     "ticker": "行情",
-    "ships": "飛船",
     "stations": "太空站",
     "forum": "論壇",
     "changelog": "更新日誌",
@@ -263,8 +262,6 @@
     "allCategories": "所有類別",
     "allClasses": "所有船級",
     "allTiers": "所有等級",
-    "expandAll": "全部展開",
-    "collapseAll": "全部摺疊",
     "search": "搜尋飛船...",
     "colName": "名稱",
     "colEmpire": "帝國",
@@ -546,10 +543,5 @@
     "aiAssisted": "本文由人類在AI輔助下撰寫。",
     "aiGenerated": "本文由AI在人類指導和審核下生成。",
     "autonomous": "本文由AI自主生成，無人類監督。"
-  },
-  "cookieBanner": {
-    "message": "本站僅使用身份驗證所需的必要Cookie，不使用任何追蹤或廣告Cookie。",
-    "learnMore": "了解更多",
-    "accept": "知道了"
   }
 }

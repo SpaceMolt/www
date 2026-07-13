@@ -75,9 +75,7 @@
 .brand img {
   width: 28px;
   height: 28px;
-  border-radius: 50%;
-  border: 1px solid rgba(0, 212, 255, 0.6);
-  box-shadow: 0 0 12px rgba(0, 212, 255, 0.35);
+  filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.35));
 }
 
 .brandName {
@@ -181,43 +179,58 @@
   flex-shrink: 0;
 }
 
-.playBtn {
-  font-family: var(--font-jetbrains), monospace;
-  font-size: 0.72rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--star-white);
-  text-decoration: none;
-  padding: 0.42rem 0.9rem;
-  border-radius: 3px;
-  background: linear-gradient(135deg, var(--shell-orange), var(--claw-red));
-  border: 1px solid rgba(255, 107, 53, 0.7);
-  transition: box-shadow 0.2s ease;
-  white-space: nowrap;
-}
-
-.playBtn:hover {
-  box-shadow: 0 0 18px rgba(255, 107, 53, 0.5);
-}
-
-.paneToggle {
+/* Every button in the cluster shares one geometry — same height, radius, type
+   scale, icon size. Only the fill separates the tiers:
+     tier 1 (.ctaBtn)     — filled orange gradient, the one loud thing
+     tier 2 (.socialBtn)  — neutral chrome, brand colour carried by icon + text
+     tier 3 (.paneToggle) — neutral chrome, silver: console utility
+   Tier 2 deliberately does NOT get a brand-tinted fill, or it would outshout
+   the CTA. */
+.socialBtn,
+.paneToggle,
+.ctaBtn {
   display: flex;
   align-items: center;
   gap: 0.45rem;
+  height: 32px;
+  padding: 0 0.7rem;
   font-family: var(--font-jetbrains), monospace;
   font-size: 0.68rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.1em;
+  border-radius: 3px;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.socialBtn,
+.paneToggle {
   color: var(--chrome-silver);
   background: rgba(0, 212, 255, 0.04);
   border: 1px solid rgba(107, 143, 163, 0.4);
-  border-radius: 3px;
-  padding: 0.42rem 0.7rem;
-  cursor: pointer;
-  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
-  white-space: nowrap;
+}
+
+.socialDiscord svg {
+  color: #8b9dff;
+}
+
+.socialDiscord:hover {
+  color: #b9c6ff;
+  background: rgba(88, 101, 242, 0.14);
+  border-color: rgba(129, 140, 248, 0.8);
+}
+
+.socialPatreon svg {
+  color: var(--shell-orange);
+}
+
+.socialPatreon:hover {
+  color: #ffb59b;
+  background: rgba(255, 107, 53, 0.12);
+  border-color: rgba(255, 107, 53, 0.7);
 }
 
 .paneToggle:hover {
@@ -229,6 +242,20 @@
   color: var(--plasma-cyan);
   border-color: rgba(0, 212, 255, 0.55);
   background: rgba(0, 212, 255, 0.1);
+}
+
+/* tier 1 — the only filled button in the topbar */
+.ctaBtn {
+  padding: 0 1rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--star-white);
+  background: linear-gradient(135deg, var(--shell-orange), var(--claw-red));
+  border: 1px solid rgba(255, 107, 53, 0.7);
+}
+
+.ctaBtn:hover {
+  box-shadow: 0 0 18px rgba(255, 107, 53, 0.5);
 }
 
 /* ------------------------------------------------------------
@@ -331,6 +358,50 @@
   opacity: 0.45;
 }
 
+/* --- community rail (pinned above the nav groups) --- */
+
+.navDiscord,
+.navPatreon,
+.navShop {
+  color: var(--star-white);
+}
+
+.navDiscord svg,
+.navPatreon svg,
+.navShop svg {
+  opacity: 1;
+}
+
+.navDiscord svg {
+  color: #8b9dff;
+}
+
+.navPatreon svg {
+  color: var(--shell-orange);
+}
+
+.navShop svg {
+  color: var(--bio-green);
+}
+
+.navDiscord:hover {
+  color: #b9c6ff;
+  background: rgba(88, 101, 242, 0.12);
+  border-left-color: #5865f2;
+}
+
+.navPatreon:hover {
+  color: #ffb59b;
+  background: rgba(255, 107, 53, 0.1);
+  border-left-color: var(--shell-orange);
+}
+
+.navShop:hover {
+  color: var(--bio-green);
+  background: rgba(45, 212, 191, 0.1);
+  border-left-color: var(--bio-green);
+}
+
 .sidebarFooter {
   margin-top: auto;
   padding: 0.9rem 1rem 0.4rem;
@@ -367,7 +438,7 @@
 /* language selector lives in the topbar on desktop, in the drawer on mobile */
 .sidebarLang {
   display: none;
-  padding: 0.6rem 1rem 0.2rem;
+  padding: 0.7rem 1rem 1.1rem;
 }
 
 /* --- main viewport --- */
@@ -621,38 +692,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* collapsed edge tab (desktop, pane closed) */
-.paneEdgeTab {
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 20;
-  writing-mode: vertical-rl;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.8rem 0.3rem;
-  font-family: var(--font-jetbrains), monospace;
-  font-size: 0.62rem;
-  font-weight: 600;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--chrome-silver);
-  background: rgba(13, 19, 33, 0.95);
-  border: 1px solid rgba(0, 212, 255, 0.3);
-  border-right: none;
-  border-radius: 4px 0 0 4px;
-  cursor: pointer;
-  transition: color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.paneEdgeTab:hover {
-  color: var(--plasma-cyan);
-  border-color: var(--plasma-cyan);
-  box-shadow: 0 0 14px rgba(0, 212, 255, 0.3);
-}
-
 /* mobile-only pieces, hidden on desktop */
 .sheetGrip {
   display: none;
@@ -698,13 +737,35 @@
     display: none;
   }
 
-  .playBtn {
-    padding: 0.38rem 0.6rem;
-    font-size: 0.64rem;
+  /* Everything but the CTA goes icon-only; the labels reappear in the drawer.
+     Touch targets grow to 44px. */
+  .btnLabel {
+    display: none;
   }
 
-  .paneToggleLabel {
-    display: none;
+  .iconBtn,
+  .paneToggle,
+  .socialBtn,
+  .ctaBtn {
+    min-height: 44px;
+    height: 44px;
+  }
+
+  .iconBtn,
+  .paneToggle,
+  .socialBtn {
+    min-width: 44px;
+    justify-content: center;
+    padding: 0 0.6rem;
+  }
+
+  .ctaBtn {
+    padding: 0 0.8rem;
+    font-size: 0.68rem;
+  }
+
+  .topbarActions {
+    gap: 0.4rem;
   }
 
   .body {
@@ -783,17 +844,47 @@
     border-radius: 2px;
     background: rgba(0, 212, 255, 0.35);
   }
+}
 
-  .paneEdgeTab {
-    top: auto;
-    bottom: 0;
-    right: 12px;
-    transform: none;
-    writing-mode: horizontal-tb;
-    padding: 0.4rem 0.9rem;
-    border-radius: 4px 4px 0 0;
-    border: 1px solid rgba(0, 212, 255, 0.3);
-    border-bottom: none;
+/* Below ~700px the topbar can no longer fit menu + brand + telemetry + actions
+   without clipping the buttons, and the live pane already shows the same
+   connection state — so the readouts go rather than the controls. */
+@media (max-width: 700px) {
+  .telemetry {
+    display: none;
+  }
+
+  /* .telemetry carried the margin-left:auto that pushed the actions right —
+     with it gone, the cluster has to hold the right edge itself. */
+  .topbarActions {
+    margin-left: auto;
+  }
+}
+
+/* Phone widths: shed the cluster in priority order rather than letting it clip.
+   Patreon goes first (lower frequency, weaker icon recognition at 13px); Discord
+   and the CTA survive to the narrowest screens. Anything that drops is still one
+   tap away in the nav drawer's Community group. */
+@media (max-width: 560px) {
+  .socialPatreon {
+    display: none;
+  }
+}
+
+@media (max-width: 400px) {
+  .brandName {
+    font-size: 0.74rem;
+  }
+
+  /* CTA keeps its rocket, loses its word */
+  .ctaLabel {
+    display: none;
+  }
+
+  .ctaBtn {
+    min-width: 44px;
+    justify-content: center;
+    padding: 0 0.6rem;
   }
 }
 

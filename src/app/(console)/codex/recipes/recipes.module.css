@@ -1,0 +1,58 @@
+/* Recipe detail — the input/output stack lists.
+   Colocated on purpose: codex.module.css is shared by every codex section,
+   so section-specific styling lives next to the page that needs it. */
+
+.stackList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 0.4rem;
+}
+
+.stack {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  padding: 0.45rem 0.6rem;
+  background: rgba(13, 19, 33, 0.75);
+  border: 1px solid rgba(0, 212, 255, 0.12);
+  border-left: 2px solid rgba(0, 212, 255, 0.4);
+  text-decoration: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+a.stack:hover {
+  border-color: rgba(0, 212, 255, 0.5);
+  border-left-color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.06);
+  text-decoration: none;
+}
+
+.stackQty {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--plasma-cyan);
+  white-space: nowrap;
+}
+
+.stackName {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.76rem;
+  color: var(--star-white);
+  word-break: break-word;
+}
+
+a.stack:hover .stackName {
+  color: var(--plasma-cyan);
+}
+
+.stackKind {
+  margin-left: auto;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--chrome-silver);
+  opacity: 0.6;
+  white-space: nowrap;
+}

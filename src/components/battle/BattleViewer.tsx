@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
+import { RotateCcw } from 'lucide-react'
 import styles from './BattleViewer.module.css'
 import { useTranslation } from '@/i18n'
 import { useBattleData } from '@/lib/battle/useBattleData'
@@ -440,17 +441,22 @@ export default function BattleViewer({ battleId }: { battleId: string }) {
             }}
           />
 
-          {timeline.sides.map(side => (
-            <SideScoreboard
-              key={side.sideId}
-              side={side}
-              timeline={timeline}
-              tickIndex={Math.min(uiTick, timeline.entries.length - 1)}
-              selectedId={selectedId}
-              onSelect={id => setSelectedId(prev => (prev === id ? null : id))}
-              winner={endEntry?.winning_side === side.sideId && !!showOutcome}
-            />
-          ))}
+          {/* display:contents on desktop (panels dock to the arena flanks);
+              a stacked chip column on narrow screens so multi-side battles
+              never bury the arena under floating panels. */}
+          <div className={styles.scoreboardLayer}>
+            {timeline.sides.map(side => (
+              <SideScoreboard
+                key={side.sideId}
+                side={side}
+                timeline={timeline}
+                tickIndex={Math.min(uiTick, timeline.entries.length - 1)}
+                selectedId={selectedId}
+                onSelect={id => setSelectedId(prev => (prev === id ? null : id))}
+                winner={endEntry?.winning_side === side.sideId && !!showOutcome}
+              />
+            ))}
+          </div>
 
           {selectedId && (
             <ShipInspector
@@ -470,7 +476,7 @@ export default function BattleViewer({ battleId }: { battleId: string }) {
                   {endEntry.ships_destroyed} {t('battles.destroyed')}
                 </span>
                 <button className={styles.replayBtn} onClick={() => { seek(0); setPlaying(true) }}>
-                  ⟲ {t('battles.replay')}
+                  <RotateCcw size={12} aria-hidden /> {t('battles.replay')}
                 </button>
               </div>
             </div>

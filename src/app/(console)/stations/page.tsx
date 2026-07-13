@@ -57,6 +57,18 @@ const CAPITAL_IDS = new Set([
   'frontier_base',
 ])
 
+const srOnly: React.CSSProperties = {
+  position: 'absolute',
+  width: 1,
+  height: 1,
+  padding: 0,
+  margin: -1,
+  overflow: 'hidden',
+  clip: 'rect(0 0 0 0)',
+  whiteSpace: 'nowrap',
+  border: 0,
+}
+
 function truncateDescription(text: string, maxLen: number): string {
   if (text.length <= maxLen) return text
   return text.slice(0, maxLen).replace(/\s+\S*$/, '') + '...'
@@ -111,6 +123,7 @@ export default function StationsPage() {
         <p className={styles.headerDesc}>{t('stations.pageDescription')}</p>
       </header>
 
+      <h2 style={srOnly}>Filter by Empire</h2>
       <div className={styles.filterBar} role="group" aria-label="Filter by empire">
         <span className={styles.filterLabel}>Empire</span>
         <button
@@ -142,6 +155,8 @@ export default function StationsPage() {
           </span>
         )}
       </div>
+
+      <h2 style={srOnly}>Station Registry</h2>
 
       {loading && (
         <div className={styles.loading}>{t('stations.loading')}</div>

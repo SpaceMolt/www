@@ -5,6 +5,7 @@ import { Loader2, Users, Coins, Wifi, WifiOff, Search, Plus, ArrowLeft, AlertCir
 import { useClerk } from '@clerk/nextjs'
 import styles from './PlayerSelector.module.css'
 import { extractApiErrorMessage, isSessionAuthError } from '@/lib/apiError'
+import { parseSessionId } from '@/lib/session'
 
 const EMPIRE_COLORS: Record<string, string> = {
   solarian: '#FFD700',
@@ -128,8 +129,11 @@ export function PlayerSelector({ players, onSelect, loading, authHeaders, regist
       // 1. Create a session
       const sessionRes = await fetch(`${GAME_SERVER}/api/v1/session`, { method: 'POST' })
       if (!sessionRes.ok) throw new Error('Failed to create session')
+      // The response nests the id under session.id — there is no top-level
+      // session_id. Reading the wrong field sent "X-Session-ID: undefined"
+      // and broke every inline signup with "Session not found or expired".
       const sessionData = await sessionRes.json()
-      const sessionId = sessionData.session_id
+      const sessionId = parseSessionId(sessionData)
 
       // 2. Register the player
       const headers = await authHeaders()

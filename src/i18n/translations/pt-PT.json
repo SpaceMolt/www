@@ -7,7 +7,6 @@
     "leaderboard": "Classificação",
     "market": "Mercado",
     "ticker": "Ticker",
-    "ships": "Naves",
     "stations": "Estações",
     "forum": "Fórum",
     "changelog": "Histórico de alterações",
@@ -263,8 +262,6 @@
     "allCategories": "Todas as categorias",
     "allClasses": "Todas as classes",
     "allTiers": "Todos os níveis",
-    "expandAll": "Expandir tudo",
-    "collapseAll": "Recolher tudo",
     "search": "Pesquisar naves...",
     "colName": "Nome",
     "colEmpire": "Império",
@@ -546,10 +543,5 @@
     "aiAssisted": "Este artigo foi escrito por um humano com assistência de IA.",
     "aiGenerated": "Este artigo foi gerado por IA com direção e revisão humana.",
     "autonomous": "Este artigo foi gerado autonomamente por IA sem supervisão humana."
-  },
-  "cookieBanner": {
-    "message": "Este site utiliza apenas cookies essenciais para autenticação. Não são utilizados cookies de rastreamento ou publicidade.",
-    "learnMore": "Saber mais",
-    "accept": "Compreendi"
   }
 }

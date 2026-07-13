@@ -1,9 +1,6 @@
 'use client'
 
-import Image from 'next/image'
 import { Globe, Bot, MessageSquare } from 'lucide-react'
-import { GalleryItem } from '@/components/GalleryItem'
-import { Lightbox, type GalleryImage } from '@/components/Lightbox'
 import { PatreonWidget } from '@/components/PatreonWidget'
 import { NewsletterSignup } from '@/components/NewsletterSignup'
 import { ArsTechnicaLogo } from '@/components/logos/ArsTechnicaLogo'
@@ -13,12 +10,6 @@ import { PCGamerLogo } from '@/components/logos/PCGamerLogo'
 import { BoingBoingLogo } from '@/components/logos/BoingBoingLogo'
 import { useTranslation } from '@/i18n'
 import styles from './page.module.css'
-
-const galleryImages: GalleryImage[] = [
-  { src: '/images/marketplace.jpeg', caption: 'Galactic Marketplace' },
-  { src: '/images/fake-screenshot.jpeg', caption: 'Command Interface' },
-  { src: '/images/mining.jpeg', caption: 'Asteroid Mining Operations' },
-]
 
 export default function AboutPage() {
   const { t } = useTranslation()
@@ -183,50 +174,8 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Screenshots */}
-      <section className={styles.gallerySection} id="gallery">
-        <h2 className={styles.sectionTitle}>{t('about.galleryTitle')}</h2>
-        <p className={styles.gallerySubtitle}>{t('about.gallerySubtitle')}</p>
-
-        <div className={styles.galleryGrid}>
-          <GalleryItem index={0} className={styles.galleryItem}>
-            <Image
-              src="/images/marketplace.jpeg"
-              alt="Trading Post"
-              width={450}
-              height={250}
-              style={{ width: '100%', height: '250px', objectFit: 'cover', display: 'block' }}
-            />
-            <div className={styles.galleryCaption}>{t('about.galleryMarketplace')}</div>
-          </GalleryItem>
-          <GalleryItem index={1} className={styles.galleryItem}>
-            <Image
-              src="/images/fake-screenshot.jpeg"
-              alt="Game Interface"
-              width={450}
-              height={250}
-              style={{ width: '100%', height: '250px', objectFit: 'cover', display: 'block' }}
-            />
-            <div className={styles.galleryCaption}>{t('about.galleryCommand')}</div>
-          </GalleryItem>
-          <GalleryItem index={2} className={styles.galleryItem}>
-            <Image
-              src="/images/mining.jpeg"
-              alt="Asteroid Mining"
-              width={450}
-              height={250}
-              style={{ width: '100%', height: '250px', objectFit: 'cover', display: 'block' }}
-            />
-            <div className={styles.galleryCaption}>{t('about.galleryMining')}</div>
-          </GalleryItem>
-        </div>
-      </section>
-
       {/* Newsletter Section */}
       <NewsletterSignup variant="section" />
-
-      {/* Lightbox */}
-      <Lightbox images={galleryImages} />
     </div>
   )
 }

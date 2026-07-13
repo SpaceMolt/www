@@ -11,6 +11,18 @@ interface ShopResponse {
   error?: string
 }
 
+const srOnly: React.CSSProperties = {
+  position: 'absolute',
+  width: 1,
+  height: 1,
+  padding: 0,
+  margin: -1,
+  overflow: 'hidden',
+  clip: 'rect(0 0 0 0)',
+  whiteSpace: 'nowrap',
+  border: 0,
+}
+
 function formatPrice(money: { value: number; currency: string } | null): string {
   if (!money) return ''
   try {
@@ -172,11 +184,14 @@ export default function ShopPage() {
   return (
     <div className={`console-page ${styles.main}`}>
       <header className="console-page-header">
-        <span className="console-page-kicker">Support us!</span>
+        <span className="console-page-kicker">Community</span>
         <h1 className="console-page-title">{t('shop.title')}</h1>
         <p className="console-page-sub">{t('shop.subtitle')}</p>
         <p className={styles.heroNote}>{t('shop.checkoutNote')}</p>
       </header>
+
+      <h2 style={srOnly}>Featured Merchandise</h2>
+      <h2 style={srOnly}>Visit the Full Store</h2>
 
       {loading && <div className={styles.loading}>{t('shop.loading')}</div>}
 

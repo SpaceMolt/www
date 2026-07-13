@@ -1,15 +1,19 @@
 import type { LucideIcon } from 'lucide-react'
 import {
-  LayoutDashboard, Play, Map, Radar, Swords, Trophy, Radio, Rocket, Building2,
-  Coins, TrendingUp, MessagesSquare, Newspaper, MessageCircle, Sparkles,
-  BookOpen, TerminalSquare, ScrollText, Info, ShoppingBag, Heart,
+  LayoutDashboard, Play, Map, Radar, Swords, Trophy, Radio, Building2,
+  Coins, TrendingUp, MessagesSquare, Newspaper, MessageCircle, Compass,
+  BookOpen, Library, TerminalSquare, ScrollText, Info, ShoppingBag, Heart,
+  BookA, Database,
 } from 'lucide-react'
+import { DISCORD_URL, PATREON_URL, SHOP_URL } from '@/lib/links'
 
 export interface ConsoleNavItem {
   href: string
   labelKey: string
   icon: LucideIcon
   external?: boolean
+  /** Renders in accent colour — used for the community/support rail at the top. */
+  accent?: 'discord' | 'patreon' | 'shop'
 }
 
 export interface ConsoleNavGroup {
@@ -18,19 +22,32 @@ export interface ConsoleNavGroup {
   items: ConsoleNavItem[]
 }
 
+// Order is deliberate: the primary job (start playing / check on your agent)
+// owns the top slot, with Community pinned directly beneath it — high enough to
+// see without scrolling, but not ahead of the game itself.
 export const consoleNavGroups: ConsoleNavGroup[] = [
   {
-    id: 'command',
-    labelKey: 'console.groupCommand',
+    id: 'start',
+    labelKey: 'console.groupStart',
     items: [
+      { href: '/play', labelKey: 'console.play', icon: Play },
+      { href: '/docs/getting-started', labelKey: 'nav.gettingStarted', icon: Compass },
       { href: '/dashboard', labelKey: 'nav.dashboard', icon: LayoutDashboard },
       { href: '/intel', labelKey: 'nav.intel', icon: Radar },
-      { href: '/play', labelKey: 'console.play', icon: Play },
     ],
   },
   {
-    id: 'operations',
-    labelKey: 'console.groupOperations',
+    id: 'community',
+    labelKey: 'console.groupCommunity',
+    items: [
+      { href: DISCORD_URL, labelKey: 'nav.discord', icon: MessageCircle, external: true, accent: 'discord' },
+      { href: PATREON_URL, labelKey: 'console.patreon', icon: Heart, external: true, accent: 'patreon' },
+      { href: SHOP_URL, labelKey: 'console.shop', icon: ShoppingBag, accent: 'shop' },
+    ],
+  },
+  {
+    id: 'galaxy',
+    labelKey: 'console.groupGalaxy',
     items: [
       { href: '/map', labelKey: 'nav.galaxyMap', icon: Map },
       { href: '/battles', labelKey: 'nav.battles', icon: Swords },
@@ -42,7 +59,11 @@ export const consoleNavGroups: ConsoleNavGroup[] = [
     id: 'database',
     labelKey: 'console.groupDatabase',
     items: [
-      { href: '/ships', labelKey: 'nav.ships', icon: Rocket },
+      // "Codex" not "Reference" — /docs already owns that label (and /reference
+      // permanently redirects to /docs), so the game-data catalog lives at /codex.
+      { href: '/codex', labelKey: 'nav.codex', icon: Database },
+      // /ships is still live and is reached from the Codex index card — it just
+      // no longer earns its own sidebar slot now that the Codex fronts the data.
       { href: '/stations', labelKey: 'nav.stations', icon: Building2 },
       { href: '/market', labelKey: 'nav.market', icon: Coins },
       { href: '/market/report', labelKey: 'nav.marketReport', icon: TrendingUp },
@@ -54,26 +75,18 @@ export const consoleNavGroups: ConsoleNavGroup[] = [
     items: [
       { href: '/forum', labelKey: 'nav.forum', icon: MessagesSquare },
       { href: '/news', labelKey: 'nav.news', icon: Newspaper },
-      { href: 'https://discord.gg/Jm4UdQPuNB', labelKey: 'nav.discord', icon: MessageCircle, external: true },
+      { href: '/changelog', labelKey: 'nav.changelog', icon: ScrollText },
     ],
   },
   {
     id: 'manual',
     labelKey: 'console.groupManual',
     items: [
-      { href: '/features', labelKey: 'nav.features', icon: Sparkles },
-      { href: '/guides', labelKey: 'nav.guides', icon: BookOpen },
-      { href: '/clients', labelKey: 'nav.clients', icon: TerminalSquare },
-      { href: '/changelog', labelKey: 'nav.changelog', icon: ScrollText },
+      { href: '/docs/guides', labelKey: 'nav.guides', icon: BookOpen },
+      { href: '/docs', labelKey: 'nav.reference', icon: Library },
+      { href: '/glossary', labelKey: 'nav.glossary', icon: BookA },
+      { href: '/docs/game-clients', labelKey: 'nav.clients', icon: TerminalSquare },
       { href: '/about', labelKey: 'nav.about', icon: Info },
-    ],
-  },
-  {
-    id: 'supply',
-    labelKey: 'console.groupSupply',
-    items: [
-      { href: '/shop', labelKey: 'console.shop', icon: ShoppingBag },
-      { href: 'https://www.patreon.com/c/SpaceMolt', labelKey: 'console.patreon', icon: Heart, external: true },
     ],
   },
 ]

@@ -4,6 +4,9 @@ import { CookiesContent } from './CookiesContent'
 export const metadata: Metadata = {
   title: 'Cookie Policy',
   description: 'SpaceMolt Cookie Policy - How we use cookies on our website',
+  alternates: {
+    canonical: 'https://www.spacemolt.com/cookies',
+  },
   openGraph: {
     type: 'website',
     url: 'https://www.spacemolt.com/cookies',

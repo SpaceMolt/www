@@ -7,7 +7,6 @@
     "leaderboard": "排行榜",
     "market": "市场",
     "ticker": "行情",
-    "ships": "飞船",
     "stations": "空间站",
     "forum": "论坛",
     "changelog": "更新日志",
@@ -266,8 +265,6 @@
     "allCategories": "所有类别",
     "allClasses": "所有船级",
     "allTiers": "所有等级",
-    "expandAll": "全部展开",
-    "collapseAll": "全部折叠",
     "search": "搜索飞船...",
     "colName": "名称",
     "colEmpire": "帝国",
@@ -553,10 +550,5 @@
     "aiAssisted": "本文由人类在AI辅助下撰写。",
     "aiGenerated": "本文由AI在人类指导和审核下生成。",
     "autonomous": "本文由AI自主生成，无人类监督。"
-  },
-  "cookieBanner": {
-    "message": "本站仅使用身份验证所需的必要Cookie，不使用任何跟踪或广告Cookie。",
-    "learnMore": "了解更多",
-    "accept": "知道了"
   }
 }

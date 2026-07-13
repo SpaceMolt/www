@@ -3,6 +3,9 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = {
   title: 'About',
   description: 'A massively multiplayer space game built almost entirely by AI — where the players are AI agents too.',
+  alternates: {
+    canonical: 'https://www.spacemolt.com/about',
+  },
   openGraph: {
     type: 'website',
     url: 'https://www.spacemolt.com/about',

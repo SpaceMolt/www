@@ -1,0 +1,165 @@
+/* === Community footer — three-card rail closing out every docs page === */
+
+.wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem 3.5rem;
+}
+
+.rule {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.6rem;
+}
+
+.rule::before,
+.rule::after {
+  content: '';
+  height: 1px;
+  flex: 1;
+  background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.35), transparent);
+}
+
+.ruleLabel {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--hull-grey);
+  white-space: nowrap;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  --accent: var(--plasma-cyan);
+  --accent-soft: rgba(0, 212, 255, 0.12);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1.3rem 1.3rem 1.15rem;
+  text-decoration: none;
+  background:
+    linear-gradient(180deg, var(--accent-soft), transparent 55%),
+    rgba(13, 19, 33, 0.75);
+  border: 1px solid rgba(107, 143, 163, 0.28);
+  border-radius: 4px;
+  overflow: hidden;
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* corner tick — instrument-panel detail shared with the console chrome */
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 26px;
+  height: 2px;
+  background: var(--accent);
+  opacity: 0.7;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
+.cardDiscord {
+  --accent: #5865f2;
+  --accent-soft: rgba(88, 101, 242, 0.16);
+}
+
+.cardPatreon {
+  --accent: var(--shell-orange);
+  --accent-soft: rgba(255, 107, 53, 0.14);
+}
+
+.cardShop {
+  --accent: var(--bio-green);
+  --accent-soft: rgba(45, 212, 191, 0.14);
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.cardIcon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 3px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+}
+
+.cardTitle {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--star-white);
+  margin: 0;
+}
+
+.cardDesc {
+  font-size: 0.83rem;
+  line-height: 1.55;
+  color: var(--chrome-silver);
+  margin: 0;
+  flex: 1;
+}
+
+.cardCta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+}
+
+.card:hover .cardCta svg {
+  transform: translateX(3px);
+}
+
+.cardCta svg {
+  transition: transform 0.2s ease;
+}
+
+@media (max-width: 900px) {
+  .wrap {
+    padding: 0 1.25rem 2.5rem;
+  }
+
+  .cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .cardCta svg {
+    transition: none;
+  }
+
+  .card:hover {
+    transform: none;
+  }
+}
