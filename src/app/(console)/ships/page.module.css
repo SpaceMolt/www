@@ -401,26 +401,9 @@
   box-shadow: 0 0 16px color-mix(in srgb, var(--empire-color, var(--plasma-cyan)) 18%, transparent);
 }
 
-.shipCardExpanded {
-  border-color: var(--empire-color, var(--plasma-cyan));
-  box-shadow: 0 0 16px color-mix(in srgb, var(--empire-color, var(--plasma-cyan)) 14%, transparent);
-  grid-column: 1 / -1;
-  flex-direction: row;
-}
-
-.shipCardExpanded .cardAccent {
-  width: 2px;
-  height: auto;
-}
-
 .cardLeft {
   display: flex;
   flex-direction: column;
-}
-
-.shipCardExpanded .cardLeft {
-  flex: 0 0 360px;
-  border-right: 1px solid rgba(0, 212, 255, 0.1);
 }
 
 .cardAccent {
@@ -648,28 +631,10 @@
   color: var(--bio-green);
 }
 
-/* === Expanded Detail === */
-.expandedDetail {
-  padding: 1rem 1.1rem;
-  flex: 1;
-  min-width: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 0 1.5rem;
-  align-content: start;
-}
-
+/* === Detail sections (ship modal + table expand row) === */
 .detailSection {
   margin-top: 0;
   margin-bottom: 1rem;
-}
-
-.detailSection:first-child {
-  grid-column: 1 / -1;
-}
-
-.detailSectionWide {
-  grid-column: 1 / -1;
 }
 
 .detailSectionTitle {
@@ -818,7 +783,7 @@
   color: var(--star-white);
 }
 
-/* === Image Zoom Modal (intentional full-screen overlay) === */
+/* === Ship Detail Modal (intentional full-screen overlay) === */
 .modalOverlay {
   position: fixed;
   inset: 0;
@@ -828,15 +793,46 @@
   align-items: center;
   justify-content: center;
   padding: 2rem;
-  cursor: zoom-out;
+  cursor: pointer;
+}
+
+.modalContent {
+  display: flex;
+  flex-direction: column;
+  width: min(880px, 100%);
+  /* Bound the panel to the viewport so .modalBody, not the page, does the
+     scrolling — a capital hull's full detail is taller than most screens. */
+  max-height: min(86vh, 100%);
+  background: rgba(9, 14, 26, 0.98);
+  border: 1px solid var(--empire-color, rgba(0, 212, 255, 0.3));
+  border-radius: 0;
+  box-shadow: 0 0 40px color-mix(in srgb, var(--empire-color, var(--plasma-cyan)) 16%, transparent);
+  cursor: default;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.1rem;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.14);
+  background: rgba(13, 19, 33, 0.9);
+  flex-shrink: 0;
+}
+
+.modalTags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.45rem;
 }
 
 .modalClose {
-  position: fixed;
-  top: 1.25rem;
-  right: 1.25rem;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -845,7 +841,6 @@
   border-radius: 0;
   color: var(--chrome-silver);
   cursor: pointer;
-  z-index: 1001;
   transition: color 0.2s ease, border-color 0.2s ease;
 }
 
@@ -859,32 +854,29 @@
   outline-offset: 1px;
 }
 
-.modalContent {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  max-width: min(1200px, 90vw);
-  cursor: default;
+.modalBody {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 1.1rem;
 }
 
 .modalImage {
   width: 100%;
-  height: auto;
-  max-height: 78vh;
+  /* Cap the hero art so the stats below it are on-screen without scrolling */
+  height: clamp(200px, 34vh, 320px);
   object-fit: contain;
-  border: 1px solid rgba(0, 212, 255, 0.25);
+  border: 1px solid rgba(0, 212, 255, 0.18);
   border-radius: 0;
   display: block;
+  margin-bottom: 1rem;
+  background: rgba(5, 8, 20, 0.8);
 }
 
-.modalCaption {
+.modalSlots {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.35rem;
-  margin-top: 1rem;
-  text-align: center;
-  max-width: 700px;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
 }
 
 .modalShipName {
@@ -894,13 +886,15 @@
   color: var(--star-white);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  margin: 0;
 }
 
 .modalShipDesc {
   font-size: 0.85rem;
   color: var(--chrome-silver);
   line-height: 1.6;
-  opacity: 0.8;
+  opacity: 0.85;
+  margin: 0 0 1rem;
 }
 
 /* === Ship Table (registry readout) === */
@@ -1101,25 +1095,6 @@
   }
 
   .guideColumns {
-    grid-template-columns: 1fr;
-  }
-
-  .shipCardExpanded {
-    flex-direction: column;
-  }
-
-  .shipCardExpanded .cardAccent {
-    width: auto;
-    height: 2px;
-  }
-
-  .shipCardExpanded .cardLeft {
-    flex: none;
-    border-right: none;
-    border-bottom: 1px solid rgba(0, 212, 255, 0.1);
-  }
-
-  .expandedDetail {
     grid-template-columns: 1fr;
   }
 
