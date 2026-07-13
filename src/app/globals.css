@@ -17,6 +17,15 @@
 
   --glow-cyan: 0 0 30px rgba(0, 212, 255, 0.5);
   --glow-orange: 0 0 30px rgba(255, 107, 53, 0.5);
+
+  /* Site-search field (search.module.css): above 720px it is taken out of the
+     flow, at the top-right of #console-main. These describe the box it claims so
+     the pages underneath can keep clear of it — the header reserves the column,
+     and full-bleed pages (map, ticker) leave --console-search-clear at the top. */
+  --console-search-w: 320px;
+  --console-search-h: 38px;
+  --console-search-top: 1.4rem;
+  --console-search-clear: calc(var(--console-search-top) + var(--console-search-h) + 0.6rem);
 }
 
 /* === Reset === */
@@ -938,6 +947,16 @@ footer {
   padding-bottom: 0.9rem;
   border-bottom: 1px solid rgba(0, 212, 255, 0.18);
   position: relative;
+}
+
+/* Reserve the search field's column: the header runs to the same right edge the
+   field does, so without this a long title (or any header-right control we add
+   later) would slide underneath it. Only above 720px — below that the field is
+   back in the flow and there is nothing to clear. */
+@media (min-width: 721px) {
+  .console-page-header {
+    padding-right: calc(var(--console-search-w) - clamp(1rem, 2.5vw, 2.2rem) + 1rem);
+  }
 }
 
 .console-page-header::after {

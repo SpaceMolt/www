@@ -1025,12 +1025,21 @@
   font-size: 0.85rem;
 }
 
-/* Travel Tracker */
+/* Travel Tracker — fullPage only, so it shares the map's top-right corner with
+   the console's site-search field. Sit below the field's box (the map fills
+   #console-main, so the field's offsets apply here unchanged); at <=720px the
+   field is back in the flow above the map and the corner is ours again. */
 .travelTracker {
   position: absolute;
-  top: 1rem;
+  top: var(--console-search-clear);
   right: 1rem;
   z-index: 100;
+}
+
+@media (max-width: 720px) {
+  .travelTracker {
+    top: 1rem;
+  }
 }
 
 .travelTrackerBtn {

@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { usePathname } from 'next/navigation'
 import { Search } from 'lucide-react'
 import { useTranslation } from '@/i18n'
 import { SearchDialog } from './SearchDialog'
@@ -9,19 +8,19 @@ import styles from './search.module.css'
 
 /**
  * Owns the single search dialog for the whole console: Cmd-K / Ctrl-K opens it
- * from any page, and on /docs a visible field is shown as well — that field is
- * only a trigger for the same dialog, never a second search implementation.
+ * from any page, and every console page also shows the visible field at the top
+ * right of the content area — that field is only a trigger for the same dialog,
+ * never a second search implementation. (Pages with their own local filter box,
+ * like the codex tables, keep it: that filters the list in place, while this
+ * searches the whole site.)
  *
  * "/" is deliberately not bound: the console is full of text inputs and a bare
  * slash shortcut would swallow keystrokes in them.
  */
 export function ConsoleSearch() {
-  const pathname = usePathname()
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [isMac, setIsMac] = useState(true)
-
-  const showField = pathname.startsWith('/docs')
 
   useEffect(() => {
     setIsMac(/mac/i.test(navigator.platform))
@@ -57,28 +56,26 @@ export function ConsoleSearch() {
 
   return (
     <>
-      {showField && (
-        <div className={styles.fieldWrap} data-pagefind-ignore>
-          <Search size={14} className={styles.fieldIcon} aria-hidden />
-          {/* A trigger dressed as a field: the real input lives in the dialog. */}
-          {/* Its own placeholder: the dialog's is too long for a 320px field and
-              clips mid-word. */}
-          <input
-            type="text"
-            readOnly
-            className={styles.field}
-            placeholder={t('search.fieldPlaceholder')}
-            aria-label={t('search.label')}
-            aria-haspopup="dialog"
-            onClick={openFromField}
-            onFocus={openFromField}
-          />
-          <span className={styles.fieldHint} aria-hidden>
-            <kbd className={styles.kbd}>{isMac ? '⌘' : 'Ctrl'}</kbd>
-            <kbd className={styles.kbd}>K</kbd>
-          </span>
-        </div>
-      )}
+      <div className={styles.fieldWrap} data-pagefind-ignore>
+        <Search size={14} className={styles.fieldIcon} aria-hidden />
+        {/* A trigger dressed as a field: the real input lives in the dialog. Its
+            own placeholder, because the dialog's is too long for a 320px control
+            and clips mid-word. */}
+        <input
+          type="text"
+          readOnly
+          className={styles.field}
+          placeholder={t('search.fieldPlaceholder')}
+          aria-label={t('search.label')}
+          aria-haspopup="dialog"
+          onClick={openFromField}
+          onFocus={openFromField}
+        />
+        <span className={styles.fieldHint} aria-hidden>
+          <kbd className={styles.kbd}>{isMac ? '⌘' : 'Ctrl'}</kbd>
+          <kbd className={styles.kbd}>K</kbd>
+        </span>
+      </div>
       <SearchDialog open={open} onClose={close} />
     </>
   )

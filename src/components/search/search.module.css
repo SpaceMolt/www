@@ -1,24 +1,31 @@
 /* ============================================================
-   Site search — Cmd-K dialog + the docs-only trigger field
+   Site search — Cmd-K dialog + the console trigger field
    ============================================================ */
 
 /* ------------------------------------------------------------
-   Docs field (a trigger, not an input)
+   Console field (a trigger, not an input)
    ------------------------------------------------------------ */
 
 /* Sits at the top-right of the scroll area, opposite the page header, rather than
    in the flow above it (which centred it and pushed the page down). #console-main
    is the positioning context; the gutter matches .console-page's own, so the field
    lines up with the right edge of the page content on both the normal and the
-   -wide page widths that /docs uses. */
+   -wide page widths that /docs uses.
+
+   The box it occupies is described by the --console-search-* custom properties in
+   globals.css; pages that fill #console-main (the map, the ticker tape) read those
+   to keep their own chrome out of it. */
 .fieldWrap {
   position: absolute;
-  top: 1.4rem;
+  top: var(--console-search-top);
   right: 0;
-  z-index: 3;
+  /* Above the map's floating overlays (100) and the ticker bar (40), which it
+     shares a stacking context with; below the mobile nav drawer (110), the skip
+     link (300) and page modals. */
+  z-index: 101;
   display: flex;
   align-items: center;
-  width: min(320px, 100%);
+  width: min(var(--console-search-w), 100%);
   padding-right: clamp(1rem, 2.5vw, 2.2rem);
 }
 
@@ -31,9 +38,11 @@
 
 .field {
   width: 100%;
-  height: 38px;
+  height: var(--console-search-h);
   padding: 0 5.4rem 0 2.1rem;
-  background: rgba(0, 212, 255, 0.04);
+  /* Opaque enough to stay readable over whatever the page paints behind it —
+     the map canvas and the ticker tape both run under this corner. */
+  background: rgba(10, 14, 23, 0.92);
   border: 1px solid rgba(107, 143, 163, 0.4);
   border-radius: 4px;
   color: var(--star-white);
