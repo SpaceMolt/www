@@ -16,9 +16,11 @@ interface ConsoleTopbarProps {
   onToggleNav: () => void
   paneOpen: boolean
   onTogglePane: () => void
+  /** Pages that have no use for the galaxy feed (the intel map) hide it entirely. */
+  hidePaneToggle?: boolean
 }
 
-export function ConsoleTopbar({ stats, online, navOpen, onToggleNav, paneOpen, onTogglePane }: ConsoleTopbarProps) {
+export function ConsoleTopbar({ stats, online, navOpen, onToggleNav, paneOpen, onTogglePane, hidePaneToggle = false }: ConsoleTopbarProps) {
   const { t } = useTranslation()
 
   return (
@@ -73,16 +75,18 @@ export function ConsoleTopbar({ stats, online, navOpen, onToggleNav, paneOpen, o
         <SignedIn>
           <Link href="/play" className={styles.playBtn}>{t('console.play')}</Link>
         </SignedIn>
-        <button
-          className={styles.paneToggle}
-          onClick={onTogglePane}
-          aria-expanded={paneOpen}
-          aria-controls="console-live-pane"
-          aria-label={paneOpen ? t('console.closeLive') : t('console.openLive')}
-        >
-          <Activity size={13} aria-hidden />
-          <span className={styles.paneToggleLabel}>{t('console.live')}</span>
-        </button>
+        {!hidePaneToggle && (
+          <button
+            className={styles.paneToggle}
+            onClick={onTogglePane}
+            aria-expanded={paneOpen}
+            aria-controls="console-live-pane"
+            aria-label={paneOpen ? t('console.closeLive') : t('console.openLive')}
+          >
+            <Activity size={13} aria-hidden />
+            <span className={styles.paneToggleLabel}>{t('console.live')}</span>
+          </button>
+        )}
       </div>
     </header>
   )

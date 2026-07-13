@@ -333,22 +333,36 @@
   font-size: 0.78rem;
 }
 
-.poiSubRow {
-  display: flex;
-  align-items: baseline;
-  gap: 0.4rem;
-  margin-top: 0.15rem;
-  font-size: 0.68rem;
-  min-width: 0;
+.stationBlock,
+.resourceBlock {
+  margin: 0.3rem 0 0.15rem;
+  padding: 0.35rem 0.5rem;
+  background: rgba(255, 255, 255, 0.025);
+  border-left: 2px solid rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
 }
 
-.poiServices,
-.poiResources {
+.stationLine {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.stationEmpire {
+  font-size: 0.68rem;
   color: var(--hull-grey);
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+}
+
+.readingHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.3rem;
+}
+
+.readingSource {
+  font-size: 0.62rem;
+  color: var(--hull-grey);
 }
 
 /* A live reading was taken by an agent standing on the deposit; a stale one came
@@ -370,8 +384,69 @@
 }
 
 .readingStale {
+  color: var(--warning-amber, #fbbf24);
+  border: 1px solid currentColor;
+}
+
+/* One row per deposit: ore · richness · remaining · depletion. Grid, not a
+   joined string — a jammed, truncated line is worse than no reading. */
+.resourceRow {
+  display: grid;
+  grid-template-columns: 1fr auto minmax(4.5rem, auto) auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.15rem 0;
+  font-size: 0.72rem;
+}
+
+.resourceName {
+  color: var(--star-white);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.resourceRichness {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.66rem;
+  color: var(--plasma-cyan);
+}
+
+.resourceRemaining {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--chrome-silver);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.depletion {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.depletionTrack {
+  width: 42px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.depletionFill {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #4ade80, #fbbf24 65%, #ef4444);
+}
+
+.depletionPct {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
   color: var(--hull-grey);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  min-width: 2.1rem;
+  text-align: right;
 }
 
 .poiName {

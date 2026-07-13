@@ -97,24 +97,35 @@ const describeAge = (ticks: number) => {
   return hours < 48 ? `${hours}h ago` : `${Math.round(hours / 24)}d ago`
 }
 
-const describeResource = ({
-  resource_id,
-  richness,
-  remaining_display,
-}: IntelEntryResource) =>
-  [
-    titleCase(resource_id),
-    richness ? `richness ${richness}` : '',
-    remaining_display,
-  ]
-    .filter(Boolean)
-    .join(' · ')
+/** One deposit: ore, how rich, how much is left, and how mined-out it is. */
+function ResourceRow({ resource }: { resource: IntelEntryResource }) {
+  const { resource_id, richness, remaining_display, depletion_percent } = resource
+  const depleted = depletion_percent ?? 0
+
+  return (
+    <div className={styles.resourceRow}>
+      <span className={styles.resourceName}>{titleCase(resource_id)}</span>
+      {richness ? <span className={styles.resourceRichness}>R{richness}</span> : <span />}
+      <span className={styles.resourceRemaining}>{remaining_display}</span>
+      {depletion_percent === undefined ? (
+        <span />
+      ) : (
+        <span className={styles.depletion} title={`${depleted.toFixed(0)}% depleted`}>
+          <span className={styles.depletionTrack}>
+            <span className={styles.depletionFill} style={{ width: `${depleted}%` }} />
+          </span>
+          <span className={styles.depletionPct}>{depleted.toFixed(0)}%</span>
+        </span>
+      )}
+    </div>
+  )
+}
 
 /**
  * One POI. Beyond the name and type it carries the station vitals the public map
- * already shows, plus any deposit reading — badged with whether an agent is
- * standing on it right now or it came second-hand from the faction pool, because
- * a stale "full" reading on a mined-out deposit is worse than no reading.
+ * already shows, plus any deposit readings — badged with whether an agent is
+ * standing on the deposit right now or it came second-hand from the faction
+ * pool, because a stale "full" reading on a mined-out belt is worse than none.
  */
 function PoiRow({ poi }: { poi: IntelSystemPoi }) {
   const live = poi.resource_source === 'live'
@@ -132,24 +143,38 @@ function PoiRow({ poi }: { poi: IntelSystemPoi }) {
       </div>
 
       {poi.station_condition && (
-        <div className={styles.poiSubRow}>
-          <span className={styles.stationCondition}>{poi.station_condition}</span>
+        <div className={styles.stationBlock}>
+          <div className={styles.stationLine}>
+            <span className={styles.stationCondition}>{poi.station_condition}</span>
+            {poi.station_empire && (
+              <span className={styles.stationEmpire}>{titleCase(poi.station_empire)}</span>
+            )}
+          </div>
           {poi.station_services?.length ? (
-            <span className={styles.poiServices}>
-              {poi.station_services.map(titleCase).join(' · ')}
-            </span>
+            <div className={styles.serviceChips}>
+              {poi.station_services.map((service) => (
+                <span key={service} className={styles.serviceChip}>
+                  {titleCase(service)}
+                </span>
+              ))}
+            </div>
           ) : null}
         </div>
       )}
 
       {resources.length > 0 && (
-        <div className={styles.poiSubRow}>
-          <span className={live ? styles.readingLive : styles.readingStale}>
-            {live ? 'live' : describeAge(poi.resource_age_ticks ?? 0)}
-          </span>
-          <span className={styles.poiResources}>
-            {resources.map(describeResource).join(', ')}
-          </span>
+        <div className={styles.resourceBlock}>
+          <div className={styles.readingHeader}>
+            <span className={live ? styles.readingLive : styles.readingStale}>
+              {live ? 'live' : describeAge(poi.resource_age_ticks ?? 0)}
+            </span>
+            <span className={styles.readingSource}>
+              {live ? 'agent on site' : 'faction intel · may be out of date'}
+            </span>
+          </div>
+          {resources.map((resource) => (
+            <ResourceRow key={resource.resource_id} resource={resource} />
+          ))}
         </div>
       )}
     </div>

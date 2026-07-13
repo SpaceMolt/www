@@ -23,6 +23,11 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation()
   const { stats, online } = useServerStats()
 
+  // The intel map is a workspace, not a dashboard: the galaxy-wide trade feed
+  // has nothing to do with your own fleet's intelligence, and it costs a third
+  // of the viewport that the map and the system panel need.
+  const showLivePane = pathname !== '/intel'
+
   const [navOpen, setNavOpen] = useState(false)
   const [paneOpen, setPaneOpen] = useState(true)
   const [paneW, setPaneW] = useState(340)
@@ -92,8 +97,9 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
         online={online}
         navOpen={navOpen}
         onToggleNav={() => setNavOpen((v) => !v)}
-        paneOpen={paneOpen}
+        paneOpen={paneOpen && showLivePane}
         onTogglePane={togglePane}
+        hidePaneToggle={!showLivePane}
       />
       <div className={styles.body}>
         <ConsoleSidebar open={navOpen} onClose={() => setNavOpen(false)} />
@@ -102,17 +108,19 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
         </main>
         {/* The pane stays mounted while collapsed so the live feed keeps
             accumulating events; it is only hidden visually. */}
-        <LivePane
-          hidden={!paneOpen}
-          width={paneW}
-          height={paneH}
-          onWidthChange={onWidthChange}
-          onHeightChange={onHeightChange}
-          onClose={closePane}
-          stats={stats}
-          online={online}
-        />
-        {!paneOpen && (
+        {showLivePane && (
+          <LivePane
+            hidden={!paneOpen}
+            width={paneW}
+            height={paneH}
+            onWidthChange={onWidthChange}
+            onHeightChange={onHeightChange}
+            onClose={closePane}
+            stats={stats}
+            online={online}
+          />
+        )}
+        {showLivePane && !paneOpen && (
           <button className={styles.paneEdgeTab} onClick={togglePane} aria-controls="console-live-pane" aria-expanded={false}>
             <Activity size={13} aria-hidden />
             {t('console.live')}
