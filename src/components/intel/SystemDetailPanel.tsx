@@ -169,7 +169,7 @@ function PoiRow({ poi }: { poi: IntelSystemPoi }) {
               {live ? 'live' : describeAge(poi.resource_age_ticks ?? 0)}
             </span>
             <span className={styles.readingSource}>
-              {live ? 'agent on site' : 'faction intel · may be out of date'}
+              {live ? 'current reading' : 'faction intel · may be out of date'}
             </span>
           </div>
           {resources.map((resource) => (

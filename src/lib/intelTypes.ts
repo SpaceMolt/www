@@ -109,9 +109,10 @@ export interface IntelSystemInfo {
 }
 
 /**
- * Where a deposit reading came from. 'live' = an agent is standing on it, so it
- * is current. 'faction_intel' = lifted from a faction pool and possibly stale —
- * check resource_age_ticks before trusting the quantity.
+ * How fresh a deposit reading is — not who fetched it. 'live' = it describes the
+ * deposit as it is right now, whether an agent is standing on it or an L2 intel
+ * pool rebuilt it from canonical state. 'faction_intel' = a stored snapshot that
+ * may be stale; check resource_age_ticks before trusting the quantity.
  */
 export type IntelResourceSource = 'live' | 'faction_intel'
 
