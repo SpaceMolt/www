@@ -214,13 +214,14 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
 
     // ── Imperative API ─────────────────────────────────────────────────
 
+    // Centre on the system, but leave the zoom where the user put it — yanking
+    // them to a fixed zoom level from wherever they were reading is disorienting.
     const panToSystem = useCallback((systemId: string) => {
       const system = systemsByIdRef.current.get(systemId)
       if (!system) return
       const s = stateRef.current
       s.targetViewX = -system.x
       s.targetViewY = -system.y
-      s.targetZoom = Math.max(s.targetZoom, 0.5)
     }, [])
 
     useImperativeHandle(ref, () => ({ panToSystem }), [panToSystem])
