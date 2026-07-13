@@ -143,11 +143,12 @@ export default function BattlesPage() {
   useVisiblePoll(() => fetchBattles(limit, false), POLL_INTERVAL)
 
   const handleLoadMore = useCallback(() => {
+    if (loadingMore) return
     const nextLimit = Math.min(limit + PAGE_SIZE, MAX_LIMIT)
     setLimit(nextLimit)
     setLoadingMore(true)
     fetchBattles(nextLimit, false)
-  }, [limit, fetchBattles])
+  }, [limit, loadingMore, fetchBattles])
 
   // Servers that predate the category param return everything — filter here
   // too so the chips always mean what they say.
@@ -207,9 +208,10 @@ export default function BattlesPage() {
           <div className={styles.searchInputWrap}>
             <Search size={14} className={styles.searchIcon} aria-hidden />
             <input
-              type="text"
+              type="search"
               className={styles.searchInput}
               placeholder={t('battles.searchPlaceholder')}
+              aria-label={t('battles.searchPlaceholder')}
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
