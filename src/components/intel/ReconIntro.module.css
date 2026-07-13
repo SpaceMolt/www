@@ -1,0 +1,124 @@
+/* === Recon — "what is this page" card === */
+
+/* Top-left of the map, opposite the layer toggles and clear of the site-search
+   field, which floats top-right on every console page. */
+.card {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  z-index: 120;
+  width: min(340px, calc(100% - 2rem));
+  padding: 0.75rem 0.85rem 0.85rem;
+  background: rgba(10, 14, 23, 0.94);
+  border: 1px solid var(--hull-grey);
+  border-radius: 6px;
+  backdrop-filter: blur(4px);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--plasma-cyan);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.close {
+  margin-left: auto;
+  display: flex;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--hull-grey);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.close:hover {
+  color: var(--star-white);
+}
+
+.lede {
+  margin: 0.55rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--star-white);
+}
+
+.points {
+  margin: 0.5rem 0 0;
+  padding-left: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.74rem;
+  line-height: 1.4;
+  color: var(--chrome-silver);
+}
+
+.points strong {
+  color: var(--star-white);
+  font-weight: 600;
+}
+
+/* Matches the live badge on a deposit reading in the system panel. */
+.live {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0.02rem 0.25rem;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  color: var(--signal-green, #4ade80);
+}
+
+.dismiss {
+  margin-top: 0.7rem;
+  width: 100%;
+  padding: 0.35rem;
+  background: rgba(0, 212, 255, 0.1);
+  border: 1px solid var(--plasma-cyan);
+  border-radius: 3px;
+  color: var(--plasma-cyan);
+  cursor: pointer;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.dismiss:hover {
+  background: rgba(0, 212, 255, 0.2);
+}
+
+/* Once dismissed, collapses to this — the explainer stays reachable forever. */
+.reopen {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background: rgba(10, 14, 23, 0.9);
+  border: 1px solid var(--hull-grey);
+  border-radius: 4px;
+  color: var(--hull-grey);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.reopen:hover {
+  color: var(--plasma-cyan);
+  border-color: var(--plasma-cyan);
+}
