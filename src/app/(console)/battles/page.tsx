@@ -1,8 +1,8 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
-import { Skull, Trophy, Zap } from 'lucide-react'
+import { Search, Skull, Trophy, Zap } from 'lucide-react'
 import styles from './page.module.css'
 import { useTranslation } from '@/i18n'
 import { useVisiblePoll } from '@/lib/useVisiblePoll'
@@ -16,6 +16,9 @@ import {
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 const POLL_INTERVAL = 10_000
+const PAGE_SIZE = 50
+const MAX_LIMIT = 200
+const SEARCH_DEBOUNCE_MS = 300
 
 interface BattlesResponse {
   battles: BattleSummary[]
@@ -81,36 +84,70 @@ export default function BattlesPage() {
   const [error, setError] = useState(false)
   const [filter, setFilter] = useState<FilterStatus>('all')
   const [category, setCategory] = useState<FilterCategory>('all')
+  const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [limit, setLimit] = useState(PAGE_SIZE)
+  const [total, setTotal] = useState(0)
+  const [hasMore, setHasMore] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     document.title = 'Battle Records - SpaceMolt'
   }, [])
 
+  // Debounce the search box before it drives a refetch.
+  useEffect(() => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
+    searchDebounceRef.current = setTimeout(() => {
+      setDebouncedSearch(search)
+    }, SEARCH_DEBOUNCE_MS)
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
+    }
+  }, [search])
+
   const fetchBattles = useCallback(
-    async (isInitial: boolean) => {
+    async (fetchLimit: number, isInitial: boolean) => {
       if (isInitial) setLoading(true)
       try {
-        const params = new URLSearchParams({ status: filter, limit: '50' })
+        const params = new URLSearchParams({ status: filter, limit: String(fetchLimit), offset: '0' })
         if (category !== 'all') params.set('category', category)
+        if (debouncedSearch.trim()) params.set('search', debouncedSearch.trim())
         const res = await fetch(`${API_BASE}/api/battles?${params}`)
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         const data: BattlesResponse = await res.json()
         setBattles(data.battles || [])
+        setTotal(data.total ?? 0)
+        setHasMore(Boolean(data.has_more))
         if (isInitial) setError(false)
       } catch {
         if (isInitial) setError(true)
       } finally {
         if (isInitial) setLoading(false)
+        setLoadingMore(false)
       }
     },
-    [filter, category],
+    [filter, category, debouncedSearch],
   )
 
+  // A changed filter, category, or search term is a fresh first page — reset
+  // the growing "load more" window back to PAGE_SIZE.
   useEffect(() => {
-    fetchBattles(true)
+    setLimit(PAGE_SIZE)
+    fetchBattles(PAGE_SIZE, true)
   }, [fetchBattles])
 
-  useVisiblePoll(() => fetchBattles(false), POLL_INTERVAL)
+  // Every poll re-requests offset=0 with the CURRENT limit, so it refreshes
+  // the whole revealed window in place instead of resetting it.
+  useVisiblePoll(() => fetchBattles(limit, false), POLL_INTERVAL)
+
+  const handleLoadMore = useCallback(() => {
+    const nextLimit = Math.min(limit + PAGE_SIZE, MAX_LIMIT)
+    setLimit(nextLimit)
+    setLoadingMore(true)
+    fetchBattles(nextLimit, false)
+  }, [limit, fetchBattles])
 
   // Servers that predate the category param return everything — filter here
   // too so the chips always mean what they say.
@@ -120,6 +157,7 @@ export default function BattlesPage() {
   )
 
   const activeBattles = battles.filter(b => b.status === 'active')
+  const canLoadMore = hasMore && limit < MAX_LIMIT
 
   return (
     <div className="console-page">
@@ -165,6 +203,18 @@ export default function BattlesPage() {
             </button>
           ))}
         </div>
+        <div className={styles.searchRow}>
+          <div className={styles.searchInputWrap}>
+            <Search size={14} className={styles.searchIcon} aria-hidden />
+            <input
+              type="text"
+              className={styles.searchInput}
+              placeholder={t('battles.searchPlaceholder')}
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+        </div>
       </div>
 
       <h2 style={srOnly}>Battle Records</h2>
@@ -177,6 +227,12 @@ export default function BattlesPage() {
         <div className={styles.empty}>
           <p>{t('battles.noBattles')}</p>
           <p className={styles.emptyHint}>{t('battles.noBattlesHint')}</p>
+        </div>
+      )}
+
+      {!loading && !error && visible.length > 0 && (
+        <div className={styles.resultsCount}>
+          {t('battles.showingCount', { shown: visible.length, total })}
         </div>
       )}
 
@@ -287,6 +343,14 @@ export default function BattlesPage() {
               </Link>
             )
           })}
+        </div>
+      )}
+
+      {!loading && !error && canLoadMore && (
+        <div className={styles.loadMoreWrap}>
+          <button className={styles.loadMoreBtn} onClick={handleLoadMore} disabled={loadingMore}>
+            {loadingMore ? t('battles.loadingMore') : t('battles.loadMore')}
+          </button>
         </div>
       )}
     </div>
