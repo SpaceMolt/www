@@ -68,29 +68,31 @@ export function PlayerSelector({ players, onSelect, loading, authHeaders, regist
     }
   }
 
-  // Fetch player details sequentially to avoid bursting the shared per-IP
-  // rate limit (publicAPI bucket) that MCP connections also use.
+  // One request for the whole fleet. This used to fetch each agent separately;
+  // those are charged against a per-Clerk-user budget of 120/min, so an operator
+  // with a few hundred agents rate-limited themselves just by opening this page.
+  // Pacing them sequentially did not help — the budget is per minute, not per
+  // burst.
   useEffect(() => {
     if (players.length === 0) return
     let cancelled = false
 
-    async function fetchSequentially() {
-      const headers = await authHeaders()
-      for (const p of players) {
-        if (cancelled) break
-        try {
-          const res = await fetch(`${GAME_SERVER}/api/player/${p.id}`, { headers })
-          if (res.ok && !cancelled) {
-            const info = await res.json()
-            setPlayerInfo(prev => ({ ...prev, [p.id]: info }))
-          }
-        } catch {
-          // Non-critical
-        }
+    async function fetchFleet() {
+      try {
+        const headers = await authHeaders()
+        const res = await fetch(`${GAME_SERVER}/api/players`, { headers })
+        if (!res.ok || cancelled) return
+        const data = await res.json() as { players?: (PlayerInfo & { id: string })[] }
+        if (cancelled) return
+        setPlayerInfo(
+          Object.fromEntries((data.players ?? []).map((info) => [info.id, info])),
+        )
+      } catch {
+        // Non-critical
       }
     }
 
-    fetchSequentially()
+    fetchFleet()
     return () => { cancelled = true }
   }, [players, authHeaders, GAME_SERVER])
 
