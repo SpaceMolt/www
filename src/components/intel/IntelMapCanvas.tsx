@@ -38,6 +38,8 @@ const UNKNOWN_ALPHA = 0.3
 // Agent-system labels render well before general labels, but still hide at
 // far zoom where a big fleet's labels would collapse into overlapping mush.
 const AGENT_LABEL_MIN_ZOOM = 0.045
+/** Engine tick rate: a fixed 10s. Used to advance the tick between clock updates. */
+const TICK_MS = 10_000
 const EMPIRE_NAMES: Record<string, string> = {
   solarian: 'Solarian Confederacy',
   voidborn: 'Voidborn Collective',
@@ -79,8 +81,6 @@ interface IntelMapCanvasProps {
   /** Server tick from the last snapshot, and the wall-clock at which it arrived */
   currentTick: number | null
   tickAnchorMs: number
-  /** Measured tick length. Assuming a fixed rate is what made ships drift. */
-  msPerTick: number
   selectedSystemId: string | null
   layers: IntelLayerState
   onSystemSelect: (id: string) => void
@@ -112,7 +112,6 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
       transits,
       currentTick,
       tickAnchorMs,
-      msPerTick,
       selectedSystemId,
       layers,
       onSystemSelect,
@@ -169,16 +168,16 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
     transitsRef.current = transits
 
     // Estimated server tick right now: the last tick we were told about, plus the
-    // wall-clock elapsed since it landed, divided by how long a tick is actually
-    // taking. msPerTick is measured from the server's own ticks rather than
-    // assumed — assume 10s while the server runs at 9.7s and every ship drifts
-    // ahead of itself, then jumps back the moment a fresh tick arrives.
-    const tickInfoRef = useRef({ tick: currentTick, anchorMs: tickAnchorMs, msPerTick })
-    tickInfoRef.current = { tick: currentTick, anchorMs: tickAnchorMs, msPerTick }
+    // wall-clock elapsed since it landed. The render loop calls this every frame so
+    // an in-flight agent advances smoothly rather than stepping once per poll. Its
+    // accuracy rests on how fresh that anchor is, which is why the tick is taken
+    // from the event feed as it happens and not only from the 20s snapshot.
+    const tickInfoRef = useRef({ tick: currentTick, anchorMs: tickAnchorMs })
+    tickInfoRef.current = { tick: currentTick, anchorMs: tickAnchorMs }
     const tickNowRef = useRef(() => {
-      const { tick, anchorMs, msPerTick } = tickInfoRef.current
+      const { tick, anchorMs } = tickInfoRef.current
       if (tick === null) return 0
-      return tick + (Date.now() - anchorMs) / msPerTick
+      return tick + (Date.now() - anchorMs) / TICK_MS
     })
     const selectedRef = useRef(selectedSystemId)
     selectedRef.current = selectedSystemId

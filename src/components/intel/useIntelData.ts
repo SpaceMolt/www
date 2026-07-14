@@ -30,19 +30,6 @@ const MOVEMENTS_POLL_MS = 60_000
 const MOVEMENTS_LIMIT = 2000
 const RATE_LIMIT_BACKOFF_MS = 60_000
 
-// Tick pacing. The canvas places a ship along its jump by turning wall-clock into
-// an estimated server tick, so its idea of how long a tick lasts has to match the
-// server's or the ship slides ahead of where it really is and snaps back at every
-// poll. The configured rate is 10s, but a tick is one pass of the engine loop, not
-// a metronome: measured against prod it runs closer to 9.7s and wanders either
-// side of that under load. So treat 10s only as the opening guess and correct it
-// from the ticks the server actually reports.
-const TICK_MS_INITIAL = 10_000
-/** Bounds on a believable tick. Outside these, the sample is clock skew, not pace. */
-const TICK_MS_MIN = 2_000
-const TICK_MS_MAX = 60_000
-/** Weight on each new sample. Low, so one slow tick doesn't jerk every ship. */
-const TICK_MS_SMOOTHING = 0.25
 /** Floor between tick observations, so a busy event feed can't re-render the map per event. */
 const TICK_OBSERVE_MIN_INTERVAL_MS = 2_000
 /** Debounce for movements refetch while the user is typing in the agent filter */
@@ -111,8 +98,6 @@ export interface UseIntelDataResult {
   factionOptions: FactionOption[]
   currentTick: number | null
   tickAnchorMs: number
-  /** Measured length of a server tick. The canvas needs it to place ships in time. */
-  msPerTick: number
   movementsTruncated: boolean
   loading: boolean
   error: string | null
@@ -133,38 +118,29 @@ export function useIntelData({
   const [intel, setIntel] = useState<IntelMapResponse | null>(null)
   // Faction-scoped snapshot; null when no faction filter is active.
   const [narrowed, setNarrowed] = useState<IntelMapResponse | null>(null)
-  // The server's clock, as last seen: the tick, the client wall-clock at which it
-  // landed, and how long a tick is actually taking. Anchoring on our own clock
-  // rather than the server's generated_at keeps any clock skew out of it.
-  const [tickInfo, setTickInfo] = useState(() => ({
-    tick: 0,
-    anchorMs: Date.now(),
-    msPerTick: TICK_MS_INITIAL,
-  }))
+  // The server's clock as last seen: the tick, and the client wall-clock at which
+  // it landed. Anchoring on our own clock rather than the server's generated_at
+  // keeps any clock skew out of it.
+  //
+  // Where the tick comes from matters more than the rate does. The tick rate is a
+  // fixed 10s. What the map cannot know from a poll is the *phase*: the snapshot
+  // says "current tick = N", and we can only assume tick N began the moment the
+  // response landed — but it could have begun anywhere in the preceding 10s. So a
+  // poll-anchored clock is out of phase by up to a full tick, and re-randomises
+  // that offset every 20s, which is what made ships sit wrong and shift on each
+  // poll. The event feed carries the tick as it happens, so anchoring on that
+  // reduces the error to network latency.
+  const [tickInfo, setTickInfo] = useState(() => ({ tick: 0, anchorMs: Date.now() }))
   const tickInfoRef = useRef(tickInfo)
   tickInfoRef.current = tickInfo
 
-  // Every observed tick both re-anchors the clock and refines the tick length.
-  // Called from the snapshot poll and from the event feed — SSE carries the tick
-  // on every event, so between 20s polls the ships stay pinned to the server
-  // rather than drifting on an assumed rate.
   const observeTick = useCallback((tick: number) => {
     if (!Number.isFinite(tick) || tick <= 0) return
     const now = Date.now()
     const prev = tickInfoRef.current
     if (tick <= prev.tick) return // stale or duplicate event
     if (prev.tick > 0 && now - prev.anchorMs < TICK_OBSERVE_MIN_INTERVAL_MS) return
-
-    let msPerTick = prev.msPerTick
-    if (prev.tick > 0) {
-      const observed = (now - prev.anchorMs) / (tick - prev.tick)
-      if (observed >= TICK_MS_MIN && observed <= TICK_MS_MAX) {
-        msPerTick = Math.round(
-          prev.msPerTick * (1 - TICK_MS_SMOOTHING) + observed * TICK_MS_SMOOTHING,
-        )
-      }
-    }
-    setTickInfo({ tick, anchorMs: now, msPerTick })
+    setTickInfo({ tick, anchorMs: now })
   }, [])
   const [movements, setMovements] = useState<IntelMovement[]>([])
   const [movementsTruncated, setMovementsTruncated] = useState(false)
@@ -590,7 +566,6 @@ export function useIntelData({
     factionOptions,
     currentTick: tickInfo.tick > 0 ? tickInfo.tick : (intel?.current_tick ?? null),
     tickAnchorMs: tickInfo.anchorMs,
-    msPerTick: tickInfo.msPerTick,
     movementsTruncated,
     loading,
     error,
