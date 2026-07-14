@@ -1,0 +1,89 @@
+/* === Price History Chart === */
+
+.container {
+  background: linear-gradient(180deg, rgba(0, 212, 255, 0.04), rgba(13, 19, 33, 0.6));
+  border: 1px solid rgba(0, 212, 255, 0.18);
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(61, 90, 108, 0.3);
+}
+
+.title {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--plasma-cyan);
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+}
+
+.up {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--bio-green);
+}
+
+.down {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--claw-red);
+}
+
+.trendIcon {
+  flex-shrink: 0;
+}
+
+.rangePicker {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.rangeBtn,
+.rangeBtnActive {
+  background: none;
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  color: var(--chrome-silver);
+  cursor: pointer;
+  padding: 0.15rem 0.5rem;
+  border-radius: 2px;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+.rangeBtn:hover {
+  border-color: var(--plasma-cyan);
+  color: var(--plasma-cyan);
+}
+
+.rangeBtnActive {
+  background: rgba(0, 212, 255, 0.15);
+  border-color: var(--plasma-cyan);
+  color: var(--plasma-cyan);
+}
+
+.empty {
+  padding: 2rem;
+  text-align: center;
+  color: var(--hull-grey);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+}

@@ -8,6 +8,7 @@ import { titleCase } from '@/lib/format'
 import {
   BackLink, RecipeRefGrid, Section, ShipRefList, SkillRefList, StatGrid, type StatEntry,
 } from '../../parts'
+import PriceHistoryChart from '@/components/PriceHistoryChart'
 import styles from '../../codex.module.css'
 
 const RARITY_CLASSES: Record<string, string> = {
@@ -112,6 +113,10 @@ export default async function ItemDetailPage({ params }: { params: Promise<{ id:
 
       <Section title="Stats">
         <StatGrid stats={stats} />
+      </Section>
+
+      <Section title="Price History">
+        <PriceHistoryChart itemId={item.id} itemName={item.name} />
       </Section>
 
       {item.required_skills && Object.keys(item.required_skills).length > 0 && (
