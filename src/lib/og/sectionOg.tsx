@@ -71,6 +71,7 @@ export async function renderSectionOg(input: SectionOgInput): Promise<ImageRespo
               fontSize: title.length > 16 ? 68 : 84,
               lineHeight: 1.05,
               color: '#e8f4f8',
+              maxWidth: 1050,
             }}
           >
             {title}

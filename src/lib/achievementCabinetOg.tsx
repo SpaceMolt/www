@@ -78,6 +78,7 @@ export async function renderAchievementCabinetOg(input: AchievementCabinetOgInpu
               fontSize: subjectName.length > 18 ? 56 : 72,
               lineHeight: 1.04,
               color: '#e8f4f8',
+              maxWidth: 1050,
             }}
           >
             {subjectName}
