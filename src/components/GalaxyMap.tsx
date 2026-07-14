@@ -1075,6 +1075,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
     username.className = styles.playerUsername
     username.textContent = player.username
     username.href = '/player/' + encodeURIComponent(player.username)
+    username.onclick = (e) => e.stopPropagation()
     nameRow.appendChild(username)
 
     info.appendChild(nameRow)
@@ -1153,6 +1154,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
         factionBadge.style.borderColor = factionColor
         factionBadge.textContent = `[${poi.station_faction_tag}]`
         factionBadge.href = '/faction/' + encodeURIComponent(poi.station_faction_tag)
+        factionBadge.onclick = (e) => e.stopPropagation()
         if (poi.station_faction_name)
           factionBadge.title = poi.station_faction_name
         meta.appendChild(factionBadge)

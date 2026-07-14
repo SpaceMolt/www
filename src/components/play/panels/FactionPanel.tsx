@@ -6,6 +6,7 @@ import { useGame } from '../GameProvider'
 import { ActionButton } from '../ActionButton'
 import { Panel, shared } from '../shared'
 import type { FactionInfoResponse, FactionMember } from '../types'
+import { playerHref } from '@/components/profile/ProfileLink'
 import styles from './FactionPanel.module.css'
 
 // Local types for API responses not in shared types
@@ -544,7 +545,7 @@ export function FactionPanel() {
                       <span className={`${styles.onlineDot} ${member.is_online ? styles.online : ''}`} />
                       {/* New tab so the live play session isn't navigated away. */}
                       <a
-                        href={`/player/${encodeURIComponent(member.username)}`}
+                        href={playerHref(member.username)}
                         className={styles.memberName}
                         target="_blank"
                         rel="noreferrer"

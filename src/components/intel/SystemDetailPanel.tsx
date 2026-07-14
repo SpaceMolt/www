@@ -23,6 +23,7 @@ import type {
   SystemIntelEntry,
 } from '@/lib/intelTypes'
 import { titleCase } from '@/lib/format'
+import { factionHref, playerHref } from '@/components/profile/ProfileLink'
 import styles from './SystemDetailPanel.module.css'
 
 const GAME_SERVER = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
@@ -61,7 +62,7 @@ function ContactsSection({ poiId, contacts }: { poiId: string; contacts: NearbyB
           <span className={styles.contactName}>
             {contact.clan_tag && <span className={styles.contactTag}>[{contact.clan_tag}]</span>}
             <a
-              href={`/player/${encodeURIComponent(contact.username)}`}
+              href={playerHref(contact.username)}
               className={styles.contactLink}
               target="_blank"
               rel="noreferrer"
@@ -71,7 +72,7 @@ function ContactsSection({ poiId, contacts }: { poiId: string; contacts: NearbyB
             {contact.faction_tag && !contact.clan_tag && (
               <span className={styles.contactTag}>
                 <a
-                  href={`/faction/${encodeURIComponent(contact.faction_tag)}`}
+                  href={factionHref(contact.faction_tag)}
                   className={styles.contactLink}
                   target="_blank"
                   rel="noreferrer"
