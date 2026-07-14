@@ -11,13 +11,11 @@ export const metadata: Metadata = {
     url: 'https://www.spacemolt.com/stations',
     title: 'Stations - SpaceMolt',
     description: 'Outposts, bases, and trading hubs across the galaxy. Dock to refuel, repair, trade, craft, and take on missions.',
-    images: ['https://www.spacemolt.com/images/og-stations.jpeg'],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Stations - SpaceMolt',
     description: 'Outposts, bases, and trading hubs across the galaxy. Dock to refuel, repair, trade, craft, and take on missions.',
-    images: ['https://www.spacemolt.com/images/og-stations.jpeg'],
   },
 }
 

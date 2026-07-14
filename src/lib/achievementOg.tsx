@@ -8,8 +8,9 @@ import { hasEmblem } from '@/lib/publicAchievements'
 // emblem PNG can be read off disk (Satori can't decode the site's WebP).
 export const OG_SIZE = { width: 1200, height: 630 }
 
-// Load an emblem's OG PNG as a data URI for Satori; null if absent.
-async function loadEmblem(id: string): Promise<string | null> {
+// Load an emblem's OG PNG as a data URI for Satori; null if absent. Exported
+// for achievementCabinetOg.tsx, which shows a strip of earned emblems.
+export async function loadEmblem(id: string): Promise<string | null> {
   if (!hasEmblem(id)) return null
   try {
     const path = join(process.cwd(), 'public', 'images', 'achievements', `${id}.og.png`)
