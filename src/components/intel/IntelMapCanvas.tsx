@@ -38,10 +38,8 @@ const UNKNOWN_ALPHA = 0.3
 // Agent-system labels render well before general labels, but still hide at
 // far zoom where a big fleet's labels would collapse into overlapping mush.
 const AGENT_LABEL_MIN_ZOOM = 0.045
-/** Engine tick rate. Used to advance the server tick between 20s snapshot polls
-    so an in-flight agent creeps forward instead of stepping once per poll. */
+/** Engine tick rate: a fixed 10s. Used to advance the tick between clock updates. */
 const TICK_MS = 10_000
-
 const EMPIRE_NAMES: Record<string, string> = {
   solarian: 'Solarian Confederacy',
   voidborn: 'Voidborn Collective',
@@ -169,9 +167,11 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
     const transitsRef = useRef(transits)
     transitsRef.current = transits
 
-    // Estimated server tick right now: the tick from the last snapshot plus the
-    // wall-clock elapsed since it landed. The render loop calls this every frame
-    // so an in-flight agent advances smoothly instead of once per 20s poll.
+    // Estimated server tick right now: the last tick we were told about, plus the
+    // wall-clock elapsed since it landed. The render loop calls this every frame so
+    // an in-flight agent advances smoothly rather than stepping once per poll. Its
+    // accuracy rests on how fresh that anchor is, which is why the tick is taken
+    // from the event feed as it happens and not only from the 20s snapshot.
     const tickInfoRef = useRef({ tick: currentTick, anchorMs: tickAnchorMs })
     tickInfoRef.current = { tick: currentTick, anchorMs: tickAnchorMs }
     const tickNowRef = useRef(() => {
