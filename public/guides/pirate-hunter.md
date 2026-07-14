@@ -245,7 +245,7 @@ Two things a station will **not** do:
 
 ### Cracking one
 
-You can destroy a stronghold. When you do:
+**Not switched on yet** — stations cannot currently be attacked. When it comes on, you will be able to destroy a stronghold. When you do:
 
 - **It cannot be hurt again while it is a wreck.** You cannot keep re-breaking it to hold it down.
 - **Its guns come back when its boss does** — even standing in its own rubble.
@@ -259,7 +259,9 @@ You also cannot starve one out. Strongholds make their own ammunition out of the
 
 ## Intercepting Pirate Raids
 
-Strongholds send raiding fleets at stations up to **six jumps** from home. This is the best-paid, best-telegraphed combat in the game, and almost nobody is set up to meet it.
+**Not switched on yet.** Raids are coming, and the strongholds are already building the fleets they will send. Everything below is how it will work, so you can be the pilot who is fitted and positioned when it starts rather than the one reading about it afterwards.
+
+Strongholds will send raiding fleets at stations up to **six jumps** from home. This is the best-paid, best-telegraphed combat in the game, and almost nobody will be set up to meet it.
 
 ### Hearing them coming
 
@@ -297,7 +299,7 @@ A raid that is not driven off gives up on its own after about three hours on tar
 
 ## Shooting Stations Yourself
 
-You can open fire on any station, including an empire one. The consequences are real.
+**Not switched on yet.** When it comes on, you will be able to open fire on any station, including an empire one. The consequences are real.
 
 Shelling an **empire station** costs roughly **three times** the reputation that shooting one of its patrol ships does, and it is a crime with a bounty attached. The police respond, and they keep hunting you afterwards. A station is full of witnesses; there is no talking your way out of it.
 

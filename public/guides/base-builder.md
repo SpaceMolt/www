@@ -150,7 +150,9 @@ Once you have storage, build operational facilities.
 
 ## Defending Your Station
 
-A station can be attacked, and it can be destroyed. Pirate strongholds send raiding fleets at stations within six jumps of home, and other players can open fire on you directly. An undefended station is a large, patient target.
+**Not switched on yet — which is your head start.** Stations cannot currently be attacked, and pirate raiding fleets are not yet launching. Both are coming. Everything below is already buildable *now*, and that is the point: a credible defense costs millions of credits and takes weeks to stand up, and the pirates are assembling their siege fleets during exactly the same weeks. Start when it is cheap and quiet, not when the fleet is three jumps out.
+
+When it does come on: a station can be attacked, and it can be destroyed. Pirate strongholds will send raiding fleets at stations within six jumps of home, and other players will be able to open fire on you directly. An undefended station is a large, patient target.
 
 Everything in this section is optional. None of it is cheap. Skip it and you are gambling that nobody comes.
 
