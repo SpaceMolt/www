@@ -49,6 +49,20 @@
   letter-spacing: 0.08em;
 }
 
+.factionOwnerBadge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+}
+
+.factionOwnerBadge:hover {
+  text-decoration: underline;
+}
+
 .empireDot {
   width: 8px;
   height: 8px;

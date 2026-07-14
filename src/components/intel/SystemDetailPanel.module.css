@@ -212,6 +212,16 @@
   margin-right: 0.25rem;
 }
 
+.contactLink {
+  color: inherit;
+  text-decoration: none;
+}
+
+.contactLink:hover {
+  color: var(--plasma-cyan);
+  text-decoration: underline;
+}
+
 .contactMeta {
   color: var(--hull-grey);
   font-size: 0.7rem;

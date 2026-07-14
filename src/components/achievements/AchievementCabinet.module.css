@@ -55,6 +55,24 @@
   vertical-align: middle;
 }
 
+.nameLink {
+  color: inherit;
+  text-decoration: none;
+}
+
+.nameLink:hover {
+  color: var(--accent);
+}
+
+.tagLink {
+  color: inherit;
+  text-decoration: none;
+}
+
+.tagLink:hover {
+  color: var(--accent);
+}
+
 .affiliation {
   font-family: var(--font-jetbrains), monospace;
   font-size: 0.8rem;

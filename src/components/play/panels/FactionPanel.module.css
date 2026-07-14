@@ -296,6 +296,15 @@
   text-overflow: ellipsis;
 }
 
+a.memberName {
+  text-decoration: none;
+}
+
+a.memberName:hover {
+  color: var(--plasma-cyan);
+  text-decoration: underline;
+}
+
 .memberRole {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
   font-size: 0.75rem;

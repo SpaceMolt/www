@@ -1,0 +1,466 @@
+.page {
+  --accent: #00d4ff;
+  --accent2: #ff6b35;
+  position: relative;
+  min-height: 100vh;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 7rem 1.5rem 5rem;
+  overflow: hidden;
+}
+
+.ambient {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(60% 40% at 50% 0%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 70%);
+}
+
+/* === Header === */
+.header {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2rem;
+  flex-wrap: wrap;
+  padding: 1.5rem 0 1.75rem;
+  border-bottom: 1px solid var(--dim-grey);
+  margin-bottom: 2rem;
+}
+
+.banner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.kicker {
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+
+.name {
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 800;
+  line-height: 1.05;
+  color: var(--star-white);
+  text-shadow: 0 0 30px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.tagInline {
+  font-size: 0.45em;
+  font-weight: 600;
+  color: var(--accent);
+  margin-right: 0.6em;
+  vertical-align: middle;
+}
+
+.description {
+  font-size: 0.95rem;
+  color: var(--chrome-silver);
+  margin-top: 0.75rem;
+  max-width: 46rem;
+}
+
+.titles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.titleChip {
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--star-white);
+  padding: 0.3rem 0.7rem;
+  border-radius: 6px;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--dim-grey));
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.meta {
+  display: flex;
+  gap: 1.75rem;
+  flex-wrap: wrap;
+}
+
+.metaItem dt {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--chrome-silver);
+  margin-bottom: 0.35rem;
+}
+
+.metaItem dd {
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--star-white);
+}
+
+/* === Sections === */
+.section {
+  margin-bottom: 2.5rem;
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--star-white);
+  margin-bottom: 1rem;
+}
+
+.charter {
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: var(--chrome-silver);
+  white-space: pre-wrap;
+  padding: 1.1rem 1.3rem;
+  border-left: 3px solid var(--accent);
+  border-radius: 0 11px 11px 0;
+  background: rgba(13, 19, 33, 0.7);
+  max-width: 52rem;
+}
+
+/* === Cards === */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 0.9rem;
+  margin-bottom: 2.5rem;
+}
+
+.card {
+  padding: 1.1rem 1.2rem;
+  border-radius: 11px;
+  border: 1px solid var(--dim-grey);
+  background: rgba(13, 19, 33, 0.7);
+}
+
+.cardTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.66rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--accent);
+  margin-bottom: 0.75rem;
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.cardMain {
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--star-white);
+}
+
+.cardDenom {
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--hull-grey);
+}
+
+.cardPoints {
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--accent);
+  margin-left: 0.7em;
+}
+
+.cardLink {
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  text-decoration: none;
+  margin-top: 0.2rem;
+}
+
+.cardLink:hover {
+  text-decoration: underline;
+}
+
+.completionBar {
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+}
+
+.completionFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+.inlineLink {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.inlineLink:hover {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* === Ranks === */
+.rankList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0;
+}
+
+.rankRow {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+
+.rankRow:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.rankBadge {
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--accent);
+  min-width: 2.4em;
+}
+
+.rankLabel {
+  flex: 1;
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  color: var(--star-white);
+}
+
+.rankValue {
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.72rem;
+  color: var(--chrome-silver);
+}
+
+/* === Diplomacy === */
+.diplomacy {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.dipGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.dipLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.66rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--chrome-silver);
+}
+
+.dipChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.dipChip {
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.74rem;
+  color: var(--star-white);
+  padding: 0.35rem 0.75rem;
+  border-radius: 7px;
+  border: 1px solid var(--dim-grey);
+  background: rgba(13, 19, 33, 0.7);
+  text-decoration: none;
+  transition: border-color 0.15s ease;
+}
+
+.dipChip.ally {
+  border-color: color-mix(in srgb, var(--bio-green) 45%, var(--dim-grey));
+}
+
+.dipChip.ally:hover {
+  border-color: var(--bio-green);
+}
+
+.dipChip.enemy {
+  border-color: color-mix(in srgb, var(--claw-red) 45%, var(--dim-grey));
+}
+
+.dipChip.enemy:hover {
+  border-color: var(--claw-red);
+}
+
+.warList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0;
+}
+
+.warRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.65rem 0.9rem;
+  border-radius: 9px;
+  border: 1px solid color-mix(in srgb, var(--claw-red) 35%, var(--dim-grey));
+  background: rgba(13, 19, 33, 0.7);
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.78rem;
+  color: var(--star-white);
+}
+
+.warScore {
+  font-family: var(--font-orbitron), sans-serif;
+  font-weight: 800;
+  color: var(--claw-red);
+}
+
+.warMeta {
+  flex: 1;
+  font-size: 0.68rem;
+  color: var(--hull-grey);
+}
+
+/* === Stations === */
+.stationList {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 0.6rem;
+  padding: 0;
+}
+
+.stationRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem 0.95rem;
+  border-radius: 9px;
+  border: 1px solid var(--dim-grey);
+  background: rgba(13, 19, 33, 0.7);
+  text-decoration: none;
+  transition: border-color 0.15s ease;
+}
+
+.stationRow:hover {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--dim-grey));
+}
+
+.stationName {
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--star-white);
+}
+
+.stationSystem {
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  color: var(--chrome-silver);
+}
+
+/* === Roster === */
+.rosterWrap {
+  overflow-x: auto;
+  border: 1px solid var(--dim-grey);
+  border-radius: 11px;
+  background: rgba(13, 19, 33, 0.7);
+}
+
+.roster {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.78rem;
+}
+
+.roster th {
+  text-align: left;
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--chrome-silver);
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid var(--dim-grey);
+}
+
+.roster td {
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--dim-grey) 55%, transparent);
+  color: var(--star-white);
+}
+
+.roster tr:last-child td {
+  border-bottom: none;
+}
+
+.roster td:nth-child(n + 2) {
+  color: var(--chrome-silver);
+}
+
+@media (max-width: 640px) {
+  .header {
+    align-items: flex-start;
+  }
+}

@@ -30,6 +30,10 @@ interface StationDetail {
   description: string
   empire: string
   empire_name: string
+  faction_id?: string
+  faction_name?: string
+  faction_tag?: string
+  faction_color?: string
   system_id: string
   system_name: string
   condition: string
@@ -221,6 +225,15 @@ export default function StationDetailPage() {
         <div className={styles.titleRow}>
           <h1 className="console-page-title">{station.name}</h1>
           <div className={styles.titleBadges}>
+            {station.faction_tag && (
+              <Link
+                href={`/faction/${encodeURIComponent(station.faction_tag)}`}
+                className={styles.factionOwnerBadge}
+                style={{ color: station.faction_color || 'var(--chrome-silver)' }}
+              >
+                [{station.faction_tag}] {station.faction_name}
+              </Link>
+            )}
             <span className={styles.empireBadge}>
               <span
                 className={styles.empireDot}

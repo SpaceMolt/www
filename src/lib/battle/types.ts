@@ -37,6 +37,12 @@ export interface BattleSummary {
   total_damage: number
   ships_destroyed: number
   destroyed_names?: string[]
+  /**
+   * Real player usernames among the participants (NPC names excluded), so
+   * consumers can link them to profile pages. Absent on battles recorded
+   * before the server emitted it.
+   */
+  player_names?: string[]
   top_damage?: BattleTopDamage
   outcome?: string
   winning_side?: number

@@ -8,6 +8,7 @@ import {
   hasEmblem,
   emblemSrc,
 } from '@/lib/publicAchievements'
+import { FactionLink, PlayerLink } from '@/components/profile/ProfileLink'
 import styles from './AchievementCabinet.module.css'
 
 // A public "service dossier" — a subject's full achievement cabinet: identity +
@@ -35,9 +36,19 @@ export function AchievementCabinet({
             {isFaction ? 'Faction Dossier' : 'Pilot Dossier'}
           </p>
           <h1 className={styles.name}>
-            {subject.name}
+            {isFaction && subject.faction_tag ? (
+              <FactionLink tag={subject.faction_tag} className={styles.nameLink}>
+                {subject.name}
+              </FactionLink>
+            ) : (
+              <PlayerLink name={subject.name} className={styles.nameLink} />
+            )}
             {subject.faction_tag && !isFaction && (
-              <span className={styles.tagInline}>[{subject.faction_tag}]</span>
+              <span className={styles.tagInline}>
+                <FactionLink tag={subject.faction_tag} className={styles.tagLink}>
+                  [{subject.faction_tag}]
+                </FactionLink>
+              </span>
             )}
           </h1>
           <p className={styles.affiliation}>

@@ -72,7 +72,10 @@ const EMPIRE_COLORS: Record<string, string> = {
 
 // Player span with empire dot and optional faction tag
 // All user-supplied values are escaped via escapeHtml before insertion.
-// Only hardcoded structural HTML (span tags with known attributes) is used.
+// Only hardcoded structural HTML (span/anchor tags with known attributes) is
+// used, and hrefs are built with encodeURIComponent. Names without player_info
+// metadata may be NPCs (pirates, creatures), so only enriched names — which
+// the server resolves against real players — become profile links.
 function pp(name: string | number | undefined, pi?: Record<string, PlayerMeta>): string {
   const nameStr = String(name || '')
   const escaped = escapeHtml(nameStr)
@@ -81,8 +84,10 @@ function pp(name: string | number | undefined, pi?: Record<string, PlayerMeta>):
   const rawColor = EMPIRE_COLORS[meta.empire] || '#888'
   const color = isValidHexColor(rawColor) ? rawColor : FALLBACK_COLOR
   const dot = `<span style="color:${color}" title="${escapeHtml(meta.empire)}">&#9679;</span>`
-  const faction = meta.faction_tag ? ` <span data-cls="eventFaction">[${escapeHtml(meta.faction_tag)}]</span> ` : ' '
-  return `${dot}${faction}<span data-cls="eventPlayer">${escaped}</span>`
+  const faction = meta.faction_tag
+    ? ` <a data-cls="eventFaction" href="/faction/${encodeURIComponent(meta.faction_tag)}">[${escapeHtml(meta.faction_tag)}]</a> `
+    : ' '
+  return `${dot}${faction}<a data-cls="eventPlayer" href="/player/${encodeURIComponent(nameStr)}">${escaped}</a>`
 }
 
 const SZ = 14
@@ -344,6 +349,8 @@ const eventTextStyles = `
   [data-cls="eventFaction"] { color: #c39bd3; font-weight: 500; }
   [data-cls="eventItem"] { color: #ffd700; }
   [data-cls="eventDevTeam"] { color: var(--shell-orange); font-weight: 500; }
+  a[data-cls="eventPlayer"], a[data-cls="eventFaction"] { text-decoration: none; }
+  a[data-cls="eventPlayer"]:hover, a[data-cls="eventFaction"]:hover { text-decoration: underline; }
 `
 
 // The same recent-event buffer the SSE stream replays on connect, as plain JSON.
