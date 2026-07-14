@@ -14,6 +14,11 @@ export function formatDuration(ticks: number): string {
   return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`
 }
 
+/** Bounds a string's length regardless of how long a name gets, so callers can't overflow a fixed layout. */
+export function truncate(s: string, max: number): string {
+  return s.length > max ? `${s.slice(0, max - 1)}…` : s
+}
+
 export function winnerNames(battle: BattleSummary): string[] {
   const side = (battle.sides ?? []).find(s => s.side_id === battle.winning_side)
   return side?.participants ?? []
@@ -36,7 +41,13 @@ export function outcomeLabel(battle: BattleSummary): string {
   }
 }
 
-/** Display label for one side: its roster, faction tag, or a generic fallback for unnamed NPC/wildlife/police forces. */
+/**
+ * Display label for one side: its roster, faction tag, or a generic fallback
+ * for unnamed NPC/wildlife/police forces. Deliberately prioritizes names over
+ * faction tag — unlike the live viewer's compact side label in timeline.ts,
+ * which favors the tag for space — because a share card's whole point is to
+ * show who fought, not just their faction.
+ */
 export function sideLabel(side: BattleSide, maxNames = 3): string {
   if (side.participants?.length) {
     const names = side.participants

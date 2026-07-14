@@ -1,10 +1,13 @@
 import { ImageResponse } from 'next/og'
 import { BATTLE_CATEGORY_META, sideColor, type BattleSummary } from '@/lib/battle/types'
-import { formatDuration, outcomeLabel, sideLabel } from '@/lib/battle/format'
+import { formatDuration, outcomeLabel, sideLabel, truncate } from '@/lib/battle/format'
 
 // Shared OpenGraph card renderer for the battle detail share page.
 export const OG_SIZE = { width: 1200, height: 630 }
 
+// English-only plain text for the card (Satori has no i18n context to draw
+// from). Keep in sync with BATTLE_CATEGORY_META's labelKey translations in
+// battle/types.ts if a category's label ever changes.
 const CATEGORY_LABELS: Record<string, string> = {
   pvp: 'PVP ENGAGEMENT',
   pirate: 'PIRATE ATTACK',
@@ -12,12 +15,6 @@ const CATEGORY_LABELS: Record<string, string> = {
   wildlife: 'WILDLIFE ENCOUNTER',
   pve: 'PVE ENGAGEMENT',
   npc: 'NPC ENGAGEMENT',
-}
-
-// Bounds a value's on-card width regardless of how long a player/system name
-// gets, so the card layout can never push content off-canvas.
-function truncate(s: string, max: number): string {
-  return s.length > max ? `${s.slice(0, max - 1)}…` : s
 }
 
 // Pull a single weight of a Google font as an ArrayBuffer for Satori. Returns

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import BattleViewer from '@/components/battle/BattleViewer'
 import { fetchBattleSummary } from '@/lib/battle/serverSummary'
-import { outcomeLabel, sideLabel } from '@/lib/battle/format'
+import { outcomeLabel, sideLabel, truncate } from '@/lib/battle/format'
 
 type Params = Promise<{ id: string }>
 
@@ -14,7 +14,9 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 
   const systemName = battle.system_name || battle.system_id
   const title = `${systemName} — ${outcomeLabel(battle)}`
-  const matchup = (battle.sides ?? []).map(s => sideLabel(s)).join(' vs ')
+  // Free-for-all battles can have many long-named sides; cap the matchup so
+  // the meta description can't balloon past what any platform would show.
+  const matchup = truncate((battle.sides ?? []).map(s => sideLabel(s)).join(' vs '), 160)
   const description = [
     matchup,
     `${battle.total_damage.toLocaleString()} damage dealt`,
