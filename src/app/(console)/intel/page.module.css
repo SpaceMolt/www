@@ -25,6 +25,18 @@
   position: relative;
 }
 
+/* Above the zoom stack (3 x 36px buttons + 2 x 4px gaps), same as the public map. */
+.mapSearch {
+  bottom: calc(1rem + 116px + 0.5rem);
+  right: 1rem;
+}
+
+@media (max-width: 768px) {
+  .mapSearch {
+    bottom: calc(1rem + 140px + 0.5rem);
+  }
+}
+
 /* Center states (auth loading / gate) */
 .centerState {
   height: 100%;

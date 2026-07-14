@@ -1,0 +1,112 @@
+/* === Shared system search (galaxy map + Recon) === */
+
+.container {
+  position: absolute;
+  z-index: 100;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-end;
+}
+
+.trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: rgba(10, 14, 23, 0.9);
+  border: 1px solid var(--hull-grey);
+  border-radius: 6px;
+  color: var(--plasma-cyan);
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.trigger:hover {
+  border-color: var(--plasma-cyan);
+  color: var(--star-white);
+}
+
+.dropdown {
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  right: 0;
+  width: 300px;
+  background: rgba(10, 14, 23, 0.95);
+  border: 1px solid var(--hull-grey);
+  border-radius: 6px;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.input {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(107, 143, 163, 0.3);
+  border-radius: 4px;
+  color: var(--star-white);
+  font-family: inherit;
+  font-size: 0.8rem;
+  padding: 0.4rem 0.5rem;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--plasma-cyan);
+}
+
+.results {
+  display: flex;
+  flex-direction: column;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  padding: 0.35rem 0.4rem;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+}
+
+.result:hover {
+  background: rgba(107, 143, 163, 0.15);
+}
+
+.resultName {
+  font-size: 0.8rem;
+  color: var(--star-white);
+}
+
+.resultMeta {
+  font-size: 0.68rem;
+  color: var(--plasma-cyan);
+  white-space: nowrap;
+}
+
+.empty {
+  font-size: 0.75rem;
+  color: var(--hull-grey);
+  padding: 0.35rem 0.4rem;
+}
+
+@media (max-width: 768px) {
+  .trigger {
+    width: 44px;
+    height: 44px;
+  }
+
+  .dropdown {
+    width: min(300px, calc(100vw - 1.5rem));
+  }
+}

@@ -17,11 +17,44 @@ export interface IntelMapSystem {
   empire_color?: string
   is_home?: boolean
   is_stronghold?: boolean
+  /** Non-cloaked players in the system right now — the public map counts these too. */
+  online?: number
   connections: string[]
 }
 
 export interface PublicMapResponse {
   systems: IntelMapSystem[]
+}
+
+// ── Stations (GET /api/stations) ───────────────────────────────────────
+//
+// Public and unauthenticated, and it already carries every base in the galaxy:
+// the five empire capitals, the pirate dens, and every station a player faction
+// has founded. Recon joins it onto the galaxy topology by system_id, which is
+// why a station layer needs no new endpoint.
+
+export interface PublicStation {
+  id: string
+  name: string
+  description?: string
+  empire?: string
+  empire_name?: string
+  faction_id?: string
+  faction_name?: string
+  faction_tag?: string
+  faction_color?: string
+  system_id: string
+  system_name?: string
+  services?: string[]
+  condition?: string
+  condition_text?: string
+  satisfaction_pct?: number
+  facility_count?: number
+  defense_level?: number
+}
+
+export interface PublicStationsResponse {
+  stations: PublicStation[]
 }
 
 // ── Fleet snapshot (GET /api/intel-map) ────────────────────────────────
@@ -132,8 +165,16 @@ export interface IntelSystemPoi {
 
   station_name?: string
   station_empire?: string
+  /** A faction station sits in lawless space, so empire is empty and these carry the owner. */
+  station_faction_id?: string
+  station_faction_name?: string
+  station_faction_tag?: string
+  station_faction_color?: string
   station_condition?: string
   station_services?: string[]
+
+  /** Non-cloaked players standing here, exactly as the public map lists them. */
+  players?: IntelPoiPlayer[]
 
   /** Same shape the faction pool reports, whoever took the reading. */
   resources?: IntelEntryResource[]
@@ -141,6 +182,14 @@ export interface IntelSystemPoi {
   resource_as_of_tick?: number
   /** 0 (or absent) when the reading is live */
   resource_age_ticks?: number
+}
+
+export interface IntelPoiPlayer {
+  username: string
+  clan_tag?: string
+  primary_color?: string
+  secondary_color?: string
+  status?: string
 }
 
 export interface NearbyContact {
@@ -195,6 +244,10 @@ export interface StationMarketRow {
 export interface IntelStation {
   base_id: string
   name: string
+  faction_id?: string
+  faction_name?: string
+  faction_tag?: string
+  faction_color?: string
   condition?: string
   condition_text?: string
   satisfaction_pct?: number
@@ -254,6 +307,12 @@ export interface SystemIntelEntry {
 
 export interface IntelSystemDetailResponse {
   system: IntelSystemInfo
+  /**
+   * false = the fleet knows nothing here beyond what the public map tells
+   * anonymous visitors, and the response is that public baseline. The system is
+   * still dimmed on the map — this says "no intel", not "no data".
+   */
+  has_intel: boolean
   pois: IntelSystemPoi[]
   agents_here: string[]
   nearby_by_poi: Record<string, NearbyByPoi>
@@ -275,6 +334,7 @@ export interface IntelMovement {
 export interface IntelMovementsResponse {
   movements: IntelMovement[]
   truncated: boolean
+  window_minutes: number
   window_hours: number
 }
 
@@ -302,6 +362,7 @@ export interface TransitMarker {
 export interface IntelLayerState {
   fog: boolean
   intel: boolean
+  stations: boolean
   trails: boolean
   agents: boolean
 }
