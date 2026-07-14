@@ -17,6 +17,8 @@ import type {
   IntelMovement,
   IntelMovementsResponse,
   PublicMapResponse,
+  PublicStation,
+  PublicStationsResponse,
   TrailSegment,
   TransitMarker,
 } from '@/lib/intelTypes'
@@ -66,7 +68,7 @@ interface UseIntelDataOptions {
   filterText: string
   factionFilter: string
   showHidden: boolean
-  /** Movements window in hours (24/72/168) */
+  /** Movements window in minutes */
   trailsWindow: number
 }
 
@@ -78,6 +80,8 @@ interface ActivityEventPayload {
 export interface UseIntelDataResult {
   systems: IntelMapSystem[]
   systemsById: Map<string, IntelMapSystem>
+  /** Every station in the galaxy, keyed by system. Public knowledge, never fogged. */
+  stationsBySystem: Map<string, PublicStation[]>
   agents: IntelAgent[]
   filteredAgents: IntelAgent[]
   exploredSet: Set<string>
@@ -105,6 +109,7 @@ export function useIntelData({
   trailsWindow,
 }: UseIntelDataOptions): UseIntelDataResult {
   const [systems, setSystems] = useState<IntelMapSystem[]>([])
+  const [stations, setStations] = useState<PublicStation[]>([])
   const [intel, setIntel] = useState<IntelMapResponse | null>(null)
   // Faction-scoped snapshot; null when no faction filter is active.
   const [narrowed, setNarrowed] = useState<IntelMapResponse | null>(null)
@@ -139,6 +144,16 @@ export function useIntelData({
     if (!res.ok) throw new Error(`map fetch failed (${res.status})`)
     const data: PublicMapResponse = await res.json()
     setSystems(data.systems || [])
+  }, [])
+
+  // Every base in the galaxy — empire capitals, pirate dens, and the stations
+  // player factions have founded. Public and unauthenticated, so a failure here
+  // costs the station layer and nothing else.
+  const fetchStations = useCallback(async () => {
+    const res = await fetch(`${GAME_SERVER}/api/stations`)
+    if (!res.ok) throw new Error(`stations fetch failed (${res.status})`)
+    const data: PublicStationsResponse = await res.json()
+    setStations(data.stations || [])
   }, [])
 
   const fetchIntel = useCallback(async () => {
@@ -179,10 +194,17 @@ export function useIntelData({
     setNarrowed(await res.json())
   }, [noteResponse])
 
-  const fetchMovements = useCallback(async (hours: number, playerIds: string[] | null) => {
+  const fetchMovements = useCallback(async (minutes: number, playerIds: string[] | null) => {
     if (Date.now() < backoffUntilRef.current) return
     const headers = await authHeadersRef.current()
-    const params = new URLSearchParams({ hours: String(hours), limit: String(MOVEMENTS_LIMIT) })
+    // `hours` rides along for a gameserver that predates `minutes` — without it
+    // an older server would ignore the window entirely and pin trails to its 24h
+    // default. A server that understands `minutes` prefers it and ignores `hours`.
+    const params = new URLSearchParams({
+      minutes: String(minutes),
+      hours: String(Math.max(1, Math.round(minutes / 60))),
+      limit: String(MOVEMENTS_LIMIT),
+    })
     if (playerIds && playerIds.length > 0) params.set('players', playerIds.join(','))
     const res = await fetch(`${GAME_SERVER}/api/intel-map/movements?${params}`, { headers })
     if (!res.ok) {
@@ -251,9 +273,10 @@ export function useIntelData({
         fetchGalaxy(),
         fetchIntel(),
         fetchMovements(trailsWindowRef.current, null),
+        fetchStations(),
       ])
       // Galaxy topology and the fleet snapshot are both required; a failed
-      // movements fetch just means no trails until the next poll.
+      // movements or stations fetch just costs that one layer.
       if (results[0].status === 'rejected' || results[1].status === 'rejected') {
         setError('Could not reach game server')
       }
@@ -262,7 +285,7 @@ export function useIntelData({
     } finally {
       setLoading(false)
     }
-  }, [fetchGalaxy, fetchIntel, fetchMovements])
+  }, [fetchGalaxy, fetchIntel, fetchMovements, fetchStations])
 
   useEffect(() => {
     if (!enabled || initialLoadedRef.current) return
@@ -404,6 +427,19 @@ export function useIntelData({
 
   const systemsById = useMemo(() => new Map(systems.map((s) => [s.id, s])), [systems])
 
+  // Stations are public knowledge, so this is deliberately NOT scoped to the
+  // fleet's fog of war: a station in a system nobody has visited still draws.
+  // Hiding it would tell the operator less than the public map does.
+  const stationsBySystem = useMemo(() => {
+    const map = new Map<string, PublicStation[]>()
+    for (const station of stations) {
+      const list = map.get(station.system_id)
+      if (list) list.push(station)
+      else map.set(station.system_id, [station])
+    }
+    return map
+  }, [stations])
+
   // Everything derived from what the fleet *knows* reads the scoped snapshot, so
   // selecting a faction narrows the fog of war and the intel overlay too — not
   // just the agent list. Falls back to the full snapshot when nothing is scoped,
@@ -452,7 +488,7 @@ export function useIntelData({
   const trails = useMemo<TrailSegment[]>(() => {
     if (movements.length === 0 || filteredAgents.length === 0) return []
     const filteredIds = new Set(filteredAgents.map((a) => a.id))
-    const windowMs = trailsWindow * 3600_000
+    const windowMs = trailsWindow * 60_000
     const now = Date.now()
     const segments: TrailSegment[] = []
     for (const move of movements) {
@@ -486,6 +522,7 @@ export function useIntelData({
   return {
     systems,
     systemsById,
+    stationsBySystem,
     agents,
     filteredAgents,
     exploredSet,

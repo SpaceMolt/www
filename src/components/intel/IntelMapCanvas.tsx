@@ -10,6 +10,7 @@ import type {
   IntelAgent,
   IntelLayerState,
   IntelMapSystem,
+  PublicStation,
   TrailSegment,
   TransitMarker,
 } from '@/lib/intelTypes'
@@ -74,6 +75,8 @@ interface IntelMapCanvasProps {
   systems: IntelMapSystem[]
   exploredSystems: Set<string>
   intelSystems: Set<string>
+  /** Every station in the galaxy, keyed by system. Public knowledge — not fogged. */
+  stationsBySystem: Map<string, PublicStation[]>
   agentsBySystem: Map<string, IntelAgent[]>
   trails: TrailSegment[]
   transits: TransitMarker[]
@@ -105,6 +108,7 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
       systems,
       exploredSystems,
       intelSystems,
+      stationsBySystem,
       agentsBySystem,
       trails,
       transits,
@@ -156,6 +160,8 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
     exploredRef.current = exploredSystems
     const intelRef = useRef(intelSystems)
     intelRef.current = intelSystems
+    const stationsRef = useRef(stationsBySystem)
+    stationsRef.current = stationsBySystem
     const agentsBySystemRef = useRef(agentsBySystem)
     agentsBySystemRef.current = agentsBySystem
     const trailsRef = useRef(trails)
@@ -454,6 +460,47 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
       [worldToScreen],
     )
 
+    // Station marker: a square tucked under the node, opposite the agent badge.
+    // Squares read as built structure against the round star nodes. A faction
+    // station takes its owner's colour, so a fleet can pick its own out at a
+    // glance; NPC stations stay neutral. Stations are public knowledge, so this
+    // draws regardless of fog — the node underneath stays dim, the station does
+    // not, which is the honest picture: you know it is there, not what is inside.
+    const drawStationMarker = useCallback(
+      (
+        ctx: CanvasRenderingContext2D,
+        x: number,
+        y: number,
+        stations: PublicStation[],
+        nodeScale: number,
+      ) => {
+        const size = 5 * Math.max(nodeScale, 0.6)
+        const bx = x + NODE_RADIUS * nodeScale + size * 0.9
+        const by = y + NODE_RADIUS * nodeScale + size * 0.9
+        const owned = stations.find((s) => s.faction_color)
+
+        ctx.save()
+        ctx.fillStyle = owned?.faction_color || 'rgba(196, 208, 216, 0.9)'
+        ctx.strokeStyle = 'rgba(5, 8, 16, 0.9)'
+        ctx.lineWidth = 1.5
+        ctx.beginPath()
+        ctx.rect(bx - size, by - size, size * 2, size * 2)
+        ctx.fill()
+        ctx.stroke()
+
+        // More than one station in the system: mark it rather than lie by omission.
+        if (stations.length > 1) {
+          ctx.fillStyle = '#050810'
+          ctx.font = `bold ${Math.max(8, Math.round(size * 1.4))}px "JetBrains Mono", monospace`
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'middle'
+          ctx.fillText(String(Math.min(stations.length, 9)), bx, by)
+        }
+        ctx.restore()
+      },
+      [],
+    )
+
     const drawAgentBadge = useCallback(
       (ctx: CanvasRenderingContext2D, x: number, y: number, agents: IntelAgent[], nodeScale: number) => {
         const count = agents.length
@@ -628,6 +675,14 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
             ctx.fill()
           }
 
+          // Station marker
+          if (layersRef.current.stations) {
+            const stationsHere = stationsRef.current.get(system.id)
+            if (stationsHere && stationsHere.length > 0) {
+              drawStationMarker(ctx, pos.x, pos.y, stationsHere, nodeScale)
+            }
+          }
+
           // Agent count badge
           if (agentsHere && agentsHere.length > 0) {
             drawAgentBadge(ctx, pos.x, pos.y, agentsHere, nodeScale)
@@ -657,7 +712,16 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
 
         drawTransits(ctx)
       },
-      [drawStarfield, drawGrid, drawTrails, drawTransits, drawAgentBadge, visibilityOf, worldToScreen],
+      [
+        drawStarfield,
+        drawGrid,
+        drawTrails,
+        drawTransits,
+        drawStationMarker,
+        drawAgentBadge,
+        visibilityOf,
+        worldToScreen,
+      ],
     )
 
     // ── Tooltip ────────────────────────────────────────────────────────

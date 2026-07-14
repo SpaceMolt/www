@@ -142,13 +142,30 @@ function PoiRow({ poi }: { poi: IntelSystemPoi }) {
         </span>
       </div>
 
-      {poi.station_condition && (
+      {poi.station_name && (
         <div className={styles.stationBlock}>
           <div className={styles.stationLine}>
-            <span className={styles.stationCondition}>{poi.station_condition}</span>
-            {poi.station_empire && (
-              <span className={styles.stationEmpire}>{titleCase(poi.station_empire)}</span>
+            {poi.station_condition && (
+              <span className={styles.stationCondition}>{poi.station_condition}</span>
             )}
+            {/* A player faction's station sits in lawless space and has no empire,
+                so the owner is the only thing that identifies it. */}
+            {poi.station_faction_name ? (
+              <span
+                className={styles.stationFaction}
+                style={
+                  poi.station_faction_color
+                    ? { color: poi.station_faction_color }
+                    : undefined
+                }
+              >
+                {poi.station_faction_tag
+                  ? `[${poi.station_faction_tag}] ${poi.station_faction_name}`
+                  : poi.station_faction_name}
+              </span>
+            ) : poi.station_empire ? (
+              <span className={styles.stationEmpire}>{titleCase(poi.station_empire)}</span>
+            ) : null}
           </div>
           {poi.station_services?.length ? (
             <div className={styles.serviceChips}>
@@ -161,6 +178,17 @@ function PoiRow({ poi }: { poi: IntelSystemPoi }) {
           ) : null}
         </div>
       )}
+
+      {poi.players?.length ? (
+        <div className={styles.poiPlayers}>
+          {poi.players.map((p) => (
+            <span key={p.username} className={styles.poiPlayer}>
+              {p.clan_tag ? `[${p.clan_tag}] ` : ''}
+              {p.username}
+            </span>
+          ))}
+        </div>
+      ) : null}
 
       {resources.length > 0 && (
         <div className={styles.resourceBlock}>
@@ -235,19 +263,21 @@ export function SystemDetailPanel({
 }: SystemDetailPanelProps) {
   const [detail, setDetail] = useState<IntelSystemDetailResponse | null>(null)
   const [loading, setLoading] = useState(true)
-  const [noIntel, setNoIntel] = useState(false)
+  // A 404 now means the system genuinely does not exist. A system the fleet has
+  // simply never scouted answers with the public baseline and has_intel=false.
+  const [notFound, setNotFound] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const fetchDetail = useCallback(async () => {
     setLoading(true)
-    setNoIntel(false)
+    setNotFound(false)
     setError(null)
     setDetail(null)
     try {
       const headers = await authHeaders()
       const res = await fetch(`${GAME_SERVER}/api/intel-map/system/${systemId}`, { headers })
       if (res.status === 404) {
-        setNoIntel(true)
+        setNotFound(true)
       } else if (!res.ok) {
         setError(`Server returned ${res.status}`)
       } else {
@@ -289,10 +319,10 @@ export function SystemDetailPanel({
       <div className={styles.panelContent}>
         {loading ? (
           <div className={styles.loading}>Scanning intel archives...</div>
-        ) : noIntel ? (
+        ) : notFound ? (
           <div className={styles.noIntel}>
             <Radar size={28} />
-            <p>No intel on this system — no agent of yours has been there.</p>
+            <p>No such system.</p>
           </div>
         ) : error ? (
           <div className={styles.errorBox}>
@@ -304,6 +334,19 @@ export function SystemDetailPanel({
           </div>
         ) : detail ? (
           <>
+            {/* No agent of ours has been here and no intel pool covers it, so what
+                follows is public knowledge — the same thing the public galaxy map
+                shows anyone. Say so plainly rather than passing it off as intel. */}
+            {!detail.has_intel && (
+              <div className={styles.publicOnly}>
+                <Radar size={13} />
+                <span>
+                  No intel here yet — showing public knowledge only. Send an agent to
+                  see deposits, contacts and station holdings.
+                </span>
+              </div>
+            )}
+
             {/* Agents here */}
             {agentsInSystem.length > 0 && (
               <section className={styles.section}>

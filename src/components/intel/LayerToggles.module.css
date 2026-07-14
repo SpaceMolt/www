@@ -104,6 +104,22 @@
   border-color: var(--plasma-cyan);
 }
 
+.windowInput {
+  width: 5.5rem;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(107, 143, 163, 0.3);
+  border-radius: 4px;
+  color: var(--star-white);
+  font-size: 0.72rem;
+  padding: 0.15rem 0.3rem;
+  font-family: inherit;
+}
+
+.windowInput:focus {
+  outline: none;
+  border-color: var(--plasma-cyan);
+}
+
 .note {
   font-size: 0.62rem;
   color: var(--hull-grey);

@@ -15,7 +15,8 @@ import { AgentSidebar } from '@/components/intel/AgentSidebar'
 import { SystemDetailPanel } from '@/components/intel/SystemDetailPanel'
 import { LayerToggles } from '@/components/intel/LayerToggles'
 import { ReconIntro } from '@/components/intel/ReconIntro'
-import type { IntelAgent, IntelLayerState } from '@/lib/intelTypes'
+import { SystemSearch } from '@/components/map/SystemSearch'
+import type { IntelAgent, IntelLayerState, IntelMapSystem } from '@/lib/intelTypes'
 import styles from './page.module.css'
 
 export default function IntelPage() {
@@ -41,10 +42,12 @@ function IntelContent() {
   const [factionFilter, setFactionFilter] = useState('')
   const [showHidden, setShowHidden] = useState(false)
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
-  const [trailsWindow, setTrailsWindow] = useState(24)
+  // Minutes. 24h is still the default view; the list just reaches further down now.
+  const [trailsWindow, setTrailsWindow] = useState(24 * 60)
   const [layers, setLayers] = useState<IntelLayerState>({
     fog: true,
     intel: true,
+    stations: true,
     trails: true,
     agents: true,
   })
@@ -72,6 +75,16 @@ function IntelContent() {
       setSelectedAgentId(agent.id)
       setSelectedSystem(agent.system)
       mapRef.current?.panToSystem(agent.system)
+    },
+    [setSelectedSystem],
+  )
+
+  // Searching for a system takes you there and opens it, same as picking an
+  // agent does. Zoom is left where the user put it.
+  const handleSearchSelect = useCallback(
+    (system: IntelMapSystem) => {
+      setSelectedSystem(system.id)
+      mapRef.current?.panToSystem(system.id)
     },
     [setSelectedSystem],
   )
@@ -142,6 +155,7 @@ function IntelContent() {
           systems={data.systems}
           exploredSystems={data.exploredSet}
           intelSystems={data.intelSet}
+          stationsBySystem={data.stationsBySystem}
           agentsBySystem={data.agentsBySystem}
           trails={data.trails}
           transits={data.transits}
@@ -160,6 +174,13 @@ function IntelContent() {
           onLayersChange={setLayers}
           trailsWindow={trailsWindow}
           onTrailsWindowChange={setTrailsWindow}
+        />
+
+        <SystemSearch
+          systems={data.systems}
+          onSelect={handleSearchSelect}
+          renderMeta={(s) => (s.online ? `${s.online} online` : null)}
+          className={styles.mapSearch}
         />
 
         {data.loading && (
