@@ -109,7 +109,7 @@ export default function PriceHistoryChart({ itemId, itemName }: PriceHistoryChar
     setError(false)
 
     const days = RANGES.find((r) => r.key === range)?.days ?? 90
-    fetch(`${API_BASE}/api/market/vwap-history/${itemId}?days=${days}`)
+    fetch(`${API_BASE}/api/market/vwap-history/${encodeURIComponent(itemId)}?days=${days}`)
       .then((res) => {
         if (!res.ok) throw new Error(`${res.status}`)
         return res.json() as Promise<VWAPHistoryResponse>
