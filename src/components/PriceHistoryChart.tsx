@@ -29,6 +29,37 @@ interface VWAPHistoryResponse {
   history: HistoryPoint[]
 }
 
+/** A chart data point — vwap/volume are null on calendar days with no trades. */
+interface ChartPoint {
+  date: string
+  vwap: number | null
+  volume: number | null
+}
+
+/**
+ * Expands a sparse history into one entry per calendar day between the first
+ * and last trade, filling untraded days with nulls. Without this, recharts'
+ * categorical x-axis packs whatever dates ARE present edge-to-edge — a item
+ * that traded once a week would render as a smooth, densely-spaced line,
+ * misrepresenting how sparsely it actually trades. Nulls render as a real
+ * gap: Line breaks (connectNulls defaults to false) and Bar simply omits
+ * that day's bar.
+ */
+function fillGaps(history: HistoryPoint[]): ChartPoint[] {
+  if (history.length === 0) return []
+  const byDate = new Map(history.map((h) => [h.date, h]))
+  const start = new Date(`${history[0].date}T00:00:00Z`)
+  const end = new Date(`${history[history.length - 1].date}T00:00:00Z`)
+
+  const filled: ChartPoint[] = []
+  for (let d = start; d.getTime() <= end.getTime(); d.setUTCDate(d.getUTCDate() + 1)) {
+    const dateKey = d.toISOString().slice(0, 10)
+    const point = byDate.get(dateKey)
+    filled.push({ date: dateKey, vwap: point?.vwap ?? null, volume: point?.volume ?? null })
+  }
+  return filled
+}
+
 interface PriceHistoryChartProps {
   itemId: string
   itemName: string
@@ -106,6 +137,8 @@ export default function PriceHistoryChart({ itemId, itemName }: PriceHistoryChar
     return ((last - first) / first) * 100
   }, [history])
 
+  const chartData = useMemo(() => fillGaps(history ?? []), [history])
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -147,7 +180,7 @@ export default function PriceHistoryChart({ itemId, itemName }: PriceHistoryChar
         </div>
       ) : (
         <ResponsiveContainer width="100%" height={280}>
-          <ComposedChart data={history} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
+          <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
             <XAxis dataKey="date" {...AXIS_STYLE} />
             <YAxis
               yAxisId="price"
@@ -158,11 +191,14 @@ export default function PriceHistoryChart({ itemId, itemName }: PriceHistoryChar
             <YAxis yAxisId="volume" orientation="right" tickFormatter={formatVolume} {...AXIS_STYLE} />
             <Tooltip
               contentStyle={TOOLTIP_STYLE}
-              formatter={(value, name) =>
-                name === 'vwap'
+              formatter={(value, name) => {
+                if (value === null || value === undefined) {
+                  return ['No trades', name === 'vwap' ? 'VWAP' : 'Volume']
+                }
+                return name === 'vwap'
                   ? [Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 }), 'VWAP']
                   : [Number(value).toLocaleString(), 'Volume']
-              }
+              }}
             />
             <Bar
               yAxisId="volume"
@@ -177,7 +213,7 @@ export default function PriceHistoryChart({ itemId, itemName }: PriceHistoryChar
               dataKey="vwap"
               stroke={PRICE_COLOR}
               strokeWidth={2}
-              dot={false}
+              dot={{ r: 3, fill: PRICE_COLOR, strokeWidth: 0 }}
               isAnimationActive={false}
             />
           </ComposedChart>
