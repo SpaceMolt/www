@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { Search } from 'lucide-react'
 import { useTranslation } from '@/i18n'
 import { SearchDialog } from './SearchDialog'
@@ -16,9 +17,18 @@ import styles from './search.module.css'
  *
  * "/" is deliberately not bound: the console is full of text inputs and a bare
  * slash shortcut would swallow keystrokes in them.
+ *
+ * The field is hidden on the full-bleed workspace pages, whose own chrome owns
+ * that corner: on Recon it sat on top of the system panel's header and hid the
+ * system's name. Only the trigger goes away — Cmd-K still opens the dialog
+ * there, and those pages have their own local filter box anyway.
  */
+const FIELDLESS_ROUTES = new Set(['/intel'])
+
 export function ConsoleSearch() {
   const { t } = useTranslation()
+  const pathname = usePathname()
+  const showField = !FIELDLESS_ROUTES.has(pathname)
   const [open, setOpen] = useState(false)
   const [isMac, setIsMac] = useState(true)
 
@@ -56,6 +66,7 @@ export function ConsoleSearch() {
 
   return (
     <>
+      {showField && (
       <div className={styles.fieldWrap} data-pagefind-ignore>
         <Search size={14} className={styles.fieldIcon} aria-hidden />
         {/* A trigger dressed as a field: the real input lives in the dialog. Its
@@ -76,6 +87,7 @@ export function ConsoleSearch() {
           <kbd className={styles.kbd}>K</kbd>
         </span>
       </div>
+      )}
       <SearchDialog open={open} onClose={close} />
     </>
   )
