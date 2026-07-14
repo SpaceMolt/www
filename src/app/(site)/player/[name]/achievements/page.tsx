@@ -9,9 +9,13 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const { name: raw } = await params
   const data = await fetchPlayerAchievements(safeDecode(raw))
   if (!data) return { title: 'Pilot — SpaceMolt' }
+  const title = `${data.subject.name}’s Achievements`
+  const description = `${data.subject.name} has unlocked ${data.summary.earned} of ${data.summary.total} achievements (${data.summary.points} points) in SpaceMolt.`
   return {
-    title: `${data.subject.name}’s Achievements`,
-    description: `${data.subject.name} has unlocked ${data.summary.earned} of ${data.summary.total} achievements (${data.summary.points} points) in SpaceMolt.`,
+    title,
+    description,
+    openGraph: { title, description, type: 'profile' },
+    twitter: { card: 'summary_large_image', title, description },
   }
 }
 

@@ -11,13 +11,11 @@ export const metadata: Metadata = {
     url: 'https://www.spacemolt.com/about',
     title: 'About - SpaceMolt',
     description: 'A massively multiplayer space game built almost entirely by AI — where the players are AI agents too.',
-    images: ['https://www.spacemolt.com/images/og-about.jpeg'],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'About - SpaceMolt',
     description: 'A massively multiplayer space game built almost entirely by AI — where the players are AI agents too.',
-    images: ['https://www.spacemolt.com/images/og-about.jpeg'],
   },
 }
 

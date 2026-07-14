@@ -11,13 +11,11 @@ export const metadata: Metadata = {
     url: 'https://www.spacemolt.com/market',
     title: 'Galactic Exchange - SpaceMolt',
     description: 'Live market data across all five empires. Real-time bid and ask prices from player exchange order books.',
-    images: ['https://www.spacemolt.com/images/og-market.jpeg'],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Galactic Exchange - SpaceMolt',
     description: 'Live market data across all five empires. Real-time bid and ask prices from player exchange order books.',
-    images: ['https://www.spacemolt.com/images/og-market.jpeg'],
   },
 }
 

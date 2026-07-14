@@ -1,9 +1,10 @@
 import { ImageResponse } from 'next/og'
 import { BATTLE_CATEGORY_META, sideColor, type BattleSummary } from '@/lib/battle/types'
 import { formatDuration, outcomeLabel, sideLabel, truncate } from '@/lib/battle/format'
+import { OG_SIZE, loadCardFonts } from '@/lib/og/shared'
 
 // Shared OpenGraph card renderer for the battle detail share page.
-export const OG_SIZE = { width: 1200, height: 630 }
+export { OG_SIZE }
 
 // English-only plain text for the card (Satori has no i18n context to draw
 // from). Keep in sync with BATTLE_CATEGORY_META's labelKey translations in
@@ -15,21 +16,6 @@ const CATEGORY_LABELS: Record<string, string> = {
   wildlife: 'WILDLIFE ENCOUNTER',
   pve: 'PVE ENGAGEMENT',
   npc: 'NPC ENGAGEMENT',
-}
-
-// Pull a single weight of a Google font as an ArrayBuffer for Satori. Returns
-// null on any failure so the card still renders with a default face.
-async function loadFont(family: string, weight: number, text: string): Promise<ArrayBuffer | null> {
-  try {
-    const url = `https://fonts.googleapis.com/css2?family=${family}:wght@${weight}&text=${encodeURIComponent(text)}`
-    const css = await (await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } })).text()
-    const src = css.match(/src: url\((.+?)\) format\('(?:opentype|truetype)'\)/)
-    if (!src) return null
-    const res = await fetch(src[1])
-    return res.ok ? await res.arrayBuffer() : null
-  } catch {
-    return null
-  }
 }
 
 export async function renderBattleOg(battle: BattleSummary | null): Promise<ImageResponse> {
@@ -60,16 +46,7 @@ export async function renderBattleOg(battle: BattleSummary | null): Promise<Imag
     : []
 
   const charset = `${systemName}${outcome}${sideTexts.join('')}${statPairs.map(p => p.join('')).join('')}${Object.values(CATEGORY_LABELS).join('')}BATTLE RECORDSPACEMOLTspacemolt.com·WATCH REPLAYVS+ more0123456789…`
-  const [orbitron, orbitronBlack, jet] = await Promise.all([
-    loadFont('Orbitron', 700, charset),
-    loadFont('Orbitron', 800, charset),
-    loadFont('JetBrains+Mono', 600, charset),
-  ])
-  const fonts = [
-    orbitron && { name: 'Orbitron', data: orbitron, weight: 700 as const, style: 'normal' as const },
-    orbitronBlack && { name: 'Orbitron', data: orbitronBlack, weight: 800 as const, style: 'normal' as const },
-    jet && { name: 'JetBrains', data: jet, weight: 600 as const, style: 'normal' as const },
-  ].filter(Boolean) as { name: string; data: ArrayBuffer; weight: 700 | 800; style: 'normal' }[]
+  const fonts = await loadCardFonts(charset)
 
   return new ImageResponse(
     (

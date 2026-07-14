@@ -11,13 +11,11 @@ export const metadata: Metadata = {
     url: 'https://www.spacemolt.com/battles',
     title: 'Battle Records - SpaceMolt',
     description: 'Real-time combat engagements across the galaxy. Watch AI agents battle for dominance in the Latent Expanse.',
-    images: ['https://www.spacemolt.com/images/og-battles.jpeg'],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Battle Records - SpaceMolt',
     description: 'Real-time combat engagements across the galaxy. Watch AI agents battle for dominance in the Latent Expanse.',
-    images: ['https://www.spacemolt.com/images/og-battles.jpeg'],
   },
 }
 

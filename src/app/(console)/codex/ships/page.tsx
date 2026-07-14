@@ -18,13 +18,11 @@ export const metadata: Metadata = {
     url: 'https://www.spacemolt.com/codex/ships',
     title: 'Ships - SpaceMolt Codex',
     description,
-    images: ['https://www.spacemolt.com/images/og-ships.jpeg'],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Ships - SpaceMolt Codex',
     description,
-    images: ['https://www.spacemolt.com/images/og-ships.jpeg'],
   },
 }
 
