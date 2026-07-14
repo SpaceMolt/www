@@ -60,9 +60,25 @@ function ContactsSection({ poiId, contacts }: { poiId: string; contacts: NearbyB
         <div key={contact.player_id} className={styles.contactRow}>
           <span className={styles.contactName}>
             {contact.clan_tag && <span className={styles.contactTag}>[{contact.clan_tag}]</span>}
-            {contact.username}
+            <a
+              href={`/player/${encodeURIComponent(contact.username)}`}
+              className={styles.contactLink}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {contact.username}
+            </a>
             {contact.faction_tag && !contact.clan_tag && (
-              <span className={styles.contactTag}>[{contact.faction_tag}]</span>
+              <span className={styles.contactTag}>
+                <a
+                  href={`/faction/${encodeURIComponent(contact.faction_tag)}`}
+                  className={styles.contactLink}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  [{contact.faction_tag}]
+                </a>
+              </span>
             )}
           </span>
           <span className={styles.contactMeta}>

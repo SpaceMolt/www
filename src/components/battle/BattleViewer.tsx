@@ -17,6 +17,7 @@ import {
 } from '@/lib/battle/render'
 import { BATTLE_CATEGORY_META, SIDE_COLORS } from '@/lib/battle/types'
 import { CategoryIcon } from './CategoryIcon'
+import { PlayerLink } from '@/components/profile/ProfileLink'
 import BattleTimeline from './BattleTimeline'
 import EventFeed from './EventFeed'
 import SideScoreboard from './SideScoreboard'
@@ -390,6 +391,16 @@ export default function BattleViewer({ battleId }: { battleId: string }) {
                 </span>
               ))}
             </div>
+            {(summary?.player_names?.length ?? 0) > 0 && (
+              <div className={styles.pilotLinks}>
+                {summary!.player_names!.map((name, i) => (
+                  <span key={name}>
+                    {i > 0 && ', '}
+                    <PlayerLink name={name} className={styles.pilotLink} />
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
         <div className={styles.headerRight}>

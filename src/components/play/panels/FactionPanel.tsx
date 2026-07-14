@@ -542,7 +542,15 @@ export function FactionPanel() {
                   <div key={member.player_id} className={styles.memberItem}>
                     <div className={styles.memberLeft}>
                       <span className={`${styles.onlineDot} ${member.is_online ? styles.online : ''}`} />
-                      <span className={styles.memberName}>{member.username}</span>
+                      {/* New tab so the live play session isn't navigated away. */}
+                      <a
+                        href={`/player/${encodeURIComponent(member.username)}`}
+                        className={styles.memberName}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {member.username}
+                      </a>
                     </div>
                     <div className={styles.memberRight}>
                       <span className={styles.memberRole}>{member.role}</span>

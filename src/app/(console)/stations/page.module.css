@@ -309,6 +309,14 @@
   margin-right: 0.35rem;
 }
 
+.factionOwnerLink {
+  text-decoration: none;
+}
+
+.factionOwnerLink:hover {
+  text-decoration: underline;
+}
+
 .systemCell {
   white-space: nowrap;
   color: var(--chrome-silver);

@@ -113,6 +113,27 @@
   color: var(--hull-grey);
 }
 
+.pilotLinks {
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.68rem;
+  color: var(--hull-grey);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 0.2rem;
+}
+
+.pilotLink {
+  color: var(--chrome-silver);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+
+.pilotLink:hover {
+  color: var(--plasma-cyan);
+  border-bottom-color: var(--plasma-cyan);
+}
+
 .headerRight {
   display: flex;
   align-items: center;

@@ -5,6 +5,7 @@ import { Info } from 'lucide-react'
 import { useTranslation } from '@/i18n'
 import styles from './page.module.css'
 import { AchievementsBoard } from './AchievementsBoard'
+import { PlayerLink, FactionLink } from '@/components/profile/ProfileLink'
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 
@@ -13,6 +14,7 @@ interface PlayerRankEntry {
   username: string
   empire: string
   value: number
+  npc?: boolean // injected benchmark rows (empire/pirate fleets) — never link
 }
 
 interface FactionRankEntry {
@@ -613,7 +615,9 @@ function PlayerTable({ entries, format }: { entries: PlayerRankEntry[]; format: 
           {entries.map(entry => (
             <tr key={`${entry.rank}-${entry.username}`} className={entry.rank <= 3 ? styles[`rank${entry.rank}`] : undefined}>
               <td className={styles.cellRank}>{entry.rank}</td>
-              <td className={styles.cellName}>{entry.username}</td>
+              <td className={styles.cellName}>
+                {entry.npc ? entry.username : <PlayerLink name={entry.username} />}
+              </td>
               <td className={styles.cellEmpire}>
                 <span
                   className={styles.empireDot}
@@ -652,8 +656,12 @@ function FactionTable({ entries, format }: { entries: FactionRankEntry[]; format
           {entries.map(entry => (
             <tr key={`${entry.rank}-${entry.tag}`} className={entry.rank <= 3 ? styles[`rank${entry.rank}`] : undefined}>
               <td className={styles.cellRank}>{entry.rank}</td>
-              <td className={styles.cellTag}>[{entry.tag}]</td>
-              <td className={styles.cellName}>{entry.name}</td>
+              <td className={styles.cellTag}>
+                <FactionLink tag={entry.tag}>[{entry.tag}]</FactionLink>
+              </td>
+              <td className={styles.cellName}>
+                <FactionLink tag={entry.tag} name={entry.name} />
+              </td>
               <td className={styles.cellValue}>{formatValue(entry.value, format)}</td>
             </tr>
           ))}

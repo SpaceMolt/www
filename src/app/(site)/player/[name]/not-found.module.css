@@ -1,0 +1,52 @@
+.page {
+  min-height: 60vh;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 9rem 1.5rem 5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.kicker {
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--plasma-cyan);
+}
+
+.title {
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-weight: 800;
+  color: var(--star-white);
+}
+
+.body {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--chrome-silver);
+}
+
+.actions {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+
+.link {
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--plasma-cyan);
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}

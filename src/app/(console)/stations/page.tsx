@@ -15,6 +15,10 @@ interface Station {
   description: string
   empire: string
   empire_name: string
+  faction_id?: string
+  faction_name?: string
+  faction_tag?: string
+  faction_color?: string
   system_id: string
   system_name: string
   condition: string
@@ -279,13 +283,30 @@ export default function StationsPage() {
                           </span>
                         </td>
                         <td className={styles.empireCell}>
-                          <span
-                            className={styles.empireDot}
-                            style={{ background: EMPIRE_COLORS[station.empire] }}
-                          />
-                          <span style={{ color: EMPIRE_COLORS[station.empire] }}>
-                            {station.empire_name}
-                          </span>
+                          {station.faction_tag ? (
+                            <Link
+                              href={`/faction/${encodeURIComponent(station.faction_tag)}`}
+                              className={styles.factionOwnerLink}
+                              style={{ color: station.faction_color || 'var(--chrome-silver)' }}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <span
+                                className={styles.empireDot}
+                                style={{ background: station.faction_color || 'var(--chrome-silver)' }}
+                              />
+                              [{station.faction_tag}] {station.faction_name}
+                            </Link>
+                          ) : (
+                            <>
+                              <span
+                                className={styles.empireDot}
+                                style={{ background: EMPIRE_COLORS[station.empire] }}
+                              />
+                              <span style={{ color: EMPIRE_COLORS[station.empire] }}>
+                                {station.empire_name}
+                              </span>
+                            </>
+                          )}
                         </td>
                         <td className={styles.systemCell}>{station.system_name}</td>
                         <td>

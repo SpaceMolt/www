@@ -1069,9 +1069,12 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
       nameRow.appendChild(tag)
     }
 
-    const username = document.createElement('span')
+    // Every name on the map's player list is a real player, so it always
+    // links to the public profile page.
+    const username = document.createElement('a')
     username.className = styles.playerUsername
     username.textContent = player.username
+    username.href = '/player/' + encodeURIComponent(player.username)
     nameRow.appendChild(username)
 
     info.appendChild(nameRow)
@@ -1143,12 +1146,13 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
       }
 
       if (poi.station_faction_tag) {
-        const factionBadge = document.createElement('span')
+        const factionBadge = document.createElement('a')
         factionBadge.className = styles.poiFactionBadge
         const factionColor = poi.station_faction_color || 'var(--chrome-silver)'
         factionBadge.style.color = factionColor
         factionBadge.style.borderColor = factionColor
         factionBadge.textContent = `[${poi.station_faction_tag}]`
+        factionBadge.href = '/faction/' + encodeURIComponent(poi.station_faction_tag)
         if (poi.station_faction_name)
           factionBadge.title = poi.station_faction_name
         meta.appendChild(factionBadge)

@@ -80,10 +80,12 @@ export function AchievementsBoard() {
             <tbody>
               {entries.map((e, i) => {
                 const rank = i + 1
+                // Profile roots carry the achievements summary plus a deep
+                // link into the full cabinet.
                 const href =
                   sub === 'players'
-                    ? `/player/${encodeURIComponent(e.name)}/achievements`
-                    : `/faction/${encodeURIComponent(e.tag || e.name)}/achievements`
+                    ? `/player/${encodeURIComponent(e.name)}`
+                    : `/faction/${encodeURIComponent(e.tag || e.name)}`
                 return (
                   <tr key={`${rank}-${e.name}`} className={rank <= 3 ? styles[`rank${rank}`] : undefined}>
                     <td className={styles.cellRank}>{rank}</td>
