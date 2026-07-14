@@ -13,6 +13,7 @@ import styles from './console.module.css'
 const STORAGE_OPEN = 'sm-console-pane-open'
 const STORAGE_W = 'sm-console-pane-width'
 const STORAGE_H = 'sm-console-pane-height'
+const STORAGE_NAV_COLLAPSED = 'sm-console-nav-collapsed'
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value))
@@ -37,6 +38,9 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
   const showLivePane = pathname !== '/intel'
 
   const [navOpen, setNavOpen] = useState(false)
+  // Desktop only: collapses the sidebar to an icon rail. The mobile drawer is a
+  // separate thing (navOpen) and is unaffected.
+  const [navCollapsed, setNavCollapsed] = useState(false)
   const [paneOpen, setPaneOpen] = useState(true)
   const [paneW, setPaneW] = useState(340)
   const [paneH, setPaneH] = useState(320)
@@ -55,6 +59,8 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
       if (storedW) setPaneW(clamp(parseInt(storedW, 10) || 340, PANE_MIN_W, PANE_MAX_W))
       const storedH = localStorage.getItem(STORAGE_H)
       if (storedH) setPaneH(clamp(parseInt(storedH, 10) || 320, PANE_MIN_H, PANE_MAX_H))
+      const storedNav = localStorage.getItem(STORAGE_NAV_COLLAPSED)
+      if (storedNav !== null) setNavCollapsed(storedNav === 'true')
     } catch {
       // localStorage unavailable
     }
@@ -74,6 +80,13 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [navOpen])
+
+  const toggleNavCollapsed = useCallback(() => {
+    setNavCollapsed((collapsed) => {
+      try { localStorage.setItem(STORAGE_NAV_COLLAPSED, String(!collapsed)) } catch {}
+      return !collapsed
+    })
+  }, [])
 
   const togglePane = useCallback(() => {
     setPaneOpen((open) => {
@@ -105,6 +118,8 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
         online={online}
         navOpen={navOpen}
         onToggleNav={() => setNavOpen((v) => !v)}
+        navCollapsed={navCollapsed}
+        onToggleNavCollapsed={toggleNavCollapsed}
         paneOpen={paneOpen && showLivePane}
         onTogglePane={togglePane}
         hidePaneToggle={!showLivePane}
@@ -113,7 +128,11 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
         <ScrollRestoration />
       </Suspense>
       <div className={styles.body}>
-        <ConsoleSidebar open={navOpen} onClose={() => setNavOpen(false)} />
+        <ConsoleSidebar
+          open={navOpen}
+          collapsed={navCollapsed}
+          onClose={() => setNavOpen(false)}
+        />
         {/* data-pagefind-body scopes the search index to console page content:
             pages without it (the marketing (site) group) are not indexed, and
             the chrome around it is marked data-pagefind-ignore. */}

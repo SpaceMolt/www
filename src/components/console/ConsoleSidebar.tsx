@@ -16,10 +16,12 @@ const ACCENT_CLASS: Record<string, string> = {
 
 interface ConsoleSidebarProps {
   open: boolean
+  /** Desktop icon-rail mode. The mobile drawer ignores this. */
+  collapsed: boolean
   onClose: () => void
 }
 
-export function ConsoleSidebar({ open, onClose }: ConsoleSidebarProps) {
+export function ConsoleSidebar({ open, collapsed, onClose }: ConsoleSidebarProps) {
   const pathname = usePathname()
   const { t } = useTranslation()
   const activeHref = findActiveHref(pathname)
@@ -33,7 +35,9 @@ export function ConsoleSidebar({ open, onClose }: ConsoleSidebarProps) {
       />
       <nav
         id="console-sidebar"
-        className={`${styles.sidebar} ${open ? styles.sidebarOpen : ''}`}
+        className={`${styles.sidebar} ${open ? styles.sidebarOpen : ''} ${
+          collapsed ? styles.sidebarCollapsed : ''
+        }`}
         aria-label={t('console.navLabel')}
         data-pagefind-ignore
       >
@@ -46,6 +50,10 @@ export function ConsoleSidebar({ open, onClose }: ConsoleSidebarProps) {
                   const Icon = item.icon
                   const active = !item.external && item.href === activeHref
                   const accent = item.accent ? ACCENT_CLASS[item.accent] : ''
+                  const label = t(item.labelKey)
+                  // Collapsed to icons, the label is the only thing identifying the
+                  // link, so it becomes the tooltip rather than disappearing outright.
+                  const tooltip = collapsed ? label : undefined
                   return (
                     <li key={item.href}>
                       {item.external ? (
@@ -54,9 +62,10 @@ export function ConsoleSidebar({ open, onClose }: ConsoleSidebarProps) {
                           target="_blank"
                           rel="noopener noreferrer"
                           className={`${styles.navLink} ${accent}`}
+                          title={tooltip}
                         >
                           <Icon size={15} aria-hidden />
-                          {t(item.labelKey)}
+                          <span className={styles.navLabel}>{label}</span>
                           <ExternalLink size={11} className={styles.navExternal} aria-hidden />
                         </a>
                       ) : (
@@ -64,9 +73,10 @@ export function ConsoleSidebar({ open, onClose }: ConsoleSidebarProps) {
                           href={item.href}
                           className={`${styles.navLink} ${accent} ${active ? styles.navActive : ''}`}
                           aria-current={active ? 'page' : undefined}
+                          title={tooltip}
                         >
                           <Icon size={15} aria-hidden />
-                          {t(item.labelKey)}
+                          <span className={styles.navLabel}>{label}</span>
                         </Link>
                       )}
                     </li>
