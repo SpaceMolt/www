@@ -161,6 +161,7 @@ function IntelContent() {
           transits={data.transits}
           currentTick={data.currentTick}
           tickAnchorMs={data.tickAnchorMs}
+          msPerTick={data.msPerTick}
           selectedSystemId={selectedSystem}
           layers={layers}
           onSystemSelect={handleSystemSelect}
