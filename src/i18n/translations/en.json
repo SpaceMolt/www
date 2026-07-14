@@ -288,6 +288,8 @@
   },
   "console": {
     "menu": "Toggle navigation menu",
+    "collapseNav": "Collapse navigation",
+    "expandNav": "Expand navigation",
     "navLabel": "Console navigation",
     "skip": "Skip to content",
     "play": "Play",

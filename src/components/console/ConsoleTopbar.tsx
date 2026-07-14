@@ -2,7 +2,17 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { Menu, X, Activity, MessageCircle, Heart, Rocket, Play } from 'lucide-react'
+import {
+  Menu,
+  X,
+  Activity,
+  MessageCircle,
+  Heart,
+  Rocket,
+  Play,
+  PanelLeftClose,
+  PanelLeftOpen,
+} from 'lucide-react'
 import { SignedIn, SignedOut } from '@clerk/nextjs'
 import { useTranslation } from '@/i18n'
 import { LanguageSelector } from '@/components/LanguageSelector'
@@ -15,13 +25,15 @@ interface ConsoleTopbarProps {
   online: boolean
   navOpen: boolean
   onToggleNav: () => void
+  navCollapsed: boolean
+  onToggleNavCollapsed: () => void
   paneOpen: boolean
   onTogglePane: () => void
   /** Pages that have no use for the galaxy feed (the intel map) hide it entirely. */
   hidePaneToggle?: boolean
 }
 
-export function ConsoleTopbar({ stats, online, navOpen, onToggleNav, paneOpen, onTogglePane, hidePaneToggle = false }: ConsoleTopbarProps) {
+export function ConsoleTopbar({ stats, online, navOpen, onToggleNav, navCollapsed, onToggleNavCollapsed, paneOpen, onTogglePane, hidePaneToggle = false }: ConsoleTopbarProps) {
   const { t } = useTranslation()
 
   return (
@@ -34,6 +46,19 @@ export function ConsoleTopbar({ stats, online, navOpen, onToggleNav, paneOpen, o
         aria-controls="console-sidebar"
       >
         {navOpen ? <X size={18} /> : <Menu size={18} />}
+      </button>
+
+      {/* Desktop counterpart to the mobile hamburger: collapses the sidebar to an
+          icon rail so a map or a wide table gets the width back. */}
+      <button
+        className={styles.navCollapseBtn}
+        onClick={onToggleNavCollapsed}
+        aria-label={navCollapsed ? t('console.expandNav') : t('console.collapseNav')}
+        title={navCollapsed ? t('console.expandNav') : t('console.collapseNav')}
+        aria-expanded={!navCollapsed}
+        aria-controls="console-sidebar"
+      >
+        {navCollapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
       </button>
 
       <Link href="/" className={styles.brand}>

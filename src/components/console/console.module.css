@@ -110,6 +110,27 @@
   color: var(--plasma-cyan);
 }
 
+/* Desktop-only mirror of .iconBtn: the hamburger owns mobile, this owns desktop. */
+.navCollapseBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  background: none;
+  border: 1px solid rgba(107, 143, 163, 0.35);
+  border-radius: 4px;
+  color: var(--chrome-silver);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.navCollapseBtn:hover {
+  border-color: var(--plasma-cyan);
+  color: var(--plasma-cyan);
+}
+
 /* --- telemetry readouts --- */
 
 .telemetry {
@@ -271,15 +292,52 @@
 /* --- left nav --- */
 
 .sidebar {
-  width: 218px;
+  width: var(--nav-w, 218px);
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   background: linear-gradient(180deg, rgba(13, 19, 33, 0.85), rgba(10, 14, 23, 0.95));
   border-right: 1px solid rgba(0, 212, 255, 0.14);
   overflow-y: auto;
+  overflow-x: hidden;
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 212, 255, 0.25) transparent;
+  transition: width 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Collapsed: an icon rail. Desktop only — below 900px the sidebar is already a
+   hamburger drawer, and a rail there would be a second, conflicting nav. Main
+   content is flex:1, so it reclaims the width on its own; there is no content
+   offset to keep in sync. */
+@media (min-width: 901px) {
+  .sidebarCollapsed {
+    --nav-w: 56px;
+  }
+
+  .sidebarCollapsed .navLabel,
+  .sidebarCollapsed .navGroupLabel,
+  .sidebarCollapsed .navExternal,
+  .sidebarCollapsed .sidebarLang,
+  .sidebarCollapsed .sidebarFooter {
+    display: none;
+  }
+
+  .sidebarCollapsed .navLink {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  /* The rule is the only thing separating groups once the labels are gone. */
+  .sidebarCollapsed .navGroup {
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(0, 212, 255, 0.08);
+  }
+
+  .sidebarCollapsed .navGroup:last-of-type {
+    border-bottom: none;
+  }
 }
 
 .sidebarInner {
@@ -715,6 +773,12 @@
     display: flex;
   }
 
+  /* Mobile has the hamburger drawer; an icon rail would just be a second,
+     conflicting nav. The collapse styles are desktop-scoped, so nothing else
+     here needs undoing. */
+  .navCollapseBtn {
+    display: none;
+  }
 
   .brandName {
     font-size: 0.82rem;
