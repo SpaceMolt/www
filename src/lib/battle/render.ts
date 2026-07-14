@@ -81,6 +81,13 @@ function arenaPos(
   meta: ParticipantMeta,
   snap: ParticipantSnapshot,
 ): Vec {
+  // A station is bolted to the middle of the arena — the engine pins it at the
+  // engaged ring, never moves it, and lets the fight come to it. So it sits on
+  // the bullseye rather than out along its side's bearing like a ship: it is the
+  // thing both sides are converging on, and drawing it anywhere else would put
+  // the object of the siege off to one flank.
+  if (meta.kind === 'station') return { x: 0, y: 0 }
+
   const sideCount = timeline.sides.length
   const angle = sideAngle(meta.sideIndex, sideCount)
   const r = RING_R[zoneIndex(snap.zone)]
@@ -207,7 +214,9 @@ export function sampleShips(timeline: BattleTimeline, playhead: number, timeMs: 
     const s1 = nextSnaps?.get(id)
     const f0 = facingToward(snap.target_id)
     const f1 = s1 ? facingToward(s1.target_id) : f0
-    const facing = angleLerp(f0, f1, moveT)
+    // A station has no bow to bring to bear — its guns cover every approach — so
+    // it is drawn square rather than slewing to track whatever it is shooting.
+    const facing = meta.kind === 'station' ? 0 : angleLerp(f0, f1, moveT)
 
     const p0 = arenaPos(timeline, meta, snap)
     const p1 = s1 ? arenaPos(timeline, meta, s1) : p0
@@ -250,11 +259,18 @@ export function makeTransform(width: number, height: number, view: ViewState): S
 /** Glyph radius per ship scale (1 = personal … 5 = capital), in px at zoom 1. */
 const SCALE_RADIUS = [9, 9, 12, 15.5, 20, 25.5]
 
-function shipRadius(meta: ParticipantMeta, pxScale: number): number {
+export function shipRadius(meta: ParticipantMeta, pxScale: number): number {
   // Glyph size by ship scale, in px at zoom 1 (tf.scale ≈ 360px on a desktop
   // viewport), clamped so extreme zoom or tiny viewports keep glyphs readable.
+  // A station outsizes even a capital: nothing else in the arena is a place.
   const base =
-    meta.kind === 'drone' ? 5 : meta.kind === 'creature' ? 9 : SCALE_RADIUS[Math.max(1, Math.min(5, Math.round(meta.scale)))]
+    meta.kind === 'station'
+      ? 30
+      : meta.kind === 'drone'
+        ? 5
+        : meta.kind === 'creature'
+          ? 9
+          : SCALE_RADIUS[Math.max(1, Math.min(5, Math.round(meta.scale)))]
   return base * Math.max(0.6, Math.min(1.8, pxScale / 360))
 }
 
@@ -484,18 +500,20 @@ function drawShip(
     }
   }
 
-  // Engine glow (brighter while moving).
-  const flick = reducedMotion ? 0.5 : 0.5 + 0.5 * Math.sin(timeMs * 0.02 + hashStr(s.meta.id))
-  const engineA = s.moving ? 0.7 + 0.3 * flick : 0.22 + 0.18 * flick
-  const ex = pos.x - Math.cos(s.facing) * size * 1.15
-  const ey = pos.y - Math.sin(s.facing) * size * 1.15
-  const eg = ctx.createRadialGradient(ex, ey, 0, ex, ey, size * (s.moving ? 1.3 : 0.7))
-  eg.addColorStop(0, `rgba(0,212,255,${(engineA * 0.7).toFixed(2)})`)
-  eg.addColorStop(1, 'rgba(0,212,255,0)')
-  ctx.fillStyle = eg
-  ctx.beginPath()
-  ctx.arc(ex, ey, size * (s.moving ? 1.3 : 0.7), 0, Math.PI * 2)
-  ctx.fill()
+  // Engine glow (brighter while moving) — a station has no engines to light.
+  if (s.meta.kind !== 'station') {
+    const flick = reducedMotion ? 0.5 : 0.5 + 0.5 * Math.sin(timeMs * 0.02 + hashStr(s.meta.id))
+    const engineA = s.moving ? 0.7 + 0.3 * flick : 0.22 + 0.18 * flick
+    const ex = pos.x - Math.cos(s.facing) * size * 1.15
+    const ey = pos.y - Math.sin(s.facing) * size * 1.15
+    const eg = ctx.createRadialGradient(ex, ey, 0, ex, ey, size * (s.moving ? 1.3 : 0.7))
+    eg.addColorStop(0, `rgba(0,212,255,${(engineA * 0.7).toFixed(2)})`)
+    eg.addColorStop(1, 'rgba(0,212,255,0)')
+    ctx.fillStyle = eg
+    ctx.beginPath()
+    ctx.arc(ex, ey, size * (s.moving ? 1.3 : 0.7), 0, Math.PI * 2)
+    ctx.fill()
+  }
 
   // Body.
   drawShipBody(ctx, pos.x, pos.y, size, s.facing, s.meta, color, false)
@@ -618,8 +636,9 @@ function drawShipBody(
     ctx.stroke()
     strokeGlyphDetail(ctx, meta.archetype, size)
     // Armed cue: a short muzzle line off the nose — this thing shoots.
-    // Skipped on tiny glyphs where it would read as noise.
-    if (meta.armed && size >= 8) {
+    // Skipped on tiny glyphs where it would read as noise, and on stations,
+    // which have no nose and wear their guns around the ring instead.
+    if (meta.armed && size >= 8 && meta.kind !== 'station') {
       const nose = GLYPH_NOSE_X[meta.archetype]
       ctx.beginPath()
       ctx.moveTo(size * nose, 0)

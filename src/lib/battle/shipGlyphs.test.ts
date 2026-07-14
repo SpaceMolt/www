@@ -18,6 +18,7 @@ const ARCHETYPES: GlyphArchetype[] = [
   'support',
   'drone',
   'creature',
+  'station',
 ]
 
 describe('CLASS_ARCHETYPES', () => {
@@ -33,6 +34,11 @@ describe('archetypeForShip', () => {
   it('routes drones and creatures by kind, ignoring class', () => {
     expect(archetypeForShip('drone', undefined, undefined, 0)).toBe('drone')
     expect(archetypeForShip('creature', 'Fighter', 'Combat', 3)).toBe('creature')
+  })
+
+  it('routes stations by kind — they carry no ship class at all', () => {
+    expect(archetypeForShip('station', undefined, undefined, 0)).toBe('station')
+    expect(archetypeForShip('station', '', '', 0)).toBe('station')
   })
 
   it('matches classes case-insensitively', () => {

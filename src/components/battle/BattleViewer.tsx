@@ -12,6 +12,7 @@ import {
   renderBackground,
   renderFrame,
   sampleShips,
+  shipRadius,
   type ViewState,
 } from '@/lib/battle/render'
 import { BATTLE_CATEGORY_META, SIDE_COLORS } from '@/lib/battle/types'
@@ -212,12 +213,16 @@ export default function BattleViewer({ battleId }: { battleId: string }) {
     const tf = makeTransform(width, height, viewRef.current)
     const ships = sampleShips(timelineRef.current, playheadRef.current, performance.now(), true)
     let best: string | null = null
-    let bestDist = 28
+    let bestDist = Infinity
     for (const s of ships.values()) {
       if (!s.alive) continue
       const p = tf.toScreen(s.pos)
       const d = Math.hypot(p.x - mx, p.y - my)
-      if (d < bestDist) {
+      // A ship is a 28px target whatever its glyph. A station is drawn far larger
+      // than that — ring, spars and all — so it takes a target that covers what
+      // is actually on screen, or most of the thing would not be clickable.
+      const reach = s.meta.kind === 'station' ? Math.max(28, shipRadius(s.meta, tf.scale) * 1.45) : 28
+      if (d < reach && d < bestDist) {
         bestDist = d
         best = s.meta.id
       }

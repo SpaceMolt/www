@@ -71,6 +71,12 @@ export interface ParticipantSnapshot {
   player_id: string
   username: string
   side_id: number
+  /**
+   * What this combatant is: player | pirate | police | drone | creature |
+   * station | npc. Absent on logs written before the server tagged its
+   * snapshots, which is why detectKind() still keeps a heuristic fallback.
+   */
+  kind?: string
   faction_id?: string
   zone: string
   stance: string

@@ -22,8 +22,13 @@ export type GlyphArchetype =
   | 'support'
   | 'drone'
   | 'creature'
+  | 'station'
 
-/** Nose extent of each archetype (units of size), for attaching the muzzle cue. */
+/**
+ * Nose extent of each archetype (units of size), for attaching the muzzle cue.
+ * A station has no nose — it is radially symmetric and never rotated — so its
+ * entry is the plain core radius and the caller skips the muzzle line for it.
+ */
 export const GLYPH_NOSE_X: Record<GlyphArchetype, number> = {
   fighter: 1.25,
   warship: 1.3,
@@ -35,6 +40,7 @@ export const GLYPH_NOSE_X: Record<GlyphArchetype, number> = {
   support: 1.0,
   drone: 1.0,
   creature: 0.9,
+  station: 1.0,
 }
 
 /** Catalog ship class (lowercase) → silhouette archetype. */
@@ -114,7 +120,7 @@ export const CLASS_ARCHETYPES: Record<string, GlyphArchetype> = {
  * the generic scout teardrop for anything unknown.
  */
 export function archetypeForShip(
-  kind: 'ship' | 'drone' | 'creature',
+  kind: 'ship' | 'drone' | 'creature' | 'station',
   shipClass: string | undefined,
   category: string | undefined,
   scale: number,
@@ -256,6 +262,20 @@ export function traceGlyphPath(
       ctx.lineTo(-size * 0.75, -size * 0.6)
       ctx.lineTo(size * 0.4, -size * 0.6)
       break
+    case 'station': {
+      // Regular hexagonal keep. Unlike every other glyph this one is symmetric
+      // about both axes and is drawn unrotated: a station has no bow, no engines
+      // and no facing — it is bolted to the middle of the arena and the fight
+      // comes to it. The docking ring and gun blisters are struck on afterwards.
+      for (let v = 0; v < 6; v++) {
+        const a = (v / 6) * Math.PI * 2
+        const px = Math.cos(a) * size
+        const py = Math.sin(a) * size
+        if (v === 0) ctx.moveTo(px, py)
+        else ctx.lineTo(px, py)
+      }
+      break
+    }
   }
   ctx.closePath()
 }
@@ -314,6 +334,29 @@ export function strokeGlyphDetail(
       ctx.lineTo(-size * 0.3, size * 0.85)
       ctx.stroke()
       break
+    case 'station': {
+      // Docking ring on radial spars, and gun blisters that bear on every
+      // approach — this is a fortress, and it does not have to turn to shoot you.
+      const ring = size * 1.4
+      ctx.beginPath()
+      ctx.arc(0, 0, ring, 0, Math.PI * 2)
+      ctx.stroke()
+      ctx.beginPath()
+      for (let s = 0; s < 6; s++) {
+        const a = ((s + 0.5) / 6) * Math.PI * 2
+        ctx.moveTo(Math.cos(a) * size * 0.72, Math.sin(a) * size * 0.72)
+        ctx.lineTo(Math.cos(a) * ring, Math.sin(a) * ring)
+      }
+      ctx.stroke()
+      ctx.fillStyle = 'rgba(232,244,248,0.5)'
+      for (let g = 0; g < 6; g++) {
+        const a = (g / 6) * Math.PI * 2
+        ctx.beginPath()
+        ctx.arc(Math.cos(a) * ring, Math.sin(a) * ring, size * 0.16, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      break
+    }
     default:
       break
   }
