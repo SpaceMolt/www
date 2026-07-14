@@ -13,6 +13,7 @@ import {
   type BattleCategory,
   type BattleSummary,
 } from '@/lib/battle/types'
+import { formatDuration, winnerNames } from '@/lib/battle/format'
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 const POLL_INTERVAL = 10_000
@@ -50,17 +51,6 @@ const CATEGORY_FILTERS: { key: FilterCategory; labelKey: string }[] = [
   { key: 'pve', labelKey: 'battles.filterTypePve' },
 ]
 
-function formatDuration(ticks: number): string {
-  const seconds = ticks * 10
-  if (seconds < 60) return `${seconds}s`
-  const minutes = Math.floor(seconds / 60)
-  const secs = seconds % 60
-  if (minutes < 60) return secs > 0 ? `${minutes}m ${secs}s` : `${minutes}m`
-  const hours = Math.floor(minutes / 60)
-  const mins = minutes % 60
-  return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`
-}
-
 function timeAgo(dateStr: string): string {
   const ms = Date.now() - new Date(dateStr).getTime()
   const mins = Math.floor(ms / 60_000)
@@ -70,11 +60,6 @@ function timeAgo(dateStr: string): string {
   if (hours < 24) return `${hours}h ago`
   const days = Math.floor(hours / 24)
   return `${days}d ago`
-}
-
-function winnerNames(battle: BattleSummary): string[] {
-  const side = (battle.sides ?? []).find(s => s.side_id === battle.winning_side)
-  return side?.participants ?? []
 }
 
 export default function BattlesPage() {
