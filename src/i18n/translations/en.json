@@ -642,7 +642,6 @@
     "errorTitle": "Unable to Load Station",
     "errorDesc": "The game server may be offline. Try again later.",
     "system": "System",
-    "defense": "Defense",
     "satisfaction": "Satisfaction",
     "access": "Access",
     "accessPublic": "Public",
@@ -655,7 +654,12 @@
     "uniqueBadge": "Unique",
     "level": "Lv",
     "showLore": "Show lore",
-    "hideLore": "Hide lore"
+    "hideLore": "Hide lore",
+    "hull": "Hull",
+    "shield": "Shield",
+    "guns": "Guns",
+    "gunsValue": "{dps}/tick · reach {reach}",
+    "gunsSilent": "Silent — no ammunition"
   },
   "marketDetail": {
     "backToMarket": "Back to Market",
