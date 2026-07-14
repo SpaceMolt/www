@@ -225,7 +225,7 @@ export function FactionProfile({ profile }: { profile: PublicFactionProfile }) {
                   </td>
                   <td>{m.role || '—'}</td>
                   <td>{formatDate(m.joined_at)}</td>
-                  <td>{timeAgo(m.last_seen)}</td>
+                  <td>{timeAgo(m.last_seen) || '—'}</td>
                 </tr>
               ))}
             </tbody>

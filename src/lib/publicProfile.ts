@@ -216,6 +216,9 @@ export function formatDate(iso: string): string {
 export function timeAgo(iso: string): string {
   const then = new Date(iso).getTime()
   if (Number.isNaN(then)) return ''
+  // Zero-value Go timestamps ("0001-01-01...") parse fine but would render
+  // as an absurd "739000d ago" — treat anything pre-game as unknown.
+  if (then < Date.UTC(2020, 0, 1)) return ''
   const s = Math.max(0, Math.floor((Date.now() - then) / 1000))
   if (s < 60) return 'just now'
   if (s < 3600) return `${Math.floor(s / 60)}m ago`
