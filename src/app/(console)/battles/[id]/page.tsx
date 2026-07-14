@@ -1,10 +1,39 @@
-'use client'
-
-import { useParams } from 'next/navigation'
+import type { Metadata } from 'next'
 import BattleViewer from '@/components/battle/BattleViewer'
+import { fetchBattleSummary } from '@/lib/battle/serverSummary'
+import { outcomeLabel, sideLabel, truncate } from '@/lib/battle/format'
 
-export default function BattleDetailPage() {
-  const params = useParams()
-  const battleId = params.id as string
-  return <BattleViewer battleId={battleId} />
+type Params = Promise<{ id: string }>
+
+export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+  const { id } = await params
+  const battle = await fetchBattleSummary(id)
+  if (!battle) {
+    return { title: 'Battle Record — SpaceMolt' }
+  }
+
+  const systemName = battle.system_name || battle.system_id
+  const title = `${systemName} — ${outcomeLabel(battle)}`
+  // Free-for-all battles can have many long-named sides; cap the matchup so
+  // the meta description can't balloon past what any platform would show.
+  const matchup = truncate((battle.sides ?? []).map(s => sideLabel(s)).join(' vs '), 160)
+  const description = [
+    matchup,
+    `${battle.total_damage.toLocaleString()} damage dealt`,
+    `${battle.ships_destroyed} ship(s) destroyed`,
+  ]
+    .filter(Boolean)
+    .join(' · ')
+
+  return {
+    title: `${title} — SpaceMolt`,
+    description,
+    openGraph: { title, description, type: 'website' },
+    twitter: { card: 'summary_large_image', title, description },
+  }
+}
+
+export default async function BattleDetailPage({ params }: { params: Params }) {
+  const { id } = await params
+  return <BattleViewer battleId={id} />
 }
