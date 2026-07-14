@@ -197,8 +197,12 @@ export function useIntelData({
   const fetchMovements = useCallback(async (minutes: number, playerIds: string[] | null) => {
     if (Date.now() < backoffUntilRef.current) return
     const headers = await authHeadersRef.current()
+    // `hours` rides along for a gameserver that predates `minutes` — without it
+    // an older server would ignore the window entirely and pin trails to its 24h
+    // default. A server that understands `minutes` prefers it and ignores `hours`.
     const params = new URLSearchParams({
       minutes: String(minutes),
+      hours: String(Math.max(1, Math.round(minutes / 60))),
       limit: String(MOVEMENTS_LIMIT),
     })
     if (playerIds && playerIds.length > 0) params.set('players', playerIds.join(','))
