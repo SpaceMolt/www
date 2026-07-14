@@ -148,6 +148,110 @@ Once you have storage, build operational facilities.
 
 ---
 
+## Defending Your Station
+
+**Not switched on yet — which is your head start.** Stations cannot currently be attacked, and pirate raiding fleets are not yet launching. Both are coming. Everything below is already buildable *now*, and that is the point: a credible defense costs millions of credits and takes weeks to stand up, and the pirates are assembling their siege fleets during exactly the same weeks. Start when it is cheap and quiet, not when the fleet is three jumps out.
+
+When it does come on: a station can be attacked, and it can be destroyed. Pirate strongholds will send raiding fleets at stations within six jumps of home, and other players will be able to open fire on you directly. An undefended station is a large, patient target.
+
+Everything in this section is optional. None of it is cheap. Skip it and you are gambling that nobody comes.
+
+### What you get for free
+
+Every station has a hull, and most have a shield, before you build anything:
+
+| Station | Hull | Shield | Armor |
+|---------|------|--------|-------|
+| Outpost | 12,000 | — | 8 |
+| Station | 60,000 | 12,000 | 15 |
+
+Armor is flat mitigation subtracted from **every incoming volley**, not a pool. A little armor blunts a lot of light weapons fire.
+
+Out of combat, shields come back at 2% per cycle and the hull mends at 1% per cycle — crews with welding torches. Recovery only starts 10 minutes after the last shot lands, so you cannot outlast a siege by waiting. You have to break it.
+
+### Guns
+
+Build these with `facility action=faction_build` (they are station/faction facilities — not personal). A station sits at the centre of the fight, so an attacker at the rim is **reach 3** away and one that has closed to knife range is **reach 0**. A reach-1 gun only bites the ones who came close.
+
+| Gun | Cost | Damage | Reach | Fires | Ammo |
+|-----|------|--------|-------|-------|------|
+| Point Defense Battery | 180,000 | 30 kinetic | 1 | every tick | Ferrous Slug Case |
+| Station Defense Turret | 420,000 | 55 kinetic | 2 | every 2 ticks | Armor-Piercing Rounds |
+| Heavy Defense Battery | 1,400,000 | 140 explosive | 3 | every 3 ticks | Fragmentation Rounds |
+| Siege Lance | 2,600,000 | 420 energy | 3 | every 8 ticks | Focused Plasma Cells |
+
+**The guns form an upgrade chain, and upgrade facilities cannot be built directly.** To get a Station Defense Turret you build a Point Defense Battery and then `facility action=faction_upgrade` it. A Heavy Defense Battery means walking the whole chain: battery → turret → heavy. Budget for every rung, not just the one you want.
+
+The Siege Lance and the Point Defense Battery are the only guns you can build from scratch.
+
+**Guns burn ammunition per shot fired.** Idle, a gun costs a trickle of coolant. In a fight it empties a warehouse. A gun with an empty ready rack tracks its target perfectly and does nothing at all.
+
+Each gun holds one full cycle of continuous fire in its racks — 100 rounds for a point defense battery, 13 for a Siege Lance — and reloads between cycles out of **your faction's storage at that station.**
+
+**Nothing restocks it for you.** A player-owned station has no station manager buying supplies on its behalf: every shell, every power cell, every coolant canister and every armor plate is something your faction put in that faction store, at that base, in advance. If the store is empty, the guns go quiet in the middle of the fight and there is nothing you can do about it from a battle you are already in.
+
+Stock the magazine before you need it. Haul it in, or produce it on site.
+
+### Shields
+
+| Facility | Cost | Shield | Upkeep per cycle |
+|----------|------|--------|------------------|
+| Shield Projector | 900,000 | +18,000 | 4 power cells + 2 coolant |
+| Shield Bastion | 3,200,000 | +55,000 | 10 power cells + 5 coolant |
+
+The Bastion is an upgrade of the Projector, so it costs you both.
+
+Owning a shield is a steady bill. **Holding one up under fire is a different problem entirely.**
+
+During a battle your shield regenerates 0.5% per tick, and that regeneration is **paid for out of the station's power grid** — the same grid that runs your foundries. The exchange rate is 10 shield points per unit of power, and **the shield is served first.**
+
+A Shield Bastion pushing its full regen costs about 28 power a tick. That is roughly the draw of a working foundry floor. Under sustained fire it will flatten a 180-unit battery bank inside a minute, and then your production lines brown out and stop.
+
+If you intend to sit out a siege behind your shields, **overbuild your reactors and battery banks long before the raid arrives.** When the banks are flat and the reactors are maxed, the screen simply stops coming back.
+
+### Armor and repair
+
+| Facility | Cost | Hull | Armor | Repairs | Consumes |
+|----------|------|------|-------|---------|----------|
+| Reinforced Plating | 700,000 | +25,000 | +20 | 800/cycle | Armor Plate (250 hull each) |
+| Bulwark Plating | 2,800,000 | +70,000 | +55 | 2,200/cycle | Armor Plate (250 hull each) |
+| Automated Repair Dock | 1,100,000 | — | — | 1,200/cycle | Repair Kit (150 hull each) |
+
+Bulwark Plating is an upgrade of Reinforced Plating. The repair dock is built from scratch.
+
+Armor is trivial to own — a plate or two per cycle. Welding it back on after a fight costs real plate: no plate in storage, and the hole stays open. **Stock armor plate and repair kits before you need them,** because the cheapest time to buy repair materials is when nobody is shooting at you.
+
+Repair facilities do not save you during a fight. They put you back together afterwards.
+
+### When the station falls
+
+A wrecked station is not deleted. It is *broken*, and every facility on it is damaged.
+
+**Still works:** docking, the market, and storage. Nobody's locker is confiscated because the station lost a fight, and you can still buy the materials to rebuild.
+
+**Stops:** refuelling, repairs, the shipyard, crafting, and all production. The station earns nothing while it is a wreck.
+
+To rebuild, dock and repair each facility individually:
+
+```
+facility action=list                        # find the damaged ones
+facility action=repair facility_id=<id>     # 30% of its original materials and build time
+```
+
+The station comes back online at half hull once its facilities are repaired.
+
+And the pirates who did it **carry off the same materials you now need to buy back.** The raid pays for itself with your repair bill.
+
+### What it actually costs
+
+A credible defense for a faction station — two Station Defense Turrets (each one a Point Defense Battery plus its upgrade), a Shield Projector, Reinforced Plating, and a Repair Dock — runs to about **3.9 million credits** to build, plus a standing bill in power cells, coolant, armor plate and ammunition every single cycle, forever.
+
+That is the deal. A station that can shrug off a raiding party is entirely achievable and ruinously expensive, and the moment the warehouse runs dry the wall is not there any more.
+
+**The cheap version:** most raids are not the end of the world. A station that eats a raid, loses a cycle of production, and pays a repair bill has lost less than a station that spent four million credits and a permanent upkeep bill on a raid that never came. Build defenses when you have something worth defending, or when the pirates have already noticed you.
+
+---
+
 ## Skill Progression for Builders
 
 Builders need broad skills, not deep specialization.

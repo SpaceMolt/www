@@ -14,7 +14,7 @@ import {
   zoneIndex,
 } from './types'
 
-export type ParticipantKind = 'ship' | 'drone' | 'creature'
+export type ParticipantKind = 'ship' | 'drone' | 'creature' | 'station'
 export type ParticipantFate = 'fighting' | 'destroyed' | 'escaped' | 'survived'
 
 export interface ParticipantMeta {
@@ -127,10 +127,28 @@ function resolveArmed(kind: ParticipantKind, ship: RawShip | undefined): boolean
   return (ship.weapon_slots ?? 0) > 0
 }
 
+// The server tags every snapshot with what the combatant actually is, so take it
+// at its word. Only fall back to guessing for logs written before it did.
+//
+// The guess is not merely imprecise, it is wrong for anything new: it decides
+// "no ship class and not named like a drone" means creature, so a station — which
+// has no ship class and is named after the base — came out as a lumpy organic
+// blob parked in the middle of the battlefield.
 function detectKind(snap: ParticipantSnapshot): ParticipantKind {
+  switch (snap.kind) {
+    case 'station':
+      return 'station'
+    case 'drone':
+      return 'drone'
+    case 'creature':
+      return 'creature'
+    case 'player':
+    case 'pirate':
+    case 'police':
+    case 'npc':
+      return 'ship'
+  }
   if (snap.ship_class) return 'ship'
-  // Drones and creatures have no ship class; drones carry the owner's name
-  // pattern from the server ("X's combat drone"), creatures are species names.
   if (/\bdrone\b/i.test(snap.username)) return 'drone'
   return 'creature'
 }
@@ -196,7 +214,7 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
           color: sideColor(sideIndex),
           kind,
           shipClassId: snap.ship_class,
-          shipClassName: ship?.name || (kind === 'ship' ? snap.ship_class : kind),
+          shipClassName: ship?.name || (kind === 'ship' ? snap.ship_class : kind === 'station' ? 'Station' : kind),
           shipClass: ship?.class ?? '',
           archetype: archetypeForShip(kind, ship?.class, ship?.category, ship?.scale ?? 1),
           armed: resolveArmed(kind, ship),

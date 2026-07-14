@@ -223,6 +223,90 @@ After you kill a pirate, loot the wreck.
 
 ---
 
+## Pirate Strongholds Shoot Back
+
+A stronghold is not scenery. It has guns, and it uses them.
+
+**If a fight breaks out on a stronghold's doorstep, the station joins it** — on its own crews' side. You cannot park outside a pirate base and farm its pirates one at a time while the fortress they are standing in front of watches. It will open fire on you.
+
+| Stronghold gun | Damage | Reach | Fires |
+|----------------|--------|-------|-------|
+| Scrap Flak Battery | 70 kinetic | 2 | every 2 ticks |
+| Harpoon Emplacement | 300 kinetic | 3 | every 6 ticks |
+
+**Reach 3 covers the entire engagement.** Standing off at maximum range does not put you out of the harpoon's reach — there is nowhere in the fight you can sit and be safe from it. A stronghold has roughly 120,000 hull, 30,000 shield, and 30 armor, so it is not something you chip down by accident.
+
+Two things a station will **not** do:
+
+- It never joins a wildlife hunt. Shooting fauna near a stronghold does not bring the guns down on you.
+- It never takes sides in somebody else's quarrel where there is no clear aggressor. Two pilots brawling outside are not the station's business.
+
+**What this means for you:** hunting pirates *at* their stronghold is now a fight with the stronghold. Hunt them where you find them — on patrol, at belts, in transit — and leave the fortress alone unless you came to crack it and brought enough ship to do it.
+
+### Cracking one
+
+**Not switched on yet** — stations cannot currently be attacked. When it comes on, you will be able to destroy a stronghold. When you do:
+
+- **It cannot be hurt again while it is a wreck.** You cannot keep re-breaking it to hold it down.
+- **Its guns come back when its boss does** — even standing in its own rubble.
+- It rebuilds itself in about a day.
+
+So camping a stronghold you have already wrecked is pointless: you sit under an emplacement that will never die, hitting something that cannot be hurt. Take what you came for and go.
+
+You also cannot starve one out. Strongholds make their own ammunition out of the wrecks of the people who came to take them — there is no supply line to cut.
+
+---
+
+## Intercepting Pirate Raids
+
+**Not switched on yet.** Raids are coming, and the strongholds are already building the fleets they will send. Everything below is how it will work, so you can be the pilot who is fitted and positioned when it starts rather than the one reading about it afterwards.
+
+Strongholds will send raiding fleets at stations up to **six jumps** from home. This is the best-paid, best-telegraphed combat in the game, and almost nobody will be set up to meet it.
+
+### Hearing them coming
+
+Fit a **Pirate Radio Scanner**. Pirates plan out loud.
+
+Raid traffic broadcasts **seven jumps** — much further than ordinary pirate chatter, which only carries three — so you can hear a fleet that is coming for a station well before it arrives. The chatter escalates through three stages over about an hour:
+
+1. **A rumour** — something is being planned, somewhere in the region.
+2. **The target, named** — which station, which system.
+3. **Imminent** — they are launching, and how many.
+
+That is your hour to get there first.
+
+### Meeting them on the road
+
+A raiding fleet is 4–12 hulls, plus a couple of salvagers and **a couple of haulers.** It moves hop by hop and **sits in each system for a few minutes** before jumping again.
+
+That dwell is your window. A raid caught in transit is a raid fighting without its target's defenders — and a fleet that gets badly mauled on the road turns around and goes home.
+
+### Kill the haulers
+
+This is the thing worth knowing.
+
+**A raiding fleet carries its own ammunition, and when it runs out, it gives up and goes home.** The haulers are the supply train — they carry the reserve and run more ammunition across to the guns mid-siege. They are not in the fight. They are the reason it is still going.
+
+Killing the haulers ends a siege far faster than killing the warships does. A raiding party with no ammunition is a formation of very expensive ships with nothing to shoot.
+
+If you take nothing else from this section: **when you break a siege, shoot the trucks.**
+
+### The clock
+
+A raid that is not driven off gives up on its own after about three hours on target. That is a backstop, not a plan — three hours is long enough to flatten most stations.
+
+---
+
+## Shooting Stations Yourself
+
+**Not switched on yet.** When it comes on, you will be able to open fire on any station, including an empire one. The consequences are real.
+
+Shelling an **empire station** costs roughly **three times** the reputation that shooting one of its patrol ships does, and it is a crime with a bounty attached. The police respond, and they keep hunting you afterwards. A station is full of witnesses; there is no talking your way out of it.
+
+Pirate strongholds carry no such penalty. Nobody is going to file a complaint on their behalf.
+
+---
+
 ## Advanced Tips (Optional Reading)
 
 **Pirate Tiers:**

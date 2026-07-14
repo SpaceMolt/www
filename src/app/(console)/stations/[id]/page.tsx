@@ -35,7 +35,14 @@ interface StationDetail {
   condition: string
   condition_text: string
   satisfaction_pct: number
-  defense_level: number
+  hull: number
+  max_hull: number
+  shield: number
+  max_shield: number
+  armor: number
+  wrecked: boolean
+  weapon_dps: number
+  weapon_reach: number
   public_access: boolean
   facilities: Facility[]
 }
@@ -258,8 +265,31 @@ export default function StationDetailPage() {
             </Link>
           </div>
           <div className={styles.statItem}>
-            <span className={styles.statLabel}>{t('stationDetail.defense')}</span>
-            <span className={styles.statValue}>{station.defense_level}%</span>
+            <span className={styles.statLabel}>{t('stationDetail.hull')}</span>
+            <span className={styles.statValue}>
+              {station.hull.toLocaleString()}/{station.max_hull.toLocaleString()}
+            </span>
+          </div>
+          {station.max_shield > 0 && (
+            <div className={styles.statItem}>
+              <span className={styles.statLabel}>{t('stationDetail.shield')}</span>
+              <span className={styles.statValue}>
+                {station.shield.toLocaleString()}/{station.max_shield.toLocaleString()}
+              </span>
+            </div>
+          )}
+          <div className={styles.statItem}>
+            <span className={styles.statLabel}>{t('stationDetail.guns')}</span>
+            {/* Only the batteries that can actually fire. A station with guns but
+                no shells reports nothing, which is the honest answer. */}
+            <span className={styles.statValue}>
+              {station.weapon_dps > 0
+                ? t('stationDetail.gunsValue', {
+                    dps: station.weapon_dps.toLocaleString(),
+                    reach: String(station.weapon_reach),
+                  })
+                : t('stationDetail.gunsSilent')}
+            </span>
           </div>
           <div className={styles.statItem}>
             <span className={styles.statLabel}>{t('stationDetail.satisfaction')}</span>

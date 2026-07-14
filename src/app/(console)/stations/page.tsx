@@ -21,7 +21,8 @@ interface Station {
   condition_text: string
   satisfaction_pct: number
   facility_count: number
-  defense_level: number
+  weapon_dps: number
+  wrecked: boolean
 }
 
 interface Empire {
@@ -254,7 +255,7 @@ export default function StationsPage() {
                       <th scope="col">Condition</th>
                       <th scope="col" className={styles.numCol}>Sat</th>
                       <th scope="col" className={styles.numCol}>Fac</th>
-                      <th scope="col" className={styles.numCol}>Def</th>
+                      <th scope="col" className={styles.numCol}>Guns</th>
                       <th scope="col" aria-hidden className={styles.chevronCol} />
                     </tr>
                   </thead>
@@ -297,7 +298,7 @@ export default function StationsPage() {
                         </td>
                         <td className={styles.numCell}>{station.satisfaction_pct}%</td>
                         <td className={styles.numCell}>{station.facility_count}</td>
-                        <td className={styles.numCell}>{station.defense_level}%</td>
+                        <td className={styles.numCell}>{station.wrecked ? 'wrecked' : station.weapon_dps.toLocaleString()}</td>
                         <td className={styles.chevronCell}>
                           <ChevronRight size={13} aria-hidden />
                         </td>

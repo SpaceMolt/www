@@ -119,9 +119,12 @@ export default function ShipInspector({ timeline, participantId, tickIndex, onCl
                 <div key={i} className={styles.moduleRow}>
                   <span className={styles.moduleName}>{m.name}</span>
                   {m.magazine_size ? (
-                    <span className={styles.moduleAmmo}>
+                    // An empty rack is the most informative thing in this panel —
+                    // it is why a gun has gone quiet, and on a besieged station it
+                    // is the siege being won. Do not let it read like a full one.
+                    <span className={styles.moduleAmmo} style={(m.current_ammo ?? 0) === 0 ? { color: '#e63946' } : undefined}>
                       {m.loaded_ammo ? `${m.loaded_ammo} · ` : ''}
-                      {m.current_ammo}/{m.magazine_size}
+                      {m.current_ammo ?? 0}/{m.magazine_size}
                     </span>
                   ) : null}
                 </div>
