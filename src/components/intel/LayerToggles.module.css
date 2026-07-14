@@ -2,7 +2,9 @@
 
 .panel {
   position: absolute;
-  top: 1rem;
+  /* Clear the site-search field, which floats in this same corner on every
+     console page. Same convention the galaxy map's travel tracker uses. */
+  top: var(--console-search-clear);
   right: 1rem;
   z-index: 120;
   display: flex;

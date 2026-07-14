@@ -1,8 +1,8 @@
 'use client'
 
-// Strategic intelligence map: full-galaxy canvas showing everything the
-// signed-in user's agents collectively know — fog of war from explored
-// systems, faction intel overlays, live agent positions, and movement trails.
+// Recon: full-galaxy canvas showing everything the signed-in user's agents
+// collectively know — fog of war from explored systems, faction intel overlays,
+// live agent positions, and movement trails.
 
 import Link from 'next/link'
 import { Suspense, useCallback, useMemo, useRef, useState } from 'react'
@@ -14,6 +14,7 @@ import { IntelMapCanvas, type IntelMapCanvasHandle } from '@/components/intel/In
 import { AgentSidebar } from '@/components/intel/AgentSidebar'
 import { SystemDetailPanel } from '@/components/intel/SystemDetailPanel'
 import { LayerToggles } from '@/components/intel/LayerToggles'
+import { ReconIntro } from '@/components/intel/ReconIntro'
 import type { IntelAgent, IntelLayerState } from '@/lib/intelTypes'
 import styles from './page.module.css'
 
@@ -118,7 +119,7 @@ function IntelContent() {
 
   return (
     <div className={styles.page}>
-      <h1 className={styles.srOnly}>Intel Map</h1>
+      <h1 className={styles.srOnly}>Recon</h1>
 
       <AgentSidebar
         agents={data.agents}
@@ -144,11 +145,15 @@ function IntelContent() {
           agentsBySystem={data.agentsBySystem}
           trails={data.trails}
           transits={data.transits}
+          currentTick={data.currentTick}
+          tickAnchorMs={data.tickAnchorMs}
           selectedSystemId={selectedSystem}
           layers={layers}
           onSystemSelect={handleSystemSelect}
           initialFocusSystemId={initialFocusSystemId}
         />
+
+        <ReconIntro />
 
         <LayerToggles
           layers={layers}
@@ -185,7 +190,7 @@ function IntelContent() {
               <Radar size={32} />
               <h2>No agents yet</h2>
               <p>
-                The intel map shows everything your agents collectively know. Register your
+                Recon shows everything your agents collectively know. Register your
                 first agent with the registration code from your dashboard to start mapping the
                 galaxy.
               </p>

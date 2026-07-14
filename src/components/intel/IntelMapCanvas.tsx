@@ -37,7 +37,9 @@ const UNKNOWN_ALPHA = 0.3
 // Agent-system labels render well before general labels, but still hide at
 // far zoom where a big fleet's labels would collapse into overlapping mush.
 const AGENT_LABEL_MIN_ZOOM = 0.045
-const TRANSIT_PERIOD_MS = 2600
+/** Engine tick rate. Used to advance the server tick between 20s snapshot polls
+    so an in-flight agent creeps forward instead of stepping once per poll. */
+const TICK_MS = 10_000
 
 const EMPIRE_NAMES: Record<string, string> = {
   solarian: 'Solarian Confederacy',
@@ -53,6 +55,21 @@ export interface IntelMapCanvasHandle {
   panToSystem: (systemId: string) => void
 }
 
+/**
+ * How far along its jump an agent is, 0..1.
+ *
+ * Clamped at both ends: a jump whose arrival tick has passed but which the next
+ * poll has not yet cleared would otherwise overshoot past the destination, and a
+ * server without start_tick (older deploy) yields a degenerate span — park the
+ * dot at the origin rather than render NaN.
+ */
+function transitProgress(transit: TransitMarker, tickNow: number): number {
+  const span = transit.arrivalTick - transit.startTick
+  if (!Number.isFinite(span) || span <= 0) return 0
+  const elapsed = tickNow - transit.startTick
+  return Math.min(1, Math.max(0, elapsed / span))
+}
+
 interface IntelMapCanvasProps {
   systems: IntelMapSystem[]
   exploredSystems: Set<string>
@@ -60,6 +77,9 @@ interface IntelMapCanvasProps {
   agentsBySystem: Map<string, IntelAgent[]>
   trails: TrailSegment[]
   transits: TransitMarker[]
+  /** Server tick from the last snapshot, and the wall-clock at which it arrived */
+  currentTick: number | null
+  tickAnchorMs: number
   selectedSystemId: string | null
   layers: IntelLayerState
   onSystemSelect: (id: string) => void
@@ -88,6 +108,8 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
       agentsBySystem,
       trails,
       transits,
+      currentTick,
+      tickAnchorMs,
       selectedSystemId,
       layers,
       onSystemSelect,
@@ -140,6 +162,17 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
     trailsRef.current = trails
     const transitsRef = useRef(transits)
     transitsRef.current = transits
+
+    // Estimated server tick right now: the tick from the last snapshot plus the
+    // wall-clock elapsed since it landed. The render loop calls this every frame
+    // so an in-flight agent advances smoothly instead of once per 20s poll.
+    const tickInfoRef = useRef({ tick: currentTick, anchorMs: tickAnchorMs })
+    tickInfoRef.current = { tick: currentTick, anchorMs: tickAnchorMs }
+    const tickNowRef = useRef(() => {
+      const { tick, anchorMs } = tickInfoRef.current
+      if (tick === null) return 0
+      return tick + (Date.now() - anchorMs) / TICK_MS
+    })
     const selectedRef = useRef(selectedSystemId)
     selectedRef.current = selectedSystemId
     const layersRef = useRef(layers)
@@ -181,13 +214,14 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
 
     // ── Imperative API ─────────────────────────────────────────────────
 
+    // Centre on the system, but leave the zoom where the user put it — yanking
+    // them to a fixed zoom level from wherever they were reading is disorienting.
     const panToSystem = useCallback((systemId: string) => {
       const system = systemsByIdRef.current.get(systemId)
       if (!system) return
       const s = stateRef.current
       s.targetViewX = -system.x
       s.targetViewY = -system.y
-      s.targetZoom = Math.max(s.targetZoom, 0.5)
     }, [])
 
     useImperativeHandle(ref, () => ({ panToSystem }), [panToSystem])
@@ -396,8 +430,11 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
           ctx.stroke()
           ctx.setLineDash([])
 
-          // Animated dot sliding from → to
-          const t = (s.animationTime % TRANSIT_PERIOD_MS) / TRANSIT_PERIOD_MS
+          // Where the agent actually is: the fraction of the flight elapsed.
+          // The server tick only advances every 10s and we only poll every 20s,
+          // so estimate the tick from the last snapshot plus wall-clock since,
+          // otherwise the dot would stand still and jerk forward once a poll.
+          const t = transitProgress(transit, tickNowRef.current())
           const x = from.x + (to.x - from.x) * t
           const y = from.y + (to.y - from.y) * t
           const glow = ctx.createRadialGradient(x, y, 1, x, y, 10)
