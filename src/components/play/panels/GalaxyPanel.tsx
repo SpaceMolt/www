@@ -131,7 +131,7 @@ function buildRouteViaWaypoints(systems: MapSystemData[], startId: string, destI
   return buildRouteFromPath(fullPath, systems, fuelPerJump, fuelAvailable, via)
 }
 
-const EMPIRE_NAMES: Record<string, string> = {
+export const EMPIRE_NAMES: Record<string, string> = {
   solarian: 'Solarian Confederacy',
   voidborn: 'Voidborn Collective',
   crimson: 'Crimson Pact',

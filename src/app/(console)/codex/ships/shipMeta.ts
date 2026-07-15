@@ -52,11 +52,11 @@ export const EMPIRE_COLORS: Record<string, string> = {
 }
 
 export const EMPIRE_NAMES: Record<string, string> = {
-  solarian: 'Solarian Concord',
+  solarian: 'Solarian Confederacy',
   voidborn: 'Voidborn Collective',
-  crimson: 'Crimson Fleet',
+  crimson: 'Crimson Pact',
   nebula: 'Nebula Trade Federation',
-  outerrim: 'Outer Rim',
+  outerrim: 'Outer Rim Explorers',
 }
 
 export const EMPIRE_SHORT_KEYS: Record<string, string> = {

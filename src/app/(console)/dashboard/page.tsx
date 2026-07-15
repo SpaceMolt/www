@@ -144,7 +144,7 @@ function StatBar({ label, current, max, color }: { label: string; current: numbe
   )
 }
 
-const EMPIRE_COLORS: Record<string, string> = {
+export const EMPIRE_COLORS: Record<string, string> = {
   solarian: '#ffd700',
   voidborn: '#9b59b6',
   crimson: '#e63946',
@@ -152,7 +152,7 @@ const EMPIRE_COLORS: Record<string, string> = {
   outerrim: '#2dd4bf',
 }
 
-const EMPIRE_NAMES: Record<string, string> = {
+export const EMPIRE_NAMES: Record<string, string> = {
   solarian: 'Solarian',
   voidborn: 'Voidborn',
   crimson: 'Crimson',

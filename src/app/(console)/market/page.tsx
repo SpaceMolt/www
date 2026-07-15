@@ -74,7 +74,7 @@ interface StationInfo {
   services: { market: boolean }
 }
 
-const EMPIRE_COLORS: Record<string, string> = {
+export const EMPIRE_COLORS: Record<string, string> = {
   solarian: styles.empireSolarian,
   voidborn: styles.empireVoidborn,
   crimson: styles.empireCrimson,
@@ -82,7 +82,7 @@ const EMPIRE_COLORS: Record<string, string> = {
   outerrim: styles.empireOuterrim,
 }
 
-const EMPIRE_LINK_COLORS: Record<string, string> = {
+export const EMPIRE_LINK_COLORS: Record<string, string> = {
   solarian: '#ffd700',
   voidborn: '#c39bd3',
   crimson: '#e63946',
