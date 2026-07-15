@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'bun:test'
-import { empireShortName } from './empireNames'
+import { empireShortName, EMPIRE_SHORT_NAMES } from './empireNames'
+import { CANONICAL_EMPIRE_SHORT_NAMES, expectExactEmpireKeys } from '@/test/canonicalEmpires'
 
 // Same shortnames shown in the Ships codex table rows (en.json's `empireX`
 // keys) — the facilities empire column and filter must agree with them
@@ -17,5 +18,17 @@ describe('empireShortName', () => {
 
   it('does not mangle "outerrim" into "Outerrim" via raw title-casing', () => {
     expect(empireShortName('outerrim')).not.toBe('Outerrim')
+  })
+})
+
+describe('EMPIRE_SHORT_NAMES', () => {
+  it('has exactly the 5 canonical empire ids as keys (no stray, typo’d, or missing keys)', () => {
+    expectExactEmpireKeys(Object.keys(EMPIRE_SHORT_NAMES))
+  })
+
+  it('matches the canonical short names from en.json for every empire', () => {
+    for (const [id, canonicalName] of Object.entries(CANONICAL_EMPIRE_SHORT_NAMES)) {
+      expect(EMPIRE_SHORT_NAMES[id]).toBe(canonicalName)
+    }
   })
 })

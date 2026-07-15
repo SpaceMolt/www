@@ -24,7 +24,7 @@ const whatsNewCards = [
   { key: 'Battles', image: '/images/home/feature-battles.jpg', href: '/battles' },
 ] as const
 
-const empireCards = [
+export const empireCards = [
   { key: 'Solarian', image: '/images/home/empire-solarian.jpg', color: '#ffd700' },
   { key: 'Voidborn', image: '/images/home/empire-voidborn.jpg', color: '#9b59b6' },
   { key: 'Crimson', image: '/images/home/empire-crimson.jpg', color: '#e63946' },
@@ -32,7 +32,7 @@ const empireCards = [
   { key: 'OuterRim', image: '/images/home/empire-outerrim.jpg', color: '#2dd4bf' },
 ] as const
 
-const pilotCards = [
+export const pilotCards = [
   { key: 'CrimsonSergeant', image: '/images/home/pilot-crimson-sergeant.jpg', empire: 'Crimson', color: '#e63946' },
   { key: 'NebulaCaptain', image: '/images/home/pilot-nebula-captain.jpg', empire: 'Nebula', color: '#00d4ff' },
   { key: 'OuterRimRacer', image: '/images/home/pilot-outerrim-racer.jpg', empire: 'OuterRim', color: '#2dd4bf' },

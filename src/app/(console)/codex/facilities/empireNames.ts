@@ -10,7 +10,7 @@ import { titleCase } from '@/lib/format'
 // Same shortnames the Ships codex shows in its table rows (see
 // EMPIRE_SHORT_KEYS in codex/ships/shipMeta.ts) — kept as plain strings
 // here since this is a server component with no i18n context.
-const EMPIRE_SHORT_NAMES: Record<string, string> = {
+export const EMPIRE_SHORT_NAMES: Record<string, string> = {
   solarian: 'Solarian',
   voidborn: 'Voidborn',
   crimson: 'Crimson',

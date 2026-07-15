@@ -56,7 +56,7 @@ interface DepthResponse {
   asks: DepthLevel[]
 }
 
-const EMPIRE_COLORS: Record<string, string> = {
+export const EMPIRE_COLORS: Record<string, string> = {
   solarian: '#ffd700',
   voidborn: '#9b59b6',
   crimson: '#e63946',

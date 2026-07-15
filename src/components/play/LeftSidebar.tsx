@@ -56,7 +56,7 @@ interface IntelQueryResult {
   intel_level: number
 }
 
-const EMPIRE_NAMES: Record<string, string> = {
+export const EMPIRE_NAMES: Record<string, string> = {
   solarian: 'Solarian Confederacy',
   voidborn: 'Voidborn Collective',
   crimson: 'Crimson Pact',

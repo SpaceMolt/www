@@ -7,7 +7,7 @@ import styles from './PlayerSelector.module.css'
 import { extractApiErrorMessage, isSessionAuthError } from '@/lib/apiError'
 import { parseSessionId } from '@/lib/session'
 
-const EMPIRE_COLORS: Record<string, string> = {
+export const EMPIRE_COLORS: Record<string, string> = {
   solarian: '#FFD700',
   voidborn: '#9b59b6',
   crimson: '#e63946',
@@ -15,7 +15,7 @@ const EMPIRE_COLORS: Record<string, string> = {
   outerrim: '#2dd4bf',
 }
 
-const EMPIRES = [
+export const EMPIRES = [
   { id: 'solarian', name: 'Solarian Confederacy', tagline: 'Balanced, +5% all stats', color: '#FFD700' },
   { id: 'voidborn', name: 'Voidborn Collective', tagline: 'Shield specialists', color: '#9b59b6' },
   { id: 'crimson', name: 'Crimson Pact', tagline: 'Weapon specialists', color: '#e63946' },

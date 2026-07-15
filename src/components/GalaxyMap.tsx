@@ -106,7 +106,7 @@ const TRAVEL_PATH_COLORS = [
   '#22d3ee', // cyan
 ]
 
-const EMPIRE_NAMES: Record<string, string> = {
+export const EMPIRE_NAMES: Record<string, string> = {
   solarian: 'Solarian Confederacy',
   voidborn: 'Voidborn Collective',
   crimson: 'Crimson Pact',

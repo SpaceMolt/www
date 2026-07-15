@@ -40,7 +40,7 @@ const UNKNOWN_ALPHA = 0.3
 const AGENT_LABEL_MIN_ZOOM = 0.045
 /** Engine tick rate: a fixed 10s. Used to advance the tick between clock updates. */
 const TICK_MS = 10_000
-const EMPIRE_NAMES: Record<string, string> = {
+export const EMPIRE_NAMES: Record<string, string> = {
   solarian: 'Solarian Confederacy',
   voidborn: 'Voidborn Collective',
   crimson: 'Crimson Pact',

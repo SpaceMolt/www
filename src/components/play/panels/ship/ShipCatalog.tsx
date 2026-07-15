@@ -22,7 +22,7 @@ import { BugReportButton } from '../../BugReportButton'
 import { buildShipCatalogContext } from '../../bugReportContext'
 import styles from './ShipCatalog.module.css'
 
-const EMPIRES = ['solarian', 'voidborn', 'crimson', 'nebula', 'outerrim']
+export const EMPIRES = ['solarian', 'voidborn', 'crimson', 'nebula', 'outerrim']
 const TIERS = [1, 2, 3, 4, 5]
 const CATEGORIES = ['Civilian', 'Combat', 'Commercial', 'Exploration', 'Industrial']
 const CLASSES = ['Assault', 'Courier', 'Explorer', 'Fighter', 'Freighter', 'Gas Harvester', 'Ice Harvester', 'Miner', 'Raider', 'Salvager', 'Scout', 'Shuttle']
