@@ -27,8 +27,10 @@ export const TRAIL_WINDOW_MAX_MINUTES = 168 * 60
 const LAYER_LABELS: { key: keyof IntelLayerState; label: string }[] = [
   { key: 'fog', label: 'Fog of war' },
   { key: 'intel', label: 'Faction intel' },
+  { key: 'names', label: 'System names' },
   { key: 'stations', label: 'Stations' },
   { key: 'trails', label: 'Trails' },
+  { key: 'trailFocus', label: 'Focus trails' },
   { key: 'agents', label: 'Agents' },
 ]
 

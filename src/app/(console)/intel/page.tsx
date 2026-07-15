@@ -47,8 +47,10 @@ function IntelContent() {
   const [layers, setLayers] = useState<IntelLayerState>({
     fog: true,
     intel: true,
+    names: true,
     stations: true,
     trails: true,
+    trailFocus: false,
     agents: true,
   })
 

@@ -362,7 +362,9 @@ export interface TransitMarker {
 export interface IntelLayerState {
   fog: boolean
   intel: boolean
+  names: boolean
   stations: boolean
   trails: boolean
+  trailFocus: boolean
   agents: boolean
 }
