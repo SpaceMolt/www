@@ -5,7 +5,7 @@
 // props-driven: no game-state coupling, no fetching — the page supplies
 // topology, fog-of-war sets, agent positions, and trails.
 
-import { useEffect, useRef, useCallback, useImperativeHandle, forwardRef } from 'react'
+import { useEffect, useRef, useCallback, useImperativeHandle, useMemo, forwardRef } from 'react'
 import type {
   IntelAgent,
   IntelLayerState,
@@ -46,6 +46,77 @@ export const EMPIRE_NAMES: Record<string, string> = {
   crimson: 'Crimson Pact',
   nebula: 'Nebula Trade Federation',
   outerrim: 'Outer Rim Explorers',
+}
+
+const trailConnectionKey = (from: string, to: string) =>
+  from < to ? `${from}\u0000${to}` : `${to}\u0000${from}`
+
+export function buildTrailFocus(trails: TrailSegment[], transits: TransitMarker[]) {
+  const systems = new Set<string>()
+  const connections = new Set<string>()
+  const addSegment = (segment: Pick<TrailSegment, 'from' | 'to'>) => {
+    systems.add(segment.from)
+    systems.add(segment.to)
+    connections.add(trailConnectionKey(segment.from, segment.to))
+  }
+  for (const segment of trails) addSegment(segment)
+  for (const transit of transits) addSegment(transit)
+  return { systems, connections }
+}
+
+export function isConnectionTrailFocused(connections: Set<string>, from: string, to: string) {
+  return connections.has(trailConnectionKey(from, to))
+}
+
+export function shouldDimSystemForTrailFocus(
+  enabled: boolean,
+  focusedSystems: Set<string>,
+  systemId: string,
+  isHovered: boolean,
+  isSelected: boolean,
+) {
+  return enabled && !focusedSystems.has(systemId) && !isHovered && !isSelected
+}
+
+export function shouldShowSystemLabel(
+  namesEnabled: boolean,
+  isHovered: boolean,
+  isSelected: boolean,
+  agentCount: number,
+  zoom: number,
+) {
+  if (!namesEnabled || isHovered) return false
+  return isSelected || (agentCount > 0 && zoom > AGENT_LABEL_MIN_ZOOM) || zoom > 0.15
+}
+
+function fallbackFactionColor(factionId: string) {
+  // FNV-1a gives each id a stable pseudo-random point in a green band between
+  // Solarian yellow and Outer Rim teal. Keeping generated hues between 90° and
+  // 135° leaves at least 35° of separation from every canonical empire color.
+  let hash = 2166136261
+  for (let i = 0; i < factionId.length; i++) {
+    hash ^= factionId.charCodeAt(i)
+    hash = Math.imul(hash, 16777619)
+  }
+  const unsigned = hash >>> 0
+  const hue = 90 + (unsigned % 46)
+  const saturation = 68 + ((unsigned >>> 8) % 20)
+  const lightness = 52 + ((unsigned >>> 16) % 14)
+  return `hsl(${hue} ${saturation}% ${lightness}%)`
+}
+
+export function getStationRingStyle(stations: PublicStation[], systemColor: string) {
+  const factionStation = stations.find((station) => station.faction_id)
+  if (factionStation?.faction_id) {
+    return {
+      color: factionStation.faction_color || fallbackFactionColor(factionStation.faction_id),
+      dashed: true,
+    }
+  }
+  return {
+    color: systemColor,
+    dashed: false,
+  }
 }
 
 // ── Types ──────────────────────────────────────────────────────────────
@@ -166,6 +237,9 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
     trailsRef.current = trails
     const transitsRef = useRef(transits)
     transitsRef.current = transits
+    const trailFocus = useMemo(() => buildTrailFocus(trails, transits), [trails, transits])
+    const trailFocusRef = useRef(trailFocus)
+    trailFocusRef.current = trailFocus
 
     // Estimated server tick right now: the last tick we were told about, plus the
     // wall-clock elapsed since it landed. The render loop calls this every frame so
@@ -460,47 +534,6 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
       [worldToScreen],
     )
 
-    // Station marker: a square tucked under the node, opposite the agent badge.
-    // Squares read as built structure against the round star nodes. A faction
-    // station takes its owner's colour, so a fleet can pick its own out at a
-    // glance; NPC stations stay neutral. Stations are public knowledge, so this
-    // draws regardless of fog — the node underneath stays dim, the station does
-    // not, which is the honest picture: you know it is there, not what is inside.
-    const drawStationMarker = useCallback(
-      (
-        ctx: CanvasRenderingContext2D,
-        x: number,
-        y: number,
-        stations: PublicStation[],
-        nodeScale: number,
-      ) => {
-        const size = 5 * Math.max(nodeScale, 0.6)
-        const bx = x + NODE_RADIUS * nodeScale + size * 0.9
-        const by = y + NODE_RADIUS * nodeScale + size * 0.9
-        const owned = stations.find((s) => s.faction_color)
-
-        ctx.save()
-        ctx.fillStyle = owned?.faction_color || 'rgba(196, 208, 216, 0.9)'
-        ctx.strokeStyle = 'rgba(5, 8, 16, 0.9)'
-        ctx.lineWidth = 1.5
-        ctx.beginPath()
-        ctx.rect(bx - size, by - size, size * 2, size * 2)
-        ctx.fill()
-        ctx.stroke()
-
-        // More than one station in the system: mark it rather than lie by omission.
-        if (stations.length > 1) {
-          ctx.fillStyle = '#050810'
-          ctx.font = `bold ${Math.max(8, Math.round(size * 1.4))}px "JetBrains Mono", monospace`
-          ctx.textAlign = 'center'
-          ctx.textBaseline = 'middle'
-          ctx.fillText(String(Math.min(stations.length, 9)), bx, by)
-        }
-        ctx.restore()
-      },
-      [],
-    )
-
     const drawAgentBadge = useCallback(
       (ctx: CanvasRenderingContext2D, x: number, y: number, agents: IntelAgent[], nodeScale: number) => {
         const count = agents.length
@@ -546,6 +579,7 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
 
         // Connections — dimmed when either endpoint is unknown under fog
         const byId = systemsByIdRef.current
+        const trailFocus = trailFocusRef.current
         const drawnConnections = new Set<string>()
         ctx.lineWidth = 1.5
         for (const system of allSystems) {
@@ -559,8 +593,11 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
             if (!connSystem) continue
             const pos2 = worldToScreen(connSystem.x, connSystem.y)
             const vis2 = visibilityOf(connId)
+            const offTrail =
+              layersRef.current.trailFocus &&
+              !isConnectionTrailFocused(trailFocus.connections, system.id, connId)
             ctx.strokeStyle =
-              vis1 === 'unknown' || vis2 === 'unknown' ? UNKNOWN_LINE_COLOR : LINE_COLOR
+              offTrail || vis1 === 'unknown' || vis2 === 'unknown' ? UNKNOWN_LINE_COLOR : LINE_COLOR
             ctx.beginPath()
             ctx.moveTo(pos1.x, pos1.y)
             ctx.lineTo(pos2.x, pos2.y)
@@ -581,12 +618,23 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
           const isHovered = s.hoveredSystem?.id === system.id
           const isSelected = selectedRef.current === system.id
           const isHomeSystem = system.is_home === true
+          const stationsHere = layersRef.current.stations
+            ? stationsRef.current.get(system.id) || []
+            : []
+          const hasStation = stationsHere.length > 0
           const agentsHere = layersRef.current.agents
             ? agentsBySystemRef.current.get(system.id)
             : undefined
+          const offTrail = shouldDimSystemForTrailFocus(
+            layersRef.current.trailFocus,
+            trailFocus.systems,
+            system.id,
+            isHovered,
+            isSelected,
+          )
 
-          // Unknown systems: heavily dimmed, desaturated, no decoration
-          if (vis === 'unknown' && !isHovered && !isSelected) {
+          // Unknown and off-trail systems share the same low-profile treatment.
+          if ((vis === 'unknown' && !isHovered && !isSelected) || offTrail) {
             ctx.globalAlpha = UNKNOWN_ALPHA
             ctx.fillStyle = UNKNOWN_COLOR
             ctx.beginPath()
@@ -596,7 +644,8 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
             continue
           }
 
-          const color = vis === 'unknown' ? UNKNOWN_COLOR : system.empire_color || DEFAULT_COLOR
+          const systemColor = vis === 'unknown' ? UNKNOWN_COLOR : system.empire_color || DEFAULT_COLOR
+          const color = systemColor
 
           // Selection ring + glow
           if (isSelected) {
@@ -630,7 +679,7 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
             // Faction intel only — dashed outline, muted fill, never visited
             ctx.fillStyle = color + '55'
             ctx.beginPath()
-            ctx.arc(pos.x, pos.y, nr * 0.8, 0, Math.PI * 2)
+            ctx.arc(pos.x, pos.y, hasStation ? nr : nr * 0.8, 0, Math.PI * 2)
             ctx.fill()
             ctx.strokeStyle = INTEL_OUTLINE_COLOR
             ctx.lineWidth = 1.2
@@ -642,7 +691,7 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
           } else {
             // Explored (or fog disabled): base node like the public map
             const hoverScale = isHovered ? 1.5 : 1.0
-            const nodeRadius = isHomeSystem ? nr * 1.6 : nr * 0.9
+            const nodeRadius = isHomeSystem ? nr * 1.6 : hasStation ? nr : nr * 0.9
 
             if (system.is_stronghold) {
               const pulsePhase = (s.animationTime * 0.0015 + system.x * 0.002) % (Math.PI * 2)
@@ -669,18 +718,27 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
               ctx.stroke()
             }
 
-            ctx.fillStyle = '#ffffff'
+            ctx.fillStyle = hasStation ? '#ffffff' : color + 'cc'
             ctx.beginPath()
             ctx.arc(pos.x, pos.y, nodeRadius * 0.3 * hoverScale, 0, Math.PI * 2)
             ctx.fill()
           }
 
-          // Station marker
-          if (layersRef.current.stations) {
-            const stationsHere = stationsRef.current.get(system.id)
-            if (stationsHere && stationsHere.length > 0) {
-              drawStationMarker(ctx, pos.x, pos.y, stationsHere, nodeScale)
-            }
+          // Match the main galaxy map: a station is a colored circular system
+          // node with a single ring, not a separate secondary marker.
+          if (hasStation && !isHomeSystem) {
+            const hoverScale = isHovered ? 1.5 : 1.0
+            const nodeRadius = nr * hoverScale
+            const ring = getStationRingStyle(stationsHere, systemColor)
+            ctx.save()
+            ctx.globalAlpha = 0.67
+            ctx.strokeStyle = ring.color
+            ctx.lineWidth = 1.5 * nodeScale
+            if (ring.dashed) ctx.setLineDash([3, 2])
+            ctx.beginPath()
+            ctx.arc(pos.x, pos.y, nodeRadius + 3 * nodeScale, 0, Math.PI * 2)
+            ctx.stroke()
+            ctx.restore()
           }
 
           // Agent count badge
@@ -688,24 +746,21 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
             drawAgentBadge(ctx, pos.x, pos.y, agentsHere, nodeScale)
           }
 
-          // Label — always for hovered/selected, agent systems above a lower
-          // zoom gate, everything else only when zoomed in
-          const showLabel =
-            isHovered ||
-            isSelected ||
-            (agentsHere && agentsHere.length > 0 && s.zoom > AGENT_LABEL_MIN_ZOOM) ||
-            s.zoom > 0.15
+          // Hover uses the richer DOM tooltip, so it never duplicates the canvas
+          // name. The names layer controls every persistent canvas label.
+          const showLabel = shouldShowSystemLabel(
+            layersRef.current.names,
+            isHovered,
+            isSelected,
+            agentsHere?.length || 0,
+            s.zoom,
+          )
           if (showLabel) {
-            ctx.font = isHovered
-              ? 'bold 14px "Space Grotesk", sans-serif'
-              : '13px "Space Grotesk", sans-serif'
+            ctx.font = '13px "Space Grotesk", sans-serif'
             ctx.textAlign = 'center'
             ctx.textBaseline = 'top'
-            ctx.fillStyle = isHovered
-              ? '#ffffff'
-              : vis === 'intel'
-                ? 'rgba(168, 197, 214, 0.55)'
-                : 'rgba(168, 197, 214, 0.9)'
+            ctx.fillStyle =
+              vis === 'intel' ? 'rgba(168, 197, 214, 0.55)' : 'rgba(168, 197, 214, 0.9)'
             ctx.fillText(system.name, pos.x, pos.y + nr + 8)
           }
         }
@@ -717,7 +772,6 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
         drawGrid,
         drawTrails,
         drawTransits,
-        drawStationMarker,
         drawAgentBadge,
         visibilityOf,
         worldToScreen,
