@@ -8,6 +8,15 @@ import {
 } from 'lucide-react'
 import styles from './GalaxyMap.module.css'
 import { subscribeToEvents } from '@/lib/sharedEventSource'
+import {
+  estimateCurrentTick,
+  observeServerTick,
+  publicTransitOffsets,
+  publicTransitProgress,
+  type PublicTransit,
+  type TickAnchor,
+} from './publicTransit'
+import { configureHiDPICanvas, logicalCanvasSize } from './canvasResolution'
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -79,6 +88,15 @@ interface Star {
 interface ActivityEvent {
   type: string
   data?: Record<string, string | boolean | number>
+  tick?: number
+}
+
+interface MapActivityData {
+  online?: Record<string, number>
+  battles?: Record<string, string>
+  strongholds?: Record<string, boolean>
+  current_tick?: number
+  transits?: PublicTransit[]
 }
 
 // ── Constants ──────────────────────────────────────────────────────────
@@ -184,6 +202,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
   // Mutable state refs (not React state -- canvas animation loop manages these)
   const stateRef = useRef({
     mapData: null as MapData | null,
+    systemsById: new Map<string, SystemData>(),
     hoveredSystem: null as SystemData | null,
     selectedSystem: null as SystemData | null,
     viewX: 0,
@@ -211,6 +230,8 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
     travelHistory: new Map<string, string[]>(),
     selectedTravelPlayers: new Set<string>(),
     travelPings: [] as { wx: number; wy: number; startTime: number; color: string }[],
+    publicTransits: [] as PublicTransit[],
+    tickAnchor: null as TickAnchor | null,
     pendingSystemId: null as string | null,
   })
 
@@ -238,8 +259,8 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
     const canvas = canvasRef.current
     if (!canvas) return { x: 0, y: 0 }
     const s = stateRef.current
-    const cx = canvas.width / 2
-    const cy = canvas.height / 2
+    const cx = canvas.clientWidth / 2
+    const cy = canvas.clientHeight / 2
     return {
       x: cx + (wx + s.viewX) * s.zoom,
       y: cy + (wy + s.viewY) * s.zoom,
@@ -250,8 +271,8 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
     const canvas = canvasRef.current
     if (!canvas) return { x: 0, y: 0 }
     const s = stateRef.current
-    const cx = canvas.width / 2
-    const cy = canvas.height / 2
+    const cx = canvas.clientWidth / 2
+    const cy = canvas.clientHeight / 2
     return {
       x: (sx - cx) / s.zoom - s.viewX,
       y: (sy - cy) / s.zoom - s.viewY,
@@ -356,8 +377,8 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
       const s = stateRef.current
 
       for (const star of s.stars) {
-        const x = star.x * canvas.width
-        const y = star.y * canvas.height
+        const x = star.x * canvas.clientWidth
+        const y = star.y * canvas.clientHeight
         const twinkle =
           0.5 +
           0.5 *
@@ -396,7 +417,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
       ]
 
       const startWorld = screenToWorld(0, 0)
-      const endWorld = screenToWorld(canvas.width, canvas.height)
+      const endWorld = screenToWorld(canvas.clientWidth, canvas.clientHeight)
       ctx.lineWidth = 1
 
       for (const level of gridLevels) {
@@ -412,7 +433,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
           const screen = worldToScreen(wx, 0)
           ctx.beginPath()
           ctx.moveTo(screen.x, 0)
-          ctx.lineTo(screen.x, canvas.height)
+          ctx.lineTo(screen.x, canvas.clientHeight)
           ctx.stroke()
         }
 
@@ -420,7 +441,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
           const screen = worldToScreen(0, wy)
           ctx.beginPath()
           ctx.moveTo(0, screen.y)
-          ctx.lineTo(canvas.width, screen.y)
+          ctx.lineTo(canvas.clientWidth, screen.y)
           ctx.stroke()
         }
       }
@@ -579,6 +600,48 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
     [worldToScreen],
   )
 
+  const drawPublicTransits = useCallback(
+    (ctx: CanvasRenderingContext2D) => {
+      const s = stateRef.current
+      if (!s.mapData || !s.tickAnchor || s.publicTransits.length === 0) return
+
+      const currentTick = estimateCurrentTick(s.tickAnchor)
+      ctx.save()
+      ctx.fillStyle = '#67e8f9'
+      ctx.shadowColor = '#22d3ee'
+      ctx.shadowBlur = 12
+      for (const transit of s.publicTransits) {
+        if (currentTick < transit.start_tick || currentTick >= transit.arrival_tick) continue
+
+        const from = s.systemsById.get(transit.from_system)
+        const to = s.systemsById.get(transit.to_system)
+        if (!from || !to) continue
+
+        const fromPos = worldToScreen(from.x, from.y)
+        const toPos = worldToScreen(to.x, to.y)
+        const progress = publicTransitProgress(transit, currentTick)
+        const x = fromPos.x + (toPos.x - fromPos.x) * progress
+        const y = fromPos.y + (toPos.y - fromPos.y) * progress
+        const dx = toPos.x - fromPos.x
+        const dy = toPos.y - fromPos.y
+        const length = Math.hypot(dx, dy)
+        if (length === 0) continue
+        const perpendicularX = -dy / length
+        const perpendicularY = dx / length
+
+        for (const offset of publicTransitOffsets(transit.count)) {
+          const dotX = x + perpendicularX * offset
+          const dotY = y + perpendicularY * offset
+          ctx.beginPath()
+          ctx.arc(dotX, dotY, 3, 0, Math.PI * 2)
+          ctx.fill()
+        }
+      }
+      ctx.restore()
+    },
+    [worldToScreen],
+  )
+
   const render = useCallback(
     (ctx?: CanvasRenderingContext2D | null) => {
       const canvas = canvasRef.current
@@ -589,7 +652,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
       if (!s.mapData) return
 
       ctx.fillStyle = '#050810'
-      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      ctx.fillRect(0, 0, canvas.clientWidth, canvas.clientHeight)
 
       drawStarfield(ctx)
       drawGrid(ctx)
@@ -928,10 +991,12 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
         }
       }
 
-      // Draw travel pings (on top of everything)
+      // Draw anonymous live traffic above the systems, then tracked-player
+      // arrival pings above everything.
+      drawPublicTransits(ctx)
       drawTravelPings(ctx)
     },
-    [drawStarfield, drawGrid, drawTravelPaths, drawTravelPings, worldToScreen],
+    [drawStarfield, drawGrid, drawTravelPaths, drawPublicTransits, drawTravelPings, worldToScreen],
   )
 
   // ── Tooltip ────────────────────────────────────────────────────────
@@ -1449,7 +1514,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
       // system at the upper half instead of dead centre.
       const canvas = canvasRef.current
       if (canvas && window.matchMedia('(max-width: 768px)').matches) {
-        s.targetViewY = -system.y - (canvas.height * 0.25) / s.targetZoom
+        s.targetViewY = -system.y - (canvas.clientHeight * 0.25) / s.targetZoom
       }
       s.isAnimating = true
 
@@ -1592,6 +1657,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
     if (!canvas) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
+    const drawingContext = ctx
     const s = stateRef.current
 
     // ── Resize ───────────────────────────────────────────────────
@@ -1603,10 +1669,15 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
       if (!canvas) return
       const container = containerRef.current
       if (container) {
-        canvas.width = container.clientWidth
-        canvas.height = container.clientHeight
+        configureHiDPICanvas(
+          canvas,
+          drawingContext,
+          container.clientWidth,
+          container.clientHeight,
+          window.devicePixelRatio,
+        )
       }
-      render(ctx)
+      render(drawingContext)
     }
 
     // Convert viewport (client) coordinates to canvas-local coordinates.
@@ -1655,7 +1726,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
         Math.abs(viewXDiff) <= 0.1 &&
         Math.abs(viewYDiff) <= 0.1
 
-      render(ctx)
+      render(drawingContext)
 
       if (viewSettled && !s.viewWasSettled) {
         s.zoom = s.targetZoom
@@ -1674,24 +1745,22 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
 
     // ── Fetch Map Data ───────────────────────────────────────────
     // Static data (galaxy topology + stations) is fetched once on mount.
-    // Only activity data (online counts, battles, strongholds) is polled.
+    // Only activity data (online counts, battles, strongholds, transits) is polled.
 
     // Cached station system IDs -- populated once, reused by activity merges
     let stationSystemIds: Set<string> = new Set()
 
-    function mergeActivityInto(data: MapData, activityData: Record<string, unknown>) {
+    function mergeActivityInto(data: MapData, activityData: MapActivityData) {
       if (activityData.online) {
-        const online = activityData.online as Record<string, number>
         for (const system of data.systems) {
-          system.online = online[system.id] || 0
+          system.online = activityData.online[system.id] || 0
         }
       }
       if (activityData.battles) {
-        const battles = activityData.battles as Record<string, string>
         for (const system of data.systems) {
-          if (battles[system.id]) {
+          if (activityData.battles[system.id]) {
             system.has_battle = true
-            system.battle_id = battles[system.id]
+            system.battle_id = activityData.battles[system.id]
           } else {
             system.has_battle = false
             system.battle_id = undefined
@@ -1699,10 +1768,15 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
         }
       }
       if (activityData.strongholds) {
-        const strongholds = activityData.strongholds as Record<string, boolean>
         for (const system of data.systems) {
-          system.is_stronghold = !!strongholds[system.id]
+          system.is_stronghold = !!activityData.strongholds[system.id]
         }
+      }
+      if (activityData.transits) {
+        s.publicTransits = activityData.transits
+      }
+      if (typeof activityData.current_tick === 'number') {
+        s.tickAnchor = observeServerTick(s.tickAnchor, activityData.current_tick)
       }
     }
 
@@ -1768,6 +1842,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
         }
 
         s.mapData = data
+        s.systemsById = new Map(data.systems.map((system) => [system.id, system]))
 
         updateStats(data)
         if (loadingRef.current)
@@ -1780,7 +1855,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
             // Center view on this system (upper half on phones — the POI
             // sheet covers the lower half)
             const mobileOffset = window.matchMedia('(max-width: 768px)').matches
-              ? (canvas!.height * 0.25) / 0.5
+              ? (logicalCanvasSize(canvas!).height * 0.25) / 0.5
               : 0
             s.targetViewX = -pendingSystem.x
             s.targetViewY = -pendingSystem.y - mobileOffset
@@ -1850,6 +1925,10 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
     const unsubscribeActivityFeed = subscribeToEvents((raw) => {
       try {
         const data = JSON.parse(raw) as ActivityEvent
+
+        if (typeof data.tick === 'number') {
+          s.tickAnchor = observeServerTick(s.tickAnchor, data.tick)
+        }
 
         // Track player system changes for travel paths
         const player = data.data?.player
@@ -1961,8 +2040,9 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
 
       // Zoom toward mouse position (canvas-local coordinates)
       const mouse = toCanvas(e.clientX, e.clientY)
-      const cx = canvas!.width / 2
-      const cy = canvas!.height / 2
+      const logicalSize = logicalCanvasSize(canvas!)
+      const cx = logicalSize.width / 2
+      const cy = logicalSize.height / 2
       const worldX = (mouse.x - cx) / s.zoom - s.viewX
       const worldY = (mouse.y - cy) / s.zoom - s.viewY
 
@@ -2041,8 +2121,9 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
         const scale = newDistance / s.lastTouchDistance
 
         const center = toCanvas(newCenter.x, newCenter.y)
-        const cx = canvas!.width / 2
-        const cy = canvas!.height / 2
+        const logicalSize = logicalCanvasSize(canvas!)
+        const cx = logicalSize.width / 2
+        const cy = logicalSize.height / 2
         const worldX = (center.x - cx) / s.zoom - s.viewX
         const worldY = (center.y - cy) / s.zoom - s.viewY
 
@@ -2099,7 +2180,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
               // (bottom half on phones) doesn't cover it.
               if (window.matchMedia('(max-width: 768px)').matches) {
                 s.targetViewX = -system.x
-                s.targetViewY = -system.y - (canvas!.height * 0.25) / s.zoom
+                s.targetViewY = -system.y - (logicalCanvasSize(canvas!).height * 0.25) / s.zoom
                 s.isAnimating = true
               }
             } else {
@@ -2164,8 +2245,18 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
       if (s.urlUpdateTimeout) clearTimeout(s.urlUpdateTimeout)
       if (s.activityToastTimeout) clearTimeout(s.activityToastTimeout)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [
+    findSystemAt,
+    fullPage,
+    generateStars,
+    handleActivityEvent,
+    parseUrlState,
+    render,
+    router,
+    showPOIPanel,
+    updateTooltip,
+    updateUrlState,
+  ])
 
   // ── JSX ────────────────────────────────────────────────────────────
 
