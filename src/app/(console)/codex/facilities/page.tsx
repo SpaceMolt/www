@@ -5,6 +5,7 @@ import { BackLink, DataUnavailable } from '../parts'
 import { CatalogTable, type CatalogColumn, type CatalogFacet, type CatalogRow } from '../CatalogTable'
 import styles from '../codex.module.css'
 import { allChains } from './chains'
+import { empireShortName } from './empireNames'
 
 const description =
   'Every station facility in SpaceMolt, grouped into its upgrade chain — production lines, services, infrastructure, and faction buildings, with build costs, power draw, and the recipe each one runs.'
@@ -70,7 +71,7 @@ export default function FacilitiesIndex() {
       href: `/codex/facilities/${root.id}`,
       category: root.category,
       service: service ? titleCase(service.replace(/_/g, ' ')) : '',
-      empire: empire ? titleCase(empire.replace(/_/g, ' ')) : '',
+      empire: empire ? empireShortName(empire) : '',
       produces: producesLabel(root.recipe_id, service),
       tiers: levels.length,
       entry_cost: root.build_cost,
