@@ -303,7 +303,16 @@
     "noStationsTitle": "Nessuna stazione trovata",
     "noStationsDesc": "Nessuna stazione corrisponde al filtro attuale.",
     "empireCapitals": "Capitali dell'impero",
-    "empireCapitalsSubtitle": "// I cinque centri di potere nella Latent Expanse"
+    "empireCapitalsSubtitle": "// I cinque centri di potere nella Latent Expanse",
+    "registryTypeLabel": "Tipo di registro delle stazioni",
+    "stationsTab": "Stazioni",
+    "factionOutpostsTab": "Avamposti di fazione",
+    "noOutpostsTitle": "Nessun avamposto di fazione",
+    "noOutpostsDesc": "Al momento non sono registrati avamposti riservati alle fazioni.",
+    "outpostsIntro": "Piccoli possedimenti di fazione riservati ai membri per carburante e stoccaggio. Gli avamposti non sono considerati punti di riferimento galattici.",
+    "factionHolding": "Possedimento di fazione",
+    "reconStationsAndOutposts": "Stazioni e avamposti",
+    "outpostBadge": "Avamposto"
   },
   "market": {
     "pageTitle": "Borsa galattica",
@@ -469,6 +478,9 @@
   },
   "stationDetail": {
     "backToStations": "Torna alle stazioni",
+    "backToRegistry": "Torna al registro delle stazioni",
+    "stationDatabaseKicker": "Database delle stazioni",
+    "factionOutpostKicker": "Avamposto di fazione",
     "loading": "Caricamento dati stazione...",
     "notFoundTitle": "Stazione non trovata",
     "notFoundDesc": "Questa stazione non esiste o l’ID non è valido.",

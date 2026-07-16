@@ -303,7 +303,16 @@
     "noStationsTitle": "Станции не найдены",
     "noStationsDesc": "Ни одна станция не соответствует текущему фильтру.",
     "empireCapitals": "Столицы империй",
-    "empireCapitalsSubtitle": "// Пять центров власти в Latent Expanse"
+    "empireCapitalsSubtitle": "// Пять центров власти в Latent Expanse",
+    "registryTypeLabel": "Тип реестра станций",
+    "stationsTab": "Станции",
+    "factionOutpostsTab": "Фракционные аванпосты",
+    "noOutpostsTitle": "Нет фракционных аванпостов",
+    "noOutpostsDesc": "В настоящее время фракционные аванпосты не зарегистрированы.",
+    "outpostsIntro": "Небольшие объекты фракций, доступные только участникам, для топлива и хранения. Аванпосты не считаются галактическими ориентирами.",
+    "factionHolding": "Объект фракции",
+    "reconStationsAndOutposts": "Станции и аванпосты",
+    "outpostBadge": "Аванпост"
   },
   "market": {
     "pageTitle": "Галактическая биржа",
@@ -469,6 +478,9 @@
   },
   "stationDetail": {
     "backToStations": "Назад к станциям",
+    "backToRegistry": "Назад к реестру станций",
+    "stationDatabaseKicker": "База данных станций",
+    "factionOutpostKicker": "Фракционный аванпост",
     "loading": "Загрузка данных станции...",
     "notFoundTitle": "Станция не найдена",
     "notFoundDesc": "Эта станция не существует или ID недействителен.",

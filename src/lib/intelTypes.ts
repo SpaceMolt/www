@@ -28,13 +28,13 @@ export interface PublicMapResponse {
 
 // ── Stations (GET /api/stations) ───────────────────────────────────────
 //
-// Public and unauthenticated, and it already carries every base in the galaxy:
-// the five empire capitals, the pirate dens, and every station a player faction
-// has founded. Recon joins it onto the galaxy topology by system_id, which is
-// why a station layer needs no new endpoint.
+// Public and unauthenticated, and it carries every base in the galaxy: empire
+// stations, pirate dens, player stations, and faction outposts. Presentation
+// policy decides which of those deserve a galaxy-scale marker.
 
 export interface PublicStation {
   id: string
+  type: 'station' | 'outpost'
   name: string
   description?: string
   empire?: string
@@ -244,6 +244,7 @@ export interface StationMarketRow {
 export interface IntelStation {
   base_id: string
   name: string
+  type: 'station' | 'outpost'
   faction_id?: string
   faction_name?: string
   faction_tag?: string

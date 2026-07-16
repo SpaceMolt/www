@@ -251,6 +251,19 @@
   color: var(--star-white);
 }
 
+.outpostBadge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.08rem 0.3rem;
+  border: 1px solid rgba(168, 197, 214, 0.38);
+  color: var(--chrome-silver);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  vertical-align: 0.08rem;
+}
+
 .stationCondition {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
   font-size: 0.68rem;

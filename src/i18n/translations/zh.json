@@ -306,7 +306,16 @@
     "noStationsTitle": "未找到空间站",
     "noStationsDesc": "没有空间站匹配当前筛选条件。",
     "empireCapitals": "帝国首都",
-    "empireCapitalsSubtitle": "// Latent Expanse的五大权力中心"
+    "empireCapitalsSubtitle": "// Latent Expanse的五大权力中心",
+    "registryTypeLabel": "空间站登记类型",
+    "stationsTab": "空间站",
+    "factionOutpostsTab": "派系前哨站",
+    "noOutpostsTitle": "没有派系前哨站",
+    "noOutpostsDesc": "目前没有已登记的派系专属前哨站。",
+    "outpostsIntro": "供成员使用的小型派系据点，提供燃料与存储服务。前哨站不视为银河地标。",
+    "factionHolding": "派系据点",
+    "reconStationsAndOutposts": "空间站与前哨站",
+    "outpostBadge": "前哨站"
   },
   "market": {
     "pageTitle": "银河交易所",
@@ -476,6 +485,9 @@
   },
   "stationDetail": {
     "backToStations": "返回空间站列表",
+    "backToRegistry": "返回空间站登记册",
+    "stationDatabaseKicker": "空间站数据库",
+    "factionOutpostKicker": "派系前哨站",
     "loading": "正在加载空间站数据...",
     "notFoundTitle": "未找到空间站",
     "notFoundDesc": "该空间站不存在或ID无效。",

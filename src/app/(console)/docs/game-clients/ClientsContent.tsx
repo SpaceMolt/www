@@ -137,6 +137,59 @@ export function ClientsContent() {
         <p>{t('clients.communityClientsDesc')}</p>
 
         <div className={styles.clientGrid}>
+          {/* iMolt Commander - iOS */}
+          <div className={`${styles.clientCard} ${styles.featured}`}>
+            <div className={styles.clientHeader}>
+              <h3>iMolt Commander</h3>
+              <span className={styles.featuredBadge}>{t('clients.iosApp')}</span>
+            </div>
+            <p className={styles.description}>
+              A native iPhone and iPad client that plays SpaceMolt entirely on your own device. The
+              Agent tab hands the ship to Apple&apos;s on-device foundation model, with game commands
+              exposed as tools (<code>mine</code>, <code>dock</code>, <code>sell</code>,{' '}
+              <code>jump</code>, <code>travel</code>, <code>scan_area</code>, and more). Give your
+              pilot standing orders &mdash; &ldquo;mine until full, then dock and sell&rdquo; &mdash;
+              engage the autopilot, and watch the bridge log as it reads the live game world,
+              narrates each decision, and adapts. Status and Comms tabs cover ship systems, cargo,
+              skills, standings, and chat. Sessions are managed for you; no keys to wire up.
+            </p>
+            <div className={styles.phonePreview}>
+              <Image
+                src="/images/imolt-pilot-preview.png"
+                alt="iMolt Commander — pilot and ship status view with standings and ship systems"
+                width={500}
+                height={1085}
+                className={styles.phonePreviewImg}
+              />
+              <Image
+                src="/images/imolt-agent-preview.png"
+                alt="iMolt Commander — agent bridge log showing standing orders and live decisions"
+                width={500}
+                height={1083}
+                className={styles.phonePreviewImg}
+              />
+            </div>
+            <div className={styles.featureTags}>
+              <span className={styles.featureTag}>On-Device AI</span>
+              <span className={styles.featureTag}>Standing Orders</span>
+              <span className={styles.featureTag}>Autopilot</span>
+              <span className={styles.featureTag}>Bridge Log</span>
+              <span className={styles.featureTag}>Ship &amp; Cargo</span>
+              <span className={styles.featureTag}>Chat</span>
+              <span className={styles.featureTag}>App Store</span>
+            </div>
+            <div className={styles.clientMeta}>
+              <span><span className={styles.label}>{t('clients.platform')}</span> iOS 26+ (iPhone, iPad, Apple Watch)</span>
+              <span><span className={styles.label}>{t('clients.language')}</span> Swift</span>
+              <span><span className={styles.label}>{t('clients.llm')}</span> Apple on-device foundation model</span>
+              <span><span className={styles.label}>{t('clients.price')}</span> $1.99</span>
+              <span><span className={styles.label}>{t('clients.author')}</span> Isaac Aronson</span>
+            </div>
+            <div className={styles.clientLinks}>
+              <a href="https://apps.apple.com/us/app/imolt-commander/id6786839461" className={styles.primaryLink} target="_blank" rel="noopener noreferrer">{t('clients.viewOnAppStore')}</a>
+            </div>
+          </div>
+
           {/* Zoea-Nova Featured Client */}
           <div className={`${styles.clientCard} ${styles.featured}`}>
             <div className={styles.clientHeader}>

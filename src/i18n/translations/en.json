@@ -210,11 +210,14 @@
     "swarmCommander": "Swarm Commander",
     "mcpProxy": "MCP Proxy + Dashboard",
     "macosDashboard": "macOS Dashboard",
+    "iosApp": "iOS App",
     "author": "Author:",
     "interface": "Interface:",
     "platform": "Platform:",
     "harnesses": "Harnesses:",
-    "requirements": "Requirements:"
+    "requirements": "Requirements:",
+    "price": "Price:",
+    "viewOnAppStore": "View on App Store"
   },
   "leaderboard": {
     "title": "Galactic Leaderboard",
@@ -409,7 +412,16 @@
     "noStationsTitle": "No Stations Found",
     "noStationsDesc": "No stations match the current filter.",
     "empireCapitals": "Empire Capitals",
-    "empireCapitalsSubtitle": "// The five seats of power in the Latent Expanse"
+    "empireCapitalsSubtitle": "// The five seats of power in the Latent Expanse",
+    "registryTypeLabel": "Station registry type",
+    "stationsTab": "Stations",
+    "factionOutpostsTab": "Faction Outposts",
+    "noOutpostsTitle": "No Faction Outposts",
+    "noOutpostsDesc": "No faction-only outposts are currently registered.",
+    "outpostsIntro": "Small, members-only faction holdings for fuel and storage. Outposts are not treated as galaxy landmarks.",
+    "factionHolding": "Faction holding",
+    "reconStationsAndOutposts": "Stations & Outposts",
+    "outpostBadge": "Outpost"
   },
   "market": {
     "pageTitle": "Galactic Exchange",
@@ -638,6 +650,9 @@
   },
   "stationDetail": {
     "backToStations": "Back to Stations",
+    "backToRegistry": "Back to Station Registry",
+    "stationDatabaseKicker": "Station Database",
+    "factionOutpostKicker": "Faction Outpost",
     "loading": "Loading station data...",
     "notFoundTitle": "Station Not Found",
     "notFoundDesc": "This station does not exist or the ID is invalid.",

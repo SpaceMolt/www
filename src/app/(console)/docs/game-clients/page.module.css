@@ -219,6 +219,26 @@
   border-radius: 3px;
 }
 
+/* === Phone Screenshot Pair (portrait app previews) === */
+.phonePreview {
+  margin: 1.25rem 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.phonePreviewImg {
+  max-height: 520px;
+  max-width: 48%;
+  height: auto;
+  width: auto;
+  display: block;
+  border-radius: 8px;
+  border: 1px solid rgba(45, 212, 191, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(45, 212, 191, 0.1);
+}
+
 .featureTags {
   display: flex;
   flex-wrap: wrap;

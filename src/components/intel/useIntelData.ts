@@ -22,6 +22,7 @@ import type {
   TrailSegment,
   TransitMarker,
 } from '@/lib/intelTypes'
+import { stationsVisibleInRecon } from '@/lib/stationPresentation'
 
 const GAME_SERVER = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 
@@ -459,18 +460,20 @@ export function useIntelData({
 
   const systemsById = useMemo(() => new Map(systems.map((s) => [s.id, s])), [systems])
 
-  // Stations are public knowledge, so this is deliberately NOT scoped to the
-  // fleet's fog of war: a station in a system nobody has visited still draws.
-  // Hiding it would tell the operator less than the public map does.
+  // Significant stations remain public landmarks. A faction outpost only earns
+  // a marker when one of this operator's agents belongs to its owning faction.
   const stationsBySystem = useMemo(() => {
     const map = new Map<string, PublicStation[]>()
-    for (const station of stations) {
+    const ownedFactionIds = agents.flatMap((agent) =>
+      agent.faction_id ? [agent.faction_id] : [],
+    )
+    for (const station of stationsVisibleInRecon(stations, ownedFactionIds)) {
       const list = map.get(station.system_id)
       if (list) list.push(station)
       else map.set(station.system_id, [station])
     }
     return map
-  }, [stations])
+  }, [stations, agents])
 
   // Everything derived from what the fleet *knows* reads the scoped snapshot, so
   // selecting a faction narrows the fog of war and the intel overlay too — not
