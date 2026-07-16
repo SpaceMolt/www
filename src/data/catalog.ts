@@ -106,7 +106,6 @@ export interface RawCatalogItem {
   power_usage?: number
   damage?: number
   damage_type?: string
-  range?: number
   reach?: number
   cooldown?: number
   accuracy_bonus?: number

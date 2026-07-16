@@ -270,7 +270,6 @@ export interface EnrichedShipModule {
   power_usage: number
   damage?: number
   damage_type?: string
-  range?: number
   cooldown?: number
   reach?: number
   shield_bonus?: number

@@ -37,7 +37,6 @@ export interface CatalogModuleStats {
   power_usage: number
   damage?: number
   damage_type?: string
-  range?: number
   cooldown?: number
   shield_bonus?: number
   armor_bonus?: number
@@ -99,7 +98,6 @@ export function ModuleStatsDisplay({ mod, compact }: { mod: CatalogModuleStats; 
 
   if (mod.damage) stats.push({ label: 'Damage', value: String(mod.damage) })
   if (mod.damage_type) stats.push({ label: 'Dmg Type', value: mod.damage_type })
-  if (mod.range) stats.push({ label: 'Range', value: String(mod.range) })
   if (mod.cooldown) stats.push({ label: 'Cooldown', value: `${mod.cooldown} tick${mod.cooldown !== 1 ? 's' : ''}` })
   if (mod.shield_bonus) stats.push({ label: 'Shield', value: `+${mod.shield_bonus}` })
   if (mod.armor_bonus) stats.push({ label: 'Armor', value: `+${mod.armor_bonus}` })
@@ -255,7 +253,7 @@ export function ItemDetail({ item, totalCols }: { item: CatalogItem; totalCols: 
 // ── Build-time catalog lookup ──────────────────────────────────────────
 
 const MODULE_STAT_KEYS: (keyof CatalogModuleStats)[] = [
-  'type', 'cpu_usage', 'power_usage', 'damage', 'damage_type', 'range', 'cooldown',
+  'type', 'cpu_usage', 'power_usage', 'damage', 'damage_type', 'cooldown',
   'shield_bonus', 'armor_bonus', 'hull_bonus', 'mining_power', 'mining_range',
   'harvest_power', 'harvest_range', 'special', 'speed_bonus', 'cargo_bonus',
   'scanner_power', 'cloak_strength', 'fuel_efficiency', 'drone_capacity', 'drone_bandwidth',
