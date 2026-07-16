@@ -465,18 +465,22 @@ export function CraftingPanel() {
                         key={recipe.id}
                         className={`${styles.recipeCard} ${craftable ? styles.recipeCardCraftable : styles.recipeCardLocked}`}
                       >
-                        <button
-                          className={styles.recipeCardHeader}
-                          onClick={() => setExpandedId(isExpanded ? null : recipe.id)}
-                          type="button"
-                          title={craftable ? 'You can craft this' : reasons.join('; ')}
-                        >
-                          <div className={styles.recipeCardTitle}>
-                            {isExpanded ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
-                            <span className={styles.recipeName}>{recipe.name}</span>
-                            <BugReportButton contextType="recipe" entityName={recipe.name} entityContext={buildRecipeContext(recipe)} />
-                          </div>
-                        </button>
+                        {/* header is a div, not a button: BugReportButton renders
+                            a <button> and buttons cannot nest */}
+                        <div className={styles.recipeCardHeader}>
+                          <button
+                            className={styles.recipeCardToggle}
+                            onClick={() => setExpandedId(isExpanded ? null : recipe.id)}
+                            type="button"
+                            title={craftable ? 'You can craft this' : reasons.join('; ')}
+                          >
+                            <div className={styles.recipeCardTitle}>
+                              {isExpanded ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
+                              <span className={styles.recipeName}>{recipe.name}</span>
+                            </div>
+                          </button>
+                          <BugReportButton contextType="recipe" entityName={recipe.name} entityContext={buildRecipeContext(recipe)} />
+                        </div>
 
                         {isExpanded && (
                           <div className={styles.recipeCardBody}>
