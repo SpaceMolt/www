@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import {
   estimateCurrentTick,
+  observeSnapshotTick,
   observeServerTick,
   publicTransitProgress,
   publicTransitOffsets,
@@ -45,6 +46,20 @@ describe('estimateCurrentTick', () => {
   test('ignores burst events so network timing cannot constantly re-phase the clock', () => {
     const initial = { tick: 200, anchoredAtMs: 1_000 }
     expect(observeServerTick(initial, 201, 2_000)).toBe(initial)
+  })
+
+  test('keeps snapshot refreshes from re-phasing an event-driven clock', () => {
+    const bootstrap = observeSnapshotTick(null, 200, 1_000)
+    expect(bootstrap).toEqual({ tick: 200, anchoredAtMs: 1_000 })
+    expect(estimateCurrentTick(bootstrap!, 16_000)).toBe(201.5)
+
+    const afterPoll = observeSnapshotTick(bootstrap, 202, 16_000)
+    expect(afterPoll).toBe(bootstrap)
+    expect(estimateCurrentTick(afterPoll!, 16_000)).toBe(201.5)
+
+    const eventAnchor = observeServerTick(afterPoll, 203, 21_000)
+    expect(eventAnchor).toEqual({ tick: 203, anchoredAtMs: 21_000 })
+    expect(observeSnapshotTick(eventAnchor, 204, 31_000)).toBe(eventAnchor)
   })
 })
 

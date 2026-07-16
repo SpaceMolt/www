@@ -33,10 +33,9 @@ export function estimateCurrentTick(anchor: TickAnchor, nowMs = Date.now()): num
   return anchor.tick + Math.max(0, nowMs - anchor.anchoredAtMs) / TICK_DURATION_MS
 }
 
-// Match Recon's clock discipline: public events are the authoritative tick
-// phase, while snapshots only establish or refresh a sufficiently old anchor.
-// Ignoring duplicate and burst observations prevents network timing from
-// repeatedly re-phasing moving dots.
+// Real-time public events are the authoritative tick-phase signal. Ignoring
+// duplicate and burst observations prevents network timing from repeatedly
+// re-phasing moving dots.
 export function observeServerTick(
   anchor: TickAnchor | null,
   tick: number,
@@ -45,6 +44,19 @@ export function observeServerTick(
   if (!Number.isFinite(tick) || tick <= 0) return anchor
   if (anchor && tick <= anchor.tick) return anchor
   if (anchor && nowMs - anchor.anchoredAtMs < TICK_OBSERVE_MIN_INTERVAL_MS) return anchor
+  return { tick, anchoredAtMs: nowMs }
+}
+
+// Activity snapshots arrive on their own polling cadence, so their response
+// time is not a reliable tick boundary. The public map uses one only to
+// bootstrap the clock, then preserves the phase learned from real-time events.
+export function observeSnapshotTick(
+  anchor: TickAnchor | null,
+  tick: number,
+  nowMs = Date.now(),
+): TickAnchor | null {
+  if (anchor) return anchor
+  if (!Number.isFinite(tick) || tick <= 0) return anchor
   return { tick, anchoredAtMs: nowMs }
 }
 

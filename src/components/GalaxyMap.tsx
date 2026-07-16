@@ -10,6 +10,7 @@ import styles from './GalaxyMap.module.css'
 import { subscribeToEvents } from '@/lib/sharedEventSource'
 import {
   estimateCurrentTick,
+  observeSnapshotTick,
   observeServerTick,
   publicTransitOffsets,
   publicTransitProgress,
@@ -1776,7 +1777,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
         s.publicTransits = activityData.transits
       }
       if (typeof activityData.current_tick === 'number') {
-        s.tickAnchor = observeServerTick(s.tickAnchor, activityData.current_tick)
+        s.tickAnchor = observeSnapshotTick(s.tickAnchor, activityData.current_tick)
       }
     }
 
