@@ -257,7 +257,7 @@ First seal the cargo into a package. Then dock at a station with an operational 
 }}
 ```
 
-The quote reports the route, target and deadline, base reward, maximum speed bonus, service fee, insurance premium, package value, risk band, required carrier tier, reserved liability, and default consequences. A quote is informational: it does not reserve the package or price.
+The quote reports the route, target and deadline, base reward, maximum speed bonus, service fee, insurance premium, package value, risk band, required carrier tier, reserved liability, and `failure_debt` for the selected insurance terms. Uninsured failure debt is 500 cr; insured failure debt is the full covered value plus 10%, with at least a 100 cr surcharge. A quote is informational: it does not reserve the package or price.
 
 Post the contract with the same commercial terms. `max_total_cost` is an optional safety guard because posting recalculates the quote:
 
@@ -341,11 +341,11 @@ Players and factions have **separate global carrier records**. Your empire does 
 }}
 ```
 
-`profile` shows your tier (`probationary`, `licensed`, `trusted`, or `prime`), completed station-issued deliveries, total delivered value, priority deliveries, returns, breaches, defaults, active contracts, current liability, per-package and aggregate limits, remaining allowance, and outstanding freight debt.
+`profile` shows your tier (`probationary`, `licensed`, `trusted`, or `prime`), successful deliveries, total delivered value, priority deliveries, returns, breaches, defaults, active contracts, current liability, per-package and aggregate limits, remaining allowance, and outstanding freight debt.
 
 There is no arbitrary contract-count cap. Acceptance is limited by **liability exposure**: a carrier must meet the listing's tier, fit that package under the per-package limit, and keep total active exposure under the aggregate limit. Listings explain which requirement failed.
 
-| Carrier tier | Station-issued deliveries | Delivered value | Per-package limit | Aggregate active limit |
+| Carrier tier | Successful deliveries | Delivered value | Per-package limit | Aggregate active limit |
 |--------------|----------------------------:|----------------:|------------------:|-----------------------:|
 | Probationary | 0 | 0 cr | 5,000 cr | 10,000 cr |
 | Licensed | 5 | 250 cr | 50,000 cr | 100,000 cr |
@@ -362,7 +362,7 @@ The value of a listing also establishes its minimum carrier tier:
 | Over 500,000 cr | Prime |
 | Unpriced package | Prime; reserves 1,000,000 cr of liability |
 
-Stations also publish ordinary NPC freight. These lower-risk contracts are the normal way to establish a record before anyone entrusts you with diamonds or exotic crystals. Tier progression requires both successful station-issued work and delivered value; repeatedly circulating private packages between teammates is not a shortcut.
+Tier progression requires both successful deliveries and delivered value. Start with low-value contracts that fit your probationary liability limits before taking responsibility for diamonds or exotic crystals.
 
 ### Payment and timing
 
@@ -390,7 +390,7 @@ The beacon records settled location changes rather than continuously filming the
 - **Cancel:** only the shipper can cancel, and only while the contract is still posted and unaccepted. Canceling for a faction requires Manage Treasury, but not a Market Runner. The package and refundable escrow return to origin storage and the shipper; the service fee remains spent.
 - **Breach:** completing an unpack job and opening the seal while the package is under contract breaches the job. Canceling that queued unpack job before completion leaves the seal intact.
 - **Default:** confirmed destruction, deep-space loss, wreck expiry, or missing the deadline defaults the contract. Theft or a handoff does not default an intact package merely because somebody else holds it; the clock and the original carrier's liability keep running.
-- **Consequences:** a breach or default forfeits the payout and demotes the carrier record by one tier, down to probationary. Uninsured failure creates 500 cr of freight debt. Insured failure creates debt equal to the covered value plus 10%, with at least a 100 cr surcharge.
+- **Consequences:** a breach or default forfeits the payout and demotes the carrier record by one tier, down to probationary. The contract's `failure_debt` is 500 cr when uninsured; when insured, it is the full covered value plus 10%, with at least a 100 cr surcharge.
 - **Debt:** outstanding freight debt blocks new acceptances. Pay it at any operational missions service with `shipping action=pay_debt`. Paying faction debt also requires Manage Treasury and an active local Market Runner / faction-market service; an active market at the faction's own station satisfies that requirement. Repayment restores acceptance eligibility but does not erase the breach/default history.
 
 ```json
