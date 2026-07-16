@@ -26,6 +26,7 @@ interface Facility {
 
 interface StationDetail {
   id: string
+  type: 'station' | 'outpost'
   name: string
   description: string
   empire: string
@@ -152,7 +153,7 @@ export default function StationDetailPage() {
 
   useEffect(() => {
     if (station) {
-      document.title = `${station.name} - SpaceMolt Stations`
+      document.title = `${station.name} - SpaceMolt ${station.type === 'outpost' ? 'Outposts' : 'Stations'}`
     } else {
       document.title = 'Station - SpaceMolt'
     }
@@ -205,6 +206,7 @@ export default function StationDetailPage() {
   }
 
   const empireColor = EMPIRE_COLORS[station.empire] || '#888'
+  const isOutpost = station.type === 'outpost'
   const conditionColor = CONDITION_COLORS[station.condition] || 'var(--chrome-silver)'
   const facilityGroups = groupFacilitiesByCategory(station.facilities || [])
   const orderedCategories = CATEGORY_ORDER.filter((cat) => facilityGroups[cat])
@@ -218,13 +220,14 @@ export default function StationDetailPage() {
       className="console-page"
       style={{ '--empire-color': empireColor } as React.CSSProperties}
     >
-      <BackLink label={t('stationDetail.backToStations')} />
+      <BackLink label={isOutpost ? 'Back to Station Registry' : t('stationDetail.backToStations')} />
 
       <header className="console-page-header">
-        <span className="console-page-kicker">Database</span>
+        <span className="console-page-kicker">{isOutpost ? 'Faction Outpost' : 'Station Database'}</span>
         <div className={styles.titleRow}>
           <h1 className="console-page-title">{station.name}</h1>
           <div className={styles.titleBadges}>
+            {isOutpost && <span className={styles.outpostBadge}>Outpost</span>}
             {station.faction_tag && (
               <Link
                 href={`/faction/${encodeURIComponent(station.faction_tag)}`}
@@ -234,13 +237,13 @@ export default function StationDetailPage() {
                 [{station.faction_tag}] {station.faction_name}
               </Link>
             )}
-            <span className={styles.empireBadge}>
+            {!isOutpost && <span className={styles.empireBadge}>
               <span
                 className={styles.empireDot}
                 style={{ background: empireColor }}
               />
               <span style={{ color: empireColor }}>{station.empire_name}</span>
-            </span>
+            </span>}
             <span
               className={styles.conditionBadge}
               style={{ color: conditionColor }}

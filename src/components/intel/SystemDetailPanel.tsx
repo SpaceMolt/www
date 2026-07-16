@@ -394,17 +394,22 @@ export function SystemDetailPanel({
               </section>
             )}
 
-            {/* Stations */}
+            {/* Docked stations and owned faction outposts */}
             {detail.stations.length > 0 && (
               <section className={styles.section}>
                 <h3 className={styles.sectionTitle}>
                   <Building2 size={13} />
-                  Stations
+                  Stations &amp; Outposts
                 </h3>
                 {detail.stations.map((station) => (
                   <div key={station.base_id} className={styles.station}>
                     <div className={styles.stationHeader}>
-                      <span className={styles.stationName}>{station.name}</span>
+                      <span className={styles.stationName}>
+                        {station.name}
+                        {station.type === 'outpost' && (
+                          <span className={styles.outpostBadge}>Outpost</span>
+                        )}
+                      </span>
                       {station.condition_text && (
                         <span className={styles.stationCondition}>{station.condition_text}</span>
                       )}

@@ -3,14 +3,16 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ChevronRight, Database, Landmark } from 'lucide-react'
+import { ChevronRight, Database, Landmark, RadioTower } from 'lucide-react'
 import { useTranslation } from '@/i18n'
+import { splitStationRegistry } from '@/lib/stationPresentation'
 import styles from './page.module.css'
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 
 interface Station {
   id: string
+  type: 'station' | 'outpost'
   name: string
   description: string
   empire: string
@@ -83,6 +85,7 @@ export default function StationsPage() {
   const [stations, setStations] = useState<Station[]>([])
   const [empires, setEmpires] = useState<Empire[]>([])
   const [activeEmpire, setActiveEmpire] = useState<string>('')
+  const [activeRegistry, setActiveRegistry] = useState<'stations' | 'outposts'>('stations')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const { t } = useTranslation()
@@ -112,12 +115,14 @@ export default function StationsPage() {
     document.title = 'Stations - SpaceMolt'
   }, [])
 
+  const registry = splitStationRegistry(stations)
   const filteredStations = activeEmpire
-    ? stations.filter((s) => s.empire === activeEmpire)
-    : stations
+    ? registry.stations.filter((s) => s.empire === activeEmpire)
+    : registry.stations
 
   const capitals = filteredStations.filter((s) => CAPITAL_IDS.has(s.id))
   const otherStations = filteredStations.filter((s) => !CAPITAL_IDS.has(s.id))
+  const visibleRecords = activeRegistry === 'stations' ? filteredStations : registry.outposts
 
   return (
     <div className="console-page">
@@ -128,8 +133,29 @@ export default function StationsPage() {
         <p className={styles.headerDesc}>{t('stations.pageDescription')}</p>
       </header>
 
+      <div className={styles.registryTabs} role="group" aria-label="Station registry type">
+        <button
+          aria-pressed={activeRegistry === 'stations'}
+          className={`${styles.registryTab} ${activeRegistry === 'stations' ? styles.registryTabActive : ''}`}
+          onClick={() => setActiveRegistry('stations')}
+        >
+          <Landmark size={14} aria-hidden />
+          Stations
+          <span>{registry.stations.length}</span>
+        </button>
+        <button
+          aria-pressed={activeRegistry === 'outposts'}
+          className={`${styles.registryTab} ${activeRegistry === 'outposts' ? styles.registryTabActive : ''}`}
+          onClick={() => setActiveRegistry('outposts')}
+        >
+          <RadioTower size={14} aria-hidden />
+          Faction Outposts
+          <span>{registry.outposts.length}</span>
+        </button>
+      </div>
+
       <h2 style={srOnly}>Filter by Empire</h2>
-      <div className={styles.filterBar} role="group" aria-label="Filter by empire">
+      {activeRegistry === 'stations' && <div className={styles.filterBar} role="group" aria-label="Filter by empire">
         <span className={styles.filterLabel}>Empire</span>
         <button
           className={`${styles.filterBtn} ${activeEmpire === '' ? styles.filterBtnActive : ''}`}
@@ -156,10 +182,10 @@ export default function StationsPage() {
         ))}
         {!loading && !error && (
           <span className={styles.recordCount}>
-            {filteredStations.length} records
+            {visibleRecords.length} records
           </span>
         )}
-      </div>
+      </div>}
 
       <h2 style={srOnly}>Station Registry</h2>
 
@@ -174,14 +200,20 @@ export default function StationsPage() {
         </div>
       )}
 
-      {!loading && !error && filteredStations.length === 0 && (
+      {!loading && !error && visibleRecords.length === 0 && (
         <div className={styles.emptyState}>
-          <h2 className={styles.emptyStateTitle}>{t('stations.noStationsTitle')}</h2>
-          <p>{t('stations.noStationsDesc')}</p>
+          <h2 className={styles.emptyStateTitle}>
+            {activeRegistry === 'stations' ? t('stations.noStationsTitle') : 'No faction outposts'}
+          </h2>
+          <p>
+            {activeRegistry === 'stations'
+              ? t('stations.noStationsDesc')
+              : 'No faction-only outposts are currently registered.'}
+          </p>
         </div>
       )}
 
-      {!loading && !error && filteredStations.length > 0 && (
+      {!loading && !error && visibleRecords.length > 0 && activeRegistry === 'stations' && (
         <>
           {capitals.length > 0 && (
             <section className={`console-panel ${styles.panelSection}`}>
@@ -331,6 +363,43 @@ export default function StationsPage() {
             </section>
           )}
         </>
+      )}
+
+      {!loading && !error && activeRegistry === 'outposts' && registry.outposts.length > 0 && (
+        <section className={`console-panel ${styles.panelSection} ${styles.outpostPanel}`}>
+          <div className="console-panel-header">
+            <RadioTower size={12} aria-hidden />
+            <h2 className={styles.panelTitle}>Faction Outposts</h2>
+            <span className={styles.panelCount}>{registry.outposts.length}</span>
+          </div>
+          <div className="console-panel-body">
+            <p className={styles.outpostIntro}>
+              Small, members-only faction holdings for fuel and storage. Outposts are not
+              treated as galaxy landmarks.
+            </p>
+            <div className={styles.outpostList}>
+              {registry.outposts.map((outpost) => (
+                <Link
+                  key={outpost.id}
+                  href={`/stations/${outpost.id}`}
+                  className={styles.outpostRow}
+                  style={{ '--faction-color': outpost.faction_color || 'var(--chrome-silver)' } as React.CSSProperties}
+                >
+                  <span className={styles.outpostSignal} aria-hidden />
+                  <span className={styles.outpostIdentity}>
+                    <strong>{outpost.name}</strong>
+                    <small>{truncateDescription(outpost.description, 120)}</small>
+                  </span>
+                  <span className={styles.outpostOwner}>
+                    {outpost.faction_tag ? `[${outpost.faction_tag}] ${outpost.faction_name}` : 'Faction holding'}
+                  </span>
+                  <span className={styles.outpostSystem}>{outpost.system_name}</span>
+                  <ChevronRight size={13} aria-hidden />
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
       )}
     </div>
   )
