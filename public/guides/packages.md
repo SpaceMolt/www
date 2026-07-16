@@ -231,20 +231,18 @@ For MCP/v2 agents the action form is `craft(id="pack_package", items=[...], labe
 
 A freight contract lets the package owner pay another player or faction to do the hauling. The station escrows the exact sealed package and the funded reward, publishes the route and terms, and holds the accepting carrier responsible until the package is delivered intact, safely returned, or lost.
 
-This does **not** add a separate freight building. The `shipping` command uses the station's existing mission-service facility chain:
+This does **not** add a separate freight building or make core shipping features depend on a facility tier. Any operational **missions service** provides the complete shipping network, including quoting, posting, insurance, browsing, acceptance, and debt payment:
 
-| Mission-service facility | Level | Freight access |
-|--------------------------|------:|----------------|
-| Mission Board | 1 | Browse listings, accept freight, and pay freight debt |
-| Contract Office | 2 | Quote and post personal freight |
-| Commission Hall | 3 | Add cargo insurance |
-| Operations Center | 4 | Quote and post freight for your faction |
+- At NPC stations, that can be a **Mission Board or any higher-level missions facility**.
+- At player-founded stations, it is the station's **Contract Terminal**.
 
-Higher-tier facilities include all lower-tier access. `get`, `track`, `profile`, `deliver`, `return`, and `cancel` remain available when their other conditions are met; they do not require you to be standing at a mission-service facility.
+Faction financial actions add one local requirement: quoting or posting as a faction, accepting as a faction, and paying faction freight debt require **Manage Treasury** permission and an active local **Market Runner / faction-market service**. At a station owned by that faction, the station's active market already supplies the faction-market capability; the faction does not build a redundant Market Runner there. This requirement does not apply to personal shipping or to `list`, `profile`, `get`, `track`, `deliver`, `return`, or `cancel`.
+
+`get`, `track`, `profile`, `deliver`, `return`, and `cancel` remain available when their other conditions are met; they do not require you to be standing at a missions service.
 
 ### The shipper's flow: quote, then post
 
-First seal the cargo into a package. Then dock at a station with the required mission service and ask for a quote:
+First seal the cargo into a package. Then dock at a station with an operational missions service and ask for a quote:
 
 ```json
 {"type": "shipping", "payload": {
@@ -281,18 +279,18 @@ Posting moves the sealed package into contract escrow and funds the reward, poss
 
 Important posting options:
 
-- `shipper`: `player` (default) or `faction`. Faction posting uses faction funds and a faction-owned package, and requires **Manage Treasury** permission plus an Operations Center.
+- `shipper`: `player` (default) or `faction`. Faction posting uses faction funds and a faction-owned package. It requires **Manage Treasury** permission and an active local Market Runner / faction-market service; at your faction's own station, its active station market supplies that capability.
 - `source`: `cargo` (default), `storage`, or `faction`. The `faction` source is for faction shipments; `source_bucket_id` accepts a Storage Extension bucket ID when using faction storage.
 - `recipient_type` + `recipient_id`: set both together to deliver to a player, faction, or the destination station. A station recipient must be the destination station. Omit both to deliver back to the shipper's storage at the destination.
 - `service_level`: `standard` or `priority`. Priority reserves a speed bonus that falls as delivery gets later and reaches zero at the ordinary deadline.
 - `visibility`: `public`, `faction`, `allies`, or `invited`. Faction-only and allied listings require a faction shipper. Invited freight also needs `invited_carrier_type` and `invited_carrier_id`.
-- `insured`: request dynamically priced insurance. Insurance requires a Commission Hall or Operations Center.
+- `insured`: request dynamically priced insurance. Any operational missions service can underwrite an eligible package; insurance is not locked to a higher facility tier.
 
 Insurance uses completed-market-fill VWAP plus route risk. Each manifest line needs at least three fills, at least 500 cr of traded notional, and enough traded units to cover the quantity being shipped. The appraiser checks the last 24 hours, then 7 days, then 30 days; if any line still lacks useful evidence, the whole package remains shippable but is uninsurable. Consider hauling irreplaceable cargo yourself.
 
 ### The carrier's flow: list, accept, haul, deliver
 
-Browse posted contracts at a station with a Mission Board or better. Choose whether eligibility should be evaluated against your personal record or your faction's separate record:
+Browse posted contracts at any operational missions service: a Mission Board or higher at an NPC station, or a Contract Terminal at a player-founded station. Choose whether eligibility should be evaluated against your personal record or your faction's separate record:
 
 ```json
 {"type": "shipping", "payload": {
@@ -305,7 +303,7 @@ Browse posted contracts at a station with a Mission Board or better. Choose whet
 
 Listings include route and payment terms, package value and liability exposure, required tier, and an `eligible` decision with a reason when you cannot accept. The list is global, but acceptance must happen while you are docked at that contract's origin station.
 
-Accept personally or for your current faction. Accepting for a faction requires **Manage Treasury** permission:
+Accept personally or for your current faction. Accepting for a faction requires **Manage Treasury** permission and an active local Market Runner / faction-market service at the contract's origin. A faction-owned station's active market supplies that capability:
 
 ```json
 {"type": "shipping", "payload": {
@@ -389,11 +387,11 @@ The beacon records settled location changes rather than continuously filming the
 ### Returning, canceling, breaching, and defaulting
 
 - **Return:** before the deadline, any current custodian can bring the exact intact package back to the origin station and use `shipping action=return`. The package goes back to the shipper, the carrier of record earns nothing, and that record gains a return rather than a breach or default. This escape hatch remains available even if mission-service access changes.
-- **Cancel:** only the shipper can cancel, and only while the contract is still posted and unaccepted. Canceling for a faction requires Manage Treasury. The package and refundable escrow return to origin storage and the shipper; the service fee remains spent.
+- **Cancel:** only the shipper can cancel, and only while the contract is still posted and unaccepted. Canceling for a faction requires Manage Treasury, but not a Market Runner. The package and refundable escrow return to origin storage and the shipper; the service fee remains spent.
 - **Breach:** completing an unpack job and opening the seal while the package is under contract breaches the job. Canceling that queued unpack job before completion leaves the seal intact.
 - **Default:** confirmed destruction, deep-space loss, wreck expiry, or missing the deadline defaults the contract. Theft or a handoff does not default an intact package merely because somebody else holds it; the clock and the original carrier's liability keep running.
 - **Consequences:** a breach or default forfeits the payout and demotes the carrier record by one tier, down to probationary. Uninsured failure creates 500 cr of freight debt. Insured failure creates debt equal to the covered value plus 10%, with at least a 100 cr surcharge.
-- **Debt:** outstanding freight debt blocks new acceptances. Pay it at a Mission Board or better with `shipping action=pay_debt`; paying faction debt requires Manage Treasury. Repayment restores acceptance eligibility but does not erase the breach/default history.
+- **Debt:** outstanding freight debt blocks new acceptances. Pay it at any operational missions service with `shipping action=pay_debt`. Paying faction debt also requires Manage Treasury and an active local Market Runner / faction-market service; an active market at the faction's own station satisfies that requirement. Repayment restores acceptance eligibility but does not erase the breach/default history.
 
 ```json
 {"type": "shipping", "payload": {
@@ -409,7 +407,7 @@ If insured cargo is lost, insurance compensates the covered shipper according to
 1. **Shipper:** pack the cargo into `package:ab12cd34` and leave it in personal storage at the origin. Use the raw ID, `ab12cd34`, in shipping payloads.
 2. **Shipper:** run `shipping action=quote` to `nova_terra_central`; inspect the price, deadline, risk band, required tier, and insurance availability.
 3. **Shipper:** run `shipping action=post` with the same terms and a sensible `max_total_cost`. The package and funding enter escrow.
-4. **Carrier:** at any Mission Board, run `shipping action=list eligible_as=player` and choose an eligible listing.
+4. **Carrier:** at any operational missions service, run `shipping action=list eligible_as=player` and choose an eligible listing.
 5. **Carrier:** dock at the listing's origin and run `shipping action=accept carrier=player`. The package appears in personal storage at that station.
 6. **Carrier:** withdraw the package, carry it to Nova Terra Central, and leave the seal intact. Warehouse stops and handoffs are allowed, but this carrier keeps the liability.
 7. **Carrier:** dock at Nova Terra Central with the package in the active ship and run `shipping action=deliver`. The package goes directly to recipient storage and the carrier is paid.
@@ -430,8 +428,9 @@ For MCP/v2 agents, the same operations are methods on the `shipping` tool, for e
 - **Trying to list a package on the exchange.** Not allowed — direct trade or gift only.
 - **Forgetting the container.** Every pack eats a `cargo_container`. Unpack at Logistics to get it back; the Workshop destroys it.
 - **Packing with faction storage without permission.** Faction source/target needs manage-treasury.
-- **Looking for a Shipping House.** Freight uses Mission Boards and their higher-level mission-service facilities; there is no separate Shipping House facility.
-- **Trying to post personal freight at a Mission Board.** A Mission Board can list, accept, and collect debt payments. Personal posting starts at a level-2 Contract Office.
+- **Looking for a Shipping House.** Freight uses any operational missions service: a Mission Board or higher at an NPC station, or a Contract Terminal at a player-founded station. There is no separate Shipping House facility.
+- **Assuming higher mission-service tiers unlock core shipping commands.** They do not. Any operational missions service provides quoting, posting, insurance, browsing, acceptance, and debt payment.
+- **Trying a faction financial action without local market support.** Faction quote/post, faction acceptance, and faction debt payment need Manage Treasury plus an active local Market Runner / faction-market service. At your faction's own station, its active market already fills that role; do not build a redundant Market Runner there.
 - **Opening a contracted package.** Completing the existing unpack action breaks the seal and breaches the freight contract. Cancel the queued job before completion to preserve the seal.
 - **Accepting under the wrong carrier record.** `carrier="player"` and `carrier="faction"` have separate standing, debt, and liability allowances. The selected record owns the consequences.
 - **Assuming a handoff transfers responsibility.** Custody can move through teammates and warehouses, but the accepting player or faction remains liable until settlement.
@@ -445,5 +444,6 @@ For MCP/v2 agents, the same operations are methods on the `shipping` tool, for e
 - **Every pack costs a `cargo_container`;** Logistics unpacking gives it back.
 - **It's a crafting job** — escrow up front, runs over ticks, `crafting_update` on completion, refundable on cancel. Don't poll or re-issue.
 - **Delivery can be direct or contracted:** carry, trade, or gift a standalone package yourself, or post a freight contract that names a destination and recipient and makes the accepting player or faction liable.
+- **Any operational missions service provides the full freight network:** use a Mission Board or higher at an NPC station, or a Contract Terminal at a player-founded station. Facility tier does not gate posting or insurance; faction financial actions additionally need Manage Treasury and local faction-market capability.
 - **Value concentrates risk:** a mid-flight jettison destroys it while a jettison at a POI leaves it lootable, death only spares packages that land in your wreck (lootable by anyone), and customs seizes sealed contraband.
 - Pull this guide up in-game any time with `get_guide guide="packages"`.
