@@ -9,15 +9,14 @@ import {
 import styles from './GalaxyMap.module.css'
 import { subscribeToEvents } from '@/lib/sharedEventSource'
 import {
-  estimateCurrentTick,
+  displayedPublicTransitOpacity,
+  displayedPublicTransitProgress,
   FLEET_DOT_SPACING,
   forEachPublicTransitFormationPoint,
-  observeSnapshotTick,
-  observeServerTick,
   publicTransitFormation,
-  publicTransitProgress,
+  reconcilePublicTransitPresentation,
   type PublicTransit,
-  type TickAnchor,
+  type PublicTransitPresentation,
 } from './publicTransit'
 import { configureHiDPICanvas, logicalCanvasSize } from './canvasResolution'
 
@@ -236,9 +235,12 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
     travelHistory: new Map<string, string[]>(),
     selectedTravelPlayers: new Set<string>(),
     travelPings: [] as { wx: number; wy: number; startTime: number; color: string }[],
-    publicTransits: [] as PublicTransit[],
+    publicTransitPresentation: {
+      displayed: [],
+      retiredKeys: new Map<string, number>(),
+      latestSnapshotTick: 0,
+    } as PublicTransitPresentation,
     publicTransitPaths: new Map<number, Path2D>(),
-    tickAnchor: null as TickAnchor | null,
     pendingSystemId: null as string | null,
   })
 
@@ -610,15 +612,17 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
   const drawPublicTransits = useCallback(
     (ctx: CanvasRenderingContext2D) => {
       const s = stateRef.current
-      if (!s.mapData || !s.tickAnchor || s.publicTransits.length === 0) return
+      if (!s.mapData || s.publicTransitPresentation.displayed.length === 0) return
 
-      const currentTick = estimateCurrentTick(s.tickAnchor)
+      const nowMs = Date.now()
       ctx.save()
       ctx.fillStyle = '#67e8f9'
       ctx.shadowColor = '#22d3ee'
       ctx.shadowBlur = TRANSIT_GLOW_RADIUS
-      for (const transit of s.publicTransits) {
-        if (currentTick < transit.start_tick || currentTick >= transit.arrival_tick) continue
+      for (const transit of s.publicTransitPresentation.displayed) {
+        const progress = displayedPublicTransitProgress(transit, nowMs)
+        const opacity = displayedPublicTransitOpacity(transit, nowMs)
+        if (progress >= 1 || opacity <= 0) continue
 
         const from = s.systemsById.get(transit.from_system)
         const to = s.systemsById.get(transit.to_system)
@@ -626,7 +630,6 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
 
         const fromPos = worldToScreen(from.x, from.y)
         const toPos = worldToScreen(to.x, to.y)
-        const progress = publicTransitProgress(transit, currentTick)
         const x = fromPos.x + (toPos.x - fromPos.x) * progress
         const y = fromPos.y + (toPos.y - fromPos.y) * progress
         const dx = toPos.x - fromPos.x
@@ -668,12 +671,14 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
         }
 
         ctx.save()
+        ctx.globalAlpha = opacity
         ctx.translate(x, y)
         ctx.rotate(Math.atan2(dy, dx))
         ctx.fill(formationPath)
         ctx.restore()
         if (formation.overflowCount > 0) {
           ctx.save()
+          ctx.globalAlpha = opacity
           ctx.shadowBlur = 4
           ctx.font = '600 10px monospace'
           ctx.textAlign = 'center'
@@ -1822,16 +1827,20 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
         }
       }
       if (activityData.transits) {
-        s.publicTransits = activityData.transits
+        s.publicTransitPresentation = reconcilePublicTransitPresentation(
+          s.publicTransitPresentation,
+          activityData.transits,
+          Date.now(),
+          activityData.current_tick,
+        )
         const activeFormationSizes = new Set(
-          activityData.transits.map((transit) => publicTransitFormation(transit.count).visibleCount),
+          s.publicTransitPresentation.displayed.map(
+            (transit) => publicTransitFormation(transit.count).visibleCount,
+          ),
         )
         for (const count of s.publicTransitPaths.keys()) {
           if (!activeFormationSizes.has(count)) s.publicTransitPaths.delete(count)
         }
-      }
-      if (typeof activityData.current_tick === 'number') {
-        s.tickAnchor = observeSnapshotTick(s.tickAnchor, activityData.current_tick)
       }
     }
 
@@ -1980,10 +1989,6 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
     const unsubscribeActivityFeed = subscribeToEvents((raw) => {
       try {
         const data = JSON.parse(raw) as ActivityEvent
-
-        if (typeof data.tick === 'number') {
-          s.tickAnchor = observeServerTick(s.tickAnchor, data.tick)
-        }
 
         // Track player system changes for travel paths
         const player = data.data?.player

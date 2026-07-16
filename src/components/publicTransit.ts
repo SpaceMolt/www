@@ -6,13 +6,21 @@ export interface PublicTransit {
   count: number
 }
 
-export interface TickAnchor {
-  tick: number
-  anchoredAtMs: number
+export interface DisplayedPublicTransit extends PublicTransit {
+  displayStartedAtMs: number
+}
+
+export interface PublicTransitPresentation {
+  displayed: DisplayedPublicTransit[]
+  retiredKeys: Map<string, number>
+  latestSnapshotTick: number
 }
 
 const TICK_DURATION_MS = 10_000
-const TICK_OBSERVE_MIN_INTERVAL_MS = 2_000
+const TRANSIT_FADE_IN_MS = 1_000
+const TRANSIT_FADE_OUT_MS = 1_500
+const RETIRED_TRANSIT_TTL_MS = 120_000
+const MAX_TRANSIT_DURATION_TICKS = 3_600
 export interface TransitFormationPoint {
   forward: number
   side: number
@@ -31,41 +39,112 @@ export const FLEET_DOT_SPACING = 7
 // large synchronized movements in full while bounding malformed API input.
 export const MAX_TRANSIT_FORMATION_DOTS = 1_024
 
-export function publicTransitProgress(transit: PublicTransit, currentTick: number): number {
-  const duration = transit.arrival_tick - transit.start_tick
-  if (duration <= 0) return 1
-  return Math.max(0, Math.min(1, (currentTick - transit.start_tick) / duration))
+function publicTransitKey(transit: PublicTransit): string {
+  return [
+    transit.from_system,
+    transit.to_system,
+    transit.start_tick,
+    transit.arrival_tick,
+  ].join('\u0000')
 }
 
-export function estimateCurrentTick(anchor: TickAnchor, nowMs = Date.now()): number {
-  return anchor.tick + Math.max(0, nowMs - anchor.anchoredAtMs) / TICK_DURATION_MS
+function displayedPublicTransitDurationMs(transit: DisplayedPublicTransit): number {
+  return Math.max(0, transit.arrival_tick - transit.start_tick) * TICK_DURATION_MS
 }
 
-// Real-time public events are the authoritative tick-phase signal. Ignoring
-// duplicate and burst observations prevents network timing from repeatedly
-// re-phasing moving dots.
-export function observeServerTick(
-  anchor: TickAnchor | null,
-  tick: number,
+/**
+ * Progresses a transit on a local presentation timeline. A newly discovered
+ * trip therefore departs from its origin instead of popping into the middle
+ * of the route when a polling response happens to arrive late.
+ */
+export function displayedPublicTransitProgress(
+  transit: DisplayedPublicTransit,
   nowMs = Date.now(),
-): TickAnchor | null {
-  if (!Number.isFinite(tick) || tick <= 0) return anchor
-  if (anchor && tick <= anchor.tick) return anchor
-  if (anchor && nowMs - anchor.anchoredAtMs < TICK_OBSERVE_MIN_INTERVAL_MS) return anchor
-  return { tick, anchoredAtMs: nowMs }
+): number {
+  const durationMs = displayedPublicTransitDurationMs(transit)
+  if (durationMs <= 0) return 1
+  return Math.max(0, Math.min(1, (nowMs - transit.displayStartedAtMs) / durationMs))
 }
 
-// Activity snapshots arrive on their own polling cadence, so their response
-// time is not a reliable tick boundary. The public map uses one only to
-// bootstrap the clock, then preserves the phase learned from real-time events.
-export function observeSnapshotTick(
-  anchor: TickAnchor | null,
-  tick: number,
+export function displayedPublicTransitOpacity(
+  transit: DisplayedPublicTransit,
   nowMs = Date.now(),
-): TickAnchor | null {
-  if (anchor) return anchor
-  if (!Number.isFinite(tick) || tick <= 0) return anchor
-  return { tick, anchoredAtMs: nowMs }
+): number {
+  const elapsedMs = Math.max(0, nowMs - transit.displayStartedAtMs)
+  const remainingMs = Math.max(0, displayedPublicTransitDurationMs(transit) - elapsedMs)
+  return Math.max(
+    0,
+    Math.min(1, elapsedMs / TRANSIT_FADE_IN_MS, remainingMs / TRANSIT_FADE_OUT_MS),
+  )
+}
+
+/**
+ * Reconciles polling snapshots with the map's local animation lifecycle.
+ * Missing trips remain visible until their local arrival, while completed
+ * keys remain briefly retired so delayed snapshots cannot restart them.
+ */
+export function reconcilePublicTransitPresentation(
+  previous: PublicTransitPresentation,
+  snapshot: PublicTransit[],
+  nowMs = Date.now(),
+  snapshotTick?: number,
+): PublicTransitPresentation {
+  const retiredKeys = new Map(
+    [...previous.retiredKeys].filter(([, expiresAtMs]) => expiresAtMs > nowMs),
+  )
+  const latestSnapshotTick = Number.isFinite(snapshotTick) && snapshotTick! > 0
+    ? Math.max(previous.latestSnapshotTick, snapshotTick!)
+    : previous.latestSnapshotTick
+  const isStaleSnapshot = Number.isFinite(snapshotTick)
+    && snapshotTick! > 0
+    && snapshotTick! < previous.latestSnapshotTick
+  const snapshotByKey = new Map<string, PublicTransit>()
+  if (!isStaleSnapshot) {
+    for (const transit of snapshot) {
+      const duration = transit.arrival_tick - transit.start_tick
+      if (
+        !Number.isFinite(transit.start_tick)
+        || !Number.isFinite(transit.arrival_tick)
+        || !Number.isFinite(transit.count)
+        || duration <= 0
+        || duration > MAX_TRANSIT_DURATION_TICKS
+        || transit.count <= 0
+      ) continue
+
+      const key = publicTransitKey(transit)
+      const existing = snapshotByKey.get(key)
+      snapshotByKey.set(key, {
+        ...transit,
+        count: Math.floor(transit.count) + (existing?.count ?? 0),
+      })
+    }
+  }
+
+  const displayed: DisplayedPublicTransit[] = []
+  const activeCountByKey = new Map<string, number>()
+
+  for (const transit of previous.displayed) {
+    const key = publicTransitKey(transit)
+    if (displayedPublicTransitProgress(transit, nowMs) >= 1) {
+      retiredKeys.set(key, nowMs + RETIRED_TRANSIT_TTL_MS)
+      continue
+    }
+    displayed.push(transit)
+    activeCountByKey.set(key, (activeCountByKey.get(key) ?? 0) + transit.count)
+  }
+
+  for (const [key, transit] of snapshotByKey) {
+    if (retiredKeys.has(key)) continue
+    const additionalCount = transit.count - (activeCountByKey.get(key) ?? 0)
+    if (additionalCount <= 0) continue
+    displayed.push({ ...transit, count: additionalCount, displayStartedAtMs: nowMs })
+  }
+
+  return {
+    displayed,
+    retiredKeys,
+    latestSnapshotTick,
+  }
 }
 
 export function publicTransitFormation(count: number): TransitFormation {
