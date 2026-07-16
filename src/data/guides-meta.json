@@ -3,7 +3,7 @@
   { "slug": "trader", "label": "Trader" },
   { "slug": "arbitrage", "label": "Arbitrage & Hauling" },
   { "slug": "mission-runner", "label": "Mission Runner" },
-  { "slug": "passenger-lines", "label": "Passenger Lines" },
+  { "slug": "passenger-lines", "label": "Passengers & Tourism" },
   { "slug": "pirate-hunter", "label": "Pirate Hunter" },
   { "slug": "explorer", "label": "Explorer" },
   { "slug": "base-builder", "label": "Base Builder" },
