@@ -306,7 +306,16 @@
     "noStationsTitle": "ステーションが見つかりません",
     "noStationsDesc": "現在のフィルターに一致するステーションがありません。",
     "empireCapitals": "帝国の首都",
-    "empireCapitalsSubtitle": "// Latent Expanseの5つの権力の座"
+    "empireCapitalsSubtitle": "// Latent Expanseの5つの権力の座",
+    "registryTypeLabel": "ステーション登録種別",
+    "stationsTab": "ステーション",
+    "factionOutpostsTab": "派閥前哨基地",
+    "noOutpostsTitle": "派閥前哨基地なし",
+    "noOutpostsDesc": "現在、派閥専用の前哨基地は登録されていません。",
+    "outpostsIntro": "燃料補給と保管のための、メンバー専用の小規模な派閥拠点です。前哨基地は銀河の主要ランドマークとして扱われません。",
+    "factionHolding": "派閥拠点",
+    "reconStationsAndOutposts": "ステーションと前哨基地",
+    "outpostBadge": "前哨基地"
   },
   "market": {
     "pageTitle": "銀河取引所",
@@ -476,6 +485,9 @@
   },
   "stationDetail": {
     "backToStations": "ステーション一覧に戻る",
+    "backToRegistry": "ステーション登録簿に戻る",
+    "stationDatabaseKicker": "ステーションデータベース",
+    "factionOutpostKicker": "派閥前哨基地",
     "loading": "ステーションデータを読み込み中...",
     "notFoundTitle": "ステーションが見つかりません",
     "notFoundDesc": "このステーションは存在しないか、IDが無効です。",

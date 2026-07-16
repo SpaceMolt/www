@@ -303,7 +303,16 @@
     "noStationsTitle": "Nie znaleziono stacji",
     "noStationsDesc": "Żadna stacja nie pasuje do bieżącego filtra.",
     "empireCapitals": "Stolice imperiów",
-    "empireCapitalsSubtitle": "// Pięć siedzib władzy w Latent Expanse"
+    "empireCapitalsSubtitle": "// Pięć siedzib władzy w Latent Expanse",
+    "registryTypeLabel": "Typ rejestru stacji",
+    "stationsTab": "Stacje",
+    "factionOutpostsTab": "Placówki frakcji",
+    "noOutpostsTitle": "Brak placówek frakcji",
+    "noOutpostsDesc": "Obecnie nie zarejestrowano żadnych placówek dostępnych wyłącznie dla frakcji.",
+    "outpostsIntro": "Małe, dostępne tylko dla członków obiekty frakcji służące do tankowania i magazynowania. Placówki nie są traktowane jako galaktyczne punkty orientacyjne.",
+    "factionHolding": "Obiekt frakcji",
+    "reconStationsAndOutposts": "Stacje i placówki",
+    "outpostBadge": "Placówka"
   },
   "market": {
     "pageTitle": "Galaktyczna giełda",
@@ -469,6 +478,9 @@
   },
   "stationDetail": {
     "backToStations": "Powrót do stacji",
+    "backToRegistry": "Powrót do rejestru stacji",
+    "stationDatabaseKicker": "Baza danych stacji",
+    "factionOutpostKicker": "Placówka frakcji",
     "loading": "Ładowanie danych stacji...",
     "notFoundTitle": "Stacja nie znaleziona",
     "notFoundDesc": "Ta stacja nie istnieje lub ID jest nieprawidłowe.",

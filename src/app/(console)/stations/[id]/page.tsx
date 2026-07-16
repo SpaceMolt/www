@@ -220,14 +220,16 @@ export default function StationDetailPage() {
       className="console-page"
       style={{ '--empire-color': empireColor } as React.CSSProperties}
     >
-      <BackLink label={isOutpost ? 'Back to Station Registry' : t('stationDetail.backToStations')} />
+      <BackLink label={isOutpost ? t('stationDetail.backToRegistry') : t('stationDetail.backToStations')} />
 
       <header className="console-page-header">
-        <span className="console-page-kicker">{isOutpost ? 'Faction Outpost' : 'Station Database'}</span>
+        <span className="console-page-kicker">
+          {isOutpost ? t('stationDetail.factionOutpostKicker') : t('stationDetail.stationDatabaseKicker')}
+        </span>
         <div className={styles.titleRow}>
           <h1 className="console-page-title">{station.name}</h1>
           <div className={styles.titleBadges}>
-            {isOutpost && <span className={styles.outpostBadge}>Outpost</span>}
+            {isOutpost && <span className={styles.outpostBadge}>{t('stations.outpostBadge')}</span>}
             {station.faction_tag && (
               <Link
                 href={`/faction/${encodeURIComponent(station.faction_tag)}`}

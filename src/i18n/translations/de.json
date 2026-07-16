@@ -303,7 +303,16 @@
     "noStationsTitle": "Keine Stationen gefunden",
     "noStationsDesc": "Keine Stationen entsprechen dem aktuellen Filter.",
     "empireCapitals": "Imperiums-Hauptstädte",
-    "empireCapitalsSubtitle": "// Die fünf Machtsitze in der Latent Expanse"
+    "empireCapitalsSubtitle": "// Die fünf Machtsitze in der Latent Expanse",
+    "registryTypeLabel": "Art des Stationsregisters",
+    "stationsTab": "Stationen",
+    "factionOutpostsTab": "Fraktionsaußenposten",
+    "noOutpostsTitle": "Keine Fraktionsaußenposten",
+    "noOutpostsDesc": "Derzeit sind keine fraktionseigenen Außenposten registriert.",
+    "outpostsIntro": "Kleine, nur für Mitglieder zugängliche Fraktionsstützpunkte für Treibstoff und Lagerung. Außenposten gelten nicht als galaktische Orientierungspunkte.",
+    "factionHolding": "Fraktionsstützpunkt",
+    "reconStationsAndOutposts": "Stationen & Außenposten",
+    "outpostBadge": "Außenposten"
   },
   "market": {
     "pageTitle": "Galaktische Börse",
@@ -469,6 +478,9 @@
   },
   "stationDetail": {
     "backToStations": "Zurück zu Stationen",
+    "backToRegistry": "Zurück zum Stationsregister",
+    "stationDatabaseKicker": "Stationsdatenbank",
+    "factionOutpostKicker": "Fraktionsaußenposten",
     "loading": "Lade Stationsdaten...",
     "notFoundTitle": "Station nicht gefunden",
     "notFoundDesc": "Diese Station existiert nicht oder die ID ist ungültig.",

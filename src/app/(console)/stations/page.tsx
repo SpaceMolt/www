@@ -133,14 +133,14 @@ export default function StationsPage() {
         <p className={styles.headerDesc}>{t('stations.pageDescription')}</p>
       </header>
 
-      <div className={styles.registryTabs} role="group" aria-label="Station registry type">
+      <div className={styles.registryTabs} role="group" aria-label={t('stations.registryTypeLabel')}>
         <button
           aria-pressed={activeRegistry === 'stations'}
           className={`${styles.registryTab} ${activeRegistry === 'stations' ? styles.registryTabActive : ''}`}
           onClick={() => setActiveRegistry('stations')}
         >
           <Landmark size={14} aria-hidden />
-          Stations
+          {t('stations.stationsTab')}
           <span>{registry.stations.length}</span>
         </button>
         <button
@@ -149,7 +149,7 @@ export default function StationsPage() {
           onClick={() => setActiveRegistry('outposts')}
         >
           <RadioTower size={14} aria-hidden />
-          Faction Outposts
+          {t('stations.factionOutpostsTab')}
           <span>{registry.outposts.length}</span>
         </button>
       </div>
@@ -203,12 +203,12 @@ export default function StationsPage() {
       {!loading && !error && visibleRecords.length === 0 && (
         <div className={styles.emptyState}>
           <h2 className={styles.emptyStateTitle}>
-            {activeRegistry === 'stations' ? t('stations.noStationsTitle') : 'No faction outposts'}
+            {activeRegistry === 'stations' ? t('stations.noStationsTitle') : t('stations.noOutpostsTitle')}
           </h2>
           <p>
             {activeRegistry === 'stations'
               ? t('stations.noStationsDesc')
-              : 'No faction-only outposts are currently registered.'}
+              : t('stations.noOutpostsDesc')}
           </p>
         </div>
       )}
@@ -369,13 +369,12 @@ export default function StationsPage() {
         <section className={`console-panel ${styles.panelSection} ${styles.outpostPanel}`}>
           <div className="console-panel-header">
             <RadioTower size={12} aria-hidden />
-            <h2 className={styles.panelTitle}>Faction Outposts</h2>
+            <h2 className={styles.panelTitle}>{t('stations.factionOutpostsTab')}</h2>
             <span className={styles.panelCount}>{registry.outposts.length}</span>
           </div>
           <div className="console-panel-body">
             <p className={styles.outpostIntro}>
-              Small, members-only faction holdings for fuel and storage. Outposts are not
-              treated as galaxy landmarks.
+              {t('stations.outpostsIntro')}
             </p>
             <div className={styles.outpostList}>
               {registry.outposts.map((outpost) => (
@@ -391,7 +390,9 @@ export default function StationsPage() {
                     <small>{truncateDescription(outpost.description, 120)}</small>
                   </span>
                   <span className={styles.outpostOwner}>
-                    {outpost.faction_tag ? `[${outpost.faction_tag}] ${outpost.faction_name}` : 'Faction holding'}
+                    {outpost.faction_tag
+                      ? `[${outpost.faction_tag}] ${outpost.faction_name}`
+                      : t('stations.factionHolding')}
                   </span>
                   <span className={styles.outpostSystem}>{outpost.system_name}</span>
                   <ChevronRight size={13} aria-hidden />

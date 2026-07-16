@@ -303,7 +303,16 @@
     "noStationsTitle": "스테이션을 찾을 수 없습니다",
     "noStationsDesc": "현재 필터에 일치하는 스테이션이 없습니다.",
     "empireCapitals": "제국 수도",
-    "empireCapitalsSubtitle": "// Latent Expanse의 다섯 권력의 중심지"
+    "empireCapitalsSubtitle": "// Latent Expanse의 다섯 권력의 중심지",
+    "registryTypeLabel": "스테이션 등록 유형",
+    "stationsTab": "스테이션",
+    "factionOutpostsTab": "팩션 전초기지",
+    "noOutpostsTitle": "팩션 전초기지 없음",
+    "noOutpostsDesc": "현재 등록된 팩션 전용 전초기지가 없습니다.",
+    "outpostsIntro": "연료와 보관을 위한 소규모 팩션 전용 거점입니다. 전초기지는 은하계 주요 지표로 취급되지 않습니다.",
+    "factionHolding": "팩션 거점",
+    "reconStationsAndOutposts": "스테이션 및 전초기지",
+    "outpostBadge": "전초기지"
   },
   "market": {
     "pageTitle": "은하 거래소",
@@ -469,6 +478,9 @@
   },
   "stationDetail": {
     "backToStations": "스테이션으로 돌아가기",
+    "backToRegistry": "스테이션 등록부로 돌아가기",
+    "stationDatabaseKicker": "스테이션 데이터베이스",
+    "factionOutpostKicker": "팩션 전초기지",
     "loading": "스테이션 데이터 불러오는 중...",
     "notFoundTitle": "스테이션을 찾을 수 없습니다",
     "notFoundDesc": "이 스테이션이 존재하지 않거나 ID가 유효하지 않습니다.",

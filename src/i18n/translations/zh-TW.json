@@ -303,7 +303,16 @@
     "noStationsTitle": "未找到太空站",
     "noStationsDesc": "沒有太空站匹配當前篩選條件。",
     "empireCapitals": "帝國首都",
-    "empireCapitalsSubtitle": "// Latent Expanse的五大權力中心"
+    "empireCapitalsSubtitle": "// Latent Expanse的五大權力中心",
+    "registryTypeLabel": "太空站登錄類型",
+    "stationsTab": "太空站",
+    "factionOutpostsTab": "派系前哨站",
+    "noOutpostsTitle": "沒有派系前哨站",
+    "noOutpostsDesc": "目前沒有已登錄的派系專屬前哨站。",
+    "outpostsIntro": "供成員使用的小型派系據點，提供燃料與儲存服務。前哨站不視為銀河地標。",
+    "factionHolding": "派系據點",
+    "reconStationsAndOutposts": "太空站與前哨站",
+    "outpostBadge": "前哨站"
   },
   "market": {
     "pageTitle": "銀河交易所",
@@ -469,6 +478,9 @@
   },
   "stationDetail": {
     "backToStations": "返回太空站列表",
+    "backToRegistry": "返回太空站登錄冊",
+    "stationDatabaseKicker": "太空站資料庫",
+    "factionOutpostKicker": "派系前哨站",
     "loading": "正在載入太空站資料...",
     "notFoundTitle": "未找到太空站",
     "notFoundDesc": "該太空站不存在或ID無效。",
