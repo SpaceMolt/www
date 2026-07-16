@@ -1,13 +1,13 @@
 import { describe, expect, test } from 'bun:test'
 import {
-  estimateCurrentTick,
+  displayedPublicTransitOpacity,
+  displayedPublicTransitProgress,
   forEachPublicTransitFormationPoint,
   MAX_TRANSIT_FORMATION_DOTS,
-  observeSnapshotTick,
-  observeServerTick,
   publicTransitFormation,
-  publicTransitProgress,
+  reconcilePublicTransitPresentation,
   type PublicTransit,
+  type PublicTransitPresentation,
 } from './publicTransit'
 
 const transit: PublicTransit = {
@@ -18,50 +18,106 @@ const transit: PublicTransit = {
   count: 1,
 }
 
-describe('publicTransitProgress', () => {
-  test('clamps progress before, during, and after a jump', () => {
-    expect(publicTransitProgress(transit, 95)).toBe(0)
-    expect(publicTransitProgress(transit, 105)).toBe(0.5)
-    expect(publicTransitProgress(transit, 115)).toBe(1)
+describe('public transit presentation lifecycle', () => {
+  const emptyPresentation: PublicTransitPresentation = {
+    displayed: [],
+    retiredKeys: new Map(),
+    latestSnapshotTick: 0,
+  }
+
+  test('starts newly observed traffic at its origin and preserves that local timeline', () => {
+    const first = reconcilePublicTransitPresentation(emptyPresentation, [transit], 1_000)
+    expect(first.displayed).toHaveLength(1)
+    expect(displayedPublicTransitProgress(first.displayed[0], 1_000)).toBe(0)
+    expect(displayedPublicTransitProgress(first.displayed[0], 26_000)).toBe(0.25)
+
+    const refreshed = reconcilePublicTransitPresentation(first, [transit], 16_000)
+    expect(refreshed.displayed[0].displayStartedAtMs).toBe(1_000)
+    expect(displayedPublicTransitProgress(refreshed.displayed[0], 26_000)).toBe(0.25)
   })
 
-  test('treats invalid durations as complete', () => {
-    expect(publicTransitProgress({ ...transit, arrival_tick: 100 }, 100)).toBe(1)
-  })
-})
+  test('keeps missing traffic moving until local arrival instead of popping out', () => {
+    const first = reconcilePublicTransitPresentation(emptyPresentation, [transit], 1_000)
+    const missing = reconcilePublicTransitPresentation(first, [], 16_000)
+    expect(missing.displayed).toHaveLength(1)
+    expect(displayedPublicTransitProgress(missing.displayed[0], 26_000)).toBe(0.25)
 
-describe('estimateCurrentTick', () => {
-  test('advances the server tick anchor using the ten-second tick rate', () => {
-    expect(estimateCurrentTick({ tick: 200, anchoredAtMs: 1_000 }, 16_000)).toBe(201.5)
-  })
-
-  test('uses fresh SSE ticks as phase anchors without moving backward', () => {
-    const initial = observeServerTick(null, 200, 1_000)
-    expect(initial).toEqual({ tick: 200, anchoredAtMs: 1_000 })
-    expect(observeServerTick(initial, 199, 12_000)).toBe(initial)
-    expect(observeServerTick(initial, 201, 12_000)).toEqual({
-      tick: 201,
-      anchoredAtMs: 12_000,
-    })
+    const arrived = reconcilePublicTransitPresentation(missing, [], 101_000)
+    expect(arrived.displayed).toHaveLength(0)
   })
 
-  test('ignores burst events so network timing cannot constantly re-phase the clock', () => {
-    const initial = { tick: 200, anchoredAtMs: 1_000 }
-    expect(observeServerTick(initial, 201, 2_000)).toBe(initial)
+  test('does not restart a completed trip while a stale snapshot still contains it', () => {
+    const shortTransit = { ...transit, arrival_tick: 101 }
+    const first = reconcilePublicTransitPresentation(emptyPresentation, [shortTransit], 1_000)
+    const stale = reconcilePublicTransitPresentation(first, [shortTransit], 11_000)
+    expect(stale.displayed).toHaveLength(0)
+    expect(stale.retiredKeys.size).toBe(1)
+
+    const repeatedStale = reconcilePublicTransitPresentation(stale, [shortTransit], 16_000)
+    expect(repeatedStale.displayed).toHaveLength(0)
+
+    const omitted = reconcilePublicTransitPresentation(repeatedStale, [], 20_000)
+    const reappeared = reconcilePublicTransitPresentation(omitted, [shortTransit], 25_000)
+    expect(reappeared.displayed).toHaveLength(0)
   })
 
-  test('keeps snapshot refreshes from re-phasing an event-driven clock', () => {
-    const bootstrap = observeSnapshotTick(null, 200, 1_000)
-    expect(bootstrap).toEqual({ tick: 200, anchoredAtMs: 1_000 })
-    expect(estimateCurrentTick(bootstrap!, 16_000)).toBe(201.5)
+  test('ignores older responses and starts added ships as a new departure cohort', () => {
+    const first = reconcilePublicTransitPresentation(
+      emptyPresentation,
+      [{ ...transit, count: 25 }],
+      1_000,
+      200,
+    )
+    const refreshed = reconcilePublicTransitPresentation(
+      first,
+      [{ ...transit, count: 26 }],
+      16_000,
+      201,
+    )
+    expect(refreshed.displayed.map(({ count }) => count)).toEqual([25, 1])
+    expect(refreshed.displayed[0].displayStartedAtMs).toBe(1_000)
+    expect(displayedPublicTransitProgress(refreshed.displayed[1], 16_000)).toBe(0)
 
-    const afterPoll = observeSnapshotTick(bootstrap, 202, 16_000)
-    expect(afterPoll).toBe(bootstrap)
-    expect(estimateCurrentTick(afterPoll!, 16_000)).toBe(201.5)
+    const repeated = reconcilePublicTransitPresentation(
+      refreshed,
+      [{ ...transit, count: 26 }],
+      17_000,
+      202,
+    )
+    expect(repeated.displayed.map(({ count }) => count)).toEqual([25, 1])
 
-    const eventAnchor = observeServerTick(afterPoll, 203, 21_000)
-    expect(eventAnchor).toEqual({ tick: 203, anchoredAtMs: 21_000 })
-    expect(observeSnapshotTick(eventAnchor, 204, 31_000)).toBe(eventAnchor)
+    const reduced = reconcilePublicTransitPresentation(
+      repeated,
+      [{ ...transit, count: 10 }],
+      18_000,
+      203,
+    )
+    expect(reduced.displayed.map(({ count }) => count)).toEqual([25, 1])
+
+    const staleOtherTransit = { ...transit, start_tick: 200, arrival_tick: 205 }
+    const stale = reconcilePublicTransitPresentation(reduced, [staleOtherTransit], 19_000, 199)
+    expect(stale.displayed).toHaveLength(2)
+    expect(stale.latestSnapshotTick).toBe(203)
+  })
+
+  test('rejects malformed or non-positive transit durations', () => {
+    const malformed = [
+      { ...transit, start_tick: Number.NaN },
+      { ...transit, arrival_tick: Number.POSITIVE_INFINITY },
+      { ...transit, arrival_tick: transit.start_tick },
+      { ...transit, arrival_tick: transit.start_tick - 1 },
+    ]
+    expect(
+      reconcilePublicTransitPresentation(emptyPresentation, malformed, 1_000).displayed,
+    ).toHaveLength(0)
+  })
+
+  test('fades traffic in at departure and out at arrival', () => {
+    const first = reconcilePublicTransitPresentation(emptyPresentation, [transit], 1_000)
+    const displayed = first.displayed[0]
+    expect(displayedPublicTransitOpacity(displayed, 1_000)).toBe(0)
+    expect(displayedPublicTransitOpacity(displayed, 2_000)).toBe(1)
+    expect(displayedPublicTransitOpacity(displayed, 100_500)).toBeCloseTo(1 / 3)
   })
 })
 
