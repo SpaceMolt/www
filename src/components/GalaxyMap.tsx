@@ -638,8 +638,8 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
         if (length === 0) continue
 
         const formation = publicTransitFormation(transit.count)
-        const halfForward = ((formation.columns - 1) * FLEET_DOT_SPACING) / 2 + TRANSIT_DOT_RADIUS
-        const halfSide = ((formation.rows - 1) * FLEET_DOT_SPACING) / 2 + TRANSIT_DOT_RADIUS
+        const halfForward = ((formation.rows - 1) * FLEET_DOT_SPACING) / 2 + TRANSIT_DOT_RADIUS
+        const halfSide = ((formation.columns - 1) * FLEET_DOT_SPACING) / 2 + TRANSIT_DOT_RADIUS
         const cullRadius = Math.hypot(halfForward, halfSide) + TRANSIT_GLOW_RADIUS
         const canvas = canvasRef.current
         if (

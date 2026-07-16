@@ -122,7 +122,7 @@ describe('public transit presentation lifecycle', () => {
 })
 
 describe('publicTransitFormation', () => {
-  test('lays legitimate fleet sizes out in centered rows and columns', () => {
+  test('lays legitimate fleet sizes out in forward-pointing arrowheads', () => {
     const single = publicTransitFormation(1)
     const singlePoints: Array<{ forward: number; side: number }> = []
     forEachPublicTransitFormationPoint(single, (point) => singlePoints.push(point))
@@ -132,32 +132,50 @@ describe('publicTransitFormation', () => {
     const fourPoints: Array<{ forward: number; side: number }> = []
     forEachPublicTransitFormationPoint(four, (point) => fourPoints.push(point))
     expect(fourPoints).toEqual([
-      { forward: -3.5, side: -3.5 },
-      { forward: 3.5, side: -3.5 },
-      { forward: -3.5, side: 3.5 },
-      { forward: 3.5, side: 3.5 },
+      { forward: 3.5, side: 0 },
+      { forward: -3.5, side: -7 },
+      { forward: -3.5, side: 0 },
+      { forward: -3.5, side: 7 },
     ])
 
-    const largeFleet = publicTransitFormation(100)
-    expect(largeFleet).toEqual({
-      totalCount: 100,
-      visibleCount: 100,
+    const standardFleet = publicTransitFormation(25)
+    expect(standardFleet).toEqual({
+      totalCount: 25,
+      visibleCount: 25,
       overflowCount: 0,
-      columns: 10,
-      rows: 10,
+      columns: 9,
+      rows: 5,
+      rankCounts: [1, 3, 5, 7, 9],
     })
   })
 
-  test('centers a partial final row', () => {
+  test('centers incomplete ranks while preserving a pointed nose', () => {
     const points: Array<{ forward: number; side: number }> = []
     forEachPublicTransitFormationPoint(publicTransitFormation(5), (point) => points.push(point))
     expect(points).toEqual([
-      { forward: -7, side: -3.5 },
-      { forward: 0, side: -3.5 },
-      { forward: 7, side: -3.5 },
-      { forward: -3.5, side: 3.5 },
-      { forward: 3.5, side: 3.5 },
+      { forward: 7, side: 0 },
+      { forward: 0, side: 0 },
+      { forward: -7, side: -7 },
+      { forward: -7, side: 0 },
+      { forward: -7, side: 7 },
     ])
+  })
+
+  test('keeps every normal fleet centered with a unique forward nose', () => {
+    for (let count = 1; count <= 25; count++) {
+      const points: Array<{ forward: number; side: number }> = []
+      forEachPublicTransitFormationPoint(publicTransitFormation(count), (point) => {
+        points.push(point)
+      })
+
+      expect(points).toHaveLength(count)
+      expect(new Set(points.map(({ forward, side }) => `${forward}:${side}`)).size).toBe(count)
+      const nose = Math.max(...points.map(({ forward }) => forward))
+      expect(points.filter(({ forward }) => forward === nose)).toEqual([{ forward: nose, side: 0 }])
+      for (const { forward, side } of points) {
+        expect(points).toContainEqual({ forward, side: side === 0 ? 0 : -side })
+      }
+    }
   })
 
   test('bounds malformed counts while preserving the exact overflow', () => {
@@ -166,8 +184,9 @@ describe('publicTransitFormation', () => {
       totalCount: 1_000_000_000,
       visibleCount: MAX_TRANSIT_FORMATION_DOTS,
       overflowCount: 1_000_000_000 - MAX_TRANSIT_FORMATION_DOTS,
-      columns: 32,
+      columns: 63,
       rows: 32,
+      rankCounts: Array.from({ length: 32 }, (_, rank) => rank * 2 + 1),
     })
   })
 })
