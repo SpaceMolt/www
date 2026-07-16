@@ -127,7 +127,6 @@ export interface RawCatalogItem {
   harvest_power?: number
   harvest_range?: number
   survey_power?: number
-  survey_range?: number
   scanner_power?: number
   cloak_strength?: number
   signature_bonus?: number

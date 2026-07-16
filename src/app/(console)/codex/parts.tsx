@@ -117,7 +117,6 @@ const MODULE_STAT_LABELS: [keyof RawCatalogItem, string, ((v: number) => string)
   ['harvest_power', 'Harvest Power'],
   ['harvest_range', 'Harvest Range'],
   ['survey_power', 'Survey Power'],
-  ['survey_range', 'Survey Range'],
   ['scanner_power', 'Scanner Power'],
   ['cloak_strength', 'Cloak Strength'],
   ['signature_bonus', 'Signature', (v) => `+${v}`],
