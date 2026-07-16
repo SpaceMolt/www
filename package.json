@@ -7,8 +7,7 @@
     "dev": "next dev",
     "build": "node scripts/fetch-catalog.mjs && node scripts/build-guides-manifest.mjs && next build && node scripts/build-search-index.mjs",
     "start": "next start",
-    "lint": "node scripts/fetch-catalog.mjs && node scripts/build-guides-manifest.mjs && tsc --noEmit",
-    "generate:types": "npx openapi-typescript src/lib/openapi-v2.json -o src/lib/generated/v2api.d.ts"
+    "lint": "node scripts/fetch-catalog.mjs && node scripts/build-guides-manifest.mjs && tsc --noEmit"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.37.3",

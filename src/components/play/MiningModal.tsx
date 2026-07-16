@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Pickaxe, Square, Package } from 'lucide-react'
-import { useGame } from './GameProvider'
+import { SpacemoltError, type MineResponse } from '@spacemolt/lib'
+import { useAccountStore, useCommandMutation, useShip } from '@/lib/spacemolt'
 import { formatItemId } from '@/data/catalog'
 import styles from './MiningModal.module.css'
 
@@ -18,9 +19,8 @@ interface MiningModalProps {
 }
 
 export function MiningModal({ onClose }: MiningModalProps) {
-  const { state, sendCommand } = useGame()
-  const sendCommandRef = useRef(sendCommand)
-  sendCommandRef.current = sendCommand
+  const store = useAccountStore()
+  const mutate = useCommandMutation()
   const [recentLog, setRecentLog] = useState<MineLogEntry[]>([])
   const [totals, setTotals] = useState<Record<string, { name: string; quantity: number }>>({}
   )
@@ -43,8 +43,15 @@ export function MiningModal({ onClose }: MiningModalProps) {
     setRecentLog(prev => [...prev.slice(-4), entry])
   }, [])
 
-  const addYield = useCallback((resourceId: string, quantity: number) => {
-    const name = formatItemId(resourceId)
+  const resolveResourceName = useCallback((resourceId: string, resourceName?: string): string => {
+    if (resourceName) return resourceName
+    const match = store.account.location?.resources?.find((r) => r.item_id === resourceId)
+    if (match?.item_name) return match.item_name
+    return formatItemId(resourceId)
+  }, [store])
+
+  const addYield = useCallback((resourceId: string, quantity: number, resourceName?: string) => {
+    const name = resolveResourceName(resourceId, resourceName)
     setTotals(prev => ({
       ...prev,
       [resourceId]: {
@@ -53,7 +60,7 @@ export function MiningModal({ onClose }: MiningModalProps) {
       },
     }))
     addLog(`+${quantity} ${name}`, 'yield')
-  }, [addLog])
+  }, [addLog, resolveResourceName])
 
   // Tick for progress bar
   useEffect(() => {
@@ -77,7 +84,9 @@ export function MiningModal({ onClose }: MiningModalProps) {
       await new Promise(r => setTimeout(r, 0))
 
       while (!stopRequestedRef.current) {
-        const ship = state.ship
+        // Read live account state (not a stale render snapshot) for the
+        // client-side pre-check — the server enforces this too on overflow.
+        const ship = store.account.ship
         if (ship) {
           const cargoUsed = ship.cargo_used ?? 0
           const cargoCapacity = ship.cargo_capacity ?? 0
@@ -90,43 +99,35 @@ export function MiningModal({ onClose }: MiningModalProps) {
         setMineStartTime(Date.now())
 
         try {
-          const result = await sendCommandRef.current('mine')
+          const result = await mutate((c) => c.spacemolt.mine(), { label: 'mine' })
+          // useCommandMutation's RunMutation type isn't generic over the
+          // per-command details type, so the result is widened to
+          // Record<string, unknown> — narrow back to the documented shape.
+          const details = result.delta.details as MineResponse | undefined
 
-          if (!result) {
-            addLog('Mine failed — no response', 'error')
-            break
-          }
-
-          if (result.error || result.code) {
-            const msg = (result.message as string) || 'Mining failed'
-            if ((result.code as string) === 'cargo_full' || msg.toLowerCase().includes('cargo')) {
-              setStatusMessage('Cargo hold is full!')
-              break
-            }
-            if ((result.code as string) === 'no_resources' || msg.toLowerCase().includes('no resource') || msg.toLowerCase().includes('nothing to mine')) {
-              setStatusMessage('No resources available to mine')
-              break
-            }
-            addLog(msg, 'error')
-            break
-          }
-
-          // Parse yield from response
-          const quantity = result.quantity as number | undefined
-          const resourceId = result.resource_id as string | undefined
-          const message = result.message as string | undefined
-
-          if (quantity && resourceId) {
-            addYield(resourceId, quantity)
-          } else if (message) {
-            addLog(message, 'info')
+          if (!details) {
+            addLog('Mining...', 'info')
+          } else if ('resource_id' in details) {
+            addYield(details.resource_id, details.quantity, details.resource_name)
+          } else if (details.message) {
+            addLog(details.message, 'info')
           } else {
             addLog('Mining...', 'info')
           }
 
           setMineCount(prev => prev + 1)
         } catch (err) {
-          addLog(`Error: ${err instanceof Error ? err.message : 'unknown'}`, 'error')
+          const code = err instanceof SpacemoltError ? err.code : ''
+          const msg = err instanceof Error ? err.message : 'unknown'
+          if (code === 'cargo_full' || msg.toLowerCase().includes('cargo')) {
+            setStatusMessage('Cargo hold is full!')
+            break
+          }
+          if (code === 'no_resources' || msg.toLowerCase().includes('no resource') || msg.toLowerCase().includes('nothing to mine')) {
+            setStatusMessage('No resources available to mine')
+            break
+          }
+          addLog(`Error: ${msg}`, 'error')
           break
         }
 
@@ -135,7 +136,7 @@ export function MiningModal({ onClose }: MiningModalProps) {
 
       setIsRunning(false)
     })()
-  }, [addYield, addLog])
+  }, [store, mutate, addYield, addLog])
 
   const [stopRequested, setStopRequested] = useState(false)
 
@@ -144,7 +145,7 @@ export function MiningModal({ onClose }: MiningModalProps) {
     setStopRequested(true)
   }, [])
 
-  const ship = state.ship
+  const ship = useShip()
   const cargoUsed = ship?.cargo_used ?? 0
   const cargoCapacity = ship?.cargo_capacity ?? 0
   const cargoPercent = cargoCapacity > 0 ? Math.min(100, (cargoUsed / cargoCapacity) * 100) : 0

@@ -18,7 +18,8 @@ import {
   Wind,
   Rabbit,
 } from 'lucide-react'
-import { useGame } from '../GameProvider'
+import { useAccountStore, useCargo, useCommandMutation, useLocationState, useModules, usePlayer } from '@/lib/spacemolt'
+import { usePlay, usePlayUi } from '../PlayProvider'
 import { Panel, Modal, shared } from '../shared'
 import styles from './CombatPanel.module.css'
 
@@ -32,72 +33,90 @@ const STANCES: { id: Stance; label: string; icon: typeof Swords; title: string }
 ]
 
 export function CombatPanel() {
-  const { state, sendCommand } = useGame()
+  const store = useAccountStore()
+  const { uiStore } = usePlay()
+  const mutate = useCommandMutation()
+  const player = usePlayer()
+  const location = useLocationState()
+  const modules = useModules()
+  const cargo = useCargo()
+  const battle = usePlayUi((s) => s.battle)
+  const inCombat = usePlayUi((s) => s.inCombat)
+
   const [confirmSelfDestruct, setConfirmSelfDestruct] = useState(false)
   const [selectedAmmo, setSelectedAmmo] = useState<Record<string, string>>({})
 
-  const handleAttack = useCallback(
-    (playerId: string) => {
-      sendCommand('attack', { target_id: playerId })
+  const reportError = useCallback(
+    (err: unknown) => {
+      const text = err instanceof Error ? err.message : String(err)
+      uiStore.dispatch({ type: 'toast', kind: 'danger', text })
+      uiStore.dispatch({ type: 'event', kind: 'danger', text })
     },
-    [sendCommand]
+    [uiStore],
+  )
+
+  const handleAttack = useCallback(
+    (id: string) => {
+      mutate((c) => c.spacemolt.attack({ id }), { label: 'attack' }).catch(reportError)
+    },
+    [mutate, reportError],
   )
 
   const handleScan = useCallback(
-    (playerId: string) => {
-      sendCommand('scan', { target_id: playerId })
+    (id: string) => {
+      mutate((c) => c.spacemolt.scan({ id }), { label: 'scan' }).catch(reportError)
     },
-    [sendCommand]
+    [mutate, reportError],
   )
 
   const handleCloak = useCallback(() => {
-    sendCommand('cloak', { enable: !state.player?.is_cloaked })
-  }, [sendCommand, state.player?.is_cloaked])
+    mutate((c) => c.spacemolt.cloak({ enable: !player?.is_cloaked }), { label: 'cloak' }).catch(reportError)
+  }, [mutate, reportError, player?.is_cloaked])
 
   const handleSelfDestruct = useCallback(() => {
-    sendCommand('self_destruct')
     setConfirmSelfDestruct(false)
-  }, [sendCommand])
+    mutate((c) => c.spacemolt.self_destruct(), { label: 'self_destruct' }).catch(reportError)
+  }, [mutate, reportError])
 
   const handleRefresh = useCallback(() => {
-    sendCommand('get_nearby')
-  }, [sendCommand])
+    store.account.refresh().catch(reportError)
+  }, [store, reportError])
 
-  // Tactical controls
+  // Tactical controls — battle stance/movement resolve synchronously
+  // (query commands), not queued to the next tick, so they bypass mutate().
   const handleStance = useCallback(
     (stance: Stance) => {
-      sendCommand('battle', { action: 'stance', stance })
+      store.account.commands.spacemolt_battle.stance({ id: stance }).catch(reportError)
     },
-    [sendCommand]
+    [store, reportError],
   )
 
   const handleAdvance = useCallback(() => {
-    sendCommand('battle', { action: 'advance' })
-  }, [sendCommand])
+    store.account.commands.spacemolt_battle.advance().catch(reportError)
+  }, [store, reportError])
 
   const handleRetreat = useCallback(() => {
-    sendCommand('battle', { action: 'retreat' })
-  }, [sendCommand])
+    store.account.commands.spacemolt_battle.retreat().catch(reportError)
+  }, [store, reportError])
 
-  // Reload handler
   const handleReload = useCallback(
     (instanceId: string) => {
       const ammoId = selectedAmmo[instanceId]
       if (!ammoId) return
-      sendCommand('reload', {
-        weapon_instance_id: instanceId,
-        ammo_item_id: ammoId,
-      })
+      mutate((c) => c.spacemolt_battle.reload({ id: instanceId, target: ammoId }), { label: 'reload' }).catch(
+        reportError,
+      )
     },
-    [sendCommand, selectedAmmo]
+    [mutate, reportError, selectedAmmo],
   )
 
-  const isCloaked = state.player?.is_cloaked ?? false
-  const nearby = state.nearby || []
-  const battleStatus = state.battleStatus
-  const yourStance = battleStatus?.your_stance
-  const weapons = (state.shipModules || []).filter((m) => m.type === 'weapon')
-  const cargoItems = state.ship?.cargo || []
+  const isCloaked = player?.is_cloaked ?? false
+  const nearbyPlayers = location?.nearby_players ?? []
+  const nearbyPirates = location?.nearby_pirates ?? []
+  const nearbyCount = nearbyPlayers.length + nearbyPirates.length
+  const yourStance = battle?.your_stance
+  const weapons = (modules ?? []).filter((m) => m.type === 'weapon')
+  const cargoItems = cargo ?? []
 
   return (
     <Panel
@@ -106,9 +125,7 @@ export function CombatPanel() {
       color="var(--claw-red)"
       headerRight={
         <div className={styles.headerRight}>
-          {state.inCombat && (
-            <span className={styles.combatBadge}>In Combat</span>
-          )}
+          {inCombat && <span className={styles.combatBadge}>In Combat</span>}
           <button
             className={shared.refreshBtn}
             onClick={handleRefresh}
@@ -146,26 +163,26 @@ export function CombatPanel() {
       </div>
 
       {/* Battle Status */}
-      {state.inCombat && (
+      {inCombat && (
         <div className={styles.battleSection}>
           <div className={shared.sectionTitle}>
             <Target size={12} /> Battle Status
           </div>
-          {battleStatus ? (
+          {battle ? (
             <div className={styles.battleInfo}>
               {/* Your posture */}
-              {(battleStatus.your_zone || yourStance) && (
+              {(battle.your_zone || yourStance) && (
                 <div className={styles.sideCount}>
-                  {battleStatus.your_zone ? `Zone: ${battleStatus.your_zone}` : ''}
-                  {battleStatus.your_zone && yourStance ? ' · ' : ''}
+                  {battle.your_zone ? `Zone: ${battle.your_zone}` : ''}
+                  {battle.your_zone && yourStance ? ' · ' : ''}
                   {yourStance ? `Stance: ${yourStance}` : ''}
-                  {battleStatus.auto_pilot ? ' · auto-pilot' : ''}
+                  {battle.auto_pilot ? ' · auto-pilot' : ''}
                 </div>
               )}
 
               {/* Sides */}
               <div className={styles.sidesRow}>
-                {battleStatus.sides.map((side) => (
+                {battle.sides.map((side) => (
                   <div key={side.side_id} className={styles.sideCard}>
                     <span className={styles.sideName}>Side {side.side_id}</span>
                     <span className={styles.sideCount}>
@@ -178,7 +195,7 @@ export function CombatPanel() {
 
               {/* Participants */}
               <div className={styles.participantList}>
-                {battleStatus.participants.map((p) => (
+                {battle.participants.map((p) => (
                   <div
                     key={p.player_id}
                     className={styles.participantCard}
@@ -274,40 +291,31 @@ export function CombatPanel() {
         </div>
       )}
 
-      {/* Nearby players */}
+      {/* Nearby players and pirates */}
       <div>
         <div className={shared.sectionTitle}>
-          Nearby ({nearby.length})
+          Nearby ({nearbyCount})
         </div>
-        {nearby.length > 0 ? (
+        {nearbyCount > 0 ? (
           <div className={styles.playerList}>
-            {nearby.map((player) => {
-              const displayName = player.username || 'Unknown'
-              const playerId = player.player_id ?? ''
+            {nearbyPlayers.map((p) => {
+              const displayName = p.username || 'Unknown'
+              const playerId = p.player_id ?? ''
 
               return (
                 <div key={playerId} className={styles.playerCard}>
                   <div className={styles.playerInfo}>
                     <div className={styles.playerNameRow}>
-                      <span
-                        className={styles.playerName}
-                        style={
-                          player.primary_color
-                            ? { color: player.primary_color }
-                            : undefined
-                        }
-                      >
-                        {displayName}
-                      </span>
-                      {player.clan_tag && (
+                      <span className={styles.playerName}>{displayName}</span>
+                      {p.clan_tag && (
                         <span className={styles.clanTag}>
-                          [{player.clan_tag}]
+                          [{p.clan_tag}]
                         </span>
                       )}
                     </div>
-                    {player.ship_class && (
+                    {p.ship_class && (
                       <span className={styles.playerShip}>
-                        <Shield size={10} /> {player.ship_class}
+                        <Shield size={10} /> {p.ship_class}
                       </span>
                     )}
                   </div>
@@ -333,6 +341,45 @@ export function CombatPanel() {
                 </div>
               )
             })}
+            {nearbyPirates.map((p) => {
+              const displayName = p.name || 'Unknown pirate'
+              const pirateId = p.pirate_id ?? ''
+
+              return (
+                <div key={pirateId} className={styles.playerCard}>
+                  <div className={styles.playerInfo}>
+                    <div className={styles.playerNameRow}>
+                      <span className={styles.playerName}>{displayName}</span>
+                      <span className={styles.npcTag}>Pirate</span>
+                    </div>
+                    {p.tier && (
+                      <span className={styles.playerShip}>
+                        <Shield size={10} /> {p.tier}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className={styles.playerActions}>
+                    <button
+                      className={styles.scanBtn}
+                      onClick={() => handleScan(pirateId)}
+                      title={`Scan ${displayName}`}
+                      type="button"
+                    >
+                      <Search size={14} />
+                    </button>
+                    <button
+                      className={styles.attackBtn}
+                      onClick={() => handleAttack(pirateId)}
+                      title={`Attack ${displayName}`}
+                      type="button"
+                    >
+                      <Swords size={14} />
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         ) : (
           <div className={shared.emptyState}>
@@ -349,7 +396,7 @@ export function CombatPanel() {
           </div>
           <div className={styles.reloadList}>
             {weapons.map((weapon) => {
-              const instanceId = weapon.module_id || weapon.id || ''
+              const instanceId = weapon.module_id ?? ''
               const ammoStatus =
                 weapon.magazine_size !== undefined
                   ? `${weapon.current_ammo ?? 0}/${weapon.magazine_size}${weapon.loaded_ammo_name ? ` · ${weapon.loaded_ammo_name}` : ''}`
@@ -376,7 +423,7 @@ export function CombatPanel() {
                       <option value="">Select ammo</option>
                       {cargoItems.map((item) => (
                         <option key={item.item_id} value={item.item_id}>
-                          {item.name} (x{item.quantity})
+                          {item.item_name} (x{item.quantity})
                         </option>
                       ))}
                     </select>
@@ -431,14 +478,6 @@ export function CombatPanel() {
             <strong>Fee schedule:</strong> First 2 self-destructs per 24h are free.
             3rd costs 200 cr, then doubles (400, 800, 1600...).
             Repeated use restricts trading and gifting.
-            {state.player?.trading_restricted_until && new Date(state.player.trading_restricted_until) > new Date() && (
-              <>
-                <br /><br />
-                <span style={{ color: 'var(--claw-red)' }}>
-                  You are currently trade-restricted until {new Date(state.player.trading_restricted_until).toLocaleTimeString()}.
-                </span>
-              </>
-            )}
           </div>
         </Modal>
       )}

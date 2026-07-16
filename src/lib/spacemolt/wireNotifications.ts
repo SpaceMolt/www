@@ -78,7 +78,22 @@ export function wireNotifications(account: Account, store: UiStore): () => void 
     }),
 
     account.on('crafting_update', (update) => {
-      if (Array.isArray(update.jobs)) store.dispatch({ type: 'set_craft_jobs', jobs: update.jobs })
+      if (!Array.isArray(update.jobs)) return
+      store.dispatch({ type: 'set_craft_jobs', jobs: update.jobs })
+      // Each tick a queued job deposits output; surface it so async crafting
+      // is visible without polling. The push is a sparse per-tick delta.
+      for (const job of update.jobs) {
+        const mode = job.mode === 'recycle' ? 'Recycled' : 'Crafted'
+        const deposited = (job.deposited ?? [])
+          .map((item) => `${item.quantity ?? '?'}x ${item.item_name || item.item_id || 'item'}`)
+          .join(', ')
+        const remaining = job.runs_remaining ?? 0
+        let text = `${mode} ${job.recipe ?? 'job'}`
+        if (deposited) text += ` → ${deposited}`
+        if (job.completed) text += ' (job complete)'
+        else if (remaining > 0) text += ` (${remaining} run${remaining === 1 ? '' : 's'} left)`
+        log('success', text)
+      }
     }),
 
     account.on('drone_update', () => log('info', 'Drone status updated')),

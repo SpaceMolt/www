@@ -1,49 +1,98 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { X } from 'lucide-react'
+import { ACTIONS, type ActionDef, type ActionParam } from '@spacemolt/lib'
+import { useAccountStore } from '@/lib/spacemolt'
 import styles from './CommandModal.module.css'
-
-export interface FieldDef {
-  name: string
-  label: string
-  type: 'text' | 'number' | 'select'
-  options?: { value: string; label: string }[]
-  required?: boolean
-  placeholder?: string
-}
 
 interface CommandModalProps {
   open: boolean
   onClose: () => void
-  title: string
-  fields: FieldDef[]
-  onSubmit: (values: Record<string, string | number>) => void
 }
 
-export function CommandModal({
-  open,
-  onClose,
-  title,
-  fields,
-  onSubmit,
-}: CommandModalProps) {
+interface FieldDef {
+  name: string
+  label: string
+  type: 'text' | 'number' | 'select'
+  options?: { value: string; label: string }[]
+  required: boolean
+  placeholder?: string
+}
+
+const COMMAND_KEYS = Object.keys(ACTIONS).sort()
+
+function fieldForParam(param: ActionParam): FieldDef {
+  if (param.enumValues && param.enumValues.length > 0) {
+    return {
+      name: param.name,
+      label: param.name,
+      type: 'select',
+      options: param.enumValues.map((value) => ({ value, label: value })),
+      required: param.required,
+      placeholder: param.description,
+    }
+  }
+  if (param.type === 'boolean') {
+    return {
+      name: param.name,
+      label: param.name,
+      type: 'select',
+      options: [{ value: 'true', label: 'true' }, { value: 'false', label: 'false' }],
+      required: param.required,
+      placeholder: param.description,
+    }
+  }
+  return {
+    name: param.name,
+    label: param.name,
+    type: param.type === 'number' ? 'number' : 'text',
+    required: param.required,
+    placeholder: param.description,
+  }
+}
+
+/** Parse a command's typed params into the payload `account.send` expects. */
+function buildPayload(params: readonly ActionParam[], values: Record<string, string>): Record<string, unknown> | null {
+  const payload: Record<string, unknown> = {}
+  for (const param of params) {
+    const raw = values[param.name] ?? ''
+    if (param.required && raw.trim() === '') return null
+    if (raw.trim() === '') continue
+    if (param.type === 'number') payload[param.name] = Number(raw)
+    else if (param.type === 'boolean') payload[param.name] = raw === 'true'
+    else payload[param.name] = raw
+  }
+  return payload
+}
+
+/**
+ * Developer console: pick any v2 command from the generated ACTIONS catalog,
+ * fill in its params, and run it through `account.send`. Not wired into any
+ * panel yet — kept as a generic escape-hatch UI.
+ */
+export function CommandModal({ open, onClose }: CommandModalProps) {
+  const store = useAccountStore()
+  const [commandKey, setCommandKey] = useState<string>(COMMAND_KEYS[0] ?? '')
   const [values, setValues] = useState<Record<string, string>>({})
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [result, setResult] = useState<string | null>(null)
   const backdropRef = useRef<HTMLDivElement>(null)
 
-  // Reset values when modal opens
+  const actionDef: ActionDef | undefined = ACTIONS[commandKey]
+  const fields = useMemo(() => actionDef?.params.map(fieldForParam) ?? [], [actionDef])
+
+  // Reset form state whenever the modal opens or the selected command changes
   useEffect(() => {
-    if (open) {
-      const defaults: Record<string, string> = {}
-      for (const field of fields) {
-        if (field.type === 'select' && field.options && field.options.length > 0) {
-          defaults[field.name] = field.options[0].value
-        } else {
-          defaults[field.name] = ''
-        }
-      }
-      setValues(defaults)
+    if (!open) return
+    const defaults: Record<string, string> = {}
+    for (const field of fields) {
+      defaults[field.name] = field.type === 'select' && field.options && field.options.length > 0 ? field.options[0].value : ''
     }
+    setValues(defaults)
+    setError(null)
+    setResult(null)
   }, [open, fields])
 
   // Close on Escape
@@ -58,11 +107,9 @@ export function CommandModal({
 
   const handleBackdropClick = useCallback(
     (e: React.MouseEvent) => {
-      if (e.target === backdropRef.current) {
-        onClose()
-      }
+      if (e.target === backdropRef.current) onClose()
     },
-    [onClose]
+    [onClose],
   )
 
   const handleChange = useCallback((name: string, value: string) => {
@@ -70,23 +117,25 @@ export function CommandModal({
   }, [])
 
   const handleSubmit = useCallback(
-    (e: React.FormEvent) => {
+    async (e: React.FormEvent) => {
       e.preventDefault()
+      if (!actionDef) return
+      const payload = buildPayload(actionDef.params, values)
+      if (!payload) return
 
-      const result: Record<string, string | number> = {}
-      for (const field of fields) {
-        const raw = values[field.name] ?? ''
-        if (field.required && raw.trim() === '') return
-        if (field.type === 'number') {
-          result[field.name] = raw === '' ? 0 : Number(raw)
-        } else {
-          result[field.name] = raw
-        }
+      setSubmitting(true)
+      setError(null)
+      setResult(null)
+      try {
+        const response = await store.account.send(actionDef.tool, actionDef.action, payload)
+        const display = 'delta' in response ? response.delta : (response.structuredContent ?? response.result)
+        setResult(JSON.stringify(display, null, 2))
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Command failed')
       }
-
-      onSubmit(result)
+      setSubmitting(false)
     },
-    [fields, values, onSubmit]
+    [actionDef, values, store],
   )
 
   if (!open) return null
@@ -99,7 +148,7 @@ export function CommandModal({
     >
       <div className={styles.modal} role="dialog" aria-modal="true">
         <div className={styles.header}>
-          <span className={styles.title}>{title}</span>
+          <span className={styles.title}>Run Command</span>
           <button
             type="button"
             className={styles.closeButton}
@@ -112,6 +161,25 @@ export function CommandModal({
 
         <form onSubmit={handleSubmit}>
           <div className={styles.body}>
+            <div className={styles.field}>
+              <label className={styles.fieldLabel} htmlFor="cmd-select">
+                Command
+              </label>
+              <select
+                id="cmd-select"
+                className={styles.fieldSelect}
+                value={commandKey}
+                onChange={(e) => setCommandKey(e.target.value)}
+              >
+                {COMMAND_KEYS.map((key) => (
+                  <option key={key} value={key}>
+                    {key}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {actionDef?.summary && <p className={styles.summary}>{actionDef.summary}</p>}
+
             {fields.map((field) => (
               <div key={field.name} className={styles.field}>
                 <label className={styles.fieldLabel} htmlFor={`cmd-${field.name}`}>
@@ -145,6 +213,9 @@ export function CommandModal({
                 )}
               </div>
             ))}
+
+            {error && <div className={styles.error}>{error}</div>}
+            {result && <pre className={styles.result}>{result}</pre>}
           </div>
 
           <div className={styles.footer}>
@@ -158,8 +229,9 @@ export function CommandModal({
             <button
               type="submit"
               className={styles.submitButton}
+              disabled={submitting || !actionDef}
             >
-              Execute
+              {submitting ? 'Running…' : 'Execute'}
             </button>
           </div>
         </form>

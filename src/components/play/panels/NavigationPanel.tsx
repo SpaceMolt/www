@@ -13,62 +13,133 @@ import {
   Route,
   Radar,
 } from 'lucide-react'
-import { useGame } from '../GameProvider'
+import { SpacemoltError } from '@spacemolt/lib'
+import type { FindRouteResponse } from '@spacemolt/lib'
+import {
+  useAccountStore,
+  useCommandMutation,
+  useCurrentTick,
+  useLocationState,
+  useModules,
+  useShip,
+  useSystem,
+} from '@/lib/spacemolt'
+import { usePlay } from '../PlayProvider'
 import { ProgressBar } from '../ProgressBar'
 import { Panel, shared } from '../shared'
 import styles from './NavigationPanel.module.css'
 
-interface RouteStep {
-  system_id: string
-  name: string
-  jumps: number
-}
-
-interface RouteResult {
-  found: boolean
-  route: RouteStep[]
-  total_jumps: number
-  message: string
+function errorMessage(err: unknown): string {
+  if (err instanceof SpacemoltError) return err.message
+  if (err instanceof Error) return err.message
+  return 'Action failed'
 }
 
 export function NavigationPanel() {
-  const { state, sendCommand } = useGame()
+  const store = useAccountStore()
+  const { uiStore } = usePlay()
+  const mutate = useCommandMutation()
+  const system = useSystem()
+  const location = useLocationState()
+  const ship = useShip()
+  const modules = useModules()
+  const currentTick = useCurrentTick()
+
   const [searchQuery, setSearchQuery] = useState('')
   const [routeQuery, setRouteQuery] = useState('')
   const [routeLoading, setRouteLoading] = useState(false)
-  const [routeResult, setRouteResult] = useState<RouteResult | null>(null)
+  const [routeResult, setRouteResult] = useState<FindRouteResponse | null>(null)
+
+  const logEvent = useCallback(
+    (text?: string) => {
+      if (text) uiStore.dispatch({ type: 'event', kind: 'info', text })
+    },
+    [uiStore],
+  )
+
+  const reportError = useCallback(
+    (err: unknown) => {
+      const text = errorMessage(err)
+      uiStore.dispatch({ type: 'toast', kind: 'danger', text })
+      uiStore.dispatch({ type: 'event', kind: 'danger', text })
+    },
+    [uiStore],
+  )
+
+  const data = system.data
+  const sys = data && 'system' in data ? data.system : undefined
+  const currentPoi = data && 'poi' in data ? data.poi : undefined
 
   const handleTravel = useCallback(
-    (poiId: string) => {
-      sendCommand('travel', { target_poi: poiId })
+    async (poiId: string) => {
+      const targetPoi = sys?.pois.find((p) => p.id === poiId)
+      let estimatedMs: number | undefined
+      if (currentPoi && targetPoi) {
+        const dx = targetPoi.position.x - currentPoi.position.x
+        const dy = targetPoi.position.y - currentPoi.position.y
+        const distance = Math.sqrt(dx * dx + dy * dy)
+        const speed = Math.max(0.1, ship?.speed ?? 1)
+        const travelTicks = Math.max(1, Math.ceil(distance / speed))
+        estimatedMs = travelTicks * 10000
+      }
+      try {
+        const result = await mutate((c) => c.spacemolt.travel({ id: poiId }), { label: 'travel', estimatedMs })
+        logEvent(result.delta.details?.message || `Traveling to ${targetPoi?.name || 'destination'}...`)
+      } catch (err) {
+        reportError(err)
+      }
     },
-    [sendCommand]
+    [mutate, sys, currentPoi, ship?.speed, logEvent, reportError],
   )
 
   const handleJump = useCallback(
-    (systemId: string) => {
-      sendCommand('jump', { target_system: systemId })
+    async (systemId: string) => {
+      const speed = ship?.speed ?? 1
+      const estimatedMs = Math.max(10, 70 - 10 * speed) * 1000
+      try {
+        const result = await mutate((c) => c.spacemolt.jump({ id: systemId }), { label: 'jump', estimatedMs })
+        const details = result.delta.details
+        const destName = details && 'system' in details ? details.system : undefined
+        logEvent(destName ? `Arrived in ${destName}` : 'Jumping...')
+      } catch (err) {
+        reportError(err)
+      }
     },
-    [sendCommand]
+    [mutate, ship?.speed, logEvent, reportError],
   )
 
-  const handleDock = useCallback(() => {
-    sendCommand('dock')
-  }, [sendCommand])
+  const handleDock = useCallback(async () => {
+    try {
+      const result = await mutate((c) => c.spacemolt.dock(), { label: 'dock' })
+      logEvent(`Docked at ${result.delta.details?.base || 'base'}`)
+    } catch (err) {
+      reportError(err)
+    }
+  }, [mutate, logEvent, reportError])
 
-  const handleUndock = useCallback(() => {
-    sendCommand('undock')
-  }, [sendCommand])
+  const handleUndock = useCallback(async () => {
+    try {
+      await mutate((c) => c.spacemolt.undock(), { label: 'undock' })
+      logEvent('Undocked from station')
+    } catch (err) {
+      reportError(err)
+    }
+  }, [mutate, logEvent, reportError])
 
   const handleRefresh = useCallback(() => {
-    sendCommand('get_system')
-  }, [sendCommand])
+    system.refetch()
+  }, [system])
 
-  const handleSearch = useCallback(() => {
-    if (searchQuery.trim()) {
-      sendCommand('search_systems', { query: searchQuery.trim() })
+  const handleSearch = useCallback(async () => {
+    const text = searchQuery.trim()
+    if (!text) return
+    try {
+      const resp = await store.account.commands.spacemolt.search_systems({ text })
+      logEvent(resp.structuredContent?.message)
+    } catch (err) {
+      reportError(err)
     }
-  }, [sendCommand, searchQuery])
+  }, [store, searchQuery, logEvent, reportError])
 
   const handleSearchKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -76,38 +147,25 @@ export function NavigationPanel() {
         handleSearch()
       }
     },
-    [handleSearch]
+    [handleSearch],
   )
 
-  const handleFindRoute = useCallback(() => {
-    if (routeQuery.trim()) {
-      setRouteResult(null)
-      setRouteLoading(true)
-      sendCommand('find_route', { target_system: routeQuery.trim() }).then((result) => {
-        const msg = (result.message as string) || ''
-        if (result.error) {
-          setRouteResult({ found: false, route: [], total_jumps: 0, message: msg || 'Route finding failed' })
-        } else if (Array.isArray(result.route)) {
-          setRouteResult({
-            found: true,
-            route: result.route as RouteStep[],
-            total_jumps: (result.total_jumps as number) || 0,
-            message: msg || 'Route found',
-          })
-        } else {
-          const jumpMatch = msg.match(/(\d+)\s+jump/)
-          const found = !msg.toLowerCase().includes('no route')
-          setRouteResult({
-            found,
-            route: [],
-            total_jumps: jumpMatch ? parseInt(jumpMatch[1], 10) : 0,
-            message: msg,
-          })
-        }
-        setRouteLoading(false)
-      })
+  const handleFindRoute = useCallback(async () => {
+    const text = routeQuery.trim()
+    if (!text) return
+    setRouteResult(null)
+    setRouteLoading(true)
+    try {
+      const resp = await store.account.commands.spacemolt.find_route({ id: text })
+      const result = resp.structuredContent ?? null
+      setRouteResult(result)
+      logEvent(result?.message)
+    } catch (err) {
+      reportError(err)
+    } finally {
+      setRouteLoading(false)
     }
-  }, [sendCommand, routeQuery])
+  }, [store, routeQuery, logEvent, reportError])
 
   const handleRouteKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -115,21 +173,35 @@ export function NavigationPanel() {
         handleFindRoute()
       }
     },
-    [handleFindRoute]
+    [handleFindRoute],
   )
 
-  const handleSurvey = useCallback(() => {
-    sendCommand('survey_system')
-  }, [sendCommand])
+  const handleSurvey = useCallback(async () => {
+    try {
+      const result = await mutate((c) => c.spacemolt.survey_system(), { label: 'survey_system' })
+      logEvent(result.delta.details?.message || 'Survey complete')
+    } catch (err) {
+      reportError(err)
+    }
+  }, [mutate, logEvent, reportError])
 
-  const system = state.system
-  const poi = state.poi
-  const isTraveling =
-    state.travelProgress !== null && state.travelProgress !== undefined
+  const isDocked = Boolean(location?.docked_at)
+  const isTraveling = Boolean(location?.in_transit)
+  const isJump = location?.transit_type === 'jump'
+  const travelDestination =
+    (isJump ? location?.transit_dest_system_name : location?.transit_dest_poi_name) ||
+    location?.transit_dest_poi_name ||
+    location?.transit_dest_system_name ||
+    'unknown'
+  const elapsed = location?.transit_ticks_elapsed ?? 0
+  const arrivalTick = location?.transit_arrival_tick
+  const eta = arrivalTick !== undefined ? Math.max(0, arrivalTick - currentTick) : null
+  const totalTicks = eta !== null ? elapsed + eta : null
+  const travelProgress = totalTicks && totalTicks > 0 ? Math.max(0, Math.min(100, (elapsed / totalTicks) * 100)) : 0
 
-  // Module instances are stored as IDs in Ship; we can't filter by type/name here,
-  // so always show the survey button and let the server reject if no scanner is installed.
-  const hasSurveyScanner = Boolean(state.ship?.modules?.length)
+  // Module instances don't expose type/name filtering here, so always show the
+  // survey button and let the server reject if no scanner is installed.
+  const hasSurveyScanner = Boolean(modules?.length)
 
   const refreshButton = (
     <button
@@ -145,28 +217,28 @@ export function NavigationPanel() {
   return (
     <Panel title="Navigation" icon={<Compass size={16} />} headerRight={refreshButton}>
         {/* Current system info */}
-        {system ? (
+        {sys ? (
           <div className={styles.systemInfo}>
-            <div className={styles.systemName}>{system.name}</div>
+            <div className={styles.systemName}>{sys.name}</div>
             <div className={styles.systemMeta}>
-              {system.empire && (
+              {sys.empire && (
                 <span className={styles.metaTag}>
                   Empire:{' '}
-                  <span className={styles.metaValue}>{system.empire}</span>
+                  <span className={styles.metaValue}>{sys.empire}</span>
                 </span>
               )}
               <span className={styles.metaTag}>
                 Security:{' '}
                 <span className={styles.metaValue}>
-                  {system.security_status || `Level ${system.police_level}`}
+                  {sys.security_status || `Level ${sys.police_level}`}
                 </span>
               </span>
-              {state.isDocked && (
+              {isDocked && (
                 <span className={styles.dockedBadge}>Docked</span>
               )}
             </div>
-            {system.description && (
-              <span className={styles.metaTag}>{system.description}</span>
+            {sys.description && (
+              <span className={styles.metaTag}>{sys.description}</span>
             )}
           </div>
         ) : (
@@ -178,10 +250,10 @@ export function NavigationPanel() {
           <div className={styles.travelBar}>
             <div className={styles.travelLabel}>
               <Navigation size={12} /> Traveling to{' '}
-              {state.travelDestination || 'unknown'}...
+              {travelDestination}...
             </div>
             <ProgressBar
-              value={state.travelProgress ?? 0}
+              value={travelProgress}
               max={100}
               color="purple"
               size="sm"
@@ -191,9 +263,9 @@ export function NavigationPanel() {
         )}
 
         {/* Dock / Undock — show only the action available in current state */}
-        {poi && poi.base_id && (
+        {currentPoi && currentPoi.has_base && (
           <div className={styles.dockRow}>
-            {state.isDocked ? (
+            {isDocked ? (
               <button
                 className={styles.searchBtn}
                 onClick={handleUndock}
@@ -214,12 +286,12 @@ export function NavigationPanel() {
         )}
 
         {/* POIs in system */}
-        {system && system.pois.length > 0 && (
+        {sys && sys.pois.length > 0 && (
           <div>
             <div className={shared.sectionTitle}>Points of Interest</div>
             <div className={styles.poiList}>
-              {system.pois.map((p, i) => {
-                const isActive = poi?.id === p.id
+              {sys.pois.map((p, i) => {
+                const isActive = location?.poi_id === p.id
                 return (
                   <div
                     key={p.id || `poi-${i}`}
@@ -262,11 +334,11 @@ export function NavigationPanel() {
         )}
 
         {/* Connected systems */}
-        {system && system.connections.length > 0 && (
+        {sys && sys.connections.length > 0 && (
           <div>
             <div className={shared.sectionTitle}>Connected Systems</div>
             <div className={styles.connectionList}>
-              {system.connections.map((conn) => (
+              {sys.connections.map((conn) => (
                 <div
                   key={conn.system_id}
                   className={styles.connectionItem}
@@ -348,8 +420,8 @@ export function NavigationPanel() {
                   {routeResult.route.length > 0 && (
                     <ol className={styles.routeList}>
                       {routeResult.route.map((step, idx) => {
-                        const isCurrentSystem = step.system_id === system?.id
-                        const isAdjacentToCurrentIndex = idx > 0 && routeResult.route[idx - 1]?.system_id === system?.id
+                        const isCurrentSystem = step.system_id === sys?.id
+                        const isAdjacentToCurrentIndex = idx > 0 && routeResult.route[idx - 1]?.system_id === sys?.id
                         const canJump = !isCurrentSystem && isAdjacentToCurrentIndex
                         return (
                           <li

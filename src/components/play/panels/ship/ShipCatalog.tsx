@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import {
   Heart,
   Shield,
@@ -16,7 +16,9 @@ import {
   Loader2,
   ShoppingCart,
 } from 'lucide-react'
-import { useGame } from '../../GameProvider'
+import type { BrowseShipsResponse, StorageResponse } from '@spacemolt/lib'
+import { useCargo, useCatalog, useCommandMutation, useCommandQuery, useLocationState, usePlayer, useShip } from '@/lib/spacemolt'
+import { usePlay } from '../../PlayProvider'
 import { Credits, Loading, Modal, shared } from '../../shared'
 import { BugReportButton } from '../../BugReportButton'
 import { buildShipCatalogContext } from '../../bugReportContext'
@@ -26,6 +28,7 @@ export const EMPIRES = ['solarian', 'voidborn', 'crimson', 'nebula', 'outerrim']
 const TIERS = [1, 2, 3, 4, 5]
 const CATEGORIES = ['Civilian', 'Combat', 'Commercial', 'Exploration', 'Industrial']
 const CLASSES = ['Assault', 'Courier', 'Explorer', 'Fighter', 'Freighter', 'Gas Harvester', 'Ice Harvester', 'Miner', 'Raider', 'Salvager', 'Scout', 'Shuttle']
+const PAGE_SIZE = 20
 
 export interface CatalogShip {
   id: string
@@ -51,6 +54,8 @@ export interface CatalogShip {
   faction?: string
 }
 
+type ShipListing = BrowseShipsResponse['listings'][number]
+
 /**
  * Whether a catalog ship passes the tier dropdown filter.
  *
@@ -63,28 +68,27 @@ export function matchesTierFilter(ship: { tier: number }, tier: string): boolean
   return !tier || parseInt(tier, 10) === ship.tier
 }
 
-interface ShipListing {
-  listing_id: string
-  class_id: string
-  price: number
-  ship_name: string
-  seller: string
+function errorText(err: unknown): string {
+  return err instanceof Error ? err.message : String(err)
 }
 
-interface CommissionQuote {
-  ship_class: string
-  ship_name: string
-  labor_cost: number
-  credits_only_total: number
-  credits_only_available: boolean
-  provide_materials_total: number
-  build_time: number
-  build_materials: { item_id: string; name: string; quantity: number }[]
-  can_commission: boolean
-  can_afford_credits_only: boolean
-  can_afford_provide_materials: boolean
-  player_credits: number
-  blockers?: string[]
+/** IDs from a `spacemolt_catalog` bare-tool query response (loosely typed). */
+function idsFromCatalogPayload(payload: Record<string, unknown> | undefined): Set<string> {
+  const items = payload && Array.isArray(payload.items) ? payload.items : []
+  const ids = new Set<string>()
+  for (const item of items) {
+    if (item && typeof item === 'object' && typeof (item as Record<string, unknown>).id === 'string') {
+      ids.add((item as Record<string, unknown>).id as string)
+    }
+  }
+  return ids
+}
+
+/** `spacemolt_storage.view` returns a union keyed by variant; only the
+ * personal/faction variants carry `items`. */
+function storageItemsOf(resp: StorageResponse | undefined): { item_id: string; quantity: number }[] {
+  if (!resp || !('items' in resp)) return []
+  return resp.items
 }
 
 function StatWithDelta({ label, value, currentValue }: { label: string; value: number; currentValue?: number }) {
@@ -105,56 +109,77 @@ function StatWithDelta({ label, value, currentValue }: { label: string; value: n
 }
 
 export function ShipCatalog() {
-  const { state, sendCommand } = useGame()
-  const [ships, setShips] = useState<CatalogShip[]>([])
-  const [loading, setLoading] = useState(false)
+  const ship = useShip()
+  const cargo = useCargo() ?? []
+  const player = usePlayer()
+  const location = useLocationState()
+  const isDocked = Boolean(location?.docked_at)
+  const mutate = useCommandMutation()
+  const { uiStore } = usePlay()
+  const { data: catalog, error: catalogError } = useCatalog()
+
+  const reportError = useCallback(
+    (err: unknown) => {
+      const text = errorText(err)
+      uiStore.dispatch({ type: 'toast', kind: 'danger', text })
+      uiStore.dispatch({ type: 'event', kind: 'danger', text })
+    },
+    [uiStore]
+  )
+
   const [expandedShip, setExpandedShip] = useState<string | null>(null)
   const [fullscreenImage, setFullscreenImage] = useState<{ src: string; name: string } | null>(null)
   const [page, setPage] = useState(1)
-  const [total, setTotal] = useState(0)
 
-  // Commissionable ship IDs at this station (server-checked)
-  const [commissionableIds, setCommissionableIds] = useState<Set<string>>(new Set())
+  // Commissionable ship IDs at this station (server-checked, station-specific)
+  const { data: commissionablePayload } = useCommandQuery(
+    async (account) => (await account.query('spacemolt_catalog', '', { type: 'ships', commissionable: true, page_size: 500 })).structuredContent,
+    [],
+    { enabled: isDocked }
+  )
+  const commissionableIds = useMemo(() => (isDocked ? idsFromCatalogPayload(commissionablePayload) : new Set<string>()), [isDocked, commissionablePayload])
 
   // Ship market listings (cheapest per class)
-  const [cheapestByClass, setCheapestByClass] = useState<Record<string, ShipListing>>({})
+  const { data: browseData, refetch: refetchBrowse } = useCommandQuery(
+    async (account) => (await account.commands.spacemolt_ship.browse_ships({})).structuredContent,
+    [],
+    { enabled: isDocked }
+  )
+  const cheapestByClass = useMemo(() => {
+    const cheapest: Record<string, ShipListing> = {}
+    for (const l of browseData?.listings ?? []) {
+      if (!cheapest[l.class_id] || l.price < cheapest[l.class_id].price) {
+        cheapest[l.class_id] = l
+      }
+    }
+    return isDocked ? cheapest : {}
+  }, [browseData, isDocked])
+
   const [buyTarget, setBuyTarget] = useState<{ ship: CatalogShip; listing: ShipListing } | null>(null)
   const [buying, setBuying] = useState(false)
 
-  // Fetch commissionable IDs and ship marketplace when docked
-  useEffect(() => {
-    if (!state.isDocked) {
-      setCheapestByClass({})
-      setCommissionableIds(new Set())
-      return
-    }
-    // Fetch all commissionable ships at this station
-    sendCommand('catalog', { type: 'ships', commissionable: true, page_size: 500 }).then((result) => {
-      const r = result as Record<string, unknown>
-      const items = (r.items || []) as CatalogShip[]
-      setCommissionableIds(new Set(items.map((s) => s.id)))
-    }).catch(() => {})
-    // Fetch ship marketplace listings
-    sendCommand('browse_ships').then((result) => {
-      const listings = ((result as Record<string, unknown>).listings || []) as ShipListing[]
-      const cheapest: Record<string, ShipListing> = {}
-      for (const l of listings) {
-        if (!cheapest[l.class_id] || l.price < cheapest[l.class_id].price) {
-          cheapest[l.class_id] = l
-        }
-      }
-      setCheapestByClass(cheapest)
-    }).catch(() => {})
-  }, [state.isDocked, sendCommand])
-
   // Commission modal
   const [commissionShip, setCommissionShip] = useState<CatalogShip | null>(null)
-  const [quote, setQuote] = useState<CommissionQuote | null>(null)
-  const [quoteLoading, setQuoteLoading] = useState(false)
   const [commissioning, setCommissioning] = useState(false)
 
+  const { data: quote, loading: quoteLoading } = useCommandQuery(
+    async (account) => {
+      if (!commissionShip) return undefined
+      return (await account.commands.spacemolt_ship.commission_quote({ id: commissionShip.id })).structuredContent
+    },
+    [commissionShip?.id],
+    { enabled: Boolean(commissionShip) }
+  )
+
+  const { data: storageResp } = useCommandQuery(
+    async (account) => (await account.commands.spacemolt_storage.view({})).structuredContent,
+    [],
+    { enabled: Boolean(commissionShip) }
+  )
+  const storageItemsList = storageItemsOf(storageResp)
+
   // Filters
-  const defaultEmpire = (state.isDocked && state.system?.empire) ? state.system.empire.toLowerCase() : ''
+  const defaultEmpire = isDocked && location?.empire ? location.empire.toLowerCase() : ''
   const [empire, setEmpire] = useState(defaultEmpire)
   const [tier, setTier] = useState('')
   const [category, setCategory] = useState('')
@@ -162,89 +187,67 @@ export function ShipCatalog() {
   const [search, setSearch] = useState('')
   const [commissionableOnly, setCommissionableOnly] = useState(false)
 
-  const fetchCatalog = useCallback((p: number) => {
-    setLoading(true)
-    const params: Record<string, unknown> = { type: 'ships', page: p, page_size: 20 }
-    if (empire) params.empire = empire
-    if (tier) params.tier = parseInt(tier, 10)
-    if (category) params.category = category
-    if (shipClass) params.class = shipClass
-    if (search.trim()) params.search = search.trim()
-    if (commissionableOnly) params.commissionable = true
-    sendCommand('catalog', params).then((result) => {
-      const r = result as Record<string, unknown>
-      const items = ((r.items || []) as CatalogShip[]).filter((s) => matchesTierFilter(s, tier))
-      setShips(items)
-      setTotal((r.total as number) || 0)
-      setLoading(false)
-    }).catch(() => setLoading(false))
-  }, [sendCommand, empire, tier, category, shipClass, search, commissionableOnly])
+  const allShips = useMemo(() => (catalog?.ships ?? []) as unknown as CatalogShip[], [catalog])
 
-  useEffect(() => {
-    fetchCatalog(page)
-  }, [fetchCatalog, page])
+  const filteredShips = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    return allShips.filter((s) => {
+      if (empire && (s.faction ?? '').toLowerCase() !== empire) return false
+      if (!matchesTierFilter(s, tier)) return false
+      if (category && s.category !== category) return false
+      if (shipClass && s.class !== shipClass) return false
+      if (commissionableOnly && !commissionableIds.has(s.id)) return false
+      if (q && !`${s.name} ${s.description ?? ''}`.toLowerCase().includes(q)) return false
+      return true
+    })
+  }, [allShips, empire, tier, category, shipClass, commissionableOnly, commissionableIds, search])
 
-  useEffect(() => {
-    setPage(1)
-  }, [empire, tier, category, shipClass, search, commissionableOnly])
+  const total = filteredShips.length
+  const pageStart = (page - 1) * PAGE_SIZE
+  const ships = filteredShips.slice(pageStart, pageStart + PAGE_SIZE)
+
+  const resetPage = useCallback(() => setPage(1), [])
 
   const toggleExpand = useCallback((id: string) => {
     setExpandedShip((prev) => (prev === id ? null : id))
   }, [])
 
-  const handleSearchKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') fetchCatalog(1)
-  }, [fetchCatalog])
-
   // Commission modal
   const openCommission = useCallback((ship: CatalogShip) => {
     setCommissionShip(ship)
-    setQuote(null)
-    setQuoteLoading(true)
-    sendCommand('commission_quote', { ship_class: ship.id }).then((result) => {
-      setQuote(result as unknown as CommissionQuote)
-      setQuoteLoading(false)
-    }).catch(() => {
-      setQuoteLoading(false)
-    })
-  }, [sendCommand])
+  }, [])
 
   const handleBuyListing = useCallback(() => {
     if (!buyTarget) return
     setBuying(true)
-    sendCommand('buy_listed_ship', { listing_id: buyTarget.listing.listing_id }).then(() => {
-      setBuying(false)
-      setBuyTarget(null)
-      // Refresh listings
-      sendCommand('browse_ships').then((result) => {
-        const listings = ((result as Record<string, unknown>).listings || []) as ShipListing[]
-        const cheapest: Record<string, ShipListing> = {}
-        for (const l of listings) {
-          if (!cheapest[l.class_id] || l.price < cheapest[l.class_id].price) {
-            cheapest[l.class_id] = l
-          }
-        }
-        setCheapestByClass(cheapest)
-      }).catch(() => {})
-    }).catch(() => {
-      setBuying(false)
-    })
-  }, [sendCommand, buyTarget])
+    mutate((c) => c.spacemolt_ship.buy_listed_ship({ id: buyTarget.listing.listing_id }), { label: 'buy_listed_ship' })
+      .then(() => {
+        setBuying(false)
+        setBuyTarget(null)
+        refetchBrowse()
+      })
+      .catch((err) => {
+        setBuying(false)
+        reportError(err)
+      })
+  }, [mutate, buyTarget, refetchBrowse, reportError])
 
-  const handleCommission = useCallback((provideMaterials: boolean) => {
-    if (!commissionShip) return
-    setCommissioning(true)
-    sendCommand('commission_ship', {
-      ship_class: commissionShip.id,
-      provide_materials: provideMaterials,
-    }).then(() => {
-      setCommissioning(false)
-      setCommissionShip(null)
-      setQuote(null)
-    }).catch(() => {
-      setCommissioning(false)
-    })
-  }, [sendCommand, commissionShip])
+  const handleCommission = useCallback(
+    (provideMaterials: boolean) => {
+      if (!commissionShip) return
+      setCommissioning(true)
+      mutate((c) => c.spacemolt_ship.commission_ship({ id: commissionShip.id, provide_materials: provideMaterials }), { label: 'commission_ship' })
+        .then(() => {
+          setCommissioning(false)
+          setCommissionShip(null)
+        })
+        .catch((err) => {
+          setCommissioning(false)
+          reportError(err)
+        })
+    },
+    [mutate, commissionShip, reportError]
+  )
 
   return (
     <>
@@ -258,13 +261,12 @@ export function ShipCatalog() {
               type="text"
               placeholder="Search ships..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onKeyDown={handleSearchKeyDown}
+              onChange={(e) => { setSearch(e.target.value); resetPage() }}
             />
           </div>
           <button
             className={`${styles.toggleBtn} ${commissionableOnly ? styles.toggleBtnActive : ''}`}
-            onClick={() => setCommissionableOnly(!commissionableOnly)}
+            onClick={() => { setCommissionableOnly(!commissionableOnly); resetPage() }}
             title="Show only commissionable ships"
             type="button"
           >
@@ -273,25 +275,25 @@ export function ShipCatalog() {
           </button>
         </div>
         <div className={styles.filterRow}>
-          <select className={styles.filterSelect} value={empire} onChange={(e) => setEmpire(e.target.value)}>
+          <select className={styles.filterSelect} value={empire} onChange={(e) => { setEmpire(e.target.value); resetPage() }}>
             <option value="">All Empires</option>
             {EMPIRES.map((e) => (
               <option key={e} value={e}>{e.charAt(0).toUpperCase() + e.slice(1)}</option>
             ))}
           </select>
-          <select className={styles.filterSelect} value={tier} onChange={(e) => setTier(e.target.value)}>
+          <select className={styles.filterSelect} value={tier} onChange={(e) => { setTier(e.target.value); resetPage() }}>
             <option value="">All Tiers</option>
             {TIERS.map((t) => (
               <option key={t} value={t}>Tier {t}</option>
             ))}
           </select>
-          <select className={styles.filterSelect} value={category} onChange={(e) => setCategory(e.target.value)}>
+          <select className={styles.filterSelect} value={category} onChange={(e) => { setCategory(e.target.value); resetPage() }}>
             <option value="">All Categories</option>
             {CATEGORIES.map((c) => (
               <option key={c} value={c}>{c}</option>
             ))}
           </select>
-          <select className={styles.filterSelect} value={shipClass} onChange={(e) => setShipClass(e.target.value)}>
+          <select className={styles.filterSelect} value={shipClass} onChange={(e) => { setShipClass(e.target.value); resetPage() }}>
             <option value="">All Classes</option>
             {CLASSES.map((c) => (
               <option key={c} value={c}>{c}</option>
@@ -301,8 +303,10 @@ export function ShipCatalog() {
       </div>
 
       {/* Results */}
-      {loading && ships.length === 0 ? (
+      {!catalog && !catalogError ? (
         <Loading message="Loading catalog..." />
+      ) : catalogError ? (
+        <div className={shared.emptyState}>Failed to load ship catalog: {catalogError}</div>
       ) : ships.length === 0 ? (
         <div className={shared.emptyState}>No ships found</div>
       ) : (
@@ -311,45 +315,45 @@ export function ShipCatalog() {
             {total} ship class{total !== 1 ? 'es' : ''}
           </span>
           <div className={styles.shipList}>
-            {ships.map((ship) => {
-              const isExpanded = expandedShip === ship.id
-              const imgName = ship.id.toLowerCase().replace(/\s+/g, '_')
+            {ships.map((catShip) => {
+              const isExpanded = expandedShip === catShip.id
+              const imgName = catShip.id.toLowerCase().replace(/\s+/g, '_')
               const imgSrc = `/images/ships/catalog/${imgName}.webp`
-              const isCommissionable = commissionableIds.has(ship.id)
+              const isCommissionable = commissionableIds.has(catShip.id)
               return (
-                <div key={ship.id} className={styles.shipCard}>
+                <div key={catShip.id} className={styles.shipCard}>
                   {/* Collapsed view */}
                   <div
                     className={styles.shipCardTop}
-                    onClick={() => toggleExpand(ship.id)}
+                    onClick={() => toggleExpand(catShip.id)}
                     role="button"
                     tabIndex={0}
-                    onKeyDown={(e) => { if (e.key === 'Enter') toggleExpand(ship.id) }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') toggleExpand(catShip.id) }}
                   >
                     <div className={styles.shipCardInfo}>
                       <div className={styles.shipCardNameRow}>
-                        <span className={styles.shipCardName}>{ship.name}</span>
+                        <span className={styles.shipCardName}>{catShip.name}</span>
                         <span className={styles.shipCardBadges}>
-                          {ship.tier > 0 && <span className={shared.badgeOrange}>T{ship.tier}</span>}
-                          {ship.faction && <span className={shared.badgeCyan}>{ship.faction}</span>}
+                          {catShip.tier > 0 && <span className={shared.badgeOrange}>T{catShip.tier}</span>}
+                          {catShip.faction && <span className={shared.badgeCyan}>{catShip.faction}</span>}
                         </span>
-                        <BugReportButton contextType="ship" entityName={ship.name} entityContext={buildShipCatalogContext(ship)} />
+                        <BugReportButton contextType="ship" entityName={catShip.name} entityContext={buildShipCatalogContext(catShip)} />
                       </div>
                       <span className={styles.shipCardClass}>
-                        {ship.category} · {ship.class}
+                        {catShip.category} · {catShip.class}
                       </span>
-                      {ship.description && (
-                        <span className={styles.shipCardDesc}>{ship.description}</span>
+                      {catShip.description && (
+                        <span className={styles.shipCardDesc}>{catShip.description}</span>
                       )}
                     </div>
-                    {state.isDocked && (isCommissionable || cheapestByClass[ship.id]) && (
+                    {isDocked && (isCommissionable || cheapestByClass[catShip.id]) && (
                       <div className={styles.cardActions}>
                         {isCommissionable && (
                           <button
                             className={styles.commissionBtn}
                             onClick={(e) => {
                               e.stopPropagation()
-                              openCommission(ship)
+                              openCommission(catShip)
                             }}
                             title="Commission this ship"
                             type="button"
@@ -358,18 +362,18 @@ export function ShipCatalog() {
                             Commission
                           </button>
                         )}
-                        {cheapestByClass[ship.id] && (
+                        {cheapestByClass[catShip.id] && (
                           <button
                             className={styles.buyListingBtn}
                             onClick={(e) => {
                               e.stopPropagation()
-                              setBuyTarget({ ship, listing: cheapestByClass[ship.id] })
+                              setBuyTarget({ ship: catShip, listing: cheapestByClass[catShip.id] })
                             }}
-                            title={`Buy from ${cheapestByClass[ship.id].seller}`}
+                            title={`Buy from ${cheapestByClass[catShip.id].seller}`}
                             type="button"
                           >
                             <ShoppingCart size={12} />
-                            Buy <Credits amount={cheapestByClass[ship.id].price} />
+                            Buy <Credits amount={cheapestByClass[catShip.id].price} />
                           </button>
                         )}
                       </div>
@@ -382,7 +386,7 @@ export function ShipCatalog() {
                       <div className={styles.shipImageWrap}>
                         <img
                           src={imgSrc}
-                          alt={ship.name}
+                          alt={catShip.name}
                           className={styles.shipImageExpanded}
                           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                         />
@@ -390,7 +394,7 @@ export function ShipCatalog() {
                           className={styles.fullscreenBtn}
                           onClick={(e) => {
                             e.stopPropagation()
-                            setFullscreenImage({ src: imgSrc, name: ship.name })
+                            setFullscreenImage({ src: imgSrc, name: catShip.name })
                           }}
                           title="View full size"
                           type="button"
@@ -401,24 +405,24 @@ export function ShipCatalog() {
 
                       <div className={styles.shipDetailsRight}>
                         <div className={styles.shipStatsRow}>
-                          <div className={styles.shipStat}><Heart size={10} /><StatWithDelta label="Hull" value={ship.base_hull} currentValue={state.ship?.max_hull} /></div>
-                          <div className={styles.shipStat}><Shield size={10} /><StatWithDelta label="Shield" value={ship.base_shield} currentValue={state.ship?.max_shield} /></div>
-                          <div className={styles.shipStat}><Gauge size={10} /><StatWithDelta label="Speed" value={ship.base_speed} currentValue={state.ship?.speed} /></div>
+                          <div className={styles.shipStat}><Heart size={10} /><StatWithDelta label="Hull" value={catShip.base_hull} currentValue={ship?.max_hull} /></div>
+                          <div className={styles.shipStat}><Shield size={10} /><StatWithDelta label="Shield" value={catShip.base_shield} currentValue={ship?.max_shield} /></div>
+                          <div className={styles.shipStat}><Gauge size={10} /><StatWithDelta label="Speed" value={catShip.base_speed} currentValue={ship?.speed} /></div>
                         </div>
                         <div className={styles.shipStatsRow}>
-                          <div className={styles.shipStat}><Fuel size={10} /><StatWithDelta label="Fuel" value={ship.base_fuel} currentValue={state.ship?.max_fuel} /></div>
-                          <div className={styles.shipStat}><Package size={10} /><StatWithDelta label="Cargo" value={ship.cargo_capacity} currentValue={state.ship?.cargo_capacity} /></div>
+                          <div className={styles.shipStat}><Fuel size={10} /><StatWithDelta label="Fuel" value={catShip.base_fuel} currentValue={ship?.max_fuel} /></div>
+                          <div className={styles.shipStat}><Package size={10} /><StatWithDelta label="Cargo" value={catShip.cargo_capacity} currentValue={ship?.cargo_capacity} /></div>
                         </div>
                         <div className={styles.shipStatsRow}>
-                          <div className={styles.shipStat}><Crosshair size={10} /><StatWithDelta label="Wpn" value={ship.weapon_slots} currentValue={state.ship?.weapon_slots} /></div>
-                          <div className={styles.shipStat}><Shield size={10} /><StatWithDelta label="Def" value={ship.defense_slots} currentValue={state.ship?.defense_slots} /></div>
-                          <div className={styles.shipStat}><CircuitBoard size={10} /><StatWithDelta label="Util" value={ship.utility_slots} currentValue={state.ship?.utility_slots} /></div>
+                          <div className={styles.shipStat}><Crosshair size={10} /><StatWithDelta label="Wpn" value={catShip.weapon_slots} currentValue={ship?.weapon_slots} /></div>
+                          <div className={styles.shipStat}><Shield size={10} /><StatWithDelta label="Def" value={catShip.defense_slots} currentValue={ship?.defense_slots} /></div>
+                          <div className={styles.shipStat}><CircuitBoard size={10} /><StatWithDelta label="Util" value={catShip.utility_slots} currentValue={ship?.utility_slots} /></div>
                         </div>
 
-                        {ship.build_materials && ship.build_materials.length > 0 && (
+                        {catShip.build_materials && catShip.build_materials.length > 0 && (
                           <div className={styles.buildMats}>
                             <span className={styles.buildLabel}>Build materials:</span>
-                            {ship.build_materials.map((m) => (
+                            {catShip.build_materials.map((m) => (
                               <span key={m.item_id} className={styles.buildItem}>
                                 {m.item_id.replace(/_/g, ' ')} x{m.quantity}
                               </span>
@@ -426,8 +430,8 @@ export function ShipCatalog() {
                           </div>
                         )}
 
-                        {ship.lore && (
-                          <div className={styles.shipLore}>{ship.lore}</div>
+                        {catShip.lore && (
+                          <div className={styles.shipLore}>{catShip.lore}</div>
                         )}
                       </div>
                     </div>
@@ -437,11 +441,11 @@ export function ShipCatalog() {
             })}
           </div>
 
-          {total > 20 && (
+          {total > PAGE_SIZE && (
             <div className={styles.pagination}>
               <button className={styles.pageBtn} onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1} type="button">Prev</button>
-              <span className={styles.pageInfo}>{page} / {Math.ceil(total / 20)}</span>
-              <button className={styles.pageBtn} onClick={() => setPage((p) => p + 1)} disabled={page * 20 >= total} type="button">Next</button>
+              <span className={styles.pageInfo}>{page} / {Math.ceil(total / PAGE_SIZE)}</span>
+              <button className={styles.pageBtn} onClick={() => setPage((p) => p + 1)} disabled={page * PAGE_SIZE >= total} type="button">Next</button>
             </div>
           )}
         </>
@@ -461,7 +465,7 @@ export function ShipCatalog() {
         <Modal
           title={`Commission ${commissionShip.name}`}
           icon={<Hammer size={14} />}
-          onClose={() => { setCommissionShip(null); setQuote(null) }}
+          onClose={() => setCommissionShip(null)}
         >
             {quoteLoading && (
               <Loading message="Getting quote..." />
@@ -482,32 +486,32 @@ export function ShipCatalog() {
 
             {quote && quote.can_commission && (() => {
               // Check local inventory (cargo + storage) for materials
-              const cargo = state.ship?.cargo || []
-              const storageItems = state.storageData?.items || []
-              const materialChecks = quote.build_materials.map((m) => {
-                const inCargo = cargo.find((c) => c.item_id === m.item_id)?.quantity || 0
-                const inStorage = storageItems.find((s) => s.item_id === m.item_id)?.quantity || 0
+              const buildMaterials = quote.build_materials ?? []
+              const materialChecks = buildMaterials.map((m) => {
+                const inCargo = cargo.find((c) => c.item_id === m.item_id)?.quantity ?? 0
+                const inStorage = storageItemsList.find((s) => s.item_id === m.item_id)?.quantity ?? 0
                 const have = inCargo + inStorage
                 return { ...m, have, enough: have >= m.quantity }
               })
               const hasAllMaterials = materialChecks.every((m) => m.enough)
-              const canAffordMaterials = hasAllMaterials && quote.player_credits >= quote.provide_materials_total
+              const playerCredits = quote.player_credits ?? 0
+              const canAffordMaterials = hasAllMaterials && playerCredits >= quote.provide_materials_total
 
               return (
               <div className={styles.commissionBody}>
                 <div className={styles.commissionInfo}>
                   <div className={styles.commissionRow}>
                     <span className={styles.commissionLabel}>Build Time</span>
-                    <span className={styles.commissionValue}>{quote.build_time} ticks (~{Math.round(quote.build_time * 10 / 60)} min)</span>
+                    <span className={styles.commissionValue}>{quote.build_time ?? 0} ticks (~{Math.round((quote.build_time ?? 0) * 10 / 60)} min)</span>
                   </div>
                   <div className={styles.commissionRow}>
                     <span className={styles.commissionLabel}>Your Credits</span>
-                    <span className={styles.commissionValue}><Credits amount={quote.player_credits} /></span>
+                    <span className={styles.commissionValue}><Credits amount={playerCredits} /></span>
                   </div>
                 </div>
 
                 {/* Materials list with have/need */}
-                {quote.build_materials.length > 0 && (
+                {buildMaterials.length > 0 && (
                   <div className={styles.commissionMaterials}>
                     <span className={styles.commissionLabel}>Required Materials</span>
                     {materialChecks.map((m) => (
@@ -556,7 +560,7 @@ export function ShipCatalog() {
                   </button>
                   <button
                     className={shared.subtleBtn}
-                    onClick={() => { setCommissionShip(null); setQuote(null) }}
+                    onClick={() => setCommissionShip(null)}
                     disabled={commissioning}
                     type="button"
                   >
@@ -571,7 +575,7 @@ export function ShipCatalog() {
 
       {/* Buy listing confirmation modal */}
       {buyTarget && (() => {
-        const credits = state.player?.credits ?? 0
+        const credits = player?.credits ?? 0
         const canAfford = credits >= buyTarget.listing.price
         return (
           <Modal

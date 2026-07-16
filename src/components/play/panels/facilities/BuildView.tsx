@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect, useMemo } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import {
   Search,
   ChevronDown,
@@ -9,9 +9,10 @@ import {
   Loader2,
   Hammer,
 } from 'lucide-react'
-import { useGame } from '../../GameProvider'
+import type { FacilityResponse, StorageResponse } from '@spacemolt/lib'
+import { useAccountStore, useCargo, useCommandMutation, useCommandQuery, useLocationState, usePlayer } from '@/lib/spacemolt'
+import { usePlay } from '../../PlayProvider'
 import { Credits, Modal, Loading, shared } from '../../shared'
-import type { ViewStorageResponse } from '@/lib/gameTypes'
 import styles from './facilities.module.css'
 
 /**
@@ -39,71 +40,18 @@ export function combinedQuantity(
   return fromCargo + fromStorage + fromFaction
 }
 
-// Not in generated schema — the types endpoint returns untyped structured data
-
-interface FacilityTypesDiscovery {
-  action: string
-  total: number
-  categories: Record<string, {
-    count: number
-    buildable?: number
-    description: string
-  }>
-}
-
-interface FacilityTypeSummary {
-  id: string
-  type_id: string
-  name: string
-  category: string
-  level: number
-  build_cost: number
-  buildable: boolean
-  personal_service?: string
-  bonus_type?: string
-  bonus_value?: number
-  recipe_id?: string
-  service?: string
-}
-
-interface FacilityTypesFiltered {
-  action: string
-  page: number
-  per_page: number
-  total: number
-  total_pages: number
-  types: FacilityTypeSummary[]
-}
-
-interface FacilityTypeDetail {
-  action: string
-  type_id: string
-  name: string
-  description: string
-  category: string
-  level: number
-  buildable: boolean
-  build_cost: number
-  build_time: number
-  build_materials: { item_id: string; name: string; quantity: number }[]
-  labor_cost: number
-  rent_per_cycle: number
-  recipe?: {
-    id: string
-    name: string
-    crafting_time: number
-    inputs: { item_id: string; name: string; quantity: number }[]
-    outputs: { item_id: string; name: string; quantity: number }[]
-  }
-  personal_service?: string
-  bonus_type?: string
-  bonus_value?: number
-  maintenance_per_cycle?: { item_id: string; name: string; quantity: number }[]
-  upgrades_to?: string
-  upgrades_to_name?: string
-  upgrades_from?: string
-  upgrades_from_name?: string
-}
+// The `types` action of spacemolt_facility is overloaded by which params are
+// passed: no params -> category discovery, category/name/page -> a filtered
+// paginated list, facility_type -> full detail for one type. Each shape is a
+// distinct member of the FacilityResponse union; the field combinations below
+// are unique discriminators for each (grepped node_modules/@spacemolt/lib).
+type FacilityTypesDiscovery = Extract<FacilityResponse, { categories: unknown }>
+type FacilityTypesFiltered = Extract<FacilityResponse, { types: unknown }>
+type FacilityTypeSummary = FacilityTypesFiltered['types'][number]
+// Extract requires the discriminator field to be REQUIRED (not `?`) on the
+// target member — `type_id` is required on the detail variant, `build_materials` is not.
+type FacilityTypeDetail = Extract<FacilityResponse, { type_id: unknown }>
+type ViewStorageResponse = Extract<StorageResponse, { items: unknown }>
 
 interface BuildViewProps {
   onRefresh: () => void
@@ -111,33 +59,42 @@ interface BuildViewProps {
 
 const BUILDABLE_CATEGORIES = ['production', 'personal', 'faction']
 
+const describeError = (err: unknown): string => (err instanceof Error ? err.message : String(err))
+
 export function BuildView({ onRefresh }: BuildViewProps) {
-  const { sendCommand, api, state, dispatch } = useGame()
-  const factionId = state.player?.faction_id
+  const store = useAccountStore()
+  const mutate = useCommandMutation()
+  const { uiStore } = usePlay()
+  const player = usePlayer()
+  const factionId = player?.faction_id
+  const dockedAt = useLocationState()?.docked_at ?? null
+
+  const reportError = useCallback((err: unknown) => {
+    uiStore.dispatch({ type: 'toast', kind: 'danger', text: describeError(err) })
+  }, [uiStore])
 
   // Inventory pools for the have/need indicator on build materials. Cargo +
   // station storage cover personal/station builds; faction storage (fetched
-  // below) covers faction builds. Memoized refs keep React happy in the JSX
-  // and avoid recomputing find() on every render of every material row.
-  const cargoItems = useMemo(() => state.ship?.cargo ?? [], [state.ship?.cargo])
-  const stationStorageItems = useMemo(
-    () => (state.isDocked ? state.storageData?.items ?? [] : []),
-    [state.isDocked, state.storageData?.items],
+  // below) covers faction builds.
+  const cargoRaw = useCargo()
+  const cargoItems = useMemo(
+    () => (cargoRaw ?? []).flatMap(c => (c.item_id != null && c.quantity != null ? [{ item_id: c.item_id, quantity: c.quantity }] : [])),
+    [cargoRaw],
   )
 
-  // Ensure station storage is loaded when the build view is open and the
-  // player is docked, so the have/need indicator can credit items the player
-  // already left at the station. Mirrors CraftingPanel's behavior — without
-  // this, items in station storage show as "missing" until the user visits
-  // another panel that triggers `view_storage`.
-  useEffect(() => {
-    if (state.isDocked && !state.storageData) {
-      sendCommand('view_storage')
-    }
-  }, [state.isDocked, state.storageData, sendCommand])
-
-  const [discovery, setDiscovery] = useState<FacilityTypesDiscovery | null>(null)
-  const [discoveryLoading, setDiscoveryLoading] = useState(false)
+  // Station storage is docked-base-scoped and not part of the core state
+  // sections, so it's a panel-local query keyed on dockedAt — mirrors
+  // CraftingPanel's have/need indicator (see gameserver crafting.go:
+  // "station-storage-centric, no cargo path").
+  const { data: storageData } = useCommandQuery(
+    async (account) => {
+      const resp = await account.commands.spacemolt_storage.view({})
+      return resp.structuredContent as ViewStorageResponse | undefined
+    },
+    [dockedAt],
+    { enabled: Boolean(dockedAt) },
+  )
+  const stationStorageItems = useMemo(() => storageData?.items ?? [], [storageData])
 
   const [selectedCategory, setSelectedCategory] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
@@ -153,40 +110,39 @@ export function BuildView({ onRefresh }: BuildViewProps) {
   const [buildConfirm, setBuildConfirm] = useState<FacilityTypeDetail | null>(null)
   const [building, setBuilding] = useState(false)
 
+  // The category-discovery view (types() with no params) loads once on mount.
+  // The filtered list / single-type detail below it are driven by explicit
+  // user actions (category click, search, page change, row expand), so those
+  // stay imperative one-off calls rather than reactive queries.
+  const { data: discovery, loading: discoveryLoading } = useCommandQuery(
+    async (account) => {
+      const resp = await account.commands.spacemolt_facility.types()
+      return resp.structuredContent as FacilityTypesDiscovery | undefined
+    },
+    [],
+  )
+
   // Faction resources for client-side buildable evaluation. Only fetched if the
   // player belongs to a faction — server's `buildable` flag for faction-typed
   // facilities ignores faction treasury/storage and only checks the player's
   // personal credits/inventory, which hides faction-buildable entries.
-  const [factionStorage, setFactionStorage] = useState<ViewStorageResponse | null>(null)
-  const [factionTreasury, setFactionTreasury] = useState<number | null>(null)
-
-  useEffect(() => {
-    if (!api) return
-    setDiscoveryLoading(true)
-    api.callStructured<FacilityTypesDiscovery>('spacemolt_facility', 'types', {})
-      .then(data => { if (data) setDiscovery(data) })
-      .catch(() => {})
-      .finally(() => setDiscoveryLoading(false))
-  }, [api])
-
-  // Fetch faction storage + treasury once when the build view opens and the
-  // player has a faction. These are used to override the server-side
-  // `buildable` flag for faction-typed facilities.
-  useEffect(() => {
-    if (!api || !factionId) return
-    let cancelled = false
-    api.callStructured<ViewStorageResponse>('spacemolt_storage', 'view', { target: 'faction' })
-      .then(data => { if (!cancelled && data) setFactionStorage(data) })
-      .catch(() => {})
-    api.callStructured<{ treasury?: number }>('spacemolt_faction', 'info', {})
-      .then(data => {
-        if (!cancelled && data && typeof data.treasury === 'number') {
-          setFactionTreasury(data.treasury)
-        }
-      })
-      .catch(() => {})
-    return () => { cancelled = true }
-  }, [api, factionId])
+  const { data: factionStorage, refetch: refetchFactionStorage } = useCommandQuery(
+    async (account) => {
+      const resp = await account.commands.spacemolt_storage.view({ target: 'faction' })
+      return resp.structuredContent as ViewStorageResponse | undefined
+    },
+    [factionId],
+    { enabled: Boolean(factionId) },
+  )
+  const { data: factionInfo, refetch: refetchFactionInfo } = useCommandQuery(
+    async (account) => {
+      const resp = await account.commands.spacemolt_faction.info()
+      return resp.structuredContent
+    },
+    [factionId],
+    { enabled: Boolean(factionId) },
+  )
+  const factionTreasury = typeof factionInfo?.treasury === 'number' ? factionInfo.treasury : null
 
   // Faction-aware buildable check for a facility type summary. Only used for
   // the "Buildable Only" filter; the server still validates on actual build.
@@ -194,24 +150,29 @@ export function BuildView({ onRefresh }: BuildViewProps) {
   // is intentional, since the cheap path is enough to surface the entry so the
   // user can expand it and see the breakdown.
   const isFactionBuildable = useCallback((ft: FacilityTypeSummary): boolean => {
-    if (ft.category !== 'faction') return ft.buildable
-    if (!factionId) return ft.buildable
-    if (factionTreasury == null) return ft.buildable
+    if (ft.category !== 'faction') return Boolean(ft.buildable)
+    if (!factionId) return Boolean(ft.buildable)
+    if (factionTreasury == null) return Boolean(ft.buildable)
     return factionTreasury >= ft.build_cost
   }, [factionId, factionTreasury])
 
   const fetchFiltered = useCallback(async (category: string, name: string, page: number) => {
-    if (!api) return
     setFilteredLoading(true)
     try {
-      const params: Record<string, unknown> = { per_page: 20, page }
-      if (category) params.category = category
+      const params: {
+        category?: 'infrastructure' | 'service' | 'production' | 'faction' | 'personal'
+        name?: string
+        page: number
+        per_page: number
+      } = { per_page: 20, page }
+      if (category) params.category = category as 'infrastructure' | 'service' | 'production' | 'faction' | 'personal'
       if (name) params.name = name
-      const data = await api.callStructured<FacilityTypesFiltered>('spacemolt_facility', 'types', params)
+      const resp = await store.account.commands.spacemolt_facility.types(params)
+      const data = resp.structuredContent as FacilityTypesFiltered | undefined
       if (data) setFilteredData(data)
     } catch { /* ignore */ }
     setFilteredLoading(false)
-  }, [api])
+  }, [store])
 
   const handleCategorySelect = useCallback((cat: string) => {
     const newCat = selectedCategory === cat ? '' : cat
@@ -248,55 +209,42 @@ export function BuildView({ onRefresh }: BuildViewProps) {
       setTypeDetail(null)
       return
     }
-    if (!api) return
     setExpandedType(typeId)
     setTypeDetail(null)
     setDetailLoading(true)
     try {
-      const data = await api.callStructured<FacilityTypeDetail>('spacemolt_facility', 'types', { facility_type: typeId })
+      const resp = await store.account.commands.spacemolt_facility.types({ facility_type: typeId })
+      const data = resp.structuredContent as FacilityTypeDetail | undefined
       if (data) setTypeDetail(data)
     } catch { /* ignore */ }
     setDetailLoading(false)
-  }, [expandedType, api])
+  }, [expandedType, store])
 
   const handleBuild = useCallback(async (detail: FacilityTypeDetail) => {
     setBuilding(true)
-    const action = detail.category === 'personal'
-      ? 'facility_personal_build'
-      : detail.category === 'faction'
-        ? 'facility_faction_build'
-        : 'facility_build'
     try {
-      const result = await sendCommand(action, { facility_type: detail.type_id })
-      // sendCommand resolves with { error: true, ... } on failure rather than
-      // throwing, so check the result before claiming success.
-      if (!result?.error) {
-        const owner = detail.category === 'faction' ? 'faction' : 'station'
-        const message = (result?.message as string | undefined)
-          || `Construction started: ${detail.name} (${owner}) — ${detail.build_time} ticks`
-        dispatch({ type: 'ADD_EVENT', entry: {
-          id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-          type: 'info',
-          message,
-          timestamp: Date.now(),
-        }})
-        setBuildConfirm(null)
-        // Refresh faction resources so subsequent build evaluations are accurate
-        if (detail.category === 'faction' && api && factionId) {
-          api.callStructured<ViewStorageResponse>('spacemolt_storage', 'view', { target: 'faction' })
-            .then(data => { if (data) setFactionStorage(data) })
-            .catch(() => {})
-          api.callStructured<{ treasury?: number }>('spacemolt_faction', 'info', {})
-            .then(data => {
-              if (data && typeof data.treasury === 'number') setFactionTreasury(data.treasury)
-            })
-            .catch(() => {})
-        }
-        onRefresh()
+      const result = detail.category === 'personal'
+        ? await mutate((c) => c.spacemolt_facility.personal_build({ facility_type: detail.type_id }), { label: 'facility_personal_build' })
+        : detail.category === 'faction'
+          ? await mutate((c) => c.spacemolt_facility.faction_build({ facility_type: detail.type_id }), { label: 'facility_faction_build' })
+          : await mutate((c) => c.spacemolt_facility.build({ facility_type: detail.type_id }), { label: 'facility_build' })
+      const owner = detail.category === 'faction' ? 'faction' : 'station'
+      const detailsRecord = (result.delta.details ?? {}) as Record<string, unknown>
+      const message = (typeof detailsRecord.message === 'string' ? detailsRecord.message : undefined)
+        || `Construction started: ${detail.name} (${owner}) — ${detail.build_time} ticks`
+      uiStore.dispatch({ type: 'event', kind: 'info', text: message })
+      setBuildConfirm(null)
+      // Refresh faction resources so subsequent build evaluations are accurate
+      if (detail.category === 'faction' && factionId) {
+        refetchFactionStorage()
+        refetchFactionInfo()
       }
-    } catch { /* handled by event log */ }
+      onRefresh()
+    } catch (err) {
+      reportError(err)
+    }
     setBuilding(false)
-  }, [sendCommand, onRefresh, dispatch, api, factionId])
+  }, [mutate, onRefresh, uiStore, factionId, refetchFactionStorage, refetchFactionInfo, reportError])
 
   if (discoveryLoading) return <Loading message="Loading facility catalog..." />
 
@@ -398,7 +346,7 @@ export function BuildView({ onRefresh }: BuildViewProps) {
                               <span className={styles.costLabel}>Rent</span>
                               <span className={styles.costValue}><Credits amount={typeDetail.rent_per_cycle} /> /cycle</span>
                             </div>
-                            {typeDetail.build_materials.length > 0 && (
+                            {typeDetail.build_materials && typeDetail.build_materials.length > 0 && (
                               <div className={styles.costRow}>
                                 <span className={styles.costLabel}>Materials</span>
                                 <span className={styles.materialList}>
@@ -484,7 +432,7 @@ export function BuildView({ onRefresh }: BuildViewProps) {
                             if (!canBuild && typeDetail.category === 'faction' && factionId) {
                               const treasuryOk = factionTreasury != null
                                 && factionTreasury >= typeDetail.build_cost
-                              const matsOk = !typeDetail.build_materials.length
+                              const matsOk = !typeDetail.build_materials?.length
                                 || (factionStorage != null && typeDetail.build_materials.every(m => {
                                   const have = (factionStorage.items || []).find(i => i.item_id === m.item_id)
                                   return (have?.quantity ?? 0) >= m.quantity
@@ -568,7 +516,7 @@ export function BuildView({ onRefresh }: BuildViewProps) {
               <span className={styles.costLabel}>Ongoing Rent</span>
               <span className={styles.costValue}><Credits amount={buildConfirm.rent_per_cycle} /> /cycle</span>
             </div>
-            {buildConfirm.build_materials.length > 0 && (
+            {buildConfirm.build_materials && buildConfirm.build_materials.length > 0 && (
               <div className={styles.costRow}>
                 <span className={styles.costLabel}>Materials</span>
                 <span className={styles.materialList}>

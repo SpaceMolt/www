@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { Star, RefreshCw, ChevronDown, ChevronRight } from 'lucide-react'
-import { useGame } from '../GameProvider'
+import type { CatalogEntry } from '@spacemolt/lib'
+import { useAccountStore, useCatalog, usePlayer, useSkills } from '@/lib/spacemolt'
 import { ProgressBar } from '../ProgressBar'
 import { Panel, Loading, shared } from '../shared'
 import styles from './SkillsPanel.module.css'
@@ -18,47 +19,40 @@ interface SkillCatalogEntry {
   empire_restriction?: string
 }
 
+function toSkillEntry(entry: CatalogEntry): SkillCatalogEntry {
+  const bonusPerLevel =
+    entry.bonus_per_level && typeof entry.bonus_per_level === 'object'
+      ? (entry.bonus_per_level as Record<string, number>)
+      : undefined
+  return {
+    id: typeof entry.id === 'string' ? entry.id : '',
+    name: typeof entry.name === 'string' ? entry.name : '',
+    description: typeof entry.description === 'string' ? entry.description : '',
+    category: typeof entry.category === 'string' ? entry.category : 'Other',
+    max_level: typeof entry.max_level === 'number' ? entry.max_level : 0,
+    training_source: typeof entry.training_source === 'string' ? entry.training_source : undefined,
+    bonus_per_level: bonusPerLevel,
+    empire_restriction: typeof entry.empire_restriction === 'string' ? entry.empire_restriction : undefined,
+  }
+}
+
 export function SkillsPanel() {
-  const { state, sendCommand } = useGame()
+  const store = useAccountStore()
+  const player = usePlayer()
+  const playerSkills = useSkills()
+  const catalog = useCatalog()
   const [expandedId, setExpandedId] = useState<string | null>(null)
-  const [catalogSkills, setCatalogSkills] = useState<SkillCatalogEntry[]>([])
-  const catalogFetched = useRef(false)
 
-  // Fetch player skills
-  useEffect(() => {
-    if (!state.skillsData) {
-      sendCommand('get_skills')
-    }
-  }, [state.skillsData, sendCommand])
-
-  // Fetch skill catalog (metadata) once
-  useEffect(() => {
-    if (catalogFetched.current) return
-    catalogFetched.current = true
-
-    async function fetchAll() {
-      let page = 1
-      let totalPages = 1
-      const all: SkillCatalogEntry[] = []
-      while (page <= totalPages) {
-        try {
-          const result = await sendCommand('catalog', { type: 'skills', page_size: 50, page }) as Record<string, unknown>
-          const items = (result.items || []) as SkillCatalogEntry[]
-          all.push(...items)
-          totalPages = (result.total_pages as number) || 1
-          page++
-        } catch { break }
-      }
-      setCatalogSkills(all)
-    }
-    fetchAll()
-  }, [sendCommand])
+  const catalogSkills = useMemo(
+    () => (catalog.data?.skills ?? []).map(toSkillEntry),
+    [catalog.data],
+  )
 
   const handleRefresh = useCallback(() => {
-    sendCommand('get_skills')
-  }, [sendCommand])
+    void store.account.refresh().catch(() => {})
+  }, [store])
 
-  const playerSkills = state.skillsData?.skills
+  const playerEmpire = player?.empire
 
   // Merge catalog data with player levels, group by category
   const grouped = useMemo(() => {
@@ -68,8 +62,6 @@ export function SkillsPanel() {
       xp: number
       nextLevelXp: number
     }>> = {}
-
-    const playerEmpire = state.player?.empire as string | undefined
 
     for (const skill of catalogSkills) {
       // Only show empire skills for the player's own empire
@@ -97,7 +89,7 @@ export function SkillsPanel() {
     }
 
     return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b))
-  }, [catalogSkills, playerSkills])
+  }, [catalogSkills, playerSkills, playerEmpire])
 
   return (
     <Panel

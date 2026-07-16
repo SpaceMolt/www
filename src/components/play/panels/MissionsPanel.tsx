@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useCallback, useState } from 'react'
 import {
   Target,
   ChevronDown,
@@ -10,52 +10,102 @@ import {
   Check,
   X,
 } from 'lucide-react'
-import { useGame } from '../GameProvider'
+import { SpacemoltError } from '@spacemolt/lib'
+import type { CompleteMissionResponse, CompletedMissionsResponse, GameState, GetMissionsResponse, ViewCompletedMissionResponse } from '@spacemolt/lib'
+import { useAccountStore, useCommandMutation, useCommandQuery, useMissions } from '@/lib/spacemolt'
+import { usePlay } from '../PlayProvider'
 import { Credits, PanelWithTabs, shared } from '../shared'
 import { BugReportButton } from '../BugReportButton'
 import { buildMissionContext } from '../bugReportContext'
-import type { Mission } from '@/lib/gameTypes'
+import type { Mission } from '../types'
 import styles from './MissionsPanel.module.css'
 
-interface ActiveMissionObjective {
+type AvailableMission = GetMissionsResponse['missions'][number]
+type ActiveMissionEntry = NonNullable<NonNullable<GameState['missions']>['active']>[number]
+type CompletedMission = CompletedMissionsResponse['missions'][number]
+
+interface ObjectiveView {
   type: string
   description: string
   current: number
   required: number
   completed: boolean
-  item_id?: string
   item_name?: string
-  target_base?: string
   target_base_name?: string
-  system_id?: string
   system_name?: string
   in_cargo?: number
   in_storage?: number
 }
 
+interface RewardsView {
+  credits?: number
+  items?: Record<string, number>
+  skill_xp?: Record<string, number>
+}
+
+function toAvailableObjective(o: NonNullable<AvailableMission['objectives']>[number]): ObjectiveView {
+  return {
+    type: o.type,
+    description: o.description,
+    current: 0,
+    required: o.quantity ?? 0,
+    completed: false,
+    target_base_name: o.target_base_name,
+    system_name: o.system_name,
+  }
+}
+
+function toActiveObjective(o: NonNullable<ActiveMissionEntry['objectives']>[number]): ObjectiveView {
+  return {
+    type: o.type ?? '',
+    description: o.description ?? '',
+    current: o.current ?? 0,
+    required: o.required ?? 0,
+    completed: Boolean(o.completed),
+    item_name: o.item_name,
+    target_base_name: o.target_base_name,
+    system_name: o.system_name,
+    in_cargo: o.in_cargo,
+    in_storage: o.in_storage,
+  }
+}
+
+function toMissionContext(m: ActiveMissionEntry): Mission {
+  const context = {
+    mission_id: m.mission_id ?? '',
+    title: m.title ?? '',
+    description: m.description ?? '',
+    difficulty: m.difficulty ?? 0,
+    expires_in_ticks: m.expires_in_ticks ?? 0,
+    type: m.type ?? '',
+    percent_complete: m.percent_complete,
+    rewards: {
+      credits: m.rewards?.credits ?? 0,
+      items: m.rewards?.items,
+      pirate_rep: m.rewards?.pirate_rep,
+      reputation: m.rewards?.reputation,
+      skill_xp: m.rewards?.skill_xp,
+    },
+    objectives: m.objectives?.map((o) => ({
+      description: o.description ?? '',
+      type: o.type ?? '',
+      item_id: o.item_id,
+      quantity: o.required,
+      system_id: o.system_id,
+      system_name: o.system_name,
+      target_base_name: o.target_base_name,
+    })),
+  }
+  return context
+}
+
+function errorMessage(err: unknown): string {
+  if (err instanceof SpacemoltError) return err.message
+  if (err instanceof Error) return err.message
+  return 'Action failed'
+}
+
 type TabId = 'available' | 'active' | 'completed'
-
-interface CompletedMission {
-  template_id: string
-  title: string
-  type: string
-  difficulty: string
-  completion_time: string
-  giver: { name: string; title: string }
-}
-
-interface CompletedMissionDetail {
-  template_id: string
-  title: string
-  type: string
-  description: string
-  difficulty: string
-  completion_time: string
-  objectives: { type: string; description: string }[]
-  rewards: { credits: number; items?: { item_id: string; quantity: number }[]; skill_xp?: Record<string, number> }
-  dialog: { offer: string; accept: string; decline: string; complete: string }
-  giver: { name: string; title: string }
-}
 
 function formatRelativeTime(isoStr: string): string {
   const date = new Date(isoStr)
@@ -73,28 +123,46 @@ function formatRelativeTime(isoStr: string): string {
 }
 
 export function MissionsPanel() {
-  const { state, sendCommand } = useGame()
+  const store = useAccountStore()
+  const mutate = useCommandMutation()
+  const { uiStore } = usePlay()
   const [activeTab, setActiveTab] = useState<TabId>('available')
 
+  const reportError = useCallback(
+    (err: unknown) => {
+      const text = errorMessage(err)
+      uiStore.dispatch({ type: 'toast', kind: 'danger', text })
+      uiStore.dispatch({ type: 'event', kind: 'danger', text })
+    },
+    [uiStore],
+  )
+
   // Completion modal
-  const [completionResult, setCompletionResult] = useState<Record<string, unknown> | null>(null)
+  const [completionResult, setCompletionResult] = useState<CompleteMissionResponse | null>(null)
 
-  // Available missions state
-  const [availableMissions, setAvailableMissions] = useState<Mission[]>([])
-  const [availableLoaded, setAvailableLoaded] = useState(false)
-  const [loadingAvailable, setLoadingAvailable] = useState(false)
+  // Available missions — lazily loaded per-tab
+  const availableQuery = useCommandQuery(
+    async (account) => (await account.commands.spacemolt.get_missions()).structuredContent,
+    [],
+    { enabled: activeTab === 'available' },
+  )
+  const availableMissions = availableQuery.data?.missions ?? []
 
-  // Active missions state
-  const [activeMissions, setActiveMissions] = useState<Mission[]>([])
-  const [activeLoaded, setActiveLoaded] = useState(false)
-  const [loadingActive, setLoadingActive] = useState(false)
+  // Active missions — live section, kept current by mutation deltas
+  const missionsSection = useMissions()
+  const activeMissions = missionsSection?.active ?? []
+  const activeLoaded = missionsSection !== undefined
 
-  // Completed missions state
-  const [completedMissions, setCompletedMissions] = useState<CompletedMission[]>([])
-  const [completedMissionsTotal, setCompletedMissionsTotal] = useState(0)
-  const [completedLoaded, setCompletedLoaded] = useState(false)
-  const [loadingCompleted, setLoadingCompleted] = useState(false)
-  const [selectedCompletedMission, setSelectedCompletedMission] = useState<CompletedMissionDetail | null>(null)
+  // Completed missions
+  const completedQuery = useCommandQuery(
+    async (account) => (await account.commands.spacemolt.completed_missions()).structuredContent,
+    [],
+    { enabled: activeTab === 'completed' },
+  )
+  const completedMissions: CompletedMission[] = completedQuery.data?.missions ?? []
+  const completedMissionsTotal = completedQuery.data?.total_count ?? completedMissions.length
+
+  const [selectedCompletedMission, setSelectedCompletedMission] = useState<ViewCompletedMissionResponse | null>(null)
   const [loadingMissionDetail, setLoadingMissionDetail] = useState(false)
 
   // Expanded mission tracking
@@ -112,111 +180,53 @@ export function MissionsPanel() {
     })
   }, [])
 
-  const handleLoadAvailable = useCallback(async () => {
-    setLoadingAvailable(true)
-    try {
-      const resp = await sendCommand('get_missions')
-      const missions = (resp.missions || []) as Mission[]
-      setAvailableMissions(missions)
-      setAvailableLoaded(true)
-    } finally {
-      setLoadingAvailable(false)
-    }
-  }, [sendCommand])
-
-  const handleLoadActive = useCallback(async () => {
-    setLoadingActive(true)
-    try {
-      const resp = await sendCommand('get_active_missions')
-      // v2 returns { missions: { active: [...], max_missions: N } }
-      const missionsData = resp.missions as Record<string, unknown> | unknown[] | undefined
-      const missions = Array.isArray(missionsData)
-        ? missionsData as Mission[]
-        : ((missionsData as Record<string, unknown>)?.active || []) as Mission[]
-      setActiveMissions(missions)
-      setActiveLoaded(true)
-    } finally {
-      setLoadingActive(false)
-    }
-  }, [sendCommand])
-
-  const handleLoadCompleted = useCallback(async () => {
-    setLoadingCompleted(true)
-    try {
-      const resp = await sendCommand('completed_missions')
-      const missions = (resp.missions || []) as CompletedMission[]
-      setCompletedMissions(missions)
-      setCompletedMissionsTotal((resp.total_count as number) || missions.length)
-      setCompletedLoaded(true)
-    } finally {
-      setLoadingCompleted(false)
-    }
-  }, [sendCommand])
-
-  // Load data when switching tabs — track last loaded tab to avoid re-fetching
-  const lastLoadedTabRef = useRef<string>('')
-  useEffect(() => {
-    if (lastLoadedTabRef.current === activeTab) return
-    lastLoadedTabRef.current = activeTab
-    if (activeTab === 'available') handleLoadAvailable()
-    if (activeTab === 'active') handleLoadActive()
-    if (activeTab === 'completed') handleLoadCompleted()
-  }, [activeTab, handleLoadAvailable, handleLoadActive, handleLoadCompleted])
-
   const handleAcceptMission = useCallback(async (missionId: string) => {
-    await sendCommand('accept_mission', { mission_id: missionId })
-    // Refresh both available and active missions after accepting
-    const [availResp, activeResp] = await Promise.all([
-      sendCommand('get_missions'),
-      sendCommand('get_active_missions'),
-    ])
-    setAvailableMissions((availResp.missions || []) as Mission[])
-    const activeMissionsData = activeResp.missions as Record<string, unknown> | unknown[] | undefined
-    const activeMissionsList = Array.isArray(activeMissionsData)
-      ? activeMissionsData as Mission[]
-      : ((activeMissionsData as Record<string, unknown>)?.active || []) as Mission[]
-    setActiveMissions(activeMissionsList)
-  }, [sendCommand])
+    try {
+      const result = await mutate((c) => c.spacemolt.accept_mission({ id: missionId }), { label: 'accept_mission' })
+      const details = result.delta.details
+      uiStore.dispatch({
+        type: 'event',
+        kind: 'success',
+        text: details?.message || `Mission accepted: ${details?.title || 'mission'}`,
+      })
+      availableQuery.refetch()
+    } catch (err) {
+      reportError(err)
+    }
+  }, [mutate, uiStore, availableQuery, reportError])
 
   const handleCompleteMission = useCallback(async (missionId: string) => {
-    const result = await sendCommand('complete_mission', { mission_id: missionId })
-    setCompletionResult(result)
-    // Refresh active and completed missions
-    const [activeResp, completedResp] = await Promise.all([
-      sendCommand('get_active_missions'),
-      sendCommand('completed_missions'),
-    ])
-    const activeMissionsData = activeResp.missions as Record<string, unknown> | unknown[] | undefined
-    setActiveMissions(Array.isArray(activeMissionsData)
-      ? activeMissionsData as Mission[]
-      : ((activeMissionsData as Record<string, unknown>)?.active || []) as Mission[])
-    setCompletedMissions((completedResp.missions || []) as CompletedMission[])
-    setCompletedMissionsTotal((completedResp.total_count as number) || 0)
-  }, [sendCommand])
+    try {
+      const result = await mutate((c) => c.spacemolt.complete_mission({ id: missionId }), { label: 'complete_mission' })
+      if (result.delta.details) setCompletionResult(result.delta.details)
+      completedQuery.refetch()
+    } catch (err) {
+      reportError(err)
+    }
+  }, [mutate, completedQuery, reportError])
 
   const handleAbandonMission = useCallback(async (missionId: string) => {
-    await sendCommand('abandon_mission', { mission_id: missionId })
-    // Refresh active missions after abandoning
-    const resp = await sendCommand('get_active_missions')
-    const missionsData = resp.missions as Record<string, unknown> | unknown[] | undefined
-    const missions = Array.isArray(missionsData)
-      ? missionsData as Mission[]
-      : ((missionsData as Record<string, unknown>)?.active || []) as Mission[]
-    setActiveMissions(missions)
-    setActiveLoaded(true)
-  }, [sendCommand])
+    try {
+      const result = await mutate((c) => c.spacemolt.abandon_mission({ id: missionId }), { label: 'abandon_mission' })
+      uiStore.dispatch({ type: 'event', kind: 'info', text: result.delta.details?.message || 'Mission abandoned' })
+    } catch (err) {
+      reportError(err)
+    }
+  }, [mutate, uiStore, reportError])
 
   const handleViewCompletedMission = useCallback(async (templateId: string) => {
     setLoadingMissionDetail(true)
     try {
-      const resp = await sendCommand('view_completed_mission', { template_id: templateId })
-      setSelectedCompletedMission(resp as unknown as CompletedMissionDetail)
+      const resp = await store.account.commands.spacemolt.view_completed_mission({ id: templateId })
+      setSelectedCompletedMission(resp.structuredContent ?? null)
+    } catch (err) {
+      reportError(err)
     } finally {
       setLoadingMissionDetail(false)
     }
-  }, [sendCommand])
+  }, [store, reportError])
 
-  const renderObjective = (obj: ActiveMissionObjective, index: number, showProgress: boolean) => (
+  const renderObjective = (obj: ObjectiveView, index: number, showProgress: boolean) => (
     <div key={index} className={`${styles.objectiveItem} ${obj.completed ? styles.objectiveItemDone : ''}`}>
       {showProgress && obj.completed ? (
         <span className={styles.objectiveComplete}>
@@ -246,11 +256,9 @@ export function MissionsPanel() {
     </div>
   )
 
-  const renderRewards = (rewards?: Record<string, unknown>) => {
+  const renderRewards = (rewards?: RewardsView) => {
     if (!rewards) return null
-    const credits = rewards.credits as number | undefined
-    const items = rewards.items as Record<string, number> | undefined
-    const skillXp = rewards.skill_xp as Record<string, number> | undefined
+    const { credits, items, skill_xp: skillXp } = rewards
     const hasContent = (credits && credits > 0) || (items && Object.keys(items).length > 0) || (skillXp && Object.keys(skillXp).length > 0)
     if (!hasContent) return null
     return (
@@ -291,13 +299,13 @@ export function MissionsPanel() {
         {/* Available Missions Tab */}
         {activeTab === 'available' && (
           <>
-            {loadingAvailable && availableMissions.length === 0 && (
+            {availableQuery.loading && availableMissions.length === 0 && (
               <div className={styles.loading}>
                 <span className={shared.spinner} />
                 Loading available missions...
               </div>
             )}
-            {availableLoaded && availableMissions.length === 0 && !loadingAvailable && (
+            {availableQuery.data && availableMissions.length === 0 && !availableQuery.loading && (
               <div className={shared.emptyState}>
                 No missions available at this location.
               </div>
@@ -305,12 +313,8 @@ export function MissionsPanel() {
             {availableMissions.length > 0 && (
               <div className={styles.missionList}>
                 {availableMissions.map((m) => {
-                  const mr = m as unknown as Record<string, unknown>
                   const isExpanded = expandedMissions.has(m.mission_id)
-                  const giver = mr.giver as { name: string; title: string } | undefined
-                  const objectives = (mr.objectives || m.objectives || []) as ActiveMissionObjective[]
-                  const rewards = (mr.rewards || m.rewards) as Record<string, unknown> | undefined
-                  const dialog = mr.dialog as { offer?: string } | undefined
+                  const objectives = (m.objectives || []).map(toAvailableObjective)
 
                   return (
                     <div key={m.mission_id} className={styles.missionItem}>
@@ -327,21 +331,21 @@ export function MissionsPanel() {
                         <BugReportButton contextType="mission" entityName={m.title} entityContext={buildMissionContext(m)} />
                       </div>
 
-                      {giver && (
+                      {m.giver && (
                         <div className={styles.missionMeta}>
-                          <span>{giver.name}, {giver.title}</span>
+                          <span>{m.giver.name}, {m.giver.title}</span>
                         </div>
                       )}
 
                       <div className={styles.missionDesc}>{m.description}</div>
 
-                      {isExpanded && dialog?.offer && (
+                      {isExpanded && m.dialog?.offer && (
                         <div className={styles.missionDialog}>
-                          &ldquo;{dialog.offer}&rdquo;
+                          &ldquo;{m.dialog.offer}&rdquo;
                         </div>
                       )}
 
-                      {renderRewards(rewards)}
+                      {renderRewards(m.rewards)}
 
                       {objectives.length > 0 && (
                         <div className={styles.objectiveList}>
@@ -368,36 +372,31 @@ export function MissionsPanel() {
         {/* Active Missions Tab */}
         {activeTab === 'active' && (
           <>
-            {loadingActive && activeMissions.length === 0 && (
+            {!activeLoaded && (
               <div className={styles.loading}>
                 <span className={shared.spinner} />
                 Loading active missions...
               </div>
             )}
-            {activeLoaded && activeMissions.length === 0 && !loadingActive && (
+            {activeLoaded && activeMissions.length === 0 && (
               <div className={shared.emptyState}>
                 No active missions. Accept a mission to get started.
               </div>
             )}
             {activeMissions.length > 0 && (
               <div className={styles.missionList}>
-                {activeMissions.map((m) => {
-                  const mr = m as unknown as Record<string, unknown>
-                  const isExpanded = expandedMissions.has(m.mission_id)
-                  const percentComplete = (mr.percent_complete as number) ?? 0
-                  const objectives = (mr.objectives || m.objectives || []) as ActiveMissionObjective[]
+                {activeMissions.map((m, idx) => {
+                  const missionId = m.mission_id ?? `active-${idx}`
+                  const isExpanded = expandedMissions.has(missionId)
+                  const percentComplete = m.percent_complete ?? 0
+                  const objectives = (m.objectives || []).map(toActiveObjective)
                   const isCompletable = percentComplete >= 100 || objectives.every((obj) => obj.completed)
-                  const giver = mr.giver as { name: string; title: string } | undefined
-                  const expiresInTicks = mr.expires_in_ticks as number | undefined
-                  const issuingBase = mr.issuing_base as string | undefined
-                  const issuingSystemName = mr.issuing_system_name as string | undefined
-                  const rewards = (mr.rewards || m.rewards) as Record<string, unknown> | undefined
 
                   return (
-                    <div key={m.mission_id} className={`${styles.missionItem} ${isCompletable ? styles.missionItemReady : ''}`}>
+                    <div key={missionId} className={`${styles.missionItem} ${isCompletable ? styles.missionItemReady : ''}`}>
                       <div
                         className={styles.missionHeader}
-                        onClick={() => toggleExpanded(m.mission_id)}
+                        onClick={() => toggleExpanded(missionId)}
                         style={{ cursor: 'pointer' }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flex: 1, minWidth: 0 }}>
@@ -407,7 +406,7 @@ export function MissionsPanel() {
                         <span className={styles.missionStatusBadge} data-status={isCompletable ? 'completable' : 'active'}>
                           {isCompletable ? 'Ready' : `${Math.round(percentComplete)}%`}
                         </span>
-                        <BugReportButton contextType="mission" entityName={m.title} entityContext={buildMissionContext(m)} />
+                        <BugReportButton contextType="mission" entityName={m.title ?? 'mission'} entityContext={buildMissionContext(toMissionContext(m))} />
                       </div>
 
                       {/* Progress bar */}
@@ -419,10 +418,10 @@ export function MissionsPanel() {
                       </div>
 
                       {/* Giver + location */}
-                      {(giver || issuingBase) && (
+                      {(m.giver || m.issuing_base) && (
                         <div className={styles.missionMeta}>
-                          {giver && <span>{giver.name}, {giver.title}</span>}
-                          {issuingBase && <span className={styles.metaSep}>{issuingBase}{issuingSystemName ? ` (${issuingSystemName})` : ''}</span>}
+                          {m.giver && <span>{m.giver.name}, {m.giver.title}</span>}
+                          {m.issuing_base && <span className={styles.metaSep}>{m.issuing_base}{m.issuing_system_name ? ` (${m.issuing_system_name})` : ''}</span>}
                         </div>
                       )}
 
@@ -438,12 +437,12 @@ export function MissionsPanel() {
                       )}
 
                       {/* Rewards */}
-                      {isExpanded && renderRewards(rewards)}
+                      {isExpanded && renderRewards(m.rewards)}
 
                       {/* Expiration */}
-                      {isExpanded && expiresInTicks != null && expiresInTicks > 0 && (
+                      {isExpanded && m.expires_in_ticks != null && m.expires_in_ticks > 0 && (
                         <div className={styles.expiresIn}>
-                          Expires in {Math.floor(expiresInTicks * 10 / 3600)}h {Math.floor((expiresInTicks * 10 % 3600) / 60)}m
+                          Expires in {Math.floor(m.expires_in_ticks * 10 / 3600)}h {Math.floor((m.expires_in_ticks * 10 % 3600) / 60)}m
                         </div>
                       )}
 
@@ -451,7 +450,7 @@ export function MissionsPanel() {
                       {isCompletable && (
                         <button
                           className={styles.completeBtn}
-                          onClick={() => handleCompleteMission(m.mission_id)}
+                          onClick={() => handleCompleteMission(missionId)}
                           type="button"
                         >
                           <Check size={12} />
@@ -463,7 +462,7 @@ export function MissionsPanel() {
                       {isExpanded && (
                         <button
                           className={styles.abandonBtn}
-                          onClick={() => handleAbandonMission(m.mission_id)}
+                          onClick={() => handleAbandonMission(missionId)}
                           type="button"
                         >
                           <X size={12} />
@@ -481,13 +480,13 @@ export function MissionsPanel() {
         {/* Completed Missions Tab */}
         {activeTab === 'completed' && (
           <>
-            {loadingCompleted && completedMissions.length === 0 && (
+            {completedQuery.loading && completedMissions.length === 0 && (
               <div className={styles.loading}>
                 <span className={shared.spinner} />
                 Loading completed missions...
               </div>
             )}
-            {completedLoaded && completedMissions.length === 0 && !loadingCompleted && (
+            {completedQuery.data && completedMissions.length === 0 && !completedQuery.loading && (
               <div className={shared.emptyState}>
                 No completed missions yet.
               </div>
@@ -511,7 +510,7 @@ export function MissionsPanel() {
                       <span className={styles.missionDifficulty}>{m.difficulty}</span>
                     </div>
                     <div className={styles.missionDesc}>
-                      {m.giver.name} -- {m.giver.title}
+                      {m.giver ? `${m.giver.name} -- ${m.giver.title}` : ''}
                     </div>
                     <div className={styles.completionTime}>
                       Completed {formatRelativeTime(m.completion_time)}
@@ -546,13 +545,13 @@ export function MissionsPanel() {
                   {selectedCompletedMission.description}
                 </div>
                 <div className={styles.missionDesc}>
-                  Given by: {selectedCompletedMission.giver.name} -- {selectedCompletedMission.giver.title}
+                  Given by: {selectedCompletedMission.giver ? `${selectedCompletedMission.giver.name} -- ${selectedCompletedMission.giver.title}` : 'unknown'}
                 </div>
                 <div className={styles.completionTime}>
                   Completed {formatRelativeTime(selectedCompletedMission.completion_time)}
                 </div>
 
-                {selectedCompletedMission.objectives.length > 0 && (
+                {selectedCompletedMission.objectives && selectedCompletedMission.objectives.length > 0 && (
                   <div className={styles.missionDetailSection}>
                     <div className={styles.missionDetailLabel}>Objectives</div>
                     {selectedCompletedMission.objectives.map((obj, i) => (
@@ -568,10 +567,10 @@ export function MissionsPanel() {
                   <div className={styles.missionReward}>
                     <Credits amount={selectedCompletedMission.rewards.credits} />
                   </div>
-                  {selectedCompletedMission.rewards.items && selectedCompletedMission.rewards.items.length > 0 && (
+                  {selectedCompletedMission.rewards.items && Object.keys(selectedCompletedMission.rewards.items).length > 0 && (
                     <div className={styles.missionDesc}>
-                      Items: {selectedCompletedMission.rewards.items.map(
-                        (item) => `${item.item_id} x${item.quantity}`
+                      Items: {Object.entries(selectedCompletedMission.rewards.items).map(
+                        ([itemId, qty]) => `${itemId} x${qty}`
                       ).join(', ')}
                     </div>
                   )}
@@ -613,36 +612,36 @@ export function MissionsPanel() {
               <span className={styles.completionTitle}>Mission Complete</span>
             </div>
             <div className={styles.completionMissionTitle}>
-              {completionResult.title as string}
+              {completionResult.title}
             </div>
-            {!!completionResult.message && (
+            {completionResult.message && (
               <div className={styles.completionDialog}>
-                {completionResult.message as string}
+                {completionResult.message}
               </div>
             )}
             <div className={styles.completionRewards}>
               <div className={styles.completionRewardsLabel}>Rewards</div>
-              {(completionResult.credits_earned as number) > 0 && (
+              {completionResult.credits_earned > 0 && (
                 <div className={styles.completionRewardRow}>
-                  <Credits amount={completionResult.credits_earned as number} />
+                  <Credits amount={completionResult.credits_earned} />
                 </div>
               )}
-              {!!completionResult.items_received && Object.keys(completionResult.items_received as Record<string, number>).length > 0 && (
+              {completionResult.items_received && Object.keys(completionResult.items_received).length > 0 && (
                 <div className={styles.completionRewardRow}>
-                  {Object.entries(completionResult.items_received as Record<string, number>).map(([itemId, qty]) => (
+                  {Object.entries(completionResult.items_received).map(([itemId, qty]) => (
                     <span key={itemId}>{itemId.replace(/_/g, ' ')} x{qty}</span>
                   ))}
                 </div>
               )}
-              {!!completionResult.skill_xp_gained && Object.keys(completionResult.skill_xp_gained as Record<string, number>).length > 0 && (
+              {completionResult.skill_xp_gained && Object.keys(completionResult.skill_xp_gained).length > 0 && (
                 <div className={styles.completionRewardRow}>
-                  {Object.entries(completionResult.skill_xp_gained as Record<string, number>).map(([skill, xp]) => (
+                  {Object.entries(completionResult.skill_xp_gained).map(([skill, xp]) => (
                     <span key={skill} className={styles.completionXp}>+{xp} {skill.replace(/_/g, ' ')} XP</span>
                   ))}
                 </div>
               )}
             </div>
-            {!!completionResult.chain_next && (
+            {completionResult.chain_next && (
               <div className={styles.completionChain}>
                 A new mission is available...
               </div>

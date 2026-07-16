@@ -6,7 +6,7 @@ import {
   Ship,
   Users,
 } from 'lucide-react'
-import { useGame } from '../GameProvider'
+import { usePlayer } from '@/lib/spacemolt'
 import { PanelWithTabs } from '../shared'
 import { StorageView } from './trading/StorageView'
 import { FactionStorageView } from './trading/FactionStorageView'
@@ -15,8 +15,8 @@ import { FleetView } from './ship/FleetView'
 type TabId = 'storage' | 'faction' | 'ships'
 
 export function StoragePanel() {
-  const { state } = useGame()
-  const hasFaction = !!state.player?.faction_id
+  const player = usePlayer()
+  const hasFaction = Boolean(player?.faction_id)
 
   const [activeTab, setActiveTab] = useState<TabId>('storage')
 

@@ -2,18 +2,23 @@
 
 import { useState, useCallback, type ReactNode } from 'react'
 import { AlertTriangle, ChevronDown, ChevronRight, Loader2 } from 'lucide-react'
-import type { Facility } from '@/lib/gameTypes'
-import { useGame } from '../../GameProvider'
+import type { FacilityResponse } from '@spacemolt/lib'
+import type { Facility } from '../../types'
+import { useAccountStore } from '@/lib/spacemolt'
 import { shared } from '../../shared'
 import { BugReportButton } from '../../BugReportButton'
 import { buildFacilityContext } from '../../bugReportContext'
 import { titleCase as formatLabel } from '@/lib/format'
 import {
   extractMaintenanceInputs,
-  type FacilityTypeMaintenanceDetail,
   type MaintenanceInput,
 } from './maintenanceTypes'
 import styles from './facilities.module.css'
+
+// `{ type_id: unknown }` uniquely identifies the single-facility-type detail
+// variant within the FacilityResponse union (see UpgradeModal.tsx — Extract
+// requires the discriminator field to be REQUIRED, not `?`, on that member).
+type FacilityTypeDetail = Extract<FacilityResponse, { type_id: unknown }>
 
 const CATEGORY_BADGE: Record<string, string> = {
   service: shared.badgeGreen,
@@ -35,7 +40,7 @@ type MaintenanceState =
   | { status: 'error' }
 
 export function FacilityCard({ facility, children }: FacilityCardProps) {
-  const { api } = useGame()
+  const store = useAccountStore()
   const serviceLabel = facility.service || facility.personal_service || facility.faction_service
   const production = facility.production
 
@@ -49,19 +54,12 @@ export function FacilityCard({ facility, children }: FacilityCardProps) {
     }
     setExpanded(true)
     if (maintenance.status === 'loaded' || maintenance.status === 'loading') return
-    if (!api) {
-      setMaintenance({ status: 'error' })
-      return
-    }
     setMaintenance({ status: 'loading' })
     try {
       // Mirrors BuildView's facility-type detail fetch — same endpoint, same
       // params shape — so we benefit from the same caching / response shape.
-      const detail = await api.callStructured<FacilityTypeMaintenanceDetail>(
-        'spacemolt_facility',
-        'types',
-        { facility_type: facility.type },
-      )
+      const resp = await store.account.commands.spacemolt_facility.types({ facility_type: facility.type })
+      const detail = resp.structuredContent as FacilityTypeDetail | undefined
       setMaintenance({
         status: 'loaded',
         inputs: extractMaintenanceInputs(detail),
@@ -69,7 +67,7 @@ export function FacilityCard({ facility, children }: FacilityCardProps) {
     } catch {
       setMaintenance({ status: 'error' })
     }
-  }, [api, expanded, facility.type, maintenance.status])
+  }, [store, expanded, facility.type, maintenance.status])
 
   return (
     <div className={styles.card}>

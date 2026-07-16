@@ -6,43 +6,32 @@ import {
   Swords,
   Coins,
   Pickaxe,
-  Navigation,
   Info,
   Cpu,
 } from 'lucide-react'
-import { useGame } from './GameProvider'
-import type { EventLogEntry } from './types'
+import { usePlayUi } from './PlayProvider'
+import type { EventLogEntry } from '@/lib/spacemolt'
 import styles from './ToastContainer.module.css'
 
 const TOAST_DURATION = 4000
 const MAX_TOASTS = 3
 
 const ICON_MAP: Record<string, typeof Info> = {
-  error: AlertTriangle,
+  danger: AlertTriangle,
   combat: Swords,
-  trade: Coins,
-  mining: Pickaxe,
-  travel: Navigation,
+  chat: Coins,
+  success: Pickaxe,
   info: Info,
   warning: AlertTriangle,
-  system: Cpu,
-  crafting: Pickaxe,
-  drone: Cpu,
-  base: Cpu,
 }
 
 const CLASS_MAP: Record<string, string> = {
-  error: styles.toastError,
+  danger: styles.toastError,
   combat: styles.toastCombat,
-  trade: styles.toastTrade,
-  mining: styles.toastMining,
-  travel: styles.toastTravel,
+  success: styles.toastMining,
+  chat: styles.toastTrade,
   info: styles.toastInfo,
   warning: styles.toastWarning,
-  system: styles.toastSystem,
-  crafting: styles.toastMining,
-  drone: styles.toastSystem,
-  base: styles.toastSystem,
 }
 
 interface ToastItem {
@@ -52,9 +41,9 @@ interface ToastItem {
 }
 
 export function ToastContainer() {
-  const { state } = useGame()
+  const eventLog = usePlayUi((s) => s.eventLog)
   const [toasts, setToasts] = useState<ToastItem[]>([])
-  const lastEventIdRef = useRef<string | null>(null)
+  const lastEventIdRef = useRef<number | null>(null)
 
   const dismissToast = useCallback((id: string) => {
     setToasts((prev) => prev.map((t) => (t.id === id ? { ...t, exiting: true } : t)))
@@ -64,13 +53,13 @@ export function ToastContainer() {
   }, [])
 
   useEffect(() => {
-    if (state.eventLog.length === 0) return
-    const latest = state.eventLog[0]
+    if (eventLog.length === 0) return
+    const latest = eventLog[0]
     if (latest.id === lastEventIdRef.current) return
     lastEventIdRef.current = latest.id
 
-    // Only show toasts for errors
-    if (latest.type !== 'error') return
+    // Only surface urgent events as toasts
+    if (latest.kind !== 'danger') return
 
     const toastId = `toast-${latest.id}`
     setToasts((prev) => {
@@ -79,22 +68,22 @@ export function ToastContainer() {
     })
 
     setTimeout(() => dismissToast(toastId), TOAST_DURATION)
-  }, [state.eventLog, dismissToast])
+  }, [eventLog, dismissToast])
 
   if (toasts.length === 0) return null
 
   return (
     <div className={styles.container}>
       {toasts.map((toast) => {
-        const Icon = ICON_MAP[toast.entry.type] || Info
-        const colorClass = CLASS_MAP[toast.entry.type] || ''
+        const Icon = ICON_MAP[toast.entry.kind] || Info
+        const colorClass = CLASS_MAP[toast.entry.kind] || ''
         return (
           <div
             key={toast.id}
             className={`${styles.toast} ${colorClass} ${toast.exiting ? styles.exiting : ''}`}
           >
             <Icon size={14} className={styles.toastIcon} />
-            <span className={styles.toastMessage}>{toast.entry.message}</span>
+            <span className={styles.toastMessage}>{toast.entry.text}</span>
           </div>
         )
       })}

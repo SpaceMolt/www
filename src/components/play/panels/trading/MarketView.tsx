@@ -20,7 +20,17 @@ import {
   X,
   Lightbulb,
 } from 'lucide-react'
-import { useGame } from '../../GameProvider'
+import {
+  useAccountStore,
+  useCargo,
+  useCommandMutation,
+  useCommandQuery,
+  useLocationState,
+  usePlayer,
+  type RunMutation,
+} from '@/lib/spacemolt'
+import type { AnalyzeMarketResponse, Commands, EstimatePurchaseResponse, MutationResult, StorageResponse, ViewMarketResponse, ViewOrdersResponse } from '@spacemolt/lib'
+import { usePlay } from '../../PlayProvider'
 import { getCatalogItem } from '../../../ItemDetail'
 import { ItemName } from '../../ItemTooltip'
 import { Credits, Loading, Modal, shared } from '../../shared'
@@ -28,51 +38,30 @@ import { useHoverTooltip } from '../../hooks/useHoverTooltip'
 import { titleCase } from '@/lib/format'
 import styles from './MarketView.module.css'
 
-interface MarketInsight {
-  category: string
-  item: string
+type MarketInsight = AnalyzeMarketResponse['insights'][number]
+type MarketItem = ViewMarketResponse['items'][number]
+
+// StorageResponse is one generated union across every branch of the unified
+// storage action (self view, faction view, deposit/withdraw/gift results) —
+// narrow to the branch view({}) actually returns.
+type PersonalStorageView = Extract<StorageResponse, { hint: string; ships: Array<unknown> }>
+
+interface CargoRow {
   item_id: string
-  message: string
-  priority: number
-}
-
-interface AnalysisData {
-  insights: MarketInsight[]
-  skill_level: number
-  station: string
-  message: string
-}
-
-interface EstimateFill {
-  price_each: number
+  name: string
   quantity: number
-  source: string
+  size?: number
 }
 
-interface EstimateData {
-  item: string
-  quantity_requested: number
-  available: number
-  total_cost: number
-  fills: EstimateFill[]
-  unfilled: number
-  message: string
+/** useCargo() rows are all-optional (delta-friendly wire shape); drop incomplete entries and normalize item_name -> name. */
+function normalizeCargo(raw: ReturnType<typeof useCargo>): CargoRow[] {
+  return (raw ?? []).flatMap((c) => {
+    if (!c.item_id || !c.quantity) return []
+    return [{ item_id: c.item_id, name: c.item_name ?? c.item_id, quantity: c.quantity, size: c.size }]
+  })
 }
 
-interface MarketItem {
-  item_id: string
-  item_name: string
-  category: string
-  best_buy: number
-  best_sell: number
-  buy_price: number
-  buy_quantity: number
-  sell_price: number
-  sell_quantity: number
-  spread?: number
-  buy_orders: Array<{ price_each: number; quantity: number; source?: string; my_quantity?: number }>
-  sell_orders: Array<{ price_each: number; quantity: number; source?: string; my_quantity?: number }>
-}
+const errorMessage = (err: unknown): string => (err instanceof Error ? err.message : String(err))
 
 type SortField = 'name' | 'have' | 'buyQty' | 'buyPrice' | 'sellQty' | 'sellPrice' | 'spread'
 type SortDir = 'asc' | 'desc'
@@ -116,21 +105,49 @@ function InsightBadge({ insights }: { insights: MarketInsight[] }) {
 }
 
 export function MarketView() {
-  const { state, sendCommand } = useGame()
-  const isDocked = state.isDocked
-  const marketData = state.marketData
-  const cargo = state.ship?.cargo || []
+  const store = useAccountStore()
+  const { uiStore } = usePlay()
+  const location = useLocationState()
+  const dockedAt = location?.docked_at
+  const isDocked = Boolean(dockedAt)
+  const player = usePlayer()
+  const credits = player?.credits ?? 0
+  const rawCargo = useCargo()
+  const cargo = useMemo(() => normalizeCargo(rawCargo), [rawCargo])
+  const mutate = useCommandMutation()
 
-  const credits = state.player?.credits ?? 0
-  const storageItems = state.storageData?.items || []
-  const ordersData = state.ordersData
+  const reportError = useCallback((err: unknown) => {
+    const text = errorMessage(err)
+    uiStore.dispatch({ type: 'toast', kind: 'danger', text })
+    uiStore.dispatch({ type: 'event', kind: 'danger', text })
+  }, [uiStore])
+
+  const { data: marketData, error: marketError, refetch: refetchMarket } = useCommandQuery(
+    async (account) => (await account.commands.spacemolt_market.view_market()).structuredContent,
+    [dockedAt],
+    { enabled: isDocked },
+  )
+
+  const { data: storageData } = useCommandQuery(
+    async (account) => (await account.commands.spacemolt_storage.view()).structuredContent as PersonalStorageView | undefined,
+    [dockedAt],
+    { enabled: isDocked, refreshOnSections: ['cargo'] },
+  )
+
+  const { data: ordersData, refetch: refetchOrders } = useCommandQuery(
+    async (account) => (await account.commands.spacemolt_market.view_orders()).structuredContent,
+    [dockedAt],
+    { enabled: isDocked },
+  )
+
+  const storageItems = storageData?.items ?? []
 
   const [expandedItem, setExpandedItem] = useState<string | null>(null)
-  const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null)
+  const [analysisData, setAnalysisData] = useState<AnalyzeMarketResponse | null>(null)
   const [analysisLoading, setAnalysisLoading] = useState(false)
 
   // Buy confirmation modal
-  const [buyEstimate, setBuyEstimate] = useState<{ itemId: string; itemName: string; data: EstimateData } | null>(null)
+  const [buyEstimate, setBuyEstimate] = useState<{ itemId: string; itemName: string; data: EstimatePurchaseResponse } | null>(null)
   const [estimating, setEstimating] = useState(false)
   const [buying, setBuying] = useState(false)
 
@@ -152,38 +169,24 @@ export function MarketView() {
   // Track whether we've auto-analyzed for the current market data
   const analyzedRef = useRef(false)
 
-  // Auto-fetch market + storage data when docked
-  useEffect(() => {
-    if (isDocked && !marketData) {
-      sendCommand('view_market')
-    }
-    if (isDocked && !state.storageData) {
-      sendCommand('view_storage')
-    }
-    if (isDocked && !ordersData) {
-      sendCommand('view_orders')
-    }
-  }, [isDocked, marketData, state.storageData, ordersData, sendCommand])
-
   // Auto-analyze market when data arrives
   useEffect(() => {
     if (!marketData || analyzedRef.current) return
     analyzedRef.current = true
     setAnalysisLoading(true)
-    sendCommand('analyze_market').then((resp: unknown) => {
-      const r = resp as Record<string, unknown>
-      if (!r.error) {
-        const data = resp as AnalysisData
-        if (data.insights) setAnalysisData(data)
-      }
-      setAnalysisLoading(false)
-    })
-  }, [marketData, sendCommand])
+    store.account.commands.spacemolt_market.analyze_market().then(
+      (result) => {
+        if (result.structuredContent?.insights) setAnalysisData(result.structuredContent)
+        setAnalysisLoading(false)
+      },
+      () => setAnalysisLoading(false)
+    )
+  }, [marketData, store])
 
   const handleRefresh = useCallback(() => {
     analyzedRef.current = false
-    sendCommand('view_market')
-  }, [sendCommand])
+    refetchMarket()
+  }, [refetchMarket])
 
   const handleCategoryToggle = useCallback((category: string) => {
     setSelectedCategory(prev => prev === category ? '' : category)
@@ -208,41 +211,45 @@ export function MarketView() {
 
   // Buy at market: estimate first, then show modal
   const handleBuyEstimate = useCallback(
-    (itemId: string, itemName: string, quantity: number) => {
+    async (itemId: string, itemName: string, quantity: number) => {
       setEstimating(true)
-      sendCommand('estimate_purchase', { item_id: itemId, quantity }).then((resp: unknown) => {
-        const r = resp as Record<string, unknown>
-        if (!r.error) setBuyEstimate({ itemId, itemName, data: resp as EstimateData })
+      try {
+        const result = await store.account.commands.spacemolt_market.estimate_purchase({ item_id: itemId, quantity })
+        if (result.structuredContent) setBuyEstimate({ itemId, itemName, data: result.structuredContent })
+      } catch (err) {
+        reportError(err)
+      } finally {
         setEstimating(false)
-      })
+      }
     },
-    [sendCommand]
+    [store, reportError]
   )
 
-  const handleConfirmBuy = useCallback(() => {
+  const handleConfirmBuy = useCallback(async () => {
     if (!buyEstimate) return
     setBuying(true)
-    sendCommand('buy', { item_id: buyEstimate.itemId, quantity: buyEstimate.data.quantity_requested }).then((resp: unknown) => {
+    try {
+      await mutate((c) => c.spacemolt.buy({ id: buyEstimate.itemId, quantity: buyEstimate.data.quantity_requested }), { label: 'buy' })
+      setBuyEstimate(null)
+      refetchMarket()
+    } catch (err) {
+      reportError(err)
+    } finally {
       setBuying(false)
-      const r = resp as Record<string, unknown>
-      if (!r.error) {
-        setBuyEstimate(null)
-        sendCommand('view_market')
-      }
-    })
-  }, [sendCommand, buyEstimate])
+    }
+  }, [mutate, buyEstimate, refetchMarket, reportError])
 
-  const handleAnalyzeMarket = useCallback(() => {
+  const handleAnalyzeMarket = useCallback(async () => {
     setAnalysisLoading(true)
-    sendCommand('analyze_market').then((resp: unknown) => {
-      const r = resp as Record<string, unknown>
-      if (!r.error) {
-        const data = resp as AnalysisData
-        if (data.insights) setAnalysisData(data)
-      }
+    try {
+      const result = await store.account.commands.spacemolt_market.analyze_market()
+      if (result.structuredContent?.insights) setAnalysisData(result.structuredContent)
+    } catch (err) {
+      reportError(err)
+    } finally {
       setAnalysisLoading(false)
-    })
-  }, [sendCommand])
+    }
+  }, [store, reportError])
 
   // Sell confirmation: show modal with price check
   const handleQuickSell = useCallback(
@@ -252,23 +259,24 @@ export function MarketView() {
     []
   )
 
-  const handleConfirmSell = useCallback(() => {
+  const handleConfirmSell = useCallback(async () => {
     if (!sellConfirm) return
     setSelling(true)
-    sendCommand('sell', { item_id: sellConfirm.itemId, quantity: sellConfirm.quantity }).then((resp: unknown) => {
+    try {
+      await mutate((c) => c.spacemolt.sell({ id: sellConfirm.itemId, quantity: sellConfirm.quantity }), { label: 'sell' })
+      setSellConfirm(null)
+      refetchMarket()
+    } catch (err) {
+      reportError(err)
+    } finally {
       setSelling(false)
-      const r = resp as Record<string, unknown>
-      if (!r.error) {
-        setSellConfirm(null)
-        sendCommand('view_market')
-      }
-    })
-  }, [sendCommand, sellConfirm])
+    }
+  }, [mutate, sellConfirm, refetchMarket, reportError])
 
   const haveMap = useMemo(() => {
     const map = new Map<string, number>()
     for (const c of cargo) map.set(c.item_id, (map.get(c.item_id) ?? 0) + c.quantity)
-    for (const s of storageItems as Array<{ item_id: string; quantity: number }>) map.set(s.item_id, (map.get(s.item_id) ?? 0) + s.quantity)
+    for (const s of storageItems) map.set(s.item_id, (map.get(s.item_id) ?? 0) + s.quantity)
     return map
   }, [cargo, storageItems])
 
@@ -293,7 +301,7 @@ export function MarketView() {
 
   // Filter and sort items
   const { groupedItems, visibleCategories } = useMemo(() => {
-    const items = (marketData?.items || []) as MarketItem[]
+    const items = marketData?.items ?? []
     const search = searchQuery.toLowerCase().trim()
 
     // Filter
@@ -320,7 +328,7 @@ export function MarketView() {
           quantity: (prev?.quantity ?? 0) + c.quantity,
         })
       }
-      for (const s of storageItems as Array<{ item_id: string; name: string; quantity: number }>) {
+      for (const s of storageItems) {
         const prev = owned.get(s.item_id)
         owned.set(s.item_id, {
           name: s.name || prev?.name || s.item_id,
@@ -342,7 +350,9 @@ export function MarketView() {
           item_name: info.name,
           category: 'inventory',
           best_buy: 0,
+          best_buy_qty: 0,
           best_sell: 0,
+          best_sell_qty: 0,
           buy_price: 0,
           buy_quantity: 0,
           sell_price: 0,
@@ -391,7 +401,7 @@ export function MarketView() {
       groupedItems: sortedCats.map(cat => ({ category: cat, items: groups[cat] })),
       visibleCategories: sortedCats,
     }
-  }, [marketData?.items, selectedCategory, searchQuery, showFilter, sortField, sortDir, haveMap, insightsByItem])
+  }, [marketData?.items, selectedCategory, searchQuery, showFilter, sortField, sortDir, haveMap, insightsByItem, cargo, storageItems])
 
   if (!isDocked) {
     return (
@@ -523,7 +533,11 @@ export function MarketView() {
       )}
 
       {!marketData ? (
-        <Loading message="Loading market data..." />
+        marketError ? (
+          <div className={shared.emptyState}>{marketError}</div>
+        ) : (
+          <Loading message="Loading market data..." />
+        )
       ) : groupedItems.length === 0 ? (
         <div className={shared.emptyState}>
           {showFilter === 'insights'
@@ -624,11 +638,14 @@ export function MarketView() {
                           item={item}
                           credits={credits}
                           getAvailable={getAvailable}
-                          sendCommand={sendCommand}
+                          mutate={mutate}
                           ordersData={ordersData}
                           onBuyEstimate={handleBuyEstimate}
                           estimating={estimating}
                           onQuickSell={handleQuickSell}
+                          onRefreshMarket={refetchMarket}
+                          onRefreshOrders={refetchOrders}
+                          onError={reportError}
                         />
                       )}
                     </div>
@@ -737,15 +754,18 @@ function QtyButtons({ max, current, onChange }: { max: number; current: string; 
 }
 
 /** Expanded panel for a single market item — order book + actions */
-function ExpandedItemPanel({ item, credits, getAvailable, sendCommand, ordersData, onBuyEstimate, estimating, onQuickSell }: {
+function ExpandedItemPanel({ item, credits, getAvailable, mutate, ordersData, onBuyEstimate, estimating, onQuickSell, onRefreshMarket, onRefreshOrders, onError }: {
   item: MarketItem
   credits: number
   getAvailable: (itemId: string) => number
-  sendCommand: (cmd: string, params?: Record<string, unknown>) => Promise<unknown>
-  ordersData: { orders: Array<{ order_id: string; item_id: string; price_each: number; order_type: string; remaining: number }> } | null
+  mutate: RunMutation
+  ordersData: ViewOrdersResponse | undefined
   onBuyEstimate: (itemId: string, itemName: string, qty: number) => void
   estimating: boolean
   onQuickSell: (itemId: string, itemName: string, quantity: number, priceEach: number, baseValue: number) => void
+  onRefreshMarket: () => void
+  onRefreshOrders: () => void
+  onError: (err: unknown) => void
 }) {
   const available = getAvailable(item.item_id)
   const catalogItem = getCatalogItem(item.item_id)
@@ -767,36 +787,52 @@ function ExpandedItemPanel({ item, credits, getAvailable, sendCommand, ordersDat
   const [orderQtys, setOrderQtys] = useState<Record<string, string>>({})
   const setOrderQty = (key: string, val: string) => setOrderQtys(prev => ({ ...prev, [key]: val }))
 
-  const submitOrder = useCallback((cmd: string, params: Record<string, unknown>, onSuccess?: () => void) => {
+  const submitOrder = useCallback((run: (c: Commands) => Promise<MutationResult>, onSuccess?: () => void) => {
     setListing(true)
-    sendCommand(cmd, params).then((resp: unknown) => {
-      setListing(false)
-      const r = resp as Record<string, unknown>
-      if (!r.error) {
-        sendCommand('view_market')
+    mutate(run, { label: 'market_order' }).then(
+      () => {
+        setListing(false)
+        onRefreshMarket()
         onSuccess?.()
-      }
-    })
-  }, [sendCommand])
+      },
+      (err) => {
+        setListing(false)
+        onError(err)
+      },
+    )
+  }, [mutate, onRefreshMarket, onError])
 
   const handleTradeOrder = useCallback(
-    (cmd: 'buy' | 'sell', qty: number) => sendCommand(cmd, { item_id: item.item_id, quantity: qty }).then(() => { sendCommand('view_market') }),
-    [sendCommand, item.item_id]
+    (cmd: 'buy' | 'sell', qty: number) => {
+      const promise = cmd === 'buy'
+        ? mutate((c) => c.spacemolt.buy({ id: item.item_id, quantity: qty }), { label: 'buy' })
+        : mutate((c) => c.spacemolt.sell({ id: item.item_id, quantity: qty }), { label: 'sell' })
+      promise.then(
+        () => onRefreshMarket(),
+        (err) => onError(err),
+      )
+    },
+    [mutate, item.item_id, onRefreshMarket, onError]
   )
 
   const handleCancelOrder = useCallback(
-    (orderId: string) => sendCommand('cancel_order', { order_id: orderId }).then(() => {
-      sendCommand('view_market')
-      sendCommand('view_orders')
-    }),
-    [sendCommand]
+    (orderId: string) => {
+      mutate((c) => c.spacemolt_market.cancel_order({ order_id: orderId }), { label: 'cancel_order' }).then(
+        () => {
+          onRefreshMarket()
+          onRefreshOrders()
+        },
+        (err) => onError(err),
+      )
+    },
+    [mutate, onRefreshMarket, onRefreshOrders, onError]
   )
 
   const handleSubmitListing = useCallback(() => {
     const qty = parseInt(listingQty, 10)
     const price = parseInt(listingPrice, 10)
     if (qty >= 1 && price >= 1) {
-      submitOrder('create_sell_order', { item_id: item.item_id, quantity: qty, price_each: price }, () => {
+      submitOrder((c) => c.spacemolt_market.create_sell_order({ item_id: item.item_id, quantity: qty, price_each: price }), () => {
         setListingOpen(false); setListingQty(''); setListingPrice('')
       })
     }
@@ -971,7 +1007,7 @@ function ExpandedItemPanel({ item, credits, getAvailable, sendCommand, ordersDat
             </button>
             <button
               className={shared.actionBtn}
-              onClick={() => submitOrder('create_buy_order', { item_id: item.item_id, quantity: parseInt(buyQty, 10) || 0, price_each: baseValue })}
+              onClick={() => submitOrder((c) => c.spacemolt_market.create_buy_order({ item_id: item.item_id, quantity: parseInt(buyQty, 10) || 0, price_each: baseValue }))}
               disabled={!buyQty || parseInt(buyQty, 10) < 1 || baseValue < 1}
               title={baseValue > 0 ? `Place buy order at ${baseValue.toLocaleString()} cr each` : 'Base price unavailable'}
               type="button"
@@ -1013,7 +1049,7 @@ function ExpandedItemPanel({ item, credits, getAvailable, sendCommand, ordersDat
               </button>
               <button
                 className={shared.warningBtn}
-                onClick={() => submitOrder('create_sell_order', { item_id: item.item_id, quantity: available, price_each: baseValue })}
+                onClick={() => submitOrder((c) => c.spacemolt_market.create_sell_order({ item_id: item.item_id, quantity: available, price_each: baseValue }))}
                 disabled={listing || available === 0 || baseValue < 1}
                 title={baseValue > 0 ? `List all ${available} at ${baseValue.toLocaleString()} cr each` : 'Base price unavailable'}
                 type="button"

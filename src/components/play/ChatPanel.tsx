@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { useGame } from './GameProvider'
+import { useAccountStore } from '@/lib/spacemolt'
+import { usePlay, usePlayUi } from './PlayProvider'
 import { Send, Hash, Users, Shield, MessageSquare } from 'lucide-react'
 import styles from './ChatPanel.module.css'
 
@@ -25,19 +26,16 @@ function formatTimestamp(ts?: string | null): string {
 }
 
 export function ChatPanel() {
-  const { state, sendCommand } = useGame()
+  const store = useAccountStore()
+  const { uiStore } = usePlay()
+  const chatMessages = usePlayUi((s) => s.chatMessages)
   const [activeChannel, setActiveChannel] = useState<Channel>('local')
   const [input, setInput] = useState('')
   const [privateTarget, setPrivateTarget] = useState('')
   const messagesRef = useRef<HTMLDivElement>(null)
   const isAutoScrollRef = useRef(true)
 
-  const filteredMessages = state.chatMessages.filter((msg) => {
-    if (activeChannel === 'private') {
-      return msg.channel === 'private' || msg.channel === 'whisper'
-    }
-    return msg.channel === activeChannel
-  })
+  const filteredMessages = chatMessages.filter((msg) => msg.channel === activeChannel)
 
   useEffect(() => {
     const el = messagesRef.current
@@ -58,17 +56,17 @@ export function ChatPanel() {
     const content = input.trim()
     if (!content) return
 
-    const payload: Record<string, unknown> = {
-      channel: activeChannel,
-      content,
-    }
-    if (activeChannel === 'private' && privateTarget.trim()) {
-      payload.target_id = privateTarget.trim()
-    }
+    const targetId = activeChannel === 'private' && privateTarget.trim() ? privateTarget.trim() : undefined
 
-    sendCommand('chat', payload)
     setInput('')
-  }, [input, activeChannel, privateTarget, sendCommand])
+    void store.account.commands.spacemolt_social
+      .chat({ content, target: activeChannel, target_id: targetId })
+      .catch((err) => {
+        const message = err instanceof Error ? err.message : 'Failed to send message'
+        uiStore.dispatch({ type: 'toast', kind: 'danger', text: message })
+        uiStore.dispatch({ type: 'event', kind: 'danger', text: message })
+      })
+  }, [input, activeChannel, privateTarget, store, uiStore])
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -108,8 +106,8 @@ export function ChatPanel() {
             No messages in {CHANNEL_CONFIG[activeChannel].label}
           </div>
         ) : (
-          filteredMessages.map((msg) => (
-            <div key={msg.id} className={styles.message}>
+          filteredMessages.map((msg, index) => (
+            <div key={msg.id ?? index} className={styles.message}>
               <div className={styles.messageMeta}>
                 <span className={styles.sender}>{msg.sender}</span>
                 {msg.target_name && (
@@ -119,7 +117,7 @@ export function ChatPanel() {
                   </>
                 )}
                 <span className={styles.timestamp}>
-                  {formatTimestamp(msg.timestamp || msg.timestamp_utc)}
+                  {formatTimestamp(msg.timestamp)}
                 </span>
               </div>
               <div className={styles.messageContent}>{msg.content}</div>

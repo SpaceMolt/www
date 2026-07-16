@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Radio, MessageSquare, ChevronUp } from 'lucide-react'
-import { useGame } from './GameProvider'
+import { usePlayUi } from './PlayProvider'
 import { EventLog } from './EventLog'
 import { ChatPanel } from './ChatPanel'
 import styles from './RightPane.module.css'
@@ -10,12 +10,13 @@ import styles from './RightPane.module.css'
 type SubTab = 'events' | 'chat'
 
 export function RightPane() {
-  const { state } = useGame()
+  const eventLog = usePlayUi((s) => s.eventLog)
+  const chatMessages = usePlayUi((s) => s.chatMessages)
   const [activeTab, setActiveTab] = useState<SubTab>('events')
   const [mobileExpanded, setMobileExpanded] = useState(false)
 
-  const eventCount = state.eventLog.length
-  const hasUnreadChat = state.chatMessages.length > 0
+  const eventCount = eventLog.length
+  const hasUnreadChat = chatMessages.length > 0
 
   return (
     <div className={`${styles.container} ${mobileExpanded ? styles.containerExpanded : ''}`}>

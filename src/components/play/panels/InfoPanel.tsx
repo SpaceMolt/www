@@ -10,16 +10,17 @@ import {
   ExternalLink,
   ScrollText,
 } from 'lucide-react'
-import { useGame } from '../GameProvider'
+import { SpacemoltError } from '@spacemolt/lib'
+import type { Commands, GetActionLogResponse, GetNotesResponse } from '@spacemolt/lib'
+import { useAccountStore, usePlayer } from '@/lib/spacemolt'
+import { usePlay } from '../PlayProvider'
 import { ActionButton } from '../ActionButton'
 import { PanelWithTabs, shared } from '../shared'
 import styles from './InfoPanel.module.css'
 
-interface Note {
-  id: string
-  title: string
-  content: string
-}
+type Note = GetNotesResponse['notes'][number]
+type ActionLogEntry = GetActionLogResponse['entries'][number]
+type ActionLogCategory = NonNullable<Parameters<Commands['spacemolt_social']['get_action_log']>[0]>['category']
 
 interface LogEntry {
   id: string
@@ -27,18 +28,15 @@ interface LogEntry {
   timestamp: string
 }
 
-interface ActionLogEntry {
-  id: string
-  category: string
-  event_type: string
-  summary: string
-  created_at: string
-  data?: Record<string, unknown>
-}
-
 const ACTION_LOG_CATEGORIES = [
   'all', 'combat', 'trading', 'crafting', 'ship', 'faction', 'mission', 'skill', 'salvage', 'mining',
 ] as const
+
+function errorMessage(err: unknown): string {
+  if (err instanceof SpacemoltError) return err.message
+  if (err instanceof Error) return err.message
+  return 'Action failed'
+}
 
 function formatRelativeTime(isoStr: string): string {
   const date = new Date(isoStr)
@@ -56,7 +54,11 @@ function formatRelativeTime(isoStr: string): string {
 }
 
 export function InfoPanel() {
-  const { state, sendCommand } = useGame()
+  const store = useAccountStore()
+  const { uiStore } = usePlay()
+  const player = usePlayer()
+  const welcome = store.account.welcome
+
   const [notes, setNotes] = useState<Note[]>([])
   const [notesLoaded, setNotesLoaded] = useState(false)
   const [loadingNotes, setLoadingNotes] = useState(false)
@@ -78,66 +80,89 @@ export function InfoPanel() {
   const [loadingActionLog, setLoadingActionLog] = useState(false)
   const [loadingMoreActionLog, setLoadingMoreActionLog] = useState(false)
 
-  const handleHelp = useCallback(() => {
-    sendCommand('help')
-  }, [sendCommand])
+  const reportError = useCallback(
+    (err: unknown) => {
+      const text = errorMessage(err)
+      uiStore.dispatch({ type: 'toast', kind: 'danger', text })
+    },
+    [uiStore],
+  )
+
+  const handleHelp = useCallback(async () => {
+    try {
+      const resp = await store.account.commands.spacemolt.get_commands()
+      const actions = resp.structuredContent?.actions ?? []
+      const tools = new Set(actions.map((a) => a.tool)).size
+      uiStore.dispatch({
+        type: 'event',
+        kind: 'info',
+        text: `${actions.length} commands available across ${tools} tools. Use get_guide for a playstyle walkthrough.`,
+      })
+    } catch (err) {
+      reportError(err)
+    }
+  }, [store, uiStore, reportError])
 
   const handleLoadNotes = useCallback(async () => {
     setLoadingNotes(true)
     try {
-      const resp = await sendCommand('get_notes')
-      const loadedNotes = (resp.notes || []) as Note[]
-      setNotes(loadedNotes)
+      const resp = await store.account.commands.spacemolt_social.get_notes()
+      setNotes(resp.structuredContent?.notes ?? [])
       setNotesLoaded(true)
+    } catch (err) {
+      reportError(err)
     } finally {
       setLoadingNotes(false)
     }
-  }, [sendCommand])
+  }, [store, reportError])
 
-  const handleCreateNote = useCallback(() => {
+  const handleCreateNote = useCallback(async () => {
     if (!noteTitle.trim() || !noteContent.trim()) return
     setCreatingNote(true)
-    sendCommand('create_note', {
-      title: noteTitle.trim(),
-      content: noteContent.trim(),
-    })
-    setNoteTitle('')
-    setNoteContent('')
-    setShowNoteForm(false)
-    setTimeout(() => setCreatingNote(false), 2000)
-  }, [sendCommand, noteTitle, noteContent])
+    try {
+      await store.account.commands.spacemolt_social.create_note({
+        title: noteTitle.trim(),
+        content: noteContent.trim(),
+      })
+      setNoteTitle('')
+      setNoteContent('')
+      setShowNoteForm(false)
+    } catch (err) {
+      reportError(err)
+    } finally {
+      setCreatingNote(false)
+    }
+  }, [store, noteTitle, noteContent, reportError])
 
   const handleLoadLog = useCallback(async () => {
     setLoadingLog(true)
     try {
       // captains_log_list is paginated: one entry per index (0 = newest).
       // Fetch index 0 to learn total_count, then pull the rest in parallel.
-      type LogResp = {
-        entry?: { index: number; entry: string; created_at: string } | null
-        total_count?: number
-      }
-      const first = (await sendCommand('captains_log_list', { index: 0 })) as LogResp
-      const total = first.total_count || 0
-      if (total === 0 || !first.entry) {
+      const first = (await store.account.commands.spacemolt_social.captains_log_list({ index: 0 })).structuredContent
+      const total = first?.total_count || 0
+      if (total === 0 || !first?.entry) {
         setLogEntries([])
         setLogLoaded(true)
         return
       }
-      const rest = (await Promise.all(
+      const rest = await Promise.all(
         Array.from({ length: total - 1 }, (_, i) =>
-          sendCommand('captains_log_list', { index: i + 1 })
+          store.account.commands.spacemolt_social.captains_log_list({ index: i + 1 })
         )
-      )) as LogResp[]
-      const entries: LogEntry[] = [first, ...rest]
-        .map((r) => r.entry)
-        .filter((e): e is NonNullable<LogResp['entry']> => Boolean(e))
+      )
+      const entries: LogEntry[] = [first, ...rest.map((r) => r.structuredContent)]
+        .map((r) => r?.entry)
+        .filter((e): e is NonNullable<typeof e> => Boolean(e))
         .map((e) => ({ id: String(e.index), message: e.entry, timestamp: e.created_at }))
       setLogEntries(entries)
       setLogLoaded(true)
+    } catch (err) {
+      reportError(err)
     } finally {
       setLoadingLog(false)
     }
-  }, [sendCommand])
+  }, [store, reportError])
 
   // Action Log handlers
   const [actionLogPage, setActionLogPage] = useState(1)
@@ -145,37 +170,36 @@ export function InfoPanel() {
   const handleLoadActionLog = useCallback(async () => {
     setLoadingActionLog(true)
     try {
-      const params: Record<string, unknown> = { page: 1, page_size: 20 }
-      if (actionLogCategory !== 'all') params.category = actionLogCategory
-      const resp = await sendCommand('get_action_log', params)
-      const entries = (resp.entries || []) as ActionLogEntry[]
-      setActionLogEntries(entries)
-      setActionLogHasMore(!!(resp.has_more))
+      const category = actionLogCategory === 'all' ? undefined : (actionLogCategory as ActionLogCategory)
+      const resp = await store.account.commands.spacemolt_social.get_action_log({ page: 1, page_size: 20, category })
+      const data = resp.structuredContent
+      setActionLogEntries(data?.entries ?? [])
+      setActionLogHasMore(Boolean(data?.has_more))
       setActionLogPage(1)
+    } catch (err) {
+      reportError(err)
     } finally {
       setLoadingActionLog(false)
     }
-  }, [sendCommand, actionLogCategory])
+  }, [store, actionLogCategory, reportError])
 
   const handleLoadMoreActionLog = useCallback(async () => {
     if (actionLogEntries.length === 0) return
     setLoadingMoreActionLog(true)
     try {
       const nextPage = actionLogPage + 1
-      const params: Record<string, unknown> = { page: nextPage, page_size: 20 }
-      if (actionLogCategory !== 'all') params.category = actionLogCategory
-      const resp = await sendCommand('get_action_log', params)
-      const entries = (resp.entries || []) as ActionLogEntry[]
-      setActionLogEntries(prev => [...prev, ...entries])
-      setActionLogHasMore(!!(resp.has_more))
+      const category = actionLogCategory === 'all' ? undefined : (actionLogCategory as ActionLogCategory)
+      const resp = await store.account.commands.spacemolt_social.get_action_log({ page: nextPage, page_size: 20, category })
+      const data = resp.structuredContent
+      setActionLogEntries(prev => [...prev, ...(data?.entries ?? [])])
+      setActionLogHasMore(Boolean(data?.has_more))
       setActionLogPage(nextPage)
+    } catch (err) {
+      reportError(err)
     } finally {
       setLoadingMoreActionLog(false)
     }
-  }, [sendCommand, actionLogCategory, actionLogEntries, actionLogPage])
-
-  const player = state.player
-  const welcome = state.welcome
+  }, [store, actionLogCategory, actionLogEntries, actionLogPage, reportError])
 
   const tabs = [
     { id: 'info', label: 'Info', icon: <Info size={12} /> },
@@ -373,7 +397,7 @@ export function InfoPanel() {
           {notes.length > 0 && (
             <div className={styles.noteList}>
               {notes.map((note) => (
-                <div key={note.id} className={styles.noteItem}>
+                <div key={note.note_id} className={styles.noteItem}>
                   <span className={styles.noteIcon}>
                     <FileText size={12} />
                   </span>

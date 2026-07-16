@@ -1,21 +1,29 @@
 'use client'
 
-import { useGame } from './GameProvider'
+import { useCurrentTick, useLocationState } from '@/lib/spacemolt'
 import { Navigation, Zap } from 'lucide-react'
 import styles from './TravelProgress.module.css'
 
 export function TravelProgress() {
-  const { state } = useGame()
+  const location = useLocationState()
+  const currentTick = useCurrentTick()
 
-  if (state.travelProgress === null) return null
+  if (!location?.in_transit) return null
 
-  const progress = Math.max(0, Math.min(100, state.travelProgress))
-  const destination = state.travelDestination || 'Unknown'
-  const travelType = state.travelType || 'travel'
-  const arrivalTick = state.travelArrivalTick
-  const eta = arrivalTick !== null ? Math.max(0, arrivalTick - state.currentTick) : null
-
+  const travelType = location.transit_type || 'travel'
   const isJump = travelType === 'jump'
+  const destination =
+    (isJump ? location.transit_dest_system_name : location.transit_dest_poi_name) ||
+    location.transit_dest_poi_name ||
+    location.transit_dest_system_name ||
+    'Unknown'
+
+  const arrivalTick = location.transit_arrival_tick
+  const elapsed = location.transit_ticks_elapsed ?? 0
+  const eta = arrivalTick !== undefined ? Math.max(0, arrivalTick - currentTick) : null
+  const totalTicks = eta !== null ? elapsed + eta : null
+  const progress =
+    totalTicks && totalTicks > 0 ? Math.max(0, Math.min(100, (elapsed / totalTicks) * 100)) : 0
 
   return (
     <div className={`${styles.container} ${styles.pulse}`}>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Trophy, RefreshCw } from 'lucide-react'
-import { useGame } from '../GameProvider'
+import { usePlayer } from '@/lib/spacemolt'
 import { Panel, Loading, shared } from '../shared'
 import {
   fetchPlayerAchievements,
@@ -17,8 +17,8 @@ import styles from './AchievementsPanel.module.css'
 type FilterMode = 'all' | 'earned' | 'locked'
 
 export function AchievementsPanel() {
-  const { state } = useGame()
-  const username = state.player?.username
+  const player = usePlayer()
+  const username = player?.username
   const [data, setData] = useState<PublicAchievementsResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)

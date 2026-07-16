@@ -1,23 +1,18 @@
 'use client'
 
 import { Package, Archive } from 'lucide-react'
+import { useCargo } from '@/lib/spacemolt'
 import { ItemName } from './ItemTooltip'
 import styles from './CargoList.module.css'
 
-interface CargoListItem {
-  item_id: string
-  name: string
-  quantity: number
-  size: number
-}
-
 interface CargoListProps {
-  items: CargoListItem[]
   compact?: boolean
 }
 
-export function CargoList({ items, compact = false }: CargoListProps) {
-  if (items.length === 0) {
+export function CargoList({ compact = false }: CargoListProps) {
+  const cargo = useCargo() ?? []
+
+  if (cargo.length === 0) {
     return (
       <div className={styles.container}>
         <div className={styles.empty}>
@@ -34,22 +29,27 @@ export function CargoList({ items, compact = false }: CargoListProps) {
 
   return (
     <div className={`${styles.container} ${compact ? styles.compact : ''}`}>
-      {items.map((item) => (
-        <div key={item.item_id} className={styles.item}>
-          <span className={styles.itemIcon}>
-            <Package size={iconSize} />
-          </span>
-          <span className={styles.itemName}>
-            <ItemName itemId={item.item_id}>{item.name}</ItemName>
-          </span>
-          <span className={styles.itemQuantity}>
-            x{item.quantity}
-          </span>
-          <span className={styles.itemSize}>
-            {item.size * item.quantity}m3
-          </span>
-        </div>
-      ))}
+      {cargo.map((item, index) => {
+        const itemId = item.item_id ?? `cargo-${index}`
+        const quantity = item.quantity ?? 0
+        const size = item.size ?? 0
+        return (
+          <div key={itemId} className={styles.item}>
+            <span className={styles.itemIcon}>
+              <Package size={iconSize} />
+            </span>
+            <span className={styles.itemName}>
+              <ItemName itemId={itemId}>{item.item_name || itemId}</ItemName>
+            </span>
+            <span className={styles.itemQuantity}>
+              x{quantity}
+            </span>
+            <span className={styles.itemSize}>
+              {size * quantity}m3
+            </span>
+          </div>
+        )
+      })}
     </div>
   )
 }

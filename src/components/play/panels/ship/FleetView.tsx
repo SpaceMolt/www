@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useCallback, useState } from 'react'
+import { useCallback, useState } from 'react'
 import {
   Ship,
   RefreshCw,
@@ -15,74 +15,80 @@ import {
   Hammer,
   AlertTriangle,
 } from 'lucide-react'
-import { useGame } from '../../GameProvider'
+import type { ListShipsResponse } from '@spacemolt/lib'
+import { useCommandMutation, useCommandQuery, useLocationState } from '@/lib/spacemolt'
+import { usePlay } from '../../PlayProvider'
 import { Loading, Panel, ConfirmAction, shared } from '../../shared'
-import type { FleetShip } from '../../types'
 import styles from './FleetView.module.css'
 
-export function FleetView() {
-  const { state, sendCommand } = useGame()
-  const fleet = state.fleetData
-  const isDocked = state.isDocked
-  const currentBaseId = state.poi?.base_id
+type FleetShipEntry = ListShipsResponse['ships'][number]
 
-  // Auto-fetch on mount or when fleetData is cleared
-  useEffect(() => {
-    if (!fleet) {
-      sendCommand('list_ships')
-    }
-  }, [fleet, sendCommand])
+function errorText(err: unknown): string {
+  return err instanceof Error ? err.message : String(err)
+}
+
+export function FleetView() {
+  const location = useLocationState()
+  const isDocked = Boolean(location?.docked_at)
+  const currentBaseId = location?.docked_at ?? undefined
+  const mutate = useCommandMutation()
+  const { uiStore } = usePlay()
+
+  const { data: fleet, refetch } = useCommandQuery(
+    async (account) => (await account.commands.spacemolt_ship.list_ships()).structuredContent,
+    [],
+    { refreshOnSections: ['ship'] }
+  )
+
+  const reportError = useCallback(
+    (err: unknown) => {
+      const text = errorText(err)
+      uiStore.dispatch({ type: 'toast', kind: 'danger', text })
+      uiStore.dispatch({ type: 'event', kind: 'danger', text })
+    },
+    [uiStore]
+  )
 
   const handleRefresh = useCallback(() => {
-    sendCommand('list_ships')
-  }, [sendCommand])
+    refetch()
+  }, [refetch])
 
   const handleSwitch = useCallback(
     (shipId: string) => {
-      sendCommand('switch_ship', { ship_id: shipId }).then(() => {
-        sendCommand('get_status')
-        sendCommand('list_ships')
-      })
+      mutate((c) => c.spacemolt_ship.switch_ship({ id: shipId }), { label: 'switch_ship' })
+        .then(() => refetch())
+        .catch(reportError)
     },
-    [sendCommand]
-  )
-
-  const handleSell = useCallback(
-    (shipId: string) => {
-      sendCommand('sell_ship', { ship_id: shipId })
-    },
-    [sendCommand]
+    [mutate, refetch, reportError]
   )
 
   // scrap_ship: break down a docked ship for partial materials (irreversible).
   const handleScrap = useCallback(
     (shipId: string) => {
-      sendCommand('scrap_ship', { ship_id: shipId }).then(() => {
-        sendCommand('list_ships')
-      })
+      mutate((c) => c.spacemolt_ship.scrap_ship({ id: shipId }), { label: 'scrap_ship' })
+        .then(() => refetch())
+        .catch(reportError)
     },
-    [sendCommand]
+    [mutate, refetch, reportError]
   )
 
-  // rename_ship operates on the active ship only (server: name_ship).
+  // rename_ship operates on the active ship only.
   const handleRename = useCallback(
     (name: string) => {
-      sendCommand('rename_ship', { name }).then(() => {
-        sendCommand('get_status')
-        sendCommand('list_ships')
-      })
+      mutate((c) => c.spacemolt_ship.rename_ship({ name }), { label: 'rename_ship' })
+        .then(() => refetch())
+        .catch(reportError)
     },
-    [sendCommand]
+    [mutate, refetch, reportError]
   )
 
   // refit_ship resets the active ship to its current class spec; modules and
   // cargo are moved to station storage. Requires a shipyard.
   const handleRefit = useCallback(() => {
-    sendCommand('refit_ship').then(() => {
-      sendCommand('get_status')
-      sendCommand('list_ships')
-    })
-  }, [sendCommand])
+    mutate((c) => c.spacemolt_ship.refit_ship(), { label: 'refit_ship' })
+      .then(() => refetch())
+      .catch(reportError)
+  }, [mutate, refetch, reportError])
 
   const refreshButton = (
     <button
@@ -126,7 +132,6 @@ export function FleetView() {
                   isDocked={isDocked}
                   currentBaseId={currentBaseId}
                   onSwitch={handleSwitch}
-                  onSell={handleSell}
                   onScrap={handleScrap}
                   onRename={handleRename}
                   onRefit={handleRefit}
@@ -140,11 +145,10 @@ export function FleetView() {
 }
 
 interface FleetCardProps {
-  ship: FleetShip
+  ship: FleetShipEntry
   isDocked: boolean
   currentBaseId?: string
   onSwitch: (shipId: string) => void
-  onSell: (shipId: string) => void
   onScrap: (shipId: string) => void
   onRename: (name: string) => void
   onRefit: () => void
@@ -155,7 +159,6 @@ function FleetCard({
   isDocked,
   currentBaseId,
   onSwitch,
-  onSell,
   onScrap,
   onRename,
   onRefit,
@@ -168,7 +171,7 @@ function FleetCard({
 
   const [renaming, setRenaming] = useState(false)
   const [renameValue, setRenameValue] = useState(ship.custom_name || '')
-  const [confirm, setConfirm] = useState<'scrap' | 'refit' | 'sell' | null>(null)
+  const [confirm, setConfirm] = useState<'scrap' | 'refit' | null>(null)
 
   const cardClass = ship.is_active ? styles.fleetCardActive : styles.fleetCard
 
@@ -230,15 +233,6 @@ function FleetCard({
               </button>
               <button
                 className={shared.dangerBtn}
-                onClick={() => setConfirm('sell')}
-                title="Sell this ship"
-                type="button"
-              >
-                <Trash2 size={11} />
-                Sell
-              </button>
-              <button
-                className={shared.dangerBtn}
                 onClick={() => setConfirm('scrap')}
                 title="Scrap this ship for materials"
                 type="button"
@@ -272,14 +266,6 @@ function FleetCard({
         </div>
       )}
 
-      {confirm === 'sell' && (
-        <ConfirmAction
-          message="Sell this ship? Irreversible."
-          icon={<AlertTriangle size={14} style={{ color: 'var(--claw-red)', flexShrink: 0 }} />}
-          onConfirm={() => { onSell(ship.ship_id); setConfirm(null) }}
-          onCancel={() => setConfirm(null)}
-        />
-      )}
       {confirm === 'scrap' && (
         <ConfirmAction
           message="Scrap this ship for materials? Irreversible."

@@ -6,12 +6,15 @@ import {
   ArrowRightLeft,
   Loader2,
 } from 'lucide-react'
-import { useGame } from '../../GameProvider'
+import { useAccountStore, useCommandMutation } from '@/lib/spacemolt'
+import { usePlay } from '../../PlayProvider'
 import { shared } from '../../shared'
-import type { FacilityListResponse, Facility } from '@/lib/gameTypes'
+import type { FacilityListResponse, Facility } from '../../types'
 import { FacilityCard } from './FacilityCard'
 import { UpgradeModal, fetchUpgradeOptions, type UpgradeOption } from './UpgradeModal'
 import styles from './facilities.module.css'
+
+const describeError = (err: unknown): string => (err instanceof Error ? err.message : String(err))
 
 interface FactionViewProps {
   facilityData: FacilityListResponse
@@ -19,41 +22,52 @@ interface FactionViewProps {
 }
 
 export function FactionView({ facilityData, onRefresh }: FactionViewProps) {
-  const { sendCommand, api } = useGame()
+  const store = useAccountStore()
+  const mutate = useCommandMutation()
+  const { uiStore } = usePlay()
 
   const [upgradeModal, setUpgradeModal] = useState<{ facility: Facility; options: UpgradeOption[] } | null>(null)
   const [upgradeLoading, setUpgradeLoading] = useState(false)
   const [upgrading, setUpgrading] = useState(false)
   const [transferring, setTransferring] = useState<string | null>(null)
 
+  const reportError = useCallback((err: unknown) => {
+    const text = describeError(err)
+    uiStore.dispatch({ type: 'toast', kind: 'danger', text })
+    uiStore.dispatch({ type: 'event', kind: 'danger', text })
+  }, [uiStore])
+
   const factionFacilities = facilityData.faction_facilities
 
   const handleShowUpgrades = useCallback(async (facility: Facility) => {
-    if (!api) return
     setUpgradeLoading(true)
-    const options = await fetchUpgradeOptions(api, facility)
+    const options = await fetchUpgradeOptions(store.account.commands, facility)
     setUpgradeModal({ facility, options })
     setUpgradeLoading(false)
-  }, [api])
+  }, [store])
 
   const handleUpgrade = useCallback(async (facilityId: string, facilityType: string) => {
     setUpgrading(true)
     try {
-      await sendCommand('facility_faction_upgrade', { facility_id: facilityId, facility_type: facilityType })
+      await mutate((c) => c.spacemolt_facility.faction_upgrade({ facility_id: facilityId, facility_type: facilityType }), { label: 'facility_faction_upgrade' })
       setUpgradeModal(null)
       onRefresh()
-    } catch { /* handled by event log */ }
+    } catch (err) {
+      reportError(err)
+    }
     setUpgrading(false)
-  }, [sendCommand, onRefresh])
+  }, [mutate, onRefresh, reportError])
 
   const handleTransferToPlayer = useCallback(async (facilityId: string) => {
     setTransferring(facilityId)
     try {
-      await sendCommand('facility_transfer', { facility_id: facilityId, direction: 'to_player' })
+      await mutate((c) => c.spacemolt_facility.transfer({ facility_id: facilityId, direction: 'to_player' }), { label: 'facility_transfer' })
       onRefresh()
-    } catch { /* handled by event log */ }
+    } catch (err) {
+      reportError(err)
+    }
     setTransferring(null)
-  }, [sendCommand, onRefresh])
+  }, [mutate, onRefresh, reportError])
 
   if (factionFacilities.length === 0) {
     return (

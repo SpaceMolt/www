@@ -1,7 +1,6 @@
-import { useRef, useState, useCallback } from 'react'
-import { useGame } from './GameProvider'
+import { useRef, useState, useCallback, useEffect } from 'react'
+import { useAccountStore } from '@/lib/spacemolt'
 import type { PlannedRoute } from './panels/GalaxyPanel'
-import type { SystemInfo, POI } from './types'
 
 export interface AutoTravelProgress {
   currentJumpIndex: number    // 0-based, which jump we're on (-1 = undocking)
@@ -29,19 +28,28 @@ export interface UseAutoTravelReturn {
 }
 
 export function useAutoTravel(): UseAutoTravelReturn {
-  const { sendCommand, state } = useGame()
+  const store = useAccountStore()
   const [progress, setProgress] = useState<AutoTravelProgress | null>(null)
 
   // Refs for the async loop to read current values
   const abortRequestedRef = useRef(false)
   const activeRef = useRef(false)
-  const stateRef = useRef(state)
-  stateRef.current = state
+  // battle_started can land mid-jump/mid-travel while the mutation promise is
+  // still outstanding (multi-tick actions) — there is no in_combat flag on
+  // the jump/travel response itself, so track it via the push instead.
+  const pulledIntoCombatRef = useRef(false)
+
+  useEffect(() => {
+    return store.account.on('battle_started', () => {
+      pulledIntoCombatRef.current = true
+    })
+  }, [store])
 
   const start = useCallback((route: PlannedRoute, options: { shipSpeed: number; isDocked: boolean }) => {
     if (activeRef.current) return
     activeRef.current = true
     abortRequestedRef.current = false
+    pulledIntoCombatRef.current = false
 
     const { shipSpeed, isDocked } = options
     const baseSecsPerJump = Math.max(10, 70 - 10 * shipSpeed)
@@ -83,13 +91,9 @@ export function useAutoTravel(): UseAutoTravelReturn {
       // Step 1: Undock if needed
       if (isDocked) {
         try {
-          const result = await sendCommand('undock')
-          if (result.error) {
-            abort(`Failed to undock: ${result.message || 'unknown error'}`)
-            return
-          }
-        } catch {
-          abort('Failed to undock')
+          await store.account.commands.spacemolt.undock()
+        } catch (err) {
+          abort(`Failed to undock: ${err instanceof Error ? err.message : 'unknown error'}`)
           return
         }
 
@@ -115,22 +119,12 @@ export function useAutoTravel(): UseAutoTravelReturn {
         } : null)
 
         try {
-          const result = await sendCommand('jump', { target_system: targetSystemId })
+          // Mutations are two-phase: this resolves only once the jump has
+          // actually executed (which can be several ticks later), so no
+          // separate poll for arrival is needed here.
+          const result = await store.account.commands.spacemolt.jump({ id: targetSystemId })
 
-          if (!result) {
-            abort('Jump failed — no response from server')
-            return
-          }
-
-          // Check for errors — sendCommand returns { error: true, code, message } on failure
-          if (result.error || result.code) {
-            const msg = (result.message as string) || (result.error as string) || 'Unknown error'
-            abort(`Jump failed: ${msg}`)
-            return
-          }
-
-          // Check if pulled into combat
-          if (result.in_combat) {
+          if (pulledIntoCombatRef.current) {
             abort('Pulled into combat — jump sequence aborted')
             return
           }
@@ -139,10 +133,10 @@ export function useAutoTravel(): UseAutoTravelReturn {
           const jumpMs = Date.now() - jumpStart
           jumpTimes.push(jumpMs)
 
-          // Update fuel from response if available
-          const shipData = result.ship as Record<string, unknown> | undefined
-          if (shipData && typeof shipData.fuel === 'number') {
-            currentFuel = shipData.fuel
+          // Update fuel from the delta if available
+          const shipFuel = result.delta.ship?.fuel
+          if (typeof shipFuel === 'number') {
+            currentFuel = shipFuel
           } else {
             // Estimate fuel decrease
             currentFuel = Math.max(0, currentFuel - route.fuelPerJump)
@@ -176,20 +170,18 @@ export function useAutoTravel(): UseAutoTravelReturn {
       }
 
       // Step 3: Travel to station if destination system has one.
-      // We call get_system explicitly rather than reading stateRef because
-      // GameProvider's auto-refresh (fired after the last jump) may not have
-      // resolved yet — we need the response data synchronously here.
       if (!abortRequestedRef.current) {
         try {
-          const sysResult = await sendCommand('get_system') as Record<string, unknown>
-          const sysInfo = sysResult?.system as SystemInfo | undefined
-          const currentPoi = sysResult?.poi as POI | undefined
-          const stationPoi = sysInfo?.pois?.find(p => p.base_id && p.id !== currentPoi?.id)
+          const sysResult = await store.account.commands.spacemolt.get_system()
+          const sysData = sysResult.structuredContent
+          const sysInfo = sysData && 'system' in sysData ? sysData.system : undefined
+          const currentPoi = sysData && 'poi' in sysData ? sysData.poi : undefined
+          const stationPoi = sysInfo?.pois.find(p => p.has_base && p.id !== currentPoi?.id)
 
           if (stationPoi && currentPoi?.position && stationPoi.position) {
             // Calculate travel time from POI distance and ship speed
-            const dx = (stationPoi.position.x ?? 0) - (currentPoi.position.x ?? 0)
-            const dy = (stationPoi.position.y ?? 0) - (currentPoi.position.y ?? 0)
+            const dx = stationPoi.position.x - currentPoi.position.x
+            const dy = stationPoi.position.y - currentPoi.position.y
             const distance = Math.sqrt(dx * dx + dy * dy)
             const speed = Math.max(0.1, shipSpeed)
             const travelTicks = Math.max(1, Math.ceil(distance / speed))
@@ -208,21 +200,12 @@ export function useAutoTravel(): UseAutoTravelReturn {
             } : null)
 
             try {
-              await sendCommand('travel', { target_poi: stationPoi.id })
+              // Same two-phase contract — resolves once travel has arrived.
+              await store.account.commands.spacemolt.travel({ id: stationPoi.id })
 
-              // Wait for in-system travel to complete by watching game state.
-              // travelProgress: null → non-null (traveling) → null (arrived).
-              // Initial 2s delay ensures the first STATE_UPDATE with travel
-              // progress has arrived before we start polling — avoids a race
-              // where travel completes before our first check.
-              await new Promise(r => setTimeout(r, 2000))
-              if (abortRequestedRef.current) { abort('Emergency abort'); return }
-
-              const maxWaitMs = (travelSecs + 10) * 1000 // predicted time + 10s buffer
-              while (Date.now() - travelStartMs < maxWaitMs) {
-                if (stateRef.current.travelProgress === null) break
-                await new Promise(r => setTimeout(r, 500))
-                if (abortRequestedRef.current) { abort('Emergency abort'); return }
+              if (pulledIntoCombatRef.current) {
+                abort('Pulled into combat — jump sequence aborted')
+                return
               }
             } catch {
               // Travel command failed — still in the right system, proceed to arrived
@@ -246,7 +229,7 @@ export function useAutoTravel(): UseAutoTravelReturn {
       activeRef.current = false
 
     })()
-  }, [sendCommand])
+  }, [store])
 
   const requestAbort = useCallback(() => {
     abortRequestedRef.current = true
