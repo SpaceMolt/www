@@ -13,15 +13,23 @@ export interface TickAnchor {
 
 const TICK_DURATION_MS = 10_000
 const TICK_OBSERVE_MIN_INTERVAL_MS = 2_000
-const MAX_FLEET_DOTS = 5
-const FLEET_DOT_SPACING = 4
-const FLEET_OFFSETS = Array.from({ length: MAX_FLEET_DOTS }, (_, countIndex) => {
-  const count = countIndex + 1
-  const midpoint = (count - 1) / 2
-  return Object.freeze(
-    Array.from({ length: count }, (_, index) => (index - midpoint) * FLEET_DOT_SPACING),
-  )
-})
+export interface TransitFormationPoint {
+  forward: number
+  side: number
+}
+
+export interface TransitFormation {
+  totalCount: number
+  visibleCount: number
+  overflowCount: number
+  columns: number
+  rows: number
+}
+
+export const FLEET_DOT_SPACING = 7
+// Normal fleets top out around 25 ships. This ceiling still shows unusually
+// large synchronized movements in full while bounding malformed API input.
+export const MAX_TRANSIT_FORMATION_DOTS = 1_024
 
 export function publicTransitProgress(transit: PublicTransit, currentTick: number): number {
   const duration = transit.arrival_tick - transit.start_tick
@@ -60,7 +68,35 @@ export function observeSnapshotTick(
   return { tick, anchoredAtMs: nowMs }
 }
 
-export function publicTransitOffsets(count: number): readonly number[] {
-  const visibleCount = Math.max(1, Math.min(MAX_FLEET_DOTS, Math.floor(count)))
-  return FLEET_OFFSETS[visibleCount - 1]
+export function publicTransitFormation(count: number): TransitFormation {
+  const totalCount = Number.isFinite(count) ? Math.max(1, Math.floor(count)) : 1
+  const visibleCount = Math.min(totalCount, MAX_TRANSIT_FORMATION_DOTS)
+  const columns = Math.ceil(Math.sqrt(visibleCount))
+  const rows = Math.ceil(visibleCount / columns)
+
+  return {
+    totalCount,
+    visibleCount,
+    overflowCount: totalCount - visibleCount,
+    columns,
+    rows,
+  }
+}
+
+export function forEachPublicTransitFormationPoint(
+  formation: TransitFormation,
+  visit: (point: TransitFormationPoint) => void,
+): void {
+  for (let row = 0; row < formation.rows; row++) {
+    const rowCount = Math.min(
+      formation.columns,
+      formation.visibleCount - row * formation.columns,
+    )
+    for (let column = 0; column < rowCount; column++) {
+      visit({
+        forward: (column - (rowCount - 1) / 2) * FLEET_DOT_SPACING,
+        side: (row - (formation.rows - 1) / 2) * FLEET_DOT_SPACING,
+      })
+    }
+  }
 }

@@ -10,9 +10,11 @@ import styles from './GalaxyMap.module.css'
 import { subscribeToEvents } from '@/lib/sharedEventSource'
 import {
   estimateCurrentTick,
+  FLEET_DOT_SPACING,
+  forEachPublicTransitFormationPoint,
   observeSnapshotTick,
   observeServerTick,
-  publicTransitOffsets,
+  publicTransitFormation,
   publicTransitProgress,
   type PublicTransit,
   type TickAnchor,
@@ -103,6 +105,9 @@ interface MapActivityData {
 // ── Constants ──────────────────────────────────────────────────────────
 
 const NODE_RADIUS = 6
+const TRANSIT_DOT_RADIUS = 3
+const TRANSIT_GLOW_RADIUS = 12
+const MAX_TRANSIT_PATH_CACHE_SIZE = 32
 const DEFAULT_COLOR = '#5a6a7a'
 const LINE_COLOR = 'rgba(140, 170, 200, 0.6)'
 const MIN_ZOOM = 0.001
@@ -232,6 +237,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
     selectedTravelPlayers: new Set<string>(),
     travelPings: [] as { wx: number; wy: number; startTime: number; color: string }[],
     publicTransits: [] as PublicTransit[],
+    publicTransitPaths: new Map<number, Path2D>(),
     tickAnchor: null as TickAnchor | null,
     pendingSystemId: null as string | null,
   })
@@ -610,7 +616,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
       ctx.save()
       ctx.fillStyle = '#67e8f9'
       ctx.shadowColor = '#22d3ee'
-      ctx.shadowBlur = 12
+      ctx.shadowBlur = TRANSIT_GLOW_RADIUS
       for (const transit of s.publicTransits) {
         if (currentTick < transit.start_tick || currentTick >= transit.arrival_tick) continue
 
@@ -627,15 +633,57 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
         const dy = toPos.y - fromPos.y
         const length = Math.hypot(dx, dy)
         if (length === 0) continue
-        const perpendicularX = -dy / length
-        const perpendicularY = dx / length
 
-        for (const offset of publicTransitOffsets(transit.count)) {
-          const dotX = x + perpendicularX * offset
-          const dotY = y + perpendicularY * offset
-          ctx.beginPath()
-          ctx.arc(dotX, dotY, 3, 0, Math.PI * 2)
-          ctx.fill()
+        const formation = publicTransitFormation(transit.count)
+        const halfForward = ((formation.columns - 1) * FLEET_DOT_SPACING) / 2 + TRANSIT_DOT_RADIUS
+        const halfSide = ((formation.rows - 1) * FLEET_DOT_SPACING) / 2 + TRANSIT_DOT_RADIUS
+        const cullRadius = Math.hypot(halfForward, halfSide) + TRANSIT_GLOW_RADIUS
+        const canvas = canvasRef.current
+        if (
+          !canvas ||
+          x + cullRadius < 0 ||
+          x - cullRadius > canvas.clientWidth ||
+          y + cullRadius < 0 ||
+          y - cullRadius > canvas.clientHeight
+        ) {
+          continue
+        }
+
+        let formationPath = s.publicTransitPaths.get(formation.visibleCount)
+        if (formationPath) {
+          // Refresh insertion order so the bounded map behaves as an LRU.
+          s.publicTransitPaths.delete(formation.visibleCount)
+          s.publicTransitPaths.set(formation.visibleCount, formationPath)
+        } else {
+          formationPath = new Path2D()
+          forEachPublicTransitFormationPoint(formation, ({ forward, side }) => {
+            formationPath!.moveTo(forward + TRANSIT_DOT_RADIUS, side)
+            formationPath!.arc(forward, side, TRANSIT_DOT_RADIUS, 0, Math.PI * 2)
+          })
+          s.publicTransitPaths.set(formation.visibleCount, formationPath)
+          if (s.publicTransitPaths.size > MAX_TRANSIT_PATH_CACHE_SIZE) {
+            const oldest = s.publicTransitPaths.keys().next().value
+            if (oldest !== undefined) s.publicTransitPaths.delete(oldest)
+          }
+        }
+
+        ctx.save()
+        ctx.translate(x, y)
+        ctx.rotate(Math.atan2(dy, dx))
+        ctx.fill(formationPath)
+        ctx.restore()
+        if (formation.overflowCount > 0) {
+          ctx.save()
+          ctx.shadowBlur = 4
+          ctx.font = '600 10px monospace'
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'top'
+          ctx.fillText(
+            `+${formation.overflowCount.toLocaleString()}`,
+            x,
+            y + Math.hypot(halfForward, halfSide) + 6,
+          )
+          ctx.restore()
         }
       }
       ctx.restore()
@@ -1775,6 +1823,12 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
       }
       if (activityData.transits) {
         s.publicTransits = activityData.transits
+        const activeFormationSizes = new Set(
+          activityData.transits.map((transit) => publicTransitFormation(transit.count).visibleCount),
+        )
+        for (const count of s.publicTransitPaths.keys()) {
+          if (!activeFormationSizes.has(count)) s.publicTransitPaths.delete(count)
+        }
       }
       if (typeof activityData.current_tick === 'number') {
         s.tickAnchor = observeSnapshotTick(s.tickAnchor, activityData.current_tick)
