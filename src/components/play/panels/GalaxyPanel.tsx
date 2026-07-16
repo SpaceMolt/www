@@ -2,8 +2,45 @@
 
 import { useEffect, useRef, useCallback, useImperativeHandle, forwardRef, useState } from 'react'
 import { Home, Crosshair } from 'lucide-react'
-import { useGame } from '../GameProvider'
+import type { MapSystem } from '@spacemolt/lib'
+import { useLocationState, useMap, usePlayer } from '@/lib/spacemolt'
 import styles from './GalaxyPanel.module.css'
+
+const GAMESERVER_URL = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
+
+// The /api/map fields aren't in the typed v2 spec (MapSystem is intentionally
+// loose — see @spacemolt/lib's data/map.ts), so narrow each field defensively
+// when adapting into the canvas's MapSystemData shape.
+function numberField(v: unknown): number {
+  return typeof v === 'number' ? v : 0
+}
+function stringField(v: unknown): string | undefined {
+  return typeof v === 'string' ? v : undefined
+}
+function booleanField(v: unknown): boolean | undefined {
+  return typeof v === 'boolean' ? v : undefined
+}
+function stringArrayField(v: unknown): string[] {
+  return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []
+}
+
+function toMapSystemData(raw: MapSystem): MapSystemData | null {
+  const id = stringField(raw.id)
+  const name = stringField(raw.name)
+  if (!id || !name) return null
+  return {
+    id,
+    name,
+    x: numberField(raw.x),
+    y: numberField(raw.y),
+    empire: stringField(raw.empire),
+    empire_color: stringField(raw.empire_color),
+    is_home: booleanField(raw.is_home),
+    is_stronghold: booleanField(raw.is_stronghold),
+    has_station: booleanField(raw.has_station),
+    connections: stringArrayField(raw.connections),
+  }
+}
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -157,7 +194,9 @@ interface GalaxyPanelProps {
 }
 
 export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(function GalaxyPanel({ onSystemSelect, plannedRoute, onPlannedRouteChange, autoTravelProgress, highlightedSystems }, ref) {
-  const { state: gameState } = useGame()
+  const player = usePlayer()
+  const location = useLocationState()
+  const map = useMap()
   const [focusedSystemId, setFocusedSystemId] = useState<string | null>(null)
   const focusedSystemRef = useRef<string | null>(null)
   focusedSystemRef.current = focusedSystemId
@@ -204,6 +243,7 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
     dragPreviewRoute: null as PlannedRoute | null,
     lastDragSystemId: '',
   })
+  const stationSystemIdsRef = useRef<Set<string> | null>(null)
 
   const plannedRouteRef = useRef<PlannedRoute | null>(null)
   // Only sync from prop when NOT dragging (drag manages its own preview)
@@ -224,7 +264,7 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
   autoTravelProgressRef.current = autoTravelProgress ?? null
 
   const currentSystemIdRef = useRef<string | null>(null)
-  currentSystemIdRef.current = gameState.system?.id ?? null
+  currentSystemIdRef.current = location?.system_id ?? null
 
   const hasCenteredRef = useRef(false)
 
@@ -890,22 +930,22 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
     const s = stateRef.current
     if (!s.mapData) return
     // Find the empire home system for the player's empire
-    const empire = gameState.player?.empire
+    const empire = player?.empire
     if (!empire) return
     const homeSystem = s.mapData.systems.find((sys) => sys.empire === empire && sys.is_home)
     if (homeSystem) {
       panToSystemWithHighlight(homeSystem.id)
     }
-  }, [gameState.player?.empire, panToSystemWithHighlight])
+  }, [player?.empire, panToSystemWithHighlight])
 
   const handleGoCurrentLocation = useCallback(() => {
     const s = stateRef.current
-    if (!s.mapData || !gameState.system) return
-    const currentSystem = s.mapData.systems.find((sys) => sys.id === gameState.system!.id)
+    if (!s.mapData || !location?.system_id) return
+    const currentSystem = s.mapData.systems.find((sys) => sys.id === location.system_id)
     if (currentSystem) {
       panToSystemWithHighlight(currentSystem.id)
     }
-  }, [gameState.system, panToSystemWithHighlight])
+  }, [location?.system_id, panToSystemWithHighlight])
 
   // Snap the view to a system without animation (used for initial centering)
   const snapToSystem = useCallback((system: MapSystemData) => {
@@ -922,13 +962,13 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
   useEffect(() => {
     if (hasCenteredRef.current) return
     const s = stateRef.current
-    if (!s.mapData || !gameState.system) return
-    const currentSystem = s.mapData.systems.find((sys) => sys.id === gameState.system!.id)
+    if (!s.mapData || !location?.system_id) return
+    const currentSystem = s.mapData.systems.find((sys) => sys.id === location.system_id)
     if (currentSystem) {
       snapToSystem(currentSystem)
       hasCenteredRef.current = true
     }
-  }, [gameState.system, snapToSystem])
+  }, [location?.system_id, snapToSystem])
 
   // Fit view to show full route when one is first plotted
   const hasFitRouteRef = useRef(false)
@@ -1003,6 +1043,51 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
     s.targetZoom = Math.max(MIN_ZOOM, s.targetZoom / 1.5)
   }, [])
 
+  // Merge the raw /api/stations has_station overlay onto whatever map data is
+  // currently loaded — called after either the stations fetch or the map data
+  // resolves, in whichever order they land.
+  const applyStationFlags = useCallback(() => {
+    const s = stateRef.current
+    const ids = stationSystemIdsRef.current
+    if (!s.mapData || !ids) return
+    for (const system of s.mapData.systems) {
+      if (ids.has(system.id)) system.has_station = true
+    }
+    render()
+  }, [render])
+
+  // Galaxy topology from useMap() (module-level cache, survives player
+  // switches). Adapts the loosely-typed MapSystem entries into MapSystemData
+  // and hands them to the canvas's mutable stateRef (not React state — the
+  // animation loop reads/writes it directly for performance).
+  useEffect(() => {
+    if (!map.data) return
+    const s = stateRef.current
+    const systems = map.data.systems
+      .map(toMapSystemData)
+      .filter((sys): sys is MapSystemData => sys !== null)
+    s.mapData = { systems }
+    applyStationFlags()
+
+    const currentId = currentSystemIdRef.current
+    if (currentId && !hasCenteredRef.current) {
+      const currentSystem = systems.find((sys) => sys.id === currentId)
+      if (currentSystem) {
+        snapToSystem(currentSystem)
+        hasCenteredRef.current = true
+      }
+    }
+
+    if (loadingRef.current) loadingRef.current.style.display = 'none'
+    render()
+  }, [map.data, applyStationFlags, snapToSystem, render])
+
+  useEffect(() => {
+    if (map.error && loadingRef.current) {
+      loadingRef.current.textContent = 'Failed to load galaxy data'
+    }
+  }, [map.error])
+
   // ── Main Effect ────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -1073,56 +1158,26 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
     // Start animation immediately
     animFrameId = requestAnimationFrame(animationLoop)
 
-    // ── Fetch Map Data ───────────────────────────────────────────
-    // Static data (galaxy topology + stations) is fetched once on mount.
+    // ── Fetch Stations ───────────────────────────────────────────
+    // Galaxy topology comes from useMap() (a separate effect below); the
+    // station-presence overlay has no lib binding yet, so it's still fetched
+    // raw here and merged onto whatever map data is present via applyStationFlags.
 
-    async function fetchStaticData() {
+    async function fetchStations() {
       try {
-        const [mapResponse, stationsResponse] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'}/api/map`),
-          fetch(`${process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'}/api/stations`),
-        ])
-        const data: MapData = await mapResponse.json()
-
-        // Mark systems that have stations
-        try {
-          const stationsData = await stationsResponse.json()
-          const stationSystemIds = new Set(
-            (stationsData.stations || []).map((st: { system_id: string }) => st.system_id),
-          )
-          for (const system of data.systems) {
-            if (stationSystemIds.has(system.id)) {
-              system.has_station = true
-            }
-          }
-        } catch {
-          // Stations data is optional -- map still works without it
-        }
-
-        s.mapData = data
-
-        // Center on player's current location on first load
-        const currentId = currentSystemIdRef.current
-        if (currentId && !hasCenteredRef.current) {
-          const currentSystem = data.systems.find((sys) => sys.id === currentId)
-          if (currentSystem) {
-            snapToSystem(currentSystem)
-            hasCenteredRef.current = true
-          }
-        }
-
-        if (loadingRef.current)
-          loadingRef.current.style.display = 'none'
-
-        render(ctx)
-      } catch (err) {
-        console.error('Failed to fetch map data:', err)
-        if (loadingRef.current)
-          loadingRef.current.textContent = 'Failed to load galaxy data'
+        const stationsResponse = await fetch(`${GAMESERVER_URL}/api/stations`)
+        const stationsData = (await stationsResponse.json()) as { stations?: Array<{ system_id: string }> }
+        const stationSystemIds = new Set(
+          (stationsData.stations || []).map((st) => st.system_id),
+        )
+        stationSystemIdsRef.current = stationSystemIds
+        applyStationFlags()
+      } catch {
+        // Stations data is optional -- map still works without it
       }
     }
 
-    fetchStaticData()
+    fetchStations()
 
     // ── Waypoint hit detection ───────────────────────────────────
     function findWaypointAt(sx: number, sy: number): number {
@@ -1456,7 +1511,7 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
       if (resizeObserver) resizeObserver.disconnect()
       cancelAnimationFrame(animFrameId)
     }
-  }, [render, generateStars, canvasCoords, findSystemAt, updateTooltip, worldToScreen])
+  }, [render, generateStars, canvasCoords, findSystemAt, updateTooltip, worldToScreen, applyStationFlags])
 
   // ── JSX ────────────────────────────────────────────────────────────
 

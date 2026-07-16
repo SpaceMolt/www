@@ -2,66 +2,30 @@
 
 import { useState, useCallback, useEffect, useReducer } from 'react'
 import { Users, Flag, Shield, UserPlus, UserMinus, Swords, RefreshCw, Radar, DoorOpen, Trash2, Plus, Search, BarChart3, Eye, Crown, X, Handshake, LogIn, ChevronDown, ChevronRight } from 'lucide-react'
-import { useGame } from '../GameProvider'
+import type {
+  FactionGetInvitesResponse,
+  FactionInfoResponse,
+  FactionIntelStatusResponse,
+  FactionListResponse,
+  FactionQueryIntelResponse,
+  FactionRoomsResponse,
+  FactionVisitRoomResponse,
+} from '@spacemolt/lib'
+import { useAccountStore, useCommandMutation, useLocationState, usePlayer } from '@/lib/spacemolt'
+import { usePlay } from '../PlayProvider'
 import { ActionButton } from '../ActionButton'
 import { Panel, shared } from '../shared'
-import type { FactionInfoResponse, FactionMember } from '../types'
 import { playerHref } from '@/components/profile/ProfileLink'
 import styles from './FactionPanel.module.css'
 
-// Local types for API responses not in shared types
-interface FactionListEntry {
-  id: string
-  name: string
-  tag: string
-  member_count?: number
-  leader_username?: string
-}
-
-interface FactionInvite {
-  faction_id: string
-  faction_name: string
-  faction_tag: string
-  invited_at?: string
-  invited_by?: string
-}
-
-interface IntelEntry {
-  system_id: string
-  name: string
-  submitted_by?: string
-  submitter_name?: string
-  police_level?: number
-  connections?: string[]
-}
-
-interface IntelStatus {
-  intel_level: number
-  reports_24h?: number
-  total_reports?: number
-  unique_players?: number
-  unique_systems?: number
-  top_contributors?: { username: string; reports: number }[]
-}
-
-interface FactionRoom {
-  room_id: string
-  name: string
-  access?: string
-  author?: string
-  updated_at?: string
-}
-
-interface FactionRoomDetail {
-  room_id: string
-  name: string
-  description: string
-  access: string
-  author: string
-  created_at: string
-  updated_at: string
-}
-
+// Types derived from the generated command response shapes.
+type FactionListEntry = FactionListResponse['factions'][number]
+type FactionInvite = FactionGetInvitesResponse['invites'][number]
+type IntelEntry = FactionQueryIntelResponse['entries'][number]
+type IntelStatus = FactionIntelStatusResponse
+type FactionRoom = FactionRoomsResponse['rooms'][number]
+type FactionRoomDetail = FactionVisitRoomResponse
+type FactionMember = NonNullable<FactionInfoResponse['members']>[number]
 type FactionWar = NonNullable<FactionInfoResponse['wars']>[number]
 type PeaceProposal = NonNullable<FactionInfoResponse['peace_proposals']>[number]
 type FactionRelation = NonNullable<FactionInfoResponse['allies']>[number]
@@ -158,22 +122,37 @@ function Section({ title, icon, children, defaultOpen = true }: {
 
 // FactionPanel
 export function FactionPanel() {
-  const { state, sendCommand } = useGame()
+  const store = useAccountStore()
+  const mutate = useCommandMutation()
+  const { uiStore } = usePlay()
+  const player = usePlayer()
+  const location = useLocationState()
   const [s, set] = useReducer(merge, INITIAL_STATE)
 
-  const hasFaction = Boolean(state.player?.faction_id)
-  const playerId = state.player?.id
+  const hasFaction = Boolean(player?.faction_id)
+  const playerId = player?.id
+
+  const reportError = useCallback(
+    (err: unknown) => {
+      const text = err instanceof Error ? err.message : String(err)
+      uiStore.dispatch({ type: 'toast', kind: 'danger', text })
+      uiStore.dispatch({ type: 'event', kind: 'danger', text })
+    },
+    [uiStore],
+  )
 
   const loadFactionInfo = useCallback(async () => {
     if (!hasFaction) return
     set({ loadingInfo: true })
     try {
-      const res = await sendCommand('faction_info') as Record<string, unknown>
-      set({ factionInfo: res as unknown as FactionInfoResponse })
+      const res = await store.account.commands.spacemolt_faction.info()
+      set({ factionInfo: res.structuredContent ?? null })
+    } catch (err) {
+      reportError(err)
     } finally {
       set({ loadingInfo: false })
     }
-  }, [sendCommand, hasFaction])
+  }, [store, reportError, hasFaction])
 
   useEffect(() => {
     if (hasFaction) {
@@ -187,202 +166,288 @@ export function FactionPanel() {
     if (!s.createName.trim() || !s.createTag.trim()) return
     set({ creating: true })
     try {
-      await sendCommand('create_faction', {
-        name: s.createName.trim(),
-        tag: s.createTag.trim().toUpperCase(),
+      await mutate((c) => c.spacemolt_faction.create({ id: s.createTag.trim().toUpperCase(), text: s.createName.trim() }), {
+        label: 'create_faction',
       })
       set({ createName: '', createTag: '' })
+    } catch (err) {
+      reportError(err)
     } finally {
       set({ creating: false })
     }
-  }, [sendCommand, s.createName, s.createTag])
+  }, [mutate, reportError, s.createName, s.createTag])
 
   const handleLeaveFaction = useCallback(async () => {
-    await sendCommand('leave_faction')
-    set({
-      factionInfo: null, rooms: [], roomsLoaded: false,
-      intelEntries: [], intelStatus: null,
-    })
-  }, [sendCommand])
+    try {
+      await mutate((c) => c.spacemolt_faction.leave(), { label: 'leave_faction' })
+      set({
+        factionInfo: null, rooms: [], roomsLoaded: false,
+        intelEntries: [], intelStatus: null,
+      })
+    } catch (err) {
+      reportError(err)
+    }
+  }, [mutate, reportError])
 
   const handleInvite = useCallback(async () => {
     if (!s.inviteTarget.trim()) return
     set({ inviting: true })
     try {
-      await sendCommand('faction_invite', { player_id: s.inviteTarget.trim() })
+      await mutate((c) => c.spacemolt_faction.invite({ id: s.inviteTarget.trim() }), { label: 'faction_invite' })
       set({ inviteTarget: '' })
+    } catch (err) {
+      reportError(err)
     } finally {
       set({ inviting: false })
     }
-  }, [sendCommand, s.inviteTarget])
+  }, [mutate, reportError, s.inviteTarget])
 
   const handleKick = useCallback(async (memberId: string) => {
     set({ kickingPlayer: memberId })
     try {
-      await sendCommand('faction_kick', { player_id: memberId })
+      await mutate((c) => c.spacemolt_faction.kick({ id: memberId }), { label: 'faction_kick' })
       await loadFactionInfo()
+    } catch (err) {
+      reportError(err)
     } finally {
       set({ kickingPlayer: null })
     }
-  }, [sendCommand, loadFactionInfo])
+  }, [mutate, reportError, loadFactionInfo])
 
   const handleLoadInvites = useCallback(async () => {
     set({ loadingInvites: true })
     try {
-      const res = await sendCommand('faction_get_invites') as Record<string, unknown>
-      set({ pendingInvites: (res.invites || []) as FactionInvite[], invitesLoaded: true })
+      const res = await store.account.commands.spacemolt_faction.get_invites()
+      set({ pendingInvites: res.structuredContent?.invites ?? [], invitesLoaded: true })
+    } catch (err) {
+      reportError(err)
     } finally {
       set({ loadingInvites: false })
     }
-  }, [sendCommand])
+  }, [store, reportError])
 
   const handleAcceptInvite = useCallback(async (factionId: string) => {
     set({ joiningFaction: factionId })
     try {
-      await sendCommand('faction_accept_invite', { faction_id: factionId })
+      await mutate((c) => c.spacemolt_faction.accept_invite({ id: factionId }), { label: 'faction_accept_invite' })
       set({ pendingInvites: [], invitesLoaded: false })
+    } catch (err) {
+      reportError(err)
     } finally {
       set({ joiningFaction: null })
     }
-  }, [sendCommand])
+  }, [mutate, reportError])
 
   const handleDeclineInvite = useCallback(async (factionId: string) => {
     set({ decliningInvite: factionId })
     try {
-      await sendCommand('faction_decline_invite', { faction_id: factionId })
+      await store.account.commands.spacemolt_faction.decline_invite({ id: factionId })
       set(prev => ({ pendingInvites: prev.pendingInvites.filter(i => i.faction_id !== factionId) }))
+    } catch (err) {
+      reportError(err)
     } finally {
       set({ decliningInvite: null })
     }
-  }, [sendCommand])
+  }, [store, reportError])
 
   const handleLoadFactions = useCallback(async () => {
     set({ loadingList: true })
     try {
-      const res = await sendCommand('faction_list') as Record<string, unknown>
-      set({ factionList: (res.factions || []) as FactionListEntry[], listLoaded: true })
+      const res = await store.account.commands.spacemolt_faction.list()
+      set({ factionList: res.structuredContent?.factions ?? [], listLoaded: true })
+    } catch (err) {
+      reportError(err)
     } finally {
       set({ loadingList: false })
     }
-  }, [sendCommand])
+  }, [store, reportError])
 
   const handleJoinFaction = useCallback(async (factionId: string) => {
     set({ joiningFaction: factionId })
     try {
-      await sendCommand('join_faction', { faction_id: factionId })
+      await mutate((c) => c.spacemolt_faction.join({ id: factionId }), { label: 'join_faction' })
       set({ factionList: [], listLoaded: false })
+    } catch (err) {
+      reportError(err)
     } finally {
       set({ joiningFaction: null })
     }
-  }, [sendCommand])
+  }, [mutate, reportError])
 
-  const handleDiplomacy = useCallback(async (action: string, factionId: string, extra?: Record<string, unknown>) => {
-    if (!factionId) return
+  const handleProposeAlly = useCallback(async () => {
+    if (!s.diplomacyTarget) return
     set({ diplomacyLoading: true })
     try {
-      await sendCommand(action, { faction_id: factionId, ...extra })
-      set({ diplomacyTarget: '', warReason: '', peaceTerms: '' })
+      await mutate((c) => c.spacemolt_faction.propose_ally({ id: s.diplomacyTarget }), { label: 'propose_ally' })
+      set({ diplomacyTarget: '' })
       await loadFactionInfo()
+    } catch (err) {
+      reportError(err)
     } finally {
       set({ diplomacyLoading: false })
     }
-  }, [sendCommand, loadFactionInfo])
+  }, [mutate, reportError, s.diplomacyTarget, loadFactionInfo])
+
+  const handleSetEnemy = useCallback(async () => {
+    if (!s.diplomacyTarget) return
+    set({ diplomacyLoading: true })
+    try {
+      await mutate((c) => c.spacemolt_faction.set_enemy({ id: s.diplomacyTarget }), { label: 'set_enemy' })
+      set({ diplomacyTarget: '' })
+      await loadFactionInfo()
+    } catch (err) {
+      reportError(err)
+    } finally {
+      set({ diplomacyLoading: false })
+    }
+  }, [mutate, reportError, s.diplomacyTarget, loadFactionInfo])
+
+  const handleDeclareWar = useCallback(async () => {
+    if (!s.diplomacyTarget) return
+    set({ diplomacyLoading: true })
+    try {
+      await mutate((c) => c.spacemolt_faction.declare_war({ id: s.diplomacyTarget, text: s.warReason || undefined }), {
+        label: 'declare_war',
+      })
+      set({ diplomacyTarget: '', warReason: '' })
+      await loadFactionInfo()
+    } catch (err) {
+      reportError(err)
+    } finally {
+      set({ diplomacyLoading: false })
+    }
+  }, [mutate, reportError, s.diplomacyTarget, s.warReason, loadFactionInfo])
+
+  const handleProposePeace = useCallback(async () => {
+    if (!s.diplomacyTarget) return
+    set({ diplomacyLoading: true })
+    try {
+      await mutate((c) => c.spacemolt_faction.propose_peace({ id: s.diplomacyTarget, text: s.peaceTerms || undefined }), {
+        label: 'propose_peace',
+      })
+      set({ diplomacyTarget: '', peaceTerms: '' })
+      await loadFactionInfo()
+    } catch (err) {
+      reportError(err)
+    } finally {
+      set({ diplomacyLoading: false })
+    }
+  }, [mutate, reportError, s.diplomacyTarget, s.peaceTerms, loadFactionInfo])
 
   const handleAcceptPeace = useCallback(async (factionId: string) => {
     set({ diplomacyLoading: true })
     try {
-      await sendCommand('faction_accept_peace', { faction_id: factionId })
+      await mutate((c) => c.spacemolt_faction.accept_peace({ id: factionId }), { label: 'accept_peace' })
       await loadFactionInfo()
+    } catch (err) {
+      reportError(err)
     } finally {
       set({ diplomacyLoading: false })
     }
-  }, [sendCommand, loadFactionInfo])
+  }, [mutate, reportError, loadFactionInfo])
 
   const handleSubmitIntel = useCallback(async () => {
-    if (!state.system?.id) return
+    const systemId = location?.system_id
+    if (!systemId) return
     set({ submittingIntel: true })
     try {
-      await sendCommand('faction_submit_intel', { systems: [{ system_id: state.system.id }] })
+      await mutate(
+        (c) => c.spacemolt_intel.submit_intel({ systems: [{ system_id: systemId, name: location?.system_name }] }),
+        { label: 'submit_intel' },
+      )
+    } catch (err) {
+      reportError(err)
     } finally {
       set({ submittingIntel: false })
     }
-  }, [sendCommand, state.system])
+  }, [mutate, reportError, location?.system_id, location?.system_name])
 
   const handleQueryIntel = useCallback(async () => {
     set({ queryingIntel: true })
     try {
-      const params: Record<string, unknown> = {}
-      if (s.intelQuery.trim()) params.system_name = s.intelQuery.trim()
-      const res = await sendCommand('faction_query_intel', params) as Record<string, unknown>
-      set({ intelEntries: (res.entries || []) as IntelEntry[] })
+      const params = s.intelQuery.trim() ? { system_name: s.intelQuery.trim() } : {}
+      const res = await store.account.commands.spacemolt_intel.query_intel(params)
+      set({ intelEntries: res.structuredContent?.entries ?? [] })
+    } catch (err) {
+      reportError(err)
     } finally {
       set({ queryingIntel: false })
     }
-  }, [sendCommand, s.intelQuery])
+  }, [store, reportError, s.intelQuery])
 
   const handleIntelStatus = useCallback(async () => {
     set({ loadingIntelStatus: true })
     try {
-      const res = await sendCommand('faction_intel_status') as Record<string, unknown>
-      set({ intelStatus: res as unknown as IntelStatus })
+      const res = await store.account.commands.spacemolt_intel.intel_status()
+      set({ intelStatus: res.structuredContent ?? null })
+    } catch (err) {
+      reportError(err)
     } finally {
       set({ loadingIntelStatus: false })
     }
-  }, [sendCommand])
+  }, [store, reportError])
 
   const handleLoadRooms = useCallback(async () => {
     set({ loadingRooms: true })
     try {
-      const res = await sendCommand('faction_rooms') as Record<string, unknown>
+      const res = await store.account.commands.spacemolt_faction.rooms()
       set({
-        rooms: (res.rooms || []) as FactionRoom[],
-        maxRooms: typeof res.max_rooms === 'number' ? res.max_rooms : 5,
+        rooms: res.structuredContent?.rooms ?? [],
+        maxRooms: res.structuredContent?.max_rooms ?? 5,
         roomsLoaded: true,
       })
+    } catch (err) {
+      reportError(err)
     } finally {
       set({ loadingRooms: false })
     }
-  }, [sendCommand])
+  }, [store, reportError])
 
   const handleVisitRoom = useCallback(async (roomId: string) => {
     set({ loadingRoom: true, selectedRoom: null })
     try {
-      const res = await sendCommand('faction_visit_room', { room_id: roomId }) as unknown as FactionRoomDetail
-      set({ selectedRoom: res })
+      const res = await store.account.commands.spacemolt_faction.visit_room({ id: roomId })
+      set({ selectedRoom: res.structuredContent ?? null })
+    } catch (err) {
+      reportError(err)
     } finally {
       set({ loadingRoom: false })
     }
-  }, [sendCommand])
+  }, [store, reportError])
 
   const handleCreateRoom = useCallback(async () => {
     if (!s.roomFormName.trim()) return
     set({ creatingRoom: true })
     try {
-      await sendCommand('faction_write_room', {
+      await store.account.commands.spacemolt_faction_admin.write_room({
         name: s.roomFormName.trim(),
-        content: s.roomFormDesc.trim(),
-        access: s.roomFormAccess,
+        description: s.roomFormDesc.trim(),
+        access: s.roomFormAccess as 'public' | 'members' | 'officers',
       })
       set({ roomFormName: '', roomFormDesc: '', roomFormAccess: 'members' })
       await handleLoadRooms()
+    } catch (err) {
+      reportError(err)
     } finally {
       set({ creatingRoom: false })
     }
-  }, [sendCommand, s.roomFormName, s.roomFormDesc, s.roomFormAccess, handleLoadRooms])
+  }, [store, reportError, s.roomFormName, s.roomFormDesc, s.roomFormAccess, handleLoadRooms])
 
   const handleDeleteRoom = useCallback(async (roomId: string) => {
     if (!confirm('Delete this room? This cannot be undone.')) return
     set({ deletingRoomId: roomId })
     try {
-      await sendCommand('faction_delete_room', { room_id: roomId })
+      await store.account.commands.spacemolt_faction.delete_room({ id: roomId })
       set(prev => ({
         rooms: prev.rooms.filter(r => r.room_id !== roomId),
         selectedRoom: prev.selectedRoom?.room_id === roomId ? null : prev.selectedRoom,
       }))
+    } catch (err) {
+      reportError(err)
     } finally {
       set({ deletingRoomId: null })
     }
-  }, [sendCommand])
+  }, [store, reportError])
 
   return (
     <Panel
@@ -619,7 +684,7 @@ export function FactionPanel() {
                 <ActionButton
                   label="Propose Ally"
                   icon={<Shield size={12} />}
-                  onClick={() => handleDiplomacy('faction_propose_ally', s.diplomacyTarget)}
+                  onClick={handleProposeAlly}
                   disabled={!s.diplomacyTarget || s.diplomacyLoading}
                   loading={s.diplomacyLoading}
                   size="sm"
@@ -627,7 +692,7 @@ export function FactionPanel() {
                 <ActionButton
                   label="Set Enemy"
                   icon={<Swords size={12} />}
-                  onClick={() => handleDiplomacy('faction_set_enemy', s.diplomacyTarget)}
+                  onClick={handleSetEnemy}
                   disabled={!s.diplomacyTarget || s.diplomacyLoading}
                   variant="danger"
                   size="sm"
@@ -646,7 +711,7 @@ export function FactionPanel() {
               <ActionButton
                 label="Declare War"
                 icon={<Flag size={12} />}
-                onClick={() => handleDiplomacy('faction_declare_war', s.diplomacyTarget, { reason: s.warReason })}
+                onClick={handleDeclareWar}
                 disabled={!s.diplomacyTarget || s.diplomacyLoading}
                 loading={s.diplomacyLoading}
                 variant="danger"
@@ -666,7 +731,7 @@ export function FactionPanel() {
               <ActionButton
                 label="Propose Peace"
                 icon={<Handshake size={12} />}
-                onClick={() => handleDiplomacy('faction_propose_peace', s.diplomacyTarget, { terms: s.peaceTerms })}
+                onClick={handleProposePeace}
                 disabled={!s.diplomacyTarget || s.diplomacyLoading}
                 loading={s.diplomacyLoading}
                 variant="secondary"
@@ -683,7 +748,7 @@ export function FactionPanel() {
                 label="Submit Intel"
                 icon={<Radar size={12} />}
                 onClick={handleSubmitIntel}
-                disabled={!state.system?.id || s.submittingIntel}
+                disabled={!location?.system_id || s.submittingIntel}
                 loading={s.submittingIntel}
                 size="sm"
               />
@@ -740,22 +805,31 @@ export function FactionPanel() {
                     <span className={styles.intelStatValue}>{s.intelStatus.intel_level}</span>
                   </div>
                   <div className={styles.intelStatItem}>
-                    <span className={styles.intelStatLabel}>Reports (24h)</span>
-                    <span className={styles.intelStatValue}>{s.intelStatus.reports_24h ?? '--'}</span>
+                    <span className={styles.intelStatLabel}>Coverage</span>
+                    <span className={styles.intelStatValue}>{s.intelStatus.coverage_pct}%</span>
                   </div>
                   <div className={styles.intelStatItem}>
-                    <span className={styles.intelStatLabel}>Total Reports</span>
-                    <span className={styles.intelStatValue}>{s.intelStatus.total_reports ?? '--'}</span>
+                    <span className={styles.intelStatLabel}>Systems Known</span>
+                    <span className={styles.intelStatValue}>
+                      {s.intelStatus.systems_known}
+                      {s.intelStatus.total_systems !== undefined ? ` / ${s.intelStatus.total_systems}` : ''}
+                    </span>
                   </div>
                   <div className={styles.intelStatItem}>
-                    <span className={styles.intelStatLabel}>Unique Systems</span>
-                    <span className={styles.intelStatValue}>{s.intelStatus.unique_systems ?? '--'}</span>
+                    <span className={styles.intelStatLabel}>POIs Known</span>
+                    <span className={styles.intelStatValue}>{s.intelStatus.pois_known}</span>
                   </div>
-                  {s.intelStatus.top_contributors && s.intelStatus.top_contributors.length > 0 && (
+                  {s.intelStatus.contributors !== undefined && (
+                    <div className={styles.intelStatItem}>
+                      <span className={styles.intelStatLabel}>Contributors</span>
+                      <span className={styles.intelStatValue}>{s.intelStatus.contributors}</span>
+                    </div>
+                  )}
+                  {s.intelStatus.top_contributor && (
                     <div className={styles.intelStatItem}>
                       <span className={styles.intelStatLabel}>Top Contributor</span>
                       <span className={styles.intelStatValue}>
-                        {s.intelStatus.top_contributors[0].username} ({s.intelStatus.top_contributors[0].reports})
+                        {s.intelStatus.top_contributor} ({s.intelStatus.top_contributions ?? 0})
                       </span>
                     </div>
                   )}

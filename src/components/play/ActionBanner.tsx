@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Loader2 } from 'lucide-react'
-import { useGame } from './GameProvider'
+import { usePendingAction } from '@/lib/spacemolt'
 import styles from './ActionBanner.module.css'
 
 /** Human-readable labels for mutation commands */
@@ -47,10 +47,9 @@ function getLabel(command: string): string {
 }
 
 export function ActionBanner({ autoTravelActive }: { autoTravelActive?: boolean }) {
-  const { state } = useGame()
   const [elapsed, setElapsed] = useState(0)
 
-  const pending = state.pendingAction
+  const pending = usePendingAction()
 
   useEffect(() => {
     if (!pending) {

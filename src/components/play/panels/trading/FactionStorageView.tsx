@@ -1,20 +1,49 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import {
   Users,
   RefreshCw,
   ArrowDownToLine,
   ArrowUpFromLine,
   Box,
-  Ship,
 } from 'lucide-react'
-import { useGame } from '../../GameProvider'
-import { GameApiError } from '@/lib/gameApi'
+import {
+  useCargo,
+  useCommandMutation,
+  useCommandQuery,
+  useLocationState,
+  usePendingAction,
+  usePlayer,
+} from '@/lib/spacemolt'
+import type { StorageResponse } from '@spacemolt/lib'
+import { usePlay } from '../../PlayProvider'
 import { ItemName } from '../../ItemTooltip'
 import { shared } from '../../shared'
-import type { ViewStorageResponse } from '@/lib/gameTypes'
 import styles from './StorageView.module.css'
+
+// StorageResponse is one generated union across every branch of the unified
+// storage action (self view, faction view, deposit/withdraw/gift results) —
+// narrow to the branch each view() call here actually returns.
+type PersonalStorageView = Extract<StorageResponse, { hint: string; ships: Array<unknown> }>
+type FactionStorageResponse = Extract<StorageResponse, { hint: string; faction_id: string }>
+
+interface CargoRow {
+  item_id: string
+  name: string
+  quantity: number
+  size?: number
+}
+
+/** useCargo() rows are all-optional (delta-friendly wire shape); drop incomplete entries and normalize item_name -> name. */
+function normalizeCargo(raw: ReturnType<typeof useCargo>): CargoRow[] {
+  return (raw ?? []).flatMap((c) => {
+    if (!c.item_id || !c.quantity) return []
+    return [{ item_id: c.item_id, name: c.item_name ?? c.item_id, quantity: c.quantity, size: c.size }]
+  })
+}
+
+const errorMessage = (err: unknown): string => (err instanceof Error ? err.message : String(err))
 
 /**
  * FactionStorageView shows the contents of the faction lockbox at the current
@@ -23,114 +52,100 @@ import styles from './StorageView.module.css'
  * which we surface as an empty-state hint.
  */
 export function FactionStorageView() {
-  const { state, sendCommand, api } = useGame()
-  const isDocked = state.isDocked
-  const hasFaction = !!state.player?.faction_id
-  const cargo = state.ship?.cargo || []
-  const personalStorage = state.storageData?.items || []
-  const actionPending = state.pendingAction !== null
+  const { uiStore } = usePlay()
+  const location = useLocationState()
+  const dockedAt = location?.docked_at
+  const isDocked = Boolean(dockedAt)
+  const hasFaction = Boolean(usePlayer()?.faction_id)
+  const rawCargo = useCargo()
+  const cargo = useMemo(() => normalizeCargo(rawCargo), [rawCargo])
+  const actionPending = usePendingAction() !== null
+  const mutate = useCommandMutation()
 
-  const [factionData, setFactionData] = useState<ViewStorageResponse | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const reportError = useCallback((err: unknown) => {
+    const text = errorMessage(err)
+    uiStore.dispatch({ type: 'toast', kind: 'danger', text })
+    uiStore.dispatch({ type: 'event', kind: 'danger', text })
+  }, [uiStore])
+
+  const {
+    data: factionData,
+    loading: factionLoading,
+    error: factionError,
+    refetch: refetchFaction,
+  } = useCommandQuery(
+    async (account) => (await account.commands.spacemolt_storage.view({ target: 'faction' })).structuredContent as FactionStorageResponse | undefined,
+    [dockedAt, hasFaction],
+    { enabled: isDocked && hasFaction, refreshOnSections: ['cargo'] },
+  )
+
+  const { data: personalData, refetch: refetchPersonal } = useCommandQuery(
+    async (account) => (await account.commands.spacemolt_storage.view()).structuredContent as PersonalStorageView | undefined,
+    [dockedAt, hasFaction],
+    { enabled: isDocked && hasFaction, refreshOnSections: ['cargo'] },
+  )
+  const personalStorage = personalData?.items ?? []
 
   // Per-row qty inputs
   const [withdrawQtys, setWithdrawQtys] = useState<Record<string, string>>({})
   const [depositQtys, setDepositQtys] = useState<Record<string, string>>({})
 
-  const fetchFactionStorage = useCallback(async () => {
-    if (!api || !isDocked || !hasFaction) return
-    setLoading(true)
-    setError(null)
-    try {
-      const result = await api.command('view_storage', { target: 'faction' }) as ViewStorageResponse
-      setFactionData(result)
-    } catch (err) {
-      if (err instanceof GameApiError) {
-        setError(err.message || 'Faction storage is not available here.')
-      } else {
-        setError('Failed to load faction storage.')
-      }
-      setFactionData(null)
-    } finally {
-      setLoading(false)
-    }
-  }, [api, isDocked, hasFaction])
-
-  // Fetch on mount and when docked/faction state changes
-  useEffect(() => {
-    fetchFactionStorage()
-  }, [fetchFactionStorage])
-
   // Withdraw from faction storage to personal cargo (source=faction)
   const handleWithdrawItem = useCallback(
     async (itemId: string, maxQty: number) => {
-      if (actionPending || !api) return
+      if (actionPending) return
       const qtyStr = withdrawQtys[itemId] ?? String(maxQty)
       const quantity = parseInt(qtyStr, 10)
       if (isNaN(quantity) || quantity < 1 || quantity > maxQty) return
       try {
-        await api.command('withdraw_items', {
-          item_id: itemId,
-          quantity,
-          source: 'faction',
-        })
+        await mutate((c) => c.spacemolt_storage.withdraw({ item_id: itemId, quantity, source: 'faction' }), { label: 'faction_withdraw' })
         setWithdrawQtys((prev) => ({ ...prev, [itemId]: '' }))
-        // Refresh both faction storage and personal/cargo state
-        await fetchFactionStorage()
-        sendCommand('view_storage')
+        refetchFaction()
+        refetchPersonal()
       } catch (err) {
-        if (err instanceof GameApiError) setError(err.message)
+        reportError(err)
       }
     },
-    [api, sendCommand, withdrawQtys, actionPending, fetchFactionStorage]
+    [mutate, withdrawQtys, actionPending, refetchFaction, refetchPersonal, reportError, setWithdrawQtys]
   )
 
   // Deposit from cargo to faction storage (target=faction)
   const handleDepositFromCargo = useCallback(
     async (itemId: string, maxQty: number) => {
-      if (actionPending || !api) return
+      if (actionPending) return
       const qtyStr = depositQtys[itemId] ?? String(maxQty)
       const quantity = parseInt(qtyStr, 10)
       if (isNaN(quantity) || quantity < 1 || quantity > maxQty) return
       try {
-        await api.command('deposit_items', {
-          item_id: itemId,
-          quantity,
-          target: 'faction',
-        })
+        await mutate((c) => c.spacemolt_storage.deposit({ item_id: itemId, quantity, target: 'faction' }), { label: 'faction_deposit' })
         setDepositQtys((prev) => ({ ...prev, [itemId]: '' }))
-        await fetchFactionStorage()
-        sendCommand('view_storage')
+        refetchFaction()
+        refetchPersonal()
       } catch (err) {
-        if (err instanceof GameApiError) setError(err.message)
+        reportError(err)
       }
     },
-    [api, sendCommand, depositQtys, actionPending, fetchFactionStorage]
+    [mutate, depositQtys, actionPending, refetchFaction, refetchPersonal, reportError, setDepositQtys]
   )
 
   // Move from personal storage to faction storage (source=storage, target=faction)
   const handleMoveFromPersonal = useCallback(
     async (itemId: string, maxQty: number) => {
-      if (actionPending || !api) return
-      const qtyStr = depositQtys[`personal:${itemId}`] ?? String(maxQty)
+      if (actionPending) return
+      const key = `personal:${itemId}`
+      const qtyStr = depositQtys[key] ?? String(maxQty)
       const quantity = parseInt(qtyStr, 10)
       if (isNaN(quantity) || quantity < 1 || quantity > maxQty) return
       try {
-        await api.command('deposit_items', {
-          item_id: itemId,
-          quantity,
-          source: 'storage',
-          target: 'faction',
-        })
-        setDepositQtys((prev) => ({ ...prev, [`personal:${itemId}`]: '' }))
-        await fetchFactionStorage()
-        sendCommand('view_storage')
+        await mutate((c) => c.spacemolt_storage.deposit({ item_id: itemId, quantity, source: 'storage', target: 'faction' }), { label: 'faction_deposit' })
+        setDepositQtys((prev) => ({ ...prev, [key]: '' }))
+        refetchFaction()
+        refetchPersonal()
       } catch (err) {
-        if (err instanceof GameApiError) setError(err.message)
+        reportError(err)
       }
     },
-    [api, sendCommand, depositQtys, actionPending, fetchFactionStorage]
+    [mutate, depositQtys, actionPending, refetchFaction, refetchPersonal, reportError, setDepositQtys]
   )
 
   if (!isDocked) {
@@ -150,7 +165,6 @@ export function FactionStorageView() {
   }
 
   const factionItems = factionData?.items || []
-  const factionShips = factionData?.ships || []
 
   return (
     <div className={styles.container}>
@@ -161,22 +175,22 @@ export function FactionStorageView() {
         </span>
         <button
           className={shared.refreshBtn}
-          onClick={fetchFactionStorage}
+          onClick={refetchFaction}
           title="Refresh faction storage"
           type="button"
-          disabled={loading}
+          disabled={factionLoading}
         >
           <RefreshCw size={13} />
         </button>
       </div>
 
-      {loading && !factionData && (
+      {factionLoading && !factionData && (
         <div className={styles.loading}>Loading faction storage...</div>
       )}
 
-      {error && !loading && !factionData && (
+      {factionError && !factionLoading && !factionData && (
         <div className={shared.emptyState}>
-          {error}
+          {factionError}
           <div style={{ marginTop: '0.4rem', fontSize: '0.65rem', opacity: 0.75 }}>
             Build a faction lockbox at this base to enable faction storage.
           </div>
@@ -245,29 +259,6 @@ export function FactionStorageView() {
           ) : (
             <div className={shared.emptyState}>No items in faction storage</div>
           )}
-        </div>
-      )}
-
-      {/* Faction stored ships */}
-      {factionData && factionShips.length > 0 && (
-        <div className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <Ship size={12} />
-            Faction Ships ({factionShips.length})
-          </div>
-          <div className={styles.shipList}>
-            {factionShips.map((ship) => (
-              <div key={ship.ship_id} className={styles.shipCard}>
-                <span className={styles.shipName}>
-                  {ship.class_name || ship.class_id}
-                </span>
-                <div className={styles.shipMeta}>
-                  <span className={styles.shipStat}>Modules: {ship.modules}</span>
-                  <span className={styles.shipStat}>Cargo: {ship.cargo_used}</span>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       )}
 

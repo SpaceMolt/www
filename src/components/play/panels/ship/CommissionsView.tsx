@@ -1,63 +1,92 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback } from 'react'
 import {
   Clock,
   Check,
   X,
   AlertTriangle,
   MapPin,
+  Send,
 } from 'lucide-react'
-import { useGame } from '../../GameProvider'
+import type { CommissionStatusResponse } from '@spacemolt/lib'
+import { useCommandMutation, useCommandQuery } from '@/lib/spacemolt'
+import { usePlay } from '../../PlayProvider'
 import { Loading, ConfirmAction, shared } from '../../shared'
 import { formatItemId } from '@/data/catalog'
 import styles from './CommissionsView.module.css'
 
-interface Commission {
-  commission_id: string
-  ship_class_id: string
-  status: string
-  ship_name: string
-  base_name: string
-  ticks_remaining: number
-  built_ship_id?: string
-  // sourcing state: how much of each build material the shipyard has acquired
-  materials_gathered?: Record<string, number>
-  required_materials?: Record<string, number>
+type Commission = CommissionStatusResponse['commissions'][number]
+
+function errorText(err: unknown): string {
+  return err instanceof Error ? err.message : String(err)
 }
 
 export function CommissionsView() {
-  const { sendCommand } = useGame()
-  const [commissions, setCommissions] = useState<Commission[]>([])
-  const [loading, setLoading] = useState(true)
+  const mutate = useCommandMutation()
+  const { uiStore } = usePlay()
   const [cancelConfirm, setCancelConfirm] = useState<string | null>(null)
+  const [supplyQtys, setSupplyQtys] = useState<Record<string, string>>({})
+  const [supplying, setSupplying] = useState<string | null>(null)
 
-  const fetchStatus = useCallback(() => {
-    setLoading(true)
-    sendCommand('commission_status').then((result) => {
-      const r = result as Record<string, unknown>
-      setCommissions((r.commissions || []) as Commission[])
-      setLoading(false)
-    }).catch(() => setLoading(false))
-  }, [sendCommand])
+  const { data, loading, refetch } = useCommandQuery(
+    async (account) => (await account.commands.spacemolt_ship.commission_status({})).structuredContent,
+    []
+  )
+  const commissions = data?.commissions ?? []
 
-  // Auto-fetch on mount
-  useEffect(() => {
-    fetchStatus()
-  }, [fetchStatus])
+  const reportError = useCallback(
+    (err: unknown) => {
+      const text = errorText(err)
+      uiStore.dispatch({ type: 'toast', kind: 'danger', text })
+      uiStore.dispatch({ type: 'event', kind: 'danger', text })
+    },
+    [uiStore]
+  )
 
   // Finished ships are delivered straight into your fleet (docked at the build
   // station). Switching to the built ship is how you take the helm.
-  const handleSwitchTo = useCallback((shipId: string) => {
-    sendCommand('switch_ship', { ship_id: shipId }).then(() => fetchStatus())
-  }, [sendCommand, fetchStatus])
+  const handleSwitchTo = useCallback(
+    (shipId: string) => {
+      mutate((c) => c.spacemolt_ship.switch_ship({ id: shipId }), { label: 'switch_ship' })
+        .then(() => refetch())
+        .catch(reportError)
+    },
+    [mutate, refetch, reportError]
+  )
 
-  const handleCancel = useCallback((commissionId: string) => {
-    sendCommand('cancel_commission', { commission_id: commissionId }).then(() => {
-      setCancelConfirm(null)
-      fetchStatus()
-    })
-  }, [sendCommand, fetchStatus])
+  const handleCancel = useCallback(
+    (commissionId: string) => {
+      mutate((c) => c.spacemolt_ship.cancel_commission({ id: commissionId }), { label: 'cancel_commission' })
+        .then(() => {
+          setCancelConfirm(null)
+          refetch()
+        })
+        .catch(reportError)
+    },
+    [mutate, refetch, reportError]
+  )
+
+  const handleSupply = useCallback(
+    (commissionId: string, itemId: string, maxQty: number) => {
+      const key = `${commissionId}:${itemId}`
+      const qtyStr = supplyQtys[key] ?? String(maxQty)
+      const quantity = parseInt(qtyStr, 10)
+      if (isNaN(quantity) || quantity < 1) return
+      setSupplying(key)
+      mutate((c) => c.spacemolt_ship.supply_commission({ id: commissionId, item_id: itemId, quantity }), { label: 'supply_commission' })
+        .then(() => {
+          setSupplying(null)
+          setSupplyQtys((prev) => ({ ...prev, [key]: '' }))
+          refetch()
+        })
+        .catch((err) => {
+          setSupplying(null)
+          reportError(err)
+        })
+    },
+    [mutate, refetch, supplyQtys, reportError]
+  )
 
   if (loading && commissions.length === 0) {
     return (
@@ -76,10 +105,11 @@ export function CommissionsView() {
   return (
     <>
       <div className={styles.commissionsList}>
-        {commissions.map((c) => {
+        {commissions.map((c: Commission) => {
           const isReady = c.status === 'ready'
           const isBuilding = c.status === 'building'
           const isSourcing = c.status === 'sourcing'
+          const ticksRemaining = c.ticks_remaining ?? 0
 
           const statusLabel = isReady ? 'Ready' : isSourcing ? 'Sourcing' : c.status === 'pending' ? 'Queued' : 'Building'
           const statusClass = isReady
@@ -134,18 +164,18 @@ export function CommissionsView() {
                   <MapPin size={10} />
                   <span>{c.base_name}</span>
                 </div>
-                {!isReady && c.ticks_remaining > 0 && (
+                {!isReady && ticksRemaining > 0 && (
                   <div className={styles.commissionStat}>
                     <Clock size={10} />
-                    <span>{c.ticks_remaining} ticks (~{Math.round(c.ticks_remaining * 10 / 60)} min)</span>
+                    <span>{ticksRemaining} ticks (~{Math.round(ticksRemaining * 10 / 60)} min)</span>
                   </div>
                 )}
               </div>
 
               {/* Progress bar */}
-              {isBuilding && c.ticks_remaining > 0 && (
+              {isBuilding && ticksRemaining > 0 && (
                 <div className={styles.progressBarOuter}>
-                  <div className={styles.progressBarInner} style={{ width: `${Math.max(5, 100 - (c.ticks_remaining * 2))}%` }} />
+                  <div className={styles.progressBarInner} style={{ width: `${Math.max(5, 100 - (ticksRemaining * 2))}%` }} />
                 </div>
               )}
               {isReady && (
@@ -162,17 +192,47 @@ export function CommissionsView() {
                 </div>
               )}
 
-              {/* Materials progress (sourcing state, credits-only commissions) */}
+              {/* Materials progress (sourcing state, credits-only commissions) — donate
+                  materials directly to unstick a commission that's short on supply. */}
               {isSourcing && c.required_materials && Object.keys(c.required_materials).length > 0 && (
                 <div className={styles.materialsProgress}>
                   {Object.entries(c.required_materials).map(([itemId, need]) => {
                     const have = c.materials_gathered?.[itemId] ?? 0
+                    const remaining = Math.max(0, need - have)
+                    const key = `${c.commission_id}:${itemId}`
+                    const qtyStr = supplyQtys[key] ?? String(remaining)
+                    const qtyNum = parseInt(qtyStr, 10)
+                    const qtyValid = !isNaN(qtyNum) && qtyNum >= 1
                     return (
                       <div key={itemId} className={styles.materialProgressRow}>
                         <span className={styles.materialProgressName}>{formatItemId(itemId)}</span>
                         <span className={have >= need ? styles.materialProgressComplete : styles.materialProgressValue}>
                           {have}/{need}
                         </span>
+                        {remaining > 0 && (
+                          <span className={styles.commissionActions}>
+                            <input
+                              className={shared.textInput}
+                              type="number"
+                              min={1}
+                              max={remaining}
+                              value={qtyStr}
+                              onChange={(e) =>
+                                setSupplyQtys((prev) => ({ ...prev, [key]: e.target.value }))
+                              }
+                              title="Quantity to supply"
+                            />
+                            <button
+                              className={shared.confirmBtn}
+                              onClick={() => handleSupply(c.commission_id, itemId, remaining)}
+                              disabled={supplying === key || !qtyValid}
+                              title="Supply this material from your cargo/storage"
+                              type="button"
+                            >
+                              <Send size={10} /> Supply
+                            </button>
+                          </span>
+                        )}
                       </div>
                     )
                   })}

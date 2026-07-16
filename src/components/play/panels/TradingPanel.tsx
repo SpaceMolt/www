@@ -7,8 +7,9 @@ import {
   ClipboardList,
   ArrowLeftRight,
 } from 'lucide-react'
-import { useGame } from '../GameProvider'
-import { PanelWithTabs, shared } from '../shared'
+import { useLocationState } from '@/lib/spacemolt'
+import { usePlayUi } from '../PlayProvider'
+import { PanelWithTabs } from '../shared'
 import { MarketView } from './trading/MarketView'
 import { OrdersView } from './trading/OrdersView'
 import { TradesList } from './trading/TradesList'
@@ -17,10 +18,10 @@ import styles from './TradingPanel.module.css'
 type TabId = 'market' | 'orders' | 'trades'
 
 export function TradingPanel() {
-  const { state } = useGame()
+  const location = useLocationState()
+  const isDocked = Boolean(location?.docked_at)
+  const pendingTrades = usePlayUi((s) => s.pendingTrades)
   const [activeTab, setActiveTab] = useState<TabId>('market')
-  const pendingTrades = state.pendingTrades || []
-  const isDocked = state.isDocked
 
   // If undocked and on market tab, switch to orders
   useEffect(() => {

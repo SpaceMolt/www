@@ -18,43 +18,30 @@ import {
   Database,
   Gem,
 } from 'lucide-react'
-import { useGame } from './GameProvider'
+import { SpacemoltError } from '@spacemolt/lib'
+import type { FactionQueryIntelResponse } from '@spacemolt/lib'
+import {
+  useAccountStore,
+  useCommandMutation,
+  useCurrentTick,
+  useLocationState,
+  useModules,
+  usePendingAction,
+  usePlayer,
+  usePoi,
+  useShip,
+  useSystem,
+} from '@/lib/spacemolt'
+import { usePlay } from './PlayProvider'
 import { ProgressBar } from './ProgressBar'
 import { MiningModal } from './MiningModal'
 import type { GalaxyPanelHandle, MapSystemData, PlannedRoute } from './panels/GalaxyPanel'
 import { titleCase as formatLabel } from '@/lib/format'
 import styles from './LeftSidebar.module.css'
 
-// Intel query response types (not in generated types)
-interface IntelPoi {
-  id: string
-  type: string
-  name: string
-  class?: string
-  base_id?: string
-  base_name?: string
-  resources?: { resource_id: string; richness: number; remaining: number }[]
-}
-
-interface IntelEntry {
-  system_id: string
-  name: string
-  empire?: string
-  police_level: number
-  connections?: string[]
-  pois?: IntelPoi[]
-  submitted_by: string
-  submitter_name: string
-  submitted_at_tick: number
-  auto_synced?: boolean
-}
-
-interface IntelQueryResult {
-  entries: IntelEntry[]
-  count: number
-  total: number
-  intel_level: number
-}
+// Intel query response entries — shaped by the faction intel query, not a
+// cached state section.
+type IntelEntry = FactionQueryIntelResponse['entries'][number]
 
 export const EMPIRE_NAMES: Record<string, string> = {
   solarian: 'Solarian Confederacy',
@@ -78,8 +65,32 @@ interface LeftSidebarProps {
   onHighlightedSystemsChange?: (systems: Set<string> | null) => void
 }
 
+function errorMessage(err: unknown): string {
+  if (err instanceof SpacemoltError) return err.message
+  if (err instanceof Error) return err.message
+  return 'Action failed'
+}
+
+// useCommandMutation's runner returns the generic MutationResult shape
+// (details: Record<string, unknown>), not the per-command typed response —
+// narrow the optional `message` field defensively.
+function detailMessage(details: unknown): string | undefined {
+  const message = (details as { message?: unknown } | undefined)?.message
+  return typeof message === 'string' ? message : undefined
+}
+
 export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, plannedRoute, onPlannedRouteChange, activeTab, onTabChange, autoTravelActive, onHighlightedSystemsChange }: LeftSidebarProps) {
-  const { state, sendCommand, api } = useGame()
+  const store = useAccountStore()
+  const { uiStore } = usePlay()
+  const mutate = useCommandMutation()
+  const player = usePlayer()
+  const ship = useShip()
+  const modules = useModules()
+  const location = useLocationState()
+  const pendingAction = usePendingAction()
+  const currentTick = useCurrentTick()
+  const systemQuery = useSystem()
+  const poiQuery = usePoi()
   const [expandedPoi, setExpandedPoi] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [showMiningModal, setShowMiningModal] = useState(false)
@@ -97,16 +108,15 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
     if (exploreSystem) onTabChange('explore')
   }, [exploreSystem, onTabChange])
 
-  // Fetch intel status on mount to determine intel level (use api directly to avoid event log noise)
+  // Fetch intel status on mount to determine intel level
   useEffect(() => {
-    if (intelStatusFetched.current || !state.player?.faction_id || !api) return
+    if (intelStatusFetched.current || !player?.faction_id) return
     intelStatusFetched.current = true
-    api.callStructured<{ intel_level?: number }>('spacemolt_intel', 'intel_status').then((result) => {
-      if (result && typeof result.intel_level === 'number') {
-        setIntelLevel(result.intel_level)
-      }
+    store.account.commands.spacemolt_intel.intel_status().then((result) => {
+      const level = result.structuredContent?.intel_level
+      if (typeof level === 'number') setIntelLevel(level)
     }).catch(() => {})
-  }, [state.player?.faction_id, api])
+  }, [player?.faction_id, store])
 
   // Fetch intel for selected system
   useEffect(() => {
@@ -114,18 +124,14 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
       setSelectedSystemIntel(null)
       return
     }
-    if (!api) return
     let cancelled = false
-    api.callStructured<IntelQueryResult>('spacemolt_intel', 'query_intel', { system_id: exploreSystem.id, limit: 1 }).then((r) => {
+    store.account.commands.spacemolt_intel.query_intel({ system_id: exploreSystem.id, limit: 1 }).then((r) => {
       if (cancelled) return
-      if (r?.entries?.length) {
-        setSelectedSystemIntel(r.entries[0])
-      } else {
-        setSelectedSystemIntel(null)
-      }
+      const entries = r.structuredContent?.entries
+      setSelectedSystemIntel(entries && entries.length > 0 ? entries[0] : null)
     }).catch(() => { if (!cancelled) setSelectedSystemIntel(null) })
     return () => { cancelled = true }
-  }, [exploreSystem, intelLevel, api])
+  }, [exploreSystem, intelLevel, store])
 
   // Intel search: debounced query when search changes
   const hasIntel = intelLevel >= 2
@@ -144,11 +150,11 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
     const resourceId = query.toLowerCase().replace(/\s+/g, '_')
 
     intelDebounceRef.current = setTimeout(() => {
-      if (!api) return
-      api.callStructured<IntelQueryResult>('spacemolt_intel', 'query_intel', { resource_type: resourceId, limit: 100 }).then((r) => {
-        if (r?.entries?.length) {
-          setIntelResults(r.entries)
-          onHighlightedSystemsChange?.(new Set(r.entries.map(e => e.system_id)))
+      store.account.commands.spacemolt_intel.query_intel({ resource_type: resourceId, limit: 100 }).then((r) => {
+        const entries = r.structuredContent?.entries
+        if (entries && entries.length > 0) {
+          setIntelResults(entries)
+          onHighlightedSystemsChange?.(new Set(entries.map(e => e.system_id)))
         } else {
           setIntelResults(null)
           onHighlightedSystemsChange?.(null)
@@ -164,7 +170,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
     return () => {
       if (intelDebounceRef.current) clearTimeout(intelDebounceRef.current)
     }
-  }, [searchQuery, hasIntel, api, onHighlightedSystemsChange])
+  }, [searchQuery, hasIntel, store, onHighlightedSystemsChange])
 
   const handleIntelResultSelect = useCallback((entry: IntelEntry) => {
     const systems = galaxyRef.current?.getSystems() ?? []
@@ -179,69 +185,158 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
     }
   }, [galaxyRef, onExploreSystemChange, onTabChange, onHighlightedSystemsChange])
 
-  const system = state.system
-  const poi = state.poi
-  const isDocked = state.isDocked
-  const isTraveling =
-    state.travelProgress !== null && state.travelProgress !== undefined
-  const actionBusy = state.pendingAction !== null || autoTravelActive
+  const systemData = systemQuery.data
+  const system = systemData && 'system' in systemData ? systemData.system : undefined
+  const poiData = poiQuery.data
+  const poi = poiData && 'poi' in poiData ? poiData.poi : undefined
+
+  const isDocked = Boolean(location?.docked_at)
+  const isTraveling = Boolean(location?.in_transit)
+  const actionBusy = pendingAction !== null || autoTravelActive
+
+  const isJumpTransit = location?.transit_type === 'jump'
+  const travelDestination =
+    (isJumpTransit ? location?.transit_dest_system_name : location?.transit_dest_poi_name) ||
+    location?.transit_dest_poi_name ||
+    location?.transit_dest_system_name ||
+    'unknown'
+  const transitElapsed = location?.transit_ticks_elapsed ?? 0
+  const transitArrivalTick = location?.transit_arrival_tick
+  const transitEta = transitArrivalTick !== undefined ? Math.max(0, transitArrivalTick - currentTick) : null
+  const transitTotalTicks = transitEta !== null ? transitElapsed + transitEta : null
+  const travelProgress =
+    transitTotalTicks && transitTotalTicks > 0 ? Math.max(0, Math.min(100, (transitElapsed / transitTotalTicks) * 100)) : 0
+
+  const logEvent = useCallback((text?: string) => {
+    if (text) uiStore.dispatch({ type: 'event', kind: 'info', text })
+  }, [uiStore])
+
+  const reportError = useCallback((err: unknown) => {
+    const text = errorMessage(err)
+    uiStore.dispatch({ type: 'toast', kind: 'danger', text })
+    uiStore.dispatch({ type: 'event', kind: 'danger', text })
+  }, [uiStore])
 
   const handleTravel = useCallback(
-    (poiId: string) => {
-      sendCommand('travel', { target_poi: poiId })
+    async (poiId: string) => {
+      const targetPoi = system?.pois.find((p) => p.id === poiId)
+      let estimatedMs: number | undefined
+      if (poi && targetPoi) {
+        const dx = targetPoi.position.x - poi.position.x
+        const dy = targetPoi.position.y - poi.position.y
+        const distance = Math.sqrt(dx * dx + dy * dy)
+        const speed = Math.max(0.1, ship?.speed ?? 1)
+        const travelTicks = Math.max(1, Math.ceil(distance / speed))
+        estimatedMs = travelTicks * 10000
+      }
+      try {
+        const result = await mutate((c) => c.spacemolt.travel({ id: poiId }), { label: 'travel', estimatedMs })
+        logEvent(detailMessage(result.delta.details) || `Traveling to ${targetPoi?.name || 'destination'}...`)
+      } catch (err) {
+        reportError(err)
+      }
     },
-    [sendCommand]
+    [mutate, system, poi, ship?.speed, logEvent, reportError],
   )
 
   const handleJump = useCallback(
-    (systemId: string) => {
-      sendCommand('jump', { target_system: systemId })
+    async (systemId: string) => {
+      const speed = ship?.speed ?? 1
+      const estimatedMs = Math.max(10, 70 - 10 * speed) * 1000
+      try {
+        await mutate((c) => c.spacemolt.jump({ id: systemId }), { label: 'jump', estimatedMs })
+        logEvent('Jumping...')
+      } catch (err) {
+        reportError(err)
+      }
     },
-    [sendCommand]
+    [mutate, ship?.speed, logEvent, reportError],
   )
 
-  const handleDock = useCallback(() => {
-    sendCommand('dock')
-  }, [sendCommand])
+  const handleDock = useCallback(async () => {
+    try {
+      const result = await mutate((c) => c.spacemolt.dock(), { label: 'dock' })
+      logEvent(`Docked at ${result.delta.details?.base || 'base'}`)
+    } catch (err) {
+      reportError(err)
+    }
+  }, [mutate, logEvent, reportError])
 
-  const handleUndock = useCallback(() => {
-    sendCommand('undock')
-  }, [sendCommand])
+  const handleUndock = useCallback(async () => {
+    try {
+      await mutate((c) => c.spacemolt.undock(), { label: 'undock' })
+      logEvent('Undocked from station')
+    } catch (err) {
+      reportError(err)
+    }
+  }, [mutate, logEvent, reportError])
 
-  const handleMine = useCallback(() => {
-    sendCommand('mine')
-  }, [sendCommand])
+  const handleMine = useCallback(async () => {
+    try {
+      const result = await mutate((c) => c.spacemolt.mine(), { label: 'mine' })
+      logEvent(detailMessage(result.delta.details) || 'Mining started')
+    } catch (err) {
+      reportError(err)
+    }
+  }, [mutate, logEvent, reportError])
 
-  const handleSurvey = useCallback(() => {
-    sendCommand('survey_system')
-  }, [sendCommand])
+  const handleSurvey = useCallback(async () => {
+    try {
+      const result = await mutate((c) => c.spacemolt.survey_system(), { label: 'survey_system' })
+      logEvent(detailMessage(result.delta.details) || 'Survey complete')
+    } catch (err) {
+      reportError(err)
+    }
+  }, [mutate, logEvent, reportError])
 
-  const handleRefuel = useCallback(() => {
-    sendCommand('refuel')
-  }, [sendCommand])
+  const handleRefuel = useCallback(async () => {
+    try {
+      const result = await mutate((c) => c.spacemolt.refuel(), { label: 'refuel' })
+      logEvent(detailMessage(result.delta.details) || 'Refueled')
+    } catch (err) {
+      reportError(err)
+    }
+  }, [mutate, logEvent, reportError])
 
-  const handleRepair = useCallback(() => {
-    sendCommand('repair')
-  }, [sendCommand])
+  const handleRepair = useCallback(async () => {
+    try {
+      const result = await mutate((c) => c.spacemolt.repair(), { label: 'repair' })
+      logEvent(detailMessage(result.delta.details) || 'Repaired')
+    } catch (err) {
+      reportError(err)
+    }
+  }, [mutate, logEvent, reportError])
+
+  const handleScanNearest = useCallback(async () => {
+    const targetId = location?.nearby_players?.[0]?.player_id
+    if (!targetId) return
+    try {
+      const result = await mutate((c) => c.spacemolt.scan({ id: targetId }), { label: 'scan' })
+      logEvent(detailMessage(result.delta.details) || 'Scan complete')
+    } catch (err) {
+      reportError(err)
+    }
+  }, [mutate, location, logEvent, reportError])
 
   const handlePlotCourse = useCallback(async () => {
     if (!exploreSystem) return
     try {
-      const result = await sendCommand('find_route', { target_system: exploreSystem.id })
-      if (result && result.found) {
+      const result = await store.account.commands.spacemolt.find_route({ id: exploreSystem.id })
+      const data = result.structuredContent
+      if (data?.found) {
         onPlannedRouteChange({
-          route: result.route as PlannedRoute['route'],
-          totalJumps: result.total_jumps as number,
-          targetSystem: result.target_system as string,
-          fuelPerJump: result.fuel_per_jump as number,
-          estimatedFuel: result.estimated_fuel as number,
-          fuelAvailable: result.fuel_available as number,
+          route: data.route.map((r) => ({ system_id: r.system_id, name: r.name, jumps: r.jumps })),
+          totalJumps: data.total_jumps,
+          targetSystem: data.target_system,
+          fuelPerJump: data.fuel_per_jump,
+          estimatedFuel: data.estimated_fuel,
+          fuelAvailable: data.fuel_available,
         })
       }
-    } catch {
-      // Route planning failed
+    } catch (err) {
+      reportError(err)
     }
-  }, [exploreSystem, sendCommand, onPlannedRouteChange])
+  }, [exploreSystem, store, onPlannedRouteChange, reportError])
 
   const togglePoiExpand = useCallback((poiId: string) => {
     setExpandedPoi((prev) => (prev === poiId ? null : poiId))
@@ -254,7 +349,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
       onTabChange('explore')
       galaxyRef.current?.panToSystem(sys.id)
     },
-    [galaxyRef, onExploreSystemChange],
+    [galaxyRef, onExploreSystemChange, onTabChange],
   )
 
   // Fuzzy filter systems
@@ -320,13 +415,21 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
                   {poi.description && (
                     <div className={styles.poiDescription}>{poi.description}</div>
                   )}
-                  {poi.resources && poi.resources.length > 0 && (
+                  {location?.resources && location.resources.length > 0 && (
                     <div className={styles.resourceList}>
-                      {poi.resources.map((r) => (
-                        <div key={r.resource_id} className={styles.resourceItem}>
-                          <span className={styles.resourceName}>{r.name || r.resource_id}</span>
+                      {location.resources.map((r) => (
+                        <div key={r.item_id} className={styles.resourceItem}>
+                          <span className={styles.resourceName}>{r.item_name || r.item_id}</span>
                           <span className={styles.resourceRichness}>{r.richness}</span>
-                          <span className={styles.resourceRemaining}>{r.remaining_display || `${r.remaining}`}</span>
+                          <span className={styles.resourceRemaining}>
+                            {r.remaining === undefined
+                              ? ''
+                              : r.remaining < 0
+                                ? '∞'
+                                : r.remaining === 0
+                                  ? 'depleted'
+                                  : r.remaining.toLocaleString()}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -344,10 +447,10 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
           <div className={styles.travelBar}>
             <div className={styles.travelLabel}>
               <Navigation size={11} />
-              <span>→ {state.travelDestination || 'unknown'}</span>
+              <span>→ {travelDestination}</span>
             </div>
             <ProgressBar
-              value={state.travelProgress ?? 0}
+              value={travelProgress}
               max={100}
               color="purple"
               size="sm"
@@ -361,7 +464,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
           <div className={styles.sectionLabel}>Actions</div>
 
           {/* Dock / Undock */}
-          {poi && poi.base_id && (
+          {poi?.base_id && (
             isDocked ? (
               <button
                 className={styles.actionBtn}
@@ -386,7 +489,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
           )}
 
           {/* Mine — only when undocked and POI has resources */}
-          {!isDocked && poi?.resources && poi.resources.length > 0 && (
+          {!isDocked && location?.resources && location.resources.length > 0 && (
             <>
               <button
                 className={styles.actionBtn}
@@ -410,10 +513,10 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
           )}
 
           {/* Attack — only when undocked and there are nearby targets */}
-          {!isDocked && state.nearby.length > 0 && (
+          {!isDocked && location?.nearby_players && location.nearby_players.length > 0 && (
             <button
               className={styles.actionBtn}
-              onClick={() => sendCommand('scan', { target_id: state.nearby[0]?.player_id })}
+              onClick={handleScanNearest}
               disabled={actionBusy}
               type="button"
             >
@@ -423,7 +526,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
           )}
 
           {/* Survey */}
-          {Boolean(state.ship?.modules?.length) && (
+          {Boolean(modules?.length) && (
             <button
               className={styles.actionBtn}
               onClick={handleSurvey}
@@ -436,7 +539,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
           )}
 
           {/* Refuel — docked and below max fuel */}
-          {isDocked && state.ship && state.ship.fuel < state.ship.max_fuel && (
+          {isDocked && ship && (ship.fuel ?? 0) < (ship.max_fuel ?? 0) && (
             <button
               className={styles.actionBtn}
               onClick={handleRefuel}
@@ -444,12 +547,12 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
               type="button"
             >
               <Fuel size={13} />
-              <span>Refuel ({state.ship.fuel}/{state.ship.max_fuel})</span>
+              <span>Refuel ({ship.fuel}/{ship.max_fuel})</span>
             </button>
           )}
 
           {/* Repair — docked and below max hull */}
-          {isDocked && state.ship && state.ship.hull < state.ship.max_hull && (
+          {isDocked && ship && (ship.hull ?? 0) < (ship.max_hull ?? 0) && (
             <button
               className={styles.actionBtn}
               onClick={handleRepair}
@@ -457,7 +560,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
               type="button"
             >
               <Wrench size={13} />
-              <span>Repair ({state.ship.hull}/{state.ship.max_hull})</span>
+              <span>Repair ({ship.hull}/{ship.max_hull})</span>
             </button>
           )}
         </div>
@@ -630,7 +733,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
                         <span className={styles.searchResultName}>{entry.name}</span>
                         <span className={styles.searchResultIntelDetail}>
                           {(entry.pois ?? [])
-                            .flatMap(p => p.resources ?? [])
+                            .flatMap((p) => p.resources ?? [])
                             .filter(r => r.resource_id.toLowerCase().includes(normalizedQuery))
                             .slice(0, 2)
                             .map(r => `${formatLabel(r.resource_id)} ×${r.richness}`)

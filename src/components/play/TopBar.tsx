@@ -9,9 +9,9 @@ import {
   Rocket,
   Anchor,
   LogOut,
-  AlertTriangle,
 } from 'lucide-react'
-import { useGame } from './GameProvider'
+import { useAccountStore, useConnectionPhase, useLocationState, usePlayer, useShip } from '@/lib/spacemolt'
+import { usePlay } from './PlayProvider'
 import { BugReportButton } from './BugReportButton'
 import { TickCooldown } from './TickCooldown'
 import styles from './TopBar.module.css'
@@ -32,28 +32,25 @@ function StatusBar({ value, max, color, label }: { value: number; max: number; c
   )
 }
 
-function formatCountdown(isoDate: string): string {
-  const remaining = new Date(isoDate).getTime() - Date.now()
-  if (remaining <= 0) return 'expired'
-  const hours = Math.floor(remaining / 3600000)
-  const minutes = Math.floor((remaining % 3600000) / 60000)
-  if (hours > 0) return `${hours}h ${minutes}m`
-  return `${minutes}m`
-}
-
 export function TopBar() {
-  const { state, sendCommand, dispatch, onSwitchPlayer } = useGame()
-  const player = state.player
-  const ship = state.ship
-  const connected = state.connected
+  const store = useAccountStore()
+  const { onSwitchPlayer } = usePlay()
+  const player = usePlayer()
+  const ship = useShip()
+  const location = useLocationState()
+  const { phase } = useConnectionPhase()
+  const connected = phase === 'ready'
+  const isDocked = Boolean(location?.docked_at)
 
   const handleLogout = useCallback(() => {
-    sendCommand('logout')
-    dispatch({ type: 'RESET' })
+    // Switching players tears down the AccountProvider (fresh Account per
+    // player), so no local state reset is needed beyond leaving the session.
+    void store.account.logout().catch(() => {})
     if (onSwitchPlayer) onSwitchPlayer()
-  }, [sendCommand, dispatch, onSwitchPlayer])
+  }, [store, onSwitchPlayer])
 
-  const hullPct = ship && ship.max_hull > 0 ? ship.hull / ship.max_hull : 1
+  const maxHull = ship?.max_hull ?? 0
+  const hullPct = ship && maxHull > 0 ? (ship.hull ?? 0) / maxHull : 1
   const hullColor = hullPct < 0.25 ? 'red' : hullPct < 0.5 ? 'orange' : 'green'
 
   return (
@@ -71,29 +68,25 @@ export function TopBar() {
               <span className={styles.username}>{player.username}</span>
               <span className={styles.credits}>
                 <Coins size={11} className={styles.creditsIcon} />
-                {player.credits.toLocaleString()}
+                {(player.credits ?? 0).toLocaleString()}
               </span>
-              {player.trading_restricted_until && new Date(player.trading_restricted_until) > new Date() && (
-                <span className={styles.tradingRestricted} title={`Until ${new Date(player.trading_restricted_until).toLocaleTimeString()}`}>
-                  <AlertTriangle size={10} />
-                  Trading locked ({formatCountdown(player.trading_restricted_until)})
-                </span>
-              )}
+              {/* trading_restricted_until badge removed: the v2 player state
+                  section doesn't carry the field (server schema gap) */}
             </>
           ) : (
             <span className={styles.noPlayer}>Not logged in</span>
           )}
         </div>
 
-        {(state.system || state.poi) && (
+        {(location?.system_name || location?.poi_name) && (
           <>
             <span className={styles.sep} />
             <div className={styles.locationSection}>
               <MapPin size={12} className={styles.locationIcon} />
-              {state.system && <span className={styles.systemName}>{state.system.name}</span>}
-              {state.system && state.poi && <span className={styles.poiSep}>/</span>}
-              {state.poi && <span className={styles.poiName}>{state.poi.name}</span>}
-              {state.isDocked && (
+              {location?.system_name && <span className={styles.systemName}>{location.system_name}</span>}
+              {location?.system_name && location?.poi_name && <span className={styles.poiSep}>/</span>}
+              {location?.poi_name && <span className={styles.poiName}>{location.poi_name}</span>}
+              {isDocked && (
                 <span className={styles.dockedBadge}>
                   <Anchor size={10} /> Docked
                 </span>
@@ -135,10 +128,10 @@ export function TopBar() {
       {/* Row 2: Ship status bars */}
       {ship && (
         <div className={styles.barsRow}>
-          <StatusBar value={ship.hull} max={ship.max_hull} color={hullColor} label="Hull" />
+          <StatusBar value={ship.hull ?? 0} max={maxHull} color={hullColor} label="Hull" />
           <StatusBar value={ship.shield ?? 0} max={ship.max_shield ?? 0} color="blue" label="Shield" />
-          <StatusBar value={ship.fuel} max={ship.max_fuel} color="yellow" label="Fuel" />
-          <StatusBar value={ship.cargo_used ?? 0} max={ship.cargo_capacity} color="cyan" label="Cargo" />
+          <StatusBar value={ship.fuel ?? 0} max={ship.max_fuel ?? 0} color="yellow" label="Fuel" />
+          <StatusBar value={ship.cargo_used ?? 0} max={ship.cargo_capacity ?? 0} color="cyan" label="Cargo" />
         </div>
       )}
     </div>

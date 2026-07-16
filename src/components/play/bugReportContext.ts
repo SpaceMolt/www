@@ -1,76 +1,9 @@
-import type { GameState, Recipe } from './types'
-import type { Mission, Facility } from '@/lib/gameTypes'
+import type { Facility, Mission, Recipe } from './types'
 import { titleCase } from '@/lib/format'
 
-// ---------------------------------------------------------------------------
-// Generic context — included in every bug report
-// ---------------------------------------------------------------------------
-
-export function buildGenericContext(state: GameState): string {
-  const lines: string[] = []
-
-  // Player
-  const p = state.player
-  if (p) {
-    lines.push('### Player')
-    lines.push(`- **Name:** ${p.username}`)
-    lines.push(`- **ID:** \`${p.id}\``)
-    lines.push(`- **Empire:** ${p.empire || 'none'}`)
-    lines.push(`- **Faction:** ${p.faction_id || 'none'}`)
-    lines.push(`- **Credits:** ${p.credits.toLocaleString()}`)
-  }
-
-  // Location
-  lines.push('')
-  lines.push('### Location')
-  lines.push(`- **System:** ${state.system?.name || 'unknown'}`)
-  lines.push(`- **POI:** ${state.poi?.name || 'unknown'}`)
-  lines.push(`- **Docked:** ${state.isDocked ? 'yes' : 'no'}`)
-
-  // Ship
-  const s = state.ship
-  if (s) {
-    lines.push('')
-    lines.push('### Ship')
-    lines.push(`- **Name:** ${s.name}`)
-    lines.push(`- **Class:** ${s.class_id || 'unknown'}`)
-    lines.push(`- **Hull:** ${s.hull}/${s.max_hull}`)
-    lines.push(`- **Shield:** ${s.shield ?? 0}/${s.max_shield ?? 0}`)
-    lines.push(`- **Fuel:** ${s.fuel}/${s.max_fuel}`)
-    lines.push(`- **Cargo:** ${s.cargo_used ?? 0}/${s.cargo_capacity}`)
-    lines.push(`- **Speed:** ${s.speed}`)
-
-    // Cargo contents
-    const cargo = s.cargo as Array<{ item_id: string; name?: string; quantity: number }> | undefined
-    if (cargo && cargo.length > 0) {
-      lines.push('')
-      lines.push('### Cargo')
-      for (const item of cargo) {
-        lines.push(`- ${item.name || titleCase(item.item_id)} x${item.quantity}`)
-      }
-    }
-  }
-
-  // Installed modules
-  if (state.shipModules.length > 0) {
-    lines.push('')
-    lines.push('### Modules')
-    for (const m of state.shipModules) {
-      lines.push(`- ${m.name} (${m.type}) — ${m.type_id}`)
-    }
-  }
-
-  // Skills
-  if (state.skillsData?.skills) {
-    lines.push('')
-    lines.push('### Skills')
-    for (const [id, info] of Object.entries(state.skillsData.skills)) {
-      lines.push(`- ${titleCase(id)}: Lv${info.level}`)
-    }
-  }
-
-  return lines.join('\n')
-}
+// The generic (player/ship/location) context lives in BugReportModal itself,
+// built from the live state hooks; these helpers format the panel-specific
+// context blocks appended to it.
 
 // ---------------------------------------------------------------------------
 // Mission context

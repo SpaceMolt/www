@@ -7,8 +7,7 @@
     "dev": "next dev",
     "build": "node scripts/fetch-catalog.mjs && node scripts/build-guides-manifest.mjs && next build && node scripts/build-search-index.mjs",
     "start": "next start",
-    "lint": "node scripts/fetch-catalog.mjs && node scripts/build-guides-manifest.mjs && tsc --noEmit",
-    "generate:types": "npx openapi-typescript src/lib/openapi-v2.json -o src/lib/generated/v2api.d.ts"
+    "lint": "node scripts/fetch-catalog.mjs && node scripts/build-guides-manifest.mjs && tsc --noEmit"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.37.3",
@@ -32,8 +31,8 @@
     "@types/node": "^25.2.2",
     "@types/react": "^19.2.13",
     "@types/react-dom": "^19.2.3",
-    "openapi-typescript": "^7.13.0",
     "pagefind": "^1.5.2",
+    "playwright": "1.61.1",
     "typescript": "^5.9.3"
   },
   "pnpm": {

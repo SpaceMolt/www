@@ -2,14 +2,20 @@
 
 import { useState, useCallback } from 'react'
 import { Settings, Palette, Home, LogOut } from 'lucide-react'
-import { useGame } from '../GameProvider'
+import { useAccountStore, useConnectionPhase, useCurrentTick, useLocationState, usePlayer } from '@/lib/spacemolt'
+import { usePlay } from '../PlayProvider'
 import { ActionButton } from '../ActionButton'
 import { Panel, shared } from '../shared'
 import styles from './SettingsPanel.module.css'
 
 export function SettingsPanel() {
-  const { state, sendCommand, onSwitchPlayer } = useGame()
-  const player = state.player
+  const store = useAccountStore()
+  const { onSwitchPlayer } = usePlay()
+  const player = usePlayer()
+  const location = useLocationState()
+  const { phase } = useConnectionPhase()
+  const connected = phase === 'ready'
+  const currentTick = useCurrentTick()
 
   const [statusMsg, setStatusMsg] = useState(player?.status_message ?? '')
   const [clanTag, setClanTag] = useState(player?.clan_tag ?? '')
@@ -20,39 +26,46 @@ export function SettingsPanel() {
   const [savingColors, setSavingColors] = useState(false)
   const [settingHome, setSettingHome] = useState(false)
 
-  const isDocked = state.isDocked
+  const dockedAt = location?.docked_at
+  const isDocked = Boolean(dockedAt)
 
   const handleSaveStatus = useCallback(() => {
     setSavingStatus(true)
-    sendCommand('set_status', { status_message: statusMsg })
-    setTimeout(() => setSavingStatus(false), 2000)
-  }, [sendCommand, statusMsg])
+    store.account.commands.spacemolt_social
+      .set_status({ content: statusMsg })
+      .catch(() => {})
+      .finally(() => setSavingStatus(false))
+  }, [store, statusMsg])
 
   const handleSaveTag = useCallback(() => {
     setSavingTag(true)
-    sendCommand('set_status', { clan_tag: clanTag.toUpperCase() })
-    setTimeout(() => setSavingTag(false), 2000)
-  }, [sendCommand, clanTag])
+    store.account.commands.spacemolt_social
+      .set_status({ clan_tag: clanTag.toUpperCase() })
+      .catch(() => {})
+      .finally(() => setSavingTag(false))
+  }, [store, clanTag])
 
   const handleSaveColors = useCallback(() => {
     setSavingColors(true)
-    sendCommand('set_colors', {
-      primary_color: primaryColor,
-      secondary_color: secondaryColor,
-    })
-    setTimeout(() => setSavingColors(false), 2000)
-  }, [sendCommand, primaryColor, secondaryColor])
+    store.account.commands.spacemolt_social
+      .set_colors({ primary_color: primaryColor, secondary_color: secondaryColor })
+      .catch(() => {})
+      .finally(() => setSavingColors(false))
+  }, [store, primaryColor, secondaryColor])
 
   const handleSetHomeBase = useCallback(() => {
+    if (!dockedAt) return
     setSettingHome(true)
-    sendCommand('set_home_base')
-    setTimeout(() => setSettingHome(false), 2000)
-  }, [sendCommand])
+    store.account.commands.spacemolt_salvage
+      .set_home({ id: dockedAt })
+      .catch(() => {})
+      .finally(() => setSettingHome(false))
+  }, [store, dockedAt])
 
   const handleLogout = useCallback(() => {
-    sendCommand('logout')
+    void store.account.logout().catch(() => {})
     if (onSwitchPlayer) onSwitchPlayer()
-  }, [sendCommand, onSwitchPlayer])
+  }, [store, onSwitchPlayer])
 
   return (
     <Panel title="Settings" icon={<Settings size={16} />}>
@@ -198,20 +211,20 @@ export function SettingsPanel() {
             <div className={styles.connectionRow}>
               <span className={styles.connectionLabel}>Status</span>
               <span className={
-                state.connected
+                connected
                   ? styles.connectionValueOnline
                   : styles.connectionValueOffline
               }>
                 <span className={`${styles.statusDot} ${
-                  state.connected ? styles.statusDotOnline : styles.statusDotOffline
+                  connected ? styles.statusDotOnline : styles.statusDotOffline
                 }`} />
-                {state.connected ? 'Connected' : 'Disconnected'}
+                {connected ? 'Connected' : 'Disconnected'}
               </span>
             </div>
             <div className={styles.connectionRow}>
               <span className={styles.connectionLabel}>Tick</span>
               <span className={styles.connectionValue}>
-                {state.currentTick}
+                {currentTick}
               </span>
             </div>
             {player?.username && (

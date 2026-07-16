@@ -1,9 +1,7 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback } from 'react'
 import {
-  Store,
-  Coins,
   Heart,
   ShoppingCart,
   AlertTriangle,
@@ -12,30 +10,39 @@ import {
   Tag,
   Loader2,
 } from 'lucide-react'
-import { useGame } from '../../GameProvider'
+import type { BrowseShipsResponse } from '@spacemolt/lib'
+import { useCommandMutation, useCommandQuery, useLocationState, usePlayer } from '@/lib/spacemolt'
+import { usePlay } from '../../PlayProvider'
 import { Credits, Loading, Modal, ConfirmAction, shared } from '../../shared'
 import styles from './MarketplaceView.module.css'
 
-interface ShipListing {
-  listing_id: string
-  class_id: string
-  price: number
-  ship_name: string
-  category: string
-  tier: number
-  hull: number
-  max_hull: number
-  seller: string
+type ShipListing = BrowseShipsResponse['listings'][number]
+
+function errorText(err: unknown): string {
+  return err instanceof Error ? err.message : String(err)
 }
 
 export function MarketplaceView() {
-  const { state, sendCommand } = useGame()
-  const isDocked = state.isDocked
-  const credits = state.player?.credits ?? 0
-  const fleet = state.fleetData
+  const location = useLocationState()
+  const isDocked = Boolean(location?.docked_at)
+  const player = usePlayer()
+  const credits = player?.credits ?? 0
+  const mutate = useCommandMutation()
+  const { uiStore } = usePlay()
 
-  const [listings, setListings] = useState<ShipListing[]>([])
-  const [loadingBrowse, setLoadingBrowse] = useState(false)
+  const { data: browseData, loading: loadingBrowse, refetch: refetchListings } = useCommandQuery(
+    async (account) => (await account.commands.spacemolt_ship.browse_ships({})).structuredContent,
+    [],
+    { enabled: isDocked }
+  )
+  const listings = browseData?.listings ?? []
+
+  const { data: fleet, refetch: refetchFleet } = useCommandQuery(
+    async (account) => (await account.commands.spacemolt_ship.list_ships()).structuredContent,
+    [],
+    { enabled: isDocked, refreshOnSections: ['ship'] }
+  )
+
   const [buyConfirm, setBuyConfirm] = useState<string | null>(null)
   const [cancelConfirm, setCancelConfirm] = useState<string | null>(null)
   const [buying, setBuying] = useState(false)
@@ -45,52 +52,63 @@ export function MarketplaceView() {
   const [sellPrice, setSellPrice] = useState('')
   const [selling, setSelling] = useState(false)
 
-  const fetchListings = useCallback(() => {
-    setLoadingBrowse(true)
-    sendCommand('browse_ships').then((resp) => {
-      const data = resp as Record<string, unknown>
-      setListings((data.listings || []) as ShipListing[])
-      setLoadingBrowse(false)
-    }).catch(() => setLoadingBrowse(false))
-  }, [sendCommand])
+  const reportError = useCallback(
+    (err: unknown) => {
+      const text = errorText(err)
+      uiStore.dispatch({ type: 'toast', kind: 'danger', text })
+      uiStore.dispatch({ type: 'event', kind: 'danger', text })
+    },
+    [uiStore]
+  )
 
-  // Auto-fetch when docked
-  useEffect(() => {
-    if (isDocked) {
-      fetchListings()
-      if (!fleet) sendCommand('list_ships')
-    }
-  }, [isDocked, fetchListings, sendCommand, fleet])
+  const handleBuy = useCallback(
+    (listingId: string) => {
+      setBuying(true)
+      mutate((c) => c.spacemolt_ship.buy_listed_ship({ id: listingId }), { label: 'buy_listed_ship' })
+        .then(() => {
+          setBuying(false)
+          setBuyConfirm(null)
+          refetchListings()
+          refetchFleet()
+        })
+        .catch((err) => {
+          setBuying(false)
+          reportError(err)
+        })
+    },
+    [mutate, refetchListings, refetchFleet, reportError]
+  )
 
-  const handleBuy = useCallback((listingId: string) => {
-    setBuying(true)
-    sendCommand('buy_listed_ship', { listing_id: listingId }).then(() => {
-      setBuying(false)
-      setBuyConfirm(null)
-      fetchListings()
-    }).catch(() => setBuying(false))
-  }, [sendCommand, fetchListings])
-
-  const handleCancelListing = useCallback((listingId: string) => {
-    sendCommand('cancel_ship_listing', { listing_id: listingId }).then(() => {
-      setCancelConfirm(null)
-      fetchListings()
-    })
-  }, [sendCommand, fetchListings])
+  const handleCancelListing = useCallback(
+    (listingId: string) => {
+      mutate((c) => c.spacemolt_ship.cancel_ship_listing({ id: listingId }), { label: 'cancel_ship_listing' })
+        .then(() => {
+          setCancelConfirm(null)
+          refetchListings()
+        })
+        .catch(reportError)
+    },
+    [mutate, refetchListings, reportError]
+  )
 
   const handleSell = useCallback(() => {
     if (!sellShipId || !sellPrice) return
     const price = parseInt(sellPrice, 10)
     if (isNaN(price) || price <= 0) return
     setSelling(true)
-    sendCommand('list_ship_for_sale', { ship_id: sellShipId, price }).then(() => {
-      setSelling(false)
-      setSellShipId(null)
-      setSellPrice('')
-      fetchListings()
-      sendCommand('list_ships')
-    }).catch(() => setSelling(false))
-  }, [sellShipId, sellPrice, sendCommand, fetchListings])
+    mutate((c) => c.spacemolt_ship.list_ship_for_sale({ id: sellShipId, price }), { label: 'list_ship_for_sale' })
+      .then(() => {
+        setSelling(false)
+        setSellShipId(null)
+        setSellPrice('')
+        refetchListings()
+        refetchFleet()
+      })
+      .catch((err) => {
+        setSelling(false)
+        reportError(err)
+      })
+  }, [sellShipId, sellPrice, mutate, refetchListings, refetchFleet, reportError])
 
   if (!isDocked) {
     return (
@@ -100,13 +118,14 @@ export function MarketplaceView() {
     )
   }
 
-  const playerName = state.player?.username
+  const playerName = player?.username
   const ownListings = listings.filter((l) => l.seller === playerName)
   const otherListings = listings.filter((l) => l.seller !== playerName)
 
   // Ships available to sell: inactive, docked at this base
+  const dockedAt = location?.docked_at ?? undefined
   const availableShips = fleet?.ships.filter(
-    (s) => !s.is_active && s.location_base_id === state.poi?.base_id
+    (s) => !s.is_active && s.location_base_id === dockedAt
   ) ?? []
 
   // Ship being sold (for modal)
@@ -143,7 +162,7 @@ export function MarketplaceView() {
                   </div>
                   <div className={styles.listingBadges}>
                     {listing.category && <span className={shared.badgeGreen}>{listing.category}</span>}
-                    {listing.tier > 0 && <span className={shared.badgeCyan}>T{listing.tier}</span>}
+                    {(listing.tier ?? 0) > 0 && <span className={shared.badgeCyan}>T{listing.tier}</span>}
                   </div>
                   <div className={styles.listingStatsRow}>
                     <div className={styles.listingStat}>

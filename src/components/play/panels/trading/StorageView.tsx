@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   Package,
   RefreshCw,
@@ -14,12 +14,42 @@ import {
   Send,
   MapPin,
 } from 'lucide-react'
-import { useGame } from '../../GameProvider'
-import { GameApiError } from '@/lib/gameApi'
+import {
+  useAccountStore,
+  useCargo,
+  useCommandMutation,
+  useCommandQuery,
+  useLocationState,
+  usePendingAction,
+} from '@/lib/spacemolt'
+import type { StorageResponse } from '@spacemolt/lib'
+import { usePlay } from '../../PlayProvider'
 import { ItemName } from '../../ItemTooltip'
 import { Credits, shared } from '../../shared'
 import { titleCase } from '@/lib/format'
 import styles from './StorageView.module.css'
+
+// StorageResponse is one generated union across every branch of the unified
+// storage action (self view, faction view, deposit/withdraw/gift results) —
+// narrow to the branch view({target: 'self' | undefined}) actually returns.
+type PersonalStorageView = Extract<StorageResponse, { hint: string; ships: Array<unknown> }>
+
+interface CargoRow {
+  item_id: string
+  name: string
+  quantity: number
+  size?: number
+}
+
+/** useCargo() rows are all-optional (delta-friendly wire shape); drop incomplete entries and normalize item_name -> name. */
+function normalizeCargo(raw: ReturnType<typeof useCargo>): CargoRow[] {
+  return (raw ?? []).flatMap((c) => {
+    if (!c.item_id || !c.quantity) return []
+    return [{ item_id: c.item_id, name: c.item_name ?? c.item_id, quantity: c.quantity, size: c.size }]
+  })
+}
+
+const errorMessage = (err: unknown): string => (err instanceof Error ? err.message : String(err))
 
 /** Parse station IDs from the hint string: "X items in storage at station1, station2" */
 function parseStationsFromHint(hint: string): string[] {
@@ -29,16 +59,32 @@ function parseStationsFromHint(hint: string): string[] {
 }
 
 export function StorageView() {
-  const { state, sendCommand, api } = useGame()
-  const isDocked = state.isDocked
-  const storageData = state.storageData
-  const cargo = state.ship?.cargo || []
-  const actionPending = state.pendingAction !== null
+  const store = useAccountStore()
+  const { uiStore } = usePlay()
+  const location = useLocationState()
+  const dockedAt = location?.docked_at
+  const isDocked = Boolean(dockedAt)
+  const rawCargo = useCargo()
+  const cargo = useMemo(() => normalizeCargo(rawCargo), [rawCargo])
+  const actionPending = usePendingAction() !== null
+  const mutate = useCommandMutation()
+
+  const reportError = useCallback((err: unknown) => {
+    const text = errorMessage(err)
+    uiStore.dispatch({ type: 'toast', kind: 'danger', text })
+    uiStore.dispatch({ type: 'event', kind: 'danger', text })
+  }, [uiStore])
+
+  const { data: storageData, refetch: refetchStorage } = useCommandQuery(
+    async (account) => (await account.commands.spacemolt_storage.view()).structuredContent as PersonalStorageView | undefined,
+    [dockedAt],
+    { enabled: isDocked, refreshOnSections: ['cargo'] },
+  )
 
   // Remote viewing state (undocked)
   const [remoteStations, setRemoteStations] = useState<string[]>([])
   const [selectedStation, setSelectedStation] = useState('')
-  const [remoteData, setRemoteData] = useState<typeof storageData>(null)
+  const [remoteData, setRemoteData] = useState<PersonalStorageView | null>(null)
   const [remoteLoading, setRemoteLoading] = useState(false)
 
   // Item withdraw qty tracking (keyed by item_id)
@@ -57,15 +103,7 @@ export function StorageView() {
   const [giftShipId, setGiftShipId] = useState('')
   const [sendingGift, setSendingGift] = useState(false)
 
-  // When docked, auto-fetch storage
-  useEffect(() => {
-    if (isDocked && !storageData) {
-      sendCommand('view_storage')
-    }
-  }, [isDocked, storageData, sendCommand])
-
-  // When undocked, probe for station list using the API directly
-  // (bypasses sendCommand error dispatch to avoid showing error toasts)
+  // When undocked, probe for station list (bypasses toast dispatch on the expected "not docked" error)
   useEffect(() => {
     if (isDocked) {
       setRemoteStations([])
@@ -73,93 +111,107 @@ export function StorageView() {
       setRemoteData(null)
       return
     }
-    if (!api) return
-    api.command('view_storage').then((result) => {
-      const hint = (result as Record<string, unknown>).hint as string || ''
-      if (hint) {
-        setRemoteStations(parseStationsFromHint(hint))
-      }
+    let cancelled = false
+    store.account.commands.spacemolt_storage.view().then((result) => {
+      if (cancelled) return
+      const hint = (result.structuredContent as PersonalStorageView | undefined)?.hint ?? ''
+      if (hint) setRemoteStations(parseStationsFromHint(hint))
     }).catch((err: unknown) => {
+      if (cancelled) return
       // The not_docked error message contains the station list hint
-      if (err instanceof GameApiError) {
-        const stations = parseStationsFromHint(err.message)
-        setRemoteStations(stations)
-      }
+      setRemoteStations(parseStationsFromHint(errorMessage(err)))
     })
-  }, [isDocked, api])
+    return () => {
+      cancelled = true
+    }
+  }, [isDocked, store])
 
   // Fetch remote station storage
   useEffect(() => {
-    if (!selectedStation || isDocked || !api) return
+    if (!selectedStation || isDocked) return
+    let cancelled = false
     setRemoteLoading(true)
-    api.command('view_storage', { station_id: selectedStation }).then((result) => {
-      setRemoteData(result as typeof storageData)
+    store.account.commands.spacemolt_storage.view({ station_id: selectedStation }).then((result) => {
+      if (cancelled) return
+      setRemoteData((result.structuredContent as PersonalStorageView | undefined) ?? null)
       setRemoteLoading(false)
     }).catch(() => {
+      if (cancelled) return
       setRemoteLoading(false)
     })
-  }, [selectedStation, isDocked, api])
+    return () => {
+      cancelled = true
+    }
+  }, [selectedStation, isDocked, store])
 
   const handleRefresh = useCallback(() => {
     if (isDocked) {
-      sendCommand('view_storage')
-    } else if (selectedStation && api) {
+      refetchStorage()
+    } else if (selectedStation) {
       setRemoteLoading(true)
-      api.command('view_storage', { station_id: selectedStation }).then((result) => {
-        setRemoteData(result as typeof storageData)
+      store.account.commands.spacemolt_storage.view({ station_id: selectedStation }).then((result) => {
+        setRemoteData((result.structuredContent as PersonalStorageView | undefined) ?? null)
         setRemoteLoading(false)
       }).catch(() => setRemoteLoading(false))
     }
-  }, [sendCommand, isDocked, selectedStation, api])
+  }, [isDocked, selectedStation, store, refetchStorage])
 
   // Item operations (docked only)
   const handleWithdrawItem = useCallback(
-    (itemId: string, maxQty: number) => {
+    async (itemId: string, maxQty: number) => {
       if (actionPending) return
       const qtyStr = withdrawQtys[itemId] ?? String(maxQty)
       const quantity = parseInt(qtyStr, 10)
       if (isNaN(quantity) || quantity < 1 || quantity > maxQty) return
-      sendCommand('withdraw_items', { item_id: itemId, quantity })
-      setWithdrawQtys((prev) => ({ ...prev, [itemId]: '' }))
+      try {
+        await mutate((c) => c.spacemolt_storage.withdraw({ item_id: itemId, quantity }), { label: 'withdraw_items' })
+        setWithdrawQtys((prev) => ({ ...prev, [itemId]: '' }))
+      } catch (err) {
+        reportError(err)
+      }
     },
-    [sendCommand, withdrawQtys, actionPending]
+    [mutate, withdrawQtys, actionPending, reportError]
   )
 
   const handleDepositItem = useCallback(
-    (itemId: string, maxQty: number) => {
+    async (itemId: string, maxQty: number) => {
       if (actionPending) return
       const qtyStr = depositQtys[itemId] ?? String(maxQty)
       const quantity = parseInt(qtyStr, 10)
       if (isNaN(quantity) || quantity < 1 || quantity > maxQty) return
-      sendCommand('deposit_items', { item_id: itemId, quantity })
-      setDepositQtys((prev) => ({ ...prev, [itemId]: '' }))
+      try {
+        await mutate((c) => c.spacemolt_storage.deposit({ item_id: itemId, quantity }), { label: 'deposit_items' })
+        setDepositQtys((prev) => ({ ...prev, [itemId]: '' }))
+      } catch (err) {
+        reportError(err)
+      }
     },
-    [sendCommand, depositQtys, actionPending]
+    [mutate, depositQtys, actionPending, reportError]
   )
 
   const handleSendGift = useCallback(async () => {
-    if (!giftRecipient.trim()) return
+    const target = giftRecipient.trim()
+    if (!target) return
+    const message = giftMessage.trim() || undefined
     setSendingGift(true)
     try {
-      // send_gift routes to spacemolt_storage/deposit on v2. The backend payload
+      // send_gift routes to spacemolt_storage.deposit on v2. The backend payload
       // uses target=<player_name> for recipient and item_id for the thing being
       // gifted (item id, "credits", or a ship instance ID). A single send_gift
       // call transfers one of items, credits, or ship — so prefer ship > item
-      // > credits when the user fills in multiple fields.
-      const base: Record<string, unknown> = { target: giftRecipient.trim() }
-      if (giftMessage.trim()) base.message = giftMessage.trim()
-
+      // > credits when the user fills in multiple fields. The item/ship pickers
+      // list station storage contents, so item transfers source from storage.
       if (giftShipId) {
-        await sendCommand('send_gift', { ...base, item_id: giftShipId })
+        await mutate((c) => c.spacemolt_storage.deposit({ target, item_id: giftShipId, message }), { label: 'send_gift' })
       } else if (giftItemId && giftItemQty) {
         const qty = parseInt(giftItemQty, 10)
         if (!isNaN(qty) && qty > 0) {
-          await sendCommand('send_gift', { ...base, item_id: giftItemId, quantity: qty })
+          await mutate((c) => c.spacemolt_storage.deposit({ target, item_id: giftItemId, quantity: qty, source: 'storage', message }), { label: 'send_gift' })
         }
       } else {
         const credits = parseInt(giftCredits, 10)
         if (!isNaN(credits) && credits > 0) {
-          await sendCommand('send_gift', { ...base, item_id: 'credits', quantity: credits })
+          await mutate((c) => c.spacemolt_storage.deposit({ target, credits, message }), { label: 'send_gift' })
         }
       }
       setGiftRecipient('')
@@ -169,11 +221,13 @@ export function StorageView() {
       setGiftItemQty('')
       setGiftShipId('')
       setShowSendGift(false)
-      sendCommand('view_storage')
+      refetchStorage()
+    } catch (err) {
+      reportError(err)
     } finally {
       setSendingGift(false)
     }
-  }, [sendCommand, giftRecipient, giftMessage, giftCredits, giftItemId, giftItemQty, giftShipId])
+  }, [mutate, giftRecipient, giftMessage, giftCredits, giftItemId, giftItemQty, giftShipId, refetchStorage, reportError])
 
   // --- Undocked: remote station viewer ---
   if (!isDocked) {

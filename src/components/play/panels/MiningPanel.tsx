@@ -2,7 +2,9 @@
 
 import { useState, useCallback } from 'react'
 import { Pickaxe, Package, Trash2, X, Check, Zap } from 'lucide-react'
-import { useGame } from '../GameProvider'
+import { SpacemoltError } from '@spacemolt/lib'
+import { useCargo, useCommandMutation, useLocationState, useShip } from '@/lib/spacemolt'
+import { usePlay } from '../PlayProvider'
 import { ProgressBar } from '../ProgressBar'
 import { Panel, shared } from '../shared'
 import styles from './MiningPanel.module.css'
@@ -13,28 +15,81 @@ interface JettisonTarget {
   maxQty: number
 }
 
+function errorMessage(err: unknown): string {
+  if (err instanceof SpacemoltError) return err.message
+  if (err instanceof Error) return err.message
+  return 'Action failed'
+}
+
 export function MiningPanel() {
-  const { state, sendCommand } = useGame()
+  const { uiStore } = usePlay()
+  const mutate = useCommandMutation()
+  const ship = useShip()
+  const cargo = useCargo()
+  const location = useLocationState()
   const [jettisonTarget, setJettisonTarget] = useState<JettisonTarget | null>(
     null
   )
   const [jettisonQty, setJettisonQty] = useState('1')
 
-  const handleMine = useCallback(() => {
-    sendCommand('mine')
-  }, [sendCommand])
+  const reportError = useCallback(
+    (err: unknown) => {
+      const text = errorMessage(err)
+      uiStore.dispatch({ type: 'toast', kind: 'danger', text })
+      uiStore.dispatch({ type: 'event', kind: 'danger', text })
+    },
+    [uiStore],
+  )
 
-  const handleJettison = useCallback(() => {
+  const handleMine = useCallback(async () => {
+    try {
+      const result = await mutate((c) => c.spacemolt.mine(), { label: 'mine' })
+      const details = result.delta.details
+      const text =
+        details && 'message' in details
+          ? details.message
+          : details
+            ? `Mined ${details.quantity}x ${details.resource_name || details.resource_id}`
+            : 'Mining started'
+      uiStore.dispatch({ type: 'event', kind: 'info', text })
+    } catch (err) {
+      reportError(err)
+    }
+  }, [mutate, uiStore, reportError])
+
+  const handleUseItem = useCallback(
+    async (itemId: string) => {
+      try {
+        const result = await mutate((c) => c.spacemolt.use_item({ id: itemId }), { label: 'use_item' })
+        const text = result.delta.details?.message
+        if (text) uiStore.dispatch({ type: 'event', kind: 'info', text })
+      } catch (err) {
+        reportError(err)
+      }
+    },
+    [mutate, uiStore, reportError],
+  )
+
+  const handleJettison = useCallback(async () => {
     if (!jettisonTarget) return
     const quantity = parseInt(jettisonQty, 10)
     if (isNaN(quantity) || quantity < 1) return
-    sendCommand('jettison', {
-      item_id: jettisonTarget.itemId,
-      quantity,
-    })
-    setJettisonTarget(null)
-    setJettisonQty('1')
-  }, [sendCommand, jettisonTarget, jettisonQty])
+    try {
+      const result = await mutate(
+        (c) => c.spacemolt.jettison({ id: jettisonTarget.itemId, quantity }),
+        { label: 'jettison' },
+      )
+      const details = result.delta.details
+      const text =
+        details && 'message' in details ? details.message : `Jettisoned ${quantity}x ${jettisonTarget.name}`
+      uiStore.dispatch({ type: 'event', kind: 'info', text })
+    } catch (err) {
+      reportError(err)
+    } finally {
+      setJettisonTarget(null)
+      setJettisonQty('1')
+    }
+  }, [mutate, jettisonTarget, jettisonQty, uiStore, reportError])
 
   const openJettison = useCallback(
     (itemId: string, name: string, maxQty: number) => {
@@ -44,11 +99,10 @@ export function MiningPanel() {
     []
   )
 
-  const ship = state.ship
-  const cargo = ship?.cargo || []
+  const cargoItems = cargo || []
   const cargoUsed = ship?.cargo_used ?? 0
   const cargoCapacity = ship?.cargo_capacity ?? 0
-  const isDocked = state.isDocked
+  const isDocked = Boolean(location?.docked_at)
 
   return (
     <Panel title="Mining" icon={<Pickaxe size={16} />} color="var(--shell-orange)">
@@ -68,9 +122,9 @@ export function MiningPanel() {
               Undock to begin mining operations
             </div>
           )}
-          {!isDocked && state.poi && (
+          {!isDocked && location?.poi_name && (
             <div className={styles.mineHint}>
-              Mining at {state.poi.name} ({state.poi.type})
+              Mining at {location.poi_name} ({location.poi_type})
             </div>
           )}
         </div>
@@ -88,43 +142,44 @@ export function MiningPanel() {
             />
           </div>
 
-          {cargo.length > 0 ? (
+          {cargoItems.length > 0 ? (
             <div className={styles.cargoList}>
-              {cargo.map((item) => (
-                <div key={item.item_id} className={styles.cargoItem}>
-                  <div className={styles.cargoLeft}>
-                    <span className={styles.cargoIcon}>
-                      <Package size={13} />
-                    </span>
-                    <span className={styles.cargoName}>
-                      {item.name ?? item.item_id}
-                    </span>
+              {cargoItems.map((item, i) => {
+                const itemId = item.item_id ?? `cargo-${i}`
+                const quantity = item.quantity ?? 0
+                const name = item.item_name ?? item.item_id ?? itemId
+                return (
+                  <div key={itemId} className={styles.cargoItem}>
+                    <div className={styles.cargoLeft}>
+                      <span className={styles.cargoIcon}>
+                        <Package size={13} />
+                      </span>
+                      <span className={styles.cargoName}>
+                        {name}
+                      </span>
+                    </div>
+                    <div className={styles.cargoRight}>
+                      <span className={styles.cargoQty}>x{quantity}</span>
+                      <button
+                        className={styles.useBtn}
+                        onClick={() => handleUseItem(itemId)}
+                        title={`Use ${name}`}
+                        type="button"
+                      >
+                        <Zap size={13} />
+                      </button>
+                      <button
+                        className={styles.jettisonBtn}
+                        onClick={() => openJettison(itemId, name, quantity)}
+                        title={`Jettison ${name}`}
+                        type="button"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
                   </div>
-                  <div className={styles.cargoRight}>
-                    <span className={styles.cargoQty}>x{item.quantity}</span>
-                    <button
-                      className={styles.useBtn}
-                      onClick={() =>
-                        sendCommand('use_item', { item_id: item.item_id })
-                      }
-                      title={`Use ${item.name ?? item.item_id}`}
-                      type="button"
-                    >
-                      <Zap size={13} />
-                    </button>
-                    <button
-                      className={styles.jettisonBtn}
-                      onClick={() =>
-                        openJettison(item.item_id, item.name ?? item.item_id, item.quantity)
-                      }
-                      title={`Jettison ${item.name ?? item.item_id}`}
-                      type="button"
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           ) : (
             <div className={shared.emptyState}>Cargo hold is empty</div>

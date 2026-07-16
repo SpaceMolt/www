@@ -9,13 +9,16 @@ import {
   ListOrdered,
   Tag,
 } from 'lucide-react'
-import { useGame } from '../../GameProvider'
+import { useAccountStore, useCommandMutation } from '@/lib/spacemolt'
+import { usePlay } from '../../PlayProvider'
 import { Modal, shared } from '../../shared'
-import type { FacilityListResponse, Facility } from '@/lib/gameTypes'
+import type { FacilityListResponse, Facility } from '../../types'
 import { FacilityCard } from './FacilityCard'
 import { UpgradeModal, fetchUpgradeOptions, type UpgradeOption } from './UpgradeModal'
 import { FacilityQueueModal } from './FacilityQueueModal'
 import styles from './facilities.module.css'
+
+const describeError = (err: unknown): string => (err instanceof Error ? err.message : String(err))
 
 interface OwnedViewProps {
   facilityData: FacilityListResponse
@@ -23,7 +26,9 @@ interface OwnedViewProps {
 }
 
 export function OwnedView({ facilityData, onRefresh }: OwnedViewProps) {
-  const { sendCommand, api } = useGame()
+  const store = useAccountStore()
+  const mutate = useCommandMutation()
+  const { uiStore } = usePlay()
 
   const [upgradeModal, setUpgradeModal] = useState<{ facility: Facility; options: UpgradeOption[] } | null>(null)
   const [upgradeLoading, setUpgradeLoading] = useState(false)
@@ -31,80 +36,88 @@ export function OwnedView({ facilityData, onRefresh }: OwnedViewProps) {
   const [transferring, setTransferring] = useState<string | null>(null)
   const [decorateModal, setDecorateModal] = useState<Facility | null>(null)
   const [decorateDesc, setDecorateDesc] = useState('')
-  const [decorateAccess, setDecorateAccess] = useState('private')
+  const [decorateAccess, setDecorateAccess] = useState<'private' | 'public'>('private')
   const [decorating, setDecorating] = useState(false)
   const [queueModal, setQueueModal] = useState<Facility | null>(null)
   const [pricingId, setPricingId] = useState<string | null>(null)
+
+  const reportError = useCallback((err: unknown) => {
+    const text = describeError(err)
+    uiStore.dispatch({ type: 'toast', kind: 'danger', text })
+    uiStore.dispatch({ type: 'event', kind: 'danger', text })
+  }, [uiStore])
 
   // Server pre-filters player_facilities to only the requesting player's own
   // facilities, so we can render the list directly without further filtering.
   const myFacilities = facilityData.player_facilities
 
   const handleShowUpgrades = useCallback(async (facility: Facility) => {
-    if (!api) return
     setUpgradeLoading(true)
-    const options = await fetchUpgradeOptions(api, facility)
+    const options = await fetchUpgradeOptions(store.account.commands, facility)
     setUpgradeModal({ facility, options })
     setUpgradeLoading(false)
-  }, [api])
+  }, [store])
 
   const handleUpgrade = useCallback(async (facilityId: string, facilityType: string) => {
     setUpgrading(true)
     try {
-      await sendCommand('facility_upgrade', { facility_id: facilityId, facility_type: facilityType })
+      await mutate((c) => c.spacemolt_facility.upgrade({ facility_id: facilityId, facility_type: facilityType }), { label: 'facility_upgrade' })
       setUpgradeModal(null)
       onRefresh()
-    } catch { /* handled by event log */ }
+    } catch (err) {
+      reportError(err)
+    }
     setUpgrading(false)
-  }, [sendCommand, onRefresh])
+  }, [mutate, onRefresh, reportError])
 
   const handleTransfer = useCallback(async (facilityId: string) => {
     setTransferring(facilityId)
     try {
-      await sendCommand('facility_transfer', { facility_id: facilityId, direction: 'to_faction' })
+      await mutate((c) => c.spacemolt_facility.transfer({ facility_id: facilityId, direction: 'to_faction' }), { label: 'facility_transfer' })
       onRefresh()
-    } catch { /* handled by event log */ }
+    } catch (err) {
+      reportError(err)
+    }
     setTransferring(null)
-  }, [sendCommand, onRefresh])
+  }, [mutate, onRefresh, reportError])
 
   const handleToggleAccess = useCallback(async (facility: Facility) => {
-    if (!api) return
     const nextAccess = facility.production?.public ? 'private' : 'public'
     try {
-      await api.callStructured('spacemolt_facility', 'set_access', {
-        facility_id: facility.facility_id, access: nextAccess,
-      })
+      await mutate((c) => c.spacemolt_facility.set_access({ facility_id: facility.facility_id, access: nextAccess }), { label: 'facility_set_access' })
       onRefresh()
-    } catch { /* handled by event log */ }
-  }, [api, onRefresh])
+    } catch (err) {
+      reportError(err)
+    }
+  }, [mutate, onRefresh, reportError])
 
   const handleSetOutputPrice = useCallback(async (facilityId: string, price: string) => {
-    if (!api) return
     const parsed = Number(price)
     if (!Number.isFinite(parsed) || parsed < 0) return
     try {
-      await api.callStructured('spacemolt_facility', 'set_output_price', {
-        facility_id: facilityId, price: parsed,
-      })
+      await mutate((c) => c.spacemolt_facility.set_output_price({ facility_id: facilityId, price: parsed }), { label: 'facility_set_output_price' })
       onRefresh()
-    } catch { /* handled by event log */ }
+    } catch (err) {
+      reportError(err)
+    }
     setPricingId(null)
-  }, [api, onRefresh])
+  }, [mutate, onRefresh, reportError])
 
   const handleDecorate = useCallback(async () => {
     if (!decorateModal) return
     setDecorating(true)
     try {
-      await sendCommand('facility_personal_decorate', {
-        facility_id: decorateModal.facility_id,
+      await mutate((c) => c.spacemolt_facility.personal_decorate({
         description: decorateDesc,
         access: decorateAccess,
-      })
+      }), { label: 'facility_personal_decorate' })
       setDecorateModal(null)
       onRefresh()
-    } catch { /* handled by event log */ }
+    } catch (err) {
+      reportError(err)
+    }
     setDecorating(false)
-  }, [sendCommand, decorateModal, decorateDesc, decorateAccess, onRefresh])
+  }, [mutate, decorateModal, decorateDesc, decorateAccess, onRefresh, reportError])
 
   const openDecorate = useCallback((facility: Facility) => {
     setDecorateDesc('')
@@ -258,7 +271,7 @@ export function OwnedView({ facilityData, onRefresh }: OwnedViewProps) {
                 <select
                   className={shared.textInput}
                   value={decorateAccess}
-                  onChange={e => setDecorateAccess(e.target.value)}
+                  onChange={e => setDecorateAccess(e.target.value === 'public' ? 'public' : 'private')}
                 >
                   <option value="private">Private</option>
                   <option value="public">Public</option>

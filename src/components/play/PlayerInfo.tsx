@@ -1,13 +1,14 @@
 'use client'
 
-import { useGame } from './GameProvider'
+import { useConnectionPhase, useLocationState, usePlayer } from '@/lib/spacemolt'
 import { Coins, Globe, MapPin, Wifi, WifiOff } from 'lucide-react'
 import styles from './PlayerInfo.module.css'
 
 export function PlayerInfo() {
-  const { state } = useGame()
-  const player = state.player
-  const connected = state.connected
+  const player = usePlayer()
+  const location = useLocationState()
+  const { phase } = useConnectionPhase()
+  const connected = phase === 'ready'
 
   return (
     <div className={styles.container}>
@@ -29,7 +30,7 @@ export function PlayerInfo() {
             <div className={styles.detailItem}>
               <Coins size={12} className={styles.creditsIcon} />
               <span className={styles.creditsValue}>
-                {player.credits.toLocaleString()}
+                {(player.credits ?? 0).toLocaleString()}
               </span>
             </div>
             {player.empire && (
@@ -38,16 +39,16 @@ export function PlayerInfo() {
                 <span className={styles.detailValue}>{player.empire}</span>
               </div>
             )}
-            {state.system && (
+            {location?.system_name && (
               <div className={styles.detailItem}>
                 <MapPin size={12} className={styles.systemIcon} />
-                <span className={styles.detailValue}>{state.system.name}</span>
+                <span className={styles.detailValue}>{location.system_name}</span>
               </div>
             )}
-            {state.poi && (
+            {location?.poi_name && (
               <div className={styles.detailItem}>
                 <MapPin size={11} className={styles.poiIcon} />
-                <span className={styles.detailValueSmall}>{state.poi.name}</span>
+                <span className={styles.detailValueSmall}>{location.poi_name}</span>
               </div>
             )}
           </div>

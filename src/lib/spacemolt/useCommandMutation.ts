@@ -17,10 +17,14 @@ export interface MutationOptions {
   estimatedMs?: number
 }
 
-export type RunMutation = (
-  run: (commands: Commands) => Promise<MutationResult>,
+// Generic so each call site keeps the specific `TDetails` of the command it
+// invokes (e.g. `c.spacemolt.jump(...)` -> `MutationResult<JumpResponse>`) —
+// a non-generic signature here would erase every mutation's response to
+// `Record<string, unknown>` and defeat typed `delta.details` access.
+export type RunMutation = <TDetails = Record<string, unknown>>(
+  run: (commands: Commands) => Promise<MutationResult<TDetails>>,
   options?: MutationOptions,
-) => Promise<MutationResult>
+) => Promise<MutationResult<TDetails>>
 
 /**
  * Returns a runner that executes one typed mutation through the account's
@@ -31,8 +35,11 @@ export type RunMutation = (
  */
 export function useCommandMutation(): RunMutation {
   const store = useAccountStore()
-  return useCallback<RunMutation>(
-    async (run, { label = 'action', estimatedMs }: MutationOptions = {}) => {
+  return useCallback(
+    async <TDetails,>(
+      run: (commands: Commands) => Promise<MutationResult<TDetails>>,
+      { label = 'action', estimatedMs }: MutationOptions = {},
+    ) => {
       store.setPendingAction({ command: label, startedAt: Date.now(), estimatedMs })
       try {
         return await run(store.account.commands)

@@ -13,11 +13,35 @@ import {
   Search,
   ChevronDown,
 } from 'lucide-react'
-import { useGame } from '../../GameProvider'
+import { useCargo, useCommandMutation, useCommandQuery, useLocationState, usePlayer } from '@/lib/spacemolt'
+import type { StorageResponse } from '@spacemolt/lib'
 import { Credits, shared } from '../../shared'
+import { usePlay } from '../../PlayProvider'
 import { getItem, tradeableItems, formatItemId } from '@/data/catalog'
 import type { RawCatalogItem } from '@/data/catalog'
 import styles from './OrdersView.module.css'
+
+// StorageResponse is one generated union across every branch of the unified
+// storage action (self view, faction view, deposit/withdraw/gift results) —
+// narrow to the branch view({}) actually returns.
+type PersonalStorageView = Extract<StorageResponse, { hint: string; ships: Array<unknown> }>
+
+interface CargoRow {
+  item_id: string
+  name: string
+  quantity: number
+  size?: number
+}
+
+/** useCargo() rows are all-optional (delta-friendly wire shape); drop incomplete entries and normalize item_name -> name. */
+function normalizeCargo(raw: ReturnType<typeof useCargo>): CargoRow[] {
+  return (raw ?? []).flatMap((c) => {
+    if (!c.item_id || !c.quantity) return []
+    return [{ item_id: c.item_id, name: c.item_name ?? c.item_id, quantity: c.quantity, size: c.size }]
+  })
+}
+
+const errorMessage = (err: unknown): string => (err instanceof Error ? err.message : String(err))
 
 // ── Sell Item Dropdown ──────────────────────────────────────────────────
 
@@ -198,11 +222,40 @@ function BuyAutocomplete({ value, onChange }: BuyAutocompleteProps) {
 // ── Main OrdersView ─────────────────────────────────────────────────────
 
 export function OrdersView() {
-  const { state, sendCommand } = useGame()
-  const isDocked = state.isDocked
-  const ordersData = state.ordersData
-  const cargo = state.ship?.cargo || []
-  const storageItems = state.storageData?.items || []
+  const { uiStore } = usePlay()
+  const location = useLocationState()
+  const dockedAt = location?.docked_at
+  const isDocked = Boolean(dockedAt)
+  const player = usePlayer()
+  const hasFaction = Boolean(player?.faction_id)
+  const rawCargo = useCargo()
+  const cargo = useMemo(() => normalizeCargo(rawCargo), [rawCargo])
+  const mutate = useCommandMutation()
+
+  const reportError = useCallback((err: unknown) => {
+    const text = errorMessage(err)
+    uiStore.dispatch({ type: 'toast', kind: 'danger', text })
+    uiStore.dispatch({ type: 'event', kind: 'danger', text })
+  }, [uiStore])
+
+  const { data: storageData } = useCommandQuery(
+    async (account) => (await account.commands.spacemolt_storage.view()).structuredContent as PersonalStorageView | undefined,
+    [dockedAt],
+    { enabled: isDocked, refreshOnSections: ['cargo'] },
+  )
+  const storageItems = storageData?.items ?? []
+
+  const { data: personalOrdersData, refetch: refetchPersonalOrders } = useCommandQuery(
+    async (account) => (await account.commands.spacemolt_market.view_orders({ scope: 'personal', page_size: 50 })).structuredContent,
+    [dockedAt],
+    { enabled: isDocked },
+  )
+
+  const { data: factionOrdersData } = useCommandQuery(
+    async (account) => (await account.commands.spacemolt_market.view_orders({ scope: 'faction', page_size: 50 })).structuredContent,
+    [dockedAt, hasFaction],
+    { enabled: isDocked && hasFaction },
+  )
 
   // Build inventory list for sell dropdown: tradeable items in cargo + storage
   const inventoryItems = useMemo(() => {
@@ -287,43 +340,42 @@ export function OrdersView() {
   const [editPrice, setEditPrice] = useState('')
   const [modifyResult, setModifyResult] = useState<Record<string, { message: string; listing_fee?: number }>>({})
 
-  // Auto-fetch orders when docked and data is null
-  useEffect(() => {
-    if (isDocked && !ordersData) {
-      sendCommand('view_orders')
-    }
-    if (isDocked && !state.storageData) {
-      sendCommand('view_storage')
-    }
-  }, [isDocked, ordersData, state.storageData, sendCommand])
-
   const handleRefresh = useCallback(() => {
-    sendCommand('view_orders')
-  }, [sendCommand])
+    refetchPersonalOrders()
+  }, [refetchPersonalOrders])
 
   const handleCancelOrder = useCallback(
-    (orderId: string) => {
-      sendCommand('cancel_order', { order_id: orderId })
+    async (orderId: string) => {
+      try {
+        await mutate((c) => c.spacemolt_market.cancel_order({ order_id: orderId }), { label: 'cancel_order' })
+        refetchPersonalOrders()
+      } catch (err) {
+        reportError(err)
+      }
     },
-    [sendCommand]
+    [mutate, refetchPersonalOrders, reportError]
   )
 
-  const handleCreateOrder = useCallback(() => {
+  const handleCreateOrder = useCallback(async () => {
     const quantity = parseInt(orderQty, 10)
     const priceEach = parseInt(orderPrice, 10)
     if (!orderItemId.trim() || isNaN(quantity) || quantity < 1 || isNaN(priceEach) || priceEach < 1) return
 
-    const cmd = orderType === 'sell' ? 'create_sell_order' : 'create_buy_order'
-    sendCommand(cmd, {
-      item_id: orderItemId.trim(),
-      quantity,
-      price_each: priceEach,
-    })
-    setOrderItemId('')
-    setOrderQty('')
-    setOrderPrice('')
-    setShowForm(false)
-  }, [sendCommand, orderType, orderItemId, orderQty, orderPrice])
+    try {
+      if (orderType === 'sell') {
+        await mutate((c) => c.spacemolt_market.create_sell_order({ item_id: orderItemId.trim(), quantity, price_each: priceEach }), { label: 'create_sell_order' })
+      } else {
+        await mutate((c) => c.spacemolt_market.create_buy_order({ item_id: orderItemId.trim(), quantity, price_each: priceEach }), { label: 'create_buy_order' })
+      }
+      setOrderItemId('')
+      setOrderQty('')
+      setOrderPrice('')
+      setShowForm(false)
+      refetchPersonalOrders()
+    } catch (err) {
+      reportError(err)
+    }
+  }, [mutate, orderType, orderItemId, orderQty, orderPrice, refetchPersonalOrders, reportError])
 
   const handleStartModify = useCallback((orderId: string, currentPrice: number) => {
     setEditingOrderId(orderId)
@@ -341,24 +393,28 @@ export function OrdersView() {
   }, [])
 
   const handleSubmitModify = useCallback(
-    (orderId: string) => {
+    async (orderId: string) => {
       const newPrice = parseInt(editPrice, 10)
       if (isNaN(newPrice) || newPrice < 1) return
-      sendCommand('modify_order', { order_id: orderId, new_price: newPrice }).then(
-        (resp: unknown) => {
-          const data = resp as { order_id: string; old_price: number; new_price: number; listing_fee?: number; message: string } | undefined
-          if (data?.message) {
-            setModifyResult((prev) => ({
-              ...prev,
-              [orderId]: { message: data.message, listing_fee: data.listing_fee },
-            }))
-          }
-          setEditingOrderId(null)
-          setEditPrice('')
+      try {
+        const result = await mutate((c) => c.spacemolt_market.modify_order({ order_id: orderId, price_each: newPrice }), { label: 'modify_order' })
+        // modify_order's response type also covers bulk mode; single-order calls always return the branch with a top-level message.
+        const details = result.delta.details as { message: string; listing_fee?: number } | undefined
+        if (details?.message) {
+          setModifyResult((prev) => ({
+            ...prev,
+            [orderId]: { message: details.message, listing_fee: details.listing_fee },
+          }))
         }
-      )
+        refetchPersonalOrders()
+      } catch (err) {
+        reportError(err)
+      } finally {
+        setEditingOrderId(null)
+        setEditPrice('')
+      }
     },
-    [sendCommand, editPrice]
+    [mutate, editPrice, refetchPersonalOrders, reportError]
   )
 
   if (!isDocked) {
@@ -369,8 +425,11 @@ export function OrdersView() {
     )
   }
 
-  const personalOrders = (ordersData?.orders || []).filter((o) => !o.faction_order)
-  const factionOrders = (ordersData?.orders || []).filter((o) => o.faction_order)
+  // scope:'personal' returns every order this player placed, including ones
+  // placed under the faction (Company Store); exclude those here since the
+  // scope:'faction' query below already lists them (with the placing member's name).
+  const personalOrders = (personalOrdersData?.orders ?? []).filter((o) => !o.faction_order)
+  const factionOrders = factionOrdersData?.orders ?? []
 
   const formatDate = (iso: string) => {
     try {
@@ -517,7 +576,7 @@ export function OrdersView() {
       )}
 
       {/* Personal orders list */}
-      {!ordersData ? (
+      {!personalOrdersData ? (
         <div className={styles.loading}>Loading orders...</div>
       ) : personalOrders.length === 0 ? (
         <div className={shared.emptyState}>No active orders</div>

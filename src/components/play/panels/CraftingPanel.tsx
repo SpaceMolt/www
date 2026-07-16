@@ -5,7 +5,9 @@ import {
   Hammer, RefreshCw, AlertTriangle, Lock, Check, ChevronDown, ChevronRight,
   Search, Filter, Clock, RotateCcw, Trash2, Coins, Calculator, Package, Factory,
 } from 'lucide-react'
-import { useGame } from '../GameProvider'
+import type { CraftJobResponse, FacilityResponse, RecycleJobResponse, StorageResponse } from '@spacemolt/lib'
+import { useAccountStore, useCommandMutation, useCommandQuery, useCurrentTick, useLocationState, useSkills } from '@/lib/spacemolt'
+import { usePlay } from '../PlayProvider'
 import { ActionButton } from '../ActionButton'
 import { ProgressBar } from '../ProgressBar'
 import { Panel, shared } from '../shared'
@@ -14,7 +16,7 @@ import { buildRecipeContext } from '../bugReportContext'
 import type { Recipe, CraftJobView, CraftQuote, Facility } from '../types'
 import { recipesById, formatItemId } from '@/data/catalog'
 import { titleCase } from '@/lib/format'
-import { canCraftRecipe, availableQuantity } from '@/lib/crafting'
+import { canCraftRecipe, availableQuantity, type SkillEntry } from '@/lib/crafting'
 import { estimateJobProgress } from './craftProgress'
 import { FacilityVenuePicker } from './facilities/FacilityVenuePicker'
 import styles from './CraftingPanel.module.css'
@@ -24,8 +26,30 @@ const HIDDEN_CATEGORIES = new Set(['facility only', 'ship passive'])
 // Quote / craft / recycle direction for a recipe card.
 type CraftMode = 'craft' | 'recycle'
 
+const describeError = (err: unknown): string => (err instanceof Error ? err.message : String(err))
+
+// craft()/recycle() share the same response-shape family (create-single,
+// bulk-create, dry-run quote, queue-list, single-cancel, bulk-cancel); these
+// discriminators narrow across both unions at once (grepped
+// node_modules/@spacemolt/lib — see UpgradeModal.tsx for the pattern).
+type AnyJobResponse = CraftJobResponse | RecycleJobResponse
+type JobQueueVariant = Extract<AnyJobResponse, { jobs: unknown }>
+type JobCreateVariant = Extract<AnyJobResponse, { escrowed: unknown }>
+type JobQuoteVariant = Extract<AnyJobResponse, { dry_run: unknown }>
+
+// `{ station_facilities: unknown }` uniquely identifies the facility-list
+// variant within the FacilityResponse union.
+type FacilityListResponse = Extract<FacilityResponse, { station_facilities: unknown }>
+type ViewStorageResponse = Extract<StorageResponse, { items: unknown }>
+
 export function CraftingPanel() {
-  const { state, dispatch, sendCommand, api } = useGame()
+  const store = useAccountStore()
+  const mutate = useCommandMutation()
+  const { uiStore } = usePlay()
+  const currentTick = useCurrentTick()
+  const dockedAt = useLocationState()?.docked_at ?? null
+  const isDocked = Boolean(dockedAt)
+
   const [busyId, setBusyId] = useState<string | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [filter, setFilter] = useState<'all' | 'craftable'>('all')
@@ -40,66 +64,76 @@ export function CraftingPanel() {
   // once per dock so the picker can show real backlog/pricing.
   const [selectedVenue, setSelectedVenue] = useState<Record<string, string>>({})
   const [venuePickerRecipeId, setVenuePickerRecipeId] = useState<string | null>(null)
-  const [facilities, setFacilities] = useState<{
-    own: Facility[]
-    faction: Facility[]
-    public: Facility[]
-  }>({ own: [], faction: [], public: [] })
 
-  // Queued jobs across all venues (craft action=queue). Lives in shared game
-  // state (not local) so a crafting_update push can patch it live even if
-  // this panel wasn't the one that queued the job. null = not yet loaded.
-  const jobs = state.craftJobs
-  const [jobsLoading, setJobsLoading] = useState(false)
-  const [cancellingId, setCancellingId] = useState<string | null>(null)
+  const reportError = useCallback((err: unknown) => {
+    const text = describeError(err)
+    uiStore.dispatch({ type: 'toast', kind: 'danger', text })
+    uiStore.dispatch({ type: 'event', kind: 'danger', text })
+  }, [uiStore])
 
-  // Fetch skills on mount (needed for craftability check)
-  useEffect(() => {
-    if (!state.skillsData) sendCommand('get_skills')
-  }, [state.skillsData, sendCommand])
-
-  // Fetch the facility list once per dock — needed for the venue picker's
-  // backlog/pricing info. Read-only query, not a mutation.
-  useEffect(() => {
-    if (!state.isDocked || !api) return
-    let cancelled = false
-    api.callStructured<{
-      player_facilities?: Facility[]
-      faction_facilities?: Facility[]
-      public_facilities?: Facility[]
-    }>('spacemolt_facility', 'list', {}).then((data) => {
-      if (cancelled || !data) return
-      setFacilities({
-        own: data.player_facilities || [],
-        faction: data.faction_facilities || [],
-        public: data.public_facilities || [],
-      })
-    }).catch(() => {})
-    return () => { cancelled = true }
-  }, [state.isDocked, api])
+  // Facility list (own/faction/public) — needed for the venue picker's
+  // backlog/pricing info. Read-only, docked-scoped panel-local query.
+  const { data: facilityListData } = useCommandQuery(
+    async (account) => {
+      const resp = await account.commands.spacemolt_facility.list()
+      return resp.structuredContent as FacilityListResponse | undefined
+    },
+    [dockedAt],
+    { enabled: isDocked },
+  )
+  const facilities = useMemo(() => ({
+    own: facilityListData?.player_facilities ?? [],
+    faction: facilityListData?.faction_facilities ?? [],
+    public: facilityListData?.public_facilities ?? [],
+  }), [facilityListData])
 
   // When docked, fetch station storage — crafting escrows inputs from station
   // storage (NOT cargo), so the craftable filter and material counts read from
   // there. See gameserver crafting.go ("station-storage-centric, no cargo path").
-  useEffect(() => {
-    if (state.isDocked && !state.storageData) {
-      sendCommand('view_storage')
+  const { data: storageResp, refetch: refetchStorage } = useCommandQuery(
+    async (account) => {
+      const resp = await account.commands.spacemolt_storage.view({})
+      return resp.structuredContent as ViewStorageResponse | undefined
+    },
+    [dockedAt],
+    { enabled: isDocked },
+  )
+  const storageItems = useMemo(() => (isDocked ? storageResp?.items ?? [] : []), [isDocked, storageResp])
+
+  const skillsRaw = useSkills()
+  const skillsMap = useMemo(() => {
+    if (!skillsRaw) return undefined
+    const result: Record<string, SkillEntry> = {}
+    for (const [id, s] of Object.entries(skillsRaw)) {
+      result[id] = { level: s.level ?? 0, xp: s.xp ?? 0, next_level_xp: s.next_level_xp ?? 0 }
     }
-  }, [state.isDocked, state.storageData, sendCommand])
+    return result
+  }, [skillsRaw])
+
+  // Queued jobs across all venues (craft action=queue). Panel-local — not
+  // shared game state, since crafting_update pushes only carry a sparse
+  // per-tick completion delta (no position/status/produces/facility_id), not
+  // a full queue snapshot, so there's nothing to live-patch from. null = not
+  // yet loaded.
+  const [jobs, setJobs] = useState<CraftJobView[] | null>(null)
+  const [jobsLoading, setJobsLoading] = useState(false)
+  const [cancellingId, setCancellingId] = useState<string | null>(null)
 
   // Crafting is queued, not instant. `craft` with no recipe returns the
   // player's job queue. It costs a mutation (1/tick), so we load it once on
   // mount and otherwise update optimistically + via an explicit refresh.
   const fetchQueue = useCallback(async () => {
     setJobsLoading(true)
-    const r = await sendCommand('craft', {})
-    if (!r.error && Array.isArray(r.jobs)) {
-      dispatch({ type: 'SET_CRAFT_JOBS', payload: r.jobs as CraftJobView[] })
-    } else if (!r.error) {
-      dispatch({ type: 'SET_CRAFT_JOBS', payload: [] })
+    try {
+      const result = await mutate((c) => c.spacemolt.craft({}), { label: 'craft_queue' })
+      const details = result.delta.details as JobQueueVariant | undefined
+      setJobs((details?.jobs ?? []).map((j): CraftJobView => ({ ...j, last_sync_tick: result.tick })))
+    } catch (err) {
+      reportError(err)
+      setJobs([])
     }
     setJobsLoading(false)
-  }, [sendCommand, dispatch])
+  }, [mutate, reportError])
 
   useEffect(() => {
     if (jobs === null) fetchQueue()
@@ -114,65 +148,73 @@ export function CraftingPanel() {
     const quantity = getQty(recipeId)
     const facilityId = selectedVenue[recipeId]
     setBusyId(recipeId)
-    const r = await sendCommand(mode, { recipe_id: recipeId, quantity, facility_id: facilityId })
-    setBusyId(null)
-    if (!r.error && r.job_id) {
-      // Optimistically add the queued job (re-fetching would be rate-limited).
-      const job: CraftJobView = {
-        job_id: r.job_id as string,
-        venue: r.venue as string | undefined,
-        recipe: (r.recipe as string) || recipeId,
-        mode: (r.mode as string) || mode,
-        produces: r.produces as CraftJobView['produces'],
-        runs_total: (r.runs as number) ?? 0,
-        runs_done: 0,
-        runs_remaining: (r.runs as number) ?? 0,
-        progress: 0,
-        eta_ticks: Math.max(0, ((r.est_completion_tick as number) ?? 0) - state.currentTick),
-        position: (jobs?.length ?? 0) + 1,
-        orderer: 'self',
-        external: r.external as boolean | undefined,
-        status: 'queued',
-        facility_id: (r.facility_id as string) || '',
+    try {
+      const result = mode === 'recycle'
+        ? await mutate((c) => c.spacemolt.recycle({ id: recipeId, quantity, facility_id: facilityId }), { label: 'recycle' })
+        : await mutate((c) => c.spacemolt.craft({ id: recipeId, quantity, facility_id: facilityId }), { label: 'craft' })
+      const details = result.delta.details as JobCreateVariant | undefined
+      if (details) {
+        // Optimistically add the queued job (re-fetching would be rate-limited).
+        const job: CraftJobView = {
+          job_id: details.job_id,
+          venue: details.venue,
+          recipe: details.recipe,
+          mode: details.mode,
+          produces: details.produces,
+          runs_total: details.runs,
+          runs_done: 0,
+          runs_remaining: details.runs,
+          progress: 0,
+          eta_ticks: Math.max(0, details.est_completion_tick - result.tick),
+          position: (jobs?.length ?? 0) + 1,
+          orderer: 'self',
+          external: details.external,
+          status: 'queued',
+          facility_id: details.facility_id,
+        }
+        setJobs(prev => [...(prev ?? []), job])
+        // Clear any stale quote for this recipe.
+        setQuotes(prev => {
+          const next = { ...prev }
+          delete next[recipeId]
+          return next
+        })
       }
-      dispatch({ type: 'ADD_CRAFT_JOB', job })
-      // Clear any stale quote for this recipe.
-      setQuotes(prev => {
-        const next = { ...prev }
-        delete next[recipeId]
-        return next
-      })
+    } catch (err) {
+      reportError(err)
     }
-  }, [getQty, selectedVenue, sendCommand, state.currentTick, jobs, dispatch])
+    setBusyId(null)
+  }, [getQty, selectedVenue, mutate, jobs, reportError])
 
   const handleQuote = useCallback(async (recipeId: string, mode: CraftMode) => {
     const quantity = getQty(recipeId)
     const facilityId = selectedVenue[recipeId]
     setBusyId(recipeId)
-    const r = await sendCommand(mode, { recipe_id: recipeId, quantity, dry_run: true, facility_id: facilityId })
+    try {
+      const result = mode === 'recycle'
+        ? await mutate((c) => c.spacemolt.recycle({ id: recipeId, quantity, dry_run: true, facility_id: facilityId }), { label: 'recycle_quote' })
+        : await mutate((c) => c.spacemolt.craft({ id: recipeId, quantity, dry_run: true, facility_id: facilityId }), { label: 'craft_quote' })
+      const details = result.delta.details as JobQuoteVariant | undefined
+      setQuotes(prev => ({
+        ...prev,
+        [recipeId]: details ?? { error: 'Quote failed' },
+      }))
+    } catch (err) {
+      setQuotes(prev => ({ ...prev, [recipeId]: { error: describeError(err) } }))
+    }
     setBusyId(null)
-    setQuotes(prev => ({
-      ...prev,
-      [recipeId]: r.error
-        ? { error: (r.message as string) || 'Quote failed' }
-        : (r as unknown as CraftQuote),
-    }))
-  }, [getQty, selectedVenue, sendCommand])
+  }, [getQty, selectedVenue, mutate])
 
   const handleCancel = useCallback(async (jobId: string) => {
     setCancellingId(jobId)
-    const r = await sendCommand('craft', { job_id: jobId })
-    setCancellingId(null)
-    if (!r.error) {
-      dispatch({ type: 'REMOVE_CRAFT_JOB', jobId })
+    try {
+      await mutate((c) => c.spacemolt.craft({ job_id: jobId }), { label: 'craft_cancel' })
+      setJobs(prev => (prev ?? []).filter(j => j.job_id !== jobId))
+    } catch (err) {
+      reportError(err)
     }
-  }, [sendCommand, dispatch])
-
-  const storageItems = useMemo(
-    () => (state.isDocked ? state.storageData?.items ?? [] : []),
-    [state.isDocked, state.storageData?.items],
-  )
-  const skillsMap = state.skillsData?.skills
+    setCancellingId(null)
+  }, [mutate, reportError])
 
   const recipes = useMemo((): Recipe[] => {
     return Object.values(recipesById)
@@ -250,7 +292,6 @@ export function CraftingPanel() {
     })
   }, [])
 
-  const isDocked = state.isDocked
   const activeJobs = jobs ?? []
 
   return (
@@ -261,7 +302,7 @@ export function CraftingPanel() {
         <div className={styles.headerActions}>
           <button
             className={shared.refreshBtn}
-            onClick={() => { sendCommand('get_skills'); if (isDocked) sendCommand('view_storage') }}
+            onClick={() => { store.account.refresh().catch(() => {}); if (isDocked) refetchStorage() }}
             title="Refresh skills & storage"
             type="button"
           >
@@ -297,7 +338,7 @@ export function CraftingPanel() {
             <div className={styles.jobsList}>
               {activeJobs.map((job) => {
                 const total = Math.max(1, job.runs_total)
-                const done = estimateJobProgress(job, state.currentTick, ticksPerRunFor(job.facility_id, facilities))
+                const done = estimateJobProgress(job, currentTick, ticksPerRunFor(job.facility_id, facilities))
                 return (
                   <div key={job.job_id} className={styles.jobCard}>
                     <div className={styles.jobTop}>
@@ -424,18 +465,22 @@ export function CraftingPanel() {
                         key={recipe.id}
                         className={`${styles.recipeCard} ${craftable ? styles.recipeCardCraftable : styles.recipeCardLocked}`}
                       >
-                        <button
-                          className={styles.recipeCardHeader}
-                          onClick={() => setExpandedId(isExpanded ? null : recipe.id)}
-                          type="button"
-                          title={craftable ? 'You can craft this' : reasons.join('; ')}
-                        >
-                          <div className={styles.recipeCardTitle}>
-                            {isExpanded ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
-                            <span className={styles.recipeName}>{recipe.name}</span>
-                            <BugReportButton contextType="recipe" entityName={recipe.name} entityContext={buildRecipeContext(recipe)} />
-                          </div>
-                        </button>
+                        {/* header is a div, not a button: BugReportButton renders
+                            a <button> and buttons cannot nest */}
+                        <div className={styles.recipeCardHeader}>
+                          <button
+                            className={styles.recipeCardToggle}
+                            onClick={() => setExpandedId(isExpanded ? null : recipe.id)}
+                            type="button"
+                            title={craftable ? 'You can craft this' : reasons.join('; ')}
+                          >
+                            <div className={styles.recipeCardTitle}>
+                              {isExpanded ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
+                              <span className={styles.recipeName}>{recipe.name}</span>
+                            </div>
+                          </button>
+                          <BugReportButton contextType="recipe" entityName={recipe.name} entityContext={buildRecipeContext(recipe)} />
+                        </div>
 
                         {isExpanded && (
                           <div className={styles.recipeCardBody}>
@@ -516,7 +561,7 @@ export function CraftingPanel() {
                                 </div>
                                 <div className={styles.quoteRow}>
                                   <span className={styles.quoteLabel}><Clock size={10} /> ETA</span>
-                                  <span>~{Math.max(0, quote.est_completion_tick - state.currentTick)} ticks</span>
+                                  <span>~{Math.max(0, quote.est_completion_tick - currentTick)} ticks</span>
                                 </div>
                                 {(!quote.have_inputs || !quote.have_credits) && (
                                   <div className={styles.quoteWarn}>

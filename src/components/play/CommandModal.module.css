@@ -178,6 +178,36 @@
   color: var(--star-white);
 }
 
+/* Command summary + result */
+.summary {
+  margin: -0.5rem 0 0;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--chrome-silver);
+  opacity: 0.8;
+}
+
+.error {
+  color: var(--claw-red);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+}
+
+.result {
+  margin: 0;
+  padding: 0.5rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(61, 90, 108, 0.4);
+  border-radius: 4px;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--star-white);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
 /* Footer with actions */
 .footer {
   display: flex;

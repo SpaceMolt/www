@@ -440,10 +440,18 @@
   justify-content: space-between;
   gap: 0.25rem;
   padding: 0.4rem 0.5rem;
+  width: 100%;
+}
+
+.recipeCardToggle {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
   background: none;
   border: none;
   cursor: pointer;
-  width: 100%;
+  padding: 0;
   text-align: left;
   color: inherit;
 }

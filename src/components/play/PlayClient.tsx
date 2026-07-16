@@ -4,11 +4,12 @@ import { useEffect, useRef, useCallback, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Loader2, RefreshCw, WifiOff, LogIn, MonitorSmartphone } from 'lucide-react'
 import { SignInButton } from '@clerk/nextjs'
-import { GameProvider, useGame } from './GameProvider'
+import { mintWsToken } from '@spacemolt/lib'
+import { AccountProvider, useAccountStore, useConnectionPhase } from '@/lib/spacemolt'
+import { PlayProvider } from './PlayProvider'
 import { PlayerSelector } from './PlayerSelector'
 import { HUD } from './HUD'
 import { useGameAuth } from '@/lib/useGameAuth'
-import { GameApi } from '@/lib/gameApi'
 import styles from './PlayClient.module.css'
 
 const GAME_SERVER = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
@@ -19,28 +20,16 @@ interface LinkedPlayer {
 }
 
 /**
- * PlayClientInner manages the game lifecycle after a player is selected.
- * Phases: connecting → authenticating → playing
- *
- * Authentication uses short-lived tokens from the gameserver's ws-token
- * endpoint, obtained via Clerk JWT. No passwords are stored or transmitted.
+ * PlayClientInner renders the game once a player is connected. Connection,
+ * authentication (fresh single-use ws-token per (re)connect), and reconnect
+ * are owned by AccountProvider; this component just maps the connection phase
+ * to screens.
  */
-function PlayClientInner({ playerId, authHeaders, onSwitchPlayer }: {
-  playerId: string
-  authHeaders: () => Promise<Record<string, string>>
-  onSwitchPlayer: () => void
-}) {
-  const { state, wsSend, sendCommand, setApi, api, connect, disconnect, sessionReplaced } = useGame()
-  const [phase, setPhase] = useState<'connecting' | 'authenticating' | 'playing'>('connecting')
-  const hasConnected = useRef(false)
-  const authAttempted = useRef(false)
-
-  // Connect WS on mount
-  const connectRef = useRef(connect)
-  connectRef.current = connect
-  useEffect(() => {
-    connectRef.current()
-  }, [])
+function PlayClientInner() {
+  const store = useAccountStore()
+  const { phase, detail } = useConnectionPhase()
+  const wasReady = useRef(false)
+  if (phase === 'ready') wasReady.current = true
 
   // Add play-page class to body
   useEffect(() => {
@@ -48,94 +37,23 @@ function PlayClientInner({ playerId, authHeaders, onSwitchPlayer }: {
     return () => { document.body.classList.remove('play-page') }
   }, [])
 
-  // Fetch ws-token helper
-  const fetchToken = useCallback(async (): Promise<string | null> => {
-    try {
-      const headers = await authHeaders()
-      const res = await fetch(`${GAME_SERVER}/api/player/${playerId}/ws-token`, {
-        method: 'POST',
-        headers,
-      })
-      if (!res.ok) return null
-      const data = await res.json()
-      return data.token || null
-    } catch {
-      return null
-    }
-  }, [authHeaders, playerId])
-
-  // Authenticate both HTTP v2 (for commands) and WebSocket (for notifications)
-  const authenticateWithToken = useCallback(async () => {
-    try {
-      // Token A: authenticate HTTP v2 session
-      const tokenA = await fetchToken()
-      if (!tokenA) return
-
-      const api = new GameApi()
-      await api.createSession()
-      await api.loginToken(tokenA)
-      setApi(api)
-
-      // Token B: authenticate WebSocket for notifications
-      const tokenB = await fetchToken()
-      if (tokenB) {
-        wsSend({ type: 'login_token', payload: { token: tokenB } })
-      }
-    } catch {
-      // Auth error — will retry on next reconnect
-    }
-  }, [fetchToken, setApi, wsSend])
-
-  // Phase transitions based on WS state
-  useEffect(() => {
-    if (state.connected && !hasConnected.current) {
-      hasConnected.current = true
-    }
-
-    // Authenticated — move to playing
-    if (state.authenticated) {
-      if (phase !== 'playing') {
-        sendCommand('get_status')
-        sendCommand('get_system')
-        sendCommand('get_poi')
-      }
-      setPhase('playing')
-      authAttempted.current = false
-      return
-    }
-
-    // Connected + welcome received + not yet authenticated — request token
-    if (state.connected && state.welcome && !state.authenticated && !authAttempted.current) {
-      authAttempted.current = true
-      setPhase('authenticating')
-      authenticateWithToken()
-      return
-    }
-
-    // Lost auth while playing (e.g. server-side logout) — reset for re-auth
-    if (phase === 'playing' && !state.authenticated) {
-      authAttempted.current = false
-      setPhase('connecting')
-    }
-
-    // Reconnection: WS came back, need fresh token
-    if (!state.connected && hasConnected.current) {
-      authAttempted.current = false
-    }
-  }, [state.connected, state.authenticated, state.welcome, sendCommand, authenticateWithToken, phase])
-
-  // Reconnect overlay
-  const showReconnecting = !state.connected && hasConnected.current && phase === 'playing' && !sessionReplaced
+  const reconnectHere = useCallback(() => {
+    store.setPhase('connecting')
+    store.account
+      .reconnectOnce()
+      .then(() => store.setPhase('ready'))
+      .catch((err) => store.fail(err))
+  }, [store])
 
   // Session replaced — another tab/client connected as this player
-  if (sessionReplaced) {
+  if (phase === 'session_replaced') {
     return (
       <div className={styles.loadingScreen}>
         <div className={styles.loadingContent}>
           <MonitorSmartphone size={32} />
           <div className={styles.loadingTitle}>Session Replaced</div>
           <div className={styles.loadingText}>Another session connected as this player.</div>
-          <button className={styles.signInBtn} onClick={() => connect()}>
+          <button className={styles.signInBtn} onClick={reconnectHere}>
             Reconnect Here
           </button>
         </div>
@@ -143,7 +61,24 @@ function PlayClientInner({ playerId, authHeaders, onSwitchPlayer }: {
     )
   }
 
-  if (phase === 'connecting' || phase === 'authenticating' || (!state.connected && !hasConnected.current)) {
+  if (phase === 'error') {
+    return (
+      <div className={styles.loadingScreen}>
+        <div className={styles.loadingContent}>
+          <WifiOff size={32} />
+          <div className={styles.loadingTitle}>Connection Failed</div>
+          <div className={styles.loadingText}>{detail || 'Could not reach the game server.'}</div>
+          <button className={styles.signInBtn} onClick={reconnectHere}>
+            <RefreshCw size={16} />
+            Retry
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Initial connect/auth — nothing to show behind the loader yet
+  if (!wasReady.current) {
     return (
       <div className={styles.loadingScreen}>
         <div className={styles.loadingContent}>
@@ -157,6 +92,8 @@ function PlayClientInner({ playerId, authHeaders, onSwitchPlayer }: {
     )
   }
 
+  // Ready before (HUD has state to show); overlay while the lib reconnects
+  const showReconnecting = phase === 'reconnecting' || phase === 'disconnected'
   return (
     <>
       <HUD />
@@ -165,8 +102,17 @@ function PlayClientInner({ playerId, authHeaders, onSwitchPlayer }: {
           <div className={styles.reconnectCard}>
             <WifiOff size={24} className={styles.reconnectIcon} />
             <div className={styles.reconnectTitle}>Connection Lost</div>
-            <div className={styles.reconnectText}>Reconnecting automatically...</div>
-            <RefreshCw size={20} className={styles.spinner} />
+            <div className={styles.reconnectText}>
+              {phase === 'disconnected' ? 'Connection lost.' : 'Reconnecting automatically...'}
+            </div>
+            {phase === 'disconnected' ? (
+              <button className={styles.signInBtn} onClick={reconnectHere}>
+                <RefreshCw size={16} />
+                Reconnect
+              </button>
+            ) : (
+              <RefreshCw size={20} className={styles.spinner} />
+            )}
           </div>
         </div>
       )}
@@ -201,6 +147,13 @@ export function PlayClient() {
     }
     setSelectedPlayerId(playerId)
   }, [authHeaders])
+
+  // A fresh single-use ws-token per (re)connect; short-lived Clerk JWTs (or
+  // the dev-mode header) are resolved per request by the headers factory.
+  const mintToken = useCallback(() => {
+    if (!selectedPlayerId) return Promise.reject(new Error('no player selected'))
+    return mintWsToken({ httpBaseUrl: GAME_SERVER, playerId: selectedPlayerId, headers: authHeaders })
+  }, [selectedPlayerId, authHeaders])
 
   // Add play-page class even while loading
   useEffect(() => {
@@ -289,8 +242,23 @@ export function PlayClient() {
 
   // Player selected — launch game
   return (
-    <GameProvider onSwitchPlayer={handleSwitchPlayer}>
-      <PlayClientInner playerId={selectedPlayerId} authHeaders={authHeaders} onSwitchPlayer={handleSwitchPlayer} />
-    </GameProvider>
+    <AccountProvider
+      playerId={selectedPlayerId}
+      mintToken={mintToken}
+      gameserverUrl={GAME_SERVER}
+      fallback={
+        <div className={styles.loadingScreen}>
+          <div className={styles.loadingContent}>
+            <Loader2 size={32} className={styles.spinner} />
+            <div className={styles.loadingTitle}>SpaceMolt</div>
+            <div className={styles.loadingText}>Connecting to game server...</div>
+          </div>
+        </div>
+      }
+    >
+      <PlayProvider onSwitchPlayer={handleSwitchPlayer}>
+        <PlayClientInner />
+      </PlayProvider>
+    </AccountProvider>
   )
 }

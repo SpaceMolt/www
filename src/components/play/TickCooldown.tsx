@@ -1,12 +1,16 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { useGame } from './GameProvider'
+import { useAccountStore, useConnectionPhase, useCurrentTick, usePlayer } from '@/lib/spacemolt'
 import { Timer } from 'lucide-react'
 import styles from './TickCooldown.module.css'
 
 export function TickCooldown() {
-  const { state } = useGame()
+  const store = useAccountStore()
+  const player = usePlayer()
+  const currentTick = useCurrentTick()
+  const { phase } = useConnectionPhase()
+  const authenticated = phase === 'ready'
   const [progress, setProgress] = useState(0)
   const [displayTick, setDisplayTick] = useState(0)
   const [flash, setFlash] = useState(false)
@@ -14,40 +18,41 @@ export function TickCooldown() {
   const lastTickNumRef = useRef(0)
   const rafRef = useRef<number>(0)
 
-  const tickRateMs = (state.welcome?.tick_rate || 10) * 1000
+  const welcome = store.account.welcome
+  const tickRateMs = (welcome?.tick_rate || 10) * 1000
 
   // Bootstrap tick from welcome message
   useEffect(() => {
-    if (state.welcome && state.welcome.current_tick > 0 && lastTickNumRef.current === 0) {
-      lastTickNumRef.current = state.welcome.current_tick
+    if (welcome && welcome.current_tick > 0 && lastTickNumRef.current === 0) {
+      lastTickNumRef.current = welcome.current_tick
       // Estimate when the current tick started using server_time
-      if (state.welcome.server_time > 0) {
-        const serverNowMs = state.welcome.server_time * 1000
+      if (welcome.server_time > 0) {
+        const serverNowMs = welcome.server_time * 1000
         const tickElapsedMs = serverNowMs % tickRateMs
         lastTickTimeRef.current = Date.now() - tickElapsedMs
       } else {
         lastTickTimeRef.current = Date.now()
       }
-      setDisplayTick(state.welcome.current_tick)
+      setDisplayTick(welcome.current_tick)
     }
-  }, [state.welcome, tickRateMs])
+  }, [welcome, tickRateMs])
 
   // Sync from confirmed server tick (action_result, etc.)
   useEffect(() => {
-    if (state.currentTick > 0 && state.currentTick !== lastTickNumRef.current) {
-      lastTickNumRef.current = state.currentTick
+    if (currentTick > 0 && currentTick !== lastTickNumRef.current) {
+      lastTickNumRef.current = currentTick
       lastTickTimeRef.current = Date.now()
-      setDisplayTick(state.currentTick)
+      setDisplayTick(currentTick)
       setFlash(true)
       setProgress(0)
     }
-  }, [state.currentTick])
+  }, [currentTick])
 
   // Reset timer baseline on status poll (player object changes)
-  const playerRef = useRef(state.player)
+  const playerRef = useRef(player)
   useEffect(() => {
-    if (state.player && state.player !== playerRef.current) {
-      playerRef.current = state.player
+    if (player && player !== playerRef.current) {
+      playerRef.current = player
       // If the timer has drifted far (more than 3 ticks without server confirmation),
       // reset the baseline to keep the animation fresh
       const elapsed = Date.now() - lastTickTimeRef.current
@@ -55,7 +60,7 @@ export function TickCooldown() {
         lastTickTimeRef.current = Date.now()
       }
     }
-  }, [state.player, tickRateMs])
+  }, [player, tickRateMs])
 
   // Clear flash after animation
   useEffect(() => {
@@ -90,7 +95,7 @@ export function TickCooldown() {
     return () => cancelAnimationFrame(rafRef.current)
   }, [animate])
 
-  if (!state.authenticated) return null
+  if (!authenticated) return null
 
   // Waiting for first tick data
   if (displayTick === 0) {

@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
-import type { FacilityListResponse } from '@/lib/gameTypes'
+import type { FacilityListResponse } from '../../types'
 import { shared } from '../../shared'
 import { FacilityCard } from './FacilityCard'
 import styles from './facilities.module.css'

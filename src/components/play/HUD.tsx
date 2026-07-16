@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { useGame } from './GameProvider'
+import { useLocationState, useShip } from '@/lib/spacemolt'
+import { usePlayUi } from './PlayProvider'
 import { TopBar } from './TopBar'
 import { ToastContainer } from './ToastContainer'
 import { TravelProgress } from './TravelProgress'
@@ -125,7 +126,11 @@ function AutoTravelBanner({ progress, onAbort }: { progress: AutoTravelProgress;
 }
 
 export function HUD() {
-  const { state } = useGame()
+  const ship = useShip()
+  const location = useLocationState()
+  const isDocked = Boolean(location?.docked_at)
+  const pendingTrades = usePlayUi((s) => s.pendingTrades)
+  const inCombat = usePlayUi((s) => s.inCombat)
   const [activePanel, setActivePanel] = useState('galaxy')
   const galaxyRef = useRef<GalaxyPanelHandle>(null)
   const [exploreSystem, setExploreSystem] = useState<MapSystemData | null>(null)
@@ -135,13 +140,13 @@ export function HUD() {
   const [highlightedSystems, setHighlightedSystems] = useState<Set<string> | null>(null)
 
   const handleBeginTravel = useCallback(() => {
-    if (!plannedRoute || !state.ship) return
+    if (!plannedRoute || !ship) return
     autoTravel.start(plannedRoute, {
-      shipSpeed: state.ship.speed ?? 1,
-      isDocked: state.isDocked,
+      shipSpeed: ship.speed ?? 1,
+      isDocked,
     })
     setPlannedRoute(null) // clear the planned route, auto-travel takes over
-  }, [plannedRoute, state.ship, state.isDocked, autoTravel])
+  }, [plannedRoute, ship, isDocked, autoTravel])
 
   // When auto-travel completes a jump, switch to system tab
   const completedJumps = autoTravel.progress?.completedJumps ?? 0
@@ -211,8 +216,8 @@ export function HUD() {
   const ActivePanelComponent = PANELS[activePanel]
 
   const badges: Record<string, number> = {}
-  if (state.pendingTrades.length > 0) badges.trading = state.pendingTrades.length
-  if (state.inCombat) badges.combat = 1
+  if (pendingTrades.length > 0) badges.trading = pendingTrades.length
+  if (inCombat) badges.combat = 1
 
   return (
     <>
@@ -225,8 +230,8 @@ export function HUD() {
           activePanel={activePanel}
           onPanelChange={setActivePanel}
           badges={badges}
-          isDocked={state.isDocked}
-          inCombat={state.inCombat}
+          isDocked={isDocked}
+          inCombat={inCombat}
         />
 
         {/* Main Content: Left Sidebar + Panel + Right Pane */}
@@ -242,8 +247,8 @@ export function HUD() {
                     <span className={styles.routeBannerLabel}>Route Planned</span>
                     <span className={styles.routeBannerStats}>
                       {plannedRoute.totalJumps} jump{plannedRoute.totalJumps !== 1 ? 's' : ''} · {plannedRoute.estimatedFuel} fuel
-                      {state.ship && (() => {
-                        const secsPerJump = Math.max(10, 70 - 10 * (state.ship.speed ?? 1))
+                      {ship && (() => {
+                        const secsPerJump = Math.max(10, 70 - 10 * (ship.speed ?? 1))
                         const totalSecs = secsPerJump * plannedRoute.totalJumps
                         const mins = Math.floor(totalSecs / 60)
                         const secs = totalSecs % 60

@@ -1,13 +1,21 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback } from 'react'
 import { ListOrdered, ArrowUp, ArrowDown, Trash2, Loader2, User, Globe, RefreshCw } from 'lucide-react'
-import { useGame } from '../../GameProvider'
+import type { FacilityResponse } from '@spacemolt/lib'
+import { useCommandMutation, useCommandQuery, useCurrentTick } from '@/lib/spacemolt'
+import { usePlay } from '../../PlayProvider'
 import { Modal, shared } from '../../shared'
 import { ProgressBar } from '../../ProgressBar'
 import { estimateJobProgress } from '../craftProgress'
 import type { Facility, CraftJobView } from '../../types'
 import styles from './facilities.module.css'
+
+// `{ jobs: unknown }` uniquely identifies the job-list variant within the
+// FacilityResponse union (see UpgradeModal.tsx for the discriminator pattern).
+type FacilityJobListResponse = Extract<FacilityResponse, { jobs: unknown }>
+
+const describeError = (err: unknown): string => (err instanceof Error ? err.message : String(err))
 
 interface FacilityQueueModalProps {
   facility: Facility
@@ -15,57 +23,55 @@ interface FacilityQueueModalProps {
 }
 
 export function FacilityQueueModal({ facility, onClose }: FacilityQueueModalProps) {
-  const { state, api } = useGame()
-  const [jobs, setJobs] = useState<CraftJobView[] | null>(null)
-  const [loading, setLoading] = useState(false)
+  const currentTick = useCurrentTick()
+  const mutate = useCommandMutation()
+  const { uiStore } = usePlay()
   const [busyId, setBusyId] = useState<string | null>(null)
-  const currentTickRef = useRef(state.currentTick)
-  currentTickRef.current = state.currentTick
 
-  const refresh = useCallback(async () => {
-    if (!api) return
-    setLoading(true)
-    try {
-      const data = await api.callStructured<{ jobs?: CraftJobView[] }>(
-        'spacemolt_facility', 'job_list', { facility_id: facility.facility_id },
-      )
-      // Sort by queue position so array index matches the visual/reorder
-      // order, and stamp last_sync_tick — this component keeps its own local
-      // job state rather than the shared craftJobs slice (crafting_update
-      // pushes only reach a job's own orderer, not the facility owner
-      // watching someone else's rental job), so it must timestamp its own
-      // syncs for estimateJobProgress's interpolation to work.
-      const sorted = [...(data?.jobs || [])].sort((a, b) => a.position - b.position)
-      setJobs(sorted.map(j => ({ ...j, last_sync_tick: currentTickRef.current })))
-    } catch {
-      setJobs([])
-    }
-    setLoading(false)
-  }, [api, facility.facility_id])
+  // This component keeps its own local job state rather than the shared
+  // craftJobs slice (crafting_update pushes only reach a job's own orderer,
+  // not the facility owner watching someone else's rental job), so it must
+  // timestamp its own syncs for estimateJobProgress's interpolation to work.
+  const { data: rawJobs, loading, error, refetch } = useCommandQuery(
+    async (account) => {
+      const resp = await account.commands.spacemolt_facility.job_list({ facility_id: facility.facility_id })
+      const data = resp.structuredContent as FacilityJobListResponse | undefined
+      // Sort by queue position so array index matches the visual/reorder order.
+      const sorted = [...(data?.jobs ?? [])].sort((a, b) => a.position - b.position)
+      return sorted.map((j): CraftJobView => ({ ...j, last_sync_tick: account.currentTick }))
+    },
+    [facility.facility_id],
+  )
+  const jobs = rawJobs ?? (error ? [] : null)
 
-  useEffect(() => { refresh() }, [refresh])
+  const reportError = useCallback((err: unknown) => {
+    uiStore.dispatch({ type: 'toast', kind: 'danger', text: describeError(err) })
+  }, [uiStore])
 
   const handleReorder = useCallback(async (jobId: string, position: number) => {
-    if (!api) return
     setBusyId(jobId)
     try {
-      await api.callStructured('spacemolt_facility', 'job_reorder', {
-        facility_id: facility.facility_id, job_id: jobId, position,
-      })
-      await refresh()
-    } catch { /* handled by empty state on next refresh */ }
+      await mutate(
+        (c) => c.spacemolt_facility.job_reorder({ facility_id: facility.facility_id, job_id: jobId, position }),
+        { label: 'facility_job_reorder' },
+      )
+      refetch()
+    } catch (err) {
+      reportError(err)
+    }
     setBusyId(null)
-  }, [api, facility.facility_id, refresh])
+  }, [mutate, facility.facility_id, refetch, reportError])
 
   const handleCancel = useCallback(async (jobId: string) => {
-    if (!api) return
     setBusyId(jobId)
     try {
-      await api.callStructured('spacemolt_facility', 'job_cancel', { job_id: jobId })
-      await refresh()
-    } catch { /* handled by empty state on next refresh */ }
+      await mutate((c) => c.spacemolt_facility.job_cancel({ job_id: jobId }), { label: 'facility_job_cancel' })
+      refetch()
+    } catch (err) {
+      reportError(err)
+    }
     setBusyId(null)
-  }, [api, refresh])
+  }, [mutate, refetch, reportError])
 
   return (
     <Modal
@@ -73,7 +79,7 @@ export function FacilityQueueModal({ facility, onClose }: FacilityQueueModalProp
       icon={<ListOrdered size={14} />}
       onClose={onClose}
       actions={
-        <button className={shared.subtleBtn} onClick={refresh} disabled={loading} type="button">
+        <button className={shared.subtleBtn} onClick={refetch} disabled={loading} type="button">
           <RefreshCw size={11} /> Refresh
         </button>
       }
@@ -86,7 +92,7 @@ export function FacilityQueueModal({ facility, onClose }: FacilityQueueModalProp
       )}
       {jobs && jobs.map((job, i) => {
         const isSelf = job.orderer === 'self'
-        const done = estimateJobProgress(job, state.currentTick, facility.production?.ticks_per_run)
+        const done = estimateJobProgress(job, currentTick, facility.production?.ticks_per_run)
         return (
           <div key={job.job_id} className={styles.typeDetail}>
             <div className={styles.typeHeader}>

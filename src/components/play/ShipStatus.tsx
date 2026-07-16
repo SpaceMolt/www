@@ -1,13 +1,12 @@
 'use client'
 
-import { useGame } from './GameProvider'
+import { useShip } from '@/lib/spacemolt'
 import { ProgressBar } from './ProgressBar'
 import { Rocket } from 'lucide-react'
 import styles from './ShipStatus.module.css'
 
 export function ShipStatus() {
-  const { state } = useGame()
-  const ship = state.ship
+  const ship = useShip()
 
   if (!ship) {
     return (
@@ -20,7 +19,8 @@ export function ShipStatus() {
     )
   }
 
-  const hullPct = ship.max_hull > 0 ? ship.hull / ship.max_hull : 0
+  const maxHull = ship.max_hull ?? 0
+  const hullPct = maxHull > 0 ? (ship.hull ?? 0) / maxHull : 0
   const hullColor = hullPct < 0.25 ? 'red' : hullPct < 0.5 ? 'orange' : 'green'
 
   return (
@@ -32,8 +32,8 @@ export function ShipStatus() {
       <div className={styles.bars}>
         <div className={styles.barItem}>
           <ProgressBar
-            value={ship.hull}
-            max={ship.max_hull}
+            value={ship.hull ?? 0}
+            max={maxHull}
             color={hullColor}
             label="Hull"
             size="sm"
@@ -50,8 +50,8 @@ export function ShipStatus() {
         </div>
         <div className={styles.barItem}>
           <ProgressBar
-            value={ship.fuel}
-            max={ship.max_fuel}
+            value={ship.fuel ?? 0}
+            max={ship.max_fuel ?? 0}
             color="yellow"
             label="Fuel"
             size="sm"
@@ -60,7 +60,7 @@ export function ShipStatus() {
         <div className={styles.barItem}>
           <ProgressBar
             value={ship.cargo_used ?? 0}
-            max={ship.cargo_capacity}
+            max={ship.cargo_capacity ?? 0}
             color="cyan"
             label="Cargo"
             size="sm"
