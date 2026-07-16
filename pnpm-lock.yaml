@@ -14,6 +14,9 @@ importers:
       '@clerk/themes':
         specifier: ^2.4.51
         version: 2.4.51(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@spacemolt/lib':
+        specifier: ^7.1.0
+        version: 7.1.0(typescript@5.9.3)
       gray-matter:
         specifier: ^4.0.3
         version: 4.0.3
@@ -399,6 +402,12 @@ packages:
         optional: true
       react-redux:
         optional: true
+
+  '@spacemolt/lib@7.1.0':
+    resolution: {integrity: sha512-7OmJmbsDkdsazHGRLcWLv+a5qZzbiEYRoWQjQNjn/Rgx3jaj2cKr57e9Iffnms7H69CUrf5a2pVLqVRrC+lTOQ==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      typescript: ^5.5
 
   '@stablelib/base64@1.0.1':
     resolution: {integrity: sha512-1bnPQqSxSuc3Ii6MhBysoWCg58j97aUjuCSZrGSmDxNqtytIi0k8utUenAwTZN4V5mXXYGsVUI9zeBqy+jBOSQ==}
@@ -1605,6 +1614,10 @@ snapshots:
     optionalDependencies:
       react: 19.2.4
       react-redux: 9.2.0(@types/react@19.2.13)(react@19.2.4)(redux@5.0.1)
+
+  '@spacemolt/lib@7.1.0(typescript@5.9.3)':
+    dependencies:
+      typescript: 5.9.3
 
   '@stablelib/base64@1.0.1': {}
 
