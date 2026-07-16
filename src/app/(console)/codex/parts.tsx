@@ -97,7 +97,6 @@ const MODULE_STAT_LABELS: [keyof RawCatalogItem, string, ((v: number) => string)
   ['cpu_usage', 'CPU Usage'],
   ['power_usage', 'Power Usage'],
   ['damage', 'Damage'],
-  ['range', 'Range'],
   ['reach', 'Reach'],
   ['cooldown', 'Cooldown', (v) => `${v} tick${v === 1 ? '' : 's'}`],
   ['accuracy_bonus', 'Accuracy', (v) => `+${v}`],
