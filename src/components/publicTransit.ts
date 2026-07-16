@@ -13,15 +13,23 @@ export interface TickAnchor {
 
 const TICK_DURATION_MS = 10_000
 const TICK_OBSERVE_MIN_INTERVAL_MS = 2_000
-const MAX_FLEET_DOTS = 5
-const FLEET_DOT_SPACING = 4
-const FLEET_OFFSETS = Array.from({ length: MAX_FLEET_DOTS }, (_, countIndex) => {
-  const count = countIndex + 1
-  const midpoint = (count - 1) / 2
-  return Object.freeze(
-    Array.from({ length: count }, (_, index) => (index - midpoint) * FLEET_DOT_SPACING),
-  )
-})
+export interface TransitFormationPoint {
+  forward: number
+  side: number
+}
+
+export interface TransitFormation {
+  totalCount: number
+  visibleCount: number
+  overflowCount: number
+  columns: number
+  rows: number
+}
+
+export const FLEET_DOT_SPACING = 7
+// Normal fleets top out around 25 ships. This ceiling still shows unusually
+// large synchronized movements in full while bounding malformed API input.
+export const MAX_TRANSIT_FORMATION_DOTS = 1_024
 
 export function publicTransitProgress(transit: PublicTransit, currentTick: number): number {
   const duration = transit.arrival_tick - transit.start_tick
@@ -33,10 +41,9 @@ export function estimateCurrentTick(anchor: TickAnchor, nowMs = Date.now()): num
   return anchor.tick + Math.max(0, nowMs - anchor.anchoredAtMs) / TICK_DURATION_MS
 }
 
-// Match Recon's clock discipline: public events are the authoritative tick
-// phase, while snapshots only establish or refresh a sufficiently old anchor.
-// Ignoring duplicate and burst observations prevents network timing from
-// repeatedly re-phasing moving dots.
+// Real-time public events are the authoritative tick-phase signal. Ignoring
+// duplicate and burst observations prevents network timing from repeatedly
+// re-phasing moving dots.
 export function observeServerTick(
   anchor: TickAnchor | null,
   tick: number,
@@ -48,7 +55,48 @@ export function observeServerTick(
   return { tick, anchoredAtMs: nowMs }
 }
 
-export function publicTransitOffsets(count: number): readonly number[] {
-  const visibleCount = Math.max(1, Math.min(MAX_FLEET_DOTS, Math.floor(count)))
-  return FLEET_OFFSETS[visibleCount - 1]
+// Activity snapshots arrive on their own polling cadence, so their response
+// time is not a reliable tick boundary. The public map uses one only to
+// bootstrap the clock, then preserves the phase learned from real-time events.
+export function observeSnapshotTick(
+  anchor: TickAnchor | null,
+  tick: number,
+  nowMs = Date.now(),
+): TickAnchor | null {
+  if (anchor) return anchor
+  if (!Number.isFinite(tick) || tick <= 0) return anchor
+  return { tick, anchoredAtMs: nowMs }
+}
+
+export function publicTransitFormation(count: number): TransitFormation {
+  const totalCount = Number.isFinite(count) ? Math.max(1, Math.floor(count)) : 1
+  const visibleCount = Math.min(totalCount, MAX_TRANSIT_FORMATION_DOTS)
+  const columns = Math.ceil(Math.sqrt(visibleCount))
+  const rows = Math.ceil(visibleCount / columns)
+
+  return {
+    totalCount,
+    visibleCount,
+    overflowCount: totalCount - visibleCount,
+    columns,
+    rows,
+  }
+}
+
+export function forEachPublicTransitFormationPoint(
+  formation: TransitFormation,
+  visit: (point: TransitFormationPoint) => void,
+): void {
+  for (let row = 0; row < formation.rows; row++) {
+    const rowCount = Math.min(
+      formation.columns,
+      formation.visibleCount - row * formation.columns,
+    )
+    for (let column = 0; column < rowCount; column++) {
+      visit({
+        forward: (column - (rowCount - 1) / 2) * FLEET_DOT_SPACING,
+        side: (row - (formation.rows - 1) / 2) * FLEET_DOT_SPACING,
+      })
+    }
+  }
 }

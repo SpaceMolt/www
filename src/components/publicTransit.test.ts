@@ -1,9 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 import {
   estimateCurrentTick,
+  forEachPublicTransitFormationPoint,
+  MAX_TRANSIT_FORMATION_DOTS,
+  observeSnapshotTick,
   observeServerTick,
+  publicTransitFormation,
   publicTransitProgress,
-  publicTransitOffsets,
   type PublicTransit,
 } from './publicTransit'
 
@@ -46,12 +49,69 @@ describe('estimateCurrentTick', () => {
     const initial = { tick: 200, anchoredAtMs: 1_000 }
     expect(observeServerTick(initial, 201, 2_000)).toBe(initial)
   })
+
+  test('keeps snapshot refreshes from re-phasing an event-driven clock', () => {
+    const bootstrap = observeSnapshotTick(null, 200, 1_000)
+    expect(bootstrap).toEqual({ tick: 200, anchoredAtMs: 1_000 })
+    expect(estimateCurrentTick(bootstrap!, 16_000)).toBe(201.5)
+
+    const afterPoll = observeSnapshotTick(bootstrap, 202, 16_000)
+    expect(afterPoll).toBe(bootstrap)
+    expect(estimateCurrentTick(afterPoll!, 16_000)).toBe(201.5)
+
+    const eventAnchor = observeServerTick(afterPoll, 203, 21_000)
+    expect(eventAnchor).toEqual({ tick: 203, anchoredAtMs: 21_000 })
+    expect(observeSnapshotTick(eventAnchor, 204, 31_000)).toBe(eventAnchor)
+  })
 })
 
-describe('publicTransitOffsets', () => {
-  test('fans fleets symmetrically and caps visual density', () => {
-    expect(publicTransitOffsets(1)).toEqual([0])
-    expect(publicTransitOffsets(4)).toEqual([-6, -2, 2, 6])
-    expect(publicTransitOffsets(100)).toEqual([-8, -4, 0, 4, 8])
+describe('publicTransitFormation', () => {
+  test('lays legitimate fleet sizes out in centered rows and columns', () => {
+    const single = publicTransitFormation(1)
+    const singlePoints: Array<{ forward: number; side: number }> = []
+    forEachPublicTransitFormationPoint(single, (point) => singlePoints.push(point))
+    expect(singlePoints).toEqual([{ forward: 0, side: 0 }])
+
+    const four = publicTransitFormation(4)
+    const fourPoints: Array<{ forward: number; side: number }> = []
+    forEachPublicTransitFormationPoint(four, (point) => fourPoints.push(point))
+    expect(fourPoints).toEqual([
+      { forward: -3.5, side: -3.5 },
+      { forward: 3.5, side: -3.5 },
+      { forward: -3.5, side: 3.5 },
+      { forward: 3.5, side: 3.5 },
+    ])
+
+    const largeFleet = publicTransitFormation(100)
+    expect(largeFleet).toEqual({
+      totalCount: 100,
+      visibleCount: 100,
+      overflowCount: 0,
+      columns: 10,
+      rows: 10,
+    })
+  })
+
+  test('centers a partial final row', () => {
+    const points: Array<{ forward: number; side: number }> = []
+    forEachPublicTransitFormationPoint(publicTransitFormation(5), (point) => points.push(point))
+    expect(points).toEqual([
+      { forward: -7, side: -3.5 },
+      { forward: 0, side: -3.5 },
+      { forward: 7, side: -3.5 },
+      { forward: -3.5, side: 3.5 },
+      { forward: 3.5, side: 3.5 },
+    ])
+  })
+
+  test('bounds malformed counts while preserving the exact overflow', () => {
+    const formation = publicTransitFormation(1_000_000_000)
+    expect(formation).toEqual({
+      totalCount: 1_000_000_000,
+      visibleCount: MAX_TRANSIT_FORMATION_DOTS,
+      overflowCount: 1_000_000_000 - MAX_TRANSIT_FORMATION_DOTS,
+      columns: 32,
+      rows: 32,
+    })
   })
 })
