@@ -3,10 +3,13 @@
 import { useState, useCallback, useMemo } from 'react'
 import { Bug, Loader2 } from 'lucide-react'
 import type { GameState } from '@spacemolt/lib'
-import { useAccountStore, useCargo, useLocationState, useModules, usePlayer, useShip, useSkills } from '@/lib/spacemolt'
+import { useCargo, useLocationState, useModules, usePlayer, useShip, useSkills } from '@/lib/spacemolt'
 import { Modal, shared } from './shared'
+import { useGameAuth } from '@/lib/useGameAuth'
 import { titleCase } from '@/lib/format'
 import styles from './BugReportModal.module.css'
+
+const GAME_SERVER = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 
 interface BugReportModalProps {
   title: string
@@ -84,7 +87,7 @@ function buildGenericContext(sections: {
 }
 
 export function BugReportModal({ title, entityContext, onClose }: BugReportModalProps) {
-  const store = useAccountStore()
+  const { authHeaders } = useGameAuth()
   const player = usePlayer()
   const location = useLocationState()
   const ship = useShip()
@@ -111,16 +114,26 @@ export function BugReportModal({ title, entityContext, onClose }: BugReportModal
     setError(null)
     try {
       const body = `## Player Description\n\n${description.trim()}\n\n## Context\n\n${fullContext}`
-      // Not yet in the generated Commands facade (needs a gameserver deploy) —
-      // wired through the untyped query escape hatch ahead of that deploy.
-      await store.account.query('spacemolt_social', 'bugreport', { title, body })
+      // Bug reporting is a web-client surface, not a game command: the
+      // Clerk-authenticated player route keeps it out of the agent-facing
+      // API spec and tool listings.
+      const headers = await authHeaders()
+      const res = await fetch(`${GAME_SERVER}/api/player/${player?.id}/bugreport`, {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, body }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        throw new Error(data?.error || `Failed to submit report (${res.status})`)
+      }
       setSubmitted(true)
       setTimeout(onClose, 1500)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to submit report')
     }
     setSubmitting(false)
-  }, [store, description, fullContext, title, onClose])
+  }, [authHeaders, player?.id, description, fullContext, title, onClose])
 
   if (submitted) {
     return (
