@@ -9,6 +9,51 @@
   line-height: 1.55;
 }
 
+.registryTabs {
+  display: flex;
+  gap: 0.35rem;
+  margin: 0 0 0.9rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.12);
+}
+
+.registryTab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--chrome-silver);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.registryTab span {
+  color: inherit;
+  opacity: 0.62;
+  font-variant-numeric: tabular-nums;
+}
+
+.registryTab:hover,
+.registryTabActive {
+  color: var(--plasma-cyan);
+}
+
+.registryTabActive {
+  border-bottom-color: var(--plasma-cyan);
+  background: linear-gradient(180deg, transparent, rgba(0, 212, 255, 0.06));
+}
+
+.registryTab:focus-visible {
+  outline: 2px solid var(--plasma-cyan);
+  outline-offset: 1px;
+}
+
 /* === Filter Bar === */
 .filterBar {
   display: flex;
@@ -346,6 +391,93 @@
   color: var(--plasma-cyan);
 }
 
+/* === Faction Outposts === */
+.outpostPanel {
+  border-color: rgba(148, 163, 184, 0.16);
+}
+
+.outpostIntro {
+  max-width: 76ch;
+  margin: 0 0 0.8rem;
+  color: var(--chrome-silver);
+  font-size: 0.76rem;
+  line-height: 1.55;
+  opacity: 0.72;
+}
+
+.outpostList {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.outpostRow {
+  display: grid;
+  grid-template-columns: 8px minmax(220px, 1fr) minmax(150px, auto) minmax(120px, auto) 18px;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  color: var(--chrome-silver);
+  text-decoration: none;
+  background: rgba(8, 14, 25, 0.36);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.outpostRow:hover {
+  background: rgba(18, 27, 44, 0.58);
+  border-color: color-mix(in srgb, var(--faction-color) 35%, transparent);
+}
+
+.outpostRow:focus-visible {
+  outline: 2px solid var(--plasma-cyan);
+  outline-offset: 1px;
+}
+
+.outpostSignal {
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--faction-color);
+  transform: rotate(45deg);
+  box-shadow: 0 0 7px color-mix(in srgb, var(--faction-color) 50%, transparent);
+}
+
+.outpostIdentity {
+  min-width: 0;
+}
+
+.outpostIdentity strong {
+  display: block;
+  color: var(--star-white);
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.outpostIdentity small {
+  display: block;
+  margin-top: 0.2rem;
+  overflow: hidden;
+  color: var(--chrome-silver);
+  font-size: 0.7rem;
+  line-height: 1.35;
+  opacity: 0.64;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.outpostOwner,
+.outpostSystem {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.outpostOwner {
+  color: var(--faction-color);
+}
+
 /* === Loading === */
 .loading {
   text-align: center;
@@ -387,5 +519,22 @@
 
   .nameCell {
     min-width: 180px;
+  }
+
+  .registryTabs {
+    overflow-x: auto;
+  }
+
+  .registryTab {
+    white-space: nowrap;
+  }
+
+  .outpostRow {
+    grid-template-columns: 8px minmax(0, 1fr) 18px;
+  }
+
+  .outpostOwner,
+  .outpostSystem {
+    display: none;
   }
 }

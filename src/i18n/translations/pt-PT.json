@@ -303,7 +303,16 @@
     "noStationsTitle": "Nenhuma estação encontrada",
     "noStationsDesc": "Nenhuma estação corresponde ao filtro atual.",
     "empireCapitals": "Capitais do império",
-    "empireCapitalsSubtitle": "// Os cinco centros de poder na Latent Expanse"
+    "empireCapitalsSubtitle": "// Os cinco centros de poder na Latent Expanse",
+    "registryTypeLabel": "Tipo de registo de estações",
+    "stationsTab": "Estações",
+    "factionOutpostsTab": "Postos avançados de fação",
+    "noOutpostsTitle": "Sem postos avançados de fação",
+    "noOutpostsDesc": "Não existem atualmente postos avançados exclusivos de fação registados.",
+    "outpostsIntro": "Pequenas instalações de fação, exclusivas para membros, destinadas a combustível e armazenamento. Os postos avançados não são tratados como marcos galácticos.",
+    "factionHolding": "Instalação de fação",
+    "reconStationsAndOutposts": "Estações e postos avançados",
+    "outpostBadge": "Posto avançado"
   },
   "market": {
     "pageTitle": "Bolsa galáctica",
@@ -469,6 +478,9 @@
   },
   "stationDetail": {
     "backToStations": "Voltar às estações",
+    "backToRegistry": "Voltar ao registo de estações",
+    "stationDatabaseKicker": "Base de dados de estações",
+    "factionOutpostKicker": "Posto avançado de fação",
     "loading": "A carregar dados da estação...",
     "notFoundTitle": "Estação não encontrada",
     "notFoundDesc": "Esta estação não existe ou o ID é inválido.",

@@ -19,6 +19,7 @@ import {
   type PublicTransitPresentation,
 } from './publicTransit'
 import { configureHiDPICanvas, logicalCanvasSize } from './canvasResolution'
+import { stationsVisibleOnPublicMap } from '@/lib/stationPresentation'
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -965,16 +966,12 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
           )
           ctx.stroke()
         } else if (system.has_station) {
-          // Non-capital station: single ring indicator. Player-faction-owned
-          // stations get a dashed ring in the faction's color instead of a
-          // solid ring in the system's empire color, so ownership reads at
-          // a glance.
+          // Significant faction stations retain their ownership treatment;
+          // only minor outposts are filtered from the map entirely.
           const stationRingColor = system.faction_station_color || color
           ctx.strokeStyle = stationRingColor + 'aa'
           ctx.lineWidth = 1.5
-          if (system.has_faction_station) {
-            ctx.setLineDash([3, 2])
-          }
+          if (system.has_faction_station) ctx.setLineDash([3, 2])
           ctx.beginPath()
           ctx.arc(
             pos.x,
@@ -984,9 +981,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
             Math.PI * 2,
           )
           ctx.stroke()
-          if (system.has_faction_station) {
-            ctx.setLineDash([])
-          }
+          if (system.has_faction_station) ctx.setLineDash([])
         }
 
         // Bright center
@@ -1865,17 +1860,16 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
         ])
         const data: MapData = await mapResponse.json()
 
-        // Mark systems that have stations, and separately flag ones with a
-        // player-faction-owned station so they can be highlighted distinctly
-        // from NPC/empire stations.
+        // Faction outposts are local holdings, not galaxy-scale landmarks.
         try {
           const stationsData = await stationsResponse.json()
-          const stations = (stationsData.stations || []) as Array<{
+          const stations = stationsVisibleOnPublicMap((stationsData.stations || []) as Array<{
             system_id: string
+            type?: string
             faction_id?: string
             faction_tag?: string
             faction_color?: string
-          }>
+          }>)
           stationSystemIds = new Set(stations.map((st) => st.system_id))
           const factionStationBySystem = new Map(
             stations
@@ -2419,10 +2413,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
         <div className={styles.legendItem}>
           <div
             className={styles.legendDot}
-            style={{
-              background: 'transparent',
-              border: '1.5px dashed #ffffff',
-            }}
+            style={{ background: 'transparent', border: '1.5px dashed #ffffff' }}
           />
           <span className={styles.legendLabel}>Faction Station</span>
         </div>

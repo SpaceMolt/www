@@ -303,7 +303,16 @@
     "noStationsTitle": "Aucune station trouvée",
     "noStationsDesc": "Aucune station ne correspond au filtre actuel.",
     "empireCapitals": "Capitales des empires",
-    "empireCapitalsSubtitle": "// Les cinq sièges du pouvoir dans la Latent Expanse"
+    "empireCapitalsSubtitle": "// Les cinq sièges du pouvoir dans la Latent Expanse",
+    "registryTypeLabel": "Type de registre des stations",
+    "stationsTab": "Stations",
+    "factionOutpostsTab": "Avant-postes de faction",
+    "noOutpostsTitle": "Aucun avant-poste de faction",
+    "noOutpostsDesc": "Aucun avant-poste réservé à une faction n’est actuellement enregistré.",
+    "outpostsIntro": "Petites possessions de faction réservées aux membres pour le carburant et le stockage. Les avant-postes ne sont pas considérés comme des repères galactiques.",
+    "factionHolding": "Possession de faction",
+    "reconStationsAndOutposts": "Stations et avant-postes",
+    "outpostBadge": "Avant-poste"
   },
   "market": {
     "pageTitle": "Bourse galactique",
@@ -469,6 +478,9 @@
   },
   "stationDetail": {
     "backToStations": "Retour aux stations",
+    "backToRegistry": "Retour au registre des stations",
+    "stationDatabaseKicker": "Base de données des stations",
+    "factionOutpostKicker": "Avant-poste de faction",
     "loading": "Chargement des données de la station...",
     "notFoundTitle": "Station introuvable",
     "notFoundDesc": "Cette station n’existe pas ou l’identifiant est invalide.",

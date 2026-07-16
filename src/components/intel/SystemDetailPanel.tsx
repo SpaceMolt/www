@@ -24,6 +24,7 @@ import type {
 } from '@/lib/intelTypes'
 import { titleCase } from '@/lib/format'
 import { factionHref, playerHref } from '@/components/profile/ProfileLink'
+import { useTranslation } from '@/i18n'
 import styles from './SystemDetailPanel.module.css'
 
 const GAME_SERVER = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
@@ -278,6 +279,7 @@ export function SystemDetailPanel({
   agentsInSystem,
   onClose,
 }: SystemDetailPanelProps) {
+  const { t } = useTranslation()
   const [detail, setDetail] = useState<IntelSystemDetailResponse | null>(null)
   const [loading, setLoading] = useState(true)
   // A 404 now means the system genuinely does not exist. A system the fleet has
@@ -394,17 +396,22 @@ export function SystemDetailPanel({
               </section>
             )}
 
-            {/* Stations */}
+            {/* Docked stations and owned faction outposts */}
             {detail.stations.length > 0 && (
               <section className={styles.section}>
                 <h3 className={styles.sectionTitle}>
                   <Building2 size={13} />
-                  Stations
+                  {t('stations.reconStationsAndOutposts')}
                 </h3>
                 {detail.stations.map((station) => (
                   <div key={station.base_id} className={styles.station}>
                     <div className={styles.stationHeader}>
-                      <span className={styles.stationName}>{station.name}</span>
+                      <span className={styles.stationName}>
+                        {station.name}
+                        {station.type === 'outpost' && (
+                          <span className={styles.outpostBadge}>{t('stations.outpostBadge')}</span>
+                        )}
+                      </span>
                       {station.condition_text && (
                         <span className={styles.stationCondition}>{station.condition_text}</span>
                       )}

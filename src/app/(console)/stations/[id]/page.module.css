@@ -63,6 +63,18 @@
   text-decoration: underline;
 }
 
+.outpostBadge {
+  padding: 0.18rem 0.48rem;
+  border: 1px solid rgba(148, 163, 184, 0.42);
+  color: var(--chrome-silver);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transform: skewX(-7deg);
+}
+
 .empireDot {
   width: 8px;
   height: 8px;

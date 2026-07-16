@@ -303,7 +303,16 @@
     "noStationsTitle": "Geen stations gevonden",
     "noStationsDesc": "Geen stations komen overeen met het huidige filter.",
     "empireCapitals": "Rijkshoofdsteden",
-    "empireCapitalsSubtitle": "// De vijf machtszetels in de Latent Expanse"
+    "empireCapitalsSubtitle": "// De vijf machtszetels in de Latent Expanse",
+    "registryTypeLabel": "Type stationsregister",
+    "stationsTab": "Stations",
+    "factionOutpostsTab": "Factievoorposten",
+    "noOutpostsTitle": "Geen factievoorposten",
+    "noOutpostsDesc": "Er zijn momenteel geen exclusieve factievoorposten geregistreerd.",
+    "outpostsIntro": "Kleine factiebezittingen voor alleen leden, bedoeld voor brandstof en opslag. Voorposten gelden niet als galactische oriëntatiepunten.",
+    "factionHolding": "Factiebezitting",
+    "reconStationsAndOutposts": "Stations en voorposten",
+    "outpostBadge": "Voorpost"
   },
   "market": {
     "pageTitle": "Galactische beurs",
@@ -469,6 +478,9 @@
   },
   "stationDetail": {
     "backToStations": "Terug naar stations",
+    "backToRegistry": "Terug naar het stationsregister",
+    "stationDatabaseKicker": "Stationsdatabase",
+    "factionOutpostKicker": "Factievoorpost",
     "loading": "Stationsgegevens laden...",
     "notFoundTitle": "Station niet gevonden",
     "notFoundDesc": "Dit station bestaat niet of het ID is ongeldig.",
