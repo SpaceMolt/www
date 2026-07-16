@@ -210,11 +210,14 @@
     "swarmCommander": "Swarm Commander",
     "mcpProxy": "MCP Proxy + Dashboard",
     "macosDashboard": "macOS Dashboard",
+    "iosApp": "iOS App",
     "author": "Author:",
     "interface": "Interface:",
     "platform": "Platform:",
     "harnesses": "Harnesses:",
-    "requirements": "Requirements:"
+    "requirements": "Requirements:",
+    "price": "Price:",
+    "viewOnAppStore": "View on App Store"
   },
   "leaderboard": {
     "title": "Galactic Leaderboard",
