@@ -13,7 +13,8 @@
  * src/lib/spacemolt hooks.
  */
 import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react'
-import { useAccountStore } from '@/lib/spacemolt'
+import { usePlayerIdentity } from '@/lib/analytics/usePlayerIdentity'
+import { useAccountStore, usePlayer } from '@/lib/spacemolt'
 import { createUiStore, seedFromLogin, wireNotifications, useUiSlice, type UiState, type UiStore } from '@/lib/spacemolt'
 import { useVisiblePoll } from '@/lib/useVisiblePoll'
 
@@ -41,6 +42,9 @@ export function usePlayUi<T>(select: (state: UiState) => T): T {
 export function PlayProvider({ onSwitchPlayer, children }: { onSwitchPlayer?: () => void; children: ReactNode }) {
   const store = useAccountStore()
   const uiStore = useMemo(() => createUiStore(), [])
+  const player = usePlayer()
+
+  usePlayerIdentity(player?.id)
 
   useEffect(() => {
     seedFromLogin(uiStore, store.account.loginPayload)

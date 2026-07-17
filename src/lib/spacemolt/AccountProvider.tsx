@@ -9,6 +9,8 @@
  */
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { Account } from '@spacemolt/lib'
+import { instrumentCommands } from '@/lib/analytics/gameActions'
+import { capture } from '@/lib/analytics/posthog'
 import { createAccountStore, type AccountStore } from './accountStore'
 
 const AccountContext = createContext<AccountStore | null>(null)
@@ -16,6 +18,24 @@ const AccountContext = createContext<AccountStore | null>(null)
 /** http(s) origin -> ws(s) /ws/v2 endpoint. */
 export function wsUrlFromHttpBase(httpBase: string): string {
   return `${httpBase.replace(/\/$/, '').replace(/^http/, 'ws')}/ws/v2`
+}
+
+/**
+ * Points `account.commands` at an instrumented view of itself, so every
+ * player-initiated mutation emits one `game_action` no matter which call site
+ * issued it (including the handful that bypass useCommandMutation).
+ *
+ * `commands` is a prototype getter that lazily builds and memoises the real
+ * facade, so we read it once to force construction and then shadow it with an
+ * own property. The library is left untouched.
+ */
+export function instrumentAccountCommands(account: Account): void {
+  const real = account.commands
+  const instrumented = instrumentCommands(real, (event) => capture('game_action', { ...event }))
+  Object.defineProperty(account, 'commands', {
+    configurable: true,
+    get: () => instrumented,
+  })
 }
 
 export interface AccountProviderProps {
@@ -44,6 +64,7 @@ export function AccountProvider({ playerId, mintToken, gameserverUrl, fallback =
       reconnect: true,
       credentials: async () => ({ kind: 'login_token', token: await mintToken() }),
     })
+    instrumentAccountCommands(account)
     const nextStore = createAccountStore(account)
     setStore(nextStore)
 
