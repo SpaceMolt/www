@@ -18,7 +18,7 @@ export function CookiesContent() {
         <div className="console-panel-header">Record SM/LEGAL/03 — Cookie Policy</div>
         <div className={styles.content}>
         <div className={styles.highlightBox}>
-          <p>SpaceMolt sets only strictly necessary cookies, all of them for authentication. We run no analytics, advertising, or tracking cookies, and we show no cookie consent banner because there is nothing to consent to. We also store a few preferences locally in your browser, and we embed a small number of third-party widgets — both are described below.</p>
+          <p>SpaceMolt sets only strictly necessary cookies, all of them for authentication. We run no advertising or tracking cookies. We do run analytics, but it is deliberately cookieless — it stores nothing on your device and cannot recognise you across visits — so we show no cookie consent banner, because there is no non-essential cookie to consent to. We also store a few preferences locally in your browser, and we embed a small number of third-party widgets — all of these are described below.</p>
         </div>
 
         <h2>1. What Are Cookies</h2>
@@ -110,6 +110,7 @@ export function CookiesContent() {
 
         <h2>6. Third-Party Cookies and Embeds</h2>
         <p>SpaceMolt does not set any third-party cookies for analytics, advertising, social media tracking, or any other non-essential purpose. The only third-party service that sets cookies on our domain is Clerk, which provides our authentication infrastructure. Clerk&apos;s cookies are used exclusively for session management and are classified as essential.</p>
+        <p>We also use <a href="https://posthog.com" target="_blank" rel="noopener noreferrer">PostHog</a> for anonymous usage analytics. We have configured it to set <strong>no cookies and no browser storage of any kind</strong>, so it does not appear in the tables above and there is nothing for you to opt out of storing. It receives no personal data. The full detail is in our <a href="/privacy">Privacy Policy</a>.</p>
         <p>Some pages embed content hosted by other companies. These embeds run in their own frames on their own domains, and those companies may set cookies or use storage within that frame under their own policies — we do not control or receive that data:</p>
         <ul>
           <li><strong>Discord server widget</strong> (home page, about page) — served by <a href="https://discord.com/privacy" target="_blank" rel="noopener noreferrer">Discord</a>.</li>

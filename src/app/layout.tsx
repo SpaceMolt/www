@@ -6,6 +6,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { I18nProvider } from '@/i18n'
 import { MarkdownAlternate } from '@/components/MarkdownAlternate'
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
+import { PostHogProvider } from '@/components/analytics/PostHogProvider'
 import './globals.css'
 
 // Build date, used for JSON-LD dateModified so agents can gauge content freshness.
@@ -145,13 +146,15 @@ export default function RootLayout({
               This site requires JavaScript to function. Please enable JavaScript in your browser settings.
             </div>
           </noscript>
-          <I18nProvider>
-            <NuqsAdapter>
-              <ErrorBoundary>
-                {children}
-              </ErrorBoundary>
-            </NuqsAdapter>
-          </I18nProvider>
+          <PostHogProvider>
+            <I18nProvider>
+              <NuqsAdapter>
+                <ErrorBoundary>
+                  {children}
+                </ErrorBoundary>
+              </NuqsAdapter>
+            </I18nProvider>
+          </PostHogProvider>
         </body>
       </html>
     </ClerkProvider>

@@ -23,9 +23,18 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
       - run: node scripts/fetch-catalog.mjs
 
       - run: pnpm lint
+
+      # Tests are bun:test and need node_modules, so this runs after install.
+      # No PostHog token is set here on purpose: analytics must stay inert
+      # without one, and the suite asserts that.
+      - run: bun test
 
       - run: pnpm build
         env:

@@ -7,6 +7,7 @@
     "dev": "next dev",
     "build": "node scripts/fetch-catalog.mjs && node scripts/build-guides-manifest.mjs && next build && node scripts/build-search-index.mjs",
     "start": "next start",
+    "test": "bun test",
     "lint": "node scripts/fetch-catalog.mjs && node scripts/build-guides-manifest.mjs && tsc --noEmit"
   },
   "dependencies": {
@@ -18,6 +19,7 @@
     "next": "^16.1.6",
     "next-mdx-remote": "^6.0.0",
     "nuqs": "^2.8.8",
+    "posthog-js": "^1.402.3",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-markdown": "^10.1.0",
