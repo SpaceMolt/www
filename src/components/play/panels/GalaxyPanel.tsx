@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useCallback, useImperativeHandle, forwardRef, useState } from 'react'
 import { Home, Crosshair } from 'lucide-react'
-import type { MapSystem } from '@spacemolt/lib'
+import { fetchStations, type MapSystem } from '@spacemolt/lib'
 import { useLocationState, useMap, usePlayer } from '@/lib/spacemolt'
 import styles from './GalaxyPanel.module.css'
 
@@ -1160,24 +1160,20 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
 
     // ── Fetch Stations ───────────────────────────────────────────
     // Galaxy topology comes from useMap() (a separate effect below); the
-    // station-presence overlay has no lib binding yet, so it's still fetched
-    // raw here and merged onto whatever map data is present via applyStationFlags.
+    // station-presence overlay comes from the lib's station directory binding
+    // and is merged onto whatever map data is present via applyStationFlags.
 
-    async function fetchStations() {
+    async function loadStationOverlay() {
       try {
-        const stationsResponse = await fetch(`${GAMESERVER_URL}/api/stations`)
-        const stationsData = (await stationsResponse.json()) as { stations?: Array<{ system_id: string }> }
-        const stationSystemIds = new Set(
-          (stationsData.stations || []).map((st) => st.system_id),
-        )
-        stationSystemIdsRef.current = stationSystemIds
+        const { stations } = await fetchStations(GAMESERVER_URL)
+        stationSystemIdsRef.current = new Set(stations.map((st) => st.system_id))
         applyStationFlags()
       } catch {
         // Stations data is optional -- map still works without it
       }
     }
 
-    fetchStations()
+    loadStationOverlay()
 
     // ── Waypoint hit detection ───────────────────────────────────
     function findWaypointAt(sx: number, sy: number): number {

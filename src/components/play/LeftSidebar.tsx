@@ -221,7 +221,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
     async (poiId: string) => {
       const targetPoi = system?.pois.find((p) => p.id === poiId)
       let estimatedMs: number | undefined
-      if (poi && targetPoi) {
+      if (poi?.position?.x !== undefined && poi.position.y !== undefined && targetPoi?.position) {
         const dx = targetPoi.position.x - poi.position.x
         const dy = targetPoi.position.y - poi.position.y
         const distance = Math.sqrt(dx * dx + dy * dy)

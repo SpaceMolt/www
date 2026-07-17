@@ -5,7 +5,13 @@ import {
   Hammer, RefreshCw, AlertTriangle, Lock, Check, ChevronDown, ChevronRight,
   Search, Filter, Clock, RotateCcw, Trash2, Coins, Calculator, Package, Factory,
 } from 'lucide-react'
-import type { CraftJobResponse, FacilityResponse, RecycleJobResponse, StorageResponse } from '@spacemolt/lib'
+import type {
+  CraftJobResponse,
+  CraftQueueResponse,
+  CraftQuoteResponse,
+  FacilityResponse,
+  StorageResponse,
+} from '@spacemolt/lib'
 import { useAccountStore, useCommandMutation, useCommandQuery, useCurrentTick, useLocationState, useSkills } from '@/lib/spacemolt'
 import { usePlay } from '../PlayProvider'
 import { ActionButton } from '../ActionButton'
@@ -29,13 +35,11 @@ type CraftMode = 'craft' | 'recycle'
 const describeError = (err: unknown): string => (err instanceof Error ? err.message : String(err))
 
 // craft()/recycle() share the same response-shape family (create-single,
-// bulk-create, dry-run quote, queue-list, single-cancel, bulk-cancel); these
-// discriminators narrow across both unions at once (grepped
-// node_modules/@spacemolt/lib — see UpgradeModal.tsx for the pattern).
-type AnyJobResponse = CraftJobResponse | RecycleJobResponse
-type JobQueueVariant = Extract<AnyJobResponse, { jobs: unknown }>
-type JobCreateVariant = Extract<AnyJobResponse, { escrowed: unknown }>
-type JobQuoteVariant = Extract<AnyJobResponse, { dry_run: unknown }>
+// bulk-create, dry-run quote, queue-list, single-cancel, bulk-cancel); the
+// spec publishes each variant as a named component, discriminated by `kind`.
+type JobQueueVariant = CraftQueueResponse
+type JobCreateVariant = CraftJobResponse
+type JobQuoteVariant = CraftQuoteResponse
 
 // `{ station_facilities: unknown }` uniquely identifies the facility-list
 // variant within the FacilityResponse union.

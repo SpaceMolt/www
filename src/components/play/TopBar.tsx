@@ -9,6 +9,7 @@ import {
   Rocket,
   Anchor,
   LogOut,
+  AlertTriangle,
 } from 'lucide-react'
 import { useAccountStore, useConnectionPhase, useLocationState, usePlayer, useShip } from '@/lib/spacemolt'
 import { usePlay } from './PlayProvider'
@@ -30,6 +31,15 @@ function StatusBar({ value, max, color, label }: { value: number; max: number; c
       <span className={styles.statusValue}>{value}/{max}</span>
     </div>
   )
+}
+
+function formatCountdown(isoDate: string): string {
+  const remaining = new Date(isoDate).getTime() - Date.now()
+  if (remaining <= 0) return 'expired'
+  const hours = Math.floor(remaining / 3600000)
+  const minutes = Math.floor((remaining % 3600000) / 60000)
+  if (hours > 0) return `${hours}h ${minutes}m`
+  return `${minutes}m`
 }
 
 export function TopBar() {
@@ -70,8 +80,15 @@ export function TopBar() {
                 <Coins size={11} className={styles.creditsIcon} />
                 {(player.credits ?? 0).toLocaleString()}
               </span>
-              {/* trading_restricted_until badge removed: the v2 player state
-                  section doesn't carry the field (server schema gap) */}
+              {player.trading_restricted_until && new Date(player.trading_restricted_until) > new Date() && (
+                <span
+                  className={styles.tradingRestricted}
+                  title={`Until ${new Date(player.trading_restricted_until).toLocaleTimeString()}`}
+                >
+                  <AlertTriangle size={10} />
+                  Trading locked ({formatCountdown(player.trading_restricted_until)})
+                </span>
+              )}
             </>
           ) : (
             <span className={styles.noPlayer}>Not logged in</span>
