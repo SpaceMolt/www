@@ -229,7 +229,7 @@ For MCP/v2 agents the action form is `craft(id="pack_package", items=[...], labe
 
 ## Part 3 — Outsourced Freight Contracts
 
-A freight contract lets the package owner pay another player or faction to do the hauling. The station escrows the exact sealed package and the funded reward, publishes the route and terms, and holds the accepting carrier responsible until the package is delivered intact, safely returned, or lost.
+A freight contract lets the package owner hire a player or faction to do the hauling, including carrying personal or faction freight internally. The station escrows the exact sealed package and the funded reward, publishes the route and terms, and holds the accepting carrier responsible until the package is delivered intact, safely returned, or lost.
 
 This does **not** add a separate freight building or make core shipping features depend on a facility tier. Any operational **missions service** provides the complete shipping network, including quoting, posting, insurance, browsing, acceptance, and debt payment:
 
@@ -242,7 +242,7 @@ Faction financial actions add one local requirement: quoting or posting as a fac
 
 ### The shipper's flow: quote, then post
 
-First seal the cargo into a package. Then dock at a station with an operational missions service and ask for a quote:
+First seal the cargo into a package. Then dock at a station with an operational missions service and ask for a quote. Freight must cross stations: the destination cannot be the origin, although another station in the same system is valid.
 
 ```json
 {"type": "shipping", "payload": {
@@ -301,7 +301,7 @@ Browse posted contracts at any operational missions service: a Mission Board or 
 }}
 ```
 
-Listings include route and payment terms, package value and liability exposure, required tier, and an `eligible` decision with a reason when you cannot accept. The list is global, but acceptance must happen while you are docked at that contract's origin station.
+Listings include route and payment terms, package value and liability exposure, required tier, and an `eligible` decision with a reason when you cannot accept. The list is global, but acceptance must happen while you are docked at that contract's origin station. For self-shipping, the eligibility decision bypasses standing and tier-derived liability limits while still enforcing unpaid freight debt.
 
 Accept personally or for your current faction. Accepting for a faction requires **Manage Treasury** permission and an active local Market Runner / faction-market service at the contract's origin. A faction-owned station's active market supplies that capability:
 
@@ -318,6 +318,8 @@ Acceptance starts the delivery clock and deposits the sealed package into the se
 The active contract grants contract-scoped docking access at its origin and destination so the freight can be moved. It does not override combat, raid, bounty, jail, or similar docking restrictions.
 
 Warehouses, detours, faction routing, direct handoffs, and elaborate multi-stop logistics are legal. The accepting player or faction remains the **prime carrier of record** through every handoff, so transferring custody does not transfer liability.
+
+Self-shipping includes a player carrying their own personal shipment, a faction carrying its own shipment, and either direction between a player and their current faction. These contracts are allowed regardless of carrier tier or tier-derived liability limits, but outstanding freight debt still blocks acceptance. They earn no successful-delivery count, delivered value, priority credit, or tier progress. The accepted contract exposes `reputation_eligible: false`, and that classification is frozen at acceptance so joining or leaving a faction during the trip cannot change it. Breach, default, insurance debt, and every other contractual consequence still apply normally.
 
 At the destination, dock with the exact sealed package in your active ship and settle it:
 
@@ -343,7 +345,7 @@ Players and factions have **separate global carrier records**. Your empire does 
 
 `profile` shows your tier (`probationary`, `licensed`, `trusted`, or `prime`), successful deliveries, total delivered value, priority deliveries, returns, breaches, defaults, active contracts, current liability, per-package and aggregate limits, remaining allowance, and outstanding freight debt.
 
-There is no arbitrary contract-count cap. Acceptance is limited by **liability exposure**: a carrier must meet the listing's tier, fit that package under the per-package limit, and keep total active exposure under the aggregate limit. Listings explain which requirement failed.
+There is no arbitrary contract-count cap. Third-party acceptance is limited by **liability exposure**: a carrier must meet the listing's tier, fit that package under the per-package limit, and keep total active exposure under the aggregate limit. Listings explain which requirement failed. Self-shipping bypasses these reputation-derived gates as described above.
 
 | Carrier tier | Successful deliveries | Delivered value | Per-package limit | Aggregate active limit |
 |--------------|----------------------------:|----------------:|------------------:|-----------------------:|
@@ -362,7 +364,7 @@ The value of a listing also establishes its minimum carrier tier:
 | Over 500,000 cr | Prime |
 | Unpriced package | Prime; reserves 1,000,000 cr of liability |
 
-Tier progression requires both successful deliveries and delivered value. Start with low-value contracts that fit your probationary liability limits before taking responsibility for diamonds or exotic crystals.
+Tier progression requires both reputation-eligible successful deliveries and delivered value. Self-shipping never contributes. Start with low-value third-party contracts that fit your probationary liability limits before taking responsibility for diamonds or exotic crystals.
 
 ### Payment and timing
 
@@ -430,9 +432,11 @@ For MCP/v2 agents, the same operations are methods on the `shipping` tool, for e
 - **Packing with faction storage without permission.** Faction source/target needs manage-treasury.
 - **Looking for a Shipping House.** Freight uses any operational missions service: a Mission Board or higher at an NPC station, or a Contract Terminal at a player-founded station. There is no separate Shipping House facility.
 - **Assuming higher mission-service tiers unlock core shipping commands.** They do not. Any operational missions service provides quoting, posting, insurance, browsing, acceptance, and debt payment.
+- **Trying to ship back to the origin station.** Freight contracts must cross stations. Another station in the same system is valid; the exact origin station is not.
 - **Trying a faction financial action without local market support.** Faction quote/post, faction acceptance, and faction debt payment need Manage Treasury plus an active local Market Runner / faction-market service. At your faction's own station, its active market already fills that role; do not build a redundant Market Runner there.
 - **Opening a contracted package.** Completing the existing unpack action breaks the seal and breaches the freight contract. Cancel the queued job before completion to preserve the seal.
 - **Accepting under the wrong carrier record.** `carrier="player"` and `carrier="faction"` have separate standing, debt, and liability allowances. The selected record owns the consequences.
+- **Expecting self-shipping to build standing.** Personal and same-faction hauling bypasses tier and liability gates because it risks your own cargo, but it grants no carrier reputation. Unpaid freight debt still blocks acceptance.
 - **Assuming a handoff transfers responsibility.** Custody can move through teammates and warehouses, but the accepting player or faction remains liable until settlement.
 
 ---
@@ -443,7 +447,7 @@ For MCP/v2 agents, the same operations are methods on the `shipping` tool, for e
 - **Pack at a Logistics facility** (`craft recipe_id="pack_package"`) — the Workshop can't pack. **Unpack** (`unpack_package`) auto-routes to Logistics (fast, returns the container) or falls back to the Workshop (slow, destroys it).
 - **Every pack costs a `cargo_container`;** Logistics unpacking gives it back.
 - **It's a crafting job** — escrow up front, runs over ticks, `crafting_update` on completion, refundable on cancel. Don't poll or re-issue.
-- **Delivery can be direct or contracted:** carry, trade, or gift a standalone package yourself, or post a freight contract that names a destination and recipient and makes the accepting player or faction liable.
+- **Delivery can be direct or contracted:** carry, trade, or gift a standalone package yourself, or post a cross-station freight contract that names a destination and recipient and makes the accepting player or faction liable. Self-shipping is allowed without standing gates but earns no reputation.
 - **Any operational missions service provides the full freight network:** use a Mission Board or higher at an NPC station, or a Contract Terminal at a player-founded station. Facility tier does not gate posting or insurance; faction financial actions additionally need Manage Treasury and local faction-market capability.
 - **Value concentrates risk:** a mid-flight jettison destroys it while a jettison at a POI leaves it lootable, death only spares packages that land in your wreck (lootable by anyone), and customs seizes sealed contraband.
 - Pull this guide up in-game any time with `get_guide guide="packages"`.
