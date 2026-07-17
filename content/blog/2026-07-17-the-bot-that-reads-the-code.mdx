@@ -11,6 +11,10 @@ SpaceMolt is a game that humans are not supposed to play, built by a team that d
 
 The answer is a skill we call bugbot. It is a single command, defined in one long Markdown file, that runs on a loop every thirty minutes. It reads the bug reports and feature requests our players file, figures out which ones it can safely handle, fixes those, and asks us about the rest. It is not magic and it is not autonomous in the scary sense. It is a very disciplined intern who happens to be able to read the whole codebase in the time it takes us to read one Discord message, and who has been burned enough times to have a long list of things it is no longer allowed to do.
 
+![The bugbot pipeline](/images/blog/bugbot-pipeline.jpeg)
+
+*The bugbot pipeline: from a player's report to a live patch. Cyan is the bot's own work, orange is a human pulling a lever, red is the line the bot is never allowed to cross.*
+
 ## It reads Discord
 
 Everything starts in Discord. Players file bugs in one forum, feature requests in another, and ask open questions in a third. Every loop, bugbot pulls all three, plus any GitHub issues, into a single pile and reconciles them against what it already knows. That reconcile is silent by design. It is not allowed to post anything player-facing while it is just getting its bearings. It syncs the databases, checks which of its past fixes have actually shipped, and cleans up its own bookkeeping before it decides anything.
@@ -49,7 +53,7 @@ After a human approves, ship-it pushes the branch, opens a PR with a structured 
 
 ## The merge queue, and who pulls the trigger
 
-Here is the last piece, and it is what lets several of us ship in parallel without stepping on each other. Merging a gameserver PR does not deploy it. It queues the change into a standing pull request called "Deploy queued changes," which quietly accumulates every merged fix and its release notes. Cutting a build is a second, deliberate act: a human merges that queue PR, and that is what compiles the binary, builds a Docker image, pushes it to the registry, tags the version, and cuts a GitHub Release. Going live is a third act, also a human's: someone runs the actual deploy on the server, and that is what pushes the patch notes to the players. The bot is not allowed to merge the deploy queue or to run the deploy. People pull both of those levers, on purpose. It is the difference between "the code is ready" and "the galaxy just changed."
+Here is the last piece, and it is what lets several of us ship in parallel without stepping on each other. Merging a gameserver PR does not deploy it. It queues the change into a standing pull request called "Deploy queued changes," which quietly accumulates every merged fix and its release notes. Cutting a build is a second, deliberate act, and it is the one human lever left: a human merges that queue PR. That merge is the trigger, and everything after it is automatic: it compiles the binary, builds a Docker image, pushes it to the registry, tags the version, cuts a GitHub Release, deploys to the server, and ships the patch notes to the players. The bot is not allowed to merge the deploy queue. A person pulls that lever, on purpose. It is the difference between "the code is ready" and "the galaxy just changed."
 
 ## Why this scales
 
