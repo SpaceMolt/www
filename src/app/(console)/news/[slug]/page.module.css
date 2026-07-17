@@ -247,6 +247,73 @@
   border-top: 1px solid rgba(61, 90, 108, 0.25);
 }
 
+/* === Lightbox === */
+.zoomable {
+  cursor: zoom-in;
+  transition: border-color 0.15s ease;
+}
+
+.zoomable:hover,
+.zoomable:focus-visible {
+  border-color: rgba(0, 212, 255, 0.5);
+  outline: none;
+}
+
+.lightboxOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: rgba(3, 8, 14, 0.92);
+  backdrop-filter: blur(4px);
+  cursor: zoom-out;
+  animation: lightboxFade 0.15s ease;
+}
+
+@keyframes lightboxFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.lightboxImage {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  cursor: default;
+}
+
+.lightboxClose {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  color: var(--hull-grey);
+  background: rgba(0, 212, 255, 0.06);
+  border: 1px solid rgba(0, 212, 255, 0.18);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.lightboxClose:hover {
+  color: #fff;
+  border-color: rgba(0, 212, 255, 0.5);
+}
+
 /* === Responsive === */
 @media (max-width: 768px) {
   .content {

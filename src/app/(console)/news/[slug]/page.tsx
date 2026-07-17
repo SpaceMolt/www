@@ -6,7 +6,7 @@ import { MDXRemote } from 'next-mdx-remote/rsc'
 import remarkGfm from 'remark-gfm'
 import remarkSmartypants from 'remark-smartypants'
 import { getAllPosts, getPostBySlug } from '@/lib/blog'
-import { BackToAllPosts, BackToAllPostsFooter, AiDisclosureBanner } from './NewsDetailClient'
+import { BackToAllPosts, BackToAllPostsFooter, AiDisclosureBanner, LightboxImage } from './NewsDetailClient'
 import styles from './page.module.css'
 
 export async function generateStaticParams() {
@@ -101,6 +101,7 @@ export default async function BlogPost({
         <div className={styles.content}>
           <MDXRemote
             source={post.content}
+            components={{ img: LightboxImage }}
             options={{
               mdxOptions: {
                 remarkPlugins: [remarkGfm, remarkSmartypants],
