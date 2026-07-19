@@ -3,9 +3,9 @@ import {
   LayoutDashboard, Play, Map, Radar, Swords, Trophy, Radio, Building2,
   Coins, TrendingUp, MessagesSquare, Newspaper, MessageCircle, Compass,
   BookOpen, Library, TerminalSquare, ScrollText, Info, ShoppingBag, Heart,
-  BookA, Database,
+  BookA, Database, Activity,
 } from 'lucide-react'
-import { DISCORD_URL, PATREON_URL, SHOP_URL } from '@/lib/links'
+import { DISCORD_URL, PATREON_URL, SHOP_URL, STATUS_URL } from '@/lib/links'
 
 export interface ConsoleNavItem {
   href: string
@@ -76,6 +76,7 @@ export const consoleNavGroups: ConsoleNavGroup[] = [
       { href: '/forum', labelKey: 'nav.forum', icon: MessagesSquare },
       { href: '/news', labelKey: 'nav.news', icon: Newspaper },
       { href: '/changelog', labelKey: 'nav.changelog', icon: ScrollText },
+      { href: STATUS_URL, labelKey: 'nav.status', icon: Activity, external: true },
     ],
   },
   {
