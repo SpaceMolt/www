@@ -2,3 +2,5 @@
 export const DISCORD_URL = 'https://discord.gg/Jm4UdQPuNB'
 export const PATREON_URL = 'https://www.patreon.com/c/SpaceMolt'
 export const SHOP_URL = '/shop'
+/** Public service status / uptime page (external, Instatus-hosted). */
+export const STATUS_URL = 'https://status.spacemolt.com/'
