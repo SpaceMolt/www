@@ -48,6 +48,7 @@
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 const GAME_SERVER = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 
@@ -198,19 +199,64 @@ function byId(entries) {
   return map
 }
 
+/** The data half of an output file: every requested section, keyed by id. */
+export function catalogPayload(sections, dump) {
+  const payload = {}
+  for (const section of sections) {
+    payload[section] = byId(dump[section])
+  }
+  return payload
+}
+
+/**
+ * True if a previously written file holds exactly the same data as `payload`,
+ * ignoring `_meta` entirely. Key order within an entry is not significant.
+ */
+export function isSameCatalogData(previous, payload, sections) {
+  if (!previous || typeof previous !== 'object') return false
+  return sections.every(
+    (section) => stableStringify(previous[section]) === stableStringify(payload[section]),
+  )
+}
+
+/** JSON.stringify with object keys sorted, so key order can't fake a diff. */
+function stableStringify(value) {
+  if (value === null || typeof value !== 'object') return JSON.stringify(value) ?? 'null'
+  if (Array.isArray(value)) return `[${value.map(stableStringify).join(',')}]`
+  const keys = Object.keys(value).sort()
+  return `{${keys.map((k) => `${JSON.stringify(k)}:${stableStringify(value[k])}`).join(',')}}`
+}
+
+/** Parse a previously written output file, or undefined if there isn't a usable one. */
+function readPrevious(filename) {
+  try {
+    return JSON.parse(readFileSync(dataPath(filename), 'utf8'))
+  } catch {
+    return undefined
+  }
+}
+
 /**
  * Write one output file. `allowEmpty` names the sections this source is known
  * not to carry — those may come out empty (and stamp the file `partial`) instead
  * of failing the build.
+ *
+ * If the data is identical to the last build's, the file is left ALONE — not
+ * rewritten with a fresh timestamp. Both outputs are static `import`s: rewriting
+ * them changes the module hash even when no game data moved, which re-hashes the
+ * client bundle (every player re-downloads the 1.2 MB catalog on every deploy)
+ * and moves every codex route's sitemap `lastModified`. Leaving the bytes alone
+ * is what lets the build cache do its job. `_meta.fetchedAt` therefore means
+ * "when this data last CHANGED", not "when the last build ran" — which is the
+ * more useful reading for both the codex provenance line and the sitemap.
  */
 function writeOutput(filename, sections, dump, { fetchedAt, version, source, allowEmpty }) {
-  const data = {}
+  const data = catalogPayload(sections, dump)
   const counts = {}
   const meta = {}
   let partial = false
 
   for (const section of sections) {
-    data[section] = byId(dump[section])
     counts[section] = Object.keys(data[section]).length
 
     if (counts[section] === 0) {
@@ -222,6 +268,13 @@ function writeOutput(filename, sections, dump, { fetchedAt, version, source, all
       }
       partial = true
     }
+  }
+
+  const summary = sections.map((s) => `${counts[s]} ${s}`).join(', ')
+
+  if (isSameCatalogData(readPrevious(filename), data, sections)) {
+    console.log(`  src/data/${filename} unchanged — left as-is (${summary})`)
+    return
   }
 
   // Hidden achievements are withheld from the dump by design; the server tells
@@ -241,7 +294,6 @@ function writeOutput(filename, sections, dump, { fetchedAt, version, source, all
   writeFileSync(dataPath(filename), json)
 
   const size = (json.length / 1024).toFixed(0)
-  const summary = sections.map((s) => `${counts[s]} ${s}`).join(', ')
   console.log(`  Written to src/data/${filename} (${size} KB) — ${summary}${partial ? ' [PARTIAL]' : ''}`)
 }
 
@@ -292,16 +344,28 @@ async function main() {
   }
 }
 
-main().catch((err) => {
-  console.error('Failed to fetch catalog:', err.message)
+// Only fetch when run as a script. The pure helpers above are imported by
+// scripts/fetch-catalog.test.mjs, which must not hit the network.
+//
+// Deliberately NOT `import.meta.main` — that is Node 24+ only, and nothing here
+// pins the build's Node version. On an older Node it would be `undefined`, this
+// block would silently never run, and the build would quietly proceed on a stale
+// or missing catalog. argv comparison works on every Node and under Bun.
+const invokedDirectly =
+  process.argv[1] !== undefined && resolve(process.argv[1]) === fileURLToPath(import.meta.url)
 
-  const missing = Object.keys(OUTPUTS).filter((f) => !existsSync(dataPath(f)))
+if (invokedDirectly) {
+  main().catch((err) => {
+    console.error('Failed to fetch catalog:', err.message)
 
-  if (missing.length === 0) {
-    console.log(`  Using stale ${Object.keys(OUTPUTS).join(' + ')} from previous build`)
-    process.exit(0)
-  } else {
-    console.error(`  Missing ${missing.join(', ')} — build cannot proceed without catalog data`)
-    process.exit(1)
-  }
-})
+    const missing = Object.keys(OUTPUTS).filter((f) => !existsSync(dataPath(f)))
+
+    if (missing.length === 0) {
+      console.log(`  Using stale ${Object.keys(OUTPUTS).join(' + ')} from previous build`)
+      process.exit(0)
+    } else {
+      console.error(`  Missing ${missing.join(', ')} — build cannot proceed without catalog data`)
+      process.exit(1)
+    }
+  })
+}
