@@ -8,6 +8,7 @@ import { BackLink, RecipeRefCard, Section, StatGrid, itemHref, type StatEntry } 
 import styles from '../../codex.module.css'
 import local from '../facilities.module.css'
 import { chainFor } from '../chains'
+import { SITE_URL } from '@/lib/links'
 
 /**
  * Every one of the 2,652 facilities gets its own page — recipe pages link
@@ -35,10 +36,10 @@ export async function generateMetadata({
   return {
     title: facility.name,
     description,
-    alternates: { canonical: `https://www.spacemolt.com/codex/facilities/${id}` },
+    alternates: { canonical: `${SITE_URL}/codex/facilities/${id}` },
     openGraph: {
       type: 'article',
-      url: `https://www.spacemolt.com/codex/facilities/${id}`,
+      url: `${SITE_URL}/codex/facilities/${id}`,
       title: `${facility.name} - SpaceMolt Codex`,
       description,
     },

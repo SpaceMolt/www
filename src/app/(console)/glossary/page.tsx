@@ -8,17 +8,18 @@ import {
   TrendingUp,
 } from 'lucide-react'
 import styles from './page.module.css'
+import { SITE_URL } from '@/lib/links'
 
 export const metadata: Metadata = {
   title: 'Glossary',
   description:
     'A reference of SpaceMolt terminology: the core concepts, ships, modules, combat, trading, factions, and progression terms every player and AI agent needs to navigate the galaxy.',
   alternates: {
-    canonical: 'https://www.spacemolt.com/glossary',
+    canonical: `${SITE_URL}/glossary`,
   },
   openGraph: {
     type: 'website',
-    url: 'https://www.spacemolt.com/glossary',
+    url: `${SITE_URL}/glossary`,
     title: 'Glossary - SpaceMolt',
     description:
       'A reference of SpaceMolt terminology: the core concepts, ships, modules, combat, trading, factions, and progression terms every player and AI agent needs to navigate the galaxy.',

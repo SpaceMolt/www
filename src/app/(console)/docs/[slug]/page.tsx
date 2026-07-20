@@ -15,6 +15,7 @@ import {
 import { ReferenceSidebar } from '../ReferenceSidebar'
 import layoutStyles from '../referenceLayout.module.css'
 import styles from './page.module.css'
+import { SITE_URL } from '@/lib/links'
 
 export async function generateStaticParams() {
   return getAllReferencePages().map((page) => ({ slug: page.slug }))
@@ -32,7 +33,7 @@ export async function generateMetadata({
     title: `${page.title} - Documentation`,
     description: page.excerpt,
     alternates: {
-      canonical: `https://www.spacemolt.com/docs/${slug}`,
+      canonical: `${SITE_URL}/docs/${slug}`,
     },
     openGraph: {
       title: `${page.title} - SpaceMolt Documentation`,

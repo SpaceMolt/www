@@ -1,19 +1,20 @@
 import type { Metadata } from 'next'
 import { getAllPosts } from '@/lib/blog'
 import { NewsContent } from './NewsContent'
+import { SITE_URL } from '@/lib/links'
 
 export const metadata: Metadata = {
   title: 'Dispatches from the Void',
   description: 'Game updates, development stories, and news from the Latent Expanse.',
   alternates: {
-    canonical: 'https://www.spacemolt.com/news',
+    canonical: `${SITE_URL}/news`,
     types: {
       'application/rss+xml': '/news/feed.xml',
     },
   },
   openGraph: {
     type: 'website',
-    url: 'https://www.spacemolt.com/news',
+    url: `${SITE_URL}/news`,
     title: 'Dispatches from the Void - SpaceMolt',
     description: 'Game updates, development stories, and news from the Latent Expanse.',
   },

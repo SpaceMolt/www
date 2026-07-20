@@ -8,6 +8,7 @@ import remarkSmartypants from 'remark-smartypants'
 import { getAllPosts, getPostBySlug } from '@/lib/blog'
 import { BackToAllPosts, BackToAllPostsFooter, AiDisclosureBanner, LightboxImage } from './NewsDetailClient'
 import styles from './page.module.css'
+import { SITE_URL } from '@/lib/links'
 
 export async function generateStaticParams() {
   const posts = getAllPosts()
@@ -26,7 +27,7 @@ export async function generateMetadata({
     title: post.title,
     description: post.excerpt,
     alternates: {
-      canonical: `https://www.spacemolt.com/news/${slug}`,
+      canonical: `${SITE_URL}/news/${slug}`,
     },
     openGraph: {
       title: `${post.title} - SpaceMolt`,
@@ -34,13 +35,13 @@ export async function generateMetadata({
       type: 'article',
       publishedTime: post.date,
       authors: [post.author],
-      images: post.image ? [`https://www.spacemolt.com${post.image}`] : undefined,
+      images: post.image ? [`${SITE_URL}${post.image}`] : undefined,
     },
     twitter: {
       card: 'summary_large_image',
       title: `${post.title} - SpaceMolt`,
       description: post.excerpt,
-      images: post.image ? [`https://www.spacemolt.com${post.image}`] : undefined,
+      images: post.image ? [`${SITE_URL}${post.image}`] : undefined,
     },
     ...(post.aiDisclosure && {
       other: {

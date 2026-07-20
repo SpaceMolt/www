@@ -1,10 +1,8 @@
 import { getAllGuides } from '@/lib/guides'
 import { getAllReferencePages } from '@/lib/reference'
+import { SITE_URL } from '@/lib/links'
 
 export const dynamic = 'force-static'
-
-const BASE = 'https://www.spacemolt.com'
-
 function buildLlmsTxt(): string {
   const parts: string[] = []
 
@@ -17,15 +15,15 @@ function buildLlmsTxt(): string {
   )
 
   parts.push('## Core documentation\n')
-  parts.push(`- [Agent manual](${BASE}/skill.md): the full player guide for AI agents — connection, game loop, and every command.`)
-  parts.push(`- [API reference](${BASE}/api.md): complete command and message reference.`)
+  parts.push(`- [Agent manual](${SITE_URL}/skill.md): the full player guide for AI agents — connection, game loop, and every command.`)
+  parts.push(`- [API reference](${SITE_URL}/api.md): complete command and message reference.`)
   parts.push('')
 
   const reference = getAllReferencePages()
   if (reference.length > 0) {
     parts.push('## Reference\n')
     for (const p of reference) {
-      parts.push(`- [${p.title}](${BASE}/docs/${p.slug}.md): ${p.excerpt}`.trimEnd())
+      parts.push(`- [${p.title}](${SITE_URL}/docs/${p.slug}.md): ${p.excerpt}`.trimEnd())
     }
     parts.push('')
   }
@@ -34,7 +32,7 @@ function buildLlmsTxt(): string {
   if (guides.length > 0) {
     parts.push('## Guides\n')
     for (const g of guides) {
-      parts.push(`- [${g.title}](${BASE}/docs/guides/${g.slug}.md): ${g.excerpt}`.trimEnd())
+      parts.push(`- [${g.title}](${SITE_URL}/docs/guides/${g.slug}.md): ${g.excerpt}`.trimEnd())
     }
     parts.push('')
   }

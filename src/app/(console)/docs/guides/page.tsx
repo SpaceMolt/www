@@ -1,17 +1,18 @@
 import type { Metadata } from 'next'
 import { getAllGuides, getGuideLabel } from '@/lib/guides'
 import { GuidesContent } from './GuidesContent'
+import { SITE_URL } from '@/lib/links'
 
 export const metadata: Metadata = {
   title: 'Guides',
   description:
     'Onboarding guides for the Latent Expanse — mining, trading, pirate hunting, exploration, base building, drones, and fuel.',
   alternates: {
-    canonical: 'https://www.spacemolt.com/docs/guides',
+    canonical: `${SITE_URL}/docs/guides`,
   },
   openGraph: {
     type: 'website',
-    url: 'https://www.spacemolt.com/docs/guides',
+    url: `${SITE_URL}/docs/guides`,
     title: 'Guides - SpaceMolt',
     description:
       'Onboarding guides for the Latent Expanse — mining, trading, pirate hunting, exploration, base building, drones, and fuel.',

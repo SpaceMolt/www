@@ -1,11 +1,9 @@
 import { getAllGuides } from '@/lib/guides'
 import { getAllReferencePages } from '@/lib/reference'
 import { getAllPosts } from '@/lib/blog'
+import { SITE_URL } from '@/lib/links'
 
 export const dynamic = 'force-static'
-
-const BASE = 'https://www.spacemolt.com'
-
 // Top-level pages, mirroring the static list in sitemap.ts.
 const STATIC_PAGES: { title: string; path: string }[] = [
   { title: 'Home', path: '' },
@@ -38,13 +36,13 @@ function buildMarkdown(): string {
 
   parts.push('# SpaceMolt Sitemap\n')
   parts.push(
-    'A directory of pages on www.spacemolt.com, for humans and AI agents.\n',
+    'A directory of pages on spacemolt.com, for humans and AI agents.\n',
   )
 
   parts.push(
     section(
       'Pages',
-      STATIC_PAGES.map((p) => ({ title: p.title, url: `${BASE}${p.path}` })),
+      STATIC_PAGES.map((p) => ({ title: p.title, url: `${SITE_URL}${p.path}` })),
     ),
   )
 
@@ -62,7 +60,7 @@ function buildMarkdown(): string {
         { title: 'Skills', path: '/codex/skills' },
         { title: 'Facilities', path: '/codex/facilities' },
         { title: 'Achievements', path: '/codex/achievements' },
-      ].map((p) => ({ title: p.title, url: `${BASE}${p.path}` })),
+      ].map((p) => ({ title: p.title, url: `${SITE_URL}${p.path}` })),
     ) +
       '\nThe entire catalog — every item, module, recipe, skill, ship, facility, and achievement —\n' +
       'is also served as one JSON file: https://game.spacemolt.com/api/catalog.json (ETag\'d and cached;\n' +
@@ -74,7 +72,7 @@ function buildMarkdown(): string {
       'Documentation',
       getAllReferencePages().map((p) => ({
         title: p.title,
-        url: `${BASE}/docs/${p.slug}`,
+        url: `${SITE_URL}/docs/${p.slug}`,
       })),
     ),
   )
@@ -84,7 +82,7 @@ function buildMarkdown(): string {
       'Guides',
       getAllGuides().map((g) => ({
         title: g.title,
-        url: `${BASE}/docs/guides/${g.slug}`,
+        url: `${SITE_URL}/docs/guides/${g.slug}`,
       })),
     ),
   )
@@ -94,7 +92,7 @@ function buildMarkdown(): string {
       'News',
       getAllPosts().map((p) => ({
         title: p.title,
-        url: `${BASE}/news/${p.slug}`,
+        url: `${SITE_URL}/news/${p.slug}`,
       })),
     ),
   )

@@ -3,6 +3,7 @@ import { allModules } from '@/data/catalog'
 import { BackLink, headlineStat } from '../parts'
 import { CatalogTable, type CatalogColumn, type CatalogFacet, type CatalogRow } from '../CatalogTable'
 import styles from '../codex.module.css'
+import { SITE_URL } from '@/lib/links'
 
 const description =
   'Every ship module in SpaceMolt — weapons, defenses, mining lasers, and utilities — with CPU and power draw, headline stats, and skill requirements.'
@@ -10,10 +11,10 @@ const description =
 export const metadata: Metadata = {
   title: 'Modules',
   description,
-  alternates: { canonical: 'https://www.spacemolt.com/codex/modules' },
+  alternates: { canonical: `${SITE_URL}/codex/modules` },
   openGraph: {
     type: 'website',
-    url: 'https://www.spacemolt.com/codex/modules',
+    url: `${SITE_URL}/codex/modules`,
     title: 'Modules - SpaceMolt Codex',
     description,
   },

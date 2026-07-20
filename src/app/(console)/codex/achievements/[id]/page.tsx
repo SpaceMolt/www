@@ -18,6 +18,7 @@ import { BackLink, Section, StatGrid, type StatEntry } from '../../parts'
 import { rewardSummary } from '../rewards'
 import styles from '../../codex.module.css'
 import local from '../achievements.module.css'
+import { SITE_URL } from '@/lib/links'
 
 export async function generateStaticParams() {
   return [...allAchievements(), ...allFactionAchievements()].map((a) => ({ id: a.id }))
@@ -37,10 +38,10 @@ export async function generateMetadata({
   return {
     title: achievement.name,
     description,
-    alternates: { canonical: `https://www.spacemolt.com/codex/achievements/${id}` },
+    alternates: { canonical: `${SITE_URL}/codex/achievements/${id}` },
     openGraph: {
       type: 'article',
-      url: `https://www.spacemolt.com/codex/achievements/${id}`,
+      url: `${SITE_URL}/codex/achievements/${id}`,
       title: `${achievement.name} - SpaceMolt Codex`,
       description,
     },

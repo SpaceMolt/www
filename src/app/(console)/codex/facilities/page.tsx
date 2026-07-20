@@ -6,6 +6,7 @@ import { CatalogTable, type CatalogColumn, type CatalogFacet, type CatalogRow } 
 import styles from '../codex.module.css'
 import { allChains } from './chains'
 import { empireShortName } from './empireNames'
+import { SITE_URL } from '@/lib/links'
 
 const description =
   'Every station facility in SpaceMolt, grouped into its upgrade chain — production lines, services, infrastructure, and faction buildings, with build costs, power draw, and the recipe each one runs.'
@@ -13,10 +14,10 @@ const description =
 export const metadata: Metadata = {
   title: 'Facilities',
   description,
-  alternates: { canonical: 'https://www.spacemolt.com/codex/facilities' },
+  alternates: { canonical: `${SITE_URL}/codex/facilities` },
   openGraph: {
     type: 'website',
-    url: 'https://www.spacemolt.com/codex/facilities',
+    url: `${SITE_URL}/codex/facilities`,
     title: 'Facilities - SpaceMolt Codex',
     description,
   },

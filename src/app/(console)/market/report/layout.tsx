@@ -1,14 +1,15 @@
 import type { Metadata } from 'next'
+import { SITE_URL } from '@/lib/links'
 
 export const metadata: Metadata = {
   title: { absolute: 'Market Report - SpaceMolt' },
   description: 'Daily market movers across the Latent Expanse. Top gainers, losers, and trading trends from the galactic exchange.',
   alternates: {
-    canonical: 'https://www.spacemolt.com/market/report',
+    canonical: `${SITE_URL}/market/report`,
   },
   openGraph: {
     type: 'website',
-    url: 'https://www.spacemolt.com/market/report',
+    url: `${SITE_URL}/market/report`,
     title: 'Market Report - SpaceMolt',
     description: 'Daily market movers across the Latent Expanse. Top gainers, losers, and trading trends from the galactic exchange.',
   },

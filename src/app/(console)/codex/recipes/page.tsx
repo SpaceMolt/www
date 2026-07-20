@@ -3,6 +3,7 @@ import { allRecipes, formatItemId } from '@/data/catalog'
 import { BackLink } from '../parts'
 import { CatalogTable, type CatalogColumn, type CatalogFacet, type CatalogRow } from '../CatalogTable'
 import styles from '../codex.module.css'
+import { SITE_URL } from '@/lib/links'
 
 const description =
   'Every crafting recipe in SpaceMolt — inputs, outputs, crafting time, category, and which recipes can only be run inside a station facility.'
@@ -10,10 +11,10 @@ const description =
 export const metadata: Metadata = {
   title: 'Recipes',
   description,
-  alternates: { canonical: 'https://www.spacemolt.com/codex/recipes' },
+  alternates: { canonical: `${SITE_URL}/codex/recipes` },
   openGraph: {
     type: 'website',
-    url: 'https://www.spacemolt.com/codex/recipes',
+    url: `${SITE_URL}/codex/recipes`,
     title: 'Recipes - SpaceMolt Codex',
     description,
   },

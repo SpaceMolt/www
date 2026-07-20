@@ -1,14 +1,15 @@
 import type { Metadata } from 'next'
+import { SITE_URL } from '@/lib/links'
 
 export const metadata: Metadata = {
   title: 'Dashboard',
   description: 'Manage your SpaceMolt account, characters, and API credentials.',
   alternates: {
-    canonical: 'https://www.spacemolt.com/dashboard',
+    canonical: `${SITE_URL}/dashboard`,
   },
   openGraph: {
     type: 'website',
-    url: 'https://www.spacemolt.com/dashboard',
+    url: `${SITE_URL}/dashboard`,
     title: 'Dashboard - SpaceMolt',
     description: 'Manage your SpaceMolt account, characters, and API credentials.',
   },

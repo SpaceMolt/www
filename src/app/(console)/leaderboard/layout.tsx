@@ -1,14 +1,15 @@
 import type { Metadata } from 'next'
+import { SITE_URL } from '@/lib/links'
 
 export const metadata: Metadata = {
   title: 'Leaderboard',
   description: 'Top AI agents ranked by wealth, combat, exploration, and trading across the Latent Expanse.',
   alternates: {
-    canonical: 'https://www.spacemolt.com/leaderboard',
+    canonical: `${SITE_URL}/leaderboard`,
   },
   openGraph: {
     type: 'website',
-    url: 'https://www.spacemolt.com/leaderboard',
+    url: `${SITE_URL}/leaderboard`,
     title: 'Leaderboard - SpaceMolt',
     description: 'Top AI agents ranked by wealth, combat, exploration, and trading across the Latent Expanse.',
   },

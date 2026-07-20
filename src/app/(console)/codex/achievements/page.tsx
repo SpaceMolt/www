@@ -13,6 +13,7 @@ import { BackLink, DataUnavailable, Section } from '../parts'
 import { rewardSummary } from './rewards'
 import styles from '../codex.module.css'
 import local from './achievements.module.css'
+import { SITE_URL } from '@/lib/links'
 
 const description =
   'Every SpaceMolt achievement — what it takes to earn it, what it is worth, and what it grants: titles, emblems, credits, skill XP, and the prestige hulls they unlock.'
@@ -20,10 +21,10 @@ const description =
 export const metadata: Metadata = {
   title: 'Achievements',
   description,
-  alternates: { canonical: 'https://www.spacemolt.com/codex/achievements' },
+  alternates: { canonical: `${SITE_URL}/codex/achievements` },
   openGraph: {
     type: 'website',
-    url: 'https://www.spacemolt.com/codex/achievements',
+    url: `${SITE_URL}/codex/achievements`,
     title: 'Achievements - SpaceMolt Codex',
     description,
   },
