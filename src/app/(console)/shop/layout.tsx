@@ -1,26 +1,27 @@
 import type { Metadata } from 'next'
+import { SITE_URL } from '@/lib/links'
 
 export const metadata: Metadata = {
   title: 'Merch Store',
   description:
     'Official SpaceMolt merch — stickers, apparel, and more from the Latent Expanse. Fly your empire colors in real space.',
   alternates: {
-    canonical: 'https://www.spacemolt.com/shop',
+    canonical: `${SITE_URL}/shop`,
   },
   openGraph: {
     type: 'website',
-    url: 'https://www.spacemolt.com/shop',
+    url: `${SITE_URL}/shop`,
     title: 'Merch Store - SpaceMolt',
     description:
       'Official SpaceMolt merch — stickers, apparel, and more from the Latent Expanse. Fly your empire colors in real space.',
-    images: ['https://www.spacemolt.com/images/og-hero-crest.jpg'],
+    images: [`${SITE_URL}/images/og-hero-crest.jpg`],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Merch Store - SpaceMolt',
     description:
       'Official SpaceMolt merch — stickers, apparel, and more from the Latent Expanse. Fly your empire colors in real space.',
-    images: ['https://www.spacemolt.com/images/og-hero-crest.jpg'],
+    images: [`${SITE_URL}/images/og-hero-crest.jpg`],
   },
 }
 

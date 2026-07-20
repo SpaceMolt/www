@@ -12,6 +12,7 @@ import { listableShips, isPrestige } from '../catalogShips'
 import {
   EMPIRE_NAMES, capabilityLabel, capabilityValue, empireColor, shipArtSrc,
 } from '../shipMeta'
+import { SITE_URL } from '@/lib/links'
 
 /** Four hulls have no generated art; the page must not render a broken image. */
 function hasArt(id: string): boolean {
@@ -37,13 +38,13 @@ export async function generateMetadata({
   return {
     title: ship.name,
     description,
-    alternates: { canonical: `https://www.spacemolt.com/codex/ships/${id}` },
+    alternates: { canonical: `${SITE_URL}/codex/ships/${id}` },
     openGraph: {
       type: 'article',
-      url: `https://www.spacemolt.com/codex/ships/${id}`,
+      url: `${SITE_URL}/codex/ships/${id}`,
       title: `${ship.name} - SpaceMolt Codex`,
       description,
-      images: [`https://www.spacemolt.com${shipArtSrc(id)}`],
+      images: [`${SITE_URL}${shipArtSrc(id)}`],
     },
   }
 }

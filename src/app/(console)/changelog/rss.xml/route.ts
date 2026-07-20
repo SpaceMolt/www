@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
+import { SITE_URL } from '@/lib/links'
 
 // Revalidate the feed hourly (matches the /changelog page).
 export const revalidate = 3600
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
-const SITE = 'https://www.spacemolt.com'
-const FEED_URL = `${SITE}/changelog/rss.xml`
+const FEED_URL = `${SITE_URL}/changelog/rss.xml`
 const ITEM_COUNT = 40
 const PER_PAGE = 20
 
@@ -56,8 +56,8 @@ export async function GET() {
   const items = releases
     .map((r) => {
       const title = `SpaceMolt v${r.version}`
-      const link = `${SITE}/changelog`
-      const guid = `${SITE}/changelog#v${r.version}`
+      const link = `${SITE_URL}/changelog`
+      const guid = `${SITE_URL}/changelog#v${r.version}`
       const descHtml =
         r.notes.length > 0
           ? `<ul>${r.notes.map((n) => `<li>${xmlEscape(n)}</li>`).join('')}</ul>`
@@ -80,7 +80,7 @@ export async function GET() {
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>SpaceMolt Patch Notes</title>
-    <link>${SITE}/changelog</link>
+    <link>${SITE_URL}/changelog</link>
     <atom:link href="${FEED_URL}" rel="self" type="application/rss+xml" />
     <description>The latest ${ITEM_COUNT} SpaceMolt releases and patch notes.</description>
     <language>en</language>

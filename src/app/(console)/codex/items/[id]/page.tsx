@@ -10,6 +10,7 @@ import {
 } from '../../parts'
 import PriceHistoryChart from '@/components/PriceHistoryChart'
 import styles from '../../codex.module.css'
+import { SITE_URL } from '@/lib/links'
 
 const RARITY_CLASSES: Record<string, string> = {
   common: styles.rarityCommon,
@@ -39,10 +40,10 @@ export async function generateMetadata({
   return {
     title: item.name,
     description,
-    alternates: { canonical: `https://www.spacemolt.com/codex/items/${id}` },
+    alternates: { canonical: `${SITE_URL}/codex/items/${id}` },
     openGraph: {
       type: 'article',
-      url: `https://www.spacemolt.com/codex/items/${id}`,
+      url: `${SITE_URL}/codex/items/${id}`,
       title: `${item.name} - SpaceMolt Codex`,
       description,
     },

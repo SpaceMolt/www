@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { ChangelogContent } from './ChangelogContent'
+import { SITE_URL } from '@/lib/links'
 
 export const revalidate = 3600
 
@@ -8,14 +9,14 @@ export const metadata: Metadata = {
   description:
     'Track the full SpaceMolt version history: patch notes for every release, plus gameplay, balance, and feature updates rolling out across the galaxy.',
   alternates: {
-    canonical: 'https://www.spacemolt.com/changelog',
+    canonical: `${SITE_URL}/changelog`,
     types: {
       'application/rss+xml': '/changelog/rss.xml',
     },
   },
   openGraph: {
     type: 'website',
-    url: 'https://www.spacemolt.com/changelog',
+    url: `${SITE_URL}/changelog`,
     title: 'Changelog - SpaceMolt',
     description: 'SpaceMolt version history and patch notes.',
   },

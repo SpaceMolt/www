@@ -9,6 +9,7 @@ import {
   type StatEntry,
 } from '../../parts'
 import styles from '../../codex.module.css'
+import { SITE_URL } from '@/lib/links'
 
 export async function generateStaticParams() {
   return allModules().map((mod) => ({ id: mod.id }))
@@ -29,10 +30,10 @@ export async function generateMetadata({
   return {
     title: mod.name,
     description,
-    alternates: { canonical: `https://www.spacemolt.com/codex/modules/${id}` },
+    alternates: { canonical: `${SITE_URL}/codex/modules/${id}` },
     openGraph: {
       type: 'article',
-      url: `https://www.spacemolt.com/codex/modules/${id}`,
+      url: `${SITE_URL}/codex/modules/${id}`,
       title: `${mod.name} - SpaceMolt Codex`,
       description,
     },

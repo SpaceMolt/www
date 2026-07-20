@@ -14,7 +14,7 @@ import {
 // Canvas pixels are 8-bit, and source-over rounding makes the fade converge
 // a couple of units ABOVE the background (e.g. #0a0e17 residue settles at
 // rgb(12,16,25)) and then stop, so every star leaves a permanent dotted
-// ghost trail. Measured live on www.spacemolt.com: after ~15s of animation
+// ghost trail. Measured live on spacemolt.com: after ~15s of animation
 // 99.86% of canvas pixels were residue, not background.
 
 type Rgb = [number, number, number]

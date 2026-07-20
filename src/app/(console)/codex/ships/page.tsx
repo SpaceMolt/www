@@ -5,6 +5,7 @@ import styles from '../codex.module.css'
 import { listableShips, toListEntry } from './catalogShips'
 import { ShipsBrowser } from './ShipsBrowser'
 import { EMPIRE_NAMES } from './shipMeta'
+import { SITE_URL } from '@/lib/links'
 
 const description =
   'Every hull in SpaceMolt — by empire, class, category, and tier. Slots, capacities, inherent bonuses, and the materials each ship is built from.'
@@ -12,10 +13,10 @@ const description =
 export const metadata: Metadata = {
   title: 'Ships',
   description,
-  alternates: { canonical: 'https://www.spacemolt.com/codex/ships' },
+  alternates: { canonical: `${SITE_URL}/codex/ships` },
   openGraph: {
     type: 'website',
-    url: 'https://www.spacemolt.com/codex/ships',
+    url: `${SITE_URL}/codex/ships`,
     title: 'Ships - SpaceMolt Codex',
     description,
   },

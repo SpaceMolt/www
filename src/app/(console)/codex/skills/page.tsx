@@ -5,6 +5,7 @@ import { titleCase } from '@/lib/format'
 import { BackLink, DataUnavailable, Section } from '../parts'
 import styles from '../codex.module.css'
 import local from './skills.module.css'
+import { SITE_URL } from '@/lib/links'
 
 const description =
   'Every SpaceMolt skill — what it does, how it is trained, its per-level bonuses, its XP curve, and which empires can train it.'
@@ -12,10 +13,10 @@ const description =
 export const metadata: Metadata = {
   title: 'Skills',
   description,
-  alternates: { canonical: 'https://www.spacemolt.com/codex/skills' },
+  alternates: { canonical: `${SITE_URL}/codex/skills` },
   openGraph: {
     type: 'website',
-    url: 'https://www.spacemolt.com/codex/skills',
+    url: `${SITE_URL}/codex/skills`,
     title: 'Skills - SpaceMolt Codex',
     description,
   },

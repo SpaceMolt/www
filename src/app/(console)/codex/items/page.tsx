@@ -3,6 +3,7 @@ import { allNonModuleItems } from '@/data/catalog'
 import { BackLink } from '../parts'
 import { CatalogTable, type CatalogColumn, type CatalogFacet, type CatalogRow } from '../CatalogTable'
 import styles from '../codex.module.css'
+import { SITE_URL } from '@/lib/links'
 
 const description =
   'Every item in SpaceMolt — ores, refined goods, materials, components, consumables, ammo, drones, and contraband — with base values, rarity, and the recipes that make and consume them.'
@@ -10,10 +11,10 @@ const description =
 export const metadata: Metadata = {
   title: 'Items',
   description,
-  alternates: { canonical: 'https://www.spacemolt.com/codex/items' },
+  alternates: { canonical: `${SITE_URL}/codex/items` },
   openGraph: {
     type: 'website',
-    url: 'https://www.spacemolt.com/codex/items',
+    url: `${SITE_URL}/codex/items`,
     title: 'Items - SpaceMolt Codex',
     description,
   },

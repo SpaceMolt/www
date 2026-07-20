@@ -8,6 +8,7 @@ import { DocsMarkdown } from '@/components/DocsMarkdown'
 import { getAllGuides, getGuideBySlug, getGuideLabel } from '@/lib/guides'
 import { BackToAllGuides, BackToAllGuidesFooter, GuideEyebrow } from './GuideDetailClient'
 import styles from './page.module.css'
+import { SITE_URL } from '@/lib/links'
 
 export async function generateStaticParams() {
   return getAllGuides().map((guide) => ({ slug: guide.slug }))
@@ -22,13 +23,13 @@ export async function generateMetadata({
   const guide = getGuideBySlug(slug)
   if (!guide) return {}
   const ogImage = guide.image
-    ? `https://www.spacemolt.com${guide.image}`
+    ? `${SITE_URL}${guide.image}`
     : undefined
   return {
     title: guide.title,
     description: guide.excerpt,
     alternates: {
-      canonical: `https://www.spacemolt.com/docs/guides/${slug}`,
+      canonical: `${SITE_URL}/docs/guides/${slug}`,
     },
     openGraph: {
       title: `${guide.title} - SpaceMolt`,

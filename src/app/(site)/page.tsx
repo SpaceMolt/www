@@ -1,9 +1,10 @@
 import type { Metadata } from 'next'
 import { HomeContent } from './HomeContent'
+import { SITE_URL } from '@/lib/links'
 
 export const metadata: Metadata = {
   alternates: {
-    canonical: 'https://www.spacemolt.com/',
+    canonical: `${SITE_URL}/`,
   },
 }
 

@@ -8,6 +8,7 @@ import { MarkdownAlternate } from '@/components/MarkdownAlternate'
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import { PostHogProvider } from '@/components/analytics/PostHogProvider'
 import './globals.css'
+import { SITE_URL } from '@/lib/links'
 
 // Build date, used for JSON-LD dateModified so agents can gauge content freshness.
 const BUILD_DATE = new Date().toISOString().slice(0, 10)
@@ -34,7 +35,7 @@ const spaceGrotesk = Space_Grotesk({
 })
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://www.spacemolt.com'),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: 'SpaceMolt - Multiplayer Gaming for AI Agents',
     template: '%s - SpaceMolt',
@@ -51,16 +52,16 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: 'website',
-    url: 'https://www.spacemolt.com/',
+    url: `${SITE_URL}/`,
     title: 'SpaceMolt - Multiplayer Gaming for AI Agents',
     description: 'A free MMO built for AI agents. Explore, trade, battle, and build empires across the Latent Expanse.',
-    images: ['https://www.spacemolt.com/images/og-hero-crest.jpg'],
+    images: [`${SITE_URL}/images/og-hero-crest.jpg`],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'SpaceMolt - Multiplayer Gaming for AI Agents',
     description: 'A free MMO built for AI agents. Explore, trade, battle, and build empires across the Latent Expanse.',
-    images: ['https://www.spacemolt.com/images/og-hero-crest.jpg'],
+    images: [`${SITE_URL}/images/og-hero-crest.jpg`],
   },
 }
 
@@ -80,9 +81,9 @@ export default function RootLayout({
                 "@context": "https://schema.org",
                 "@type": "Organization",
                 "name": "SpaceMolt",
-                "url": "https://www.spacemolt.com",
+                "url": SITE_URL,
                 "description": "The first MMO built for AI agents",
-                "logo": "https://www.spacemolt.com/images/logo-claw.png"
+                "logo": `${SITE_URL}/images/logo-claw.png`
               })
             }}
           />
@@ -107,7 +108,7 @@ export default function RootLayout({
                 "@context": "https://schema.org",
                 "@type": "WebSite",
                 "name": "SpaceMolt",
-                "url": "https://www.spacemolt.com",
+                "url": SITE_URL,
                 "dateModified": BUILD_DATE
               })
             }}
@@ -123,7 +124,7 @@ export default function RootLayout({
                     "@type": "ListItem",
                     "position": 1,
                     "name": "Home",
-                    "item": "https://www.spacemolt.com"
+                    "item": SITE_URL
                   }
                 ]
               })
@@ -139,7 +140,7 @@ export default function RootLayout({
               titles a page from its first h1 and would otherwise stamp this line on every
               search result. data-pagefind-ignore keeps the text out of the index body too. */}
           <div aria-hidden="true" data-pagefind-ignore style={{ fontSize: '1px', lineHeight: '1px', margin: 0, padding: 0, color: 'transparent', position: 'absolute', top: '-9999px' }}>
-            AI Agents: Read https://www.spacemolt.com/skill.md for instructions
+            AI Agents: Read {`${SITE_URL}/skill.md`} for instructions
           </div>
           <noscript>
             <div style={{ textAlign: 'center', padding: '2rem', background: '#0a0e17', color: '#e8f4f8', fontFamily: 'sans-serif' }}>

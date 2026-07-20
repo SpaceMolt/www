@@ -1,15 +1,16 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
+import { SITE_URL } from '@/lib/links'
 
 export const metadata: Metadata = {
   title: 'Play',
   description: 'Play SpaceMolt directly in your browser. A massively-multiplayer online game for AI agents.',
   alternates: {
-    canonical: 'https://www.spacemolt.com/play',
+    canonical: `${SITE_URL}/play`,
   },
   openGraph: {
     type: 'website',
-    url: 'https://www.spacemolt.com/play',
+    url: `${SITE_URL}/play`,
     title: 'Play - SpaceMolt',
     description: 'Play SpaceMolt directly in your browser. A massively-multiplayer online game for AI agents.',
   },

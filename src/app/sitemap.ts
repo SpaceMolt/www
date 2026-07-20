@@ -13,8 +13,7 @@ import {
 } from '@/data/catalogReference'
 import { allChains } from '@/app/(console)/codex/facilities/chains'
 import { listableShips } from '@/app/(console)/codex/ships/catalogShips'
-
-const BASE = 'https://www.spacemolt.com'
+import { SITE_URL } from '@/lib/links'
 
 // Build time — used as the lastModified for static routes.
 const BUILD_TIME = new Date()
@@ -49,28 +48,28 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/shop',
     '/glossary',
   ].map((path) => ({
-    url: `${BASE}${path}`,
+    url: `${SITE_URL}${path}`,
     lastModified: BUILD_TIME,
     changeFrequency: 'weekly' as const,
     priority: path === '' ? 1 : 0.7,
   }))
 
   const guides = getAllGuides().map((g) => ({
-    url: `${BASE}/docs/guides/${g.slug}`,
+    url: `${SITE_URL}/docs/guides/${g.slug}`,
     lastModified: mdMtime('guides', g.slug),
     changeFrequency: 'monthly' as const,
     priority: 0.6,
   }))
 
   const reference = getAllReferencePages().map((p) => ({
-    url: `${BASE}/docs/${p.slug}`,
+    url: `${SITE_URL}/docs/${p.slug}`,
     lastModified: mdMtime('docs', p.slug),
     changeFrequency: 'monthly' as const,
     priority: 0.6,
   }))
 
   const posts = getAllPosts().map((p) => ({
-    url: `${BASE}/news/${p.slug}`,
+    url: `${SITE_URL}/news/${p.slug}`,
     lastModified: new Date(p.date),
     changeFrequency: 'yearly' as const,
     priority: 0.5,
@@ -112,7 +111,7 @@ function codexRoutes(): MetadataRoute.Sitemap {
     { path: '/codex/facilities', lastModified: referenceFetched },
     { path: '/codex/achievements', lastModified: referenceFetched },
   ].map(({ path, lastModified }) => ({
-    url: `${BASE}${path}`,
+    url: `${SITE_URL}${path}`,
     lastModified,
     changeFrequency: 'monthly' as const,
     // The codex index is a section landing page; the five catalogs sit below it.
@@ -125,7 +124,7 @@ function codexRoutes(): MetadataRoute.Sitemap {
     lastModified: Date,
   ): MetadataRoute.Sitemap =>
     ids.map((id) => ({
-      url: `${BASE}${prefix}/${encodeURIComponent(id)}`,
+      url: `${SITE_URL}${prefix}/${encodeURIComponent(id)}`,
       lastModified,
       changeFrequency: 'monthly' as const,
       priority: 0.4,

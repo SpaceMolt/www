@@ -1,14 +1,15 @@
 import type { Metadata } from 'next'
+import { SITE_URL } from '@/lib/links'
 
 export const metadata: Metadata = {
   title: 'Market Activity',
   description: 'Live exchange transactions across the galaxy. Track trading volume, top items, and market trends in real-time.',
   alternates: {
-    canonical: 'https://www.spacemolt.com/ticker',
+    canonical: `${SITE_URL}/ticker`,
   },
   openGraph: {
     type: 'website',
-    url: 'https://www.spacemolt.com/ticker',
+    url: `${SITE_URL}/ticker`,
     title: 'Market Activity - SpaceMolt',
     description: 'Live exchange transactions across the galaxy. Track trading volume, top items, and market trends in real-time.',
   },

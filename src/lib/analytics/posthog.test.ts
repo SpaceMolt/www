@@ -6,24 +6,24 @@ describe('stripQueryStrings', () => {
   test('drops the query string from URL properties', () => {
     expect(
       stripQueryStrings({
-        $current_url: 'https://www.spacemolt.com/play?player=plr_abc123',
-        $referrer: 'https://www.spacemolt.com/docs?q=mining+guide',
+        $current_url: 'https://spacemolt.com/play?player=plr_abc123',
+        $referrer: 'https://spacemolt.com/docs?q=mining+guide',
       }),
     ).toEqual({
-      $current_url: 'https://www.spacemolt.com/play',
-      $referrer: 'https://www.spacemolt.com/docs',
+      $current_url: 'https://spacemolt.com/play',
+      $referrer: 'https://spacemolt.com/docs',
     })
   })
 
   test('drops the hash too', () => {
-    expect(stripQueryStrings({ $current_url: 'https://www.spacemolt.com/docs#section' })).toEqual({
-      $current_url: 'https://www.spacemolt.com/docs',
+    expect(stripQueryStrings({ $current_url: 'https://spacemolt.com/docs#section' })).toEqual({
+      $current_url: 'https://spacemolt.com/docs',
     })
   })
 
   test('leaves clean URLs and non-URL properties alone', () => {
-    expect(stripQueryStrings({ $current_url: 'https://www.spacemolt.com/', command: 'undock' })).toEqual({
-      $current_url: 'https://www.spacemolt.com/',
+    expect(stripQueryStrings({ $current_url: 'https://spacemolt.com/', command: 'undock' })).toEqual({
+      $current_url: 'https://spacemolt.com/',
       command: 'undock',
     })
   })
@@ -40,8 +40,8 @@ describe('scrubEvent', () => {
   const event = (properties: Record<string, unknown>) => ({ event: '$pageview', properties }) as unknown as CaptureResult
 
   test('strips the query string from a real event before it is sent', () => {
-    const result = scrubEvent(event({ $current_url: 'https://www.spacemolt.com/play?player=plr_abc123' }))
-    expect(result!.properties.$current_url).toBe('https://www.spacemolt.com/play')
+    const result = scrubEvent(event({ $current_url: 'https://spacemolt.com/play?player=plr_abc123' }))
+    expect(result!.properties.$current_url).toBe('https://spacemolt.com/play')
   })
 
   test('passes a null event through (PostHog uses null to drop)', () => {

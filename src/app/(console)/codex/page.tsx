@@ -12,6 +12,7 @@ import {
   referenceMeta,
 } from '@/data/catalogReference'
 import styles from './codex.module.css'
+import { SITE_URL } from '@/lib/links'
 
 const CATALOG_URL = 'https://game.spacemolt.com/api/catalog.json'
 
@@ -21,10 +22,10 @@ const description =
 export const metadata: Metadata = {
   title: 'Codex',
   description,
-  alternates: { canonical: 'https://www.spacemolt.com/codex' },
+  alternates: { canonical: `${SITE_URL}/codex` },
   openGraph: {
     type: 'website',
-    url: 'https://www.spacemolt.com/codex',
+    url: `${SITE_URL}/codex`,
     title: 'Codex - SpaceMolt Game Data',
     description,
   },

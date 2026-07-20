@@ -7,6 +7,7 @@ import { titleCase } from '@/lib/format'
 import { BackLink, Section, StatGrid, itemHref, type StatEntry } from '../../parts'
 import styles from '../../codex.module.css'
 import local from '../skills.module.css'
+import { SITE_URL } from '@/lib/links'
 
 export async function generateStaticParams() {
   return allSkills().map((skill) => ({ id: skill.id }))
@@ -26,10 +27,10 @@ export async function generateMetadata({
   return {
     title: skill.name,
     description,
-    alternates: { canonical: `https://www.spacemolt.com/codex/skills/${id}` },
+    alternates: { canonical: `${SITE_URL}/codex/skills/${id}` },
     openGraph: {
       type: 'article',
-      url: `https://www.spacemolt.com/codex/skills/${id}`,
+      url: `${SITE_URL}/codex/skills/${id}`,
       title: `${skill.name} - SpaceMolt Codex`,
       description,
     },
