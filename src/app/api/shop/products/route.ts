@@ -15,12 +15,6 @@ const STOREFRONT_API = 'https://storefront-api.fourthwall.com/v1'
 export const SHOP_BASE_URL =
   process.env.FOURTHWALL_SHOP_URL || 'https://spacemolt-shop.fourthwall.com'
 
-// Fourthwall's public product pages live under a locale/currency segment
-// (e.g. /en-usd/products/<slug>). Deep-linking to the bare /products/<slug>
-// path lands on a gated route that prompts for sign-in, so buy links must
-// include the locale. Overridable if the store's default locale changes.
-export const SHOP_LOCALE = process.env.FOURTHWALL_SHOP_LOCALE || 'en-usd'
-
 // Revalidate the catalog every 5 minutes.
 export const revalidate = 300
 
@@ -108,7 +102,7 @@ function normalize(p: FourthwallProduct): ShopProduct {
     colors: Array.from(colorMap, ([name, swatch]) => ({ name, swatch })),
     sizeCount: sizes.size,
     variantCount: variants.length,
-    url: `${SHOP_BASE_URL}/${SHOP_LOCALE}/products/${p.slug}`,
+    url: `${SHOP_BASE_URL}/products/${p.slug}`,
   }
 }
 
