@@ -1,0 +1,224 @@
+name: Lib Sync
+
+# Keeps www's @spacemolt/lib dependency current automatically. The lib is
+# self-maintaining against the gameserver (its spec-sync regenerates the
+# command surface on every deploy and its release workflow publishes a
+# semver-classified version), which means www is the last manually-updated
+# link in the chain — and lib majors land frequently by design. This workflow
+# closes that gap:
+#
+#   - When a new lib version is on npm, bump package.json and run the quality
+#     gate (`pnpm lint` typecheck + `bun test`).
+#   - Gate green  -> open a PR with the bump, quoting the lib release's
+#     machine-generated "why this bump" changelog.
+#   - Gate red    -> file an issue labeled `lib-sync-broken` carrying the
+#     version delta, the changelog, and the typecheck/test output, so the
+#     breakage is visible the same day instead of accumulating across majors.
+#
+# Triggers:
+#   - repository_dispatch (lib-released): fired by spacemolt-lib's release
+#     workflow right after a successful npm publish. Payload carries the
+#     version. This is the event-driven path.
+#   - schedule: daily backstop in case a dispatch is missed.
+#   - workflow_dispatch: manual run from the Actions tab.
+#
+# Secrets:
+#   - LIB_SYNC_PAT (recommended): a fine-grained PAT for this repo with
+#     Contents: write + Pull requests: write + Issues: write. PRs created with
+#     the default GITHUB_TOKEN do not trigger other workflows (GitHub's
+#     recursion guard), so without this the bump PR would show no CI checks.
+#     The workflow falls back to GITHUB_TOKEN and says so in the PR body.
+
+on:
+  repository_dispatch:
+    types: [lib-released]
+  schedule:
+    # Daily backstop; the repository_dispatch above is the real trigger.
+    - cron: '23 7 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+# Never let two sync runs race each other over the same branch/PR.
+concurrency:
+  group: lib-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Checkout with the PAT when available so pushes made with the
+          # persisted credentials create PRs whose CI actually runs.
+          token: ${{ secrets.LIB_SYNC_PAT || github.token }}
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Bump @spacemolt/lib
+        id: bump
+        env:
+          # The dispatch payload names the just-published version; scheduled and
+          # manual runs take whatever npm calls latest.
+          TARGET: ${{ github.event.client_payload.version || 'latest' }}
+        run: |
+          set -euo pipefail
+          OLD=$(node -p "require('./package.json').dependencies['@spacemolt/lib']" | tr -d '^~')
+          pnpm add "@spacemolt/lib@${TARGET}"
+          NEW=$(node -p "require('./package.json').dependencies['@spacemolt/lib']" | tr -d '^~')
+          echo "old=$OLD" >> "$GITHUB_OUTPUT"
+          echo "new=$NEW" >> "$GITHUB_OUTPUT"
+          if [ "$OLD" = "$NEW" ]; then
+            echo "Already on @spacemolt/lib $NEW — nothing to do."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Bumping @spacemolt/lib $OLD -> $NEW"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Skip if a PR or issue for this version already exists
+        id: dedupe
+        if: steps.bump.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.LIB_SYNC_PAT || github.token }}
+          NEW: ${{ steps.bump.outputs.new }}
+        run: |
+          set -euo pipefail
+          open_pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --head "bot/lib-sync-v${NEW}" --json number --jq 'length')
+          open_issue=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --label lib-sync-broken --search "\"v${NEW}\" in:title" --json number --jq 'length')
+          if [ "$open_pr" != "0" ] || [ "$open_issue" != "0" ]; then
+            echo "A PR or issue for v${NEW} is already open — skipping."
+            echo "fresh=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "fresh=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run the quality gate (typecheck + tests)
+        id: verdict
+        if: steps.bump.outputs.changed == 'true' && steps.dedupe.outputs.fresh == 'true'
+        run: |
+          set +e
+          pnpm lint > /tmp/lint.log 2>&1
+          LINT=$?
+          bun test > /tmp/test.log 2>&1
+          TEST=$?
+          set -e
+          echo "lint_exit=$LINT" >> "$GITHUB_OUTPUT"
+          echo "test_exit=$TEST" >> "$GITHUB_OUTPUT"
+          if [ "$LINT" -eq 0 ] && [ "$TEST" -eq 0 ]; then
+            echo "green=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "green=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Gate: lint=$LINT test=$TEST"
+
+      - name: Fetch the lib release changelog
+        id: changelog
+        if: steps.bump.outputs.changed == 'true' && steps.dedupe.outputs.fresh == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NEW: ${{ steps.bump.outputs.new }}
+        run: |
+          set -euo pipefail
+          BODY=$(gh release view "v${NEW}" --repo SpaceMolt/spacemolt-lib --json body --jq .body 2>/dev/null || echo "(release notes unavailable)")
+          {
+            echo 'body<<CHANGELOG_EOF'
+            echo "$BODY"
+            echo 'CHANGELOG_EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Open bump PR (gate green)
+        if: steps.verdict.outputs.green == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.LIB_SYNC_PAT || github.token }}
+          OLD: ${{ steps.bump.outputs.old }}
+          NEW: ${{ steps.bump.outputs.new }}
+          CHANGELOG: ${{ steps.changelog.outputs.body }}
+          HAS_PAT: ${{ secrets.LIB_SYNC_PAT != '' }}
+        run: |
+          set -euo pipefail
+          BRANCH="bot/lib-sync-v${NEW}"
+          git config user.name "SpaceMolt DevTeam"
+          git config user.email "devteam@spacemolt.com"
+          git checkout -b "$BRANCH"
+          git add package.json pnpm-lock.yaml
+          git commit -m "chore: bump @spacemolt/lib ${OLD} -> ${NEW}"
+          git push -u origin "$BRANCH"
+          {
+            echo "Automated bump of \`@spacemolt/lib\` from ${OLD} to ${NEW}."
+            echo
+            echo "Typecheck (\`pnpm lint\`) and \`bun test\` both pass on this bump."
+            echo
+            echo "## Upstream changelog (v${NEW})"
+            echo
+            echo "$CHANGELOG"
+            if [ "$HAS_PAT" != "true" ]; then
+              echo
+              echo "> Created with the default GITHUB_TOKEN, so CI did not trigger —"
+              echo "> close and reopen this PR to run checks, or add the LIB_SYNC_PAT secret."
+            fi
+          } > /tmp/pr-body.md
+          gh pr create \
+            --repo "$GITHUB_REPOSITORY" \
+            --head "$BRANCH" \
+            --title "chore: bump @spacemolt/lib to ${NEW}" \
+            --body-file /tmp/pr-body.md
+
+      - name: File breakage issue (gate red)
+        if: steps.verdict.outputs.green == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.LIB_SYNC_PAT || github.token }}
+          OLD: ${{ steps.bump.outputs.old }}
+          NEW: ${{ steps.bump.outputs.new }}
+          CHANGELOG: ${{ steps.changelog.outputs.body }}
+          LINT_EXIT: ${{ steps.verdict.outputs.lint_exit }}
+          TEST_EXIT: ${{ steps.verdict.outputs.test_exit }}
+        run: |
+          set -euo pipefail
+          # Ensure the label exists (no-op if it already does).
+          gh label create lib-sync-broken \
+            --repo "$GITHUB_REPOSITORY" \
+            --description "An @spacemolt/lib bump fails typecheck or tests" \
+            --color B60205 2>/dev/null || true
+          {
+            echo "Bumping \`@spacemolt/lib\` from ${OLD} to ${NEW} breaks the build."
+            echo
+            echo "- \`pnpm lint\` exit code: ${LINT_EXIT}"
+            echo "- \`bun test\` exit code: ${TEST_EXIT}"
+            echo "- Workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            echo
+            echo "## Upstream changelog (v${NEW})"
+            echo
+            echo "$CHANGELOG"
+            echo
+            echo "## Typecheck output (tail)"
+            echo
+            echo '```'
+            tail -c 4000 /tmp/lint.log || true
+            echo '```'
+            echo
+            echo "## Test output (tail)"
+            echo
+            echo '```'
+            tail -c 3000 /tmp/test.log || true
+            echo '```'
+          } > /tmp/issue-body.md
+          gh issue create \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "lib-sync: @spacemolt/lib v${NEW} breaks www" \
+            --label lib-sync-broken \
+            --body-file /tmp/issue-body.md
