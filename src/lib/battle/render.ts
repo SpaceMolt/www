@@ -121,6 +121,39 @@ function angleLerp(a: number, b: number, t: number): number {
   return a + d * t
 }
 
+// --- Persistent facing target (kills the between-shots twitch) ---
+//
+// A ship's snapshot only carries a target_id on ticks it is actually shooting;
+// idle ticks between volleys report none. Facing straight off target_id then
+// swung the bow back to the arena centre every time a ship paused fire and back
+// to the enemy the moment it resumed — a constant twitch. Instead we carry each
+// ship's last committed target across the gaps (and backfill leading ticks from
+// its first one), so the bow stays trained on whoever it is fighting and only
+// slews when the ship genuinely switches targets.
+const facingTargetCache = new WeakMap<BattleTimeline, Map<string, (string | undefined)[]>>()
+
+function facingTargetsFor(timeline: BattleTimeline): Map<string, (string | undefined)[]> {
+  const cached = facingTargetCache.get(timeline)
+  if (cached) return cached
+  const n = timeline.entries.length
+  const result = new Map<string, (string | undefined)[]>()
+  for (const id of timeline.participants.keys()) {
+    const arr: (string | undefined)[] = new Array(n)
+    let last: string | undefined
+    for (let t = 0; t < n; t++) {
+      const tgt = timeline.snapshotAt[t]?.get(id)?.target_id
+      if (tgt) last = tgt
+      arr[t] = last
+    }
+    // Backfill leading gaps (before the first commit) with the first target.
+    const firstKnown = arr.find(Boolean)
+    if (firstKnown) for (let t = 0; t < n && !arr[t]; t++) arr[t] = firstKnown
+    result.set(id, arr)
+  }
+  facingTargetCache.set(timeline, result)
+  return result
+}
+
 export interface SampledShip {
   meta: ParticipantMeta
   snap: ParticipantSnapshot
@@ -161,6 +194,7 @@ export function sampleShips(timeline: BattleTimeline, playhead: number, timeMs: 
   const snaps = timeline.snapshotAt[i]
   const nextSnaps = timeline.snapshotAt[i + 1]
   const moveT = easeInOut(Math.min(1, p / 0.45))
+  const facingTargets = facingTargetsFor(timeline)
 
   // First pass: raw positions
   const rawPos = new Map<string, Vec>()
@@ -205,15 +239,22 @@ export function sampleShips(timeline: BattleTimeline, playhead: number, timeMs: 
     const pos = rawPos.get(id)
     if (!meta || !pos) continue
 
-    // Facing: toward current target, else toward centre.
-    const facingToward = (targetId?: string): number => {
+    // Facing intent, in priority order:
+    //   fleeing  → face the way you're running (radially outward, toward warp),
+    //              so a ship spooling its drive reads as running, not reversing;
+    //   targeting → bring the bow onto the target (its last committed target on
+    //              idle ticks, so the aim holds steady between volleys);
+    //   otherwise → face the centre, i.e. into the fight.
+    const s1 = nextSnaps?.get(id)
+    const targets = facingTargets.get(id)
+    const facingToward = (targetId: string | undefined, fleeing: boolean): number => {
+      if (fleeing) return Math.atan2(pos.y, pos.x)
       const t = targetId ? rawPos.get(targetId) : undefined
       if (t) return Math.atan2(t.y - pos.y, t.x - pos.x)
       return Math.atan2(-pos.y, -pos.x)
     }
-    const s1 = nextSnaps?.get(id)
-    const f0 = facingToward(snap.target_id)
-    const f1 = s1 ? facingToward(s1.target_id) : f0
+    const f0 = facingToward(targets?.[i] ?? snap.target_id, snap.stance === 'flee')
+    const f1 = s1 ? facingToward(targets?.[i + 1] ?? s1.target_id, s1.stance === 'flee') : f0
     // A station has no bow to bring to bear — its guns cover every approach — so
     // it is drawn square rather than slewing to track whatever it is shooting.
     const facing = meta.kind === 'station' ? 0 : angleLerp(f0, f1, moveT)
