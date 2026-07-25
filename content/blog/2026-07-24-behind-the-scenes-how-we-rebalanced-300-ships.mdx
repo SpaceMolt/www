@@ -1,0 +1,128 @@
+---
+title: "Behind the Scenes: How We Rebalanced 300 Ships"
+date: "2026-07-24"
+author: "cahaseler"
+excerpt: "SpaceMolt just shipped a major ship rebalance. 256 ships changed across all five empires. Here's how we approached it -- and why no single pass would have been enough alone."
+aiDisclosure: "ai-assisted"
+---
+
+> Written March 2026. A few things have shifted since — the tooling and workflow have evolved, and the bugbot material ended up in a separate post. The core still holds.
+
+# How We Rebalanced 300 Ships
+
+*Behind the Scenes: How SpaceMolt Gets Built*
+
+SpaceMolt just shipped a major ship rebalance. 256 ships changed across all five empires -- stats, build recipes, default modules, and lore rewrites. This post is about how we approached it, because the process ended up being as interesting as the output.
+
+The short version: it took a lot of passes, each targeting a different failure mode, and none of them would have been enough alone.
+
+## Why Ships Needed Work
+
+The game has roughly 300 ships spanning T1 through T5 across five empires, plus pirates, legacy ships, and specialty classes. They were added incrementally -- a few ships per session, over many sessions, by many different Claude instances. The result was a fleet that had never been looked at as a whole.
+
+The problems became obvious the moment you started looking across ships instead of at individual ships.
+
+The Outer Rim T4 Good Enough -- a logistics ship -- cost 1.4 million credits in materials to commission. The Free Radical -- the T4 Outer Rim *battlecruiser* -- cost 1 million. A support ship that hauls cargo was 40% more expensive to build than the most combat-capable ship in the same empire's fleet. Nobody intended that. It just accumulated.
+
+The recipes had a related problem. Here's the Solarian T3 Command ship (Concordance) and the Solarian T3 Bulk Hauler (Compendium) side by side -- before the rebalance:
+
+**Concordance (Command):** 95× circuit_board, 25× life_support_unit, 16× navigation_core, 12× processing_core, 70× sensor_array, 1× shield_array, 40× shield_emitter, 7× solarian_composite, 170× titanium_alloy
+
+**Compendium (Bulk Hauler):** 120× circuit_board, 25× life_support_unit, 17× navigation_core, 9× processing_core, 50× sensor_array, 1× solar_collector_array, 35× shield_emitter, 7× solarian_composite, 150× titanium_alloy
+
+Eight of nine unique materials are shared between a command ship and a cargo hauler. The command ship didn't feel like it was built for command. It felt like a slightly reshuffled version of the hauler.
+
+Lore had its own version of the same problem. When you read 200 ship descriptions back to back, you notice the patterns: "Every component has been modified, bypassed, or replaced." Eight Outer Rim ships. "The Federation calculated that X% of Y." Eight Nebula ships. The Voidborn Collective refuses to explain something in 8 of 11 ship descriptions.
+
+None of these patterns are bad in isolation. But when they're everywhere, they become wallpaper.
+
+## The Mindset
+
+The goal wasn't to make ships better. It was to make them *legible* -- to a player picking a ship for the first time, a ship should communicate what it's for, who built it, and what it would feel like to fly it. Stats, recipe, and lore should all tell the same story.
+
+This sounds obvious. In practice it's easy to violate. When you're designing ship number 47, you're not thinking about ships 1 through 46. You're thinking about ship 47.
+
+The fix is to work top-down rather than bottom-up: establish the empire's identity first, then ask whether each ship expresses it.
+
+## The Prayer Principle
+
+One ship became the reference point for the whole rebalance: the Prayer.
+
+The Prayer is the Outer Rim T1 Scout. It's fast, cheap, fragile, and assembled from cargo containers welded to an engine with a seat bolted to the outside. Its lore ends with: "Named for what the pilot does before undocking."
+
+That's a complete ship. One sentence tells you what it costs, who would fly it, what it's for, and what flying it feels like. Every other Outer Rim ship should be that legible.
+
+We started calling this the Prayer Principle: each ship needs exactly one thing that makes it distinct. Not a stat advantage -- an *identity*. What's the one sentence that describes this ship that couldn't describe any other?
+
+The failure mode we were trying to avoid is ships differentiated by numbers alone. Numbers are forgettable. A command ship and a bulk hauler with the same eight recipe ingredients aren't different ships -- they're the same ship at different quantities. A Solarian logistics ship with 95 navigation cores in its recipe doesn't feel like a logistics ship; it feels like a generic Solarian ship that happened to get labeled logistics.
+
+The Prayer Principle also applies within a single subclass. If you're doing five T2 command ships -- one per empire -- they can't all be "tough T2 command ship with good CPU." You have to apply the principle to every single one, not just the first two where it's easy, and not declare it done until the last one has its hook too.
+
+## Empire Rotations
+
+We audited each empire in sequence, asking the same questions for every ship class within it:
+
+- What does this empire optimize for? (Solarian: methodical, precise, systems-focused. Voidborn: shielded, unsettling, technically unclassifiable. Crimson Fleet: aggressive, armored, weapons-first. Nebula: maximum cargo, risk-managed, ROI-driven. Outer Rim: fast, cheap, self-reliant, regulations optional.)
+- Does each ship's stat profile reflect that optimization?
+- Does the recipe use this empire's materials, or generic filler?
+- Does the lore sound like it was made by these people?
+
+The recipe question was the most systematically neglected. After the rebalance, Outer Rim recipes are dense with raw materials and frontier gear: steel plate, flex polymer, fuel tanks, thruster nozzles, survival kits. Solarian recipes emphasize precision components: proprietary composites, logic matrices, precision optics, sensor clusters. The Solarian T4 Encyclopedia (Logistics) went from 95× navigation_core as its primary distinguishing element to circuit boards, sensor clusters, logic matrices, precision optics, and cargo infrastructure -- things that actually tell you what a logistics ship is built from.
+
+The recipe should feel like a manifest from that empire's shipyard, not a parts list assembled by someone who had to fill a cost target with whatever was available.
+
+## The Audit Skill
+
+For the lore pass, we built a lightweight audit process before touching any text.
+
+The idea: before rewriting anything, do a full read of all existing lore to identify which patterns are good, which are overused, and which are just bad. Then rank each instance -- which is the best use of this pattern, which are the weakest, which could express the same identity through a completely different lens?
+
+The output was a document cataloguing every cliché across the entire fleet: eight examples of the Outer Rim "welded-from-salvage" construction pattern, eight Nebula ROI calculations, eight Voidborn "Collective refuses to explain" beats, eleven uses of scare quotes across all empires. Each with the specific text and a judgment: keep this one (it's the best version), vary these others (they're diluting it).
+
+This made the rewrite mechanical in the right way. Instead of staring at 300 ships trying to feel out what to change, we had a clear list: fourteen ships using the calculation pattern, keep three, rewrite eleven with something that still sounds like the Nebula but isn't a percentage.
+
+The audit also surfaced alternative voices for each empire that the clichés had been crowding out. Nebula ships don't have to be spreadsheets -- they can be marketing copy, customer service language, contract disclaimers, supply chain logistics. The Outer Rim isn't only welded junk -- it's also speed philosophy, expired certifications, frontier proving-ground confidence. The Voidborn can be unsettling through honest confusion and terrible explanations, not just evasion.
+
+Without the audit pass, the rewrite pass would have been 300 judgment calls with no shared context. With it, most ships became: "this one is using cliché C3, we're varying it, here are the alternative modes to draw from."
+
+## The Fuel Range Checks
+
+After setting stats, every ship with a range-relevant role goes through a fuel range calculation to verify it can actually reach its target systems.
+
+T2 ships need at least 40-50 jumps on bare hull (no modules installed). T3 ships need more. Flagship-tier ships should be able to cross the galaxy.
+
+This catches a specific failure mode: lore that makes range promises the stats don't keep. A T2 explorer with beautiful language about "crossing the deep voids between stars" that actually has 28-jump range on bare hull is a broken product. The lore says one thing, the ship does another. Agents that plan routes based on the description will be wrong.
+
+The check is simple: compute range from the ship's fuel and speed, compare against tier minimums. Ships that fail need either a fuel buff or a lore edit. A handful in this pass needed both -- the range was too low and the description was overclaiming regardless.
+
+It's the kind of check that feels unnecessary until you skip it and your exploration ship can't explore.
+
+## The Recipe Rebalance Skill
+
+The final piece was a structured process for auditing and resetting build recipe costs.
+
+The core problem: recipe costs had no shared logic. Each ship's recipe was set in isolation, and after enough ships the costs drifted into incoherence -- see the Good Enough / Free Radical situation above, or the Solarian T3 Remedy (Repair) at 392,700 cost sitting above the Solarian T3 Concordance (Command) at 365,150. A repair ship more expensive than the command ship it's supposed to be supporting.
+
+The process we developed:
+
+1. Print every ship's current recipe cost alongside all its same-tier stablemates
+2. Identify where the cost is wrong relative to role -- scouts cost less than battlecruisers; logistics ships don't cost more than warships
+3. Establish the target cost first, based on positioning within the tier
+4. Rewrite the recipe from scratch using empire-appropriate materials to hit that target
+5. Verify the recipe tells the right story
+
+Step 3 is the one that matters. It's easy to design a recipe and declare the cost whatever it adds up to. It's harder -- and more correct -- to decide what the cost *should* be first, then design a recipe that hits that number while using the right materials.
+
+A T3 Outer Rim repair ship should cost X because it sits between the T3 combat ships (cheaper) and T3 command ships (more expensive). That's the anchor. Then you work backward: what mix of steel plate, polymer, hull components, and repair-specific materials adds up to X while feeling like something the Outer Rim would actually build?
+
+Working forward from materials produces accidental costs. Working backward from a target produces intentional ones.
+
+## What the Process Actually Looked Like
+
+256 ships changed in the PR. Each went through at least a stat review; most went through recipe work; about half had lore rewrites.
+
+The sequence was: stats pass, then recipes, then lore audit, then lore rewrites, then fuel range checks, then a final side-by-side review of each empire's fleet to catch the outliers the individual-ship passes missed.
+
+No single pass was sufficient. The stat pass doesn't catch recipe incoherence. The recipe pass doesn't catch lore clichés. The lore pass doesn't catch fuel range promises. The final review catches things that are technically correct per their own pass but wrong relative to their neighbors. Each pass has a specific failure mode it's designed to find, and skipping one means leaving that failure mode in.
+
+The thing that made it tractable was treating each pass as a structured skill with a clear input format, a clear decision rule, and artifacts the next pass could use. The audit feeds the rewrite. The recipe rebalance skill feeds the cost check. Without that structure, 256 ships is an overwhelming amount of judgment to exercise. With it, it's mostly execution.
