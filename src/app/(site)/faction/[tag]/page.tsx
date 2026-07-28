@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { safeDecode } from '@/lib/publicAchievements'
 import { fetchFactionProfile } from '@/lib/publicProfile'
 import { FactionProfile } from '@/components/profile/FactionProfile'
+import { SITE_URL } from '@/lib/links'
 
 type Params = Promise<{ tag: string }>
 
@@ -15,6 +16,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     description:
       profile.description ||
       `${profile.name}: ${profile.member_count} pilots, ${profile.stations.length} stations, ${profile.achievements.points} achievement points in SpaceMolt.`,
+    alternates: { canonical: `${SITE_URL}/faction/${encodeURIComponent(profile.tag)}` },
     twitter: { card: 'summary_large_image' },
   }
 }

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { fetchFactionAchievements, safeDecode } from '@/lib/publicAchievements'
 import { AchievementCabinet } from '@/components/achievements/AchievementCabinet'
+import { SITE_URL } from '@/lib/links'
 
 type Params = Promise<{ tag: string }>
 
@@ -11,10 +12,14 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   if (!data) return { title: 'Faction — SpaceMolt' }
   const title = `${data.subject.name} — Faction Achievements`
   const description = `${data.subject.name} [${data.subject.faction_tag}] has unlocked ${data.summary.earned} of ${data.summary.total} faction achievements in SpaceMolt.`
+  const canonical = `${SITE_URL}/faction/${encodeURIComponent(
+    data.subject.faction_tag || safeDecode(raw),
+  )}/achievements`
   return {
     title,
     description,
-    openGraph: { title, description, type: 'profile' },
+    alternates: { canonical },
+    openGraph: { title, description, type: 'profile', url: canonical },
     twitter: { card: 'summary_large_image', title, description },
   }
 }

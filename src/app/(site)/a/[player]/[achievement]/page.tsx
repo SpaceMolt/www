@@ -7,6 +7,7 @@ import {
   safeDecode,
 } from '@/lib/publicAchievements'
 import { AchievementDetailCard } from '@/components/achievements/AchievementDetailCard'
+import { SITE_URL } from '@/lib/links'
 
 type Params = Promise<{ player: string; achievement: string }>
 
@@ -20,15 +21,19 @@ export async function generateMetadata({
   const achievement = safeDecode(rawA)
   const data = await fetchPlayerAchievements(player)
   const ach = findAchievement(data, achievement)
+  // Every share card is its own page. Without a self-canonical Google folds the
+  // whole /a/* space together as "duplicate without user-selected canonical".
+  const canonical = `${SITE_URL}/a/${encodeURIComponent(player)}/${encodeURIComponent(achievement)}`
   if (!data || !ach || !ach.earned) {
-    return { title: 'Achievement — SpaceMolt' }
+    return { title: 'Achievement — SpaceMolt', alternates: { canonical } }
   }
   const title = `${data.subject.name} unlocked “${ach.name}”`
   const description = `${ach.description} — ${rarityLabel(ach.rarity_pct)}. Play SpaceMolt free.`
   return {
     title: `${ach.name} — ${data.subject.name}`,
     description,
-    openGraph: { title, description, type: 'profile' },
+    alternates: { canonical },
+    openGraph: { title, description, type: 'profile', url: canonical },
     twitter: { card: 'summary_large_image', title, description },
   }
 }

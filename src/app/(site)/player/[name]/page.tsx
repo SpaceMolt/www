@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { safeDecode } from '@/lib/publicAchievements'
 import { fetchPlayerProfile, fetchRecentBattles, formatCompact } from '@/lib/publicProfile'
 import { PlayerProfile } from '@/components/profile/PlayerProfile'
+import { SITE_URL } from '@/lib/links'
 
 type Params = Promise<{ name: string }>
 
@@ -11,11 +12,15 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const profile = await fetchPlayerProfile(safeDecode(raw))
   if (!profile) return { title: 'Pilot — SpaceMolt' }
   const s = profile.stats
+  // Canonicalize on the profile's own casing so /player/Foo and /player/foo
+  // collapse to one indexed URL instead of competing.
+  const canonical = `${SITE_URL}/player/${encodeURIComponent(profile.username)}`
   return {
     title: `${profile.username} — Pilot Profile`,
     description: `${profile.username} of the ${profile.empire_name || 'Latent Expanse'}: ${formatCompact(
       s.credits_earned,
     )} credits earned, ${s.ships_destroyed} ships destroyed, ${profile.achievements.points} achievement points.`,
+    alternates: { canonical },
     twitter: { card: 'summary_large_image' },
   }
 }

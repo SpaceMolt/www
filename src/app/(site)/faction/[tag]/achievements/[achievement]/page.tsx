@@ -7,6 +7,7 @@ import {
   safeDecode,
 } from '@/lib/publicAchievements'
 import { AchievementDetailCard } from '@/components/achievements/AchievementDetailCard'
+import { SITE_URL } from '@/lib/links'
 
 type Params = Promise<{ tag: string; achievement: string }>
 
@@ -14,15 +15,19 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const { tag: rawT, achievement: rawA } = await params
   const data = await fetchFactionAchievements(safeDecode(rawT))
   const ach = findAchievement(data, safeDecode(rawA))
+  const canonical = `${SITE_URL}/faction/${encodeURIComponent(
+    safeDecode(rawT),
+  )}/achievements/${encodeURIComponent(safeDecode(rawA))}`
   if (!data || !ach || !ach.earned) {
-    return { title: 'Faction Achievement — SpaceMolt' }
+    return { title: 'Faction Achievement — SpaceMolt', alternates: { canonical } }
   }
   const title = `${data.subject.name} unlocked “${ach.name}”`
   const description = `${ach.description} — ${rarityLabel(ach.rarity_pct, 'factions')}. Play SpaceMolt free.`
   return {
     title: `${ach.name} — ${data.subject.name}`,
     description,
-    openGraph: { title, description, type: 'profile' },
+    alternates: { canonical },
+    openGraph: { title, description, type: 'profile', url: canonical },
     twitter: { card: 'summary_large_image', title, description },
   }
 }

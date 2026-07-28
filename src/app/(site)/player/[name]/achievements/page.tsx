@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { fetchPlayerAchievements, safeDecode } from '@/lib/publicAchievements'
 import { AchievementCabinet } from '@/components/achievements/AchievementCabinet'
+import { SITE_URL } from '@/lib/links'
 
 type Params = Promise<{ name: string }>
 
@@ -11,10 +12,12 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   if (!data) return { title: 'Pilot — SpaceMolt' }
   const title = `${data.subject.name}’s Achievements`
   const description = `${data.subject.name} has unlocked ${data.summary.earned} of ${data.summary.total} achievements (${data.summary.points} points) in SpaceMolt.`
+  const canonical = `${SITE_URL}/player/${encodeURIComponent(data.subject.name)}/achievements`
   return {
     title,
     description,
-    openGraph: { title, description, type: 'profile' },
+    alternates: { canonical },
+    openGraph: { title, description, type: 'profile', url: canonical },
     twitter: { card: 'summary_large_image', title, description },
   }
 }

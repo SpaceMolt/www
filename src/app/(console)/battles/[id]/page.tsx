@@ -2,14 +2,18 @@ import type { Metadata } from 'next'
 import BattleViewer from '@/components/battle/BattleViewer'
 import { fetchBattleSummary } from '@/lib/battle/serverSummary'
 import { outcomeLabel, sideLabel, truncate } from '@/lib/battle/format'
+import { SITE_URL } from '@/lib/links'
 
 type Params = Promise<{ id: string }>
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { id } = await params
   const battle = await fetchBattleSummary(id)
+  const canonical = `${SITE_URL}/battles/${encodeURIComponent(id)}`
   if (!battle) {
-    return { title: 'Battle Record — SpaceMolt' }
+    // An unknown battle id renders an empty viewer, so keep it out of the index
+    // rather than letting it accumulate as a soft 404.
+    return { title: 'Battle Record — SpaceMolt', robots: { index: false, follow: true } }
   }
 
   const systemName = battle.system_name || battle.system_id
@@ -28,7 +32,8 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   return {
     title: `${title} — SpaceMolt`,
     description,
-    openGraph: { title, description, type: 'website' },
+    alternates: { canonical },
+    openGraph: { title, description, type: 'website', url: canonical },
     twitter: { card: 'summary_large_image', title, description },
   }
 }
