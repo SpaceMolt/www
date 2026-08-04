@@ -3,7 +3,7 @@
 import { useEffect, useRef, useCallback, useImperativeHandle, forwardRef, useState } from 'react'
 import { Home, Crosshair } from 'lucide-react'
 import { fetchStations, type MapSystem } from '@spacemolt/lib'
-import { useLocationState, useMap, usePlayer } from '@/lib/spacemolt'
+import { useCurrentTick, useLocationState, useMap, usePlayer } from '@/lib/spacemolt'
 import styles from './GalaxyPanel.module.css'
 
 const GAMESERVER_URL = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
@@ -98,6 +98,15 @@ const STAR_COUNT = 800
 const ZOOM_EASE_FACTOR = 0.15
 const PAN_EASE_FACTOR = 0.12
 const DEFAULT_ZOOM = 0.08
+
+// Travelling blue dot: a single cyan marker that glides along the jump edge
+// while the player is in transit, matching the public galaxy map's transit
+// dots. One game tick is ~10s, which sets the animation timeline.
+const TRANSIT_TICK_DURATION_MS = 10_000
+const TRANSIT_DOT_RADIUS = 5
+const TRANSIT_DOT_COLOR = '#67e8f9'
+const TRANSIT_DOT_GLOW = '#22d3ee'
+const TRANSIT_DOT_GLOW_RADIUS = 14
 
 // ── Client-side BFS pathfinding ────────────────────────────────────────
 
@@ -265,6 +274,45 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
 
   const currentSystemIdRef = useRef<string | null>(null)
   currentSystemIdRef.current = location?.system_id ?? null
+
+  // Travelling blue dot: derive an ms-based animation timeline for the current
+  // jump so the dot glides linearly along the edge. The timeline is pinned once
+  // per trip (keyed by origin/destination/arrival) so advancing ticks don't
+  // re-sync and jitter the position. Off-network "pathfinder" jumps report no
+  // destination, so no dot is shown for them.
+  const currentTick = useCurrentTick()
+  const transitAnimRef = useRef<{
+    fromId: string
+    toId: string
+    startedAtMs: number
+    durationMs: number
+    key: string
+  } | null>(null)
+  if (
+    location?.in_transit &&
+    location.transit_type === 'jump' &&
+    location.transit_dest_system_id &&
+    location.system_id
+  ) {
+    const arrival = location.transit_arrival_tick
+    const elapsed = location.transit_ticks_elapsed ?? 0
+    const remaining = arrival != null ? Math.max(0, arrival - currentTick) : 0
+    const totalTicks = elapsed + remaining
+    const key = `${location.system_id}->${location.transit_dest_system_id}@${arrival ?? 0}`
+    if (totalTicks > 0 && transitAnimRef.current?.key !== key) {
+      transitAnimRef.current = {
+        fromId: location.system_id,
+        toId: location.transit_dest_system_id,
+        startedAtMs: Date.now() - elapsed * TRANSIT_TICK_DURATION_MS,
+        durationMs: totalTicks * TRANSIT_TICK_DURATION_MS,
+        key,
+      }
+    } else if (totalTicks <= 0) {
+      transitAnimRef.current = null
+    }
+  } else {
+    transitAnimRef.current = null
+  }
 
   const hasCenteredRef = useRef(false)
 
@@ -554,6 +602,41 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
         ctx.fillText(String(i + 1), pos.x, pos.y)
       }
 
+      ctx.restore()
+    },
+    [worldToScreen],
+  )
+
+  // Travelling blue dot along the active jump edge.
+  const drawTransitDot = useCallback(
+    (ctx: CanvasRenderingContext2D) => {
+      const anim = transitAnimRef.current
+      if (!anim) return
+      const s = stateRef.current
+      if (!s.mapData) return
+
+      const from = s.mapData.systems.find((sys) => sys.id === anim.fromId)
+      const to = s.mapData.systems.find((sys) => sys.id === anim.toId)
+      if (!from || !to) return
+
+      const progress =
+        anim.durationMs > 0
+          ? Math.max(0, Math.min(1, (Date.now() - anim.startedAtMs) / anim.durationMs))
+          : 1
+      if (progress >= 1) return
+
+      const fromPos = worldToScreen(from.x, from.y)
+      const toPos = worldToScreen(to.x, to.y)
+      const x = fromPos.x + (toPos.x - fromPos.x) * progress
+      const y = fromPos.y + (toPos.y - fromPos.y) * progress
+
+      ctx.save()
+      ctx.fillStyle = TRANSIT_DOT_COLOR
+      ctx.shadowColor = TRANSIT_DOT_GLOW
+      ctx.shadowBlur = TRANSIT_DOT_GLOW_RADIUS
+      ctx.beginPath()
+      ctx.arc(x, y, TRANSIT_DOT_RADIUS, 0, Math.PI * 2)
+      ctx.fill()
       ctx.restore()
     },
     [worldToScreen],
@@ -855,8 +938,10 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
         }
       }
 
+      // Travelling blue dot rides on top of the nodes and route overlay.
+      drawTransitDot(ctx)
     },
-    [drawStarfield, drawGrid, drawPlannedRoute, worldToScreen],
+    [drawStarfield, drawGrid, drawPlannedRoute, drawTransitDot, worldToScreen],
   )
 
   // ── Tooltip ────────────────────────────────────────────────────────
