@@ -38,6 +38,13 @@
   text-shadow: 0 0 8px rgba(155, 89, 182, 0.6);
 }
 
+/* Stale estimate: no fresh server tick, number is frozen and marked approximate */
+.tickBadgeStale .tickIcon,
+.tickBadgeStale .tickNum {
+  color: var(--hull-grey);
+  opacity: 0.75;
+}
+
 /* Track */
 .track {
   width: 50px;
@@ -60,7 +67,7 @@
   will-change: width;
 }
 
-/* Waiting state before first tick */
+/* Indeterminate track: before the first tick, and while a stale estimate is frozen */
 .fillWaiting {
   position: absolute;
   top: 0;

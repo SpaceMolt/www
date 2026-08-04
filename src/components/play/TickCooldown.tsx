@@ -1,19 +1,23 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { useAccountStore, useConnectionPhase, useCurrentTick, usePlayer } from '@/lib/spacemolt'
+import { useAccountStore, useConnectionPhase, useCurrentTick } from '@/lib/spacemolt'
 import { Timer } from 'lucide-react'
+import { estimateTick } from './tickEstimate'
 import styles from './TickCooldown.module.css'
 
 export function TickCooldown() {
   const store = useAccountStore()
-  const player = usePlayer()
   const currentTick = useCurrentTick()
   const { phase } = useConnectionPhase()
   const authenticated = phase === 'ready'
   const [progress, setProgress] = useState(0)
   const [displayTick, setDisplayTick] = useState(0)
+  const [stale, setStale] = useState(false)
   const [flash, setFlash] = useState(false)
+  // The anchor: a tick number the server reported, and when we observed it.
+  // These two are only ever written together — an anchor with a refreshed
+  // timestamp but a stale number would silently corrupt the estimate.
   const lastTickTimeRef = useRef(Date.now())
   const lastTickNumRef = useRef(0)
   const rafRef = useRef<number>(0)
@@ -21,46 +25,39 @@ export function TickCooldown() {
   const welcome = store.account.welcome
   const tickRateMs = (welcome?.tick_rate || 10) * 1000
 
-  // Bootstrap tick from welcome message
+  // Anchor on the welcome payload. The lib hands us a fresh payload object per
+  // connection, so this also re-anchors after a reconnect, where the server's
+  // authoritative current_tick is the best correction we get.
+  const welcomeRef = useRef<typeof welcome>(null)
   useEffect(() => {
-    if (welcome && welcome.current_tick > 0 && lastTickNumRef.current === 0) {
-      lastTickNumRef.current = welcome.current_tick
-      // Estimate when the current tick started using server_time
-      if (welcome.server_time > 0) {
-        const serverNowMs = welcome.server_time * 1000
-        const tickElapsedMs = serverNowMs % tickRateMs
-        lastTickTimeRef.current = Date.now() - tickElapsedMs
-      } else {
-        lastTickTimeRef.current = Date.now()
-      }
-      setDisplayTick(welcome.current_tick)
+    if (!welcome || welcome === welcomeRef.current) return
+    welcomeRef.current = welcome
+    if (welcome.current_tick <= 0) return
+    lastTickNumRef.current = welcome.current_tick
+    // Estimate when the current tick started using server_time
+    if (welcome.server_time > 0) {
+      const serverNowMs = welcome.server_time * 1000
+      const tickElapsedMs = serverNowMs % tickRateMs
+      lastTickTimeRef.current = Date.now() - tickElapsedMs
+    } else {
+      lastTickTimeRef.current = Date.now()
     }
+    setDisplayTick(welcome.current_tick)
+    setStale(false)
   }, [welcome, tickRateMs])
 
-  // Sync from confirmed server tick (action_result, etc.)
+  // Sync from confirmed server tick (action_result, pushes, etc.). Every
+  // tick-bearing frame is a free resync, so this is the main correction path.
   useEffect(() => {
     if (currentTick > 0 && currentTick !== lastTickNumRef.current) {
       lastTickNumRef.current = currentTick
       lastTickTimeRef.current = Date.now()
       setDisplayTick(currentTick)
+      setStale(false)
       setFlash(true)
       setProgress(0)
     }
   }, [currentTick])
-
-  // Reset timer baseline on status poll (player object changes)
-  const playerRef = useRef(player)
-  useEffect(() => {
-    if (player && player !== playerRef.current) {
-      playerRef.current = player
-      // If the timer has drifted far (more than 3 ticks without server confirmation),
-      // reset the baseline to keep the animation fresh
-      const elapsed = Date.now() - lastTickTimeRef.current
-      if (elapsed > tickRateMs * 3) {
-        lastTickTimeRef.current = Date.now()
-      }
-    }
-  }, [player, tickRateMs])
 
   // Clear flash after animation
   useEffect(() => {
@@ -69,22 +66,27 @@ export function TickCooldown() {
     return () => clearTimeout(timeout)
   }, [flash])
 
-  // Smooth animation - auto-cycles between ticks (never gets stuck)
+  // Animate between anchors. The estimate is deliberately bounded: the server
+  // counts processed ticks, not wall-clock elapsed, so free-running off a
+  // nominal tick rate drifts ahead of the real counter (dc#276432). Past the
+  // window the number freezes and is rendered as approximate rather than
+  // confidently wrong. There is no per-tick server push and this badge is
+  // cosmetic, so it must never poll the gameserver to stay fresh.
   const displayTickRef = useRef(0)
   displayTickRef.current = displayTick
+  const staleRef = useRef(false)
+  staleRef.current = stale
   const animate = useCallback(() => {
-    const elapsed = Date.now() - lastTickTimeRef.current
-    const ticksElapsed = Math.floor(elapsed / tickRateMs)
-    const withinTick = elapsed - ticksElapsed * tickRateMs
-    const pct = withinTick / tickRateMs
-    setProgress(pct)
-
-    // Auto-estimate displayed tick number
+    const estimate = estimateTick(
+      lastTickNumRef.current,
+      lastTickTimeRef.current,
+      Date.now(),
+      tickRateMs,
+    )
+    setProgress(estimate.progress)
     if (lastTickNumRef.current > 0) {
-      const estimated = lastTickNumRef.current + ticksElapsed
-      if (estimated !== displayTickRef.current) {
-        setDisplayTick(estimated)
-      }
+      if (estimate.tick !== displayTickRef.current) setDisplayTick(estimate.tick)
+      if (estimate.stale !== staleRef.current) setStale(estimate.stale)
     }
 
     rafRef.current = requestAnimationFrame(animate)
@@ -117,16 +119,33 @@ export function TickCooldown() {
   return (
     <div className={styles.container}>
       <div className={styles.indicator}>
-        <div className={`${styles.tickBadge} ${flash ? styles.tickBadgeFlash : ''}`}>
+        <div
+          className={`${styles.tickBadge} ${flash ? styles.tickBadgeFlash : ''} ${stale ? styles.tickBadgeStale : ''}`}
+          title={
+            stale
+              ? 'Approximate — no fresh tick from the server yet. Take an action to resync.'
+              : undefined
+          }
+          aria-label={
+            stale ? `Approximate tick ${displayTick}, awaiting server` : `Tick ${displayTick}`
+          }
+        >
           <Timer size={10} className={styles.tickIcon} />
-          <span className={styles.tickNum}>{displayTick}</span>
+          <span className={styles.tickNum}>
+            {stale ? '~' : ''}
+            {displayTick}
+          </span>
         </div>
       </div>
       <div className={styles.track}>
-        <div
-          className={`${styles.fill} ${flash ? styles.fillFlash : ''}`}
-          style={{ width: `${progress * 100}%` }}
-        />
+        {stale ? (
+          <div className={styles.fillWaiting} />
+        ) : (
+          <div
+            className={`${styles.fill} ${flash ? styles.fillFlash : ''}`}
+            style={{ width: `${progress * 100}%` }}
+          />
+        )}
         {flash && <div className={styles.burst} />}
       </div>
     </div>
