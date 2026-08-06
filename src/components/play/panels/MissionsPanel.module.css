@@ -374,6 +374,20 @@
   color: var(--hull-grey);
 }
 
+/* Failed query (matches SalvagePanel's .errorBanner) */
+.errorBanner {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.55rem;
+  background: rgba(230, 57, 70, 0.06);
+  border: 1px solid rgba(230, 57, 70, 0.2);
+  border-radius: 4px;
+  color: var(--claw-red);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+}
+
 /* Link button (for back navigation etc.) */
 .linkBtn {
   display: inline-flex;

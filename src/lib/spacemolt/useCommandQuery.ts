@@ -7,6 +7,7 @@
  * fetched view data belongs to the panel that fetches it.
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { SpacemoltError } from '@spacemolt/lib'
 import type { Account, StateSection } from '@spacemolt/lib'
 import { useAccountStore } from './AccountProvider'
 
@@ -23,10 +24,17 @@ export interface CommandQueryResult<T> {
   data: T | undefined
   loading: boolean
   error: string | null
+  /**
+   * Machine-readable server error code (`SpacemoltError.code`, e.g.
+   * `not_docked`) when the failure came from the game server, otherwise null.
+   * Panels should branch on this rather than string-matching `error`.
+   */
+  errorCode: string | null
   refetch: () => void
 }
 
 const message = (err: unknown): string => (err instanceof Error ? err.message : String(err))
+const code = (err: unknown): string | null => (err instanceof SpacemoltError ? err.code : null)
 
 export function useCommandQuery<T>(
   run: (account: Account) => Promise<T>,
@@ -37,6 +45,7 @@ export function useCommandQuery<T>(
   const [data, setData] = useState<T | undefined>(undefined)
   const [loading, setLoading] = useState(enabled)
   const [error, setError] = useState<string | null>(null)
+  const [errorCode, setErrorCode] = useState<string | null>(null)
   const [generation, setGeneration] = useState(0)
   // The latest run wins; earlier in-flight responses are dropped.
   const runSeq = useRef(0)
@@ -53,11 +62,13 @@ export function useCommandQuery<T>(
         if (runSeq.current !== seq) return
         setData(result)
         setError(null)
+        setErrorCode(null)
         setLoading(false)
       },
       (err) => {
         if (runSeq.current !== seq) return
         setError(message(err))
+        setErrorCode(code(err))
         setLoading(false)
       },
     )
@@ -76,5 +87,5 @@ export function useCommandQuery<T>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store, enabled, refetch, refreshOnSections.join(','), refreshOnEvents.join(',')])
 
-  return { data, loading, error, refetch }
+  return { data, loading, error, errorCode, refetch }
 }
