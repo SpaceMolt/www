@@ -107,6 +107,50 @@ function errorMessage(err: unknown): string {
 
 type TabId = 'available' | 'active' | 'completed'
 
+export type MissionsTabView = 'loading' | 'error' | 'empty' | 'list'
+
+/**
+ * Picks exactly one of the four render states for a query-backed missions tab.
+ *
+ * Regression guard for gh#1885: the Available tab previously rendered loading /
+ * empty / list only, so a failed `get_missions` (the common one being
+ * `not_docked`) produced a completely blank tab that players read as "this
+ * station has no missions". Every combination must now resolve to a visible
+ * state, and `error` must never collapse into the "genuinely zero missions"
+ * empty state — those two mean different things to the player.
+ */
+export function missionsTabView(q: {
+  loading: boolean
+  error: string | null
+  hasData: boolean
+  count: number
+}): MissionsTabView {
+  // Keep an already-rendered list on screen while it refreshes.
+  if (q.count > 0) return 'list'
+  if (q.loading) return 'loading'
+  if (q.error) return 'error'
+  if (q.hasData) return 'empty'
+  // Enabled but not yet started (the frame between tab switch and effect).
+  return 'loading'
+}
+
+/**
+ * Player-facing text for a failed missions query. `not_docked` is the one
+ * failure with an actionable fix, so it gets a specific hint; everything else
+ * surfaces the server's own message rather than a blank panel. Branches on
+ * `SpacemoltError.code` (see `useCommandQuery`), never on message text.
+ */
+export function missionsErrorText(
+  errorCode: string | null,
+  error: string | null,
+  subject: 'available missions' | 'completed missions',
+): string {
+  if (errorCode === 'not_docked') {
+    return 'Dock at a station to see the missions it offers.'
+  }
+  return error ? `Could not load ${subject}: ${error}` : `Could not load ${subject}.`
+}
+
 function formatRelativeTime(isoStr: string): string {
   const date = new Date(isoStr)
   const now = new Date()
@@ -147,6 +191,12 @@ export function MissionsPanel() {
     { enabled: activeTab === 'available' },
   )
   const availableMissions = availableQuery.data?.missions ?? []
+  const availableView = missionsTabView({
+    loading: availableQuery.loading,
+    error: availableQuery.error,
+    hasData: availableQuery.data !== undefined,
+    count: availableMissions.length,
+  })
 
   // Active missions — live section, kept current by mutation deltas
   const missionsSection = useMissions()
@@ -161,6 +211,12 @@ export function MissionsPanel() {
   )
   const completedMissions: CompletedMission[] = completedQuery.data?.missions ?? []
   const completedMissionsTotal = completedQuery.data?.total_count ?? completedMissions.length
+  const completedView = missionsTabView({
+    loading: completedQuery.loading,
+    error: completedQuery.error,
+    hasData: completedQuery.data !== undefined,
+    count: completedMissions.length,
+  })
 
   const [selectedCompletedMission, setSelectedCompletedMission] = useState<ViewCompletedMissionResponse | null>(null)
   const [loadingMissionDetail, setLoadingMissionDetail] = useState(false)
@@ -299,18 +355,24 @@ export function MissionsPanel() {
         {/* Available Missions Tab */}
         {activeTab === 'available' && (
           <>
-            {availableQuery.loading && availableMissions.length === 0 && (
+            {availableView === 'loading' && (
               <div className={styles.loading}>
                 <span className={shared.spinner} />
                 Loading available missions...
               </div>
             )}
-            {availableQuery.data && availableMissions.length === 0 && !availableQuery.loading && (
+            {availableView === 'error' && (
+              <div className={styles.errorBanner}>
+                <AlertTriangle size={12} />
+                {missionsErrorText(availableQuery.errorCode, availableQuery.error, 'available missions')}
+              </div>
+            )}
+            {availableView === 'empty' && (
               <div className={shared.emptyState}>
                 No missions available at this location.
               </div>
             )}
-            {availableMissions.length > 0 && (
+            {availableView === 'list' && (
               <div className={styles.missionList}>
                 {availableMissions.map((m) => {
                   const isExpanded = expandedMissions.has(m.mission_id)
@@ -480,20 +542,26 @@ export function MissionsPanel() {
         {/* Completed Missions Tab */}
         {activeTab === 'completed' && (
           <>
-            {completedQuery.loading && completedMissions.length === 0 && (
+            {completedView === 'loading' && (
               <div className={styles.loading}>
                 <span className={shared.spinner} />
                 Loading completed missions...
               </div>
             )}
-            {completedQuery.data && completedMissions.length === 0 && !completedQuery.loading && (
+            {completedView === 'error' && (
+              <div className={styles.errorBanner}>
+                <AlertTriangle size={12} />
+                {missionsErrorText(completedQuery.errorCode, completedQuery.error, 'completed missions')}
+              </div>
+            )}
+            {completedView === 'empty' && (
               <div className={shared.emptyState}>
                 No completed missions yet.
               </div>
             )}
 
             {/* Completed mission list */}
-            {completedMissions.length > 0 && !selectedCompletedMission && (
+            {completedView === 'list' && !selectedCompletedMission && (
               <div className={styles.missionList}>
                 <div className={shared.sectionTitle}>
                   <span className={styles.sectionIcon}><Award size={12} /></span>
