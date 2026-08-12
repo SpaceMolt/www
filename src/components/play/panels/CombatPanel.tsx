@@ -17,8 +17,17 @@ import {
   Flame,
   Wind,
   Rabbit,
+  PawPrint,
 } from 'lucide-react'
-import { useAccountStore, useCargo, useCommandMutation, useLocationState, useModules, usePlayer } from '@/lib/spacemolt'
+import {
+  useAccountStore,
+  useCargo,
+  useCommandMutation,
+  useCommandQuery,
+  useLocationState,
+  useModules,
+  usePlayer,
+} from '@/lib/spacemolt'
 import { usePlay, usePlayUi } from '../PlayProvider'
 import { Panel, Modal, shared } from '../shared'
 import styles from './CombatPanel.module.css'
@@ -42,6 +51,14 @@ export function CombatPanel() {
   const cargo = useCargo()
   const battle = usePlayUi((s) => s.battle)
   const inCombat = usePlayUi((s) => s.inCombat)
+
+  // Wildlife is only on the get_nearby response — the cached location state
+  // carries nearby players and pirates but no creatures.
+  const nearbyQuery = useCommandQuery(
+    async (account) => (await account.commands.spacemolt.get_nearby()).structuredContent,
+    [location?.poi_id],
+    { enabled: Boolean(location?.poi_id), refreshOnSections: ['location'] },
+  )
 
   const [confirmSelfDestruct, setConfirmSelfDestruct] = useState(false)
   const [selectedAmmo, setSelectedAmmo] = useState<Record<string, string>>({})
@@ -69,6 +86,13 @@ export function CombatPanel() {
     [mutate, reportError],
   )
 
+  const handleHunt = useCallback(
+    (id: string) => {
+      mutate((c) => c.spacemolt.hunt({ id }), { label: 'hunt' }).catch(reportError)
+    },
+    [mutate, reportError],
+  )
+
   const handleCloak = useCallback(() => {
     mutate((c) => c.spacemolt.cloak({ enable: !player?.is_cloaked }), { label: 'cloak' }).catch(reportError)
   }, [mutate, reportError, player?.is_cloaked])
@@ -80,7 +104,8 @@ export function CombatPanel() {
 
   const handleRefresh = useCallback(() => {
     store.account.refresh().catch(reportError)
-  }, [store, reportError])
+    nearbyQuery.refetch()
+  }, [store, reportError, nearbyQuery.refetch])
 
   // Tactical controls — battle stance/movement resolve synchronously
   // (query commands), not queued to the next tick, so they bypass mutate().
@@ -113,7 +138,8 @@ export function CombatPanel() {
   const isCloaked = player?.is_cloaked ?? false
   const nearbyPlayers = location?.nearby_players ?? []
   const nearbyPirates = location?.nearby_pirates ?? []
-  const nearbyCount = nearbyPlayers.length + nearbyPirates.length
+  const nearbyCreatures = nearbyQuery.data?.creatures ?? []
+  const nearbyCount = nearbyPlayers.length + nearbyPirates.length + nearbyCreatures.length
   const yourStance = battle?.your_stance
   const weapons = (modules ?? []).filter((m) => m.type === 'weapon')
   const cargoItems = cargo ?? []
@@ -372,6 +398,39 @@ export function CombatPanel() {
                       className={styles.attackBtn}
                       onClick={() => handleAttack(pirateId)}
                       title={`Attack ${displayName}`}
+                      type="button"
+                    >
+                      <Swords size={14} />
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+            {nearbyCreatures.map((creature) => {
+              const displayName = creature.name || 'Unknown creature'
+              const hull =
+                creature.max_hull > 0 ? `${creature.hull}/${creature.max_hull} HULL` : ''
+              const detail = [creature.species, creature.role, hull].filter(Boolean).join(' · ')
+
+              return (
+                <div key={creature.creature_id} className={styles.playerCard}>
+                  <div className={styles.playerInfo}>
+                    <div className={styles.playerNameRow}>
+                      <span className={styles.playerName}>{displayName}</span>
+                      <span className={styles.npcTag}>Wildlife</span>
+                    </div>
+                    {detail && (
+                      <span className={styles.playerShip}>
+                        <PawPrint size={10} /> {detail}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className={styles.playerActions}>
+                    <button
+                      className={styles.attackBtn}
+                      onClick={() => handleHunt(creature.creature_id)}
+                      title={`Hunt ${displayName}`}
                       type="button"
                     >
                       <Swords size={14} />
