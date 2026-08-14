@@ -301,8 +301,8 @@
 }
 
 .cargoQtyInput {
-  width: 52px;
-  min-width: 52px;
+  width: 68px;
+  min-width: 68px;
   background: rgba(10, 14, 20, 0.6);
   border: 1px solid var(--dim-grey);
   border-radius: 3px;
@@ -312,6 +312,16 @@
   color: var(--star-white);
   outline: none;
   text-align: right;
+}
+
+/* Reserve a gutter for the native number stepper so it can never sit on top of the
+   quantity when it becomes visible on hover/focus (see StorageView.module.css).
+
+   As in StorageView, the stepper is deliberately kept (not hidden with
+   `-moz-appearance: textfield`) because it is the only increment affordance on this
+   field. Firefox has no way to add the gutter, so some overlap remains there. */
+.cargoQtyInput::-webkit-inner-spin-button {
+  margin-left: 0.3rem;
 }
 
 .cargoQtyInput:focus {
