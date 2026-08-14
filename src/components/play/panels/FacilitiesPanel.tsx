@@ -7,6 +7,7 @@ import {
   User,
   Hammer,
   Users,
+  Globe,
 } from 'lucide-react'
 import type { FacilityResponse } from '@spacemolt/lib'
 import { useCommandQuery, useLocationState, usePlayer } from '@/lib/spacemolt'
@@ -15,8 +16,9 @@ import { StationView } from './facilities/StationView'
 import { OwnedView } from './facilities/OwnedView'
 import { BuildView } from './facilities/BuildView'
 import { FactionView } from './facilities/FactionView'
+import { PublicView } from './facilities/PublicView'
 
-type TabId = 'station' | 'owned' | 'build' | 'faction'
+type TabId = 'station' | 'owned' | 'build' | 'faction' | 'public'
 
 // `{ station_facilities: unknown }` uniquely identifies the facility-list
 // variant within the FacilityResponse union (see UpgradeModal.tsx for the
@@ -37,6 +39,7 @@ export function FacilitiesPanel() {
     { id: 'owned', label: 'My Facilities', icon: <User size={13} /> },
     { id: 'build', label: 'Build', icon: <Hammer size={13} /> },
     { id: 'faction', label: 'Faction', icon: <Users size={13} />, hidden: !hasFaction },
+    { id: 'public', label: 'Public', icon: <Globe size={13} /> },
   ], [hasFaction])
 
   const { data: facilityData, loading, refetch: refreshFacilities } = useCommandQuery(
@@ -70,6 +73,7 @@ export function FacilitiesPanel() {
       {facilityData && activeTab === 'owned' && <OwnedView facilityData={facilityData} onRefresh={refreshFacilities} />}
       {activeTab === 'build' && <BuildView onRefresh={refreshFacilities} />}
       {facilityData && activeTab === 'faction' && <FactionView facilityData={facilityData} onRefresh={refreshFacilities} />}
+      {facilityData && activeTab === 'public' && <PublicView facilityData={facilityData} />}
     </PanelWithTabs>
   )
 }
