@@ -53,6 +53,23 @@ export const EMPIRE_NAMES: Record<string, string> = {
 
 export type SidebarTab = 'current' | 'explore'
 
+/**
+ * True when the current POI has mineable deposits, i.e. when the Mine and
+ * Mine Until Full actions are meaningful.
+ *
+ * Read off the `location` state section rather than the `get_poi` query. The
+ * mining actions once hung off `get_poi`'s POI blob, so when the gameserver
+ * briefly deprecated `get_poi` (server v0.433.0, restored in v0.435.1) both
+ * buttons silently vanished for every player (dc#457858). `location` is a
+ * core state section pushed on every action_result delta, so the affordance
+ * can no longer be taken out by a single query command changing shape.
+ */
+export function hasMineableResources(
+  location: { resources?: unknown[] } | undefined | null,
+): boolean {
+  return Boolean(location?.resources && location.resources.length > 0)
+}
+
 interface LeftSidebarProps {
   galaxyRef: RefObject<GalaxyPanelHandle | null>
   exploreSystem: MapSystemData | null
@@ -415,9 +432,9 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
                   {poi.description && (
                     <div className={styles.poiDescription}>{poi.description}</div>
                   )}
-                  {location?.resources && location.resources.length > 0 && (
+                  {hasMineableResources(location) && (
                     <div className={styles.resourceList}>
-                      {location.resources.map((r) => (
+                      {location?.resources?.map((r) => (
                         <div key={r.item_id} className={styles.resourceItem}>
                           <span className={styles.resourceName}>{r.item_name || r.item_id}</span>
                           <span className={styles.resourceRichness}>{r.richness}</span>
@@ -489,7 +506,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
           )}
 
           {/* Mine — only when undocked and POI has resources */}
-          {!isDocked && location?.resources && location.resources.length > 0 && (
+          {!isDocked && hasMineableResources(location) && (
             <>
               <button
                 className={styles.actionBtn}
