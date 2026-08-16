@@ -28,6 +28,7 @@ import { ItemName } from '../../ItemTooltip'
 import { Credits, shared } from '../../shared'
 import { titleCase } from '@/lib/format'
 import styles from './StorageView.module.css'
+import { resolveGiftAction, isGiftSubmitDisabled } from './giftValidation'
 
 // StorageResponse is one generated union across every branch of the unified
 // storage action (self view, faction view, deposit/withdraw/gift results) —
@@ -192,27 +193,30 @@ export function StorageView() {
   const handleSendGift = useCallback(async () => {
     const target = giftRecipient.trim()
     if (!target) return
+    // send_gift routes to spacemolt_storage.deposit on v2. The backend payload
+    // uses target=<player_name> for recipient and item_id for the thing being
+    // gifted (item id, "credits", or a ship instance ID). A single send_gift
+    // call transfers one of items, credits, or ship, so resolveGiftAction picks
+    // exactly one. The item/ship pickers list station storage contents, so item
+    // transfers source from storage.
+    const action = resolveGiftAction({
+      credits: giftCredits,
+      itemId: giftItemId,
+      itemQty: giftItemQty,
+      shipId: giftShipId,
+    })
+    // Nothing valid to send: leave the form filled in so a no-op cannot look
+    // like a completed gift (dc#689374).
+    if (!action) return
     const message = giftMessage.trim() || undefined
     setSendingGift(true)
     try {
-      // send_gift routes to spacemolt_storage.deposit on v2. The backend payload
-      // uses target=<player_name> for recipient and item_id for the thing being
-      // gifted (item id, "credits", or a ship instance ID). A single send_gift
-      // call transfers one of items, credits, or ship — so prefer ship > item
-      // > credits when the user fills in multiple fields. The item/ship pickers
-      // list station storage contents, so item transfers source from storage.
-      if (giftShipId) {
-        await mutate((c) => c.spacemolt_storage.deposit({ target, item_id: giftShipId, message }), { label: 'send_gift' })
-      } else if (giftItemId && giftItemQty) {
-        const qty = parseInt(giftItemQty, 10)
-        if (!isNaN(qty) && qty > 0) {
-          await mutate((c) => c.spacemolt_storage.deposit({ target, item_id: giftItemId, quantity: qty, source: 'storage', message }), { label: 'send_gift' })
-        }
+      if (action.kind === 'ship') {
+        await mutate((c) => c.spacemolt_storage.deposit({ target, item_id: action.shipId, message }), { label: 'send_gift' })
+      } else if (action.kind === 'item') {
+        await mutate((c) => c.spacemolt_storage.deposit({ target, item_id: action.itemId, quantity: action.quantity, source: 'storage', message }), { label: 'send_gift' })
       } else {
-        const credits = parseInt(giftCredits, 10)
-        if (!isNaN(credits) && credits > 0) {
-          await mutate((c) => c.spacemolt_storage.deposit({ target, credits, message }), { label: 'send_gift' })
-        }
+        await mutate((c) => c.spacemolt_storage.deposit({ target, credits: action.credits, message }), { label: 'send_gift' })
       }
       setGiftRecipient('')
       setGiftMessage('')
@@ -483,7 +487,16 @@ export function StorageView() {
             <button
               className={shared.confirmBtn}
               onClick={handleSendGift}
-              disabled={sendingGift || !giftRecipient.trim() || (!giftCredits && !giftItemId && !giftShipId)}
+              disabled={
+                sendingGift ||
+                isGiftSubmitDisabled({
+                  recipient: giftRecipient,
+                  credits: giftCredits,
+                  itemId: giftItemId,
+                  itemQty: giftItemQty,
+                  shipId: giftShipId,
+                })
+              }
               type="button"
             >
               <Send size={10} />
