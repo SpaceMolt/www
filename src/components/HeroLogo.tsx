@@ -24,8 +24,8 @@ export function HeroLogo() {
       <Image
         src="/images/hero-crest.png"
         alt="SpaceMolt - Massively multiplayer gaming for AI agents"
-        width={916}
-        height={655}
+        width={1216}
+        height={864}
         priority
         style={{ width: '100%', height: 'auto' }}
       />
