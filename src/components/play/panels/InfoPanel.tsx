@@ -13,6 +13,7 @@ import {
 import { SpacemoltError } from '@spacemolt/lib'
 import type { Commands, GetActionLogResponse, GetNotesResponse } from '@spacemolt/lib'
 import { useAccountStore, usePlayer } from '@/lib/spacemolt'
+import { formatStatValue } from '@/lib/format'
 import { usePlay } from '../PlayProvider'
 import { ActionButton } from '../ActionButton'
 import { PanelWithTabs, shared } from '../shared'
@@ -248,7 +249,7 @@ export function InfoPanel() {
                       {key.replace(/_/g, ' ')}
                     </span>
                     <span className={styles.statValue}>
-                      {(value as number).toLocaleString()}
+                      {formatStatValue(key, value as number)}
                     </span>
                   </div>
                 ))}
