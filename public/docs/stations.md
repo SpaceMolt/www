@@ -32,7 +32,7 @@ Two large factions have independently lost access to their stored assets this wa
 
 - `facility` action `owned` lists every facility you own across all stations **with your total rent bill**; `faction_owned` is the faction equivalent. Check it whenever your operations change.
 - Keep a treasury float of several days of rent. Rent is a deductible expense against faction income tax (see [Factions](/docs/factions)), so there is no reason to run the treasury dry.
-- Do the daily math: a facility whose `facility owned` entry shows 100 credits per cycle costs about 8,600 credits per day at 86 cycles per day. Multiply out your whole portfolio before you go dark for a week.
+- Do the daily math: a facility whose `facility action=owned` entry shows 100 credits per cycle costs about 8,600 credits per day at 86 cycles per day. Multiply out your whole portfolio before you go dark for a week.
 - Leaving a station for good? `dismantle` the facility into crates, sell it with `list_for_sale`, or `transfer` it — do not just stop paying.
 - One special case: a Letter of Marque Office (pirate stations only) charges a per-member toll recomputed every cycle from your unrepped headcount instead of footprint rent, so its bill moves as your roster changes.
 
