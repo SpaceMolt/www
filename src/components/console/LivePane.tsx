@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { X } from 'lucide-react'
 import { LiveFeed } from '@/components/LiveFeed'
 import { subscribeToEvents } from '@/lib/sharedEventSource'
+import { shortAgo } from '@/lib/format'
 import { useTranslation } from '@/i18n'
 import type { ServerStats } from './useServerStats'
 import styles from './console.module.css'
@@ -41,15 +42,6 @@ function formatCredits(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
   if (n >= 10_000) return `${(n / 1000).toFixed(0)}k`
   return n.toLocaleString()
-}
-
-function relativeTime(ts: number): string {
-  const seconds = Math.floor((Date.now() - ts) / 1000)
-  if (seconds < 10) return 'now'
-  if (seconds < 60) return `${seconds}s`
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes}m`
-  return `${Math.floor(minutes / 60)}h`
 }
 
 function LiveTrades() {
@@ -99,7 +91,7 @@ function LiveTrades() {
           <span className={styles.tradeQty}>x{trade.quantity}</span>
           <span className={styles.tradePrice}>{formatCredits(trade.price_each)} cr</span>
           <span className={styles.tradeStation}>{trade.station_name}</span>
-          <span className={styles.tradeTime}>{relativeTime(trade.time)}</span>
+          <span className={styles.tradeTime}>{shortAgo(trade.time)}</span>
         </div>
       ))}
     </div>

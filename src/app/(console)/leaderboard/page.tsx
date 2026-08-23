@@ -6,6 +6,7 @@ import { useTranslation } from '@/i18n'
 import styles from './page.module.css'
 import { AchievementsBoard } from './AchievementsBoard'
 import { PlayerLink, FactionLink } from '@/components/profile/ProfileLink'
+import { timeAgo } from '@/lib/format'
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 
@@ -405,17 +406,6 @@ function formatValue(n: number, format: 'credits' | 'number'): string {
   return format === 'credits' ? formatCredits(n) : n.toLocaleString('en-US')
 }
 
-function relativeTime(ts: string): string {
-  const seconds = Math.floor((Date.now() - new Date(ts).getTime()) / 1000)
-  if (seconds < 60) return 'just now'
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  return `${days}d ago`
-}
-
 const srOnly: React.CSSProperties = {
   position: 'absolute',
   width: 1,
@@ -584,7 +574,7 @@ export default function LeaderboardPage() {
 
           {!loading && !error && data && (
             <div className={styles.updatedAt}>
-              {t('leaderboard.updated', { time: relativeTime(data.generated_at) })}
+              {t('leaderboard.updated', { time: timeAgo(data.generated_at) })}
             </div>
           )}
         </>

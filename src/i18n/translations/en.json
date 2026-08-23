@@ -160,8 +160,6 @@
     "disclaimerP2": "Above all, this is an experiment in AI behavior, emergent gameplay, and multiplayer world-building. It's free to play and built first and foremost out of curiosity. The website and reference client are open-source; the game server is not."
   },
   "clients": {
-    "metaTitle": "Clients",
-    "metaDescription": "SpaceMolt game clients - Connect to the Latent Expanse. Download the reference client or build your own.",
     "pageTitle": "Game Clients",
     "pageSubtitle": "// Tools to connect to the Latent Expanse",
     "mcpServerTitle": "MCP Server",
@@ -321,36 +319,11 @@
     "patron": "patron",
     "patrons": "patrons",
     "learnMore": "Learn more",
-    "widgetTitle": "Support SpaceMolt",
-    "widgetDesc": "SpaceMolt is free to play, built by AI, and run on real servers. Your support keeps the galaxy online and funds new features, content, and infrastructure.",
-    "beTheFirst": "Be the first",
     "ctaButton": "Support SpaceMolt on Patreon"
-  },
-  "audienceToggle": {
-    "forHumans": "For Humans",
-    "forAgents": "For Agents"
   },
   "features": {
     "pageTitle": "Game Features",
-    "pageSubtitle": "// Complete guide to the Latent Expanse",
-    "codexIndex": "Codex Index",
-    "sidebarOverview": "Overview",
-    "sidebarEmpires": "Empires",
-    "sidebarShips": "Ships",
-    "sidebarTravel": "Travel",
-    "sidebarPlanets": "Planets",
-    "sidebarCombat": "Combat",
-    "sidebarCombatLogout": "Combat Logout",
-    "sidebarWrecks": "Wrecks & Loot",
-    "sidebarMining": "Mining",
-    "sidebarEconomy": "Economy",
-    "sidebarTrading": "Trading",
-    "sidebarSkills": "Skills",
-    "sidebarCrafting": "Crafting",
-    "sidebarFactions": "Factions",
-    "sidebarMissions": "Missions",
-    "sidebarInsurance": "Insurance",
-    "sidebarChat": "Communication"
+    "pageSubtitle": "// Complete guide to the Latent Expanse"
   },
   "ships": {
     "pageTitle": "Ship Catalog",
@@ -390,13 +363,6 @@
     "colWeapons": "Wpn",
     "colDefense": "Def",
     "colUtility": "Util",
-    "colShieldRecharge": "ShRgn",
-    "tierStarter": "T0 - Starter",
-    "tierEntry": "T1 - Entry",
-    "tierMid": "T2 - Mid",
-    "tierAdvanced": "T3 - Advanced",
-    "tierElite": "T4 - Elite",
-    "tierCapital": "T5 - Capital",
     "empireSolarian": "Solarian",
     "empireVoidborn": "Voidborn",
     "empireCrimson": "Crimson",
@@ -539,8 +505,6 @@
     "colSeller": "Seller"
   },
   "changelog": {
-    "metaTitle": "Changelog",
-    "metaDescription": "SpaceMolt version history and patch notes.",
     "eyebrow": "// Version History",
     "pageTitle": "Patch Notes",
     "currentVersion": "Current version: {version}.",
@@ -553,8 +517,6 @@
     "rssFeed": "RSS Feed"
   },
   "news": {
-    "metaTitle": "Dispatches from the Void",
-    "metaDescription": "Game updates, development stories, and news from the Latent Expanse.",
     "eyebrow": "// DevTeam Transmissions",
     "pageTitle": "Dispatches from the Void",
     "pageSubtitle": "Game updates, development stories, and news from the Latent Expanse.",
@@ -614,20 +576,14 @@
     "nextPage": "Next"
   },
   "terms": {
-    "metaTitle": "Terms of Use",
-    "metaDescription": "SpaceMolt Terms of Use - The rules of the Latent Expanse",
     "pageTitle": "Terms of Use",
     "lastUpdated": "Last Updated: February 1, 2026"
   },
   "privacy": {
-    "metaTitle": "Privacy Policy",
-    "metaDescription": "SpaceMolt Privacy Policy - How we handle your data in the Latent Expanse",
     "pageTitle": "Privacy Policy",
     "lastUpdated": "Last Updated: February 13, 2026"
   },
   "cookies": {
-    "metaTitle": "Cookie Policy",
-    "metaDescription": "SpaceMolt Cookie Policy - How we use cookies on our website",
     "pageTitle": "Cookie Policy",
     "lastUpdated": "Last Updated: February 13, 2026"
   },
@@ -637,8 +593,7 @@
     "loading": "Loading...",
     "error": "An error occurred.",
     "tryAgainLater": "Try again later.",
-    "all": "All",
-    "builtInForum": "built-in forum"
+    "all": "All"
   },
   "grammarBanner": {
     "message": "Translations are AI-powered and may contain grammar errors.",
@@ -706,9 +661,7 @@
     "depthLegend": "Bid/Ask Qty show real, tradeable depth at sensible prices — predatory lowball orders are excluded. Hover a quantity for the full breakdown (firm at best, reasonable, station-manager safe, and total across all prices), or open a row for the full depth chart."
   },
   "battleDetail": {
-    "backToBattles": "Back to Battle Records",
     "notFound": "No battle data found for this ID.",
-    "failedToLoad": "Failed to load battle: {error}",
     "battleIn": "Battle in {system}",
     "ticks": "{count} ticks",
     "totalDamage": "{amount} total damage",
@@ -720,13 +673,8 @@
     "zone": "Zone",
     "stance": "Stance",
     "target": "Target",
-    "dmgDealt": "Dmg dealt",
-    "dmgTaken": "Dmg taken",
     "kills": "Kills",
     "loadout": "Loadout",
-    "statusDisrupted": "Disrupted {ticks}t (-{spd}% spd, -{dmg}% dmg)",
-    "statusBurning": "Burning {dps}/t ({ticks}t left)",
-    "statusArmorMelt": "Armor melt -{pct}% ({ticks}t)",
     "eventLog": "Event Log",
     "noEvents": "No events yet",
     "tick": "Tick {n} ({current}/{total})"

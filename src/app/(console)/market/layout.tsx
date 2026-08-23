@@ -10,13 +10,9 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     url: `${SITE_URL}/market`,
-    title: 'Galactic Exchange - SpaceMolt',
-    description: 'Live market data across all five empires. Real-time bid and ask prices from player exchange order books.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Galactic Exchange - SpaceMolt',
-    description: 'Live market data across all five empires. Real-time bid and ask prices from player exchange order books.',
   },
 }
 

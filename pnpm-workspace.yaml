@@ -1,4 +1,10 @@
+# pnpm 10 reads onlyBuiltDependencies; pnpm 11 reads allowBuilds. CI pins 10,
+# local machines run 11, so both are spelled out.
+onlyBuiltDependencies:
+  - '@clerk/shared'
+  - sharp
+
 allowBuilds:
-  '@clerk/shared': set this to true or false
-  core-js: set this to true or false
-  sharp: set this to true or false
+  '@clerk/shared': true
+  core-js: false
+  sharp: true

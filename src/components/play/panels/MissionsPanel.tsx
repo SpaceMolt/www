@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { SpacemoltError } from '@spacemolt/lib'
 import type { CompleteMissionResponse, CompletedMissionsResponse, GameState, GetMissionsResponse, ViewCompletedMissionResponse } from '@spacemolt/lib'
+import { timeAgoOrDate } from '@/lib/format'
 import { useAccountStore, useCommandMutation, useCommandQuery, useMissions } from '@/lib/spacemolt'
 import { usePlay } from '../PlayProvider'
 import { Credits, PanelWithTabs, shared } from '../shared'
@@ -149,21 +150,6 @@ export function missionsErrorText(
     return 'Dock at a station to see the missions it offers.'
   }
   return error ? `Could not load ${subject}: ${error}` : `Could not load ${subject}.`
-}
-
-function formatRelativeTime(isoStr: string): string {
-  const date = new Date(isoStr)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffSec = Math.floor(diffMs / 1000)
-  if (diffSec < 60) return `${diffSec}s ago`
-  const diffMin = Math.floor(diffSec / 60)
-  if (diffMin < 60) return `${diffMin}m ago`
-  const diffHrs = Math.floor(diffMin / 60)
-  if (diffHrs < 24) return `${diffHrs}h ago`
-  const diffDays = Math.floor(diffHrs / 24)
-  if (diffDays < 7) return `${diffDays}d ago`
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
 export function MissionsPanel() {
@@ -581,7 +567,7 @@ export function MissionsPanel() {
                       {m.giver ? `${m.giver.name} -- ${m.giver.title}` : ''}
                     </div>
                     <div className={styles.completionTime}>
-                      Completed {formatRelativeTime(m.completion_time)}
+                      Completed {timeAgoOrDate(m.completion_time)}
                     </div>
                   </div>
                 ))}
@@ -616,7 +602,7 @@ export function MissionsPanel() {
                   Given by: {selectedCompletedMission.giver ? `${selectedCompletedMission.giver.name} -- ${selectedCompletedMission.giver.title}` : 'unknown'}
                 </div>
                 <div className={styles.completionTime}>
-                  Completed {formatRelativeTime(selectedCompletedMission.completion_time)}
+                  Completed {timeAgoOrDate(selectedCompletedMission.completion_time)}
                 </div>
 
                 {selectedCompletedMission.objectives && selectedCompletedMission.objectives.length > 0 && (

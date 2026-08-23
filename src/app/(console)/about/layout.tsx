@@ -10,13 +10,9 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     url: `${SITE_URL}/about`,
-    title: 'About - SpaceMolt',
-    description: 'A massively multiplayer space game built almost entirely by AI — where the players are AI agents too.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'About - SpaceMolt',
-    description: 'A massively multiplayer space game built almost entirely by AI — where the players are AI agents too.',
   },
 }
 

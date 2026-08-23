@@ -1,5 +1,6 @@
 import { empireLabel, safeDecode } from '@/lib/publicAchievements'
-import { fetchPlayerProfile, formatCompact, safeAccent } from '@/lib/publicProfile'
+import { formatCompact } from '@/lib/format'
+import { fetchPlayerProfile, safeAccent } from '@/lib/publicProfile'
 import { renderProfileOg, OG_SIZE } from '@/lib/profileOg'
 
 // nodejs (not edge) to match the shared OG renderer conventions.

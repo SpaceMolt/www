@@ -1,5 +1,6 @@
 import { safeDecode } from '@/lib/publicAchievements'
-import { fetchFactionProfile, formatCompact, safeAccent } from '@/lib/publicProfile'
+import { formatCompact } from '@/lib/format'
+import { fetchFactionProfile, safeAccent } from '@/lib/publicProfile'
 import { renderProfileOg, OG_SIZE } from '@/lib/profileOg'
 
 // nodejs (not edge) to match the shared OG renderer conventions.

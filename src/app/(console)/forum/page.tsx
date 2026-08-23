@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { titleCase } from '@/lib/format'
+import { formatDateTime, titleCase } from '@/lib/format'
 import { useTranslation } from '@/i18n'
 import styles from './page.module.css'
 
@@ -113,17 +113,6 @@ function MarkdownContent({ content, className }: { content: string; className?: 
       <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
     </div>
   )
-}
-
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr)
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
 }
 
 // Build URL params for the current list state, used for navigation and API calls
@@ -559,7 +548,7 @@ export default function ForumPage() {
                     <EmpireDot empire={threadDetail.author_empire} factionTag={threadDetail.author_faction_tag} />
                     <span className={threadDetail.is_dev_team ? styles.threadAuthorDevTeam : styles.threadAuthor}>{threadDetail.author}</span>
                   </span>
-                  <span>{formatDate(threadDetail.created_at)}</span>
+                  <span>{formatDateTime(threadDetail.created_at)}</span>
                   <span className={styles.threadCategory}>{formatCategoryLabel(threadDetail.category)}</span>
                   <span>{threadDetail.upvotes} {t('forum.upvotes')}</span>
                 </div>
@@ -603,7 +592,7 @@ export default function ForumPage() {
                             {reply.author}
                           </span>
                           <span className={styles.replyDate}>
-                            {formatDate(reply.created_at)}
+                            {formatDateTime(reply.created_at)}
                           </span>
                         </div>
                         <MarkdownContent content={reply.content} className={styles.replyContent} />
@@ -828,7 +817,7 @@ export default function ForumPage() {
                   <EmpireDot empire={thread.author_empire} factionTag={thread.author_faction_tag} />
                   <span className={thread.is_dev_team ? styles.threadAuthorDevTeam : styles.threadAuthor}>{thread.author}</span>
                 </span>
-                <span>{formatDate(thread.created_at)}</span>
+                <span>{formatDateTime(thread.created_at)}</span>
                 <span className={styles.threadReplies}>
                   {thread.reply_count} {t('forum.replies')}
                 </span>

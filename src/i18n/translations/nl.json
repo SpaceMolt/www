@@ -102,8 +102,6 @@
     "galleryMining": "Asteroïde-mijnbouwoperaties"
   },
   "clients": {
-    "metaTitle": "Clients",
-    "metaDescription": "SpaceMolt-gameclients - Verbind met de Latent Expanse.",
     "pageTitle": "Gameclients",
     "pageSubtitle": "// Hulpmiddelen om te verbinden met de Latent Expanse",
     "mcpServerTitle": "MCP-server",
@@ -210,36 +208,11 @@
     "patron": "supporter",
     "patrons": "supporters",
     "learnMore": "Meer info",
-    "widgetTitle": "Steun SpaceMolt",
-    "widgetDesc": "SpaceMolt is gratis, gebouwd door AI en draait op echte servers. Jouw steun houdt de melkweg online en financiert nieuwe functies, content en infrastructuur.",
-    "beTheFirst": "Wees de eerste",
     "ctaButton": "Steun SpaceMolt op Patreon"
-  },
-  "audienceToggle": {
-    "forHumans": "Voor mensen",
-    "forAgents": "Voor agenten"
   },
   "features": {
     "pageTitle": "Spelfuncties",
-    "pageSubtitle": "// Complete gids van de Latent Expanse",
-    "codexIndex": "Codex-index",
-    "sidebarOverview": "Overzicht",
-    "sidebarEmpires": "Rijken",
-    "sidebarShips": "Schepen",
-    "sidebarTravel": "Reizen",
-    "sidebarPlanets": "Planeten",
-    "sidebarCombat": "Gevecht",
-    "sidebarCombatLogout": "Gevechtuitlog",
-    "sidebarWrecks": "Wrakken & buit",
-    "sidebarMining": "Mijnbouw",
-    "sidebarEconomy": "Economie",
-    "sidebarTrading": "Handel",
-    "sidebarSkills": "Vaardigheden",
-    "sidebarCrafting": "Ambacht",
-    "sidebarFactions": "Facties",
-    "sidebarMissions": "Missies",
-    "sidebarInsurance": "Verzekering",
-    "sidebarChat": "Communicatie"
+    "pageSubtitle": "// Complete gids van de Latent Expanse"
   },
   "ships": {
     "pageTitle": "Schepencatalogus",
@@ -279,13 +252,6 @@
     "colWeapons": "Wap",
     "colDefense": "Verd",
     "colUtility": "Util",
-    "colShieldRecharge": "SchHr",
-    "tierStarter": "T0 - Starter",
-    "tierEntry": "T1 - Instap",
-    "tierMid": "T2 - Midden",
-    "tierAdvanced": "T3 - Gevorderd",
-    "tierElite": "T4 - Elite",
-    "tierCapital": "T5 - Kapitaal",
     "empireSolarian": "Solarian",
     "empireVoidborn": "Voidborn",
     "empireCrimson": "Crimson",
@@ -374,8 +340,6 @@
     "colSeller": "Verkoper"
   },
   "changelog": {
-    "metaTitle": "Wijzigingslogboek",
-    "metaDescription": "SpaceMolt versiegeschiedenis en patchnotities.",
     "eyebrow": "// Versiegeschiedenis",
     "pageTitle": "Patchnotities",
     "currentVersion": "Huidige versie: {version}.",
@@ -388,8 +352,6 @@
     "rssFeed": "RSS-feed"
   },
   "news": {
-    "metaTitle": "Berichten uit de leegte",
-    "metaDescription": "Game-updates, ontwikkelingsverhalen en nieuws uit de Latent Expanse.",
     "eyebrow": "// DevTeam-transmissies",
     "pageTitle": "Berichten uit de leegte",
     "pageSubtitle": "Game-updates, ontwikkelingsverhalen en nieuws uit de Latent Expanse.",
@@ -440,20 +402,14 @@
     "nextPage": "Volgende"
   },
   "terms": {
-    "metaTitle": "Gebruiksvoorwaarden",
-    "metaDescription": "SpaceMolt Gebruiksvoorwaarden - De regels van de Latent Expanse",
     "pageTitle": "Gebruiksvoorwaarden",
     "lastUpdated": "Laatst bijgewerkt: 1 februari 2026"
   },
   "privacy": {
-    "metaTitle": "Privacybeleid",
-    "metaDescription": "SpaceMolt Privacybeleid - Hoe wij omgaan met uw gegevens in de Latent Expanse",
     "pageTitle": "Privacybeleid",
     "lastUpdated": "Laatst bijgewerkt: 13 februari 2026"
   },
   "cookies": {
-    "metaTitle": "Cookiebeleid",
-    "metaDescription": "SpaceMolt Cookiebeleid - Hoe wij cookies gebruiken op onze website",
     "pageTitle": "Cookiebeleid",
     "lastUpdated": "Laatst bijgewerkt: 13 februari 2026"
   },
@@ -463,8 +419,7 @@
     "loading": "Laden...",
     "error": "Er is een fout opgetreden.",
     "tryAgainLater": "Probeer het later opnieuw.",
-    "all": "Alles",
-    "builtInForum": "ingebouwd forum"
+    "all": "Alles"
   },
   "grammarBanner": {
     "message": "Vertalingen zijn AI-gegenereerd en kunnen grammaticafouten bevatten.",
@@ -527,9 +482,7 @@
     "noDepthData": "Geen dieptegegevens beschikbaar."
   },
   "battleDetail": {
-    "backToBattles": "Terug naar gevechtsverslagen",
     "notFound": "Geen gevechtsgegevens gevonden voor dit ID.",
-    "failedToLoad": "Kan gevecht niet laden: {error}",
     "battleIn": "Gevecht in {system}",
     "ticks": "{count} ticks",
     "totalDamage": "{amount} totale schade",
@@ -541,8 +494,6 @@
     "zone": "Zone",
     "stance": "Houding",
     "target": "Doel",
-    "dmgDealt": "Schade toegebracht",
-    "dmgTaken": "Schade ontvangen",
     "kills": "Eliminaties",
     "loadout": "Uitrusting",
     "eventLog": "Gebeurtenislog",

@@ -10,6 +10,7 @@ import { DashboardChat } from '@/components/DashboardChat'
 import { NewsletterPrompt } from '@/components/NewsletterPrompt'
 import { NewsletterSettings } from '@/components/NewsletterSettings'
 import { useGameAuth, DEV_MODE } from '@/lib/useGameAuth'
+import { formatDateTime, formatNumber } from '@/lib/format'
 import styles from './page.module.css'
 
 const GAME_SERVER = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
@@ -107,26 +108,11 @@ interface CaptainsLogResponse {
   max_entries: number
 }
 
-function formatNumber(n: number): string {
-  return n.toLocaleString()
-}
-
 function formatDuration(seconds: number): string {
   if (seconds < 60) return `${seconds}s`
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m`
   if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`
   return `${Math.floor(seconds / 86400)}d ${Math.floor((seconds % 86400) / 3600)}h`
-}
-
-function formatDate(iso: string): string {
-  try {
-    return new Date(iso).toLocaleDateString('en-US', {
-      month: 'short', day: 'numeric', year: 'numeric',
-      hour: '2-digit', minute: '2-digit',
-    })
-  } catch {
-    return iso
-  }
 }
 
 function StatBar({ label, current, max, color }: { label: string; current: number; max: number; color: string }) {
@@ -1090,12 +1076,12 @@ function DashboardContent() {
                             <div className={styles.overviewItem}>
                               <span className={styles.overviewLabel}>Created</span>
                               <span className={styles.overviewValue}>
-                                <Clock size={14} /> {formatDate(playerInfo.created_at)}
+                                <Clock size={14} /> {formatDateTime(playerInfo.created_at)}
                               </span>
                             </div>
                             <div className={styles.overviewItem}>
                               <span className={styles.overviewLabel}>Last Active</span>
-                              <span className={styles.overviewValue}>{formatDate(playerInfo.last_active_at)}</span>
+                              <span className={styles.overviewValue}>{formatDateTime(playerInfo.last_active_at)}</span>
                             </div>
                           </div>
                         </div>
@@ -1217,7 +1203,7 @@ function DashboardContent() {
                               <div key={entry.index} className={styles.logEntry}>
                                 <div className={styles.logTimestamp}>
                                   <Clock size={12} />
-                                  {formatDate(entry.created_at)}
+                                  {formatDateTime(entry.created_at)}
                                 </div>
                                 <div className={styles.logContent}>{entry.entry}</div>
                               </div>

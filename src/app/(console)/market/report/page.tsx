@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowRight, Crosshair, TrendingDown, TrendingUp } from 'lucide-react'
 import styles from './page.module.css'
 import { useVisiblePoll } from '@/lib/useVisiblePoll'
+import { timeAgo } from '@/lib/format'
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 const POLL_INTERVAL = 300_000 // server recomputes at most every 5 min
@@ -77,16 +78,6 @@ function volumeCell(m: MoverItem) {
 function pct(n: number): string {
   const rounded = Math.round(n)
   return `${rounded > 0 ? '+' : ''}${rounded}%`
-}
-
-function timeAgo(iso: string): string {
-  const then = new Date(iso).getTime()
-  if (Number.isNaN(then)) return ''
-  const mins = Math.max(0, Math.round((Date.now() - then) / 60000))
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins} min ago`
-  const hrs = Math.round(mins / 60)
-  return `${hrs} hr${hrs === 1 ? '' : 's'} ago`
 }
 
 export default function MarketReportPage() {

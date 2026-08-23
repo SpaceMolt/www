@@ -14,6 +14,7 @@ import {
   type BattleSummary,
 } from '@/lib/battle/types'
 import { formatDuration, winnerNames } from '@/lib/battle/format'
+import { timeAgo } from '@/lib/format'
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 const POLL_INTERVAL = 10_000
@@ -50,17 +51,6 @@ const CATEGORY_FILTERS: { key: FilterCategory; labelKey: string }[] = [
   { key: 'wildlife', labelKey: 'battles.filterTypeWildlife' },
   { key: 'pve', labelKey: 'battles.filterTypePve' },
 ]
-
-function timeAgo(dateStr: string): string {
-  const ms = Date.now() - new Date(dateStr).getTime()
-  const mins = Math.floor(ms / 60_000)
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins}m ago`
-  const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  return `${days}d ago`
-}
 
 export default function BattlesPage() {
   const { t } = useTranslation()

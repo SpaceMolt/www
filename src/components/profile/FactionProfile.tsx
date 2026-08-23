@@ -10,14 +10,8 @@ import {
   Users,
   Vault,
 } from 'lucide-react'
-import {
-  type PublicFactionProfile,
-  formatCompact,
-  formatDate,
-  formatNumber,
-  safeAccent,
-  timeAgo,
-} from '@/lib/publicProfile'
+import { formatCompact, formatDate, formatNumber, timeAgo } from '@/lib/format'
+import { type PublicFactionProfile, safeAccent } from '@/lib/publicProfile'
 import { FactionLink, PlayerLink } from './ProfileLink'
 import styles from './FactionProfile.module.css'
 

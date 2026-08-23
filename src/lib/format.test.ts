@@ -1,5 +1,16 @@
 import { describe, it, expect } from 'bun:test'
-import { isTimestampStatKey, formatStatValue } from './format'
+import {
+  formatCompact,
+  formatDate,
+  formatDateTime,
+  formatDuration,
+  formatNumber,
+  formatStatValue,
+  isTimestampStatKey,
+  shortAgo,
+  timeAgo,
+  timeAgoOrDate,
+} from './format'
 
 // A player stat like `last_property_tax_assessed_at` holds a unix epoch, not a
 // quantity. Rendering it with the plain thousands-separator formatter showed
@@ -50,5 +61,57 @@ describe('formatStatValue', () => {
 
   it('falls back to the numeric formatter for an unusable timestamp', () => {
     expect(formatStatValue('last_property_tax_assessed_at', Number.NaN, 'UTC')).toBe('NaN')
+  })
+})
+
+// One relative-time ladder replaced nine near-identical private copies.
+describe('timeAgo / shortAgo', () => {
+  const ago = (ms: number) => Date.now() - ms
+
+  it('walks the ladder', () => {
+    expect(timeAgo(ago(3_000))).toBe('just now')
+    expect(timeAgo(ago(42_000))).toBe('42s ago')
+    expect(timeAgo(ago(5 * 60_000))).toBe('5m ago')
+    expect(timeAgo(ago(3 * 3600_000))).toBe('3h ago')
+    expect(timeAgo(ago(2 * 86400_000))).toBe('2d ago')
+  })
+
+  it('drops the "ago" in compact mode', () => {
+    expect(shortAgo(ago(3_000))).toBe('now')
+    expect(shortAgo(ago(90_000))).toBe('1m')
+  })
+
+  it('accepts ISO strings as well as epoch millis', () => {
+    expect(timeAgo(new Date(ago(5 * 60_000)).toISOString())).toBe('5m ago')
+  })
+
+  // Zero-value Go timestamps must not render as "739000d ago".
+  it('returns empty for unusable timestamps', () => {
+    expect(timeAgo('0001-01-01T00:00:00Z')).toBe('')
+    expect(timeAgo('not a date')).toBe('')
+    expect(timeAgo(undefined)).toBe('')
+  })
+
+  it('falls back to a short date past a week', () => {
+    expect(timeAgoOrDate(new Date(ago(3 * 86400_000)).toISOString())).toBe('3d ago')
+    expect(timeAgoOrDate('2026-03-04T12:00:00Z')).toBe('Mar 4')
+  })
+})
+
+describe('number and date formatting', () => {
+  it('separates thousands and compacts big values', () => {
+    expect(formatNumber(1234567)).toBe('1,234,567')
+    expect(formatCompact(1234567)).toBe('1.2M')
+  })
+
+  it('renders durations from seconds', () => {
+    expect(formatDuration(90)).toBe('1m')
+    expect(formatDuration(7200)).toBe('2h')
+    expect(formatDuration(90000)).toBe('1d 1h')
+  })
+
+  it('keeps the raw input when a datetime will not parse', () => {
+    expect(formatDate('nope')).toBe('')
+    expect(formatDateTime('nope')).toBe('nope')
   })
 })

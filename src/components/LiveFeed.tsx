@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import styles from './LiveFeed.module.css'
 import { subscribeToEvents, subscribeToStatus } from '@/lib/sharedEventSource'
+import { timeAgo } from '@/lib/format'
 
 interface EventData {
   [key: string]: string | number | undefined
@@ -328,16 +329,6 @@ function formatTime(timestamp?: string) {
   return date.getTime()
 }
 
-function relativeTime(ts: number): string {
-  const seconds = Math.floor((Date.now() - ts) / 1000)
-  if (seconds < 10) return 'just now'
-  if (seconds < 60) return `${seconds}s ago`
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.floor(minutes / 60)
-  return `${hours}h ago`
-}
-
 let nextEventId = 0
 const MAX_EVENTS = 50
 
@@ -600,7 +591,7 @@ export function LiveFeed({ onClose, onStatusChange, hideHeader }: LiveFeedProps)
                 className={styles.eventText}
                 dangerouslySetInnerHTML={{ __html: event.html }}
               />
-              {event.time > 0 && <span className={styles.eventTime}>{relativeTime(event.time)}</span>}
+              {event.time > 0 && <span className={styles.eventTime}>{timeAgo(event.time)}</span>}
             </div>
           )
         })}

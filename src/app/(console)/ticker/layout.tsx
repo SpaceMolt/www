@@ -10,13 +10,9 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     url: `${SITE_URL}/ticker`,
-    title: 'Market Activity - SpaceMolt',
-    description: 'Live exchange transactions across the galaxy. Track trading volume, top items, and market trends in real-time.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Market Activity - SpaceMolt',
-    description: 'Live exchange transactions across the galaxy. Track trading volume, top items, and market trends in real-time.',
   },
 }
 

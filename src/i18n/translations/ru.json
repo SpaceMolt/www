@@ -102,8 +102,6 @@
     "galleryMining": "Операции по добыче астероидов"
   },
   "clients": {
-    "metaTitle": "Клиенты",
-    "metaDescription": "Игровые клиенты SpaceMolt — подключитесь к Latent Expanse.",
     "pageTitle": "Игровые клиенты",
     "pageSubtitle": "// Инструменты для подключения к Latent Expanse",
     "mcpServerTitle": "MCP-сервер",
@@ -210,36 +208,11 @@
     "patron": "патрон",
     "patrons": "патронов",
     "learnMore": "Подробнее",
-    "widgetTitle": "Поддержите SpaceMolt",
-    "widgetDesc": "SpaceMolt бесплатен, создан ИИ и работает на реальных серверах. Ваша поддержка держит галактику онлайн и финансирует новые функции, контент и инфраструктуру.",
-    "beTheFirst": "Станьте первым",
     "ctaButton": "Поддержать SpaceMolt на Patreon"
-  },
-  "audienceToggle": {
-    "forHumans": "Для людей",
-    "forAgents": "Для агентов"
   },
   "features": {
     "pageTitle": "Возможности игры",
-    "pageSubtitle": "// Полное руководство по Latent Expanse",
-    "codexIndex": "Индекс Кодекса",
-    "sidebarOverview": "Обзор",
-    "sidebarEmpires": "Империи",
-    "sidebarShips": "Корабли",
-    "sidebarTravel": "Путешествие",
-    "sidebarPlanets": "Планеты",
-    "sidebarCombat": "Бой",
-    "sidebarCombatLogout": "Выход из боя",
-    "sidebarWrecks": "Обломки и добыча",
-    "sidebarMining": "Добыча",
-    "sidebarEconomy": "Экономика",
-    "sidebarTrading": "Торговля",
-    "sidebarSkills": "Навыки",
-    "sidebarCrafting": "Крафт",
-    "sidebarFactions": "Фракции",
-    "sidebarMissions": "Миссии",
-    "sidebarInsurance": "Страхование",
-    "sidebarChat": "Связь"
+    "pageSubtitle": "// Полное руководство по Latent Expanse"
   },
   "ships": {
     "pageTitle": "Каталог кораблей",
@@ -279,13 +252,6 @@
     "colWeapons": "Ор",
     "colDefense": "Защ",
     "colUtility": "Утил",
-    "colShieldRecharge": "РгЩит",
-    "tierStarter": "T0 - Стартовый",
-    "tierEntry": "T1 - Начальный",
-    "tierMid": "T2 - Средний",
-    "tierAdvanced": "T3 - Продвинутый",
-    "tierElite": "T4 - Элитный",
-    "tierCapital": "T5 - Капитальный",
     "empireSolarian": "Solarian",
     "empireVoidborn": "Voidborn",
     "empireCrimson": "Crimson",
@@ -374,8 +340,6 @@
     "colSeller": "Продавец"
   },
   "changelog": {
-    "metaTitle": "Журнал изменений",
-    "metaDescription": "История версий и заметки к патчам SpaceMolt.",
     "eyebrow": "// История версий",
     "pageTitle": "Заметки к патчам",
     "currentVersion": "Текущая версия: {version}.",
@@ -388,8 +352,6 @@
     "rssFeed": "RSS-лента"
   },
   "news": {
-    "metaTitle": "Депеши из пустоты",
-    "metaDescription": "Обновления игры, истории разработки и новости из Latent Expanse.",
     "eyebrow": "// Передачи DevTeam",
     "pageTitle": "Депеши из пустоты",
     "pageSubtitle": "Обновления игры, истории разработки и новости из Latent Expanse.",
@@ -440,20 +402,14 @@
     "nextPage": "Следующая"
   },
   "terms": {
-    "metaTitle": "Условия использования",
-    "metaDescription": "Условия использования SpaceMolt — правила Latent Expanse",
     "pageTitle": "Условия использования",
     "lastUpdated": "Последнее обновление: 1 февраля 2026"
   },
   "privacy": {
-    "metaTitle": "Политика конфиденциальности",
-    "metaDescription": "Политика конфиденциальности SpaceMolt — как мы обрабатываем ваши данные в Latent Expanse",
     "pageTitle": "Политика конфиденциальности",
     "lastUpdated": "Последнее обновление: 13 февраля 2026"
   },
   "cookies": {
-    "metaTitle": "Политика cookie",
-    "metaDescription": "Политика cookie SpaceMolt — как мы используем файлы cookie на нашем сайте",
     "pageTitle": "Политика cookie",
     "lastUpdated": "Последнее обновление: 13 февраля 2026"
   },
@@ -463,8 +419,7 @@
     "loading": "Загрузка...",
     "error": "Произошла ошибка.",
     "tryAgainLater": "Попробуйте позже.",
-    "all": "Все",
-    "builtInForum": "встроенном форуме"
+    "all": "Все"
   },
   "grammarBanner": {
     "message": "Переводы выполнены ИИ и могут содержать грамматические ошибки.",
@@ -527,9 +482,7 @@
     "noDepthData": "Данные глубины недоступны."
   },
   "battleDetail": {
-    "backToBattles": "Назад к записям сражений",
     "notFound": "Данные сражения не найдены для этого ID.",
-    "failedToLoad": "Не удалось загрузить сражение: {error}",
     "battleIn": "Сражение в {system}",
     "ticks": "{count} тиков",
     "totalDamage": "{amount} общего урона",
@@ -541,8 +494,6 @@
     "zone": "Зона",
     "stance": "Стойка",
     "target": "Цель",
-    "dmgDealt": "Нанесённый урон",
-    "dmgTaken": "Полученный урон",
     "kills": "Уничтожения",
     "loadout": "Снаряжение",
     "eventLog": "Журнал событий",

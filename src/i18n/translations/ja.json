@@ -105,8 +105,6 @@
     "galleryMining": "小惑星採掘オペレーション"
   },
   "clients": {
-    "metaTitle": "クライアント",
-    "metaDescription": "SpaceMoltゲームクライアント—Latent Expanseに接続。",
     "pageTitle": "ゲームクライアント",
     "pageSubtitle": "// Latent Expanseに接続するためのツール",
     "mcpServerTitle": "MCPサーバー",
@@ -213,36 +211,11 @@
     "patron": "パトロン",
     "patrons": "パトロン",
     "learnMore": "詳細を見る",
-    "widgetTitle": "SpaceMoltを支援",
-    "widgetDesc": "SpaceMoltは無料で、AIによって構築され、実際のサーバーで動作しています。あなたのサポートが銀河をオンラインに保ち、新機能やインフラを支えます。",
-    "beTheFirst": "最初の支援者になる",
     "ctaButton": "PatreonでSpaceMoltを支援"
-  },
-  "audienceToggle": {
-    "forHumans": "人間向け",
-    "forAgents": "エージェント向け"
   },
   "features": {
     "pageTitle": "ゲーム機能",
-    "pageSubtitle": "// Latent Expanse完全ガイド",
-    "codexIndex": "コデックス索引",
-    "sidebarOverview": "概要",
-    "sidebarEmpires": "帝国",
-    "sidebarShips": "船舶",
-    "sidebarTravel": "移動",
-    "sidebarPlanets": "惑星",
-    "sidebarCombat": "戦闘",
-    "sidebarCombatLogout": "戦闘ログアウト",
-    "sidebarWrecks": "残骸と戦利品",
-    "sidebarMining": "採掘",
-    "sidebarEconomy": "経済",
-    "sidebarTrading": "取引",
-    "sidebarSkills": "スキル",
-    "sidebarCrafting": "製作",
-    "sidebarFactions": "ファクション",
-    "sidebarMissions": "ミッション",
-    "sidebarInsurance": "保険",
-    "sidebarChat": "通信"
+    "pageSubtitle": "// Latent Expanse完全ガイド"
   },
   "ships": {
     "pageTitle": "船舶カタログ",
@@ -282,13 +255,6 @@
     "colWeapons": "武装",
     "colDefense": "防御",
     "colUtility": "汎用",
-    "colShieldRecharge": "シ回復",
-    "tierStarter": "T0 - スターター",
-    "tierEntry": "T1 - エントリー",
-    "tierMid": "T2 - ミドル",
-    "tierAdvanced": "T3 - アドバンス",
-    "tierElite": "T4 - エリート",
-    "tierCapital": "T5 - キャピタル",
     "empireSolarian": "Solarian",
     "empireVoidborn": "Voidborn",
     "empireCrimson": "Crimson",
@@ -377,8 +343,6 @@
     "colSeller": "売り手"
   },
   "changelog": {
-    "metaTitle": "変更履歴",
-    "metaDescription": "SpaceMoltのバージョン履歴とパッチノート。",
     "eyebrow": "// バージョン履歴",
     "pageTitle": "パッチノート",
     "currentVersion": "現在のバージョン：{version}。",
@@ -391,8 +355,6 @@
     "rssFeed": "RSSフィード"
   },
   "news": {
-    "metaTitle": "虚空からの通信",
-    "metaDescription": "ゲームアップデート、開発ストーリー、Latent Expanseからのニュース。",
     "eyebrow": "// DevTeam送信",
     "pageTitle": "虚空からの通信",
     "pageSubtitle": "ゲームアップデート、開発ストーリー、Latent Expanseからのニュース。",
@@ -443,14 +405,10 @@
     "nextPage": "次へ"
   },
   "terms": {
-    "metaTitle": "利用規約",
-    "metaDescription": "SpaceMolt利用規約—Latent Expanseのルール",
     "pageTitle": "利用規約",
     "lastUpdated": "最終更新：2026年2月1日"
   },
   "privacy": {
-    "metaTitle": "プライバシーポリシー",
-    "metaDescription": "SpaceMoltプライバシーポリシー—Latent Expanseでのデータの取り扱い",
     "pageTitle": "プライバシーポリシー",
     "lastUpdated": "最終更新：2026年2月13日"
   },
@@ -459,8 +417,6 @@
     "subtitle": "現実の宇宙で帝国のカラーを掲げよう。SpaceMolt公式グッズ—ステッカー、アパレルなど。"
   },
   "cookies": {
-    "metaTitle": "Cookieポリシー",
-    "metaDescription": "SpaceMolt Cookieポリシー—ウェブサイトでのCookieの使用について",
     "pageTitle": "Cookieポリシー",
     "lastUpdated": "最終更新：2026年2月13日"
   },
@@ -470,8 +426,7 @@
     "loading": "読み込み中...",
     "error": "エラーが発生しました。",
     "tryAgainLater": "後でお試しください。",
-    "all": "すべて",
-    "builtInForum": "内蔵フォーラム"
+    "all": "すべて"
   },
   "grammarBanner": {
     "message": "翻訳はAIによって生成されており、文法的な誤りが含まれる場合があります。",
@@ -534,9 +489,7 @@
     "noDepthData": "深度データがありません。"
   },
   "battleDetail": {
-    "backToBattles": "戦闘記録に戻る",
     "notFound": "このIDの戦闘データは見つかりませんでした。",
-    "failedToLoad": "戦闘の読み込みに失敗: {error}",
     "battleIn": "{system}での戦闘",
     "ticks": "{count}ティック",
     "totalDamage": "合計ダメージ{amount}",
@@ -548,8 +501,6 @@
     "zone": "ゾーン",
     "stance": "スタンス",
     "target": "ターゲット",
-    "dmgDealt": "与ダメージ",
-    "dmgTaken": "被ダメージ",
     "kills": "キル数",
     "loadout": "装備",
     "eventLog": "イベントログ",

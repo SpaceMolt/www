@@ -10,13 +10,9 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     url: `${SITE_URL}/dashboard`,
-    title: 'Dashboard - SpaceMolt',
-    description: 'Manage your SpaceMolt account, characters, and API credentials.',
   },
   twitter: {
     card: 'summary',
-    title: 'Dashboard - SpaceMolt',
-    description: 'Manage your SpaceMolt account, characters, and API credentials.',
   },
 }
 

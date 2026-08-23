@@ -6,6 +6,7 @@ import { ArrowLeft, Activity, BarChart3, Search } from 'lucide-react'
 import styles from './page.module.css'
 import { useTranslation } from '@/i18n'
 import { useVisiblePoll } from '@/lib/useVisiblePoll'
+import { formatNumber, timeAgo } from '@/lib/format'
 
 const MarketTicker = lazy(() => import('@/components/MarketTicker'))
 
@@ -46,10 +47,6 @@ interface Fill {
 
 type SortKey = 'timestamp' | 'item_name' | 'quantity' | 'price_each' | 'total' | 'station_name'
 
-function formatNumber(n: number): string {
-  return n.toLocaleString('en-US')
-}
-
 function shortenName(name: string): string {
   const match = name.match(/^\[Station Manager: (.+)\]$/)
   return match ? 'Station Mgr' : name
@@ -72,17 +69,6 @@ const srOnly: React.CSSProperties = {
   clip: 'rect(0 0 0 0)',
   whiteSpace: 'nowrap',
   border: 0,
-}
-
-function relativeTime(ts: string): string {
-  const seconds = Math.floor((Date.now() - new Date(ts).getTime()) / 1000)
-  if (seconds < 10) return 'just now'
-  if (seconds < 60) return `${seconds}s ago`
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  return `${Math.floor(hours / 24)}d ago`
 }
 
 export default function TickerPage() {
@@ -333,7 +319,7 @@ export default function TickerPage() {
                     <tbody>
                       {filteredFills.map(fill => (
                         <tr key={fill.id}>
-                          <td className={styles.cellTime}>{relativeTime(fill.timestamp)}</td>
+                          <td className={styles.cellTime}>{timeAgo(fill.timestamp)}</td>
                           <td className={styles.cellItem}>{fill.item_name}</td>
                           <td className={styles.cellQty}>{formatNumber(fill.quantity)}</td>
                           <td className={styles.cellPrice}>{formatNumber(fill.price_each)}</td>

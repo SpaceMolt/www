@@ -160,9 +160,6 @@ const reference = rawReference as unknown as ReferenceData
 
 // ── Exports ─────────────────────────────────────────────────────────────
 
-/** All skills keyed by ID */
-export const skillsById: Readonly<Record<string, RawSkill>> = reference.skills
-
 /** All facilities keyed by ID */
 export const facilitiesById: Readonly<Record<string, RawFacility>> = reference.facilities
 
@@ -201,11 +198,6 @@ export function getAchievement(id: string): RawAchievement | undefined {
   return achievementsById[id] ?? factionAchievementsById[id]
 }
 
-/** Get a single faction achievement by ID */
-export function getFactionAchievement(id: string): RawAchievement | undefined {
-  return factionAchievementsById[id]
-}
-
 /** Get a single facility by ID */
 export function getFacility(id: string): RawFacility | undefined {
   return reference.facilities[id]
@@ -230,13 +222,6 @@ let _skillsByCategory: Record<string, RawSkill[]> | null = null
 export function skillsByCategory(): Readonly<Record<string, RawSkill[]>> {
   if (!_skillsByCategory) _skillsByCategory = groupBy(allSkills(), s => s.category)
   return _skillsByCategory
-}
-
-/** Facilities grouped by category ("production", "service", ...) — cached */
-let _facilitiesByCategory: Record<string, RawFacility[]> | null = null
-export function facilitiesByCategory(): Readonly<Record<string, RawFacility[]>> {
-  if (!_facilitiesByCategory) _facilitiesByCategory = groupBy(allFacilities(), f => f.category)
-  return _facilitiesByCategory
 }
 
 /** All (non-hidden) player achievements as a flat array (cached) */
