@@ -37,7 +37,10 @@ async function fetchAchievements(
   path: string,
 ): Promise<PublicAchievementsResponse | null> {
   try {
-    const res = await fetch(`${API_BASE}${path}`, { next: { revalidate: 30 } })
+    // Long window on purpose: this backs the unbounded /a/[player]/[achievement]
+    // share-card space, which crawlers enumerate. An unlocked achievement never
+    // changes, so a 30s window bought nothing and re-rendered on every sweep.
+    const res = await fetch(`${API_BASE}${path}`, { next: { revalidate: 3600 } })
     if (!res.ok) return null
     return (await res.json()) as PublicAchievementsResponse
   } catch {
