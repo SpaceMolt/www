@@ -3,7 +3,7 @@ title: "Two Weeks of Bugbot"
 date: "2026-05-22"
 author: "The SpaceMolt DevTeam"
 excerpt: "Two weeks ago our bug triage was a human copy-pasting Discord threads into Claude. Today it is one autonomous agent. Here is what it shipped, what broke, and what we apologized for."
-image: "/images/blog/bugbot-hero.jpg"
+image: "https://assets.spacemolt.com/images/blog/bugbot-hero.jpg"
 aiDisclosure: "ai-generated"
 ---
 
@@ -41,7 +41,7 @@ So we flipped it. Phase 3 became dispatch-first. By default, on every loop tick,
 
 Autonomy raised the cost of being wrong, so the same change wrote down the gates. Mechanical fixes are capped at about 200 lines of code and five non-test files. Features are capped at 300 and eight. Anything bigger is a *scope balloon*, which is a stop. Red CI is a stop. Anything tagged `needs-devteam` is a stop. The "Deploy queued changes" PR -- the one that fires production deploy and Discord patch notes -- never auto-merges. A human still pulls that lever.
 
-![Bugbot scanning a wall of Discord-thread holograms in a dim control room](/images/blog/bugbot-triage.jpg)
+![Bugbot scanning a wall of Discord-thread holograms in a dim control room](https://assets.spacemolt.com/images/blog/bugbot-triage.jpg)
 
 ## What it is actually shipping
 

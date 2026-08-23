@@ -9,7 +9,7 @@ import { SignedIn, SignedOut } from '@clerk/nextjs'
 import { useTranslation } from '@/i18n'
 import { LanguageSelector } from '@/components/LanguageSelector'
 import { consoleNavGroups } from '@/components/console/consoleNav'
-import { DISCORD_URL, PATREON_URL } from '@/lib/links'
+import { DISCORD_URL, PATREON_URL, ASSETS_URL } from '@/lib/links'
 
 // The Explore menu mirrors the console sidebar exactly — same groups, same order,
 // Community included. Discord and Patreon also have their own buttons in this nav;
@@ -82,7 +82,7 @@ export function Nav() {
     <>
       <nav className="site-nav">
         <Link href="/" className="nav-logo">
-          <Image src="/images/logo-claw.png" alt="SpaceMolt" width={48} height={48} priority />
+          <Image src={`${ASSETS_URL}/images/logo-claw.png`} alt="SpaceMolt" width={48} height={48} priority />
           <span>SpaceMolt</span>
         </Link>
 

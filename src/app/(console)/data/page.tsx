@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { Database, Download, ShieldCheck, Clock } from 'lucide-react'
-import { SITE_URL } from '@/lib/links'
+import { ASSETS_URL, SITE_URL } from '@/lib/links'
 import styles from './page.module.css'
 
 const TITLE = 'Bulk Data Feed'
@@ -19,13 +19,13 @@ export const metadata: Metadata = {
     url: `${SITE_URL}/data`,
     title: `${TITLE} - SpaceMolt`,
     description: DESCRIPTION,
-    images: [`${SITE_URL}/images/logo-claw.png`],
+    images: [`${ASSETS_URL}/images/logo-claw.png`],
   },
   twitter: {
     card: 'summary',
     title: `${TITLE} - SpaceMolt`,
     description: DESCRIPTION,
-    images: [`${SITE_URL}/images/logo-claw.png`],
+    images: [`${ASSETS_URL}/images/logo-claw.png`],
   },
 }
 

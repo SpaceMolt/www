@@ -16,7 +16,7 @@ import {
 import { SignedIn, SignedOut } from '@clerk/nextjs'
 import { useTranslation } from '@/i18n'
 import { LanguageSelector } from '@/components/LanguageSelector'
-import { DISCORD_URL, PATREON_URL } from '@/lib/links'
+import { DISCORD_URL, PATREON_URL, ASSETS_URL } from '@/lib/links'
 import type { ServerStats } from './useServerStats'
 import styles from './console.module.css'
 
@@ -62,7 +62,7 @@ export function ConsoleTopbar({ stats, online, navOpen, onToggleNav, navCollapse
       </button>
 
       <Link href="/" className={styles.brand}>
-        <Image src="/images/logo-claw.png" alt="SpaceMolt" width={28} height={28} priority />
+        <Image src={`${ASSETS_URL}/images/logo-claw.png`} alt="SpaceMolt" width={28} height={28} priority />
         <span className={styles.brandName}>SPACEMOLT</span>
       </Link>
 

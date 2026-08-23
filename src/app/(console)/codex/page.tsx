@@ -12,7 +12,7 @@ import {
   referenceMeta,
 } from '@/data/catalogReference'
 import styles from './codex.module.css'
-import { SITE_URL } from '@/lib/links'
+import { SITE_URL, ASSETS_URL } from '@/lib/links'
 
 const CATALOG_URL = 'https://game.spacemolt.com/api/catalog.json'
 
@@ -37,7 +37,7 @@ export default function CodexIndex() {
     {
       href: '/codex/items',
       icon: Boxes,
-      image: '/images/guides/trader.jpg',
+      image: `${ASSETS_URL}/images/guides/trader.jpg`,
       title: 'Items',
       count: allNonModuleItems().length,
       desc: 'Ores, refined goods, components, consumables, ammo, drones, and contraband — with the recipes that make and consume them.',
@@ -45,7 +45,7 @@ export default function CodexIndex() {
     {
       href: '/codex/modules',
       icon: Cpu,
-      image: '/images/codex/modules.jpg',
+      image: `${ASSETS_URL}/images/codex/modules.jpg`,
       title: 'Modules',
       count: allModules().length,
       desc: 'Every weapon, defense, mining and utility module: CPU and power draw, full stats, and skill requirements.',
@@ -53,7 +53,7 @@ export default function CodexIndex() {
     {
       href: '/codex/recipes',
       icon: Hammer,
-      image: '/images/guides/crafting.jpg',
+      image: `${ASSETS_URL}/images/guides/crafting.jpg`,
       title: 'Recipes',
       count: catalogMeta.counts.recipes,
       desc: 'The full crafting tree — inputs, outputs, crafting time, and which recipes are facility-only.',
@@ -61,7 +61,7 @@ export default function CodexIndex() {
     {
       href: '/codex/skills',
       icon: GraduationCap,
-      image: '/images/codex/skills.jpg',
+      image: `${ASSETS_URL}/images/codex/skills.jpg`,
       title: 'Skills',
       count: referenceMeta.counts.skills,
       desc: 'XP curves, per-level bonuses, and how each skill is trained.',
@@ -69,7 +69,7 @@ export default function CodexIndex() {
     {
       href: '/codex/ships',
       icon: Rocket,
-      image: '/images/guides/drones.jpg',
+      image: `${ASSETS_URL}/images/guides/drones.jpg`,
       title: 'Ships',
       count: listableShips().length,
       desc: 'Hulls by class, empire, and tier — slots, capacities, and build materials.',
@@ -77,7 +77,7 @@ export default function CodexIndex() {
     {
       href: '/codex/facilities',
       icon: Factory,
-      image: '/images/home/feature-stations.jpg',
+      image: `${ASSETS_URL}/images/home/feature-stations.jpg`,
       title: 'Facilities',
       count: referenceMeta.counts.facilities,
       desc: 'Station modules and the recipes they unlock or accelerate.',
@@ -85,7 +85,7 @@ export default function CodexIndex() {
     {
       href: '/codex/achievements',
       icon: Trophy,
-      image: '/images/codex/achievements.jpg',
+      image: `${ASSETS_URL}/images/codex/achievements.jpg`,
       title: 'Achievements',
       count: allAchievements().length + allFactionAchievements().length,
       desc: 'Pilot and faction achievements — what earns them, what they pay, and the prestige hulls they unlock.',

@@ -1,11 +1,10 @@
 import { ImageResponse } from 'next/og'
-import { readFile } from 'node:fs/promises'
-import { join } from 'node:path'
 import { hasEmblem } from '@/lib/publicAchievements'
+import { ASSETS_URL } from '@/lib/links'
 
 // Shared OpenGraph card renderer for achievement detail pages (player and
-// faction). nodejs runtime is required by the route modules that use this so the
-// emblem PNG can be read off disk (Satori can't decode the site's WebP).
+// faction). Emblems are fetched as PNG from the asset CDN — Satori can't decode
+// the site's WebP.
 export const OG_SIZE = { width: 1200, height: 630 }
 
 // Load an emblem's OG PNG as a data URI for Satori; null if absent. Exported
@@ -13,8 +12,9 @@ export const OG_SIZE = { width: 1200, height: 630 }
 export async function loadEmblem(id: string): Promise<string | null> {
   if (!hasEmblem(id)) return null
   try {
-    const path = join(process.cwd(), 'public', 'images', 'achievements', `${id}.og.png`)
-    const buf = await readFile(path)
+    const res = await fetch(`${ASSETS_URL}/images/achievements/${id}.og.png`)
+    if (!res.ok) return null
+    const buf = Buffer.from(await res.arrayBuffer())
     return `data:image/png;base64,${buf.toString('base64')}`
   } catch {
     return null

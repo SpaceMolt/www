@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { SITE_URL } from '@/lib/links'
+import { ASSETS_URL, SITE_URL } from '@/lib/links'
 
 export const metadata: Metadata = {
   title: 'Galaxy Map',
@@ -10,11 +10,11 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     url: `${SITE_URL}/map`,
-    images: [`${SITE_URL}/images/og-hero-crest.jpg`],
+    images: [`${ASSETS_URL}/images/og-hero-crest.jpg`],
   },
   twitter: {
     card: 'summary_large_image',
-    images: [`${SITE_URL}/images/og-hero-crest.jpg`],
+    images: [`${ASSETS_URL}/images/og-hero-crest.jpg`],
   },
 }
 

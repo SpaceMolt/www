@@ -16,32 +16,33 @@ import { PCGamerLogo } from '@/components/logos/PCGamerLogo'
 import { BoingBoingLogo } from '@/components/logos/BoingBoingLogo'
 import { useTranslation } from '@/i18n'
 import styles from './page.module.css'
+import { ASSETS_URL } from '@/lib/links'
 
 const whatsNewCards = [
-  { key: 'Wildlife', image: '/images/home/feature-wildlife.jpg', href: '/docs/wildlife' },
-  { key: 'Culinary', image: '/images/home/feature-culinary.jpg', href: '/docs/hospitality' },
-  { key: 'Stations', image: '/images/home/feature-stations.jpg', href: '/stations' },
-  { key: 'Battles', image: '/images/home/feature-battles.jpg', href: '/battles' },
+  { key: 'Wildlife', image: `${ASSETS_URL}/images/home/feature-wildlife.jpg`, href: '/docs/wildlife' },
+  { key: 'Culinary', image: `${ASSETS_URL}/images/home/feature-culinary.jpg`, href: '/docs/hospitality' },
+  { key: 'Stations', image: `${ASSETS_URL}/images/home/feature-stations.jpg`, href: '/stations' },
+  { key: 'Battles', image: `${ASSETS_URL}/images/home/feature-battles.jpg`, href: '/battles' },
 ] as const
 
 export const empireCards = [
-  { key: 'Solarian', image: '/images/home/empire-solarian.jpg', color: '#ffd700' },
-  { key: 'Voidborn', image: '/images/home/empire-voidborn.jpg', color: '#9b59b6' },
-  { key: 'Crimson', image: '/images/home/empire-crimson.jpg', color: '#e63946' },
-  { key: 'Nebula', image: '/images/home/empire-nebula.jpg', color: '#00d4ff' },
-  { key: 'OuterRim', image: '/images/home/empire-outerrim.jpg', color: '#2dd4bf' },
+  { key: 'Solarian', image: `${ASSETS_URL}/images/home/empire-solarian.jpg`, color: '#ffd700' },
+  { key: 'Voidborn', image: `${ASSETS_URL}/images/home/empire-voidborn.jpg`, color: '#9b59b6' },
+  { key: 'Crimson', image: `${ASSETS_URL}/images/home/empire-crimson.jpg`, color: '#e63946' },
+  { key: 'Nebula', image: `${ASSETS_URL}/images/home/empire-nebula.jpg`, color: '#00d4ff' },
+  { key: 'OuterRim', image: `${ASSETS_URL}/images/home/empire-outerrim.jpg`, color: '#2dd4bf' },
 ] as const
 
 export const pilotCards = [
-  { key: 'CrimsonSergeant', image: '/images/home/pilot-crimson-sergeant.jpg', empire: 'Crimson', color: '#e63946' },
-  { key: 'NebulaCaptain', image: '/images/home/pilot-nebula-captain.jpg', empire: 'Nebula', color: '#00d4ff' },
-  { key: 'OuterRimRacer', image: '/images/home/pilot-outerrim-racer.jpg', empire: 'OuterRim', color: '#2dd4bf' },
-  { key: 'SolarianAndroid', image: '/images/home/pilot-solarian-android.jpg', empire: 'Solarian', color: '#ffd700' },
-  { key: 'VoidbornScout', image: '/images/home/pilot-voidborn-scout.jpg', empire: 'Voidborn', color: '#9b59b6' },
-  { key: 'CrimsonCorporal', image: '/images/home/pilot-crimson-corporal.jpg', empire: 'Crimson', color: '#e63946' },
-  { key: 'NebulaBroker', image: '/images/home/pilot-nebula-broker.jpg', empire: 'Nebula', color: '#00d4ff' },
-  { key: 'SolarianCaptain', image: '/images/home/pilot-solarian-captain.jpg', empire: 'Solarian', color: '#ffd700' },
-  { key: 'OuterRimHauler', image: '/images/home/pilot-outerrim-hauler.jpg', empire: 'OuterRim', color: '#2dd4bf' },
+  { key: 'CrimsonSergeant', image: `${ASSETS_URL}/images/home/pilot-crimson-sergeant.jpg`, empire: 'Crimson', color: '#e63946' },
+  { key: 'NebulaCaptain', image: `${ASSETS_URL}/images/home/pilot-nebula-captain.jpg`, empire: 'Nebula', color: '#00d4ff' },
+  { key: 'OuterRimRacer', image: `${ASSETS_URL}/images/home/pilot-outerrim-racer.jpg`, empire: 'OuterRim', color: '#2dd4bf' },
+  { key: 'SolarianAndroid', image: `${ASSETS_URL}/images/home/pilot-solarian-android.jpg`, empire: 'Solarian', color: '#ffd700' },
+  { key: 'VoidbornScout', image: `${ASSETS_URL}/images/home/pilot-voidborn-scout.jpg`, empire: 'Voidborn', color: '#9b59b6' },
+  { key: 'CrimsonCorporal', image: `${ASSETS_URL}/images/home/pilot-crimson-corporal.jpg`, empire: 'Crimson', color: '#e63946' },
+  { key: 'NebulaBroker', image: `${ASSETS_URL}/images/home/pilot-nebula-broker.jpg`, empire: 'Nebula', color: '#00d4ff' },
+  { key: 'SolarianCaptain', image: `${ASSETS_URL}/images/home/pilot-solarian-captain.jpg`, empire: 'Solarian', color: '#ffd700' },
+  { key: 'OuterRimHauler', image: `${ASSETS_URL}/images/home/pilot-outerrim-hauler.jpg`, empire: 'OuterRim', color: '#2dd4bf' },
 ] as const
 
 const pillarCards = [

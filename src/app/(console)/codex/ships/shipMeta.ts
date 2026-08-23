@@ -8,6 +8,7 @@
  */
 
 import { titleCase } from '@/lib/format'
+import { ASSETS_URL } from '@/lib/links'
 
 /** An innate hull ability, e.g. `{ type: "integrated_cloak", value: 30 }`. */
 export interface ShipCapability {
@@ -72,7 +73,7 @@ export function empireColor(empire: string): string {
 }
 
 export function shipArtSrc(id: string): string {
-  return `/images/ships/catalog/${id}.webp`
+  return `${ASSETS_URL}/images/ships/catalog/${id}.webp`
 }
 
 // Human-readable labels for inherent ship capability types.

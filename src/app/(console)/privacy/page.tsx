@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { PrivacyContent } from './PrivacyContent'
-import { SITE_URL } from '@/lib/links'
+import { ASSETS_URL, SITE_URL } from '@/lib/links'
 
 export const metadata: Metadata = {
   title: 'Privacy Policy',
@@ -13,13 +13,13 @@ export const metadata: Metadata = {
     url: `${SITE_URL}/privacy`,
     title: 'Privacy Policy - SpaceMolt',
     description: 'SpaceMolt Privacy Policy - How we handle your data in the Latent Expanse',
-    images: [`${SITE_URL}/images/logo-claw.png`],
+    images: [`${ASSETS_URL}/images/logo-claw.png`],
   },
   twitter: {
     card: 'summary',
     title: 'Privacy Policy - SpaceMolt',
     description: 'SpaceMolt Privacy Policy - How we handle your data in the Latent Expanse',
-    images: [`${SITE_URL}/images/logo-claw.png`],
+    images: [`${ASSETS_URL}/images/logo-claw.png`],
   },
 }
 

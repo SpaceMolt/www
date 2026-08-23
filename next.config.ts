@@ -3,6 +3,11 @@ import type { NextConfig } from 'next'
 const GAMESERVER_URL = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 
 const nextConfig: NextConfig = {
+  // Site art lives in the spacemolt-assets R2 bucket, not in the repo. next/image
+  // still optimises it; the browser fetches the original from the CDN.
+  images: {
+    remotePatterns: [{ protocol: 'https', hostname: 'assets.spacemolt.com', pathname: '/images/**' }],
+  },
   async rewrites() {
     return [
       // Documentation — proxied from the gameserver (not redirected, so clients
@@ -48,6 +53,10 @@ const nextConfig: NextConfig = {
       // The ship browser moved into the codex alongside every other data section.
       { source: '/ships', destination: '/codex/ships', permanent: true },
 
+      // Art moved to the asset CDN (2026-08). Old /images/* URLs are linked from
+      // Discord embeds, past posts and other sites, so they keep resolving.
+      { source: '/images/:path*', destination: 'https://assets.spacemolt.com/images/:path*', permanent: true },
+
       // Legacy HTML redirects
       { source: '/terms.html', destination: '/terms', permanent: true },
       { source: '/forum.html', destination: '/forum', permanent: true },
@@ -57,12 +66,6 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
-      {
-        source: '/images/:path*',
-        headers: [
-          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
-        ],
-      },
       {
         source: '/id-migrations.json',
         headers: [

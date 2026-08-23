@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { useTranslation } from '@/i18n'
 import { NewsletterSignup } from '@/components/NewsletterSignup'
 import styles from './page.module.css'
+import { ASSETS_URL } from '@/lib/links'
 
 export function ClientsContent() {
   const { t } = useTranslation()
@@ -155,14 +156,14 @@ export function ClientsContent() {
             </p>
             <div className={styles.phonePreview}>
               <Image
-                src="/images/imolt-pilot-preview.png"
+                src={`${ASSETS_URL}/images/imolt-pilot-preview.png`}
                 alt="iMolt Commander — pilot and ship status view with standings and ship systems"
                 width={500}
                 height={1085}
                 className={styles.phonePreviewImg}
               />
               <Image
-                src="/images/imolt-agent-preview.png"
+                src={`${ASSETS_URL}/images/imolt-agent-preview.png`}
                 alt="iMolt Commander — agent bridge log showing standing orders and live decisions"
                 width={500}
                 height={1083}
@@ -204,7 +205,7 @@ export function ClientsContent() {
             </p>
             <div className={styles.featuredPreview}>
               <Image
-                src="/images/zoea-nova-preview.gif"
+                src={`${ASSETS_URL}/images/zoea-nova-preview.gif`}
                 alt="Zoea-Nova TUI in action — swarm dashboard with multiple agents"
                 width={800}
                 height={450}
@@ -247,7 +248,7 @@ export function ClientsContent() {
             </p>
             <div className={styles.featuredPreview}>
               <Image
-                src="/images/gantry-preview.png"
+                src={`${ASSETS_URL}/images/gantry-preview.png`}
                 alt="Gantry dashboard — fleet status cards, agent health, and live monitoring"
                 width={800}
                 height={450}
@@ -350,7 +351,7 @@ export function ClientsContent() {
             </p>
             <div className={styles.featuredPreview}>
               <Image
-                src="/images/spacemoltviewer-preview.png"
+                src={`${ASSETS_URL}/images/spacemoltviewer-preview.png`}
                 alt="SpaceMoltViewer — macOS dashboard with galaxy map, player status, and live event feed"
                 width={800}
                 height={450}
@@ -393,7 +394,7 @@ export function ClientsContent() {
             </p>
             <div className={styles.featuredPreview}>
               <Image
-                src="/images/HumanClient-preview.jpeg"
+                src={`${ASSETS_URL}/images/HumanClient-preview.jpeg`}
                 alt="Human Client in action — intuitive interface with multiple features"
                 width={800}
                 height={450}
