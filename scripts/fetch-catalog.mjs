@@ -14,17 +14,23 @@
  *
  * WHY TWO FILES — this split is load-bearing, do not merge them back:
  *
- *   src/data/catalog.json           { items, recipes, ships, _meta }   ~1.2 MB
+ *   src/data/catalog.json           { items, recipes, ships }          ~1.2 MB
  *     Consumed by src/data/catalog.ts, which six 'use client' components in
  *     /play import. A static JSON import is inlined wholesale into the client
  *     bundle, so EVERY BYTE IN THIS FILE IS DOWNLOADED BY EVERY PLAYER loading
- *     the web client. Keep it to data /play actually uses.
+ *     the web client. Keep it to data /play actually uses. It also carries no
+ *     build timestamp, so its bytes only move when the game data moves.
  *
  *   src/data/catalog-reference.json { skills, facilities, achievements,
- *                                     faction_achievements, _meta }     ~2.2 MB
+ *                                     faction_achievements }            ~2.2 MB
  *     Consumed only by src/data/catalogReference.ts, which is marked
  *     `import 'server-only'`. Used by the /codex/* pages, which are
  *     server-rendered at build time — so this never reaches the browser.
+ *
+ *   src/data/*-meta.json            { fetchedAt, version, counts, … }   ~300 B
+ *     Provenance for each file above, written fresh on every build. Read only
+ *     by src/data/catalogMeta.ts, which is `server-only` — keeping the build
+ *     timestamp out of anything the client bundle inlines.
  *
  * THREE LEVELS OF FALLBACK — both JSON files are gitignored, so a CI build
  * starts with nothing on disk and one failed request is a failed build:
@@ -73,6 +79,9 @@ const HIDDEN_COUNT_KEYS = ['hidden_achievement_count', 'hidden_faction_achieveme
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
 const dataPath = (filename) => resolve(import.meta.dirname, '..', 'src', 'data', filename)
+
+/** `catalog.json` -> `catalog-meta.json`. Provenance lives beside the data, not in it. */
+const metaName = (filename) => filename.replace(/\.json$/, '-meta.json')
 
 // ── Source 1: the one-shot dump ─────────────────────────────────────────
 
@@ -233,12 +242,18 @@ function writeOutput(filename, sections, dump, { fetchedAt, version, source, all
     }
   }
 
-  const json = JSON.stringify({
-    ...data,
-    _meta: { fetchedAt, server: GAME_SERVER, version, counts, source, partial, ...meta },
-  })
+  const json = JSON.stringify(data)
 
+  // Provenance goes in its own small file. It carries a fresh timestamp on every
+  // build, and anything it is inlined into re-hashes on every build with it. The
+  // data file must not pay that cost: it is a static import, so a changed byte
+  // re-hashes the client bundle and every player re-downloads 1.2 MB for nothing.
+  // Only server-side code reads the meta file — see src/data/catalogMeta.ts.
   writeFileSync(dataPath(filename), json)
+  writeFileSync(
+    dataPath(metaName(filename)),
+    JSON.stringify({ fetchedAt, server: GAME_SERVER, version, counts, source, partial, ...meta }),
+  )
 
   const size = (json.length / 1024).toFixed(0)
   const summary = sections.map((s) => `${counts[s]} ${s}`).join(', ')
@@ -282,8 +297,11 @@ async function main() {
   for (const [filename, sections] of Object.entries(OUTPUTS)) {
     // A degraded source has nothing to say about skills/facilities/achievements.
     // If the last build left a complete file there, keep it — stale beats empty.
+    // Keeping the data means keeping its provenance, so both must already exist —
+    // a tree with data but no meta file predates the split, and skipping there
+    // would leave the meta import unresolvable.
     const degrades = sections.some((s) => allowEmpty.includes(s))
-    if (degrades && hasGoodData(filename, sections)) {
+    if (degrades && hasGoodData(filename, sections) && existsSync(dataPath(metaName(filename)))) {
       console.log(`  Keeping existing src/data/${filename} — the paged API cannot refresh it`)
       continue
     }
@@ -295,7 +313,9 @@ async function main() {
 main().catch((err) => {
   console.error('Failed to fetch catalog:', err.message)
 
-  const missing = Object.keys(OUTPUTS).filter((f) => !existsSync(dataPath(f)))
+  const missing = Object.keys(OUTPUTS)
+    .flatMap((f) => [f, metaName(f)])
+    .filter((f) => !existsSync(dataPath(f)))
 
   if (missing.length === 0) {
     console.log(`  Using stale ${Object.keys(OUTPUTS).join(' + ')} from previous build`)

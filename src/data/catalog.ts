@@ -252,7 +252,6 @@ interface CatalogData {
   items: Record<string, RawCatalogItem>
   recipes: Record<string, RawRecipe>
   ships: Record<string, RawShip>
-  _meta: CatalogMeta<{ items: number; recipes: number; ships: number }>
 }
 
 const catalog = rawCatalog as unknown as CatalogData
@@ -261,9 +260,6 @@ const catalog = rawCatalog as unknown as CatalogData
 
 /** All recipes keyed by ID */
 export const recipesById: Readonly<Record<string, RawRecipe>> = catalog.recipes
-
-/** Provenance: when this catalog was fetched, from which server, at which game version */
-export const catalogMeta: Readonly<CatalogData['_meta']> = catalog._meta
 
 /** Get a single item by ID */
 export function getItem(id: string): RawCatalogItem | undefined {

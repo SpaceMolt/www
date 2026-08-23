@@ -4,13 +4,9 @@ import type { MetadataRoute } from 'next'
 import { getAllGuides } from '@/lib/guides'
 import { getAllReferencePages } from '@/lib/reference'
 import { getAllPosts } from '@/lib/blog'
-import { allModules, allNonModuleItems, allRecipes, catalogMeta } from '@/data/catalog'
-import {
-  allAchievements,
-  allFactionAchievements,
-  allSkills,
-  referenceMeta,
-} from '@/data/catalogReference'
+import { allModules, allNonModuleItems, allRecipes } from '@/data/catalog'
+import { allAchievements, allFactionAchievements, allSkills } from '@/data/catalogReference'
+import { catalogMeta, referenceMeta } from '@/data/catalogMeta'
 import { allChains } from '@/app/(console)/codex/facilities/chains'
 import { listableShips } from '@/app/(console)/codex/ships/catalogShips'
 import { SITE_URL } from '@/lib/links'
