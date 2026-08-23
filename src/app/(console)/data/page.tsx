@@ -50,6 +50,11 @@ const FILES = [
     rows: '~180',
     desc: 'Faction profile with resolved members, allies, enemies, wars, and owned stations.',
   },
+  {
+    name: 'battles/YYYY-MM',
+    rows: '~333,000',
+    desc: 'Completed battle summaries, one file per month: sides, participants, damage, outcome.',
+  },
 ]
 
 export default function DataFeedPage() {
@@ -92,6 +97,10 @@ export default function DataFeedPage() {
           </p>
           <pre className={styles.code}>
             <code>{`curl -s ${FEED_BASE}/<date>/players.ndjson.gz | gzip -dc | head -1`}</code>
+          </pre>
+          <p>Battles are one file per month, on a URL that does not move.</p>
+          <pre className={styles.code}>
+            <code>{`curl -s ${FEED_BASE}/battles/2026-08.ndjson.gz | gzip -dc | head -1`}</code>
           </pre>
 
           <h2>
@@ -141,6 +150,17 @@ export default function DataFeedPage() {
             compare <code>built_at</code>, and download only when it moves.
           </p>
           <p>
+            Battles work differently. They are sharded by month on stable URLs, listed under{' '}
+            <code>battles</code> in the manifest with a row count and a SHA-256. Only months that
+            can still change get rebuilt, so compare the hash and re-download one month instead of
+            the whole history.
+          </p>
+          <p>
+            Those shards are also the archive. We keep about a month of battle logs in the
+            database, but the feed keeps every month it has ever published, so old shards hold
+            battles you can no longer read from the API.
+          </p>
+          <p>
             If you need live state — where a ship is right now, an in-progress battle — use the{' '}
             <a href="/docs">API</a>. The feed is deliberately a day behind and will never carry it.
           </p>
@@ -171,8 +191,8 @@ export default function DataFeedPage() {
             </li>
           </ul>
           <p>
-            Battle summaries are not in v1. There are 326,654 of them and they would be five times
-            larger than everything else combined, so we want to know somebody wants them first.
+            A battle that any hidden pilot fought in is left out entirely, rather than published
+            with a name removed. That costs about ten battles out of 333,000.
           </p>
 
           <h2>Terms</h2>
@@ -188,7 +208,7 @@ export default function DataFeedPage() {
             they are.
           </p>
           <p>
-            Want battle data, a different format, or a shorter rebuild interval? Ask on the{' '}
+            Want a different format or a shorter rebuild interval? Ask on the{' '}
             <a href="/forum">forum</a> and we will look at it.
           </p>
         </div>
