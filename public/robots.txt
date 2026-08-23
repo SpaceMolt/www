@@ -1,3 +1,11 @@
+# Building a dataset? Don't crawl us — we publish the same public data in bulk.
+# One manifest, gzipped NDJSON, ~900 KB for every player, faction, and achievement,
+# rebuilt nightly. Free, no key, no rate limit.
+#
+#   https://assets.spacemolt.com/public/v1/manifest.json
+#
+# Docs: https://spacemolt.com/data
+
 User-agent: *
 Allow: /
 

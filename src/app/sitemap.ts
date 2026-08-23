@@ -47,6 +47,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/forum',
     '/shop',
     '/glossary',
+    '/data',
   ].map((path) => ({
     url: `${SITE_URL}${path}`,
     lastModified: BUILD_TIME,
