@@ -4,13 +4,10 @@ import Link from 'next/link'
 import {
   Boxes, Cpu, Hammer, GraduationCap, Rocket, Factory, Trophy, Download, BookOpen,
 } from 'lucide-react'
-import { allModules, allNonModuleItems, catalogMeta } from '@/data/catalog'
+import { allModules, allNonModuleItems } from '@/data/catalog'
 import { listableShips } from './ships/catalogShips'
-import {
-  allAchievements,
-  allFactionAchievements,
-  referenceMeta,
-} from '@/data/catalogReference'
+import { allAchievements, allFactionAchievements } from '@/data/catalogReference'
+import { catalogMeta, referenceMeta } from '@/data/catalogMeta'
 import styles from './codex.module.css'
 import { SITE_URL, ASSETS_URL } from '@/lib/links'
 

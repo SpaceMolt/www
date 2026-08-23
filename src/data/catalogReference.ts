@@ -22,7 +22,8 @@
 import 'server-only'
 
 import rawReference from './catalog-reference.json'
-import { groupBy, type CatalogMeta, type ItemStack } from './catalog'
+import { groupBy, type ItemStack } from './catalog'
+import { referenceMeta } from './catalogMeta'
 
 // ── Raw types matching the JSON shape from the game server ──────────────
 
@@ -143,17 +144,6 @@ interface ReferenceData {
   facilities: Record<string, RawFacility>
   achievements: Record<string, RawAchievement>
   faction_achievements: Record<string, RawAchievement>
-  _meta: CatalogMeta<{
-    skills: number
-    facilities: number
-    achievements: number
-    faction_achievements: number
-  }> & {
-    /** How many player achievements are secret (withheld from the dump) */
-    hidden_achievement_count?: number
-    /** How many faction achievements are secret (withheld from the dump) */
-    hidden_faction_achievement_count?: number
-  }
 }
 
 const reference = rawReference as unknown as ReferenceData
@@ -179,14 +169,11 @@ export const factionAchievementsById: Readonly<Record<string, RawAchievement>> =
   reference.faction_achievements ?? {}
 
 /** How many player achievements are secret — published but not enumerated */
-export const hiddenAchievementCount: number = reference._meta?.hidden_achievement_count ?? 0
+export const hiddenAchievementCount: number = referenceMeta.hidden_achievement_count ?? 0
 
 /** How many faction achievements are secret */
 export const hiddenFactionAchievementCount: number =
-  reference._meta?.hidden_faction_achievement_count ?? 0
-
-/** Provenance: when this data was fetched, from which server, at which game version */
-export const referenceMeta: Readonly<ReferenceData['_meta']> = reference._meta
+  referenceMeta.hidden_faction_achievement_count ?? 0
 
 /** Get a single skill by ID */
 export function getSkill(id: string): RawSkill | undefined {
