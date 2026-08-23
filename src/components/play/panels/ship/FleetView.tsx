@@ -20,6 +20,7 @@ import { useCommandMutation, useCommandQuery, useLocationState } from '@/lib/spa
 import { usePlay } from '../../PlayProvider'
 import { Loading, Panel, ConfirmAction, shared } from '../../shared'
 import styles from './FleetView.module.css'
+import { ASSETS_URL } from '@/lib/links'
 
 type FleetShipEntry = ListShipsResponse['ships'][number]
 
@@ -185,7 +186,7 @@ function FleetCard({
       <div className={styles.fleetCardTop}>
         <div className={styles.fleetCardInfo}>
           <img
-            src={`/images/ships/catalog/${(ship.class_name || ship.class_id).toLowerCase().replace(/\s+/g, '_')}.webp`}
+            src={`${ASSETS_URL}/images/ships/catalog/${(ship.class_name || ship.class_id).toLowerCase().replace(/\s+/g, '_')}.webp`}
             alt={ship.class_name || ship.class_id}
             className={styles.shipImage}
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}

@@ -1,13 +1,14 @@
 import fs from 'fs'
 import path from 'path'
 import guidesMeta from '@/data/guides-meta.json'
+import { hasImage, imageUrl } from '@/data/images'
 
 export interface Guide {
   slug: string
   title: string
   excerpt: string
   content: string
-  /** Hero image path under public/, present when images/guides/<slug>.jpg exists. */
+  /** Hero image URL on the CDN, present when images/guides/<slug>.jpg exists. */
   image?: string
 }
 
@@ -44,13 +45,9 @@ function parseGuide(slug: string, raw: string): Guide {
   return { slug, title, excerpt, content: raw }
 }
 
-const GUIDE_IMAGES_DIR = path.join(process.cwd(), 'public', 'images', 'guides')
-
-/** Hero image convention: public/images/guides/<slug>.jpg (optional per guide). */
+/** Hero image convention: images/guides/<slug>.jpg on the CDN (optional per guide). */
 function guideImage(slug: string): string | undefined {
-  return fs.existsSync(path.join(GUIDE_IMAGES_DIR, `${slug}.jpg`))
-    ? `/images/guides/${slug}.jpg`
-    : undefined
+  return hasImage(`guides/${slug}.jpg`) ? imageUrl(`guides/${slug}.jpg`) : undefined
 }
 
 function readGuide(slug: string): Guide | undefined {

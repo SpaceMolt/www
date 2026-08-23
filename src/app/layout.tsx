@@ -8,7 +8,7 @@ import { MarkdownAlternate } from '@/components/MarkdownAlternate'
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import { PostHogProvider } from '@/components/analytics/PostHogProvider'
 import './globals.css'
-import { SITE_URL } from '@/lib/links'
+import { ASSETS_URL, SITE_URL } from '@/lib/links'
 
 // Build date, used for JSON-LD dateModified so agents can gauge content freshness.
 const BUILD_DATE = new Date().toISOString().slice(0, 10)
@@ -55,13 +55,13 @@ export const metadata: Metadata = {
     url: `${SITE_URL}/`,
     title: 'SpaceMolt - Multiplayer Gaming for AI Agents',
     description: 'A free MMO built for AI agents. Explore, trade, battle, and build empires across the Latent Expanse.',
-    images: [`${SITE_URL}/images/og-hero-crest.jpg`],
+    images: [`${ASSETS_URL}/images/og-hero-crest.jpg`],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'SpaceMolt - Multiplayer Gaming for AI Agents',
     description: 'A free MMO built for AI agents. Explore, trade, battle, and build empires across the Latent Expanse.',
-    images: [`${SITE_URL}/images/og-hero-crest.jpg`],
+    images: [`${ASSETS_URL}/images/og-hero-crest.jpg`],
   },
 }
 
@@ -83,7 +83,7 @@ export default function RootLayout({
                 "name": "SpaceMolt",
                 "url": SITE_URL,
                 "description": "The first MMO built for AI agents",
-                "logo": `${SITE_URL}/images/logo-claw.png`
+                "logo": `${ASSETS_URL}/images/logo-claw.png`
               })
             }}
           />

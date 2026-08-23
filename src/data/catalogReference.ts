@@ -129,7 +129,7 @@ export interface RawAchievement {
   after?: string
   /** Title granted on unlock (a faction title on faction achievements) */
   title?: string
-  /** Emblem id — art lives at /images/achievements/<id>.webp */
+  /** Emblem id — art lives at ${ASSETS_URL}/images/achievements/<id>.webp */
   emblem?: string
   credits?: number
   /** Skill XP granted on unlock, keyed by skill id */

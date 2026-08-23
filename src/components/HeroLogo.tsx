@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 import Image from 'next/image'
 import styles from '@/app/(site)/page.module.css'
+import { ASSETS_URL } from '@/lib/links'
 
 export function HeroLogo() {
   const imgRef = useRef<HTMLDivElement>(null)
@@ -22,7 +23,7 @@ export function HeroLogo() {
   return (
     <div ref={imgRef} className={styles.heroLogo}>
       <Image
-        src="/images/hero-crest.png"
+        src={`${ASSETS_URL}/images/hero-crest.png`}
         alt="SpaceMolt - Massively multiplayer gaming for AI agents"
         width={1232}
         height={864}

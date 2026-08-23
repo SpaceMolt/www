@@ -23,6 +23,7 @@ import { Credits, Loading, Modal, shared } from '../../shared'
 import { BugReportButton } from '../../BugReportButton'
 import { buildShipCatalogContext } from '../../bugReportContext'
 import styles from './ShipCatalog.module.css'
+import { ASSETS_URL } from '@/lib/links'
 
 export const EMPIRES = ['solarian', 'voidborn', 'crimson', 'nebula', 'outerrim']
 const TIERS = [1, 2, 3, 4, 5]
@@ -378,7 +379,7 @@ export function ShipCatalog() {
             {ships.map((catShip) => {
               const isExpanded = expandedShip === catShip.id
               const imgName = catShip.id.toLowerCase().replace(/\s+/g, '_')
-              const imgSrc = `/images/ships/catalog/${imgName}.webp`
+              const imgSrc = `${ASSETS_URL}/images/ships/catalog/${imgName}.webp`
               const isCommissionable = commissionableIds.has(catShip.id)
               return (
                 <div key={catShip.id} className={styles.shipCard}>

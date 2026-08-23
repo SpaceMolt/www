@@ -2,6 +2,7 @@
 // data source). See gameserver internal/server/achievements_api.go.
 
 import emblemManifest from '@/data/achievement-emblems.json'
+import { ASSETS_URL } from '@/lib/links'
 
 export interface PublicAchievementEntry {
   id: string
@@ -118,7 +119,7 @@ export function hasEmblem(id: string): boolean {
 }
 
 export function emblemSrc(id: string): string {
-  return `/images/achievements/${id}.webp`
+  return `${ASSETS_URL}/images/achievements/${id}.webp`
 }
 
 // Prestige tier from points — drives the medallion's frame metal (and any

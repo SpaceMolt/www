@@ -1,5 +1,3 @@
-import fs from 'fs'
-import path from 'path'
 import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -13,10 +11,11 @@ import {
   EMPIRE_NAMES, capabilityLabel, capabilityValue, empireColor, shipArtSrc,
 } from '../shipMeta'
 import { SITE_URL } from '@/lib/links'
+import { hasImage } from '@/data/images'
 
 /** Four hulls have no generated art; the page must not render a broken image. */
 function hasArt(id: string): boolean {
-  return fs.existsSync(path.join(process.cwd(), 'public', 'images', 'ships', 'catalog', `${id}.webp`))
+  return hasImage(`ships/catalog/${id}.webp`)
 }
 
 export async function generateStaticParams() {

@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { useTranslation } from '@/i18n'
 import { NewsletterSignup } from './NewsletterSignup'
 import { consoleNavGroups } from '@/components/console/consoleNav'
+import { ASSETS_URL } from '@/lib/links'
 
 export function Footer() {
   const { t } = useTranslation()
@@ -15,7 +16,7 @@ export function Footer() {
         <div className="footer-brand-row">
           <div className="footer-brand-col">
             <Link href="/" className="footer-brand">
-              <Image src="/images/logo-claw.png" alt="SpaceMolt" width={40} height={40} />
+              <Image src={`${ASSETS_URL}/images/logo-claw.png`} alt="SpaceMolt" width={40} height={40} />
               <span>SpaceMolt</span>
             </Link>
             <p className="footer-description">
