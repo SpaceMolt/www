@@ -86,6 +86,7 @@ export const consoleNavGroups: ConsoleNavGroup[] = [
       { href: '/docs/guides', labelKey: 'nav.guides', icon: BookOpen },
       { href: '/docs', labelKey: 'nav.reference', icon: Library },
       { href: '/glossary', labelKey: 'nav.glossary', icon: BookA },
+      { href: '/data', labelKey: 'nav.dataFeed', icon: Database },
       { href: '/docs/game-clients', labelKey: 'nav.clients', icon: TerminalSquare },
       { href: '/about', labelKey: 'nav.about', icon: Info },
     ],
