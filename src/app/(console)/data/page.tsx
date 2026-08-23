@@ -93,10 +93,10 @@ export default function DataFeedPage() {
           </pre>
           <p>
             Files are gzipped newline-delimited JSON. One object per line, so you can stream them
-            without loading the whole file into memory.
+            without loading the whole file into memory. Each build gets its own directory.
           </p>
           <pre className={styles.code}>
-            <code>{`curl -s ${FEED_BASE}/<date>/players.ndjson.gz | gzip -dc | head -1`}</code>
+            <code>{`curl -s $(curl -s ${MANIFEST_URL} | jq -r '.files[] | select(.name == "players") | .url') | gzip -dc | head -1`}</code>
           </pre>
           <p>Battles are one file per month, on a URL that does not move.</p>
           <pre className={styles.code}>
