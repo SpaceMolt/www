@@ -68,6 +68,11 @@ export function matchesTierFilter(ship: { tier: number }, tier: string): boolean
   return !tier || parseInt(tier, 10) === ship.tier
 }
 
+/** The server clamps `page_size` to 50, so a larger request buys nothing. */
+export const COMMISSIONABLE_PAGE_SIZE = 50
+/** Hard ceiling on catalog requests, so a bad `total_pages` cannot loop. */
+export const MAX_COMMISSIONABLE_PAGES = 20
+
 function errorText(err: unknown): string {
   return err instanceof Error ? err.message : String(err)
 }
@@ -80,6 +85,55 @@ function idsFromCatalogPayload(payload: Record<string, unknown> | undefined): Se
     if (item && typeof item === 'object' && typeof (item as Record<string, unknown>).id === 'string') {
       ids.add((item as Record<string, unknown>).id as string)
     }
+  }
+  return ids
+}
+
+/** Page count from a catalog response: `total_pages` if the server sent a
+ * usable one, else derived from `total`/`page_size`, else a single page. */
+function pageCountOf(payload: Record<string, unknown> | undefined): number {
+  const declared = payload?.total_pages
+  if (typeof declared === 'number' && Number.isFinite(declared) && declared >= 1) {
+    return Math.floor(declared)
+  }
+  const total = payload?.total
+  const pageSize = payload?.page_size
+  if (typeof total === 'number' && typeof pageSize === 'number' && total > 0 && pageSize > 0) {
+    return Math.ceil(total / pageSize)
+  }
+  return 1
+}
+
+/** The `spacemolt_catalog` request for one page of commissionable ships. */
+export function commissionableCatalogRequest(page: number): Record<string, unknown> {
+  return { type: 'ships', commissionable: true, page_size: COMMISSIONABLE_PAGE_SIZE, page }
+}
+
+/**
+ * Collect every commissionable ship id at this station.
+ *
+ * dc#108959: the server clamps `page_size` to 50 and returns commissionable
+ * hulls cheapest-first, so reading only page 1 hides the most expensive hulls
+ * behind a missing Commission button. Walk the pages the server declares,
+ * bounded by `MAX_COMMISSIONABLE_PAGES` and by the first empty page. A failed
+ * later page keeps the ids already collected — a partial list still shows more
+ * Commission buttons than none.
+ */
+export async function fetchCommissionableShipIds(
+  queryPage: (page: number) => Promise<Record<string, unknown> | undefined>,
+): Promise<Set<string>> {
+  const first = await queryPage(1)
+  const ids = idsFromCatalogPayload(first)
+  const lastPage = Math.min(pageCountOf(first), MAX_COMMISSIONABLE_PAGES)
+  for (let page = 2; page <= lastPage; page++) {
+    let pageIds: Set<string>
+    try {
+      pageIds = idsFromCatalogPayload(await queryPage(page))
+    } catch {
+      break
+    }
+    if (pageIds.size === 0) break
+    for (const id of pageIds) ids.add(id)
   }
   return ids
 }
@@ -132,12 +186,18 @@ export function ShipCatalog() {
   const [page, setPage] = useState(1)
 
   // Commissionable ship IDs at this station (server-checked, station-specific)
-  const { data: commissionablePayload } = useCommandQuery(
-    async (account) => (await account.query('spacemolt_catalog', '', { type: 'ships', commissionable: true, page_size: 500 })).structuredContent,
+  const { data: commissionableFromServer } = useCommandQuery(
+    async (account) =>
+      fetchCommissionableShipIds(
+        async (page) => (await account.query('spacemolt_catalog', '', commissionableCatalogRequest(page))).structuredContent
+      ),
     [],
     { enabled: isDocked }
   )
-  const commissionableIds = useMemo(() => (isDocked ? idsFromCatalogPayload(commissionablePayload) : new Set<string>()), [isDocked, commissionablePayload])
+  const commissionableIds = useMemo(
+    () => (isDocked && commissionableFromServer ? commissionableFromServer : new Set<string>()),
+    [isDocked, commissionableFromServer]
+  )
 
   // Ship market listings (cheapest per class)
   const { data: browseData, refetch: refetchBrowse } = useCommandQuery(
