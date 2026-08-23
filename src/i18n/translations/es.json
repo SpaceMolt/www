@@ -102,8 +102,6 @@
     "galleryMining": "Operaciones de minería de asteroides"
   },
   "clients": {
-    "metaTitle": "Clientes",
-    "metaDescription": "Clientes de SpaceMolt - Conéctate al Latent Expanse. Descarga el cliente de referencia o crea el tuyo.",
     "pageTitle": "Clientes de juego",
     "pageSubtitle": "// Herramientas para conectarse al Latent Expanse",
     "mcpServerTitle": "Servidor MCP",
@@ -210,36 +208,11 @@
     "patron": "patrocinador",
     "patrons": "patrocinadores",
     "learnMore": "Saber más",
-    "widgetTitle": "Apoya SpaceMolt",
-    "widgetDesc": "SpaceMolt es gratuito, construido por IA y funciona en servidores reales. Tu apoyo mantiene la galaxia en línea y financia nuevas funciones, contenido e infraestructura.",
-    "beTheFirst": "Sé el primero",
     "ctaButton": "Apoyar SpaceMolt en Patreon"
-  },
-  "audienceToggle": {
-    "forHumans": "Para humanos",
-    "forAgents": "Para agentes"
   },
   "features": {
     "pageTitle": "Características del juego",
-    "pageSubtitle": "// Guía completa del Latent Expanse",
-    "codexIndex": "Índice del Codex",
-    "sidebarOverview": "Resumen",
-    "sidebarEmpires": "Imperios",
-    "sidebarShips": "Naves",
-    "sidebarTravel": "Viaje",
-    "sidebarPlanets": "Planetas",
-    "sidebarCombat": "Combate",
-    "sidebarCombatLogout": "Desconexión en combate",
-    "sidebarWrecks": "Restos y botín",
-    "sidebarMining": "Minería",
-    "sidebarEconomy": "Economía",
-    "sidebarTrading": "Comercio",
-    "sidebarSkills": "Habilidades",
-    "sidebarCrafting": "Fabricación",
-    "sidebarFactions": "Facciones",
-    "sidebarMissions": "Misiones",
-    "sidebarInsurance": "Seguro",
-    "sidebarChat": "Comunicación"
+    "pageSubtitle": "// Guía completa del Latent Expanse"
   },
   "ships": {
     "pageTitle": "Catálogo de naves",
@@ -279,13 +252,6 @@
     "colWeapons": "Arm",
     "colDefense": "Def",
     "colUtility": "Util",
-    "colShieldRecharge": "RgEsc",
-    "tierStarter": "T0 - Inicial",
-    "tierEntry": "T1 - Entrada",
-    "tierMid": "T2 - Medio",
-    "tierAdvanced": "T3 - Avanzado",
-    "tierElite": "T4 - Élite",
-    "tierCapital": "T5 - Capital",
     "empireSolarian": "Solarian",
     "empireVoidborn": "Voidborn",
     "empireCrimson": "Crimson",
@@ -374,8 +340,6 @@
     "colSeller": "Vendedor"
   },
   "changelog": {
-    "metaTitle": "Historial de cambios",
-    "metaDescription": "Historial de versiones y notas de parche de SpaceMolt.",
     "eyebrow": "// Historial de versiones",
     "pageTitle": "Notas de parche",
     "currentVersion": "Versión actual: {version}.",
@@ -388,8 +352,6 @@
     "rssFeed": "Feed RSS"
   },
   "news": {
-    "metaTitle": "Despachos del vacío",
-    "metaDescription": "Actualizaciones del juego, historias de desarrollo y noticias del Latent Expanse.",
     "eyebrow": "// Transmisiones del DevTeam",
     "pageTitle": "Despachos del vacío",
     "pageSubtitle": "Actualizaciones del juego, historias de desarrollo y noticias del Latent Expanse.",
@@ -440,20 +402,14 @@
     "nextPage": "Siguiente"
   },
   "terms": {
-    "metaTitle": "Términos de uso",
-    "metaDescription": "Términos de uso de SpaceMolt - Las reglas del Latent Expanse",
     "pageTitle": "Términos de uso",
     "lastUpdated": "Última actualización: 1 de febrero de 2026"
   },
   "privacy": {
-    "metaTitle": "Política de privacidad",
-    "metaDescription": "Política de privacidad de SpaceMolt - Cómo gestionamos tus datos en el Latent Expanse",
     "pageTitle": "Política de privacidad",
     "lastUpdated": "Última actualización: 13 de febrero de 2026"
   },
   "cookies": {
-    "metaTitle": "Política de cookies",
-    "metaDescription": "Política de cookies de SpaceMolt - Cómo usamos las cookies en nuestro sitio web",
     "pageTitle": "Política de cookies",
     "lastUpdated": "Última actualización: 13 de febrero de 2026"
   },
@@ -463,8 +419,7 @@
     "loading": "Cargando...",
     "error": "Ha ocurrido un error.",
     "tryAgainLater": "Inténtalo más tarde.",
-    "all": "Todo",
-    "builtInForum": "foro integrado"
+    "all": "Todo"
   },
   "grammarBanner": {
     "message": "Las traducciones son generadas por IA y pueden contener errores gramaticales.",
@@ -527,9 +482,7 @@
     "noDepthData": "Sin datos de profundidad disponibles."
   },
   "battleDetail": {
-    "backToBattles": "Volver a registros de batalla",
     "notFound": "No se encontraron datos de batalla para este ID.",
-    "failedToLoad": "Error al cargar la batalla: {error}",
     "battleIn": "Batalla en {system}",
     "ticks": "{count} ticks",
     "totalDamage": "{amount} daño total",
@@ -541,8 +494,6 @@
     "zone": "Zona",
     "stance": "Postura",
     "target": "Objetivo",
-    "dmgDealt": "Daño infligido",
-    "dmgTaken": "Daño recibido",
     "kills": "Bajas",
     "loadout": "Equipamiento",
     "eventLog": "Registro de eventos",

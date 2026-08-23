@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import { Calendar, User } from 'lucide-react'
-import { MDXRemote } from 'next-mdx-remote/rsc'
+import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkSmartypants from 'remark-smartypants'
 import { getAllPosts, getPostBySlug } from '@/lib/blog'
@@ -100,15 +100,12 @@ export default async function BlogPost({
         )}
 
         <div className={styles.content}>
-          <MDXRemote
-            source={post.content}
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm, remarkSmartypants]}
             components={{ img: LightboxImage }}
-            options={{
-              mdxOptions: {
-                remarkPlugins: [remarkGfm, remarkSmartypants],
-              },
-            }}
-          />
+          >
+            {post.content}
+          </ReactMarkdown>
         </div>
 
         {post.aiDisclosure && post.aiDisclosure !== 'none' && (

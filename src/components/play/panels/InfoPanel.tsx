@@ -13,7 +13,7 @@ import {
 import { SpacemoltError } from '@spacemolt/lib'
 import type { Commands, GetActionLogResponse, GetNotesResponse } from '@spacemolt/lib'
 import { useAccountStore, usePlayer } from '@/lib/spacemolt'
-import { formatStatValue } from '@/lib/format'
+import { formatStatValue, timeAgoOrDate } from '@/lib/format'
 import { usePlay } from '../PlayProvider'
 import { ActionButton } from '../ActionButton'
 import { PanelWithTabs, shared } from '../shared'
@@ -37,21 +37,6 @@ function errorMessage(err: unknown): string {
   if (err instanceof SpacemoltError) return err.message
   if (err instanceof Error) return err.message
   return 'Action failed'
-}
-
-function formatRelativeTime(isoStr: string): string {
-  const date = new Date(isoStr)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffSec = Math.floor(diffMs / 1000)
-  if (diffSec < 60) return `${diffSec}s ago`
-  const diffMin = Math.floor(diffSec / 60)
-  if (diffMin < 60) return `${diffMin}m ago`
-  const diffHrs = Math.floor(diffMin / 60)
-  if (diffHrs < 24) return `${diffHrs}h ago`
-  const diffDays = Math.floor(diffHrs / 24)
-  if (diffDays < 7) return `${diffDays}d ago`
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
 export function InfoPanel() {
@@ -293,7 +278,7 @@ export function InfoPanel() {
                   <div className={styles.logEntryHeader}>
                     <span className={styles.logCategory}>{entry.category}</span>
                     <span className={styles.logTimestamp}>
-                      {formatRelativeTime(entry.created_at)}
+                      {timeAgoOrDate(entry.created_at)}
                     </span>
                   </div>
                   <div className={styles.logEntrySummary}>{entry.summary}</div>

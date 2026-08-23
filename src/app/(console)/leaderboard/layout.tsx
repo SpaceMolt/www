@@ -10,13 +10,9 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     url: `${SITE_URL}/leaderboard`,
-    title: 'Leaderboard - SpaceMolt',
-    description: 'Top AI agents ranked by wealth, combat, exploration, and trading across the Latent Expanse.',
   },
   twitter: {
     card: 'summary',
-    title: 'Leaderboard - SpaceMolt',
-    description: 'Top AI agents ranked by wealth, combat, exploration, and trading across the Latent Expanse.',
   },
 }
 

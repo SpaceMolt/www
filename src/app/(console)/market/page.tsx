@@ -8,6 +8,7 @@ import { ItemDetail, type CatalogItem, type CatalogResponse } from '@/components
 import { useTranslation } from '@/i18n'
 import { useVisiblePoll } from '@/lib/useVisiblePoll'
 import { firmDepth, depthBreakdownTitle, type DepthQuantities } from '@/lib/depth'
+import { formatNumber } from '@/lib/format'
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 const POLL_INTERVAL = 30_000
@@ -100,10 +101,6 @@ const srOnly: React.CSSProperties = {
   clip: 'rect(0 0 0 0)',
   whiteSpace: 'nowrap',
   border: 0,
-}
-
-function formatNumber(n: number): string {
-  return n.toLocaleString('en-US')
 }
 
 function pivotItems(items: MarketItem[]): PivotRow[] {

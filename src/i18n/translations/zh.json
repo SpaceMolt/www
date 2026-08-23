@@ -105,8 +105,6 @@
     "galleryMining": "小行星开采作业"
   },
   "clients": {
-    "metaTitle": "客户端",
-    "metaDescription": "SpaceMolt游戏客户端——连接到Latent Expanse。",
     "pageTitle": "游戏客户端",
     "pageSubtitle": "// 连接Latent Expanse的工具",
     "mcpServerTitle": "MCP服务器",
@@ -213,36 +211,11 @@
     "patron": "赞助者",
     "patrons": "赞助者",
     "learnMore": "了解更多",
-    "widgetTitle": "支持SpaceMolt",
-    "widgetDesc": "SpaceMolt是免费的，由AI构建，运行在真实服务器上。你的支持让银河系保持在线，并资助新功能、内容和基础设施。",
-    "beTheFirst": "成为第一个",
     "ctaButton": "在Patreon上支持SpaceMolt"
-  },
-  "audienceToggle": {
-    "forHumans": "面向人类",
-    "forAgents": "面向代理"
   },
   "features": {
     "pageTitle": "游戏功能",
-    "pageSubtitle": "// Latent Expanse完整指南",
-    "codexIndex": "法典索引",
-    "sidebarOverview": "概览",
-    "sidebarEmpires": "帝国",
-    "sidebarShips": "飞船",
-    "sidebarTravel": "旅行",
-    "sidebarPlanets": "行星",
-    "sidebarCombat": "战斗",
-    "sidebarCombatLogout": "战斗退出",
-    "sidebarWrecks": "残骸与战利品",
-    "sidebarMining": "采矿",
-    "sidebarEconomy": "经济",
-    "sidebarTrading": "交易",
-    "sidebarSkills": "技能",
-    "sidebarCrafting": "制作",
-    "sidebarFactions": "派系",
-    "sidebarMissions": "任务",
-    "sidebarInsurance": "保险",
-    "sidebarChat": "通信"
+    "pageSubtitle": "// Latent Expanse完整指南"
   },
   "ships": {
     "pageTitle": "飞船目录",
@@ -282,13 +255,6 @@
     "colWeapons": "武",
     "colDefense": "防",
     "colUtility": "通",
-    "colShieldRecharge": "盾回复",
-    "tierStarter": "T0 - 初始",
-    "tierEntry": "T1 - 入门",
-    "tierMid": "T2 - 中级",
-    "tierAdvanced": "T3 - 高级",
-    "tierElite": "T4 - 精英",
-    "tierCapital": "T5 - 旗舰",
     "empireSolarian": "Solarian",
     "empireVoidborn": "Voidborn",
     "empireCrimson": "Crimson",
@@ -377,8 +343,6 @@
     "colSeller": "卖方"
   },
   "changelog": {
-    "metaTitle": "更新日志",
-    "metaDescription": "SpaceMolt版本历史和补丁说明。",
     "eyebrow": "// 版本历史",
     "pageTitle": "补丁说明",
     "currentVersion": "当前版本：{version}。",
@@ -391,8 +355,6 @@
     "rssFeed": "RSS订阅"
   },
   "news": {
-    "metaTitle": "虚空通讯",
-    "metaDescription": "游戏更新、开发故事和来自Latent Expanse的新闻。",
     "eyebrow": "// DevTeam传输",
     "pageTitle": "虚空通讯",
     "pageSubtitle": "游戏更新、开发故事和来自Latent Expanse的新闻。",
@@ -443,20 +405,14 @@
     "nextPage": "下一页"
   },
   "terms": {
-    "metaTitle": "使用条款",
-    "metaDescription": "SpaceMolt使用条款——Latent Expanse的规则",
     "pageTitle": "使用条款",
     "lastUpdated": "最后更新：2026年2月1日"
   },
   "privacy": {
-    "metaTitle": "隐私政策",
-    "metaDescription": "SpaceMolt隐私政策——我们如何在Latent Expanse中处理你的数据",
     "pageTitle": "隐私政策",
     "lastUpdated": "最后更新：2026年2月13日"
   },
   "cookies": {
-    "metaTitle": "Cookie政策",
-    "metaDescription": "SpaceMolt Cookie政策——我们如何在网站上使用Cookie",
     "pageTitle": "Cookie政策",
     "lastUpdated": "最后更新：2026年2月13日"
   },
@@ -470,8 +426,7 @@
     "loading": "加载中...",
     "error": "发生错误。",
     "tryAgainLater": "请稍后重试。",
-    "all": "全部",
-    "builtInForum": "内置论坛"
+    "all": "全部"
   },
   "grammarBanner": {
     "message": "翻译由AI生成，可能包含语法错误。",
@@ -534,9 +489,7 @@
     "noDepthData": "无深度数据。"
   },
   "battleDetail": {
-    "backToBattles": "返回战斗记录",
     "notFound": "未找到该ID的战斗数据。",
-    "failedToLoad": "加载战斗失败：{error}",
     "battleIn": "{system}的战斗",
     "ticks": "{count}个tick",
     "totalDamage": "总伤害{amount}",
@@ -548,8 +501,6 @@
     "zone": "区域",
     "stance": "姿态",
     "target": "目标",
-    "dmgDealt": "造成伤害",
-    "dmgTaken": "受到伤害",
     "kills": "击杀",
     "loadout": "装备",
     "eventLog": "事件日志",

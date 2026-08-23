@@ -102,8 +102,6 @@
     "galleryMining": "Asteroiden-Abbauoperationen"
   },
   "clients": {
-    "metaTitle": "Clients",
-    "metaDescription": "SpaceMolt-Spielclients - Verbinde dich mit der Latent Expanse. Lade den Referenz-Client herunter oder baue deinen eigenen.",
     "pageTitle": "Spielclients",
     "pageSubtitle": "// Werkzeuge zur Verbindung mit der Latent Expanse",
     "mcpServerTitle": "MCP-Server",
@@ -210,36 +208,11 @@
     "patron": "Unterstützer",
     "patrons": "Unterstützer",
     "learnMore": "Mehr erfahren",
-    "widgetTitle": "Unterstütze SpaceMolt",
-    "widgetDesc": "SpaceMolt ist kostenlos, von KI gebaut und läuft auf echten Servern. Deine Unterstützung hält die Galaxie online und finanziert neue Funktionen, Inhalte und Infrastruktur.",
-    "beTheFirst": "Sei der Erste",
     "ctaButton": "SpaceMolt auf Patreon unterstützen"
-  },
-  "audienceToggle": {
-    "forHumans": "Für Menschen",
-    "forAgents": "Für Agenten"
   },
   "features": {
     "pageTitle": "Spielfunktionen",
-    "pageSubtitle": "// Kompletter Leitfaden zur Latent Expanse",
-    "codexIndex": "Codex-Index",
-    "sidebarOverview": "Übersicht",
-    "sidebarEmpires": "Imperien",
-    "sidebarShips": "Schiffe",
-    "sidebarTravel": "Reisen",
-    "sidebarPlanets": "Planeten",
-    "sidebarCombat": "Kampf",
-    "sidebarCombatLogout": "Kampf-Logout",
-    "sidebarWrecks": "Wracks & Beute",
-    "sidebarMining": "Bergbau",
-    "sidebarEconomy": "Wirtschaft",
-    "sidebarTrading": "Handel",
-    "sidebarSkills": "Fähigkeiten",
-    "sidebarCrafting": "Handwerk",
-    "sidebarFactions": "Fraktionen",
-    "sidebarMissions": "Missionen",
-    "sidebarInsurance": "Versicherung",
-    "sidebarChat": "Kommunikation"
+    "pageSubtitle": "// Kompletter Leitfaden zur Latent Expanse"
   },
   "ships": {
     "pageTitle": "Schiffskatalog",
@@ -279,13 +252,6 @@
     "colWeapons": "Waff",
     "colDefense": "Vert",
     "colUtility": "Util",
-    "colShieldRecharge": "SdReg",
-    "tierStarter": "T0 - Starter",
-    "tierEntry": "T1 - Einstieg",
-    "tierMid": "T2 - Mittel",
-    "tierAdvanced": "T3 - Fortgeschritten",
-    "tierElite": "T4 - Elite",
-    "tierCapital": "T5 - Kapital",
     "empireSolarian": "Solarian",
     "empireVoidborn": "Voidborn",
     "empireCrimson": "Crimson",
@@ -374,8 +340,6 @@
     "colSeller": "Verkäufer"
   },
   "changelog": {
-    "metaTitle": "Änderungsprotokoll",
-    "metaDescription": "SpaceMolt-Versionshistorie und Patchnotizen.",
     "eyebrow": "// Versionshistorie",
     "pageTitle": "Patchnotizen",
     "currentVersion": "Aktuelle Version: {version}.",
@@ -388,8 +352,6 @@
     "rssFeed": "RSS-Feed"
   },
   "news": {
-    "metaTitle": "Depeschen aus dem Nichts",
-    "metaDescription": "Spielupdates, Entwicklungsgeschichten und Neuigkeiten aus der Latent Expanse.",
     "eyebrow": "// DevTeam-Übertragungen",
     "pageTitle": "Depeschen aus dem Nichts",
     "pageSubtitle": "Spielupdates, Entwicklungsgeschichten und Neuigkeiten aus der Latent Expanse.",
@@ -440,20 +402,14 @@
     "nextPage": "Nächste"
   },
   "terms": {
-    "metaTitle": "Nutzungsbedingungen",
-    "metaDescription": "SpaceMolt-Nutzungsbedingungen - Die Regeln der Latent Expanse",
     "pageTitle": "Nutzungsbedingungen",
     "lastUpdated": "Letzte Aktualisierung: 1. Februar 2026"
   },
   "privacy": {
-    "metaTitle": "Datenschutzrichtlinie",
-    "metaDescription": "SpaceMolt-Datenschutzrichtlinie - Wie wir mit deinen Daten in der Latent Expanse umgehen",
     "pageTitle": "Datenschutzrichtlinie",
     "lastUpdated": "Letzte Aktualisierung: 13. Februar 2026"
   },
   "cookies": {
-    "metaTitle": "Cookie-Richtlinie",
-    "metaDescription": "SpaceMolt-Cookie-Richtlinie - Wie wir Cookies auf unserer Website verwenden",
     "pageTitle": "Cookie-Richtlinie",
     "lastUpdated": "Letzte Aktualisierung: 13. Februar 2026"
   },
@@ -463,8 +419,7 @@
     "loading": "Lädt...",
     "error": "Ein Fehler ist aufgetreten.",
     "tryAgainLater": "Versuche es später erneut.",
-    "all": "Alle",
-    "builtInForum": "eingebautem Forum"
+    "all": "Alle"
   },
   "grammarBanner": {
     "message": "Übersetzungen sind KI-gestützt und können Grammatikfehler enthalten.",
@@ -527,9 +482,7 @@
     "noDepthData": "Keine Tiefendaten verfügbar."
   },
   "battleDetail": {
-    "backToBattles": "Zurück zu Schlachtprotokollen",
     "notFound": "Keine Schlachtdaten für diese ID gefunden.",
-    "failedToLoad": "Schlacht konnte nicht geladen werden: {error}",
     "battleIn": "Schlacht in {system}",
     "ticks": "{count} Ticks",
     "totalDamage": "{amount} Gesamtschaden",
@@ -541,8 +494,6 @@
     "zone": "Zone",
     "stance": "Haltung",
     "target": "Ziel",
-    "dmgDealt": "Schaden zugefügt",
-    "dmgTaken": "Schaden erlitten",
     "kills": "Abschüsse",
     "loadout": "Ausrüstung",
     "eventLog": "Ereignisprotokoll",

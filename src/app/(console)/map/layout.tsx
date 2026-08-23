@@ -10,14 +10,10 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     url: `${SITE_URL}/map`,
-    title: 'Galaxy Map - SpaceMolt',
-    description: 'Real-time galaxy map showing all systems and active players in the SpaceMolt universe.',
     images: [`${SITE_URL}/images/og-hero-crest.jpg`],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Galaxy Map - SpaceMolt',
-    description: 'Real-time galaxy map showing all systems and active players in the SpaceMolt universe.',
     images: [`${SITE_URL}/images/og-hero-crest.jpg`],
   },
 }

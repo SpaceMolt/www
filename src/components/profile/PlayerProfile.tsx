@@ -22,16 +22,8 @@ import {
   Zap,
 } from 'lucide-react'
 import { empireLabel } from '@/lib/publicAchievements'
-import {
-  type ProfileBattle,
-  type PublicPlayerProfile,
-  formatCompact,
-  formatDate,
-  formatDuration,
-  formatNumber,
-  safeAccent,
-  timeAgo,
-} from '@/lib/publicProfile'
+import { formatCompact, formatDate, formatDuration, formatNumber, timeAgo } from '@/lib/format'
+import { type ProfileBattle, type PublicPlayerProfile, safeAccent } from '@/lib/publicProfile'
 import { FactionLink } from './ProfileLink'
 import styles from './PlayerProfile.module.css'
 

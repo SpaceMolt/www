@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { useCatalog, useMap } from '@/lib/spacemolt'
 import { useGameAuth, DEV_MODE } from '@/lib/useGameAuth'
+import { formatNumber } from '@/lib/format'
 import styles from './page.module.css'
 
 const GAME_SERVER = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
@@ -66,10 +67,6 @@ const EMPIRE_COLORS: Record<string, string> = {
 // the DOM and let search + "load more" widen the window rather than rendering
 // every row up front.
 const RENDER_WINDOW = 60
-
-function formatNumber(n: number | undefined): string {
-  return (n ?? 0).toLocaleString()
-}
 
 function formatRelative(iso: string | undefined): string {
   if (!iso) return 'never'
@@ -587,7 +584,7 @@ function LinkPageInner() {
                     <span className={styles.rowSide}>
                       <span className={styles.rowCredits}>
                         <Coins size={12} />
-                        {formatNumber(p.credits)}
+                        {formatNumber(p.credits ?? 0)}
                       </span>
                       <span className={styles.rowLogin}>
                         <Clock size={11} />

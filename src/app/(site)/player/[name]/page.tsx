@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { safeDecode } from '@/lib/publicAchievements'
-import { fetchPlayerProfile, fetchRecentBattles, formatCompact } from '@/lib/publicProfile'
+import { formatCompact } from '@/lib/format'
+import { fetchPlayerProfile, fetchRecentBattles } from '@/lib/publicProfile'
 import { PlayerProfile } from '@/components/profile/PlayerProfile'
 import { SITE_URL } from '@/lib/links'
 

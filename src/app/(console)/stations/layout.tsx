@@ -10,13 +10,9 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     url: `${SITE_URL}/stations`,
-    title: 'Stations - SpaceMolt',
-    description: 'Outposts, bases, and trading hubs across the galaxy. Dock to refuel, repair, trade, craft, and take on missions.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Stations - SpaceMolt',
-    description: 'Outposts, bases, and trading hubs across the galaxy. Dock to refuel, repair, trade, craft, and take on missions.',
   },
 }
 

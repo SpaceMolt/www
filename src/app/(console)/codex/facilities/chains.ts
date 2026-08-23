@@ -84,11 +84,3 @@ export function allChains(): FacilityChain[] {
 export function chainFor(facilityId: string): FacilityChain | undefined {
   return index().byFacility.get(facilityId)
 }
-
-/** The facility one tier above this one, if any. */
-export function upgradesTo(facilityId: string): RawFacility | undefined {
-  const chain = chainFor(facilityId)
-  if (!chain) return undefined
-  const i = chain.levels.findIndex((f) => f.id === facilityId)
-  return i >= 0 ? chain.levels[i + 1] : undefined
-}

@@ -102,8 +102,6 @@
     "galleryMining": "Operazioni di estrazione asteroidale"
   },
   "clients": {
-    "metaTitle": "Client",
-    "metaDescription": "Client di gioco SpaceMolt - Connettiti alla Latent Expanse. Scarica il client di riferimento o crea il tuo.",
     "pageTitle": "Client di gioco",
     "pageSubtitle": "// Strumenti per connettersi alla Latent Expanse",
     "mcpServerTitle": "Server MCP",
@@ -210,36 +208,11 @@
     "patron": "sostenitore",
     "patrons": "sostenitori",
     "learnMore": "Scopri di più",
-    "widgetTitle": "Supporta SpaceMolt",
-    "widgetDesc": "SpaceMolt è gratuito, costruito dall'IA e funziona su server reali. Il tuo supporto mantiene la galassia online e finanzia nuove funzionalità, contenuti e infrastruttura.",
-    "beTheFirst": "Sii il primo",
     "ctaButton": "Supporta SpaceMolt su Patreon"
-  },
-  "audienceToggle": {
-    "forHumans": "Per umani",
-    "forAgents": "Per agenti"
   },
   "features": {
     "pageTitle": "Funzionalità del gioco",
-    "pageSubtitle": "// Guida completa alla Latent Expanse",
-    "codexIndex": "Indice Codex",
-    "sidebarOverview": "Panoramica",
-    "sidebarEmpires": "Imperi",
-    "sidebarShips": "Navi",
-    "sidebarTravel": "Viaggio",
-    "sidebarPlanets": "Pianeti",
-    "sidebarCombat": "Combattimento",
-    "sidebarCombatLogout": "Disconnessione in combattimento",
-    "sidebarWrecks": "Relitti e bottino",
-    "sidebarMining": "Estrazione",
-    "sidebarEconomy": "Economia",
-    "sidebarTrading": "Commercio",
-    "sidebarSkills": "Abilità",
-    "sidebarCrafting": "Fabbricazione",
-    "sidebarFactions": "Fazioni",
-    "sidebarMissions": "Missioni",
-    "sidebarInsurance": "Assicurazione",
-    "sidebarChat": "Comunicazione"
+    "pageSubtitle": "// Guida completa alla Latent Expanse"
   },
   "ships": {
     "pageTitle": "Catalogo navi",
@@ -279,13 +252,6 @@
     "colWeapons": "Arm",
     "colDefense": "Dif",
     "colUtility": "Util",
-    "colShieldRecharge": "RgScu",
-    "tierStarter": "T0 - Iniziale",
-    "tierEntry": "T1 - Base",
-    "tierMid": "T2 - Medio",
-    "tierAdvanced": "T3 - Avanzato",
-    "tierElite": "T4 - Élite",
-    "tierCapital": "T5 - Capitale",
     "empireSolarian": "Solarian",
     "empireVoidborn": "Voidborn",
     "empireCrimson": "Crimson",
@@ -374,8 +340,6 @@
     "colSeller": "Venditore"
   },
   "changelog": {
-    "metaTitle": "Registro modifiche",
-    "metaDescription": "Cronologia delle versioni e note delle patch di SpaceMolt.",
     "eyebrow": "// Cronologia versioni",
     "pageTitle": "Note delle patch",
     "currentVersion": "Versione attuale: {version}.",
@@ -388,8 +352,6 @@
     "rssFeed": "Feed RSS"
   },
   "news": {
-    "metaTitle": "Dispacci dal vuoto",
-    "metaDescription": "Aggiornamenti del gioco, storie di sviluppo e notizie dalla Latent Expanse.",
     "eyebrow": "// Trasmissioni del DevTeam",
     "pageTitle": "Dispacci dal vuoto",
     "pageSubtitle": "Aggiornamenti del gioco, storie di sviluppo e notizie dalla Latent Expanse.",
@@ -440,20 +402,14 @@
     "nextPage": "Successivo"
   },
   "terms": {
-    "metaTitle": "Termini d'uso",
-    "metaDescription": "Termini d'uso di SpaceMolt - Le regole della Latent Expanse",
     "pageTitle": "Termini d'uso",
     "lastUpdated": "Ultimo aggiornamento: 1 febbraio 2026"
   },
   "privacy": {
-    "metaTitle": "Informativa sulla privacy",
-    "metaDescription": "Informativa sulla privacy di SpaceMolt - Come gestiamo i tuoi dati nella Latent Expanse",
     "pageTitle": "Informativa sulla privacy",
     "lastUpdated": "Ultimo aggiornamento: 13 febbraio 2026"
   },
   "cookies": {
-    "metaTitle": "Politica sui cookie",
-    "metaDescription": "Politica sui cookie di SpaceMolt - Come utilizziamo i cookie sul nostro sito web",
     "pageTitle": "Politica sui cookie",
     "lastUpdated": "Ultimo aggiornamento: 13 febbraio 2026"
   },
@@ -463,8 +419,7 @@
     "loading": "Caricamento...",
     "error": "Si è verificato un errore.",
     "tryAgainLater": "Riprova più tardi.",
-    "all": "Tutto",
-    "builtInForum": "forum integrato"
+    "all": "Tutto"
   },
   "grammarBanner": {
     "message": "Le traduzioni sono generate dall'IA e potrebbero contenere errori grammaticali.",
@@ -527,9 +482,7 @@
     "noDepthData": "Nessun dato di profondità disponibile."
   },
   "battleDetail": {
-    "backToBattles": "Torna ai registri di battaglia",
     "notFound": "Nessun dato di battaglia trovato per questo ID.",
-    "failedToLoad": "Impossibile caricare la battaglia: {error}",
     "battleIn": "Battaglia in {system}",
     "ticks": "{count} tick",
     "totalDamage": "{amount} danno totale",
@@ -541,8 +494,6 @@
     "zone": "Zona",
     "stance": "Postura",
     "target": "Bersaglio",
-    "dmgDealt": "Danni inflitti",
-    "dmgTaken": "Danni subiti",
     "kills": "Uccisioni",
     "loadout": "Equipaggiamento",
     "eventLog": "Registro eventi",

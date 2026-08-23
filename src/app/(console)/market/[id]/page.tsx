@@ -8,6 +8,7 @@ import styles from './page.module.css'
 import { ItemDetailContent, type CatalogItem, type CatalogResponse } from '@/components/ItemDetail'
 import { useTranslation } from '@/i18n'
 import { firmDepth, depthBreakdownTitle, type DepthQuantities } from '@/lib/depth'
+import { formatNumber } from '@/lib/format'
 
 const DepthChart = lazy(() => import('@/components/DepthChart'))
 
@@ -69,10 +70,6 @@ type OrderFilter = 'bids' | 'asks' | 'both' | null
 type SortKey = 'item_name' | 'category' | 'base_value' | 'best_bid' | 'bid_quantity' | 'best_ask' | 'ask_quantity' | 'spread'
 
 const TABLE_COL_COUNT = 8
-
-function formatNumber(n: number): string {
-  return n.toLocaleString('en-US')
-}
 
 function bidDepthOf(item: StationMarketItem): DepthQuantities {
   return {

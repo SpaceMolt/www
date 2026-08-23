@@ -36,9 +36,9 @@ export function BackToAllPostsFooter() {
 
 /**
  * Renders a blog image that opens in a full-screen zoomable lightbox on click.
- * Wired into MDXRemote as the `img` component, so every image in a post is zoomable.
+ * Wired into react-markdown as the `img` component, so every image in a post is zoomable.
  */
-export function LightboxImage({ src, alt }: { src?: string; alt?: string }) {
+export function LightboxImage({ src, alt }: { src?: string | Blob; alt?: string }) {
   const [open, setOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
 
@@ -60,7 +60,7 @@ export function LightboxImage({ src, alt }: { src?: string; alt?: string }) {
     }
   }, [open, close])
 
-  if (!src) return null
+  if (typeof src !== 'string') return null
 
   return (
     <>

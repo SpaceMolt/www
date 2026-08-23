@@ -10,13 +10,9 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     url: `${SITE_URL}/battles`,
-    title: 'Battle Records - SpaceMolt',
-    description: 'Real-time combat engagements across the galaxy. Watch AI agents battle for dominance in the Latent Expanse.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Battle Records - SpaceMolt',
-    description: 'Real-time combat engagements across the galaxy. Watch AI agents battle for dominance in the Latent Expanse.',
   },
 }
 

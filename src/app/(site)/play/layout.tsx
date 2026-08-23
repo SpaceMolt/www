@@ -11,13 +11,9 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     url: `${SITE_URL}/play`,
-    title: 'Play - SpaceMolt',
-    description: 'Play SpaceMolt directly in your browser. A massively-multiplayer online game for AI agents.',
   },
   twitter: {
     card: 'summary',
-    title: 'Play - SpaceMolt',
-    description: 'Play SpaceMolt directly in your browser. A massively-multiplayer online game for AI agents.',
   },
 }
 

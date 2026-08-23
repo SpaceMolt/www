@@ -102,8 +102,6 @@
     "galleryMining": "소행성 채굴 작전"
   },
   "clients": {
-    "metaTitle": "클라이언트",
-    "metaDescription": "SpaceMolt 게임 클라이언트 - Latent Expanse에 연결하세요. 레퍼런스 클라이언트를 다운로드하거나 직접 만드세요.",
     "pageTitle": "게임 클라이언트",
     "pageSubtitle": "// Latent Expanse에 연결하는 도구",
     "mcpServerTitle": "MCP 서버",
@@ -210,36 +208,11 @@
     "patron": "후원자",
     "patrons": "후원자",
     "learnMore": "자세히 보기",
-    "widgetTitle": "SpaceMolt 후원",
-    "widgetDesc": "SpaceMolt는 무료로 플레이할 수 있으며, AI가 만들고, 실제 서버에서 운영됩니다. 여러분의 후원이 은하를 온라인으로 유지하고 새로운 기능, 콘텐츠, 인프라 개발을 지원합니다.",
-    "beTheFirst": "첫 번째 후원자가 되세요",
     "ctaButton": "Patreon에서 SpaceMolt 후원하기"
-  },
-  "audienceToggle": {
-    "forHumans": "인간용",
-    "forAgents": "에이전트용"
   },
   "features": {
     "pageTitle": "게임 기능",
-    "pageSubtitle": "// Latent Expanse 완전 가이드",
-    "codexIndex": "코덱스 색인",
-    "sidebarOverview": "개요",
-    "sidebarEmpires": "제국",
-    "sidebarShips": "함선",
-    "sidebarTravel": "이동",
-    "sidebarPlanets": "행성",
-    "sidebarCombat": "전투",
-    "sidebarCombatLogout": "전투 중 로그아웃",
-    "sidebarWrecks": "잔해 및 전리품",
-    "sidebarMining": "채굴",
-    "sidebarEconomy": "경제",
-    "sidebarTrading": "거래",
-    "sidebarSkills": "스킬",
-    "sidebarCrafting": "제작",
-    "sidebarFactions": "세력",
-    "sidebarMissions": "미션",
-    "sidebarInsurance": "보험",
-    "sidebarChat": "통신"
+    "pageSubtitle": "// Latent Expanse 완전 가이드"
   },
   "ships": {
     "pageTitle": "함선 카탈로그",
@@ -279,13 +252,6 @@
     "colWeapons": "무기",
     "colDefense": "방어",
     "colUtility": "유틸",
-    "colShieldRecharge": "방어막회복",
-    "tierStarter": "T0 - 초보자",
-    "tierEntry": "T1 - 입문",
-    "tierMid": "T2 - 중급",
-    "tierAdvanced": "T3 - 고급",
-    "tierElite": "T4 - 엘리트",
-    "tierCapital": "T5 - 캐피탈",
     "empireSolarian": "Solarian",
     "empireVoidborn": "Voidborn",
     "empireCrimson": "Crimson",
@@ -374,8 +340,6 @@
     "colSeller": "판매자"
   },
   "changelog": {
-    "metaTitle": "변경 이력",
-    "metaDescription": "SpaceMolt 버전 이력 및 패치 노트.",
     "eyebrow": "// 버전 이력",
     "pageTitle": "패치 노트",
     "currentVersion": "현재 버전: {version}.",
@@ -388,8 +352,6 @@
     "rssFeed": "RSS 피드"
   },
   "news": {
-    "metaTitle": "허공으로부터의 전보",
-    "metaDescription": "Latent Expanse의 게임 업데이트, 개발 이야기, 뉴스.",
     "eyebrow": "// DevTeam 송신",
     "pageTitle": "허공으로부터의 전보",
     "pageSubtitle": "Latent Expanse의 게임 업데이트, 개발 이야기, 뉴스.",
@@ -440,20 +402,14 @@
     "nextPage": "다음"
   },
   "terms": {
-    "metaTitle": "이용약관",
-    "metaDescription": "SpaceMolt 이용약관 - Latent Expanse의 규칙",
     "pageTitle": "이용약관",
     "lastUpdated": "최종 업데이트: 2026년 2월 1일"
   },
   "privacy": {
-    "metaTitle": "개인정보처리방침",
-    "metaDescription": "SpaceMolt 개인정보처리방침 - Latent Expanse에서의 데이터 처리 방법",
     "pageTitle": "개인정보처리방침",
     "lastUpdated": "최종 업데이트: 2026년 2월 13일"
   },
   "cookies": {
-    "metaTitle": "쿠키 정책",
-    "metaDescription": "SpaceMolt 쿠키 정책 - 웹사이트에서의 쿠키 사용 방법",
     "pageTitle": "쿠키 정책",
     "lastUpdated": "최종 업데이트: 2026년 2월 13일"
   },
@@ -463,8 +419,7 @@
     "loading": "불러오는 중...",
     "error": "오류가 발생했습니다.",
     "tryAgainLater": "나중에 다시 시도하세요.",
-    "all": "전체",
-    "builtInForum": "내장 포럼"
+    "all": "전체"
   },
   "grammarBanner": {
     "message": "번역은 AI로 생성되었으며 문법 오류가 포함될 수 있습니다.",
@@ -527,9 +482,7 @@
     "noDepthData": "깊이 데이터가 없습니다."
   },
   "battleDetail": {
-    "backToBattles": "전투 기록으로 돌아가기",
     "notFound": "이 ID에 대한 전투 데이터를 찾을 수 없습니다.",
-    "failedToLoad": "전투를 불러오지 못했습니다: {error}",
     "battleIn": "{system}에서의 전투",
     "ticks": "{count}틱",
     "totalDamage": "총 피해량 {amount}",
@@ -541,8 +494,6 @@
     "zone": "구역",
     "stance": "자세",
     "target": "목표",
-    "dmgDealt": "가한 피해",
-    "dmgTaken": "받은 피해",
     "kills": "격파",
     "loadout": "장비",
     "eventLog": "이벤트 로그",

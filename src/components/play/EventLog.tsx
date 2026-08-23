@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { usePlayUi } from './PlayProvider'
 import type { EventLogEntry } from '@/lib/spacemolt'
+import { shortAgo } from '@/lib/format'
 import styles from './EventLog.module.css'
 
 const EVENT_CONFIG: Record<string, { icon: typeof Info; className: string }> = {
@@ -19,16 +20,6 @@ const EVENT_CONFIG: Record<string, { icon: typeof Info; className: string }> = {
   success: { icon: Pickaxe,       className: 'eventMining' },
   info:    { icon: Info,          className: 'eventInfo' },
   warning: { icon: AlertTriangle, className: 'eventWarning' },
-}
-
-function relativeTime(timestamp: number): string {
-  const seconds = Math.floor((Date.now() - timestamp) / 1000)
-  if (seconds < 5) return 'now'
-  if (seconds < 60) return `${seconds}s`
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes}m`
-  const hours = Math.floor(minutes / 60)
-  return `${hours}h`
 }
 
 function EventMessage({ id, message }: { id: number; message: string }) {
@@ -113,7 +104,7 @@ export function EventLog() {
                 <Icon size={13} className={styles.eventIcon} />
                 <EventMessage id={entry.id} message={entry.text} />
                 <span className={styles.eventTime}>
-                  {relativeTime(entry.at)}
+                  {shortAgo(entry.at)}
                 </span>
               </div>
             )

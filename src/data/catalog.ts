@@ -259,14 +259,8 @@ const catalog = rawCatalog as unknown as CatalogData
 
 // ── Exports ─────────────────────────────────────────────────────────────
 
-/** All items keyed by ID (includes modules) — plain object, O(1) lookups */
-export const itemsById: Readonly<Record<string, RawCatalogItem>> = catalog.items
-
 /** All recipes keyed by ID */
 export const recipesById: Readonly<Record<string, RawRecipe>> = catalog.recipes
-
-/** All ships keyed by ID */
-export const shipsById: Readonly<Record<string, RawShip>> = catalog.ships
 
 /** Provenance: when this catalog was fetched, from which server, at which game version */
 export const catalogMeta: Readonly<CatalogData['_meta']> = catalog._meta
@@ -421,20 +415,6 @@ export function groupBy<T>(entries: T[], key: (entry: T) => string | undefined):
     ;(out[k] ??= []).push(entry)
   }
   return out
-}
-
-/** Ships grouped by hull class ("Shuttle", "Cruiser", ...) — cached */
-let _shipsByClass: Record<string, RawShip[]> | null = null
-export function shipsByClass(): Readonly<Record<string, RawShip[]>> {
-  if (!_shipsByClass) _shipsByClass = groupBy(allShips(), s => s.class)
-  return _shipsByClass
-}
-
-/** Ships grouped by owning empire/faction ("solarian", "pirate", ...) — cached */
-let _shipsByFaction: Record<string, RawShip[]> | null = null
-export function shipsByFaction(): Readonly<Record<string, RawShip[]>> {
-  if (!_shipsByFaction) _shipsByFaction = groupBy(allShips(), s => s.faction)
-  return _shipsByFaction
 }
 
 // Skills and facilities live in the server-only sibling module:
