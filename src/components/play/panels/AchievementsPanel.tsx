@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Trophy, RefreshCw } from 'lucide-react'
-import { usePlayer } from '@/lib/spacemolt'
+import { usePlayer, useCommandQuery } from '@/lib/spacemolt'
 import { Panel, Loading, shared } from '../shared'
 import {
   fetchPlayerAchievements,
@@ -16,12 +16,18 @@ import styles from './AchievementsPanel.module.css'
 
 type FilterMode = 'all' | 'earned' | 'locked'
 
+// The two sources agree on everything the tile draws except rarity and emblem,
+// which only the public endpoint carries.
+type AchievementTileEntry = Pick<
+  PublicAchievementEntry,
+  'id' | 'name' | 'category' | 'points' | 'hidden' | 'earned'
+> & { rarity_pct?: number; emblem?: string }
+
 export function AchievementsPanel() {
   const player = usePlayer()
   const username = player?.username
   const [data, setData] = useState<PublicAchievementsResponse | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
   const [filter, setFilter] = useState<FilterMode>('all')
   const [reloadKey, setReloadKey] = useState(0)
 
@@ -33,7 +39,6 @@ export function AchievementsPanel() {
   useEffect(() => {
     let cancelled = false
     setData(null)
-    setError(false)
     if (!username) {
       setLoading(false)
       return
@@ -43,10 +48,9 @@ export function AchievementsPanel() {
       .then((res) => {
         if (cancelled) return
         setData(res ?? null)
-        setError(!res)
       })
       .catch(() => {
-        if (!cancelled) setError(true)
+        if (!cancelled) setData(null)
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -56,14 +60,26 @@ export function AchievementsPanel() {
     }
   }, [username, reloadKey])
 
+  // A pilot who has set their profile hidden gets a 404 from the public
+  // endpoint even for their own name, so fall back to the authenticated
+  // command. It carries no rarity, which is why the tiles drop that line.
+  const own = useCommandQuery(
+    async (account) => (await account.commands.spacemolt.get_achievements()).structuredContent,
+    [username],
+    { enabled: !loading && !data },
+  )
+
+  const view = data ?? own.data ?? null
+  const pending = !data && (loading || own.loading)
+
   const visible = useMemo(() => {
-    if (!data) return []
-    return data.achievements.filter((a) => {
+    if (!view) return []
+    return view.achievements.filter((a) => {
       if (filter === 'earned') return a.earned
       if (filter === 'locked') return !a.earned
       return true
     })
-  }, [data, filter])
+  }, [view, filter])
 
   const refreshButton = (
     <button className={shared.refreshBtn} onClick={reload} title="Refresh achievements" type="button">
@@ -73,20 +89,20 @@ export function AchievementsPanel() {
 
   return (
     <Panel title="Achievements" icon={<Trophy size={16} />} headerRight={refreshButton}>
-      {loading && !data ? (
+      {pending ? (
         <Loading message="Loading achievements..." />
-      ) : error || !data ? (
+      ) : !view ? (
         <div className={shared.emptyState}>Could not load achievements.</div>
       ) : (
         <>
           <div className={styles.summary}>
             <div className={styles.summaryStat}>
-              <span className={styles.summaryNum}>{data.summary.earned}</span>
-              <span className={styles.summaryDenom}>/ {data.summary.total}</span>
+              <span className={styles.summaryNum}>{view.summary.earned}</span>
+              <span className={styles.summaryDenom}>/ {view.summary.total}</span>
               <span className={styles.summaryLabel}>Unlocked</span>
             </div>
             <div className={styles.summaryStat}>
-              <span className={styles.summaryNum}>{data.summary.points}</span>
+              <span className={styles.summaryNum}>{view.summary.points}</span>
               <span className={styles.summaryLabel}>Points</span>
             </div>
             <div className={styles.completion}>
@@ -94,7 +110,7 @@ export function AchievementsPanel() {
                 <div
                   className={styles.completionFill}
                   style={{
-                    width: `${data.summary.total > 0 ? Math.round((data.summary.earned / data.summary.total) * 100) : 0}%`,
+                    width: `${view.summary.total > 0 ? Math.round((view.summary.earned / view.summary.total) * 100) : 0}%`,
                   }}
                 />
               </div>
@@ -130,7 +146,7 @@ export function AchievementsPanel() {
   )
 }
 
-function AchievementTile({ a }: { a: PublicAchievementEntry }) {
+function AchievementTile({ a }: { a: AchievementTileEntry }) {
   const secretLocked = a.hidden && !a.earned
   const glyph = (a.emblem || a.name).charAt(0).toUpperCase()
   const cls = [styles.tile, a.earned ? styles.earned : styles.locked, secretLocked ? styles.secret : '']
@@ -155,7 +171,9 @@ function AchievementTile({ a }: { a: PublicAchievementEntry }) {
       <div className={styles.tBody}>
         <p className={styles.tName}>{secretLocked ? 'Secret achievement' : a.name}</p>
         <p className={styles.tCategory}>{a.category}</p>
-        <p className={styles.tRarity}>{rarityLabel(a.rarity_pct, 'pilots')}</p>
+        {a.rarity_pct !== undefined && (
+          <p className={styles.tRarity}>{rarityLabel(a.rarity_pct, 'pilots')}</p>
+        )}
       </div>
       <div className={styles.tMeta}>
         <span className={styles.tPoints}>{a.points}</span>
