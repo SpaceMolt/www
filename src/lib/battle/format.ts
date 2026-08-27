@@ -29,8 +29,10 @@ export function outcomeLabel(battle: BattleSummary): string {
   if (battle.status === 'active') return 'Battle in progress'
   switch (battle.outcome) {
     case 'victory': {
-      const winners = winnerNames(battle)
-      return winners.length ? `Victory: ${winners.join(', ')}` : 'Victory'
+      const winningSide = (battle.sides ?? []).find(s => s.side_id === battle.winning_side)
+      if (!winningSide?.participants?.length) return 'Victory'
+      const winners = winningSide.participants
+      return `Victory: ${winners.length > 3 ? sideLabel(winningSide) : winners.join(', ')}`
     }
     case 'stalemate':
       return 'Stalemate'
@@ -42,18 +44,43 @@ export function outcomeLabel(battle: BattleSummary): string {
 }
 
 /**
- * Display label for one side: its roster, faction tag, or a generic fallback
- * for unnamed NPC/wildlife/police forces. Deliberately prioritizes names over
- * faction tag — unlike the live viewer's compact side label in timeline.ts,
- * which favors the tag for space — because a share card's whole point is to
- * show who fought, not just their faction.
+ * Display label for one side. Small engagements name every combatant; larger
+ * engagements use a station, faction, commander, or ship-count fleet identity
+ * so share metadata and fixed-size cards stay readable.
  */
 export function sideLabel(side: BattleSide, maxNames = 3): string {
   if (side.participants?.length) {
     const names = side.participants
-    const shown = names.slice(0, maxNames).join(', ')
-    return names.length > maxNames ? `${shown} +${names.length - maxNames}` : shown
+    if (names.length <= maxNames) return names.join(', ')
+
+    // Three combatants are still a small engagement on the image card, where
+    // maxNames is two; keep the familiar compact “A, B +1” form there.
+    if (names.length === maxNames + 1 && names.length <= 3) {
+      return `${names.slice(0, maxNames).join(', ')} +1`
+    }
+
+    const station = stationDefenseName(names)
+    if (station) return `${station} Defense Fleet`
+
+    if (side.faction_tag) return `[${side.faction_tag}] Fleet`
+
+    const commander = names.find(name => COMMANDER_TITLE.test(name))
+    if (commander) return `${commander}${commander.endsWith('s') ? '\'' : "'s"} Fleet`
+
+    return `${names.length}-Ship Fleet`
   }
   if (side.faction_tag) return `[${side.faction_tag}]`
   return 'Hostile forces'
+}
+
+const COMMANDER_TITLE = /^(?:Admiral|Archon|Commandant|Commander|Director|Grand Marshal|Imperator|Overlord|Sovereign|Warlord)\b/i
+
+/** Extracts and shortens a station participant name for a defense-force label. */
+function stationDefenseName(names: string[]): string | undefined {
+  const stationParticipant = names.find(name => /\bStation$/i.test(name) && !name.includes(' - '))
+    ?? names.find(name => /\bStation$/i.test(name))
+  if (!stationParticipant) return undefined
+
+  const stationName = stationParticipant.split(' - ').at(-1)!.replace(/^\[[^\]]+\]\s*/, '')
+  return stationName.replace(/\s+(?:Defense|Industrial|Military|Mining|Orbital|Research|Trade)\s+Station$/i, ' Station')
 }
