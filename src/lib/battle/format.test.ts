@@ -78,6 +78,25 @@ describe('outcomeLabel', () => {
     expect(outcomeLabel(b)).toBe('Victory')
   })
 
+  it('uses a concise fleet identity for a large winning side', () => {
+    const b = summary({
+      outcome: 'victory',
+      winning_side: 2,
+      sides: [{
+        side_id: 2,
+        participants: [
+          'Anamnesis',
+          'Annihilation',
+          'Node Beta Industrial Station',
+          'Voidborn Singularity',
+          '[POLICE] Collective Observer I - Node Beta Industrial Station',
+          '[POLICE] Collective Observer II - Node Beta Industrial Station',
+        ],
+      }],
+    })
+    expect(outcomeLabel(b)).toBe('Victory: Node Beta Station Defense Fleet')
+  })
+
   it('labels a stalemate', () => {
     expect(outcomeLabel(summary({ outcome: 'stalemate' }))).toBe('Stalemate')
   })
@@ -109,6 +128,51 @@ describe('sideLabel', () => {
 
   it('falls back to a generic label when there is neither roster nor faction tag', () => {
     expect(sideLabel({ side_id: 1 })).toBe('Hostile forces')
+  })
+
+  it('summarizes a large boss-led pirate group as the boss fleet', () => {
+    const side = {
+      side_id: 1,
+      participants: [
+        'Ashen Assault',
+        'Attrition',
+        'Grand Marshal Korr',
+        'Grind Advance',
+        'Iron Siege',
+        'Scorched Vanguard',
+        'Weathered Storm',
+      ],
+    }
+    expect(sideLabel(side, 2)).toBe("Grand Marshal Korr's Fleet")
+  })
+
+  it('summarizes a large station side as its defense fleet', () => {
+    const side = {
+      side_id: 2,
+      participants: [
+        'Anamnesis',
+        'Annihilation',
+        'Node Beta Industrial Station',
+        'Voidborn Singularity',
+        '[POLICE] Collective Observer I - Node Beta Industrial Station',
+        '[POLICE] Collective Observer II - Node Beta Industrial Station',
+      ],
+    }
+    expect(sideLabel(side, 2)).toBe('Node Beta Station Defense Fleet')
+  })
+
+  it('summarizes a large faction side by faction instead of listing pilots', () => {
+    const side = {
+      side_id: 1,
+      faction_tag: 'HEXC',
+      participants: ['A', 'B', 'C', 'D'],
+    }
+    expect(sideLabel(side)).toBe('[HEXC] Fleet')
+  })
+
+  it('summarizes a large unaligned group by ship count', () => {
+    const side = { side_id: 1, participants: ['A', 'B', 'C', 'D'] }
+    expect(sideLabel(side)).toBe('4-Ship Fleet')
   })
 })
 
