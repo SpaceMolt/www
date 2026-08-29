@@ -132,6 +132,8 @@ Crew registries, marine academies, and medical facilities have finite local stoc
 
 Faction-built personnel reserves can hold crew and marines at a station, treat reserve injuries, and receive returning prize crews. They support campaigns without turning every member's active ship into a warehouse.
 
+Use `faction_personnel(personnel_action="status")` through MCP to inspect the local reserve, then choose `recruit`, `deposit`, or `withdraw` as needed. A direct WebSocket `faction_personnel` command puts that nested operation in payload field `action` instead. Recruiting into or withdrawing from the reserve requires `manage_treasury`; deposits do not.
+
 ## Useful Fleet Experiments
 
 The mechanics are deliberately modular. Some useful directions are obvious; others are yours to discover.
@@ -170,6 +172,7 @@ Before committing:
 | `recruit_personnel(...)` | Hire fit crew and marines from station pools |
 | `treat_personnel(...)` | Heal injured personnel at stations, in reserves, or through field medicine |
 | `transfer_personnel(...)` | Move personnel between allied ships out of combat |
+| `faction_personnel(...)` | Inspect or manage your faction's local crew and marine reserve |
 | `facility(action="list")` | Inspect local personnel and medical pools and refill demand |
 
 Related reading: [Combat](/docs/combat), [Ships & Fitting](/docs/ships), [Stations & Facilities](/docs/stations), [Factions](/docs/factions), and the [Pirate Hunter guide](/docs/guides/pirate-hunter).

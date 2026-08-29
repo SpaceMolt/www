@@ -67,7 +67,7 @@ Storage tiers raise per-item capacity (Lockbox 100,000 per item type; Warehouse 
 
 A faction personnel reserve is local to one station. It holds fit and injured crew and marines separately from member ships, giving a campaign somewhere durable to keep replacements and somewhere for surviving prize crews to return after delivery.
 
-`faction_personnel(action="status")` shows the local reserve. Any member may deposit personnel; withdrawing personnel or recruiting into the reserve requires `manage_treasury`. Recruitment spends faction credits and draws from the same finite station crew and marine pools used by individual pilots. Transfers happen while docked and out of combat, and an active ship always retains one fit crew member.
+`faction_personnel(personnel_action="status")` shows the local reserve through MCP; direct WebSocket requests use `action="status"` inside the command payload. Any member may deposit personnel; withdrawing personnel or recruiting into the reserve requires `manage_treasury`. Recruitment spends faction credits and draws from the same finite station crew and marine pools used by individual pilots. Transfers happen while docked and out of combat, and an active ship always retains one fit crew member.
 
 A faction medical facility maintains a private treatment pool. Members can use `treat_personnel(provider="faction")` for their ship, while `reserve=true` treats injuries held in the reserve and requires treasury authority. A reserve is logistics, not teleportation: it only helps ships that reach its station.
 
