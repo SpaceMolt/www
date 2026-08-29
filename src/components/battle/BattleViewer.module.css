@@ -593,6 +593,21 @@
   color: var(--star-white);
 }
 
+.telemetryMetrics .telemetryHit,
+.telemetryMetrics .telemetryMiss {
+  margin-left: 0.18rem;
+  font-size: 0.56rem;
+  letter-spacing: 0.08em;
+}
+
+.telemetryMetrics .telemetryHit {
+  color: #5ee6a8;
+}
+
+.telemetryMetrics .telemetryMiss {
+  color: var(--hull-grey);
+}
+
 .telemetryModifiers {
   display: flex;
   flex-wrap: wrap;

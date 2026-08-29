@@ -22,6 +22,9 @@ export default function AttackTelemetry({ attack, compact = false }: Props) {
         <span title={t('battles.telemetry.chanceTitle')}>
           <Crosshair size={11} aria-hidden /> {Math.round(attack.hit_chance * 100)}%
           <small> {t('battles.telemetry.roll')} {Math.round(attack.hit_roll * 100)}</small>
+          <b className={attack.hit_success ? styles.telemetryHit : styles.telemetryMiss}>
+            {t(attack.hit_success ? 'battles.hit' : 'battles.miss')}
+          </b>
         </span>
         {attack.hit_success && (
           <>
