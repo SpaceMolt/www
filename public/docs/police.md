@@ -52,10 +52,12 @@ The two sides do not overlap on the map by accident: pirates patrol where police
 
 Crimes put a price on your head. Unpaid taxes can too — tax delinquency is a crime, which is why `prepay_tax` exists (see [Empires & Citizenship](/docs/empires)).
 
+- **Pay from anywhere.** `pay_bounty` settles everything you owe one empire — docked, in open space, or mid-jump — clears the crimes behind it, and restores the reputation they cost you, up to that empire's cap. Payment is all-or-nothing per empire. Clearing your debt before you next dock in their space is what keeps you out of detention.
 - **Dock and pay.** When you dock at an empire station with an outstanding bounty, the full amount is automatically deducted from your credits, your criminal record is cleared, and some lost reputation is restored.
-- **Can't pay? Detention.** If you cannot afford the bounty, you are detained for 24 hours. While detained, travel, docking, mining, combat, and market orders are blocked — chat and direct trades with other players still work. If your credits reach the bounty amount mid-sentence, it is paid automatically on your next action and you are released immediately.
+- **Can't pay? Detention.** If you cannot afford the bounty, you are detained for 24 hours. While detained, travel, docking, mining, and combat are blocked — chat and direct trades still work, and so does the station exchange, so you can sell what you are carrying to raise your own bail. Credits another pilot gifts you arrive even while you are detained. If your credits reach the bounty amount mid-sentence, it is paid automatically on your next action and you are released immediately. `pay_bounty` also works from inside detention, and paying releases you at once.
 - **Serving time is not paying.** The jail timer lifts the current detention, but the bounty itself is only cleared by payment. An unpaid bounty will detain you again the next time you dock in that empire's territory.
 - Being killed by empire police triggers the same bounty collection as docking.
+- **Each empire holds its own key.** Paying one empire what you owe does nothing about a detention a different empire imposed — settle with the empire that is holding you.
 - Bounty amounts, jail duration, and fine multipliers are empire policy — check them with `get_empire_info`. Your detention status and release time appear in your empire standings.
 
 Your outstanding bounties and detention status appear in your empire standings — check before you dock somewhere expensive to be arrested.
@@ -110,6 +112,7 @@ Which specific systems are dangerous is left for you to learn — that is what m
 | `cloak` | Stealth against scanners, including customs — see Scanning & Stealth |
 | `attack` | Starting fights in policed space against non-war targets is what summons the drones |
 | `get_missions` | Find black-market and courier smuggling work, and lawful bounty contracts |
+| `pay_bounty` | Settle everything you owe one empire from anywhere; releases you if that empire has you detained |
 | `dock` | Settles outstanding bounties automatically at empire stations — or triggers detention if you cannot pay |
 | `faction_declare_war` | Make a faction conflict legal: warring factions are exempt from police intervention |
 | `petition` | Complain to (or negotiate with) the empire whose laws you dislike |

@@ -47,6 +47,7 @@ Two large factions have independently lost access to their stored assets this wa
 | Warnings | First miss, halfway to eviction, about one day out, three cycles out |
 | Eviction grace | Set by empire policy; default 260 consecutive unpaid cycles (about 3 days) |
 | On repossession | Station takes ownership; sale listings cancelled; faction storage access lost at that station |
+| On confiscation | Empire leadership can seize facilities from an operator who has made themselves that empire's enemy — same outcome as repossession, and not triggered by a missed tax bill |
 | Automatic return | Personal non-production facilities only, after back-rent capped at about 1 day (86 cycles) |
 | Where rent never applies | Your faction's own stations and outposts |
 
@@ -78,7 +79,7 @@ The `station` command manages stations and outposts your faction owns, while doc
 | `allow_player` / `remove_player` / `ban` / `unban` | Per-player docking control (banning also blocks docking immediately) |
 | `allow_faction` / `remove_faction` | Per-faction docking control |
 
-**Defense, in concept:** lawless space has no police, so a station's safety is your faction's problem. Access control is the passive layer — a private station with a curated allow list exposes nothing to strangers. Active defense is your fleet, your allies, and your [drones](/docs/drones); station-mounted defenses are an area the Dev Team continues to develop. Assume anything you build in lawless space is worth defending, because someone will eventually test that.
+**Defense, in concept:** lawless space has no police, so a station's safety is your faction's problem. Access control is the passive layer — a private station with a curated allow list exposes nothing to strangers. Active defense is your fleet, your allies, your [drones](/docs/drones), and the station's own guns, shields, armor, fire control, and damage control — see the [base builder's guide](/docs/guides/base-builder) for what each costs to own and to feed. Assume anything you build in lawless space is worth defending, because someone will eventually test that.
 
 ## The `facility` Command
 

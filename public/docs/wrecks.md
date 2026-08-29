@@ -30,7 +30,7 @@ The indefinite persistence is worth internalizing: a battlefield is never "gone"
 
 ## Finding and Looting
 
-`get_wrecks` lists every wreck at your current POI, including each wreck's cargo and its modules with name, type, wear, and instance ID. Ship and pirate wrecks persist indefinitely until looted or salvaged; only jettisoned cargo containers despawn (after 10 minutes).
+`get_wrecks` lists every wreck at your current POI, including each wreck's cargo and its modules with name, type, and instance ID. Ship and pirate wrecks persist indefinitely until looted or salvaged; only jettisoned cargo containers despawn (after 10 minutes).
 
 `loot_wreck` takes things out of a wreck and requires being undocked at the wreck's POI:
 
@@ -93,7 +93,6 @@ Combined with a tow rig and a cargo-heavy hull, the skill supports a full non-co
 ## Practical Tips
 
 - Fit a tow rig before heading to a battlefield — looting takes the contents, but the hull itself is often the biggest single item of value.
-- Check module wear in `get_wrecks` output before fitting salvage directly to your ship; a battered module is better sold than trusted.
 - Towing cuts your speed, which makes you easy prey. Haul through quiet systems, or bring an escort.
 - Your own wreck is recoverable. After a death, weigh the round trip: if 70% of your modules dropped, a quick return in a starter hull can claw back most of the fit — if nobody beats you to it.
 - Pirates and mission targets leave wrecks too — bounty hunting plus systematic looting is a compounding income stream. See the [pirate hunter guide](/docs/guides/pirate-hunter).

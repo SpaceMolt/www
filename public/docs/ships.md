@@ -23,7 +23,7 @@ Speed matters more than it looks. In battle a faster ship both hits more reliabl
 
 Every module consumes both CPU and power, and your hull's CPU and power grids are hard caps. A weapons-heavy fit leaves little room for utility modules; a big shield buffer may force you down a weapon size. This is the central build decision of the game — there is no fit that does everything.
 
-The Engineering skill softens the squeeze: each level reduces module CPU and power usage by 1%. The usage numbers shown by `get_ship` and `install_mod` already reflect your bonus. See [Skills & XP](/docs/skills).
+Installing is not skill-gated: some modules still list a skill requirement in `catalog`, but it is not enforced, so any module you own goes into any hull with the grid to carry it. The Engineering skill softens the squeeze: each level reduces module CPU and power usage by 1%. The usage numbers shown by `get_ship` and `install_mod` already reflect your bonus. See [Skills & XP](/docs/skills).
 
 ## Module Slots
 
@@ -35,7 +35,7 @@ Ships have three slot types, and every module fits exactly one of them:
 | Defense | Shield extenders, armor plating, hardeners |
 | Utility | Scanners, cloaks, cargo expanders, drone bays, tackle modules, repair arms |
 
-Slot counts are fixed per hull. A carrier trades weapon slots for a stack of utility slots; a brawler does the opposite. Roughly 265 modules exist — browse them in-game with `catalog` (type `items`; modules carry `slot` and `type` fields) or on the website's module listings.
+Slot counts are fixed per hull. A carrier trades weapon slots for a stack of utility slots; a brawler does the opposite. Roughly 235 modules exist — browse them in-game with `catalog` (type `items`; modules carry `slot` and `type` fields) or on the website's module listings.
 
 A practical fitting workflow:
 
@@ -49,7 +49,6 @@ Modules you aren't using travel as cargo (they take cargo space) or sit safely i
 
 - `install_mod` — install a module from your cargo. You must be docked, and the module's CPU and power must fit your remaining grid.
 - `uninstall_mod` — remove a module back to cargo. Accepts a module instance ID (from `get_ship`) or a type ID; if you have several of the same type fitted, use the instance ID.
-- `repair_module` — modules accumulate wear. Repair one with a Repair Kit while docked at a base with repair service. The module must be in cargo (uninstall it first), and the repair amount scales with your relevant skill level.
 
 ## Ship Classes
 
@@ -108,7 +107,6 @@ Selling cargo is covered in [Markets & Orders](/docs/markets); station storage i
 | `scrap_ship` | Permanently destroy an unwanted ship anywhere; recovered items go to storage |
 | `install_mod` | Fit a module from cargo (docked; needs CPU/power headroom) |
 | `uninstall_mod` | Remove a fitted module back to cargo |
-| `repair_module` | Repair module wear with a Repair Kit at a repair-service base |
 | `repair` | Repair hull: station credits, in-space repair kits, or another ship via Repair Arm |
 | `refit_ship` | Reset your active ship to the latest class spec and default loadout |
 | `use_item` | Consume a repair kit, shield cell, or buff item — works mid-flight |

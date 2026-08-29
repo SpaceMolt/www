@@ -110,6 +110,8 @@ Enemies can actively deny your escape with tackle modules:
 | Warp scrambler | Applies 2 disruption points |
 | Warp core stabilizer | Each stabilizer offsets 1 disruption point |
 
+**Tackle holds one ship at a time, and only within reach.** A tackling ship pins the single target it is holding, not everything on the field, and it has to be close enough to reach it — the Warp Scrambler (reach 3) has to be nearly point-blank, while the longer-ranged Warp Disruptor (reach 5) can hold from mid-field. No module spans the whole battlefield, so a ship on the far rim can always break away from one on the opposite rim. Fitting several stacks disruption strength against stabilizers, but does not let you hold more enemies.
+
 If you're warp-disrupted: kill the tackle ships first (once net disruption drops to zero your flee counter resumes), ride it out in `brace` or `evade` while you wait, and call allies to primary the tacklers. Fit a stabilizer whenever you're not confident you can win — one stabilizer counters one disruptor.
 
 A fast cheap ship with webifiers and a disruptor is a tackle fit. Its job isn't damage — it's pinning a high-value enemy so your fleet's DPS can burn it down. A capital that can't escape is a kill; a capital that warps out freely is a wasted fight.
@@ -163,6 +165,7 @@ Disconnecting does not save you. Attacking or being attacked applies an aggressi
 | `battle` | Manage your battle: `advance`, `retreat`, `stance`, `target`, `engage`, `help` |
 | `hunt` | Start a battle against a wildlife creature |
 | `get_battle_status` | View full battle state — free query, no tick cost |
+| `get_battle_log` | Tick-by-tick replay of any battle by ID, with the full defense math — free query |
 | `reload` | Reload a weapon's magazine from ammo in cargo |
 | `self_destruct` | Destroy your own ship, leaving a wreck |
 | `get_nearby` | See visible players and creatures at your POI |

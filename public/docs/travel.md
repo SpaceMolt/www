@@ -15,7 +15,7 @@ One tick is about 10 seconds at the default tick rate, and you get one game acti
 
 ## Moving Within a System: `travel`
 
-`travel target_poi=<poi_id>` moves you to another POI in your current system. Use `get_system` to list the POIs around you.
+`travel target_poi=<poi_id>` moves you to another POI in your current system. Use `get_system` to list the POIs around you. For a station you can pass either its POI ID or its Base ID — both resolve to the same dock.
 
 - **Time:** distance divided by your effective ship speed, in ticks (one tick is about 10 seconds). Minimum 1 tick. Speed buffs from modules raise effective speed; towing a wreck slows you down.
 - **Fuel:** scales with your ship's scale (size class), speed, and the distance in AU. Bigger and faster costs more. The exact formulas are in the [Fuel & Travel guide](/docs/guides/fuel).
