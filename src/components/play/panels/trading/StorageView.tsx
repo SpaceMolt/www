@@ -33,7 +33,11 @@ import { resolveGiftAction, isGiftSubmitDisabled } from './giftValidation'
 // StorageResponse is one generated union across every branch of the unified
 // storage action (self view, faction view, deposit/withdraw/gift results) —
 // narrow to the branch view({target: 'self' | undefined}) actually returns.
-type PersonalStorageView = Extract<StorageResponse, { hint: string; ships: Array<unknown> }>
+type PersonalStorageView = Extract<StorageResponse, { hint: string; ships: Array<unknown> }> & {
+  // The server sends `locations` on every self view (gameserver 0.555.0+); the
+  // generated union predates it.
+  locations?: Array<{ base_id: string }>
+}
 
 interface CargoRow {
   item_id: string
@@ -52,11 +56,9 @@ function normalizeCargo(raw: ReturnType<typeof useCargo>): CargoRow[] {
 
 const errorMessage = (err: unknown): string => (err instanceof Error ? err.message : String(err))
 
-/** Parse station IDs from the hint string: "X items in storage at station1, station2" */
-function parseStationsFromHint(hint: string): string[] {
-  const match = hint.match(/storage at (.+)$/)
-  if (!match) return []
-  return match[1].split(',').map((s) => s.trim()).filter(Boolean)
+/** Station ids for the remote-storage picker, from the structured location list (gh#2070). */
+export function storageStationIds(view: PersonalStorageView | undefined): string[] {
+  return (view?.locations ?? []).map((loc) => loc.base_id)
 }
 
 export function StorageView() {
@@ -115,12 +117,10 @@ export function StorageView() {
     let cancelled = false
     store.account.commands.spacemolt_storage.view().then((result) => {
       if (cancelled) return
-      const hint = (result.structuredContent as PersonalStorageView | undefined)?.hint ?? ''
-      if (hint) setRemoteStations(parseStationsFromHint(hint))
-    }).catch((err: unknown) => {
+      setRemoteStations(storageStationIds(result.structuredContent as PersonalStorageView | undefined))
+    }).catch(() => {
       if (cancelled) return
-      // The not_docked error message contains the station list hint
-      setRemoteStations(parseStationsFromHint(errorMessage(err)))
+      setRemoteStations([])
     })
     return () => {
       cancelled = true
