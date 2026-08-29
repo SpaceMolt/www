@@ -6,9 +6,11 @@
 
 import { getShip, type RawShip } from '@/data/catalog'
 import { archetypeForShip, type GlyphArchetype } from './shipGlyphs'
+import { secondaryAttackLabel } from './combatTelemetry'
 import {
   type BattleLogEntry,
   type BattleSummary,
+  type AttackLogEntry,
   type ParticipantSnapshot,
   sideColor,
   zoneIndex,
@@ -79,6 +81,8 @@ export interface BattleEvent {
   text: string
   /** Primary participant, used for jump-to-ship on click */
   actorId?: string
+  /** Rich server-resolved volley detail for expandable combat-log rows. */
+  attack?: AttackLogEntry
 }
 
 export interface TickDamage {
@@ -285,14 +289,16 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
         const ammo = a.weapons?.find(w => w.ammo_used)?.ammo_used
         const ammoStr = ammo ? ` [${ammo}]` : ''
         const critStr = crit ? ' — CRITICAL' : ''
-        if (a.splash) {
+        const secondary = secondaryAttackLabel(a)
+        if (secondary) {
           events.push({
             tickIndex,
             tick: entry.tick,
             kind: 'splash',
             color: EVENT_COLORS.splash,
-            text: `${name(a.target_id)} caught ${dmgStr} ${a.damage_type} splash from ${name(a.attacker_id)}${ammoStr}`,
+            text: `${secondary}: ${name(a.attacker_id)} → ${name(a.target_id)} for ${dmgStr} ${a.damage_type}${ammoStr}`,
             actorId: a.target_id,
+            attack: a,
           })
         } else {
           events.push({
@@ -302,6 +308,7 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
             color: EVENT_COLORS.attack,
             text: `${name(a.attacker_id)} hit ${name(a.target_id)} for ${dmgStr} ${a.damage_type}${ammoStr}${critStr}`,
             actorId: a.attacker_id,
+            attack: a,
           })
         }
       } else {
@@ -312,19 +319,21 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
           color: EVENT_COLORS.miss,
           text: `${name(a.attacker_id)} missed ${name(a.target_id)} (${Math.round(a.hit_chance * 100)}% to hit)`,
           actorId: a.attacker_id,
+          attack: a,
         })
       }
     }
 
     for (const b of entry.burns ?? []) {
+      const source = b.source_id ? ` from ${name(b.source_id)}` : ''
       events.push({
         tickIndex,
         tick: entry.tick,
         kind: 'burn',
         color: b.destroyed ? EVENT_COLORS.kill : EVENT_COLORS.burn,
         text: b.destroyed
-          ? `${name(b.target_id)} burned to destruction (${b.damage} damage)`
-          : `${name(b.target_id)} took ${b.damage} burn damage${b.ticks_remaining > 0 ? ` (${b.ticks_remaining} ticks left)` : ''}`,
+          ? `${name(b.target_id)} burned to destruction${source} (${b.damage} damage)`
+          : `${name(b.target_id)} took ${b.damage} burn damage${source}${b.ticks_remaining > 0 ? ` (${b.ticks_remaining} ticks left)` : ''}`,
         actorId: b.target_id,
       })
     }
@@ -334,6 +343,7 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
       if (r.shield_regen > 0) parts.push(`${r.shield_regen} shield`)
       if (r.armor_repair > 0) parts.push(`${r.armor_repair} armor`)
       if (r.remote_repair) parts.push(`${r.remote_repair} remote hull repair`)
+      if (r.passive_repair) parts.push(`${r.passive_repair} passive hull repair`)
       if (parts.length === 0) continue
       events.push({
         tickIndex,

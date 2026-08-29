@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import styles from './BattleViewer.module.css'
 import { useTranslation } from '@/i18n'
 import type { BattleTimeline, BattleEventKind } from '@/lib/battle/timeline'
+import AttackTelemetry from './AttackTelemetry'
 
 type FilterKey = 'all' | 'combat' | 'kills' | 'movement' | 'support'
 
@@ -29,6 +30,7 @@ interface Props {
 export default function EventFeed({ timeline, tickIndex, isPlaying, onJump }: Props) {
   const { t } = useTranslation()
   const [filter, setFilter] = useState<FilterKey>('all')
+  const [expandedEvent, setExpandedEvent] = useState<string | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const pinnedToEnd = useRef(true)
 
@@ -73,19 +75,31 @@ export default function EventFeed({ timeline, tickIndex, isPlaying, onJump }: Pr
         }}
       >
         {visible.length === 0 && <div className={styles.feedEmpty}>{t('battles.noEvents')}</div>}
-        {visible.map((ev, i) => (
-          <button
-            key={`${ev.tickIndex}-${i}`}
-            className={`${styles.feedRow} ${ev.tickIndex === tickIndex ? styles.feedRowNow : ''}`}
-            onClick={() => onJump(ev.tickIndex, ev.actorId)}
-          >
-            <span className={styles.feedTick}>{ev.tickIndex + 1}</span>
-            <span className={styles.dot} style={{ background: ev.color }} />
-            <span className={styles.feedText} style={ev.kind === 'kill' || ev.kind === 'end' ? { color: ev.color } : undefined}>
-              {ev.text}
-            </span>
-          </button>
-        ))}
+        {visible.map(ev => {
+          const eventKey = `${ev.tickIndex}-${ev.kind}-${ev.actorId ?? ''}-${ev.text}`
+          const expanded = expandedEvent === eventKey
+          return (
+            <button
+              key={eventKey}
+              className={`${styles.feedRow} ${ev.tickIndex === tickIndex ? styles.feedRowNow : ''} ${expanded ? styles.feedRowExpanded : ''}`}
+              onClick={() => {
+                onJump(ev.tickIndex, ev.actorId)
+                if (ev.attack) setExpandedEvent(current => current === eventKey ? null : eventKey)
+              }}
+              aria-expanded={ev.attack ? expanded : undefined}
+            >
+              <span className={styles.feedRowSummary}>
+                <span className={styles.feedTick}>{ev.tickIndex + 1}</span>
+                <span className={styles.dot} style={{ background: ev.color }} />
+                <span className={styles.feedText} style={ev.kind === 'kill' || ev.kind === 'end' ? { color: ev.color } : undefined}>
+                  {ev.text}
+                </span>
+                {ev.attack && <span className={styles.feedDetailCue}>{expanded ? 'HIDE' : 'DETAIL'}</span>}
+              </span>
+              {expanded && ev.attack && <AttackTelemetry attack={ev.attack} compact />}
+            </button>
+          )
+        })}
       </div>
     </aside>
   )
