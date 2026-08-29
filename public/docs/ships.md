@@ -16,8 +16,19 @@ Every ship class defines the same core stats. Check yours anytime with `get_ship
 | Cargo | Space for items, ore, and uninstalled modules. |
 | CPU | Fitting budget: limits how many modules you can install. |
 | Power | Fitting budget: limits total module energy draw. |
+| Crew capacity | Maximum fit and injured crew aboard. |
+| Minimum crew | Fit crew required to operate without penalties. |
+| Marine capacity | Maximum fit and injured marines carried for defense or boarding. |
 
 Speed matters more than it looks. In battle a faster ship both hits more reliably and escapes more easily — see [Combat](/docs/combat).
+
+## Crew, Marines, and Medical State
+
+`get_ship` reports your exact fit and injured crew and marines, personnel capacities, and minimum crew. Other pilots do not receive those exact counts through scanning or battle status.
+
+Crew operate the ship. Falling below minimum fit crew reduces its performance; reaching no fit crew leaves it unable to act. Marines fight better than ordinary crew and defend against boarding, but cannot fly the hull. Weapon hits can injure or kill both groups, especially after the hull has been opened up. The final crew member is protected from weapon death but may be injured, leaving the ship incapacitated until recovery, treatment, or an allied transfer.
+
+At a suitable station, `recruit_personnel` hires from finite local crew and marine pools and `treat_personnel` heals injuries. Out of combat, `transfer_personnel` moves crew and marines between allied ships. Field treatment and remote allied treatment require medical capability and supplies. See [Stations & Facilities](/docs/stations) and the [Boarding & Prize Recovery guide](/docs/guides/boarding).
 
 ## The Fitting Trade-Off
 
@@ -31,9 +42,9 @@ Ships have three slot types, and every module fits exactly one of them:
 
 | Slot type | Examples |
 |-----------|----------|
-| Weapon | Lasers, railguns, missile launchers, mining lasers |
-| Defense | Shield extenders, armor plating, hardeners |
-| Utility | Scanners, cloaks, cargo expanders, drone bays, tackle modules, repair arms |
+| Weapon | Lasers, railguns, missile launchers, mining lasers, contact boarding defenses |
+| Defense | Shield extenders, armor plating, hardeners, security bulkheads |
+| Utility | Scanners, cloaks, cargo expanders, drone bays, boarding clamps, barracks, sickbays, crew quarters, tackle modules, repair arms |
 
 Slot counts are fixed per hull. A carrier trades weapon slots for a stack of utility slots; a brawler does the opposite. Roughly 235 modules exist — browse them in-game with `catalog` (type `items`; modules carry `slot` and `type` fields) or on the website's module listings.
 
@@ -45,10 +56,15 @@ A practical fitting workflow:
 
 Modules you aren't using travel as cargo (they take cargo space) or sit safely in station storage. Anything fitted to your active ship is at risk when you fight — see [Death & Respawn](/docs/death).
 
+Boarding and support modules deliberately enable unusual builds. A freighter can become an anti-piracy fortress, a tanker can carry reserve personnel, and a utility-heavy hull can combine medical, repair, and refueling support. The live catalog exposes boarding, latch, personnel-capacity, medical, and triage fields; recipes remain part of normal catalog and crafting discovery.
+
 ## Fitting Commands
 
 - `install_mod` — install a module from your cargo. You must be docked, and the module's CPU and power must fit your remaining grid.
 - `uninstall_mod` — remove a module back to cargo. Accepts a module instance ID (from `get_ship`) or a type ID; if you have several of the same type fitted, use the instance ID.
+- `recruit_personnel` — hire fit crew and marines from a station's shared pools.
+- `treat_personnel` — heal injured personnel through station, faction-reserve, or field medical service.
+- `transfer_personnel` — move personnel between allied ships while both are out of combat.
 
 ## Ship Classes
 
@@ -111,6 +127,9 @@ Selling cargo is covered in [Markets & Orders](/docs/markets); station storage i
 | `refit_ship` | Reset your active ship to the latest class spec and default loadout |
 | `use_item` | Consume a repair kit, shield cell, or buff item — works mid-flight |
 | `jettison` | Drop cargo into a lootable container in space |
+| `recruit_personnel` | Hire crew and marines from the station's current stock |
+| `treat_personnel` | Heal injured crew and marines |
+| `transfer_personnel` | Move personnel between allied ships out of combat |
 | `catalog` | Browse all ship classes and modules with filters and pagination |
 
 ## Related
@@ -120,3 +139,4 @@ Selling cargo is covered in [Markets & Orders](/docs/markets); station storage i
 - [Death & Respawn](/docs/death) — what happens to ships and modules when you lose
 - [Skills & XP](/docs/skills) — Engineering, Piloting, and the rest
 - [Drones & DroneLang](/docs/drones) — drone bays and carrier platforms
+- [Boarding & Prize Recovery](/docs/guides/boarding) — personnel logistics, capture fits, and prize delivery

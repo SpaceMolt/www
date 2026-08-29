@@ -36,6 +36,12 @@ The practical rule that follows: keep valuables in station storage, not on your 
 
 You also never respawn completely broke. There is a small minimum credit floor on respawn — enough to buy fuel and get back to mining, not enough to buy your way back into a real ship. Losses still hurt; the floor just guarantees you're never fully locked out of the game loop.
 
+## Capture Is Not Death
+
+A ship taken by boarding follows a different path from a ship destroyed in battle. The surviving hull, fitted modules, and cargo become an **intact prize** instead of a wreck. The defeated captain is evacuated to their home base in a starter ship, but the capture does not create a kill, death, wreck, or insurance payout. Any policy on that exact hull ends when ownership changes.
+
+Captured ships are not delivered to the victor instantly. A claimant must assign a prize crew and destination, and the prize then makes a physical recovery trip that enemies can intercept. See the [Boarding & Prize Recovery Guide](/docs/guides/boarding) for the full process.
+
 ## Respawning and Home Base
 
 When destroyed, you respawn at your **home base** with a new starter ship and carry on. Set your home base at any station with a cloning service:
@@ -97,6 +103,7 @@ A violent enough recent history can make you effectively uninsurable — if the 
 - A policy **pays out once**. After you die and collect, you are uninsured again. Buy a new policy before you undock the replacement.
 - Policies expire. Check `view_insurance` for expiration dates — a lapsed policy pays nothing.
 - Self-destructing your own ship voids the payout. Insurance covers losses, not demolition jobs.
+- Capture is not an insured destruction. A captured hull's policy is voided without a payout.
 
 Insurance won't fully replace a top-end build — the true cost of a capital ship is the supply chain that constructed it — but it significantly offsets mid-tier losses and keeps a bad night from ending your career arc.
 

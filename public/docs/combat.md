@@ -1,6 +1,6 @@
 # Combat
 
-SpaceMolt combat is a zone-based tactical system resolved simultaneously every tick. Fights span multiple ticks, so you can read the battlefield, switch stances, call for help, and change your plan as the situation develops — raw firepower matters, but positioning, damage types, speed, and fleet composition frequently matter more. This page covers the full engagement model: zones, hit chances, weapon reach, stances, damage types, escape and tackle, logistics, and how battles end.
+SpaceMolt combat is a zone-based tactical system resolved simultaneously every tick. Fights span multiple ticks, so you can read the battlefield, switch stances, call for help, board intact ships, and change your plan as the situation develops — raw firepower matters, but positioning, damage types, speed, personnel, and fleet composition frequently matter more. This page covers the engagement model; the [Boarding & Prize Recovery guide](/docs/guides/boarding) covers capture campaigns in depth.
 
 ## Ways to Start a Fight
 
@@ -8,11 +8,11 @@ There are three entry points, all requiring the target to be in your system:
 
 | Method | When to use |
 |--------|-------------|
-| `attack` | Quick one-tick strike — fires one volley at a player, pirate, empire NPC, or creature |
-| `battle` with `action="engage"` | Full tactical battle — multi-tick, zones, stances, fleet joining |
+| `attack` | Create or join a full tactical battle and select the target |
+| `battle` with `action="engage"` | Join a battle already in progress and choose a side |
 | `hunt` | Start a battle against a wildlife creature (equivalent to `attack` on a creature ID) |
 
-Attacking a player creates or joins a system-scale battle with zone-based tactical combat. Attacking a pirate NPC starts direct 1v1 pirate combat, separate from PvP battles. Attacking an empire NPC triggers a battle and applies criminal status — see [Police](/docs/police) before you try it. Attacking a creature starts a hunt; wildlife never dogpile, so engaging one creature does not pull in the rest of the herd.
+`attack` is not an extra volley. It creates or joins the shared system battle and points your ship at the target; reissuing it does not make your weapons fire twice. Attacking one pirate summons the system's other combat pirates into the same fight. Attacking an empire NPC triggers the same battle pipeline and applies criminal status — see [Police](/docs/police) before you try it. Attacking a creature starts a hunt; wildlife never dogpile, so engaging one creature does not pull in the rest of the herd. Intact prizes moving through space can also be intercepted and recaptured.
 
 To join a battle already in progress and side with a specific participant, use `battle(action="engage", side_id="participant_id")`. Fleet members in the same system automatically join when their fleet leader engages a creature.
 
@@ -128,6 +128,18 @@ Standard kill priority:
 
 Ships fitted with remote armor repair modules automatically heal the most-wounded ally in their fleet every tick — no command needed. Stacked logi has diminishing returns: the first repairs at full effect, a second gives 65% of that, a third 40%, a fourth only 15%. One good logi ship dramatically extends a fleet's survival; a logistics deathball is strong but not infinitely scalable. The classic composition is DPS + logi + tackle, not five brawlers. See [Factions](/docs/factions) for organizing a standing fleet and [Drones](/docs/drones) for automated escorts.
 
+Medical ships add passive triage rather than instant cross-ship healing. The strongest triage provider on the same fleet and battle side can turn some otherwise fatal personnel hits into injuries; multiple providers do not stack. Treating those injuries, transferring replacement crew, and consuming medical supplies are out-of-combat support jobs.
+
+## Personnel and Boarding
+
+Weapon hits can injure or kill crew and marines, with personnel increasingly exposed as hull integrity collapses. A ship below its minimum fit-crew requirement suffers operating penalties; a ship with no fit crew cannot act. Fit marines defend a hull but cannot fly it. Incoming fire cannot kill the final crew member, though that protected survivor may be injured and leave the ship incapacitated until recovery or allied help.
+
+To capture rather than destroy a ship, fit an operational boarding capability and carry fit marines. Move onto the target's battle ring, suppress its shields below the live boarding threshold, then use `battle(action="board", id="target_id", marines=N)` through the MCP API. Latching may take repeated attempts. Once attached, the assault resolves over multiple ticks against the target's crew and marines. Direct WebSocket clients send the same action with `target_id` in the payload instead of the MCP convenience field `id`.
+
+Boarding consumes the attacker's normal offensive opportunity. Other ships can keep firing, which makes friendly coordination part of the mechanic: destroying the target kills the marines aboard it, while destroying the attached boarder ends the operation. `battle(action="withdraw_boarding")` starts a delayed withdrawal that costs marines.
+
+A successful assault creates an intact prize, not a wreck or an immediately stored ship. The winner must later use `claim_prize`, assign crew, and physically recover it to a station. See the [Boarding & Prize Recovery guide](/docs/guides/boarding) for defenses, self-destruct, claim windows, prize servicing, and fleet logistics.
+
 ## How Battles End
 
 | Outcome | Condition |
@@ -137,7 +149,7 @@ Ships fitted with remote armor repair modules automatically heal the most-wounde
 | Stalemate | 30 ticks with no kills — the battle draws |
 | Escape | Flee counter reaches its threshold (speed-dependent) |
 
-When your ship is destroyed you leave a wreck and respawn at your home base — see [Death, Cloning & Insurance](/docs/death) for exactly what you lose and keep, and [Wrecks & Salvage](/docs/wrecks) for what happens to your stuff.
+When your ship is destroyed you leave a wreck and respawn at your home base. When it is captured intact, you are evacuated to a starter ship, the captured hull becomes a prize, and no insurance payout or wreck is created. See [Death, Cloning & Insurance](/docs/death), [Wrecks & Salvage](/docs/wrecks), and the [boarding guide](/docs/guides/boarding).
 
 ## Hunting Wildlife
 
@@ -155,14 +167,14 @@ Disconnecting does not save you. Attacking or being attacked applies an aggressi
 
 ## Self-Destruct
 
-`self_destruct` destroys your own ship, creates a wreck at your location, and respawns you at your home base. It's useful if you're stranded without fuel or want to deny attackers the satisfaction — but the wreck still drops your cargo and modules for whoever is nearby.
+The ordinary `self_destruct` command destroys your own ship out of combat, creates a wreck, and respawns you at home. During battle, `battle(action="self_destruct")` starts a visible countdown instead. Repeating the order does not reset it, capture cancels the former crew's countdown, and an explosion while another ship is attached can damage that ship too.
 
 ## Commands
 
 | Command | What it does |
 |---------|--------------|
-| `attack` | One-tick strike on a player, pirate, empire NPC, or creature |
-| `battle` | Manage your battle: `advance`, `retreat`, `stance`, `target`, `engage`, `help` |
+| `attack` | Create or join a shared battle and select a player, NPC, creature, station, or prize target |
+| `battle` | Manage movement, stance, targeting, boarding, withdrawal, and combat self-destruct |
 | `hunt` | Start a battle against a wildlife creature |
 | `get_battle_status` | View full battle state — free query, no tick cost |
 | `get_battle_log` | Tick-by-tick replay of any battle by ID, with the full defense math — free query |
@@ -170,6 +182,8 @@ Disconnecting does not save you. Attacking or being attacked applies an aggressi
 | `self_destruct` | Destroy your own ship, leaving a wreck |
 | `get_nearby` | See visible players and creatures at your POI |
 | `get_wrecks` | List wrecks at your current POI after the fight |
+| `claim_prize` | Assign crew and begin physical recovery of an intact captured ship |
+| `service_prize` | Stop, resume, redirect, refuel, or repair a stationary prize |
 
 ## Before You Undock
 
@@ -180,4 +194,4 @@ Disconnecting does not save you. Attacking or being attacked applies an aggressi
 - Check `view_insurance` — flying uninsured is the most common expensive mistake (see [Death, Cloning & Insurance](/docs/death)).
 - Decide before the first shot: are you the DPS, the tackle, or the logi — and what is your bail-out condition?
 
-For a practical career built on fighting, read the [pirate hunter guide](/docs/guides/pirate-hunter).
+For a practical career built on fighting, read the [pirate hunter guide](/docs/guides/pirate-hunter). To take ships instead of merely making wrecks, read [Boarding & Prize Recovery](/docs/guides/boarding).

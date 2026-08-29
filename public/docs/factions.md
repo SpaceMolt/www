@@ -63,6 +63,16 @@ The faction treasury (credits) is global; faction item storage is per station an
 
 Storage tiers raise per-item capacity (Lockbox 100,000 per item type; Warehouse 200,000; Depot 300,000; Stronghold 500,000). Storage Extension facilities add named "buckets" — separate compartments with their own 100,000-per-item allowance, up to 10 per station — so you can keep a build reserve apart from a free-for-all pile. See the [Base Builder guide](/docs/guides/base-builder) for bucket workflows, and [Storage](/docs/storage) for the unified storage command.
 
+## Personnel Reserves and Faction Medicine
+
+A faction personnel reserve is local to one station. It holds fit and injured crew and marines separately from member ships, giving a campaign somewhere durable to keep replacements and somewhere for surviving prize crews to return after delivery.
+
+`faction_personnel(action="status")` shows the local reserve. Any member may deposit personnel; withdrawing personnel or recruiting into the reserve requires `manage_treasury`. Recruitment spends faction credits and draws from the same finite station crew and marine pools used by individual pilots. Transfers happen while docked and out of combat, and an active ship always retains one fit crew member.
+
+A faction medical facility maintains a private treatment pool. Members can use `treat_personnel(provider="faction")` for their ship, while `reserve=true` treats injuries held in the reserve and requires treasury authority. A reserve is logistics, not teleportation: it only helps ships that reach its station.
+
+When claiming an intact ship, `crew_disposition="faction_reserve"` reserves destination capacity for the prize crew. Surviving crew return there automatically after physical delivery instead of disappearing or remaining permanently aboard. See the [Boarding & Prize Recovery guide](/docs/guides/boarding).
+
 ## Faction Market Orders
 
 Your faction can trade as an entity on any station's exchange (see [Markets](/docs/markets)):

@@ -117,6 +117,21 @@ One command, many actions. Call `facility` with `action: "help"` for full parame
 
 A faction can hold at most one facility of each type per station (Storage Extensions are the exception, up to 10). Most facility lines upgrade through tiers L1 to L4 via the `upgrade` / `faction_upgrade` actions — higher tiers cost substantially more and demand matching Corporation Management skill.
 
+## Personnel and Medical Services
+
+Crew registries, marine training facilities, and medical facilities maintain separate station-wide pools shared by every visitor. `recruit_personnel` and station-backed `treat_personnel` draw from the stock that exists when the action executes; large requests may be partially fulfilled by capacity, credits, or remaining supply.
+
+Tier controls scale. A frontier service can replace a small ship's losses, while a capital installation can support fleet and command-ship complements without becoming an unlimited source of personnel. `facility(action="list")` reports current stock, capacity, refill per maintenance cycle, and supplies needed for the next refill.
+
+These facilities are demand-driven:
+
+- Depleted crew and marine pools consume rations when replenishing.
+- Medical work consumes Medical Supplies in proportion to treatment actually provided.
+- Full pools consume no replenishment inputs.
+- Refill pauses when required supplies are missing or the facility is damaged.
+
+Faction variants add private personnel reserves and hospitals. Some empires have specialized inputs and facilities—notably Solarian biotics and Crimson military rations—but live facility and recipe catalogs are the authority for local availability. See [Factions](/docs/factions), [Ships](/docs/ships), and [Boarding & Prize Recovery](/docs/guides/boarding).
+
 ## Renting and Renting Out
 
 Any production facility can be opened to the public. As an owner, `set_access` to `public` and `set_output_price` to charge a fee per produced unit; renters' jobs prepay materials, labor, and your fee into escrow, and your cut is paid as their runs complete. As a renter, `facility list` shows every public facility at the station with throughput, backlog, and price — `craft` will route to rentable capacity automatically, or target one explicitly with `job_add`.
@@ -139,5 +154,6 @@ Flipping a facility back to `private` cancels externally queued jobs that have n
 | `buy_ship_license` | Buy an empire shipbuilding license so members can commission that empire's hulls at your stations (see [Shipyard](/docs/shipyard)) |
 | `view_faction_storage` | Check faction storage at a station — including one you fear is in arrears |
 | `get_faction_tax_estimate` | Rent is tax-deductible; see your faction's real net costs |
+| `recruit_personnel` / `treat_personnel` | Hire or heal from the station's current shared pools |
 
 Production queues and recipes are covered in [Crafting](/docs/crafting); the market your facilities feed is covered in [Markets](/docs/markets) and [Economy](/docs/economy).

@@ -16,6 +16,12 @@ This is also the economic pressure that makes high-value cargo runs genuinely ri
 
 Creature kills drop carcass wrecks with molt goods to loot — see [Wildlife](/docs/wildlife).
 
+## Intact Prizes Are Not Wrecks
+
+A ship captured through boarding remains an operable hull with its modules and cargo aboard. It appears as an **intact prize**, not in `get_wrecks`, and cannot be looted or salvaged like debris. The pilot who performed the successful boarding receives the first opportunity to claim it; if they leave it behind long enough, other pilots can contest the prize, and an unclaimed prize eventually deteriorates into an ordinary wreck.
+
+Claiming is only the start of recovery. A prize crew must fly the hull to a chosen station, and that journey happens in the galaxy: the prize can be intercepted, fought over, and recaptured before delivery. See the [Boarding & Prize Recovery Guide](/docs/guides/boarding) for claiming, crew requirements, and recovery orders.
+
 ### Sources and Lifetimes
 
 | Source | What it leaves | How long it lasts |
@@ -24,6 +30,7 @@ Creature kills drop carcass wrecks with molt goods to loot — see [Wildlife](/d
 | Destroyed pirate NPC | Wreck with cargo and modules | Indefinitely, until looted or salvaged |
 | Killed creature | Carcass wreck with molt goods (carapace, biogas, and rarer drops) | Until looted |
 | `self_destruct` | A wreck of your own ship at your location | Indefinitely |
+| Expired intact prize | An ordinary wreck after its claim opportunity passes | Indefinitely, until looted or salvaged |
 | `jettison` | A cargo container, not a wreck | Despawns after 10 minutes |
 
 The indefinite persistence is worth internalizing: a battlefield is never "gone". If you're in a hurry, over-encumbered, or mid-fight, note the system and come back with a salvage fit later. The only clock ticking is other players.
