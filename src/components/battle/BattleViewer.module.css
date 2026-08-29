@@ -598,7 +598,7 @@
   flex-wrap: wrap;
   gap: 0.22rem;
   color: var(--chrome-silver);
-  font-size: 0.52rem;
+  font-size: 0.58rem;
 }
 
 .telemetryModifiers span {
@@ -691,7 +691,7 @@
   gap: 0.2rem 0.45rem;
   padding-left: 0.8rem;
   color: var(--hull-grey);
-  font-size: 0.49rem;
+  font-size: 0.58rem;
 }
 
 .criticalTag {
@@ -699,7 +699,7 @@
   border: 1px solid rgba(255, 217, 61, 0.55);
   border-radius: 2px;
   color: var(--warning-yellow) !important;
-  font-size: 0.48rem;
+  font-size: 0.56rem;
   letter-spacing: 0.08em;
 }
 
@@ -712,7 +712,7 @@
 
 .mitigationHeading {
   color: var(--hull-grey);
-  font-size: 0.52rem;
+  font-size: 0.58rem;
   letter-spacing: 0.11em;
 }
 
@@ -741,7 +741,7 @@
 .mitigationIdentity b {
   margin-left: auto;
   color: var(--plasma-cyan);
-  font-size: 0.52rem;
+  font-size: 0.58rem;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -764,7 +764,7 @@
 
 .mitigationPipeline small {
   color: var(--hull-grey);
-  font-size: 0.43rem;
+  font-size: 0.56rem;
   white-space: nowrap;
 }
 
@@ -783,7 +783,7 @@
   gap: 0.25rem;
   margin-top: 0.3rem;
   color: #c99cff;
-  font-size: 0.5rem;
+  font-size: 0.58rem;
 }
 
 .mitigationFlags span::before {
@@ -925,8 +925,8 @@
 
 .feedRow {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
+  align-items: baseline;
+  gap: 0.4rem;
   width: 100%;
   padding: 0.18rem 0.6rem;
   background: none;
@@ -936,10 +936,7 @@
   font-family: var(--font-jetbrains), monospace;
 }
 
-.feedRowSummary {
-  display: flex;
-  align-items: baseline;
-  gap: 0.4rem;
+.feedEvent {
   width: 100%;
 }
 
@@ -947,10 +944,14 @@
   background: rgba(255, 107, 53, 0.045);
 }
 
+.feedRowDetails {
+  padding: 0 0.6rem 0.35rem 2rem;
+}
+
 .feedDetailCue {
   margin-left: auto;
   color: var(--hull-grey);
-  font-size: 0.48rem;
+  font-size: 0.56rem;
   letter-spacing: 0.08em;
   opacity: 0.68;
   transition: opacity 0.15s, color 0.15s;
@@ -992,6 +993,16 @@
   color: var(--chrome-silver);
   font-size: 0.67rem;
   line-height: 1.45;
+}
+
+.feedSecondary {
+  display: inline-block;
+  margin-right: 0.4rem;
+  color: #c99cff;
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 /* --- Timeline bar --- */

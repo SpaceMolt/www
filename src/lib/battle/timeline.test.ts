@@ -117,10 +117,40 @@ describe('detailed combat events', () => {
 
     const timeline = buildTimeline([combatEntry], null)
     expect(timeline.events.find(event => event.kind === 'splash')?.text)
-      .toBe('Chain arc: Arc Knight → Bulwark for 25 shield energy')
+      .toBe('Arc Knight → Bulwark for 25 shield energy')
+    expect(timeline.events.find(event => event.kind === 'splash')?.secondaryKind).toBe('chain')
     expect(timeline.events.find(event => event.kind === 'burn')?.text)
       .toBe('Bulwark took 8 burn damage from Arc Knight (3 ticks left)')
     expect(timeline.events.find(event => event.kind === 'regen')?.text)
       .toBe('Bulwark restored 6 passive hull repair')
+  })
+
+  it('preserves secondary identity when a chain, area, or retaliation attack misses', () => {
+    const combatEntry = entry([
+      snap({ player_id: 'a', username: 'Arc Knight', side_id: 1 }),
+      snap({ player_id: 'b', username: 'Bulwark', side_id: 2 }),
+    ])
+    combatEntry.attacks = [{
+      attacker_id: 'a',
+      target_id: 'b',
+      zone_distance: 1,
+      weapons: [],
+      raw_damage: 40,
+      weapon_skill_pct: 0,
+      pre_hit_damage: 40,
+      hit_chance: 0.3,
+      hit_roll: 0.8,
+      hit_success: false,
+      final_damage: 0,
+      shield_damage: 0,
+      hull_damage: 0,
+      damage_type: 'energy',
+      secondary_kind: 'retaliation',
+    }]
+
+    const timeline = buildTimeline([combatEntry], null)
+    expect(timeline.events[0]?.kind).toBe('splash')
+    expect(timeline.events[0]?.text).toBe('Arc Knight missed Bulwark (30% to hit)')
+    expect(timeline.events[0]?.secondaryKind).toBe('retaliation')
   })
 })

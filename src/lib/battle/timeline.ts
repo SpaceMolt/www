@@ -6,7 +6,7 @@
 
 import { getShip, type RawShip } from '@/data/catalog'
 import { archetypeForShip, type GlyphArchetype } from './shipGlyphs'
-import { secondaryAttackLabel } from './combatTelemetry'
+import { secondaryAttackKind } from './combatTelemetry'
 import {
   type BattleLogEntry,
   type BattleSummary,
@@ -83,6 +83,8 @@ export interface BattleEvent {
   actorId?: string
   /** Rich server-resolved volley detail for expandable combat-log rows. */
   attack?: AttackLogEntry
+  /** Locale-neutral identity for chain, retaliation, area, and ammo-splash volleys. */
+  secondaryKind?: string
 }
 
 export interface TickDamage {
@@ -276,6 +278,7 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
 
     for (const a of entry.attacks ?? []) {
       const attackerSide = snapMap.get(a.attacker_id)?.side_id
+      const secondary = secondaryAttackKind(a)
       if (a.hit_success && attackerSide !== undefined) {
         const si = sideIndexById.get(attackerSide)
         if (si !== undefined) damageBySide[si] += a.final_damage
@@ -289,16 +292,16 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
         const ammo = a.weapons?.find(w => w.ammo_used)?.ammo_used
         const ammoStr = ammo ? ` [${ammo}]` : ''
         const critStr = crit ? ' — CRITICAL' : ''
-        const secondary = secondaryAttackLabel(a)
         if (secondary) {
           events.push({
             tickIndex,
             tick: entry.tick,
             kind: 'splash',
             color: EVENT_COLORS.splash,
-            text: `${secondary}: ${name(a.attacker_id)} → ${name(a.target_id)} for ${dmgStr} ${a.damage_type}${ammoStr}`,
+            text: `${name(a.attacker_id)} → ${name(a.target_id)} for ${dmgStr} ${a.damage_type}${ammoStr}`,
             actorId: a.target_id,
             attack: a,
+            secondaryKind: secondary,
           })
         } else {
           events.push({
@@ -315,11 +318,12 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
         events.push({
           tickIndex,
           tick: entry.tick,
-          kind: 'miss',
-          color: EVENT_COLORS.miss,
+          kind: secondary ? 'splash' : 'miss',
+          color: secondary ? EVENT_COLORS.splash : EVENT_COLORS.miss,
           text: `${name(a.attacker_id)} missed ${name(a.target_id)} (${Math.round(a.hit_chance * 100)}% to hit)`,
           actorId: a.attacker_id,
           attack: a,
+          secondaryKind: secondary,
         })
       }
     }
