@@ -400,7 +400,7 @@
   position: absolute;
   left: 10px;
   bottom: 10px;
-  width: 288px;
+  width: min(430px, calc(100% - 20px));
   max-height: 60%;
   overflow-y: auto;
   background: rgba(13, 19, 33, 0.92);
@@ -547,6 +547,266 @@
   line-height: 1.5;
 }
 
+/* --- Combat telemetry --- */
+
+.attackTelemetry {
+  display: flex;
+  flex-direction: column;
+  gap: 0.42rem;
+  min-width: 0;
+}
+
+.attackTelemetryCompact {
+  width: 100%;
+  margin-top: 0.4rem;
+  padding: 0.45rem;
+  border: 1px solid rgba(61, 90, 108, 0.45);
+  border-left: 2px solid var(--shell-orange);
+  border-radius: 3px;
+  background: rgba(6, 10, 18, 0.72);
+}
+
+.telemetryMetrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.7rem;
+  color: var(--chrome-silver);
+  font-size: 0.61rem;
+}
+
+.telemetryMetrics > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.telemetryMetrics svg {
+  color: var(--plasma-cyan);
+}
+
+.telemetryMetrics small {
+  color: var(--hull-grey);
+  font-size: inherit;
+}
+
+.telemetryMetrics b {
+  color: var(--star-white);
+}
+
+.telemetryMetrics .telemetryHit,
+.telemetryMetrics .telemetryMiss {
+  margin-left: 0.18rem;
+  font-size: 0.56rem;
+  letter-spacing: 0.08em;
+}
+
+.telemetryMetrics .telemetryHit {
+  color: #5ee6a8;
+}
+
+.telemetryMetrics .telemetryMiss {
+  color: var(--hull-grey);
+}
+
+.telemetryModifiers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.22rem;
+  color: var(--chrome-silver);
+  font-size: 0.58rem;
+}
+
+.telemetryModifiers span {
+  padding: 0.08rem 0.25rem;
+  border: 1px solid rgba(61, 90, 108, 0.45);
+  border-radius: 2px;
+  background: rgba(61, 90, 108, 0.08);
+}
+
+.effectBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.effectBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.12rem 0.3rem;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  font-size: 0.56rem;
+  line-height: 1.25;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.effectToneDanger { color: #ff6b73; }
+.effectToneWarning { color: #ffad66; }
+.effectToneSupport { color: #5ee6a8; }
+.effectToneSpecial { color: #c99cff; }
+.effectToneNeutral { color: var(--chrome-silver); }
+
+.telemetryWeapons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.16rem;
+}
+
+.telemetryWeaponRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  padding: 0.16rem 0;
+  border-bottom: 1px solid rgba(61, 90, 108, 0.24);
+}
+
+.telemetryWeaponRow:last-child {
+  border-bottom: 0;
+}
+
+.telemetryWeaponMain {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.55rem;
+  color: var(--hull-grey);
+  font-size: 0.61rem;
+}
+
+.telemetryWeaponMain > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.telemetryWeaponMain > span:first-child {
+  color: var(--star-white);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.telemetryWeaponMain i,
+.mitigationIdentity i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 6px currentColor;
+}
+
+.telemetryWeaponMain b {
+  color: var(--star-white);
+}
+
+.telemetryWeaponMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.45rem;
+  padding-left: 0.8rem;
+  color: var(--hull-grey);
+  font-size: 0.58rem;
+}
+
+.criticalTag {
+  padding: 0.04rem 0.22rem;
+  border: 1px solid rgba(255, 217, 61, 0.55);
+  border-radius: 2px;
+  color: var(--warning-yellow) !important;
+  font-size: 0.56rem;
+  letter-spacing: 0.08em;
+}
+
+.mitigationStack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.1rem;
+}
+
+.mitigationHeading {
+  color: var(--hull-grey);
+  font-size: 0.58rem;
+  letter-spacing: 0.11em;
+}
+
+.mitigationRow {
+  padding: 0.34rem 0.4rem;
+  border: 1px solid rgba(61, 90, 108, 0.38);
+  border-radius: 3px;
+  background: rgba(10, 14, 23, 0.65);
+}
+
+.mitigationIdentity {
+  display: flex;
+  align-items: center;
+  gap: 0.32rem;
+  color: var(--star-white);
+  font-size: 0.58rem;
+}
+
+.mitigationIdentity span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.mitigationIdentity b {
+  margin-left: auto;
+  color: var(--plasma-cyan);
+  font-size: 0.58rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.mitigationPipeline {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(34px, 1fr) 9px) minmax(34px, 1fr);
+  align-items: center;
+  gap: 0.12rem;
+  margin-top: 0.35rem;
+}
+
+.mitigationPipeline > span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--chrome-silver);
+  font-size: 0.58rem;
+}
+
+.mitigationPipeline small {
+  color: var(--hull-grey);
+  font-size: 0.56rem;
+  white-space: nowrap;
+}
+
+.mitigationPipeline svg {
+  color: var(--hull-grey);
+}
+
+.mitigationPipeline .mitigationFinal {
+  color: var(--star-white);
+  font-weight: 700;
+}
+
+.mitigationFlags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.3rem;
+  color: #c99cff;
+  font-size: 0.58rem;
+}
+
+.mitigationFlags span::before {
+  content: '/';
+  margin-right: 0.2rem;
+  color: var(--hull-grey);
+}
+
 /* --- Outcome banner --- */
 
 .outcomeBanner {
@@ -617,7 +877,7 @@
 /* --- Event feed --- */
 
 .feed {
-  width: 300px;
+  width: 340px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -691,6 +951,34 @@
   font-family: var(--font-jetbrains), monospace;
 }
 
+.feedEvent {
+  width: 100%;
+}
+
+.feedRowExpanded {
+  background: rgba(255, 107, 53, 0.045);
+}
+
+.feedRowDetails {
+  padding: 0 0.6rem 0.35rem 2rem;
+}
+
+.feedDetailCue {
+  margin-left: auto;
+  color: var(--hull-grey);
+  font-size: 0.56rem;
+  letter-spacing: 0.08em;
+  opacity: 0.68;
+  transition: opacity 0.15s, color 0.15s;
+}
+
+.feedRow:hover .feedDetailCue,
+.feedRow:focus-visible .feedDetailCue,
+.feedRowExpanded .feedDetailCue {
+  opacity: 1;
+  color: var(--shell-orange);
+}
+
 .feedRow:hover {
   background: rgba(26, 39, 68, 0.55);
 }
@@ -720,6 +1008,16 @@
   color: var(--chrome-silver);
   font-size: 0.67rem;
   line-height: 1.45;
+}
+
+.feedSecondary {
+  display: inline-block;
+  margin-right: 0.4rem;
+  color: #c99cff;
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 /* --- Timeline bar --- */
@@ -949,6 +1247,10 @@
     border-left: none;
     border-bottom: none;
     border-top: 2px solid var(--side-color, var(--plasma-cyan));
+  }
+
+  .mitigationPipeline {
+    grid-template-columns: repeat(4, minmax(30px, 1fr) 8px) minmax(30px, 1fr);
   }
 
   .inspectorClose {

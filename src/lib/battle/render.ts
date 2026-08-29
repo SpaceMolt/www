@@ -230,7 +230,10 @@ export function sampleShips(timeline: BattleTimeline, playhead: number, timeMs: 
   for (const r of entry.regen ?? []) {
     if (p >= 0.55) {
       landedShield.set(r.player_id, (landedShield.get(r.player_id) ?? 0) - r.shield_regen)
-      landedHull.set(r.player_id, (landedHull.get(r.player_id) ?? 0) - (r.armor_repair + (r.remote_repair ?? 0)))
+      landedHull.set(
+        r.player_id,
+        (landedHull.get(r.player_id) ?? 0) - (r.armor_repair + (r.remote_repair ?? 0) + (r.passive_repair ?? 0)),
+      )
     }
   }
 
@@ -1156,7 +1159,7 @@ function drawFloaters(
     if (!s) continue
     const life = (p - 0.55) / 0.4
     if (life < 0 || life > 1) continue
-    const total = r.shield_regen + r.armor_repair + (r.remote_repair ?? 0)
+    const total = r.shield_regen + r.armor_repair + (r.remote_repair ?? 0) + (r.passive_repair ?? 0)
     if (total <= 0) continue
     const pos = tf.toScreen(s.pos)
     const size = shipRadius(s.meta, tf.scale)

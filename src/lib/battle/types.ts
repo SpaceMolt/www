@@ -147,15 +147,59 @@ export interface AttackLogEntry {
   shield_resist_pct?: number
   type_resist_pct?: number
   flat_reduction_pct?: number
+  ignored_resistance_pct?: number
+  armor_melt_applied_pct?: number
+  system_disable_ticks?: number
+  cpu_damage_pct?: number
+  lifesteal_pct?: number
+  aoe_radius?: number
+  chain_targets?: number
+  capacitor_drain?: number
+  mine_duration?: number
+  dot_damage?: number
+  dot_duration?: number
+  dot_source_id?: string
+  shield_drain_requested?: number
+  shield_drained?: number
+  shield_transfer_pct?: number
+  shield_transferred?: number
+  secondary_kind?: 'chain' | 'retaliation' | 'aoe' | 'ammo_splash' | string
+  emergency_cloak_activated?: boolean
+  emergency_cloak_duration?: number
+  emergency_cloak_strength?: number
   final_damage: number
   shield_damage: number
   hull_damage: number
   damage_type: string
   disrupted?: boolean
   splash?: boolean
+  defense_components?: DefenseComponentLog[]
+}
+
+export interface DefenseComponentLog {
+  weapon_instance_id: string
+  weapon_name: string
+  damage_type: string
+  incoming_damage: number
+  shield_resist_pct: number
+  after_shield_resist: number
+  type_resist_pct: number
+  ignored_resistance_pct?: number
+  after_type_resist: number
+  flat_reduction_pct: number
+  after_flat_reduction: number
+  shield_bypass_pct: number
+  armor_bypass_pct: number
+  ignore_all_defense: boolean
+  final_damage: number
+  shield_damage: number
+  hull_damage: number
+  lifesteal_pct?: number
+  lifesteal_heal?: number
 }
 
 export interface BurnLogEntry {
+  source_id?: string
   target_id: string
   damage: number
   ticks_remaining: number
@@ -181,6 +225,7 @@ export interface RegenLogEntry {
   shield_regen: number
   armor_repair: number
   remote_repair?: number
+  passive_repair?: number
   shield_before: number
   shield_after: number
   hull_before: number

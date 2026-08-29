@@ -77,3 +77,80 @@ describe('participant kind', () => {
     expect(t.participants.get('k1')?.kind).toBe('creature')
   })
 })
+
+describe('detailed combat events', () => {
+  it('labels secondary attacks, attributes burns, and reports passive repair', () => {
+    const combatEntry = entry([
+      snap({ player_id: 'a', username: 'Arc Knight', side_id: 1 }),
+      snap({ player_id: 'b', username: 'Bulwark', side_id: 2 }),
+    ])
+    combatEntry.attacks = [{
+      attacker_id: 'a',
+      target_id: 'b',
+      zone_distance: 1,
+      weapons: [],
+      raw_damage: 50,
+      weapon_skill_pct: 0,
+      pre_hit_damage: 50,
+      hit_chance: 1,
+      hit_roll: 0,
+      hit_success: true,
+      final_damage: 25,
+      shield_damage: 25,
+      hull_damage: 0,
+      damage_type: 'energy',
+      secondary_kind: 'chain',
+      chain_targets: 2,
+    }]
+    combatEntry.burns = [{ source_id: 'a', target_id: 'b', damage: 8, ticks_remaining: 3 }]
+    combatEntry.regen = [{
+      player_id: 'b',
+      shield_regen: 0,
+      armor_repair: 0,
+      remote_repair: 0,
+      passive_repair: 6,
+      shield_before: 75,
+      shield_after: 75,
+      hull_before: 80,
+      hull_after: 86,
+    }]
+
+    const timeline = buildTimeline([combatEntry], null)
+    expect(timeline.events.find(event => event.kind === 'splash')?.text)
+      .toBe('Arc Knight → Bulwark for 25 shield energy')
+    expect(timeline.events.find(event => event.kind === 'splash')?.secondaryKind).toBe('chain')
+    expect(timeline.events.find(event => event.kind === 'burn')?.text)
+      .toBe('Bulwark took 8 burn damage from Arc Knight (3 ticks left)')
+    expect(timeline.events.find(event => event.kind === 'regen')?.text)
+      .toBe('Bulwark restored 6 passive hull repair')
+  })
+
+  it('preserves secondary identity when a chain, area, or retaliation attack misses', () => {
+    const combatEntry = entry([
+      snap({ player_id: 'a', username: 'Arc Knight', side_id: 1 }),
+      snap({ player_id: 'b', username: 'Bulwark', side_id: 2 }),
+    ])
+    combatEntry.attacks = [{
+      attacker_id: 'a',
+      target_id: 'b',
+      zone_distance: 1,
+      weapons: [],
+      raw_damage: 40,
+      weapon_skill_pct: 0,
+      pre_hit_damage: 40,
+      hit_chance: 0.3,
+      hit_roll: 0.8,
+      hit_success: false,
+      final_damage: 0,
+      shield_damage: 0,
+      hull_damage: 0,
+      damage_type: 'energy',
+      secondary_kind: 'retaliation',
+    }]
+
+    const timeline = buildTimeline([combatEntry], null)
+    expect(timeline.events[0]?.kind).toBe('splash')
+    expect(timeline.events[0]?.text).toBe('Arc Knight missed Bulwark (30% to hit)')
+    expect(timeline.events[0]?.secondaryKind).toBe('retaliation')
+  })
+})

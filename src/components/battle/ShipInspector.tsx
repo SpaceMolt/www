@@ -4,8 +4,8 @@ import type { ReactNode } from 'react'
 import { Flame, ShieldOff, Zap } from 'lucide-react'
 import styles from './BattleViewer.module.css'
 import { useTranslation } from '@/i18n'
-import { damageTypeColor } from '@/lib/battle/types'
 import type { BattleTimeline } from '@/lib/battle/timeline'
+import AttackTelemetry from './AttackTelemetry'
 
 interface Props {
   timeline: BattleTimeline
@@ -32,7 +32,9 @@ export default function ShipInspector({ timeline, participantId, tickIndex, onCl
   let lastAttack = null
   let lastAttackTick = -1
   for (let i = tickIndex; i >= 0 && i >= tickIndex - 20; i--) {
-    const found = (timeline.entries[i].attacks ?? []).find(a => a.attacker_id === participantId && !a.splash)
+    const found = (timeline.entries[i].attacks ?? []).find(
+      a => a.attacker_id === participantId && !a.splash && !a.secondary_kind,
+    )
     if (found) {
       lastAttack = found
       lastAttackTick = i
@@ -143,30 +145,7 @@ export default function ShipInspector({ timeline, participantId, tickIndex, onCl
           <div className={styles.inspectorSectionTitle}>
             {t('battles.lastVolley')} · {t('battles.tickShort')} {lastAttackTick + 1} → {timeline.names.get(lastAttack.target_id) ?? '?'}
           </div>
-          {lastAttack.weapons?.map((w, i) => (
-            <div key={i} className={styles.moduleRow}>
-              <span className={styles.moduleName}>
-                <span className={styles.dot} style={{ background: damageTypeColor(w.damage_type) }} /> {w.name}
-                {w.crit_fired ? ' ✦' : ''}
-              </span>
-              <span className={styles.moduleAmmo}>
-                {w.damage} {w.damage_type}
-                {w.ammo_used ? ` · ${w.ammo_used}` : ''}
-              </span>
-            </div>
-          ))}
-          <div className={styles.hitMath}>
-            {lastAttack.hit_success ? (
-              <>
-                {t('battles.hit')} — {Math.round(lastAttack.hit_chance * 100)}% chance, rolled {Math.round(lastAttack.hit_roll * 100)} ·{' '}
-                {lastAttack.final_damage} dmg ({lastAttack.shield_damage} shd / {lastAttack.hull_damage} hull)
-              </>
-            ) : (
-              <>
-                {t('battles.miss')} — {Math.round(lastAttack.hit_chance * 100)}% chance, rolled {Math.round(lastAttack.hit_roll * 100)}
-              </>
-            )}
-          </div>
+          <AttackTelemetry attack={lastAttack} />
         </div>
       )}
     </div>
