@@ -7,6 +7,7 @@ import styles from './BattleViewer.module.css'
 import { useTranslation } from '@/i18n'
 import type { BattleData } from '@/lib/battle/useBattleData'
 import { battleMomentPath, acceptsPlaybackShortcut, reconcilePlayhead } from '@/lib/battle/viewerNavigation'
+import { writeClipboardText } from '@/lib/battle/clipboardFeedback'
 import { buildTimeline } from '@/lib/battle/timeline'
 import {
   makeTransform,
@@ -353,9 +354,9 @@ export default function BattlePresentation({ battleId, data, embedded = false, f
     setSpeed(next)
   }, [])
 
-  const copyMomentLink = useCallback(() => {
+  const copyMomentLink = useCallback(async () => {
     const url = `${window.location.origin}${battleMomentPath(battleId, playheadRef.current)}`
-    navigator.clipboard?.writeText(url).catch(() => {})
+    return writeClipboardText(navigator.clipboard, url)
   }, [battleId])
 
   // --- Derived UI data ---

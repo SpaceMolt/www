@@ -5,6 +5,7 @@ import { Check, Copy, Pause, Play, SkipBack } from 'lucide-react'
 import styles from './BattleViewer.module.css'
 import { useTranslation } from '@/i18n'
 import type { BattleTimeline as Timeline } from '@/lib/battle/timeline'
+import { createClipboardFeedback, type ClipboardStatus } from '@/lib/battle/clipboardFeedback'
 
 interface Props {
   timeline: Timeline
@@ -17,7 +18,7 @@ interface Props {
   onTogglePlay: () => void
   onToggleFollow: () => void
   onCycleSpeed: () => void
-  onCopyLink: () => void
+  onCopyLink: () => Promise<boolean>
   enabled?: boolean
 }
 
@@ -67,8 +68,20 @@ export default function BattleTimeline({
   const wrapRef = useRef<HTMLDivElement>(null)
   const scrubbing = useRef(false)
   const [hoverInfo, setHoverInfo] = useState<{ x: number; tickIndex: number } | null>(null)
-  const [copied, setCopied] = useState(false)
+  const [copyStatus, setCopyStatus] = useState<ClipboardStatus>('idle')
+  const copyFeedback = useRef<ReturnType<typeof createClipboardFeedback> | null>(null)
   const animationActive = useBattleAnimationActive(wrapRef, enabled)
+
+  useEffect(() => {
+    setCopyStatus('idle')
+    if (!enabled) return
+    const feedback = createClipboardFeedback(onCopyLink, setCopyStatus)
+    copyFeedback.current = feedback
+    return () => {
+      feedback.dispose()
+      copyFeedback.current = null
+    }
+  }, [onCopyLink, enabled])
 
   const n = timeline.entries.length
 
@@ -284,16 +297,16 @@ export default function BattleTimeline({
         <button
           className={styles.ctrlBtn}
           aria-label={t('battles.copyMoment')}
-          onClick={() => {
-            onCopyLink()
-            setCopied(true)
-            setTimeout(() => setCopied(false), 1500)
-          }}
-          title="Copy link to this moment"
+          disabled={!enabled || copyStatus === 'copying'}
+          onClick={() => { void copyFeedback.current?.copy() }}
+          title={t('battles.copyMoment')}
         >
-          {copied ? <Check size={13} aria-hidden /> : <Copy size={13} aria-hidden />}
+          {copyStatus === 'copied' ? <Check size={13} aria-hidden /> : <Copy size={13} aria-hidden />}
         </button>
       </div>
+      <span className={styles.copyFeedback} role="status" aria-live="polite" hidden={copyStatus === 'idle'}>
+        {copyStatus !== 'idle' && t(`battles.${copyStatus === 'failed' ? 'copyFailed' : copyStatus}`)}
+      </span>
     </div>
   )
 }

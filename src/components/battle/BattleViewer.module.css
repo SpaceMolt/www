@@ -1060,11 +1060,20 @@
 
 .timelineBar {
   display: flex;
+  flex-wrap: wrap;
   align-items: stretch;
   gap: 0.6rem;
   padding: 0.5rem 0.8rem;
   border-top: 1px solid var(--nebula-blue);
   background: linear-gradient(0deg, rgba(13, 19, 33, 0.98), rgba(10, 14, 23, 0.92));
+}
+
+.copyFeedback {
+  flex-basis: 100%;
+  min-width: 0;
+  color: var(--chrome-silver);
+  font: 0.7rem/1.4 var(--font-jetbrains), monospace;
+  overflow-wrap: anywhere;
 }
 
 .controls {

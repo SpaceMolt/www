@@ -131,6 +131,7 @@ export function HUD() {
   const isDocked = Boolean(location?.docked_at)
   const pendingTrades = usePlayUi((s) => s.pendingTrades)
   const inCombat = usePlayUi((s) => s.inCombat)
+  const hasBattleReplay = usePlayUi((s) => Boolean(s.lastBattleId))
   const [activePanel, setActivePanel] = useState('galaxy')
   const galaxyRef = useRef<GalaxyPanelHandle>(null)
   const [exploreSystem, setExploreSystem] = useState<MapSystemData | null>(null)
@@ -232,6 +233,7 @@ export function HUD() {
           badges={badges}
           isDocked={isDocked}
           inCombat={inCombat}
+          hasBattleReplay={hasBattleReplay}
         />
 
         {/* Main Content: Left Sidebar + Panel + Right Pane */}

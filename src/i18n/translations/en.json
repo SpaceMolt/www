@@ -453,6 +453,9 @@
     "feedFilterSupport": "support",
     "feedShowDetail": "DETAIL",
     "feedHideDetail": "HIDE",
+    "copying": "Copying link…",
+    "copied": "Link copied",
+    "copyFailed": "Could not copy link. Try again.",
     "stream": {
       "viewerLabel": "Battle visualizer",
       "following": "Following latest tick",
@@ -487,7 +490,7 @@
         "fire": "Fire weapons: 100% damage dealt and taken",
         "evade": "Evade: no damage dealt, 50% taken (costs fuel)",
         "brace": "Brace: no damage dealt, 25% taken, shields regenerate faster",
-        "flee": "Flee: retreat to outer zone, then 3 ticks to escape"
+        "flee": "Flee: retreat to outer zone, then at least 3 ticks to escape. Slower than your fastest pursuer takes longer; you cannot escape while warp-disrupted."
       }
     },
     "telemetry": {

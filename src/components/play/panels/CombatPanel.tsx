@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useTranslation } from '@/i18n'
 import {
   Swords,
@@ -52,6 +52,7 @@ export function CombatPanel() {
   const mutate = useCommandMutation()
   const player = usePlayer()
   const location = useLocationState()
+  const isDocked = Boolean(location?.docked_at)
   const modules = useModules()
   const cargo = useCargo()
   const battle = usePlayUi((s) => s.battle)
@@ -60,18 +61,22 @@ export function CombatPanel() {
   const activeBattleId = usePlayUi((s) => s.activeBattleId)
   const lastBattleId = usePlayUi((s) => s.lastBattleId)
   const viewedBattleId = activeBattleId ?? lastBattleId
-  const canControl = inCombat && !battleSyncPending && phase === 'ready'
+  const canControl = !isDocked && inCombat && !battleSyncPending && phase === 'ready'
 
   // Wildlife is only on the get_nearby response — the cached location state
   // carries nearby players and pirates but no creatures.
   const nearbyQuery = useCommandQuery(
     async (account) => (await account.commands.spacemolt.get_nearby()).structuredContent,
     [location?.poi_id],
-    { enabled: Boolean(location?.poi_id), refreshOnSections: ['location'] },
+    { enabled: !isDocked && Boolean(location?.poi_id), refreshOnSections: ['location'] },
   )
 
   const [confirmSelfDestruct, setConfirmSelfDestruct] = useState(false)
   const [selectedAmmo, setSelectedAmmo] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    if (isDocked) setConfirmSelfDestruct(false)
+  }, [isDocked])
 
   const reportError = useCallback(
     (err: unknown) => {
@@ -156,6 +161,17 @@ export function CombatPanel() {
   const yourStance = battle?.your_stance
   const weapons = (modules ?? []).filter((m) => m.type === 'weapon')
   const cargoItems = cargo ?? []
+
+  // Docking (including a death/respawn) retains replay access, not the space
+  // combat command surface. This also hides any open self-destruct dialog and
+  // stale nearby targets immediately when the authoritative location changes.
+  if (isDocked) {
+    return (
+      <Panel title="Combat" icon={<Swords size={16} />} color="var(--claw-red)">
+        {viewedBattleId && <CombatBattleView key={viewedBattleId} battleId={viewedBattleId} playerId={player?.id} participating={false} />}
+      </Panel>
+    )
+  }
 
   return (
     <Panel
