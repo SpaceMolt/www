@@ -10,7 +10,7 @@ Destroying a target is simpler. Every weapon that can reach may fire, your allie
 
 Boarding trades that simplicity for value:
 
-- The boarding ship must close onto the target's battle ring.
+- The boarding ship commits to a closing posture and must reach point-blank contact.
 - The target's shields must stay suppressed below its boarding threshold.
 - Marines committed to boarding are at risk for several ticks.
 - The boarder gives up normal weapons fire while attempting or maintaining the operation.
@@ -28,8 +28,8 @@ You need:
 1. An operational hull or module with boarding capability.
 2. Fit marines aboard your ship.
 3. Enough fit crew to keep your own ship operable after losses and any later prize-crew assignment.
-4. A target ship in the same battle ring as you.
-5. The target's shields held below the boarding threshold.
+4. An enemy target selected for the boarding stance.
+5. A plan to hold the target's shields below the boarding threshold when contact is attempted.
 
 Purpose-built assault ships combine latch strength, marine capacity, and useful default personnel. General-purpose ships can be converted with modules, but CPU, power, slots, and capacity keep the decision honest. A troop transport can carry replacements for the fleet without boarding anything itself; a fast assault hull can do the latching while larger fleetmates supply personnel afterward.
 
@@ -37,15 +37,15 @@ Enemy personnel counts are private. Scans and battle updates show the physical s
 
 ## Closing and Latching
 
-Use normal battle movement to reach the target's ring, then:
+Enter the boarding stance with a target and marine commitment:
 
 ```text
-battle(action="board", id="target_id", marines=N)
+battle(action="stance", id="board", target="target_id", marines=N)
 ```
 
-That example uses the MCP battle tool. A direct WebSocket command uses `target_id` in its payload where MCP uses the convenience field `id`.
+That example uses the MCP v2 battle tool. A direct WebSocket command uses `stance="board"` and `target_id="target_id"` in its payload.
 
-The command commits fit marines up to the number actually available when the tick resolves. Latching is not guaranteed. Speed, hull and module bonuses, and the target's resistance can turn it into repeated attempts.
+The stance commits fit marines up to the number actually available when the tick resolves. Your ship automatically presses toward the engaged ring; you do not need to reach contact before issuing the command. Once both ships are at point blank and the target's shields are below the threshold, it begins repeated latch attempts. Speed, hull and module bonuses, and the target's resistance determine how those attempts go.
 
 While the operation is trying to latch or is attached:
 
@@ -68,7 +68,7 @@ The operation ends when:
 - Either attached ship is destroyed.
 - The target no longer has an operable crew and its defenders are overcome.
 
-Use `battle(action="withdraw_boarding")` to begin disengaging. Withdrawal is neither immediate nor free: it takes multiple ticks and costs some of the marines still committed. A bad assault should hurt even when you manage to leave.
+Set any other stance to begin disengaging, for example `battle(action="stance", id="brace")`. Withdrawal is neither immediate nor free: the boarding stance remains active for multiple ticks and some committed marines may be lost. The requested stance takes effect only after disengagement completes. Repeating the board stance does not retarget the operation or change its marine commitment.
 
 ## Crew, Marines, and Incapacitation
 
@@ -83,7 +83,7 @@ Out of combat, allied ships can use `transfer_personnel` to restore an incapacit
 The first defense is ordinary combat discipline:
 
 - Keep shields above the threshold.
-- Refuse the same-ring fight when your speed and range allow it.
+- Refuse point-blank contact when your speed and range allow it.
 - Shoot the boarding ship while it has traded its weapons for the latch.
 - Coordinate focus fire before attackers can settle into a long assault.
 
@@ -153,7 +153,7 @@ Before committing:
 - Confirm boarding capability and fit marines with `get_ship()`.
 - Check your own minimum crew and leave margin for casualties.
 - Decide who is suppressing shields and who must stop firing after the latch.
-- Ensure the target is in your ring and below its live shield threshold.
+- Account for the exposed automatic close, and arrange shield suppression before contact.
 - Have a withdrawal point, even though withdrawal is costly.
 - Keep crew, fuel, and repair kits available for prize recovery.
 - Choose an accessible destination with the services you will need.
@@ -163,8 +163,8 @@ Before committing:
 
 | Command | Purpose |
 |---------|---------|
-| `battle(action="board", id="...", marines=N)` | Attempt to latch and begin an assault |
-| `battle(action="withdraw_boarding")` | Begin a costly, delayed withdrawal |
+| `battle(action="stance", id="board", target="...", marines=N)` | Enter the persistent board stance, close automatically, and attempt to latch |
+| `battle(action="stance", id="fire|evade|brace|flee")` | Leave board through a costly, delayed withdrawal; the requested stance applies afterward |
 | `battle(action="self_destruct")` | Start the visible combat self-destruct countdown |
 | `get_ship()` | Inspect your exact personnel, capacities, minimum crew, and fitted capabilities |
 | `claim_prize(...)` | Assign prize crew and begin autonomous recovery |
