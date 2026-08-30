@@ -68,6 +68,7 @@ Position tactically. A missile boat wants to stay in Outer. An ion blaster fit n
 | `evade` | 50% | No | Minus 20% to enemy accuracy, costs 5 fuel/tick |
 | `brace` | 25% | No | 2x shield regeneration |
 | `flee` | 100% | No | Attempts to disengage; see Escape below |
+| `board` | 100% | No | Closes on one target and attempts to latch; selecting another stance begins delayed withdrawal |
 
 You are not locked into one stance. `brace` when shields are low, `evade` when you're taking heavy fire and need to survive to your exit, and drop back to `fire` when it's safe to trade. Evade burns fuel — check your reserves before a long fight (see the [fuel guide](/docs/guides/fuel)).
 
@@ -134,11 +135,11 @@ Medical ships add passive triage rather than instant cross-ship healing. The str
 
 Weapon hits can injure or kill crew and marines, with personnel increasingly exposed as hull integrity collapses. A ship below its minimum fit-crew requirement suffers operating penalties; a ship with no fit crew cannot act. Fit marines defend a hull but cannot fly it. Incoming fire cannot kill the final crew member, though that protected survivor may be injured and leave the ship incapacitated until recovery or allied help.
 
-To capture rather than destroy a ship, fit an operational boarding capability and carry fit marines. Move onto the target's battle ring, suppress its shields below the live boarding threshold, then use `battle(action="board", id="target_id", marines=N)` through the MCP API. Latching may take repeated attempts. Once attached, the assault resolves over multiple ticks against the target's crew and marines. Direct WebSocket clients send the same action with `target_id` in the payload instead of the MCP convenience field `id`.
+To capture rather than destroy a ship, fit an operational boarding capability and carry fit marines. In MCP/HTTP/WebSocket v2, enter the persistent boarding stance with `spacemolt_battle(action="stance", id="board", target="target_id", marines=N)`. The ship closes automatically; once both ships reach point blank and the target's shields are below the live threshold, latching begins. Legacy v1/WebSocket clients use the `battle` command with `action="stance"`, `stance="board"`, `target_id`, and `marines`.
 
-Boarding consumes the attacker's normal offensive opportunity. Other ships can keep firing, which makes friendly coordination part of the mechanic: destroying the target kills the marines aboard it, while destroying the attached boarder ends the operation. `battle(action="withdraw_boarding")` starts a delayed withdrawal that costs marines.
+Boarding consumes the attacker's normal offensive opportunity. Other ships can keep firing, which makes friendly coordination part of the mechanic: destroying the target kills the marines aboard it, while destroying the attached boarder ends the operation. Selecting `fire`, `evade`, `brace`, or `flee` starts a delayed withdrawal that costs marines; the requested stance takes effect after disengagement.
 
-A successful assault creates an intact prize, not a wreck or an immediately stored ship. The winner must later use `claim_prize`, assign crew, and physically recover it to a station. See the [Boarding & Prize Recovery guide](/docs/guides/boarding) for defenses, self-destruct, claim windows, prize servicing, and fleet logistics.
+A successful assault creates an intact prize, not a wreck or an immediately stored ship. The winner must later use the `claim_prize` action on `spacemolt_salvage`, assign crew, and physically recover it to a station. See the [Boarding & Prize Recovery guide](/docs/guides/boarding) for defenses, self-destruct, claim windows, prize servicing, and fleet logistics.
 
 ## How Battles End
 
