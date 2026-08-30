@@ -1,10 +1,27 @@
 import { describe, expect, test } from 'bun:test'
-import { createUiStore, initialUiState, uiReducer, type ChatMessage, type TradeOffer } from './uiStore'
+import { createUiStore, initialUiState, uiReducer, type BattleView, type ChatMessage, type TradeOffer } from './uiStore'
 
 const chat = (content: string): ChatMessage => ({ content, channel: 'local', sender: 'Nova' }) as ChatMessage
 const trade = (trade_id: string): TradeOffer => ({ trade_id }) as TradeOffer
+const battle = (battle_id = 'battle-1'): BattleView => ({
+  battle_id, tick: 1, auto_pilot: false, participants: [], sides: [],
+  your_side_id: 0, your_stance: 'fire', your_zone: 'outer',
+})
 
 describe('uiReducer', () => {
+  test('pending synchronization preserves history and revision until authoritative confirmation', () => {
+    const current = uiReducer(initialUiState, { type: 'battle_update', battle: battle() })
+    const pending = uiReducer(current, { type: 'battle_sync_pending' })
+    expect(pending).toMatchObject({ battleSyncPending: true, battle: current.battle, lastBattleId: 'battle-1', battleRevision: current.battleRevision })
+    expect(uiReducer(pending, { type: 'battle_ended', battleId: 'old' })).toMatchObject({
+      battleSyncPending: true, battleRevision: pending.battleRevision,
+    })
+    expect(uiReducer(pending, { type: 'battle_ended', battleId: 'battle-1' }).battleSyncPending).toBe(false)
+    expect(uiReducer(pending, { type: 'battle_left' }).battleSyncPending).toBe(false)
+    expect(uiReducer(pending, { type: 'battle_started', battleId: 'new' }).battleSyncPending).toBe(false)
+    expect(uiReducer(pending, { type: 'battle_update', battle: battle() }).battleSyncPending).toBe(false)
+  })
+
   test('events prepend and are capped', () => {
     let state = initialUiState
     for (let i = 0; i < 205; i++) {
@@ -22,11 +39,38 @@ describe('uiReducer', () => {
   })
 
   test('battle update sets inCombat; battle_ended clears it', () => {
-    let state = uiReducer(initialUiState, { type: 'battle_update', battle: { tick: 1 } as never })
+    let state = uiReducer(initialUiState, { type: 'battle_update', battle: battle() })
     expect(state.inCombat).toBe(true)
-    state = uiReducer(state, { type: 'battle_ended' })
+    state = uiReducer(state, { type: 'battle_ended', battleId: 'battle-1' })
     expect(state.inCombat).toBe(false)
     expect(state.battle).toBeNull()
+    expect(state.lastBattleId).toBe('battle-1')
+    expect(state.activeBattleId).toBeNull()
+  })
+
+  test('start establishes identity before the first update and reset drops history', () => {
+    const state = uiReducer(initialUiState, { type: 'battle_started', battleId: 'battle-1' })
+    expect(state.inCombat).toBe(true)
+    expect(state.activeBattleId).toBe('battle-1')
+    expect(state.lastBattleId).toBe('battle-1')
+    expect(uiReducer(state, { type: 'reset' })).toEqual(initialUiState)
+  })
+
+  test('an old battle end cannot clear a newly joined battle', () => {
+    const state = uiReducer(initialUiState, { type: 'battle_update', battle: battle('new') })
+    expect(uiReducer(state, { type: 'battle_ended', battleId: 'old' })).toMatchObject({
+      activeBattleId: 'new', lastBattleId: 'new', inCombat: true, battle: state.battle,
+    })
+  })
+
+  test('leaving retains replay identity and a new battle drops old live details', () => {
+    let state = uiReducer(initialUiState, { type: 'battle_update', battle: battle() })
+    state = uiReducer(state, { type: 'battle_left' })
+    expect(state.inCombat).toBe(false)
+    expect(state.lastBattleId).toBe('battle-1')
+    state = uiReducer(state, { type: 'battle_started', battleId: 'new' })
+    expect(state.battle).toBeNull()
+    expect(state.lastBattleId).toBe('new')
   })
 
   test('store notifies subscribers and supports unsubscribe', () => {

@@ -1,10 +1,11 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 import { Check, Copy, Pause, Play, SkipBack } from 'lucide-react'
 import styles from './BattleViewer.module.css'
 import { useTranslation } from '@/i18n'
 import type { BattleTimeline as Timeline } from '@/lib/battle/timeline'
+import { createClipboardFeedback, type ClipboardStatus } from '@/lib/battle/clipboardFeedback'
 
 interface Props {
   timeline: Timeline
@@ -17,7 +18,30 @@ interface Props {
   onTogglePlay: () => void
   onToggleFollow: () => void
   onCycleSpeed: () => void
-  onCopyLink: () => void
+  onCopyLink: () => Promise<boolean>
+  enabled?: boolean
+}
+
+/** Animation work belongs only to a visible part of an enabled replay. */
+export function useBattleAnimationActive(ref: RefObject<HTMLElement | null>, enabled: boolean): boolean {
+  const [intersecting, setIntersecting] = useState(false)
+  const [documentVisible, setDocumentVisible] = useState(true)
+
+  useEffect(() => {
+    const element = ref.current
+    if (!enabled || !element) return
+    const onVisibility = () => setDocumentVisible(document.visibilityState !== 'hidden')
+    onVisibility()
+    const observer = new IntersectionObserver(([entry]) => setIntersecting(entry.isIntersecting))
+    observer.observe(element)
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      observer.disconnect()
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
+  }, [enabled, ref])
+
+  return enabled && intersecting && documentVisible
 }
 
 /**
@@ -37,13 +61,27 @@ export default function BattleTimeline({
   onToggleFollow,
   onCycleSpeed,
   onCopyLink,
+  enabled = true,
 }: Props) {
   const { t } = useTranslation()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
   const scrubbing = useRef(false)
   const [hoverInfo, setHoverInfo] = useState<{ x: number; tickIndex: number } | null>(null)
-  const [copied, setCopied] = useState(false)
+  const [copyStatus, setCopyStatus] = useState<ClipboardStatus>('idle')
+  const copyFeedback = useRef<ReturnType<typeof createClipboardFeedback> | null>(null)
+  const animationActive = useBattleAnimationActive(wrapRef, enabled)
+
+  useEffect(() => {
+    setCopyStatus('idle')
+    if (!enabled) return
+    const feedback = createClipboardFeedback(onCopyLink, setCopyStatus)
+    copyFeedback.current = feedback
+    return () => {
+      feedback.dispose()
+      copyFeedback.current = null
+    }
+  }, [onCopyLink, enabled])
 
   const n = timeline.entries.length
 
@@ -60,9 +98,11 @@ export default function BattleTimeline({
 
   // Draw loop: chart is static per timeline, playhead moves every frame.
   useEffect(() => {
+    if (!animationActive) return
     let raf = 0
     const draw = () => {
       raf = requestAnimationFrame(draw)
+      if (document.visibilityState === 'hidden') return
       const canvas = canvasRef.current
       const wrap = wrapRef.current
       if (!canvas || !wrap) return
@@ -149,7 +189,7 @@ export default function BattleTimeline({
     }
     raf = requestAnimationFrame(draw)
     return () => cancelAnimationFrame(raf)
-  }, [timeline, n, getPlayhead])
+  }, [timeline, n, getPlayhead, animationActive])
 
   const onPointerDown = useCallback(
     (e: React.PointerEvent) => {
@@ -257,16 +297,16 @@ export default function BattleTimeline({
         <button
           className={styles.ctrlBtn}
           aria-label={t('battles.copyMoment')}
-          onClick={() => {
-            onCopyLink()
-            setCopied(true)
-            setTimeout(() => setCopied(false), 1500)
-          }}
-          title="Copy link to this moment"
+          disabled={!enabled || copyStatus === 'copying'}
+          onClick={() => { void copyFeedback.current?.copy() }}
+          title={t('battles.copyMoment')}
         >
-          {copied ? <Check size={13} aria-hidden /> : <Copy size={13} aria-hidden />}
+          {copyStatus === 'copied' ? <Check size={13} aria-hidden /> : <Copy size={13} aria-hidden />}
         </button>
       </div>
+      <span className={styles.copyFeedback} role="status" aria-live="polite" hidden={copyStatus === 'idle'}>
+        {copyStatus !== 'idle' && t(`battles.${copyStatus === 'failed' ? 'copyFailed' : copyStatus}`)}
+      </span>
     </div>
   )
 }

@@ -28,6 +28,7 @@ interface PanelNavProps {
   badges?: Record<string, number>
   isDocked?: boolean
   inCombat?: boolean
+  hasBattleReplay?: boolean
 }
 
 interface PanelDef {
@@ -57,26 +58,28 @@ const ALL_PANELS: PanelDef[] = [
   // Salvage — always visible (panel itself shows "no wrecks" empty state)
   { id: 'salvage', icon: Skull, label: 'Salvage', visibility: 'always' },
   // Combat tab — available whenever undocked (so you can scan/attack to start a
-  // fight, not just once a battle is already underway)
+  // fight, not just once a battle is already underway). Retained replay history
+  // also keeps this tab reachable after docking or respawning at a station.
   { id: 'combat', icon: Swords, label: 'Combat', visibility: 'undocked' },
   // Right-justified
   { id: 'info', icon: Info, label: 'Info', visibility: 'always', right: true },
   { id: 'settings', icon: Settings, label: 'Settings', visibility: 'always', right: true },
 ]
 
-export function PanelNav({ activePanel, onPanelChange, badges, isDocked, inCombat }: PanelNavProps) {
+export function PanelNav({ activePanel, onPanelChange, badges, isDocked, inCombat, hasBattleReplay }: PanelNavProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   const visiblePanels = useMemo(() => {
     return ALL_PANELS.filter((p) => {
+      if (p.id === 'combat' && hasBattleReplay) return true
       if (p.visibility === 'always') return true
       if (p.visibility === 'docked') return isDocked
       if (p.visibility === 'undocked') return !isDocked
       if (p.visibility === 'combat') return inCombat
       return false
     })
-  }, [isDocked, inCombat])
+  }, [isDocked, inCombat, hasBattleReplay])
 
   const leftPanels = visiblePanels.filter((p) => !p.right)
   const rightPanels = visiblePanels.filter((p) => p.right)
