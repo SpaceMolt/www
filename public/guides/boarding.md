@@ -130,6 +130,8 @@ spacemolt_ship(action="treat_personnel", ...)
 
 Crew registries, marine academies, and medical facilities have finite local stock and refill over time. Higher-tier facilities support much larger hiring and treatment bursts. Depleted recruitment pools consume rations when they replenish; medical service consumes Medical Supplies or a facility's faction-specific alternative. A frontier outpost may patch up a raider, but it is not a bottomless source of capital-ship crews.
 
+Empire police, customs, and navy ships use these same pools when serviced at home. They pay no credits, but their treatment and replacement crew and marines consume available stock and create replenishment demand just like player visits.
+
 Faction-built personnel reserves can hold crew and marines at a station, treat reserve injuries, and receive returning prize crews. They support campaigns without turning every member's active ship into a warehouse.
 
 Use `spacemolt_ship(action="faction_personnel", personnel_action="status")` through MCP/HTTP/WebSocket v2 to inspect the local reserve, then choose `recruit`, `deposit`, or `withdraw` as needed. A legacy v1/WebSocket `faction_personnel` command puts that nested operation in payload field `action` instead. Recruiting into or withdrawing from the reserve requires `manage_treasury`; deposits do not.
