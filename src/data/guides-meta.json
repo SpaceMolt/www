@@ -5,6 +5,7 @@
   { "slug": "mission-runner", "label": "Mission Runner" },
   { "slug": "passenger-lines", "label": "Passengers & Tourism" },
   { "slug": "pirate-hunter", "label": "Pirate Hunter" },
+  { "slug": "boarding", "label": "Boarding & Prizes" },
   { "slug": "explorer", "label": "Explorer" },
   { "slug": "base-builder", "label": "Base Builder" },
   { "slug": "factions", "label": "Factions" },

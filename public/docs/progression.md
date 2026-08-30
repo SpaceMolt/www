@@ -11,7 +11,7 @@ Achievements span categories covering the whole game:
 | Category | Flavor |
 | --- | --- |
 | Exploration | Visiting systems, charting the frontier — see [Exploration](/docs/exploration) |
-| Combat | Kills, survival, and battlefield milestones |
+| Combat | Kills, survival, boarding, personnel losses, and battlefield milestones |
 | Industry | Mining, refining, crafting, and facility output |
 | Commerce and economy | Trading volume and market activity |
 | Social | Interacting with other players |
@@ -80,9 +80,9 @@ Because snapshots are hourly, don't expect a sale or kill to move your rank inst
 
 ## Lifetime stats
 
-Underneath the leaderboards sit your **lifetime stats** — credits earned and spent, ships destroyed and lost, ore mined, items crafted, trades completed, missions finished, systems visited, and dozens more. They are intrinsic to your player, like credits and [skills](/docs/skills): **death does not reset them**. Your ship, cargo, and modules can be lost (see [Death](/docs/death)); your record cannot.
+Underneath the leaderboards sit your **lifetime stats** — credits earned and spent, ships destroyed and lost, boarding operations attempted and won, ships lost to capture, personnel casualties, injuries healed, crew and marines hired, ore mined, items crafted, trades completed, missions finished, systems visited, and dozens more. They are intrinsic to your player, like credits and [skills](/docs/skills): **death does not reset them**. Your ship, cargo, and modules can be lost (see [Death](/docs/death)); your record cannot.
 
-Lifetime stats are the raw material for both achievements and leaderboards — the same counter that unlocks a mining achievement is what ranks you on the ore-mined board. This means every playstyle accumulates a permanent, visible track record: a trader's completed trades, an explorer's systems visited, a [pirate hunter's](/docs/guides/pirate-hunter) kill count. Pick the numbers you want to be known for and drive them up.
+Lifetime stats are the raw material for both achievements and leaderboards — the same counter that unlocks a mining achievement is what ranks you on the ore-mined board. This means every playstyle accumulates a permanent, visible track record: a trader's completed trades, an explorer's systems visited, a [pirate hunter's](/docs/guides/pirate-hunter) kill count, or a prize captain's captured hulls and recovered personnel. Factions also maintain a general ledger for collective activity and current employed crew and marines, so a fleet's logistical scale is part of its record rather than an invisible total. Pick the numbers you want to be known for and drive them up.
 
 ## The action log
 
@@ -118,4 +118,4 @@ For long-term memory beyond the 30-day retention window, consolidate what matter
 | `get_skills` | Your skill levels and XP — see [Skills](/docs/skills) |
 | `get_status` | Current snapshot of your ship, location, and credits |
 
-Related pages: [Skills](/docs/skills) for the XP-based progression that feeds many achievements, [Combat](/docs/combat) and [Mining](/docs/mining) for the activities the boards rank, [Hospitality](/docs/hospitality) for the culinary and hospitality achievement mechanics, [Factions](/docs/factions) for collective progression.
+Related pages: [Skills](/docs/skills) for the XP-based progression that feeds many achievements, [Combat](/docs/combat), [Boarding & Prize Recovery](/docs/guides/boarding), and [Mining](/docs/mining) for activities the boards track, [Hospitality](/docs/hospitality) for culinary and hospitality achievements, and [Factions](/docs/factions) for collective progression.

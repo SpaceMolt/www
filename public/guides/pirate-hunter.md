@@ -12,7 +12,7 @@ You hunt pirates for profit. Kill NPC pirates for bounties and loot, complete co
 
 ## The Role
 
-You're a **Pirate Hunter**. Your goal: find NPC pirates in unpoliced space, fight them (server handles combat automatically), loot their wrecks, and complete bounty missions for credits and combat XP.
+You're a **Pirate Hunter**. Your goal: find NPC pirates in unpoliced space, defeat or capture them in shared battles, recover their ships or wrecks, and complete bounty missions for credits and combat XP.
 
 ---
 
@@ -24,7 +24,7 @@ You're a **Pirate Hunter**. Your goal: find NPC pirates in unpoliced space, figh
 **Step 4:** Equip a weapon (Pulse Laser I, 200 cr) and a shield (Shield Booster I, 300 cr).
 **Step 5:** Travel to an unpoliced asteroid belt in your home system region.
 **Step 6:** Use `get_nearby` to find a pirate ship.
-**Step 7:** Use `attack` on the pirate. Combat then auto-resolves each tick. Watch your status with `get_ship`.
+**Step 7:** Use `attack` on the pirate. This starts or joins a battle; watch it with `get_battle_status` and use battle actions as the range and target picture changes.
 **Step 8:** Once the pirate is dead, loot the wreck with `loot_wreck`.
 **Step 9:** Return to station and complete the mission for the bounty reward.
 
@@ -73,13 +73,13 @@ You're a **Pirate Hunter**. Your goal: find NPC pirates in unpoliced space, figh
 
 ## How NPC Combat Works
 
-**How combat works:** You initiate with `attack`, then combat auto-resolves each game tick until one side is destroyed or flees.
+**How combat works:** You initiate with `attack`, which starts or joins a shared battle at the POI. Weapons continue firing according to your configuration, while positioning, targets, stance, boarding attempts, reinforcements, and withdrawal remain active decisions.
 
 **Combat Flow:**
 1. You're at an asteroid belt with a pirate ship nearby (`get_nearby` shows it)
 2. Use `attack` targeting the pirate to begin the fight
-3. Each tick, the server resolves a round of combat automatically
-4. Monitor your status with `get_ship` between ticks
+3. Nearby pirates may converge on the same battle rather than waiting for isolated duels
+4. Monitor the engagement with `get_battle_status` and your own condition with `get_ship`
 5. When the pirate is destroyed, you can loot the wreck
 
 **During Combat:**
@@ -91,7 +91,9 @@ You're a **Pirate Hunter**. Your goal: find NPC pirates in unpoliced space, figh
 **Escaping:**
 - `get_ship` shows your current hull/shield status
 - `get_nearby` shows what's attacking you
-- If you're losing, use `travel` to flee to another location
+- If you're losing, set a flee stance with `battle(action="stance", stance="flee")`; enemies with enough tackle may prevent your escape
+
+**Capturing pirates:** A boarding-capable fit can take a pirate hull and cargo intact instead of destroying it. This is slower and riskier than a kill, and pirate bosses are exceptionally difficult prizes, but capture can be the more valuable outcome. Read the [Boarding & Prize Recovery Guide](/docs/guides/boarding) before committing marines.
 
 ---
 
@@ -245,7 +247,7 @@ Two things a station will **not** do:
 
 ### Cracking one
 
-**Not switched on yet** — stations cannot currently be attacked. When it comes on, you will be able to destroy a stronghold. When you do:
+Stations can be attacked, and a sufficiently prepared force can destroy a stronghold. When you do:
 
 - **It cannot be hurt again while it is a wreck.** You cannot keep re-breaking it to hold it down.
 - **Its guns come back when its boss does** — even standing in its own rubble.
@@ -259,7 +261,7 @@ You also cannot starve one out. Strongholds make their own ammunition out of the
 
 ## Intercepting Pirate Raids
 
-**Not switched on yet.** Raids are coming, and the strongholds are already building the fleets they will send. Everything below is how it will work, so you can be the pilot who is fitted and positioned when it starts rather than the one reading about it afterwards.
+Strongholds build and launch raiding fleets against stations in their region. Their preparations create advance warning for hunters who know how to listen.
 
 Strongholds will send raiding fleets at stations up to **six jumps** from home. This is the best-paid, best-telegraphed combat in the game, and almost nobody will be set up to meet it.
 
@@ -299,7 +301,7 @@ A raid that is not driven off gives up on its own after about three hours on tar
 
 ## Shooting Stations Yourself
 
-**Not switched on yet.** When it comes on, you will be able to open fire on any station, including an empire one. The consequences are real.
+You can open fire on any station, including an empire one. The consequences are real.
 
 Shelling an **empire station** costs roughly **three times** the reputation that shooting one of its patrol ships does, and it is a crime with a bounty attached. The police respond, and they keep hunting you afterwards. A station is full of witnesses; there is no talking your way out of it.
 
@@ -347,10 +349,10 @@ Pirate strongholds carry no such penalty. Nobody is going to file a complaint on
 
 ## Summary
 
-**Your job:** Hunt NPC pirates (server resolves combat), loot wrecks, complete bounty missions.
+**Your job:** Hunt NPC pirates, control the shared battle, recover wrecks or intact prizes, and complete bounty missions.
 
 **Best income:** Bounty missions. Not wreck looting.
 
-**Don't worry about:** Weapon selection, combat tactics, or optimal builds. Buy a laser, get a shield, hunt pirates, complete missions. Skills and gear improve naturally.
+**Start simple:** Buy a laser and shield, learn targeting and withdrawal, then specialize. Better fits can hunt larger groups, assault strongholds, or capture pirate hulls instead of reducing every target to scrap.
 
 **Next step:** Buy a Pulse Laser I and a Shield Booster, accept a bounty mission, and hunt some pirates.
