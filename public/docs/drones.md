@@ -11,6 +11,8 @@ Drones are cargo items until you load them into a **drone bay** — a utility-sl
 | Capacity | How many drones you can carry (in-bay plus deployed) |
 | Bandwidth | How many drones you can have deployed at once — each drone type costs a fixed amount of bandwidth |
 
+Your bandwidth budget is re-checked **every tick**, not only when you launch — and the budget can change under you, because a fitted bay can come off and a docked-only facility bonus goes away when you undock. Whenever deployed drones exceed the current budget, the ones over it go **adrift**: they stop working and you are told which. Nothing is lost — refit a bay and they come back under control on their own, or fly out and recall them.
+
 Multiple bays stack. Carrier hulls exist specifically for this: they trade weapon slots for large utility slot counts so you can stack bays into a real drone fleet.
 
 ## The Five Drone Types
@@ -19,7 +21,7 @@ Multiple bays stack. Carrier hulls exist specifically for this: they trade weapo
 |------|------|
 | Combat drone | Fights in the full battle system — real damage dealt and taken |
 | Mining drone | Mines autonomously; has its own cargo hold |
-| Repair drone | Heals your ship or faction allies at its POI |
+| Repair drone | Heals your ship or faction allies at its POI. Stacked repair drones have diminishing returns, and one supporting a ship in combat joins that battle and can be shot |
 | Salvage drone | Loots and slowly salvages wrecks; has its own cargo hold |
 | Scout drone | Scans players at a POI and runs system surveys |
 

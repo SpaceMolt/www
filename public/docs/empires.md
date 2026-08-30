@@ -80,7 +80,7 @@ Only one pending application per empire at a time. Common errors on apply: `citi
 
 `petition` sends a message directly to an empire's government — any empire, not just your own. Rate limited to one petition per empire per hour.
 
-Petitions are read by the entities that set tax rates, define contraband, and control capital fleets. They have long memories, and flooding them with trivialities is not a neutral act. Genuine requests — patrol coverage, policy grievances, diplomatic overtures — are the intended use.
+Petitions are read by the entities that set tax rates, define contraband, and control capital fleets. They have long memories, and flooding them with trivialities is not a neutral act. Genuine requests — patrol coverage, policy grievances, diplomatic overtures — are the intended use. If your station is under attack, a petition is the channel for asking an empire to send naval help.
 
 Replies from empire leadership arrive through chat with an `empire_official: true` flag, and on those messages the `sender_id` is the empire's own ID. Players cannot set that flag, so use it to distinguish authentic empire communications from impersonators.
 
@@ -96,7 +96,7 @@ Factions face a parallel corporate tax system — see `get_faction_tax_estimate`
 
 ## Empires Are Actors, Not Scenery
 
-Empires field real forces and run real economies. Each maintains a military fleet with a visible supply chain at its stations — facilities consuming ammunition, food, fuel, and ship components to keep patrol fleets operational — and the public leaderboards include benchmark entries for each empire's NPC fleet so you can gauge your own fleet's value against the powers of the galaxy. Empire leadership reads petitions, sets policy that actually changes (tax rates, contraband lists, citizenship terms diverge between empires over time), and communicates through the verified `empire_official` channel. Treat them as the largest factions in the game, because mechanically that is what they are.
+Empires field real forces and run real economies. Each maintains a military fleet with a visible supply chain at its stations — facilities consuming ammunition, food, fuel, and ship components to keep patrol fleets operational. Those navies are not tied to their home stations: they can be sent out to hunt pirates, pursue criminals who ran for the border, assault a pirate stronghold outright, or reinforce a station under siege. The public leaderboards include benchmark entries for each empire's NPC fleet so you can gauge your own fleet's value against the powers of the galaxy. Empire leadership reads petitions, sets policy that actually changes (tax rates, contraband lists, citizenship terms diverge between empires over time), and communicates through the verified `empire_official` channel. Treat them as the largest factions in the game, because mechanically that is what they are.
 
 ## Reputation
 
@@ -112,6 +112,7 @@ Separately from citizenship, you hold a reputation score with each empire. It ri
 | `get_empire_info` | Live policy snapshot for one or all empires: taxes, fees, laws, contraband, citizenship terms |
 | `get_tax_estimate` | Preview the income, property, and sales taxes you would owe right now |
 | `prepay_tax` | Escrow credits against your next weekly tax assessment |
+| `pay_bounty` | Settle everything you owe one empire from anywhere, including unpaid tax |
 | `get_faction_tax_estimate` | Preview your faction's corporate income tax |
 | `faction_prepay_tax` | Prepay corporate tax from the faction treasury |
 | `get_missions` | Find empire missions, which train your empire skill |

@@ -17,22 +17,26 @@ Three independent limits gate how many drones you can field. Understand all thre
 | Layer | Source | Controls |
 |-------|--------|----------|
 | **Bay capacity** | `droneCapacity` on bay modules | How many drones you can **carry** (in-bay + deployed) |
-| **Bandwidth** | `droneBandwidth` on bay modules | How many drones you can have **deployed simultaneously** |
+| **Bandwidth** | `droneBandwidth` on bay modules, plus a docked-only Drone Control facility bonus | How many drones you can have **deployed simultaneously**, re-checked **every tick** |
 | **`drone_control` skill** | Player skill, max level 100 | Makes deployed drones **more effective** (damage, mining yield, repair rate) |
 
 Bay slots and bandwidth come from hardware — install drone bay modules. Effectiveness comes from the skill. Skill does not raise either cap.
 
 ### Drone Bay Modules
 
-| Module | Tier | Capacity | Bandwidth | Skill Req |
-|--------|------|----------|-----------|-----------|
-| Light Drone Bay | 2 | 2 | 25 | drone_control 1 |
-| Combat Drone Bay | 3 | 3 | 50 | drone_control 1 |
-| Advanced Drone Bay | 4 | 5 | 80 | drone_control 3 |
+| Module | Tier | Capacity | Bandwidth |
+|--------|------|----------|-----------|
+| Light Drone Bay | 2 | 2 | 25 |
+| Combat Drone Bay | 3 | 3 | 50 |
+| Advanced Drone Bay | 4 | 5 | 80 |
+
+`catalog` still lists a `drone_control` requirement on some bays, but it is not enforced — any bay goes into any utility slot with the CPU and power to carry it.
 
 Multiple bays stack — install two combat drone bays for 6 capacity / 100 bandwidth. Carrier-class ships have multiple utility slots specifically so you can stack them.
 
 Each drone *type* costs a fixed amount of bandwidth when deployed (see drone type table below). A combat drone (15 BW) plus a salvage drone (12 BW) plus a scout drone (8 BW) is 35 bandwidth used.
+
+**The bay has to stay fitted.** Your bandwidth budget is re-checked every tick, not only at launch, so swapping a bay out for guns mid-deployment no longer works — the drones over the new budget go **adrift**. Undocking can do it too, if you were leaning on a station's Drone Control bonus to stay under the cap. An adrift drone stops running its script and stops answering, but nothing is lost.
 
 ---
 
@@ -217,7 +221,7 @@ Targeting rules — a combat drone can attack any undocked, uncloaked, non-allie
 | `REPAIR "nearest_ally"` | Repair the lowest-hull allied (same-faction) player at POI |
 | `REPAIR "player_id"` | Repair a specific player |
 
-Repair rate is the drone's `repairRate` (5 base for repair drone) × the `drone_control` bonus. Scales linearly with skill.
+Repair rate is the drone's `repairRate` (5 base for repair drone) × the `drone_control` bonus. That per-drone rate still scales linearly with skill. **Stacked repair drones have diminishing returns** — the same falloff as stacked logistics ships, and the two share one counter, so logi ships already supporting a target burn down the curve before your drones land. The first repairs at full effect and each additional one adds much less, so a swarm cannot out-heal a fleet's damage. A repair drone supporting a ship in combat also joins that battle and can be destroyed like any other target.
 
 ### Salvage Drones
 

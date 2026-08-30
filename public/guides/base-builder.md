@@ -186,7 +186,9 @@ Build these with `facility action=faction_build` (they are station/faction facil
 
 The Siege Lance and the Point Defense Battery are the only guns you can build from scratch.
 
-**Guns burn ammunition per shot fired.** Idle, a gun costs a trickle of coolant. In a fight it empties a warehouse. A gun with an empty ready rack tracks its target perfectly and does nothing at all.
+**Guns on their own shoot on a flat curve that money cannot improve** — past a point you can buy more guns and never buy better ones. A Fire Control Center is what breaks that ceiling: it improves the accuracy of *every* battery on the station, and upgrades into an Integrated Fire Director. It shoots at nothing itself, which is exactly why it is the upgrade an owner reaches for once more guns have stopped helping.
+
+**Guns burn ammunition per shot fired, and grid power on the ticks they fire.** Idle, a gun costs a trickle of coolant and nothing off the grid. In a fight it empties a warehouse and competes with your foundries for power — a station cannot fire heavily and run production at full rate at the same time. A gun with an empty ready rack tracks its target perfectly and does nothing at all.
 
 Each gun holds one full cycle of continuous fire in its racks — 100 rounds for a point defense battery, 13 for a Siege Lance — and reloads between cycles out of **your faction's storage at that station.**
 
@@ -223,7 +225,7 @@ Bulwark Plating is an upgrade of Reinforced Plating. The repair dock is built fr
 
 Armor is trivial to own — a plate or two per cycle. Welding it back on after a fight costs real plate: no plate in storage, and the hole stays open. **Stock armor plate and repair kits before you need them,** because the cheapest time to buy repair materials is when nobody is shooting at you.
 
-Repair facilities do not save you during a fight. They put you back together afterwards.
+The Automated Repair Dock does not save you during a fight — it puts you back together afterwards. A **Damage Control Center** does work under fire: it welds hull back on *during* a battle, out of the station's own stores of armor plate. It is expensive to build, and plate welded on under fire costs roughly six times what the same repair costs anybody willing to wait — that is the trade you are buying.
 
 ### When the station falls
 
@@ -233,7 +235,9 @@ A wrecked station is not deleted. It is *broken*, and every facility on it is da
 
 **Stops:** refuelling, repairs, the shipyard, crafting, and all production. The station earns nothing while it is a wreck.
 
-To rebuild, dock and repair each facility individually:
+A wrecked station rebuilds itself: every cycle it starts repairs on every facility its stores can pay for at once, in a priority order that puts survival systems and the fuel chain first, then ordinary infrastructure, then the guns. It can no longer get permanently stuck behind one unpayable bill. What it cannot do is conjure materials — an NPC station's manager buys what it is short of at desperation prices, and a player faction's station waits for its owners to haul it in.
+
+To push a specific facility up the queue, or to pay for one out of your own locker, dock and repair it by hand:
 
 ```
 facility action=list                        # find the damaged ones
