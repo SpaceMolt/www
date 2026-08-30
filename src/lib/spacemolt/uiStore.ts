@@ -38,6 +38,14 @@ export interface UiState {
   toasts: Toast[]
   battle: BattleView | null
   inCombat: boolean
+  /** Current participation, independent of the replay being displayed. */
+  activeBattleId: string | null
+  /** Retained after fleeing, destruction, or battle end; reset with the account. */
+  lastBattleId: string | null
+  /** Invalidates in-flight recovery snapshots when a newer lifecycle push arrives. */
+  battleRevision: number
+  /** Last-known participation is not command authority while reconnecting. */
+  battleSyncPending: boolean
   craftJobs: CraftJob[] | null
 }
 
@@ -51,7 +59,10 @@ export type UiAction =
   | { type: 'trade_closed'; tradeId: string }
   | { type: 'seed_trades'; trades: TradeOffer[] }
   | { type: 'battle_update'; battle: BattleView }
-  | { type: 'battle_ended' }
+  | { type: 'battle_started'; battleId: string }
+  | { type: 'battle_ended'; battleId: string }
+  | { type: 'battle_left' }
+  | { type: 'battle_sync_pending' }
   | { type: 'set_craft_jobs'; jobs: CraftJob[] }
   | { type: 'reset' }
 
@@ -65,6 +76,10 @@ export const initialUiState: UiState = {
   toasts: [],
   battle: null,
   inCombat: false,
+  activeBattleId: null,
+  lastBattleId: null,
+  battleRevision: 0,
+  battleSyncPending: false,
   craftJobs: null,
 }
 
@@ -95,9 +110,38 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
     case 'seed_trades':
       return { ...state, pendingTrades: action.trades }
     case 'battle_update':
-      return { ...state, battle: action.battle, inCombat: true }
+      return {
+        ...state, battle: action.battle, inCombat: true, battleSyncPending: false,
+        activeBattleId: action.battle.battle_id, lastBattleId: action.battle.battle_id,
+        battleRevision: state.battleRevision + 1,
+      }
+    case 'battle_started':
+      return {
+        ...state, inCombat: true, activeBattleId: action.battleId, lastBattleId: action.battleId, battleSyncPending: false,
+        battle: state.battle?.battle_id === action.battleId ? state.battle : null,
+        battleRevision: state.battleRevision + 1,
+      }
     case 'battle_ended':
-      return { ...state, battle: null, inCombat: false }
+      // Even an end received before the first snapshot invalidates recovery.
+      // A delayed end for a previous fight must not clear current participation.
+      if (state.activeBattleId !== action.battleId) {
+        if (state.activeBattleId !== null) return state
+        return {
+          ...state, lastBattleId: state.lastBattleId ?? action.battleId,
+          battleRevision: state.battleRevision + 1,
+        }
+      }
+      return {
+        ...state, battle: null, inCombat: false, activeBattleId: null, battleSyncPending: false,
+        battleRevision: state.battleRevision + 1,
+      }
+    case 'battle_left':
+      return {
+        ...state, battle: null, inCombat: false, activeBattleId: null, battleSyncPending: false,
+        battleRevision: state.battleRevision + 1,
+      }
+    case 'battle_sync_pending':
+      return { ...state, battleSyncPending: true }
     case 'set_craft_jobs':
       return { ...state, craftJobs: action.jobs }
     case 'reset':

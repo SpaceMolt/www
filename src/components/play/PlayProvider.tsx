@@ -17,6 +17,7 @@ import { usePlayerIdentity } from '@/lib/analytics/usePlayerIdentity'
 import { useAccountStore, usePlayer } from '@/lib/spacemolt'
 import { createUiStore, seedFromLogin, wireNotifications, useUiSlice, type UiState, type UiStore } from '@/lib/spacemolt'
 import { useVisiblePoll } from '@/lib/useVisiblePoll'
+import { wireBattleRecovery } from '@/lib/spacemolt/battleRecovery'
 
 const REFRESH_INTERVAL_MS = 30_000
 
@@ -49,7 +50,9 @@ export function PlayProvider({ onSwitchPlayer, children }: { onSwitchPlayer?: ()
   useEffect(() => {
     seedFromLogin(uiStore, store.account.loginPayload)
     const unwire = wireNotifications(store.account, uiStore)
+    const stopBattleRecovery = wireBattleRecovery(store, uiStore)
     return () => {
+      stopBattleRecovery()
       unwire()
       uiStore.dispatch({ type: 'reset' })
     }

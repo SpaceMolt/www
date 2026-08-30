@@ -48,16 +48,26 @@ export function wireNotifications(account: Account, store: UiStore): () => void 
       log('info', 'Trade cancelled')
     }),
 
-    account.on('battle_started', () => log('combat', 'Battle started')),
+    account.on('battle_started', (battle) => {
+      store.dispatch({ type: 'battle_started', battleId: battle.battle_id })
+      log('combat', 'Battle started')
+    }),
     account.on('battle_update', (battle) => store.dispatch({ type: 'battle_update', battle })),
-    account.on('battle_ended', () => {
-      store.dispatch({ type: 'battle_ended' })
+    account.on('battle_ended', (battle) => {
+      store.dispatch({ type: 'battle_ended', battleId: battle.battle_id })
       log('combat', 'Battle ended')
     }),
-    account.on('battle_alert', () => log('warning', 'Battle alert: you are under attack')),
+    account.on('battle_alert', (battle) => {
+      // Also sent to spectators: an alert does not establish participation.
+      log('warning', battle.message)
+    }),
+    account.on('battle_left', (left) => {
+      const playerId = account.state.player?.id ?? account.loginPayload?.player?.id
+      if (left.player_id === playerId) store.dispatch({ type: 'battle_left' })
+    }),
 
     account.on('player_died', (death) => {
-      store.dispatch({ type: 'battle_ended' })
+      store.dispatch({ type: 'battle_left' })
       log('danger', `You were destroyed${str(death.killer_name) ? ` by ${str(death.killer_name)}` : ''}`)
     }),
     account.on('player_kill', (kill) => log('combat', `${str(kill.victim) || 'A player'} was destroyed`)),

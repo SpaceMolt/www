@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 import { Check, Copy, Pause, Play, SkipBack } from 'lucide-react'
 import styles from './BattleViewer.module.css'
 import { useTranslation } from '@/i18n'
@@ -18,6 +18,29 @@ interface Props {
   onToggleFollow: () => void
   onCycleSpeed: () => void
   onCopyLink: () => void
+  enabled?: boolean
+}
+
+/** Animation work belongs only to a visible part of an enabled replay. */
+export function useBattleAnimationActive(ref: RefObject<HTMLElement | null>, enabled: boolean): boolean {
+  const [intersecting, setIntersecting] = useState(false)
+  const [documentVisible, setDocumentVisible] = useState(true)
+
+  useEffect(() => {
+    const element = ref.current
+    if (!enabled || !element) return
+    const onVisibility = () => setDocumentVisible(document.visibilityState !== 'hidden')
+    onVisibility()
+    const observer = new IntersectionObserver(([entry]) => setIntersecting(entry.isIntersecting))
+    observer.observe(element)
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      observer.disconnect()
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
+  }, [enabled, ref])
+
+  return enabled && intersecting && documentVisible
 }
 
 /**
@@ -37,6 +60,7 @@ export default function BattleTimeline({
   onToggleFollow,
   onCycleSpeed,
   onCopyLink,
+  enabled = true,
 }: Props) {
   const { t } = useTranslation()
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -44,6 +68,7 @@ export default function BattleTimeline({
   const scrubbing = useRef(false)
   const [hoverInfo, setHoverInfo] = useState<{ x: number; tickIndex: number } | null>(null)
   const [copied, setCopied] = useState(false)
+  const animationActive = useBattleAnimationActive(wrapRef, enabled)
 
   const n = timeline.entries.length
 
@@ -60,9 +85,11 @@ export default function BattleTimeline({
 
   // Draw loop: chart is static per timeline, playhead moves every frame.
   useEffect(() => {
+    if (!animationActive) return
     let raf = 0
     const draw = () => {
       raf = requestAnimationFrame(draw)
+      if (document.visibilityState === 'hidden') return
       const canvas = canvasRef.current
       const wrap = wrapRef.current
       if (!canvas || !wrap) return
@@ -149,7 +176,7 @@ export default function BattleTimeline({
     }
     raf = requestAnimationFrame(draw)
     return () => cancelAnimationFrame(raf)
-  }, [timeline, n, getPlayhead])
+  }, [timeline, n, getPlayhead, animationActive])
 
   const onPointerDown = useCallback(
     (e: React.PointerEvent) => {

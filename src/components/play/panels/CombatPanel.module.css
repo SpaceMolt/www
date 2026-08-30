@@ -1,5 +1,87 @@
 /* === CombatPanel === */
 
+.battleView {
+  margin: 0;
+  padding: 0;
+  flex-shrink: 0;
+  min-width: 0;
+  border: 1px solid var(--nebula-blue);
+  border-top: 2px solid var(--plasma-cyan);
+  border-radius: 4px;
+  background: var(--space-black);
+  overflow: hidden;
+}
+
+.battleViewToggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.6rem 0.7rem;
+  color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.045);
+  border: 0;
+  cursor: pointer;
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.75rem;
+  text-align: left;
+}
+
+.battleViewToggle span { flex: 1; }
+
+.battleViewHint {
+  margin: 0;
+  padding: 0.35rem 0.7rem 0.5rem;
+  color: var(--chrome-silver);
+  font-size: 0.7rem;
+  line-height: 1.5;
+}
+
+.commandDeck {
+  position: sticky;
+  top: 0;
+  z-index: 8;
+  flex-shrink: 0;
+  min-width: 0;
+  margin: 0;
+  padding: 0.45rem 0.6rem 0.55rem;
+  border: 1px solid rgba(230, 57, 70, 0.45);
+  border-radius: 4px;
+  background: #0d131f;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.commandDeck legend {
+  color: var(--star-white);
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.commandPosture {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.4rem;
+  color: var(--chrome-silver);
+  font: 0.7rem var(--font-jetbrains), monospace;
+}
+
+.commandDeck small {
+  display: block;
+  margin-top: 0.4rem;
+  color: var(--chrome-silver);
+  font-size: 0.65rem;
+  line-height: 1.4;
+}
+
+.commandDeck:disabled button { opacity: 0.45; cursor: not-allowed; }
+.commandDeck .tacticalRow { margin-top: 0.4rem; }
+.commandDeck .stanceBtn, .commandDeck .tacticalBtn { min-height: 36px; }
+.rosterSummary { cursor: pointer; color: var(--chrome-silver); font-size: 0.75rem; }
+
 .headerRight {
   display: flex;
   align-items: center;

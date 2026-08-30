@@ -12,19 +12,21 @@ interface Props {
   selectedId: string | null
   onSelect: (id: string) => void
   winner: boolean
+  compact?: boolean
+  focusPlayerId?: string
 }
 
 /**
  * Floating roster panel for one side: live hull/shield micro-bars, damage
  * dealt and kills per ship. Docked to the side's flank of the arena.
  */
-export default function SideScoreboard({ side, timeline, tickIndex, selectedId, onSelect, winner }: Props) {
+export default function SideScoreboard({ side, timeline, tickIndex, selectedId, onSelect, winner, compact = false, focusPlayerId }: Props) {
   const { t } = useTranslation()
   // Rosters start collapsed on narrow screens where an expanded panel would
   // cover the arena. Only rendered client-side (after battle data loads), so
   // reading matchMedia in the initializer is safe.
   const [collapsed, setCollapsed] = useState(
-    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches,
+    () => compact || (typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches),
   )
   const snaps = timeline.snapshotAt[tickIndex]
 
@@ -90,6 +92,7 @@ export default function SideScoreboard({ side, timeline, tickIndex, selectedId, 
                     {dead && '✕ '}
                     {escaped && '↗ '}
                     {meta.name}
+                    {id === focusPlayerId && <span className={styles.youTag}>{t('battles.stream.you')}</span>}
                   </span>
                   <span className={styles.scoreShip}>{meta.shipClassName}</span>
                 </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import styles from './BattleViewer.module.css'
 import { useTranslation } from '@/i18n'
 import type { BattleTimeline, BattleEventKind } from '@/lib/battle/timeline'
@@ -34,11 +34,17 @@ export default function EventFeed({ timeline, tickIndex, isPlaying, onJump }: Pr
   const [expandedEvent, setExpandedEvent] = useState<string | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const pinnedToEnd = useRef(true)
+  const feedId = useId()
 
   const visible = useMemo(() => {
     const kinds = FILTERS[filter]
+    const tickOccurrences = new Map<number, number>()
     const rows = timeline.events
-      .map((event, eventIndex) => ({ event, eventIndex }))
+      .map(event => {
+        const ordinal = tickOccurrences.get(event.tick) ?? 0
+        tickOccurrences.set(event.tick, ordinal + 1)
+        return { event, eventKey: `${event.tick}-${ordinal}` }
+      })
       .filter(({ event }) => event.tickIndex <= tickIndex && (!kinds || kinds.includes(event.kind)))
     // Cap the DOM for very long battles; keep the most recent.
     return rows.length > 400 ? rows.slice(rows.length - 400) : rows
@@ -78,9 +84,8 @@ export default function EventFeed({ timeline, tickIndex, isPlaying, onJump }: Pr
         }}
       >
         {visible.length === 0 && <div className={styles.feedEmpty}>{t('battles.noEvents')}</div>}
-        {visible.map(({ event: ev, eventIndex }) => {
-          const eventKey = String(eventIndex)
-          const detailId = `battle-event-detail-${eventIndex}`
+        {visible.map(({ event: ev, eventKey }) => {
+          const detailId = `${feedId}-battle-event-${eventKey}`
           const expanded = expandedEvent === eventKey
           const secondary = ev.attack && ev.secondaryKind ? secondaryAttackEffect(ev.attack) : undefined
           return (

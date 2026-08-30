@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import { useTranslation } from '@/i18n'
 import {
   Swords,
   Search,
@@ -27,22 +28,26 @@ import {
   useLocationState,
   useModules,
   usePlayer,
+  useConnectionPhase,
 } from '@/lib/spacemolt'
+import { CombatBattleView } from './CombatBattleView'
 import { usePlay, usePlayUi } from '../PlayProvider'
 import { Panel, Modal, shared } from '../shared'
 import styles from './CombatPanel.module.css'
 
 type Stance = 'fire' | 'evade' | 'brace' | 'flee'
 
-const STANCES: { id: Stance; label: string; icon: typeof Swords; title: string }[] = [
-  { id: 'fire', label: 'Fire', icon: Flame, title: 'Fire weapons: 100% damage dealt and taken' },
-  { id: 'evade', label: 'Evade', icon: Wind, title: 'Evade: no damage dealt, 50% taken (costs fuel)' },
-  { id: 'brace', label: 'Brace', icon: ShieldHalf, title: 'Brace: no damage dealt, 25% taken, shields regen faster' },
-  { id: 'flee', label: 'Flee', icon: Rabbit, title: 'Flee: retreat to outer zone, then 3 ticks to escape' },
+const STANCES: { id: Stance; icon: typeof Swords }[] = [
+  { id: 'fire', icon: Flame },
+  { id: 'evade', icon: Wind },
+  { id: 'brace', icon: ShieldHalf },
+  { id: 'flee', icon: Rabbit },
 ]
 
 export function CombatPanel() {
+  const { t } = useTranslation()
   const store = useAccountStore()
+  const { phase } = useConnectionPhase()
   const { uiStore } = usePlay()
   const mutate = useCommandMutation()
   const player = usePlayer()
@@ -51,6 +56,11 @@ export function CombatPanel() {
   const cargo = useCargo()
   const battle = usePlayUi((s) => s.battle)
   const inCombat = usePlayUi((s) => s.inCombat)
+  const battleSyncPending = usePlayUi((s) => s.battleSyncPending)
+  const activeBattleId = usePlayUi((s) => s.activeBattleId)
+  const lastBattleId = usePlayUi((s) => s.lastBattleId)
+  const viewedBattleId = activeBattleId ?? lastBattleId
+  const canControl = inCombat && !battleSyncPending && phase === 'ready'
 
   // Wildlife is only on the get_nearby response — the cached location state
   // carries nearby players and pirates but no creatures.
@@ -111,18 +121,21 @@ export function CombatPanel() {
   // (query commands), not queued to the next tick, so they bypass mutate().
   const handleStance = useCallback(
     (stance: Stance) => {
+      if (store.getPhase() !== 'ready' || !uiStore.getState().inCombat || uiStore.getState().battleSyncPending) return
       store.account.commands.spacemolt_battle.stance({ id: stance }).catch(reportError)
     },
-    [store, reportError],
+    [store, uiStore, reportError],
   )
 
   const handleAdvance = useCallback(() => {
+    if (store.getPhase() !== 'ready' || !uiStore.getState().inCombat || uiStore.getState().battleSyncPending) return
     store.account.commands.spacemolt_battle.advance().catch(reportError)
-  }, [store, reportError])
+  }, [store, uiStore, reportError])
 
   const handleRetreat = useCallback(() => {
+    if (store.getPhase() !== 'ready' || !uiStore.getState().inCombat || uiStore.getState().battleSyncPending) return
     store.account.commands.spacemolt_battle.retreat().catch(reportError)
-  }, [store, reportError])
+  }, [store, uiStore, reportError])
 
   const handleReload = useCallback(
     (instanceId: string) => {
@@ -188,12 +201,36 @@ export function CombatPanel() {
         </button>
       </div>
 
-      {/* Battle Status */}
+      {/* Authenticated commands are independent of the visualizer's historical playhead. */}
       {inCombat && (
-        <div className={styles.battleSection}>
-          <div className={shared.sectionTitle}>
-            <Target size={12} /> Battle Status
+        <fieldset className={styles.commandDeck} disabled={!canControl}>
+          <legend>{t('battles.playCombat.liveControls')}</legend>
+          <div className={styles.commandPosture}>
+            <Target size={12} aria-hidden />
+            <span>{battleSyncPending ? t('battles.playCombat.awaitingState') : <>{battle?.your_zone || t('battles.playCombat.awaitingState')}{yourStance ? ` · ${yourStance}` : ''}</>}</span>
+            {phase !== 'ready' && <span>{t('battles.playCombat.disconnected')}</span>}
           </div>
+          <div className={styles.stanceRow}>
+            {STANCES.map(({ id, icon: Icon }) => (
+              <button key={id} className={`${styles.stanceBtn} ${yourStance === id ? styles.stanceActive : ''}`} onClick={() => handleStance(id)} aria-pressed={yourStance === id} title={t(`battles.playCombat.stanceHint.${id}`)} type="button">
+                <Icon size={12} aria-hidden /> {t(`battles.playCombat.stance.${id}`)}
+              </button>
+            ))}
+          </div>
+          <div className={styles.tacticalRow}>
+            <button className={styles.tacticalBtn} onClick={handleAdvance} type="button"><ChevronUp size={14} aria-hidden /> {t('battles.playCombat.advance')}</button>
+            <button className={styles.tacticalBtn} onClick={handleRetreat} type="button"><ChevronDown size={14} aria-hidden /> {t('battles.playCombat.retreat')}</button>
+          </div>
+          <small>{t('battles.playCombat.controlsHint')}</small>
+        </fieldset>
+      )}
+
+      {viewedBattleId && <CombatBattleView key={viewedBattleId} battleId={viewedBattleId} playerId={player?.id} participating={inCombat} />}
+
+      {/* Keep the authoritative roster available even if public replay data is delayed. */}
+      {inCombat && (
+        <details className={styles.battleSection}>
+          <summary className={styles.rosterSummary}>{t('battles.playCombat.currentRoster')}</summary>
           {battle ? (
             <div className={styles.battleInfo}>
               {/* Your posture */}
@@ -270,51 +307,7 @@ export function CombatPanel() {
             </div>
           )}
 
-          {/* Tactical Controls */}
-          <div className={styles.tacticalSection}>
-            <div className={shared.sectionTitle}>
-              <Shield size={12} /> Tactical Controls
-            </div>
-
-            {/* Stance Selector */}
-            <div className={styles.stanceRow}>
-              {STANCES.map(({ id, label, icon: Icon, title }) => (
-                <button
-                  key={id}
-                  className={`${styles.stanceBtn} ${yourStance === id ? styles.stanceActive : ''}`}
-                  onClick={() => handleStance(id)}
-                  title={title}
-                  type="button"
-                >
-                  <Icon size={12} />
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            {/* Movement */}
-            <div className={styles.tacticalRow}>
-              <button
-                className={styles.tacticalBtn}
-                onClick={handleAdvance}
-                title="Advance one zone toward the enemy (higher hit chance)"
-                type="button"
-              >
-                <ChevronUp size={14} />
-                Advance
-              </button>
-              <button
-                className={styles.tacticalBtn}
-                onClick={handleRetreat}
-                title="Retreat one zone from the enemy (harder to hit)"
-                type="button"
-              >
-                <ChevronDown size={14} />
-                Retreat
-              </button>
-            </div>
-          </div>
-        </div>
+        </details>
       )}
 
       {/* Nearby players and pirates */}

@@ -453,6 +453,43 @@
     "feedFilterSupport": "support",
     "feedShowDetail": "DETAIL",
     "feedHideDetail": "HIDE",
+    "stream": {
+      "viewerLabel": "Battle visualizer",
+      "following": "Following latest tick",
+      "recorded": "Recorded combat",
+      "yourShip": "Your ship",
+      "you": "you",
+      "fullReplay": "Full replay",
+      "resolvedTick": "Viewing tick #{tick}",
+      "loading": "Loading recorded ticks…",
+      "waiting": "Waiting for the first recorded tick…",
+      "live": "Live feed · resolved ticks",
+      "finalizing": "Finalizing battle records…",
+      "complete": "Battle records loaded",
+      "unavailable": "Battle records are incomplete or unavailable. Try again shortly.",
+      "stale": "Feed delayed · showing last received records",
+      "retry": "Refresh records"
+    },
+    "playCombat": {
+      "visualizer": "Battle visualizer",
+      "lastBattle": "Last battle · watch / replay",
+      "historyHint": "Recorded combat may trail the server. Select a ship to inspect; the arena never issues commands.",
+      "spectatorHint": "You are no longer participating. Keep watching if the battle continues, or review its recorded ticks.",
+      "liveControls": "Live tactical controls",
+      "controlsHint": "Commands affect your current battle, even while viewing an earlier tick.",
+      "awaitingState": "Awaiting tactical state",
+      "disconnected": "Connection unavailable · controls disabled",
+      "currentRoster": "Current tactical roster · server state",
+      "advance": "Advance",
+      "retreat": "Retreat",
+      "stance": { "fire": "Fire", "evade": "Evade", "brace": "Brace", "flee": "Flee" },
+      "stanceHint": {
+        "fire": "Fire weapons: 100% damage dealt and taken",
+        "evade": "Evade: no damage dealt, 50% taken (costs fuel)",
+        "brace": "Brace: no damage dealt, 25% taken, shields regenerate faster",
+        "flee": "Flee: retreat to outer zone, then 3 ticks to escape"
+      }
+    },
     "telemetry": {
       "chanceTitle": "Chance to hit and server roll",
       "roll": "roll",

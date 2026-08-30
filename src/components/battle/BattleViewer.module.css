@@ -1,4 +1,4 @@
-/* Battle viewer — full-viewport tactical display */
+/* Battle viewer — full-page and embedded tactical display */
 
 .viewer {
   display: flex;
@@ -11,6 +11,42 @@
   min-height: 480px;
   background: var(--space-black);
   overflow: hidden;
+}
+
+.viewer:focus-visible {
+  outline: 1px solid var(--plasma-cyan);
+  outline-offset: -1px;
+}
+
+.streamStatus {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.8rem;
+  padding: 0.35rem 0.65rem;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--nebula-blue);
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.65rem;
+  color: var(--chrome-silver);
+}
+
+.streamStale { color: var(--warning-yellow); }
+.streamStatus button {
+  border: 0;
+  background: none;
+  color: var(--plasma-cyan);
+  cursor: pointer;
+  font: inherit;
+  text-decoration: underline;
+}
+
+.youTag {
+  margin-left: 0.3rem;
+  color: var(--plasma-cyan);
+  font-size: 0.6rem;
+  text-transform: uppercase;
 }
 
 /* --- Loading / error states --- */
@@ -1312,4 +1348,93 @@
   .outcomeLabel {
     font-size: 1.05rem;
   }
+}
+
+/* Play owns the surrounding page and commands. Size by the center panel, not the viewport. */
+.embedded {
+  container-type: inline-size;
+  height: auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.embeddedHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.4rem 0.65rem;
+  border-block: 1px solid var(--nebula-blue);
+  background: rgba(0, 212, 255, 0.025);
+  font: 0.65rem var(--font-jetbrains), monospace;
+}
+
+.embeddedMode, .embeddedActions, .embeddedActions button, .embeddedActions a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.embeddedMode { color: var(--chrome-silver); }
+.embeddedActions { flex-wrap: wrap; }
+.embeddedActions button, .embeddedActions a {
+  min-height: 32px;
+  padding: 0.3rem 0.4rem;
+  border: 1px solid var(--nebula-blue);
+  border-radius: 3px;
+  background: none;
+  color: var(--plasma-cyan);
+  text-decoration: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+.embedded .stageRow { display: flex; flex-direction: column; flex: none; }
+.embedded .stage { height: 400px; min-height: 0; flex: none; }
+.embedded .scoreboardLayer {
+  position: absolute;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  top: 0;
+  left: 0;
+  right: 0;
+  gap: 4px;
+  padding: 6px;
+  max-height: 46%;
+  overflow-y: auto;
+  pointer-events: none;
+  z-index: 4;
+}
+.embedded .scoreboard {
+  position: static;
+  transform: none;
+  flex: 1 1 45%;
+  width: 0;
+  min-width: 0;
+  max-height: none;
+  pointer-events: auto;
+}
+.embedded .scoreboardRows { max-height: 130px; }
+.embedded .sideTotals { display: none; }
+.embedded .inspector { left: 0; right: 0; bottom: 0; width: auto; max-height: 55%; border-radius: 4px 4px 0 0; }
+.embedded .feed { width: auto; height: 220px; max-height: none; border-left: 0; border-top: 1px solid var(--nebula-blue); flex: none; }
+.embedded .timelineBar { flex-wrap: wrap; gap: 0.4rem; }
+.embedded .scrubber { order: -1; flex-basis: 100%; height: 40px; }
+.embedded .ctrlBtn { min-width: 36px; min-height: 36px; }
+.embedded .tickReadout { margin-left: auto; }
+.embedded .outcomeInner { margin: 0 1rem; padding: 1rem; }
+.embedded .outcomeLabel { font-size: 1rem; }
+
+@container (max-width: 440px) {
+  .embedded .stage { height: 360px; }
+  .embedded .scoreboard { flex-basis: 100%; }
+  .embedded .embeddedHeader { align-items: flex-start; }
+  .embedded .telemetryWeaponMain { flex-wrap: wrap; }
+  .embedded .telemetryWeaponMain > span { max-width: 100%; overflow-wrap: anywhere; }
+  .embedded .mitigationPipeline { grid-template-columns: repeat(4, minmax(0, 1fr) 7px) minmax(0, 1fr); }
+  .embedded .mitigationPipeline small { white-space: normal; text-align: center; overflow-wrap: anywhere; }
+  .embedded .feedRowDetails { padding-left: 0.6rem; }
 }
