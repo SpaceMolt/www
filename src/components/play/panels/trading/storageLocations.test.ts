@@ -21,9 +21,10 @@ const undockedSummary = {
   base_id: '',
   items: [],
   ships: [],
+  // The server sorts locations by base id, so the fixture does too.
   locations: [
-    { base_id: 'sol_station', base_name: 'Sol Station', system: 'sol', system_name: 'Sol', item_count: 42, ship_count: 0 },
     { base_id: 'krynn_forge', base_name: 'Krynn Forge', system: 'krynn', system_name: 'Krynn', item_count: 0, ship_count: 1 },
+    { base_id: 'sol_station', base_name: 'Sol Station', system: 'sol', system_name: 'Sol', item_count: 42, ship_count: 0 },
   ],
   hint: '42 items in storage at krynn_forge, sol_station\n\nDock, or pass station_id, to read one station\'s contents.',
 }
@@ -31,8 +32,8 @@ const undockedSummary = {
 describe('storageStationOptions', () => {
   it('lists every station in the v0.555.0+ two-paragraph-hint response', () => {
     expect(storageStationOptions(undockedSummary)).toEqual([
-      { id: 'sol_station', label: 'Sol Station' },
       { id: 'krynn_forge', label: 'Krynn Forge' },
+      { id: 'sol_station', label: 'Sol Station' },
     ])
   })
 
