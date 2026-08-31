@@ -10,16 +10,12 @@ import { titleCase } from '@/lib/format'
  * blank for every undocked player.
  *
  * `locations` is not in the generated `@spacemolt/lib` types yet (12.2.1 still
- * omits it), so the shape is declared here. It matches
- * `apiresponses.StorageLocation` in the gameserver.
+ * omits it), so the two fields the picker needs are declared here. The server
+ * also sends `system`, `system_name`, `item_count`, and `ship_count`.
  */
 export interface StorageLocation {
   base_id: string
   base_name?: string
-  system?: string
-  system_name?: string
-  item_count?: number
-  ship_count?: number
 }
 
 export interface StorageStationOption {
