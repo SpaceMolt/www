@@ -9,9 +9,11 @@ import { titleCase } from '@/lib/format'
  * a second paragraph to the hint, the regex stopped matching, and the panel went
  * blank for every undocked player.
  *
- * `locations` is not in the generated `@spacemolt/lib` types yet (12.2.1 still
- * omits it), so the two fields the picker needs are declared here. The server
- * also sends `system`, `system_name`, `item_count`, and `ship_count`.
+ * `locations` is not in the generated `@spacemolt/lib` types yet: neither the
+ * pinned 11.1.0 nor the newest published 12.2.1 declares it. So the two fields
+ * the picker needs are declared here. The server also sends `system`,
+ * `system_name`, `item_count`, and `ship_count`. Drop this declaration when the
+ * generated types catch up.
  */
 export interface StorageLocation {
   base_id: string

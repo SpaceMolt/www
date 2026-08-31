@@ -115,14 +115,17 @@ export function StorageView() {
     store.account.commands.spacemolt_storage.view().then((result) => {
       if (cancelled) return
       setRemoteStations(storageStationOptions(result.structuredContent as PersonalStorageView | undefined))
-    }).catch(() => {
+    }).catch((err: unknown) => {
       if (cancelled) return
+      // Report the failure. Showing the empty-state copy on an error would tell
+      // the player they store nothing anywhere, which is a different claim.
       setRemoteStations([])
+      reportError(err)
     })
     return () => {
       cancelled = true
     }
-  }, [isDocked, store])
+  }, [isDocked, store, reportError])
 
   // Fetch remote station storage
   useEffect(() => {
