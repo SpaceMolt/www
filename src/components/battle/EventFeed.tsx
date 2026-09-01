@@ -3,7 +3,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import styles from './BattleViewer.module.css'
 import { useTranslation } from '@/i18n'
-import type { BattleTimeline, BattleEventKind } from '@/lib/battle/timeline'
+import type { BattleTimeline, BattleEvent, BattleEventKind } from '@/lib/battle/timeline'
 import { secondaryAttackEffect } from '@/lib/battle/combatTelemetry'
 import AttackTelemetry from './AttackTelemetry'
 
@@ -11,10 +11,10 @@ type FilterKey = 'all' | 'combat' | 'kills' | 'movement' | 'support'
 
 const FILTERS: Record<FilterKey, BattleEventKind[] | null> = {
   all: null,
-  combat: ['attack', 'miss', 'splash', 'burn', 'kill'],
-  kills: ['kill', 'escape', 'end'],
+  combat: ['attack', 'miss', 'splash', 'burn', 'kill', 'boarding', 'self_destruct'],
+  kills: ['kill', 'capture', 'self_destruct', 'escape', 'end'],
   movement: ['zone', 'stance', 'flee', 'escape', 'join'],
-  support: ['regen'],
+  support: ['regen', 'casualty'],
 }
 
 interface Props {
@@ -22,6 +22,15 @@ interface Props {
   tickIndex: number
   isPlaying: boolean
   onJump: (tickIndex: number, actorId?: string) => void
+}
+
+export function eventFeedText(
+  event: BattleEvent,
+  t: (key: string, params?: Record<string, string | number>) => string,
+): string {
+  if (!event.translation) return event.text
+  const translated = t(event.translation.key, event.translation.params)
+  return translated === event.translation.key ? event.text : translated
 }
 
 /**
@@ -45,7 +54,10 @@ export default function EventFeed({ timeline, tickIndex, isPlaying, onJump }: Pr
         tickOccurrences.set(event.tick, ordinal + 1)
         return { event, eventKey: `${event.tick}-${ordinal}` }
       })
-      .filter(({ event }) => event.tickIndex <= tickIndex && (!kinds || kinds.includes(event.kind)))
+      .filter(({ event }) => {
+        if (event.tickIndex > tickIndex || (kinds && !kinds.includes(event.kind))) return false
+        return filter !== 'kills' || event.kind !== 'self_destruct' || event.terminal === true
+      })
     // Cap the DOM for very long battles; keep the most recent.
     return rows.length > 400 ? rows.slice(rows.length - 400) : rows
   }, [timeline, tickIndex, filter])
@@ -101,9 +113,9 @@ export default function EventFeed({ timeline, tickIndex, isPlaying, onJump }: Pr
               >
                 <span className={styles.feedTick}>{ev.tickIndex + 1}</span>
                 <span className={styles.dot} style={{ background: ev.color }} />
-                <span className={styles.feedText} style={ev.kind === 'kill' || ev.kind === 'end' ? { color: ev.color } : undefined}>
+                <span className={styles.feedText} style={ev.kind === 'kill' || ev.kind === 'capture' || ev.kind === 'self_destruct' || ev.kind === 'end' ? { color: ev.color } : undefined}>
                   {secondary && <b className={styles.feedSecondary}>{t(`battles.telemetry.effect.${secondary.translationKey}`, secondary.params)}</b>}
-                  {ev.text}
+                  {eventFeedText(ev, t)}
                 </span>
                 {ev.attack && <span className={styles.feedDetailCue}>{t(expanded ? 'battles.feedHideDetail' : 'battles.feedShowDetail')}</span>}
               </button>

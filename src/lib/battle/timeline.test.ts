@@ -76,6 +76,149 @@ describe('participant kind', () => {
     expect(t.participants.get('d1')?.kind).toBe('drone')
     expect(t.participants.get('k1')?.kind).toBe('creature')
   })
+
+  it('keeps a captured prize ship-shaped while retaining its actor identity', () => {
+    const t = buildTimeline(
+      [entry([snap({ player_id: 'prize:ship-1', username: 'Captured Axiom', kind: 'prize', ship_class: 'axiom' })])],
+      null,
+    )
+    const meta = t.participants.get('prize:ship-1')
+    expect(meta?.kind).toBe('ship')
+    expect(meta?.actorKind).toBe('prize')
+    expect(meta?.archetype).not.toBe('creature')
+  })
+
+  it('uses terminal participant data to identify NPCs and bosses', () => {
+    const final = entry([snap({ player_id: 'boss', username: 'Red Wake', kind: 'pirate', ship_class: 'axiom' })])
+    final.battle_ended = {
+      outcome: 'victory',
+      winning_side: 1,
+      duration: 1,
+      total_damage: 0,
+      ships_destroyed: 0,
+      participants: [{
+        player_id: 'boss', username: 'Red Wake', side_id: 1, kind: 'pirate', is_npc: true, is_boss: true,
+        damage_dealt: 0, damage_taken: 0, kill_count: 0, survived: true,
+      }],
+    }
+
+    const meta = buildTimeline([final], null).participants.get('boss')
+    expect(meta?.actorKind).toBe('pirate')
+    expect(meta?.isNPC).toBe(true)
+    expect(meta?.isBoss).toBe(true)
+  })
+
+  it('identifies a boss from snapshots while the battle is still active', () => {
+    const active = entry([snap({
+      player_id: 'boss', username: 'Red Wake', kind: 'pirate', is_npc: true, is_boss: true, ship_class: 'axiom',
+    })])
+    const meta = buildTimeline([active], null).participants.get('boss')
+    expect(meta?.actorKind).toBe('pirate')
+    expect(meta?.isNPC).toBe(true)
+    expect(meta?.isBoss).toBe(true)
+  })
+
+  it('enriches an actor when a newer live snapshot adds NPC identity fields', () => {
+    const legacy = entry([snap({
+      player_id: 'boss', username: 'Red Wake', ship_class: 'axiom',
+    })])
+    const enriched = entry([snap({
+      player_id: 'boss', username: 'Red Wake', kind: 'pirate', is_npc: true, is_boss: true, ship_class: 'axiom',
+    })])
+    enriched.tick = 2
+
+    const meta = buildTimeline([legacy, enriched], null).participants.get('boss')
+    expect(meta?.actorKind).toBe('pirate')
+    expect(meta?.isNPC).toBe(true)
+    expect(meta?.isBoss).toBe(true)
+  })
+})
+
+describe('boarding and capture events', () => {
+  it('renders qualitative casualties, triage, boarding phases, self-destruct, and intact capture', () => {
+    const combatEntry = entry([
+      snap({ player_id: 'captor', username: 'Corsair', side_id: 1 }),
+      snap({ player_id: 'target', username: 'Red Wake', side_id: 2 }),
+      snap({ player_id: 'medic', username: 'Sawbones', side_id: 2 }),
+    ])
+    combatEntry.personnel_casualties = [{
+      target_id: 'target', casualties_occurred: true, incapacitated: true,
+      triage_applied: true, triage_converted: true, triage_provider_id: 'medic',
+    }]
+    combatEntry.boarding = [
+      { operation_id: 'op-1', phase: 'latching', actor_id: 'captor', target_id: 'target', event: 'closing_started' },
+      { operation_id: 'op-1', phase: 'assault', actor_id: 'captor', target_id: 'target', event: 'assault_continues', attacker_casualties: true, defender_casualties: true },
+      { operation_id: '', phase: 'self_destruct', actor_id: 'target', event: 'self_destruct_countdown', self_destruct_countdown: 2 },
+      { operation_id: '', phase: 'self_destruct', actor_id: 'target', event: 'self_destruct_canceled' },
+      { operation_id: 'op-1', phase: 'resolved', actor_id: 'captor', target_id: 'target', event: 'captured' },
+    ]
+    combatEntry.captures = [{
+      boarding_operation_id: 'op-1', captor_id: 'captor', captor_username: 'Corsair',
+      former_owner_id: 'target', former_owner_username: 'Red Wake', ship_id: 'ship-1', ship_class: 'axiom',
+    }]
+
+    const timeline = buildTimeline([combatEntry], null)
+    const texts = timeline.events.map(event => event.text)
+    expect(texts).toContain('Red Wake suffered personnel casualties and was incapacitated')
+    expect(texts).toContain('Triage from Sawbones stabilized casualties aboard Red Wake')
+    expect(texts).toContain('Corsair began closing to board Red Wake')
+    expect(texts).toContain('Boarding combat continued aboard Red Wake; both sides took casualties')
+    expect(texts).toContain("Red Wake's self-destruct countdown — 2 ticks remaining")
+    expect(texts).toContain("Red Wake's self-destruct was canceled")
+    expect(texts).toContain('Axiom captured intact from Red Wake by Corsair')
+    expect(timeline.events.find(event => event.text === 'Axiom captured intact from Red Wake by Corsair')?.translation).toEqual({
+      key: 'battles.events.capturedIntact',
+      params: { ship: 'Axiom', formerOwner: 'Red Wake', captor: 'Corsair' },
+    })
+    expect(timeline.events.find(event => event.text === 'Boarding combat continued aboard Red Wake; both sides took casualties')?.translation).toEqual({
+      key: 'battles.events.boardingAssaultContinuesBothCasualties',
+      params: { target: 'Red Wake' },
+    })
+    expect(timeline.participants.get('target')?.fate).toBe('captured')
+    expect(timeline.participants.get('target')?.capturedBy).toBe('Corsair')
+  })
+
+  it('marks a re-captured prize actor rather than its prior claimant', () => {
+    const combatEntry = entry([
+      snap({ player_id: 'captor', username: 'Second Captor', side_id: 1 }),
+      snap({ player_id: 'prize:ship-1', username: 'Claimed Axiom', kind: 'prize', side_id: 2, ship_class: 'axiom' }),
+    ])
+    combatEntry.boarding = [{
+      operation_id: 'op-recapture', phase: 'resolved', actor_id: 'captor', target_id: 'prize:ship-1', event: 'captured',
+    }]
+    combatEntry.captures = [{
+      boarding_operation_id: 'op-recapture', captor_id: 'captor', captor_username: 'Second Captor',
+      former_owner_id: 'first-captor', former_owner_username: 'First Captor', ship_id: 'ship-1', ship_class: 'axiom',
+    }]
+
+    const timeline = buildTimeline([combatEntry], null)
+    expect(timeline.participants.get('prize:ship-1')?.fate).toBe('captured')
+    expect(timeline.participants.get('prize:ship-1')?.capturedBy).toBe('Second Captor')
+    expect(timeline.participants.get('first-captor')).toBeUndefined()
+  })
+
+  it('distinguishes self-destruction from an ordinary combat kill', () => {
+    const combatEntry = entry([
+      snap({ player_id: 'captain', username: 'Captain', side_id: 1 }),
+      snap({ player_id: 'pirate', username: 'Cutthroat', side_id: 2 }),
+    ])
+    combatEntry.kills = [{
+      killer_id: 'captain', victim_id: 'captain', killer_username: 'Captain', victim_username: 'Captain', cause: 'self_destruct',
+    }, {
+      killer_id: 'captain', victim_id: 'pirate', killer_username: 'Captain', victim_username: 'Cutthroat', cause: 'combat',
+    }]
+
+    const timeline = buildTimeline([combatEntry], null)
+    expect(timeline.events.find(event => event.actorId === 'captain')?.text).toBe('Captain self-destructed')
+    expect(timeline.participants.get('captain')?.deathCause).toBe('self_destruct')
+    expect(timeline.events.find(event => event.actorId === 'pirate')?.text).toBe('Cutthroat destroyed by Captain')
+  })
+
+  it('remains compatible with old rows that omit every additive field', () => {
+    const timeline = buildTimeline([entry([snap({ player_id: 'legacy', username: 'Legacy' })])], null)
+    expect(timeline.participants.get('legacy')?.actorKind).toBe('unknown')
+    expect(timeline.events).toHaveLength(0)
+  })
 })
 
 describe('detailed combat events', () => {

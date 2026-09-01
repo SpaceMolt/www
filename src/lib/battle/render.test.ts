@@ -124,4 +124,66 @@ describe('ship facing', () => {
     const ships = sampleShips(timeline, 0, 0, true)
     expect(ships.get('base_1')!.facing).toBe(0)
   })
+
+  it('removes the former owner without an explosion after an intact capture', () => {
+    const captured = entry([snap({ player_id: 'target', username: 'Target', side_id: 2, ship_class: 'axiom' })])
+    captured.captures = [{
+      boarding_operation_id: 'op-1', captor_id: 'captor', captor_username: 'Captor',
+      former_owner_id: 'target', former_owner_username: 'Target', ship_id: 'ship-1', ship_class: 'axiom',
+    }]
+    const timeline = buildTimeline([captured], null)
+
+    expect(sampleShips(timeline, 0.5, 0, true).get('target')?.alive).toBe(true)
+    expect(sampleShips(timeline, 0.9, 0, true).get('target')?.alive).toBe(false)
+    expect(timeline.participants.get('target')?.fate).toBe('captured')
+  })
+
+  it('removes a recaptured prize actor rather than its prior claimant', () => {
+    const captured = entry([snap({
+      player_id: 'prize:ship-1', username: 'Claimed Axiom', kind: 'prize', side_id: 2, ship_class: 'axiom',
+    })])
+    captured.boarding = [{
+      operation_id: 'op-recapture', phase: 'resolved', actor_id: 'captor', target_id: 'prize:ship-1', event: 'captured',
+    }]
+    captured.captures = [{
+      boarding_operation_id: 'op-recapture', captor_id: 'captor', captor_username: 'Captor',
+      former_owner_id: 'first-captor', former_owner_username: 'First Captor', ship_id: 'ship-1', ship_class: 'axiom',
+    }]
+    const timeline = buildTimeline([captured], null)
+
+    expect(sampleShips(timeline, 0.5, 0, true).get('prize:ship-1')?.alive).toBe(true)
+    expect(sampleShips(timeline, 0.9, 0, true).get('prize:ship-1')?.alive).toBe(false)
+  })
+})
+
+describe('frame outcome sampling', () => {
+  it('resolves each capture target once instead of rescanning captures per participant', () => {
+    const snapshots = Array.from({ length: 20 }, (_, index) => snap({
+      player_id: `p${index}`,
+      username: `Pilot ${index}`,
+      side_id: index % 2,
+    }))
+    const tick = entry(snapshots)
+    tick.captures = [
+      { boarding_operation_id: 'op-1', captor_id: 'p0', captor_username: 'Pilot 0', former_owner_id: 'p18', former_owner_username: 'Pilot 18', ship_id: 's18', ship_class: 'axiom' },
+      { boarding_operation_id: 'op-2', captor_id: 'p1', captor_username: 'Pilot 1', former_owner_id: 'p19', former_owner_username: 'Pilot 19', ship_id: 's19', ship_class: 'axiom' },
+    ]
+    const timeline = buildTimeline([tick], null)
+    let captureLookups = 0
+    const targets = timeline.captureTargets
+    timeline.captureTargets = new Proxy(targets, {
+      get(target, property, receiver) {
+        if (property === 'get') {
+          return (key: string) => {
+            captureLookups++
+            return target.get(key)
+          }
+        }
+        return Reflect.get(target, property, receiver)
+      },
+    })
+
+    sampleShips(timeline, 0.9, 0, true)
+    expect(captureLookups).toBe(tick.captures.length)
+  })
 })
