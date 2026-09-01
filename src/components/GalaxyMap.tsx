@@ -50,6 +50,7 @@ interface POIData {
   id: string
   name: string
   type: string
+  class?: string
   has_base: boolean
   online: number
   players?: PlayerData[]
@@ -148,6 +149,50 @@ const POI_TYPE_ICONS: Record<string, { icon: string; color: string }> = {
   gas_cloud: { icon: 'G', color: '#1ABC9C' },
   relic: { icon: 'R', color: '#F39C12' },
   station: { icon: 'B', color: '#00FFFF' },
+}
+
+interface POIPresentation {
+  icon: string
+  color: string
+  typeLabel: string
+}
+
+function humanizePOIClass(poiClass: string): string {
+  return poiClass
+    .split('_')
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+}
+
+/** Public-map presentation for a POI's type-specific classification. */
+export function publicPOIPresentation(
+  poi: Pick<POIData, 'type' | 'class'>,
+): POIPresentation {
+  if (poi.type === 'sun') {
+    if (poi.class === 'BH') {
+      return { icon: 'BH', color: '#A78BFA', typeLabel: 'Black Hole' }
+    }
+
+    return {
+      ...POI_TYPE_ICONS.sun,
+      typeLabel: poi.class ? `Star · ${poi.class}` : 'Star',
+    }
+  }
+
+  if (poi.type === 'planet') {
+    return {
+      ...POI_TYPE_ICONS.planet,
+      typeLabel: poi.class
+        ? `Planet · ${humanizePOIClass(poi.class)}`
+        : 'Planet',
+    }
+  }
+
+  return {
+    ...(POI_TYPE_ICONS[poi.type] || { icon: '?', color: '#5a6a7a' }),
+    typeLabel: poi.type.replace(/_/g, ' '),
+  }
 }
 
 const TOAST_SZ = 16
@@ -1208,10 +1253,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
   const createPOIItem = useCallback(
     (poi: POIData, renderPOIsFn: (pois: POIData[]) => void) => {
       const s = stateRef.current
-      const typeInfo = POI_TYPE_ICONS[poi.type] || {
-        icon: '?',
-        color: '#5a6a7a',
-      }
+      const presentation = publicPOIPresentation(poi)
       const isExpanded = s.expandedPOIs.has(poi.id)
       const hasPlayers = poi.players && poi.players.length > 0
 
@@ -1231,9 +1273,9 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
       // Icon
       const icon = document.createElement('div')
       icon.className = styles.poiIcon
-      icon.style.background = typeInfo.color + '15'
-      icon.style.color = typeInfo.color
-      icon.textContent = typeInfo.icon
+      icon.style.background = presentation.color + '15'
+      icon.style.color = presentation.color
+      icon.textContent = presentation.icon
       item.appendChild(icon)
 
       // Info container
@@ -1250,7 +1292,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
 
       const typeSpan = document.createElement('span')
       typeSpan.className = styles.poiType
-      typeSpan.textContent = poi.type.replace(/_/g, ' ')
+      typeSpan.textContent = presentation.typeLabel
       meta.appendChild(typeSpan)
 
       if (poi.has_base) {
