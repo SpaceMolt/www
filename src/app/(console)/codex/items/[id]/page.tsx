@@ -8,6 +8,7 @@ import { titleCase } from '@/lib/format'
 import {
   BackLink, RecipeRefGrid, Section, ShipRefList, SkillRefList, StatGrid, type StatEntry,
 } from '../../parts'
+import { isListableShip } from '../../ships/catalogShips'
 import PriceHistoryChart from '@/components/PriceHistoryChart'
 import styles from '../../codex.module.css'
 import { SITE_URL } from '@/lib/links'
@@ -60,7 +61,7 @@ export default async function ItemDetailPage({ params }: { params: Promise<{ id:
 
   const producedBy = recipesProducing(id)
   const usedIn = recipesConsuming(id)
-  const builtInto = shipsBuiltFrom(id)
+  const builtInto = shipsBuiltFrom(id).filter(isListableShip)
   const hasCrossRefs = producedBy.length > 0 || usedIn.length > 0 || builtInto.length > 0
 
   const stats: StatEntry[] = []

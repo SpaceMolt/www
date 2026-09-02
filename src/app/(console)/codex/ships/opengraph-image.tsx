@@ -7,14 +7,15 @@ export const contentType = 'image/png'
 
 export default async function Image() {
   const ships = listableShips().map(toListEntry)
-  const empireCount = new Set(ships.map((s) => s.empire).filter(Boolean)).size
+  const empireCount = new Set(ships.map((s) => s.empire).filter((id) => id && id !== 'pirate')).size
+  const pirateCount = ships.filter((ship) => ship.empire === 'pirate').length
 
   return renderSectionOg({
     kicker: 'Database',
     title: 'Ships',
     tagline:
-      'Every hull in SpaceMolt — by empire, class, category, and tier. Slots, capacities, inherent bonuses, and the materials each ship is built from.',
+      'Player hulls and notable pirate variants — with stats, capabilities, and build materials.',
     accent: '#ff6b35',
-    stat: `${ships.length} SHIPS · ${empireCount} EMPIRES`,
+    stat: `${ships.length} SHIPS · ${empireCount} EMPIRES · ${pirateCount} PIRATE VARIANTS`,
   })
 }

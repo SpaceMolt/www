@@ -8,6 +8,7 @@ import {
   BackLink, RecipeRefGrid, Section, ShipRefList, SkillRefList, StatGrid, moduleStatEntries,
   type StatEntry,
 } from '../../parts'
+import { isListableShip } from '../../ships/catalogShips'
 import styles from '../../codex.module.css'
 import { SITE_URL } from '@/lib/links'
 
@@ -48,7 +49,7 @@ export default async function ModuleDetailPage({ params }: { params: Promise<{ i
 
   const producedBy = recipesProducing(id)
   const usedIn = recipesConsuming(id)
-  const builtInto = shipsBuiltFrom(id)
+  const builtInto = shipsBuiltFrom(id).filter(isListableShip)
 
   const fitting: StatEntry[] = [
     { label: 'Type', value: titleCase(mod.type ?? 'module') },
