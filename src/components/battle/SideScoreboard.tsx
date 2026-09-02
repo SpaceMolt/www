@@ -5,6 +5,20 @@ import styles from './BattleViewer.module.css'
 import { useTranslation } from '@/i18n'
 import type { BattleTimeline, SideMeta } from '@/lib/battle/timeline'
 
+function identityLabelKey(actorKind: string, isNPC: boolean, isBoss: boolean): string | null {
+  if (isBoss) return actorKind === 'pirate' ? 'battles.identityPirateBoss' : 'battles.identityNpcBoss'
+  switch (actorKind) {
+    case 'pirate': return 'battles.identityPirate'
+    case 'police': return 'battles.identityPolice'
+    case 'prize': return 'battles.identityPrize'
+    case 'npc': return 'battles.identityNpc'
+    case 'drone': return 'battles.identityDrone'
+    case 'creature': return 'battles.identityWildlife'
+    case 'station': return 'battles.identityStation'
+    default: return isNPC ? 'battles.identityNpc' : null
+  }
+}
+
 interface Props {
   side: SideMeta
   timeline: BattleTimeline
@@ -40,7 +54,7 @@ export default function SideScoreboard({ side, timeline, tickIndex, selectedId, 
     const last = snap ?? timeline.snapshotAt[Math.min(meta?.lastTickIndex ?? 0, tickIndex)]?.get(id)
     sideDamage += last?.damage_dealt ?? 0
     sideKills += last?.kill_count ?? 0
-    if (meta?.fate === 'destroyed' && (meta.fateTickIndex ?? Infinity) <= tickIndex) sideLosses++
+    if ((meta?.fate === 'destroyed' || meta?.fate === 'captured') && (meta.fateTickIndex ?? Infinity) <= tickIndex) sideLosses++
   }
 
   const dockClass = side.index === 0 ? styles.scoreboardLeft : side.index === 1 ? styles.scoreboardRight : styles.scoreboardExtra
@@ -73,10 +87,12 @@ export default function SideScoreboard({ side, timeline, tickIndex, selectedId, 
             const meta = timeline.participants.get(id)
             if (!meta) return null
             const snap = snaps?.get(id)
-            const gone = !snap
             const dead = meta.fate === 'destroyed' && (meta.fateTickIndex ?? Infinity) <= tickIndex
+            const captured = meta.fate === 'captured' && (meta.fateTickIndex ?? Infinity) <= tickIndex
             const escaped = meta.fate === 'escaped' && (meta.fateTickIndex ?? Infinity) <= tickIndex
+            const gone = !snap || dead || captured || escaped
             const notYet = meta.firstTickIndex > tickIndex
+            const identityKey = identityLabelKey(meta.actorKind, meta.isNPC, meta.isBoss)
             const shieldFrac = snap && snap.max_shield > 0 ? snap.shield / snap.max_shield : 0
             const hullFrac = snap && snap.max_hull > 0 ? snap.hull / snap.max_hull : 0
             const hullColor = hullFrac > 0.55 ? '#2dd4bf' : hullFrac > 0.25 ? '#ffd93d' : '#e63946'
@@ -94,9 +110,10 @@ export default function SideScoreboard({ side, timeline, tickIndex, selectedId, 
                     {meta.name}
                     {id === focusPlayerId && <span className={styles.youTag}>{t('battles.stream.you')}</span>}
                   </span>
-                  <span className={styles.scoreShip}>{meta.shipClassName}</span>
+                  {identityKey && <span className={styles.actorBadge}>{t(identityKey)}</span>}
+                  <span className={styles.scoreShip} title={meta.shipClassName}>{meta.shipClassName}</span>
                 </div>
-                {snap ? (
+                {snap && !captured ? (
                   <div className={styles.scoreRowBars}>
                     {snap.max_shield > 0 && (
                       <span className={styles.microBar}>
@@ -111,7 +128,13 @@ export default function SideScoreboard({ side, timeline, tickIndex, selectedId, 
                 ) : (
                   <div className={styles.scoreRowBars}>
                     <span className={styles.scoreFate}>
-                      {dead ? (meta.killedBy ? t('battles.destroyedBy', { killer: meta.killedBy }) : t('battles.destroyed')) : escaped ? t('battles.escaped') : notYet ? t('battles.notEngaged') : ''}
+                      {captured
+                        ? meta.capturedBy ? t('battles.capturedIntactBy', { captor: meta.capturedBy }) : t('battles.capturedIntact')
+                        : dead
+                          ? meta.deathCause === 'self_destruct'
+                            ? t('battles.selfDestructed')
+                            : meta.killedBy ? t('battles.destroyedBy', { killer: meta.killedBy }) : t('battles.destroyed')
+                          : escaped ? t('battles.escaped') : notYet ? t('battles.notEngaged') : ''}
                     </span>
                   </div>
                 )}

@@ -371,7 +371,9 @@
   border-left-color: var(--side-color, var(--plasma-cyan));
 }
 
-.scoreRowGone {
+.scoreRowGone .scoreName,
+.scoreRowGone .scoreShip,
+.scoreRowGone .scoreRowBars {
   opacity: 0.55;
 }
 
@@ -383,6 +385,8 @@
 }
 
 .scoreName {
+  flex: 1;
+  min-width: 0;
   color: var(--star-white);
   font-size: 0.72rem;
   white-space: nowrap;
@@ -390,10 +394,27 @@
   text-overflow: ellipsis;
 }
 
+.actorBadge {
+  display: inline-block;
+  flex-shrink: 0;
+  padding: 0.04rem 0.25rem;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  color: var(--shell-orange);
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1.25;
+  vertical-align: 0.08rem;
+}
+
 .scoreShip {
+  min-width: 0;
+  max-width: 42%;
   color: var(--hull-grey);
   font-size: 0.62rem;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .scoreRowBars {

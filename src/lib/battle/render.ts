@@ -236,6 +236,11 @@ export function sampleShips(timeline: BattleTimeline, playhead: number, timeMs: 
       )
     }
   }
+  const killedIDs = new Set((entry.kills ?? []).map(kill => kill.victim_id))
+  const capturedIDs = new Set((entry.captures ?? []).map(capture =>
+    timeline.captureTargets.get(capture.boarding_operation_id) || capture.former_owner_id,
+  ))
+  const escapedIDs = new Set((entry.flee ?? []).filter(flee => flee.escaped).map(flee => flee.player_id))
 
   for (const [id, snap] of snaps) {
     const meta = timeline.participants.get(id)
@@ -271,9 +276,11 @@ export function sampleShips(timeline: BattleTimeline, playhead: number, timeMs: 
 
     // A ship destroyed this tick starts disintegrating at its kill effect.
     let alive = true
-    const killed = (entry.kills ?? []).some(k => k.victim_id === id)
-    const escaped = (entry.flee ?? []).some(f => f.player_id === id && f.escaped)
+    const killed = killedIDs.has(id)
+    const captured = capturedIDs.has(id)
+    const escaped = escapedIDs.has(id)
     if (killed && p > 0.72) alive = false
+    if (captured && p > 0.72) alive = false
     if (escaped && p > 0.68) alive = false
 
     out.set(id, { meta, snap, nextSnap: s1, pos, facing, moving, shield, hull, alive })

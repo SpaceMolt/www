@@ -313,6 +313,17 @@
     "participants": "参与者",
     "damage": "伤害",
     "destroyed": "击毁",
+    "capturedIntact": "完整俘获", "capturedIntactBy": "由 {captor} 完整俘获", "capturedIntactCount": "完整俘获 {count} 艘", "selfDestructed": "已自毁", "identityPirateBoss": "海盗首领", "identityNpcBoss": "NPC首领", "identityPirate": "海盗", "identityPolice": "警察", "identityIntactPrize": "完整战利舰", "identityPrize": "战利舰", "identityNpc": "NPC", "identityDrone": "无人机", "identityWildlife": "太空生物", "identityStation": "空间站",
+    "events": {
+      "personnelCasualties": "{target} 出现人员伤亡", "personnelCasualtiesIncapacitated": "{target} 出现人员伤亡并失去行动能力", "triageStabilized": "{provider} 的急救稳定了 {target} 舰上的伤员", "triageTreated": "{provider} 的急救救治了 {target} 舰上的伤员",
+      "boardingClosingStarted": "{actor} 开始接近 {target} 以实施登舰", "boardingClosingProgressed": "{actor} 继续接近 {target} 准备登舰", "boardingClosingRegressed": "{target} 拉开了与 {actor} 登舰行动的距离", "boardingLatched": "{actor} 已与 {target} 接舷",
+      "boardingAssaultContinues": "{target} 舰内的登舰战仍在继续", "boardingAssaultContinuesBothCasualties": "{target} 舰内的登舰战仍在继续；双方均有伤亡", "boardingAssaultContinuesAttackerCasualties": "{target} 舰内的登舰战仍在继续；进攻方出现伤亡", "boardingAssaultContinuesDefenderCasualties": "{target} 舰内的登舰战仍在继续；防守方出现伤亡",
+      "boardingWithdrawalStarted": "{actor} 的登舰小队开始撤离 {target}", "boardingWithdrawalProgressed": "{actor} 的登舰小队继续撤离 {target}", "boardingWithdrawalProgressedBothCasualties": "{actor} 的登舰小队继续撤离 {target}；双方均有伤亡", "boardingWithdrawalProgressedAttackerCasualties": "{actor} 的登舰小队继续撤离 {target}；进攻方出现伤亡", "boardingWithdrawalProgressedDefenderCasualties": "{actor} 的登舰小队继续撤离 {target}；防守方出现伤亡",
+      "boardingWithdrawn": "{actor} 的登舰小队已撤离 {target}", "boardingWithdrawnBothCasualties": "{actor} 的登舰小队已撤离 {target}；双方均有伤亡", "boardingWithdrawnAttackerCasualties": "{actor} 的登舰小队已撤离 {target}；进攻方出现伤亡", "boardingWithdrawnDefenderCasualties": "{actor} 的登舰小队已撤离 {target}；防守方出现伤亡",
+      "boardingForceDefeated": "{actor} 的登舰部队在 {target} 舰内被击败", "boardingForceDefeatedBothCasualties": "{actor} 的登舰部队在 {target} 舰内被击败；双方均有伤亡", "boardingForceDefeatedAttackerCasualties": "{actor} 的登舰部队在 {target} 舰内被击败；进攻方出现伤亡", "boardingForceDefeatedDefenderCasualties": "{actor} 的登舰部队在 {target} 舰内被击败；防守方出现伤亡",
+      "boardingCaptureReady": "{target} 已可被 {actor} 完整俘获", "boardingCaptured": "{actor} 已将 {target} 作为完整战利舰控制", "boardingRejected": "{actor} 未能开始登舰 {target}", "boardingAttackerDestroyed": "进攻舰被摧毁，{actor} 的登舰行动结束", "boardingAttackerIncapacitated": "进攻舰失去行动能力，{actor} 的登舰行动结束", "boardingTargetDestroyed": "{target} 被摧毁，登舰行动结束", "boardingTargetSelfDestructed": "{target} 自毁，登舰行动结束", "boardingRestartCanceled": "{actor} 与 {target} 之间的登舰行动因重启恢复而取消",
+      "selfDestructStarted": "{actor} 已启动自毁装置", "selfDestructStartedCountdown": "{actor} 已启动自毁装置 — 剩余 {count} 回合", "selfDestructActive": "{actor} 的自毁装置仍处于启动状态", "selfDestructActiveCountdown": "{actor} 的自毁装置仍处于启动状态 — 剩余 {count} 回合", "selfDestructCountdown": "{actor} 的自毁倒计时 — 剩余 {count} 回合", "selfDestructCanceled": "{actor} 的自毁已取消", "selfDestructRejected": "{actor} 无法启动自毁装置", "selfDestructDetonated": "{actor} 已自毁", "selfDestructBlast": "{actor} 的自毁爆炸击中了 {target}", "selfDestructBlastDamage": "{actor} 的自毁爆炸对 {target} 造成 {damage} 点船体伤害", "selfDestructBlastDestroyed": "{actor} 的自毁爆炸击中并摧毁了 {target}", "selfDestructBlastDamageDestroyed": "{actor} 的自毁爆炸对 {target} 造成 {damage} 点船体伤害并将其摧毁", "capturedIntact": "{captor} 从 {formerOwner} 手中完整俘获了 {ship}"
+    },
     "duration": "持续时间"
   },
   "ticker": {
