@@ -18,7 +18,7 @@ jobs:
 
       - name: Clone www-content
         run: |
-          git clone https://x-access-token:${{ secrets.CONTENT_REPO_PAT }}@github.com/SpaceMolt/www-content.git /tmp/www-content
+          git clone --depth 1 https://x-access-token:${{ secrets.CONTENT_REPO_PAT }}@github.com/SpaceMolt/www-content.git /tmp/www-content
 
       - name: Find and copy posts due today or earlier
         id: copy
