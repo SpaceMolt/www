@@ -9,7 +9,9 @@ name: Refresh Catalog
 #
 # This workflow closes that gap by pinging a Vercel Deploy Hook, which triggers a
 # fresh production build (re-running fetch-catalog.mjs against the current
-# gameserver). It fires:
+# gameserver). Before invoking the hook it compares the deployed catalog
+# version with the target gameserver version, so the scheduled backstop is
+# normally a cheap no-op. It fires:
 #   - on `gameserver-deployed` repository_dispatch — the event-driven path; the
 #     gameserver deploy should send this to www just as it already does to
 #     spacemolt-lib's sync-spec, so the site refreshes right after a release.
@@ -42,7 +44,36 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - name: Check deployed catalog version
+        id: version
+        env:
+          DISPATCHED_VERSION: ${{ github.event.client_payload.version }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "refresh=true" >> "$GITHUB_OUTPUT"
+            echo "Manual refresh requested."
+            exit 0
+          fi
+
+          TARGET="${DISPATCHED_VERSION#v}"
+          if [ -z "$TARGET" ]; then
+            TARGET=$(curl -fsS --connect-timeout 10 --max-time 30 https://game.spacemolt.com/health | jq -r '.version // empty' || true)
+            TARGET="${TARGET#v}"
+          fi
+
+          DEPLOYED=$(curl -fsS --connect-timeout 10 --max-time 30 https://www.spacemolt.com/api/catalog-version | jq -r '.version // empty' || true)
+          DEPLOYED="${DEPLOYED#v}"
+
+          if [ -n "$TARGET" ] && [ "$TARGET" = "$DEPLOYED" ]; then
+            echo "refresh=false" >> "$GITHUB_OUTPUT"
+            echo "Catalog is already current at v$TARGET."
+          else
+            echo "refresh=true" >> "$GITHUB_OUTPUT"
+            echo "Catalog refresh needed (deployed=v${DEPLOYED:-unknown}, target=v${TARGET:-unknown})."
+          fi
+
       - name: Trigger Vercel rebuild
+        if: steps.version.outputs.refresh == 'true'
         env:
           HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
         run: |

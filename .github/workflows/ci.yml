@@ -4,6 +4,11 @@ on:
   pull_request:
     branches: [main]
 
+# A new commit supersedes the previous build for the same PR.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   build:
     # Don't burn Actions minutes on external PRs from forks
@@ -27,16 +32,36 @@ jobs:
         with:
           bun-version: latest
 
-      - run: node scripts/fetch-catalog.mjs
+      # Keep Next's incremental compiler cache warm between commits in this PR.
+      # The SHA makes each completed run publish a fresh immutable cache, while
+      # the restore prefix selects the newest cache from an earlier commit.
+      - name: Restore Next.js build cache
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: ${{ runner.os }}-nextjs-pr-${{ github.event.pull_request.number }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-pr-${{ github.event.pull_request.number }}-${{ hashFiles('pnpm-lock.yaml') }}-
+            ${{ runner.os }}-nextjs-pr-${{ github.event.pull_request.number }}-
 
-      - run: pnpm lint
+      - name: Generate catalog and guides manifest
+        run: |
+          node scripts/fetch-catalog.mjs
+          node scripts/build-guides-manifest.mjs
 
       # Tests are bun:test and need node_modules, so this runs after install.
       # No PostHog token is set here on purpose: analytics must stay inert
       # without one, and the suite asserts that.
-      - run: bun test
+      - name: Test
+        run: bun test
 
-      - run: pnpm build
+      # Next's production build includes TypeScript validation, so running the
+      # standalone `tsc --noEmit` from `pnpm lint` would duplicate that work.
+      - name: Build
+        run: pnpm exec next build
         env:
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_ZnJlZS1taXRlLTYuY2xlcmsuYWNjb3VudHMuZGV2JA' }}
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+
+      - name: Build search index
+        run: node scripts/build-search-index.mjs
