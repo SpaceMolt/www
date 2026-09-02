@@ -6,14 +6,14 @@ import { getShip, formatItemId } from '@/data/catalog'
 import { titleCase } from '@/lib/format'
 import { BackLink, Section, StatGrid, itemHref, type StatEntry } from '../../parts'
 import styles from '../../codex.module.css'
-import { listableShips, isPrestige } from '../catalogShips'
+import { isListableShip, listableShips, isPrestige, shipArtID } from '../catalogShips'
 import {
-  EMPIRE_NAMES, capabilityLabel, capabilityValue, empireColor, shipArtSrc,
+  SHIP_FACTION_NAMES, capabilityLabel, capabilityValue, empireColor, shipArtSrc,
 } from '../shipMeta'
 import { SITE_URL } from '@/lib/links'
 import { hasImage } from '@/data/images'
 
-/** Four hulls have no generated art; the page must not render a broken image. */
+/** The page must not render a broken image when an artwork batch is incomplete. */
 function hasArt(id: string): boolean {
   return hasImage(`ships/catalog/${id}.webp`)
 }
@@ -22,6 +22,8 @@ export async function generateStaticParams() {
   return listableShips().map((ship) => ({ id: ship.id }))
 }
 
+export const dynamicParams = false
+
 export async function generateMetadata({
   params,
 }: {
@@ -29,7 +31,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params
   const ship = getShip(id)
-  if (!ship) return {}
+  if (!ship || !isListableShip(ship)) return {}
 
   const description =
     ship.description || `${ship.name} — ${ship.class ?? 'hull'} in the SpaceMolt ship catalog.`
@@ -43,7 +45,7 @@ export async function generateMetadata({
       url: `${SITE_URL}/codex/ships/${id}`,
       title: `${ship.name} - SpaceMolt Codex`,
       description,
-      images: [`${SITE_URL}${shipArtSrc(id)}`],
+      images: [shipArtSrc(shipArtID(ship))],
     },
   }
 }
@@ -52,11 +54,13 @@ export default async function ShipDetailPage({ params }: { params: Promise<{ id:
   const { id } = await params
   const ship = getShip(id)
 
-  if (!ship) notFound()
+  if (!ship || !isListableShip(ship)) notFound()
 
   const empire = ship.faction ?? ''
-  const empireName = EMPIRE_NAMES[empire] ?? ''
+  const empireName = SHIP_FACTION_NAMES[empire] ?? ''
   const prestige = isPrestige(ship)
+  const artID = shipArtID(ship)
+  const sourceHull = ship.based_on ? getShip(ship.based_on) : undefined
 
   const stats: StatEntry[] = [
     { label: 'Hull', value: String(ship.base_hull ?? 0) },
@@ -111,13 +115,14 @@ export default async function ShipDetailPage({ params }: { params: Promise<{ id:
           {ship.category && <span className={styles.badge}>{ship.category}</span>}
           {prestige && <span className={styles.badge}>Achievement Unlock</span>}
           {ship.starter_ship && <span className={styles.badge}>Starter Ship</span>}
+          {ship.npc_role && <span className={styles.badge}>Pirate {titleCase(ship.npc_role)}</span>}
           <span className={styles.badge}>{ship.id}</span>
         </div>
       </header>
 
-      {hasArt(ship.id) && (
+      {hasArt(artID) && (
         <Image
-          src={shipArtSrc(ship.id)}
+          src={shipArtSrc(artID)}
           alt={ship.name}
           width={1200}
           height={900}
@@ -133,6 +138,17 @@ export default async function ShipDetailPage({ params }: { params: Promise<{ id:
       <Section title="Slots">
         <StatGrid stats={slots} />
       </Section>
+
+      {ship.npc_role && (
+        <Section title="Pirate Configuration">
+          <p className={styles.lore}>
+            NPC-operated {ship.npc_role} variant
+            {sourceHull && ship.based_on ? (
+              <>{' '}converted from the <Link href={`/codex/ships/${ship.based_on}`}>{sourceHull.name}</Link> hull.</>
+            ) : '.'}
+          </p>
+        </Section>
+      )}
 
       {capabilities.length > 0 && (
         <Section title="Inherent Capabilities">
@@ -170,7 +186,7 @@ export default async function ShipDetailPage({ params }: { params: Promise<{ id:
       )}
 
       {buildMaterials.length > 0 && (
-        <Section title={`Build Materials (${buildMaterials.length})`}>
+        <Section title={`${ship.npc_role ? 'Pirate Refit Materials' : 'Build Materials'} (${buildMaterials.length})`}>
           <div className={styles.chipLinkRow}>
             {buildMaterials.map((mat) => (
               <Link key={mat.item_id} href={itemHref(mat.item_id)} className={styles.refItem}>

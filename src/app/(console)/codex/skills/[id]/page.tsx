@@ -5,6 +5,7 @@ import { allModules, allShips, type RawCatalogItem, type RawShip } from '@/data/
 import { allSkills, getSkill, type RawSkill } from '@/data/catalogReference'
 import { titleCase } from '@/lib/format'
 import { BackLink, Section, StatGrid, itemHref, type StatEntry } from '../../parts'
+import { isListableShip } from '../../ships/catalogShips'
 import styles from '../../codex.module.css'
 import local from '../skills.module.css'
 import { SITE_URL } from '@/lib/links'
@@ -98,7 +99,7 @@ function modulesRequiring(skillId: string): { module: RawCatalogItem; level: num
 /** Player hulls gated behind a piloting level (the only ship-level skill gate the catalog has). */
 function shipsRequiringPiloting(): { ship: RawShip; level: number }[] {
   return allShips()
-    .filter((ship) => ship.piloting_required != null && !ship.npc_role)
+    .filter((ship) => ship.piloting_required != null && isListableShip(ship))
     .map((ship) => ({ ship, level: ship.piloting_required as number }))
     .sort((a, b) => a.level - b.level || a.ship.name.localeCompare(b.ship.name))
 }

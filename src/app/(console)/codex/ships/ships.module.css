@@ -507,6 +507,21 @@
   white-space: nowrap;
 }
 
+.npcBadge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.18rem 0.45rem;
+  border: 1px solid rgba(201, 144, 69, 0.45);
+  color: #e0ad68;
+  background: rgba(201, 144, 69, 0.1);
+  white-space: nowrap;
+}
+
 .priceBadge {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
   font-size: 0.66rem;

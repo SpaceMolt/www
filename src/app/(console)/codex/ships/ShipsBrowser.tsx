@@ -24,7 +24,7 @@ import styles from './ships.module.css'
 
 const TABLE_COLS = [
   { key: 'name',                 label: 'Name',    tKey: 'ships.colName',     title: 'Name',                 numeric: false },
-  { key: 'empireName',           label: 'Empire',  tKey: 'ships.colEmpire',   title: 'Empire',               numeric: false },
+  { key: 'empireName',           label: 'Affiliation', tKey: '',               title: 'Affiliation',          numeric: false },
   { key: 'category',             label: 'Category',tKey: 'ships.colCategory', title: 'Category',             numeric: false },
   { key: 'class',                label: 'Class',   tKey: 'ships.colClass',    title: 'Class',                numeric: false },
   { key: 'tier',                 label: 'T',       tKey: 'ships.colTier',     title: 'Tier',                 numeric: true  },
@@ -291,7 +291,7 @@ export function ShipsBrowser({ ships, empires, classes, categories, tiers }: Shi
             >
               {activeEmpire
                 ? <><span className={styles.empireDot} style={{ background: empireColor(activeEmpire) }} />{empires.find((e) => e.id === activeEmpire)?.name}</>
-                : t('ships.allEmpires')}
+                : 'All affiliations'}
               <svg className={styles.classDropdownChevron} width="10" height="6" viewBox="0 0 10 6" fill="none">
                 <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
@@ -500,7 +500,7 @@ export function ShipsBrowser({ ships, empires, classes, categories, tiers }: Shi
                 {!brokenImages.has(ship.id) && (
                   <div className={styles.shipImageWrap}>
                     <Image
-                      src={shipArtSrc(ship.id)}
+                      src={shipArtSrc(ship.artId)}
                       alt={ship.name}
                       width={600}
                       height={450}
@@ -528,6 +528,11 @@ export function ShipsBrowser({ ships, empires, classes, categories, tiers }: Shi
                     {ship.prestige && (
                       <span className={styles.prestigeBadge} title="Unlocked by completing a special achievement">
                         Achievement Unlock
+                      </span>
+                    )}
+                    {ship.npcRole && (
+                      <span className={styles.npcBadge} title="NPC-operated pirate variant">
+                        Pirate {ship.npcRole}
                       </span>
                     )}
                     <span className={styles.classBadge}>{ship.class}</span>

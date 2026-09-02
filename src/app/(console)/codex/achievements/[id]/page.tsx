@@ -15,6 +15,7 @@ import {
 import { hasEmblem, emblemSrc, tierFor } from '@/lib/publicAchievements'
 import { titleCase } from '@/lib/format'
 import { BackLink, Section, StatGrid, type StatEntry } from '../../parts'
+import { isListableShip } from '../../ships/catalogShips'
 import { rewardSummary } from '../rewards'
 import styles from '../../codex.module.css'
 import local from '../achievements.module.css'
@@ -90,7 +91,7 @@ function chainFor(achievement: RawAchievement): RawAchievement[] {
 function shipsUnlockedBy(achievement: RawAchievement): RawShip[] {
   const key = achievement.faction ? 'required_faction_achievement' : 'required_achievement'
   return allShips()
-    .filter((ship) => ship[key] === achievement.id && !ship.npc_role)
+    .filter((ship) => ship[key] === achievement.id && isListableShip(ship))
     .sort((a, b) => a.name.localeCompare(b.name))
 }
 
