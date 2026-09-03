@@ -16,7 +16,10 @@
 .content {
   padding: 1rem 1.25rem;
   background: linear-gradient(180deg, rgba(0, 212, 255, 0.04), rgba(13, 19, 33, 0.6));
-  border-top: 1px solid rgba(0, 212, 255, 0.15);
+  /* No border-top here: when ItemDetail renders first, its own closing
+     border-bottom already divides the two panels — a second border-top here
+     would double that seam. When this panel is the only one expanded, the
+     table's default td border-bottom on the row above already divides it. */
   white-space: normal;
   text-align: left;
 }

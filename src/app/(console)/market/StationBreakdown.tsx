@@ -25,6 +25,18 @@ interface ItemStationQuote extends MarketDepthFields {
  * an empire cell can read as a crossed book that no single station shows. This
  * table is where that resolves: each row is one station's own book.
  */
+/**
+ * How to interpret a /api/market/item/{id} response by status. The server
+ * returns 404, not a 200 with an empty array, when no station quotes the
+ * item (internal/server/market_station_api.go) — that is the normal
+ * "nothing to show" case, not a failure, and must not be reported as one.
+ */
+export function itemMarketOutcome(status: number, ok: boolean): 'empty' | 'ok' | 'error' {
+  if (status === 404) return 'empty'
+  if (!ok) return 'error'
+  return 'ok'
+}
+
 export function StationBreakdown({ itemId, totalCols }: { itemId: string; totalCols: number }) {
   const [stations, setStations] = useState<ItemStationQuote[] | null>(null)
   const [failed, setFailed] = useState(false)
@@ -35,8 +47,14 @@ export function StationBreakdown({ itemId, totalCols }: { itemId: string; totalC
     setFailed(false)
     fetch(`${API_BASE}/api/market/item/${encodeURIComponent(itemId)}`)
       .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        return res.json()
+        switch (itemMarketOutcome(res.status, res.ok)) {
+          case 'empty':
+            return { stations: [] }
+          case 'error':
+            throw new Error(`HTTP ${res.status}`)
+          default:
+            return res.json()
+        }
       })
       .then((data: { stations?: ItemStationQuote[] }) => {
         if (!cancelled) setStations(data.stations || [])
