@@ -101,11 +101,10 @@ export function isCrossed(bid: number, ask: number): boolean {
 export function headlinePrices(
   stations: { best_bid: number; best_ask: number }[]
 ): { bestBid: number; bestAsk: number } {
-  let bestBid = 0
-  let bestAsk = 0
-  for (const s of stations) {
-    if (s.best_bid > bestBid) bestBid = s.best_bid
-    if (s.best_ask > 0 && (bestAsk === 0 || s.best_ask < bestAsk)) bestAsk = s.best_ask
+  // 0 means "no orders on this side", so it must not win the min.
+  const asks = stations.map((s) => s.best_ask).filter((a) => a > 0)
+  return {
+    bestBid: Math.max(0, ...stations.map((s) => s.best_bid)),
+    bestAsk: asks.length > 0 ? Math.min(...asks) : 0,
   }
-  return { bestBid, bestAsk }
 }
