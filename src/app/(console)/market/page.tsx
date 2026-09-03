@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useCallback, Fragment } from 'react'
 import Link from 'next/link'
-import { ArrowRight, ChevronRight, Database } from 'lucide-react'
+import { ArrowLeftRight, ArrowRight, ChevronRight, Database } from 'lucide-react'
 import styles from './page.module.css'
 import { ItemDetail, type CatalogItem, type CatalogResponse } from '@/components/ItemDetail'
 import { useTranslation } from '@/i18n'
 import { useVisiblePoll } from '@/lib/useVisiblePoll'
-import { firmDepth, depthBreakdownTitle, type DepthQuantities } from '@/lib/depth'
+import { firmDepth, depthBreakdownTitle, isCrossed, type DepthQuantities } from '@/lib/depth'
+import { StationBreakdown } from './StationBreakdown'
 import { formatNumber } from '@/lib/format'
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
@@ -391,24 +392,21 @@ export default function MarketPage() {
                 {filteredRows.map((row) => {
                   const isExpanded = expandedItemId === row.item_id
                   const catalogItem = catalog[row.item_id]
-                  const hasCatalog = Object.keys(catalog).length > 0
 
                   return (
                     <Fragment key={row.item_id}>
                       <tr
                         className={isExpanded ? styles.expandedRow : ''}
-                        onClick={hasCatalog ? () => toggleExpanded(row.item_id) : undefined}
-                        style={hasCatalog ? { cursor: 'pointer' } : undefined}
+                        onClick={() => toggleExpanded(row.item_id)}
+                        style={{ cursor: 'pointer' }}
                       >
                         <td className={styles.cellItem}>
                           <span className={styles.itemNameWrapper}>
-                            {hasCatalog && (
-                              <ChevronRight
-                                size={12}
-                                aria-hidden
-                                className={`${styles.chevron} ${isExpanded ? styles.chevronOpen : ''}`}
-                              />
-                            )}
+                            <ChevronRight
+                              size={12}
+                              aria-hidden
+                              className={`${styles.chevron} ${isExpanded ? styles.chevronOpen : ''}`}
+                            />
                             {row.item_name}
                           </span>
                         </td>
@@ -420,6 +418,9 @@ export default function MarketPage() {
                           const data = row.empires[emp.id]
                           const hasBid = data && data.bid > 0
                           const hasAsk = data && data.ask > 0
+                          // Bid above ask cannot happen inside one station's book: the two
+                          // prices come from different stations in this empire.
+                          const crossed = !!data && isCrossed(data.bid, data.ask)
                           const bidDepth: DepthQuantities | null = data
                             ? { total: data.bidQty, atBest: data.bidQtyAtBest, reasonable: data.bidQtyReasonable, stationMgr: data.bidQtyStationMgr }
                             : null
@@ -436,6 +437,14 @@ export default function MarketPage() {
                                 {hasBid && bidDepth ? (
                                   <>
                                     {formatNumber(data.bid)}
+                                    {crossed && (
+                                      <span
+                                        className={styles.crossedMarker}
+                                        title={`This empire's best bid (${formatNumber(data.bid)}) sits at a different station than its best ask (${formatNumber(data.ask)}). Open the row to see which.`}
+                                      >
+                                        <ArrowLeftRight size={11} aria-label="Bid and ask are at different stations" />
+                                      </span>
+                                    )}
                                     <span className={styles.quantity} title={depthBreakdownTitle(bidDepth, 'bid')}>
                                       ({formatNumber(firmDepth(bidDepth))})
                                     </span>
@@ -464,6 +473,9 @@ export default function MarketPage() {
                       </tr>
                       {isExpanded && catalogItem && (
                         <ItemDetail item={catalogItem} totalCols={totalCols} />
+                      )}
+                      {isExpanded && (
+                        <StationBreakdown itemId={row.item_id} totalCols={totalCols} />
                       )}
                     </Fragment>
                   )

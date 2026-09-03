@@ -50,3 +50,62 @@ export function depthBreakdownTitle(d: DepthQuantities, side: 'bid' | 'ask'): st
   }
   return lines.join('\n')
 }
+
+/**
+ * The depth fields every market quote row carries — the empire summary, the
+ * per-station summary, and the per-item station breakdown all share them.
+ */
+export interface MarketDepthFields {
+  bid_quantity: number
+  ask_quantity: number
+  bid_quantity_at_best?: number
+  ask_quantity_at_best?: number
+  bid_quantity_reasonable?: number
+  ask_quantity_reasonable?: number
+  bid_quantity_station_mgr?: number
+  ask_quantity_station_mgr?: number
+}
+
+export function bidDepthOf(q: MarketDepthFields): DepthQuantities {
+  return {
+    total: q.bid_quantity,
+    atBest: q.bid_quantity_at_best,
+    reasonable: q.bid_quantity_reasonable,
+    stationMgr: q.bid_quantity_station_mgr,
+  }
+}
+
+export function askDepthOf(q: MarketDepthFields): DepthQuantities {
+  return {
+    total: q.ask_quantity,
+    atBest: q.ask_quantity_at_best,
+    reasonable: q.ask_quantity_reasonable,
+    stationMgr: q.ask_quantity_station_mgr,
+  }
+}
+
+/**
+ * True when an empire cell shows a bid above its ask. No single station's book
+ * can cross — the matching engine would have filled it — so this only happens
+ * when the empire's best bid and best ask sit at two different stations.
+ */
+export function isCrossed(bid: number, ask: number): boolean {
+  return bid > 0 && ask > 0 && bid > ask
+}
+
+/**
+ * The headline prices across a set of station quotes: the highest bid and the
+ * lowest ask anywhere. These are the two numbers an empire cell shows, and they
+ * routinely come from different stations.
+ */
+export function headlinePrices(
+  stations: { best_bid: number; best_ask: number }[]
+): { bestBid: number; bestAsk: number } {
+  let bestBid = 0
+  let bestAsk = 0
+  for (const s of stations) {
+    if (s.best_bid > bestBid) bestBid = s.best_bid
+    if (s.best_ask > 0 && (bestAsk === 0 || s.best_ask < bestAsk)) bestAsk = s.best_ask
+  }
+  return { bestBid, bestAsk }
+}
