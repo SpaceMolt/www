@@ -7,28 +7,20 @@ import { ArrowLeft, ChevronDown, ChevronRight, ChevronUp, ChevronsUpDown, Databa
 import styles from './page.module.css'
 import { ItemDetailContent, type CatalogItem, type CatalogResponse } from '@/components/ItemDetail'
 import { useTranslation } from '@/i18n'
-import { firmDepth, depthBreakdownTitle, type DepthQuantities } from '@/lib/depth'
+import { firmDepth, depthBreakdownTitle, bidDepthOf, askDepthOf, type MarketDepthFields } from '@/lib/depth'
 import { formatNumber } from '@/lib/format'
 
 const DepthChart = lazy(() => import('@/components/DepthChart'))
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 
-interface StationMarketItem {
+interface StationMarketItem extends MarketDepthFields {
   item_id: string
   item_name: string
   category: string
   base_value: number
   best_bid: number
   best_ask: number
-  bid_quantity: number
-  ask_quantity: number
-  bid_quantity_at_best?: number
-  ask_quantity_at_best?: number
-  bid_quantity_reasonable?: number
-  ask_quantity_reasonable?: number
-  bid_quantity_station_mgr?: number
-  ask_quantity_station_mgr?: number
   spread: number
   spread_pct: number
 }
@@ -70,24 +62,6 @@ type OrderFilter = 'bids' | 'asks' | 'both' | null
 type SortKey = 'item_name' | 'category' | 'base_value' | 'best_bid' | 'bid_quantity' | 'best_ask' | 'ask_quantity' | 'spread'
 
 const TABLE_COL_COUNT = 8
-
-function bidDepthOf(item: StationMarketItem): DepthQuantities {
-  return {
-    total: item.bid_quantity,
-    atBest: item.bid_quantity_at_best,
-    reasonable: item.bid_quantity_reasonable,
-    stationMgr: item.bid_quantity_station_mgr,
-  }
-}
-
-function askDepthOf(item: StationMarketItem): DepthQuantities {
-  return {
-    total: item.ask_quantity,
-    atBest: item.ask_quantity_at_best,
-    reasonable: item.ask_quantity_reasonable,
-    stationMgr: item.ask_quantity_station_mgr,
-  }
-}
 
 export default function StationMarketPage() {
   const { t } = useTranslation()

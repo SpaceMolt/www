@@ -1,0 +1,105 @@
+/* === Per-station breakdown, shown inside an expanded market row === */
+
+.row {
+  background: none !important;
+}
+
+.row:hover {
+  background: none !important;
+}
+
+.cell {
+  padding: 0 !important;
+  border-bottom: 2px solid var(--hull-grey) !important;
+}
+
+.content {
+  padding: 1rem 1.25rem;
+  background: linear-gradient(180deg, rgba(0, 212, 255, 0.04), rgba(13, 19, 33, 0.6));
+  /* No border-top here: when ItemDetail renders first, its own closing
+     border-bottom already divides the two panels — a second border-top here
+     would double that seam. When this panel is the only one expanded, the
+     table's default td border-bottom on the row above already divides it. */
+  white-space: normal;
+  text-align: left;
+}
+
+.explainer {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--chrome-silver);
+  opacity: 0.75;
+  margin: 0 0 0.75rem;
+  max-width: 84ch;
+}
+
+.status {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--hull-grey);
+  margin: 0;
+}
+
+.table {
+  border-collapse: collapse;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+}
+
+.table th {
+  text-align: left;
+  padding: 0.3rem 1.25rem 0.3rem 0;
+  color: var(--hull-grey);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid rgba(107, 138, 158, 0.3);
+}
+
+.table td {
+  padding: 0.3rem 1.25rem 0.3rem 0;
+  color: var(--chrome-silver);
+  white-space: nowrap;
+  text-align: left;
+}
+
+.table th.num,
+.table td.num {
+  text-align: right;
+}
+
+.bid {
+  color: var(--bio-green);
+}
+
+.ask {
+  color: var(--claw-red);
+}
+
+/* The station holding the empire's headline price */
+.best {
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.quantity {
+  color: #6b8a9e;
+  font-size: 0.68rem;
+  margin-left: 0.25rem;
+  cursor: help;
+  border-bottom: 1px dotted rgba(107, 138, 158, 0.5);
+}
+
+.empire {
+  color: var(--hull-grey);
+}
+
+.stationLink {
+  color: var(--plasma-cyan);
+  text-decoration: none;
+}
+
+.stationLink:hover {
+  text-decoration: underline;
+}
