@@ -221,6 +221,62 @@ describe('boarding and capture events', () => {
   })
 })
 
+describe('arena matches', () => {
+  it('reports knockouts, boarding knockouts and forfeits instead of losses', () => {
+    const arenaEntry = entry([
+      snap({ player_id: 'a', username: 'Ace', side_id: 1 }),
+      snap({ player_id: 'b', username: 'Brawler', side_id: 2 }),
+      snap({ player_id: 'c', username: 'Corsair', side_id: 1 }),
+      snap({ player_id: 'd', username: 'Drifter', side_id: 2 }),
+      snap({ player_id: 'e', username: 'Escapee', side_id: 2 }),
+    ])
+    arenaEntry.arena = true
+    arenaEntry.kills = [{ killer_id: 'a', victim_id: 'b', killer_username: 'Ace', victim_username: 'Brawler', cause: 'combat' }]
+    arenaEntry.boarding = [{ operation_id: 'op-1', phase: 'resolved', actor_id: 'c', target_id: 'd', event: 'captured' }]
+    arenaEntry.captures = [{
+      boarding_operation_id: 'op-1', captor_id: 'c', captor_username: 'Corsair',
+      former_owner_id: 'd', former_owner_username: 'Drifter', ship_id: 'ship-1', ship_class: 'axiom',
+    }]
+    arenaEntry.flee = [{ player_id: 'e', flee_counter: 3, flee_required: 3, escaped: true }]
+    arenaEntry.battle_ended = {
+      outcome: 'victory', winning_side: 1, duration: 1, total_damage: 50, ships_destroyed: 2, ships_captured: 1, category: 'arena',
+      participants: [],
+    }
+
+    const timeline = buildTimeline([arenaEntry], null)
+    const texts = timeline.events.map(event => event.text)
+    expect(timeline.isArena).toBe(true)
+    expect(texts).toContain('Brawler knocked out by Ace')
+    expect(texts).toContain("Drifter knocked out by Corsair's boarding party")
+    expect(texts).toContain('Escapee withdrew from the match')
+    expect(texts.at(-1)).toContain('2 knocked out')
+    expect(texts.at(-1)).not.toContain('captured intact')
+    expect(timeline.participants.get('b')?.fate).toBe('knocked_out')
+    expect(timeline.participants.get('b')?.killedBy).toBe('Ace')
+    expect(timeline.participants.get('d')?.fate).toBe('knocked_out')
+    expect(timeline.participants.get('d')?.killedBy).toBe('Corsair')
+    expect(timeline.participants.get('d')?.capturedBy).toBeUndefined()
+  })
+
+  it('leaves a real battle untouched', () => {
+    const timeline = buildTimeline([entry([snap({ player_id: 'p1', username: 'Vex' })])], null)
+    expect(timeline.isArena).toBe(false)
+  })
+})
+
+describe('rejoin after escape', () => {
+  it('puts a ship back in the fight when it reappears in later snapshots', () => {
+    const first = entry([snap({ player_id: 'p1', username: 'Vex' })])
+    first.flee = [{ player_id: 'p1', flee_counter: 3, flee_required: 3, escaped: true }]
+    const gone = entry([])
+    const back = entry([snap({ player_id: 'p1', username: 'Vex' })])
+
+    const timeline = buildTimeline([first, gone, back], null)
+    expect(timeline.participants.get('p1')?.fate).toBe('fighting')
+    expect(timeline.participants.get('p1')?.fateTickIndex).toBeUndefined()
+  })
+})
+
 describe('detailed combat events', () => {
   it('labels secondary attacks, attributes burns, and reports passive repair', () => {
     const combatEntry = entry([

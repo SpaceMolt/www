@@ -54,7 +54,7 @@ export default function SideScoreboard({ side, timeline, tickIndex, selectedId, 
     const last = snap ?? timeline.snapshotAt[Math.min(meta?.lastTickIndex ?? 0, tickIndex)]?.get(id)
     sideDamage += last?.damage_dealt ?? 0
     sideKills += last?.kill_count ?? 0
-    if ((meta?.fate === 'destroyed' || meta?.fate === 'captured') && (meta.fateTickIndex ?? Infinity) <= tickIndex) sideLosses++
+    if ((meta?.fate === 'destroyed' || meta?.fate === 'captured' || meta?.fate === 'knocked_out') && (meta.fateTickIndex ?? Infinity) <= tickIndex) sideLosses++
   }
 
   const dockClass = side.index === 0 ? styles.scoreboardLeft : side.index === 1 ? styles.scoreboardRight : styles.scoreboardExtra
@@ -77,7 +77,7 @@ export default function SideScoreboard({ side, timeline, tickIndex, selectedId, 
           {winner && <span className={styles.winnerTag}> ★ {t('battles.winner')}</span>}
         </span>
         <span className={styles.sideTotals}>
-          {sideDamage.toLocaleString()} {t('battles.damage')} · {sideKills} {t('battles.kills')}{sideLosses > 0 ? ` · ${sideLosses} ${t('battles.lost')}` : ''}
+          {sideDamage.toLocaleString()} {t('battles.damage')} · {sideKills} {t(timeline.isArena ? 'battles.arena.koShort' : 'battles.kills')}{sideLosses > 0 ? ` · ${sideLosses} ${t(timeline.isArena ? 'battles.arena.down' : 'battles.lost')}` : ''}
         </span>
         <span className={styles.collapseChevron}>{collapsed ? '▸' : '▾'}</span>
       </button>
@@ -90,7 +90,8 @@ export default function SideScoreboard({ side, timeline, tickIndex, selectedId, 
             const dead = meta.fate === 'destroyed' && (meta.fateTickIndex ?? Infinity) <= tickIndex
             const captured = meta.fate === 'captured' && (meta.fateTickIndex ?? Infinity) <= tickIndex
             const escaped = meta.fate === 'escaped' && (meta.fateTickIndex ?? Infinity) <= tickIndex
-            const gone = !snap || dead || captured || escaped
+            const knockedOut = meta.fate === 'knocked_out' && (meta.fateTickIndex ?? Infinity) <= tickIndex
+            const gone = !snap || dead || captured || escaped || knockedOut
             const notYet = meta.firstTickIndex > tickIndex
             const identityKey = identityLabelKey(meta.actorKind, meta.isNPC, meta.isBoss)
             const shieldFrac = snap && snap.max_shield > 0 ? snap.shield / snap.max_shield : 0
@@ -106,6 +107,7 @@ export default function SideScoreboard({ side, timeline, tickIndex, selectedId, 
                 <div className={styles.scoreRowTop}>
                   <span className={styles.scoreName}>
                     {dead && '✕ '}
+                    {knockedOut && 'KO '}
                     {escaped && '↗ '}
                     {meta.name}
                     {id === focusPlayerId && <span className={styles.youTag}>{t('battles.stream.you')}</span>}
@@ -113,7 +115,7 @@ export default function SideScoreboard({ side, timeline, tickIndex, selectedId, 
                   {identityKey && <span className={styles.actorBadge}>{t(identityKey)}</span>}
                   <span className={styles.scoreShip} title={meta.shipClassName}>{meta.shipClassName}</span>
                 </div>
-                {snap && !captured ? (
+                {snap && !captured && !knockedOut ? (
                   <div className={styles.scoreRowBars}>
                     {snap.max_shield > 0 && (
                       <span className={styles.microBar}>
@@ -134,7 +136,9 @@ export default function SideScoreboard({ side, timeline, tickIndex, selectedId, 
                           ? meta.deathCause === 'self_destruct'
                             ? t('battles.selfDestructed')
                             : meta.killedBy ? t('battles.destroyedBy', { killer: meta.killedBy }) : t('battles.destroyed')
-                          : escaped ? t('battles.escaped') : notYet ? t('battles.notEngaged') : ''}
+                          : knockedOut
+                            ? meta.killedBy ? t('battles.knockedOutBy', { killer: meta.killedBy }) : t('battles.knockedOut')
+                            : escaped ? t('battles.escaped') : notYet ? t('battles.notEngaged') : ''}
                     </span>
                   </div>
                 )}

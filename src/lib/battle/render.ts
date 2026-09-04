@@ -334,6 +334,7 @@ export function renderBackground(
   dpr: number,
   battleId: string,
   sideColors: string[],
+  arena = false,
 ): void {
   canvas.width = Math.max(1, Math.round(width * dpr))
   canvas.height = Math.max(1, Math.round(height * dpr))
@@ -344,12 +345,16 @@ export function renderBackground(
   ctx.fillStyle = '#04070f'
   ctx.fillRect(0, 0, width, height)
 
-  // Nebula tints from the first two side colors, pushed to the flanks.
-  const tints = [sideColors[0] ?? '#00d4ff', sideColors[1] ?? '#e63946', '#1a2744']
+  // Nebula tints from the first two side colors, pushed to the flanks. An
+  // arena is lit like a venue instead: warm gold house lights over a crimson
+  // floor, so a match never reads as a real engagement at a glance.
+  const tints = arena
+    ? ['#ffd93d', '#e63946', '#3a2410']
+    : [sideColors[0] ?? '#00d4ff', sideColors[1] ?? '#e63946', '#1a2744']
   const spots: [number, number, number, string, number][] = [
-    [width * 0.12, height * 0.3, Math.max(width, height) * 0.55, tints[0], 0.05],
-    [width * 0.88, height * 0.7, Math.max(width, height) * 0.55, tints[1], 0.05],
-    [width * 0.5, height * 0.5, Math.max(width, height) * 0.7, tints[2], 0.16],
+    [width * 0.12, height * 0.3, Math.max(width, height) * 0.55, tints[0], arena ? 0.07 : 0.05],
+    [width * 0.88, height * 0.7, Math.max(width, height) * 0.55, tints[1], arena ? 0.07 : 0.05],
+    [width * 0.5, height * 0.5, Math.max(width, height) * 0.7, tints[2], arena ? 0.22 : 0.16],
   ]
   for (const [x, y, r, color, alpha] of spots) {
     const g = ctx.createRadialGradient(x, y, 0, x, y, r)
@@ -397,7 +402,7 @@ export function renderFrame(ctx: CanvasRenderingContext2D, input: RenderInput): 
   const tf = makeTransform(width, height, view)
   const ships = sampleShips(timeline, playhead, timeMs, reducedMotion)
 
-  drawArena(ctx, tf, timeline, timeMs, width, height)
+  drawArena(ctx, tf, timeline, timeMs, width, height, reducedMotion)
   drawWrecks(ctx, tf, timeline, playhead, battleId, ships)
 
   // Target line for the selected ship.
@@ -428,7 +433,7 @@ export function renderFrame(ctx: CanvasRenderingContext2D, input: RenderInput): 
   }
 
   drawAttacks(ctx, tf, ships, entry, battleId, p)
-  drawKills(ctx, tf, ships, entry, battleId, p)
+  drawKills(ctx, tf, ships, entry, battleId, p, timeline.isArena)
   drawEscapes(ctx, tf, ships, entry, p)
   drawJoins(ctx, tf, timeline, ships, entry, p)
   drawFloaters(ctx, tf, ships, entry, battleId, p)
@@ -443,8 +448,15 @@ function drawArena(
   timeMs: number,
   width: number,
   height: number,
+  reducedMotion: boolean,
 ): void {
   const c = tf.toScreen({ x: 0, y: 0 })
+  const arena = timeline.isArena
+  const ringStrong = arena ? 'rgba(255,217,61,0.3)' : 'rgba(0,212,255,0.22)'
+  const ringSoft = arena ? 'rgba(255,190,90,0.15)' : 'rgba(77,171,247,0.13)'
+  const accent = arena ? 'rgba(255,217,61,' : 'rgba(0,212,255,'
+
+  if (arena) drawVenue(ctx, c, tf.scale, timeMs, reducedMotion)
 
   // Soft home-sector glow for each side at its rim bearing.
   const sideCount = timeline.sides.length
@@ -463,7 +475,7 @@ function drawArena(
     const r = RING_R[z] * tf.scale
     ctx.beginPath()
     ctx.arc(c.x, c.y, r, 0, Math.PI * 2)
-    ctx.strokeStyle = z === 3 ? 'rgba(0,212,255,0.22)' : 'rgba(77,171,247,0.13)'
+    ctx.strokeStyle = z === 3 ? ringStrong : ringSoft
     ctx.lineWidth = 1
     ctx.stroke()
 
@@ -485,11 +497,11 @@ function drawArena(
   ctx.setLineDash([6, 10])
   ctx.beginPath()
   ctx.arc(0, 0, RING_R[3] * tf.scale * 0.55, 0, Math.PI * 2)
-  ctx.strokeStyle = 'rgba(0,212,255,0.16)'
+  ctx.strokeStyle = `${accent}0.16)`
   ctx.stroke()
   ctx.restore()
 
-  ctx.strokeStyle = 'rgba(0,212,255,0.35)'
+  ctx.strokeStyle = `${accent}0.35)`
   ctx.lineWidth = 1
   const ch = 5
   ctx.beginPath()
@@ -498,6 +510,111 @@ function drawArena(
   ctx.moveTo(c.x, c.y - ch)
   ctx.lineTo(c.x, c.y + ch)
   ctx.stroke()
+}
+
+/**
+ * Arena venue dressing: a rope ring of chasing marquee bulbs just outside the
+ * outer zone and two slow house spotlights sweeping the floor. Purely
+ * decorative — the zones themselves are drawn by drawArena as usual.
+ */
+function drawVenue(ctx: CanvasRenderingContext2D, c: Vec, scale: number, timeMs: number, reducedMotion: boolean): void {
+  const r = RING_R[0] * scale * 1.13
+  const clock = reducedMotion ? 0 : timeMs
+
+  // Spotlights: soft wedges swinging across the floor from the rim.
+  for (let s = 0; s < 2; s++) {
+    const ang = clock * 0.00018 * (s === 0 ? 1 : -1) + s * Math.PI
+    const ox = c.x + Math.cos(ang) * r
+    const oy = c.y + Math.sin(ang) * r
+    const g = ctx.createRadialGradient(ox, oy, 0, ox, oy, r * 1.6)
+    g.addColorStop(0, 'rgba(255,230,140,0.11)')
+    g.addColorStop(1, 'rgba(255,230,140,0)')
+    ctx.save()
+    ctx.beginPath()
+    ctx.moveTo(ox, oy)
+    ctx.arc(ox, oy, r * 1.6, ang + Math.PI - 0.32, ang + Math.PI + 0.32)
+    ctx.closePath()
+    ctx.fillStyle = g
+    ctx.fill()
+    ctx.restore()
+  }
+
+  // Ropes.
+  ctx.beginPath()
+  ctx.arc(c.x, c.y, r, 0, Math.PI * 2)
+  ctx.strokeStyle = 'rgba(255,217,61,0.28)'
+  ctx.lineWidth = 2
+  ctx.stroke()
+  ctx.beginPath()
+  ctx.arc(c.x, c.y, r + 5, 0, Math.PI * 2)
+  ctx.strokeStyle = 'rgba(230,57,70,0.22)'
+  ctx.lineWidth = 1
+  ctx.stroke()
+
+  // Marquee bulbs chasing around the ropes.
+  const bulbs = 56
+  for (let k = 0; k < bulbs; k++) {
+    const phase = ((k / bulbs) * 4 + clock * 0.0004) % 1
+    const hot = phase < 0.22
+    const a = (k / bulbs) * Math.PI * 2
+    const x = c.x + Math.cos(a) * (r + 2.5)
+    const y = c.y + Math.sin(a) * (r + 2.5)
+    if (hot) {
+      const g = ctx.createRadialGradient(x, y, 0, x, y, 7)
+      g.addColorStop(0, 'rgba(255,240,180,0.55)')
+      g.addColorStop(1, 'rgba(255,217,61,0)')
+      ctx.fillStyle = g
+      ctx.beginPath()
+      ctx.arc(x, y, 7, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    ctx.beginPath()
+    ctx.arc(x, y, hot ? 1.8 : 1.2, 0, Math.PI * 2)
+    ctx.fillStyle = hot ? 'rgba(255,245,200,0.95)' : 'rgba(255,217,61,0.35)'
+    ctx.fill()
+  }
+}
+
+/** Arena knockout: a gold shockwave and a KO! card instead of a fireball. */
+function drawKnockout(ctx: CanvasRenderingContext2D, pos: Vec, size: number, t: number): void {
+  for (let ring = 0; ring < 2; ring++) {
+    const rt = Math.max(0, t - ring * 0.18)
+    if (rt <= 0) continue
+    ctx.beginPath()
+    ctx.arc(pos.x, pos.y, size * (0.8 + rt * 5.5), 0, Math.PI * 2)
+    ctx.strokeStyle = `rgba(255,217,61,${(0.7 * (1 - rt)).toFixed(2)})`
+    ctx.lineWidth = 2.5 * (1 - rt)
+    ctx.stroke()
+  }
+  // Starburst rays.
+  for (let d = 0; d < 8; d++) {
+    const ang = (d / 8) * Math.PI * 2 + Math.PI / 8
+    const inner = size * (1 + t * 3)
+    const outer = inner + size * 1.2 * (1 - t)
+    ctx.beginPath()
+    ctx.moveTo(pos.x + Math.cos(ang) * inner, pos.y + Math.sin(ang) * inner)
+    ctx.lineTo(pos.x + Math.cos(ang) * outer, pos.y + Math.sin(ang) * outer)
+    ctx.strokeStyle = `rgba(255,255,255,${(0.8 * (1 - t)).toFixed(2)})`
+    ctx.lineWidth = 1.5
+    ctx.stroke()
+  }
+  // KO! card popping up and settling.
+  const pop = Math.min(1, t / 0.25)
+  const settle = 1 + 0.35 * (1 - pop)
+  const alpha = t < 0.75 ? 1 : (1 - t) / 0.25
+  ctx.save()
+  ctx.translate(pos.x, pos.y - size * 2.4 - t * 10)
+  ctx.scale(settle, settle)
+  ctx.rotate(-0.12)
+  ctx.font = '700 20px "JetBrains Mono", monospace'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.lineWidth = 4
+  ctx.strokeStyle = `rgba(90,20,20,${alpha.toFixed(2)})`
+  ctx.strokeText('KO!', 0, 0)
+  ctx.fillStyle = `rgba(255,217,61,${alpha.toFixed(2)})`
+  ctx.fillText('KO!', 0, 0)
+  ctx.restore()
 }
 
 // --- Ship glyphs ---
@@ -942,6 +1059,7 @@ function drawKills(
   entry: BattleTimeline['entries'][number],
   battleId: string,
   p: number,
+  arena = false,
 ): void {
   for (const k of entry.kills ?? []) {
     const victim = ships.get(k.victim_id)
@@ -961,6 +1079,11 @@ function drawKills(
       ctx.beginPath()
       ctx.arc(pos.x, pos.y, size * 4, 0, Math.PI * 2)
       ctx.fill()
+    }
+    // Nothing burns in the arena: a knockout is a referee's call, not a wreck.
+    if (arena) {
+      drawKnockout(ctx, pos, size, Math.min(1, t))
+      continue
     }
     // Fireball.
     const fb = Math.min(1, t / 0.7)
@@ -1006,7 +1129,7 @@ function drawWrecks(
   ships: Map<string, SampledShip>,
 ): void {
   for (const meta of timeline.participants.values()) {
-    if (meta.fate !== 'destroyed' || meta.fateTickIndex === undefined) continue
+    if ((meta.fate !== 'destroyed' && meta.fate !== 'knocked_out') || meta.fateTickIndex === undefined) continue
     const dt = playhead - meta.fateTickIndex
     if (dt < 0.95 || dt > 3) continue
     const snaps = timeline.snapshotAt[meta.fateTickIndex]
@@ -1014,6 +1137,17 @@ function drawWrecks(
     if (!snap) continue
     const pos = tf.toScreen(arenaPos(timeline, meta, snap))
     const alpha = Math.max(0, 0.5 * (1 - (dt - 1) / 2))
+    if (meta.fate === 'knocked_out') {
+      // No debris: the ship is already back in one piece. Leave the call.
+      ctx.save()
+      ctx.globalAlpha = alpha * 1.6
+      ctx.font = '700 9px "JetBrains Mono", monospace'
+      ctx.fillStyle = '#ffd93d'
+      ctx.textAlign = 'center'
+      ctx.fillText('KO · ' + meta.name, pos.x, pos.y - 10)
+      ctx.restore()
+      continue
+    }
     ctx.save()
     ctx.globalAlpha = alpha
     ctx.strokeStyle = '#6b8fa3'

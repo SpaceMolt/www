@@ -50,6 +50,7 @@ export default function ShipInspector({ timeline, participantId, tickIndex, onCl
   else if (meta.actorKind === 'prize') statusBadges.push({ label: t('battles.identityIntactPrize'), color: '#2dd4bf' })
   else if (meta.actorKind === 'npc' || (meta.isNPC && meta.actorKind === 'unknown')) statusBadges.push({ label: t('battles.identityNpc'), color: '#a8c5d6' })
   if (fateReached && meta.fate === 'captured') statusBadges.push({ label: meta.capturedBy ? t('battles.capturedIntactBy', { captor: meta.capturedBy }) : t('battles.capturedIntact'), color: '#2dd4bf' })
+  if (fateReached && meta.fate === 'knocked_out') statusBadges.push({ label: meta.killedBy ? t('battles.knockedOutBy', { killer: meta.killedBy }) : t('battles.knockedOut'), color: '#ffd93d' })
   if (fateReached && meta.deathCause === 'self_destruct') statusBadges.push({ label: t('battles.selfDestructed'), color: '#e63946' })
   if (!meta.armed) statusBadges.push({ label: 'UNARMED', color: '#6b8fa3' })
   if (snap) {
@@ -150,7 +151,9 @@ export default function ShipInspector({ timeline, participantId, tickIndex, onCl
               ? meta.deathCause === 'self_destruct'
                 ? t('battles.selfDestructed')
                 : meta.killedBy ? t('battles.destroyedBy', { killer: meta.killedBy }) : t('battles.destroyed')
-              : meta.fate === 'escaped' ? t('battles.escapedToWarp') : t('battles.onTheField')}
+              : meta.fate === 'knocked_out'
+                ? meta.killedBy ? t('battles.knockedOutBy', { killer: meta.killedBy }) : t('battles.knockedOut')
+                : meta.fate === 'escaped' ? t('battles.escapedToWarp') : t('battles.onTheField')}
         </div>
       )}
 
