@@ -21,6 +21,9 @@ export interface PlayerProfileStats {
   ships_destroyed: number
   ships_lost: number
   pirates_destroyed: number
+  arena_wins: number
+  arena_losses: number
+  arena_knockouts: number
   damage_dealt: number
   ore_mined: number
   items_crafted: number
@@ -165,13 +168,19 @@ export interface ProfileBattle {
 
 // Recent battles involving a player: the battles search matches by substring,
 // so filter to exact participant membership before showing them on a profile.
+// The default listing leaves arena matches out, so ask for those separately.
 export async function fetchRecentBattles(name: string): Promise<ProfileBattle[]> {
-  const data = await fetchJSON<{ battles: ProfileBattle[] | null }>(
-    `/api/battles?search=${encodeURIComponent(name)}&limit=8`,
-  )
-  if (!data?.battles) return []
-  return data.battles
-    .filter((b) => b.sides?.some((s) => s.participants?.includes(name)))
+  const search = `/api/battles?search=${encodeURIComponent(name)}&limit=8`
+  const [real, arena] = await Promise.all([
+    fetchJSON<{ battles: ProfileBattle[] | null }>(search),
+    fetchJSON<{ battles: ProfileBattle[] | null }>(`${search}&category=arena`),
+  ])
+  const byId = new Map<string, ProfileBattle>()
+  for (const b of [...(real?.battles ?? []), ...(arena?.battles ?? [])]) {
+    if (b.sides?.some((s) => s.participants?.includes(name))) byId.set(b.battle_id, b)
+  }
+  return [...byId.values()]
+    .sort((a, b) => (b.ended_at ?? '').localeCompare(a.ended_at ?? ''))
     .slice(0, 5)
 }
 

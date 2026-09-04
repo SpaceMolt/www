@@ -350,6 +350,8 @@ export interface BattleLogEntry {
   flee?: FleeLogEntry[]
   joins?: JoinLogEntry[]
   kills?: KillLogEntry[]
+  /** True on every tick of a consequence-free arena match (kills are knockouts). */
+  arena?: boolean
   battle_ended?: BattleEndLogEntry
 }
 

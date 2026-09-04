@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const description = [
     matchup,
     `${battle.total_damage.toLocaleString()} damage dealt`,
-    `${battle.ships_destroyed} ship(s) destroyed`,
+    battle.category === 'arena' ? `${battle.ships_destroyed} knockout(s)` : `${battle.ships_destroyed} ship(s) destroyed`,
   ]
     .filter(Boolean)
     .join(' · ')

@@ -204,7 +204,7 @@ export default function BattlesPage() {
       {!loading && !error && visible.length === 0 && (
         <div className={styles.empty}>
           <p>{t('battles.noBattles')}</p>
-          <p className={styles.emptyHint}>{t('battles.noBattlesHint')}</p>
+          <p className={styles.emptyHint}>{t(category === 'arena' ? 'battles.noBattlesHintArena' : 'battles.noBattlesHint')}</p>
         </div>
       )}
 
@@ -313,7 +313,10 @@ export default function BattlesPage() {
                     )}
                     {(battle.destroyed_names?.length ?? 0) > 0 && (
                       <span className={styles.destroyedLine}>
-                        <Skull size={11} aria-hidden /> {battle.destroyed_names!.join(', ')}
+                        {battle.category === 'arena'
+                          ? <><Trophy size={11} aria-hidden /> {t('battles.knockedOut')}: </>
+                          : <><Skull size={11} aria-hidden /> </>}
+                        {battle.destroyed_names!.join(', ')}
                       </span>
                     )}
                   </div>

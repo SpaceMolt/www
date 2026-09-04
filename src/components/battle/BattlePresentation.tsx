@@ -477,7 +477,7 @@ export default function BattlePresentation({ battleId, data, embedded = false, f
               <b>{(endEntry?.total_damage ?? summary?.total_damage ?? timeline.totalDamage).toLocaleString()}</b>{' '}
               {t('battles.damage')}
             </span>
-            {(endEntry?.ships_captured ?? summary?.ships_captured ?? 0) > 0 && (
+            {!timeline.isArena && (endEntry?.ships_captured ?? summary?.ships_captured ?? 0) > 0 && (
               <span>
                 {t('battles.capturedIntactCount', { count: endEntry?.ships_captured ?? summary?.ships_captured ?? 0 })}
               </span>
@@ -545,8 +545,8 @@ export default function BattlePresentation({ battleId, data, embedded = false, f
                 <span className={styles.outcomeLabel}>{outcomeText}</span>
                 <span className={styles.outcomeMeta}>
                   {endEntry.duration} ticks · {endEntry.total_damage.toLocaleString()} damage ·{' '}
-                  {endEntry.ships_destroyed} {t('battles.destroyed')}
-                  {(endEntry.ships_captured ?? 0) > 0 && ` · ${t('battles.capturedIntactCount', { count: endEntry.ships_captured ?? 0 })}`}
+                  {timeline.isArena ? t('battles.knockedOutCount', { count: endEntry.ships_destroyed }) : `${endEntry.ships_destroyed} ${t('battles.destroyed')}`}
+                  {!timeline.isArena && (endEntry.ships_captured ?? 0) > 0 && ` · ${t('battles.capturedIntactCount', { count: endEntry.ships_captured ?? 0 })}`}
                 </span>
                 <button className={styles.replayBtn} onClick={() => { seek(0); setPlaying(true) }}>
                   <RotateCcw size={12} aria-hidden /> {t('battles.replay')}

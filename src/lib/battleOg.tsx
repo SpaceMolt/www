@@ -41,7 +41,7 @@ export async function renderBattleOg(battle: BattleSummary | null): Promise<Imag
     ? [
         ['DURATION', formatDuration(battle.duration_ticks)],
         ['DAMAGE', battle.total_damage.toLocaleString()],
-        ['SHIPS LOST', String(battle.ships_destroyed)],
+        [battle.category === 'arena' ? 'KNOCKOUTS' : 'SHIPS LOST', String(battle.ships_destroyed)],
         ...(battle.top_damage ? ([['TOP DAMAGE', battle.top_damage.username]] as [string, string][]) : []),
       ]
     : []

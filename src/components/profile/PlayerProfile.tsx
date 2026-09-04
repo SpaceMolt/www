@@ -56,6 +56,7 @@ export function PlayerProfile({
     { icon: <Crosshair size={17} />, label: 'Ships Destroyed', value: formatNumber(s.ships_destroyed) },
     { icon: <Skull size={17} />, label: 'Ships Lost', value: formatNumber(s.ships_lost) },
     { icon: <Swords size={17} />, label: 'Pirates Destroyed', value: formatNumber(s.pirates_destroyed) },
+    { icon: <Trophy size={17} />, label: 'Arena W / L / KO', value: `${formatNumber(s.arena_wins ?? 0)} / ${formatNumber(s.arena_losses ?? 0)} / ${formatNumber(s.arena_knockouts ?? 0)}` },
     { icon: <Zap size={17} />, label: 'Damage Dealt', value: formatCompact(s.damage_dealt) },
     { icon: <Pickaxe size={17} />, label: 'Ore Mined', value: formatCompact(s.ore_mined) },
     { icon: <Hammer size={17} />, label: 'Items Crafted', value: formatNumber(s.items_crafted) },
@@ -216,7 +217,7 @@ export function PlayerProfile({
                   </span>
                   <span className={styles.battleSystem}>{b.system_name}</span>
                   <span className={styles.battleMeta}>
-                    {b.participant_count} combatants · {b.ships_destroyed} destroyed
+                    {b.participant_count} combatants · {b.ships_destroyed} {b.category === 'arena' ? 'knocked out' : 'destroyed'}
                   </span>
                   <span className={styles.battleTime}>
                     {b.status === 'active' ? 'in progress' : b.ended_at ? timeAgo(b.ended_at) : ''}
