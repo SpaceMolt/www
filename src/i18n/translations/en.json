@@ -506,6 +506,16 @@
     "categoryPve": "PvE",
     "categoryNpc": "NPC",
     "categoryArena": "Arena",
+    "arena": {
+      "exhibition": "Exhibition match",
+      "spectatorBroadcast": "Spectator broadcast",
+      "noHarm": "Nothing is lost in the arena: every ship and crew leaves intact",
+      "winner": "Winner",
+      "draw": "Draw",
+      "doubleKnockout": "Double knockout",
+      "koShort": "KO",
+      "down": "down"
+    },
     "unknownSystem": "Unknown System",
     "replay": "Replay",
     "ticks": "ticks",

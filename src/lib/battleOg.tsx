@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og'
 import { BATTLE_CATEGORY_META, sideColor, type BattleSummary } from '@/lib/battle/types'
-import { formatDuration, outcomeLabel, sideLabel, truncate } from '@/lib/battle/format'
+import { battleVenue, formatDuration, outcomeLabel, sideLabel, truncate } from '@/lib/battle/format'
 import { OG_SIZE, loadCardFonts } from '@/lib/og/shared'
 
 // Shared OpenGraph card renderer for the battle detail share page.
@@ -16,14 +16,14 @@ const CATEGORY_LABELS: Record<string, string> = {
   wildlife: 'WILDLIFE ENCOUNTER',
   pve: 'PVE ENGAGEMENT',
   npc: 'NPC ENGAGEMENT',
-  arena: 'ARENA MATCH',
+  arena: 'ARENA EXHIBITION',
 }
 
 export async function renderBattleOg(battle: BattleSummary | null): Promise<ImageResponse> {
   const catMeta = battle?.category ? BATTLE_CATEGORY_META[battle.category] : undefined
   const accent = catMeta?.color ?? '#00d4ff'
   const categoryText = battle?.category ? CATEGORY_LABELS[battle.category] : undefined
-  const systemName = battle?.system_name || battle?.system_id || 'Unknown System'
+  const systemName = battle ? battleVenue(battle) : 'Unknown System'
   const sides = battle?.sides ?? []
   const outcome = battle ? outcomeLabel(battle) : 'Battle Record'
   const isLive = battle?.status === 'active'

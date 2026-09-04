@@ -13,7 +13,7 @@ import {
   type BattleCategory,
   type BattleSummary,
 } from '@/lib/battle/types'
-import { formatDuration, winnerNames } from '@/lib/battle/format'
+import { battleVenue, formatDuration, winnerNames } from '@/lib/battle/format'
 import { timeAgo } from '@/lib/format'
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
@@ -250,7 +250,7 @@ export default function BattlesPage() {
                         <CategoryIcon category={battle.category} size={11} /> {t(catMeta.labelKey)}
                       </span>
                     )}
-                    <span className={styles.systemName}>{battle.system_name || battle.system_id}</span>
+                    <span className={styles.systemName}>{battleVenue(battle)}</span>
                   </div>
                   <span className={styles.cardWhen}>
                     {battle.ended_at ? timeAgo(battle.ended_at) : formatDuration(battle.duration_ticks)}
@@ -302,11 +302,11 @@ export default function BattlesPage() {
                   <div className={styles.cardOutcome}>
                     {winners.length > 0 && (
                       <span className={styles.winnerLine}>
-                        <Trophy size={11} aria-hidden /> {t('battles.outcomeVictory')}: {winners.join(', ')}
+                        <Trophy size={11} aria-hidden /> {t(battle.category === 'arena' ? 'battles.arena.winner' : 'battles.outcomeVictory')}: {winners.join(', ')}
                       </span>
                     )}
                     {battle.outcome === 'stalemate' && (
-                      <span className={styles.neutralLine}>{t('battles.outcomeStalemate')}</span>
+                      <span className={styles.neutralLine}>{t(battle.category === 'arena' ? 'battles.arena.draw' : 'battles.outcomeStalemate')}</span>
                     )}
                     {battle.outcome === 'mutual_destruction' && (
                       <span className={styles.destroyedLine}>{t('battles.outcomeMutualDestruction')}</span>

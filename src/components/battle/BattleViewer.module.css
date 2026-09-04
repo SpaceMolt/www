@@ -205,6 +205,108 @@
   50% { opacity: 0.35; box-shadow: none; }
 }
 
+/* --- Arena exhibition dressing --- */
+
+.viewerArena .header {
+  border-bottom-color: rgba(255, 217, 61, 0.45);
+  background: linear-gradient(180deg, rgba(38, 28, 10, 0.92), rgba(10, 14, 23, 0.9));
+}
+
+.arenaKicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--warning-yellow);
+  margin-bottom: 0.15rem;
+}
+
+.arenaMarquee {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.6rem;
+  padding: 0.3rem 1rem;
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #2a1a00;
+  background:
+    linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.35) 50%, transparent 100%) no-repeat -60% 0 / 40% 100%,
+    linear-gradient(90deg, #b8860b, #ffd93d 30%, #ffe680 50%, #ffd93d 70%, #b8860b);
+  border-bottom: 1px solid rgba(255, 217, 61, 0.7);
+  animation: marqueeShine 6s ease-in-out infinite;
+}
+
+.arenaMarqueeItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+@keyframes marqueeShine {
+  0%, 60% { background-position: -60% 0, 0 0; }
+  100% { background-position: 160% 0, 0 0; }
+}
+
+.arenaChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--warning-yellow);
+  border: 1px solid rgba(255, 217, 61, 0.5);
+  border-radius: 4px;
+  padding: 0.15rem 0.45rem;
+  background: rgba(255, 217, 61, 0.08);
+}
+
+.outcomeArena .outcomeInner {
+  border-color: rgba(255, 217, 61, 0.7);
+  box-shadow: 0 0 40px rgba(255, 217, 61, 0.18), inset 0 0 30px rgba(255, 217, 61, 0.05);
+  background: linear-gradient(180deg, rgba(38, 28, 10, 0.92), rgba(13, 19, 33, 0.92));
+}
+
+.outcomeTrophy {
+  color: var(--warning-yellow);
+  filter: drop-shadow(0 0 10px rgba(255, 217, 61, 0.6));
+  animation: trophyPop 0.7s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+@keyframes trophyPop {
+  from { transform: scale(0.4) rotate(-12deg); opacity: 0; }
+  to { transform: scale(1) rotate(0); opacity: 1; }
+}
+
+.outcomeTagline {
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--warning-yellow);
+  opacity: 0.85;
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arenaMarquee,
+  .outcomeTrophy {
+    animation: none;
+  }
+}
+
 .categoryBadge {
   font-family: var(--font-jetbrains), monospace;
   font-size: 0.66rem;

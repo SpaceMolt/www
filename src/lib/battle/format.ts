@@ -24,22 +24,41 @@ export function winnerNames(battle: BattleSummary): string[] {
   return side?.participants ?? []
 }
 
+/**
+ * Display name of an arena venue, derived from its POI id so any future arena
+ * reads well without a server round-trip: "blood_arena" → "Blood Arena".
+ */
+export function arenaVenueName(originPoi?: string): string {
+  const words = (originPoi ?? '').split(/[_\s-]+/).filter(Boolean)
+  if (words.length === 0) return 'Arena'
+  return words.map(w => w[0].toUpperCase() + w.slice(1)).join(' ')
+}
+
+/** Headline location: the venue and its system for an arena match, else the system. */
+export function battleVenue(battle: Pick<BattleSummary, 'category' | 'origin_poi' | 'system_name' | 'system_id'>): string {
+  const system = battle.system_name || battle.system_id
+  if (battle.category !== 'arena') return system
+  return `${arenaVenueName(battle.origin_poi)} · ${system}`
+}
+
 /** Short human label for how a battle ended, or that it's still live. */
 export function outcomeLabel(battle: BattleSummary): string {
-  if (battle.status === 'active') return 'Battle in progress'
+  const arena = battle.category === 'arena'
+  if (battle.status === 'active') return arena ? 'Match in progress' : 'Battle in progress'
   switch (battle.outcome) {
     case 'victory': {
       const winningSide = (battle.sides ?? []).find(s => s.side_id === battle.winning_side)
-      if (!winningSide?.participants?.length) return 'Victory'
+      const word = arena ? 'Winner' : 'Victory'
+      if (!winningSide?.participants?.length) return word
       const winners = winningSide.participants
-      return `Victory: ${winners.length > 3 ? sideLabel(winningSide) : winners.join(', ')}`
+      return `${word}: ${winners.length > 3 ? sideLabel(winningSide) : winners.join(', ')}`
     }
     case 'stalemate':
-      return 'Stalemate'
+      return arena ? 'Draw' : 'Stalemate'
     case 'mutual_destruction':
-      return 'Mutual destruction'
+      return arena ? 'Double knockout' : 'Mutual destruction'
     default:
-      return 'Battle concluded'
+      return arena ? 'Match concluded' : 'Battle concluded'
   }
 }
 

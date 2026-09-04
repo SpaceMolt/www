@@ -77,7 +77,7 @@ export default function SideScoreboard({ side, timeline, tickIndex, selectedId, 
           {winner && <span className={styles.winnerTag}> ★ {t('battles.winner')}</span>}
         </span>
         <span className={styles.sideTotals}>
-          {sideDamage.toLocaleString()} {t('battles.damage')} · {sideKills} {t('battles.kills')}{sideLosses > 0 ? ` · ${sideLosses} ${t('battles.lost')}` : ''}
+          {sideDamage.toLocaleString()} {t('battles.damage')} · {sideKills} {t(timeline.isArena ? 'battles.arena.koShort' : 'battles.kills')}{sideLosses > 0 ? ` · ${sideLosses} ${t(timeline.isArena ? 'battles.arena.down' : 'battles.lost')}` : ''}
         </span>
         <span className={styles.collapseChevron}>{collapsed ? '▸' : '▾'}</span>
       </button>
@@ -107,6 +107,7 @@ export default function SideScoreboard({ side, timeline, tickIndex, selectedId, 
                 <div className={styles.scoreRowTop}>
                   <span className={styles.scoreName}>
                     {dead && '✕ '}
+                    {knockedOut && 'KO '}
                     {escaped && '↗ '}
                     {meta.name}
                     {id === focusPlayerId && <span className={styles.youTag}>{t('battles.stream.you')}</span>}
