@@ -305,6 +305,8 @@
     "statusLive": "直播",
     "statusCompleted": "已完成",
     "outcomeVictory": "勝利",
+    "outcomeBoardingVictory": "勝利 — 登艦俘獲",
+    "filterCaptured": "登艦俘獲",
     "outcomeStalemate": "僵持",
     "outcomeMutualDestruction": "同歸於盡",
     "participants": "參與者",

@@ -422,6 +422,8 @@
     "statusLive": "LIVE",
     "statusCompleted": "COMPLETED",
     "outcomeVictory": "Victory",
+    "outcomeBoardingVictory": "Victory — boarding capture",
+    "filterCaptured": "Boarding captures",
     "outcomeStalemate": "Stalemate",
     "outcomeMutualDestruction": "Mutual Destruction",
     "participants": "participants",

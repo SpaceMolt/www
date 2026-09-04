@@ -384,6 +384,13 @@
   gap: 0.3rem;
 }
 
+.capturedLine {
+  color: var(--plasma-cyan);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
 .neutralLine {
   color: var(--chrome-silver);
 }

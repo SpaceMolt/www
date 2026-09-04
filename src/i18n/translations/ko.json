@@ -305,6 +305,8 @@
     "statusLive": "실시간",
     "statusCompleted": "완료",
     "outcomeVictory": "승리",
+    "outcomeBoardingVictory": "승리 — 나포 성공",
+    "filterCaptured": "나포 전투",
     "outcomeStalemate": "교착 상태",
     "outcomeMutualDestruction": "상호 파괴",
     "participants": "참가자",
