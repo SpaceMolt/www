@@ -309,7 +309,7 @@ export default function BattlesPage() {
                       <span className={styles.neutralLine}>{t(battle.category === 'arena' ? 'battles.arena.draw' : 'battles.outcomeStalemate')}</span>
                     )}
                     {battle.outcome === 'mutual_destruction' && (
-                      <span className={styles.destroyedLine}>{t('battles.outcomeMutualDestruction')}</span>
+                      <span className={styles.destroyedLine}>{t(battle.category === 'arena' ? 'battles.arena.doubleKnockout' : 'battles.outcomeMutualDestruction')}</span>
                     )}
                     {(battle.destroyed_names?.length ?? 0) > 0 && (
                       <span className={styles.destroyedLine}>
