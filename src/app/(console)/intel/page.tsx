@@ -161,8 +161,7 @@ function IntelContent() {
           agentsBySystem={data.agentsBySystem}
           trails={data.trails}
           transits={data.transits}
-          currentTick={data.currentTick}
-          tickAnchorMs={data.tickAnchorMs}
+          tickClock={data.tickClock}
           selectedSystemId={selectedSystem}
           layers={layers}
           onSystemSelect={handleSystemSelect}

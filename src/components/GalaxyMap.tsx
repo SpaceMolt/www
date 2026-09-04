@@ -10,14 +10,15 @@ import styles from './GalaxyMap.module.css'
 import { subscribeToEvents } from '@/lib/sharedEventSource'
 import {
   displayedPublicTransitOpacity,
-  displayedPublicTransitProgress,
   FLEET_DOT_SPACING,
   forEachPublicTransitFormationPoint,
   publicTransitFormation,
+  publicTransitPose,
   reconcilePublicTransitPresentation,
   type PublicTransit,
   type PublicTransitPresentation,
 } from './publicTransit'
+import { TickClock } from '@/lib/transitMotion'
 import { configureHiDPICanvas, logicalCanvasSize } from './canvasResolution'
 import { stationsVisibleOnPublicMap } from '@/lib/stationPresentation'
 
@@ -283,10 +284,13 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
     travelPings: [] as { wx: number; wy: number; startTime: number; color: string }[],
     publicTransitPresentation: {
       displayed: [],
-      retiredKeys: new Map<string, number>(),
       latestSnapshotTick: 0,
     } as PublicTransitPresentation,
     publicTransitPaths: new Map<number, Path2D>(),
+    // Server tick estimate, fed by every activity poll and feed event, so the
+    // dots move on the server's timeline rather than on when we happened to
+    // first see them.
+    tickClock: new TickClock(),
     pendingSystemId: null as string | null,
   })
 
@@ -661,27 +665,24 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
       if (!s.mapData || s.publicTransitPresentation.displayed.length === 0) return
 
       const nowMs = Date.now()
+      const tickNow = s.tickClock.now(nowMs)
+      if (tickNow === null) return
+      const systemPosition = (id: string) => s.systemsById.get(id)
       ctx.save()
       ctx.fillStyle = '#67e8f9'
       ctx.shadowColor = '#22d3ee'
       ctx.shadowBlur = TRANSIT_GLOW_RADIUS
       for (const transit of s.publicTransitPresentation.displayed) {
-        const progress = displayedPublicTransitProgress(transit, nowMs)
-        const opacity = displayedPublicTransitOpacity(transit, nowMs)
-        if (progress >= 1 || opacity <= 0) continue
+        const opacity = displayedPublicTransitOpacity(transit, nowMs, tickNow)
+        if (opacity <= 0) continue
 
-        const from = s.systemsById.get(transit.from_system)
-        const to = s.systemsById.get(transit.to_system)
-        if (!from || !to) continue
+        const pose = publicTransitPose(transit, tickNow, systemPosition)
+        if (!pose) continue
 
-        const fromPos = worldToScreen(from.x, from.y)
-        const toPos = worldToScreen(to.x, to.y)
-        const x = fromPos.x + (toPos.x - fromPos.x) * progress
-        const y = fromPos.y + (toPos.y - fromPos.y) * progress
-        const dx = toPos.x - fromPos.x
-        const dy = toPos.y - fromPos.y
-        const length = Math.hypot(dx, dy)
-        if (length === 0) continue
+        const { x, y } = worldToScreen(pose.x, pose.y)
+        const ahead = worldToScreen(pose.x + pose.dirX, pose.y + pose.dirY)
+        const dx = ahead.x - x
+        const dy = ahead.y - y
 
         const formation = publicTransitFormation(transit.count)
         const halfForward = ((formation.rows - 1) * FLEET_DOT_SPACING) / 2 + TRANSIT_DOT_RADIUS
@@ -1873,11 +1874,15 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
           system.is_stronghold = !!activityData.strongholds[system.id]
         }
       }
-      if (activityData.transits) {
+      const nowMs = Date.now()
+      if (activityData.current_tick) s.tickClock.observe(activityData.current_tick, nowMs)
+      const tickNow = s.tickClock.now(nowMs)
+      if (activityData.transits && tickNow !== null) {
         s.publicTransitPresentation = reconcilePublicTransitPresentation(
           s.publicTransitPresentation,
           activityData.transits,
-          Date.now(),
+          nowMs,
+          tickNow,
           activityData.current_tick,
         )
         const activeFormationSizes = new Set(
@@ -2035,6 +2040,9 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
     const unsubscribeActivityFeed = subscribeToEvents((raw) => {
       try {
         const data = JSON.parse(raw) as ActivityEvent
+        // Every event carries the server tick it happened on: a live clock
+        // signal that keeps the dots honest between activity polls.
+        if (typeof data.tick === 'number') s.tickClock.observe(data.tick)
 
         // Track player system changes for travel paths
         const player = data.data?.player

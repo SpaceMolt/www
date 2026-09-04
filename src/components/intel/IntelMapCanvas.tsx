@@ -14,6 +14,12 @@ import type {
   TrailSegment,
   TransitMarker,
 } from '@/lib/intelTypes'
+import {
+  driftDirection,
+  driftPosition,
+  transitProgress,
+  type TickClock,
+} from '@/lib/transitMotion'
 import styles from './IntelMapCanvas.module.css'
 
 // ── Constants ──────────────────────────────────────────────────────────
@@ -38,8 +44,8 @@ const UNKNOWN_ALPHA = 0.3
 // Agent-system labels render well before general labels, but still hide at
 // far zoom where a big fleet's labels would collapse into overlapping mush.
 const AGENT_LABEL_MIN_ZOOM = 0.045
-/** Engine tick rate: a fixed 10s. Used to advance the tick between clock updates. */
-const TICK_MS = 10_000
+/** How far a void drift's projection is drawn ahead of the ship, in world units. */
+const VOID_PROJECTION_LENGTH = 2_500
 export const EMPIRE_NAMES: Record<string, string> = {
   solarian: 'Solarian Confederacy',
   voidborn: 'Voidborn Collective',
@@ -56,6 +62,7 @@ export function buildTrailFocus(trails: TrailSegment[], transits: TransitMarker[
   const connections = new Set<string>()
   const addSegment = (segment: Pick<TrailSegment, 'from' | 'to'>) => {
     systems.add(segment.from)
+    if (!segment.to) return // a void drift has no destination
     systems.add(segment.to)
     connections.add(trailConnectionKey(segment.from, segment.to))
   }
@@ -125,21 +132,6 @@ export interface IntelMapCanvasHandle {
   panToSystem: (systemId: string) => void
 }
 
-/**
- * How far along its jump an agent is, 0..1.
- *
- * Clamped at both ends: a jump whose arrival tick has passed but which the next
- * poll has not yet cleared would otherwise overshoot past the destination, and a
- * server without start_tick (older deploy) yields a degenerate span — park the
- * dot at the origin rather than render NaN.
- */
-function transitProgress(transit: TransitMarker, tickNow: number): number {
-  const span = transit.arrivalTick - transit.startTick
-  if (!Number.isFinite(span) || span <= 0) return 0
-  const elapsed = tickNow - transit.startTick
-  return Math.min(1, Math.max(0, elapsed / span))
-}
-
 interface IntelMapCanvasProps {
   systems: IntelMapSystem[]
   exploredSystems: Set<string>
@@ -149,9 +141,8 @@ interface IntelMapCanvasProps {
   agentsBySystem: Map<string, IntelAgent[]>
   trails: TrailSegment[]
   transits: TransitMarker[]
-  /** Server tick from the last snapshot, and the wall-clock at which it arrived */
-  currentTick: number | null
-  tickAnchorMs: number
+  /** Server tick estimate; read every frame so in-flight agents advance smoothly */
+  tickClock: TickClock
   selectedSystemId: string | null
   layers: IntelLayerState
   onSystemSelect: (id: string) => void
@@ -181,8 +172,7 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
       agentsBySystem,
       trails,
       transits,
-      currentTick,
-      tickAnchorMs,
+      tickClock,
       selectedSystemId,
       layers,
       onSystemSelect,
@@ -241,18 +231,8 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
     const trailFocusRef = useRef(trailFocus)
     trailFocusRef.current = trailFocus
 
-    // Estimated server tick right now: the last tick we were told about, plus the
-    // wall-clock elapsed since it landed. The render loop calls this every frame so
-    // an in-flight agent advances smoothly rather than stepping once per poll. Its
-    // accuracy rests on how fresh that anchor is, which is why the tick is taken
-    // from the event feed as it happens and not only from the 20s snapshot.
-    const tickInfoRef = useRef({ tick: currentTick, anchorMs: tickAnchorMs })
-    tickInfoRef.current = { tick: currentTick, anchorMs: tickAnchorMs }
-    const tickNowRef = useRef(() => {
-      const { tick, anchorMs } = tickInfoRef.current
-      if (tick === null) return 0
-      return tick + (Date.now() - anchorMs) / TICK_MS
-    })
+    const tickClockRef = useRef(tickClock)
+    tickClockRef.current = tickClock
     const selectedRef = useRef(selectedSystemId)
     selectedRef.current = selectedSystemId
     const layersRef = useRef(layers)
@@ -490,33 +470,89 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
     const drawTransits = useCallback(
       (ctx: CanvasRenderingContext2D) => {
         if (!layersRef.current.agents) return
+        const tickNow = tickClockRef.current.now()
+        if (tickNow === null) return
         const byId = systemsByIdRef.current
-        const s = stateRef.current
         ctx.save()
         for (const transit of transitsRef.current) {
-          const fromSys = byId.get(transit.from)
-          const toSys = byId.get(transit.to)
-          if (!fromSys || !toSys) continue
-          const from = worldToScreen(fromSys.x, fromSys.y)
-          const to = worldToScreen(toSys.x, toSys.y)
+          let x: number
+          let y: number
+          if (transit.pathfinder) {
+            const at = driftPosition(transit.pathfinder, transit.startTick, transit.arrivalTick, tickNow)
+            const here = worldToScreen(at.x, at.y)
+            x = here.x
+            y = here.y
 
-          // Faint guide line for the jump in progress
-          ctx.strokeStyle = 'rgba(0, 212, 255, 0.25)'
-          ctx.lineWidth = 1.5
-          ctx.setLineDash([4, 6])
-          ctx.beginPath()
-          ctx.moveTo(from.x, from.y)
-          ctx.lineTo(to.x, to.y)
-          ctx.stroke()
-          ctx.setLineDash([])
+            // The route flown so far: every leg origin, then the ship.
+            const waypoints = transit.waypoints?.length
+              ? transit.waypoints
+              : [{ x: transit.pathfinder.origin_x, y: transit.pathfinder.origin_y }]
+            ctx.strokeStyle = transit.color
+            ctx.globalAlpha = 0.6
+            ctx.lineWidth = 2
+            ctx.lineCap = 'round'
+            ctx.lineJoin = 'round'
+            ctx.beginPath()
+            waypoints.forEach((point, index) => {
+              const screen = worldToScreen(point.x, point.y)
+              if (index === 0) ctx.moveTo(screen.x, screen.y)
+              else ctx.lineTo(screen.x, screen.y)
+            })
+            ctx.lineTo(x, y)
+            ctx.stroke()
+            ctx.globalAlpha = 1
 
-          // Where the agent actually is: the fraction of the flight elapsed.
-          // The server tick only advances every 10s and we only poll every 20s,
-          // so estimate the tick from the last snapshot plus wall-clock since,
-          // otherwise the dot would stand still and jerk forward once a poll.
-          const t = transitProgress(transit, tickNowRef.current())
-          const x = from.x + (to.x - from.x) * t
-          const y = from.y + (to.y - from.y) * t
+            // Where the current heading leads: the system it will drop out at,
+            // or nothing at all.
+            const toSys = byId.get(transit.to)
+            let end: { x: number; y: number }
+            if (toSys) {
+              end = worldToScreen(toSys.x, toSys.y)
+            } else {
+              const dir = driftDirection(transit.pathfinder)
+              end = worldToScreen(
+                at.x + dir.x * VOID_PROJECTION_LENGTH,
+                at.y + dir.y * VOID_PROJECTION_LENGTH,
+              )
+            }
+            ctx.strokeStyle = toSys ? 'rgba(0, 212, 255, 0.35)' : 'rgba(0, 212, 255, 0.2)'
+            ctx.lineWidth = 1.5
+            ctx.setLineDash([4, 6])
+            ctx.beginPath()
+            ctx.moveTo(x, y)
+            ctx.lineTo(end.x, end.y)
+            ctx.stroke()
+            ctx.setLineDash([])
+            if (toSys) {
+              ctx.strokeStyle = 'rgba(0, 212, 255, 0.7)'
+              ctx.lineWidth = 1.5
+              ctx.beginPath()
+              ctx.arc(end.x, end.y, NODE_RADIUS * 2, 0, Math.PI * 2)
+              ctx.stroke()
+            }
+          } else {
+            const fromSys = byId.get(transit.from)
+            const toSys = byId.get(transit.to)
+            if (!fromSys || !toSys) continue
+            const from = worldToScreen(fromSys.x, fromSys.y)
+            const to = worldToScreen(toSys.x, toSys.y)
+
+            // Faint guide line for the jump in progress
+            ctx.strokeStyle = 'rgba(0, 212, 255, 0.25)'
+            ctx.lineWidth = 1.5
+            ctx.setLineDash([4, 6])
+            ctx.beginPath()
+            ctx.moveTo(from.x, from.y)
+            ctx.lineTo(to.x, to.y)
+            ctx.stroke()
+            ctx.setLineDash([])
+
+            // Where the agent actually is: the fraction of the flight elapsed.
+            const t = transitProgress(transit.startTick, transit.arrivalTick, tickNow)
+            x = from.x + (to.x - from.x) * t
+            y = from.y + (to.y - from.y) * t
+          }
+
           const glow = ctx.createRadialGradient(x, y, 1, x, y, 10)
           glow.addColorStop(0, 'rgba(0, 212, 255, 0.7)')
           glow.addColorStop(1, 'rgba(0, 212, 255, 0)')
