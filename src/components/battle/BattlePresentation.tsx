@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
-import { Crosshair, ExternalLink, Eye, Radio, RotateCcw, Trophy } from 'lucide-react'
+import { Crosshair, ExternalLink, Radio, RotateCcw, Trophy } from 'lucide-react'
 import styles from './BattleViewer.module.css'
 import { useTranslation } from '@/i18n'
 import type { BattleData } from '@/lib/battle/useBattleData'
@@ -498,14 +498,6 @@ export default function BattlePresentation({ battleId, data, embedded = false, f
         </div>
       </header>}
 
-      {isArena && !embedded && (
-        <div className={styles.arenaMarquee} aria-label={t('battles.arena.exhibition')}>
-          <span className={styles.arenaMarqueeItem}><Trophy size={12} aria-hidden /> {t('battles.arena.exhibition')}</span>
-          <span className={styles.arenaMarqueeItem}><Eye size={12} aria-hidden /> {t('battles.arena.spectatorBroadcast')}</span>
-          <span className={styles.arenaMarqueeItem}>{t('battles.arena.noHarm')}</span>
-        </div>
-      )}
-
       <div className={`${styles.streamStatus} ${data.freshness === 'stale' ? styles.streamStale : ''}`} role="status">
         <span>{t(`battles.stream.${data.freshness === 'stale' ? 'stale' : data.phase}`)}</span>
         {entry && <span>{t('battles.stream.resolvedTick', { tick: entry.tick })}</span>}
@@ -564,7 +556,7 @@ export default function BattlePresentation({ battleId, data, embedded = false, f
               <div className={styles.outcomeInner}>
                 {isArena && <Trophy size={26} aria-hidden className={styles.outcomeTrophy} />}
                 <span className={styles.outcomeLabel}>{outcomeText}</span>
-                {isArena && <span className={styles.outcomeTagline}>{t('battles.arena.noHarm')}</span>}
+                {isArena && <span className={styles.outcomeTagline}>{t('battles.arena.exhibitionClose')}</span>}
                 <span className={styles.outcomeMeta}>
                   {endEntry.duration} ticks · {endEntry.total_damage.toLocaleString()} damage ·{' '}
                   {timeline.isArena ? t('battles.knockedOutCount', { count: endEntry.ships_destroyed }) : `${endEntry.ships_destroyed} ${t('battles.destroyed')}`}

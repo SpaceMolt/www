@@ -508,8 +508,7 @@
     "categoryArena": "Arena",
     "arena": {
       "exhibition": "Exhibition match",
-      "spectatorBroadcast": "Spectator broadcast",
-      "noHarm": "Nothing is lost in the arena: every ship and crew leaves intact",
+      "exhibitionClose": "Exhibition match · all ships leave intact",
       "winner": "Winner",
       "draw": "Draw",
       "doubleKnockout": "Double knockout",
