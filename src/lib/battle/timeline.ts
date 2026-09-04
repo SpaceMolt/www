@@ -7,6 +7,7 @@
 import { getShip, type RawShip } from '@/data/catalog'
 import { archetypeForShip, type GlyphArchetype } from './shipGlyphs'
 import { secondaryAttackKind } from './combatTelemetry'
+import { humanizeID } from './format'
 import {
   type BattleLogEntry,
   type BattleSummary,
@@ -191,11 +192,6 @@ function detectKind(snap: ParticipantSnapshot, actorKind: string): ParticipantKi
   if (snap.ship_class) return 'ship'
   if (/\bdrone\b/i.test(snap.username)) return 'drone'
   return 'creature'
-}
-
-function humanizeID(value: string): string {
-  if (!value) return 'Ship'
-  return value.replace(/[_-]+/g, ' ').replace(/\b\w/g, letter => letter.toUpperCase())
 }
 
 function boardingEventText(
@@ -578,7 +574,7 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
     for (const c of entry.captures ?? []) {
       const capturedActorID = captureTargets.get(c.boarding_operation_id) || c.former_owner_id
       const capturedActor = participants.get(capturedActorID)
-      const shipName = getShip(c.ship_class)?.name || humanizeID(c.ship_class)
+      const shipName = getShip(c.ship_class)?.name || humanizeID(c.ship_class) || 'Ship'
       const formerOwner = c.former_owner_username || name(c.former_owner_id)
       const captor = c.captor_username || name(c.captor_id)
       // An arena boarding win knocks the target out; the ship never changes hands.

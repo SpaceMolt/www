@@ -24,14 +24,14 @@ export function winnerNames(battle: BattleSummary): string[] {
   return side?.participants ?? []
 }
 
-/**
- * Display name of an arena venue, derived from its POI id so any future arena
- * reads well without a server round-trip: "blood_arena" → "Blood Arena".
- */
+/** "blood_arena" → "Blood Arena": a readable name for a catalog or POI id. */
+export function humanizeID(value: string): string {
+  return value.replace(/[_-]+/g, ' ').replace(/\b\w/g, letter => letter.toUpperCase())
+}
+
+/** Display name of an arena venue, derived from its POI id so any future arena reads well. */
 export function arenaVenueName(originPoi?: string): string {
-  const words = (originPoi ?? '').split(/[_\s-]+/).filter(Boolean)
-  if (words.length === 0) return 'Arena'
-  return words.map(w => w[0].toUpperCase() + w.slice(1)).join(' ')
+  return originPoi ? humanizeID(originPoi) : 'Arena'
 }
 
 /** Headline location: the venue and its system for an arena match, else the system. */
