@@ -16,6 +16,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   wildlife: 'WILDLIFE ENCOUNTER',
   pve: 'PVE ENGAGEMENT',
   npc: 'NPC ENGAGEMENT',
+  arena: 'ARENA MATCH',
 }
 
 export async function renderBattleOg(battle: BattleSummary | null): Promise<ImageResponse> {

@@ -50,6 +50,7 @@ const CATEGORY_FILTERS: { key: FilterCategory; labelKey: string }[] = [
   { key: 'police', labelKey: 'battles.filterTypePolice' },
   { key: 'wildlife', labelKey: 'battles.filterTypeWildlife' },
   { key: 'pve', labelKey: 'battles.filterTypePve' },
+  { key: 'arena', labelKey: 'battles.filterTypeArena' },
 ]
 
 export default function BattlesPage() {

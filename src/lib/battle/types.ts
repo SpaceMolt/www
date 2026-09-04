@@ -15,7 +15,7 @@ export interface BattleSide {
   participants?: string[]
 }
 
-export type BattleCategory = 'pvp' | 'pirate' | 'police' | 'wildlife' | 'pve' | 'npc'
+export type BattleCategory = 'pvp' | 'pirate' | 'police' | 'wildlife' | 'pve' | 'npc' | 'arena'
 
 export interface BattleTopDamage {
   username: string
@@ -64,6 +64,7 @@ export const BATTLE_CATEGORY_META: Record<BattleCategory, { labelKey: string; gl
   wildlife: { labelKey: 'battles.categoryWildlife', glyph: '🐙', color: '#2dd4bf' },
   pve: { labelKey: 'battles.categoryPve', glyph: '🤖', color: '#a8c5d6' },
   npc: { labelKey: 'battles.categoryNpc', glyph: '🤖', color: '#6b8fa3' },
+  arena: { labelKey: 'battles.categoryArena', glyph: '◎', color: '#ffd93d' },
 }
 
 // --- Battle log (per-tick replay entries) ---
