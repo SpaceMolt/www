@@ -78,6 +78,21 @@ describe('attack visual planning', () => {
       ],
     })
   })
+
+  it('keeps a direct volley as the cascade anchor when retaliation precedes its collateral', () => {
+    const attacks = [
+      attack({ attacker_id: 'attacker', target_id: 'primary', aoe_radius: 2 }),
+      attack({ attacker_id: 'defender', target_id: 'attacker', secondary_kind: 'retaliation' }),
+      attack({ attacker_id: 'attacker', target_id: 'splash-1', secondary_kind: 'aoe', splash: true }),
+      attack({ attacker_id: 'attacker', target_id: 'splash-2', secondary_kind: 'aoe', splash: true }),
+    ]
+
+    expect(buildAttackVisualPlan(attacks)).toEqual({
+      primaryIndices: [0, 1],
+      orphanSecondaryIndices: [],
+      groups: [{ primaryIndex: 0, kind: 'aoe', secondaryIndices: [2, 3] }],
+    })
+  })
 })
 
 /** Two sides of two, so p4 sits off the central axis and toward-p4 is a

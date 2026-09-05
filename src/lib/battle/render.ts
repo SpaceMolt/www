@@ -202,16 +202,20 @@ export function buildAttackVisualPlan(attacks: AttackLogEntry[]): AttackVisualPl
   const primaryIndices: number[] = []
   const orphanSecondaryIndices: number[] = []
   const groups: AttackVisualGroup[] = []
-  let primaryIndex = -1
+  const primaryByAttacker = new Map<string, number>()
 
   attacks.forEach((attack, index) => {
     const kind = cascadingAttackKind(attack)
     if (!kind) {
-      primaryIndex = index
       primaryIndices.push(index)
+      // Retaliation (and unknown future secondary effects) remains visible as
+      // its own shot, but cannot displace the direct volley that subsequent
+      // collateral rows name as their attacker.
+      if (!attack.secondary_kind) primaryByAttacker.set(attack.attacker_id, index)
       return
     }
-    if (primaryIndex < 0 || attacks[primaryIndex].attacker_id !== attack.attacker_id) {
+    const primaryIndex = primaryByAttacker.get(attack.attacker_id)
+    if (primaryIndex === undefined) {
       orphanSecondaryIndices.push(index)
       return
     }
