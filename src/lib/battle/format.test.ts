@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'bun:test'
-import { formatDuration, outcomeLabel, sideLabel, truncate, winnerNames } from './format'
+import { arenaVenueName, battleVenue, formatDuration, outcomeLabel, sideLabel, truncate, winnerNames } from './format'
 import type { BattleSummary } from './types'
 
 function summary(over: Partial<BattleSummary>): BattleSummary {
@@ -187,5 +187,27 @@ describe('truncate', () => {
 
   it('clips and appends an ellipsis past the limit', () => {
     expect(truncate('12345678901', 10)).toBe('123456789…')
+  })
+})
+
+describe('arena venue', () => {
+  it('title-cases the arena POI id', () => {
+    expect(arenaVenueName('blood_arena')).toBe('Blood Arena')
+    expect(arenaVenueName('grand-coliseum')).toBe('Grand Coliseum')
+    expect(arenaVenueName(undefined)).toBe('Arena')
+  })
+
+  it('prefixes the venue for arena matches only', () => {
+    expect(battleVenue(summary({ category: 'arena', origin_poi: 'blood_arena', system_name: 'Krynn' }))).toBe('Blood Arena · Krynn')
+    expect(battleVenue(summary({ category: 'pvp', origin_poi: 'blood_arena', system_name: 'Krynn' }))).toBe('Krynn')
+  })
+
+  it('labels arena outcomes as match results', () => {
+    expect(outcomeLabel(summary({ category: 'arena', status: 'active' }))).toBe('Match in progress')
+    expect(outcomeLabel(summary({ category: 'arena', outcome: 'stalemate' }))).toBe('Draw')
+    expect(outcomeLabel(summary({
+      category: 'arena', outcome: 'victory', winning_side: 1,
+      sides: [{ side_id: 0, participants: ['a'] }, { side_id: 1, participants: ['b'] }],
+    }))).toBe('Winner: b')
   })
 })

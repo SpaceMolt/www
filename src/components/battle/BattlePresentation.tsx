@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
-import { Crosshair, ExternalLink, Radio, RotateCcw } from 'lucide-react'
+import { Crosshair, ExternalLink, Radio, RotateCcw, Trophy } from 'lucide-react'
 import styles from './BattleViewer.module.css'
 import { useTranslation } from '@/i18n'
 import type { BattleData } from '@/lib/battle/useBattleData'
 import { battleMomentPath, acceptsPlaybackShortcut, reconcilePlayhead } from '@/lib/battle/viewerNavigation'
 import { writeClipboardText } from '@/lib/battle/clipboardFeedback'
 import { buildTimeline } from '@/lib/battle/timeline'
+import { arenaVenueName } from '@/lib/battle/format'
 import {
   makeTransform,
   renderBackground,
@@ -132,12 +133,16 @@ export default function BattlePresentation({ battleId, data, embedded = false, f
     reducedMotionRef.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   }, [])
 
+  const isArena = timeline.isArena
+  const venue = arenaVenueName(summary?.origin_poi)
+
   // --- Page title ---
   useEffect(() => {
     if (embedded) return
     const sys = summary?.system_name || entries[0]?.system_id
-    document.title = sys ? `Battle in ${sys} - SpaceMolt` : 'Battle Replay - SpaceMolt'
-  }, [summary, entries, embedded])
+    if (isArena) document.title = `${venue} · ${sys ?? 'Arena'} - SpaceMolt`
+    else document.title = sys ? `Battle in ${sys} - SpaceMolt` : 'Battle Replay - SpaceMolt'
+  }, [summary, entries, embedded, isArena, venue])
 
   // --- Canvas sizing + background ---
   useEffect(() => {
@@ -154,13 +159,13 @@ export default function BattlePresentation({ battleId, data, embedded = false, f
       canvas.style.width = `${rect.width}px`
       canvas.style.height = `${rect.height}px`
       if (!bgCanvasRef.current) bgCanvasRef.current = document.createElement('canvas')
-      renderBackground(bgCanvasRef.current, rect.width, rect.height, dpr, battleId, SIDE_COLORS)
+      renderBackground(bgCanvasRef.current, rect.width, rect.height, dpr, battleId, SIDE_COLORS, isArena)
     }
     resize()
     const ro = new ResizeObserver(resize)
     ro.observe(stage)
     return () => ro.disconnect()
-  }, [battleId, ready])
+  }, [battleId, ready, isArena])
 
   // --- Master animation loop: clock + arena drawing ---
   useEffect(() => {
@@ -369,13 +374,15 @@ export default function BattlePresentation({ battleId, data, embedded = false, f
     if (!endEntry) return ''
     if (endEntry.outcome === 'victory') {
       const side = timeline.sides.find(s => s.sideId === endEntry.winning_side)
-      const label = t((endEntry.ships_captured ?? 0) > 0 ? 'battles.outcomeBoardingVictory' : 'battles.outcomeVictory')
-      return `${label} — ${side?.label ?? `Side ${endEntry.winning_side}`}`
+      const label = isArena
+        ? 'battles.arena.winner'
+        : (endEntry.ships_captured ?? 0) > 0 ? 'battles.outcomeBoardingVictory' : 'battles.outcomeVictory'
+      return `${t(label)} — ${side?.label ?? `Side ${endEntry.winning_side}`}`
     }
-    if (endEntry.outcome === 'stalemate') return t('battles.outcomeStalemate')
-    if (endEntry.outcome === 'mutual_destruction') return t('battles.outcomeMutualDestruction')
+    if (endEntry.outcome === 'stalemate') return t(isArena ? 'battles.arena.draw' : 'battles.outcomeStalemate')
+    if (endEntry.outcome === 'mutual_destruction') return t(isArena ? 'battles.arena.doubleKnockout' : 'battles.outcomeMutualDestruction')
     return endEntry.outcome
-  }, [endEntry, timeline.sides, t])
+  }, [endEntry, timeline.sides, t, isArena])
 
   if (loading) {
     return (
@@ -403,10 +410,11 @@ export default function BattlePresentation({ battleId, data, embedded = false, f
   }
 
   return (
-    <div ref={rootRef} className={`${styles.viewer} ${embedded ? styles.embedded : ''}`} tabIndex={0} role="region" aria-label={t('battles.stream.viewerLabel')} onKeyDown={onKey}>
+    <div ref={rootRef} className={`${styles.viewer} ${embedded ? styles.embedded : ''} ${isArena ? styles.viewerArena : ''}`} tabIndex={0} role="region" aria-label={t('battles.stream.viewerLabel')} onKeyDown={onKey}>
       {embedded ? (
         <header className={styles.embeddedHeader}>
           <span className={styles.embeddedMode}><Radio size={12} aria-hidden /> {t(isLive && follow ? 'battles.stream.following' : 'battles.stream.recorded')}</span>
+          {isArena && <span className={styles.arenaChip}><Trophy size={11} aria-hidden /> {t('battles.arena.exhibition')}</span>}
           <div className={styles.embeddedActions}>
             {focusPlayerId && timeline.participants.has(focusPlayerId) && (
               <button type="button" onClick={() => { resetView(); setSelectedId(focusPlayerId) }}>
@@ -424,8 +432,9 @@ export default function BattlePresentation({ battleId, data, embedded = false, f
             ←
           </Link>
           <div>
+            {isArena && <div className={styles.arenaKicker}><Trophy size={11} aria-hidden /> {t('battles.arena.exhibition')} · {summary?.system_name || entry?.system_id || t('battles.unknownSystem')}</div>}
             <h1 className={styles.title}>
-              {summary?.system_name || entry?.system_id || t('battles.unknownSystem')}
+              {isArena ? venue : summary?.system_name || entry?.system_id || t('battles.unknownSystem')}
             </h1>
             <div className={styles.subtitle}>
               {timeline.sides.map((s, i) => (
@@ -478,7 +487,12 @@ export default function BattlePresentation({ battleId, data, embedded = false, f
               <b>{(endEntry?.total_damage ?? summary?.total_damage ?? timeline.totalDamage).toLocaleString()}</b>{' '}
               {t('battles.damage')}
             </span>
-            {(endEntry?.ships_captured ?? summary?.ships_captured ?? 0) > 0 && (
+            {isArena && (
+              <span>
+                <b>{endEntry?.ships_destroyed ?? summary?.ships_destroyed ?? 0}</b> {t('battles.arena.koShort')}
+              </span>
+            )}
+            {!isArena && (endEntry?.ships_captured ?? summary?.ships_captured ?? 0) > 0 && (
               <span>
                 {t('battles.capturedIntactCount', { count: endEntry?.ships_captured ?? summary?.ships_captured ?? 0 })}
               </span>
@@ -541,13 +555,15 @@ export default function BattlePresentation({ battleId, data, embedded = false, f
           )}
 
           {showOutcome && (
-            <div className={styles.outcomeBanner}>
+            <div className={`${styles.outcomeBanner} ${isArena ? styles.outcomeArena : ''}`}>
               <div className={styles.outcomeInner}>
+                {isArena && <Trophy size={26} aria-hidden className={styles.outcomeTrophy} />}
                 <span className={styles.outcomeLabel}>{outcomeText}</span>
+                {isArena && <span className={styles.outcomeTagline}>{t('battles.arena.exhibitionClose')}</span>}
                 <span className={styles.outcomeMeta}>
                   {endEntry.duration} ticks · {endEntry.total_damage.toLocaleString()} damage ·{' '}
-                  {endEntry.ships_destroyed} {t('battles.destroyed')}
-                  {(endEntry.ships_captured ?? 0) > 0 && ` · ${t('battles.capturedIntactCount', { count: endEntry.ships_captured ?? 0 })}`}
+                  {isArena ? t('battles.knockedOutCount', { count: endEntry.ships_destroyed }) : `${endEntry.ships_destroyed} ${t('battles.destroyed')}`}
+                  {!isArena && (endEntry.ships_captured ?? 0) > 0 && ` · ${t('battles.capturedIntactCount', { count: endEntry.ships_captured ?? 0 })}`}
                 </span>
                 <button className={styles.replayBtn} onClick={() => { seek(0); setPlaying(true) }}>
                   <RotateCcw size={12} aria-hidden /> {t('battles.replay')}

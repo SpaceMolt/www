@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'bun:test'
 import { buildTimeline } from './timeline'
-import { sampleShips } from './render'
-import type { BattleLogEntry, ParticipantSnapshot } from './types'
+import { buildAttackVisualPlan, sampleShips } from './render'
+import type { AttackLogEntry, BattleLogEntry, ParticipantSnapshot } from './types'
 
 function snap(over: Partial<ParticipantSnapshot>): ParticipantSnapshot {
   return {
@@ -32,6 +32,68 @@ function snap(over: Partial<ParticipantSnapshot>): ParticipantSnapshot {
 function entry(snapshots: ParticipantSnapshot[]): BattleLogEntry {
   return { battle_id: 'b1', system_id: 'sol', tick: 1, snapshots }
 }
+
+function attack(overrides: Partial<AttackLogEntry> = {}): AttackLogEntry {
+  return {
+    attacker_id: 'attacker', target_id: 'primary', zone_distance: 0, weapons: [], raw_damage: 10,
+    weapon_skill_pct: 0, off_buff_pct: 0, pre_hit_damage: 10, hit_chance: 1, hit_roll: 0,
+    hit_success: true, final_damage: 10, shield_damage: 0, hull_damage: 10, damage_type: 'void',
+    ...overrides,
+  }
+}
+
+describe('attack visual planning', () => {
+  it('groups a massive AOE burst behind its one primary attack', () => {
+    const attacks = [
+      attack({ target_id: 'primary', aoe_radius: 2 }),
+      ...Array.from({ length: 99 }, (_, index) => attack({
+        target_id: `splash-${index}`, secondary_kind: 'aoe', splash: true, weapons: [],
+      })),
+    ]
+
+    expect(buildAttackVisualPlan(attacks)).toEqual({
+      primaryIndices: [0],
+      orphanSecondaryIndices: [],
+      groups: [{ primaryIndex: 0, kind: 'aoe', secondaryIndices: Array.from({ length: 99 }, (_, index) => index + 1) }],
+    })
+  })
+
+  it('keeps chain and ammo splash groups separate and never promotes orphan secondary hits', () => {
+    const attacks = [
+      attack({ target_id: 'first' }),
+      attack({ target_id: 'chain-1', secondary_kind: 'chain' }),
+      attack({ target_id: 'chain-2', secondary_kind: 'chain' }),
+      attack({ target_id: 'second' }),
+      attack({ target_id: 'splash-1', secondary_kind: 'ammo_splash', splash: true }),
+      attack({ attacker_id: 'other', target_id: 'orphan', secondary_kind: 'aoe', splash: true }),
+      attack({ attacker_id: 'defender', target_id: 'retaliation', secondary_kind: 'retaliation' }),
+    ]
+
+    expect(buildAttackVisualPlan(attacks)).toEqual({
+      primaryIndices: [0, 3, 6],
+      orphanSecondaryIndices: [5],
+      groups: [
+        { primaryIndex: 0, kind: 'chain', secondaryIndices: [1, 2] },
+        { primaryIndex: 3, kind: 'ammo_splash', secondaryIndices: [4] },
+      ],
+    })
+  })
+
+  it('keeps a direct volley as the cascade anchor when retaliation precedes its collateral', () => {
+    const attacks = [
+      attack({ attacker_id: 'attacker', target_id: 'primary', aoe_radius: 2 }),
+      attack({ attacker_id: 'defender', target_id: 'attacker', secondary_kind: 'retaliation' }),
+      attack({ attacker_id: 'attacker', target_id: 'splash-1', secondary_kind: 'aoe', splash: true }),
+      attack({ attacker_id: 'attacker', target_id: 'splash-2', secondary_kind: 'aoe', splash: true }),
+    ]
+
+    expect(buildAttackVisualPlan(attacks)).toEqual({
+      primaryIndices: [0, 1],
+      orphanSecondaryIndices: [],
+      groups: [{ primaryIndex: 0, kind: 'aoe', secondaryIndices: [2, 3] }],
+    })
+  })
+})
 
 /** Two sides of two, so p4 sits off the central axis and toward-p4 is a
  *  meaningfully different bearing from toward-centre. */

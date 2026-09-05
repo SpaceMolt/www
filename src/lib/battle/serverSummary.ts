@@ -10,9 +10,7 @@ export async function fetchBattleSummary(battleId: string): Promise<BattleSummar
   try {
     const res = await fetch(
       `${API_BASE}/api/battle/summary?battle_id=${encodeURIComponent(battleId)}`,
-      // Only generateMetadata and opengraph-image read this, and a finished
-      // battle's summary is immutable. The live viewer polls client-side.
-      { next: { revalidate: 3600 } },
+      { cache: 'no-store' },
     )
     if (!res.ok) return null
     return (await res.json()) as BattleSummary

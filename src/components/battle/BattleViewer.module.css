@@ -205,6 +205,75 @@
   50% { opacity: 0.35; box-shadow: none; }
 }
 
+/* --- Arena exhibition dressing --- */
+
+.viewerArena .header {
+  border-bottom-color: rgba(255, 217, 61, 0.45);
+  background: linear-gradient(180deg, rgba(38, 28, 10, 0.92), rgba(10, 14, 23, 0.9));
+}
+
+.arenaKicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--warning-yellow);
+  margin-bottom: 0.15rem;
+}
+
+.arenaChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--warning-yellow);
+  border: 1px solid rgba(255, 217, 61, 0.5);
+  border-radius: 4px;
+  padding: 0.15rem 0.45rem;
+  background: rgba(255, 217, 61, 0.08);
+}
+
+.outcomeArena .outcomeInner {
+  border-color: rgba(255, 217, 61, 0.7);
+  box-shadow: 0 0 40px rgba(255, 217, 61, 0.18), inset 0 0 30px rgba(255, 217, 61, 0.05);
+  background: linear-gradient(180deg, rgba(38, 28, 10, 0.92), rgba(13, 19, 33, 0.92));
+}
+
+.outcomeTrophy {
+  color: var(--warning-yellow);
+  filter: drop-shadow(0 0 10px rgba(255, 217, 61, 0.6));
+  animation: trophyPop 0.7s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+@keyframes trophyPop {
+  from { transform: scale(0.4) rotate(-12deg); opacity: 0; }
+  to { transform: scale(1) rotate(0); opacity: 1; }
+}
+
+.outcomeTagline {
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--warning-yellow);
+  opacity: 0.85;
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .outcomeTrophy {
+    animation: none;
+  }
+}
+
 .categoryBadge {
   font-family: var(--font-jetbrains), monospace;
   font-size: 0.66rem;

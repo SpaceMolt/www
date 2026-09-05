@@ -7,6 +7,7 @@
 import { getShip, type RawShip } from '@/data/catalog'
 import { archetypeForShip, type GlyphArchetype } from './shipGlyphs'
 import { secondaryAttackKind } from './combatTelemetry'
+import { humanizeID } from './format'
 import {
   type BattleLogEntry,
   type BattleSummary,
@@ -18,7 +19,7 @@ import {
 
 /** Rendering geometry. Deliberately separate from the server actor identity. */
 export type ParticipantKind = 'ship' | 'drone' | 'creature' | 'station'
-export type ParticipantFate = 'fighting' | 'destroyed' | 'captured' | 'escaped' | 'survived'
+export type ParticipantFate = 'fighting' | 'destroyed' | 'captured' | 'escaped' | 'survived' | 'knocked_out'
 
 export interface ParticipantMeta {
   id: string
@@ -133,6 +134,8 @@ export interface BattleTimeline {
   names: Map<string, string>
   /** Boarding operation to the actor that was actually captured. */
   captureTargets: Map<string, string>
+  /** Consequence-free arena match: kills are knockouts and captures change no hands. */
+  isArena: boolean
 }
 
 const EVENT_COLORS: Record<BattleEventKind, string> = {
@@ -189,11 +192,6 @@ function detectKind(snap: ParticipantSnapshot, actorKind: string): ParticipantKi
   if (snap.ship_class) return 'ship'
   if (/\bdrone\b/i.test(snap.username)) return 'drone'
   return 'creature'
-}
-
-function humanizeID(value: string): string {
-  if (!value) return 'Ship'
-  return value.replace(/[_-]+/g, ' ').replace(/\b\w/g, letter => letter.toUpperCase())
 }
 
 function boardingEventText(
@@ -280,6 +278,7 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
       terminalParticipants.set(participant.player_id, participant)
     }
   }
+  const isArena = summary?.category === 'arena' || entries.some(e => e.arena || e.battle_ended?.category === 'arena')
 
   // Collect side ids across the whole battle so colors stay stable.
   const sideIds = new Set<number>()
@@ -359,6 +358,11 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
         participants.set(snap.player_id, meta)
       }
       meta.lastTickIndex = tickIndex
+      if (meta.fate === 'escaped') {
+        // Back in the snapshots after escaping: a rejoin, not a ghost.
+        meta.fate = 'fighting'
+        meta.fateTickIndex = undefined
+      }
       if (snap.kind && meta.actorKind === 'unknown') meta.actorKind = snap.kind
       if (snap.is_npc !== undefined) meta.isNPC = snap.is_npc
       if (snap.is_boss !== undefined) meta.isBoss = snap.is_boss
@@ -463,7 +467,9 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
         kind: 'burn',
         color: b.destroyed ? EVENT_COLORS.kill : EVENT_COLORS.burn,
         text: b.destroyed
-          ? `${name(b.target_id)} burned to destruction${source} (${b.damage} damage)`
+          ? isArena
+            ? `${name(b.target_id)} knocked out by burn damage${source} (${b.damage} damage)`
+            : `${name(b.target_id)} burned to destruction${source} (${b.damage} damage)`
           : `${name(b.target_id)} took ${b.damage} burn damage${source}${b.ticks_remaining > 0 ? ` (${b.ticks_remaining} ticks left)` : ''}`,
         actorId: b.target_id,
       })
@@ -549,7 +555,8 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
           tick: entry.tick,
           kind: 'escape',
           color: EVENT_COLORS.escape,
-          text: `${name(f.player_id)} escaped to warp!`,
+          text: isArena ? `${name(f.player_id)} withdrew from the match` : `${name(f.player_id)} escaped to warp!`,
+          translation: isArena ? { key: 'battles.withdrewFromMatch', params: { actor: name(f.player_id) } } : undefined,
           actorId: f.player_id,
         })
       } else {
@@ -567,24 +574,27 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
     for (const c of entry.captures ?? []) {
       const capturedActorID = captureTargets.get(c.boarding_operation_id) || c.former_owner_id
       const capturedActor = participants.get(capturedActorID)
-      if (capturedActor) {
-        capturedActor.fate = 'captured'
-        capturedActor.capturedBy = c.captor_username || name(c.captor_id)
-        capturedActor.fateTickIndex = tickIndex
-      }
-      const shipName = getShip(c.ship_class)?.name || humanizeID(c.ship_class)
+      const shipName = getShip(c.ship_class)?.name || humanizeID(c.ship_class) || 'Ship'
       const formerOwner = c.former_owner_username || name(c.former_owner_id)
       const captor = c.captor_username || name(c.captor_id)
+      // An arena boarding win knocks the target out; the ship never changes hands.
+      if (capturedActor) {
+        capturedActor.fate = isArena ? 'knocked_out' : 'captured'
+        if (isArena) capturedActor.killedBy = captor
+        else capturedActor.capturedBy = captor
+        capturedActor.fateTickIndex = tickIndex
+      }
       events.push({
         tickIndex,
         tick: entry.tick,
         kind: 'capture',
         color: EVENT_COLORS.capture,
-        text: `${shipName} captured intact from ${formerOwner} by ${captor}`,
-        translation: {
-          key: 'battles.events.capturedIntact',
-          params: { ship: shipName, formerOwner, captor },
-        },
+        text: isArena
+          ? `${formerOwner} knocked out by ${captor}'s boarding party`
+          : `${shipName} captured intact from ${formerOwner} by ${captor}`,
+        translation: isArena
+          ? { key: 'battles.knockedOutByBoarding', params: { target: formerOwner, captor } }
+          : { key: 'battles.events.capturedIntact', params: { ship: shipName, formerOwner, captor } },
         actorId: c.captor_id,
       })
     }
@@ -592,7 +602,7 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
     for (const k of entry.kills ?? []) {
       const meta = participants.get(k.victim_id)
       if (meta) {
-        meta.fate = 'destroyed'
+        meta.fate = isArena ? 'knocked_out' : 'destroyed'
         meta.killedBy = k.killer_username || name(k.killer_id)
         meta.deathCause = k.cause
         if (k.cause === 'self_destruct') meta.killedBy = undefined
@@ -608,7 +618,7 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
           color: EVENT_COLORS.kill,
           text: k.cause === 'self_destruct'
             ? `${k.victim_username || name(k.victim_id)} self-destructed`
-            : `${k.victim_username || name(k.victim_id)} destroyed by ${k.killer_username || name(k.killer_id)}`,
+            : `${k.victim_username || name(k.victim_id)} ${isArena ? 'knocked out' : 'destroyed'} by ${k.killer_username || name(k.killer_id)}`,
           translation: k.cause === 'self_destruct'
             ? {
                 key: 'battles.events.selfDestructDetonated',
@@ -638,7 +648,9 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
         tick: entry.tick,
         kind: 'end',
         color: EVENT_COLORS.end,
-        text: `${outcomeText} (${e.duration} ticks, ${e.total_damage.toLocaleString()} total damage${e.ships_captured ? `, ${e.ships_captured} captured intact` : ''})`,
+        text: isArena
+          ? `${outcomeText} (${e.duration} ticks, ${e.total_damage.toLocaleString()} total damage, ${e.ships_destroyed} knocked out)`
+          : `${outcomeText} (${e.duration} ticks, ${e.total_damage.toLocaleString()} total damage${e.ships_captured ? `, ${e.ships_captured} captured intact` : ''})`,
       })
       for (const p of e.participants ?? []) {
         const meta = participants.get(p.player_id)
@@ -646,7 +658,7 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
           if (p.kind) meta.actorKind = p.kind
           meta.isNPC = p.is_npc ?? meta.isNPC
           meta.isBoss = p.is_boss ?? meta.isBoss
-          if (meta.fate === 'fighting') meta.fate = p.survived ? 'survived' : 'destroyed'
+          if (meta.fate === 'fighting') meta.fate = p.survived ? 'survived' : isArena ? 'knocked_out' : 'destroyed'
         }
       }
     }
@@ -700,5 +712,6 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
     snapshotAt,
     names,
     captureTargets,
+    isArena,
   }
 }

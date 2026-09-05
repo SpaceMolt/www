@@ -13,7 +13,7 @@ import {
   type BattleCategory,
   type BattleSummary,
 } from '@/lib/battle/types'
-import { formatDuration, winnerNames } from '@/lib/battle/format'
+import { battleVenue, formatDuration, winnerNames } from '@/lib/battle/format'
 import { timeAgo } from '@/lib/format'
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
@@ -50,6 +50,7 @@ const CATEGORY_FILTERS: { key: FilterCategory; labelKey: string }[] = [
   { key: 'police', labelKey: 'battles.filterTypePolice' },
   { key: 'wildlife', labelKey: 'battles.filterTypeWildlife' },
   { key: 'pve', labelKey: 'battles.filterTypePve' },
+  { key: 'arena', labelKey: 'battles.filterTypeArena' },
 ]
 
 export default function BattlesPage() {
@@ -215,7 +216,7 @@ export default function BattlesPage() {
       {!loading && !error && visible.length === 0 && (
         <div className={styles.empty}>
           <p>{t('battles.noBattles')}</p>
-          <p className={styles.emptyHint}>{t('battles.noBattlesHint')}</p>
+          <p className={styles.emptyHint}>{t(category === 'arena' ? 'battles.noBattlesHintArena' : 'battles.noBattlesHint')}</p>
         </div>
       )}
 
@@ -262,7 +263,7 @@ export default function BattlesPage() {
                         <CategoryIcon category={battle.category} size={11} /> {t(catMeta.labelKey)}
                       </span>
                     )}
-                    <span className={styles.systemName}>{battle.system_name || battle.system_id}</span>
+                    <span className={styles.systemName}>{battleVenue(battle)}</span>
                   </div>
                   <span className={styles.cardWhen}>
                     {battle.ended_at ? timeAgo(battle.ended_at) : formatDuration(battle.duration_ticks)}
@@ -314,18 +315,21 @@ export default function BattlesPage() {
                   <div className={styles.cardOutcome}>
                     {winners.length > 0 && (
                       <span className={styles.winnerLine}>
-                        <Trophy size={11} aria-hidden /> {t(capturedNames.length > 0 ? 'battles.outcomeBoardingVictory' : 'battles.outcomeVictory')}: {winners.join(', ')}
+                        <Trophy size={11} aria-hidden /> {t(battle.category === 'arena' ? 'battles.arena.winner' : capturedNames.length > 0 ? 'battles.outcomeBoardingVictory' : 'battles.outcomeVictory')}: {winners.join(', ')}
                       </span>
                     )}
                     {battle.outcome === 'stalemate' && (
-                      <span className={styles.neutralLine}>{t('battles.outcomeStalemate')}</span>
+                      <span className={styles.neutralLine}>{t(battle.category === 'arena' ? 'battles.arena.draw' : 'battles.outcomeStalemate')}</span>
                     )}
                     {battle.outcome === 'mutual_destruction' && (
-                      <span className={styles.destroyedLine}>{t('battles.outcomeMutualDestruction')}</span>
+                      <span className={styles.destroyedLine}>{t(battle.category === 'arena' ? 'battles.arena.doubleKnockout' : 'battles.outcomeMutualDestruction')}</span>
                     )}
                     {(battle.destroyed_names?.length ?? 0) > 0 && (
                       <span className={styles.destroyedLine}>
-                        <Skull size={11} aria-hidden /> {battle.destroyed_names!.join(', ')}
+                        {battle.category === 'arena'
+                          ? <><Trophy size={11} aria-hidden /> {t('battles.knockedOut')}: </>
+                          : <><Skull size={11} aria-hidden /> </>}
+                        {battle.destroyed_names!.join(', ')}
                       </span>
                     )}
                     {capturedNames.length > 0 && (

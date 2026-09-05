@@ -63,7 +63,9 @@ export function wireNotifications(account: Account, store: UiStore): () => void 
     }),
     account.on('battle_left', (left) => {
       const playerId = account.state.player?.id ?? account.loginPayload?.player?.id
-      if (left.player_id === playerId) store.dispatch({ type: 'battle_left' })
+      if (left.player_id !== playerId) return
+      store.dispatch({ type: 'battle_left' })
+      if (left.reason === 'knocked_out') log('combat', 'Knocked out in the arena — ship and crew restored')
     }),
 
     account.on('player_died', (death) => {
