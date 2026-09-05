@@ -79,7 +79,7 @@ describe('instrumentCommands against the real facade', () => {
       }
     }
 
-    await commands.spacemolt.get_system({ id: 'sol' })
+    await commands.spacemolt.get_system()
 
     expect(events).toEqual([])
   })
