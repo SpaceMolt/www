@@ -26,17 +26,17 @@ import type { StorageResponse } from '@spacemolt/lib'
 import { usePlay } from '../../PlayProvider'
 import { ItemName } from '../../ItemTooltip'
 import { Credits, shared } from '../../shared'
-import { titleCase } from '@/lib/format'
 import styles from './StorageView.module.css'
 import { resolveGiftAction, isGiftSubmitDisabled } from './giftValidation'
+import { storageStationOptions, type StorageLocation, type StorageStationOption } from './storageLocations'
 
 // StorageResponse is one generated union across every branch of the unified
 // storage action (self view, faction view, deposit/withdraw/gift results) —
 // narrow to the branch view({target: 'self' | undefined}) actually returns.
+// `locations` is served by the gameserver but is not in @spacemolt/lib's
+// generated types yet, so it is added here (see ./storageLocations).
 type PersonalStorageView = Extract<StorageResponse, { hint: string; ships: Array<unknown> }> & {
-  // The server sends `locations` on every self view (gameserver 0.555.0+); the
-  // generated union predates it.
-  locations?: Array<{ base_id: string }>
+  locations?: StorageLocation[]
 }
 
 interface CargoRow {
@@ -55,11 +55,6 @@ function normalizeCargo(raw: ReturnType<typeof useCargo>): CargoRow[] {
 }
 
 const errorMessage = (err: unknown): string => (err instanceof Error ? err.message : String(err))
-
-/** Station ids for the remote-storage picker, from the structured location list (gh#2070). */
-export function storageStationIds(view: PersonalStorageView | undefined): string[] {
-  return (view?.locations ?? []).map((loc) => loc.base_id)
-}
 
 export function StorageView() {
   const store = useAccountStore()
@@ -85,7 +80,7 @@ export function StorageView() {
   )
 
   // Remote viewing state (undocked)
-  const [remoteStations, setRemoteStations] = useState<string[]>([])
+  const [remoteStations, setRemoteStations] = useState<StorageStationOption[]>([])
   const [selectedStation, setSelectedStation] = useState('')
   const [remoteData, setRemoteData] = useState<PersonalStorageView | null>(null)
   const [remoteLoading, setRemoteLoading] = useState(false)
@@ -115,17 +110,22 @@ export function StorageView() {
       return
     }
     let cancelled = false
+    // Undocked with no station_id, the view succeeds and returns the locations
+    // summary alone: empty base_id, empty items/ships, every station listed.
     store.account.commands.spacemolt_storage.view().then((result) => {
       if (cancelled) return
-      setRemoteStations(storageStationIds(result.structuredContent as PersonalStorageView | undefined))
-    }).catch(() => {
+      setRemoteStations(storageStationOptions(result.structuredContent as PersonalStorageView | undefined))
+    }).catch((err: unknown) => {
       if (cancelled) return
+      // Report the failure. Showing the empty-state copy on an error would tell
+      // the player they store nothing anywhere, which is a different claim.
       setRemoteStations([])
+      reportError(err)
     })
     return () => {
       cancelled = true
     }
-  }, [isDocked, store])
+  }, [isDocked, store, reportError])
 
   // Fetch remote station storage
   useEffect(() => {
@@ -266,9 +266,9 @@ export function StorageView() {
               onChange={(e) => setSelectedStation(e.target.value)}
             >
               <option value="">Select a station...</option>
-              {remoteStations.map((stationId) => (
-                <option key={stationId} value={stationId}>
-                  {titleCase(stationId)}
+              {remoteStations.map((station) => (
+                <option key={station.id} value={station.id}>
+                  {station.label}
                 </option>
               ))}
             </select>
