@@ -374,7 +374,10 @@ export default function BattlePresentation({ battleId, data, embedded = false, f
     if (!endEntry) return ''
     if (endEntry.outcome === 'victory') {
       const side = timeline.sides.find(s => s.sideId === endEntry.winning_side)
-      return `${t(isArena ? 'battles.arena.winner' : 'battles.outcomeVictory')} — ${side?.label ?? `Side ${endEntry.winning_side}`}`
+      const label = isArena
+        ? 'battles.arena.winner'
+        : (endEntry.ships_captured ?? 0) > 0 ? 'battles.outcomeBoardingVictory' : 'battles.outcomeVictory'
+      return `${t(label)} — ${side?.label ?? `Side ${endEntry.winning_side}`}`
     }
     if (endEntry.outcome === 'stalemate') return t(isArena ? 'battles.arena.draw' : 'battles.outcomeStalemate')
     if (endEntry.outcome === 'mutual_destruction') return t(isArena ? 'battles.arena.doubleKnockout' : 'battles.outcomeMutualDestruction')

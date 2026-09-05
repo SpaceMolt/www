@@ -305,6 +305,8 @@
     "statusLive": "IN DIRETTA",
     "statusCompleted": "COMPLETATO",
     "outcomeVictory": "Vittoria",
+    "outcomeBoardingVictory": "Vittoria — cattura all'arrembaggio",
+    "filterCaptured": "Catture all'arrembaggio",
     "outcomeStalemate": "Stallo",
     "outcomeMutualDestruction": "Distruzione reciproca",
     "participants": "partecipanti",
