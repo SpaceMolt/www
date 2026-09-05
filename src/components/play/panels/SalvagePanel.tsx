@@ -474,7 +474,6 @@ export function SalvagePanel() {
                           {modules.map((m) => {
                             const modKey = `loot:${w.id}:mod:${m.id}`
                             const modBusy = actionBusy === modKey
-                            const wearPct = Math.round(m.wear)
                             return (
                               <div key={m.id} className={shared.listCard}>
                                 <span className={shared.listCardName}>
@@ -482,7 +481,6 @@ export function SalvagePanel() {
                                 </span>
                                 <span className={shared.listCardMeta}>
                                   {m.type && <span>{m.type}</span>}
-                                  <span>wear {wearPct}%</span>
                                   <button
                                     className={shared.actionBtn}
                                     onClick={() => handleLootModule(w.id, m.id)}

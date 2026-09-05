@@ -54,7 +54,6 @@ export const TRACKED_COMMANDS: ReadonlySet<string> = new Set([
   'spacemolt.craft',
   'spacemolt.recycle',
   'spacemolt.repair',
-  'spacemolt.repair_module',
   'spacemolt.install_mod',
   'spacemolt.uninstall_mod',
   'spacemolt.use_item',
