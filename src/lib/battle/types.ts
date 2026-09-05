@@ -15,7 +15,7 @@ export interface BattleSide {
   participants?: string[]
 }
 
-export type BattleCategory = 'pvp' | 'pirate' | 'police' | 'wildlife' | 'pve' | 'npc'
+export type BattleCategory = 'pvp' | 'pirate' | 'police' | 'wildlife' | 'pve' | 'npc' | 'arena'
 
 export interface BattleTopDamage {
   username: string
@@ -36,6 +36,9 @@ export interface BattleSummary {
   sides: BattleSide[]
   total_damage: number
   ships_destroyed: number
+  /** Intact ships captured through boarding; omitted by older servers and when zero. */
+  ships_captured?: number
+  captures?: CaptureLogEntry[]
   destroyed_names?: string[]
   /**
    * Real player usernames among the participants (NPC names excluded), so
@@ -61,6 +64,7 @@ export const BATTLE_CATEGORY_META: Record<BattleCategory, { labelKey: string; gl
   wildlife: { labelKey: 'battles.categoryWildlife', glyph: '🐙', color: '#2dd4bf' },
   pve: { labelKey: 'battles.categoryPve', glyph: '🤖', color: '#a8c5d6' },
   npc: { labelKey: 'battles.categoryNpc', glyph: '🤖', color: '#6b8fa3' },
+  arena: { labelKey: 'battles.categoryArena', glyph: '◎', color: '#ffd93d' },
 }
 
 // --- Battle log (per-tick replay entries) ---
@@ -79,10 +83,12 @@ export interface ParticipantSnapshot {
   side_id: number
   /**
    * What this combatant is: player | pirate | police | drone | creature |
-   * station | npc. Absent on logs written before the server tagged its
+   * station | prize | npc. Absent on logs written before the server tagged its
    * snapshots, which is why detectKind() still keeps a heuristic fallback.
    */
   kind?: string
+  is_npc?: boolean
+  is_boss?: boolean
   faction_id?: string
   zone: string
   stance: string
@@ -258,12 +264,17 @@ export interface KillLogEntry {
   victim_id: string
   killer_username: string
   victim_username: string
+  /** combat | self_destruct | police; absent on historical rows. */
+  cause?: string
 }
 
 export interface BattleEndParticipant {
   player_id: string
   username: string
   side_id: number
+  kind?: string
+  is_npc?: boolean
+  is_boss?: boolean
   damage_dealt: number
   damage_taken: number
   kill_count: number
@@ -276,7 +287,49 @@ export interface BattleEndLogEntry {
   duration: number
   total_damage: number
   ships_destroyed: number
+  ships_captured?: number
+  captures?: CaptureLogEntry[]
   participants: BattleEndParticipant[]
+  category?: string
+  participant_names?: string[]
+}
+
+/** Public, privacy-safe aggregate personnel result for one ship and tick. */
+export interface PersonnelCasualtyLogEntry {
+  target_id: string
+  casualties_occurred: boolean
+  incapacitated: boolean
+  triage_applied?: boolean
+  triage_converted?: boolean
+  triage_provider_id?: string
+  triage_provider_ship_id?: string
+}
+
+/** Observable boarding transition; exact force sizes and losses stay private. */
+export interface BoardingStateLogEntry {
+  operation_id: string
+  phase: string
+  actor_id?: string
+  target_id?: string
+  event: string
+  reason?: string
+  casualties_occurred?: boolean
+  attacker_casualties?: boolean
+  defender_casualties?: boolean
+  self_destruct_countdown?: number
+  hull_damage?: number
+  destroyed?: boolean
+}
+
+/** Intact capture record. Captures are not kills or destruction. */
+export interface CaptureLogEntry {
+  boarding_operation_id: string
+  captor_id: string
+  captor_username: string
+  former_owner_id: string
+  former_owner_username: string
+  ship_id: string
+  ship_class: string
 }
 
 export interface BattleLogEntry {
@@ -289,11 +342,16 @@ export interface BattleLogEntry {
   zone_moves?: ZoneMoveLogEntry[]
   attacks?: AttackLogEntry[]
   burns?: BurnLogEntry[]
+  personnel_casualties?: PersonnelCasualtyLogEntry[]
+  boarding?: BoardingStateLogEntry[]
+  captures?: CaptureLogEntry[]
   regen?: RegenLogEntry[]
   fuel?: FuelLogEntry[]
   flee?: FleeLogEntry[]
   joins?: JoinLogEntry[]
   kills?: KillLogEntry[]
+  /** True on every tick of a consequence-free arena match (kills are knockouts). */
+  arena?: boolean
   battle_ended?: BattleEndLogEntry
 }
 
@@ -352,6 +410,9 @@ export function normalizeEntries(entries: BattleLogEntry[]): BattleLogEntry[] {
           DamageTaken?: number
           KillCount?: number
           Survived?: boolean
+          Kind?: string
+          IsNPC?: boolean
+          IsBoss?: boolean
         }
         return {
           player_id: p.player_id ?? legacy.PlayerID ?? '',
@@ -361,6 +422,9 @@ export function normalizeEntries(entries: BattleLogEntry[]): BattleLogEntry[] {
           damage_taken: p.damage_taken ?? legacy.DamageTaken ?? 0,
           kill_count: p.kill_count ?? legacy.KillCount ?? 0,
           survived: p.survived ?? legacy.Survived ?? true,
+          kind: p.kind ?? legacy.Kind,
+          is_npc: p.is_npc ?? legacy.IsNPC,
+          is_boss: p.is_boss ?? legacy.IsBoss,
         }
       })
     }

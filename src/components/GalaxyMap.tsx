@@ -10,14 +10,15 @@ import styles from './GalaxyMap.module.css'
 import { subscribeToEvents } from '@/lib/sharedEventSource'
 import {
   displayedPublicTransitOpacity,
-  displayedPublicTransitProgress,
   FLEET_DOT_SPACING,
   forEachPublicTransitFormationPoint,
   publicTransitFormation,
+  publicTransitPose,
   reconcilePublicTransitPresentation,
   type PublicTransit,
   type PublicTransitPresentation,
 } from './publicTransit'
+import { TickClock } from '@/lib/transitMotion'
 import { configureHiDPICanvas, logicalCanvasSize } from './canvasResolution'
 import { stationsVisibleOnPublicMap } from '@/lib/stationPresentation'
 
@@ -50,6 +51,7 @@ interface POIData {
   id: string
   name: string
   type: string
+  class?: string
   has_base: boolean
   online: number
   players?: PlayerData[]
@@ -150,6 +152,50 @@ const POI_TYPE_ICONS: Record<string, { icon: string; color: string }> = {
   station: { icon: 'B', color: '#00FFFF' },
 }
 
+interface POIPresentation {
+  icon: string
+  color: string
+  typeLabel: string
+}
+
+function humanizePOIClass(poiClass: string): string {
+  return poiClass
+    .split('_')
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+}
+
+/** Public-map presentation for a POI's type-specific classification. */
+export function publicPOIPresentation(
+  poi: Pick<POIData, 'type' | 'class'>,
+): POIPresentation {
+  if (poi.type === 'sun') {
+    if (poi.class === 'BH') {
+      return { icon: 'BH', color: '#A78BFA', typeLabel: 'Black Hole' }
+    }
+
+    return {
+      ...POI_TYPE_ICONS.sun,
+      typeLabel: poi.class ? `Star · ${poi.class}` : 'Star',
+    }
+  }
+
+  if (poi.type === 'planet') {
+    return {
+      ...POI_TYPE_ICONS.planet,
+      typeLabel: poi.class
+        ? `Planet · ${humanizePOIClass(poi.class)}`
+        : 'Planet',
+    }
+  }
+
+  return {
+    ...(POI_TYPE_ICONS[poi.type] || { icon: '?', color: '#5a6a7a' }),
+    typeLabel: poi.type.replace(/_/g, ' '),
+  }
+}
+
 const TOAST_SZ = 16
 
 const ICON_MAP: Record<string, ReactNode> = {
@@ -238,10 +284,13 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
     travelPings: [] as { wx: number; wy: number; startTime: number; color: string }[],
     publicTransitPresentation: {
       displayed: [],
-      retiredKeys: new Map<string, number>(),
       latestSnapshotTick: 0,
     } as PublicTransitPresentation,
     publicTransitPaths: new Map<number, Path2D>(),
+    // Server tick estimate, fed by every activity poll and feed event, so the
+    // dots move on the server's timeline rather than on when we happened to
+    // first see them.
+    tickClock: new TickClock(),
     pendingSystemId: null as string | null,
   })
 
@@ -616,27 +665,24 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
       if (!s.mapData || s.publicTransitPresentation.displayed.length === 0) return
 
       const nowMs = Date.now()
+      const tickNow = s.tickClock.now(nowMs)
+      if (tickNow === null) return
+      const systemPosition = (id: string) => s.systemsById.get(id)
       ctx.save()
       ctx.fillStyle = '#67e8f9'
       ctx.shadowColor = '#22d3ee'
       ctx.shadowBlur = TRANSIT_GLOW_RADIUS
       for (const transit of s.publicTransitPresentation.displayed) {
-        const progress = displayedPublicTransitProgress(transit, nowMs)
-        const opacity = displayedPublicTransitOpacity(transit, nowMs)
-        if (progress >= 1 || opacity <= 0) continue
+        const opacity = displayedPublicTransitOpacity(transit, nowMs, tickNow)
+        if (opacity <= 0) continue
 
-        const from = s.systemsById.get(transit.from_system)
-        const to = s.systemsById.get(transit.to_system)
-        if (!from || !to) continue
+        const pose = publicTransitPose(transit, tickNow, systemPosition)
+        if (!pose) continue
 
-        const fromPos = worldToScreen(from.x, from.y)
-        const toPos = worldToScreen(to.x, to.y)
-        const x = fromPos.x + (toPos.x - fromPos.x) * progress
-        const y = fromPos.y + (toPos.y - fromPos.y) * progress
-        const dx = toPos.x - fromPos.x
-        const dy = toPos.y - fromPos.y
-        const length = Math.hypot(dx, dy)
-        if (length === 0) continue
+        const { x, y } = worldToScreen(pose.x, pose.y)
+        const ahead = worldToScreen(pose.x + pose.dirX, pose.y + pose.dirY)
+        const dx = ahead.x - x
+        const dy = ahead.y - y
 
         const formation = publicTransitFormation(transit.count)
         const halfForward = ((formation.rows - 1) * FLEET_DOT_SPACING) / 2 + TRANSIT_DOT_RADIUS
@@ -873,49 +919,13 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
           ctx.stroke()
         }
 
-        // Active battle indicator
-        if (system.has_battle) {
-          const battlePhase =
-            ((s.animationTime * 0.003 + system.y * 0.001) %
-              (Math.PI * 2))
-          const battleAlpha = 0.35 + Math.sin(battlePhase) * 0.2
-          const battleRadius = NODE_RADIUS * 3.5 + Math.sin(battlePhase) * NODE_RADIUS * 0.5
-
-          // Pulsing orange/red glow
-          const gradient = ctx.createRadialGradient(
-            pos.x,
-            pos.y,
-            NODE_RADIUS,
-            pos.x,
-            pos.y,
-            battleRadius,
-          )
-          gradient.addColorStop(
-            0,
-            `rgba(230, 57, 70, ${battleAlpha})`,
-          )
-          gradient.addColorStop(0.6, `rgba(255, 165, 0, ${battleAlpha * 0.4})`)
-          gradient.addColorStop(1, 'rgba(255, 165, 0, 0)')
-          ctx.fillStyle = gradient
-          ctx.beginPath()
-          ctx.arc(pos.x, pos.y, battleRadius, 0, Math.PI * 2)
-          ctx.fill()
-
-          // Rotating ring
-          const ringAlpha = 0.5 + Math.sin(battlePhase * 2) * 0.2
-          ctx.strokeStyle = `rgba(230, 57, 70, ${ringAlpha})`
-          ctx.lineWidth = 1.5
-          ctx.beginPath()
-          ctx.arc(pos.x, pos.y, NODE_RADIUS * 2.8, battlePhase, battlePhase + Math.PI * 1.2)
-          ctx.stroke()
-          ctx.beginPath()
-          ctx.arc(pos.x, pos.y, NODE_RADIUS * 2.8, battlePhase + Math.PI, battlePhase + Math.PI * 2.2)
-          ctx.stroke()
-        }
-
         // Node
         const nodeRadius = isHomeSystem ? NODE_RADIUS * 1.6 : NODE_RADIUS
         const hoverScale = isHovered ? 1.5 : 1.0
+        // Outermost ring this system draws below, so the battle indicator can clear it.
+        const markerRadius =
+          nodeRadius * hoverScale +
+          (isHomeSystem ? 12 : system.has_station ? 3 : 0)
         ctx.fillStyle =
           isStronghold && !system.empire ? '#f97316' : color
         ctx.beginPath()
@@ -982,6 +992,52 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
           )
           ctx.stroke()
           if (system.has_faction_station) ctx.setLineDash([])
+        }
+
+        // Active battle indicator, drawn above the marker so a capital's disc
+        // and rings cannot hide it.
+        if (system.has_battle) {
+          const battlePhase =
+            ((s.animationTime * 0.003 + system.y * 0.001) %
+              (Math.PI * 2))
+          const battleAlpha = 0.35 + Math.sin(battlePhase) * 0.2
+          const battleRadius =
+            markerRadius +
+            NODE_RADIUS * 2.5 +
+            Math.sin(battlePhase) * NODE_RADIUS * 0.5
+
+          // Pulsing orange/red glow, drawn as a ring so the marker stays visible
+          const gradient = ctx.createRadialGradient(
+            pos.x,
+            pos.y,
+            markerRadius,
+            pos.x,
+            pos.y,
+            battleRadius,
+          )
+          gradient.addColorStop(
+            0,
+            `rgba(230, 57, 70, ${battleAlpha})`,
+          )
+          gradient.addColorStop(0.6, `rgba(255, 165, 0, ${battleAlpha * 0.4})`)
+          gradient.addColorStop(1, 'rgba(255, 165, 0, 0)')
+          ctx.fillStyle = gradient
+          ctx.beginPath()
+          ctx.arc(pos.x, pos.y, battleRadius, 0, Math.PI * 2)
+          ctx.arc(pos.x, pos.y, markerRadius, 0, Math.PI * 2, true)
+          ctx.fill()
+
+          // Rotating ring
+          const ringAlpha = 0.5 + Math.sin(battlePhase * 2) * 0.2
+          const arcRadius = markerRadius + NODE_RADIUS * 1.8
+          ctx.strokeStyle = `rgba(230, 57, 70, ${ringAlpha})`
+          ctx.lineWidth = 1.5
+          ctx.beginPath()
+          ctx.arc(pos.x, pos.y, arcRadius, battlePhase, battlePhase + Math.PI * 1.2)
+          ctx.stroke()
+          ctx.beginPath()
+          ctx.arc(pos.x, pos.y, arcRadius, battlePhase + Math.PI, battlePhase + Math.PI * 2.2)
+          ctx.stroke()
         }
 
         // Bright center
@@ -1208,10 +1264,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
   const createPOIItem = useCallback(
     (poi: POIData, renderPOIsFn: (pois: POIData[]) => void) => {
       const s = stateRef.current
-      const typeInfo = POI_TYPE_ICONS[poi.type] || {
-        icon: '?',
-        color: '#5a6a7a',
-      }
+      const presentation = publicPOIPresentation(poi)
       const isExpanded = s.expandedPOIs.has(poi.id)
       const hasPlayers = poi.players && poi.players.length > 0
 
@@ -1231,9 +1284,9 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
       // Icon
       const icon = document.createElement('div')
       icon.className = styles.poiIcon
-      icon.style.background = typeInfo.color + '15'
-      icon.style.color = typeInfo.color
-      icon.textContent = typeInfo.icon
+      icon.style.background = presentation.color + '15'
+      icon.style.color = presentation.color
+      icon.textContent = presentation.icon
       item.appendChild(icon)
 
       // Info container
@@ -1250,7 +1303,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
 
       const typeSpan = document.createElement('span')
       typeSpan.className = styles.poiType
-      typeSpan.textContent = poi.type.replace(/_/g, ' ')
+      typeSpan.textContent = presentation.typeLabel
       meta.appendChild(typeSpan)
 
       if (poi.has_base) {
@@ -1821,11 +1874,15 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
           system.is_stronghold = !!activityData.strongholds[system.id]
         }
       }
-      if (activityData.transits) {
+      const nowMs = Date.now()
+      if (activityData.current_tick) s.tickClock.observe(activityData.current_tick, nowMs)
+      const tickNow = s.tickClock.now(nowMs)
+      if (activityData.transits && tickNow !== null) {
         s.publicTransitPresentation = reconcilePublicTransitPresentation(
           s.publicTransitPresentation,
           activityData.transits,
-          Date.now(),
+          nowMs,
+          tickNow,
           activityData.current_tick,
         )
         const activeFormationSizes = new Set(
@@ -1983,6 +2040,9 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
     const unsubscribeActivityFeed = subscribeToEvents((raw) => {
       try {
         const data = JSON.parse(raw) as ActivityEvent
+        // Every event carries the server tick it happened on: a live clock
+        // signal that keeps the dots honest between activity polls.
+        if (typeof data.tick === 'number') s.tickClock.observe(data.tick)
 
         // Track player system changes for travel paths
         const player = data.data?.player

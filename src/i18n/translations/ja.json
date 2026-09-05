@@ -313,6 +313,17 @@
     "participants": "参加者",
     "damage": "ダメージ",
     "destroyed": "撃破",
+    "capturedIntact": "無傷で鹵獲", "capturedIntactBy": "{captor}が無傷で鹵獲", "capturedIntactCount": "無傷で鹵獲: {count}", "selfDestructed": "自爆", "identityPirateBoss": "海賊ボス", "identityNpcBoss": "NPCボス", "identityPirate": "海賊", "identityPolice": "警察", "identityIntactPrize": "無傷の戦利艦", "identityPrize": "戦利艦", "identityNpc": "NPC", "identityDrone": "ドローン", "identityWildlife": "宇宙生物", "identityStation": "ステーション",
+    "events": {
+      "personnelCasualties": "{target}の乗員に損害が発生", "personnelCasualtiesIncapacitated": "{target}の乗員に損害が発生し、行動不能になった", "triageStabilized": "{provider}の救護が{target}の負傷者を安定化", "triageTreated": "{provider}の救護が{target}の負傷者を治療",
+      "boardingClosingStarted": "{actor}が{target}への移乗接近を開始", "boardingClosingProgressed": "{actor}が移乗のため{target}へ接近", "boardingClosingRegressed": "{target}が{actor}の移乗攻撃から距離を取った", "boardingLatched": "{actor}が{target}に接舷",
+      "boardingAssaultContinues": "{target}艦内で移乗戦が継続", "boardingAssaultContinuesBothCasualties": "{target}艦内で移乗戦が継続。双方に損害", "boardingAssaultContinuesAttackerCasualties": "{target}艦内で移乗戦が継続。攻撃側に損害", "boardingAssaultContinuesDefenderCasualties": "{target}艦内で移乗戦が継続。防御側に損害",
+      "boardingWithdrawalStarted": "{actor}の移乗部隊が{target}から撤退を開始", "boardingWithdrawalProgressed": "{actor}の移乗部隊が{target}から撤退中", "boardingWithdrawalProgressedBothCasualties": "{actor}の移乗部隊が{target}から撤退中。双方に損害", "boardingWithdrawalProgressedAttackerCasualties": "{actor}の移乗部隊が{target}から撤退中。攻撃側に損害", "boardingWithdrawalProgressedDefenderCasualties": "{actor}の移乗部隊が{target}から撤退中。防御側に損害",
+      "boardingWithdrawn": "{actor}の移乗部隊が{target}から撤退", "boardingWithdrawnBothCasualties": "{actor}の移乗部隊が{target}から撤退。双方に損害", "boardingWithdrawnAttackerCasualties": "{actor}の移乗部隊が{target}から撤退。攻撃側に損害", "boardingWithdrawnDefenderCasualties": "{actor}の移乗部隊が{target}から撤退。防御側に損害",
+      "boardingForceDefeated": "{actor}の移乗部隊が{target}艦内で敗北", "boardingForceDefeatedBothCasualties": "{actor}の移乗部隊が{target}艦内で敗北。双方に損害", "boardingForceDefeatedAttackerCasualties": "{actor}の移乗部隊が{target}艦内で敗北。攻撃側に損害", "boardingForceDefeatedDefenderCasualties": "{actor}の移乗部隊が{target}艦内で敗北。防御側に損害",
+      "boardingCaptureReady": "{target}は{actor}による無傷鹵獲が可能", "boardingCaptured": "{actor}が{target}を無傷の戦利艦として確保", "boardingRejected": "{actor}は{target}への移乗を開始できなかった", "boardingAttackerDestroyed": "{actor}の移乗攻撃は攻撃艦の撃破により終了", "boardingAttackerIncapacitated": "{actor}の移乗攻撃は攻撃艦の行動不能により終了", "boardingTargetDestroyed": "{target}の撃破により移乗戦終了", "boardingTargetSelfDestructed": "{target}の自爆により移乗戦終了", "boardingRestartCanceled": "{actor}と{target}の移乗戦は再起動復旧により中止",
+      "selfDestructStarted": "{actor}が自爆装置を起動", "selfDestructStartedCountdown": "{actor}が自爆装置を起動 — 残り{count}ティック", "selfDestructActive": "{actor}の自爆装置は起動中", "selfDestructActiveCountdown": "{actor}の自爆装置は起動中 — 残り{count}ティック", "selfDestructCountdown": "{actor}の自爆カウントダウン — 残り{count}ティック", "selfDestructCanceled": "{actor}の自爆は中止された", "selfDestructRejected": "{actor}は自爆装置を起動できなかった", "selfDestructDetonated": "{actor}が自爆", "selfDestructBlast": "{actor}の自爆爆発が{target}を直撃", "selfDestructBlastDamage": "{actor}の自爆爆発が{target}に船体ダメージ{damage}", "selfDestructBlastDestroyed": "{actor}の自爆爆発が{target}を直撃し撃破", "selfDestructBlastDamageDestroyed": "{actor}の自爆爆発が{target}に船体ダメージ{damage}を与えて撃破", "capturedIntact": "{captor}が{formerOwner}から{ship}を無傷で鹵獲"
+    },
     "duration": "継続時間"
   },
   "ticker": {

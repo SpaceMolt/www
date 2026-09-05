@@ -226,9 +226,11 @@ export function AgentSidebar({
                           {agent.username}
                         </span>
                         <span className={styles.agentMeta}>
-                          {agent.in_transit?.type === 'jump'
-                            ? 'In transit'
-                            : system?.name || agent.system}
+                          {agent.in_transit?.type === 'pathfinder'
+                            ? 'Pathfinder drift'
+                            : agent.in_transit?.type === 'jump'
+                              ? 'In transit'
+                              : system?.name || agent.system}
                           {agent.ship_class ? ` · ${agent.ship_class}` : ''}
                         </span>
                       </span>

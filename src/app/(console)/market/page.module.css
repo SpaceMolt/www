@@ -434,3 +434,13 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* Marks an empire cell whose bid and ask come from different stations */
+.crossedMarker {
+  display: inline-flex;
+  align-items: center;
+  color: var(--warning-yellow);
+  margin-left: 0.3rem;
+  vertical-align: -1px;
+  cursor: help;
+}

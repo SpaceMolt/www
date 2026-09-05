@@ -7,6 +7,7 @@
 import { getShip, type RawShip } from '@/data/catalog'
 import { archetypeForShip, type GlyphArchetype } from './shipGlyphs'
 import { secondaryAttackKind } from './combatTelemetry'
+import { humanizeID } from './format'
 import {
   type BattleLogEntry,
   type BattleSummary,
@@ -16,8 +17,9 @@ import {
   zoneIndex,
 } from './types'
 
+/** Rendering geometry. Deliberately separate from the server actor identity. */
 export type ParticipantKind = 'ship' | 'drone' | 'creature' | 'station'
-export type ParticipantFate = 'fighting' | 'destroyed' | 'escaped' | 'survived'
+export type ParticipantFate = 'fighting' | 'destroyed' | 'captured' | 'escaped' | 'survived' | 'knocked_out'
 
 export interface ParticipantMeta {
   id: string
@@ -26,6 +28,10 @@ export interface ParticipantMeta {
   sideIndex: number
   color: string
   kind: ParticipantKind
+  /** Server identity: player, pirate, police, npc, drone, creature, station, prize, or unknown. */
+  actorKind: string
+  isNPC: boolean
+  isBoss: boolean
   shipClassId: string
   shipClassName: string
   /** Catalog class string, e.g. "Heavy Fighter" (empty for drones/creatures/unknown) */
@@ -45,6 +51,8 @@ export interface ParticipantMeta {
   lastTickIndex: number
   fate: ParticipantFate
   killedBy?: string
+  capturedBy?: string
+  deathCause?: string
   /** Tick index at which the participant died / escaped (event tick) */
   fateTickIndex?: number
 }
@@ -66,6 +74,10 @@ export type BattleEventKind =
   | 'splash'
   | 'kill'
   | 'burn'
+  | 'casualty'
+  | 'boarding'
+  | 'self_destruct'
+  | 'capture'
   | 'regen'
   | 'zone'
   | 'stance'
@@ -79,12 +91,26 @@ export interface BattleEvent {
   kind: BattleEventKind
   color: string
   text: string
+  /** Optional locale-neutral prose. `text` remains the English/legacy fallback. */
+  translation?: BattleEventTranslation
   /** Primary participant, used for jump-to-ship on click */
   actorId?: string
   /** Rich server-resolved volley detail for expandable combat-log rows. */
   attack?: AttackLogEntry
   /** Locale-neutral identity for chain, retaliation, area, and ammo-splash volleys. */
   secondaryKind?: string
+  /** True when this event is a terminal combat result rather than progress. */
+  terminal?: boolean
+}
+
+export interface BattleEventTranslation {
+  key: string
+  params?: Record<string, string | number>
+}
+
+interface LocalizedEventText {
+  text: string
+  translation?: BattleEventTranslation
 }
 
 export interface TickDamage {
@@ -106,6 +132,10 @@ export interface BattleTimeline {
   /** snapshot lookup: snapshotAt[tickIndex].get(participantId) */
   snapshotAt: Map<string, ParticipantSnapshot>[]
   names: Map<string, string>
+  /** Boarding operation to the actor that was actually captured. */
+  captureTargets: Map<string, string>
+  /** Consequence-free arena match: kills are knockouts and captures change no hands. */
+  isArena: boolean
 }
 
 const EVENT_COLORS: Record<BattleEventKind, string> = {
@@ -115,6 +145,10 @@ const EVENT_COLORS: Record<BattleEventKind, string> = {
   splash: '#c77dff',
   kill: '#e63946',
   burn: '#ff9551',
+  casualty: '#ffd166',
+  boarding: '#c77dff',
+  self_destruct: '#e63946',
+  capture: '#2dd4bf',
   regen: '#4dabf7',
   zone: '#4dabf7',
   stance: '#a8c5d6',
@@ -140,8 +174,8 @@ function resolveArmed(kind: ParticipantKind, ship: RawShip | undefined): boolean
 // "no ship class and not named like a drone" means creature, so a station — which
 // has no ship class and is named after the base — came out as a lumpy organic
 // blob parked in the middle of the battlefield.
-function detectKind(snap: ParticipantSnapshot): ParticipantKind {
-  switch (snap.kind) {
+function detectKind(snap: ParticipantSnapshot, actorKind: string): ParticipantKind {
+  switch (actorKind) {
     case 'station':
       return 'station'
     case 'drone':
@@ -152,11 +186,78 @@ function detectKind(snap: ParticipantSnapshot): ParticipantKind {
     case 'pirate':
     case 'police':
     case 'npc':
+    case 'prize':
       return 'ship'
   }
   if (snap.ship_class) return 'ship'
   if (/\bdrone\b/i.test(snap.username)) return 'drone'
   return 'creature'
+}
+
+function boardingEventText(
+  event: NonNullable<BattleLogEntry['boarding']>[number],
+  name: (id: string) => string,
+): LocalizedEventText {
+  const actor = event.actor_id ? name(event.actor_id) : 'A boarding party'
+  const target = event.target_id ? name(event.target_id) : 'the target'
+  const localized = (key: string, text: string, params: Record<string, string | number> = { actor, target }): LocalizedEventText => ({
+    text,
+    translation: { key: `battles.events.${key}`, params },
+  })
+  const casualtyVariant = event.attacker_casualties && event.defender_casualties
+    ? 'BothCasualties'
+    : event.attacker_casualties
+      ? 'AttackerCasualties'
+      : event.defender_casualties
+        ? 'DefenderCasualties'
+        : ''
+  const casualtySuffix = casualtyVariant === 'BothCasualties'
+    ? '; both sides took casualties'
+    : casualtyVariant === 'AttackerCasualties'
+      ? '; the attackers took casualties'
+      : casualtyVariant === 'DefenderCasualties'
+        ? '; the defenders took casualties'
+        : ''
+  switch (event.event) {
+    case 'closing_started': return localized('boardingClosingStarted', `${actor} began closing to board ${target}`)
+    case 'closing_progressed': return localized('boardingClosingProgressed', `${actor} closed on ${target} for boarding`)
+    case 'closing_regressed': return localized('boardingClosingRegressed', `${target} opened distance from ${actor}'s boarding attempt`)
+    case 'latched': return localized('boardingLatched', `${actor} latched onto ${target}`)
+    case 'assault_continues': return localized(`boardingAssaultContinues${casualtyVariant}`, `Boarding combat continued aboard ${target}${casualtySuffix}`, { target })
+    case 'withdrawal_started': return localized('boardingWithdrawalStarted', `${actor}'s boarding party began withdrawing from ${target}`)
+    case 'withdrawal_progressed': return localized(`boardingWithdrawalProgressed${casualtyVariant}`, `${actor}'s boarding party continued withdrawing from ${target}${casualtySuffix}`)
+    case 'withdrawn': return localized(`boardingWithdrawn${casualtyVariant}`, `${actor}'s boarding party withdrew from ${target}${casualtySuffix}`)
+    case 'boarding_force_defeated': return localized(`boardingForceDefeated${casualtyVariant}`, `${actor}'s boarding force was defeated aboard ${target}${casualtySuffix}`)
+    case 'capture_ready': return localized('boardingCaptureReady', `${target} was ready for intact capture by ${actor}`)
+    case 'captured': return localized('boardingCaptured', `${actor} secured ${target} for intact capture`)
+    case 'boarding_rejected': return localized('boardingRejected', `${actor} could not begin boarding ${target}`)
+    case 'attacker_destroyed': return localized('boardingAttackerDestroyed', `${actor}'s boarding attempt ended when the attacker was destroyed`, { actor })
+    case 'attacker_incapacitated': return localized('boardingAttackerIncapacitated', `${actor}'s boarding attempt ended when the attacker was incapacitated`, { actor })
+    case 'target_destroyed': return localized('boardingTargetDestroyed', `Boarding ended when ${target} was destroyed`, { target })
+    case 'target_self_destructed': return localized('boardingTargetSelfDestructed', `Boarding ended when ${target} self-destructed`, { target })
+    case 'restart_canceled': return localized('boardingRestartCanceled', `Boarding between ${actor} and ${target} was canceled by restart recovery`)
+    case 'self_destruct_started': return event.self_destruct_countdown
+      ? localized('selfDestructStartedCountdown', `${actor} armed self-destruct — ${event.self_destruct_countdown} ticks remaining`, { actor, count: event.self_destruct_countdown })
+      : localized('selfDestructStarted', `${actor} armed self-destruct`, { actor })
+    case 'self_destruct_active': return event.self_destruct_countdown
+      ? localized('selfDestructActiveCountdown', `${actor}'s self-destruct remained armed — ${event.self_destruct_countdown} ticks remaining`, { actor, count: event.self_destruct_countdown })
+      : localized('selfDestructActive', `${actor}'s self-destruct remained armed`, { actor })
+    case 'self_destruct_countdown': return localized('selfDestructCountdown', `${actor}'s self-destruct countdown — ${event.self_destruct_countdown ?? 0} ticks remaining`, { actor, count: event.self_destruct_countdown ?? 0 })
+    case 'self_destruct_canceled': return localized('selfDestructCanceled', `${actor}'s self-destruct was canceled`, { actor })
+    case 'self_destruct_rejected': return localized('selfDestructRejected', `${actor} could not arm self-destruct`, { actor })
+    case 'self_destruct_detonated': return localized('selfDestructDetonated', `${actor} self-destructed`, { actor })
+    case 'self_destruct_attached_blast': {
+      const damage = event.hull_damage ? ` for ${event.hull_damage} hull damage` : ''
+      const destroyed = event.destroyed ? ', destroying it' : ''
+      const variant = `${event.hull_damage ? 'Damage' : ''}${event.destroyed ? 'Destroyed' : ''}`
+      return localized(`selfDestructBlast${variant}`, `${actor}'s self-destruct blast struck ${target}${damage}${destroyed}`, {
+        actor,
+        target,
+        ...(event.hull_damage ? { damage: event.hull_damage } : {}),
+      })
+    }
+    default: return { text: `${actor}: ${humanizeID(event.event)}` }
+  }
 }
 
 export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary | null): BattleTimeline {
@@ -165,6 +266,19 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
   const events: BattleEvent[] = []
   const tickDamage: TickDamage[] = []
   const snapshotAt: Map<string, ParticipantSnapshot>[] = []
+  const captureTargets = new Map<string, string>()
+  const terminalParticipants = new Map<string, NonNullable<BattleLogEntry['battle_ended']>['participants'][number]>()
+  for (const entry of entries) {
+    for (const boarding of entry.boarding ?? []) {
+      if (boarding.operation_id && boarding.target_id) {
+        captureTargets.set(boarding.operation_id, boarding.target_id)
+      }
+    }
+    for (const participant of entry.battle_ended?.participants ?? []) {
+      terminalParticipants.set(participant.player_id, participant)
+    }
+  }
+  const isArena = summary?.category === 'arena' || entries.some(e => e.arena || e.battle_ended?.category === 'arena')
 
   // Collect side ids across the whole battle so colors stay stable.
   const sideIds = new Set<number>()
@@ -193,6 +307,10 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
       if (k.killer_username) names.set(k.killer_id, k.killer_username)
       if (k.victim_username) names.set(k.victim_id, k.victim_username)
     }
+    for (const c of entry.captures ?? []) {
+      if (c.captor_username) names.set(c.captor_id, c.captor_username)
+      if (c.former_owner_username) names.set(c.former_owner_id, c.former_owner_username)
+    }
     for (const p of entry.battle_ended?.participants ?? []) {
       if (p.username) names.set(p.player_id, p.username)
     }
@@ -208,7 +326,9 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
       let meta = participants.get(snap.player_id)
       if (!meta) {
         const ship = snap.ship_class ? getShip(snap.ship_class) : undefined
-        const kind = detectKind(snap)
+        const terminal = terminalParticipants.get(snap.player_id)
+        const actorKind = snap.kind || terminal?.kind || 'unknown'
+        const kind = detectKind(snap, actorKind)
         const sideIndex = sideIndexById.get(snap.side_id) ?? 0
         const slot = sideSlotCounter.get(snap.side_id) ?? 0
         sideSlotCounter.set(snap.side_id, slot + 1)
@@ -219,6 +339,9 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
           sideIndex,
           color: sideColor(sideIndex),
           kind,
+          actorKind,
+          isNPC: snap.is_npc ?? terminal?.is_npc ?? (actorKind !== 'player' && actorKind !== 'unknown'),
+          isBoss: snap.is_boss ?? terminal?.is_boss ?? false,
           shipClassId: snap.ship_class,
           shipClassName: ship?.name || (kind === 'ship' ? snap.ship_class : kind === 'station' ? 'Station' : kind),
           shipClass: ship?.class ?? '',
@@ -235,6 +358,14 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
         participants.set(snap.player_id, meta)
       }
       meta.lastTickIndex = tickIndex
+      if (meta.fate === 'escaped') {
+        // Back in the snapshots after escaping: a rejoin, not a ghost.
+        meta.fate = 'fighting'
+        meta.fateTickIndex = undefined
+      }
+      if (snap.kind && meta.actorKind === 'unknown') meta.actorKind = snap.kind
+      if (snap.is_npc !== undefined) meta.isNPC = snap.is_npc
+      if (snap.is_boss !== undefined) meta.isBoss = snap.is_boss
       if (snap.faction_id && !meta.factionId) meta.factionId = snap.faction_id
     }
     snapshotAt.push(snapMap)
@@ -336,9 +467,62 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
         kind: 'burn',
         color: b.destroyed ? EVENT_COLORS.kill : EVENT_COLORS.burn,
         text: b.destroyed
-          ? `${name(b.target_id)} burned to destruction${source} (${b.damage} damage)`
+          ? isArena
+            ? `${name(b.target_id)} knocked out by burn damage${source} (${b.damage} damage)`
+            : `${name(b.target_id)} burned to destruction${source} (${b.damage} damage)`
           : `${name(b.target_id)} took ${b.damage} burn damage${source}${b.ticks_remaining > 0 ? ` (${b.ticks_remaining} ticks left)` : ''}`,
         actorId: b.target_id,
+      })
+    }
+
+    for (const c of entry.personnel_casualties ?? []) {
+      if (c.casualties_occurred || c.incapacitated) {
+        const target = name(c.target_id)
+        events.push({
+          tickIndex,
+          tick: entry.tick,
+          kind: 'casualty',
+          color: EVENT_COLORS.casualty,
+          text: `${target} suffered personnel casualties${c.incapacitated ? ' and was incapacitated' : ''}`,
+          translation: {
+            key: `battles.events.${c.incapacitated ? 'personnelCasualtiesIncapacitated' : 'personnelCasualties'}`,
+            params: { target },
+          },
+          actorId: c.target_id,
+        })
+      }
+      if (c.triage_applied) {
+        const provider = c.triage_provider_id ? name(c.triage_provider_id) : 'Medical support'
+        const target = name(c.target_id)
+        events.push({
+          tickIndex,
+          tick: entry.tick,
+          kind: 'casualty',
+          color: EVENT_COLORS.regen,
+          text: c.triage_converted
+            ? `Triage from ${provider} stabilized casualties aboard ${target}`
+            : `Triage from ${provider} treated casualties aboard ${target}`,
+          translation: {
+            key: `battles.events.${c.triage_converted ? 'triageStabilized' : 'triageTreated'}`,
+            params: { provider, target },
+          },
+          actorId: c.triage_provider_id || c.target_id,
+        })
+      }
+    }
+
+    for (const boarding of entry.boarding ?? []) {
+      const selfDestruct = boarding.phase === 'self_destruct' || boarding.event.startsWith('self_destruct_')
+      const description = boardingEventText(boarding, name)
+      events.push({
+        tickIndex,
+        tick: entry.tick,
+        kind: selfDestruct ? 'self_destruct' : 'boarding',
+        color: selfDestruct ? EVENT_COLORS.self_destruct : EVENT_COLORS.boarding,
+        text: description.text,
+        translation: description.translation,
+        actorId: boarding.actor_id || boarding.target_id,
+        terminal: boarding.event === 'self_destruct_detonated',
       })
     }
 
@@ -371,7 +555,8 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
           tick: entry.tick,
           kind: 'escape',
           color: EVENT_COLORS.escape,
-          text: `${name(f.player_id)} escaped to warp!`,
+          text: isArena ? `${name(f.player_id)} withdrew from the match` : `${name(f.player_id)} escaped to warp!`,
+          translation: isArena ? { key: 'battles.withdrewFromMatch', params: { actor: name(f.player_id) } } : undefined,
           actorId: f.player_id,
         })
       } else {
@@ -386,21 +571,63 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
       }
     }
 
-    for (const k of entry.kills ?? []) {
-      const meta = participants.get(k.victim_id)
-      if (meta) {
-        meta.fate = 'destroyed'
-        meta.killedBy = k.killer_username || name(k.killer_id)
-        meta.fateTickIndex = tickIndex
+    for (const c of entry.captures ?? []) {
+      const capturedActorID = captureTargets.get(c.boarding_operation_id) || c.former_owner_id
+      const capturedActor = participants.get(capturedActorID)
+      const shipName = getShip(c.ship_class)?.name || humanizeID(c.ship_class) || 'Ship'
+      const formerOwner = c.former_owner_username || name(c.former_owner_id)
+      const captor = c.captor_username || name(c.captor_id)
+      // An arena boarding win knocks the target out; the ship never changes hands.
+      if (capturedActor) {
+        capturedActor.fate = isArena ? 'knocked_out' : 'captured'
+        if (isArena) capturedActor.killedBy = captor
+        else capturedActor.capturedBy = captor
+        capturedActor.fateTickIndex = tickIndex
       }
       events.push({
         tickIndex,
         tick: entry.tick,
-        kind: 'kill',
-        color: EVENT_COLORS.kill,
-        text: `${k.victim_username || name(k.victim_id)} destroyed by ${k.killer_username || name(k.killer_id)}`,
-        actorId: k.victim_id,
+        kind: 'capture',
+        color: EVENT_COLORS.capture,
+        text: isArena
+          ? `${formerOwner} knocked out by ${captor}'s boarding party`
+          : `${shipName} captured intact from ${formerOwner} by ${captor}`,
+        translation: isArena
+          ? { key: 'battles.knockedOutByBoarding', params: { target: formerOwner, captor } }
+          : { key: 'battles.events.capturedIntact', params: { ship: shipName, formerOwner, captor } },
+        actorId: c.captor_id,
       })
+    }
+
+    for (const k of entry.kills ?? []) {
+      const meta = participants.get(k.victim_id)
+      if (meta) {
+        meta.fate = isArena ? 'knocked_out' : 'destroyed'
+        meta.killedBy = k.killer_username || name(k.killer_id)
+        meta.deathCause = k.cause
+        if (k.cause === 'self_destruct') meta.killedBy = undefined
+        meta.fateTickIndex = tickIndex
+      }
+      const alreadyReportedSelfDestruct = k.cause === 'self_destruct' && (entry.boarding ?? [])
+        .some(boarding => boarding.event === 'self_destruct_detonated' && boarding.actor_id === k.victim_id)
+      if (!alreadyReportedSelfDestruct) {
+        events.push({
+          tickIndex,
+          tick: entry.tick,
+          kind: 'kill',
+          color: EVENT_COLORS.kill,
+          text: k.cause === 'self_destruct'
+            ? `${k.victim_username || name(k.victim_id)} self-destructed`
+            : `${k.victim_username || name(k.victim_id)} ${isArena ? 'knocked out' : 'destroyed'} by ${k.killer_username || name(k.killer_id)}`,
+          translation: k.cause === 'self_destruct'
+            ? {
+                key: 'battles.events.selfDestructDetonated',
+                params: { actor: k.victim_username || name(k.victim_id) },
+              }
+            : undefined,
+          actorId: k.victim_id,
+        })
+      }
     }
 
     if (entry.battle_ended) {
@@ -421,12 +648,17 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
         tick: entry.tick,
         kind: 'end',
         color: EVENT_COLORS.end,
-        text: `${outcomeText} (${e.duration} ticks, ${e.total_damage.toLocaleString()} total damage)`,
+        text: isArena
+          ? `${outcomeText} (${e.duration} ticks, ${e.total_damage.toLocaleString()} total damage, ${e.ships_destroyed} knocked out)`
+          : `${outcomeText} (${e.duration} ticks, ${e.total_damage.toLocaleString()} total damage${e.ships_captured ? `, ${e.ships_captured} captured intact` : ''})`,
       })
       for (const p of e.participants ?? []) {
         const meta = participants.get(p.player_id)
-        if (meta && meta.fate === 'fighting') {
-          meta.fate = p.survived ? 'survived' : 'destroyed'
+        if (meta) {
+          if (p.kind) meta.actorKind = p.kind
+          meta.isNPC = p.is_npc ?? meta.isNPC
+          meta.isBoss = p.is_boss ?? meta.isBoss
+          if (meta.fate === 'fighting') meta.fate = p.survived ? 'survived' : isArena ? 'knocked_out' : 'destroyed'
         }
       }
     }
@@ -479,5 +711,7 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
     totalDamage,
     snapshotAt,
     names,
+    captureTargets,
+    isArena,
   }
 }

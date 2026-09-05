@@ -28,6 +28,12 @@ export interface ShipListEntry {
   tier: number
   starter: boolean
   prestige: boolean
+  /** NPC role for the small set of deliberately public pirate variants. */
+  npcRole: string
+  /** Player hull from which an NPC variant was converted. */
+  basedOn: string
+  /** Catalog image ID, which may temporarily fall back to the source hull. */
+  artId: string
   /** Free-text special behaviour tag; searchable. */
   special: string
   base_hull: number
@@ -60,6 +66,12 @@ export const EMPIRE_NAMES: Record<string, string> = {
   outerrim: 'Outer Rim Explorers',
 }
 
+/** Ship factions include the five empires plus documented non-empire hulls. */
+export const SHIP_FACTION_NAMES: Record<string, string> = {
+  ...EMPIRE_NAMES,
+  pirate: 'Pirate Crews',
+}
+
 export const EMPIRE_SHORT_KEYS: Record<string, string> = {
   solarian: 'ships.empireSolarian',
   voidborn: 'ships.empireVoidborn',
@@ -69,6 +81,7 @@ export const EMPIRE_SHORT_KEYS: Record<string, string> = {
 }
 
 export function empireColor(empire: string): string {
+  if (empire === 'pirate') return '#c99045'
   return EMPIRE_COLORS[empire] || '#888'
 }
 

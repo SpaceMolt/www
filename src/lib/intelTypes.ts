@@ -59,14 +59,31 @@ export interface PublicStationsResponse {
 
 // ── Fleet snapshot (GET /api/intel-map) ────────────────────────────────
 
+/** One leg of a pathfinder drift: the ship is at the origin at start_tick and flies `speed` units per tick along `bearing` (0 = +X, 90 = +Y). */
+export interface PathfinderLeg {
+  origin_x: number
+  origin_y: number
+  bearing: number
+  speed: number
+}
+
 export interface IntelInTransit {
-  /** "jump" = system-to-system (from/to are system ids); "travel" = POI move (from/to are POI ids) */
-  type: 'jump' | 'travel'
+  /**
+   * "jump" = system-to-system (from/to are system ids); "pathfinder" = an
+   * off-lane drift (from is the launch system, to is the system it will land
+   * at, or empty when nothing lies on the heading); "travel" = POI move
+   * (from/to are POI ids)
+   */
+  type: 'jump' | 'pathfinder' | 'travel'
   from: string
   to: string
-  /** Both ends of the flight — together they place the agent along it. */
+  /** Both ends of the flight — together they place the agent along it. arrival_tick is 0 for a drift that never lands on its own. */
   start_tick: number
   arrival_tick: number
+  /** The current leg of a pathfinder drift. */
+  pathfinder?: PathfinderLeg
+  /** Every leg origin so far, oldest first, ending at the current leg's origin: the route flown. */
+  waypoints?: { x: number; y: number }[]
 }
 
 export interface IntelAgent {
@@ -351,13 +368,16 @@ export interface TrailSegment {
   age: number
 }
 
-/** Agent currently mid-jump, rendered as an animated dot on the from→to line */
+/** Agent currently mid-jump, rendered as an animated dot on the from→to line — or, for a pathfinder drift, along its leg */
 export interface TransitMarker {
   agentId: string
+  color: string
   from: string
   to: string
   startTick: number
   arrivalTick: number
+  pathfinder?: PathfinderLeg
+  waypoints?: { x: number; y: number }[]
 }
 
 export interface IntelLayerState {

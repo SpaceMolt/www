@@ -1,4 +1,4 @@
-import { Bot, Bug, Shield, Skull, Swords } from 'lucide-react'
+import { Bot, Bug, Shield, Skull, Swords, Trophy } from 'lucide-react'
 import type { BattleCategory } from '@/lib/battle/types'
 
 /**
@@ -13,6 +13,7 @@ const CATEGORY_ICONS: Record<BattleCategory, typeof Swords> = {
   wildlife: Bug,
   pve: Bot,
   npc: Bot,
+  arena: Trophy,
 }
 
 export function CategoryIcon({ category, size = 12 }: { category: BattleCategory; size?: number }) {

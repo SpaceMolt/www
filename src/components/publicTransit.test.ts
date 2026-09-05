@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 import {
   displayedPublicTransitOpacity,
-  displayedPublicTransitProgress,
   forEachPublicTransitFormationPoint,
   MAX_TRANSIT_FORMATION_DOTS,
   publicTransitFormation,
+  publicTransitPose,
   reconcilePublicTransitPresentation,
   type PublicTransit,
   type PublicTransitPresentation,
@@ -18,86 +18,85 @@ const transit: PublicTransit = {
   count: 1,
 }
 
+const systems = new Map([
+  ['alpha', { x: 0, y: 0 }],
+  ['beta', { x: 1000, y: 0 }],
+])
+const systemPosition = (id: string) => systems.get(id)
+
 describe('public transit presentation lifecycle', () => {
   const emptyPresentation: PublicTransitPresentation = {
     displayed: [],
-    retiredKeys: new Map(),
     latestSnapshotTick: 0,
   }
 
-  test('starts newly observed traffic at its origin and preserves that local timeline', () => {
-    const first = reconcilePublicTransitPresentation(emptyPresentation, [transit], 1_000)
+  test('places a flight from the server tick, so one first seen mid-route appears where it is', () => {
+    const first = reconcilePublicTransitPresentation(emptyPresentation, [transit], 1_000, 105)
     expect(first.displayed).toHaveLength(1)
-    expect(displayedPublicTransitProgress(first.displayed[0], 1_000)).toBe(0)
-    expect(displayedPublicTransitProgress(first.displayed[0], 26_000)).toBe(0.25)
-
-    const refreshed = reconcilePublicTransitPresentation(first, [transit], 16_000)
-    expect(refreshed.displayed[0].displayStartedAtMs).toBe(1_000)
-    expect(displayedPublicTransitProgress(refreshed.displayed[0], 26_000)).toBe(0.25)
+    expect(publicTransitPose(first.displayed[0], 105, systemPosition)).toEqual({
+      x: 500,
+      y: 0,
+      dirX: 1,
+      dirY: 0,
+    })
+    expect(publicTransitPose(first.displayed[0], 107.5, systemPosition)?.x).toBe(750)
   })
 
-  test('keeps missing traffic moving until local arrival instead of popping out', () => {
-    const first = reconcilePublicTransitPresentation(emptyPresentation, [transit], 1_000)
-    const missing = reconcilePublicTransitPresentation(first, [], 16_000)
+  test('drops a flight that has already landed instead of replaying it from its origin', () => {
+    const late = reconcilePublicTransitPresentation(emptyPresentation, [transit], 1_000, 112)
+    expect(late.displayed).toHaveLength(0)
+
+    const first = reconcilePublicTransitPresentation(emptyPresentation, [transit], 1_000, 105)
+    const landed = reconcilePublicTransitPresentation(first, [transit], 16_000, 110)
+    expect(landed.displayed).toHaveLength(0)
+  })
+
+  test('keeps a flight the snapshot dropped early and fades it out where it is', () => {
+    const first = reconcilePublicTransitPresentation(emptyPresentation, [transit], 1_000, 102)
+    const missing = reconcilePublicTransitPresentation(first, [], 16_000, 103.5)
     expect(missing.displayed).toHaveLength(1)
-    expect(displayedPublicTransitProgress(missing.displayed[0], 26_000)).toBe(0.25)
+    expect(missing.displayed[0].missingSinceMs).toBe(16_000)
+    expect(displayedPublicTransitOpacity(missing.displayed[0], 16_000, 103.5)).toBe(1)
+    expect(displayedPublicTransitOpacity(missing.displayed[0], 16_750, 103.575)).toBeCloseTo(0.5)
+    expect(displayedPublicTransitOpacity(missing.displayed[0], 17_500, 103.65)).toBe(0)
 
-    const arrived = reconcilePublicTransitPresentation(missing, [], 101_000)
-    expect(arrived.displayed).toHaveLength(0)
+    const gone = reconcilePublicTransitPresentation(missing, [], 31_000, 105)
+    expect(gone.displayed).toHaveLength(0)
   })
 
-  test('does not restart a completed trip while a stale snapshot still contains it', () => {
-    const shortTransit = { ...transit, arrival_tick: 101 }
-    const first = reconcilePublicTransitPresentation(emptyPresentation, [shortTransit], 1_000)
-    const stale = reconcilePublicTransitPresentation(first, [shortTransit], 11_000)
-    expect(stale.displayed).toHaveLength(0)
-    expect(stale.retiredKeys.size).toBe(1)
-
-    const repeatedStale = reconcilePublicTransitPresentation(stale, [shortTransit], 16_000)
-    expect(repeatedStale.displayed).toHaveLength(0)
-
-    const omitted = reconcilePublicTransitPresentation(repeatedStale, [], 20_000)
-    const reappeared = reconcilePublicTransitPresentation(omitted, [shortTransit], 25_000)
-    expect(reappeared.displayed).toHaveLength(0)
+  test('relisting a dropped flight cancels its fade-out', () => {
+    const first = reconcilePublicTransitPresentation(emptyPresentation, [transit], 1_000, 102)
+    const missing = reconcilePublicTransitPresentation(first, [], 2_000, 102.1)
+    const back = reconcilePublicTransitPresentation(missing, [transit], 3_000, 102.2)
+    expect(back.displayed).toHaveLength(1)
+    expect(back.displayed[0].missingSinceMs).toBeNull()
+    expect(back.displayed[0].shownSinceMs).toBe(1_000)
   })
 
-  test('ignores older responses and starts added ships as a new departure cohort', () => {
+  test('ignores a response older than one already applied', () => {
+    const first = reconcilePublicTransitPresentation(emptyPresentation, [transit], 1_000, 102, 102)
+    const stale = reconcilePublicTransitPresentation(first, [], 16_000, 103.5, 101)
+    expect(stale).toBe(first)
+    expect(stale.displayed[0].missingSinceMs).toBeNull()
+  })
+
+  test('updates a cohort\'s count in place rather than spawning a second formation', () => {
     const first = reconcilePublicTransitPresentation(
       emptyPresentation,
       [{ ...transit, count: 25 }],
       1_000,
+      102,
       200,
     )
     const refreshed = reconcilePublicTransitPresentation(
       first,
       [{ ...transit, count: 26 }],
       16_000,
+      103.5,
       201,
     )
-    expect(refreshed.displayed.map(({ count }) => count)).toEqual([25, 1])
-    expect(refreshed.displayed[0].displayStartedAtMs).toBe(1_000)
-    expect(displayedPublicTransitProgress(refreshed.displayed[1], 16_000)).toBe(0)
-
-    const repeated = reconcilePublicTransitPresentation(
-      refreshed,
-      [{ ...transit, count: 26 }],
-      17_000,
-      202,
-    )
-    expect(repeated.displayed.map(({ count }) => count)).toEqual([25, 1])
-
-    const reduced = reconcilePublicTransitPresentation(
-      repeated,
-      [{ ...transit, count: 10 }],
-      18_000,
-      203,
-    )
-    expect(reduced.displayed.map(({ count }) => count)).toEqual([25, 1])
-
-    const staleOtherTransit = { ...transit, start_tick: 200, arrival_tick: 205 }
-    const stale = reconcilePublicTransitPresentation(reduced, [staleOtherTransit], 19_000, 199)
-    expect(stale.displayed).toHaveLength(2)
-    expect(stale.latestSnapshotTick).toBe(203)
+    expect(refreshed.displayed.map(({ count }) => count)).toEqual([26])
+    expect(refreshed.displayed[0].shownSinceMs).toBe(1_000)
   })
 
   test('rejects malformed or non-positive transit durations', () => {
@@ -106,18 +105,75 @@ describe('public transit presentation lifecycle', () => {
       { ...transit, arrival_tick: Number.POSITIVE_INFINITY },
       { ...transit, arrival_tick: transit.start_tick },
       { ...transit, arrival_tick: transit.start_tick - 1 },
+      // Only a pathfinder drift may never arrive.
+      { ...transit, arrival_tick: 0 },
     ]
     expect(
-      reconcilePublicTransitPresentation(emptyPresentation, malformed, 1_000).displayed,
+      reconcilePublicTransitPresentation(emptyPresentation, malformed, 1_000, 50).displayed,
     ).toHaveLength(0)
   })
 
-  test('fades traffic in at departure and out at arrival', () => {
-    const first = reconcilePublicTransitPresentation(emptyPresentation, [transit], 1_000)
+  test('fades traffic in when first shown and out just before it lands', () => {
+    const first = reconcilePublicTransitPresentation(emptyPresentation, [transit], 1_000, 105)
     const displayed = first.displayed[0]
-    expect(displayedPublicTransitOpacity(displayed, 1_000)).toBe(0)
-    expect(displayedPublicTransitOpacity(displayed, 2_000)).toBe(1)
-    expect(displayedPublicTransitOpacity(displayed, 100_500)).toBeCloseTo(1 / 3)
+    expect(displayedPublicTransitOpacity(displayed, 1_000, 105)).toBe(0)
+    expect(displayedPublicTransitOpacity(displayed, 2_000, 105.1)).toBe(1)
+    expect(displayedPublicTransitOpacity(displayed, 50_000, 109.95)).toBeCloseTo(1 / 3)
+  })
+
+  describe('pathfinder drifts', () => {
+    const drift: PublicTransit = {
+      from_system: 'alpha',
+      to_system: '',
+      start_tick: 100,
+      arrival_tick: 0,
+      count: 1,
+      pathfinder: { origin_x: 0, origin_y: 0, bearing: 0, speed: 10 },
+    }
+
+    test('flies the leg from its origin instead of a line between systems', () => {
+      const first = reconcilePublicTransitPresentation(emptyPresentation, [drift], 1_000, 130)
+      expect(first.displayed).toHaveLength(1)
+      const pose = publicTransitPose(first.displayed[0], 130, systemPosition)
+      expect(pose?.x).toBeCloseTo(300)
+      expect(pose?.y).toBeCloseTo(0)
+      expect(pose?.dirX).toBeCloseTo(1)
+      // A void drift never lands and never fades on arrival.
+      expect(displayedPublicTransitOpacity(first.displayed[0], 900_000, 5_000)).toBe(1)
+    })
+
+    test('a mid-flight redirect turns the same dot rather than replacing it', () => {
+      const first = reconcilePublicTransitPresentation(emptyPresentation, [drift], 1_000, 105)
+      // At tick 120 the ship is at (200, 0) and turns to bearing 90 toward beta.
+      const redirected: PublicTransit = {
+        from_system: 'alpha',
+        to_system: 'beta',
+        start_tick: 120,
+        arrival_tick: 170,
+        count: 1,
+        pathfinder: { origin_x: 200, origin_y: 0, bearing: 90, speed: 10 },
+      }
+      const steered = reconcilePublicTransitPresentation(first, [redirected], 16_000, 121)
+      expect(steered.displayed).toHaveLength(1)
+      expect(steered.displayed[0].shownSinceMs).toBe(1_000)
+      expect(steered.displayed[0].missingSinceMs).toBeNull()
+      const pose = publicTransitPose(steered.displayed[0], 121, systemPosition)
+      expect(pose?.x).toBeCloseTo(200)
+      expect(pose?.y).toBeCloseTo(10)
+      expect(pose?.dirY).toBeCloseTo(1)
+    })
+
+    test('a new drift from elsewhere is a new dot', () => {
+      const first = reconcilePublicTransitPresentation(emptyPresentation, [drift], 1_000, 105)
+      const other: PublicTransit = {
+        ...drift,
+        start_tick: 120,
+        pathfinder: { origin_x: 500, origin_y: 500, bearing: 45, speed: 10 },
+      }
+      const both = reconcilePublicTransitPresentation(first, [drift, other], 16_000, 121)
+      expect(both.displayed).toHaveLength(2)
+      expect(both.displayed[1].shownSinceMs).toBe(16_000)
+    })
   })
 })
 

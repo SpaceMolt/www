@@ -23,6 +23,7 @@ import type {
   TransitMarker,
 } from '@/lib/intelTypes'
 import { stationsVisibleInRecon } from '@/lib/stationPresentation'
+import { TickClock } from '@/lib/transitMotion'
 
 const GAME_SERVER = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 
@@ -31,8 +32,6 @@ const MOVEMENTS_POLL_MS = 60_000
 const MOVEMENTS_LIMIT = 2000
 const RATE_LIMIT_BACKOFF_MS = 60_000
 
-/** Floor between tick observations, so a busy event feed can't re-render the map per event. */
-const TICK_OBSERVE_MIN_INTERVAL_MS = 2_000
 /** Debounce for movements refetch while the user is typing in the agent filter */
 const FILTER_REFETCH_DEBOUNCE_MS = 600
 
@@ -97,8 +96,8 @@ export interface UseIntelDataResult {
   transits: TransitMarker[]
   trailColors: Map<string, string>
   factionOptions: FactionOption[]
-  currentTick: number | null
-  tickAnchorMs: number
+  /** Server tick estimate the canvas draws from. Mutable; never triggers a render. */
+  tickClock: TickClock
   movementsTruncated: boolean
   loading: boolean
   error: string | null
@@ -119,29 +118,14 @@ export function useIntelData({
   const [intel, setIntel] = useState<IntelMapResponse | null>(null)
   // Faction-scoped snapshot; null when no faction filter is active.
   const [narrowed, setNarrowed] = useState<IntelMapResponse | null>(null)
-  // The server's clock as last seen: the tick, and the client wall-clock at which
-  // it landed. Anchoring on our own clock rather than the server's generated_at
-  // keeps any clock skew out of it.
-  //
-  // Where the tick comes from matters more than the rate does. The tick rate is a
-  // fixed 10s. What the map cannot know from a poll is the *phase*: the snapshot
-  // says "current tick = N", and we can only assume tick N began the moment the
-  // response landed — but it could have begun anywhere in the preceding 10s. So a
-  // poll-anchored clock is out of phase by up to a full tick, and re-randomises
-  // that offset every 20s, which is what made ships sit wrong and shift on each
-  // poll. The event feed carries the tick as it happens, so anchoring on that
-  // reduces the error to network latency.
-  const [tickInfo, setTickInfo] = useState(() => ({ tick: 0, anchorMs: Date.now() }))
-  const tickInfoRef = useRef(tickInfo)
-  tickInfoRef.current = tickInfo
-
+  // The server's clock, fed from every tick number we see: the 20s snapshot
+  // and, far more often, the event feed. A snapshot can only say "current tick
+  // = N" as of some unknown point inside that tick, and a cached response says
+  // it late; the clock takes the earliest report of each tick and slews toward
+  // it, so ships neither sit out of phase nor shift on every poll.
+  const tickClockRef = useRef(new TickClock())
   const observeTick = useCallback((tick: number) => {
-    if (!Number.isFinite(tick) || tick <= 0) return
-    const now = Date.now()
-    const prev = tickInfoRef.current
-    if (tick <= prev.tick) return // stale or duplicate event
-    if (prev.tick > 0 && now - prev.anchorMs < TICK_OBSERVE_MIN_INTERVAL_MS) return
-    setTickInfo({ tick, anchorMs: now })
+    tickClockRef.current.observe(tick)
   }, [])
   const [movements, setMovements] = useState<IntelMovement[]>([])
   const [movementsTruncated, setMovementsTruncated] = useState(false)
@@ -491,8 +475,8 @@ export function useIntelData({
   const agentsBySystem = useMemo(() => {
     const map = new Map<string, IntelAgent[]>()
     for (const agent of filteredAgents) {
-      // Agents mid-jump are drawn as transit dots, not system badges
-      if (agent.in_transit?.type === 'jump') continue
+      // Agents mid-jump or mid-drift are drawn as transit dots, not system badges
+      if (agent.in_transit?.type === 'jump' || agent.in_transit?.type === 'pathfinder') continue
       const list = map.get(agent.system)
       if (list) list.push(agent)
       else map.set(agent.system, [agent])
@@ -503,13 +487,16 @@ export function useIntelData({
   const transits = useMemo<TransitMarker[]>(
     () =>
       filteredAgents
-        .filter((a) => a.in_transit?.type === 'jump')
+        .filter((a) => a.in_transit?.type === 'jump' || a.in_transit?.type === 'pathfinder')
         .map((a) => ({
           agentId: a.id,
+          color: trailColorFor(a.id),
           from: a.in_transit!.from,
           to: a.in_transit!.to,
           startTick: a.in_transit!.start_tick,
           arrivalTick: a.in_transit!.arrival_tick,
+          pathfinder: a.in_transit!.pathfinder,
+          waypoints: a.in_transit!.waypoints,
         })),
     [filteredAgents],
   )
@@ -567,8 +554,7 @@ export function useIntelData({
     transits,
     trailColors,
     factionOptions,
-    currentTick: tickInfo.tick > 0 ? tickInfo.tick : (intel?.current_tick ?? null),
-    tickAnchorMs: tickInfo.anchorMs,
+    tickClock: tickClockRef.current,
     movementsTruncated,
     loading,
     error,

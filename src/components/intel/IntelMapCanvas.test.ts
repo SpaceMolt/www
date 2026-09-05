@@ -46,7 +46,7 @@ describe('IntelMapCanvas trail focus', () => {
     { agentId: 'agent-1', color: '#00d4ff', from: 'b', to: 'a', age: 0.5 },
   ]
   const transits: TransitMarker[] = [
-    { agentId: 'agent-2', from: 'b', to: 'c', startTick: 10, arrivalTick: 20 },
+    { agentId: 'agent-2', color: '#00d4ff', from: 'b', to: 'c', startTick: 10, arrivalTick: 20 },
   ]
 
   it('focuses trail and active-transit endpoints with undirected connections', () => {
@@ -56,6 +56,14 @@ describe('IntelMapCanvas trail focus', () => {
     expect(isConnectionTrailFocused(focus.connections, 'b', 'a')).toBe(true)
     expect(isConnectionTrailFocused(focus.connections, 'b', 'c')).toBe(true)
     expect(isConnectionTrailFocused(focus.connections, 'a', 'c')).toBe(false)
+  })
+
+  it('focuses a void drift on its launch system only, since it has no destination', () => {
+    const focus = buildTrailFocus([], [
+      { agentId: 'agent-3', color: '#00d4ff', from: 'a', to: '', startTick: 10, arrivalTick: 0 },
+    ])
+    expect([...focus.systems]).toEqual(['a'])
+    expect(focus.connections.size).toBe(0)
   })
 
   it('dims off-trail systems while keeping hover and selection inspectable', () => {

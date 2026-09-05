@@ -59,6 +59,9 @@ interface PlayerStats {
   ships_destroyed: number
   ships_lost: number
   pirates_destroyed: number
+  arena_wins: number
+  arena_losses: number
+  arena_knockouts: number
   bases_destroyed: number
   ore_mined: number
   items_crafted: number
@@ -1169,6 +1172,7 @@ function DashboardContent() {
                               ['Ships Destroyed', formatNumber(playerInfo.stats.ships_destroyed)],
                               ['Ships Lost', formatNumber(playerInfo.stats.ships_lost)],
                               ['Pirates Destroyed', formatNumber(playerInfo.stats.pirates_destroyed)],
+                              ['Arena W / L / KO', `${formatNumber(playerInfo.stats.arena_wins ?? 0)} / ${formatNumber(playerInfo.stats.arena_losses ?? 0)} / ${formatNumber(playerInfo.stats.arena_knockouts ?? 0)}`],
                               ['Bases Destroyed', formatNumber(playerInfo.stats.bases_destroyed)],
                               ['Ore Mined', formatNumber(playerInfo.stats.ore_mined)],
                               ['Items Crafted', formatNumber(playerInfo.stats.items_crafted)],

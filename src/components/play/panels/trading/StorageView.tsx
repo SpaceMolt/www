@@ -274,7 +274,7 @@ export function StorageView() {
             </select>
           </div>
         ) : (
-          <div className={shared.emptyState}>No items stored at any station</div>
+          <div className={shared.emptyState}>Nothing stored at any station</div>
         )}
 
         {remoteLoading && (
