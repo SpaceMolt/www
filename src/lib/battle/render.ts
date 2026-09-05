@@ -9,7 +9,7 @@
  */
 
 import { damageTypeColor, zoneIndex } from './types'
-import type { ParticipantSnapshot } from './types'
+import type { AttackLogEntry, ParticipantSnapshot } from './types'
 import type { BattleTimeline, ParticipantMeta } from './timeline'
 import { GLYPH_NOSE_X, strokeGlyphDetail, traceGlyphPath } from './shipGlyphs'
 
@@ -173,6 +173,98 @@ interface AttackTiming {
   impact: number
 }
 
+export interface AttackVisualGroup {
+  primaryIndex: number
+  kind: string
+  secondaryIndices: number[]
+}
+
+export interface AttackVisualPlan {
+  primaryIndices: number[]
+  orphanSecondaryIndices: number[]
+  groups: AttackVisualGroup[]
+}
+
+function cascadingAttackKind(attack: AttackLogEntry): string {
+  if (attack.secondary_kind === 'aoe' || attack.secondary_kind === 'chain' || attack.secondary_kind === 'ammo_splash') {
+    return attack.secondary_kind
+  }
+  return attack.splash ? 'ammo_splash' : ''
+}
+
+/**
+ * Associates the server's per-target secondary rows with the direct strike
+ * that produced them. Current and historical logs append those rows directly
+ * after their primary attack; the attacker check makes the fallback fail
+ * closed if that ordering contract is ever broken.
+ */
+export function buildAttackVisualPlan(attacks: AttackLogEntry[]): AttackVisualPlan {
+  const primaryIndices: number[] = []
+  const orphanSecondaryIndices: number[] = []
+  const groups: AttackVisualGroup[] = []
+  let primaryIndex = -1
+
+  attacks.forEach((attack, index) => {
+    const kind = cascadingAttackKind(attack)
+    if (!kind) {
+      primaryIndex = index
+      primaryIndices.push(index)
+      return
+    }
+    if (primaryIndex < 0 || attacks[primaryIndex].attacker_id !== attack.attacker_id) {
+      orphanSecondaryIndices.push(index)
+      return
+    }
+    const previous = groups[groups.length - 1]
+    if (previous?.primaryIndex === primaryIndex && previous.kind === kind) previous.secondaryIndices.push(index)
+    else groups.push({ primaryIndex, kind, secondaryIndices: [index] })
+  })
+
+  return { primaryIndices, orphanSecondaryIndices, groups }
+}
+
+const attackVisualPlanCache = new WeakMap<AttackLogEntry[], AttackVisualPlan>()
+
+function attackVisualPlanFor(attacks: AttackLogEntry[]): AttackVisualPlan {
+  const cached = attackVisualPlanCache.get(attacks)
+  if (cached) return cached
+  const plan = buildAttackVisualPlan(attacks)
+  attackVisualPlanCache.set(attacks, plan)
+  return plan
+}
+
+interface PlannedAttackTiming {
+  timings: AttackTiming[]
+  secondaryIndices: Set<number>
+  groupBySecondary: Map<number, AttackVisualGroup>
+}
+
+const plannedAttackTimingCache = new WeakMap<AttackLogEntry[], PlannedAttackTiming>()
+
+function plannedAttackTiming(attacks: AttackLogEntry[], battleId: string, tick: number): PlannedAttackTiming {
+  const cached = plannedAttackTimingCache.get(attacks)
+  if (cached) return cached
+  const plan = attackVisualPlanFor(attacks)
+  const timings = attacks.map((_, index) => attackTiming(battleId, tick, index))
+  const secondaryIndices = new Set<number>()
+  const groupBySecondary = new Map<number, AttackVisualGroup>()
+  for (const group of plan.groups) {
+    const primary = timings[group.primaryIndex]
+    group.secondaryIndices.forEach((index, order) => {
+      const chainDelay = group.kind === 'chain'
+        ? 0.05 + Math.min(0.3, order * Math.min(0.055, 0.3 / Math.max(1, group.secondaryIndices.length - 1)))
+        : group.kind === 'aoe' ? 0.08 : 0.06
+      timings[index] = { start: primary.start, dur: primary.dur, impact: Math.min(0.94, primary.impact + chainDelay) }
+      secondaryIndices.add(index)
+      groupBySecondary.set(index, group)
+    })
+  }
+  for (const index of plan.orphanSecondaryIndices) secondaryIndices.add(index)
+  const result = { timings, secondaryIndices, groupBySecondary }
+  plannedAttackTimingCache.set(attacks, result)
+  return result
+}
+
 function attackTiming(battleId: string, tick: number, idx: number): AttackTiming {
   const r = rand01(battleId, tick, 'atk', idx)
   const start = 0.12 + 0.5 * r
@@ -216,9 +308,11 @@ export function sampleShips(timeline: BattleTimeline, playhead: number, timeMs: 
   // Damage landed so far this tick, per target (for live HP bars)
   const landedShield = new Map<string, number>()
   const landedHull = new Map<string, number>()
-  ;(entry.attacks ?? []).forEach((a, idx) => {
+  const attacks = entry.attacks ?? []
+  const visualTiming = plannedAttackTiming(attacks, timeline.entries[i].battle_id, entry.tick)
+  attacks.forEach((a, idx) => {
     if (!a.hit_success) return
-    const t = attackTiming(timeline.entries[i].battle_id, entry.tick, idx)
+    const t = visualTiming.timings[idx]
     if (p >= t.impact) {
       landedShield.set(a.target_id, (landedShield.get(a.target_id) ?? 0) + a.shield_damage)
       landedHull.set(a.target_id, (landedHull.get(a.target_id) ?? 0) + a.hull_damage)
@@ -840,13 +934,19 @@ function drawAttacks(
   p: number,
 ): void {
   const attacks = entry.attacks ?? []
+  const plan = attackVisualPlanFor(attacks)
+  const visualTiming = plannedAttackTiming(attacks, battleId, entry.tick)
   attacks.forEach((a, idx) => {
     const from = ships.get(a.attacker_id)
     const to = ships.get(a.target_id)
     if (!from || !to) return
-    const t = attackTiming(battleId, entry.tick, idx)
+    const t = visualTiming.timings[idx]
     const tp = (p - t.start) / t.dur
     if (tp < 0 || tp > 1.6) return
+
+    // Secondary rows describe collateral victims, not extra shots fired by the
+    // attacker. Their grouped area/chain effects are drawn below.
+    if (visualTiming.secondaryIndices.has(idx)) return
 
     const src = tf.toScreen(from.pos)
     let dst = tf.toScreen(to.pos)
@@ -922,6 +1022,155 @@ function drawAttacks(
       ctx.fill()
     }
   })
+
+  for (const group of plan.groups) {
+    const primary = attacks[group.primaryIndex]
+    const centerShip = ships.get(primary.target_id)
+    if (!centerShip) continue
+    const center = tf.toScreen(centerShip.pos)
+    const primaryTiming = visualTiming.timings[group.primaryIndex]
+    const targets = group.secondaryIndices
+      .map(index => ({ index, attack: attacks[index], ship: ships.get(attacks[index].target_id) }))
+      .filter((target): target is { index: number; attack: AttackLogEntry; ship: SampledShip } => Boolean(target.ship))
+
+    if (group.kind === 'chain') {
+      drawChainCascade(ctx, tf, center, targets, visualTiming.timings, primary.damage_type, battleId, entry.tick, p)
+    } else {
+      drawAreaBurst(ctx, tf, center, targets, primary.damage_type, primaryTiming.impact, p, group.kind === 'ammo_splash')
+    }
+
+    const flashStride = Math.max(1, Math.ceil(targets.length / 40))
+    for (const [order, target] of targets.entries()) {
+      if (order % flashStride !== 0) continue
+      if (!target.attack.hit_success) continue
+      const life = (p - visualTiming.timings[target.index].impact) / 0.24
+      if (life < 0 || life > 1) continue
+      drawCollateralImpact(ctx, tf.toScreen(target.ship.pos), target.ship, target.attack, life, tf.scale)
+    }
+  }
+
+  // Malformed or old partial logs still get a local collateral impact, but
+  // never invent another attacker-to-target projectile.
+  for (const index of plan.orphanSecondaryIndices) {
+    const attack = attacks[index]
+    const target = ships.get(attack.target_id)
+    if (!target || !attack.hit_success) continue
+    const life = (p - visualTiming.timings[index].impact) / 0.24
+    if (life >= 0 && life <= 1) drawCollateralImpact(ctx, tf.toScreen(target.pos), target, attack, life, tf.scale)
+  }
+}
+
+function drawAreaBurst(
+  ctx: CanvasRenderingContext2D,
+  tf: ScreenTransform,
+  center: Vec,
+  targets: { ship: SampledShip }[],
+  damageType: string,
+  impact: number,
+  p: number,
+  compact: boolean,
+): void {
+  const life = (p - impact) / (compact ? 0.32 : 0.52)
+  if (life < 0 || life > 1) return
+  const color = damageTypeColor(damageType)
+  const furthest = targets.reduce((radius, target) => {
+    const pos = tf.toScreen(target.ship.pos)
+    return Math.max(radius, Math.hypot(pos.x - center.x, pos.y - center.y))
+  }, 28)
+  const reach = Math.min(Math.max(furthest + 22, compact ? 70 : 120), tf.scale * 2.5)
+  const wave = easeInOut(Math.min(1, life * 1.35))
+  const radius = Math.max(8, reach * wave)
+  const envelope = Math.sin(Math.min(1, life) * Math.PI)
+
+  ctx.save()
+  ctx.globalCompositeOperation = 'lighter'
+  const glow = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, radius)
+  glow.addColorStop(0, hexWithAlpha(color, (compact ? 0.24 : 0.42) * (1 - life)))
+  glow.addColorStop(0.28, `rgba(255,240,210,${((compact ? 0.16 : 0.3) * envelope).toFixed(2)})`)
+  glow.addColorStop(0.7, hexWithAlpha(color, (compact ? 0.1 : 0.2) * envelope))
+  glow.addColorStop(1, 'rgba(0,0,0,0)')
+  ctx.fillStyle = glow
+  ctx.beginPath()
+  ctx.arc(center.x, center.y, radius, 0, Math.PI * 2)
+  ctx.fill()
+
+  for (let ring = 0; ring < (compact ? 1 : 3); ring++) {
+    const ringLife = Math.max(0, Math.min(1, life * 1.25 - ring * 0.08))
+    if (ringLife <= 0) continue
+    ctx.beginPath()
+    ctx.arc(center.x, center.y, reach * easeInOut(ringLife), 0, Math.PI * 2)
+    ctx.strokeStyle = hexWithAlpha(color, (0.65 - ring * 0.14) * (1 - ringLife))
+    ctx.lineWidth = Math.max(0.8, (compact ? 2.2 : 4.5) * (1 - ringLife))
+    ctx.stroke()
+  }
+  ctx.restore()
+}
+
+function drawChainCascade(
+  ctx: CanvasRenderingContext2D,
+  tf: ScreenTransform,
+  center: Vec,
+  targets: { index: number; ship: SampledShip }[],
+  timings: AttackTiming[],
+  damageType: string,
+  battleId: string,
+  tick: number,
+  p: number,
+): void {
+  let previous = center
+  for (const target of targets.slice(0, 32)) {
+    const timing = timings[target.index]
+    const life = (p - timing.impact + 0.08) / 0.22
+    const destination = tf.toScreen(target.ship.pos)
+    if (life >= 0 && life <= 1) {
+      const color = damageTypeColor(damageType)
+      const dx = destination.x - previous.x
+      const dy = destination.y - previous.y
+      const length = Math.hypot(dx, dy) || 1
+      ctx.save()
+      ctx.globalCompositeOperation = 'lighter'
+      ctx.strokeStyle = hexWithAlpha(color, 0.9 * Math.sin(life * Math.PI))
+      ctx.lineWidth = 1.8
+      ctx.beginPath()
+      ctx.moveTo(previous.x, previous.y)
+      for (let segment = 1; segment < 7; segment++) {
+        const fraction = segment / 7
+        const jitter = (rand01(battleId, tick, 'chain', target.index, segment) - 0.5) * 16
+        ctx.lineTo(
+          previous.x + dx * fraction - (dy / length) * jitter,
+          previous.y + dy * fraction + (dx / length) * jitter,
+        )
+      }
+      ctx.lineTo(destination.x, destination.y)
+      ctx.stroke()
+      ctx.restore()
+    }
+    previous = destination
+  }
+}
+
+function drawCollateralImpact(
+  ctx: CanvasRenderingContext2D,
+  pos: Vec,
+  ship: SampledShip,
+  attack: AttackLogEntry,
+  life: number,
+  scale: number,
+): void {
+  const size = shipRadius(ship.meta, scale)
+  const color = damageTypeColor(attack.damage_type)
+  const radius = size * (0.7 + life * 2.5) + Math.min(12, Math.sqrt(Math.max(0, attack.final_damage)))
+  ctx.save()
+  ctx.globalCompositeOperation = 'lighter'
+  const glow = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, radius)
+  glow.addColorStop(0, `rgba(255,255,255,${(0.85 * (1 - life)).toFixed(2)})`)
+  glow.addColorStop(0.3, hexWithAlpha(color, 0.6 * (1 - life)))
+  glow.addColorStop(1, 'rgba(0,0,0,0)')
+  ctx.fillStyle = glow
+  ctx.beginPath()
+  ctx.arc(pos.x, pos.y, radius, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.restore()
 }
 
 function drawProjectile(
@@ -1255,10 +1504,13 @@ function drawFloaters(
   ctx.textAlign = 'center'
   ctx.textBaseline = 'bottom'
   const attacks = entry.attacks ?? []
+  const visualTiming = plannedAttackTiming(attacks, battleId, entry.tick)
   attacks.forEach((a, idx) => {
+    const group = visualTiming.groupBySecondary.get(idx)
+    if (group && group.secondaryIndices.length >= 8) return
     const to = ships.get(a.target_id)
     if (!to) return
-    const t = attackTiming(battleId, entry.tick, idx)
+    const t = visualTiming.timings[idx]
     const life = (p - t.impact) / 0.4
     if (life < 0 || life > 1) return
     const pos = tf.toScreen(to.pos)
@@ -1293,6 +1545,30 @@ function drawFloaters(
       ctx.fillText('CRIT', pos.x + jx, y)
     }
   })
+
+  // A large area hit is one event. One compact readout reinforces that visual
+  // hierarchy instead of replacing projectile clutter with a cloud of numbers.
+  const summarizedGroups = new Set(visualTiming.groupBySecondary.values())
+  for (const group of summarizedGroups) {
+    if (group.secondaryIndices.length < 8) continue
+    const primary = attacks[group.primaryIndex]
+    const anchor = ships.get(primary.target_id)
+    if (!anchor) continue
+    const impact = visualTiming.timings[group.secondaryIndices[0]].impact
+    const life = (p - impact) / 0.52
+    if (life < 0 || life > 1) continue
+    const pos = tf.toScreen(anchor.pos)
+    const alpha = life < 0.65 ? 1 : (1 - life) / 0.35
+    const primaryCount = primary.hit_success ? 1 : 0
+    const totalDamage = group.secondaryIndices.reduce((sum, index) => sum + attacks[index].final_damage, primary.final_damage)
+    const label = group.kind === 'chain' ? 'CHAIN CASCADE' : group.kind === 'ammo_splash' ? 'SPLASH' : 'AREA DETONATION'
+    ctx.font = '700 10px "JetBrains Mono", monospace'
+    ctx.fillStyle = `rgba(255,245,220,${alpha.toFixed(2)})`
+    ctx.fillText(`${label} ×${group.secondaryIndices.length + primaryCount}`, pos.x, pos.y - 32 - life * 22)
+    ctx.font = '600 9px "JetBrains Mono", monospace'
+    ctx.fillStyle = hexWithAlpha(damageTypeColor(primary.damage_type), alpha * 0.9)
+    ctx.fillText(`${totalDamage.toLocaleString()} TOTAL`, pos.x, pos.y - 20 - life * 22)
+  }
 
   // Regen floaters.
   for (const r of entry.regen ?? []) {
