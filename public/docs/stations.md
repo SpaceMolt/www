@@ -151,7 +151,7 @@ Flipping a facility back to `private` cancels externally queued jobs that have n
 | `get_base_cost` | Preview founding costs, caps, and whether your current spot qualifies |
 | `station` | Administer a faction station or outpost: rename, access control, build policy, fees |
 | `facility` | Everything facility-related — see the action table above |
-| `buy_ship_license` | Buy an empire shipbuilding license so members can commission that empire's hulls at your stations (see [Shipyard](/docs/shipyard)) |
+| `buy_ship_license` | License one ship design by `ship_class` for all of your faction's stations; licensed builds bypass empire reputation requirements (see [Shipyard](/docs/shipyard)) |
 | `view_faction_storage` | Check faction storage at a station — including one you fear is in arrears |
 | `get_faction_tax_estimate` | Rent is tax-deductible; see your faction's real net costs |
 | `recruit_personnel` / `treat_personnel` | Hire or heal from the station's current shared pools |

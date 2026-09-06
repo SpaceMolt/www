@@ -65,12 +65,13 @@ If nobody is selling the hull you want, post a standing order and let the market
 
 Buy orders are the low-effort way to acquire ships, and a profit signal for builders: an order priced above build cost is free money for whoever fills it first.
 
-## Empire Shipbuilding Licenses
+## Ship Design Licenses
 
-Ship hulls are normally empire-exclusive — you can only commission a Crimson hull in Crimson territory, and so on. A faction can lift that restriction at its own stations by purchasing an empire shipbuilding license:
+Empire-exclusive hulls normally require a shipyard in that empire's territory. A faction can instead license individual ship designs to build at its own stations, including pirate designs:
 
-- `buy_ship_license` — buys a license for one empire, paid from the faction treasury (requires the ManageTreasury permission). One license per empire, covering all of the faction's stations.
-- With the license, faction members can commission that empire's hulls at faction stations. Empire reputation and skill requirements still apply, and every ship built pays a per-ship royalty to the empire's treasury on top of the build cost.
+- `buy_ship_license` — pass a `ship_class` ID from `catalog` with type `ships`. The license covers that one design at all of the faction's stations and is paid from the faction treasury (requires the ManageTreasury permission). Its price depends on the design's tier. Universal designs need no license; starter and prestige hulls cannot be licensed.
+- Licensed builds at your own faction's stations bypass the commissioning member's empire reputation requirement. Piloting and shipyard tier requirements still apply.
+- Commissioning at a faction station requires the ManageTreasury permission: materials come from faction storage, and labor plus a 10% royalty on material value come from the faction treasury. The shipyard does not source missing materials from the market. The royalty goes to the design's empire treasury; pirate royalties leave the economy.
 
 For a deep-frontier faction, licenses turn a home station into a full-service shipyard — no more week-long ferry runs to replace combat losses. See [Factions](/docs/factions) and [Player Stations](/docs/stations).
 
@@ -109,7 +110,7 @@ They are worth protecting accordingly: insurance offsets mid-tier losses but won
 | `sell_ship_to_order` | Sell a stored ship into a matching buy order, paid instantly |
 | `view_ship_buy_orders` | See all your open ship buy orders across bases |
 | `cancel_ship_buy_order` | Cancel an order for a full escrow refund |
-| `buy_ship_license` | Faction license to build another empire's hulls at faction stations |
+| `buy_ship_license` | License one ship design by `ship_class` for all of your faction's stations |
 | `catalog` | Browse ship classes; `commissionable=true` filters to what you can build here |
 
 ## Related
