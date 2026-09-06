@@ -14,21 +14,41 @@ import { applyShipSurface } from './ship-surfaces'
 type Ring = [x: number, halfWidth: number, halfHeight: number, centerY?: number]
 type MaterialName = 'hull' | 'armor' | 'dark' | 'metal' | 'accent' | 'glass' | 'windows'
 
-/** Grown quartz has flowing internal veins rather than machined metal paneling. */
+/** Object-space mineral grain stays attached to the shell, with sparse branching seams. */
 function crystalDetail(material: THREE.MeshStandardMaterial) {
-  material.customProgramCacheKey = () => 'cinema-grown-crystal-v2'
+  // Three folds emissiveIntensity into the emissive uniform. Normalize against
+  // this material's active value so scene cloak/capture/KO changes affect veins.
+  const activeEmission = Math.max(new THREE.Vector3(material.emissive.r, material.emissive.g, material.emissive.b).length() * material.emissiveIntensity, 1e-8).toFixed(8)
+  material.customProgramCacheKey = () => `cinema-grown-crystal-v4-${activeEmission}`
   material.onBeforeCompile = shader => {
     shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vCinemaCrystal;')
     shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvCinemaCrystal=position;')
-    shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vCinemaCrystal;')
+    shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>
+varying vec3 vCinemaCrystal;
+float mineralHash(vec3 p) { return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
+float mineralNoise(vec3 p) {
+  vec3 cell = floor(p), f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(mix(mineralHash(cell), mineralHash(cell + vec3(1,0,0)), f.x),
+                 mix(mineralHash(cell + vec3(0,1,0)), mineralHash(cell + vec3(1,1,0)), f.x), f.y),
+             mix(mix(mineralHash(cell + vec3(0,0,1)), mineralHash(cell + vec3(1,0,1)), f.x),
+                 mix(mineralHash(cell + vec3(0,1,1)), mineralHash(cell + vec3(1,1,1)), f.x), f.y), f.z);
+}`)
     shader.fragmentShader = shader.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
-float crystalWave = vCinemaCrystal.z * 70.0 + sin(vCinemaCrystal.x * 15.0) * 3.0 + vCinemaCrystal.y * 55.0;
-float crystalVein = pow(clamp(0.5 + 0.5 * sin(crystalWave), 0.0, 1.0), 26.0);
-float crystalDepth = 0.78 + 0.22 * sin(vCinemaCrystal.x * 44.0 + vCinemaCrystal.y * 29.0);
-diffuseColor.rgb *= crystalDepth;
-diffuseColor.rgb += vec3(0.025, 0.12, 0.18) * crystalVein;`)
+vec3 mineralP = vCinemaCrystal * vec3(14.0, 23.0, 19.0);
+float mineralGrain = mineralNoise(mineralP * 0.58);
+vec3 mineralWarp = mineralP + vec3(mineralGrain, mineralNoise(mineralP + 11.7), mineralNoise(mineralP - 5.3)) * 1.1;
+float mineralField = mineralNoise(mineralWarp) * 0.78 + mineralNoise(mineralWarp * 2.1) * 0.22;
+float mineralSeam = abs(mineralField - 0.51);
+float mineralAA = max(fwidth(mineralField), 0.003);
+// Compensate the widening filter footprint and fade unresolved veins rather
+// than making the fine network increasingly luminous in distant views.
+float mineralCoverage = 0.009 / (0.006 + mineralAA) * (1.0 - smoothstep(0.02, 0.08, mineralAA));
+float crystalVein = (1.0 - smoothstep(0.006, 0.006 + mineralAA, mineralSeam)) * smoothstep(0.31, 0.62, mineralGrain) * mineralCoverage;
+diffuseColor.rgb *= 0.76 + 0.24 * mineralGrain;
+diffuseColor.rgb += vec3(0.014, 0.048, 0.065) * crystalVein;`)
     shader.fragmentShader = shader.fragmentShader.replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
-totalEmissiveRadiance += vec3(0.025, 0.27, 0.42) * crystalVein * min(1.0, length(emissive) * 20.0);`)
+totalEmissiveRadiance += vec3(0.014, 0.12, 0.16) * crystalVein * min(1.0, length(emissive) / ${activeEmission});`)
   }
 }
 
@@ -77,10 +97,10 @@ export function createShip(appearance: ShipAppearance, seed: number, detail: 'he
   const hullColor = new THREE.Color(appearance.hull)
   const materialIdentity = {
     solarian: { structure: 0x465769, armor: 0x63768a, metal: 0x91a0aa, livery: 0xbda779, roughness: .42 },
-    voidborn: { structure: 0x121026, armor: 0x502878, metal: 0x7262a1, livery: 0x684194, roughness: .19 },
-    crimson: { structure: 0x343236, armor: 0x813d3e, metal: 0x646268, livery: 0x401f24, roughness: .62 },
+    voidborn: { structure: 0x171624, armor: 0x3d3152, metal: 0x655d7c, livery: 0x514360, roughness: .43 },
+    crimson: { structure: 0x343236, armor: 0x69383a, metal: 0x646268, livery: 0x401f24, roughness: .62 },
     nebula: { structure: 0x655635, armor: 0xc2ab70, metal: 0x9c844f, livery: 0x294c3a, roughness: .31 },
-    outerrim: { structure: 0x6d6252, armor: 0xc4a878, metal: 0xa0562e, livery: 0x2fb6c4, roughness: .75 },
+    outerrim: { structure: 0x635a4e, armor: 0xa69170, metal: 0x835a3e, livery: 0x526d69, roughness: .75 },
     pirate: { structure: 0x25282b, armor: 0x633c31, metal: 0xb06a35, livery: 0xa12620, roughness: .78 },
     neutral: { structure: appearance.hull, armor: hullColor.clone().multiplyScalar(1.24).getHex(), metal: 0x98a1ab, livery: accent, roughness: .43 },
   }[empire]
@@ -102,11 +122,22 @@ export function createShip(appearance: ShipAppearance, seed: number, detail: 'he
     }
     materials.metal.color.setHex(0x87664b)
   }
+  if (pirate || empire === 'outerrim') {
+    materials.glass.color.setHex(0x192a2b)
+    materials.glass.emissiveIntensity = .035
+    materials.glass.roughness = .32
+  }
   if (empire === 'voidborn' && family !== 'creature') {
     for (const key of ['hull', 'armor'] as const) {
-      materials[key].emissive.setHex(0x3fe6ff)
-      materials[key].emissiveIntensity = .025
+      materials[key].metalness = .36
+      materials[key].emissive.setHex(0x244452)
+      materials[key].emissiveIntensity = .012
     }
+    materials.glass.color.setHex(0x303346)
+    materials.glass.emissive.setHex(0x284f60)
+    materials.glass.emissiveIntensity = .035
+    materials.glass.roughness = .37
+    materials.glass.metalness = .3
     for (const key of ['hull', 'armor', 'glass'] as const) crystalDetail(materials[key])
   } else if (hero && family !== 'creature') {
     const density = family === 'fighter' || family === 'scout' || family === 'drone' ? .75 : 1.5
@@ -250,11 +281,28 @@ diffuseColor.a *= engineTail * engineFilament * 0.65;`)
           new THREE.Vector3(.08, h * .75, side * w * 1.48),
           new THREE.Vector3(.46, h * .14, side * w * .5),
         ])
-        add(new THREE.TubeGeometry(curve, hero ? 24 : 12, small ? .027 : .04, 5, false), 'armor')
-        const vein = new THREE.CatmullRomCurve3(curve.points.map(point => point.clone().add(new THREE.Vector3(0, .026, 0))))
-        add(new THREE.TubeGeometry(vein, hero ? 24 : 12, small ? .003 : .005, 4, false), 'windows')
-        // Swept crystal sails interrupt the profile well beyond hull plating.
-        add(loft([[-.32, .005, .01], [-.18, .035, h * 1.1], [.12, .018, h * .5], [.43, .002, .002]]), 'glass', 0, h * .7, side * w * .65, new THREE.Euler(side * .5, side * -.23, 0))
+        // A thick aft root grows into a fine swept tip. The mineral shader gives
+        // this volume restrained surface veins instead of a separate glowing rail.
+        const segments = hero ? 32 : 16, radial = hero ? 8 : 5
+        const fin = new THREE.TubeGeometry(curve, segments, small ? .035 : .049, radial, false)
+        const finPositions = fin.getAttribute('position'), center = new THREE.Vector3(), vertex = new THREE.Vector3()
+        for (let i = 0; i <= segments; i++) {
+          const t = i / segments, taper = .18 + .82 * Math.pow(1 - t, .65)
+          curve.getPointAt(t, center)
+          for (let j = 0; j <= radial; j++) {
+            const index = i * (radial + 1) + j
+            vertex.fromBufferAttribute(finPositions, index).sub(center).multiplyScalar(taper).add(center)
+            finPositions.setXYZ(index, vertex.x, vertex.y, vertex.z)
+          }
+        }
+        fin.computeVertexNormals()
+        add(fin, 'armor')
+        const root = new THREE.SphereGeometry(1, hero ? 16 : 8, 8)
+        root.scale(.11, h * .58, w * .34)
+        add(root, 'armor', -.37, h * .42, side * w * .62)
+        // Solid, broad-rooted crests belong to the shell rather than reading as
+        // detached turquoise triangular glazing laid over it.
+        add(loft([[-.32, .019, .014], [-.18, .045, h * .78], [.12, .024, h * .38], [.39, .006, .006]]), 'armor', 0, h * .64, side * w * .65, new THREE.Euler(side * .4, side * -.18, 0))
         engine(-.47, -.015, side * w * .48, small ? .03 : .045)
         if (swollen) {
           const pod = new THREE.SphereGeometry(1, hero ? 16 : 8, 10)
@@ -263,7 +311,7 @@ diffuseColor.a *= engineTail * engineFilament * 0.65;`)
         }
         if (family === 'carrier') slab(.025, -h * .32, side * w * .91, .4, .022, .026, 'dark')
         if (!small && !swollen) for (let i = 0; i < 3; i++) {
-          add(loft([[-.06, .017, .02], [.04, .018, .024], [.13, .001, .002]]), 'glass', -.21 + i * .19, h * 1.18, side * w * .48)
+          add(loft([[-.06, .022, .023], [.04, .018, .028], [.13, .002, .003]]), 'armor', -.21 + i * .19, h * 1.10, side * w * .48)
         }
       }
       add(new THREE.OctahedronGeometry(small ? .043 : .068), 'glass', -.12, h * 1.6)
@@ -312,7 +360,14 @@ diffuseColor.a *= engineTail * engineFilament * 0.65;`)
       for (const side of [-1, 1]) for (let i = 0; i < 4; i++) {
         const x = -.31 + i * .18
         slab(x, 0, side * w * .81, .15, w * .76, h * 1.8, i % 2 ? 'hull' : 'armor')
-        for (const rib of [-1, 1]) slab(x + rib * .05, .005, side * w * .82, .018, w * .8, h * 1.88, 'dark')
+        for (const rib of [-1, 1]) {
+          slab(x + rib * .05, .005, side * w * .82, .018, w * .8, h * 1.88, 'dark')
+          if (hero && (pirate || empire === 'outerrim')) {
+            slab(x + rib * .05, h * .97, side * w * .82, .03, .037, .011, 'metal')
+            slab(x + rib * .05, h * .978, side * w * .82, .013, .018, .005, 'dark')
+            slab(x + rib * .05, -h * .55, side * w * 1.225, .030, .010, .032, 'metal')
+          }
+        }
         if (hero) slab(x, h * .98, side * w * .82, .09, .012, .005, 'accent')
       }
       slab(.35, h * .65, 0, .19, w, h, 'armor')
@@ -376,6 +431,12 @@ diffuseColor.a *= engineTail * engineFilament * 0.65;`)
     if (empire === 'outerrim') {
       // An oversized offset powerplant and exposed spine break the fleet symmetry.
       rod(-.20, -.01, w * 1.06, small ? .052 : .075, .53, 'hull')
+      // Sleeve collars and mounting saddles tie the offset engine to its frame.
+      for (const x of [-.39, -.04]) {
+        rod(x, -.01, w * 1.06, small ? .058 : .082, .031, 'dark')
+        rod(x, -.01, w * 1.06, small ? .061 : .086, .012, 'metal')
+        slab(x, -h * .22, w * .83, .047, w * .47, h * .43, 'hull')
+      }
       engine(-.47, -.01, w * 1.06, small ? .047 : .065)
       for (let i = 0; i < 4; i++) {
         const x = -.36 + i * .12
@@ -454,7 +515,7 @@ diffuseColor.a *= engineTail * engineFilament * 0.65;`)
     })
     if (pirate || empire === 'outerrim') {
       // A limited palette of donor plates gives readable repairs without extra draw calls.
-      const colors: MaterialName[] = ['armor','metal','hull','accent','dark']
+      const colors: MaterialName[] = ['armor','hull','metal','hull','dark']
       for (let i=0; i<(hero?18:5); i++) {
         const x=-.35+random()*.65, side=i%2?1:-1
         const z=side*w*(.33+random()*.4), deck=deckAt(x,z)

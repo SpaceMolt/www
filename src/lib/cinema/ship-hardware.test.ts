@@ -58,6 +58,31 @@ function dispose(group: THREE.Group) {
 }
 const heavyFit = { source: 'modules' as const, weapons: { autocannon: 1, kinetic: 2, railgun: 4 }, cargo: 0, mining: 0, salvage: 0, sensor: 0, defense: 0, utility: 0 }
 
+test('sensor reflector has an open concave receiving face within its former footprint', () => {
+  let reflector: THREE.BufferGeometry | undefined
+  buildFittedHardware({ ...heavyFit, weapons: {}, sensor: 1 }, 'scout', {
+    hero: true, h: .1, w: .2, slab: () => {}, rounded: () => {}, rod: () => {}, engine: () => {},
+    add: geometry => { if (geometry.type === 'LatheGeometry') reflector = geometry; else geometry.dispose() },
+  })
+  expect(reflector).toBeDefined()
+  const mesh = new THREE.Mesh(reflector!, new THREE.MeshBasicMaterial())
+  mesh.updateMatrixWorld(true)
+  try {
+    const ray = new THREE.Raycaster(new THREE.Vector3(.001, .1, 0), new THREE.Vector3(0, -1, 0))
+    const center = ray.intersectObject(mesh)[0]
+    ray.ray.origin.x = .022
+    const rim = ray.intersectObject(mesh)[0]
+    expect(center).toBeDefined(); expect(rim).toBeDefined()
+    expect(center.face!.normal.y).toBeGreaterThan(0)
+    expect(rim.point.y - center.point.y).toBeGreaterThan(.005)
+    reflector!.computeBoundingBox()
+    const size = reflector!.boundingBox!.getSize(new THREE.Vector3())
+    expect(size.x).toBeLessThanOrEqual(.050001)
+    expect(size.z).toBeLessThanOrEqual(.050001)
+    expect(size.y).toBeLessThan(.02)
+  } finally { mesh.geometry.dispose(); mesh.material.dispose() }
+})
+
 test('opposed side gimbals reserve full rotation space on a narrow hull', () => {
   const mounted: THREE.Vector3[] = []
   buildFittedHardware({ ...heavyFit, weapons: { autocannon: 8 } }, 'capital', {

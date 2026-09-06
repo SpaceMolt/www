@@ -16,6 +16,66 @@ function dispose(group: THREE.Group) {
   for (const material of materials) material.dispose()
 }
 
+test('Voidborn mineral emission follows disabled and cloaked material intensity', () => {
+  const group = createShip(resolveAppearance('Cruiser', 'voidborn'), 91)
+  try {
+    for (const name of ['hull', 'armor', 'glass']) {
+      const material = (group.getObjectByName(name) as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>).material
+      const shader = { ...THREE.ShaderLib.standard, uniforms: THREE.UniformsUtils.clone(THREE.ShaderLib.standard.uniforms) }
+      material.onBeforeCompile(shader, {} as THREE.WebGLRenderer)
+      // Evaluate the actual injected radiance expression per color channel.
+      // This catches unconditionally glowing seams even when Three's standard
+      // emissive uniform has been zeroed by knockout/capture or scaled by cloak.
+      const expression = shader.fragmentShader.match(/totalEmissiveRadiance\s*\+=\s*([^;]*crystalVein[^;]*);/)?.[1]
+      expect(expression).toBeDefined()
+      const originalIntensity = material.emissiveIntensity
+      const evaluate = (scale: number) => {
+        material.emissiveIntensity = originalIntensity * scale
+        const emissive = material.emissive.clone().multiplyScalar(material.emissiveIntensity)
+        return [0, 1, 2].map(channel => {
+          const scalar = expression!
+            .replace(/vec3\(([^)]+)\)/g, (_, components: string) => components.split(',')[channel].trim())
+            .replace(/length\(emissive\)/g, String(new THREE.Vector3(emissive.r, emissive.g, emissive.b).length()))
+            .replace(/\bmin\(/g, 'Math.min(').replace(/\bmax\(/g, 'Math.max(')
+          return new Function('crystalVein', `return ${scalar}`)(1) as number
+        })
+      }
+      const active = evaluate(1), cloaked = evaluate(.05), disabled = evaluate(0), overdriven = evaluate(20)
+      expect(Math.max(...active)).toBeGreaterThan(.1)
+      expect(disabled).toEqual([0, 0, 0])
+      for (let channel = 0; channel < 3; channel++) {
+        expect(cloaked[channel] / active[channel]).toBeCloseTo(.05, 3)
+        expect(overdriven[channel]).toBeCloseTo(active[channel], 5)
+      }
+    }
+  } finally { dispose(group) }
+})
+
+test('unresolved Voidborn veins lose coverage instead of glowing more at distance', () => {
+  const group = createShip(resolveAppearance('Cruiser', 'voidborn'), 91)
+  try {
+    const material = (group.getObjectByName('armor') as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>).material
+    const shader = { ...THREE.ShaderLib.standard, uniforms: THREE.UniformsUtils.clone(THREE.ShaderLib.standard.uniforms) }
+    material.onBeforeCompile(shader, {} as THREE.WebGLRenderer)
+    const expression = shader.fragmentShader.match(/float mineralCoverage\s*=\s*([^;]+);/)?.[1]
+    expect(expression).toBeDefined()
+    const smoothstep = (a: number, b: number, x: number) => {
+      const t = Math.max(0, Math.min(1, (x - a) / (b - a)))
+      return t * t * (3 - 2 * t)
+    }
+    const evaluate = new Function('mineralAA', 'smoothstep', `return ${expression}`) as (footprint: number, smoothstep: (a: number, b: number, x: number) => number) => number
+    const footprints = [.003, .008, .02, .04, .06, .08, .16]
+    const coverage = footprints.map(footprint => evaluate(footprint, smoothstep))
+    expect(coverage[0]).toBeCloseTo(1, 5)
+    for (let i = 1; i < coverage.length; i++) {
+      expect(coverage[i]).toBeLessThanOrEqual(coverage[i - 1])
+      // The wider AA filter cannot add energy before the fine pattern fades out.
+      expect(coverage[i] * (.006 + footprints[i])).toBeLessThanOrEqual(.009 + 1e-10)
+    }
+    expect(coverage.at(-1)).toBe(0)
+  } finally { dispose(group) }
+})
+
 describe('cinematic ship geometry', () => {
   const classes = ['Fighter', 'Cruiser', 'Dreadnought', 'Fleet Carrier', 'Freighter', 'Scout', 'Logistics', 'Drone', 'Station', 'Creature']
   for (const shipClass of classes) test(`${shipClass} has finite volumetric geometry with a bounded draw budget`, () => {

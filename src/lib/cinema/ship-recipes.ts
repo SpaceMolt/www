@@ -74,13 +74,23 @@ export function buildSpecialHull(recipe: ShipRecipe | undefined, c: SpecialHullC
     slab(x, y, z, length, width, height, variant % 2 ? 'armor' : 'hull')
     const count = hero ? 11 : 5
     for (const side of [-1, 1]) {
-      for (let i = 0; i < count; i++) slab(x - length * .43 + length * .86 * i / (count - 1), y, z + side * width * .502, length * .015, .004, height * .83, 'armor')
-      for (const up of [-1, 1]) bar([x - length / 2, y + up * height / 2, z + side * width / 2], [x + length / 2, y + up * height / 2, z + side * width / 2], .0045)
-      for (const fore of [-1, 1]) bar([x + fore * length / 2, y - height / 2, z + side * width / 2], [x + fore * length / 2, y + height / 2, z + side * width / 2], .0045)
+      for (let i = 0; i < count; i++) slab(x - length * .43 + length * .86 * i / (count - 1), y, z + side * width * .502, length * .011, .002, height * .78, 'hull')
+      for (const up of [-1, 1]) bar([x - length / 2, y + up * height / 2, z + side * width / 2], [x + length / 2, y + up * height / 2, z + side * width / 2], .003, 'dark')
+      for (const fore of [-1, 1]) {
+        bar([x + fore * length / 2, y - height / 2, z + side * width / 2], [x + fore * length / 2, y + height / 2, z + side * width / 2], .0035, 'dark')
+        if(hero) for(const up of [-1,1]) slab(x+fore*length*.48,y+up*height*.44,z+side*width*.505,length*.055,.004,height*.13,'metal')
+      }
     }
     if (hero) {
       slab(x + length * .16, y + height * .51, z - width * .1, length * .2, width * .35, .003, 'metal')
-      for (const side of [-1, 1]) bar([x + length * .503, y - height * .39, z + side * width * .2], [x + length * .503, y + height * .39, z + side * width * .2], .0025, 'dark')
+      // Paired end doors, a center seam and locking handles distinguish cargo
+      // containers from generic structural blocks, including stacked variants.
+      slab(x+length*.502,y,z,.003,width*.91,height*.83,'dark')
+      for (const side of [-1, 1]) {
+        slab(x+length*.508,y,z+side*width*.225,.004,width*.435,height*.78,variant%2?'armor':'hull')
+        bar([x + length * .516, y - height * .34, z + side * width * .2], [x + length * .516, y + height * .34, z + side * width * .2], .0021, 'metal')
+        slab(x+length*.525,y-height*.12,z+side*width*.14,.003,width*.13,.003,'metal')
+      }
     }
   }
   const openPilot = (x: number, y: number, z: number, scale: number) => {
@@ -96,10 +106,14 @@ export function buildSpecialHull(recipe: ShipRecipe | undefined, c: SpecialHullC
     // The pilot is exposed to space; even the distant silhouette has no canopy.
     orb(x, y + .039 * scale, z, .026 * scale, 'armor', .7, 1.3, .85)
     orb(x + .008 * scale, y + .078 * scale, z, .022 * scale, 'metal')
-    orb(x + .023 * scale, y + .08 * scale, z, .015 * scale, 'glass', .5, .75, 1)
+    orb(x + .023 * scale, y + .08 * scale, z, .015 * scale, 'dark', .5, .75, 1)
     if (hero) for (const side of [-1, 1]) {
       bar(p(.004, .047, side * .023), p(.046, .025, side * .025), .008 * scale, 'armor')
       bar(p(.012, .003, side * .015), p(.055, -.025, side * .021), .009 * scale, 'armor')
+      bar(p(.02,.062,side*.013),p(.023,.019,side*.010),.0025*scale,'dark')
+      // Hands meet a small control yoke; no enclosing cockpit is implied.
+      bar(p(.046,.014,side*.025),p(.046,.035,side*.025),.0025*scale,'metal')
+      orb(x+.045*scale,y+.025*scale,z+side*.025*scale,.006*scale,'dark')
     }
   }
   const machinery = (x: number, y: number, z: number, radius: number, length: number, nozzle: number) => {
@@ -154,7 +168,11 @@ export function buildSpecialHull(recipe: ShipRecipe | undefined, c: SpecialHullC
     container(.035, h * .42, 0, .6, w * 1.4, h * .78, 1)
     machinery(-.36, 0, 0, Math.min(w * .77, h * .92), .22, .035)
     openPilot(.4, -h * .2, 0, .85)
-    for (const side of [-1, 1]) bar([-.26, -h * .76, side * w * .6], [.44, -h * .76, side * w * .6], .007)
+    for (const side of [-1, 1]) {
+      bar([-.26, -h * .76, side * w * .6], [.44, -h * .76, side * w * .6], .005,'dark')
+      bar([-.36, 0, side*w*.45],[-.26,-h*.76,side*w*.6],.006,'metal')
+      bar([.30,-h*.76,side*w*.6],[.35,-h*.2,side*.039],.0035,'metal')
+    }
     return true
   }
   if (recipe === 'worship') {

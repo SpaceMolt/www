@@ -27,6 +27,14 @@ export function buildEmpireHull(appearance: ShipAppearance, c: SpecialHullContex
     rounded(-.23,h*.28,0,.40,w*1.94,h*1.94,'hull')
     rounded(-.24,h*.38,0,.37,w*1.88,h*1.9,'armor')
     rounded(.085,h*.72,0,.61,w*1.47,h*.48,'armor')
+    // A shallow deck lip and inset service channel establish a maintained,
+    // layered pressure hull without making every edge another rounded box.
+    if(hero) {
+      add(armorPlateGeometry(.58,w*1.40,.009,.10,.04),'hull',.095,h*.957,0)
+      add(armorPlateGeometry(.54,w*1.31,.006,.08,.04),'armor',.095,h*1.001,0)
+      slab(.11,h*1.04,0,.36,w*.16,.007,'dark')
+      add(armorPlateGeometry(.33,w*.10,.008,.10,.08),'hull',.11,h*1.09,0)
+    }
     rounded(.46,-h*.02,0,.019,w*1.23,h*1.14,'dark')
     // A flush overlapping apron joins the raised stern shell to the foredeck.
     add(armorPlateGeometry(Math.hypot(.15,h*.36),w*1.35,h*.08,.06,.025),'hull',-.045,h*1.11,0,new THREE.Euler(0,0,-Math.atan2(h*.36,.15)))
@@ -36,9 +44,15 @@ export function buildEmpireHull(appearance: ShipAppearance, c: SpecialHullContex
       rounded(-.25,h*.76,side*w*.82,.36,.004,.007,'accent')
       rounded(-.31,h*.85,side*w*.60,.22,w*.40,h*.35,'armor')
       engine(-.49,-h*.18,side*w*.52,small?.030:.044)
+      if(hero && !cargo) {
+        // The rim surrounds a machinery bay rather than a row of floating tiles.
+        rounded(.055,-h*.37,side*w*.864,.28,.010,h*.40,'metal')
+        rounded(.055,-h*.37,side*w*.872,.258,.008,h*.30,'dark')
+        for(let i=0;i<6;i++) slab(-.047+i*.04,-h*.37,side*w*.879,.009,.005,h*.23,'hull')
+      }
       if(hero) for(let i=0;i<5;i++) {
         add(armorPlateGeometry(.10,w*.48,.004,.045,.025),'hull',-.25+i*.135,h*.91,side*w*.40)
-        slab(-.235+i*.135,-h*.47,side*w*.865,.06,.004,h*.27,'dark')
+        if(cargo) slab(-.235+i*.135,-h*.47,side*w*.865,.06,.004,h*.27,'dark')
       }
     }
     // Low stacked bridge follows the hull, avoiding a naval tower.
@@ -72,6 +86,14 @@ export function buildEmpireHull(appearance: ShipAppearance, c: SpecialHullContex
     rounded(-.21,h*1.24,0,.26,w*.90,h*.16,'accent')
     rounded(-.21,h*1.36,0,.20,w*.68,h*.18,'armor')
     slab(-.101,h*1.33,0,.004,w*.58,h*.11,'glass')
+    // The observation band sits under an overhanging roof, not on a bright block.
+    if(hero) {
+      rounded(-.21,h*1.20,0,.27,w*.92,h*.075,'dark')
+      for(const side of [-1,1]) {
+        slab(-.205,h*1.23,side*w*.458,.19,.003,h*.025,'glass')
+        rounded(-.21,h*1.30,side*w*.42,.22,w*.06,.006,'metal')
+      }
+    }
     for(const side of [-1,1]) {
       const holdLength=cargo?.67:small?.43:.57
       const holdWidth=w*(cargo?.97:.68), holdHeight=h*(cargo?1.95:1.3)
@@ -80,11 +102,17 @@ export function buildEmpireHull(appearance: ShipAppearance, c: SpecialHullContex
       // Root fairings carry the pod collars into the central pressure hull.
       rounded(-.08,h*.56,side*w*.53,.37,w*.38,h*.44,'hull')
       // Thin equatorial trim follows the same capsule outline.
-      capsule(x,0,z,holdLength+.003,holdWidth+.004,holdHeight*.12,'accent')
+      capsule(x,0,z,holdLength+.003,holdWidth+.004,holdHeight*.12,'hull')
+      capsule(x,0,z,holdLength+.004,holdWidth+.005,holdHeight*.038,'accent')
       for(const band of [-1,1]) {
         const ring=new THREE.TorusGeometry(holdWidth*.505,.004,5,hero?24:12)
         ring.rotateY(Math.PI/2);ring.scale(1,holdHeight/holdWidth,1)
         add(ring,'hull',x+band*(holdLength-holdWidth)*.28,0,z)
+        if(hero) {
+          // Buckles and short saddles explain how the hold joins its collar.
+          rounded(x+band*(holdLength-holdWidth)*.28,holdHeight*.49,z,.024,holdWidth*.25,.009,'metal')
+          slab(x+band*(holdLength-holdWidth)*.28,holdHeight*.50+.005,z,.012,holdWidth*.14,.003,'dark')
+        }
       }
       engine(-.46,-h*.12,side*w*.69,small?.032:.05)
       if(hero) vents(-.24,h*.70,side*w*.73,.13,w*.31)
@@ -100,6 +128,15 @@ export function buildEmpireHull(appearance: ShipAppearance, c: SpecialHullContex
   } else {
     // Crimson: sloped shoulder armor, blunt inclined jaws, and open machinery gaps.
     box(-.015,0,0,.92,w*1.40,h*1.37,'dark')
+    // A continuous backbone remains visible between the independent armor caps.
+    if(hero) for(const side of [-1,1]) {
+      box(-.04,h*.28,side*w*.69,.79,w*.16,h*.24,'metal')
+      box(-.04,-h*.40,side*w*.69,.79,w*.13,h*.11,'hull')
+      for(const x of [-.165,.125]) {
+        box(x,h*.40,side*w*.77,.048,.015,h*.52,'dark')
+        for(let j=0;j<4;j++) box(x,-h*.01+j*h*.15,side*w*.78,.037,.008,h*.047,'metal')
+      }
+    }
     for(let i=0;i<3;i++) {
       const x=-.31+i*.29
       box(x,0,0,.225,w*1.65,h*1.78,'hull')

@@ -29,6 +29,7 @@ export function weaponEnvelopesSeparate(a: WeaponEnvelope, b: WeaponEnvelope, ma
 export function buildFittedHardware(profile: CinemaHardware | undefined, family: ShipFamily, c: SpecialHullContext & { deckAt?: (x:number,z:number)=>number; appearance?: ShipAppearance; hullSurface?: (point:THREE.Vector3,outward:THREE.Vector3)=>THREE.Vector3|undefined; beginWeapon?: (family:CinemaWeaponFamily,pivot:THREE.Vector3,muzzle:THREE.Vector3,constructionRoll?:number,normal?:THREE.Vector3)=>void; elevateWeapon?: ()=>void; endWeapon?: ()=>void }) {
   const { add,slab,rounded,rod,h,w,hero }=c
   const known=profile && profile.source!=='unknown'
+  const voidborn=(c.appearance?.hullEmpire??c.appearance?.empire)==='voidborn'
   const legacyCount=family==='fighter'?2:family==='warship'?3:family==='capital'?4:0
   const weapons=known?profile.weapons:({kinetic:legacyCount} as Partial<Record<CinemaWeaponFamily,number>>)
   // Distant hulls omit all fine equipment: their silhouettes remain a bounded set.
@@ -93,15 +94,48 @@ export function buildFittedHardware(profile: CinemaHardware | undefined, family:
   for(let round=1;round<8&&placed.length<8;round++) for(const [kind,count] of ordered) if(round<count&&placed.length<8) place(kind)
   for(const {kind,pivot,normal,surface} of placed) {
     const barrelHeight=heightOf(kind),x=pivot.x,z=pivot.z,y=pivot.y-s*barrelHeight
+    if(c.appearance?.empire==='pirate') {
+      // Fixed conversion feet sit outside the rotating bearing. Every part
+      // remains inside its existing .70s radius and .022-high seat envelope.
+      const orientation=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),normal)
+      const fixed=(geometry:THREE.BufferGeometry,material:'dark'|'metal',offset:THREE.Vector3)=>{
+        geometry.applyQuaternion(orientation)
+        offset.applyQuaternion(orientation).add(surface)
+        add(geometry,material,offset.x,offset.y,offset.z)
+      }
+      fixed(new THREE.BoxGeometry(s*.98,.006,s*.98),'dark',new THREE.Vector3(0,.005,0))
+      for(const side of [-1,1]) {
+        const gusset=new THREE.BufferGeometry()
+        gusset.setAttribute('position',new THREE.Float32BufferAttribute([
+          -s*.25,0,-s*.04,s*.25,0,-s*.04,-s*.25,.014,-s*.04,
+          -s*.25,0,s*.04,s*.25,0,s*.04,-s*.25,.014,s*.04,
+        ],3))
+        gusset.setIndex([0,2,1,3,4,5,0,1,4,0,4,3,0,3,5,0,5,2,1,2,5,1,5,4])
+        gusset.computeVertexNormals()
+        fixed(gusset,'metal',new THREE.Vector3(0,.004,side*s*.54))
+        for(const fore of [-1,1]) fixed(new THREE.CylinderGeometry(s*.045,s*.045,.004,6),'metal',new THREE.Vector3(fore*s*.43,.016,side*s*.43))
+      }
+    }
     // Shallow armored bearing sits directly on the mounting face.
     const seat=new THREE.CylinderGeometry(s*.58,s*.70,.022,8)
     seat.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),normal))
     const seatCenter=surface.clone().addScaledVector(normal,.008)
-    add(seat,'armor',seatCenter.x,seatCenter.y,seatCenter.z)
+    add(seat,c.appearance?.empire==='pirate'?'dark':'armor',seatCenter.x,seatCenter.y,seatCenter.z)
     const muzzleLength=kind==='railgun'?2.10:kind==='torpedo'?.92:kind==='missile'?.65:kind==='beam'||kind==='laser'?1.20:kind==='plasma'?1.43:kind==='exotic'||kind==='disruptor'?1.25:kind==='mine'||kind==='smartbomb'?0:kind==='flak'?1.38:1.71
     c.beginWeapon?.(kind,pivot,new THREE.Vector3(x+s*muzzleLength,pivot.y,z),Math.atan2(normal.z,normal.y),normal)
     rod(x,pivot.y-s*.19,z,s*.48,s*.10,'dark',false)
+    add(new THREE.TorusGeometry(s*.445,s*.025,5,16),'metal',x,pivot.y-s*.145,z,new THREE.Euler(Math.PI/2,0,0))
     rounded(x,pivot.y-s*.07,z,s*1.10,s*.94,s*.22,'hull')
+    // Trunnion cheeks expose the supported elevation joint above the bearing.
+    for(const side of [-1,1]) {
+      add(new THREE.CylinderGeometry(s*.125,s*.125,s*.03,12),'dark',x+s*.045,pivot.y+s*.015,z+side*s*.455,new THREE.Euler(Math.PI/2,0,0))
+      add(new THREE.CylinderGeometry(s*.064,s*.064,s*.006,8),voidborn?'dark':'metal',x+s*.045,pivot.y+s*.015,z+side*s*.467,new THREE.Euler(Math.PI/2,0,0))
+      if(c.appearance?.empire==='pirate') {
+        // Welded conversion braces fit inside the existing bearing footprint.
+        add(new THREE.BoxGeometry(s*.61,s*.035,s*.035),'metal',x,pivot.y-s*.045,z+side*s*.435,new THREE.Euler(0,0,side*.10))
+        slab(x-s*.20,pivot.y-s*.075,z+side*s*.405,s*.14,s*.11,s*.10,'dark')
+      }
+    }
     c.elevateWeapon?.()
     if(kind==='missile'||kind==='torpedo') {
       const torpedo=kind==='torpedo'
@@ -117,12 +151,18 @@ export function buildFittedHardware(profile: CinemaHardware | undefined, family:
       add(new THREE.CircleGeometry(s*.146,16),'dark',x+s*1.168,y+s*.42,z,new THREE.Euler(0,Math.PI/2,0))
       add(new THREE.CircleGeometry(s*.067,12),'glass',x+s*1.172,y+s*.42,z,new THREE.Euler(0,Math.PI/2,0))
       add(new THREE.TorusGeometry(s*.13,s*.027,6,16),'metal',x+s*1.19,y+s*.42,z,new THREE.Euler(0,Math.PI/2,0))
-      for(const side of [-1,1]) slab(x+s*.40,y+s*.65,z+side*s*.31,s*.67,s*.09,s*.12,'metal')
+      for(const side of [-1,1]) slab(x+s*.40,y+s*.65,z+side*s*.31,s*.67,s*.09,s*.12,voidborn?'hull':'metal')
+      for(const station of [.12,.78]) {
+        for(const side of [-1,1]) slab(x+s*station,pivot.y,z+side*s*.23,s*.065,s*.022,s*.35,voidborn?'dark':'metal')
+        slab(x+s*station,pivot.y+s*.187,z,s*.065,s*.44,s*.014,voidborn?'dark':'metal')
+      }
+      slab(x+s*.40,pivot.y+s*.188,z,s*.30,s*.12,s*.008,'dark')
     } else if(kind==='railgun') {
       for(const side of [-1,1]) {
         slab(x+s*.85,y+s*.43,z+side*s*.17,s*2.5,s*.13,s*.17,'metal')
         slab(x+s*.70,y+s*.54,z+side*s*.17,s*1.65,s*.045,.003,'accent')
       }
+      for(const station of [.12,.52]) slab(x+s*station,pivot.y-s*.045,z,s*.13,s*.51,s*.09,'dark')
     } else if(kind==='plasma') {
       rod(x+s*.60,y+s*.48,z,s*.25,s*1.65,'dark')
       for(let j=0;j<4;j++) rod(x+s*(.10+j*.30),y+s*.48,z,s*.32,s*.08,'metal')
@@ -137,10 +177,21 @@ export function buildFittedHardware(profile: CinemaHardware | undefined, family:
       add(new THREE.SphereGeometry(s*.16,8,6),'glass',x,y+s*.62,z)
     } else {
       const barrels=kind==='autocannon'?4:kind==='flak'?3:2
+      // Flattened octagonal receiver, then supported sleeves and open muzzles.
+      // Its narrow vertical envelope preserves the low battery's inward cap.
+      const receiver=new THREE.CylinderGeometry(s*.33,s*.38,s*.54,8)
+      receiver.rotateZ(-Math.PI/2);receiver.scale(1,.45,1)
+      add(receiver,'hull',x+s*.20,pivot.y,z)
+      slab(x+s*.54,pivot.y,z,s*.105,s*((barrels-1)*.18+.17),s*.19,'dark')
       for(let j=0;j<barrels;j++) {
         const offset=(j-(barrels-1)/2)*s*.18
-        rod(x+s*.78,y+s*.40,z+offset,s*.065,s*(kind==='flak'?1.1:1.8),'metal')
-        rod(x+s*(kind==='flak'?1.32:1.65),y+s*.40,z+offset,s*.09,s*.12,'dark')
+        rod(x+s*.78,y+s*.40,z+offset,s*.065,s*(kind==='flak'?1.0:1.72),'metal')
+        rod(x+s*.45,pivot.y,z+offset,s*.083,s*.20,'dark')
+        rod(x+s*.95,pivot.y,z+offset,s*.075,s*.20,'metal')
+        const end=kind==='flak'?1.38:1.71
+        add(new THREE.CylinderGeometry(s*.083,s*.087,s*.10,12,1,true),'metal',x+s*(end-.06),pivot.y,z+offset,new THREE.Euler(0,0,Math.PI/2))
+        add(new THREE.CircleGeometry(s*.070,12),'dark',x+s*(end-.075),pivot.y,z+offset,new THREE.Euler(0,Math.PI/2,0))
+        add(new THREE.RingGeometry(s*.062,s*.089,12),'dark',x+s*(end-.009),pivot.y,z+offset,new THREE.Euler(0,Math.PI/2,0))
       }
     }
     c.endWeapon?.()
@@ -163,9 +214,22 @@ export function buildFittedHardware(profile: CinemaHardware | undefined, family:
     const x=-.32+i*.08,z=(i%2?1:-1)*w*.46
     const deck=c.deckAt?.(x,z)??h
     if(!Number.isFinite(deck)) continue
-    rod(x,deck+.045,z,.004,.10,'metal',false)
-    add(new THREE.SphereGeometry(.025,12,8,0,Math.PI*2,0,Math.PI*.48),'metal',x,deck+.095,z,new THREE.Euler(0,0,-.40))
-    rod(x+.008,deck+.116,z,.002,.04,'dark',false)
+    rounded(x,deck+.011,z,.046,.044,.020,'dark')
+    rounded(x,deck+.031,z,.021,.024,.030,'metal')
+    // Two compact phased-array tiles share a pedestal with a genuinely concave
+    // reflector. The thick lathed shell has an open mouth and an inward face.
+    for(const side of [-1,1]) {
+      slab(x+side*.015,deck+.028,z-.012,.016,.012,.033,'hull')
+      slab(x+side*.015,deck+.029,z-.0185,.010,.002,.023,'dark')
+      for(const row of [-1,1]) slab(x+side*.015,deck+.029+row*.006,z-.0197,.006,.001,.002,'metal')
+    }
+    const dish=new THREE.LatheGeometry([
+      new THREE.Vector2(.025,.010),new THREE.Vector2(.019,.0058),new THREE.Vector2(.011,.002),new THREE.Vector2(0,0),
+      new THREE.Vector2(0,-.003),new THREE.Vector2(.011,-.001),new THREE.Vector2(.019,.0028),new THREE.Vector2(.025,.007),new THREE.Vector2(.025,.010),
+    ],16)
+    add(dish,'metal',x,deck+.052,z)
+    add(new THREE.TorusGeometry(.0235,.0015,4,16),'dark',x,deck+.061,z,new THREE.Euler(Math.PI/2,0,0))
+    rod(x,deck+.057,z,.0025,.011,'dark',false)
   }
   for(let i=0;i<Math.min(profile.defense,6);i++) {
     const side=i%2?-1:1,x=-.26+Math.floor(i/2)*.22
