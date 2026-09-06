@@ -43,9 +43,11 @@ The version and battle ID seed all choreography. Bump `DIRECTOR_VERSION` when in
 
 Each pilot appearance has a separate lifecycle. Arena losses disable intact
 hulls. Missing or obsolete snapshots do not authorize extra destruction or
-resurrection. Recorded zone transitions drive approach and withdrawal in `motion.ts`. Continuous
-naval sweeps, class-sensitive banking and engine wakes supply cinematic movement;
-formation lanes allow room for hulls to turn, and stations occupy a separate layer.
+resurrection. Recorded zone transitions drive approach and withdrawal in `motion.ts`.
+Formations hold fixed lanes and parallel headings toward the opposing side.
+Combat retreat reverses while retaining that heading; a flee stance turns the hull
+outward. There is no automatic orbit, approach, bobbing or banking. Formation lanes
+allow room for hulls to turn, and stations occupy a separate layer.
 Source positions are not physical coordinates; scene formations are artistic. Captured prize IDs cannot always be mapped to the original hull
 from historical public records, so the compiler does not guess such links.
 
