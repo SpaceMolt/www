@@ -719,18 +719,18 @@
   color: var(--star-white);
 }
 
-.telemetryMetrics .telemetryHit,
-.telemetryMetrics .telemetryMiss {
+.telemetryHit,
+.telemetryMiss {
   margin-left: 0.18rem;
   font-size: 0.56rem;
   letter-spacing: 0.08em;
 }
 
-.telemetryMetrics .telemetryHit {
+.telemetryHit {
   color: #5ee6a8;
 }
 
-.telemetryMetrics .telemetryMiss {
+.telemetryMiss {
   color: var(--hull-grey);
 }
 
@@ -789,6 +789,12 @@
 
 .telemetryWeaponRow:last-child {
   border-bottom: 0;
+}
+
+/* A missed gun keeps its name and MISS tag legible; only its damage figures fade. */
+.telemetryWeaponMissed .telemetryWeaponMain > span:last-child,
+.telemetryWeaponMissed .telemetryWeaponMeta {
+  opacity: 0.55;
 }
 
 .telemetryWeaponMain {
