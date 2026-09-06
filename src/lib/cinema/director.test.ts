@@ -29,6 +29,24 @@ const kill = (killer: string, victim: string) => ({ killer_id: killer, victim_id
 function compile(entries: BattleLogEntry[], over: Partial<BattleSummary> = {}) { return compileBattleFilm(summary(over), entries, true) }
 
 describe('completed-record gate', () => {
+  it('excludes positively identified creatures without treating NPCs or missing classes as creatures', () => {
+    expect(getCinemaEligibility(summary({ category: 'wildlife' }), [row(100), terminal(101)], 'complete')).toBe('unsupported')
+    expect(getCinemaEligibility(summary(), [row(100, { snapshots: [snap('a'), snap('b', 2, { kind: 'creature' })] }), terminal(101)], 'complete')).toBe('unsupported')
+    expect(getCinemaEligibility(summary(), [row(100, { snapshots: [snap('a'), snap('b', 2, { kind: 'station', ship_class: '' })] }), terminal(101)], 'complete')).toBe('ready')
+  })
+  it('rejects empty encounters and mutual retreat but keeps one-sided ambushes and single escapes', () => {
+    const end = terminal(102, { snapshots: [] })
+    Object.assign(end.battle_ended!, { total_damage: 0, ships_destroyed: 0, outcome: 'stalemate' })
+    const escape = (id: string) => ({ player_id: id, escaped: true, flee_counter: 3, flee_required: 3 })
+    const emptySummary = summary({ total_damage: 0 })
+    expect(getCinemaEligibility(emptySummary, [row(100), end], 'complete')).toBe('uneventful')
+    expect(getCinemaEligibility(emptySummary, [row(100, { attacks: [attack('a', 'b', { hit_success: false, final_damage: 0, shield_damage: 0, weapons: [gun('miss', 'energy', false)] })] }), end], 'complete')).toBe('uneventful')
+    const firing = row(100, { attacks: [attack('a', 'b')] })
+    expect(getCinemaEligibility(emptySummary, [firing, row(101, { flee: [escape('a'), escape('b')] }), end], 'complete')).toBe('retreated')
+    expect(getCinemaEligibility(emptySummary, [firing, row(101, { flee: [escape('b')] }), end], 'complete')).toBe('ready')
+    expect(getCinemaEligibility(emptySummary, [row(100, { kills: [kill('a', 'b')] }), end], 'complete')).toBe('ready')
+    expect(getCinemaEligibility(emptySummary, [firing, row(101, { flee: [escape('a'), escape('b')] }), terminal(102)], 'complete')).toBe('ready')
+  })
   it('requires reconciled data, terminal row and completed summary independently', () => {
     const entries = [row(100), terminal(101)]
     expect(getCinemaEligibility(summary(), entries, 'complete')).toBe('ready')
@@ -131,6 +149,56 @@ describe('recorded outcomes and lifecycle identities', () => {
 })
 
 describe('weapon semantics and seeking', () => {
+  it('returns drained energy only when an actual transfer or lifesteal heal is recorded', () => {
+    for (const transferred of [0, 5]) {
+      const film = compile([row(100, { attacks: [attack('a', 'b', { shield_drained: 8,
+        shield_transfer_pct: 100, shield_transferred: transferred })] }), terminal(101)])
+      expect(film.cues.find(cue => cue.kind === 'drain')?.drainTransferred).toBe(transferred > 0)
+    }
+    const component = { weapon_instance_id: 'gun', weapon_name: 'Energy Siphon', damage_type: 'energy',
+      incoming_damage: 20, shield_resist_pct: 0, after_shield_resist: 20, type_resist_pct: 0,
+      after_type_resist: 20, flat_reduction_pct: 0, after_flat_reduction: 20, shield_bypass_pct: 0,
+      armor_bypass_pct: 0, ignore_all_defense: false, final_damage: 20, shield_damage: 0, hull_damage: 20,
+      lifesteal_pct: 50, lifesteal_heal: 4 }
+    const healed = compile([row(100, { attacks: [attack('a', 'b', { defense_components: [component] })] }), terminal(101)])
+    expect(healed.cues.find(cue => cue.kind === 'drain' && cue.drainKind === 'hull')?.drainTransferred).toBe(true)
+  })
+  it('rotates oversized loadouts so the same first six families do not hide the rest forever', () => {
+    const names = ['Laser I', 'Graviton Beam I', 'Railgun I', 'Autocannon I', 'Flak Cannon I', 'Plasma Cannon I',
+      'Missile Launcher I', 'Torpedo Launcher I', 'EMP Cannon I', 'Dark Matter Cannon', 'Mine Launcher I', 'Harpoon I', 'Smartbomb I']
+    const weapons = names.map((name, i) => ({ ...gun(`gun${i}`, 'kinetic'), name }))
+    const entries = Array.from({ length: 13 }, (_, i) => row(100 + i, { attacks: [attack('a', 'b', { weapons })] }))
+    const film = compile([...entries, terminal(113)])
+    const cues = film.cues.filter(cue => cue.kind === 'weapon')
+    expect(new Set(cues.map(cue => cue.weaponFamily)).size).toBe(13)
+    for (const entry of entries) expect(cues.filter(cue => cue.tick === entry.tick).length).toBeLessThanOrEqual(6)
+  })
+  it('keeps distinct delivery families with the same damage type before filling mixed hit variants', () => {
+    const names = ['Railgun I', 'Autocannon I', 'Flak Cannon I', 'Graviton Beam I']
+    const weapons = names.flatMap((name, index) => [true, false].map(hit => ({ ...gun(`${index}:${hit}`, 'kinetic', hit),
+      name, ammo_used: 'Standard Rounds', crit_fired: hit })))
+    const film = compile([row(100, { attacks: [attack('a', 'b', { weapons, damage_type: 'kinetic' })] }), terminal(101)])
+    const cues = film.cues.filter(cue => cue.kind === 'weapon')
+    expect(new Set(cues.map(cue => cue.weaponFamily))).toEqual(new Set(['railgun', 'autocannon', 'flak', 'beam']))
+    expect(cues.length).toBeLessThanOrEqual(6)
+    expect(cues.some(cue => cue.hit === false)).toBe(true)
+    expect(cues.every(cue => cue.ammoName === 'Standard Rounds')).toBe(true)
+    expect(cues.some(cue => cue.critical)).toBe(true)
+  })
+  it('emits only observed repairs, drains, disables and emergency cloaks', () => {
+    const effects = attack('a', 'b', { system_disable_ticks: 2, emergency_cloak_activated: true, shield_drained: 8 })
+    const film = compile([row(100, { attacks: [effects], regen: [{ player_id: 'a', shield_regen: 10, armor_repair: 5,
+      shield_before: 50, shield_after: 60, hull_before: 50, hull_after: 55 }] }), terminal(101)])
+    expect(film.cues.filter(cue => cue.kind === 'disable').map(cue => cue.to)).toEqual(['b:0'])
+    expect(film.cues.filter(cue => cue.kind === 'cloak').map(cue => cue.to)).toEqual(['b:0'])
+    expect(film.cues.filter(cue => cue.kind === 'drain').map(cue => cue.from)).toEqual(['a:0'])
+    expect(film.cues.filter(cue => cue.kind === 'repair').map(cue => cue.repairKind).sort()).toEqual(['hull', 'shield'])
+    expect(film.cues.filter(cue => cue.kind === 'repair').every(cue => !cue.from)).toBe(true)
+    const inert = compile([row(100, { attacks: [attack('a', 'b', { lifesteal_pct: 50, emergency_cloak_duration: 3,
+      shield_drain_requested: 80 })], regen: [{ player_id: 'a', shield_regen: 10, armor_repair: 5,
+      shield_before: 100, shield_after: 100, hull_before: 100, hull_after: 100 }] }), terminal(101)])
+    expect(inert.cues.some(cue => ['repair', 'disable', 'cloak', 'drain'].includes(cue.kind))).toBe(false)
+  })
   it('misses never emit penetrating impacts and mixed weapon families stay distinct', () => {
     const film = compile([row(100, { attacks: [attack('a', 'b', { weapons: [gun('beam', 'energy'), gun('slug', 'kinetic', false)],
       hull_damage: 10, shield_damage: 10 })] }), terminal(101)])

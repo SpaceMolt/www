@@ -12,10 +12,31 @@ battle loader handles pagination and final-write reconciliation. Do not shortcut
 its `complete` phase: a terminal row can arrive before older ticks are persisted.
 Interrupted records without a real conclusion cannot be filmed.
 
+The same eligibility function governs both the tactical-page link and direct
+cinema URLs. Completed does not automatically mean worth filming:
+
+- Confirmed wildlife/creature encounters are excluded. A creature snapshot or
+  terminal participant is sufficient, including mixed battles. Unknown historical
+  kinds are not guessed into this exclusion.
+- Records without damage, connected offensive force, a loss, or a capture are
+  excluded. Miss-only disengagements and empty/idle records get no film.
+- A lossless battle in which every side's final recorded appearances escape is
+  excluded. `stalemate` alone is insufficient: it also describes single-sided
+  retreats and timeouts. Returning pilots reset their escape state.
+- Ambushes, damaged single-sided escapes, arena knockouts, intact captures,
+  stations, returning pilots, and mutual destruction remain supported. There is
+  no absolute damage cutoff or PvP-only rule.
+
+Excluded URLs explain the reason and link back to the battle record; they do not
+present a retry loop or load the renderer.
+
 The director preserves chronological arrival, capture, escape and destruction
-milestones. It samples repetitive firing exchanges and assigns 72% of combat
-screen time to consequential neighborhoods. Consequence shots begin before the impact and hold its reaction; clustered
-losses prioritize a nearby event instead of framing an empty fleet-wide center.
+milestones. It follows a recurring protagonist/opponent through selected setup,
+firing, impact and reaction sequences, then resolves the actual outcome. Screen
+direction stays consistent within an exchange. Repetitive exchanges are sampled;
+chronology, health, movement, weapon flights and actor lifetimes are retimed
+together. Major wreck chunks persist through the final shot, including a battle
+with no surviving ships.
 The version and battle ID seed all choreography. Bump `DIRECTOR_VERSION` when intentionally changing that edit.
 
 Each pilot appearance has a separate lifecycle. Arena losses disable intact
@@ -45,9 +66,36 @@ with engines and running lights disabled. Consequences take priority over ordina
 volleys in the visual and sound pools. The renderer has automatic, high, medium and
 low quality, pauses when hidden, and exposes a reduced-motion setting.
 
+`weapons.ts` identifies 13 delivery families independently of damage type:
+laser pulses, sustained beams, railgun needles, autocannon bursts, flak fans,
+plasma packets, guided missiles, heavy torpedoes, electrical disruptors, exotic
+energy, deployed mine packets, generic kinetic shots, and historical smartbombs.
+This covers the audited 69 current catalog weapons and four historical smartbombs.
+The public gun name is the identifier; `instance_id` is opaque. Oversized loadouts
+rotate through a bounded six-family sample instead of always hiding later guns.
+Ammo names and critical flags remain attached to their representative cues.
+
+`weaponVisuals.ts` produces bounded geometry recipes with deterministic flight
+and impact phases. Misses do not produce impact explosions. Absorbed hits light
+shields. Chain and splash rows propagate from the recorded primary victim rather
+than inventing another firing weapon. Smartbomb blasts are target-centered;
+contact defenses do not become ranged guns. Current mine records describe
+packets and attributed burns, so no persistent minefield is fabricated.
+
+Only confirmed result fields produce behavior accents: actual restoration gives
+local repair/recharge sweeps; actual shield drain collapses locally, while confirmed shield transfer or
+recorded lifesteal healing produces return-flow energy; successful system disable produces electrical hull
+arcs; an explicitly activated emergency cloak phases the hull and its lights.
+Percentages, requested amounts, weapon names, and fitted modules alone do not
+prove an effect occurred. Unknown remote repair sources never acquire invented
+beams. These are short cinematic accents, not representations of mechanical
+status durations or exact hardpoint positions.
+
 `audio.ts` synthesizes the score and effects locally through Web Audio. It creates
 or resumes its context from the Play gesture, limits transient voices, and
-cancels existing sources on pause, seek and disposal. No audio files, external
+cancels existing sources on pause, seek and disposal. Families have distinct
+onsets, burst envelopes, pitch, filter sweeps and noise/tone balance. Behavior
+accents remain quiet; casualty sounds can displace ordinary volley voices. No audio files, external
 asset services, generation credentials or paid requests are required.
 
 Development builds expose diagnostic `data-cinema-*` attributes on the canvas.
@@ -68,3 +116,13 @@ Useful completed records checked during development:
 
 These IDs are test references, not bundled production fixtures. Always preserve
 old-record fallbacks; live catalog details and log availability may change.
+
+Additional edge-case audit (ten completed public records, September 6, 2026):
+five retained and five excluded. Useful examples include
+`4f3bbf5acb225c53991b5c9025205255` (mixed fleet weapons),
+`3279115614a4a0891e04d3201c7d4e69` (station plus retreat),
+`57b1527d0207b88d526c3a056f8644e8` (mutual departures), and
+`f247e1a820d3e2aa13f0bcb1f5e91e1e` (creature plus Ion/EMP weapons).
+The bounded recent sample contained no intact captures or confirmed disables,
+cloaks, or drains; regression fixtures and explicitly synthetic browser scenes
+cover those effects. Synthetic scenes are test tools, never production films.

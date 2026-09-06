@@ -11,6 +11,8 @@ import { sampleCinemaHealth } from './director'
 import { sampleShipMotion, fleetMotionSpacing, type ShipMotionOptions } from './motion'
 import { sampleStoryCamera, clearStorySightline, keepCameraOutsideHulls, type CameraBody } from './camera'
 import { cinemaRenderSettings } from './quality'
+import { weaponVisual } from './weaponVisuals'
+import { getWeaponColor, resolveWeaponFamily } from './weapons'
 import { createShip } from './ships'
 import { resolveAppearance, type ShipAppearance } from './appearance'
 import type { CinemaFilm, CinemaShip } from './types'
@@ -46,7 +48,6 @@ function random(seed: number) {
 }
 const clamp = THREE.MathUtils.clamp
 
-const weaponColors: Record<string, number> = { kinetic: 0xffd28b, energy: 0x64eaff, thermal: 0xff814b, explosive: 0xffb25b, em: 0x929bff, void: 0xd39bff }
 
 function glowTexture() {
   const canvas = document.createElement('canvas')
@@ -263,6 +264,14 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     for(const piece of pieces)piece.dispose()
     template.traverse(object=>{if(object instanceof THREE.Mesh){object.geometry.dispose();for(const material of Array.isArray(object.material)?object.material:[object.material])material.dispose()}})
     const mesh=new THREE.InstancedMesh(geometry,new THREE.MeshStandardMaterial({color:0xa1b0ba,metalness:.55,roughness:.6}),Math.max(1,actors.length))
+    // Dither per-instance cloak visibility without changing the shared fleet material.
+    geometry.setAttribute('cinemaVisibility',new THREE.InstancedBufferAttribute(new Float32Array(Math.max(1,actors.length)).fill(1),1).setUsage(THREE.DynamicDrawUsage))
+    mesh.material.onBeforeCompile=shader=>{
+      shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nattribute float cinemaVisibility; varying float vCinemaVisibility;').replace('#include <begin_vertex>','#include <begin_vertex>\nvCinemaVisibility=cinemaVisibility;')
+      shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nvarying float vCinemaVisibility;').replace('#include <clipping_planes_fragment>',`#include <clipping_planes_fragment>
+        if(vCinemaVisibility<.999 && fract(sin(dot(floor(gl_FragCoord.xy),vec2(12.9898,78.233)))*43758.5453)>vCinemaVisibility) discard;`)
+    }
+    mesh.material.customProgramCacheKey=()=> 'cinema-fleet-cloak-v1'
     mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);mesh.frustumCulled=false;scene.add(mesh)
     distantGroups.set(key,{mesh,count:0})
   }
@@ -282,6 +291,10 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   trails.frustumCulled=false; trails.instanceMatrix.setUsage(THREE.DynamicDrawUsage); scene.add(trails)
   const beams = new THREE.InstancedMesh(new THREE.CylinderGeometry(1, 1, 1, 5), new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false }), 160)
   beams.frustumCulled = false; beams.instanceMatrix.setUsage(THREE.DynamicDrawUsage); scene.add(beams)
+  const projectiles = new THREE.InstancedMesh(new THREE.ConeGeometry(.5, 2.8, 7), new THREE.MeshStandardMaterial({color:0xffffff,metalness:.75,roughness:.35}),96)
+  projectiles.frustumCulled=false;projectiles.instanceMatrix.setUsage(THREE.DynamicDrawUsage);scene.add(projectiles)
+  const wrecks = new THREE.InstancedMesh(new THREE.BoxGeometry(1,.45,.75),new THREE.MeshStandardMaterial({color:0xffffff,metalness:.6,roughness:.86}),168)
+  wrecks.frustumCulled=false;wrecks.instanceMatrix.setUsage(THREE.DynamicDrawUsage);scene.add(wrecks)
   const sparks = new THREE.InstancedMesh(new THREE.BoxGeometry(1, .4, 1), new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: .55, roughness: .6 }), 800)
   sparks.frustumCulled = false; sparks.instanceMatrix.setUsage(THREE.DynamicDrawUsage); scene.add(sparks)
   const flashes: THREE.Sprite[] = []
@@ -307,6 +320,8 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   let requestedQuality: CinemaQuality = options.quality ?? 'auto'
   let actualQuality = requestedQuality === 'auto' ? (window.innerWidth < 760 ? 'low' : 'high') : requestedQuality
   let raf = 0, last = performance.now(), reportAt = 0, sampleFrames = 0, sampleElapsed = 0, qualityAge = 0
+  const audioCues=film.cues.filter(cue=>!cue.parentId).map(cue=>cue.kind==='weapon' && (cue.secondaryKind==='retaliation'||/galvanic hull grid/i.test(cue.weaponName??'')) ? {...cue,time:cue.time+cue.duration} : cue).sort((a,b)=>a.time-b.time || a.id.localeCompare(b.id))
+  const cuesById = new Map(film.cues.map(cue=>[cue.id,cue]))
   const effectWindow = film.cues.reduce((max, cue) => Math.max(max, cue.duration + 2), 7)
   const clearanceByShot = new Map<string,number>()
   const cameraTarget = new THREE.Vector3(), cameraPosition = new THREE.Vector3()
@@ -342,26 +357,33 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
 
   function draw() {
     let engineCount = 0, trailCount = 0
+    const activeCues = [...cueRange(film.cues, time - effectWindow, time + .00001)]
+    const cloakById = new Map<string,number>()
+    for(const cue of activeCues)if(cue.kind==='cloak' && cue.to && time>=cue.time && time<cue.time+cue.duration){
+      const phase=(time-cue.time)/Math.max(.01,cue.duration)
+      cloakById.set(cue.to,Math.sin(phase*Math.PI))
+    }
     for(const group of distantGroups.values())group.count=0
     for (const actor of actors) {
       positionAt(actor, time)
       const visible = isVisible(actor, time)
+      const cloak=cloakById.get(actor.ship.id) ?? 0
 
       if (actor.model) {
         actor.model.visible = visible && !(actor.ship.fate === 'destroyed' && time > actor.ship.end + .32)
         actor.model.position.copy(actor.position)
         actor.model.rotation.set(reduced ? 0 : actor.bank, actor.rotation, 0, 'YXZ')
-        for (const { material, intensity } of actor.engineMaterials) { if (material instanceof THREE.MeshStandardMaterial) material.emissiveIntensity = actor.thrust * (2.4 + Math.sin(time * 8 + actor.seed) * .3); else { material.transparent = true; material.opacity = actor.thrust * intensity * (.7 + Math.sin(time * 8 + actor.seed) * .06) } }
+        for (const { material, intensity } of actor.engineMaterials) { if (material instanceof THREE.MeshStandardMaterial) material.emissiveIntensity = actor.thrust * (2.4 + Math.sin(time * 8 + actor.seed) * .3) * (1-cloak*.95); else { material.transparent = true; material.opacity = actor.thrust * intensity * (.7 + Math.sin(time * 8 + actor.seed) * .06) * (1-cloak*.95) } }
       } else if (visible && !(actor.ship.fate === 'destroyed' && time > actor.ship.end + .32)) {
         dummy.position.copy(actor.position); dummy.rotation.set(reduced ? 0 : actor.bank, actor.rotation, 0, 'YXZ'); dummy.scale.setScalar(actor.size); dummy.updateMatrix()
         const group=distantGroups.get(`${actor.appearance.empire}:${actor.appearance.family}`)!
-        group.mesh.setMatrixAt(group.count, dummy.matrix); group.mesh.setColorAt(group.count++, tint.setHex(actor.appearance.hull))
+        group.mesh.setMatrixAt(group.count, dummy.matrix); (group.mesh.geometry.getAttribute('cinemaVisibility') as THREE.InstancedBufferAttribute).setX(group.count,1-cloak*.95); group.mesh.setColorAt(group.count++, tint.setHex(actor.appearance.hull))
       }
       if (visible && actor.thrust > 0 && engineCount < engineSprites.length && actor.model) {
         const sprite = engineSprites[engineCount++]
         sprite.visible = true; sprite.position.copy(actor.position).add(new THREE.Vector3(-Math.cos(actor.rotation) * actor.size * 0.49, 0, Math.sin(actor.rotation) * actor.size * 0.49))
         sprite.scale.setScalar(actor.size * actor.thrust * (.34 + Math.sin(time * 6 + actor.seed) * .012))
-        sprite.material.color.setHex(actor.appearance.accent)
+        sprite.material.color.setHex(actor.appearance.accent);sprite.material.opacity=1-cloak*.95
       }
     }
     if (!reduced) for (const actor of actors) {
@@ -380,7 +402,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
       }
     }
     trails.count=trailCount;trails.instanceMatrix.needsUpdate=true;if(trails.instanceColor)trails.instanceColor.needsUpdate=true
-    for(const group of distantGroups.values()){group.mesh.count=group.count;group.mesh.instanceMatrix.needsUpdate=true;if(group.mesh.instanceColor)group.mesh.instanceColor.needsUpdate=true}
+    for(const group of distantGroups.values()){group.mesh.count=group.count;group.mesh.instanceMatrix.needsUpdate=true;group.mesh.geometry.getAttribute('cinemaVisibility').needsUpdate=true;if(group.mesh.instanceColor)group.mesh.instanceColor.needsUpdate=true}
     for (let i = engineCount; i < engineSprites.length; i++) engineSprites[i].visible = false
 
     let shotIndex = film.shots.findIndex(s => time >= s.start && time < s.end)
@@ -436,7 +458,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
       canvas.dataset.cinemaFocus=frame.target.toArray().map(value=>value.toFixed(1)).join(',')
     }
 
-    let beamCount = 0, sparkCount = 0, flashCount = 0, shieldCount = 0, shockwaveCount = 0
+    let beamCount = 0, sparkCount = 0, flashCount = 0, shieldCount = 0, shockwaveCount = 0, projectileCount = 0, wreckCount = 0
     pulseLight.intensity = 0
     const addBeam = (a: THREE.Vector3, b: THREE.Vector3, width: number, color: number) => {
       if (beamCount >= (actualQuality === 'low' ? 48 : 160)) return
@@ -461,10 +483,16 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
       actor.model.traverse(object=> {
         if(object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial && !object.userData.engine){
           const material=object.material
+          const cloak=cloakById.get(actor.ship.id) ?? 0
+          material.userData.uncloaked ??= {opacity:material.opacity,transparent:material.transparent,depthWrite:material.depthWrite}
+          const original=material.userData.uncloaked
+          const transparent=original.transparent || cloak>.01
+          if(material.transparent!==transparent){material.transparent=transparent;material.needsUpdate=true}
+          material.opacity=original.opacity*(1-cloak*.88);material.depthWrite=cloak>.01?false:original.depthWrite
           material.userData.originalColor ??= material.color.clone()
           material.color.copy(material.userData.originalColor).multiplyScalar(1-damage*.55)
           material.userData.originalEmissive ??= material.emissiveIntensity
-          material.emissiveIntensity = disabled ? 0 : material.userData.originalEmissive
+          material.emissiveIntensity = disabled ? 0 : material.userData.originalEmissive*(1-cloak*.95)
         }
       })
       if(flashCount < flashes.length - 12 && damage>.5 && actor.ship.fate!=='knocked_out' && actor.ship.fate!=='captured'){
@@ -473,7 +501,6 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
       }
     }
     // Reserve the effect budget for consequences before ordinary volleys.
-    const activeCues = [...cueRange(film.cues, time - effectWindow, time + 0.00001)]
     const consequence = (kind: string) => ['death', 'knockout', 'capture'].includes(kind) ? 1 : 0
     activeCues.sort((a,b) => (consequence(b.kind) * 2 + Number(b.to === subject.id)) - (consequence(a.kind) * 2 + Number(a.to === subject.id)))
     for (const cue of activeCues) {
@@ -483,37 +510,27 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
       const to = cue.to ? byId.get(cue.to) : undefined
       const destination = to ?? from
       if (!destination) continue
-      const color = weaponColors[cue.damageType ?? 'energy'] ?? 0x86dfff
+      const color = getWeaponColor(cue.weaponFamily ?? resolveWeaponFamily(cue.weaponName,cue.damageType),cue.damageType)
       const seed = hash(cue.id)
       if (cue.kind === 'weapon' && from && to) {
-        pointA.copy(from.position); pointA.y += from.size * 0.1
+        pointA.copy(from.position).add(new THREE.Vector3(Math.cos(from.rotation)*from.size*.42,from.size*.12,-Math.sin(from.rotation)*from.size*.42))
         pointB.copy(to.position); pointB.y += to.size * 0.06
         if (!cue.hit) { pointB.y += to.size * 0.8; pointB.z += to.size * (seed % 2 ? 0.7 : -0.7) }
-        const travel = Math.max(0.015, cue.duration)
-        if (!cue.parentId && age < travel) {
-          const fraction = clamp(age / travel, 0, 1)
-          const missile = cue.damageType === 'explosive' || /missile|torpedo/i.test(cue.weaponName ?? '')
-          const electric = cue.damageType === 'em' || cue.damageType === 'void'
-          const head = pointA.clone().lerp(pointB, fraction)
-          const tail = pointA.clone().lerp(pointB, clamp(fraction - (cue.damageType === 'energy' ? 0.9 : 0.16), 0, 1))
-          if (missile) {
-            head.y += Math.sin(fraction * Math.PI) * (30 + seed % 40)
-            tail.y += Math.sin(clamp(fraction - 0.16, 0, 1) * Math.PI) * (30 + seed % 40)
-            addBeam(tail, head, 0.32, color)
-            addFlash(head, 8, 0xffd4a3, 0.8)
-          } else if (electric) {
-            let segmentStart = pointA.clone()
-            for (let j = 1; j <= 7; j++) {
-              const step = j / 7 * fraction
-              const segmentEnd = pointA.clone().lerp(pointB, step)
-              if (j < 7) { segmentEnd.y += Math.sin(seed + j * 17 + time * 13) * 4; segmentEnd.z += Math.cos(seed + j * 19 + time * 11) * 4 }
-              addBeam(segmentStart, segmentEnd, 0.3, color); segmentStart = segmentEnd
-            }
-          } else {
-            addBeam(tail, head, cue.damageType === 'kinetic' ? 0.26 : 0.65, color)
-            if(cue.damageType==='energy') addBeam(tail,head,.17,0xeaffff)
-          }
-          addFlash(pointA, from.size * 0.3 * (1 - fraction), color, 0.5)
+        if(cue.secondaryKind==='retaliation'||/galvanic hull grid/i.test(cue.weaponName??''))pointA.copy(from.position)
+        const parent=cuesById.get(cue.parentId ?? '')
+        const collateralOrigin=parent?.to ? byId.get(parent.to)?.position : undefined
+        const visual=weaponVisual(cue,age,pointA,pointB,from.size,to.size,reduced,collateralOrigin)
+        for(const beam of visual.lines)addBeam(beam.from,beam.to,beam.width,beam.color)
+        for(const flash of visual.glows)addFlash(flash.position,flash.radius,flash.color,flash.opacity)
+        for(const wave of visual.rings){
+          if(shockwaveCount>=shockwaves.length)break
+          const ring=shockwaves[shockwaveCount++];ring.visible=true;ring.position.copy(wave.position);ring.quaternion.copy(camera.quaternion)
+          ring.scale.setScalar(wave.radius);ring.material.color.setHex(wave.color);ring.material.opacity=wave.opacity
+        }
+        for(const projectile of visual.projectiles){
+          if(projectileCount>=96)break
+          dummy.position.copy(projectile.position);dummy.quaternion.setFromUnitVectors(up,projectile.direction);dummy.scale.setScalar(projectile.size);dummy.updateMatrix()
+          projectiles.setMatrixAt(projectileCount,dummy.matrix);projectiles.setColorAt(projectileCount++,tint.setHex(projectile.color))
         }
         const impactAge = weaponImpactAge(cue, time)
         if (cue.hit && impactAge >= 0 && impactAge < 1.2) {
@@ -586,12 +603,53 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
           }
         }
         if (age < 1.5 && !reduced) { pulseLight.position.copy(destination.position); pulseLight.color.setHex(effectColor); pulseLight.intensity = radius * radius * 12 * Math.exp(-age * 3); pulseLight.distance = radius * 7 }
+      } else if (cue.kind === 'repair' && age < cue.duration) {
+        const progress=age/Math.max(.01,cue.duration), wave=Math.sin(progress*Math.PI), repairColor=cue.repairKind==='shield'?0x70cbe6:0x70e6b4
+        const center=destination.position.clone();center.y+=destination.size*(progress-.5)*.45
+        addFlash(center,destination.size*.5,repairColor,wave*.22)
+        if(shockwaveCount<shockwaves.length){const ring=shockwaves[shockwaveCount++];ring.visible=true;ring.position.copy(center);ring.rotation.set(Math.PI/2,0,destination.rotation);ring.scale.setScalar(destination.size*.45);ring.material.color.setHex(repairColor);ring.material.opacity=wave*(reduced?.12:.45)}
+      } else if (cue.kind === 'disable' && age < cue.duration) {
+        const fade=1-age/Math.max(.01,cue.duration)
+        for(let branch=0;branch<(reduced?1:3);branch++){
+          let previous=destination.position.clone()
+          for(let j=1;j<=5;j++){
+            const phase=j/5*Math.PI*2+branch*2.1
+            const next=new THREE.Vector3(Math.cos(phase)*destination.size*.5,Math.sin(phase*2+age*11)*destination.size*.16,Math.sin(phase)*destination.size*.3).applyAxisAngle(up,destination.rotation).add(destination.position)
+            addBeam(previous,next,Math.max(.18,destination.size*.003)*fade,0xabbbff);previous=next
+          }
+        }
+      } else if (cue.kind === 'drain' && from && to && age < cue.duration) {
+        const progress=age/Math.max(.01,cue.duration)
+        if(cue.drainTransferred){
+          // Only an actual shield transfer or lifesteal heal names a beneficiary.
+          const head=to.position.clone().lerp(from.position,progress),tail=to.position.clone().lerp(from.position,Math.max(0,progress-.2))
+          addBeam(tail,head,Math.max(.25,from.size*.006),0xbba0ff)
+          addFlash(head,from.size*.18,0xc3a6ff,.5*Math.sin(progress*Math.PI))
+        }else if(shockwaveCount<shockwaves.length){
+          const ring=shockwaves[shockwaveCount++];ring.visible=true;ring.position.copy(to.position);ring.quaternion.copy(camera.quaternion)
+          ring.scale.setScalar(to.size*(.65-progress*.4));ring.material.color.setHex(0x859fcf);ring.material.opacity=Math.sin(progress*Math.PI)*.45
+        }
+      } else if (cue.kind === 'cloak' && age < cue.duration) {
+        if(shieldCount<shields.length){const shield=shields[shieldCount++];shield.visible=true;shield.position.copy(destination.position);shield.rotation.y=destination.rotation;shield.scale.set(destination.size*.6,destination.size*.32,destination.size*.43);shield.material.uniforms.opacity.value=Math.sin(age/cue.duration*Math.PI)*(reduced?.1:.45);shield.material.uniforms.time.value=age*.4;shield.material.uniforms.color.value.setHex(0x8999b8)}
       } else if ((cue.kind === 'arrival' || cue.kind === 'escape') && age < 1.7) {
         addFlash(destination.position, destination.size * (1.3 + age), 0x80d8ff, Math.exp(-age * 3) * 0.35)
       } else if (cue.kind === 'burn' && age < cue.duration) {
         addFlash(destination.position, destination.size * 0.5, 0xff8c40, 0.18 * Math.sin(age / cue.duration * Math.PI))
       }
     }
+    for(const actor of actors){
+      if(!actor.model || actor.ship.fate!=='destroyed' || time<actor.ship.end+.4)continue
+      const age=time-actor.ship.end
+      for(let j=0;j<6 && wreckCount<168;j++){
+        const r=random(actor.seed+j*997)
+        const offset=new THREE.Vector3(r()-.5,r()-.5,r()-.5).multiplyScalar(actor.size*(.35+Math.min(age,15)*.025))
+        dummy.position.copy(actor.position).add(offset);dummy.rotation.set(r()*6+age*.03,r()*6+age*.025,r()*6)
+        dummy.scale.set(actor.size*(.12+r()*.14),actor.size*(.08+r()*.07),actor.size*(.14+r()*.1));dummy.updateMatrix()
+        wrecks.setMatrixAt(wreckCount,dummy.matrix);wrecks.setColorAt(wreckCount++,tint.setHex(actor.appearance.hull).multiplyScalar(.42))
+      }
+    }
+    wrecks.count=wreckCount;wrecks.instanceMatrix.needsUpdate=true;if(wrecks.instanceColor)wrecks.instanceColor.needsUpdate=true
+    projectiles.count=projectileCount;projectiles.instanceMatrix.needsUpdate=true;if(projectiles.instanceColor)projectiles.instanceColor.needsUpdate=true
     beams.count = beamCount; beams.instanceMatrix.needsUpdate = true; if (beams.instanceColor) beams.instanceColor.needsUpdate = true
     sparks.count = sparkCount; sparks.instanceMatrix.needsUpdate = true; if (sparks.instanceColor) sparks.instanceColor.needsUpdate = true
     for (let i = flashCount; i < flashes.length; i++) flashes[i].visible = false
@@ -609,7 +667,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     try { draw() } catch (error) { playing = false; audio.setPlaying(false); options.onError?.(error instanceof Error ? error.message : 'The renderer stopped.') }
   }
   const emitCues = (previous: number, current: number) => {
-    for (const cue of cueRange(film.cues, previous, current)) {
+    for (const cue of cueRange(audioCues, previous, current)) {
       if (cue.parentId) continue
       const actor = byId.get(cue.from ?? cue.to ?? '')
       let pan = 0

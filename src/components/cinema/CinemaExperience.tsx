@@ -64,8 +64,8 @@ export default function CinemaExperience({ battleId, appearances }: { battleId: 
         <p className={styles.eyebrow}>{t('cinema.series')}</p>
         <h1>{t(`cinema.state.${state}`)}</h1>
         <p className={styles.description}>{t(`cinema.state.${state}Detail`)}</p>
-        {!pending && eligibility !== 'active' && <button type="button" className={styles.secondary} onClick={() => { setAttempt(value => value + 1); data.retry() }} disabled={data.refreshing}><RotateCcw size={15} aria-hidden />{t('cinema.retry')}</button>}
-        {eligibility === 'active' && <Link className={styles.secondary} href={`/battles/${encodeURIComponent(battleId)}`}>{t('cinema.record')}</Link>}
+        {!pending && state === 'unavailable' && <button type="button" className={styles.secondary} onClick={() => { setAttempt(value => value + 1); data.retry() }} disabled={data.refreshing}><RotateCcw size={15} aria-hidden />{t('cinema.retry')}</button>}
+        {!pending && state !== 'unavailable' && <Link className={styles.secondary} href={`/battles/${encodeURIComponent(battleId)}`}>{t('cinema.record')}</Link>}
       </section>
       <p className={styles.waitFooter}>{t('cinema.inspired')}</p>
     </main>

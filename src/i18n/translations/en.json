@@ -51,7 +51,13 @@
       "unavailable": "Signal unavailable.",
       "unavailableDetail": "The complete battle record could not be loaded. Try again or return to the battle record.",
       "interrupted": "An unfinished transmission.",
-      "interruptedDetail": "This record has no complete, confirmed ending. A cinematic screening requires the full battle story."
+      "interruptedDetail": "This record has no complete, confirmed ending. A cinematic screening requires the full battle story.",
+      "unsupported": "A different kind of encounter.",
+      "unsupportedDetail": "Creature encounters are not yet supported by battle cinema. Explore this encounter in its battle record.",
+      "uneventful": "The guns fell quiet.",
+      "uneventfulDetail": "This encounter ended without a recorded hit, damage, destruction, or capture to make into a film. Its full record is still available.",
+      "retreated": "Both sides withdrew.",
+      "retreatedDetail": "Every remaining participant escaped without a recorded loss or capture. Explore the encounter in its battle record."
     }
   },
   "nav": {

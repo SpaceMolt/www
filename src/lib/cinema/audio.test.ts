@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { CinemaAudio } from './audio'
+import type { CinemaWeaponFamily } from './weapons'
 import type { CinemaCue } from './types'
 
 // Model scheduling and graph lifetime, not audible output. Future stop() calls
@@ -213,5 +214,84 @@ describe('cinema audio lifecycle', () => {
     const audio = makeAudio()
     expect(() => { audio.setMuted(false); audio.setPlaying(true); audio.cue(weapon); audio.clear(); audio.setPlaying(false); audio.dispose() }).not.toThrow()
     expect(FakeContext.instances).toHaveLength(0)
+  })
+
+  it('schedules thirteen distinct family spectra/envelopes with exactly two sources each', () => {
+    const { audio, context } = started()
+    const names: [CinemaWeaponFamily, string][] = [
+      ['laser', 'Pulse Laser I'], ['beam', 'Graviton Beam I'], ['railgun', 'Railgun II'],
+      ['autocannon', 'Autocannon I'], ['flak', 'Flak Cannon III'], ['plasma', 'Plasma Cannon I'],
+      ['missile', 'EMP Missile Launcher'], ['torpedo', 'Void Torpedo Launcher'],
+      ['disruptor', 'EMP Cannon I'], ['exotic', 'Dark Matter Projector'], ['mine', 'Tracking Mine Launcher'],
+      ['kinetic', 'Scrap Harpoon'], ['smartbomb', 'EM Smartbomb'],
+    ]
+    const signatures = new Set<string>()
+    for (const [family, name] of names) {
+      const sourcesBefore = context.transients.length, gainsBefore = context.gains.length
+      audio.cue({ ...weapon, weaponName: name, damageType: 'kinetic' })
+      expect(context.transients.length - sourcesBefore).toBe(2)
+      const tone = context.oscillators.at(-1)!, filter = context.filters.at(-1)!
+      const envelope = context.gains[gainsBefore].gain.calls
+      signatures.add(JSON.stringify({ wave: tone.type, pitch: tone.frequency.calls, filter: filter.type, cutoff: filter.frequency.calls, envelope }))
+      expect(Math.max(...envelope.map(call => call.value))).toBeLessThanOrEqual(.23)
+      expect(tone.stops[0]! - tone.starts[0]).toBeLessThanOrEqual(1.7)
+      if (family === 'autocannon') expect(envelope.filter(call => call.method === 'value')).toHaveLength(4)
+      if (family === 'beam') expect(tone.stops[0]! - tone.starts[0]).toBeGreaterThan(1)
+      audio.clear()
+    }
+    expect(signatures.size).toBe(13)
+    expect(context.panners.every(node => node.disconnected)).toBe(true)
+    expect(context.gains.slice(2).every(node => node.disconnected)).toBe(true)
+  })
+
+  it('uses the compiler family when present and limits a recorded critical to a 15 percent peak increase', () => {
+    const { audio, context } = started()
+    audio.cue({ ...weapon, weaponFamily: 'railgun', weaponName: 'Historical mount' })
+    const normalPeak = Math.max(...context.gains[2].gain.calls.map(call => call.value))
+    expect(context.oscillators.at(-1)!.frequency.calls[0].value).toBe(180)
+    audio.clear()
+    const gainsBefore = context.gains.length
+    audio.cue({ ...weapon, weaponFamily: 'railgun', critical: true })
+    const criticalPeak = Math.max(...context.gains[gainsBefore].gain.calls.map(call => call.value))
+    expect(criticalPeak / normalPeak).toBeCloseTo(1.15)
+    expect(criticalPeak).toBeLessThanOrEqual(.23)
+  })
+
+  it('gives observed repair, disable, cloak and drain different bounded accents and cleans their graphs', () => {
+    const { audio, context } = started()
+    const signatures = new Set<string>()
+    for (const kind of ['repair', 'disable', 'cloak', 'drain'] as const) {
+      const before = context.transients.length, gainIndex = context.gains.length
+      audio.cue({ ...weapon, kind })
+      expect(context.transients.length - before).toBe(2)
+      const tone = context.oscillators.at(-1)!
+      const envelope = context.gains[gainIndex].gain.calls
+      signatures.add(JSON.stringify([tone.type, tone.frequency.calls, envelope]))
+      expect(Math.max(...envelope.map(call => call.value))).toBeLessThanOrEqual(.12)
+      audio.clear()
+    }
+    expect(signatures.size).toBe(4)
+    expect(context.transients.every(source => source.ended && source.disconnected)).toBe(true)
+  })
+
+  it('keeps non-finite external control values out of AudioParam automation', () => {
+    const { audio, context } = started()
+    expect(() => { audio.setVolume(NaN); audio.intensity(NaN, Infinity); audio.cue(weapon, NaN) }).not.toThrow()
+    expect(context.master.value).toBe(0)
+    expect(context.panners[0].pan.value).toBe(0)
+  })
+
+  it('uses a short contact crack for retaliation and Galvanic defenses instead of replaying their weapon family', () => {
+    const { audio, context } = started()
+    for (const fields of [{ secondaryKind: 'retaliation', weaponFamily: 'torpedo' as const }, { weaponName: 'Galvanic Hull Grid', weaponFamily: 'disruptor' as const }]) {
+      const before = context.transients.length, gainIndex = context.gains.length
+      audio.cue({ ...weapon, ...fields })
+      expect(context.transients.length - before).toBe(2)
+      const tone = context.oscillators.at(-1)!
+      expect(tone.stops[0]! - tone.starts[0]).toBeLessThan(.3)
+      expect(Math.max(...context.gains[gainIndex].gain.calls.map(call => call.value))).toBeLessThanOrEqual(.1)
+      audio.clear()
+    }
+    expect(context.transients.every(source => source.ended && source.disconnected)).toBe(true)
   })
 })

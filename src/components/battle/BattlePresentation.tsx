@@ -10,6 +10,7 @@ import { battleMomentPath, acceptsPlaybackShortcut, reconcilePlayhead } from '@/
 import { writeClipboardText } from '@/lib/battle/clipboardFeedback'
 import { buildTimeline } from '@/lib/battle/timeline'
 import { arenaVenueName } from '@/lib/battle/format'
+import { getCinemaEligibility } from '@/lib/cinema/director'
 import {
   makeTransform,
   renderBackground,
@@ -43,6 +44,7 @@ export default function BattlePresentation({ battleId, data, embedded = false, f
   const { t } = useTranslation()
   const { summary, entries, isLive, loading, error } = data
   const timeline = useMemo(() => buildTimeline(entries, summary), [entries, summary])
+  const cinemaReady = useMemo(() => getCinemaEligibility(summary, entries, data.phase) === 'ready', [summary, entries, data.phase])
   const timelineRef = useRef(timeline)
   timelineRef.current = timeline
 
@@ -454,7 +456,7 @@ export default function BattlePresentation({ battleId, data, embedded = false, f
           </div>
         </div>
         <div className={styles.headerRight}>
-          {summary?.status === 'completed' && data.phase === 'complete' && ended && summary.outcome !== 'interrupted' && endEntry?.outcome !== 'interrupted' && (
+          {cinemaReady && (
             <Link href={`/battles/${encodeURIComponent(battleId)}/cinematic`} className={styles.replayBtn}>
               <Film size={13} aria-hidden /> {t('cinema.watch')}
             </Link>

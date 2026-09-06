@@ -1,7 +1,8 @@
 import type { BattleLogEntry, BattleSummary } from '../battle/types'
+import type { CinemaWeaponFamily } from './weapons'
 
 export type CinemaFate = 'survived' | 'destroyed' | 'knocked_out' | 'escaped' | 'captured' | 'withdrawn'
-export type CinemaCueKind = 'weapon' | 'death' | 'knockout' | 'escape' | 'capture' | 'arrival' | 'burn'
+export type CinemaCueKind = 'weapon' | 'death' | 'knockout' | 'escape' | 'capture' | 'arrival' | 'burn' | 'repair' | 'disable' | 'cloak' | 'drain'
 export type CinemaShotKind = 'reveal' | 'tracking' | 'broadside' | 'pursuit' | 'impact' | 'aftermath'
 
 export interface CinemaHealth {
@@ -57,6 +58,15 @@ export interface CinemaCue {
   /** Associates collateral with a primary cue without inventing another gun. */
   parentId?: string
   weaponName?: string
+  weaponFamily?: CinemaWeaponFamily
+  ammoName?: string
+  critical?: boolean
+  /** Observed recipient-local restoration; a remote source is not public. */
+  repairKind?: 'hull' | 'shield'
+  /** The resource actually removed from the target. */
+  drainKind?: 'hull' | 'shield'
+  /** True only when the record confirms a beneficiary received the resource. */
+  drainTransferred?: boolean
 }
 
 export type CinemaShotRole = 'geography' | 'protagonist' | 'opposition' | 'setup' | 'fire' | 'impact' | 'reaction' | 'montage' | 'resolution'

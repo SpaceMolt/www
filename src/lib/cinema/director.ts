@@ -1,9 +1,10 @@
 import type { BattleLogEntry, BattleSummary, ParticipantSnapshot } from '../battle/types'
 import type { BattleLoadPhase } from '../battle/battleData'
 import { buildAttackVisualPlan } from '../battle/attackVisualPlan'
+import { resolveWeaponFamily } from './weapons'
 import type { CinemaAxis, CinemaCue, CinemaFilm, CinemaHealth, CinemaSequence, CinemaShip, CinemaShot, CinemaSourceSegment } from './types'
 
-export const DIRECTOR_VERSION = 3
+export const DIRECTOR_VERSION = 4
 const OPENING = 8
 const AFTERMATH = 10
 const clamp = (value: number, low = 0, high = 1) => Math.min(high, Math.max(low, Number.isFinite(value) ? value : low))
@@ -15,7 +16,7 @@ export function cinemaHash(value: string): number {
   return hash >>> 0
 }
 
-export type CinemaEligibility = 'loading' | 'active' | 'finalizing' | 'unavailable' | 'interrupted' | 'ready'
+export type CinemaEligibility = 'loading' | 'active' | 'finalizing' | 'unavailable' | 'interrupted' | 'unsupported' | 'uneventful' | 'retreated' | 'ready'
 
 /** Reconciliation is established by the shared paginated loader, never inferred from a terminal row alone. */
 export function getCinemaEligibility(
@@ -30,6 +31,33 @@ export function getCinemaEligibility(
   if (summary?.outcome === 'interrupted' || terminal?.outcome === 'interrupted') return 'interrupted'
   if (phase !== 'complete' || summary?.status !== 'completed' || !terminal) return 'finalizing'
   if (!entries.length || entries.some(entry => entry.battle_id !== summary.battle_id)) return 'unavailable'
+  if (summary.category === 'wildlife' || terminal.category === 'wildlife' ||
+      terminal.participants.some(actor => actor.kind === 'creature') ||
+      entries.some(entry => entry.snapshots.some(actor => actor.kind === 'creature'))) return 'unsupported'
+  const consequential = terminal.ships_destroyed > 0 || (terminal.captures?.length ?? 0) > 0 ||
+    entries.some(entry => (entry.kills?.length ?? 0) > 0 || (entry.captures?.length ?? 0) > 0 || entry.burns?.some(burn => burn.destroyed))
+  const combat = consequential || terminal.total_damage > 0 || entries.some(entry =>
+    entry.burns?.some(burn => burn.damage > 0) || entry.attacks?.some(attack =>
+      attack.final_damage > 0 || attack.shield_damage > 0 || attack.hull_damage > 0 ||
+      (attack.hit_success && (attack.landed_damage ?? attack.pre_hit_damage ?? attack.raw_damage) > 0)))
+  if (!combat) return 'uneventful'
+  if (!consequential) {
+    // Survived means merely "not destroyed" in the terminal roster. Track the
+    // last appearance instead: an escaped pilot can rejoin before the ending.
+    const appearances = new Map<string, { side: number; escaped: boolean }>()
+    for (const entry of [...entries].sort((a, b) => a.tick - b.tick)) {
+      for (const actor of entry.snapshots) appearances.set(actor.player_id, { side: actor.side_id, escaped: false })
+      for (const actor of entry.joins ?? []) appearances.set(actor.player_id, { side: actor.side_id, escaped: false })
+      for (const flee of entry.flee ?? []) if (flee.escaped) {
+        const actor = appearances.get(flee.player_id)
+        if (actor) actor.escaped = true
+      }
+    }
+    // Unknown historical participants are not evidence of a full retreat.
+    const allKnown = terminal.participants.every(actor => appearances.has(actor.player_id))
+    const actors = [...appearances.values()]
+    if (allKnown && new Set(actors.map(actor => actor.side)).size >= 2 && actors.every(actor => actor.escaped)) return 'retreated'
+  }
   return 'ready'
 }
 
@@ -464,12 +492,30 @@ export function compileBattleFilm(summary: BattleSummary, source: BattleLogEntry
     const victims = new Set((entry.kills ?? []).map(kill => kill.victim_id))
     const hullDamage = new Map<string, number>()
     const shieldDamage = new Map<string, number>()
+    const behaviorKeys = new Set<string>()
+    const behavior = (cue: Omit<CinemaCue, 'id' | 'tick' | 'time' | 'duration'>, time = impactTime) => {
+      const key = `${cue.kind}:${cue.to}:${cue.repairKind ?? cue.drainKind ?? ''}`
+      // A local cue represents the observed effect, not every component that
+      // contributed to it. Avoid a crowd of overlapping restoration flashes.
+      if (span < .16 || behaviorKeys.has(key) || behaviorKeys.size >= 16) return
+      behaviorKeys.add(key)
+      addCue({ ...cue, tick: entry.tick, time, duration: Math.min(1.6, Math.max(.4, span * .3)) })
+    }
     attacks.forEach((attack, attackIndex) => {
       const from = active.get(attack.attacker_id) ?? (!retired.has(attack.attacker_id) ? ensureShip(attack.attacker_id, segment.start) : undefined)
       const to = active.get(attack.target_id) ?? (!retired.has(attack.target_id) ? ensureShip(attack.target_id, segment.start) : undefined)
       if (!from || !to) return
       hullDamage.set(to.playerId, (hullDamage.get(to.playerId) ?? 0) + Math.max(0, attack.hull_damage))
       shieldDamage.set(to.playerId, (shieldDamage.get(to.playerId) ?? 0) + Math.max(0, attack.shield_damage))
+      if ((attack.system_disable_ticks ?? 0) > 0) behavior({ kind: 'disable', to: to.id, intensity: .6 })
+      if (attack.emergency_cloak_activated === true) behavior({ kind: 'cloak', to: to.id, intensity: .6 })
+      if ((attack.shield_drained ?? 0) > 0) behavior({ kind: 'drain', from: from.id, to: to.id, drainKind: 'shield',
+        drainTransferred: (attack.shield_transferred ?? 0) > 0,
+        intensity: clamp(.2 + fraction(attack.shield_drained!, latestSnapshots.get(to.playerId)?.max_shield ?? 0)) })
+      const healed = (attack.defense_components ?? []).reduce((sum, component) => sum + Math.max(0, component.lifesteal_heal ?? 0), 0)
+      if (healed > 0) behavior({ kind: 'drain', from: from.id, to: to.id, drainKind: 'hull',
+        drainTransferred: true,
+        intensity: clamp(.2 + fraction(healed, latestSnapshots.get(from.playerId)?.max_hull ?? 0)) })
       if (span < 0.16) return
       const bucket = Math.floor(segment.start * 4)
       const count = budgetByTime.get(bucket) ?? 0
@@ -483,8 +529,21 @@ export function compileBattleFilm(summary: BattleSummary, source: BattleLogEntry
       const weapons = attack.weapons ?? []
       // Distinct recorded weapon families and hit outcomes get representative
       // bolts. Dense batteries share a small salvo instead of thousands of meshes.
-      const representatives = [...new Map(weapons.map(weapon =>
-        [`${weapon.damage_type}:${weapon.hit_success ?? attack.hit_success}`, weapon])).values()].slice(0, 3)
+      const variants = [...new Map(weapons.map(weapon =>
+        [`${resolveWeaponFamily(weapon.name, weapon.damage_type)}:${weapon.hit_success ?? attack.hit_success}`, weapon])).values()]
+        .sort((a, b) => Number(b.hit_success ?? attack.hit_success) - Number(a.hit_success ?? attack.hit_success))
+      const families = new Set<string>()
+      const distinctFamilies = variants.filter(weapon => {
+        const family = resolveWeaponFamily(weapon.name, weapon.damage_type)
+        if (families.has(family)) return false
+        families.add(family)
+        return true
+      })
+      // Advance a stable window through oversized batteries rather than always
+      // hiding the same later families in every volley of the encounter.
+      const rotation = distinctFamilies.length > 6 ? (entry.tick + cinemaHash(from.playerId)) % distinctFamilies.length : 0
+      const representatives = [...distinctFamilies.slice(rotation), ...distinctFamilies.slice(0, rotation)].slice(0, 6)
+      for (const weapon of variants) if (representatives.length < 6 && !representatives.includes(weapon)) representatives.push(weapon)
       const volley = representatives.length ? representatives : [undefined]
       volley.forEach((weapon, weaponIndex) => {
         const hit = weapon?.hit_success ?? attack.hit_success
@@ -497,7 +556,8 @@ export function compileBattleFilm(summary: BattleSummary, source: BattleLogEntry
           hullDamage: hit ? Math.max(0, component?.hull_damage ?? attack.hull_damage) : 0,
           intensity: clamp(0.25 + Math.log10(Math.max(1, attack.final_damage)) / 7),
           secondaryKind: attack.secondary_kind || (attack.splash ? 'ammo_splash' : undefined), parentId: parent?.id,
-          weaponName: weapon?.name })
+          weaponName: weapon?.name, weaponFamily: resolveWeaponFamily(weapon?.name, weapon?.damage_type || attack.damage_type),
+          ammoName: weapon?.ammo_used, critical: weapon?.crit_fired })
         if (parentIndex === undefined && weaponIndex === 0) emittedPrimary.set(attackIndex, cue)
       })
     })
@@ -520,6 +580,14 @@ export function compileBattleFilm(summary: BattleSummary, source: BattleLogEntry
       const snap = latestSnapshots.get(regen.player_id)
       if (ship && snap) appendHealth(ship, { time: segment.start + span * 0.82,
         hull: fraction(regen.hull_after, snap.max_hull), shield: fraction(regen.shield_after, snap.max_shield) })
+      if (ship && snap) {
+        const hullGain = Math.max(0, regen.hull_after - regen.hull_before)
+        const shieldGain = Math.max(0, regen.shield_after - regen.shield_before)
+        if (hullGain > 0 && (fraction(hullGain, snap.max_hull) >= .02 || (regen.remote_repair ?? 0) > 0))
+          behavior({ kind: 'repair', to: ship.id, repairKind: 'hull', intensity: clamp(.2 + fraction(hullGain, snap.max_hull)) }, segment.start + span * .82)
+        if (fraction(shieldGain, snap.max_shield) >= .02)
+          behavior({ kind: 'repair', to: ship.id, repairKind: 'shield', intensity: clamp(.15 + fraction(shieldGain, snap.max_shield)) }, segment.start + span * .82)
+      }
     }
     for (const move of entry.zone_moves ?? []) {
       const ship = active.get(move.player_id)
