@@ -3,12 +3,96 @@ import { armorPlateGeometry } from './ship-plates'
 import type { ShipAppearance } from './appearance'
 import type { SpecialHullContext } from './ship-recipes'
 
+/** Small Solarian craft retain filleted pressure sections, but sweep those
+ * sections into a wedge. Scouts use compact shoulders; fighters carry a wider
+ * delta shoulder. Donor hulls inherit this rule through hullEmpire/family. */
+function buildSolarianSmallHull(fighter:boolean,c:SpecialHullContext) {
+  const {add,rounded,slab,rod,engine,hero,w,h}=c
+  type Ring=readonly [x:number,width:number,height:number,y?:number]
+  const shell=(rings:readonly Ring[],material:Parameters<typeof add>[1])=>{
+    const segments=hero?24:12,positions:number[]=[],indices:number[]=[]
+    // A superellipse leaves broad pressure-panel faces with rounded corners.
+    const section=(angle:number,radius:number)=>Math.sign(Math.sin(angle))*Math.sqrt(Math.abs(Math.sin(angle)))*radius
+    for(const [x,width,height,y=0] of rings)for(let j=0;j<segments;j++) {
+      const angle=j/segments*Math.PI*2
+      positions.push(x,y+section(angle,height),section(angle+Math.PI/2,width))
+    }
+    for(let i=0;i<rings.length-1;i++)for(let j=0;j<segments;j++) {
+      const a=i*segments+j,b=i*segments+(j+1)%segments
+      indices.push(a,a+segments,b,b,a+segments,b+segments)
+    }
+    for(const end of [0,rings.length-1]) {
+      const [x,width,height,y=0]=rings[end],base=positions.length/3
+      positions.push(x,y,0)
+      for(let j=0;j<segments;j++) {
+        const angle=j/segments*Math.PI*2
+        positions.push(x,y+section(angle,height),section(angle+Math.PI/2,width))
+      }
+      for(let j=0;j<segments;j++) {
+        const a=base+1+j,b=base+1+(j+1)%segments
+        indices.push(...(end===0?[base,a,b]:[base,b,a]))
+      }
+    }
+    const geometry=new THREE.BufferGeometry()
+    geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3))
+    geometry.setIndex(indices)
+    geometry.computeVertexNormals()
+    add(geometry,material)
+  }
+  shell([
+    [-.46,w*.56,h*.60],[-.35,w*.70,h*.75],[-.18,w*.69,h*.76],
+    [.08,w*.45,h*.55],[.36,w*.22,h*.35],[.47,w*.12,h*.26],
+    [.48,w*.105,h*.23],
+  ],'armor')
+  // A low swept shoulder grows out of the rear pressure hull, rather than
+  // covering the wedge with a second rectangular deck or floating wings.
+  const spread=fighter?1.06:.80
+  shell([
+    [-.40,w*.58,h*.10,-h*.24],[-.27,w*spread,h*.18,-h*.24],
+    [-.19,w*spread,h*.18,-h*.24],[.17,w*.38,h*.12,-h*.24],
+    [.25,w*.26,h*.07,-h*.24],
+  ],'hull')
+  // Thin dorsal fairing follows the same falling forebody. Its flat rear
+  // pressure section leaves a useful mounting deck for sampled fitted hardware.
+  shell([
+    [-.32,w*.45,h*.20,h*.69],[-.22,w*.47,h*.20,h*.73],
+    [-.08,w*.34,h*.13,h*.68],[.20,w*.15,h*.065,h*.44],
+    [.30,w*.09,h*.025,h*.39],
+  ],'hull')
+  rounded(.479,0,0,.010,w*.19,h*.41,'dark')
+  rounded(-.20,h*.86,0,.16,w*.55,h*.27,'armor')
+  add(new THREE.BoxGeometry(.005,h*.15,w*.42),'glass',-.115,h*.89,0,new THREE.Euler(0,0,-.35))
+  for(const side of [-1,1]) {
+    engine(-.465,-h*.12,side*w*.43,.030)
+    rounded(-.29,-h*.12,side*w*.68,.18,.010,h*.48,'dark')
+    if(hero)for(let i=0;i<4;i++)rounded(-.35+i*.037,-h*.12,side*w*.705,.017,.009,h*.32,'metal')
+    // Flush gold strips follow the sloped sides instead of restoring a square
+    // silhouette. Rounded ends are retained on the small nose port above.
+    const start=new THREE.Vector3(-.16,-h*.08,side*w*.687)
+    const end=new THREE.Vector3(.43,-h*.02,side*w*.156)
+    const direction=end.clone().sub(start),midpoint=start.clone().add(end).multiplyScalar(.5)
+    const band=new THREE.BoxGeometry(direction.length(),.004,.003)
+    band.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1,0,0),direction.normalize()))
+    add(band,'accent',midpoint.x,midpoint.y,midpoint.z)
+    slab(-.24,-h*.035,side*w*(fighter?.91:.71),.075,w*.12,.006,'armor')
+  }
+  rounded(-.30,h*.921,0,.09,w*.24,.004,'dark')
+  if(hero) {
+    for(let i=0;i<4;i++)slab(-.331+i*.020,h*.925,0,.008,w*.20,.003,'metal')
+    rod(-.32,h*1.17,w*.20,.002,h*.38,'metal',false)
+  }
+}
+
 /** Large construction primitives establish empire identity before fitted hardware. */
 export function buildEmpireHull(appearance: ShipAppearance, c: SpecialHullContext): boolean {
   const empire = appearance.hullEmpire ?? appearance.empire
   if (!['solarian', 'nebula', 'crimson'].includes(empire)) return false
   const { add, slab, rounded, rod, engine, hero } = c
   const { family } = appearance
+  if(empire==='solarian'&&(family==='fighter'||family==='scout')) {
+    buildSolarianSmallHull(family==='fighter',c)
+    return true
+  }
   const heavyCombat=family==='capital'||family==='warship'
   const broadSolarian=empire==='solarian'&&heavyCombat
   // Combat pressure hulls use a low, broad shoulder deck. Cargo hulls retain
@@ -33,7 +117,7 @@ export function buildEmpireHull(appearance: ShipAppearance, c: SpecialHullContex
     if(hero) for(let i=0;i<9;i++) slab(x-l*.43+i*l*.105,y+.004,z,l*.024,b*.85,.003,'metal')
   }
   if (empire === 'solarian') {
-    // Lemma / Quorum / Logistics Prime: broad flat faces with generous fillets.
+    // Quorum / Logistics Prime: broad flat faces with generous fillets.
     rounded(-.01,0,0,.94,w*1.72,h*1.8,'armor')
     rounded(-.23,h*.28,0,.40,w*1.94,h*1.94,'hull')
     rounded(-.24,h*.38,0,.37,w*1.88,h*1.9,'armor')
