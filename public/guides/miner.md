@@ -198,6 +198,37 @@ A rig that can't lock at all is the simplest fleet answer: any array whose `P * 
 
 ---
 
+## What the Two Mining Skills Actually Do
+
+**Mining** does two separate things, and only the first is obvious.
+
+1. **Yield** — +1% per level, on every resource type. Straightforward.
+2. **Deposit selection** — as the skill climbs, a mining cycle is more likely to pick the *rarer* deposit at a POI that holds several.
+
+That second one matters more than it sounds. When you mine at a POI with four deposits, the game picks one. Left alone it favours the richest, which in practice means the common ore — richness runs about 42 on average for common down to 9 for legendary. A high Mining skill flips that preference.
+
+The weight for each deposit is:
+
+```
+weight = richness * (1 + rare_ore_rarity_weight_per_level * mining_level * rarity_rank)
+rarity_rank: common 0, uncommon 1, rare 2, exotic 3, legendary 4
+```
+
+`rare_ore_rarity_weight_per_level` is published at `/api/catalog.json` under `mining`. At Mining 0 the term vanishes and you get plain richness weighting. Sitting on a belt with iron (richness 90) next to an antimatter trace (richness 10, legendary):
+
+| Mining level | Chance the cycle picks the antimatter |
+| --- | --- |
+| 0 | 10% |
+| 20 | 50% |
+| 60 | 73% |
+| 100 | 82% |
+
+This is selection only — it never changes how much you extract, just which vein the beam picks. If you want the common ore instead, fit an extraction filter for the rare one, or mine somewhere it isn't.
+
+**Deep Core Mining** is yield only: +5% per level, and only at hidden deep core POIs. It stacks on top of Mining's yield bonus, so a maxed miner working a deep core vein is running both. It does nothing at an ordinary belt.
+
+---
+
 ## Ore Value Tiers (What to Mine)
 
 Don't try to optimize ore selection. **Just mine what's in your home system first.** As you unlock better skills and ships, you'll travel to richer regions.
