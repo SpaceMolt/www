@@ -2,6 +2,7 @@ import { describe, expect, it } from 'bun:test'
 import { compileBattleFilm, getCinemaEligibility, sampleCinemaHealth, sampleCinemaShot, sourceTickAt } from './director'
 import type { AttackLogEntry, BattleLogEntry, BattleSummary, ParticipantSnapshot, WeaponFireDetail } from '../battle/types'
 import { applyBattleLoadResult, initialBattleLoaderState, shouldPollBattle } from '../battle/battleData'
+import { buildHardwareCatalog } from './hardware'
 
 const summary = (over: Partial<BattleSummary> = {}): BattleSummary => ({ battle_id: 'cinema-test', system_id: 'krynn',
   system_name: 'Krynn', status: 'completed', start_tick: 100, duration_ticks: 2, participant_count: 2,
@@ -28,6 +29,50 @@ const terminal = (tick: number, over: Partial<BattleLogEntry> = {}): BattleLogEn
 const kill = (killer: string, victim: string) => ({ killer_id: killer, victim_id: victim, killer_username: killer, victim_username: victim })
 
 function compile(entries: BattleLogEntry[], over: Partial<BattleSummary> = {}) { return compileBattleFilm(summary(over), entries, true) }
+
+describe('recorded lifecycle hardware', () => {
+  it('uses the serializable public catalog projection throughout compilation', () => {
+    const catalog = structuredClone(buildHardwareCatalog([{ name: 'Mystery Laser', type: 'utility', cargo_bonus: 100 }]))
+    const film = compileBattleFilm(summary(), [row(100, { snapshots: [snap('a', 1, { modules: [{ name: 'Mystery Laser', category: 'module' }] }), snap('b', 2)] }), terminal(101)], true, catalog)
+    expect(film.ships[0].hardware).toMatchObject({ source: 'modules', weapons: {}, cargo: 1 })
+  })
+  it('keeps the first explicit fit rather than counting repeated snapshots or inventing equipment from attacks', () => {
+    const modules = [{ name: 'Cargo Expander I', category: 'module' }, { name: 'Mining Laser I', category: 'module' }]
+    const film = compile([row(100, { snapshots: [snap('a', 1, { modules }), snap('b', 2, { modules: [] })],
+      attacks: [attack('a', 'b'), attack('b', 'a')] }), row(101, { snapshots: [snap('a', 1, { modules }), snap('b', 2)] }),
+      terminal(102, { snapshots: [snap('a', 1, { modules: [{ name: 'Null Cannon', category: 'module' }] }), snap('b', 2)] })])
+    expect(film.ships[0].hardware).toMatchObject({ source: 'modules', cargo: 1, mining: 1, weapons: {} })
+    expect(film.ships[1].hardware).toMatchObject({ source: 'modules', weapons: {}, utility: 0 })
+  })
+  it('deduplicates repeated firing by hull and lets a later first explicit snapshot replace fallback', () => {
+    const volley = [gun('one', 'energy'), gun('two', 'energy')]
+    const film = compile([row(100, { attacks: [attack('a', 'b', { weapons: volley }), attack('b', 'a', { weapons: volley })] }),
+      row(101, { attacks: [attack('a', 'b', { weapons: volley })] }),
+      terminal(102, { snapshots: [snap('a'), snap('b', 2, { modules: [] })] })])
+    expect(film.ships[0].hardware).toMatchObject({ source: 'recorded-weapons', weapons: { laser: 2 } })
+    expect(film.ships[1].hardware).toMatchObject({ source: 'modules', weapons: {} })
+  })
+  it('gives returning hulls independent fits without inheriting an old snapshot on a join', () => {
+    const film = compile([row(100, { snapshots: [snap('a', 1, { modules: [{ name: 'Null Cannon', category: 'module' }] }), snap('b', 2)],
+      kills: [kill('b', 'a')] }), row(101, { snapshots: [snap('b', 2)], joins: [{ player_id: 'a', username: 'Pilot a', side_id: 1 }] }),
+      terminal(102, { snapshots: [snap('a', 1, { ship_class: 'shard', modules: [{ name: 'Mining Laser I', category: 'module' }] }), snap('b', 2)] })])
+    const hulls = film.ships.filter(ship => ship.playerId === 'a')
+    expect(hulls).toHaveLength(2)
+    expect(hulls[0].hardware).toMatchObject({ source: 'modules', weapons: { exotic: 1 }, mining: 0 })
+    expect(hulls[1].hardware).toMatchObject({ source: 'modules', weapons: {}, mining: 1 })
+    const unknownReturn = compile([row(100, { snapshots: [snap('a', 1, { modules: [{ name: 'Null Cannon', category: 'module' }] }), snap('b', 2)],
+      kills: [kill('b', 'a')] }), terminal(101, { snapshots: [snap('b', 2)], joins: [{ player_id: 'a', username: 'Pilot a', side_id: 1 }] })])
+    expect(unknownReturn.ships.find(ship => ship.id === 'a:1')!.hardware!.source).toBe('unknown')
+  })
+  it('records weapon evidence from compressed ticks and ignores derived collateral gun copies', () => {
+    const rows = Array.from({ length: 1000 }, (_, i) => row(100 + i, { attacks: [attack('a', 'b')] }))
+    rows[400].attacks = [attack('a', 'b', { weapons: [{ ...gun('rare', 'void'), name: 'Null Cannon' }] }),
+      attack('a', 'b', { secondary_kind: 'chain', weapons: [{ ...gun('copy', 'thermal'), name: 'Plasma Cannon' }] })]
+    const film = compile([...rows, terminal(1100)])
+    expect(film.ships[0].hardware!.weapons).toEqual({ laser: 1, exotic: 1 })
+    expect(film.ships[1].hardware!.source).toBe('unknown')
+  })
+})
 
 describe('completed-record gate', () => {
   it('makes settled records retryable when the summary failed or still reports active', () => {

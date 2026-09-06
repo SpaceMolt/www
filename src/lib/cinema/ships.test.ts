@@ -110,10 +110,10 @@ describe('public appearance projection', () => {
     const catalog = empires.map(faction => ({ id: `${faction}-hull`, class: 'Cruiser', faction, scale: 3 }))
     const manifest = buildShipAppearances(catalog)
     for (const empire of empires) expect(manifest[`${empire}-hull`].empire).toBe(empire)
-    expect(manifest['solarian-hull'].hull).toBe(0x3e5c82)
+    expect(manifest['solarian-hull'].hull).toBe(0x556374)
     expect(manifest['voidborn-hull'].hull).toBe(0x2a0f52)
     expect(manifest['crimson-hull'].hull).toBe(0x8b1a1a)
-    expect(manifest['nebula-hull'].hull).toBe(0x1f4a34)
+    expect(manifest['nebula-hull'].hull).toBe(0xb69a56)
     expect(manifest['outerrim-hull'].hull).toBe(0xc4a878)
     expect(manifest['pirate-hull'].hull).toBe(0x633c31)
     expect(manifest['pirate-hull'].hull).not.toBe(manifest['outerrim-hull'].hull)
@@ -124,7 +124,7 @@ describe('public appearance projection', () => {
     const result = buildShipAppearances(catalog)
     expect(result.test.family).toBe('warship')
     expect(result.test.empire).toBe('crimson')
-    expect(Object.keys(result.test).sort()).toEqual(['accent', 'beam', 'empire', 'family', 'height', 'hull', 'length', 'tier'])
+    expect(Object.keys(result.test).sort()).toEqual(['accent', 'beam', 'empire', 'family', 'height', 'hull', 'hullEmpire', 'length', 'tier'])
     expect(catalog[0].lore).toBe('A long narrative')
   })
 
@@ -136,5 +136,61 @@ describe('public appearance projection', () => {
     expect(resolveAppearance('Cruiser', undefined, 2, '', 1, 'drone').family).toBe('drone')
     expect(resolveAppearance('constructor', 'constructor', NaN).empire).toBe('neutral')
     expect(Number.isFinite(resolveAppearance('', undefined, NaN).length)).toBe(true)
+  })
+})
+
+// Recorded equipment must alter geometry without inventing weapons for an empty fit.
+describe('fitted ship hardware', () => {
+  const empty = { source: 'modules' as const, weapons: {}, cargo: 0, mining: 0, salvage: 0, sensor: 0, defense: 0, utility: 0 }
+  const vertices = (group: THREE.Group) => group.children.reduce((sum, object) => sum + (object as THREE.Mesh).geometry.getAttribute('position').count, 0)
+  test('Midas mounts recorded defenses and scanners on its structural metal hull', () => {
+    const appearance = buildShipAppearances([{ id: 'midas', class: 'Yacht', faction: 'nebula', scale: 3 }]).midas
+    const bare = createShip(appearance, 11, 'hero', empty)
+    // Its default fit contains three defenses and one scanner. Verify each
+    // category independently so one visible assembly cannot hide another lost fit.
+    for (const equipment of [{ defense: 3 }, { sensor: 1 }]) {
+      const fitted = createShip(appearance, 11, 'hero', { ...empty, ...equipment })
+      expect(vertices(fitted)).toBeGreaterThan(vertices(bare))
+      dispose(fitted)
+    }
+    dispose(bare)
+  })
+  test('an explicitly unarmed combat hull has no fallback turret geometry', () => {
+    const appearance = resolveAppearance('Cruiser', 'solarian')
+    const bare = createShip(appearance, 22, 'hero', empty), legacy = createShip(appearance, 22)
+    expect(vertices(bare)).toBeLessThan(vertices(legacy))
+    dispose(bare); dispose(legacy)
+  })
+  test('different weapon mechanisms produce different physical assemblies', () => {
+    const signatures = new Set<string>()
+    for (const family of ['laser','beam','railgun','autocannon','flak','plasma','missile','torpedo','disruptor','exotic','mine','kinetic','smartbomb'] as const) {
+      const group = createShip(resolveAppearance('Cruiser','crimson'), 1, 'hero', { ...empty, weapons: { [family]: 2 } })
+      signatures.add(group.children.map(o=>Array.from((o as THREE.Mesh).geometry.getAttribute('position').array).join(',')).join(';'))
+      expect(new THREE.Box3().setFromObject(group).getSize(new THREE.Vector3()).length()).toBeLessThan(2)
+      dispose(group)
+    }
+    // Continuous beams / pulsed lasers share optics; mines / smartbombs share emitters.
+    expect(signatures.size).toBeGreaterThanOrEqual(9)
+  })
+  test('large heterogeneous fits keep finite geometry and bounded static draw calls', () => {
+    for (const empire of ['solarian','nebula','crimson','voidborn','outerrim'] as const) {
+      const group = createShip(resolveAppearance('Dreadnought',empire), 7, 'hero', { ...empty, weapons:{laser:8,railgun:8,missile:8,exotic:8},cargo:8,mining:8,salvage:8,sensor:8,defense:8,utility:8 })
+      expect(group.children.filter(o=>!o.userData.engine).length).toBeLessThanOrEqual(7)
+      expect(new THREE.Box3().setFromObject(group).getSize(new THREE.Vector3()).length()).toBeLessThan(2)
+      for(const o of group.children) expect(Array.from((o as THREE.Mesh).geometry.getAttribute('position').array).every(Number.isFinite)).toBe(true)
+      dispose(group)
+    }
+  })
+  test('named and converted hulls remain valid in both detail levels', () => {
+    const sources = ['prayer','worship','congregation','comet','concordia','liquidity_event','midas'].map(id=>({id,class:'Freighter',faction:id==='concordia'?'solarian':id==='comet'||id==='liquidity_event'||id==='midas'?'nebula':'outerrim',scale:2}))
+    const appearances=buildShipAppearances([...sources,{id:'start_praying',class:'Freighter',faction:'pirate',based_on:'prayer'}])
+    for(const appearance of Object.values(appearances)) for(const detail of ['hero','distant'] as const) {
+      const group=createShip(appearance,11,detail,empty)
+      const size=new THREE.Box3().setFromObject(group).getSize(new THREE.Vector3())
+      expect(size.length()).toBeLessThan(2)
+      expect(size.x).toBeGreaterThan(.7)
+      for(const o of group.children) expect(Array.from((o as THREE.Mesh).geometry.getAttribute('normal').array).every(Number.isFinite)).toBe(true)
+      dispose(group)
+    }
   })
 })

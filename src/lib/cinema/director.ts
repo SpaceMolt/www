@@ -3,6 +3,7 @@ import type { BattleLoadPhase } from '../battle/battleData'
 import { buildAttackVisualPlan } from '../battle/attackVisualPlan'
 import { addBattlefieldCoverage } from './coverage'
 import { resolveWeaponFamily } from './weapons'
+import { mergeRecordedHardwareWeapons, projectCinemaHardware, type HardwareCatalog, type RecordedHardwareWeapon } from './hardware'
 import type { CinemaAxis, CinemaCue, CinemaFilm, CinemaHealth, CinemaSequence, CinemaShip, CinemaShot, CinemaSourceSegment } from './types'
 
 export const DIRECTOR_VERSION = 5
@@ -425,7 +426,7 @@ function directShots(film: CinemaFilm, entries: BattleLogEntry[]): CinemaShot[] 
   return result
 }
 /** Compile only settled completed records. The edit is pure and contains no catalog or rendering dependencies. */
-export function compileBattleFilm(summary: BattleSummary, source: BattleLogEntry[], reconciled = false): CinemaFilm {
+export function compileBattleFilm(summary: BattleSummary, source: BattleLogEntry[], reconciled = false, hardwareCatalog?: HardwareCatalog): CinemaFilm {
   if (!reconciled || getCinemaEligibility(summary, source, 'complete') !== 'ready') {
     throw new Error('A complete, reconciled battle record is required for cinema.')
   }
@@ -452,6 +453,7 @@ export function compileBattleFilm(summary: BattleSummary, source: BattleLogEntry
   const appearances = new Map<string, number>()
   const boardingTargets = new Map<string, string>()
   const latestSnapshots = new Map<string, ParticipantSnapshot>()
+  const recordedHardware = new Map<string, RecordedHardwareWeapon[]>()
   const allNames = new Map<string, string>()
   for (const entry of entries) {
     for (const snap of entry.snapshots) allNames.set(snap.player_id, snap.username)
@@ -468,6 +470,9 @@ export function compileBattleFilm(summary: BattleSummary, source: BattleLogEntry
       name: snap?.username || allNames.get(playerId) || 'Unidentified vessel', shipClass: snap?.ship_class ?? '',
       kind: snap?.kind ?? (snap?.ship_class ? 'ship' : 'unknown'), sideId: snap?.side_id ?? sideId,
       sideIndex: sideIndices.get(snap?.side_id ?? sideId) ?? 0, factionId: snap?.faction_id,
+      // A join may reuse metadata from the retired pilot's last snapshot. Its
+      // old equipment is not evidence about this new hull's fitted modules.
+      hardware: projectCinemaHardware(snapshot?.modules, [], hardwareCatalog),
       start: time, end: duration, fate: 'survived', health: [{ time, hull: snap ? fraction(snap.hull, snap.max_hull) : 1,
         shield: snap ? fraction(snap.shield, snap.max_shield) : 0 }] }
     if (snap) appendMotion(ship, time, snap.zone, snap.stance)
@@ -500,6 +505,13 @@ export function compileBattleFilm(summary: BattleSummary, source: BattleLogEntry
       const ship = ensureShip(snap.player_id, index === 0 ? 0 : segment.start, snap)
       ship.shipClass = snap.ship_class || ship.shipClass
       ship.kind = snap.kind || ship.kind
+      // Models are static per appearance. The first explicit fit, including [],
+      // supersedes firing fallback; repeated or later missing snapshots cannot
+      // double modules, erase the fit, or retroactively refit the opening shot.
+      if (ship.hardware?.source !== 'modules' && Array.isArray(snap.modules)) {
+        ship.hardware = projectCinemaHardware(snap.modules, [], hardwareCatalog)
+        recordedHardware.delete(ship.id)
+      }
       appendMotion(ship, segment.start, snap.zone, snap.stance)
       appendHealth(ship, { time: segment.start, hull: fraction(snap.hull, snap.max_hull), shield: fraction(snap.shield, snap.max_shield) })
       if (!wasActive && index > 0) addCue({ kind: 'arrival', time: segment.start, duration: Math.min(2, span), tick: entry.tick, to: ship.id, intensity: 0.5 })
@@ -538,6 +550,13 @@ export function compileBattleFilm(summary: BattleSummary, source: BattleLogEntry
     attacks.forEach((attack, attackIndex) => {
       const from = active.get(attack.attacker_id) ?? (!retired.has(attack.attacker_id) ? ensureShip(attack.attacker_id, segment.start) : undefined)
       const to = active.get(attack.target_id) ?? (!retired.has(attack.target_id) ? ensureShip(attack.target_id, segment.start) : undefined)
+      // Gather real gun details before cinematic sampling drops busy/short
+      // ticks. Derived splash/chain copies do not establish additional guns.
+      if (from && from.hardware?.source !== 'modules' && !attack.secondary_kind && !attack.splash && attack.weapons?.length) {
+        const evidence = mergeRecordedHardwareWeapons(recordedHardware.get(from.id) ?? [], attack.weapons)
+        recordedHardware.set(from.id, evidence)
+        from.hardware = projectCinemaHardware(undefined, evidence, hardwareCatalog)
+      }
       if (!from || !to) return
       hullDamage.set(to.playerId, (hullDamage.get(to.playerId) ?? 0) + Math.max(0, attack.hull_damage))
       shieldDamage.set(to.playerId, (shieldDamage.get(to.playerId) ?? 0) + Math.max(0, attack.shield_damage))

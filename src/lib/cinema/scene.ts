@@ -232,7 +232,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     const side = sides.indexOf(ship.sideIndex)
     const angle = side / Math.max(2, sides.length) * Math.PI * 2
     const lane = shipRanks.get(`${ship.sideIndex}:${ship.playerId}`) ?? 0
-    const model = detailed.has(ship.id) ? createShip(appearance, seed, 'hero') : null
+    const model = detailed.has(ship.id) ? createShip(appearance, seed, 'hero', ship.hardware) : null
     const engineMaterials: { material: THREE.MeshStandardMaterial | THREE.MeshBasicMaterial; intensity: number }[] = []
     if (model) {
       model.scale.setScalar(size)
@@ -254,8 +254,10 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   const byId = new Map(actors.map(a => [a.ship.id, a]))
   // Distant actors remain real participants, rendered with a bounded number of draw calls.
   const distantGroups = new Map<string,{mesh:THREE.InstancedMesh;count:number}>()
-  for (const key of new Set(actors.map(actor=>`${actor.appearance.empire}:${actor.appearance.family}`))) {
-    const example = actors.find(actor=>`${actor.appearance.empire}:${actor.appearance.family}`===key)!
+  const distantKey = (actor: Actor) => `${actor.appearance.empire}:${actor.appearance.hullEmpire}:${actor.appearance.family}:${actor.appearance.recipe ?? 'standard'}`
+  for (const key of new Set(actors.filter(actor=>!actor.model).map(distantKey))) {
+    const members = actors.filter(actor=>!actor.model && distantKey(actor)===key)
+    const example = members[0]
     const template = createShip(example.appearance, 31, 'distant')
     template.updateMatrixWorld(true)
     const pieces:THREE.BufferGeometry[]=[]
@@ -264,15 +266,19 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
         let geometry=object.geometry.clone()
         if(geometry.index){const flat=geometry.toNonIndexed();geometry.dispose();geometry=flat}
         for(const key of Object.keys(geometry.attributes))if(key!=='position'&&key!=='normal')geometry.deleteAttribute(key)
+        const material = (Array.isArray(object.material)?object.material[0]:object.material) as THREE.MeshStandardMaterial
+        const colors = new Float32Array(geometry.getAttribute('position').count*3)
+        for(let i=0;i<colors.length;i+=3) material.color.toArray(colors,i)
+        geometry.setAttribute('color',new THREE.BufferAttribute(colors,3))
         geometry.applyMatrix4(object.matrixWorld);pieces.push(geometry)
       }
     })
     const geometry=mergeGeometries(pieces)!
     for(const piece of pieces)piece.dispose()
     template.traverse(object=>{if(object instanceof THREE.Mesh){object.geometry.dispose();for(const material of Array.isArray(object.material)?object.material:[object.material])material.dispose()}})
-    const mesh=new THREE.InstancedMesh(geometry,new THREE.MeshStandardMaterial({color:0xffffff,metalness:.35,roughness:.6}),Math.max(1,actors.length))
+    const mesh=new THREE.InstancedMesh(geometry,new THREE.MeshStandardMaterial({color:0xffffff,vertexColors:true,metalness:.35,roughness:.6}),members.length)
     // Dither per-instance cloak visibility without changing the shared fleet material.
-    geometry.setAttribute('cinemaVisibility',new THREE.InstancedBufferAttribute(new Float32Array(Math.max(1,actors.length)).fill(1),1).setUsage(THREE.DynamicDrawUsage))
+    geometry.setAttribute('cinemaVisibility',new THREE.InstancedBufferAttribute(new Float32Array(members.length).fill(1),1).setUsage(THREE.DynamicDrawUsage))
     mesh.material.onBeforeCompile=shader=>{
       shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nattribute float cinemaVisibility; varying float vCinemaVisibility;').replace('#include <begin_vertex>','#include <begin_vertex>\nvCinemaVisibility=cinemaVisibility;')
       shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nvarying float vCinemaVisibility;').replace('#include <clipping_planes_fragment>',`#include <clipping_planes_fragment>
@@ -409,8 +415,8 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
         for (const { material, intensity } of actor.engineMaterials) { if (material instanceof THREE.MeshStandardMaterial) material.emissiveIntensity = actor.thrust * (2.4 + Math.sin(time * 8 + actor.seed) * .3) * (1-cloak*.95); else { material.transparent = true; material.opacity = actor.thrust * intensity * (.7 + Math.sin(time * 8 + actor.seed) * .06) * (1-cloak*.95) } }
       } else if (visible && !(actor.ship.fate === 'destroyed' && time > actor.ship.end + .32)) {
         dummy.position.copy(actor.position); dummy.rotation.set(reduced ? 0 : actor.bank, actor.rotation, 0, 'YXZ'); dummy.scale.setScalar(actor.size); dummy.updateMatrix()
-        const group=distantGroups.get(`${actor.appearance.empire}:${actor.appearance.family}`)!
-        group.mesh.setMatrixAt(group.count, dummy.matrix); (group.mesh.geometry.getAttribute('cinemaVisibility') as THREE.InstancedBufferAttribute).setX(group.count,1-cloak*.95); group.mesh.setColorAt(group.count++, tint.setHex(actor.appearance.hull).multiplyScalar(1 - (time >= actor.ship.end && actor.ship.fate === 'knocked_out' ? .72 : 1 - sampleCinemaHealth(actor.ship,time).hull) * .55))
+        const group=distantGroups.get(distantKey(actor))!
+        group.mesh.setMatrixAt(group.count, dummy.matrix); (group.mesh.geometry.getAttribute('cinemaVisibility') as THREE.InstancedBufferAttribute).setX(group.count,1-cloak*.95); group.mesh.setColorAt(group.count++, tint.setHex(0xffffff).multiplyScalar(1 - (time >= actor.ship.end && actor.ship.fate === 'knocked_out' ? .72 : 1 - sampleCinemaHealth(actor.ship,time).hull) * .55))
       }
       if (visible && actor.thrust > 0 && engineCount < engineSprites.length && actor.model) {
         const sprite = engineSprites[engineCount++]

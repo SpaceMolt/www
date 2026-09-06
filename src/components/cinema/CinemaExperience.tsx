@@ -8,10 +8,11 @@ import { useBattleData } from '@/lib/battle/useBattleData'
 import { getCinemaEligibility } from '@/lib/cinema/director'
 import type { CinemaFilm } from '@/lib/cinema/types'
 import type { ShipAppearanceMap } from '@/lib/cinema/appearance'
+import type { HardwareCatalog } from '@/lib/cinema/hardware'
 import CinemaPlayer from './CinemaPlayer'
 import styles from './Cinema.module.css'
 
-export default function CinemaExperience({ battleId, appearances }: { battleId: string; appearances: ShipAppearanceMap }) {
+export default function CinemaExperience({ battleId, appearances, hardwareCatalog }: { battleId: string; appearances: ShipAppearanceMap; hardwareCatalog: HardwareCatalog }) {
   const { t } = useTranslation()
   const data = useBattleData(battleId)
   const eligibility = getCinemaEligibility(data.summary, data.entries, data.phase)
@@ -39,12 +40,12 @@ export default function CinemaExperience({ battleId, appearances }: { battleId: 
         if (!disposed) setCompileError(true)
         worker?.terminate()
       }
-      worker.postMessage({ summary: data.summary, entries: data.entries, reconciled: true })
+      worker.postMessage({ summary: data.summary, entries: data.entries, reconciled: true, hardwareCatalog })
     } catch {
       setCompileError(true)
     }
     return () => { disposed = true; worker?.terminate() }
-  }, [eligibility, data.summary, data.entries, attempt])
+  }, [eligibility, data.summary, data.entries, attempt, hardwareCatalog])
 
   if (film && eligibility === 'ready') {
     return <CinemaPlayer film={film} appearances={appearances} />

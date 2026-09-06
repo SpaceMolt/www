@@ -1,9 +1,14 @@
 /** Compact public catalog projection. This module never imports the catalog bundle. */
 export type ShipFamily = 'fighter' | 'warship' | 'capital' | 'carrier' | 'industrial' | 'scout' | 'support' | 'drone' | 'station' | 'creature'
 export type ShipEmpire = 'solarian' | 'voidborn' | 'crimson' | 'nebula' | 'outerrim' | 'pirate' | 'neutral'
+export type ShipRecipe = 'prayer' | 'worship' | 'congregation' | 'comet' | 'concordia' | 'liquidity_event' | 'midas'
 export interface ShipAppearance {
   family: ShipFamily
   empire: ShipEmpire
+  /** Construction lineage; a pirate retains its donor empire's silhouette. */
+  hullEmpire: ShipEmpire
+  /** Named exceptions whose public lore calls for a distinct construction. */
+  recipe?: ShipRecipe
   /** Suggested cinematic world length; geometry itself is normalized to one. */
   length: number
   beam: number
@@ -17,10 +22,10 @@ export type ShipAppearanceMap = Record<string, ShipAppearance>
 const palettes: Record<ShipEmpire, [number, number]> = {
   // House art source: content-gen/style/empires/*.json. Hull colors remain
   // recognizable over large surfaces; the accent also colors engine emission.
-  solarian: [0x3e5c82, 0xc9a227],
+  solarian: [0x556374, 0xc9a227],
   voidborn: [0x2a0f52, 0x3fe6ff],
   crimson: [0x8b1a1a, 0xe8641c],
-  nebula: [0x1f4a34, 0xc9922e],
+  nebula: [0xb69a56, 0x244b36],
   outerrim: [0xc4a878, 0x2fb6c4],
   // Pirate ship lore describes stolen frames rebuilt with steel and salvage,
   // rather than the original empire's proprietary armor and construction.
@@ -66,9 +71,58 @@ export function resolveAppearance(shipClass: string, empire?: string, scale = 2,
   const lower = Math.floor(safeScale) - 1
   const upper = Math.min(lower + 1, lengths.length - 1)
   const meters = lengths[lower] * Math.pow(lengths[upper] / lengths[lower], safeScale - Math.floor(safeScale))
-  return { family, empire: resolvedEmpire, length: 1.8 * Math.pow(meters / 16, .72), beam, height, hull, accent, tier: Math.max(0, Math.min(5, tier || 0)) }
+  return { family, empire: resolvedEmpire, hullEmpire: resolvedEmpire, length: 1.8 * Math.pow(meters / 16, .72), beam, height, hull, accent, tier: Math.max(0, Math.min(5, tier || 0)) }
 }
 
-export function buildShipAppearances(ships: readonly { id: string; class?: string; category?: string; faction?: string; scale?: number; tier?: number }[]): ShipAppearanceMap {
-  return Object.fromEntries(ships.map(ship => [ship.id, resolveAppearance(ship.class ?? '', ship.faction, ship.scale, ship.category, ship.tier)]))
+export interface ShipAppearanceSource {
+  id: string
+  class?: string
+  category?: string
+  faction?: string
+  scale?: number
+  tier?: number
+  based_on?: string
+}
+
+const recipeDimensions = new Map<ShipRecipe, [number, number]>([
+  ['prayer', [.50, .36]], ['worship', [.65, .36]], ['congregation', [.32, .28]],
+  ['comet', [.27, .20]], ['concordia', [.20, .12]], ['liquidity_event', [.48, .30]], ['midas', [.42, .25]],
+])
+// Public No Exit description explicitly identifies its missing catalog donor
+// as a Solarian Interdictor. All other current pirate donors resolve directly.
+const absentDonors = new Map<string, ShipAppearanceSource>([
+  ['interdictor', { id: 'interdictor', class: 'Interdictor', faction: 'solarian', category: 'Combat Support', scale: 4, tier: 4 }],
+])
+
+function projectHull(ship: ShipAppearanceSource): ShipAppearance {
+  const appearance = resolveAppearance(ship.class ?? '', ship.faction, ship.scale, ship.category, ship.tier)
+  const recipe = ship.id as ShipRecipe, dimensions = recipeDimensions.get(recipe)
+  return dimensions ? { ...appearance, recipe, beam: dimensions[0], height: dimensions[1] } : appearance
+}
+
+export function buildShipAppearances(ships: readonly ShipAppearanceSource[]): ShipAppearanceMap {
+  const byId = new Map(ships.map(ship => [ship.id, ship]))
+  const donorOf = (ship: ShipAppearanceSource): ShipAppearanceSource | undefined => {
+    const seen = new Set([ship.id])
+    let source = ship
+    while (source.based_on) {
+      if (seen.has(source.based_on)) return undefined
+      seen.add(source.based_on)
+      const next = byId.get(source.based_on) ?? absentDonors.get(source.based_on)
+      if (!next) break
+      source = next
+    }
+    return source === ship ? undefined : source
+  }
+  return Object.fromEntries(ships.map(ship => {
+    const appearance = projectHull(ship), donor = donorOf(ship)
+    if (!donor) return [ship.id, appearance]
+    const original = projectHull(donor)
+    // Keep the converted ship's scale, tier and identity. The donor supplies
+    // construction, proportions and recognizable colors; salvage is added by
+    // the renderer instead of painting every pirate the same brown.
+    return [ship.id, { ...appearance, family: original.family, hullEmpire: original.hullEmpire,
+      beam: original.beam, height: original.height, hull: original.hull, accent: original.accent,
+      ...(appearance.recipe || original.recipe ? { recipe: appearance.recipe ?? original.recipe } : {}) }]
+  }))
 }

@@ -1,6 +1,11 @@
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
 import type { ShipAppearance } from './appearance'
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
+import { buildEmpireHull } from './ship-empires'
+import { buildSpecialHull } from './ship-recipes'
+import { buildFittedHardware } from './ship-hardware'
+import type { CinemaHardware } from './hardware'
 
 type Ring = [x: number, halfWidth: number, halfHeight: number, centerY?: number]
 type MaterialName = 'hull' | 'armor' | 'dark' | 'metal' | 'accent' | 'glass' | 'windows'
@@ -172,23 +177,27 @@ function loft(rings: Ring[]): THREE.BufferGeometry {
  * engine meshes remain separate with userData.engine=true and baseIntensity for animation.
  * Dispose unique geometry/material instances by traversing the group on teardown.
  */
-export function createShip(appearance: ShipAppearance, seed: number, detail: 'hero' | 'distant' = 'hero'): THREE.Group {
+export function createShip(appearance: ShipAppearance, seed: number, detail: 'hero' | 'distant' = 'hero', hardware?: CinemaHardware): THREE.Group {
   const group = new THREE.Group()
   group.name = `${appearance.empire}-${appearance.family}`
   const hero = detail === 'hero'
-  const { family, empire, beam: width, height, accent } = appearance
+  const { family, beam: width, height, accent } = appearance
+  const empire = appearance.hullEmpire ?? appearance.empire
+  const pirate = appearance.empire === 'pirate'
   let rng = seed | 0
   const random = () => { rng = (Math.imul(rng, 1664525) + 1013904223) | 0; return (rng >>> 0) / 4294967296 }
   const hullColor = new THREE.Color(appearance.hull)
   const materialIdentity = {
-    solarian: { structure: 0x243852, armor: 0x4b6fa0, metal: 0xc5d3e1, livery: 0xc9a227, roughness: .33 },
+    solarian: { structure: 0x465769, armor: 0x63768a, metal: 0x91a0aa, livery: 0xbda779, roughness: .42 },
     voidborn: { structure: 0x121026, armor: 0x502878, metal: 0x7262a1, livery: 0x684194, roughness: .19 },
-    crimson: { structure: 0x2b2e33, armor: 0x9b2227, metal: 0x565a61, livery: 0x410c13, roughness: .62 },
-    nebula: { structure: 0x163a2a, armor: 0x2e7d52, metal: 0xe8b448, livery: 0xc9922e, roughness: .25 },
+    crimson: { structure: 0x343236, armor: 0x813d3e, metal: 0x646268, livery: 0x401f24, roughness: .62 },
+    nebula: { structure: 0x655635, armor: 0xc2ab70, metal: 0x9c844f, livery: 0x294c3a, roughness: .31 },
     outerrim: { structure: 0x6d6252, armor: 0xc4a878, metal: 0xa0562e, livery: 0x2fb6c4, roughness: .75 },
     pirate: { structure: 0x25282b, armor: 0x633c31, metal: 0xb06a35, livery: 0xa12620, roughness: .78 },
     neutral: { structure: appearance.hull, armor: hullColor.clone().multiplyScalar(1.24).getHex(), metal: 0x98a1ab, livery: accent, roughness: .43 },
   }[empire]
+  if (appearance.recipe === 'comet') { materialIdentity.structure=0xc6c8b8; materialIdentity.armor=0xe0ddc7; materialIdentity.metal=0xbca363 }
+  if (appearance.recipe === 'midas') { materialIdentity.structure=0x7b6539; materialIdentity.armor=0xc5ac70; materialIdentity.metal=0xd0b77b }
   const materials: Record<MaterialName, THREE.MeshStandardMaterial> = {
     hull: new THREE.MeshStandardMaterial({ color: materialIdentity.structure, metalness: .62, roughness: materialIdentity.roughness }),
     armor: new THREE.MeshStandardMaterial({ color: materialIdentity.armor, metalness: empire === 'outerrim' ? .3 : .58, roughness: materialIdentity.roughness }),
@@ -197,6 +206,13 @@ export function createShip(appearance: ShipAppearance, seed: number, detail: 'he
     accent: new THREE.MeshStandardMaterial({ color: materialIdentity.livery, metalness: .4, roughness: materialIdentity.roughness }),
     glass: new THREE.MeshStandardMaterial({ color: 0x071f31, metalness: .88, roughness: .12, emissive: accent, emissiveIntensity: .4 }),
     windows: new THREE.MeshStandardMaterial({ color: 0xd8f2ff, emissive: accent, emissiveIntensity: 3.2, toneMapped: false }),
+  }
+  if (pirate) {
+    for (const key of ['hull','armor'] as const) {
+      materials[key].color.lerp(new THREE.Color(0x53483e), .22)
+      materials[key].roughness = .76
+    }
+    materials.metal.color.setHex(0x87664b)
   }
   if (empire === 'voidborn' && family !== 'creature') {
     for (const key of ['hull', 'armor'] as const) {
@@ -223,6 +239,9 @@ export function createShip(appearance: ShipAppearance, seed: number, detail: 'he
   const slab = (x: number, y: number, z: number, length: number, w: number, h: number, material: MaterialName = 'armor') => {
     const chamfer = Math.min(length * .1, .015)
     add(loft([[-length / 2, w * .43, h * .38], [-length / 2 + chamfer, w / 2, h / 2], [length / 2 - chamfer, w / 2, h / 2], [length / 2, w * .38, h * .36]]), material, x, y, z)
+  }
+  const rounded = (x: number, y: number, z: number, length: number, w: number, h: number, material: MaterialName = 'armor') => {
+    add(new RoundedBoxGeometry(length, h, w, hero ? 3 : 1, Math.min(length, w, h) * .24), material, x, y, z)
   }
   const rod = (x: number, y: number, z: number, radius: number, length: number, material: MaterialName = 'metal', alongX = true) => {
     add(new THREE.CylinderGeometry(radius * .8, radius, length, hero ? 8 : 5), material, x, y, z, alongX ? new THREE.Euler(0, 0, Math.PI / 2) : undefined)
@@ -272,15 +291,6 @@ diffuseColor.a *= engineTail * engineFilament * 0.65;`)
     plume.userData.baseIntensity = .3
     group.add(plume)
   }
-  const turret = (x: number, y: number, z: number, size: number, twin = true) => {
-    rod(x, y, z, size * .48, size * .2, 'dark', false)
-    slab(x, y + size * .26, z, size, size * .8, size * .45, 'hull')
-    const offsets = twin ? [-.19, .19] : [0]
-    for (const offset of offsets) {
-      rod(x + size * .7, y + size * .31, z + size * offset, size * .06, size * 1.2)
-      rod(x + size * 1.2, y + size * .31, z + size * offset, size * .077, size * .18, 'dark')
-    }
-  }
 
   if (family === 'station') {
     add(new THREE.CylinderGeometry(.12, .17, .62, 10), 'hull')
@@ -309,6 +319,9 @@ diffuseColor.a *= engineTail * engineFilament * 0.65;`)
     const alien = empire === 'voidborn'
     const broad = empire === 'crimson'
     const h = height / 2, w = width / 2
+    const context = { add, slab, rounded, rod, engine, hero, h, w }
+    const bespoke = buildSpecialHull(appearance.recipe, context) || buildEmpireHull(appearance, context)
+    if (!bespoke) {
     const nose = small ? .51 : .49
     add(loft([
       [-.49, w * .57, h * .55], [-.38, w * .9, h * .82],
@@ -356,15 +369,12 @@ diffuseColor.a *= engineTail * engineFilament * 0.65;`)
       for (const side of [-1, 1]) {
         const spread = family === 'drone' ? 1.1 : .88
         add(loft([[-.4, .05, .035], [-.29, .13, .025], [.06, .13 * spread, .016], [.29, .004, .006]]), 'armor', -.02, -.02, side * w * .65, new THREE.Euler(0, side * -.32, side * -.08))
-        rod(.11, -.015, side * w * .97, .012, .34, 'dark')
-        rod(.29, -.015, side * w * .97, .008, .07, 'metal')
         // Armored nacelles stand apart from the wing, giving a mechanical profile.
         add(loft([[-.41, .035, .033], [-.31, .046, .045], [-.10, .036, .033], [.025, .009, .012]]), 'hull', 0, .008, side * w * .57)
         add(loft([[-.34, .027, .02], [-.14, .025, .019], [-.055, .005, .006]]), 'armor', 0, .048, side * w * .57)
         engine(-.41, -.01, side * w * .55, .035)
         if (hero) {
           panel(-.1, .006, side * w * .99, .14, .05, .043)
-          rod(.12, -.005, side * w * .98, .017, .15, 'hull')
           for (let i = 0; i < 7; i++) {
             const x = -.30 + i * .023
             slab(x, .073, side * w * .57, .009, .051, .005, 'dark')
@@ -374,8 +384,6 @@ diffuseColor.a *= engineTail * engineFilament * 0.65;`)
             panel(-.25 + i * .07, .008, side * w * .81, .052, .039, .008)
             slab(-.22 + i * .07, .014, side * w * .81, .004, .035, .003, 'dark')
           }
-          rod(.345, -.02, side * w * .97, .0055, .06, 'dark')
-          rod(.373, -.02, side * w * .97, .007, .01, 'metal')
           slab(-.36, .014, side * w * .82, .019, .015, .007, 'windows')
           // Dorsal fins and exposed hydraulic lines add readable vertical structure.
           add(loft([[-.37, .004, .016], [-.26, .006, .078], [-.11, .004, .012]]), 'armor', 0, .055, side * w * .59)
@@ -441,9 +449,7 @@ diffuseColor.a *= engineTail * engineFilament * 0.65;`)
         engine(-.49, -.007, side * w * .55, family === 'capital' ? .055 : .043)
       }
       engine(-.48, h * .14, 0, family === 'capital' ? .055 : .037)
-      const guns = family === 'capital' ? 4 : 3
-      for (let i = 0; i < guns; i++) turret(.27 - i * .17, h * 1.15, 0, family === 'capital' ? .075 : .06)
-      if (hero) for (const side of [-1, 1]) for (let i = 0; i < 3; i++) turret(-.18 + i * .17, h * .83, side * w * .72, .04, false)
+
     }
 
     if (!small && !alien) {
@@ -464,40 +470,7 @@ diffuseColor.a *= engineTail * engineFilament * 0.65;`)
     }
 
     // Empire construction language changes silhouette, not just paint.
-    if (empire === 'solarian') {
-      // Broad blue shoulders, gold spine and paired clean-white sensor pylons.
-      for (const side of [-1, 1]) {
-        add(loft([[-.38, .022, .016], [-.23, w * .2, h * .4], [.19, w * .16, h * .24], [.36, .004, .006]]), 'armor', 0, h * .7, side * w * .62)
-        slab(.045, h * 1.18, side * w * .45, .57, .028, .008, 'accent')
-        slab(-.25, h * 1.65, side * w * .48, .105, .038, .07, 'metal')
-        rod(-.25, h * 2.2, side * w * .48, .003, .12, 'metal', false)
-      }
-      slab(.28, h * .89, 0, .15, w * .65, .014, 'armor')
-      slab(.28, h * .99, 0, .09, .03, .006, 'accent')
-    } else if (broad) {
-      // Red fortress shoulders and a blunt black-faced battering ram.
-      slab(.37, .005, 0, .22, w * 1.55, h * 1.5, 'armor')
-      slab(.474, .003, 0, .024, w * 1.20, h * 1.15, 'dark')
-      for (const side of [-1, 1]) {
-        add(loft([[-.33, .035, .025], [-.22, w * .30, h * .77], [.06, w * .29, h * .65], [.16, .02, .02]]), 'armor', 0, h * .42, side * w * .88)
-        slab(-.09, h * 1.03, side * w * .88, .12, .055, .013, 'dark')
-        for (let i = 0; i < 4; i++) slab(-.13 + i * .027, h * 1.10, side * w * .88, .008, .044, .006, 'windows')
-        slab(.37, h * .86, side * w * .35, .13, .044, .014, 'accent')
-      }
-    } else if (empire === 'nebula') {
-      // Enamel-green, swelling flank tanks edged in brass: wealth in transit.
-      for (const side of [-1, 1]) {
-        const tank = new THREE.SphereGeometry(1, hero ? 20 : 10, 10)
-        tank.scale(.36, h * .63, w * .33)
-        add(tank, 'armor', -.035, .005, side * w * .87)
-        add(loft([[-.4, .01, .01], [-.22, .035, .019], [.16, .03, .015], [.37, .003, .003]]), 'metal', 0, h * .69, side * w * .87)
-        add(loft([[-.32, .015, .012], [-.18, .025, .017], [.29, .017, .01], [.4, .002, .003]]), 'accent', 0, h * 1.03, side * w * .47)
-        for (const x of [-.22, .16]) {
-          add(new THREE.TorusGeometry(w * .31, .007, 5, hero ? 20 : 12), 'metal', x, .004, side * w * .87, new THREE.Euler(0, Math.PI / 2, 0))
-        }
-      }
-      slab(.21, h * .84, 0, .22, .035, .009, 'accent')
-    } else if (empire === 'outerrim') {
+    if (empire === 'outerrim') {
       // An oversized offset powerplant and exposed spine break the fleet symmetry.
       rod(-.20, -.01, w * 1.06, small ? .052 : .075, .53, 'hull')
       engine(-.47, -.01, w * 1.06, small ? .047 : .065)
@@ -531,11 +504,44 @@ diffuseColor.a *= engineTail * engineFilament * 0.65;`)
       rod(-.28, -h * .3, w * 1.10, .023, .34, 'dark')
       rod(-.31, -h * .3, w * 1.10, .026, .06, 'metal')
     }
-    if (hero && !alien) {
+    } // default empire / role assembly
+    // Seat mounts on the actual hull surface, including named exceptions and grown hulls.
+    const surfaces = [...batches.entries()].filter(([key])=>['hull','armor','dark','metal'].includes(key)).flatMap(([,pieces])=>pieces)
+    const deckAt = (x:number,z:number) => {
+      let top = -Infinity
+      for(const geometry of surfaces) {
+        const p=geometry.getAttribute('position')
+        for(let i=0;i<p.count;i+=3) {
+          const ax=p.getX(i),az=p.getZ(i),bx=p.getX(i+1),bz=p.getZ(i+1),cx=p.getX(i+2),cz=p.getZ(i+2)
+          const det=(bz-cz)*(ax-cx)+(cx-bx)*(az-cz)
+          if(Math.abs(det)<1e-10) continue
+          const u=((bz-cz)*(x-cx)+(cx-bx)*(z-cz))/det
+          const v=((cz-az)*(x-cx)+(ax-cx)*(z-cz))/det
+          if(u>=-1e-5 && v>=-1e-5 && u+v<=1.00001) top=Math.max(top,u*p.getY(i)+v*p.getY(i+1)+(1-u-v)*p.getY(i+2))
+        }
+      }
+      return top
+    }
+    buildFittedHardware(hardware, family, { ...context, deckAt })
+    if (pirate || empire === 'outerrim') {
+      // A limited palette of donor plates gives readable repairs without extra draw calls.
+      const colors: MaterialName[] = ['armor','metal','hull','accent','dark']
+      for (let i=0; i<(hero?18:5); i++) {
+        const x=-.35+random()*.65, side=i%2?1:-1
+        const z=side*w*(.33+random()*.4), deck=deckAt(x,z)
+        if(Number.isFinite(deck)) slab(x,deck+.002,z,.055+random()*.11,.025+random()*.044,.008+random()*.011,colors[i%colors.length])
+      }
+      if (pirate) {
+        slab(-.12,h*.14,w*.91,.23,.033,h*.8,'metal')
+        rod(-.28,h*1.8,-w*.44,.003,.18,'dark',false)
+      }
+    }
+    if (hero && !alien && !appearance.recipe) {
       // Seeded small-scale topology supplies parallax in close passes.
-      for (let i = 0; i < (small ? 8 : 38); i++) {
+      for (let i = 0; i < (bespoke ? (small ? 3 : 10) : small ? 8 : 38); i++) {
         const x = -.38 + random() * .54, z = (random() - .5) * width * .5
-        slab(x, h * 1.02, z, .012 + random() * .028, .008 + random() * .016, .004 + random() * .01, i % 3 === 0 ? 'dark' : 'hull')
+        const deck=deckAt(x,z)
+        if(Number.isFinite(deck)) slab(x, deck + .002, z, .012 + random() * .028, .008 + random() * .016, .004 + random() * .01, i % 3 === 0 ? 'dark' : 'hull')
       }
     }
   }

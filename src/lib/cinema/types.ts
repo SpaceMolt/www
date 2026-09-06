@@ -1,5 +1,6 @@
 import type { BattleLogEntry, BattleSummary } from '../battle/types'
 import type { CinemaWeaponFamily } from './weapons'
+import type { CinemaHardware, HardwareCatalog } from './hardware'
 
 export type CinemaFate = 'survived' | 'destroyed' | 'knocked_out' | 'escaped' | 'captured' | 'withdrawn'
 export type CinemaCueKind = 'weapon' | 'death' | 'knockout' | 'escape' | 'capture' | 'arrival' | 'burn' | 'repair' | 'disable' | 'cloak' | 'drain'
@@ -30,6 +31,8 @@ export interface CinemaShip {
   sideId: number
   sideIndex: number
   factionId?: string
+  /** Static construction evidence for this hull appearance, never prior hulls. */
+  hardware?: CinemaHardware
   start: number
   /** Time the hull stops fighting. Wreck/disabled aftermath can remain visible. */
   end: number
@@ -148,6 +151,7 @@ export interface CinemaWorkerRequest {
   entries: BattleLogEntry[]
   /** Only the shared loader's complete phase establishes reconciliation. */
   reconciled: true
+  hardwareCatalog?: HardwareCatalog
 }
 
 export type CinemaWorkerResponse = { film: CinemaFilm } | { error: string }
