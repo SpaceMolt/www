@@ -10,6 +10,8 @@ export interface WeaponMount {
   pivot: THREE.Vector3
   muzzle: THREE.Vector3
   rotation: THREE.Quaternion
+  /** Outward hull normal of the mounting face; omitted legacy mounts are unrestricted. */
+  normal?: THREE.Vector3
 }
 
 export interface WeaponRig {
@@ -33,7 +35,7 @@ export interface WeaponCueAssignment {
  * A mount stays reserved from .1s before release through the end of flight;
  * another simultaneous beam cannot make it turn while the first still fires.
  * Missing families remain ordinary distant/legacy effects, not suppressed. */
-export function assignWeaponCues(rig: WeaponRig, actorCues: readonly CinemaCue[]): WeaponCueAssignment {
+export function assignWeaponCues(rig: WeaponRig, actorCues: readonly CinemaCue[], eligible?: (mountIndex: number, cue: CinemaCue) => boolean): WeaponCueAssignment {
   const mounts = rig.mounts.slice(0, MAX_WEAPON_MOUNTS)
   const tracks: CinemaCue[][] = mounts.map(() => [])
   const byCue = new Map<string, number>(), suppressed = new Set<string>(), seen = new Set<string>()
@@ -51,7 +53,7 @@ export function assignWeaponCues(rig: WeaponRig, actorCues: readonly CinemaCue[]
     let selected = -1
     for (let offset = 0; offset < matching.length; offset++) {
       const candidate = (cursor + offset) % matching.length
-      if (occupiedUntil[matching[candidate]] <= cue.time - .1) {
+      if (occupiedUntil[matching[candidate]] <= cue.time - .1 && (!eligible || eligible(matching[candidate], cue))) {
         selected = candidate
         break
       }
@@ -141,15 +143,41 @@ export function createWeaponShadowMaterials(rig: WeaponRig): { depth: THREE.Mesh
 }
 
 const forward = new THREE.Vector3(1, 0, 0)
+const up = new THREE.Vector3(0, 1, 0)
+const minimumAimDot = -Math.sin(Math.PI / 36)
 
-/** Absolute +X-to-target rotation; seeking and playback order never affect aim.
- * A coincident or invalid target returns the neutral pose rather than stale aim. */
+/** Five degrees of depression admits distant targets near the mounting tangent;
+ * a surface-mounted battery otherwise traverses its outward hemisphere. */
+export function canAimWeaponMount(rig: WeaponRig, index: number, targetLocal: THREE.Vector3): boolean {
+  const mount = Number.isInteger(index) && index >= 0 && index < MAX_WEAPON_MOUNTS ? rig.mounts[index] : undefined
+  if (!mount) return false
+  const direction = targetLocal.clone().sub(mount.pivot), length = direction.length()
+  if (!Number.isFinite(length) || length <= 1e-10) return false
+  return !mount.normal || direction.divideScalar(length).dot(mount.normal) >= minimumAimDot - 1e-8
+}
+
+/** Absolute yaw/elevation about the mounting face. Preserving its outward up
+ * vector avoids flipping the gun's base into the hull when traversing aft. */
 export function aimWeaponMount(rig: WeaponRig, index: number, targetLocal: THREE.Vector3): boolean {
   const mount = Number.isInteger(index) && index >= 0 && index < MAX_WEAPON_MOUNTS ? rig.mounts[index] : undefined
   if (!mount) return false
-  const direction = targetLocal.clone().sub(mount.pivot), lengthSquared = direction.lengthSq()
-  if (!Number.isFinite(lengthSquared) || lengthSquared <= 1e-20) mount.rotation.identity()
-  else mount.rotation.setFromUnitVectors(forward, direction.multiplyScalar(1 / Math.sqrt(lengthSquared)))
+  const direction = targetLocal.clone().sub(mount.pivot), length = direction.length()
+  if (!Number.isFinite(length) || length <= 1e-10) mount.rotation.identity()
+  else {
+    direction.divideScalar(length)
+    const normal = mount.normal ?? up
+    let height = THREE.MathUtils.clamp(direction.dot(normal), -1, 1)
+    const horizontal = direction.clone().addScaledVector(normal, -height)
+    const horizontalLength = horizontal.length()
+    if (horizontalLength > 1e-10) horizontal.divideScalar(horizontalLength)
+    else horizontal.copy(forward)
+    if (mount.normal && height < minimumAimDot) height = minimumAimDot
+    const yaw = Math.atan2(normal.dot(new THREE.Vector3().crossVectors(forward, horizontal)), forward.dot(horizontal))
+    const elevation = Math.asin(height)
+    const yawRotation = new THREE.Quaternion().setFromAxisAngle(normal, yaw)
+    const pitchAxis = new THREE.Vector3().crossVectors(horizontal, normal).normalize()
+    mount.rotation.setFromAxisAngle(pitchAxis, elevation).multiply(yawRotation)
+  }
   rig.uniforms[index].set(mount.rotation.x, mount.rotation.y, mount.rotation.z, mount.rotation.w)
   return true
 }

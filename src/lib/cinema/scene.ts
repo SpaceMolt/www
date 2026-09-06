@@ -18,7 +18,7 @@ import { cinemaRenderSettings, initialCinemaQuality } from './quality'
 import { weaponVisual } from './weaponVisuals'
 import { getWeaponColor, resolveWeaponFamily } from './weapons'
 import { createShip } from './ships'
-import { aimWeaponMount, weaponMuzzleLocal, assignWeaponCues, type WeaponRig } from './ship-weapons'
+import { aimWeaponMount, canAimWeaponMount, weaponMuzzleLocal, assignWeaponCues, type WeaponRig } from './ship-weapons'
 import { updateRetrothrusters } from './ship-thrusters'
 import { resolveAppearance, type ShipAppearance } from './appearance'
 import type { CinemaFilm, CinemaShip, CinemaCue } from './types'
@@ -259,14 +259,6 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   const byId = new Map(actors.map(a => [a.ship.id, a]))
   const gunTracks = new Map<string, CinemaCue[][]>()
   const cueMount = new Map<string, number>(), suppressedGuns = new Set<string>()
-  for(const actor of actors) {
-    const rig=actor.model?.userData.weaponRig as WeaponRig|undefined
-    if(!rig?.mounts.length) continue
-    const assigned=assignWeaponCues(rig,film.cues.filter(cue=>cue.from===actor.ship.id))
-    gunTracks.set(actor.ship.id,assigned.tracks)
-    for(const [id,index] of assigned.byCue) cueMount.set(id,index)
-    for(const id of assigned.suppressed) suppressedGuns.add(id)
-  }
   // Distant actors remain real participants, rendered with a bounded number of draw calls.
   const distantGroups = new Map<string,{mesh:THREE.InstancedMesh;count:number}>()
   const distantKey = (actor: Actor) => `${actor.appearance.empire}:${actor.appearance.hullEmpire}:${actor.appearance.family}:${actor.appearance.recipe ?? 'standard'}`
@@ -417,6 +409,34 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     output.y+=target.size*.06
     if(!cue.hit){output.y+=target.size*.8;output.z+=target.size*(hash(cue.id)%2?.7:-.7)}
     return output
+  }
+  // Reserve an actual gun with a clear outward firing arc for the whole cue.
+  // Sampling both banking modes also keeps toggling reduced motion deterministic.
+  for(const actor of actors) {
+    const rig=actor.model?.userData.weaponRig as WeaponRig|undefined
+    if(!rig?.mounts.length) continue
+    const localTargets=new Map<string,THREE.Vector3[]>()
+    const inverse=new THREE.Matrix4(), rotation=new THREE.Quaternion()
+    const eligible=(index:number,cue:CinemaCue) => {
+      let targets=localTargets.get(cue.id)
+      if(!targets) {
+        targets=[]
+        for(const phase of [0,.5,1]) {
+          const at=cue.time+cue.duration*phase, pose=sampleShipMotion(actor.ship,at,motionOptions(actor))
+          for(const bank of [0,pose.bank]) {
+            rotation.setFromEuler(new THREE.Euler(bank,pose.yaw,0,'YXZ'))
+            inverse.compose(new THREE.Vector3(pose.x,pose.y,pose.z),rotation,new THREE.Vector3(actor.size,actor.size,actor.size)).invert()
+            targets.push(aimPoint(cue,new THREE.Vector3(),at).applyMatrix4(inverse))
+          }
+        }
+        localTargets.set(cue.id,targets)
+      }
+      return targets.every(target=>canAimWeaponMount(rig,index,target))
+    }
+    const assigned=assignWeaponCues(rig,film.cues.filter(cue=>cue.from===actor.ship.id),eligible)
+    gunTracks.set(actor.ship.id,assigned.tracks)
+    for(const [id,index] of assigned.byCue) cueMount.set(id,index)
+    for(const id of assigned.suppressed) suppressedGuns.add(id)
   }
   const previousAim=new THREE.Quaternion(), aimTarget=new THREE.Vector3(), frozenInverse=new THREE.Matrix4(), frozenRotation=new THREE.Quaternion()
   function updateGuns() {
@@ -665,7 +685,8 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
         if(cue.secondaryKind==='retaliation'||/galvanic hull grid/i.test(cue.weaponName??''))pointA.copy(from.position)
         const parent=cuesById.get(cue.parentId ?? '')
         const collateralOrigin=parent?.to ? byId.get(parent.to)?.position : undefined
-        const visual=suppressedGuns.has(cue.id)?{lines:[],glows:[],rings:[],projectiles:[]}:weaponVisual(cue,age,pointA,pointB,from.size,to.size,reduced,collateralOrigin)
+        const outsideArc=mount!==undefined && rig && from.model && !canAimWeaponMount(rig,mount,from.model.worldToLocal(pointB.clone()))
+        const visual=suppressedGuns.has(cue.id)||outsideArc?{lines:[],glows:[],rings:[],projectiles:[]}:weaponVisual(cue,age,pointA,pointB,from.size,to.size,reduced,collateralOrigin)
         for(const beam of visual.lines)addBeam(beam.from,beam.to,beam.width,beam.color)
         for(const flash of visual.glows)addFlash(flash.position,flash.radius,flash.color,flash.opacity)
         for(const wave of visual.rings){

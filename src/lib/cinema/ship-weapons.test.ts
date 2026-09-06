@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import * as THREE from 'three'
-import { aimWeaponMount, applyWeaponRig, assignWeaponCues, createWeaponRig, createWeaponShadowMaterials, tagWeaponGeometry, weaponMuzzleLocal } from './ship-weapons'
+import { aimWeaponMount, canAimWeaponMount, applyWeaponRig, assignWeaponCues, createWeaponRig, createWeaponShadowMaterials, tagWeaponGeometry, weaponMuzzleLocal } from './ship-weapons'
 import type { CinemaCue } from './types'
 
 const mount = (rig: ReturnType<typeof createWeaponRig>) => {
@@ -133,4 +133,31 @@ describe('batched weapon aiming', () => {
     expect(b.uniforms[0].toArray()).toEqual([0, 0, 0, 1])
     material.dispose()
   })
+})
+
+
+test('surface mounts permit modest depression but clamp hull-directed aim while keeping their base upright', () => {
+  const rig = createWeaponRig()
+  rig.mounts.push({ family: 'railgun', pivot: new THREE.Vector3(), muzzle: new THREE.Vector3(1, 0, 0), rotation: new THREE.Quaternion(), normal: new THREE.Vector3(0, 1, 0) })
+  expect(canAimWeaponMount(rig, 0, new THREE.Vector3(10, -.5, 0))).toBe(true)
+  expect(canAimWeaponMount(rig, 0, new THREE.Vector3(10, -3, 0))).toBe(false)
+  aimWeaponMount(rig, 0, new THREE.Vector3(10, -3, 0))
+  expect(weaponMuzzleLocal(rig, 0)!.y).toBeCloseTo(-Math.sin(Math.PI / 36), 8)
+  aimWeaponMount(rig, 0, new THREE.Vector3(-10, 0, 0))
+  expect(new THREE.Vector3(0, 1, 0).applyQuaternion(rig.mounts[0].rotation).distanceTo(new THREE.Vector3(0, 1, 0))).toBeLessThan(1e-10)
+  expect(weaponMuzzleLocal(rig, 0)!.x).toBeCloseTo(-1, 10)
+  expect(canAimWeaponMount(rig, 0, new THREE.Vector3())).toBe(false)
+})
+
+test('cue assignment respects physical firing eligibility and retains impacts for blocked discharge', () => {
+  const rig = mount(createWeaponRig())
+  rig.mounts.push({ ...rig.mounts[0], rotation: new THREE.Quaternion() })
+  const cue: CinemaCue = { id: 'outside-arc', kind: 'weapon', time: 1, duration: 1, tick: 1, intensity: 1, from: 'a', to: 'b', weaponFamily: 'laser', hit: true }
+  const assigned = assignWeaponCues(rig, [cue], index => index === 1)
+  expect(assigned.byCue.get(cue.id)).toBe(1)
+  expect(assigned.suppressed.size).toBe(0)
+  const blocked = assignWeaponCues(rig, [cue], () => false)
+  expect([...blocked.suppressed]).toEqual([cue.id])
+  expect(blocked.byCue.size).toBe(0)
+  expect(cue.hit).toBe(true)
 })

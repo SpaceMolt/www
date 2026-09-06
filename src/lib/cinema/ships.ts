@@ -228,11 +228,19 @@ export function createShip(appearance: ShipAppearance, seed: number, detail: 'he
   }
   const rig=createWeaponRig()
   group.userData.weaponRig=rig
-  let weaponIndex=-1
+  let weaponIndex=-1, weaponRoll=0
   const batches = new Map<MaterialName, THREE.BufferGeometry[]>()
   const add = (geometry: THREE.BufferGeometry, material: MaterialName, x = 0, y = 0, z = 0, rotation?: THREE.Euler) => {
     if (rotation) geometry.applyMatrix4(new THREE.Matrix4().makeRotationFromEuler(rotation))
     geometry.translate(x, y, z)
+    // Side and ventral batteries share the same +X firing axis while their
+    // mounting bases point into the supporting hull surface.
+    if(weaponIndex>=0 && weaponRoll) {
+      const pivot=rig.mounts[weaponIndex].pivot
+      geometry.translate(-pivot.x,-pivot.y,-pivot.z)
+      geometry.rotateX(weaponRoll)
+      geometry.translate(pivot.x,pivot.y,pivot.z)
+    }
     // All batches use the same position/normal layout, including procedural primitives.
     let flat = geometry
     if (geometry.index) { flat = geometry.toNonIndexed(); geometry.dispose() }
@@ -528,12 +536,30 @@ diffuseColor.a *= engineTail * engineFilament * 0.65;`)
       }
       return top
     }
-    buildFittedHardware(hardware, family, { ...context, deckAt, appearance,
-      beginWeapon: (family,pivot,muzzle) => {
+    const surfaceRay=new THREE.Ray(), a=new THREE.Vector3(), b=new THREE.Vector3(), c=new THREE.Vector3(), hit=new THREE.Vector3()
+    const hullSurface=(point:THREE.Vector3,outward:THREE.Vector3):THREE.Vector3|undefined => {
+      surfaceRay.origin.copy(point).addScaledVector(outward,2)
+      surfaceRay.direction.copy(outward).negate()
+      let nearest=Infinity, result:THREE.Vector3|undefined
+      for(const geometry of surfaces) {
+        const position=geometry.getAttribute('position')
+        for(let i=0;i<position.count;i+=3) {
+          a.fromBufferAttribute(position,i);b.fromBufferAttribute(position,i+1);c.fromBufferAttribute(position,i+2)
+          if(surfaceRay.intersectTriangle(a,b,c,false,hit)) {
+            const distance=surfaceRay.origin.distanceToSquared(hit)
+            if(distance<nearest){nearest=distance;result=hit.clone()}
+          }
+        }
+      }
+      return result
+    }
+    buildFittedHardware(hardware, family, { ...context, deckAt, hullSurface, appearance,
+      beginWeapon: (family,pivot,muzzle,constructionRoll=0,normal) => {
+        weaponRoll=constructionRoll
         weaponIndex=rig.mounts.length
-        rig.mounts.push({family,pivot,muzzle,rotation:new THREE.Quaternion()})
+        rig.mounts.push({family,pivot,muzzle,normal,rotation:new THREE.Quaternion()})
       },
-      endWeapon: () => { weaponIndex=-1 },
+      endWeapon: () => { weaponIndex=-1; weaponRoll=0 },
     })
     if (pirate || empire === 'outerrim') {
       // A limited palette of donor plates gives readable repairs without extra draw calls.

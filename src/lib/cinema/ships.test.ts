@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import * as THREE from 'three'
 import { buildShipAppearances, resolveAppearance, type ShipEmpire } from './appearance'
 import { createShip } from './ships'
-import { aimWeaponMount, weaponMuzzleLocal, type WeaponRig } from './ship-weapons'
+import { aimWeaponMount, canAimWeaponMount, weaponMuzzleLocal, type WeaponRig } from './ship-weapons'
 
 function dispose(group: THREE.Group) {
   const materials = new Set<THREE.Material>()
@@ -215,7 +215,7 @@ test('weapon proportions grow with tier while hull scale remains physical', () =
 })
 
 
-for (const family of ['autocannon', 'laser'] as const) test(`Shard ${family} mounts clear the hull through full yaw and modest battle pitch`, () => {
+for (const family of ['autocannon', 'laser'] as const) test(`Shard ${family} mounts clear the hull throughout their legal firing envelope`, () => {
   const appearance = buildShipAppearances([{ id: 'shard', class: 'Miner', category: 'Industrial', faction: 'crimson', scale: 1, tier: 0 }]).shard
   const group = createShip(appearance, 90210, 'hero', { source: 'modules', weapons: { [family]: 2 }, cargo: 0, mining: 0, salvage: 0, sensor: 0, defense: 0, utility: 0 })
   try {
@@ -228,12 +228,16 @@ for (const family of ['autocannon', 'laser'] as const) test(`Shard ${family} mou
     for (const mesh of hull) for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) material.side = THREE.DoubleSide
     const ray = new THREE.Raycaster()
     const failures: { mount: number; yaw: number; pitch: number; segment: string; surface: string }[] = []
+    let checked = 0
     for (let index = 0; index < rig.mounts.length; index++) {
       const mount = rig.mounts[index]
       for (let yaw = -180; yaw < 180; yaw += 5) for (const pitch of [-10, -5, 0, 5, 10]) {
         const heading = THREE.MathUtils.degToRad(yaw), elevation = THREE.MathUtils.degToRad(pitch)
         const direction = new THREE.Vector3(Math.cos(heading) * Math.cos(elevation), Math.sin(elevation), Math.sin(heading) * Math.cos(elevation))
-        aimWeaponMount(rig, index, mount.pivot.clone().addScaledVector(direction, 10))
+        const target = mount.pivot.clone().addScaledVector(direction, 10)
+        if (!canAimWeaponMount(rig, index, target)) continue
+        checked++
+        aimWeaponMount(rig, index, target)
         const muzzle = weaponMuzzleLocal(rig, index)!
         // Check both the visible barrel axis and the beam/projectile leaving
         // its animated muzzle. The old recessed mounts fail even at 60deg yaw.
@@ -253,6 +257,7 @@ for (const family of ['autocannon', 'laser'] as const) test(`Shard ${family} mou
       }
     }
     // A bounded diagnostic avoids drowning the first failing headings in output.
+    expect(checked).toBeGreaterThan(500)
     expect(failures.slice(0, 4)).toEqual([])
     expect(failures).toHaveLength(0)
   } finally {
