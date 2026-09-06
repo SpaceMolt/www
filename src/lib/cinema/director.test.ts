@@ -356,10 +356,10 @@ describe('source movement projection', () => {
     entries[6] = terminal(106, { snapshots: [snap('a', 1, { zone: 'inner' }), snap('b', 2)] })
     const film = compile(entries)
     const motion = film.ships.find(ship => ship.playerId === 'a')!.motion!
-    expect(motion.slice(0, 2)).toEqual([{time:0,position:0},{time:film.segments[1].start,position:0}])
-    expect(motion).toContainEqual({time:film.segments[1].end,position:1 / 3})
-    expect(motion).toContainEqual({time:film.segments[3].end,position:2 / 3})
-    expect(motion).toContainEqual({time:film.segments[5].start,position:1})
+    expect(motion.slice(0, 2)).toEqual([{time:0,position:0,stance:'aggressive'},{time:film.segments[1].start,position:0,stance:'aggressive'}])
+    expect(motion).toContainEqual({time:film.segments[1].end,position:1 / 3,stance:'aggressive'})
+    expect(motion).toContainEqual({time:film.segments[3].end,position:2 / 3,stance:'aggressive'})
+    expect(motion).toContainEqual({time:film.segments[5].start,position:1,stance:'aggressive'})
     expect(motion.at(-1)?.position).toBe(2 / 3)
     expect(motion.every((frame, index) => frame.position >= 0 && frame.position <= 1 &&
       (index === 0 || frame.time > motion[index - 1].time))).toBe(true)
@@ -374,7 +374,7 @@ describe('source movement projection', () => {
     expect(film.ships.find(ship => ship.playerId === 'a')!.motion!.length).toBeLessThanOrEqual(2)
     const appearances = film.ships.filter(ship => ship.playerId === 'b')
     expect(appearances[0].motion![0].position).toBe(1)
-    expect(appearances[1].motion![0]).toEqual({time:appearances[1].start,position:1 / 3})
+    expect(appearances[1].motion![0]).toEqual({time:appearances[1].start,position:1 / 3,stance:'aggressive'})
   })
 })
 
@@ -389,7 +389,8 @@ describe('authored narrative sequences', () => {
     const film = compile(entries)
     expect(film.story?.protagonistId).toBe('a:0')
     expect(film.story?.adversaryId).toBe('b:0')
-    expect(film.shots.slice(0,3).map(shot=>shot.role)).toEqual(['geography','protagonist','opposition'])
+    expect(film.shots[0]).toMatchObject({start:0,end:4,role:'geography',battlefield:true})
+    expect(film.shots[1].role).toBe('opposition')
     expect(film.story!.sequences.length).toBeGreaterThanOrEqual(3)
     expect(film.story!.sequences.length).toBeLessThanOrEqual(6)
     for (const sequence of film.story!.sequences) {
@@ -554,4 +555,71 @@ it('follows the live escaping actor instead of a protagonist destroyed in an ear
   expect(setup.subject).toBe('b:0')
   expect(setup.target).toBeUndefined()
   expect(film.ships.find(ship=>ship.id===setup.subject)!.end).toBeGreaterThan(setup.start)
+})
+
+it('preserves recorded stance transitions independently of zone progress through the edit', () => {
+  const film = compile([
+    row(100, { snapshots: [snap('a', 1, { zone: 'inner', stance: 'fire' }), snap('b', 2)], attacks: [attack('a','b')] }),
+    row(101, { snapshots: [snap('a', 1, { zone: 'inner', stance: 'retreat' }), snap('b', 2)], attacks: [attack('a','b')], zone_moves: [{player_id:'a',old_zone:'inner',new_zone:'mid',reason:'retreat'}] }),
+    row(102, { snapshots: [snap('a', 1, { zone: 'mid', stance: 'retreat' }), snap('b', 2)], attacks: [attack('a','b')], commands: [{player_id:'a',command:'set_combat_stance',stance:'flee'}] }),
+    terminal(103, { snapshots: [snap('a', 1, {zone:'mid',stance:'flee'}),snap('b',2)] }),
+  ])
+  const frames = film.ships.find(ship => ship.playerId === 'a')!.motion!
+  expect(frames.map(frame => frame.stance)).toContain('fire')
+  expect(frames.map(frame => frame.stance)).toContain('retreat')
+  expect(frames.map(frame => frame.stance)).toContain('flee')
+  expect(frames.some(frame => frame.position === 1/3 && frame.stance === 'retreat')).toBe(true)
+  expect(frames.every((frame,index) => !index || frame.time > frames[index-1].time)).toBe(true)
+})
+
+describe('collateral consequence direction', () => {
+  const cascade = (primaryHit = true, collateralHit = true, killer = 'a') => compile([
+    row(100, { snapshots: [snap('a'), snap('b', 2), snap('c', 2), snap('other')], attacks: [
+      attack('a', 'b', { weapons: [gun('null', 'void', primaryHit)], hit_success: primaryHit }),
+      attack('a', 'c', { weapons: [], secondary_kind: 'aoe', hit_success: collateralHit, hull_damage: collateralHit ? 100 : 0 }),
+    ], kills: [kill(killer, 'c')] }),
+    terminal(101, { snapshots: [snap('a'), snap('b', 2), snap('other')] }),
+  ], { category: 'arena' })
+
+  it('follows an area knockout back to its real primary target and holds the subsequent reaction', () => {
+    const film = cascade()
+    const sequence = film.story!.sequences.at(-1)!
+    const cause = film.cues.find(cue => cue.id === sequence.causeCueId)
+    expect(cause).toBeDefined()
+    expect(cause!.to).toBe('b:0')
+    expect(cause!.from).toBe('a:0')
+    expect(cause!.parentId).toBeUndefined()
+    expect(sequence.defender).toBe('c:0')
+    const event = film.cues.find(cue => cue.id === sequence.eventCueId)!
+    expect(event.kind).toBe('knockout')
+    expect(event.to).toBe('c:0')
+    expect(event.time - (cause!.time + cause!.duration)).toBeCloseTo(.4)
+    const fire = film.shots.find(shot => shot.sequenceId === sequence.id && shot.role === 'fire')!
+    expect(fire.subject).toBe('a:0')
+    expect(fire.target).toBe('b:0')
+    const impact = sampleCinemaShot(film, cause!.time + cause!.duration)
+    expect(impact.subject).toBe('b:0')
+    const reaction = sampleCinemaShot(film, event.time + .1)
+    expect(reaction.subject).toBe('c:0')
+    expect(reaction.focusIds).toContain('c:0')
+    expect(film.ships.find(ship => ship.id === 'c:0')!.end).toBe(event.time)
+    expect(film.cues.every((cue, index) => cue.duration > 0 && (!index || cue.time >= film.cues[index - 1].time))).toBe(true)
+  })
+
+  it('does not fabricate a parent cause for missed collateral, a missed primary, or a different killer', () => {
+    for (const film of [cascade(false, true), cascade(true, false), cascade(true, true, 'other')]) {
+      expect(film.story!.sequences.at(-1)!.causeCueId).toBeUndefined()
+    }
+  })
+
+  it('preserves recorded chain recipient order across two-digit cue identifiers', () => {
+    const targets = Array.from({ length: 12 }, (_, index) => `chain:${index + 1}`)
+    const film = compile([row(100, {
+      snapshots: [snap('a'), snap('b', 2), ...targets.map(id => snap(id, 2))],
+      attacks: [attack('a', 'b'), ...targets.map(id => attack('a', id, { weapons: [], secondary_kind: 'chain' }))],
+      kills: targets.map(id => kill('a', id)),
+    }), terminal(101, { snapshots: [snap('a'), snap('b', 2)] })])
+    expect(film.cues.filter(cue => cue.parentId && cue.secondaryKind === 'chain').map(cue => cue.to))
+      .toEqual(targets.map(id => `${id}:0`))
+  })
 })

@@ -1,4 +1,6 @@
 import type { CinemaShip } from './types'
+import { balancedFormationSlot, type FormationSlot } from './formation'
+export { fleetMotionSpacing } from './formation'
 
 export interface ShipMotionOptions {
   size: number
@@ -8,6 +10,10 @@ export interface ShipMotionOptions {
   spacing: number
   depth: number
   seed: number
+  /** Stable per-side slot assigned across the complete lifecycle roster. */
+  formation?: FormationSlot
+  /** Number of distinct battle sides, for clearance between adjacent fleets. */
+  fleetCount?: number
 }
 
 export interface ShipMotion {
@@ -26,13 +32,6 @@ const clamp = (value: number, low: number, high: number) => Math.max(low, Math.m
 const smooth = (value: number) => { const p = clamp(value, 0, 1); return p * p * (3 - 2 * p) }
 const ORBIT_RATE = 0.018
 
-/** Per-column formation clearance, shared by every member of a fleet. */
-export function fleetMotionSpacing(ships: readonly { size: number; beam: number }[]): number {
-  // Bows follow the flight path and turn across column boundaries. Beam-only
-  // clearance is insufficient once narrow capitals turn broadside in formation.
-  return ships.reduce((spacing, ship) => Math.max(spacing, ship.size * 1.2 + 40, ship.size * ship.beam * 1.4 + 28), 75)
-}
-
 /** Recorded inward progress is artistic spacing guidance, not tactical coordinates. */
 export function sampleMotionProgress(ship: CinemaShip, time: number): number {
   const frames = ship.motion
@@ -50,6 +49,35 @@ export function sampleMotionProgress(ship: CinemaShip, time: number): number {
   return clamp(left.position + (right.position - left.position) * progress, 0, 1)
 }
 
+interface StanceTurn { time: number; from: number; to: number }
+const stanceTurns = new WeakMap<NonNullable<CinemaShip['motion']>, StanceTurn[]>()
+const turnAt = (turn: StanceTurn, time: number) => turn.from + (turn.to - turn.from) * smooth((time - turn.time) / 1.6)
+
+/** Cache only immutable compiled frames; a fresh film gets its own timeline. */
+function stanceTimeline(frames: NonNullable<CinemaShip['motion']>): StanceTurn[] {
+  const existing = stanceTurns.get(frames)
+  if (existing) return existing
+  const timeline: StanceTurn[] = []
+  for (const frame of frames) {
+    const to = frame.stance === 'flee' ? 1 : 0
+    const previous = timeline.at(-1)
+    if (previous?.to === to) continue
+    timeline.push({ time: frame.time, from: previous ? turnAt(previous, frame.time) : to, to })
+  }
+  stanceTurns.set(frames, timeline)
+  return timeline
+}
+
+/** Stances take effect at the recorded frame, never ahead of a future change. */
+function fleeTurn(ship: CinemaShip, time: number): number {
+  const frames = ship.motion
+  if (!frames?.length) return 0
+  const timeline = stanceTimeline(frames)
+  let low = 0, high = timeline.length
+  while (low < high) { const middle = (low + high) >>> 1; if (timeline[middle].time <= time) low = middle + 1; else high = middle }
+  return turnAt(timeline[Math.max(0, low - 1)], time)
+}
+
 /**
  * A shared naval sweep moves whole formations through the scene. Individual
  * maneuvers stay inside narrow lanes: fighters bank through small corrections,
@@ -60,16 +88,24 @@ export function sampleShipMotion(ship: CinemaShip, time: number, options: ShipMo
   const { size, angle, lane, sideCount, spacing, depth, seed } = options
   const agility = clamp(52 / Math.max(size, 1), 0.14, 1)
   const phase = ((seed >>> 0) % 6283) / 1000
-  const row = Math.floor(lane / 7)
-  const columns = Math.min(7, Math.max(1, sideCount))
-  const slot = (lane % 7 - (columns - 1) / 2) * spacing
+  const formation = options.formation ?? balancedFormationSlot(lane, sideCount, spacing, depth)
+  const slot = formation.lateral
+  // The compiled formation carries an exact shared sector offset. Standalone
+  // motion callers use a conservative footprint estimate with the same offset
+  // for every member, rather than clamping rows together at a sector boundary.
+  const fleetCount = options.fleetCount ?? 2
+  const halfAngle = Math.PI / Math.max(2, fleetCount)
+  const fallbackSize = Math.max(1, (depth - 55) / 1.25)
+  const fallbackWidth = Math.ceil(Math.sqrt(Math.max(1, sideCount) * (depth * 1.7 + 110) / spacing)) * spacing * .5
+  const fallbackOffset = fleetCount > 2 ? Math.max(0, ((fallbackWidth + 6) * Math.cos(halfAngle) + fallbackSize * .78 + 24) / Math.sin(halfAngle) - 100) : 0
+  const sectorOffset = formation.sectorOffset ?? fallbackOffset
   const zoneSpan = clamp(depth * 0.4, 65, 200)
   // Row spacing covers the entire zone excursion, approach, and hull length.
   // Zone changes cannot send a rear row through the row ahead of it.
-  const rowDepth = row * (depth * 1.7 + 110)
+  const rowDepth = formation.depth
   const lateralAmplitude = Math.min(spacing * 0.045, 6) * agility
   const radialAmplitude = Math.min(depth * 0.13, 50) * (0.45 + agility * 0.55)
-  const height = (lane % 3 - 1) * Math.min(spacing * 0.15, 24)
+  const height = formation.elevation + (lane % 3 - 1) * Math.min(spacing * 0.15, 24)
 
   const position = (at: number) => {
     const local = Math.max(0, at - ship.start)
@@ -79,7 +115,7 @@ export function sampleShipMotion(ship: CinemaShip, time: number, options: ShipMo
     // under a tracking camera. It therefore produces real foreground/background
     // parallax rather than simply spinning an otherwise rigid tableau.
     const approach = (70 + size * 0.6) * Math.exp(-local / 45)
-    const radius = 150 + size * 0.65 + rowDepth + zoneSpan * (1 - progress) + approach
+    const radius = 150 + size * 0.65 + rowDepth + sectorOffset + zoneSpan * (1 - progress) + approach
       + Math.sin(local * 0.16 + phase) * radialAmplitude
     const lateral = slot + Math.sin(local * 0.23 + phase) * lateralAmplitude
     return {
@@ -91,7 +127,7 @@ export function sampleShipMotion(ship: CinemaShip, time: number, options: ShipMo
 
   if (ship.kind === 'station') {
     // Stations never inherit fleet orbit, zone maneuvers, or disabled drift.
-    const radius = 150 + size * 0.65 + rowDepth
+    const radius = 150 + size * 0.65 + rowDepth + sectorOffset
     // A fixed installation occupies a separate orbital layer so a sweeping
     // neighboring flight lane cannot pass through its stationary structure.
     return { x: Math.cos(angle) * radius - Math.sin(angle) * slot, y: height - (size * 0.9 + 120),
@@ -105,11 +141,18 @@ export function sampleShipMotion(ship: CinemaShip, time: number, options: ShipMo
   const next = position(sampledAt + 0.01)
   const interval = sampledAt + 0.01 - previousAt
   const velocity = { x: (next.x - previous.x) / interval, y: (next.y - previous.y) / interval, z: (next.z - previous.z) / interval }
-  const yaw = Math.atan2(-velocity.z, velocity.x)
+  // Combat maneuvers can strafe or reverse while retaining the engagement.
+  // A recorded flee stance alone turns the bow and its main drive outward.
+  const inwardYaw = Math.atan2(base.z, -base.x)
+  const flee = fleeTurn(ship, sampledAt)
+  const yaw = inwardYaw + Math.PI * flee
   const local = sampledAt - ship.start
   const bank = Math.sin(local * 0.23 + phase) * agility * 0.19
   const after = Math.max(0, time - ship.end)
-  const normalThrust = 0.95 + Math.sin(local * 0.31 + phase) * agility * 0.18
+  const inwardVelocity = -(velocity.x * base.x + velocity.z * base.z) / Math.max(1, Math.hypot(base.x, base.z))
+  const reversing = inwardVelocity < -.1
+  const mainDrive = reversing ? .08 : .75
+  const normalThrust = (mainDrive + Math.sin(local * .31 + phase) * agility * (reversing ? .025 : .12)) * (1 - flee) + 1.35 * flee
   if (time < ship.end || ship.fate === 'survived') return { ...base, yaw, bank, thrust: normalThrust }
 
   if (ship.fate === 'escaped' || ship.fate === 'withdrawn') {

@@ -140,4 +140,36 @@ describe('cinema ship choreography', () => {
     expect(position.thrust).toBe(0)
     for (const time of [4, 10, 20, 90]) expect(sampleShipMotion(station, time, options)).toEqual(position)
   })
+
+  it('backs out under an in-combat retreat while keeping its bow toward the engagement', () => {
+    const actor = ship({ motion: [{ time: 0, position: 1, stance: 'defensive' }, { time: 10, position: 1, stance: 'defensive' }, { time: 20, position: 0, stance: 'defensive' }] })
+    const before = sampleShipMotion(actor, 14.99, options)
+    const frame = sampleShipMotion(actor, 15, options)
+    const after = sampleShipMotion(actor, 15.01, options)
+    const forward = { x: Math.cos(frame.yaw), z: -Math.sin(frame.yaw) }
+    expect(forward.x * -frame.x + forward.z * -frame.z).toBeGreaterThan(Math.hypot(frame.x, frame.z) * .95)
+    expect((after.x - before.x) * forward.x + (after.z - before.z) * forward.z).toBeLessThan(0)
+    expect(frame.thrust).toBeLessThan(.4)
+  })
+
+  it('turns outward only after the recorded flee stance and restores combat facing when it ends', () => {
+    const actor = ship({ motion: [{ time: 0, position: 1, stance: 'aggressive' }, { time: 10, position: 1, stance: 'flee' }, { time: 20, position: 0, stance: 'flee' }, { time: 30, position: 0, stance: 'aggressive' }] })
+    for (const [time, outward] of [[9.9, false], [15, true], [35, false]] as const) {
+      const frame = sampleShipMotion(actor, time, options)
+      const dot = Math.cos(frame.yaw) * frame.x - Math.sin(frame.yaw) * frame.z
+      expect(outward ? dot : -dot).toBeGreaterThan(Math.hypot(frame.x, frame.z) * .9)
+      if (outward) expect(frame.thrust).toBeGreaterThan(1)
+    }
+    // A future flee frame must not rotate a currently fighting ship early.
+    expect(sampleShipMotion(actor, 9.99, options).yaw).toBeCloseTo(sampleShipMotion(ship({ motion: [{ time: 0, position: 1 }] }), 9.99, options).yaw, 5)
+  })
+
+  it('spreads a 343-ship fleet across a balanced volume instead of a seven-column depth stack', () => {
+    const layout = { ...options, sideCount: 343 }
+    const frames = Array.from({ length: 343 }, (_, lane) => sampleShipMotion(ship(), 0, { ...layout, lane }))
+    const span = (axis: 'x' | 'y' | 'z') => Math.max(...frames.map(frame => frame[axis])) - Math.min(...frames.map(frame => frame[axis]))
+    expect(span('x') / span('z')).toBeLessThan(2)
+    expect(span('z') / span('x')).toBeLessThan(2)
+    expect(span('y')).toBeGreaterThan(options.spacing * 2)
+  })
 })

@@ -1,10 +1,11 @@
 import type { BattleLogEntry, BattleSummary, ParticipantSnapshot } from '../battle/types'
 import type { BattleLoadPhase } from '../battle/battleData'
 import { buildAttackVisualPlan } from '../battle/attackVisualPlan'
+import { addBattlefieldCoverage } from './coverage'
 import { resolveWeaponFamily } from './weapons'
 import type { CinemaAxis, CinemaCue, CinemaFilm, CinemaHealth, CinemaSequence, CinemaShip, CinemaShot, CinemaSourceSegment } from './types'
 
-export const DIRECTOR_VERSION = 4
+export const DIRECTOR_VERSION = 5
 const OPENING = 8
 const AFTERMATH = 10
 const clamp = (value: number, low = 0, high = 1) => Math.min(high, Math.max(low, Number.isFinite(value) ? value : low))
@@ -129,19 +130,21 @@ function editSegments(entries: BattleLogEntry[], duration: number): CinemaSource
 }
 const rangeProgress: Record<string, number> = { outer: 0, mid: 1 / 3, inner: 2 / 3, engaged: 1 }
 
-function appendMotion(ship: CinemaShip, time: number, zone: string): void {
+function appendMotion(ship: CinemaShip, time: number, zone: string, stance?: string): void {
   const position = rangeProgress[zone]
   if (position === undefined) return
   const frames = ship.motion ?? (ship.motion = [])
   const previous = frames.at(-1)
+  const nextStance = stance ?? previous?.stance
   if (previous?.time === time) {
     previous.position = position
+    previous.stance = nextStance
     return
   }
   // Keep both ends of each constant hold, so a long wait followed by an
   // advance doesn't become a slow drift throughout all the preceding footage.
-  if (previous?.position === position && frames.at(-2)?.position === position) previous.time = time
-  else frames.push({ time, position })
+  if (previous?.position === position && previous.stance === nextStance && frames.at(-2)?.position === position && frames.at(-2)?.stance === nextStance) previous.time = time
+  else frames.push({ time, position, ...(nextStance ? { stance: nextStance } : {}) })
 }
 function appendHealth(ship: CinemaShip, frame: CinemaHealth, force = false): void {
   const previous = ship.health[ship.health.length - 1]
@@ -243,7 +246,9 @@ function directShots(film: CinemaFilm, entries: BattleLogEntry[]): CinemaShot[] 
     {start:4,end:6,kind:'tracking',role:'opposition',sequenceId:'establish',subject:adversary?.id,target:opening[0]?.id,axis:openingAxis,intensity:.22},
   ]
   const coreEnd = film.duration - AFTERMATH
-  const weapons = film.cues.filter(cue => cue.kind === 'weapon' && !cue.secondaryKind && cue.from && cue.to)
+  const weaponCues = film.cues.filter(cue => cue.kind === 'weapon' && cue.from && cue.to)
+  const weapons = weaponCues.filter(cue => !cue.secondaryKind)
+  const cueById = new Map(weaponCues.map(cue => [cue.id, cue]))
   const consequences = film.cues.filter(cue => ['death','knockout','capture','escape'].includes(cue.kind) && cue.to)
   const relevance = (from?: string, to?: string) => {
     const actors = [byId.get(from ?? ''), byId.get(to ?? '')]
@@ -251,11 +256,18 @@ function directShots(film: CinemaFilm, entries: BattleLogEntry[]): CinemaShot[] 
       (actors.some(ship => ship?.playerId === adversary?.playerId) ? 2 : 0)
   }
   const consequenceBeats: StoryBeat[] = consequences.map(event => {
-    // A recorded capture/escape is not caused by a gunshot. For destruction,
-    // follow the actual killer's final volley on this exact hull appearance.
-    const cause = ['death','knockout'].includes(event.kind) && !byId.get(event.to ?? '')?.capturedShipId ? weapons.filter(cue =>
-      cue.to === event.to && cue.tick === event.tick && cue.hit !== false && (!event.from || cue.from === event.from) &&
-      cue.time + cue.duration <= event.time + .000001).at(-1) : undefined
+    // A recorded capture/escape is not caused by a gunshot. A collateral loss
+    // follows its connected hit back to the actual primary volley; the gun
+    // still fires at that primary victim, not at the collateral casualty.
+    const cause = ['death','knockout'].includes(event.kind) && !byId.get(event.to ?? '')?.capturedShipId ? weaponCues.flatMap(cue => {
+      if (cue.to !== event.to || cue.tick !== event.tick || cue.hit !== true ||
+        (event.from && cue.from !== event.from) || cue.time + cue.duration > event.time + .000001) return []
+      if (!cue.secondaryKind && !cue.parentId) return [cue]
+      if (!['aoe', 'chain', 'ammo_splash'].includes(cue.secondaryKind ?? '') || !cue.parentId) return []
+      const primary = cueById.get(cue.parentId)
+      return primary && !primary.secondaryKind && !primary.parentId && primary.hit === true &&
+        primary.from === cue.from && primary.tick === cue.tick && primary.time + primary.duration <= event.time + .000001 ? [primary] : []
+    }).at(-1) : undefined
     return {time:event.time,actionTime:cause?.time ?? event.time,impactTime:cause ? cause.time + cause.duration : event.time,
       event,cause,attacker:cause?.from ?? event.from,defender:event.to,consequence:true,relevance:relevance(event.from,event.to)}
   })
@@ -310,7 +322,8 @@ function directShots(film: CinemaFilm, entries: BattleLogEntry[]): CinemaShot[] 
       const aftermath=beat.consequence && beat.time>beat.impactTime+.000001 ? .4 : 0
       const impact=end-reaction-aftermath
       const flight=clamp((end-start)*.16,1.2,2.8)
-      const ready=Math.max(byId.get(beat.attacker??'')?.start??0,byId.get(beat.defender??'')?.start??0)
+      const ready=Math.max(byId.get(beat.attacker??'')?.start??0,byId.get(beat.defender??'')?.start??0,
+        byId.get(beat.cause.to??'')?.start??0)
       if(ready>start && ready<beat.actionTime){
         // Compress waiting on a recorded arrival, then give the introduced pair
         // real screen time. This retimes its whole source prefix, not just a ship.
@@ -352,9 +365,11 @@ function directShots(film: CinemaFilm, entries: BattleLogEntry[]): CinemaShot[] 
   let cursor = 6
   selected.forEach((beat,index) => {
     const end = sequenceEnds[index]
-    const pairReady=Math.max(cursor,byId.get(beat.attacker??'')?.start??0,byId.get(beat.defender??'')?.start??0)
+    const impactTarget = beat.cause?.to ?? beat.defender
+    const pairReady=Math.max(cursor,byId.get(beat.attacker??'')?.start??0,byId.get(beat.defender??'')?.start??0,
+      byId.get(impactTarget??'')?.start??0)
     contextShot(cursor,pairReady,`approach:${index}`)
-    const axis = axisFor(beat.attacker,beat.defender)
+    const axis = axisFor(beat.attacker,impactTarget)
     const sequence: CinemaSequence = {id:`sequence:${index}`,start:pairReady,end,
       kind:beat === decisive ? 'climax' : byId.get(beat.defender ?? '')?.playerId === protagonist?.playerId && beat.consequence ? 'reversal' :
         beat.consequence ? 'confrontation' : 'montage',attacker:beat.attacker,defender:beat.defender,
@@ -369,11 +384,14 @@ function directShots(film: CinemaFilm, entries: BattleLogEntry[]): CinemaShot[] 
       const impactLead = Math.min(1.2,beat.cause.duration*.55,beat.cause.duration-.5)
       const impactStart = beat.impactTime-impactLead
       if (fireStart > pairReady) result.push({...common,start:pairReady,end:fireStart,kind:'tracking',role:'setup',
-        subject:beat.attacker,target:beat.defender,actionTime:beat.actionTime})
+        subject:beat.attacker,target:impactTarget,actionTime:beat.actionTime})
       result.push({...common,start:fireStart,end:impactStart,kind:'broadside',role:'fire',
-        subject:beat.attacker,target:beat.defender,actionTime:beat.actionTime})
-      result.push({...common,start:impactStart,end,kind:'impact',role:'impact',subject:beat.defender,target:beat.attacker,
+        subject:beat.attacker,target:impactTarget,actionTime:beat.actionTime})
+      const reactionStart = impactTarget !== beat.defender ? Math.min(end, beat.time) : end
+      result.push({...common,start:impactStart,end:reactionStart,kind:'impact',role:'impact',subject:impactTarget,target:beat.attacker,
         focusIds,actionTime:beat.impactTime})
+      if (reactionStart < end) result.push({...common,start:reactionStart,end,kind:'impact',role:'reaction',subject:beat.defender,target:beat.attacker,
+        focusIds,actionTime:beat.time})
     } else {
       const impactStart = Math.max(pairReady,beat.time-1.4)
       const reactionStart = Math.min(end,beat.time+.6)
@@ -452,7 +470,7 @@ export function compileBattleFilm(summary: BattleSummary, source: BattleLogEntry
       sideIndex: sideIndices.get(snap?.side_id ?? sideId) ?? 0, factionId: snap?.faction_id,
       start: time, end: duration, fate: 'survived', health: [{ time, hull: snap ? fraction(snap.hull, snap.max_hull) : 1,
         shield: snap ? fraction(snap.shield, snap.max_shield) : 0 }] }
-    if (snap) appendMotion(ship, time, snap.zone)
+    if (snap) appendMotion(ship, time, snap.zone, snap.stance)
     film.ships.push(ship)
     active.set(playerId, ship)
     return ship
@@ -482,7 +500,7 @@ export function compileBattleFilm(summary: BattleSummary, source: BattleLogEntry
       const ship = ensureShip(snap.player_id, index === 0 ? 0 : segment.start, snap)
       ship.shipClass = snap.ship_class || ship.shipClass
       ship.kind = snap.kind || ship.kind
-      appendMotion(ship, segment.start, snap.zone)
+      appendMotion(ship, segment.start, snap.zone, snap.stance)
       appendHealth(ship, { time: segment.start, hull: fraction(snap.hull, snap.max_hull), shield: fraction(snap.shield, snap.max_shield) })
       if (!wasActive && index > 0) addCue({ kind: 'arrival', time: segment.start, duration: Math.min(2, span), tick: entry.tick, to: ship.id, intensity: 0.5 })
       retired.delete(snap.player_id)
@@ -492,6 +510,11 @@ export function compileBattleFilm(summary: BattleSummary, source: BattleLogEntry
       const ship = ensureShip(join.player_id, index === 0 ? 0 : segment.start, undefined, join.side_id)
       if (!existed && index > 0) addCue({ kind: 'arrival', time: segment.start, duration: Math.min(2, span), tick: entry.tick, to: ship.id, intensity: 0.5 })
       retired.delete(join.player_id)
+    }
+    for (const command of entry.commands ?? []) {
+      const ship = active.get(command.player_id)
+      const snap = latestSnapshots.get(command.player_id)
+      if (ship && snap && command.stance) appendMotion(ship, segment.start + span * .02, snap.zone, command.stance)
     }
     const tickActors = new Map(active)
     const attacks = entry.attacks ?? []
@@ -640,7 +663,10 @@ export function compileBattleFilm(summary: BattleSummary, source: BattleLogEntry
       retire(burn.target_id, arena ? 'knocked_out' : 'destroyed', arena ? 'knockout' : 'death', active.get(burn.source_id ?? '')?.id)
     }
   })
-  film.cues.sort((a, b) => a.time - b.time || a.id.localeCompare(b.id))
+  // Stable ties retain the source ordering of simultaneous chain recipients;
+  // lexical IDs would put cue:10 ahead of cue:2 and redirect the chain.
+  film.cues.sort((a, b) => a.time - b.time)
   film.shots = directShots(film, entries)
+  film.shots = addBattlefieldCoverage(film)
   return film
 }

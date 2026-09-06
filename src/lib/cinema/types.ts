@@ -16,6 +16,8 @@ export interface CinemaHealth {
 export interface CinemaMotion {
   time: number
   position: number
+  /** Recorded stance, held until the next change; only flee authorizes turning away. */
+  stance?: string
 }
 
 /** One appearance of a hull; a pilot returning after loss gets a new ID. */
@@ -101,6 +103,8 @@ export interface CinemaStory {
 }
 
 export interface CinemaShot {
+  /** Frame the visible battlefield rather than only the featured pair. */
+  battlefield?: boolean
   start: number
   end: number
   kind: CinemaShotKind

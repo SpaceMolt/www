@@ -10,6 +10,8 @@ import { buildAudioSchedule, audioCueRange } from './audioSchedule'
 import { prioritizeCinemaEffects, selectCinemaPulseCue } from './effectPriority'
 import { cueRange, cueLifetime, weaponImpactAge } from './playback'
 import { sampleCinemaHealth } from './director'
+import { buildCinemaCascades, sampleCinemaCascade } from './cascades'
+import { buildFleetFormation } from './formation'
 import { sampleShipMotion, fleetMotionSpacing, type ShipMotionOptions } from './motion'
 import { sampleStoryCamera, clearStorySightline, keepCameraOutsideHulls, type CameraBody } from './camera'
 import { cinemaRenderSettings, initialCinemaQuality } from './quality'
@@ -244,8 +246,11 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     }
     return { ship, appearance, model, position: new THREE.Vector3(), rotation: 0, bank: 0, thrust: 1, size, angle, lane, seed, engineMaterials }
   })
-  const fleetSpacing = new Map(sides.map(side => [side, fleetMotionSpacing(actors.filter(a=>a.ship.sideIndex===side).map(a=>({size:a.size,beam:a.appearance.beam})))]))
-  const fleetDepth = new Map(sides.map(side => [side, Math.max(130,...actors.filter(a=>a.ship.sideIndex===side).map(a=>a.size*1.25+55))]))
+  const fleetSpacing = new Map(sides.map(side => [side, fleetMotionSpacing(actors.filter(a=>a.ship.sideIndex===side && a.ship.kind!=='station').map(a=>({size:a.size,beam:a.appearance.beam})))]))
+  const fleetDepth = new Map(sides.map(side => [side, Math.max(130,...actors.filter(a=>a.ship.sideIndex===side && a.ship.kind!=='station').map(a=>a.size*1.25+55))]))
+  const formations = new Map(sides.flatMap(side => [...buildFleetFormation(actors.filter(actor => actor.ship.sideIndex === side).map(actor => ({
+    id: actor.ship.id, playerId: actor.ship.playerId, size: actor.size, beam: actor.appearance.beam, kind: actor.ship.kind, family: actor.appearance.family,
+  })), sides.length)]))
   const byId = new Map(actors.map(a => [a.ship.id, a]))
   // Distant actors remain real participants, rendered with a bounded number of draw calls.
   const distantGroups = new Map<string,{mesh:THREE.InstancedMesh;count:number}>()
@@ -265,7 +270,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     const geometry=mergeGeometries(pieces)!
     for(const piece of pieces)piece.dispose()
     template.traverse(object=>{if(object instanceof THREE.Mesh){object.geometry.dispose();for(const material of Array.isArray(object.material)?object.material:[object.material])material.dispose()}})
-    const mesh=new THREE.InstancedMesh(geometry,new THREE.MeshStandardMaterial({color:0xa1b0ba,metalness:.55,roughness:.6}),Math.max(1,actors.length))
+    const mesh=new THREE.InstancedMesh(geometry,new THREE.MeshStandardMaterial({color:0xffffff,metalness:.35,roughness:.6}),Math.max(1,actors.length))
     // Dither per-instance cloak visibility without changing the shared fleet material.
     geometry.setAttribute('cinemaVisibility',new THREE.InstancedBufferAttribute(new Float32Array(Math.max(1,actors.length)).fill(1),1).setUsage(THREE.DynamicDrawUsage))
     mesh.material.onBeforeCompile=shader=>{
@@ -317,6 +322,23 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     const ring = new THREE.Mesh(new THREE.TorusGeometry(1, .006, 5, 72), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }))
     ring.visible = false; scene.add(ring); return ring
   })
+  // Dedicated cascade resources keep fleet-wide effects from exhausting the
+  // close-up impact pools. A sphere reads across all formation layers.
+  const cascadeWaves = Array.from({ length: 4 }, () => {
+    const shell = new THREE.Mesh(new THREE.SphereGeometry(1, 36, 24), new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
+      uniforms: { opacity: { value: 0 }, color: { value: new THREE.Color() } },
+      vertexShader: 'varying vec3 n;varying vec3 v;varying vec3 p;void main(){vec4 q=modelViewMatrix*vec4(position,1.);n=normalize(normalMatrix*normal);v=normalize(-q.xyz);p=position;gl_Position=projectionMatrix*q;}',
+      fragmentShader: 'varying vec3 n;varying vec3 v;varying vec3 p;uniform float opacity;uniform vec3 color;void main(){float rim=pow(1.-abs(dot(normalize(n),normalize(v))),5.);float bands=.7+.3*sin(p.y*35.+p.x*18.);gl_FragColor=vec4(color,rim*bands*opacity);}',
+    }))
+    shell.visible=false;scene.add(shell);return shell
+  })
+  const cascadeFlashes = Array.from({ length: 32 }, () => {
+    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({map:glow,color:0xffffff,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false}))
+    sprite.visible=false;scene.add(sprite);return sprite
+  })
+  const cascadeArcs = new THREE.InstancedMesh(new THREE.CylinderGeometry(1,1,1,4),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.8,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false}),128)
+  cascadeArcs.frustumCulled=false;cascadeArcs.instanceMatrix.setUsage(THREE.DynamicDrawUsage);scene.add(cascadeArcs)
   const pulseLight = new THREE.PointLight(0x66dcff, 0, 320, 2); scene.add(pulseLight)
   let time = 0, playing = false, disposed = false, reduced = options.reducedMotion ?? false
   let requestedQuality: CinemaQuality = options.quality ?? 'auto'
@@ -330,13 +352,21 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   const pointA = new THREE.Vector3(), pointB = new THREE.Vector3()
   const up = new THREE.Vector3(0, 1, 0), direction = new THREE.Vector3()
   const motionOptions = (actor: Actor): ShipMotionOptions => ({ size: actor.size, angle: actor.angle, lane: actor.lane, seed: actor.seed,
-    sideCount: sideCounts.get(actor.ship.sideIndex) ?? 1, spacing: fleetSpacing.get(actor.ship.sideIndex) ?? 90, depth: fleetDepth.get(actor.ship.sideIndex) ?? 130 })
+    formation: formations.get(actor.ship.id), fleetCount: sides.length, sideCount: sideCounts.get(actor.ship.sideIndex) ?? 1, spacing: fleetSpacing.get(actor.ship.sideIndex) ?? 90, depth: fleetDepth.get(actor.ship.sideIndex) ?? 130 })
   const positionAt = (actor: Actor, t: number) => {
     const motion = sampleShipMotion(actor.ship,t,motionOptions(actor))
     actor.position.set(motion.x,motion.y,motion.z)
     actor.rotation=motion.yaw; actor.bank=motion.bank; actor.thrust=motion.thrust
     return actor.position
   }
+  const cascadePlans = buildCinemaCascades(film.cues,(id,at)=>{
+    const actor=byId.get(id)
+    return actor ? sampleShipMotion(actor.ship,at,motionOptions(actor)) : undefined
+  }).filter(plan=>plan.kind==='chain' || plan.recipients.length>=6)
+  const cascadeGroups = new Set(cascadePlans.map(plan=>`${plan.sourceCueId}:${plan.kind==='chain'?'chain':'area'}`))
+  const cascadeCollateral = new Set(film.cues.filter(cue=>cue.hit===true && cue.parentId &&
+    ['aoe','ammo_splash','chain'].includes(cue.secondaryKind??'') &&
+    cascadeGroups.has(`${cue.parentId}:${cue.secondaryKind==='chain'?'chain':'area'}`)).map(cue=>cue.id))
   const isVisible = (actor: Actor, t: number) => t >= actor.ship.start && (t <= actor.ship.end || !['escaped', 'withdrawn'].includes(actor.ship.fate) || t < actor.ship.end + 2.5)
   const setResolution = () => {
     const width = canvas.clientWidth || 1280, height = canvas.clientHeight || 720
@@ -380,7 +410,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
       } else if (visible && !(actor.ship.fate === 'destroyed' && time > actor.ship.end + .32)) {
         dummy.position.copy(actor.position); dummy.rotation.set(reduced ? 0 : actor.bank, actor.rotation, 0, 'YXZ'); dummy.scale.setScalar(actor.size); dummy.updateMatrix()
         const group=distantGroups.get(`${actor.appearance.empire}:${actor.appearance.family}`)!
-        group.mesh.setMatrixAt(group.count, dummy.matrix); (group.mesh.geometry.getAttribute('cinemaVisibility') as THREE.InstancedBufferAttribute).setX(group.count,1-cloak*.95); group.mesh.setColorAt(group.count++, tint.setHex(actor.appearance.hull))
+        group.mesh.setMatrixAt(group.count, dummy.matrix); (group.mesh.geometry.getAttribute('cinemaVisibility') as THREE.InstancedBufferAttribute).setX(group.count,1-cloak*.95); group.mesh.setColorAt(group.count++, tint.setHex(actor.appearance.hull).multiplyScalar(1 - (time >= actor.ship.end && actor.ship.fate === 'knocked_out' ? .72 : 1 - sampleCinemaHealth(actor.ship,time).hull) * .55))
       }
       if (visible && actor.thrust > 0 && engineCount < engineSprites.length && actor.model) {
         const sprite = engineSprites[engineCount++]
@@ -396,6 +426,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
         const now=time-segment*.65, before=now-.65
         if (before<actor.ship.start || now>actor.ship.end) continue
         const head=sampleShipMotion(actor.ship,now,settings), tail=sampleShipMotion(actor.ship,before,settings)
+        if (head.thrust < .4 || tail.thrust < .4) continue
         pointA.set(head.x-Math.cos(head.yaw)*actor.size*.51,head.y,head.z+Math.sin(head.yaw)*actor.size*.51)
         pointB.set(tail.x-Math.cos(tail.yaw)*actor.size*.51,tail.y,tail.z+Math.sin(tail.yaw)*actor.size*.51)
         direction.copy(pointB).sub(pointA)
@@ -425,12 +456,16 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     const referenceTime=sequence?.start ?? 0
     const axisFrom=bodyAt(shot.axis?.from ?? subject.id,referenceTime)?.position ?? subject.position
     const axisTo=bodyAt(shot.axis?.to ?? target?.id,referenceTime)?.position ?? subject.position.clone().add(new THREE.Vector3(100,0,0))
-    const frame=sampleStoryCamera({shot,sequence,time,aspect:camera.aspect,subject,target,axisFrom,axisTo,reduced})
     const boundaries=actors.filter(actor=>isVisible(actor,time) && !(actor.ship.fate==='destroyed' && time>actor.ship.end+.32)).map(actor=>({id:actor.ship.id,position:actor.position,size:actor.size}))
+    // Hold recent wreck/impact anchors for the entire master shot. Removing
+    // every destroyed hull at once would zoom away while its blast is visible.
+    const battlefield=shot.battlefield ? actors.filter(actor=>isVisible(actor,time) &&
+      !(actor.ship.fate==='destroyed' && shot.start>actor.ship.end+7)).map(actor=>({id:actor.ship.id,position:actor.position,size:actor.size})) : boundaries
+    const frame=sampleStoryCamera({shot,sequence,time,aspect:camera.aspect,subject,target,battlefield,axisFrom,axisTo,reduced})
     // Clearance is planned over the shot, not switched frame-by-frame as another
     // hull passes the edge of the view. This avoids sudden camera height jumps.
     const clearanceKey=`${shotIndex}:${camera.aspect.toFixed(3)}:${reduced}`
-    if(!clearanceByShot.has(clearanceKey)) {
+    if(!shot.battlefield && !clearanceByShot.has(clearanceKey)) {
       let lift=0
       for(const sampleTime of [shot.start,(shot.start+shot.end)*.5,shot.end-.001]) {
         const sampledSubject=bodyAt(subject.id,sampleTime) ?? subject
@@ -445,7 +480,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     frame.position.y+=clearanceByShot.get(clearanceKey) ?? 0
     keepCameraOutsideHulls(frame.position,boundaries.map(body=>({position:body.position,radius:body.size*.78})))
     cameraPosition.copy(frame.position);cameraTarget.copy(frame.target)
-    camera.position.copy(frame.position);sky.position.copy(camera.position);stars.position.copy(camera.position);camera.fov=frame.fov;camera.lookAt(frame.target);camera.updateProjectionMatrix()
+    camera.position.copy(frame.position);sky.position.copy(camera.position);stars.position.copy(camera.position);camera.fov=frame.fov;camera.far=Math.max(14000,...battlefield.map(body=>camera.position.distanceTo(body.position)+body.size*2+500));camera.lookAt(frame.target);camera.updateProjectionMatrix()
     const shadowRadius=Math.max(90,subject.size*1.1)
     sun.position.copy(subject.position).addScaledVector(sunDirection,1400);sun.target.position.copy(subject.position)
     Object.assign(sun.shadow.camera,{left:-shadowRadius,right:shadowRadius,top:shadowRadius,bottom:-shadowRadius})
@@ -503,6 +538,47 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
         addFlash(pointA,actor.size*.28,0xff873e,(.12+Math.sin(time*5+actor.seed)*.04)*damage)
       }
     }
+    let cascadeWaveCount=0,cascadeFlashCount=0,cascadeArcCount=0
+    const cascadeLine=(a:THREE.Vector3,b:THREE.Vector3,width:number,color:number,opacity:number)=>{
+      if(cascadeArcCount>=128)return
+      direction.copy(b).sub(a)
+      dummy.position.copy(a).add(b).multiplyScalar(.5);dummy.quaternion.setFromUnitVectors(up,direction.clone().normalize())
+      dummy.scale.set(width,Math.max(.01,direction.length()),width);dummy.updateMatrix()
+      cascadeArcs.setMatrixAt(cascadeArcCount,dummy.matrix);cascadeArcs.setColorAt(cascadeArcCount++,tint.setHex(color).multiplyScalar(opacity*1.5))
+    }
+    for(const plan of cascadePlans){
+      if(time<plan.time || time>=plan.time+plan.duration)continue
+      const cascade=sampleCinemaCascade(plan,time,(actualQuality==='low'?16:32)-cascadeFlashCount)
+      const source=cuesById.get(plan.sourceCueId)
+      const color=getWeaponColor(source?.weaponFamily??resolveWeaponFamily(source?.weaponName,plan.damageType),plan.damageType)
+      if(cascade.wave && cascadeWaveCount<cascadeWaves.length){
+        const shell=cascadeWaves[cascadeWaveCount++];shell.visible=true
+        shell.position.set(cascade.wave.center.x,cascade.wave.center.y,cascade.wave.center.z)
+        shell.scale.setScalar(Math.max(1,cascade.wave.radius));shell.material.uniforms.color.value.setHex(color)
+        shell.material.uniforms.opacity.value=cascade.wave.opacity*(reduced?.15:.5)
+      }
+      for(const pulse of cascade.pulses){
+        const actor=byId.get(pulse.actorId)
+        if(!actor)continue
+        const pulseColor=pulse.fate==='knockout'?0x98d8ff:pulse.fate==='death'?0xffa65d:color
+        const flash=cascadeFlashes[cascadeFlashCount++];flash.visible=true;flash.position.copy(actor.position)
+        flash.scale.setScalar(actor.size*(pulse.fate==='hit'?1.8:3.2)*(1+pulse.age*2))
+        flash.material.color.setHex(pulseColor);flash.material.opacity=pulse.opacity*(reduced?.2:.85)
+        if(!reduced)for(let branch=0;branch<3;branch++){
+          const phase=branch*2.1+pulse.age*15
+          pointA.set(Math.cos(phase)*actor.size*.5,Math.sin(phase*2)*actor.size*.2,Math.sin(phase)*actor.size*.3).applyAxisAngle(up,actor.rotation).add(actor.position)
+          pointB.set(Math.cos(phase+1.4)*actor.size*.5,Math.sin(phase*2+2.8)*actor.size*.2,Math.sin(phase+1.4)*actor.size*.3).applyAxisAngle(up,actor.rotation).add(actor.position)
+          cascadeLine(pointA,pointB,Math.max(.18,actor.size*.006),pulseColor,pulse.opacity)
+        }
+      }
+      if(!reduced)for(const link of cascade.links){
+        const from=byId.get(link.fromActorId),to=byId.get(link.toActorId)
+        if(from&&to)cascadeLine(from.position,to.position,.5,color,link.opacity)
+      }
+    }
+    cascadeArcs.count=cascadeArcCount;cascadeArcs.instanceMatrix.needsUpdate=true;if(cascadeArcs.instanceColor)cascadeArcs.instanceColor.needsUpdate=true
+    for(let i=cascadeWaveCount;i<cascadeWaves.length;i++)cascadeWaves[i].visible=false
+    for(let i=cascadeFlashCount;i<cascadeFlashes.length;i++)cascadeFlashes[i].visible=false
     const effectFocus = { subjectId: subject.id, causeCueId: sequence?.causeCueId, eventCueId: sequence?.eventCueId }
     const pulseCue = selectCinemaPulseCue(activeCues, time, effectFocus)
     for (const cue of prioritizeCinemaEffects(activeCues, effectFocus)) {
@@ -515,6 +591,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
       const color = getWeaponColor(cue.weaponFamily ?? resolveWeaponFamily(cue.weaponName,cue.damageType),cue.damageType)
       const seed = hash(cue.id)
       if (cue.kind === 'weapon' && from && to) {
+        if(cascadeCollateral.has(cue.id))continue
         pointA.copy(from.position).add(new THREE.Vector3(Math.cos(from.rotation)*from.size*.42,from.size*.12,-Math.sin(from.rotation)*from.size*.42))
         pointB.copy(to.position); pointB.y += to.size * 0.06
         if (!cue.hit) { pointB.y += to.size * 0.8; pointB.z += to.size * (seed % 2 ? 0.7 : -0.7) }
