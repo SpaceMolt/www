@@ -214,6 +214,26 @@ export function buildFittedHardware(profile: CinemaHardware | undefined, family:
     const x=-.32+i*.08,z=(i%2?1:-1)*w*.46
     const deck=c.deckAt?.(x,z)??h
     if(!Number.isFinite(deck)) continue
+    const sensorScale=family==='support'?1.4:1
+    // The array is a readable functional assembly: a framed aperture on a
+    // raked support, beside the receiving dish, rather than a lone thin mast.
+    if(i===0) {
+      const arrayX=x+.085,arrayZ=z
+      const arrayDeck=c.deckAt?.(arrayX,arrayZ)??deck
+      if(Number.isFinite(arrayDeck)) {
+        rounded(arrayX,arrayDeck+.012,arrayZ,.075,.065,.024,'hull')
+        slab(arrayX,arrayDeck+.033,arrayZ,.025,.039,.027,'metal')
+        const tilt=new THREE.Euler(0,0,-.30)
+        add(new THREE.BoxGeometry(.017,.055,.082),'hull',arrayX,arrayDeck+.059,arrayZ,tilt)
+        const origin=new THREE.Vector3(arrayX,arrayDeck+.059,arrayZ)
+        const aperture=new THREE.Vector3(.0095,0,0).applyEuler(tilt).add(origin)
+        add(new THREE.BoxGeometry(.003,.042,.068),'dark',aperture.x,aperture.y,aperture.z,tilt)
+        for(const row of [-1,0,1]) for(const column of [-1,1]) {
+          const tile=new THREE.Vector3(.0118,row*.012,column*.017).applyEuler(tilt).add(origin)
+          add(new THREE.BoxGeometry(.001,.007,.021),'metal',tile.x,tile.y,tile.z,tilt)
+        }
+      }
+    }
     rounded(x,deck+.011,z,.046,.044,.020,'dark')
     rounded(x,deck+.031,z,.021,.024,.030,'metal')
     // Two compact phased-array tiles share a pedestal with a genuinely concave
@@ -227,8 +247,9 @@ export function buildFittedHardware(profile: CinemaHardware | undefined, family:
       new THREE.Vector2(.025,.010),new THREE.Vector2(.019,.0058),new THREE.Vector2(.011,.002),new THREE.Vector2(0,0),
       new THREE.Vector2(0,-.003),new THREE.Vector2(.011,-.001),new THREE.Vector2(.019,.0028),new THREE.Vector2(.025,.007),new THREE.Vector2(.025,.010),
     ],16)
+    dish.scale(sensorScale,sensorScale,sensorScale)
     add(dish,'metal',x,deck+.052,z)
-    add(new THREE.TorusGeometry(.0235,.0015,4,16),'dark',x,deck+.061,z,new THREE.Euler(Math.PI/2,0,0))
+    add(new THREE.TorusGeometry(.0235*sensorScale,.0015,4,16),'dark',x,deck+.052+.009*sensorScale,z,new THREE.Euler(Math.PI/2,0,0))
     rod(x,deck+.057,z,.0025,.011,'dark',false)
   }
   for(let i=0;i<Math.min(profile.defense,6);i++) {

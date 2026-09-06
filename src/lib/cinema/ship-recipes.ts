@@ -71,14 +71,37 @@ export function buildSpecialHull(recipe: ShipRecipe | undefined, c: SpecialHullC
     add(geometry, material, x, y, z)
   }
   const container = (x: number, y: number, z: number, length: number, width: number, height: number, variant: number) => {
-    slab(x, y, z, length, width, height, variant % 2 ? 'armor' : 'hull')
+    slab(x, y, z, length, width*.965, height, variant % 2 ? 'armor' : 'hull')
     const count = hero ? 11 : 5
     for (const side of [-1, 1]) {
-      for (let i = 0; i < count; i++) slab(x - length * .43 + length * .86 * i / (count - 1), y, z + side * width * .502, length * .011, .002, height * .78, 'hull')
+      // Folded sheet skins have broad valleys and small sloping shoulders. They
+      // stay inside structural corner posts rather than looking like cage bars.
+      const vertices:number[]=[]
+      const start=x-length*.46, pitch=length*.92/count
+      const profile=[[0,0],[.12,0],[.22,1],[.36,1],[.46,0],[1,0]]
+      for(let rib=0;rib<count;rib++) for(let j=0;j<profile.length-1;j++) {
+        const a=start+(rib+profile[j][0])*pitch,b=start+(rib+profile[j+1][0])*pitch
+        const az=z+side*(width*.492+profile[j][1]*.003),bz=z+side*(width*.492+profile[j+1][1]*.003)
+        const lo=y-height*.40,hi=y+height*.40
+        const quad=side>0?[a,lo,az,b,lo,bz,b,hi,bz,a,lo,az,b,hi,bz,a,hi,az]:[a,lo,az,b,hi,bz,b,lo,bz,a,lo,az,a,hi,az,b,hi,bz]
+        vertices.push(...quad)
+      }
+      const skin=new THREE.BufferGeometry()
+      skin.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));skin.computeVertexNormals()
+      add(skin,variant%2?'armor':'hull')
       for (const up of [-1, 1]) bar([x - length / 2, y + up * height / 2, z + side * width / 2], [x + length / 2, y + up * height / 2, z + side * width / 2], .003, 'dark')
       for (const fore of [-1, 1]) {
         bar([x + fore * length / 2, y - height / 2, z + side * width / 2], [x + fore * length / 2, y + height / 2, z + side * width / 2], .0035, 'dark')
         if(hero) for(const up of [-1,1]) slab(x+fore*length*.48,y+up*height*.44,z+side*width*.505,length*.055,.004,height*.13,'metal')
+      }
+      if(hero) {
+        // One repaired sheet interrupts the corrugation, with fasteners at the
+        // replacement edge rather than scattered decoration across the hull.
+        const patchX=x-length*.20,patchZ=z+side*(width*.50+.002)
+        slab(patchX,y-height*.06,patchZ,length*.22,.004,height*.48,variant%2?'hull':'metal')
+        for(const dx of [-1,1]) for(const dy of [-1,1]) {
+          add(new THREE.CylinderGeometry(.0018,.0018,.003,6),'dark',patchX+dx*length*.085,y-height*.06+dy*height*.18,patchZ+side*.003,new THREE.Euler(Math.PI/2,0,0))
+        }
       }
     }
     if (hero) {
@@ -104,13 +127,16 @@ export function buildSpecialHull(recipe: ShipRecipe | undefined, c: SpecialHullC
       bar(p(.085, .1, side * .046), p(.085, -.035, side * .046), .003 * scale)
     }
     // The pilot is exposed to space; even the distant silhouette has no canopy.
-    orb(x, y + .039 * scale, z, .026 * scale, 'armor', .7, 1.3, .85)
+    orb(x, y + .039 * scale, z, .026 * scale, 'hull', .7, 1.3, .85)
     orb(x + .008 * scale, y + .078 * scale, z, .022 * scale, 'metal')
     orb(x + .023 * scale, y + .08 * scale, z, .015 * scale, 'dark', .5, .75, 1)
     if (hero) for (const side of [-1, 1]) {
-      bar(p(.004, .047, side * .023), p(.046, .025, side * .025), .008 * scale, 'armor')
-      bar(p(.012, .003, side * .015), p(.055, -.025, side * .021), .009 * scale, 'armor')
-      bar(p(.02,.062,side*.013),p(.023,.019,side*.010),.0025*scale,'dark')
+      bar(p(.004,.047,side*.023),p(.024,.022,side*.033),.007*scale,'hull')
+      bar(p(.024,.022,side*.033),p(.046,.025,side*.025),.0065*scale,'armor')
+      bar(p(.012,.003,side*.015),p(.040,-.010,side*.021),.008*scale,'hull')
+      bar(p(.040,-.010,side*.021),p(.040,-.032,side*.021),.007*scale,'armor')
+      slab(x+.047*scale,y-.030*scale,z+side*.021*scale,.025*scale,.014*scale,.012*scale,'dark')
+      bar(p(.02,.062,side*.013),p(.023,.019,side*.010),.0025*scale,'metal')
       // Hands meet a small control yoke; no enclosing cockpit is implied.
       bar(p(.046,.014,side*.025),p(.046,.035,side*.025),.0025*scale,'metal')
       orb(x+.045*scale,y+.025*scale,z+side*.025*scale,.006*scale,'dark')

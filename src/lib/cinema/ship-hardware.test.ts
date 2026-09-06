@@ -58,6 +58,26 @@ function dispose(group: THREE.Group) {
 }
 const heavyFit = { source: 'modules' as const, weapons: { autocannon: 1, kinetic: 2, railgun: 4 }, cargo: 0, mining: 0, salvage: 0, sensor: 0, defense: 0, utility: 0 }
 
+test('sensor array tiles lie on one outward-facing plane beyond their tilted support',()=>{
+  const boxes:{geometry:THREE.BoxGeometry;position:THREE.Vector3;rotation:THREE.Euler}[]=[]
+  buildFittedHardware({...heavyFit,weapons:{},sensor:1},'scout',{
+    hero:true,h:.1,w:.2,slab:()=>{},rounded:()=>{},rod:()=>{},engine:()=>{},
+    add:(geometry,_material,x=0,y=0,z=0,rotation=new THREE.Euler())=>{
+      if(geometry instanceof THREE.BoxGeometry)boxes.push({geometry,position:new THREE.Vector3(x,y,z),rotation})
+      else geometry.dispose()
+    },
+  })
+  try {
+    const frame=boxes.find(box=>box.geometry.parameters.width===.017)!
+    const normal=new THREE.Vector3(1,0,0).applyEuler(frame.rotation)
+    const tiles=boxes.filter(box=>box.geometry.parameters.height===.007)
+    const depths=tiles.map(tile=>tile.position.clone().sub(frame.position).dot(normal))
+    expect(tiles).toHaveLength(6)
+    expect(Math.min(...depths)).toBeGreaterThan(frame.geometry.parameters.width/2)
+    expect(Math.max(...depths)-Math.min(...depths)).toBeLessThan(.00001)
+  } finally {boxes.forEach(box=>box.geometry.dispose())}
+})
+
 test('sensor reflector has an open concave receiving face within its former footprint', () => {
   let reflector: THREE.BufferGeometry | undefined
   buildFittedHardware({ ...heavyFit, weapons: {}, sensor: 1 }, 'scout', {

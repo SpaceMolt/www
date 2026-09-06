@@ -132,7 +132,7 @@ export function applyShipSurface<T extends THREE.MeshStandardMaterial>(material:
   const base = gold ? options.kind === 'armor' ? [.38, .72] : [.42, .66]
     : { hull: [.46, .12], armor: [.41, .16], dark: [.65, .28], metal: [.36, .87], accent: [.44, .10] }[options.kind]
   const crimsonPaint = options.empire === 'crimson' && (options.kind === 'hull' || options.kind === 'armor')
-  const empireRoughness = crimsonPaint ? .14 : options.empire === 'outerrim' ? .045 : options.empire === 'crimson' ? .025 : options.empire === 'nebula' && !gold ? -.035 : 0
+  const empireRoughness = crimsonPaint ? .14 : options.empire === 'outerrim' ? .13 : options.empire === 'crimson' ? .025 : options.empire === 'nebula' && !gold ? -.035 : 0
   material.roughness = THREE.MathUtils.clamp(base[0] + empireRoughness + (options.pirate ? .09 : 0), .2, .85)
   material.metalness = base[1]
   const density = THREE.MathUtils.clamp(Number.isFinite(options.density) ? options.density! : 1, .25, 4)

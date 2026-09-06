@@ -18,6 +18,7 @@ import { cinemaRenderSettings, initialCinemaQuality } from './quality'
 import { weaponVisual } from './weaponVisuals'
 import { getWeaponColor, resolveWeaponFamily } from './weapons'
 import { createShip } from './ships'
+import { bakeShipTemplateGeometry } from './ship-template'
 import { aimWeaponMount, canAimWeaponMount, weaponMuzzleLocal, assignWeaponCues, type WeaponRig } from './ship-weapons'
 import { updateRetrothrusters } from './ship-thrusters'
 import { resolveAppearance, type ShipAppearance } from './appearance'
@@ -270,14 +271,8 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     const pieces:THREE.BufferGeometry[]=[]
     template.traverse(object=>{
       if(object instanceof THREE.Mesh && !object.userData.engine) {
-        let geometry=object.geometry.clone()
-        if(geometry.index){const flat=geometry.toNonIndexed();geometry.dispose();geometry=flat}
-        for(const key of Object.keys(geometry.attributes))if(key!=='position'&&key!=='normal')geometry.deleteAttribute(key)
         const material = (Array.isArray(object.material)?object.material[0]:object.material) as THREE.MeshStandardMaterial
-        const colors = new Float32Array(geometry.getAttribute('position').count*3)
-        for(let i=0;i<colors.length;i+=3) material.color.toArray(colors,i)
-        geometry.setAttribute('color',new THREE.BufferAttribute(colors,3))
-        geometry.applyMatrix4(object.matrixWorld);pieces.push(geometry)
+        pieces.push(bakeShipTemplateGeometry(object.geometry,material,object.matrixWorld))
       }
     })
     const geometry=mergeGeometries(pieces)!
