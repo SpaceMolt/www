@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test'
 import * as THREE from 'three'
 import { createShip } from './ships'
 import { resolveAppearance } from './appearance'
-import { weaponEnvelopesSeparate } from './ship-hardware'
+import { buildFittedHardware, weaponEnvelopesSeparate } from './ship-hardware'
 import { aimWeaponMount, canAimWeaponMount, weaponMuzzleLocal, type WeaponRig } from './ship-weapons'
 
 function weapons(group: THREE.Group) {
@@ -40,6 +40,9 @@ function weapons(group: THREE.Group) {
       }
       inward = Math.max(inward, -minimum)
     }
+    // A free side gimbal can rotate its width inward too. The deck-only
+    // elevation formula above is not a bound for this articulation.
+    if (Math.abs(normal.y) < 1e-8 && Math.abs(normal.z) > 1 - 1e-8) inward = radius
     return { mesh, radius, inward, normal, elevation: elevations[index], pivot: rig.mounts[index].pivot }
   })
 }
@@ -54,6 +57,83 @@ function dispose(group: THREE.Group) {
   materials.forEach(material => material.dispose())
 }
 const heavyFit = { source: 'modules' as const, weapons: { autocannon: 1, kinetic: 2, railgun: 4 }, cargo: 0, mining: 0, salvage: 0, sensor: 0, defense: 0, utility: 0 }
+
+test('opposed side gimbals reserve full rotation space on a narrow hull', () => {
+  const mounted: THREE.Vector3[] = []
+  buildFittedHardware({ ...heavyFit, weapons: { autocannon: 8 } }, 'capital', {
+    appearance: resolveAppearance('Battlecruiser', 'solarian', 4, 'Combat', 4), hero: true, h: .1, w: .2,
+    add: geometry => geometry.dispose(), slab: () => {}, rounded: () => {}, rod: () => {}, engine: () => {},
+    deckAt: () => NaN,
+    // Only two opposed physical sockets exist. Their deck-style inward caps
+    // fit, but the freely gimballed side assemblies have overlapping spheres.
+    hullSurface: (_point, normal) => Math.abs(normal.z) > .999 ? new THREE.Vector3(0, 0, Math.sign(normal.z) * .11) : undefined,
+    beginWeapon: (_family, pivot) => { mounted.push(pivot.clone()) },
+  })
+  expect(mounted).toHaveLength(1)
+})
+
+test('opposed Axiomata side gimbals keep actual moving vertices in separated volumes', () => {
+  const group = createShip(resolveAppearance('Battlecruiser', 'solarian', 4, 'Combat', 4), 90210, 'hero', { ...heavyFit, weapons: { beam: 3, laser: 3 }, defense: 4 })
+  const actual = weapons(group), rig = group.userData.weaponRig as WeaponRig
+  let pairs = 0
+  try {
+    for (let a = 0; a < actual.length; a++) for (let b = a + 1; b < actual.length; b++) {
+      if (Math.abs(actual[a].normal.z) < .999 || actual[a].normal.dot(actual[b].normal) > -1 + 1e-8) continue
+      pairs++
+      const axis = actual[a].pivot.clone().sub(actual[b].pivot).normalize()
+      const upper = actual[a].pivot.dot(axis) - actual[a].radius, lower = actual[b].pivot.dot(axis) + actual[b].radius
+      expect(upper - lower).toBeGreaterThan(.001)
+      const plane = (upper + lower) / 2
+      for (let pose = 0; pose < 24; pose++) for (const index of [a, b]) {
+        const mount = rig.mounts[index], normal = actual[index].normal
+        const yaw = THREE.MathUtils.degToRad((index === a ? 1 : -1) * pose * 17), pitch = THREE.MathUtils.degToRad([-5, 0, 15, 45, 75, 90][pose % 6])
+        const direction = new THREE.Vector3(1, 0, 0).applyAxisAngle(normal, yaw).multiplyScalar(Math.cos(pitch)).addScaledVector(normal, Math.sin(pitch))
+        aimWeaponMount(rig, index, mount.pivot.clone().addScaledVector(direction, 10))
+        const positions = actual[index].mesh.geometry.getAttribute('position')
+        let gap = Infinity
+        for (let vertex = 0; vertex < positions.count; vertex++) {
+          const point = new THREE.Vector3().fromBufferAttribute(positions, vertex).sub(mount.pivot)
+          point.applyQuaternion(actual[index].elevation[vertex] > .5 ? mount.rotation : mount.traverseRotation!).add(mount.pivot)
+          gap = Math.min(gap, (point.dot(axis) - plane) * (index === a ? 1 : -1))
+        }
+        expect(gap).toBeGreaterThan(.0001)
+      }
+    }
+    expect(pairs).toBeGreaterThan(0)
+  } finally {
+    actual.forEach(({ mesh }) => { mesh.geometry.dispose(); (mesh.material as THREE.Material).dispose() })
+    dispose(group)
+  }
+})
+
+test('Axiomata side gun vertices move continuously through a broadside crossing', () => {
+  // Public Axiomata catalog: Solarian Battlecruiser, scale/tier 4, three beam
+  // and three laser modules. Exercise the assembled hardware, including bases.
+  const group = createShip(resolveAppearance('Battlecruiser', 'solarian', 4, 'Combat', 4), 90210, 'hero', { ...heavyFit, weapons: { beam: 3, laser: 3 }, defense: 4 })
+  const actual = weapons(group), rig = group.userData.weaponRig as WeaponRig
+  let sideMounts = 0
+  try {
+    for (let index = 0; index < rig.mounts.length; index++) {
+      const mount = rig.mounts[index]
+      if (Math.abs(mount.normal!.z) < .999) continue
+      sideMounts++
+      aimWeaponMount(rig, index, mount.pivot.clone().addScaledVector(mount.normal!, 10).add(new THREE.Vector3(.01, 0, 0)))
+      const beforeBase = mount.traverseRotation!.clone(), beforeBarrel = mount.rotation.clone()
+      aimWeaponMount(rig, index, mount.pivot.clone().addScaledVector(mount.normal!, 10).add(new THREE.Vector3(-.01, 0, 0)))
+      const positions = actual[index].mesh.geometry.getAttribute('position')
+      let maximumMovement = 0
+      for (let vertex = 0; vertex < positions.count; vertex++) {
+        const point = new THREE.Vector3().fromBufferAttribute(positions, vertex).sub(mount.pivot), barrel = actual[index].elevation[vertex] > .5
+        maximumMovement = Math.max(maximumMovement, point.clone().applyQuaternion(barrel ? beforeBarrel : beforeBase).distanceTo(point.applyQuaternion(barrel ? mount.rotation : mount.traverseRotation!)))
+      }
+      expect(maximumMovement).toBeLessThan(.002)
+    }
+    expect(sideMounts).toBeGreaterThanOrEqual(2)
+  } finally {
+    actual.forEach(({ mesh }) => { mesh.geometry.dispose(); (mesh.material as THREE.Material).dispose() })
+    dispose(group)
+  }
+})
 
 test('Devastator representative guns reserve disjoint physical volumes through independent traverse', () => {
   const group = createShip(resolveAppearance('Battlecruiser', 'crimson', 4, 'Combat', 4), 90210, 'hero', heavyFit)

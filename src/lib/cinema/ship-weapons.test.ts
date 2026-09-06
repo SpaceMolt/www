@@ -201,6 +201,53 @@ test('base and barrel geometry retain separate articulation tags through every m
   } finally { base.dispose(); barrel.dispose() }
 })
 
+test('side batteries track through broadside without rolling the gun upside down', () => {
+  for (const side of [-1, 1]) {
+    const rig = createWeaponRig(), normal = new THREE.Vector3(0, 0, side)
+    rig.mounts.push({ family: 'beam', pivot: new THREE.Vector3(), muzzle: new THREE.Vector3(1, 0, 0), normal, rotation: new THREE.Quaternion() })
+    let previous: THREE.Quaternion | undefined
+    for (const degrees of [60, 80, 89, 90, 91, 100, 120]) {
+      const angle = degrees * Math.PI / 180, target = new THREE.Vector3(Math.cos(angle), 0, side * Math.sin(angle))
+      aimWeaponMount(rig, 0, target.clone().multiplyScalar(10))
+      expect(weaponMuzzleLocal(rig, 0)!.normalize().distanceTo(target)).toBeLessThan(1e-8)
+      // A broadside sweep is around ship-up. The beam housing must retain its
+      // top/bottom orientation on both sides of the exact broadside heading.
+      expect(new THREE.Vector3(0, 1, 0).applyQuaternion(rig.mounts[0].rotation).distanceTo(new THREE.Vector3(0, 1, 0))).toBeLessThan(1e-8)
+      expect(normal.clone().applyQuaternion(rig.mounts[0].traverseRotation!).distanceTo(normal)).toBeLessThan(1e-8)
+      if (previous && degrees >= 89 && degrees <= 91) expect(previous.angleTo(rig.mounts[0].rotation)).toBeLessThan(.17)
+      previous = rig.mounts[0].rotation.clone()
+    }
+  }
+})
+
+test('side gimbals keep a fixed base and deterministic aim behind and above while respecting clearance', () => {
+  for (const side of [-1, 1]) {
+    const rig = createWeaponRig(), normal = new THREE.Vector3(0, 0, side), pivot = new THREE.Vector3(.3, .2, -.1)
+    rig.mounts.push({ family: 'laser', pivot, muzzle: pivot.clone().add(new THREE.Vector3(1, 0, 0)), normal, rotation: new THREE.Quaternion() })
+    for (const offset of [new THREE.Vector3(-10, 0, side), new THREE.Vector3(0, 10, side), new THREE.Vector3(0, -10, side), new THREE.Vector3(-10, 0, 0)]) {
+      const target = pivot.clone().add(offset)
+      expect(canAimWeaponMount(rig, 0, target)).toBe(true)
+      aimWeaponMount(rig, 0, target)
+      const expected = rig.mounts[0].rotation.clone()
+      expect(weaponMuzzleLocal(rig, 0)!.sub(pivot).normalize().distanceTo(offset.clone().normalize())).toBeLessThan(1e-8)
+      expect(rig.mounts[0].traverseRotation!.angleTo(new THREE.Quaternion())).toBeLessThan(1e-8)
+      aimWeaponMount(rig, 0, pivot.clone().add(new THREE.Vector3(7, -3, side * 9)))
+      aimWeaponMount(rig, 0, target)
+      expect(rig.mounts[0].rotation.toArray()).toEqual(expected.toArray())
+      expect(rig.uniforms[0].toArray()).toEqual(expected.toArray())
+    }
+    const inward = pivot.clone().addScaledVector(normal, -10)
+    expect(canAimWeaponMount(rig, 0, inward)).toBe(false)
+    aimWeaponMount(rig, 0, inward)
+    expect(weaponMuzzleLocal(rig, 0)!.sub(pivot).dot(normal)).toBeCloseTo(-Math.sin(Math.PI / 36), 8)
+    rig.mounts[0].minimumElevation = () => .3
+    const tangent = pivot.clone().add(new THREE.Vector3(10, 0, 0))
+    expect(canAimWeaponMount(rig, 0, tangent)).toBe(false)
+    aimWeaponMount(rig, 0, tangent)
+    expect(weaponMuzzleLocal(rig, 0)!.sub(pivot).dot(normal)).toBeCloseTo(Math.sin(.3), 8)
+  }
+})
+
 
 test('assembled guns mark the traversing body separately from the elevated weapon components', () => {
   const group = createShip(resolveAppearance('Battlecruiser', 'crimson', 4, 'Combat', 4), 12, 'hero', { source: 'modules', weapons: { railgun: 1 }, cargo: 0, mining: 0, salvage: 0, sensor: 0, defense: 0, utility: 0 })

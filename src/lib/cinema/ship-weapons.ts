@@ -192,11 +192,20 @@ export function aimWeaponMount(rig: WeaponRig, index: number, targetLocal: THREE
     if (horizontalLength > 1e-10) horizontal.divideScalar(horizontalLength)
     else horizontal.copy(forward)
     if (mount.normal) height=Math.max(height,minimumAimDot,Math.sin(mount.minimumElevation?.(horizontal)??-Math.PI/2))
-    const yaw = Math.atan2(normal.dot(new THREE.Vector3().crossVectors(forward, horizontal)), forward.dot(horizontal))
     const elevation = Math.asin(height)
-    const yawRotation = traverse.setFromAxisAngle(normal, yaw)
-    const pitchAxis = new THREE.Vector3().crossVectors(horizontal, normal).normalize()
-    mount.rotation.setFromAxisAngle(pitchAxis, elevation).multiply(yawRotation)
+    if (Math.abs(normal.y) < 1e-8 && Math.abs(normal.z) > 1 - 1e-8) {
+      // A true side sponson uses a fixed bearing and a gimballed barrel. Deck
+      // yaw/elevation becomes singular when its target crosses the side normal:
+      // the projected yaw flips 180 degrees and rolls the housing upside down.
+      traverse.identity()
+      const clampedDirection = horizontal.multiplyScalar(Math.cos(elevation)).addScaledVector(normal, height).normalize()
+      mount.rotation.setFromUnitVectors(forward, clampedDirection)
+    } else {
+      const yaw = Math.atan2(normal.dot(new THREE.Vector3().crossVectors(forward, horizontal)), forward.dot(horizontal))
+      const yawRotation = traverse.setFromAxisAngle(normal, yaw)
+      const pitchAxis = new THREE.Vector3().crossVectors(horizontal, normal).normalize()
+      mount.rotation.setFromAxisAngle(pitchAxis, elevation).multiply(yawRotation)
+    }
   }
   rig.uniforms[index].set(mount.rotation.x, mount.rotation.y, mount.rotation.z, mount.rotation.w)
   rig.traverseUniforms[index].set(traverse.x, traverse.y, traverse.z, traverse.w)

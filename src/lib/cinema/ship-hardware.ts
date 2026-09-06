@@ -64,9 +64,12 @@ export function buildFittedHardware(profile: CinemaHardware | undefined, family:
   for(const x of [.29,-.29,0,.13,-.13]) for(const [y,z] of [[height,0],[0,width],[-height,0],[0,-width],[height,width],[-height,-width],[height,-width],[-height,width]]) candidate(x,y,z)
   const placed:{kind:CinemaWeaponFamily;pivot:THREE.Vector3;normal:THREE.Vector3;surface:THREE.Vector3;attachment:THREE.Vector3;radius:number;inward:number}[]=[]
   const place=(kind:CinemaWeaponFamily,dorsalOnly=false)=>{
-    const radius=radiusOf(kind),inward=inwardOf(kind)
+    const radius=radiusOf(kind)
     for(const candidate of candidates) {
       const {normal,attachment}=candidate,pivot=candidate.point.clone()
+      // Fixed-base side gimbals can roll their barrel width inward. Reserve a
+      // full sphere instead of applying the deck bearing's elevation-only cap.
+      const inward=Math.abs(normal.y)<1e-8&&Math.abs(normal.z)>1-1e-8?radius:inwardOf(kind)
       if(dorsalOnly&&normal.y<.999) continue
       if(!candidate.sampled) {
         candidate.surface=c.hullSurface?.(pivot,attachment)??(normal.y>.999?new THREE.Vector3(pivot.x,c.deckAt?.(pivot.x,pivot.z)??h,pivot.z):undefined)
