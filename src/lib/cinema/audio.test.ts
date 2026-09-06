@@ -294,4 +294,38 @@ describe('cinema audio lifecycle', () => {
     }
     expect(context.transients.every(source => source.ended && source.disconnected)).toBe(true)
   })
+
+  it('gives charge, release, hull impact and shield impact separate bounded sound envelopes', () => {
+    const { audio, context } = started()
+    const signatures = new Set<string>()
+    for (const audioPhase of ['charge', 'release', 'impact', 'shield-impact'] as const) {
+      const gainIndex = context.gains.length
+      audio.cue({ ...weapon, duration: 1.4, weaponFamily: 'railgun', audioPhase })
+      const tone = context.oscillators.at(-1)!
+      signatures.add(JSON.stringify([tone.type, tone.frequency.calls, context.gains[gainIndex].gain.calls]))
+      expect(Math.max(...context.gains[gainIndex].gain.calls.map(call => call.value))).toBeLessThanOrEqual(.23)
+      if (audioPhase === 'charge') {
+        expect(tone.frequency.calls.at(-1)!.value).toBeGreaterThan(tone.frequency.calls[0].value)
+        expect(tone.stops[0]! - tone.starts[0]).toBeCloseTo(1.45)
+      }
+      audio.clear()
+    }
+    expect(signatures.size).toBe(4)
+  })
+
+  it('lets an impact replace a firing voice but preserves decisive loss voices and the 24-source cap', () => {
+    const { audio, context } = started()
+    for (let i = 0; i < 12; i++) audio.cue({ ...weapon, id: String(i), audioPhase: 'release' })
+    audio.cue({ ...weapon, audioPhase: 'impact' })
+    expect(context.transients).toHaveLength(26)
+    expect(context.transients.filter(source => !source.ended)).toHaveLength(24)
+    audio.clear()
+    for (let i = 0; i < 12; i++) audio.cue({ ...weapon, id: String(i), kind: 'death' })
+    const before = context.transients.length
+    audio.cue({ ...weapon, audioPhase: 'impact' })
+    expect(context.transients).toHaveLength(before)
+    expect(context.transients.filter(source => !source.ended)).toHaveLength(24)
+    audio.clear()
+    expect(context.panners.every(node => node.disconnected)).toBe(true)
+  })
 })

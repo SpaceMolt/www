@@ -6,11 +6,13 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
 import { CinemaAudio } from './audio'
+import { buildAudioSchedule, audioCueRange } from './audioSchedule'
+import { prioritizeCinemaEffects, selectCinemaPulseCue } from './effectPriority'
 import { cueRange, cueLifetime, weaponImpactAge } from './playback'
 import { sampleCinemaHealth } from './director'
 import { sampleShipMotion, fleetMotionSpacing, type ShipMotionOptions } from './motion'
 import { sampleStoryCamera, clearStorySightline, keepCameraOutsideHulls, type CameraBody } from './camera'
-import { cinemaRenderSettings } from './quality'
+import { cinemaRenderSettings, initialCinemaQuality } from './quality'
 import { weaponVisual } from './weaponVisuals'
 import { getWeaponColor, resolveWeaponFamily } from './weapons'
 import { createShip } from './ships'
@@ -318,9 +320,9 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   const pulseLight = new THREE.PointLight(0x66dcff, 0, 320, 2); scene.add(pulseLight)
   let time = 0, playing = false, disposed = false, reduced = options.reducedMotion ?? false
   let requestedQuality: CinemaQuality = options.quality ?? 'auto'
-  let actualQuality = requestedQuality === 'auto' ? (window.innerWidth < 760 ? 'low' : 'high') : requestedQuality
+  let actualQuality = requestedQuality === 'auto' ? initialCinemaQuality(canvas.clientWidth || window.innerWidth) : requestedQuality
   let raf = 0, last = performance.now(), reportAt = 0, sampleFrames = 0, sampleElapsed = 0, qualityAge = 0
-  const audioCues=film.cues.filter(cue=>!cue.parentId).map(cue=>cue.kind==='weapon' && (cue.secondaryKind==='retaliation'||/galvanic hull grid/i.test(cue.weaponName??'')) ? {...cue,time:cue.time+cue.duration} : cue).sort((a,b)=>a.time-b.time || a.id.localeCompare(b.id))
+  const audioCues = buildAudioSchedule(film.cues)
   const cuesById = new Map(film.cues.map(cue=>[cue.id,cue]))
   const effectWindow = film.cues.reduce((max, cue) => Math.max(max, cue.duration + 2), 7)
   const clearanceByShot = new Map<string,number>()
@@ -338,8 +340,9 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   const isVisible = (actor: Actor, t: number) => t >= actor.ship.start && (t <= actor.ship.end || !['escaped', 'withdrawn'].includes(actor.ship.fate) || t < actor.ship.end + 2.5)
   const setResolution = () => {
     const width = canvas.clientWidth || 1280, height = canvas.clientHeight || 720
-    const settings=cinemaRenderSettings(actualQuality,window.devicePixelRatio || 1,renderer.capabilities.maxSamples)
-    renderer.setPixelRatio(settings.pixelRatio); renderer.setSize(width,height,false)
+    const settings=cinemaRenderSettings(actualQuality,window.devicePixelRatio || 1,renderer.capabilities.maxSamples,
+      {width,height,maxTextureSize:renderer.capabilities.maxTextureSize})
+    renderer.setDrawingBufferSize(width,height,settings.pixelRatio)
     if(sceneTarget.samples!==settings.samples){sceneTarget.samples=settings.samples;sceneTarget.dispose()}
     sceneTarget.setSize(Math.floor(width*settings.pixelRatio),Math.floor(height*settings.pixelRatio))
     composer.setPixelRatio(settings.pixelRatio); composer.setSize(width,height)
@@ -500,10 +503,9 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
         addFlash(pointA,actor.size*.28,0xff873e,(.12+Math.sin(time*5+actor.seed)*.04)*damage)
       }
     }
-    // Reserve the effect budget for consequences before ordinary volleys.
-    const consequence = (kind: string) => ['death', 'knockout', 'capture'].includes(kind) ? 1 : 0
-    activeCues.sort((a,b) => (consequence(b.kind) * 2 + Number(b.to === subject.id)) - (consequence(a.kind) * 2 + Number(a.to === subject.id)))
-    for (const cue of activeCues) {
+    const effectFocus = { subjectId: subject.id, causeCueId: sequence?.causeCueId, eventCueId: sequence?.eventCueId }
+    const pulseCue = selectCinemaPulseCue(activeCues, time, effectFocus)
+    for (const cue of prioritizeCinemaEffects(activeCues, effectFocus)) {
       const age = time - cue.time
       if (age < 0 || age > cueLifetime(cue)) continue
       const from = cue.from ? byId.get(cue.from) : undefined
@@ -602,7 +604,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
             sparks.setMatrixAt(sparkCount, dummy.matrix); sparks.setColorAt(sparkCount++, tint.setHex(age < 1.3 ? 0xffc280 : age < 2.6 ? 0xd75625 : 0x42464d))
           }
         }
-        if (age < 1.5 && !reduced) { pulseLight.position.copy(destination.position); pulseLight.color.setHex(effectColor); pulseLight.intensity = radius * radius * 12 * Math.exp(-age * 3); pulseLight.distance = radius * 7 }
+        if (cue.id === pulseCue?.id && !reduced) { pulseLight.position.copy(destination.position); pulseLight.color.setHex(effectColor); pulseLight.intensity = radius * radius * 12 * Math.exp(-age * 3); pulseLight.distance = radius * 7 }
       } else if (cue.kind === 'repair' && age < cue.duration) {
         const progress=age/Math.max(.01,cue.duration), wave=Math.sin(progress*Math.PI), repairColor=cue.repairKind==='shield'?0x70cbe6:0x70e6b4
         const center=destination.position.clone();center.y+=destination.size*(progress-.5)*.45
@@ -667,9 +669,9 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     try { draw() } catch (error) { playing = false; audio.setPlaying(false); options.onError?.(error instanceof Error ? error.message : 'The renderer stopped.') }
   }
   const emitCues = (previous: number, current: number) => {
-    for (const cue of cueRange(audioCues, previous, current)) {
+    for (const cue of audioCueRange(audioCues, previous, current)) {
       if (cue.parentId) continue
-      const actor = byId.get(cue.from ?? cue.to ?? '')
+      const actor = byId.get(cue.audioActorId ?? cue.from ?? cue.to ?? '')
       let pan = 0
       if (actor) { pointA.copy(actor.position).project(camera); pan = pointA.x }
       audio.cue(cue, pan)
@@ -711,7 +713,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     setPlaying(value) { playing = value; last = performance.now(); audio.setPlaying(value) },
     setMuted(value) { audio.setMuted(value) },
     setVolume(value) { audio.setVolume(value) },
-    setQuality(value) { requestedQuality = value; actualQuality = value === 'auto' ? 'high' : value; setResolution(); safeDraw() },
+    setQuality(value) { requestedQuality = value; actualQuality = value === 'auto' ? initialCinemaQuality(canvas.clientWidth || window.innerWidth) : value; sampleFrames=0;sampleElapsed=0;qualityAge=0;setResolution(); safeDraw() },
     setReducedMotion(value) { reduced = value; safeDraw() },
     dispose() {
       if (disposed) return

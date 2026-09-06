@@ -26,14 +26,24 @@ export function getCinemaEligibility(
 ): CinemaEligibility {
   if (phase === 'loading') return 'loading'
   if (phase === 'unavailable') return 'unavailable'
-  if (summary?.status === 'active' || phase === 'live') return 'active'
   const terminal = entries.find(entry => entry.battle_ended)?.battle_ended
   if (summary?.outcome === 'interrupted' || terminal?.outcome === 'interrupted') return 'interrupted'
+  // The shared loader stops polling once logs settle, even if its independent
+  // summary request failed or returned an older active header. Offer Retry;
+  // waiting for another automatic update would otherwise never finish.
+  if (phase === 'complete' && summary?.status !== 'completed') return 'unavailable'
+  if (summary?.status === 'active' || phase === 'live') return 'active'
   if (phase !== 'complete' || summary?.status !== 'completed' || !terminal) return 'finalizing'
   if (!entries.length || entries.some(entry => entry.battle_id !== summary.battle_id)) return 'unavailable'
   if (summary.category === 'wildlife' || terminal.category === 'wildlife' ||
       terminal.participants.some(actor => actor.kind === 'creature') ||
       entries.some(entry => entry.snapshots.some(actor => actor.kind === 'creature'))) return 'unsupported'
+  // Terminal aggregate names and totals cannot establish drawable appearances.
+  // Event-only historical records remain usable when an event identifies one.
+  const hasActors = (terminal.captures?.length ?? 0) > 0 || entries.some(entry =>
+    entry.snapshots.length > 0 || (entry.joins?.length ?? 0) > 0 || (entry.attacks?.length ?? 0) > 0 ||
+    (entry.kills?.length ?? 0) > 0 || (entry.captures?.length ?? 0) > 0)
+  if (!hasActors) return 'unavailable'
   const consequential = terminal.ships_destroyed > 0 || (terminal.captures?.length ?? 0) > 0 ||
     entries.some(entry => (entry.kills?.length ?? 0) > 0 || (entry.captures?.length ?? 0) > 0 || entry.burns?.some(burn => burn.destroyed))
   const combat = consequential || terminal.total_damage > 0 || entries.some(entry =>
@@ -494,7 +504,8 @@ export function compileBattleFilm(summary: BattleSummary, source: BattleLogEntry
     const shieldDamage = new Map<string, number>()
     const behaviorKeys = new Set<string>()
     const behavior = (cue: Omit<CinemaCue, 'id' | 'tick' | 'time' | 'duration'>, time = impactTime) => {
-      const key = `${cue.kind}:${cue.to}:${cue.repairKind ?? cue.drainKind ?? ''}`
+      const key = `${cue.kind}:${cue.to}:${cue.repairKind ?? cue.drainKind ?? ''}` +
+        (cue.kind === 'drain' ? `:${cue.from}:${cue.drainTransferred === true}` : '')
       // A local cue represents the observed effect, not every component that
       // contributed to it. Avoid a crowd of overlapping restoration flashes.
       if (span < .16 || behaviorKeys.has(key) || behaviorKeys.size >= 16) return
@@ -512,10 +523,9 @@ export function compileBattleFilm(summary: BattleSummary, source: BattleLogEntry
       if ((attack.shield_drained ?? 0) > 0) behavior({ kind: 'drain', from: from.id, to: to.id, drainKind: 'shield',
         drainTransferred: (attack.shield_transferred ?? 0) > 0,
         intensity: clamp(.2 + fraction(attack.shield_drained!, latestSnapshots.get(to.playerId)?.max_shield ?? 0)) })
-      const healed = (attack.defense_components ?? []).reduce((sum, component) => sum + Math.max(0, component.lifesteal_heal ?? 0), 0)
-      if (healed > 0) behavior({ kind: 'drain', from: from.id, to: to.id, drainKind: 'hull',
-        drainTransferred: true,
-        intensity: clamp(.2 + fraction(healed, latestSnapshots.get(from.playerId)?.max_hull ?? 0)) })
+      // defense_components.lifesteal_heal is calculated before the server caps
+      // healing at maximum hull. It does not confirm a realized gain, so do not
+      // turn that field into a restoration or return-flow effect.
       if (span < 0.16) return
       const bucket = Math.floor(segment.start * 4)
       const count = budgetByTime.get(bucket) ?? 0

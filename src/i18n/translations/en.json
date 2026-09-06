@@ -16,6 +16,7 @@
     "preparing": "Preparing the screening",
     "graphicsError": "This screening could not start on your device. Try again, or explore the battle record.",
     "retry": "Try again",
+    "retryLow": "Retry in low quality",
     "exhibitionOver": "Exhibition complete",
     "transmissionEnds": "End of transmission",
     "aftermath": "The silence after.",

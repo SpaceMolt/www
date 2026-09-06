@@ -29,6 +29,8 @@ cinema URLs. Completed does not automatically mean worth filming:
 
 Excluded URLs explain the reason and link back to the battle record; they do not
 present a retry loop or load the renderer.
+Missing or stale summaries after log reconciliation expose Retry, as do records
+with only aggregate statistics and no drawable participants.
 
 The director preserves chronological arrival, capture, escape and destruction
 milestones. It follows a recurring protagonist/opponent through selected setup,
@@ -64,7 +66,10 @@ seeking and bounded playback work. Destruction replaces the intact silhouette
 with fragments and a shockwave; arena knockouts cascade electrically and drift
 with engines and running lights disabled. Consequences take priority over ordinary
 volleys in the visual and sound pools. The renderer has automatic, high, medium and
-low quality, pauses when hidden, and exposes a reduced-motion setting.
+low quality, pauses when hidden, and exposes a reduced-motion setting. Automatic
+quality starts at medium on desktop and low on narrow screens. Render targets
+have total-pixel ceilings (4/2/1 megapixels for high/medium/low), including large
+HiDPI displays; graphics-error retries explicitly use low quality.
 
 `weapons.ts` identifies 13 delivery families independently of damage type:
 laser pulses, sustained beams, railgun needles, autocannon bursts, flak fans,
@@ -83,8 +88,10 @@ contact defenses do not become ranged guns. Current mine records describe
 packets and attributed burns, so no persistent minefield is fabricated.
 
 Only confirmed result fields produce behavior accents: actual restoration gives
-local repair/recharge sweeps; actual shield drain collapses locally, while confirmed shield transfer or
-recorded lifesteal healing produces return-flow energy; successful system disable produces electrical hull
+local repair/recharge sweeps; actual shield drain collapses locally, while confirmed shield transfer
+produces return-flow energy. These two drain behaviors and their beneficiaries
+remain distinct when sampled. Calculated lifesteal amounts do not establish
+realized healing and never authorize a return flow. Successful system disable produces electrical hull
 arcs; an explicitly activated emergency cloak phases the hull and its lights.
 Percentages, requested amounts, weapon names, and fitted modules alone do not
 prove an effect occurred. Unknown remote repair sources never acquire invented
@@ -94,7 +101,10 @@ status durations or exact hardpoint positions.
 `audio.ts` synthesizes the score and effects locally through Web Audio. It creates
 or resumes its context from the Play gesture, limits transient voices, and
 cancels existing sources on pause, seek and disposal. Families have distinct
-onsets, burst envelopes, pitch, filter sweeps and noise/tone balance. Behavior
+onsets, burst envelopes, pitch, filter sweeps and noise/tone balance. A separate
+audio schedule aligns railgun charge/release and victim-local impact sounds with
+the final edited film. Misses have no impact sound; simultaneous batteries share
+one representative impact and nearby destruction supplies its own sound. Behavior
 accents remain quiet; casualty sounds can displace ordinary volley voices. No audio files, external
 asset services, generation credentials or paid requests are required.
 

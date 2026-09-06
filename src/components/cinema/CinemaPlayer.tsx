@@ -19,6 +19,7 @@ export default function CinemaPlayer({ film, appearances }: { film: CinemaFilm; 
   const root = useRef<HTMLElement>(null)
   const canvas = useRef<HTMLCanvasElement>(null)
   const player = useRef<Player | null>(null)
+  const mountQuality = useRef<Quality>('auto')
   const activityTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [ready, setReady] = useState(false)
   const [failed, setFailed] = useState(false)
@@ -54,7 +55,7 @@ export default function CinemaPlayer({ film, appearances }: { film: CinemaFilm; 
     setTime(0)
     setMuted(true)
     setVolume(0.65)
-    setQuality('auto')
+    setQuality(mountQuality.current)
     setSettings(false)
     setReducedMotion(window.matchMedia('(prefers-reduced-motion: reduce)').matches)
     // The Three.js chunk is requested only after the completed record has been
@@ -63,7 +64,7 @@ export default function CinemaPlayer({ film, appearances }: { film: CinemaFilm; 
     import('@/lib/cinema/scene').then(({ mountCinema }) => {
       if (disposed || !canvas.current) return
       player.current = mountCinema(canvas.current, film, appearances, {
-        quality: 'auto', muted: true, volume: 0.65,
+        quality: mountQuality.current, muted: true, volume: 0.65,
         reducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
         onTime: value => { if (!disposed) setTime(value) },
         onEnd: () => { if (!disposed) { setPlaying(false); setEnded(true) } },
@@ -159,7 +160,7 @@ export default function CinemaPlayer({ film, appearances }: { film: CinemaFilm; 
         <p className={styles.subtitle}>{t('cinema.title')}</p>
         <p className={styles.description}>{t(failed ? 'cinema.graphicsError' : 'cinema.inspired')}</p>
         <div className={styles.startActions}>
-          {failed ? <button className={styles.primary} onClick={() => setReload(value => value + 1)}><RotateCcw size={18} aria-hidden />{t('cinema.retry')}</button> : <>
+          {failed ? <button className={styles.primary} onClick={() => { mountQuality.current = 'low'; setReload(value => value + 1) }}><RotateCcw size={18} aria-hidden />{t('cinema.retryLow')}</button> : <>
             <button type="button" className={styles.primary} onClick={() => play(true)} disabled={!ready}><Play size={18} fill="currentColor" aria-hidden />{t(ready ? 'cinema.playSound' : 'cinema.preparing')}</button>
             <button type="button" className={styles.secondary} onClick={() => play(false)} disabled={!ready}><VolumeX size={16} aria-hidden />{t('cinema.playMuted')}</button>
           </>}

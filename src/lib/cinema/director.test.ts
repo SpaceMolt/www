@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import { compileBattleFilm, getCinemaEligibility, sampleCinemaHealth, sampleCinemaShot, sourceTickAt } from './director'
 import type { AttackLogEntry, BattleLogEntry, BattleSummary, ParticipantSnapshot, WeaponFireDetail } from '../battle/types'
+import { applyBattleLoadResult, initialBattleLoaderState, shouldPollBattle } from '../battle/battleData'
 
 const summary = (over: Partial<BattleSummary> = {}): BattleSummary => ({ battle_id: 'cinema-test', system_id: 'krynn',
   system_name: 'Krynn', status: 'completed', start_tick: 100, duration_ticks: 2, participant_count: 2,
@@ -29,6 +30,21 @@ const kill = (killer: string, victim: string) => ({ killer_id: killer, victim_id
 function compile(entries: BattleLogEntry[], over: Partial<BattleSummary> = {}) { return compileBattleFilm(summary(over), entries, true) }
 
 describe('completed-record gate', () => {
+  it('makes settled records retryable when the summary failed or still reports active', () => {
+    for (const header of [null, summary({ status: 'active' })]) {
+      const result = { entries: [row(100), terminal(101)], summary: header, summaryError: 'Summary unavailable', full: true }
+      const initial = applyBattleLoadResult(initialBattleLoaderState(), result, 100_000)
+      const settled = applyBattleLoadResult(initial, result, 140_000)
+      expect(settled.phase).toBe('complete')
+      expect(shouldPollBattle(settled)).toBe(false)
+      expect(getCinemaEligibility(settled.summary, settled.entries, settled.phase)).toBe('unavailable')
+    }
+  })
+  it('rejects aggregate-only historical records without inventing visible actors', () => {
+    const entries = [terminal(101, { snapshots: [] })]
+    expect(getCinemaEligibility(summary(), entries, 'complete')).toBe('unavailable')
+    expect(() => compile(entries)).toThrow('complete, reconciled')
+  })
   it('excludes positively identified creatures without treating NPCs or missing classes as creatures', () => {
     expect(getCinemaEligibility(summary({ category: 'wildlife' }), [row(100), terminal(101)], 'complete')).toBe('unsupported')
     expect(getCinemaEligibility(summary(), [row(100, { snapshots: [snap('a'), snap('b', 2, { kind: 'creature' })] }), terminal(101)], 'complete')).toBe('unsupported')
@@ -51,10 +67,10 @@ describe('completed-record gate', () => {
     const entries = [row(100), terminal(101)]
     expect(getCinemaEligibility(summary(), entries, 'complete')).toBe('ready')
     expect(getCinemaEligibility(summary(), entries, 'finalizing')).toBe('finalizing')
-    expect(getCinemaEligibility(summary({ status: 'active' }), entries, 'complete')).toBe('active')
+    expect(getCinemaEligibility(summary({ status: 'active' }), entries, 'complete')).toBe('unavailable')
     expect(getCinemaEligibility(summary(), [row(100)], 'complete')).toBe('finalizing')
     expect(getCinemaEligibility(summary(), entries, 'unavailable')).toBe('unavailable')
-    expect(getCinemaEligibility(null, entries, 'complete')).toBe('finalizing')
+    expect(getCinemaEligibility(null, entries, 'complete')).toBe('unavailable')
     expect(() => compileBattleFilm(summary(), entries)).toThrow('reconciled')
   })
   it('rejects interrupted, mismatched and trailing records', () => {
@@ -149,19 +165,32 @@ describe('recorded outcomes and lifecycle identities', () => {
 })
 
 describe('weapon semantics and seeking', () => {
-  it('returns drained energy only when an actual transfer or lifesteal heal is recorded', () => {
+  it('keeps different drain beneficiaries and confirmed transfers distinct within one tick', () => {
+    const film = compile([row(100, { snapshots: [snap('a'), snap('b', 2), snap('c')], attacks: [
+      attack('a', 'b', { shield_drained: 10, shield_transferred: 0 }),
+      attack('c', 'b', { shield_drained: 10, shield_transferred: 5 }),
+      attack('a', 'b', { shield_drained: 10, shield_transferred: 4 }),
+    ] }), terminal(101)])
+    expect(film.cues.filter(cue => cue.kind === 'drain').map(cue => [cue.from, cue.drainTransferred]))
+      .toEqual([['a:0', false], ['c:0', true], ['a:0', true]])
+  })
+  it('does not treat uncapped calculated lifesteal as a realized hull gain', () => {
+    const component = { weapon_instance_id: 'gun', weapon_name: 'Life Siphon', damage_type: 'energy',
+      incoming_damage: 20, shield_resist_pct: 0, after_shield_resist: 20, type_resist_pct: 0,
+      after_type_resist: 20, flat_reduction_pct: 0, after_flat_reduction: 20, shield_bypass_pct: 0,
+      armor_bypass_pct: 0, ignore_all_defense: false, final_damage: 20, shield_damage: 0, hull_damage: 20,
+      lifesteal_pct: 50, lifesteal_heal: 10 }
+    const film = compile([row(100, { attacks: [attack('a', 'b', { defense_components: [component] })] }), terminal(101)])
+    expect(film.ships.find(ship => ship.playerId === 'a')?.health.every(frame => frame.hull === 1)).toBe(true)
+    expect(film.cues.some(cue => cue.kind === 'drain' && cue.drainKind === 'hull')).toBe(false)
+    expect(film.cues.some(cue => cue.kind === 'weapon')).toBe(true)
+  })
+  it('returns drained shield energy only when an actual transfer is recorded', () => {
     for (const transferred of [0, 5]) {
       const film = compile([row(100, { attacks: [attack('a', 'b', { shield_drained: 8,
         shield_transfer_pct: 100, shield_transferred: transferred })] }), terminal(101)])
       expect(film.cues.find(cue => cue.kind === 'drain')?.drainTransferred).toBe(transferred > 0)
     }
-    const component = { weapon_instance_id: 'gun', weapon_name: 'Energy Siphon', damage_type: 'energy',
-      incoming_damage: 20, shield_resist_pct: 0, after_shield_resist: 20, type_resist_pct: 0,
-      after_type_resist: 20, flat_reduction_pct: 0, after_flat_reduction: 20, shield_bypass_pct: 0,
-      armor_bypass_pct: 0, ignore_all_defense: false, final_damage: 20, shield_damage: 0, hull_damage: 20,
-      lifesteal_pct: 50, lifesteal_heal: 4 }
-    const healed = compile([row(100, { attacks: [attack('a', 'b', { defense_components: [component] })] }), terminal(101)])
-    expect(healed.cues.find(cue => cue.kind === 'drain' && cue.drainKind === 'hull')?.drainTransferred).toBe(true)
   })
   it('rotates oversized loadouts so the same first six families do not hide the rest forever', () => {
     const names = ['Laser I', 'Graviton Beam I', 'Railgun I', 'Autocannon I', 'Flak Cannon I', 'Plasma Cannon I',

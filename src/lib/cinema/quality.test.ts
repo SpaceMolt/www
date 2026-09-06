@@ -1,9 +1,27 @@
 import { describe, expect, it } from 'bun:test'
-import { cinemaRenderSettings, type CinemaRenderQuality } from './quality'
+import { cinemaRenderSettings, initialCinemaQuality, type CinemaRenderQuality } from './quality'
 
 const tiers: CinemaRenderQuality[] = ['high', 'medium', 'low']
 
 describe('cinema rendering quality', () => {
+  it('bounds actual allocation on large HiDPI displays at every quality tier', () => {
+    const budgets = { high: 4_194_304, medium: 2_097_152, low: 1_048_576 }
+    for (const tier of tiers) for (const [width, height] of [[2560, 1440], [3840, 2160], [7680, 4320], [320, 12000]]) {
+      const settings = cinemaRenderSettings(tier, 3, 8, { width, height, maxTextureSize: 4096 })
+      const renderedWidth = Math.floor(width * settings.pixelRatio)
+      const renderedHeight = Math.floor(height * settings.pixelRatio)
+      expect(renderedWidth * renderedHeight).toBeLessThanOrEqual(budgets[tier])
+      expect(Math.max(renderedWidth, renderedHeight)).toBeLessThanOrEqual(4096)
+      expect(Math.min(renderedWidth, renderedHeight)).toBeGreaterThan(0)
+    }
+  })
+
+  it('starts automatic playback conservatively before performance can be measured', () => {
+    expect(initialCinemaQuality(390)).toBe('low')
+    expect(initialCinemaQuality(1440)).toBe('medium')
+    expect(initialCinemaQuality(3840)).toBe('medium')
+  })
+
   it('keeps Low at native CSS resolution instead of enlarging a 70-percent render', () => {
     for (const dpr of [0.5, 1, 1.5, 2, 3]) {
       const settings = cinemaRenderSettings('low', dpr, 8)

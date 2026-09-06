@@ -1,4 +1,4 @@
-import type { CinemaCue } from './types'
+import type { CinemaAudioCue } from './audioSchedule'
 import { resolveWeaponFamily, type CinemaWeaponFamily } from './weapons'
 
 interface SoundProfile {
@@ -46,7 +46,28 @@ const eventSounds: Readonly<Record<string, Readonly<SoundProfile>>> = {
   drain: { duration: 1.1, attack: .05, peak: .085, wave: 'triangle', frequency: [100, 540], filter: 'bandpass', cutoff: [260, 1800], noise: .10, tone: .55, hold: .45 },
 }
 
-type AudioCue = CinemaCue & { weaponFamily?: CinemaWeaponFamily; critical?: boolean }
+const hitSounds: Readonly<Record<string, Readonly<SoundProfile>>> = {
+  shield: { duration: .44, attack: .006, peak: .12, wave: 'sine', frequency: [760, 230], filter: 'bandpass', cutoff: [2100, 420], noise: .28, tone: .60 },
+  ballistic: { duration: .34, attack: .003, peak: .16, wave: 'triangle', frequency: [140, 39], filter: 'lowpass', cutoff: [5400, 240], noise: .85, tone: .30 },
+  explosive: { duration: .76, attack: .009, peak: .22, wave: 'sine', frequency: [110, 31], filter: 'lowpass', cutoff: [2600, 110], noise: 1, tone: .55 },
+  energy: { duration: .40, attack: .004, peak: .14, wave: 'triangle', frequency: [650, 120], filter: 'bandpass', cutoff: [3400, 530], noise: .55, tone: .40 },
+  exotic: { duration: .62, attack: .015, peak: .15, wave: 'sine', frequency: [290, 56], filter: 'bandpass', cutoff: [1800, 150], noise: .35, tone: .65 },
+}
+
+function weaponSound(cue: CinemaAudioCue, family: CinemaWeaponFamily): Readonly<SoundProfile> {
+  if (cue.audioPhase === 'charge') {
+    const duration = bounded(cue.duration, .025, 3, .4)
+    return { duration, attack: Math.min(.08, duration * .15), peak: .07, wave: 'sine', frequency: [100, 1100], filter: 'bandpass', cutoff: [180, 1600], noise: .16, tone: .65, hold: .78 }
+  }
+  if (cue.audioPhase === 'shield-impact') return hitSounds.shield
+  if (cue.audioPhase === 'impact') {
+    if (['missile', 'torpedo', 'plasma', 'mine', 'smartbomb', 'flak'].includes(family)) return hitSounds.explosive
+    if (family === 'exotic') return hitSounds.exotic
+    if (['laser', 'beam', 'disruptor'].includes(family)) return hitSounds.energy
+    return hitSounds.ballistic
+  }
+  return WEAPON_AUDIO_PROFILES[family]
+}
 const bounded = (value: number, low: number, high: number, fallback = low) => Number.isFinite(value) ? Math.max(low, Math.min(high, value)) : fallback
 
 /** Original, locally synthesized soundtrack. No samples or external audio requests. */
@@ -56,6 +77,7 @@ export class CinemaAudio {
   private bed: GainNode | null = null
   private noise: AudioBuffer | null = null
   private voices = new Set<AudioScheduledSourceNode>()
+  private voicePriority = new Map<AudioScheduledSourceNode, number>()
   private continuous: OscillatorNode[] = []
   private muted = true
   private volume = 0.65
@@ -134,22 +156,25 @@ export class CinemaAudio {
     this.bed.gain.setTargetAtTime(0.026 + value * 0.027 + Math.sin(time * 0.32) * 0.008, this.context.currentTime, 0.5)
   }
 
-  cue(cue: AudioCue, pan = 0) {
+  cue(cue: CinemaAudioCue, pan = 0) {
     const ctx = this.context
     if (!ctx || !this.master || !this.noise || !this.playing || this.muted) return
     const weapon = cue.kind === 'weapon'
-    const contact = weapon && (cue.secondaryKind === 'retaliation' || /galvanic hull grid/i.test(cue.weaponName ?? ''))
-    const profile = contact ? eventSounds.contact : weapon ? WEAPON_AUDIO_PROFILES[cue.weaponFamily ?? resolveWeaponFamily(cue.weaponName, cue.damageType)] : eventSounds[cue.kind]
+    const contact = weapon && (cue.audioPhase === 'contact' || cue.secondaryKind === 'retaliation' || /galvanic hull grid/i.test(cue.weaponName ?? ''))
+    const profile = contact ? eventSounds.contact : weapon ? weaponSound(cue, cue.weaponFamily ?? resolveWeaponFamily(cue.weaponName, cue.damageType)) : eventSounds[cue.kind]
     if (!profile) return
     const now = ctx.currentTime
     const explosion = cue.kind === 'death'
     const impact = cue.kind === 'knockout' || cue.kind === 'capture'
+    const priority = explosion || impact ? 2 : cue.audioPhase === 'impact' || cue.audioPhase === 'shield-impact' || contact ? 1 : 0
     if (this.voices.size >= 24) {
-      if (!explosion && !impact) return
-      // A decisive loss takes the oldest voice pair's place in a dense volley.
-      for (const source of [...this.voices].slice(0, 2)) {
+      // Hits may replace launches; only decisive events may replace a loss.
+      const replaced = [...this.voices].filter(source => priority === 2 || (this.voicePriority.get(source) ?? 0) < priority).slice(0, 2)
+      if (replaced.length < 2) return
+      for (const source of replaced) {
         try { source.stop() } catch { /* Already ended. */ }
         this.voices.delete(source)
+        this.voicePriority.delete(source)
       }
     }
     const duration = profile.duration
@@ -175,7 +200,8 @@ export class CinemaAudio {
     let remaining = 2
     const track = (source: AudioScheduledSourceNode) => {
       this.voices.add(source)
-      source.onended = () => { this.voices.delete(source); source.disconnect(); if (--remaining === 0) { gain.disconnect(); panner.disconnect(); filter.disconnect(); noiseGain.disconnect(); toneGain.disconnect() } }
+      this.voicePriority.set(source, priority)
+      source.onended = () => { this.voices.delete(source); this.voicePriority.delete(source); source.disconnect(); if (--remaining === 0) { gain.disconnect(); panner.disconnect(); filter.disconnect(); noiseGain.disconnect(); toneGain.disconnect() } }
       source.start(now)
       source.stop(now + duration + 0.05)
     }
@@ -195,7 +221,7 @@ export class CinemaAudio {
     track(oscillator)
   }
 
-  clear() { for (const source of this.voices) { try { source.stop() } catch { /* Already ended. */ } }; this.voices.clear() }
+  clear() { for (const source of this.voices) { try { source.stop() } catch { /* Already ended. */ } }; this.voices.clear(); this.voicePriority.clear() }
   dispose() {
     this.clear()
     for (const osc of this.continuous) { osc.stop(); osc.disconnect() }
