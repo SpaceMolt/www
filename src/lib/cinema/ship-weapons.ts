@@ -10,18 +10,22 @@ export interface WeaponMount {
   pivot: THREE.Vector3
   muzzle: THREE.Vector3
   rotation: THREE.Quaternion
+  /** Base traverse stays in the fixed mounting plane; barrels add elevation. */
+  traverseRotation?: THREE.Quaternion
   /** Outward hull normal of the mounting face; omitted legacy mounts are unrestricted. */
   normal?: THREE.Vector3
+  minimumElevation?: (horizontal: THREE.Vector3) => number
 }
 
 export interface WeaponRig {
   mounts: WeaponMount[]
   /** Stable vector objects shared by all hull and shadow material uniforms. */
   uniforms: THREE.Vector4[]
+  traverseUniforms: THREE.Vector4[]
 }
 
 export function createWeaponRig(): WeaponRig {
-  return { mounts: [], uniforms: Array.from({ length: MAX_WEAPON_MOUNTS }, () => new THREE.Vector4(0, 0, 0, 1)) }
+  return { mounts: [], uniforms: Array.from({ length: MAX_WEAPON_MOUNTS }, () => new THREE.Vector4(0, 0, 0, 1)), traverseUniforms: Array.from({ length: MAX_WEAPON_MOUNTS }, () => new THREE.Vector4(0, 0, 0, 1)) }
 }
 
 export interface WeaponCueAssignment {
@@ -73,7 +77,7 @@ export function assignWeaponCues(rig: WeaponRig, actorCues: readonly CinemaCue[]
 
 /** Tag every batch input, including static pieces, before merging geometries.
  * Positions and normals remain in the original construction pose. */
-export function tagWeaponGeometry<T extends THREE.BufferGeometry>(geometry: T, index = -1, pivot = new THREE.Vector3()): T {
+export function tagWeaponGeometry<T extends THREE.BufferGeometry>(geometry: T, index = -1, pivot = new THREE.Vector3(), elevates = true): T {
   const count = geometry.getAttribute('position').count
   const tagged = Number.isInteger(index) && index >= 0 && index < MAX_WEAPON_MOUNTS
   const indices = new Float32Array(count).fill(tagged ? index : -1)
@@ -81,50 +85,58 @@ export function tagWeaponGeometry<T extends THREE.BufferGeometry>(geometry: T, i
   if (tagged) for (let i = 0; i < count; i++) pivot.toArray(pivots, i * 3)
   geometry.setAttribute('cinemaMount', new THREE.BufferAttribute(indices, 1))
   geometry.setAttribute('cinemaPivot', new THREE.BufferAttribute(pivots, 3))
+  geometry.setAttribute('cinemaElevation', new THREE.BufferAttribute(new Float32Array(count).fill(tagged && elevates ? 1 : 0), 1))
   return geometry
 }
 
 const declarations = `
 attribute float cinemaMount;
 attribute vec3 cinemaPivot;
+attribute float cinemaElevation;
+uniform vec4 cinemaWeaponTraversals[${MAX_WEAPON_MOUNTS}];
 uniform vec4 cinemaWeaponRotations[${MAX_WEAPON_MOUNTS}];
+vec4 cinemaWeaponRotation(float index) {
+  return cinemaElevation > 0.5 ? cinemaWeaponRotations[int(index)] : cinemaWeaponTraversals[int(index)];
+}
 vec3 cinemaRotateWeapon(vec3 value, vec4 rotation) {
   return value + 2.0 * cross(rotation.xyz, cross(rotation.xyz, value) + rotation.w * value);
 }
 `
 const positionTransform = `
 if (cinemaMount >= 0.0 && cinemaMount < ${MAX_WEAPON_MOUNTS}.0) {
-  transformed = cinemaPivot + cinemaRotateWeapon(transformed - cinemaPivot, cinemaWeaponRotations[int(cinemaMount)]);
+  transformed = cinemaPivot + cinemaRotateWeapon(transformed - cinemaPivot, cinemaWeaponRotation(cinemaMount));
 }
 `
 const normalTransform = `
 if (cinemaMount >= 0.0 && cinemaMount < ${MAX_WEAPON_MOUNTS}.0) {
-  objectNormal = cinemaRotateWeapon(objectNormal, cinemaWeaponRotations[int(cinemaMount)]);
+  objectNormal = cinemaRotateWeapon(objectNormal, cinemaWeaponRotation(cinemaMount));
   #ifdef USE_TANGENT
-    objectTangent = cinemaRotateWeapon(objectTangent, cinemaWeaponRotations[int(cinemaMount)]);
+    objectTangent = cinemaRotateWeapon(objectTangent, cinemaWeaponRotation(cinemaMount));
   #endif
 }
 `
-const bindings = new WeakMap<THREE.Material, { value: THREE.Vector4[] }>()
+const bindings = new WeakMap<THREE.Material, { rotation: { value: THREE.Vector4[] }; traverse: { value: THREE.Vector4[] } }>()
 
 /** Compose after panel/crystal shader setup. Also works with depth/distance
  * materials, keeping directional and point-light shadows aligned with barrels. */
 export function applyWeaponRig<T extends THREE.Material>(material: T, rig: WeaponRig): T {
   const existing = bindings.get(material)
   if (existing) {
-    existing.value = rig.uniforms
+    existing.rotation.value = rig.uniforms
+    existing.traverse.value = rig.traverseUniforms
     return material
   }
-  const uniform = { value: rig.uniforms }
-  bindings.set(material, uniform)
+  const uniform = { value: rig.uniforms }, traverse = { value: rig.traverseUniforms }
+  bindings.set(material, { rotation: uniform, traverse })
   const previousCompile = material.onBeforeCompile
   // The default cache-key implementation reads onBeforeCompile.toString().
   // Snapshot it before installing the wrapper so the base shader is retained.
   const previousCacheKey = material.customProgramCacheKey()
-  material.customProgramCacheKey = () => `${previousCacheKey}|cinema-weapon-rig-v1`
+  material.customProgramCacheKey = () => `${previousCacheKey}|cinema-weapon-rig-v2`
   material.onBeforeCompile = function (shader, renderer) {
     previousCompile.call(this, shader, renderer)
     shader.uniforms.cinemaWeaponRotations = uniform
+    shader.uniforms.cinemaWeaponTraversals = traverse
     shader.vertexShader = shader.vertexShader.replace('#include <common>', `#include <common>\n${declarations}`)
     shader.vertexShader = shader.vertexShader.replace('#include <beginnormal_vertex>', `#include <beginnormal_vertex>\n${normalTransform}`)
     shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>\n${positionTransform}`)
@@ -153,7 +165,14 @@ export function canAimWeaponMount(rig: WeaponRig, index: number, targetLocal: TH
   if (!mount) return false
   const direction = targetLocal.clone().sub(mount.pivot), length = direction.length()
   if (!Number.isFinite(length) || length <= 1e-10) return false
-  return !mount.normal || direction.divideScalar(length).dot(mount.normal) >= minimumAimDot - 1e-8
+  if(!mount.normal)return true
+  direction.divideScalar(length)
+  const height=direction.dot(mount.normal)
+  if(height<minimumAimDot-1e-8)return false
+  if(!mount.minimumElevation)return true
+  const horizontal=direction.clone().addScaledVector(mount.normal,-height)
+  if(horizontal.lengthSq()<1e-12)return height>0
+  return Math.asin(THREE.MathUtils.clamp(height,-1,1))+1e-8>=mount.minimumElevation(horizontal.normalize())
 }
 
 /** Absolute yaw/elevation about the mounting face. Preserving its outward up
@@ -162,7 +181,8 @@ export function aimWeaponMount(rig: WeaponRig, index: number, targetLocal: THREE
   const mount = Number.isInteger(index) && index >= 0 && index < MAX_WEAPON_MOUNTS ? rig.mounts[index] : undefined
   if (!mount) return false
   const direction = targetLocal.clone().sub(mount.pivot), length = direction.length()
-  if (!Number.isFinite(length) || length <= 1e-10) mount.rotation.identity()
+  const traverse = mount.traverseRotation ??= new THREE.Quaternion()
+  if (!Number.isFinite(length) || length <= 1e-10) { mount.rotation.identity(); traverse.identity() }
   else {
     direction.divideScalar(length)
     const normal = mount.normal ?? up
@@ -171,14 +191,15 @@ export function aimWeaponMount(rig: WeaponRig, index: number, targetLocal: THREE
     const horizontalLength = horizontal.length()
     if (horizontalLength > 1e-10) horizontal.divideScalar(horizontalLength)
     else horizontal.copy(forward)
-    if (mount.normal && height < minimumAimDot) height = minimumAimDot
+    if (mount.normal) height=Math.max(height,minimumAimDot,Math.sin(mount.minimumElevation?.(horizontal)??-Math.PI/2))
     const yaw = Math.atan2(normal.dot(new THREE.Vector3().crossVectors(forward, horizontal)), forward.dot(horizontal))
     const elevation = Math.asin(height)
-    const yawRotation = new THREE.Quaternion().setFromAxisAngle(normal, yaw)
+    const yawRotation = traverse.setFromAxisAngle(normal, yaw)
     const pitchAxis = new THREE.Vector3().crossVectors(horizontal, normal).normalize()
     mount.rotation.setFromAxisAngle(pitchAxis, elevation).multiply(yawRotation)
   }
   rig.uniforms[index].set(mount.rotation.x, mount.rotation.y, mount.rotation.z, mount.rotation.w)
+  rig.traverseUniforms[index].set(traverse.x, traverse.y, traverse.z, traverse.w)
   return true
 }
 

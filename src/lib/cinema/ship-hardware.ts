@@ -10,8 +10,23 @@ export function cinemaGunSize(appearance: Pick<ShipAppearance, 'tier'|'hullEmpir
   return Math.min(.145,(small?.050:.064)*(1.4+tier*.19)*(appearance.hullEmpire==='crimson'?1.18:1))
 }
 
+export interface WeaponEnvelope {
+  pivot: THREE.Vector3
+  normal: THREE.Vector3
+  radius: number
+  inward: number
+}
+
+/** Opposed batteries occupy separate outward half-spaces even where their
+ * unrestricted spheres overlap. All other orientations use the full spheres. */
+export function weaponEnvelopesSeparate(a: WeaponEnvelope, b: WeaponEnvelope, margin = .006): boolean {
+  if (a.pivot.distanceTo(b.pivot) >= a.radius + b.radius + margin) return true
+  if (a.normal.dot(b.normal) > -1 + 1e-8) return false
+  return a.pivot.clone().sub(b.pivot).dot(a.normal) >= a.inward + b.inward + margin
+}
+
 /** Bounded representative external equipment; counts describe a fit, not literal sockets. */
-export function buildFittedHardware(profile: CinemaHardware | undefined, family: ShipFamily, c: SpecialHullContext & { deckAt?: (x:number,z:number)=>number; appearance?: ShipAppearance; hullSurface?: (point:THREE.Vector3,outward:THREE.Vector3)=>THREE.Vector3|undefined; beginWeapon?: (family:CinemaWeaponFamily,pivot:THREE.Vector3,muzzle:THREE.Vector3,constructionRoll?:number,normal?:THREE.Vector3)=>void; endWeapon?: ()=>void }) {
+export function buildFittedHardware(profile: CinemaHardware | undefined, family: ShipFamily, c: SpecialHullContext & { deckAt?: (x:number,z:number)=>number; appearance?: ShipAppearance; hullSurface?: (point:THREE.Vector3,outward:THREE.Vector3)=>THREE.Vector3|undefined; beginWeapon?: (family:CinemaWeaponFamily,pivot:THREE.Vector3,muzzle:THREE.Vector3,constructionRoll?:number,normal?:THREE.Vector3)=>void; elevateWeapon?: ()=>void; endWeapon?: ()=>void }) {
   const { add,slab,rounded,rod,h,w,hero }=c
   const known=profile && profile.source!=='unknown'
   const legacyCount=family==='fighter'?2:family==='warship'?3:family==='capital'?4:0
@@ -23,29 +38,33 @@ export function buildFittedHardware(profile: CinemaHardware | undefined, family:
   // Long barrels need real swept space, not merely a gap between their bases.
   // These conservative component bounds are checked against rendered triangles.
   const radiusOf=(kind:CinemaWeaponFamily)=>s*({railgun:2.13,autocannon:1.78,kinetic:1.75,flak:1.46,plasma:1.48,laser:1.27,beam:1.27,exotic:1.40,disruptor:1.40,torpedo:1.30,missile:1.04,mine:1.02,smartbomb:1.02}[kind])
+  // Includes negative-X stocks at 90deg elevation, barrel thickness at 5deg
+  // depression, and the traverse-only base's .24s inward depth.
+  const inwardOf=(kind:CinemaWeaponFamily)=>s*({railgun:.48,autocannon:.26,kinetic:.26,flak:.26,plasma:.50,laser:.49,beam:.49,exotic:.50,disruptor:.50,torpedo:1.20,missile:.94,mine:.80,smartbomb:.80}[kind])
   const heightOf=(kind:CinemaWeaponFamily)=>kind==='missile'||kind==='torpedo'?.55:kind==='plasma'?.48:kind==='exotic'||kind==='disruptor'?.45:kind==='beam'||kind==='laser'?.42:kind==='mine'||kind==='smartbomb'?.62:.40
   const width=Math.min(.27,Math.max(w+.035,.22)),height=Math.min(.24,Math.max(h+.10,.20))
   const candidates:{point:THREE.Vector3;normal:THREE.Vector3;attachment:THREE.Vector3;sampled?:boolean;surface?:THREE.Vector3}[]=[]
-  const candidate=(x:number,y:number,z:number,dorsal=false)=>candidates.push({point:new THREE.Vector3(x,y,z),normal:dorsal?new THREE.Vector3(0,1,0):new THREE.Vector3(0,y,z).normalize(),attachment:new THREE.Vector3(0,y,z).normalize()})
+  const candidate=(x:number,y:number,z:number)=>candidates.push({point:new THREE.Vector3(x,y,z),normal:new THREE.Vector3(0,y,z).normalize(),attachment:new THREE.Vector3(0,y,z).normalize()})
   if(c.appearance?.recipe==='shard') {
-    candidate(.20,.285,0,true)
-    candidate(-.20,.285,0,true)
+    candidate(.20,.285,0)
+    candidate(-.20,.285,0)
   }
-  // Keep the first representative of every mechanism on a broadly usable
-  // dorsal mount. Outboard seats use real diagonal structural struts.
+  // Prefer broadly usable dorsal positions for each represented mechanism.
+  // Additional batteries use the actual outward normal of their hull surface.
   const reach=s>.12?.318:Math.max(w*.8,.17)
   const dorsalHeight=s>.12?Math.max(h+.16,.31):Math.max(height,.22)
-  candidate(.31,dorsalHeight,0,true)
-  candidate(-.25,dorsalHeight,reach,true)
-  candidate(-.25,dorsalHeight,-reach,true)
-  candidate(-.22,-.32,0)
+  candidate(.32,dorsalHeight,0)
+  candidate(-.32,dorsalHeight,reach)
+  candidate(-.32,dorsalHeight,-reach)
+  candidate(-.32,-.32,0)
+  candidate(.32,-.32,0)
   // Alternating upper/lower sponsons spread large batteries around the hull.
   // The tetrahedral ordering fits four huge independent mounts before extras.
-  for(const [x,y,z] of [[.27,height,width],[.27,-height,-width],[-.27,height,-width],[-.27,-height,width]]) candidate(x,y,z)
+  for(const [x,y,z] of [[.32,height,width],[.32,-height,-width],[-.32,height,-width],[-.32,-height,width]]) candidate(x,y,z)
   for(const x of [.29,-.29,0,.13,-.13]) for(const [y,z] of [[height,0],[0,width],[-height,0],[0,-width],[height,width],[-height,-width],[height,-width],[-height,width]]) candidate(x,y,z)
-  const placed:{kind:CinemaWeaponFamily;pivot:THREE.Vector3;normal:THREE.Vector3;surface:THREE.Vector3;attachment:THREE.Vector3;radius:number}[]=[]
+  const placed:{kind:CinemaWeaponFamily;pivot:THREE.Vector3;normal:THREE.Vector3;surface:THREE.Vector3;attachment:THREE.Vector3;radius:number;inward:number}[]=[]
   const place=(kind:CinemaWeaponFamily,dorsalOnly=false)=>{
-    const radius=radiusOf(kind),barrelHeight=heightOf(kind)
+    const radius=radiusOf(kind),inward=inwardOf(kind)
     for(const candidate of candidates) {
       const {normal,attachment}=candidate,pivot=candidate.point.clone()
       if(dorsalOnly&&normal.y<.999) continue
@@ -55,12 +74,11 @@ export function buildFittedHardware(profile: CinemaHardware | undefined, family:
       }
       const surface=candidate.surface
       if(!surface||!Number.isFinite(surface.lengthSq())) continue
-      const clearance=s*(barrelHeight+.15)+.02
-      const distance=pivot.clone().sub(surface).dot(normal)
-      if(distance<clearance) pivot.addScaledVector(normal,clearance-distance)
+      const clearance=s*.26+.012
+      pivot.copy(surface).addScaledVector(normal,clearance)
       if(pivot.length()+radius>.775) continue
-      if(placed.some(other=>other.pivot.distanceTo(pivot)<other.radius+radius+.006)) continue
-      placed.push({kind,pivot,normal,surface,attachment,radius})
+      if(placed.some(other=>!weaponEnvelopesSeparate({pivot,normal,radius,inward},other))) continue
+      placed.push({kind,pivot,normal,surface,attachment,radius,inward})
       return true
     }
     return false
@@ -70,33 +88,18 @@ export function buildFittedHardware(profile: CinemaHardware | undefined, family:
   const ordered=entries.slice().sort((a,b)=>radiusOf(b[0])-radiusOf(a[0])||a[0].localeCompare(b[0]))
   for(const [kind] of ordered) if(placed.length<8) { if(!place(kind,true)) place(kind) }
   for(let round=1;round<8&&placed.length<8;round++) for(const [kind,count] of ordered) if(round<count&&placed.length<8) place(kind)
-  for(const {kind,pivot,normal,surface,attachment} of placed) {
+  for(const {kind,pivot,normal,surface} of placed) {
     const barrelHeight=heightOf(kind),x=pivot.x,z=pivot.z,y=pivot.y-s*barrelHeight
-    // The structural seat follows an actual hull hit; it is not part of the
-    // rotating batch. Meet the underside of the gun base, not its midline;
-    // excess support height would obstruct a neighboring battery's depression.
-    const base=pivot.clone().addScaledVector(normal,-s*(barrelHeight+.10))
-    const bottom=surface.clone().addScaledVector(normal,-.006),axis=base.clone().sub(bottom)
-    const support=new THREE.CylinderGeometry(s*.34,s*.51,axis.length(),8)
-    support.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),axis.clone().normalize()))
-    const middle=bottom.add(base).multiplyScalar(.5)
-    // A diagonal strut's circular cap tilts above its center. Flatten its top
-    // to the gun-seat plane so that edge cannot protrude into crossfire.
-    const supportPositions=support.getAttribute('position'),seat=base.clone().sub(middle).dot(normal),vertex=new THREE.Vector3()
-    for(let i=0;i<supportPositions.count;i++) {
-      vertex.fromBufferAttribute(supportPositions,i)
-      const excess=vertex.dot(normal)-seat
-      if(excess>0) { vertex.addScaledVector(normal,-excess);supportPositions.setXYZ(i,vertex.x,vertex.y,vertex.z) }
-    }
-    support.computeVertexNormals()
-    add(support,'dark',middle.x,middle.y,middle.z)
-    const pad=new THREE.CylinderGeometry(s*.60,s*.68,.022,8)
-    pad.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),attachment))
-    add(pad,'armor',surface.x,surface.y,surface.z)
+    // Shallow armored bearing sits directly on the mounting face.
+    const seat=new THREE.CylinderGeometry(s*.58,s*.70,.022,8)
+    seat.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),normal))
+    const seatCenter=surface.clone().addScaledVector(normal,.008)
+    add(seat,'armor',seatCenter.x,seatCenter.y,seatCenter.z)
     const muzzleLength=kind==='railgun'?2.10:kind==='torpedo'?.92:kind==='missile'?.65:kind==='beam'||kind==='laser'?1.20:kind==='plasma'?1.43:kind==='exotic'||kind==='disruptor'?1.25:kind==='mine'||kind==='smartbomb'?0:kind==='flak'?1.38:1.71
     c.beginWeapon?.(kind,pivot,new THREE.Vector3(x+s*muzzleLength,pivot.y,z),Math.atan2(normal.z,normal.y),normal)
-    rod(x,y,z,s*.48,s*.22,'dark',false)
-    rounded(x,y+s*.22,z,s,s*.83,s*.40,'hull')
+    rod(x,pivot.y-s*.19,z,s*.48,s*.10,'dark',false)
+    rounded(x,pivot.y-s*.07,z,s*1.10,s*.94,s*.22,'hull')
+    c.elevateWeapon?.()
     if(kind==='missile'||kind==='torpedo') {
       const torpedo=kind==='torpedo'
       rounded(x+.012,y+s*.55,z,s*(torpedo?1.7:1.15),s*1.12,s*.66,'armor')

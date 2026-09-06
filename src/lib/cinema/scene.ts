@@ -438,7 +438,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     for(const [id,index] of assigned.byCue) cueMount.set(id,index)
     for(const id of assigned.suppressed) suppressedGuns.add(id)
   }
-  const previousAim=new THREE.Quaternion(), aimTarget=new THREE.Vector3(), frozenInverse=new THREE.Matrix4(), frozenRotation=new THREE.Quaternion()
+  const previousAim=new THREE.Quaternion(), previousTraverse=new THREE.Quaternion(), aimTarget=new THREE.Vector3(), frozenInverse=new THREE.Matrix4(), frozenRotation=new THREE.Quaternion()
   function updateGuns() {
     for(const actor of actors) {
       const model=actor.model, tracks=gunTracks.get(actor.ship.id)
@@ -460,13 +460,21 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
         const previous=track[low-1], next=track[low]
         const approaching=next && aimAt>=next.time-1.2 && (!previous || aimAt>=previous.time+previous.duration)
         if(previous) aimWeaponMount(rig,index,targetLocal(previous))
-        else {rig.mounts[index].rotation.identity();rig.uniforms[index].set(0,0,0,1)}
+        else {
+          rig.mounts[index].rotation.identity();rig.uniforms[index].set(0,0,0,1)
+          const base=rig.mounts[index].traverseRotation??=new THREE.Quaternion()
+          base.identity();rig.traverseUniforms[index].set(0,0,0,1)
+        }
         if(approaching) {
           previousAim.copy(rig.mounts[index].rotation)
+          previousTraverse.copy(rig.mounts[index].traverseRotation!)
           aimWeaponMount(rig,index,targetLocal(next))
           const t=clamp((aimAt-next.time+1.2)/1.1,0,1), blend=t*t*(3-2*t)
           rig.mounts[index].rotation.slerpQuaternions(previousAim,rig.mounts[index].rotation.clone(),blend)
           const q=rig.mounts[index].rotation;rig.uniforms[index].set(q.x,q.y,q.z,q.w)
+          const base=rig.mounts[index].traverseRotation!
+          base.slerpQuaternions(previousTraverse,base.clone(),blend)
+          rig.traverseUniforms[index].set(base.x,base.y,base.z,base.w)
         }
       }
     }

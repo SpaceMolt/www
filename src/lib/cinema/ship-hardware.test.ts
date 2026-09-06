@@ -2,17 +2,21 @@ import { expect, test } from 'bun:test'
 import * as THREE from 'three'
 import { createShip } from './ships'
 import { resolveAppearance } from './appearance'
+import { weaponEnvelopesSeparate } from './ship-hardware'
 import { aimWeaponMount, canAimWeaponMount, weaponMuzzleLocal, type WeaponRig } from './ship-weapons'
 
 function weapons(group: THREE.Group) {
   const rig = group.userData.weaponRig as WeaponRig
-  const vertices = rig.mounts.map(() => [] as number[])
+  const vertices = rig.mounts.map(() => [] as number[]), elevations = rig.mounts.map(() => [] as number[])
   for (const child of group.children as THREE.Mesh[]) {
     const positions = child.geometry.getAttribute('position'), tags = child.geometry.getAttribute('cinemaMount')
     if (!tags) continue
     for (let i = 0; i < positions.count; i++) {
       const index = tags.getX(i)
-      if (index >= 0) vertices[index].push(positions.getX(i), positions.getY(i), positions.getZ(i))
+      if (index >= 0) {
+        vertices[index].push(positions.getX(i), positions.getY(i), positions.getZ(i))
+        elevations[index].push(child.geometry.getAttribute('cinemaElevation').getX(i))
+      }
     }
   }
   return vertices.map((positions, index) => {
@@ -20,10 +24,23 @@ function weapons(group: THREE.Group) {
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
     const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }))
     mesh.updateMatrixWorld(true)
-    let radius = 0
+    let radius = 0, inward = 0
+    const normal = rig.mounts[index].normal ?? new THREE.Vector3(0, 1, 0)
     const point = new THREE.Vector3(), attribute = geometry.getAttribute('position')
-    for (let i = 0; i < attribute.count; i++) radius = Math.max(radius, point.fromBufferAttribute(attribute, i).distanceTo(rig.mounts[index].pivot))
-    return { mesh, radius, pivot: rig.mounts[index].pivot }
+    for (let i = 0; i < attribute.count; i++) {
+      point.fromBufferAttribute(attribute, i).sub(rig.mounts[index].pivot)
+      radius = Math.max(radius, point.length())
+      const height = point.dot(normal), x = point.x, depression = Math.PI / 36
+      let minimum = height
+      if (elevations[index][i] > .5) {
+        minimum = Math.min(height * Math.cos(depression) - x * Math.sin(depression), x)
+        const angle = Math.atan2(x, height) + Math.PI
+        const stationary = Math.atan2(Math.sin(angle), Math.cos(angle))
+        if (stationary >= -depression && stationary <= Math.PI / 2) minimum = Math.min(minimum, x * Math.sin(stationary) + height * Math.cos(stationary))
+      }
+      inward = Math.max(inward, -minimum)
+    }
+    return { mesh, radius, inward, normal, elevation: elevations[index], pivot: rig.mounts[index].pivot }
   })
 }
 function dispose(group: THREE.Group) {
@@ -42,16 +59,18 @@ test('Devastator representative guns reserve disjoint physical volumes through i
   const group = createShip(resolveAppearance('Battlecruiser', 'crimson', 4, 'Combat', 4), 90210, 'hero', heavyFit)
   const actual = weapons(group)
   try {
-    expect(actual.length).toBeGreaterThanOrEqual(3)
+    expect(actual.length).toBeGreaterThanOrEqual(4)
     const rig = group.userData.weaponRig as WeaponRig
     expect(new Set(rig.mounts.map(mount => mount.family))).toEqual(new Set(['autocannon', 'kinetic', 'railgun']))
     const overlaps: { a: number; b: number; overlap: number }[] = []
     for (let a = 0; a < actual.length; a++) for (let b = a + 1; b < actual.length; b++) {
       const overlap = actual[a].radius + actual[b].radius - actual[a].pivot.distanceTo(actual[b].pivot)
-      if (overlap > -.001) overlaps.push({ a, b, overlap })
+      const opposedGap = actual[a].pivot.clone().sub(actual[b].pivot).dot(actual[a].normal) - actual[a].inward - actual[b].inward
+      const opposite = actual[a].normal.dot(actual[b].normal) < -1 + 1e-8
+      if (overlap > -.001 && !(opposite && opposedGap > .001)) overlaps.push({ a, b, overlap })
     }
-    // Measured from the actual triangles, these swept spheres guarantee that
-    // independently aimed guns cannot touch, even with different simultaneous targets.
+    // Actual triangles determine both swept spheres and the inward caps.
+    // Opposed caps use a separating plane; every other pair needs disjoint spheres.
     expect(overlaps.slice(0, 3)).toEqual([])
     for (const mount of actual) expect(mount.pivot.length() + mount.radius).toBeLessThan(.78)
   } finally {
@@ -130,7 +149,9 @@ test('heavy empire hulls keep maximum-size mechanisms separate without shrinking
       for (let a = 0; a < actual.length; a++) {
         if (actual[a].pivot.length() + actual[a].radius >= .78) failures.push(`${empire}/${family}/${a}: camera bounds`)
         for (let b = a + 1; b < actual.length; b++) {
-          if (actual[a].pivot.distanceTo(actual[b].pivot) <= actual[a].radius + actual[b].radius + .001) failures.push(`${empire}/${family}/${a}/${b}: overlapping sweep`)
+          const opposed = actual[a].normal.dot(actual[b].normal) < -1 + 1e-8
+          const gap = actual[a].pivot.clone().sub(actual[b].pivot).dot(actual[a].normal) - actual[a].inward - actual[b].inward
+          if (actual[a].pivot.distanceTo(actual[b].pivot) <= actual[a].radius + actual[b].radius + .001 && !(opposed && gap > .001)) failures.push(`${empire}/${family}/${a}/${b}: overlapping sweep`)
         }
       }
       if (family === 'railgun') {
@@ -144,4 +165,47 @@ test('heavy empire hulls keep maximum-size mechanisms separate without shrinking
     }
   }
   expect(failures).toEqual([])
+})
+
+
+test('opposed clearance requires separated inward caps, not merely different surface normals', () => {
+  const a = { pivot: new THREE.Vector3(0, .15, 0), normal: new THREE.Vector3(0, 1, 0), radius: .31, inward: .07 }
+  const b = { ...a, pivot: new THREE.Vector3(0, -.15, 0), normal: new THREE.Vector3(0, -1, 0) }
+  expect(weaponEnvelopesSeparate(a, b)).toBe(true)
+  expect(weaponEnvelopesSeparate(a, { ...b, pivot: new THREE.Vector3(0, .03, 0) })).toBe(false)
+  expect(weaponEnvelopesSeparate(a, { ...b, normal: new THREE.Vector3(0, 0, 1) })).toBe(false)
+  expect(weaponEnvelopesSeparate(a, { ...b, pivot: new THREE.Vector3(0, .4, 0) })).toBe(false)
+})
+
+test('opposed low-profile batteries keep real base and barrel vertices on separated sides under independent aim', () => {
+  const group = createShip(resolveAppearance('Battlecruiser', 'crimson', 4, 'Combat', 4), 90210, 'hero', heavyFit)
+  const actual = weapons(group), rig = group.userData.weaponRig as WeaponRig
+  let checkedPairs = 0
+  try {
+    for (let a = 0; a < actual.length; a++) for (let b = a + 1; b < actual.length; b++) {
+      if (actual[a].normal.dot(actual[b].normal) > -1 + 1e-8 || actual[a].pivot.distanceTo(actual[b].pivot) >= actual[a].radius + actual[b].radius) continue
+      checkedPairs++
+      const normal = actual[a].normal
+      const plane = (actual[a].pivot.dot(normal) - actual[a].inward + actual[b].pivot.dot(normal) + actual[b].inward) / 2
+      for (let pose = 0; pose < 25; pose++) for (const index of [a, b]) {
+        const yaw = THREE.MathUtils.degToRad((index === a ? 1 : -1) * (-160 + pose * 37))
+        const pitch = THREE.MathUtils.degToRad([-5, 0, 35, 70, 90][(pose + index) % 5])
+        const mount = rig.mounts[index], outward = actual[index].normal
+        const direction = new THREE.Vector3(1, 0, 0).applyAxisAngle(outward, yaw).multiplyScalar(Math.cos(pitch)).addScaledVector(outward, Math.sin(pitch))
+        aimWeaponMount(rig, index, mount.pivot.clone().addScaledVector(direction, 10))
+        const positions = actual[index].mesh.geometry.getAttribute('position')
+        let minimumGap = Infinity
+        for (let vertex = 0; vertex < positions.count; vertex++) {
+          const point = new THREE.Vector3().fromBufferAttribute(positions, vertex).sub(mount.pivot)
+          point.applyQuaternion(actual[index].elevation[vertex] > .5 ? mount.rotation : mount.traverseRotation!).add(mount.pivot)
+          minimumGap = Math.min(minimumGap, (point.dot(normal) - plane) * (index === a ? 1 : -1))
+        }
+        expect(minimumGap).toBeGreaterThan(.0001)
+      }
+    }
+    expect(checkedPairs).toBeGreaterThan(0)
+  } finally {
+    actual.forEach(({ mesh }) => { mesh.geometry.dispose(); (mesh.material as THREE.Material).dispose() })
+    dispose(group)
+  }
 })

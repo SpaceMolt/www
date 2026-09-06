@@ -8,6 +8,7 @@ import { buildFittedHardware } from './ship-hardware'
 import type { CinemaHardware } from './hardware'
 import { createWeaponRig, tagWeaponGeometry, applyWeaponRig, createWeaponShadowMaterials } from './ship-weapons'
 import { addRetrothrusters } from './ship-thrusters'
+import { bindWeaponHullClearance } from './ship-clearance'
 
 type Ring = [x: number, halfWidth: number, halfHeight: number, centerY?: number]
 type MaterialName = 'hull' | 'armor' | 'dark' | 'metal' | 'accent' | 'glass' | 'windows'
@@ -228,7 +229,7 @@ export function createShip(appearance: ShipAppearance, seed: number, detail: 'he
   }
   const rig=createWeaponRig()
   group.userData.weaponRig=rig
-  let weaponIndex=-1, weaponRoll=0
+  let weaponIndex=-1, weaponRoll=0, weaponElevates=false
   const batches = new Map<MaterialName, THREE.BufferGeometry[]>()
   const add = (geometry: THREE.BufferGeometry, material: MaterialName, x = 0, y = 0, z = 0, rotation?: THREE.Euler) => {
     if (rotation) geometry.applyMatrix4(new THREE.Matrix4().makeRotationFromEuler(rotation))
@@ -245,7 +246,7 @@ export function createShip(appearance: ShipAppearance, seed: number, detail: 'he
     let flat = geometry
     if (geometry.index) { flat = geometry.toNonIndexed(); geometry.dispose() }
     for (const key of Object.keys(flat.attributes)) if (key !== 'position' && key !== 'normal') flat.deleteAttribute(key)
-    tagWeaponGeometry(flat,weaponIndex,weaponIndex>=0?rig.mounts[weaponIndex].pivot:undefined)
+    tagWeaponGeometry(flat,weaponIndex,weaponIndex>=0?rig.mounts[weaponIndex].pivot:undefined,weaponElevates)
     const batch = batches.get(material) ?? []
     batch.push(flat)
     batches.set(material, batch)
@@ -556,10 +557,12 @@ diffuseColor.a *= engineTail * engineFilament * 0.65;`)
     buildFittedHardware(hardware, family, { ...context, deckAt, hullSurface, appearance,
       beginWeapon: (family,pivot,muzzle,constructionRoll=0,normal) => {
         weaponRoll=constructionRoll
+        weaponElevates=false
         weaponIndex=rig.mounts.length
-        rig.mounts.push({family,pivot,muzzle,normal,rotation:new THREE.Quaternion()})
+        rig.mounts.push({family,pivot,muzzle,normal,rotation:new THREE.Quaternion(),traverseRotation:new THREE.Quaternion()})
       },
-      endWeapon: () => { weaponIndex=-1; weaponRoll=0 },
+      elevateWeapon: () => { weaponElevates=true },
+      endWeapon: () => { weaponIndex=-1; weaponRoll=0; weaponElevates=false },
     })
     if (pirate || empire === 'outerrim') {
       // A limited palette of donor plates gives readable repairs without extra draw calls.
@@ -585,6 +588,7 @@ diffuseColor.a *= engineTail * engineFilament * 0.65;`)
   }
 
   const shadows=rig.mounts.length?createWeaponShadowMaterials(rig):undefined
+  if(hero&&rig.mounts.length) bindWeaponHullClearance(rig,[...batches.entries()].filter(([key])=>['hull','armor','dark','metal'].includes(key)).flatMap(([,geometries])=>geometries))
   for (const [key, geometries] of batches) {
     const merged = mergeGeometries(geometries, false)
     for (const geometry of geometries) geometry.dispose()

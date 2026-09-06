@@ -231,7 +231,7 @@ for (const family of ['autocannon', 'laser'] as const) test(`Shard ${family} mou
     let checked = 0
     for (let index = 0; index < rig.mounts.length; index++) {
       const mount = rig.mounts[index]
-      for (let yaw = -180; yaw < 180; yaw += 5) for (const pitch of [-10, -5, 0, 5, 10]) {
+      for (let yaw = -180; yaw < 180; yaw += 5) for (const pitch of [-10, -5, 0, 5, 10, 30, 60, 90]) {
         const heading = THREE.MathUtils.degToRad(yaw), elevation = THREE.MathUtils.degToRad(pitch)
         const direction = new THREE.Vector3(Math.cos(heading) * Math.cos(elevation), Math.sin(elevation), Math.sin(heading) * Math.cos(elevation))
         const target = mount.pivot.clone().addScaledVector(direction, 10)
