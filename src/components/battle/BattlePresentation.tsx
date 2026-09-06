@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
-import { Crosshair, ExternalLink, Radio, RotateCcw, Trophy } from 'lucide-react'
+import { Crosshair, ExternalLink, Film, Radio, RotateCcw, Trophy } from 'lucide-react'
 import styles from './BattleViewer.module.css'
 import { useTranslation } from '@/i18n'
 import type { BattleData } from '@/lib/battle/useBattleData'
@@ -454,6 +454,11 @@ export default function BattlePresentation({ battleId, data, embedded = false, f
           </div>
         </div>
         <div className={styles.headerRight}>
+          {summary?.status === 'completed' && data.phase === 'complete' && ended && summary.outcome !== 'interrupted' && endEntry?.outcome !== 'interrupted' && (
+            <Link href={`/battles/${encodeURIComponent(battleId)}/cinematic`} className={styles.replayBtn}>
+              <Film size={13} aria-hidden /> {t('cinema.watch')}
+            </Link>
+          )}
           {summary?.category && BATTLE_CATEGORY_META[summary.category] && (
             <span
               className={styles.categoryBadge}
