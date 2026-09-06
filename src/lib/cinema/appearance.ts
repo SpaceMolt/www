@@ -1,6 +1,6 @@
 /** Compact public catalog projection. This module never imports the catalog bundle. */
 export type ShipFamily = 'fighter' | 'warship' | 'capital' | 'carrier' | 'industrial' | 'scout' | 'support' | 'drone' | 'station' | 'creature'
-export type ShipEmpire = 'solarian' | 'voidborn' | 'crimson' | 'nebula' | 'outerrim' | 'neutral'
+export type ShipEmpire = 'solarian' | 'voidborn' | 'crimson' | 'nebula' | 'outerrim' | 'pirate' | 'neutral'
 export interface ShipAppearance {
   family: ShipFamily
   empire: ShipEmpire
@@ -15,11 +15,16 @@ export interface ShipAppearance {
 export type ShipAppearanceMap = Record<string, ShipAppearance>
 
 const palettes: Record<ShipEmpire, [number, number]> = {
-  solarian: [0x7795ab, 0xffcd75],
-  voidborn: [0x4c5477, 0xae85ff],
-  crimson: [0x695b59, 0xff6744],
-  nebula: [0x88aaae, 0x56efff],
-  outerrim: [0x8c7961, 0x96edb4],
+  // House art source: content-gen/style/empires/*.json. Hull colors remain
+  // recognizable over large surfaces; the accent also colors engine emission.
+  solarian: [0x3e5c82, 0xc9a227],
+  voidborn: [0x2a0f52, 0x3fe6ff],
+  crimson: [0x8b1a1a, 0xe8641c],
+  nebula: [0x1f4a34, 0xc9922e],
+  outerrim: [0xc4a878, 0x2fb6c4],
+  // Pirate ship lore describes stolen frames rebuilt with steel and salvage,
+  // rather than the original empire's proprietary armor and construction.
+  pirate: [0x633c31, 0xff6540],
   neutral: [0x687c89, 0x8bd7ff],
 }
 const proportions: Record<ShipFamily, [number, number]> = {
@@ -45,7 +50,13 @@ export function resolveAppearance(shipClass: string, empire?: string, scale = 2,
   const empireName = (empire ?? '').toLowerCase().replace(/[ _-]/g, '')
   const resolvedEmpire: ShipEmpire = Object.prototype.hasOwnProperty.call(palettes, empireName) ? empireName as ShipEmpire : 'neutral'
   const [hull, accent] = palettes[resolvedEmpire]
-  const [beam, height] = proportions[family]
+  const [baseBeam, baseHeight] = proportions[family]
+  const silhouette: Record<ShipEmpire, [number, number]> = {
+    solarian: [.92, 1.07], voidborn: [1.14, .78], crimson: [1.2, 1.16],
+    nebula: [1.12, .92], outerrim: [.86, .88], pirate: [1.04, 1.13], neutral: [1, 1],
+  }
+  const beam = baseBeam * silhouette[resolvedEmpire][0]
+  const height = baseHeight * silhouette[resolvedEmpire][1]
   // gameserver/data/ships/CLAUDE.md, "Scale ladder (canonical)": Personal 8–25m,
   // Small 25–80m, Medium 80–250m, Large 250–700m, Capital 700m–km+.
   // Compress representative physical lengths mildly for framing while retaining a

@@ -3,7 +3,7 @@ import type { BattleLoadPhase } from '../battle/battleData'
 import { buildAttackVisualPlan } from '../battle/attackVisualPlan'
 import type { CinemaCue, CinemaFilm, CinemaHealth, CinemaShip, CinemaShot, CinemaSourceSegment } from './types'
 
-export const DIRECTOR_VERSION = 1
+export const DIRECTOR_VERSION = 2
 const OPENING = 8
 const AFTERMATH = 10
 const clamp = (value: number, low = 0, high = 1) => Math.min(high, Math.max(low, Number.isFinite(value) ? value : low))
@@ -89,6 +89,22 @@ function editSegments(entries: BattleLogEntry[], duration: number): CinemaSource
     return { start, end: index === entries.length - 1 ? duration - AFTERMATH : cursor, tick: entry.tick }
   })
 }
+const rangeProgress: Record<string, number> = { outer: 0, mid: 1 / 3, inner: 2 / 3, engaged: 1 }
+
+function appendMotion(ship: CinemaShip, time: number, zone: string): void {
+  const position = rangeProgress[zone]
+  if (position === undefined) return
+  const frames = ship.motion ?? (ship.motion = [])
+  const previous = frames.at(-1)
+  if (previous?.time === time) {
+    previous.position = position
+    return
+  }
+  // Keep both ends of each constant hold, so a long wait followed by an
+  // advance doesn't become a slow drift throughout all the preceding footage.
+  if (previous?.position === position && frames.at(-2)?.position === position) previous.time = time
+  else frames.push({ time, position })
+}
 function appendHealth(ship: CinemaShip, frame: CinemaHealth, force = false): void {
   const previous = ship.health[ship.health.length - 1]
   if (previous && previous.time === frame.time) {
@@ -138,31 +154,60 @@ function directShots(film: CinemaFilm): CinemaShot[] {
   const openingShips = film.ships.filter(ship => ship.start === 0)
   const first = openingShips[0] ?? film.ships[0]
   const opponent = openingShips.find(ship => ship.sideId !== first?.sideId)
-  const result: CinemaShot[] = [{ start: 0, end: OPENING, kind: 'reveal', subject: first?.id, target: opponent?.id, intensity: 0.15 }]
+  const result: CinemaShot[] = []
   const coreEnd = film.duration - AFTERMATH
-  let cursor = OPENING
-  let index = 0
-  while (cursor < coreEnd - 0.001) {
-    const span = 5 + cinemaHash(`${film.seed}:shot:${index}`) % 4
-    const end = Math.min(coreEnd, cursor + span)
-    const near = film.cues.filter(cue => cue.time >= cursor && cue.time < end)
-    const event = near.find(cue => ['death', 'knockout', 'capture'].includes(cue.kind)) ??
-      near.find(cue => cue.kind === 'escape') ?? near.find(cue => cue.kind === 'weapon')
-    const active = film.ships.filter(ship => ship.start <= cursor && ship.end >= cursor)
-    const subject = event?.kind === 'weapon' ? event.from : event?.to ?? active[index % Math.max(1, active.length)]?.id
-    const target = event?.kind === 'weapon' ? event.to : event?.from
-    const kinds = ['tracking', 'broadside', 'tracking', 'pursuit'] as const
-    result.push({ start: cursor, end, kind: event?.kind === 'escape' ? 'pursuit' :
-      event && ['death', 'knockout', 'capture'].includes(event.kind) ? 'impact' : kinds[index % kinds.length],
-      subject, target, intensity: clamp(0.25 + near.length / 28 + (event?.intensity ?? 0) * 0.35) })
-    cursor = end
-    index++
+  const losses = film.cues.filter(cue => ['death', 'knockout', 'capture', 'escape'].includes(cue.kind))
+  const clusters: { start: number; end: number; cues: CinemaCue[] }[] = []
+  for (const cue of losses) {
+    const start = Math.max(0, cue.time - 1.4)
+    const end = Math.min(film.duration, cue.time + 2.4)
+    const previous = clusters.at(-1)
+    // Nearby losses share a moving coverage group. The renderer frames the
+    // upcoming/recent members, rather than parking on the first casualty.
+    if (previous && start <= previous.end + 1.2) {
+      previous.end = Math.max(previous.end, end)
+      previous.cues.push(cue)
+    } else clusters.push({ start, end, cues: [cue] })
   }
+  let shotIndex = 0
+  const fillAction = (start: number, end: number) => {
+    let cursor = start
+    if (cursor === 0 && end > 0) {
+      const openingEnd = Math.min(OPENING, end)
+      result.push({ start: 0, end: openingEnd, kind: 'reveal', subject: first?.id, target: opponent?.id, intensity: 0.15 })
+      cursor = openingEnd
+    }
+    while (cursor < end - 0.000001) {
+      const next = Math.min(end, cursor + 5 + cinemaHash(`${film.seed}:shot:${shotIndex}`) % 4)
+      const near = film.cues.filter(cue => cue.time >= cursor && cue.time < next)
+      const volley = near.find(cue => cue.kind === 'weapon')
+      const active = film.ships.filter(ship => ship.start <= cursor && ship.end >= cursor)
+      const kinds = ['tracking', 'broadside', 'tracking', 'pursuit'] as const
+      result.push({ start: cursor, end: next, kind: kinds[shotIndex % kinds.length],
+        subject: volley?.from ?? active[shotIndex % Math.max(1, active.length)]?.id, target: volley?.to,
+        intensity: clamp(0.25 + near.length / 28 + (volley?.intensity ?? 0) * 0.35) })
+      cursor = next
+      shotIndex++
+    }
+  }
+  let cursor = 0
+  for (const cluster of clusters) {
+    fillAction(cursor, cluster.start)
+    const event = cluster.cues[0]
+    result.push({ start: cluster.start, end: cluster.end,
+      kind: cluster.cues.every(cue => cue.kind === 'escape') ? 'pursuit' : 'impact',
+      subject: event.to, target: event.from,
+      focusIds: [...new Set(cluster.cues.flatMap(cue => cue.to ? [cue.to] : []))],
+      intensity: Math.max(...cluster.cues.map(cue => cue.intensity)) })
+    cursor = cluster.end
+  }
+  const aftermathStart = Math.max(coreEnd, cursor)
+  fillAction(cursor, aftermathStart)
   const survivor = film.ships.find(ship => ship.fate === 'survived' && ship.sideId === film.winningSide)
-  result.push({ start: coreEnd, end: film.duration, kind: 'aftermath', subject: survivor?.id ?? first?.id, intensity: 0.12 })
+  if (aftermathStart < film.duration) result.push({ start: aftermathStart, end: film.duration,
+    kind: 'aftermath', subject: survivor?.id ?? first?.id, intensity: 0.12 })
   return result
 }
-
 /** Compile only settled completed records. The edit is pure and contains no catalog or rendering dependencies. */
 export function compileBattleFilm(summary: BattleSummary, source: BattleLogEntry[], reconciled = false): CinemaFilm {
   if (!reconciled || getCinemaEligibility(summary, source, 'complete') !== 'ready') {
@@ -209,6 +254,7 @@ export function compileBattleFilm(summary: BattleSummary, source: BattleLogEntry
       sideIndex: sideIndices.get(snap?.side_id ?? sideId) ?? 0, factionId: snap?.faction_id,
       start: time, end: duration, fate: 'survived', health: [{ time, hull: snap ? fraction(snap.hull, snap.max_hull) : 1,
         shield: snap ? fraction(snap.shield, snap.max_shield) : 0 }] }
+    if (snap) appendMotion(ship, time, snap.zone)
     film.ships.push(ship)
     active.set(playerId, ship)
     return ship
@@ -238,6 +284,7 @@ export function compileBattleFilm(summary: BattleSummary, source: BattleLogEntry
       const ship = ensureShip(snap.player_id, index === 0 ? 0 : segment.start, snap)
       ship.shipClass = snap.ship_class || ship.shipClass
       ship.kind = snap.kind || ship.kind
+      appendMotion(ship, segment.start, snap.zone)
       appendHealth(ship, { time: segment.start, hull: fraction(snap.hull, snap.max_hull), shield: fraction(snap.shield, snap.max_shield) })
       if (!wasActive && index > 0) addCue({ kind: 'arrival', time: segment.start, duration: Math.min(2, span), tick: entry.tick, to: ship.id, intensity: 0.5 })
       retired.delete(snap.player_id)
@@ -314,10 +361,16 @@ export function compileBattleFilm(summary: BattleSummary, source: BattleLogEntry
       if (ship && snap) appendHealth(ship, { time: segment.start + span * 0.82,
         hull: fraction(regen.hull_after, snap.max_hull), shield: fraction(regen.shield_after, snap.max_shield) })
     }
+    for (const move of entry.zone_moves ?? []) {
+      const ship = active.get(move.player_id)
+      if (ship) appendMotion(ship, segment.end, move.new_zone)
+    }
     const retire = (playerId: string, fate: CinemaShip['fate'], kind: 'death' | 'knockout' | 'capture' | 'escape', from?: string): CinemaShip | undefined => {
       const ship = active.get(playerId)
       if (!ship) return
       ship.end = fateTime
+      const lastMotion = ship.motion?.at(-1)
+      if (lastMotion && lastMotion.time > fateTime) lastMotion.time = fateTime
       ship.fate = fate
       if (kind === 'death') appendHealth(ship, { time: fateTime, hull: 0, shield: 0 }, true)
       addCue({ kind, time: fateTime, duration: kind === 'escape' ? 2.2 : 3.5, tick: entry.tick,

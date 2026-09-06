@@ -11,6 +11,12 @@ export interface CinemaHealth {
   shield: number
 }
 
+/** Source range progress: outer=0, mid=1/3, inner=2/3, engaged=1. */
+export interface CinemaMotion {
+  time: number
+  position: number
+}
+
 /** One appearance of a hull; a pilot returning after loss gets a new ID. */
 export interface CinemaShip {
   id: string
@@ -26,6 +32,8 @@ export interface CinemaShip {
   end: number
   fate: CinemaFate
   health: CinemaHealth[]
+  /** Compact source movement with constant holds preserved between transitions. */
+  motion?: CinemaMotion[]
   /** Recorded intact capture metadata, never a destruction. */
   capturedBy?: string
   capturedShipId?: string
@@ -55,6 +63,8 @@ export interface CinemaShot {
   start: number
   end: number
   kind: CinemaShotKind
+  /** Consequential subjects in this shot; frame only upcoming/recent events within this group. */
+  focusIds?: string[]
   subject?: string
   target?: string
   intensity: number
@@ -92,4 +102,3 @@ export interface CinemaWorkerRequest {
 export type CinemaWorkerResponse = { film: CinemaFilm } | { error: string }
 
 export type Film = CinemaFilm
-

@@ -6,8 +6,9 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
 import { CinemaAudio } from './audio'
-import { cueRange, cueLifetime, weaponImpactAge } from './playback'
+import { cueRange, cueLifetime, weaponImpactAge, selectImpactFocus } from './playback'
 import { sampleCinemaHealth } from './director'
+import { sampleShipMotion, fleetMotionSpacing, type ShipMotionOptions } from './motion'
 import { keepCameraOutsideHulls } from './camera'
 import { createShip } from './ships'
 import { resolveAppearance, type ShipAppearance } from './appearance'
@@ -66,6 +67,8 @@ interface Actor {
   model: THREE.Group | null
   position: THREE.Vector3
   rotation: number
+  bank: number
+  thrust: number
   size: number
   angle: number
   lane: number
@@ -205,16 +208,16 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
       })
       scene.add(model)
     }
-    return { ship, appearance, model, position: new THREE.Vector3(), rotation: 0, size, angle, lane, seed, engineMaterials }
+    return { ship, appearance, model, position: new THREE.Vector3(), rotation: 0, bank: 0, thrust: 1, size, angle, lane, seed, engineMaterials }
   })
-  const fleetSpacing = new Map(sides.map(side => [side, Math.max(75,...actors.filter(a=>a.ship.sideIndex===side).map(a=>a.size*a.appearance.beam*1.4+28))]))
+  const fleetSpacing = new Map(sides.map(side => [side, fleetMotionSpacing(actors.filter(a=>a.ship.sideIndex===side).map(a=>({size:a.size,beam:a.appearance.beam})))]))
   const fleetDepth = new Map(sides.map(side => [side, Math.max(130,...actors.filter(a=>a.ship.sideIndex===side).map(a=>a.size*1.25+55))]))
   const byId = new Map(actors.map(a => [a.ship.id, a]))
   // Distant actors remain real participants, rendered with a bounded number of draw calls.
   const distantGroups = new Map<string,{mesh:THREE.InstancedMesh;count:number}>()
-  for (const family of new Set(actors.map(actor=>actor.appearance.family))) {
-    const example = actors.find(actor=>actor.appearance.family===family)!
-    const template = createShip({...example.appearance,empire:'neutral'}, 31, 'distant')
+  for (const key of new Set(actors.map(actor=>`${actor.appearance.empire}:${actor.appearance.family}`))) {
+    const example = actors.find(actor=>`${actor.appearance.empire}:${actor.appearance.family}`===key)!
+    const template = createShip(example.appearance, 31, 'distant')
     template.updateMatrixWorld(true)
     const pieces:THREE.BufferGeometry[]=[]
     template.traverse(object=>{
@@ -230,7 +233,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     template.traverse(object=>{if(object instanceof THREE.Mesh){object.geometry.dispose();for(const material of Array.isArray(object.material)?object.material:[object.material])material.dispose()}})
     const mesh=new THREE.InstancedMesh(geometry,new THREE.MeshStandardMaterial({color:0xa1b0ba,metalness:.55,roughness:.6}),Math.max(1,actors.length))
     mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);mesh.frustumCulled=false;scene.add(mesh)
-    distantGroups.set(family,{mesh,count:0})
+    distantGroups.set(key,{mesh,count:0})
   }
   const dummy = new THREE.Object3D(), tint = new THREE.Color()
   const engineSprites: THREE.Sprite[] = []
@@ -238,9 +241,17 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: glow, color: 0x75dfff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }))
     sprite.visible = false; scene.add(sprite); engineSprites.push(sprite)
   }
+  // Near-field particulate and exhaust give tracked shots visible parallax.
+  const dustGeometry = new THREE.BufferGeometry()
+  const dustPositions = new Float32Array(800 * 3)
+  for (let i=0;i<dustPositions.length;i++) dustPositions[i]=(rng()-.5)*2200
+  dustGeometry.setAttribute('position',new THREE.BufferAttribute(dustPositions,3))
+  scene.add(new THREE.Points(dustGeometry,new THREE.PointsMaterial({color:0xa0b6c4,size:.75,transparent:true,opacity:.24,depthWrite:false})))
+  const trails = new THREE.InstancedMesh(new THREE.CylinderGeometry(1,1,1,5),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.1,blending:THREE.AdditiveBlending,depthWrite:false}),240)
+  trails.frustumCulled=false; trails.instanceMatrix.setUsage(THREE.DynamicDrawUsage); scene.add(trails)
   const beams = new THREE.InstancedMesh(new THREE.CylinderGeometry(1, 1, 1, 5), new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false }), 160)
   beams.frustumCulled = false; beams.instanceMatrix.setUsage(THREE.DynamicDrawUsage); scene.add(beams)
-  const sparks = new THREE.InstancedMesh(new THREE.TetrahedronGeometry(1), new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false }), 800)
+  const sparks = new THREE.InstancedMesh(new THREE.BoxGeometry(1, .4, 1), new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: .55, roughness: .6 }), 800)
   sparks.frustumCulled = false; sparks.instanceMatrix.setUsage(THREE.DynamicDrawUsage); scene.add(sparks)
   const flashes: THREE.Sprite[] = []
   const shields: THREE.Mesh<THREE.SphereGeometry, THREE.ShaderMaterial>[] = []
@@ -256,6 +267,10 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     }))
     shield.visible = false; scene.add(shield); shields.push(shield)
   }
+  const shockwaves = Array.from({ length: 12 }, () => {
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(1, .006, 5, 72), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }))
+    ring.visible = false; scene.add(ring); return ring
+  })
   const pulseLight = new THREE.PointLight(0x66dcff, 0, 320, 2); scene.add(pulseLight)
   let time = 0, playing = false, disposed = false, reduced = options.reducedMotion ?? false
   let requestedQuality: CinemaQuality = options.quality ?? 'auto'
@@ -265,18 +280,12 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   const cameraTarget = new THREE.Vector3(), cameraPosition = new THREE.Vector3()
   const pointA = new THREE.Vector3(), pointB = new THREE.Vector3(), delta = new THREE.Vector3()
   const up = new THREE.Vector3(0, 1, 0), direction = new THREE.Vector3()
+  const motionOptions = (actor: Actor): ShipMotionOptions => ({ size: actor.size, angle: actor.angle, lane: actor.lane, seed: actor.seed,
+    sideCount: sideCounts.get(actor.ship.sideIndex) ?? 1, spacing: fleetSpacing.get(actor.ship.sideIndex) ?? 90, depth: fleetDepth.get(actor.ship.sideIndex) ?? 130 })
   const positionAt = (actor: Actor, t: number) => {
-    const { ship, size, angle, lane, seed } = actor
-    const local = Math.max(0, Math.min(t, ship.end) - ship.start)
-    const radius = 165 + Math.floor(lane / 7) * (fleetDepth.get(ship.sideIndex) ?? 130) + size * 0.55
-    const lateral = ((lane % 7) - Math.min(6, (sideCounts.get(ship.sideIndex) ?? 1) - 1) / 2) * (fleetSpacing.get(ship.sideIndex) ?? 90)
-    const travel = Math.sin(local * 0.023 + seed % 9) * 35
-    const drift = ship.fate === 'destroyed' || ship.fate === 'knocked_out' ? Math.max(0, t - ship.end) : 0
-    const escape = ship.fate === 'escaped' ? Math.pow(Math.max(0, t - ship.end), 2) * 22 : 0
-    actor.position.set(Math.cos(angle) * (radius + travel + escape) - Math.sin(angle) * lateral,
-      Math.sin(local * 0.055 + lane * 2) * (size < 35 ? 18 : 7) + (lane % 3 - 1) * 20 - drift * 0.5,
-      Math.sin(angle) * (radius + travel + escape) + Math.cos(angle) * lateral + Math.sin(local * 0.032 + seed % 7) * 24)
-    actor.rotation = -angle + Math.PI + Math.sin(local * 0.035) * 0.08
+    const motion = sampleShipMotion(actor.ship,t,motionOptions(actor))
+    actor.position.set(motion.x,motion.y,motion.z)
+    actor.rotation=motion.yaw; actor.bank=motion.bank; actor.thrust=motion.thrust
     return actor.position
   }
   const isVisible = (actor: Actor, t: number) => t >= actor.ship.start && (t <= actor.ship.end || !['escaped', 'withdrawn'].includes(actor.ship.fate) || t < actor.ship.end + 2.5)
@@ -292,36 +301,55 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   const resize = new ResizeObserver(() => { setResolution(); if (!playing) safeDraw() }); cleanups.push(() => resize.disconnect()); resize.observe(canvas); setResolution()
 
   function draw() {
-    let engineCount = 0
+    let engineCount = 0, trailCount = 0
     for(const group of distantGroups.values())group.count=0
     for (const actor of actors) {
       positionAt(actor, time)
       const visible = isVisible(actor, time)
       const stopped = time > actor.ship.end && actor.ship.fate !== 'survived'
       if (actor.model) {
-        actor.model.visible = visible
+        actor.model.visible = visible && !(actor.ship.fate === 'destroyed' && time > actor.ship.end + .32)
         actor.model.position.copy(actor.position)
-        actor.model.rotation.set(stopped ? Math.min(time - actor.ship.end, 12) * 0.022 : 0, actor.rotation, Math.sin(time * 0.04 + actor.seed) * 0.025)
-        for (const { material, intensity } of actor.engineMaterials) { if (material instanceof THREE.MeshStandardMaterial) material.emissiveIntensity = stopped ? 0.02 : 2.4 + Math.sin(time * 8 + actor.seed) * 0.3; else { material.transparent = true; material.opacity = stopped ? 0 : intensity * (0.7 + Math.sin(time * 8 + actor.seed) * 0.06) } }
-      } else if (visible) {
-        dummy.position.copy(actor.position); dummy.rotation.set(0, actor.rotation, 0); dummy.scale.setScalar(actor.size); dummy.updateMatrix()
-        const group=distantGroups.get(actor.appearance.family)!
+        actor.model.rotation.set(reduced ? 0 : actor.bank, actor.rotation, 0, 'YXZ')
+        for (const { material, intensity } of actor.engineMaterials) { if (material instanceof THREE.MeshStandardMaterial) material.emissiveIntensity = actor.thrust * (2.4 + Math.sin(time * 8 + actor.seed) * .3); else { material.transparent = true; material.opacity = actor.thrust * intensity * (.7 + Math.sin(time * 8 + actor.seed) * .06) } }
+      } else if (visible && !(actor.ship.fate === 'destroyed' && time > actor.ship.end + .32)) {
+        dummy.position.copy(actor.position); dummy.rotation.set(reduced ? 0 : actor.bank, actor.rotation, 0, 'YXZ'); dummy.scale.setScalar(actor.size); dummy.updateMatrix()
+        const group=distantGroups.get(`${actor.appearance.empire}:${actor.appearance.family}`)!
         group.mesh.setMatrixAt(group.count, dummy.matrix); group.mesh.setColorAt(group.count++, tint.setHex(actor.appearance.hull))
       }
-      if (visible && !stopped && engineCount < engineSprites.length && actor.model) {
+      if (visible && actor.thrust > 0 && engineCount < engineSprites.length && actor.model) {
         const sprite = engineSprites[engineCount++]
         sprite.visible = true; sprite.position.copy(actor.position).add(new THREE.Vector3(-Math.cos(actor.rotation) * actor.size * 0.49, 0, Math.sin(actor.rotation) * actor.size * 0.49))
-        sprite.scale.setScalar(actor.size * (0.34 + Math.sin(time * 6 + actor.seed) * 0.012))
+        sprite.scale.setScalar(actor.size * actor.thrust * (.34 + Math.sin(time * 6 + actor.seed) * .012))
         sprite.material.color.setHex(actor.appearance.accent)
       }
     }
+    if (!reduced) for (const actor of actors) {
+      if (!actor.model || actor.ship.kind==='station' || time < actor.ship.start || time > actor.ship.end+5) continue
+      const settings=motionOptions(actor)
+      for (let segment=0;segment<8 && trailCount<240;segment++) {
+        const now=time-segment*.65, before=now-.65
+        if (before<actor.ship.start || now>actor.ship.end) continue
+        const head=sampleShipMotion(actor.ship,now,settings), tail=sampleShipMotion(actor.ship,before,settings)
+        pointA.set(head.x-Math.cos(head.yaw)*actor.size*.51,head.y,head.z+Math.sin(head.yaw)*actor.size*.51)
+        pointB.set(tail.x-Math.cos(tail.yaw)*actor.size*.51,tail.y,tail.z+Math.sin(tail.yaw)*actor.size*.51)
+        direction.copy(pointB).sub(pointA)
+        dummy.position.copy(pointA).add(pointB).multiplyScalar(.5); dummy.quaternion.setFromUnitVectors(up,direction.clone().normalize())
+        dummy.scale.set(actor.size*.004*(1-segment/9),direction.length(),actor.size*.004*(1-segment/9));dummy.updateMatrix()
+        trails.setMatrixAt(trailCount,dummy.matrix); trails.setColorAt(trailCount++,tint.setHex(actor.appearance.accent).multiplyScalar((1-segment/9)*1.4))
+      }
+    }
+    trails.count=trailCount;trails.instanceMatrix.needsUpdate=true;if(trails.instanceColor)trails.instanceColor.needsUpdate=true
     for(const group of distantGroups.values()){group.mesh.count=group.count;group.mesh.instanceMatrix.needsUpdate=true;if(group.mesh.instanceColor)group.mesh.instanceColor.needsUpdate=true}
     for (let i = engineCount; i < engineSprites.length; i++) engineSprites[i].visible = false
 
     let shotIndex = film.shots.findIndex(s => time >= s.start && time < s.end)
     if (shotIndex < 0) shotIndex = Math.max(0, film.shots.length - 1)
     const shot = film.shots[shotIndex]
-    const requestedSubject = shot?.subject ? byId.get(shot.subject) : undefined
+    const candidates = shot?.kind === 'impact' ? selectImpactFocus(film.cues,time).flatMap(id => { const actor=byId.get(id); return actor && isVisible(actor,time) ? [actor] : [] }) : []
+    const anchor = candidates[0]
+    const impactActors = anchor ? candidates.filter(actor => actor === anchor || actor.position.distanceTo(anchor.position) < anchor.size * 3 + actor.size * .5) : []
+    const requestedSubject = impactActors[0] ?? (shot?.subject ? byId.get(shot.subject) : undefined)
     const requestedTarget = shot?.target ? byId.get(shot.target) : undefined
     const subject = requestedSubject && isVisible(requestedSubject,time) ? requestedSubject : actors.find(a => isVisible(a, time))
     const target = requestedTarget && isVisible(requestedTarget,time) ? requestedTarget : undefined
@@ -358,15 +386,24 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
       cameraPosition.copy(cameraTarget).add(new THREE.Vector3(-delta.z, .27, delta.x).multiplyScalar(Math.max(separation * .95, size * 3)))
       cameraPosition.addScaledVector(delta, (progress - .5) * separation * .18)
     }
+    if (!reduced && kind === 'impact' && impactActors.length > 1) {
+      cameraTarget.set(0,0,0)
+      for (const actor of impactActors) cameraTarget.add(actor.position)
+      cameraTarget.multiplyScalar(1 / impactActors.length)
+      const radius = Math.max(...impactActors.map(actor => actor.position.distanceTo(cameraTarget) + actor.size * .8))
+      const halfAngle = Math.min(20 * Math.PI / 180, Math.atan(Math.tan(20 * Math.PI / 180) * camera.aspect))
+      const distance = radius / Math.sin(halfAngle) * 1.12
+      cameraPosition.copy(cameraTarget).add(new THREE.Vector3(Math.cos(yaw + .6 + progress * .25), .5, -Math.sin(yaw + .6 + progress * .25)).normalize().multiplyScalar(distance))
+    }
     // Keep every camera path outside a conservative hull sphere, including neighboring ships.
-    keepCameraOutsideHulls(cameraPosition, actors.filter(actor=>isVisible(actor,time)).map(actor=>({position:actor.position,radius:actor.size*.78})))
+    keepCameraOutsideHulls(cameraPosition, actors.filter(actor=>isVisible(actor,time) && !(actor.ship.fate==='destroyed' && time>actor.ship.end+.32)).map(actor=>({position:actor.position,radius:actor.size*.78})))
     camera.position.copy(cameraPosition)
     if (!reduced) cameraTarget.y += Math.sin(time * 0.55) * 0.5
     camera.lookAt(cameraTarget)
     camera.fov = kind === 'reveal' ? 48 : 40
     camera.updateProjectionMatrix()
 
-    let beamCount = 0, sparkCount = 0, flashCount = 0, shieldCount = 0
+    let beamCount = 0, sparkCount = 0, flashCount = 0, shieldCount = 0, shockwaveCount = 0
     pulseLight.intensity = 0
     const addBeam = (a: THREE.Vector3, b: THREE.Vector3, width: number, color: number) => {
       if (beamCount >= (actualQuality === 'low' ? 48 : 160)) return
@@ -386,20 +423,27 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
       if (!isVisible(actor,time) || !actor.model) continue
       const health=sampleCinemaHealth(actor.ship,time)
       const destroyed=time>=actor.ship.end && actor.ship.fate==='destroyed'
-      const damage=destroyed ? 1 : 1-health.hull
+      const disabled = time >= actor.ship.end && ['destroyed', 'knocked_out'].includes(actor.ship.fate)
+      const damage=destroyed ? 1 : disabled ? .72 : 1-health.hull
       actor.model.traverse(object=> {
         if(object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial && !object.userData.engine){
           const material=object.material
           material.userData.originalColor ??= material.color.clone()
           material.color.copy(material.userData.originalColor).multiplyScalar(1-damage*.55)
+          material.userData.originalEmissive ??= material.emissiveIntensity
+          material.emissiveIntensity = disabled ? 0 : material.userData.originalEmissive
         }
       })
-      if(damage>.5 && actor.ship.fate!=='knocked_out' && actor.ship.fate!=='captured'){
+      if(flashCount < flashes.length - 12 && damage>.5 && actor.ship.fate!=='knocked_out' && actor.ship.fate!=='captured'){
         pointA.copy(actor.position);pointA.y+=actor.size*.08
         addFlash(pointA,actor.size*.28,0xff873e,(.12+Math.sin(time*5+actor.seed)*.04)*damage)
       }
     }
-    for (const cue of cueRange(film.cues, time - effectWindow, time + 0.00001)) {
+    // Reserve the effect budget for consequences before ordinary volleys.
+    const activeCues = [...cueRange(film.cues, time - effectWindow, time + 0.00001)]
+    const consequence = (kind: string) => ['death', 'knockout', 'capture'].includes(kind) ? 1 : 0
+    activeCues.sort((a,b) => (consequence(b.kind) * 2 + Number(b.to === subject?.ship.id)) - (consequence(a.kind) * 2 + Number(a.to === subject?.ship.id)))
+    for (const cue of activeCues) {
       const age = time - cue.time
       if (age < 0 || age > cueLifetime(cue)) continue
       const from = cue.from ? byId.get(cue.from) : undefined
@@ -443,7 +487,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
           const damage = (cue.hullDamage ?? 0) + (cue.shieldDamage ?? 0)
           if (damage > 0) addFlash(pointB, to.size * (cue.hullDamage ? 0.75 : 0.4) * (1 + impactAge), color, (1 - impactAge / 1.2) * 0.65)
           // A stopped volley lights the shield, never a penetrating hull explosion.
-          if ((cue.shieldDamage ?? 0) > 0 || damage === 0) {
+          if (((cue.shieldDamage ?? 0) > 0 || damage === 0) && !(time >= to.ship.end && ['destroyed', 'knocked_out'].includes(to.ship.fate))) {
             if (shieldCount < shields.length) {
               const shield = shields[shieldCount++]; shield.visible = true; shield.position.copy(to.position); shield.rotation.y = to.rotation
               shield.scale.set(to.size * 0.6, to.size * 0.32, to.size * 0.43)
@@ -463,22 +507,52 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
       } else if (cue.kind === 'death' || cue.kind === 'knockout' || cue.kind === 'capture') {
         const death = cue.kind === 'death', radius = destination.size
         const effectColor = death ? 0xffa058 : cue.kind === 'capture' ? 0x8cf1cd : 0x8acbff
-        if (age < 2.5) addFlash(destination.position, radius * (1.5 + age * 1.8), effectColor, Math.exp(-age * 1.4) * (death ? 1 : 0.45))
-        if (shieldCount < shields.length && age < 3) {
-          const shield = shields[shieldCount++]; shield.visible = true; shield.position.copy(destination.position); shield.scale.setScalar(radius * (0.7 + age * (death ? 1.5 : 0.4)))
-          shield.material.uniforms.opacity.value = Math.exp(-age) * (reduced ? 0.15 : 0.6)
-          shield.material.uniforms.time.value = age; shield.material.uniforms.color.value.setHex(effectColor)
+        const knockout = cue.kind === 'knockout'
+        // Knockouts leave an intact unpowered hull; destruction breaks into fragments.
+        if (age < 3.8) {
+          addFlash(destination.position, radius * (death ? 2.6 + age * 2.2 : 1.7 + age), effectColor, Math.exp(-age * (death ? .95 : 1.1)) * (death ? 1 : .8))
+          if (death && age < 1.1) addFlash(destination.position, radius * (1 + age), 0xfff5d8, 1 - age / 1.1)
+        }
+        if (!death && shieldCount < shields.length && age < 3.2) {
+          const shield = shields[shieldCount++]; shield.visible = true; shield.position.copy(destination.position); shield.rotation.y = destination.rotation
+          if (death) shield.scale.setScalar(radius * (.5 + age * 1.4))
+          else shield.scale.set(radius * (.68 + age * .12), radius * .38, radius * .5)
+          shield.material.uniforms.opacity.value = Math.exp(-age * .6) * (reduced ? .15 : .95)
+          shield.material.uniforms.time.value = age * (knockout ? 3 : 1); shield.material.uniforms.color.value.setHex(effectColor)
+        }
+        if (!reduced && age < 3.2 && shockwaveCount < shockwaves.length) {
+          const ring = shockwaves[shockwaveCount++]; ring.visible = true; ring.position.copy(destination.position)
+          ring.rotation.set(Math.PI * .43, 0, destination.rotation)
+          ring.scale.setScalar(radius * (.55 + age * (death ? 1.8 : .65)))
+          ring.material.color.setHex(effectColor); ring.material.opacity = Math.pow(1 - age / 3.2, 2) * .8
+        }
+        if (knockout && age < 1.8 && !reduced) {
+          for (let branch = 0; branch < 3; branch++) {
+            let previous = destination.position.clone()
+            for (let j = 1; j <= 5; j++) {
+              const phase = j / 5 * Math.PI * 2 + branch * 2.1
+              const vertex = new THREE.Vector3(Math.cos(phase) * radius * .5, Math.sin(phase * 2 + age * 19) * radius * .2, Math.sin(phase) * radius * .3)
+              vertex.applyAxisAngle(up, destination.rotation).add(destination.position)
+              addBeam(previous, vertex, Math.max(.22, radius * .004) * (1 - age / 1.8), 0x94cfff); previous = vertex
+            }
+          }
         }
         if (death) {
-          for (let j = 0; j < 40 && sparkCount < 800; j++) {
-            const r = random(seed + j * 997)
-            dummy.position.copy(destination.position).add(new THREE.Vector3(r() - 0.5, r() - 0.5, r() - 0.5).multiplyScalar(radius * (0.2 + age * 0.75)))
-            dummy.rotation.set(r() * 6 + age, r() * 6 + age * 0.4, r() * 6)
-            dummy.scale.setScalar((0.5 + r() * 1.5) * Math.max(0, 1 - age / 7)); dummy.updateMatrix()
-            sparks.setMatrixAt(sparkCount, dummy.matrix); sparks.setColorAt(sparkCount++, tint.setHex(age < 1.4 ? 0xffb66a : 0x3a3b3e))
+          if (age < 2.8) for (let burst=0;burst<3;burst++) {
+            const r=random(seed+burst*73)
+            pointA.copy(destination.position).add(new THREE.Vector3(r()-.5,r()-.5,r()-.5).multiplyScalar(radius*(.15+age*.5)))
+            addFlash(pointA,radius*(.9+age*.6),burst===0?0xffd196:0xf47731,Math.exp(-age*1.1)*.7)
           }
-          if (age < 1 && !reduced) { pulseLight.position.copy(destination.position); pulseLight.color.setHex(effectColor); pulseLight.intensity = 8000 * (1 - age) }
+          for (let j = 0; j < 48 && sparkCount < 800; j++) {
+            const r = random(seed + j * 997)
+            dummy.position.copy(destination.position).add(new THREE.Vector3(r() - .5, r() - .35, r() - .5).multiplyScalar(radius * (.15 + age * .72)))
+            dummy.rotation.set(r() * 6 + age, r() * 6 + age * .4, r() * 6)
+            const fragment = radius * (.018 + r() * .055) * Math.max(.3, 1 - age / 10)
+            dummy.scale.set(fragment * (j % 3 === 0 ? 2.8 : 1), fragment * .45, fragment); dummy.updateMatrix()
+            sparks.setMatrixAt(sparkCount, dummy.matrix); sparks.setColorAt(sparkCount++, tint.setHex(age < 1.3 ? 0xffc280 : age < 2.6 ? 0xd75625 : 0x42464d))
+          }
         }
+        if (age < 1.5 && !reduced) { pulseLight.position.copy(destination.position); pulseLight.color.setHex(effectColor); pulseLight.intensity = radius * radius * 12 * Math.exp(-age * 3); pulseLight.distance = radius * 7 }
       } else if ((cue.kind === 'arrival' || cue.kind === 'escape') && age < 1.7) {
         addFlash(destination.position, destination.size * (1.3 + age), 0x80d8ff, Math.exp(-age * 3) * 0.35)
       } else if (cue.kind === 'burn' && age < cue.duration) {
@@ -489,6 +563,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     sparks.count = sparkCount; sparks.instanceMatrix.needsUpdate = true; if (sparks.instanceColor) sparks.instanceColor.needsUpdate = true
     for (let i = flashCount; i < flashes.length; i++) flashes[i].visible = false
     for (let i = shieldCount; i < shields.length; i++) shields[i].visible = false
+    for (let i = shockwaveCount; i < shockwaves.length; i++) shockwaves[i].visible = false
     grade.uniforms.time.value = reduced ? 0 : time
     grade.uniforms.amount.value = actualQuality === 'low' ? 0 : 0.012
     audio.intensity(shot?.intensity ?? 0.1, time)

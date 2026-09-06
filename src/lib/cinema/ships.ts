@@ -59,6 +59,24 @@ roughnessFactor = clamp(roughnessFactor + cinemaSurface.y, 0.22, 0.86);`)
   }
 }
 
+/** Grown quartz has flowing internal veins rather than machined metal paneling. */
+function crystalDetail(material: THREE.MeshStandardMaterial) {
+  material.customProgramCacheKey = () => 'cinema-grown-crystal-v1'
+  material.onBeforeCompile = shader => {
+    shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vCinemaCrystal;')
+    shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvCinemaCrystal=position;')
+    shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vCinemaCrystal;')
+    shader.fragmentShader = shader.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
+float crystalWave = vCinemaCrystal.z * 70.0 + sin(vCinemaCrystal.x * 15.0) * 3.0 + vCinemaCrystal.y * 55.0;
+float crystalVein = pow(0.5 + 0.5 * sin(crystalWave), 26.0);
+float crystalDepth = 0.78 + 0.22 * sin(vCinemaCrystal.x * 44.0 + vCinemaCrystal.y * 29.0);
+diffuseColor.rgb *= crystalDepth;
+diffuseColor.rgb += vec3(0.025, 0.12, 0.18) * crystalVein;`)
+    shader.fragmentShader = shader.fragmentShader.replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+totalEmissiveRadiance += vec3(0.025, 0.27, 0.42) * crystalVein * min(1.0, length(emissive) * 20.0);`)
+  }
+}
+
 /** Faceted octagonal cross sections give the hull actual volume and chamfered edges. */
 function loft(rings: Ring[]): THREE.BufferGeometry {
   const vertices: number[] = []
@@ -100,16 +118,31 @@ export function createShip(appearance: ShipAppearance, seed: number, detail: 'he
   let rng = seed | 0
   const random = () => { rng = (Math.imul(rng, 1664525) + 1013904223) | 0; return (rng >>> 0) / 4294967296 }
   const hullColor = new THREE.Color(appearance.hull)
+  const materialIdentity = {
+    solarian: { structure: 0x243852, armor: 0x4b6fa0, metal: 0xc5d3e1, livery: 0xc9a227, roughness: .33 },
+    voidborn: { structure: 0x121026, armor: 0x502878, metal: 0x7262a1, livery: 0x684194, roughness: .19 },
+    crimson: { structure: 0x2b2e33, armor: 0x9b2227, metal: 0x565a61, livery: 0x410c13, roughness: .62 },
+    nebula: { structure: 0x163a2a, armor: 0x2e7d52, metal: 0xe8b448, livery: 0xc9922e, roughness: .25 },
+    outerrim: { structure: 0x6d6252, armor: 0xc4a878, metal: 0xa0562e, livery: 0x2fb6c4, roughness: .75 },
+    pirate: { structure: 0x25282b, armor: 0x633c31, metal: 0xb06a35, livery: 0xa12620, roughness: .78 },
+    neutral: { structure: appearance.hull, armor: hullColor.clone().multiplyScalar(1.24).getHex(), metal: 0x98a1ab, livery: accent, roughness: .43 },
+  }[empire]
   const materials: Record<MaterialName, THREE.MeshStandardMaterial> = {
-    hull: new THREE.MeshStandardMaterial({ color: hullColor, metalness: .72, roughness: .43 }),
-    armor: new THREE.MeshStandardMaterial({ color: hullColor.clone().multiplyScalar(1.24), metalness: .63, roughness: .36 }),
+    hull: new THREE.MeshStandardMaterial({ color: materialIdentity.structure, metalness: .62, roughness: materialIdentity.roughness }),
+    armor: new THREE.MeshStandardMaterial({ color: materialIdentity.armor, metalness: empire === 'outerrim' ? .3 : .58, roughness: materialIdentity.roughness }),
     dark: new THREE.MeshStandardMaterial({ color: 0x101923, metalness: .65, roughness: .62 }),
-    metal: new THREE.MeshStandardMaterial({ color: 0x98a1ab, metalness: .88, roughness: .3 }),
-    accent: new THREE.MeshStandardMaterial({ color: accent, metalness: .35, roughness: .37, emissive: accent, emissiveIntensity: .25 }),
+    metal: new THREE.MeshStandardMaterial({ color: materialIdentity.metal, metalness: .82, roughness: materialIdentity.roughness }),
+    accent: new THREE.MeshStandardMaterial({ color: materialIdentity.livery, metalness: .4, roughness: materialIdentity.roughness }),
     glass: new THREE.MeshStandardMaterial({ color: 0x071f31, metalness: .88, roughness: .12, emissive: accent, emissiveIntensity: .4 }),
     windows: new THREE.MeshStandardMaterial({ color: 0xd8f2ff, emissive: accent, emissiveIntensity: 3.2, toneMapped: false }),
   }
-  if (hero && family !== 'creature') {
+  if (empire === 'voidborn' && family !== 'creature') {
+    for (const key of ['hull', 'armor'] as const) {
+      materials[key].emissive.setHex(0x3fe6ff)
+      materials[key].emissiveIntensity = .025
+    }
+    for (const key of ['hull', 'armor', 'glass'] as const) crystalDetail(materials[key])
+  } else if (hero && family !== 'creature') {
     const density = family === 'fighter' || family === 'scout' || family === 'drone' ? .75 : 1.5
     for (const key of ['hull', 'armor', 'dark', 'metal'] as const) surfaceDetail(materials[key], seed, density)
   }
@@ -216,7 +249,40 @@ diffuseColor.a *= engineTail * engineFilament * 0.65;`)
     add(loft([[-.44, w * .4, h * .25], [.2, w * .37, h * .2], [.45, .008, h * .1]]), 'dark', 0, -h * .95)
     add(loft([[-.31, w * .7, h * .45], [-.03, w * .65, h * .55], [.35, w * .32, h * .2], [.43, .01, .006]]), 'armor', 0, h * .66)
 
-    if (small) {
+    if (alien) {
+      // A grown body replaces the naval assembly language, while the family
+      // determines whether it carries swollen holds, flight bays or sharp fins.
+      const swollen = family === 'industrial' || family === 'carrier'
+      const body = new THREE.SphereGeometry(1, hero ? 24 : 12, hero ? 14 : 8)
+      body.scale(.43, h * (swollen ? 1.15 : .9), w * (swollen ? 1.08 : .72))
+      add(body, 'armor', -.04, h * .42)
+      for (const side of [-1, 1]) {
+        const finReach = small ? 1.25 : 1.1
+        const curve = new THREE.CatmullRomCurve3([
+          new THREE.Vector3(-.45, h * .1, side * w * .52),
+          new THREE.Vector3(-.27, h * 1.2, side * w * finReach),
+          new THREE.Vector3(.08, h * .75, side * w * 1.48),
+          new THREE.Vector3(.46, h * .14, side * w * .5),
+        ])
+        add(new THREE.TubeGeometry(curve, hero ? 24 : 12, small ? .027 : .04, 5, false), 'armor')
+        const vein = new THREE.CatmullRomCurve3(curve.points.map(point => point.clone().add(new THREE.Vector3(0, .026, 0))))
+        add(new THREE.TubeGeometry(vein, hero ? 24 : 12, small ? .003 : .005, 4, false), 'windows')
+        // Swept crystal sails interrupt the profile well beyond hull plating.
+        add(loft([[-.32, .005, .01], [-.18, .035, h * 1.1], [.12, .018, h * .5], [.43, .002, .002]]), 'glass', 0, h * .7, side * w * .65, new THREE.Euler(side * .5, side * -.23, 0))
+        engine(-.47, -.015, side * w * .48, small ? .03 : .045)
+        if (swollen) {
+          const pod = new THREE.SphereGeometry(1, hero ? 16 : 8, 10)
+          pod.scale(.29, h * .66, w * .34)
+          add(pod, 'glass', -.05, -h * .4, side * w * .78)
+        }
+        if (family === 'carrier') slab(.025, -h * .32, side * w * .91, .4, .022, .026, 'dark')
+        if (!small && !swollen) for (let i = 0; i < 3; i++) {
+          add(loft([[-.06, .017, .02], [.04, .018, .024], [.13, .001, .002]]), 'glass', -.21 + i * .19, h * 1.18, side * w * .48)
+        }
+      }
+      add(new THREE.OctahedronGeometry(small ? .043 : .068), 'glass', -.12, h * 1.6)
+      if (family === 'support') add(new THREE.TorusGeometry(w * .86, .012, 5, hero ? 36 : 16), 'windows', -.07, h * 1.12, 0, new THREE.Euler(Math.PI / 2, 0, .2))
+    } else if (small) {
       for (const side of [-1, 1]) {
         const spread = family === 'drone' ? 1.1 : .88
         add(loft([[-.4, .05, .035], [-.29, .13, .025], [.06, .13 * spread, .016], [.29, .004, .006]]), 'armor', -.02, -.02, side * w * .65, new THREE.Euler(0, side * -.32, side * -.08))
@@ -310,7 +376,7 @@ diffuseColor.a *= engineTail * engineFilament * 0.65;`)
       if (hero) for (const side of [-1, 1]) for (let i = 0; i < 3; i++) turret(-.18 + i * .17, h * .83, side * w * .72, .04, false)
     }
 
-    if (!small) {
+    if (!small && !alien) {
       // Naval bridge rises aft of the weapon line, with a luminous inset wraparound.
       slab(-.23, h * 1.45, 0, .16, w * .7, h * .8, 'hull')
       slab(-.245, h * 1.97, 0, .12, w * .61, h * .3, 'dark')
@@ -328,26 +394,74 @@ diffuseColor.a *= engineTail * engineFilament * 0.65;`)
     }
 
     // Empire construction language changes silhouette, not just paint.
-    if (alien) {
+    if (empire === 'solarian') {
+      // Broad blue shoulders, gold spine and paired clean-white sensor pylons.
       for (const side of [-1, 1]) {
-        add(loft([[-.48, .008, .015], [-.21, .034, .05], [.16, .027, .024], [.47, .002, .002]]), 'armor', -.02, h * .55, side * w * 1.04, new THREE.Euler(0, side * .12, side * .15))
-        add(loft([[-.4, .008, .005], [-.12, .013, .009], [.39, .002, .002]]), 'windows', 0, h * .63, side * w * 1.1)
+        add(loft([[-.38, .022, .016], [-.23, w * .2, h * .4], [.19, w * .16, h * .24], [.36, .004, .006]]), 'armor', 0, h * .7, side * w * .62)
+        slab(.045, h * 1.18, side * w * .45, .57, .028, .008, 'accent')
+        slab(-.25, h * 1.65, side * w * .48, .105, .038, .07, 'metal')
+        rod(-.25, h * 2.2, side * w * .48, .003, .12, 'metal', false)
       }
-      add(new THREE.OctahedronGeometry(.06), 'glass', -.14, h * 1.6)
-    } else if (empire === 'solarian') {
-      for (const side of [-1, 1]) slab(.13, h * 1.15, side * w * .43, .43, .012, .004, 'accent')
-      slab(.31, h * .7, 0, .07, w * .8, .008, 'metal')
+      slab(.28, h * .89, 0, .15, w * .65, .014, 'armor')
+      slab(.28, h * .99, 0, .09, .03, .006, 'accent')
     } else if (broad) {
-      slab(.37, .005, 0, .19, w * 1.4, h * 1.3, 'armor')
-      for (const side of [-1, 1]) slab(.4, h * .7, side * w * .4, .13, .02, .006, 'accent')
+      // Red fortress shoulders and a blunt black-faced battering ram.
+      slab(.37, .005, 0, .22, w * 1.55, h * 1.5, 'armor')
+      slab(.474, .003, 0, .024, w * 1.20, h * 1.15, 'dark')
+      for (const side of [-1, 1]) {
+        add(loft([[-.33, .035, .025], [-.22, w * .30, h * .77], [.06, w * .29, h * .65], [.16, .02, .02]]), 'armor', 0, h * .42, side * w * .88)
+        slab(-.09, h * 1.03, side * w * .88, .12, .055, .013, 'dark')
+        for (let i = 0; i < 4; i++) slab(-.13 + i * .027, h * 1.10, side * w * .88, .008, .044, .006, 'windows')
+        slab(.37, h * .86, side * w * .35, .13, .044, .014, 'accent')
+      }
     } else if (empire === 'nebula') {
-      for (const side of [-1, 1]) add(loft([[-.43, .02, .02], [-.21, .035, .038], [.22, .025, .021], [.38, .003, .003]]), 'metal', 0, h * .6, side * w * .8)
+      // Enamel-green, swelling flank tanks edged in brass: wealth in transit.
+      for (const side of [-1, 1]) {
+        const tank = new THREE.SphereGeometry(1, hero ? 20 : 10, 10)
+        tank.scale(.36, h * .63, w * .33)
+        add(tank, 'armor', -.035, .005, side * w * .87)
+        add(loft([[-.4, .01, .01], [-.22, .035, .019], [.16, .03, .015], [.37, .003, .003]]), 'metal', 0, h * .69, side * w * .87)
+        add(loft([[-.32, .015, .012], [-.18, .025, .017], [.29, .017, .01], [.4, .002, .003]]), 'accent', 0, h * 1.03, side * w * .47)
+        for (const x of [-.22, .16]) {
+          add(new THREE.TorusGeometry(w * .31, .007, 5, hero ? 20 : 12), 'metal', x, .004, side * w * .87, new THREE.Euler(0, Math.PI / 2, 0))
+        }
+      }
+      slab(.21, h * .84, 0, .22, .035, .009, 'accent')
     } else if (empire === 'outerrim') {
-      slab(-.09, h * .4, w * 1.08, .29, .068, .06, 'hull')
-      rod(-.1, h * .87, w * 1.07, .009, .26, 'metal')
-      if (hero) for (let i = 0; i < 4; i++) slab(-.19 + i * .055, h * .93, w * 1.07, .017, .07, .005, 'accent')
+      // An oversized offset powerplant and exposed spine break the fleet symmetry.
+      rod(-.20, -.01, w * 1.06, small ? .052 : .075, .53, 'hull')
+      engine(-.47, -.01, w * 1.06, small ? .047 : .065)
+      for (let i = 0; i < 4; i++) {
+        const x = -.36 + i * .12
+        rod(x, -.01, w * 1.06, small ? .055 : .079, .024, 'metal')
+        slab(x, h * 1.03, -w * .45, .092, w * .50, .016, i % 2 ? 'armor' : 'metal')
+      }
+      slab(.04, h * .97, w * .15, .44, .035, .014, 'accent')
+      slab(-.22, h * .6, -w * 1.07, .19, .042, .043, 'metal')
+      rod(-.22, h * 1.35, -w * 1.07, .003, .14, 'metal', false)
+      if (hero) for (let i = 0; i < 4; i++) rod(-.25 + i * .045, .043, w * .80, .004, .16, 'dark')
+    } else if (empire === 'pirate') {
+      // Stolen frames, blackened salvage armor and irregular red/ochre repair
+      // plates. This is heavier and more jagged than the Rim's lean fast craft.
+      for (const side of [-1, 1]) {
+        for (let i = 0; i < 4; i++) {
+          const x = -.32 + i * .18 + (side > 0 ? .035 : 0)
+          const lean = (i % 2 ? .13 : -.16) * side
+          add(loft([[-.09, .025, .024], [-.065, w * .27, h * .52], [.055, w * .23, h * .40], [.12, .007, .006]]),
+            (i + (side > 0 ? 1 : 0)) % 3 === 0 ? 'metal' : 'armor', x, h * .4, side * w * .84, new THREE.Euler(lean, side * .09, -.08))
+          slab(x - .02, h * 1.0, side * w * .6, .09, .033, .012, i % 2 ? 'accent' : 'dark')
+          if (hero) for (const offset of [-1, 1]) rod(x + offset * .035, h * 1.10, side * w * .61, .006, .009, 'metal', false)
+        }
+      }
+      // The salvaged dorsal mast and one overplated prow give an asymmetric
+      // profile even when the viewer cannot resolve rivets or painted panels.
+      add(loft([[-.11, .01, .024], [-.03, .025, h * 1.12], [.07, .008, h * .24]]), 'dark', -.25, h * 1.10, -w * .35, new THREE.Euler(.17, 0, -.15))
+      slab(.34, h * .85, w * .28, .22, w * .59, .023, 'accent')
+      slab(.20, h * .84, -w * .38, .13, w * .41, .02, 'metal')
+      rod(-.28, -h * .3, w * 1.10, .023, .34, 'dark')
+      rod(-.31, -h * .3, w * 1.10, .026, .06, 'metal')
     }
-    if (hero) {
+    if (hero && !alien) {
       // Seeded small-scale topology supplies parallax in close passes.
       for (let i = 0; i < (small ? 8 : 38); i++) {
         const x = -.38 + random() * .54, z = (random() - .5) * width * .5

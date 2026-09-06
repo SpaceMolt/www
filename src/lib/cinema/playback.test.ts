@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { cueRange, cueLifetime, weaponImpactAge } from './playback'
+import { cueRange, cueLifetime, weaponImpactAge, impactFocusIds, selectImpactFocus } from './playback'
 import type { CinemaCue } from './types'
 const cue = (time: number): CinemaCue => ({ id: String(time), time, kind: 'weapon', tick: 0, intensity: 1, duration: 1 })
 describe('cinema frame cue ranges', () => {
@@ -24,4 +24,45 @@ test('collateral waits for parent arrival and long flights retain impact time', 
   expect(weaponImpactAge(secondary,13.5)).toBe(.5)
   expect(weaponImpactAge(primary,13.5)).toBe(.5)
   expect(cueLifetime(primary)).toBe(4.2)
+})
+
+test('impact framing follows every simultaneous loss without retaining old victims', () => {
+  const cues: CinemaCue[] = [
+    { ...cue(5), kind: 'death', to: 'a' },
+    { ...cue(5), kind: 'knockout', to: 'b' },
+    { ...cue(9), kind: 'death', to: 'c' },
+  ]
+  expect(impactFocusIds(cues, 4)).toEqual(['a', 'b'])
+  expect(impactFocusIds(cues, 7)).toEqual(['a', 'b'])
+  expect(impactFocusIds(cues, 9)).toEqual(['c'])
+})
+
+describe('held impact focus', () => {
+  const loss = (time: number, to: string, intensity = 1): CinemaCue => ({ ...cue(time), id:to, kind:'death', to, intensity })
+  test('keeps a primary through rapid cascades instead of switching on every newer loss', () => {
+    const cues=[loss(10,'a'),loss(10.4,'b'),loss(10.8,'c'),loss(11.4,'d'),loss(11.8,'e'),loss(12.2,'f')]
+    expect(selectImpactFocus(cues,9)[0]).toBe('a')
+    expect(selectImpactFocus(cues,10.9)[0]).toBe('a')
+    expect(selectImpactFocus(cues,11.49)[0]).toBe('a')
+    expect(selectImpactFocus(cues,11.6)[0]).toBe('e')
+    expect(selectImpactFocus(cues,12.9)[0]).toBe('e')
+    expect(selectImpactFocus(cues,13.4)[0]).toBe('f')
+    expect(selectImpactFocus(cues,16)).toEqual([])
+  })
+  test('prepares upcoming impacts and retains simultaneous targets in deterministic priority order', () => {
+    const cues=[loss(10,'a',.5),loss(10,'b',1),loss(12,'c')]
+    expect(selectImpactFocus(cues,8.5)).toEqual([])
+    expect(selectImpactFocus(cues,8.6)).toEqual(['b','a'])
+    expect(selectImpactFocus(cues,10.7)[0]).toBe('b')
+    expect(selectImpactFocus(cues,11.6)[0]).toBe('c')
+    const forward=selectImpactFocus(cues,11.6)
+    selectImpactFocus(cues,8.6)
+    expect(selectImpactFocus(cues,11.6)).toEqual(forward)
+  })
+  test('covers a late cascade tail before a distant next exchange', () => {
+    const cues=[loss(10,'a'),loss(10.4,'b'),loss(11.4,'c'),loss(20,'d')]
+    expect(selectImpactFocus(cues,11.6)[0]).toBe('c')
+    expect(selectImpactFocus(cues,15)).toEqual([])
+    expect(selectImpactFocus(cues,19)[0]).toBe('d')
+  })
 })

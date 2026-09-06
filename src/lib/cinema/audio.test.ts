@@ -163,6 +163,14 @@ describe('cinema audio lifecycle', () => {
     expect(context.transients).toHaveLength(prior + 2)
   })
 
+  it('lets a recorded loss interrupt a saturated volley instead of dropping its sound', () => {
+    const { audio, context } = started()
+    for (let i = 0; i < 30; i++) audio.cue({ ...weapon, id: String(i) })
+    const prior = context.transients.length
+    audio.cue({ ...weapon, kind: 'death', id: 'decisive-loss' })
+    expect(context.transients).toHaveLength(prior + 2)
+  })
+
   it('reuses a single context and continuous bed across pause, seek, and repeated replay', () => {
     const { audio, context } = started()
     const continuous = [...context.oscillators]

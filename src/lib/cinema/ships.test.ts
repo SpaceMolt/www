@@ -36,7 +36,7 @@ describe('cinematic ship geometry', () => {
   })
 
   test('empire construction changes physical geometry', () => {
-    const empires: ShipEmpire[] = ['solarian', 'voidborn', 'crimson', 'nebula', 'outerrim']
+    const empires: ShipEmpire[] = ['solarian', 'voidborn', 'crimson', 'nebula', 'outerrim', 'pirate']
     const signatures = empires.map(empire => {
       const group = createShip(resolveAppearance('Cruiser', empire), 72)
       const size = new THREE.Box3().setFromObject(group).getSize(new THREE.Vector3())
@@ -46,6 +46,38 @@ describe('cinematic ship geometry', () => {
       return `${size.toArray().join(',')}:${geometry}`
     })
     expect(new Set(signatures).size).toBe(empires.length)
+  })
+
+  test('empire silhouettes remain distinct without hero details or illumination', () => {
+    const empires: ShipEmpire[] = ['solarian', 'voidborn', 'crimson', 'nebula', 'outerrim', 'pirate']
+    for (const shipClass of ['Fighter', 'Cruiser', 'Freighter', 'Carrier']) {
+      const outlines = empires.map(empire => {
+        const group = createShip(resolveAppearance(shipClass, empire), 12, 'distant')
+        const size = new THREE.Box3().setFromObject(group).getSize(new THREE.Vector3())
+        const armor = group.getObjectByName('armor') as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>
+        expect(armor.geometry.getAttribute('position').count).toBeGreaterThan(200)
+        expect(group.children.filter(child => !child.userData.engine).length).toBeLessThanOrEqual(7)
+        const silhouette = size.toArray().map(value => value.toFixed(3)).join(',')
+        dispose(group)
+        return silhouette
+      })
+      expect(new Set(outlines).size).toBe(empires.length)
+    }
+  })
+
+  test('grown Voidborn hulls and all empire variants have finite normals and bounded volumes', () => {
+    for (const empire of ['solarian', 'voidborn', 'crimson', 'nebula', 'outerrim', 'pirate']) {
+      for (const shipClass of classes) {
+        const group = createShip(resolveAppearance(shipClass, empire), 9)
+        const size = new THREE.Box3().setFromObject(group).getSize(new THREE.Vector3())
+        expect(size.length()).toBeLessThan(2)
+        for (const object of group.children) {
+          const mesh = object as THREE.Mesh
+          expect(Array.from(mesh.geometry.getAttribute('normal').array).every(Number.isFinite)).toBe(true)
+        }
+        dispose(group)
+      }
+    }
   })
 
   test('distant models reduce geometry and groups do not share disposable resources', () => {
@@ -73,6 +105,20 @@ describe('cinematic ship geometry', () => {
 })
 
 describe('public appearance projection', () => {
+  test('public catalog faction IDs preserve five empire palettes and pirate salvage identity', () => {
+    const empires = ['solarian', 'voidborn', 'crimson', 'nebula', 'outerrim', 'pirate'] as const
+    const catalog = empires.map(faction => ({ id: `${faction}-hull`, class: 'Cruiser', faction, scale: 3 }))
+    const manifest = buildShipAppearances(catalog)
+    for (const empire of empires) expect(manifest[`${empire}-hull`].empire).toBe(empire)
+    expect(manifest['solarian-hull'].hull).toBe(0x3e5c82)
+    expect(manifest['voidborn-hull'].hull).toBe(0x2a0f52)
+    expect(manifest['crimson-hull'].hull).toBe(0x8b1a1a)
+    expect(manifest['nebula-hull'].hull).toBe(0x1f4a34)
+    expect(manifest['outerrim-hull'].hull).toBe(0xc4a878)
+    expect(manifest['pirate-hull'].hull).toBe(0x633c31)
+    expect(manifest['pirate-hull'].hull).not.toBe(manifest['outerrim-hull'].hull)
+  })
+
   test('projects only appearance fields without altering input catalog', () => {
     const catalog = [Object.freeze({ id: 'test', class: 'Cruiser', faction: 'crimson', category: 'Combat', scale: 3, tier: 4, lore: 'A long narrative', price: 500 })]
     const result = buildShipAppearances(catalog)

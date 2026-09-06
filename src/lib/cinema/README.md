@@ -14,27 +14,35 @@ Interrupted records without a real conclusion cannot be filmed.
 
 The director preserves chronological arrival, capture, escape and destruction
 milestones. It samples repetitive firing exchanges and assigns 72% of combat
-screen time to consequential neighborhoods. The version and battle ID seed all
-choreography. Bump `DIRECTOR_VERSION` when intentionally changing that edit.
+screen time to consequential neighborhoods. Consequence shots begin before the impact and hold its reaction; clustered
+losses prioritize a nearby event instead of framing an empty fleet-wide center.
+The version and battle ID seed all choreography. Bump `DIRECTOR_VERSION` when intentionally changing that edit.
 
 Each pilot appearance has a separate lifecycle. Arena losses disable intact
 hulls. Missing or obsolete snapshots do not authorize extra destruction or
-resurrection. Source positions are not physical coordinates; scene formations
-are artistic. Captured prize IDs cannot always be mapped to the original hull
+resurrection. Recorded zone transitions drive approach and withdrawal in `motion.ts`. Continuous
+naval sweeps, class-sensitive banking and engine wakes supply cinematic movement;
+formation lanes allow room for hulls to turn, and stations occupy a separate layer.
+Source positions are not physical coordinates; scene formations are artistic. Captured prize IDs cannot always be mapped to the original hull
 from historical public records, so the compiler does not guess such links.
 
 ## Rendering and audio
 
 `appearance.ts` projects the public catalog server-side into visual metadata.
 `ships.ts` constructs ten hull families with empire variations, merged surface
-geometry, shader-generated plating, and engine assemblies. Scale follows the
+geometry, shader-generated plating, and engine assemblies. Each empire has a
+distinct construction style and broad livery; pirate hulls retain their own
+scavenged identity instead of resolving to a neutral palette. Scale follows the
 canonical ladder in gameserver `data/ships/CLAUDE.md`; tier does not affect size.
 Representative 16/48/150/450/1200-meter hulls receive modest cinematic compression.
 
 `scene.ts` owns the canvas, camera, postprocessing, instance pools and cleanup.
 Nearby featured ships use detailed meshes; other ships use instanced reduced
 hull geometry by family. Effect and sound ranges are binary-searchable for
-seeking and bounded playback work. The renderer has automatic, high, medium and
+seeking and bounded playback work. Destruction replaces the intact silhouette
+with fragments and a shockwave; arena knockouts cascade electrically and drift
+with engines and running lights disabled. Consequences take priority over ordinary
+volleys in the visual and sound pools. The renderer has automatic, high, medium and
 low quality, pauses when hidden, and exposes a reduced-motion setting.
 
 `audio.ts` synthesizes the score and effects locally through Web Audio. It creates

@@ -210,3 +210,70 @@ describe('historical end-state evidence', () => {
     expect(film.cues.filter(cue => cue.kind === 'death')).toHaveLength(1)
   })
 })
+
+describe('consequential camera coverage', () => {
+  it('holds every loss on camera through impact and its aftermath, including clustered casualties', () => {
+    const snapshots = [snap('a'), snap('b', 2), snap('c', 2), snap('d', 2)]
+    const entries = Array.from({ length: 20 }, (_, index) => row(100 + index, {
+      snapshots: snapshots.filter(ship => ship.player_id === 'a' ||
+        ship.player_id === 'b' && index <= 8 || ship.player_id === 'c' && index <= 9 || ship.player_id === 'd' && index <= 18),
+      attacks: index <= 8 ? [attack('a', 'b')] : index <= 9 ? [attack('a', 'c')] : index <= 18 ? [attack('a', 'd')] : [],
+      kills: index === 8 ? [kill('a', 'b')] : index === 9 ? [kill('a', 'c')] : index === 18 ? [kill('a', 'd')] : [],
+    }))
+    entries[19] = terminal(119, { snapshots: [snap('a')] })
+    const film = compile(entries)
+    for (const cue of film.cues.filter(cue => cue.kind === 'death')) {
+      for (const offset of [-1, 0, 1, 2]) {
+        const shot = sampleCinemaShot(film, cue.time + offset)
+        const focusIds = (shot as typeof shot & { focusIds?: string[] }).focusIds ?? [shot.subject]
+        expect(focusIds).toContain(cue.to)
+        expect(shot.kind).toBe('impact')
+      }
+    }
+    expect(film.shots.at(-1)?.kind).toBe('aftermath')
+    expect(film.duration).toBeLessThanOrEqual(180)
+  })
+  it('includes every victim in the framing group for simultaneous losses', () => {
+    const film = compile([row(100, { snapshots: [snap('a'), snap('b', 2), snap('c', 2)],
+      kills: [kill('a', 'b'), kill('a', 'c')] }), terminal(101, { snapshots: [snap('a')] })])
+    const deaths = film.cues.filter(cue => cue.kind === 'death')
+    const shot = sampleCinemaShot(film, deaths[0].time)
+    const focusIds = (shot as typeof shot & { focusIds?: string[] }).focusIds ?? [shot.subject]
+    expect(focusIds).toContain('b:0')
+    expect(focusIds).toContain('c:0')
+    expect(shot.end).toBeGreaterThanOrEqual(deaths[0].time + 2)
+  })
+})
+
+describe('source movement projection', () => {
+  it('carries advance and retreat progress while preserving stationary holds', () => {
+    const zones = ['outer', 'outer', 'mid', 'mid', 'inner', 'engaged', 'inner']
+    const entries = zones.map((zone, index) => row(100 + index, {
+      snapshots: [snap('a', 1, { zone }), snap('b', 2)], attacks: [attack('a', 'b')],
+      zone_moves: index === 1 ? [{ player_id: 'a', old_zone: 'outer', new_zone: 'mid', reason: 'advance' }] :
+        index === 3 ? [{ player_id: 'a', old_zone: 'mid', new_zone: 'inner', reason: 'advance' }] : [],
+    }))
+    entries[6] = terminal(106, { snapshots: [snap('a', 1, { zone: 'inner' }), snap('b', 2)] })
+    const film = compile(entries)
+    const motion = film.ships.find(ship => ship.playerId === 'a')!.motion!
+    expect(motion.slice(0, 2)).toEqual([{time:0,position:0},{time:film.segments[1].start,position:0}])
+    expect(motion).toContainEqual({time:film.segments[1].end,position:1 / 3})
+    expect(motion).toContainEqual({time:film.segments[3].end,position:2 / 3})
+    expect(motion).toContainEqual({time:film.segments[5].start,position:1})
+    expect(motion.at(-1)?.position).toBe(2 / 3)
+    expect(motion.every((frame, index) => frame.position >= 0 && frame.position <= 1 &&
+      (index === 0 || frame.time > motion[index - 1].time))).toBe(true)
+  })
+  it('keeps a long stationary record compact and gives returning hulls independent motion', () => {
+    const entries = Array.from({length:1000}, (_, index) => row(100 + index, {
+      snapshots: [snap('a', 1, { zone: 'outer' }), ...(index < 2 || index >= 998 ? [snap('b', 2, { zone: index >= 998 ? 'mid' : 'engaged' })] : [])],
+      kills: index === 1 ? [kill('a', 'b')] : [],
+    }))
+    entries[999] = terminal(1099, { snapshots: [snap('a', 1, { zone:'outer' }), snap('b', 2, {zone:'mid'})] })
+    const film = compile(entries)
+    expect(film.ships.find(ship => ship.playerId === 'a')!.motion!.length).toBeLessThanOrEqual(2)
+    const appearances = film.ships.filter(ship => ship.playerId === 'b')
+    expect(appearances[0].motion![0].position).toBe(1)
+    expect(appearances[1].motion![0]).toEqual({time:appearances[1].start,position:1 / 3})
+  })
+})

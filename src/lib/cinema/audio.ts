@@ -85,11 +85,19 @@ export class CinemaAudio {
 
   cue(cue: CinemaCue, pan = 0) {
     const ctx = this.context
-    if (!ctx || !this.master || !this.noise || !this.playing || this.muted || this.voices.size >= 24) return
+    if (!ctx || !this.master || !this.noise || !this.playing || this.muted) return
     const now = ctx.currentTime
     const explosion = cue.kind === 'death'
     const impact = cue.kind === 'knockout' || cue.kind === 'capture'
     const weapon = cue.kind === 'weapon'
+    if (this.voices.size >= 24) {
+      if (!explosion && !impact) return
+      // A decisive loss takes the oldest voice pair's place in a dense volley.
+      for (const source of [...this.voices].slice(0, 2)) {
+        try { source.stop() } catch { /* Already ended. */ }
+        this.voices.delete(source)
+      }
+    }
     if (!weapon && !explosion && !impact && cue.kind !== 'arrival' && cue.kind !== 'escape') return
     const duration = explosion ? 2.8 : impact ? 1.8 : weapon ? 0.65 : 1.4
     const gain = ctx.createGain()
