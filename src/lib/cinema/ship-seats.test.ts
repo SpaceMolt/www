@@ -27,5 +27,3 @@ test('offset batteries traverse normal to their physical seat and use shallow ba
   expect(Math.max(...errors)).toBeLessThan(.00001)
   expect(Math.max(...heights)).toBeLessThan(.065)
 })
-
-

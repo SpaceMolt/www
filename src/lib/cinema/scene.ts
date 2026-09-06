@@ -894,4 +894,3 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     throw error
   }
 }
-

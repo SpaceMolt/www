@@ -53,5 +53,3 @@ export function buildAttackVisualPlan(attacks: AttackLogEntry[]): AttackVisualPl
 
   return { primaryIndices, orphanSecondaryIndices, groups }
 }
-
-
