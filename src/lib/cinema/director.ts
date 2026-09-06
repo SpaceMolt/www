@@ -1,9 +1,9 @@
 import type { BattleLogEntry, BattleSummary, ParticipantSnapshot } from '../battle/types'
 import type { BattleLoadPhase } from '../battle/battleData'
 import { buildAttackVisualPlan } from '../battle/attackVisualPlan'
-import type { CinemaCue, CinemaFilm, CinemaHealth, CinemaShip, CinemaShot, CinemaSourceSegment } from './types'
+import type { CinemaAxis, CinemaCue, CinemaFilm, CinemaHealth, CinemaSequence, CinemaShip, CinemaShot, CinemaSourceSegment } from './types'
 
-export const DIRECTOR_VERSION = 2
+export const DIRECTOR_VERSION = 3
 const OPENING = 8
 const AFTERMATH = 10
 const clamp = (value: number, low = 0, high = 1) => Math.min(high, Math.max(low, Number.isFinite(value) ? value : low))
@@ -150,62 +150,222 @@ export function sourceTickAt(film: CinemaFilm, time: number): number {
   return film.segments[low]?.tick ?? 0
 }
 
-function directShots(film: CinemaFilm): CinemaShot[] {
-  const openingShips = film.ships.filter(ship => ship.start === 0)
-  const first = openingShips[0] ?? film.ships[0]
-  const opponent = openingShips.find(ship => ship.sideId !== first?.sideId)
-  const result: CinemaShot[] = []
+interface StoryBeat {
+  time: number
+  actionTime: number
+  impactTime: number
+  event?: CinemaCue
+  cause?: CinemaCue
+  attacker?: string
+  defender?: string
+  consequence: boolean
+  relevance: number
+}
+
+/** A small authored story follows recurring rivals, not whichever cue happens to arrive next. */
+function directShots(film: CinemaFilm, entries: BattleLogEntry[]): CinemaShot[] {
+  const byId = new Map(film.ships.map(ship => [ship.id, ship]))
+  const involvement = new Map<string, number>()
+  const pairInvolvement = new Map<string, number>()
+  const pairKey = (a: string, b: string) => [a, b].sort().join('|')
+  const add = (id: string, amount: number) => involvement.set(id, (involvement.get(id) ?? 0) + amount)
+  for (const entry of entries) {
+    for (const attack of entry.attacks ?? []) {
+      const weight = 1 + Math.log2(1 + Math.max(0, attack.final_damage)) * .15
+      add(attack.attacker_id, weight)
+      add(attack.target_id, weight * .35)
+      const key = pairKey(attack.attacker_id, attack.target_id)
+      pairInvolvement.set(key, (pairInvolvement.get(key) ?? 0) + weight)
+    }
+    for (const event of entry.kills ?? []) { add(event.killer_id, 4); add(event.victim_id, 2) }
+    for (const event of entry.captures ?? []) { add(event.captor_id, 4); add(event.former_owner_id, 2) }
+  }
+  const rank = (a: CinemaShip, b: CinemaShip) => (involvement.get(b.playerId) ?? 0) -
+    (involvement.get(a.playerId) ?? 0) || a.start - b.start || a.id.localeCompare(b.id)
+  const opening = film.ships.filter(ship => ship.start === 0).sort(rank)
+  // An involved losing hero is still our point of view. The outcome determines
+  // the final reversal and resolution, not a retroactive winner-only opening.
+  const protagonist = opening[0] ?? [...film.ships].sort(rank)[0]
+  const adversary = opening.filter(ship => ship.sideId !== protagonist?.sideId).sort((a, b) =>
+    (pairInvolvement.get(pairKey(protagonist?.playerId ?? '', b.playerId)) ?? 0) -
+    (pairInvolvement.get(pairKey(protagonist?.playerId ?? '', a.playerId)) ?? 0) || rank(a, b))[0]
+  const axisFor = (a?: string, b?: string): CinemaAxis | undefined => {
+    if (!a || !b || a === b) return undefined
+    const order = [a, b].sort((left, right) => {
+      const l = byId.get(left), r = byId.get(right)
+      return Number(r?.sideId === protagonist?.sideId) - Number(l?.sideId === protagonist?.sideId) ||
+        (l?.sideIndex ?? 0) - (r?.sideIndex ?? 0) || left.localeCompare(right)
+    })
+    return { from: order[0], to: order[1], side: 1 }
+  }
+  const openingAxis = axisFor(opening[0]?.id, adversary?.id)
+  const result: CinemaShot[] = [
+    {start:0,end:2,kind:'reveal',role:'geography',sequenceId:'establish',subject:opening[0]?.id,target:adversary?.id,axis:openingAxis,intensity:.12},
+    {start:2,end:4,kind:'tracking',role:'protagonist',sequenceId:'establish',subject:opening[0]?.id,target:adversary?.id,axis:openingAxis,intensity:.18},
+    {start:4,end:6,kind:'tracking',role:'opposition',sequenceId:'establish',subject:adversary?.id,target:opening[0]?.id,axis:openingAxis,intensity:.22},
+  ]
   const coreEnd = film.duration - AFTERMATH
-  const losses = film.cues.filter(cue => ['death', 'knockout', 'capture', 'escape'].includes(cue.kind))
-  const clusters: { start: number; end: number; cues: CinemaCue[] }[] = []
-  for (const cue of losses) {
-    const start = Math.max(0, cue.time - 1.4)
-    const end = Math.min(film.duration, cue.time + 2.4)
-    const previous = clusters.at(-1)
-    // Nearby losses share a moving coverage group. The renderer frames the
-    // upcoming/recent members, rather than parking on the first casualty.
-    if (previous && start <= previous.end + 1.2) {
-      previous.end = Math.max(previous.end, end)
-      previous.cues.push(cue)
-    } else clusters.push({ start, end, cues: [cue] })
+  const weapons = film.cues.filter(cue => cue.kind === 'weapon' && !cue.secondaryKind && cue.from && cue.to)
+  const consequences = film.cues.filter(cue => ['death','knockout','capture','escape'].includes(cue.kind) && cue.to)
+  const relevance = (from?: string, to?: string) => {
+    const actors = [byId.get(from ?? ''), byId.get(to ?? '')]
+    return (actors.some(ship => ship?.playerId === protagonist?.playerId) ? 5 : 0) +
+      (actors.some(ship => ship?.playerId === adversary?.playerId) ? 2 : 0)
   }
-  let shotIndex = 0
-  const fillAction = (start: number, end: number) => {
-    let cursor = start
-    if (cursor === 0 && end > 0) {
-      const openingEnd = Math.min(OPENING, end)
-      result.push({ start: 0, end: openingEnd, kind: 'reveal', subject: first?.id, target: opponent?.id, intensity: 0.15 })
-      cursor = openingEnd
+  const consequenceBeats: StoryBeat[] = consequences.map(event => {
+    // A recorded capture/escape is not caused by a gunshot. For destruction,
+    // follow the actual killer's final volley on this exact hull appearance.
+    const cause = ['death','knockout'].includes(event.kind) && !byId.get(event.to ?? '')?.capturedShipId ? weapons.filter(cue =>
+      cue.to === event.to && cue.tick === event.tick && cue.hit !== false && (!event.from || cue.from === event.from) &&
+      cue.time + cue.duration <= event.time + .000001).at(-1) : undefined
+    return {time:event.time,actionTime:cause?.time ?? event.time,impactTime:cause ? cause.time + cause.duration : event.time,
+      event,cause,attacker:cause?.from ?? event.from,defender:event.to,consequence:true,relevance:relevance(event.from,event.to)}
+  })
+  const weaponBeats: StoryBeat[] = weapons.map(cause => ({time:cause.time + cause.duration,actionTime:cause.time,
+    impactTime:cause.time + cause.duration,event:cause,cause,attacker:cause.from,defender:cause.to,
+    consequence:false,relevance:relevance(cause.from,cause.to)}))
+  const victorious = film.outcome === 'victory' ? consequenceBeats.filter(beat =>
+    byId.get(beat.defender ?? '')?.sideId !== film.winningSide) : []
+  const decisive = victorious.at(-1) ?? consequenceBeats.at(-1) ?? weaponBeats.at(-1)
+  const compatible = (a: StoryBeat, b: StoryBeat) => {
+    const [earlier, later] = a.time < b.time ? [a,b] : [b,a]
+    return later.time - earlier.time >= 8 && later.actionTime - earlier.time >= 6
+  }
+  const selected: StoryBeat[] = decisive ? [decisive] : []
+  const firstVictory = consequenceBeats.find(beat => beat.relevance > 0 && decisive && compatible(beat,decisive))
+  const firstContact = weaponBeats.find(beat => decisive && compatible(beat,decisive))
+  if (firstVictory ?? firstContact) selected.push((firstVictory ?? firstContact)!)
+  const budget = Math.max(3, Math.min(6, Math.ceil((coreEnd - 6) / 18)))
+  const pool = [...consequenceBeats, ...weaponBeats].filter(beat => !decisive || beat.time <= decisive.time)
+  while (selected.length < budget) {
+    const ordered = [...selected].sort((a,b) => a.time - b.time)
+    const boundaries = [6, ...ordered.map(beat => beat.time)]
+    const gaps = boundaries.slice(1).map((end,index) => ({start:boundaries[index],end})).sort((a,b) => (b.end-b.start)-(a.end-a.start))
+    let best: StoryBeat | undefined
+    let score = -Infinity
+    for (const gap of gaps) {
+      for (const candidate of pool) {
+        if (candidate.time <= gap.start || candidate.time >= gap.end || selected.some(beat => !compatible(beat,candidate))) continue
+        const value = gap.end-gap.start + (candidate.consequence ? 7 : 0) + candidate.relevance - Math.abs(candidate.time-(gap.start+gap.end)/2)*.6
+        if (value > score || value === score && candidate.time < (best?.time ?? Infinity)) {score=value;best=candidate}
+      }
     }
-    while (cursor < end - 0.000001) {
-      const next = Math.min(end, cursor + 5 + cinemaHash(`${film.seed}:shot:${shotIndex}`) % 4)
-      const near = film.cues.filter(cue => cue.time >= cursor && cue.time < next)
-      const volley = near.find(cue => cue.kind === 'weapon')
-      const active = film.ships.filter(ship => ship.start <= cursor && ship.end >= cursor)
-      const kinds = ['tracking', 'broadside', 'tracking', 'pursuit'] as const
-      result.push({ start: cursor, end: next, kind: kinds[shotIndex % kinds.length],
-        subject: volley?.from ?? active[shotIndex % Math.max(1, active.length)]?.id, target: volley?.to,
-        intensity: clamp(0.25 + near.length / 28 + (volley?.intensity ?? 0) * 0.35) })
-      cursor = next
-      shotIndex++
+    if (!best) break
+    selected.push(best)
+  }
+  selected.sort((a,b)=>a.time-b.time)
+  const lastConsequence = consequences.at(-1)?.time ?? coreEnd - 2.4
+  const aftermathStart = Math.max(coreEnd, lastConsequence + 2.4)
+  const sequenceEnds = selected.map((beat,index) => {
+    const next=selected[index+1]
+    return next ? clamp((beat.time+next.time)/2,beat.time+2.4,next.actionTime-2.4) : aftermathStart
+  })
+  // Give each chosen cause enough flight time to read, then hold its consequence.
+  // A monotonic edit warps every recorded cue and state together: no shot is
+  // moved across another event, no loss is invented, and seeking remains exact.
+  const timing = new Map<number,number>([[0,0],[6,6],[film.duration,film.duration]])
+  selected.forEach((beat,index) => {
+    const start=index===0?6:sequenceEnds[index-1], end=sequenceEnds[index]
+    const reaction=clamp((end-start)*.25,2.5,4)
+    timing.set(start,start);timing.set(end,end)
+    if(beat.cause){
+      const aftermath=beat.consequence && beat.time>beat.impactTime+.000001 ? .4 : 0
+      const impact=end-reaction-aftermath
+      const flight=clamp((end-start)*.16,1.2,2.8)
+      const ready=Math.max(byId.get(beat.attacker??'')?.start??0,byId.get(beat.defender??'')?.start??0)
+      if(ready>start && ready<beat.actionTime){
+        // Compress waiting on a recorded arrival, then give the introduced pair
+        // real screen time. This retimes its whole source prefix, not just a ship.
+        timing.set(ready,start+Math.min(2.5,Math.max(.2,(impact-flight-start)*.35)))
+      }
+      timing.set(beat.actionTime,impact-flight)
+      timing.set(beat.impactTime,impact)
+      if(aftermath)timing.set(beat.time,impact+aftermath)
+    }else timing.set(beat.time,end-reaction)
+  })
+  const points=[...timing].sort((a,b)=>a[0]-b[0])
+  const remap=(time:number)=>{
+    let low=0,high=points.length-1
+    while(low<high){const middle=Math.ceil((low+high)/2);if(points[middle][0]<=time)low=middle;else high=middle-1}
+    const index=Math.min(low,points.length-2), a=points[index],b=points[index+1]
+    return a[1]+(time-a[0])/(b[0]-a[0])*(b[1]-a[1])
+  }
+  for(const cue of film.cues){
+    const end=cue.time+cue.duration,newTime=remap(cue.time)
+    if(cue.kind==='weapon')cue.duration=remap(end)-newTime
+    cue.time=newTime
+  }
+  for(const ship of film.ships){
+    ship.start=remap(ship.start);ship.end=remap(ship.end)
+    for(const frame of ship.health)frame.time=remap(frame.time)
+    for(const frame of ship.motion??[])frame.time=remap(frame.time)
+  }
+  for(const segment of film.segments){segment.start=remap(segment.start);segment.end=remap(segment.end)}
+  for(const beat of selected){beat.time=remap(beat.time);beat.actionTime=remap(beat.actionTime);beat.impactTime=remap(beat.impactTime)}
+  const contextShot = (start:number,end:number,id:string) => {
+    if(end<=start)return
+    const available=film.ships.filter(ship=>ship.start<=start+.000001 && ship.end>=end).sort(rank)
+    const subject=available.find(ship=>ship.playerId===protagonist?.playerId)??available[0]
+    const target=available.find(ship=>ship.sideId!==subject?.sideId)
+    result.push({start,end,kind:target?'reveal':'tracking',role:target?'geography':'protagonist',sequenceId:id,
+      subject:subject?.id,target:target?.id,axis:axisFor(subject?.id,target?.id),intensity:.2})
+  }
+  const sequences: CinemaSequence[] = []
+  let cursor = 6
+  selected.forEach((beat,index) => {
+    const end = sequenceEnds[index]
+    const pairReady=Math.max(cursor,byId.get(beat.attacker??'')?.start??0,byId.get(beat.defender??'')?.start??0)
+    contextShot(cursor,pairReady,`approach:${index}`)
+    const axis = axisFor(beat.attacker,beat.defender)
+    const sequence: CinemaSequence = {id:`sequence:${index}`,start:pairReady,end,
+      kind:beat === decisive ? 'climax' : byId.get(beat.defender ?? '')?.playerId === protagonist?.playerId && beat.consequence ? 'reversal' :
+        beat.consequence ? 'confrontation' : 'montage',attacker:beat.attacker,defender:beat.defender,
+      causeCueId:beat.cause?.id,eventCueId:beat.event?.id,actionTime:beat.actionTime,impactTime:beat.impactTime,
+      consequenceTime:beat.consequence ? beat.time : undefined,axis}
+    sequences.push(sequence)
+    const focusIds = [...new Set(consequences.filter(cue=>cue.time >= cursor && cue.time < end).flatMap(cue=>cue.to?[cue.to]:[]))]
+    const common = {sequenceId:sequence.id,axis,intensity:beat.event?.intensity ?? .4}
+    if (beat.cause) {
+      const fireStart = Math.min(beat.actionTime,Math.max(pairReady+.5,Math.min(beat.actionTime-1,pairReady+(beat.impactTime-pairReady)*.48)))
+      // Read the muzzle release, then recognize the target before the strike.
+      const impactLead = Math.min(1.2,beat.cause.duration*.55,beat.cause.duration-.5)
+      const impactStart = beat.impactTime-impactLead
+      if (fireStart > pairReady) result.push({...common,start:pairReady,end:fireStart,kind:'tracking',role:'setup',
+        subject:beat.attacker,target:beat.defender,actionTime:beat.actionTime})
+      result.push({...common,start:fireStart,end:impactStart,kind:'broadside',role:'fire',
+        subject:beat.attacker,target:beat.defender,actionTime:beat.actionTime})
+      result.push({...common,start:impactStart,end,kind:'impact',role:'impact',subject:beat.defender,target:beat.attacker,
+        focusIds,actionTime:beat.impactTime})
+    } else {
+      const impactStart = Math.max(pairReady,beat.time-1.4)
+      const reactionStart = Math.min(end,beat.time+.6)
+      const available = (id:string|undefined) => {
+        const ship=byId.get(id??'')
+        return ship && ship.start<=pairReady && ship.end>=impactStart
+      }
+      const setupSubject=[beat.attacker,beat.defender,protagonist?.id].find(available)
+      const setupTarget=[beat.defender,beat.attacker].find(id=>id!==setupSubject && available(id))
+      if (impactStart > pairReady) result.push({...common,start:pairReady,end:impactStart,kind:'tracking',role:'setup',
+        subject:setupSubject,target:setupTarget,axis:axisFor(setupSubject,setupTarget),actionTime:beat.time})
+      if (reactionStart > impactStart) result.push({...common,start:impactStart,end:reactionStart,kind:'impact',role:'impact',
+        subject:beat.defender,target:beat.attacker,focusIds,actionTime:beat.time})
+      if (end > reactionStart) result.push({...common,start:reactionStart,end,kind:'impact',role:'reaction',
+        subject:beat.defender,target:beat.attacker,focusIds,actionTime:beat.time})
     }
+    cursor=end
+  })
+  if (!sequences.length && cursor < aftermathStart) {
+    const firstAppearance=Math.min(aftermathStart,Math.max(cursor,film.ships.reduce((time,ship)=>Math.min(time,ship.start),aftermathStart)))
+    contextShot(cursor,firstAppearance,'quiet-approach')
+    contextShot(firstAppearance,aftermathStart,'quiet-encounter')
   }
-  let cursor = 0
-  for (const cluster of clusters) {
-    fillAction(cursor, cluster.start)
-    const event = cluster.cues[0]
-    result.push({ start: cluster.start, end: cluster.end,
-      kind: cluster.cues.every(cue => cue.kind === 'escape') ? 'pursuit' : 'impact',
-      subject: event.to, target: event.from,
-      focusIds: [...new Set(cluster.cues.flatMap(cue => cue.to ? [cue.to] : []))],
-      intensity: Math.max(...cluster.cues.map(cue => cue.intensity)) })
-    cursor = cluster.end
-  }
-  const aftermathStart = Math.max(coreEnd, cursor)
-  fillAction(cursor, aftermathStart)
-  const survivor = film.ships.find(ship => ship.fate === 'survived' && ship.sideId === film.winningSide)
-  if (aftermathStart < film.duration) result.push({ start: aftermathStart, end: film.duration,
-    kind: 'aftermath', subject: survivor?.id ?? first?.id, intensity: 0.12 })
+  const survivor = film.ships.filter(ship=>ship.fate==='survived' && ship.end >= aftermathStart &&
+    (film.outcome !== 'victory' || ship.sideId===film.winningSide)).sort(rank)[0]
+  const lostHero = film.ships.filter(ship=>ship.playerId===protagonist?.playerId && ship.fate!=='survived').at(-1)
+  const reminder = lostHero ?? (adversary?.fate !== 'survived' ? adversary : undefined)
+  result.push({start:aftermathStart,end:film.duration,kind:'aftermath',role:'resolution',sequenceId:'resolve',
+    subject:survivor?.id,target:reminder?.id,axis:axisFor(survivor?.id,reminder?.id),intensity:.12})
+  film.story={protagonistId:protagonist?.id,adversaryId:adversary?.id,climaxCueId:decisive?.event?.id,sequences}
   return result
 }
 /** Compile only settled completed records. The edit is pure and contains no catalog or rendering dependencies. */
@@ -403,6 +563,6 @@ export function compileBattleFilm(summary: BattleSummary, source: BattleLogEntry
     }
   })
   film.cues.sort((a, b) => a.time - b.time || a.id.localeCompare(b.id))
-  film.shots = directShots(film)
+  film.shots = directShots(film, entries)
   return film
 }

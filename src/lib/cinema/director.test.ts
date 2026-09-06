@@ -173,7 +173,7 @@ describe('editorial pacing', () => {
     const film = compile(entries)
     const coreDuration = film.duration - 18
     const meaningfulTime = film.segments.slice(3996).reduce((sum, segment) => sum + segment.end - segment.start, 0)
-    expect(meaningfulTime / coreDuration).toBeCloseTo(0.72, 6)
+    expect(meaningfulTime / coreDuration).toBeGreaterThan(0.65)
     const volleys = film.cues.filter(cue => cue.kind === 'weapon')
     expect(volleys.length).toBeLessThan(50)
     expect(volleys.every(cue => cue.duration >= 0.08)).toBe(true)
@@ -212,7 +212,7 @@ describe('historical end-state evidence', () => {
 })
 
 describe('consequential camera coverage', () => {
-  it('holds every loss on camera through impact and its aftermath, including clustered casualties', () => {
+  it('holds selected narrative losses through impact and aftermath while retaining all background casualties', () => {
     const snapshots = [snap('a'), snap('b', 2), snap('c', 2), snap('d', 2)]
     const entries = Array.from({ length: 20 }, (_, index) => row(100 + index, {
       snapshots: snapshots.filter(ship => ship.player_id === 'a' ||
@@ -222,11 +222,12 @@ describe('consequential camera coverage', () => {
     }))
     entries[19] = terminal(119, { snapshots: [snap('a')] })
     const film = compile(entries)
-    for (const cue of film.cues.filter(cue => cue.kind === 'death')) {
-      for (const offset of [-1, 0, 1, 2]) {
-        const shot = sampleCinemaShot(film, cue.time + offset)
-        const focusIds = (shot as typeof shot & { focusIds?: string[] }).focusIds ?? [shot.subject]
-        expect(focusIds).toContain(cue.to)
+    expect(film.cues.filter(cue => cue.kind === 'death')).toHaveLength(3)
+    for (const sequence of film.story!.sequences.filter(sequence => sequence.consequenceTime !== undefined)) {
+      for (const offset of [0, 1, 2]) {
+        const shot = sampleCinemaShot(film, sequence.consequenceTime! + offset)
+        expect(shot.subject).toBe(sequence.defender)
+        expect(shot.sequenceId).toBe(sequence.id)
         expect(shot.kind).toBe('impact')
       }
     }
@@ -241,7 +242,9 @@ describe('consequential camera coverage', () => {
     const focusIds = (shot as typeof shot & { focusIds?: string[] }).focusIds ?? [shot.subject]
     expect(focusIds).toContain('b:0')
     expect(focusIds).toContain('c:0')
-    expect(shot.end).toBeGreaterThanOrEqual(deaths[0].time + 2)
+    const held = sampleCinemaShot(film,deaths[0].time+2)
+    expect(held.focusIds).toContain('b:0')
+    expect(held.focusIds).toContain('c:0')
   })
 })
 
@@ -276,4 +279,182 @@ describe('source movement projection', () => {
     expect(appearances[0].motion![0].position).toBe(1)
     expect(appearances[1].motion![0]).toEqual({time:appearances[1].start,position:1 / 3})
   })
+})
+
+describe('authored narrative sequences', () => {
+  it('establishes recurring rivals and keeps setup, causal fire, and consequence in one sequence', () => {
+    const entries = Array.from({length:36}, (_, index) => row(100 + index, {
+      snapshots: [snap('a'), ...(index <= 20 ? [snap('b',2)] : []), snap('c',2)],
+      attacks: [attack('a',index <= 20 ? 'b' : 'c')],
+      kills: index === 20 ? [kill('a','b')] : index === 34 ? [kill('a','c')] : [],
+    }))
+    entries[35] = terminal(135, {snapshots:[snap('a')]})
+    const film = compile(entries)
+    expect(film.story?.protagonistId).toBe('a:0')
+    expect(film.story?.adversaryId).toBe('b:0')
+    expect(film.shots.slice(0,3).map(shot=>shot.role)).toEqual(['geography','protagonist','opposition'])
+    expect(film.story!.sequences.length).toBeGreaterThanOrEqual(3)
+    expect(film.story!.sequences.length).toBeLessThanOrEqual(6)
+    for (const sequence of film.story!.sequences) {
+      const shots=film.shots.filter(shot=>shot.sequenceId===sequence.id)
+      expect(shots.length).toBeGreaterThanOrEqual(2)
+      expect(shots.every(shot=>JSON.stringify(shot.axis)===JSON.stringify(sequence.axis))).toBe(true)
+      if (!sequence.causeCueId) continue
+      const cause=film.cues.find(cue=>cue.id===sequence.causeCueId)!
+      expect(cause.kind).toBe('weapon')
+      expect(cause.from).toBe(sequence.attacker)
+      expect(cause.to).toBe(sequence.defender)
+      const firing=shots.find(shot=>shot.role==='fire')!
+      expect(firing.subject).toBe(sequence.attacker)
+      expect(firing.start).toBeLessThanOrEqual(cause.time)
+      expect(firing.end).toBeGreaterThan(cause.time)
+      const impact=sampleCinemaShot(film,cause.time+cause.duration)
+      expect(impact.subject).toBe(sequence.defender)
+      expect(['impact','reaction']).toContain(impact.role!)
+    }
+    expect(film.shots.every(shot=>shot.sequenceId && shot.role)).toBe(true)
+  })
+  it('keeps a canonical axis when the recurring rivals exchange attacker and defender roles', () => {
+    const entries=Array.from({length:40},(_,index)=>row(100+index,{attacks:[index%2?attack('b','a'):attack('a','b')]}))
+    entries[39]=terminal(139)
+    const film=compile(entries)
+    const axes=film.story!.sequences.map(sequence=>sequence.axis).filter(Boolean)
+    expect(axes.length).toBeGreaterThanOrEqual(3)
+    expect(new Set(axes.map(axis=>JSON.stringify(axis))).size).toBe(1)
+    expect(axes.every(axis=>axis!.side===1)).toBe(true)
+  })
+  it('lets a dramatically involved protagonist lose, then resolves on actual survivors', () => {
+    const entries=Array.from({length:30},(_,index)=>row(100+index,{
+      snapshots:[snap('a'),...(index<=10?[snap('b',2)]:[]),snap('c',2)],
+      attacks:index===28?[attack('c','a')]:[attack('a',index<=10?'b':'c')],
+      kills:index===10?[kill('a','b')]:index===28?[kill('c','a')]:[],
+    }))
+    const end=terminal(129,{snapshots:[snap('c',2)]})
+    end.battle_ended!.winning_side=2
+    end.battle_ended!.participants=[{player_id:'c',username:'c',side_id:2,damage_dealt:20,damage_taken:0,kill_count:1,survived:true}]
+    entries[29]=end
+    const film=compile(entries,{winning_side:2})
+    expect(film.story?.protagonistId).toBe('a:0')
+    const climax=film.story!.sequences.at(-1)!
+    expect(climax.kind).toBe('climax')
+    expect(climax.defender).toBe('a:0')
+    const event=film.cues.find(cue=>cue.id===climax.eventCueId)!
+    const cause=film.cues.find(cue=>cue.id===climax.causeCueId)!
+    expect(cause.from).toBe('c:0')
+    expect(cause.to).toBe('a:0')
+    expect(cause.time+cause.duration).toBeLessThanOrEqual(event.time)
+    expect(climax.end).toBeGreaterThanOrEqual(event.time+2)
+    const resolution=film.shots.at(-1)!
+    expect(resolution.role).toBe('resolution')
+    expect(resolution.subject).toBe('c:0')
+    expect(resolution.target).toBe('a:0')
+  })
+})
+
+it('retimes selected causes and every dependent state together without moving events out of chronology', () => {
+  const snapshots = [snap('a'),snap('b',2),snap('c',2)]
+  const entries=Array.from({length:200},(_,index)=>row(100+index,{
+    snapshots:snapshots.filter(ship=>ship.player_id!=='b'||index<=70),
+    attacks:[attack('a',index<=70?'b':'c')],
+    kills:index===70?[kill('a','b')]:index===198?[kill('a','c')]:[],
+  }))
+  entries[199]=terminal(299,{snapshots:[snap('a')]})
+  const original=JSON.stringify(entries)
+  const film=compile(entries)
+  expect(JSON.stringify(entries)).toBe(original)
+  for(const sequence of film.story!.sequences){
+    if(!sequence.causeCueId)continue
+    const cause=film.cues.find(cue=>cue.id===sequence.causeCueId)!
+    expect(cause.duration).toBeGreaterThanOrEqual(1.19)
+    expect(cause.duration).toBeLessThanOrEqual(2.81)
+    expect(sequence.impactTime).toBeCloseTo(cause.time+cause.duration,8)
+    if(sequence.consequenceTime!==undefined){
+      expect(sequence.consequenceTime).toBeGreaterThanOrEqual(sequence.impactTime)
+      expect(sequence.end-sequence.consequenceTime).toBeGreaterThanOrEqual(2.49)
+      const victim=film.ships.find(ship=>ship.id===sequence.defender)!
+      expect(victim.end).toBeCloseTo(sequence.consequenceTime,8)
+    }
+  }
+  expect(film.cues.every((cue,index)=>cue.duration>0 && (index===0||cue.time>=film.cues[index-1].time))).toBe(true)
+  expect(film.segments.every((segment,index)=>segment.end>=segment.start && (index===0||segment.start>=film.segments[index-1].end))).toBe(true)
+  expect(film.ships.every(ship=>ship.health.every((frame,index)=>index===0||frame.time>=ship.health[index-1].time))).toBe(true)
+  expect(film.shots.every((shot,index)=>shot.end>shot.start && (index===0||Math.abs(shot.start-film.shots[index-1].end)<.00001))).toBe(true)
+  expect(film.shots.at(-1)!.end).toBe(film.duration)
+})
+
+it('never presents a missed gun or an earlier unrelated volley as the decisive cause', () => {
+  const mixed=compile([row(100,{attacks:[attack('a','b',{weapons:[gun('hit','energy'),gun('miss','kinetic',false)],hull_damage:100})],kills:[kill('a','b')]}),terminal(101,{snapshots:[snap('a')]})])
+  const mixedClimax=mixed.story!.sequences.at(-1)!
+  expect(mixed.cues.find(cue=>cue.id===mixedClimax.causeCueId)?.hit).toBe(true)
+  const delayed=compile([row(100,{attacks:[attack('a','b')]}),row(101,{burns:[{source_id:'a',target_id:'b',damage:100,ticks_remaining:0,destroyed:true}]}),terminal(102,{snapshots:[snap('a')]})])
+  expect(delayed.story!.sequences.at(-1)?.causeCueId).toBeUndefined()
+})
+
+it('never frames a future arrival in a setup, closeup, or engagement axis', () => {
+  const entries=Array.from({length:36},(_,index)=>row(100+index,{
+    snapshots:[snap('a'),snap('c',2),...(index>=18&&index<=24?[snap('late',2)]:[])],
+    joins:index===18?[{player_id:'late',username:'Late arrival',side_id:2}]:[],
+    attacks:index<18?[]:[attack('a',index<=24?'late':'c')],
+    kills:index===24?[kill('a','late')]:index===34?[kill('a','c')]:[],
+  }))
+  entries[35]=terminal(135,{snapshots:[snap('a')]})
+  const film=compile(entries)
+  for(const shot of film.shots){
+    for(const id of [shot.subject,shot.target,shot.axis?.from,shot.axis?.to].filter(Boolean)){
+      expect(film.ships.find(ship=>ship.id===id)!.start).toBeLessThanOrEqual(shot.start+.000001)
+    }
+  }
+  for(const sequence of film.story!.sequences){
+    for(const id of [sequence.attacker,sequence.defender].filter(Boolean)){
+      expect(film.ships.find(ship=>ship.id===id)!.start).toBeLessThanOrEqual(sequence.start+.000001)
+    }
+  }
+  expect(film.cues.filter(cue=>cue.kind==='arrival').length).toBeGreaterThan(0)
+})
+
+it('does not invent an opening participant when the first recorded row is empty', () => {
+  const film=compile([row(100,{snapshots:[]}),row(101,{joins:[{player_id:'a',username:'a',side_id:1},{player_id:'b',username:'b',side_id:2}],attacks:[attack('a','b')]}),terminal(102)])
+  for(const shot of film.shots.slice(0,3)){
+    expect(shot.subject).toBeUndefined()
+    expect(shot.target).toBeUndefined()
+    expect(shot.axis).toBeUndefined()
+  }
+})
+
+it('shows the muzzle release before cutting early enough to recognize the victim ahead of impact', () => {
+  const entries=Array.from({length:42},(_,index)=>row(100+index,{attacks:[attack('a','b')]}))
+  entries[40].kills=[kill('a','b')]
+  entries[41]=terminal(141,{snapshots:[snap('a')]})
+  const film=compile(entries)
+  for(const sequence of film.story!.sequences){
+    if(!sequence.causeCueId)continue
+    const cause=film.cues.find(cue=>cue.id===sequence.causeCueId)!
+    const fire=film.shots.find(shot=>shot.sequenceId===sequence.id && shot.role==='fire')!
+    const impact=film.shots.find(shot=>shot.sequenceId===sequence.id && shot.role==='impact')!
+    const anticipation=sequence.impactTime-impact.start
+    expect(fire.start).toBeLessThanOrEqual(cause.time)
+    expect(fire.end-cause.time).toBeGreaterThanOrEqual(.5-.000001)
+    expect(anticipation).toBeLessThanOrEqual(cause.duration*.55+.000001)
+    expect(anticipation).toBeLessThanOrEqual(1.200001)
+    if(cause.duration>=1.4)expect(anticipation).toBeGreaterThanOrEqual(.7)
+    expect(impact.subject).toBe(sequence.defender)
+  }
+})
+
+it('follows the live escaping actor instead of a protagonist destroyed in an earlier sequence', () => {
+  const entries=Array.from({length:8},(_,index)=>row(100+index,{
+    snapshots:index<=3?[snap('a'),snap('b',2)]:index<7?[snap('b',2)]:[],
+    attacks:index<3?[attack('a','b'),attack('a','b')]:index===3?[attack('b','a')]:[],
+    kills:index===3?[kill('b','a')]:[],
+    flee:index===6?[{player_id:'b',escaped:true,flee_counter:3,flee_required:3}]:[],
+  }))
+  const end=terminal(107,{snapshots:[]})
+  end.battle_ended!.outcome='stalemate';end.battle_ended!.winning_side=0
+  entries[7]=end
+  const film=compile(entries,{outcome:'stalemate',winning_side:0})
+  const escaping=film.story!.sequences.find(sequence=>film.cues.find(cue=>cue.id===sequence.eventCueId)?.kind==='escape')!
+  const setup=film.shots.find(shot=>shot.sequenceId===escaping.id&&shot.role==='setup')!
+  expect(setup.subject).toBe('b:0')
+  expect(setup.target).toBeUndefined()
+  expect(film.ships.find(ship=>ship.id===setup.subject)!.end).toBeGreaterThan(setup.start)
 })

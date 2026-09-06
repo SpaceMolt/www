@@ -1,15 +1,16 @@
 import * as THREE from 'three'
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
+import { TexturePass } from 'three/addons/postprocessing/TexturePass.js'
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
 import { CinemaAudio } from './audio'
-import { cueRange, cueLifetime, weaponImpactAge, selectImpactFocus } from './playback'
+import { cueRange, cueLifetime, weaponImpactAge } from './playback'
 import { sampleCinemaHealth } from './director'
 import { sampleShipMotion, fleetMotionSpacing, type ShipMotionOptions } from './motion'
-import { keepCameraOutsideHulls } from './camera'
+import { sampleStoryCamera, clearStorySightline, keepCameraOutsideHulls, type CameraBody } from './camera'
+import { cinemaRenderSettings } from './quality'
 import { createShip } from './ships'
 import { resolveAppearance, type ShipAppearance } from './appearance'
 import type { CinemaFilm, CinemaShip } from './types'
@@ -44,7 +45,7 @@ function random(seed: number) {
   return () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296 }
 }
 const clamp = THREE.MathUtils.clamp
-const smooth = (x: number) => { x = clamp(x, 0, 1); return x * x * (3 - 2 * x) }
+
 const weaponColors: Record<string, number> = { kinetic: 0xffd28b, energy: 0x64eaff, thermal: 0xff814b, explosive: 0xffb25b, em: 0x929bff, void: 0xd39bff }
 
 function glowTexture() {
@@ -78,12 +79,13 @@ interface Actor {
 
 /** The cinema owns its GPU and audio resources; nothing is shared with the tactical viewer. */
 export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appearances: Record<string, ShipAppearance>, options: CinemaOptions = {}): CinemaController {
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance', alpha: false })
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance', alpha: false })
   const cleanups: (() => void)[] = [() => renderer.dispose()]
   try {
   renderer.outputColorSpace = THREE.SRGBColorSpace
   renderer.toneMapping = THREE.ACESFilmicToneMapping
-  renderer.toneMappingExposure = 1.15
+  renderer.toneMappingExposure = 1
+  renderer.shadowMap.type = THREE.PCFShadowMap
   renderer.info.autoReset = false
   const scene = new THREE.Scene()
   cleanups.push(() => {
@@ -105,17 +107,25 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   cleanups.push(() => audio.dispose())
   audio.setMuted(options.muted ?? true)
   audio.setVolume(options.volume ?? 0.65)
+  const sceneTarget = new THREE.WebGLRenderTarget(1,1,{type:THREE.HalfFloatType,samples:Math.min(4,renderer.capabilities.maxSamples)})
+  cleanups.push(()=>sceneTarget.dispose())
   const composer = new EffectComposer(renderer)
   cleanups.push(() => { for (const pass of composer.passes) pass.dispose(); composer.dispose() })
-  composer.addPass(new RenderPass(scene, camera))
-  const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.55, 0.55, 1.05)
+  // Resolve scene MSAA once. Bloom blends only into ordinary color targets.
+  const scenePass = new TexturePass(sceneTarget.texture)
+  // Bound HDR input before the blur pyramid can spread one invalid sample.
+  scenePass.material.fragmentShader = `uniform sampler2D tDiffuse; uniform float opacity; varying vec2 vUv;
+    float finiteRadiance(float c){return c >= 0.0 ? min(c, 64.0) : 0.0;}
+    void main(){vec4 c=texture2D(tDiffuse,vUv);gl_FragColor=vec4(finiteRadiance(c.r),finiteRadiance(c.g),finiteRadiance(c.b),1.0)*opacity;}`
+  composer.addPass(scenePass)
+  const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.24, 0.3, 2.2)
   composer.addPass(bloom)
   const grade = new ShaderPass({
     uniforms: { tDiffuse: { value: null }, time: { value: 0 }, amount: { value: 0.018 } },
     vertexShader: 'varying vec2 vUv; void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
     fragmentShader: `uniform sampler2D tDiffuse; uniform float time; uniform float amount; varying vec2 vUv;
       void main(){vec3 c=texture2D(tDiffuse,vUv).rgb; vec2 p=vUv-.5;
-      float vignette=1.-smoothstep(.22,.76,length(p))*.42;
+      float vignette=1.-smoothstep(.22,.76,length(p))*.16;
       float grain=fract(sin(dot(vUv*vec2(1920.,1080.)+mod(time,73.),vec2(12.9898,78.233)))*43758.5453)-.5;
       c*=vignette; c+=grain*amount; gl_FragColor=vec4(max(c,vec3(0.)),1.);}`,
   })
@@ -123,13 +133,34 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   composer.addPass(new OutputPass())
 
   // Soft three-point light, with a warm distant sun and icy ship-side bounce.
-  scene.add(new THREE.HemisphereLight(0x9ddfff, 0x171323, 2.4))
-  const sun = new THREE.DirectionalLight(0xffd4a5, 4.2)
-  sun.position.set(-400, 260, 170); scene.add(sun)
-  const rim = new THREE.DirectionalLight(0x58c9ff, 3.1)
+  scene.add(new THREE.HemisphereLight(0xbacbdc, 0x101119, 1.35))
+  const sun = new THREE.DirectionalLight(0xffe2b9, 3.6)
+  sun.position.set(-400, 260, 170); scene.add(sun); scene.add(sun.target)
+  const sunDirection = sun.position.clone().normalize()
+  cleanups.push(()=>sun.shadow.dispose())
+  sun.castShadow=true; sun.shadow.bias=-.00008; sun.shadow.normalBias=.025
+  sun.shadow.camera.near=10;sun.shadow.camera.far=3000
+  const rim = new THREE.DirectionalLight(0x94c9ed, 1.8)
   rim.position.set(150, 80, -300); scene.add(rim)
-  const fill = new THREE.DirectionalLight(0xa0b7d5, 1.1)
+  const fill = new THREE.DirectionalLight(0xc4ccdd, .45)
   fill.position.set(0, -150, 200); scene.add(fill)
+  // A restrained stellar reflection field lets machined metal reveal its
+  // roughness and tiny bevels without placing studio scenery in the battle.
+  const reflectionScene = new THREE.Scene()
+  const reflectionMaterial = new THREE.ShaderMaterial({side:THREE.BackSide,
+    vertexShader:'varying vec3 d; void main(){d=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+    fragmentShader:`varying vec3 d;void main(){vec3 n=normalize(d);
+      float key=pow(max(0.,dot(n,normalize(vec3(-.7,.6,.35)))),24.);
+      float rim=pow(max(0.,dot(n,normalize(vec3(.5,.2,-.7)))),8.);
+      vec3 c=vec3(.014,.023,.034)+vec3(4.,3.4,2.7)*key+vec3(.18,.38,.65)*rim;
+      gl_FragColor=vec4(c,1.);}`})
+  const reflectionShell = new THREE.Mesh(new THREE.SphereGeometry(10,24,16),reflectionMaterial)
+  reflectionScene.add(reflectionShell)
+  const pmrem = new THREE.PMREMGenerator(renderer)
+  const reflectionMap = pmrem.fromScene(reflectionScene,.025,.1,50)
+  scene.environment=reflectionMap.texture; scene.environmentIntensity=.8
+  pmrem.dispose();reflectionShell.geometry.dispose();reflectionMaterial.dispose()
+  cleanups.push(()=>reflectionMap.dispose())
   const glow = glowTexture()
   cleanups.push(() => glow.dispose())
   const rng = random(film.seed)
@@ -159,7 +190,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   const starsGeometry = new THREE.BufferGeometry()
   starsGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3))
   starsGeometry.setAttribute('color', new THREE.BufferAttribute(starColors, 3))
-  scene.add(new THREE.Points(starsGeometry, new THREE.PointsMaterial({ size: 3.2, vertexColors: true, transparent: true, opacity: 0.85, sizeAttenuation: true, depthWrite: false })))
+  const stars = new THREE.Points(starsGeometry, new THREE.PointsMaterial({ size: 3.2, vertexColors: true, transparent: true, opacity: 0.85, sizeAttenuation: true, depthWrite: false })); scene.add(stars)
 
   // Planetary limb anchors scale without inventing any combat participants.
   const planet = new THREE.Mesh(new THREE.SphereGeometry(1100, 72, 48), new THREE.ShaderMaterial({
@@ -189,7 +220,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   const priority = [...film.ships].sort((a, b) => Number(featured.has(b.id)) - Number(featured.has(a.id)))
   const detailed = new Set(priority.slice(0, 28).map(s => s.id))
   const actors = film.ships.map((ship): Actor => {
-    const known = appearances[ship.shipClass]
+    const known = appearances[ship.shipClass] ?? (ship.kind==='station' ? resolveAppearance('station',undefined,5,'',0,'station') : undefined)
     const appearance = ['station', 'creature', 'drone'].includes(ship.kind) ? { ...(known ?? resolveAppearance(ship.shipClass)), family: ship.kind as ShipAppearance['family'] } : known ?? resolveAppearance(ship.shipClass)
     const size = clamp(appearance.length * 9, 16, 400)
     const seed = hash(ship.id)
@@ -277,8 +308,9 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   let actualQuality = requestedQuality === 'auto' ? (window.innerWidth < 760 ? 'low' : 'high') : requestedQuality
   let raf = 0, last = performance.now(), reportAt = 0, sampleFrames = 0, sampleElapsed = 0, qualityAge = 0
   const effectWindow = film.cues.reduce((max, cue) => Math.max(max, cue.duration + 2), 7)
+  const clearanceByShot = new Map<string,number>()
   const cameraTarget = new THREE.Vector3(), cameraPosition = new THREE.Vector3()
-  const pointA = new THREE.Vector3(), pointB = new THREE.Vector3(), delta = new THREE.Vector3()
+  const pointA = new THREE.Vector3(), pointB = new THREE.Vector3()
   const up = new THREE.Vector3(0, 1, 0), direction = new THREE.Vector3()
   const motionOptions = (actor: Actor): ShipMotionOptions => ({ size: actor.size, angle: actor.angle, lane: actor.lane, seed: actor.seed,
     sideCount: sideCounts.get(actor.ship.sideIndex) ?? 1, spacing: fleetSpacing.get(actor.ship.sideIndex) ?? 90, depth: fleetDepth.get(actor.ship.sideIndex) ?? 130 })
@@ -291,11 +323,19 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   const isVisible = (actor: Actor, t: number) => t >= actor.ship.start && (t <= actor.ship.end || !['escaped', 'withdrawn'].includes(actor.ship.fate) || t < actor.ship.end + 2.5)
   const setResolution = () => {
     const width = canvas.clientWidth || 1280, height = canvas.clientHeight || 720
-    const ratio = actualQuality === 'high' ? Math.min(window.devicePixelRatio || 1, 1.5) : actualQuality === 'medium' ? 1 : 0.7
-    renderer.setPixelRatio(ratio); renderer.setSize(width, height, false)
-    composer.setPixelRatio(ratio); composer.setSize(width, height)
-    camera.aspect = width / height; camera.updateProjectionMatrix()
-    bloom.enabled = actualQuality !== 'low'
+    const settings=cinemaRenderSettings(actualQuality,window.devicePixelRatio || 1,renderer.capabilities.maxSamples)
+    renderer.setPixelRatio(settings.pixelRatio); renderer.setSize(width,height,false)
+    if(sceneTarget.samples!==settings.samples){sceneTarget.samples=settings.samples;sceneTarget.dispose()}
+    sceneTarget.setSize(Math.floor(width*settings.pixelRatio),Math.floor(height*settings.pixelRatio))
+    composer.setPixelRatio(settings.pixelRatio); composer.setSize(width,height)
+    camera.aspect=width/height;camera.updateProjectionMatrix()
+    bloom.enabled=settings.bloom
+    // Three's material fast path does not invalidate programs when global shadows change.
+    if(renderer.shadowMap.enabled!==settings.shadows){
+      renderer.shadowMap.enabled=settings.shadows
+      scene.traverse(object=>{if(object instanceof THREE.Mesh){for(const material of Array.isArray(object.material)?object.material:[object.material])material.needsUpdate=true}})
+    }
+    if(sun.shadow.mapSize.x!==settings.shadowMapSize){sun.shadow.map?.dispose();sun.shadow.map=null;sun.shadow.mapSize.setScalar(settings.shadowMapSize)}
     options.onQuality?.(actualQuality)
   }
   const resize = new ResizeObserver(() => { setResolution(); if (!playing) safeDraw() }); cleanups.push(() => resize.disconnect()); resize.observe(canvas); setResolution()
@@ -306,7 +346,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     for (const actor of actors) {
       positionAt(actor, time)
       const visible = isVisible(actor, time)
-      const stopped = time > actor.ship.end && actor.ship.fate !== 'survived'
+
       if (actor.model) {
         actor.model.visible = visible && !(actor.ship.fate === 'destroyed' && time > actor.ship.end + .32)
         actor.model.position.copy(actor.position)
@@ -346,62 +386,55 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     let shotIndex = film.shots.findIndex(s => time >= s.start && time < s.end)
     if (shotIndex < 0) shotIndex = Math.max(0, film.shots.length - 1)
     const shot = film.shots[shotIndex]
-    const candidates = shot?.kind === 'impact' ? selectImpactFocus(film.cues,time).flatMap(id => { const actor=byId.get(id); return actor && isVisible(actor,time) ? [actor] : [] }) : []
-    const anchor = candidates[0]
-    const impactActors = anchor ? candidates.filter(actor => actor === anchor || actor.position.distanceTo(anchor.position) < anchor.size * 3 + actor.size * .5) : []
-    const requestedSubject = impactActors[0] ?? (shot?.subject ? byId.get(shot.subject) : undefined)
-    const requestedTarget = shot?.target ? byId.get(shot.target) : undefined
-    const subject = requestedSubject && isVisible(requestedSubject,time) ? requestedSubject : actors.find(a => isVisible(a, time))
-    const target = requestedTarget && isVisible(requestedTarget,time) ? requestedTarget : undefined
-    const progress = shot ? smooth((time - shot.start) / Math.max(1, shot.end - shot.start)) : 0
-    const size = subject?.size ?? 60
-    const pos = subject?.position ?? pointA.set(0, 0, 0)
-    const yaw = subject?.rotation ?? 0
-    const lateral = shotIndex % 2 ? -1 : 1
-    cameraTarget.copy(pos)
-    let localX = -size * 0.5, localY = size * 0.6, localZ = size * 2.4 * lateral
-    const kind = reduced ? 'reveal' : shot?.kind
-    if (kind === 'reveal') {
-      cameraTarget.copy(pos).lerp(new THREE.Vector3(0, 0, 0), reduced ? 0.7 : progress * 0.65)
-      const pullback = reduced ? 2.5 : 1 + progress * 2.3
-      cameraPosition.copy(pos).add(new THREE.Vector3(size * 1.3 * pullback, size * 0.75 * pullback, size * 2.6 * pullback))
-    } else if (kind === 'aftermath') {
-      localX = size * (1 + progress * 1.5); localY = size * (0.8 + progress * 0.4); localZ = size * (2.3 + progress) * lateral
-    } else if (kind === 'tracking') {
-      localX = size * (0.9 - progress * 1.6); localY = size * 0.38; localZ = size * 1.65 * lateral
-    } else if (kind === 'broadside') {
-      localX = size * (-0.6 + progress * 1.4); localY = size * 0.4; localZ = size * 1.75 * lateral
-      if (target) cameraTarget.lerp(target.position, 0.1)
-    } else if (kind === 'pursuit') {
-      localX = -size * (1.7 + progress * 0.3); localY = size * 0.65; localZ = size * 0.7 * lateral
-      if (target) cameraTarget.lerp(target.position, 0.25)
-    } else if (kind === 'impact') {
-      localX = size * (1.25 - progress * 0.3); localY = size * 0.48; localZ = size * (1.6 + progress * 0.9) * lateral
+    const sequence = film.story?.sequences.find(sequence=>sequence.id===shot?.sequenceId)
+    const subjectActor = (shot.subject ? byId.get(shot.subject) : undefined) ?? actors.find(a=>isVisible(a,time))
+    const targetActor = shot.target ? byId.get(shot.target) : undefined
+    const bodyAt = (id: string | undefined, at: number): CameraBody | undefined => {
+      const actor=id ? byId.get(id) : undefined
+      if(!actor)return undefined
+      const motion=sampleShipMotion(actor.ship,at,motionOptions(actor))
+      return {id:actor.ship.id,size:actor.size,position:new THREE.Vector3(motion.x,motion.y,motion.z)}
     }
-    if (kind !== 'reveal') cameraPosition.set(pos.x + Math.cos(yaw) * localX + Math.sin(yaw) * localZ, pos.y + localY, pos.z - Math.sin(yaw) * localX + Math.cos(yaw) * localZ)
-    if (!reduced && kind === 'broadside' && target && subject) {
-      cameraTarget.copy(subject.position).lerp(target.position, .5)
-      const separation = subject.position.distanceTo(target.position)
-      delta.copy(target.position).sub(subject.position).normalize()
-      cameraPosition.copy(cameraTarget).add(new THREE.Vector3(-delta.z, .27, delta.x).multiplyScalar(Math.max(separation * .95, size * 3)))
-      cameraPosition.addScaledVector(delta, (progress - .5) * separation * .18)
+    const subject = subjectActor ? {id:subjectActor.ship.id,size:subjectActor.size,position:subjectActor.position} : {id:'empty',size:60,position:new THREE.Vector3()}
+    const target = targetActor ? {id:targetActor.ship.id,size:targetActor.size,position:targetActor.position} : undefined
+    const referenceTime=sequence?.start ?? 0
+    const axisFrom=bodyAt(shot.axis?.from ?? subject.id,referenceTime)?.position ?? subject.position
+    const axisTo=bodyAt(shot.axis?.to ?? target?.id,referenceTime)?.position ?? subject.position.clone().add(new THREE.Vector3(100,0,0))
+    const frame=sampleStoryCamera({shot,sequence,time,aspect:camera.aspect,subject,target,axisFrom,axisTo,reduced})
+    const boundaries=actors.filter(actor=>isVisible(actor,time) && !(actor.ship.fate==='destroyed' && time>actor.ship.end+.32)).map(actor=>({id:actor.ship.id,position:actor.position,size:actor.size}))
+    // Clearance is planned over the shot, not switched frame-by-frame as another
+    // hull passes the edge of the view. This avoids sudden camera height jumps.
+    const clearanceKey=`${shotIndex}:${camera.aspect.toFixed(3)}:${reduced}`
+    if(!clearanceByShot.has(clearanceKey)) {
+      let lift=0
+      for(const sampleTime of [shot.start,(shot.start+shot.end)*.5,shot.end-.001]) {
+        const sampledSubject=bodyAt(subject.id,sampleTime) ?? subject
+        const sampledTarget=bodyAt(target?.id,sampleTime)
+        const planned=sampleStoryCamera({shot,sequence,time:sampleTime,aspect:camera.aspect,subject:sampledSubject,target:sampledTarget,axisFrom,axisTo,reduced})
+        const height=planned.position.y
+        clearStorySightline(planned,subject.id,actors.filter(actor=>isVisible(actor,sampleTime) && !(actor.ship.fate==='destroyed' && sampleTime>actor.ship.end+.32)).flatMap(actor=>bodyAt(actor.ship.id,sampleTime) ?? []))
+        lift=Math.max(lift,planned.position.y-height)
+      }
+      clearanceByShot.set(clearanceKey,lift)
     }
-    if (!reduced && kind === 'impact' && impactActors.length > 1) {
-      cameraTarget.set(0,0,0)
-      for (const actor of impactActors) cameraTarget.add(actor.position)
-      cameraTarget.multiplyScalar(1 / impactActors.length)
-      const radius = Math.max(...impactActors.map(actor => actor.position.distanceTo(cameraTarget) + actor.size * .8))
-      const halfAngle = Math.min(20 * Math.PI / 180, Math.atan(Math.tan(20 * Math.PI / 180) * camera.aspect))
-      const distance = radius / Math.sin(halfAngle) * 1.12
-      cameraPosition.copy(cameraTarget).add(new THREE.Vector3(Math.cos(yaw + .6 + progress * .25), .5, -Math.sin(yaw + .6 + progress * .25)).normalize().multiplyScalar(distance))
+    frame.position.y+=clearanceByShot.get(clearanceKey) ?? 0
+    keepCameraOutsideHulls(frame.position,boundaries.map(body=>({position:body.position,radius:body.size*.78})))
+    cameraPosition.copy(frame.position);cameraTarget.copy(frame.target)
+    camera.position.copy(frame.position);sky.position.copy(camera.position);stars.position.copy(camera.position);camera.fov=frame.fov;camera.lookAt(frame.target);camera.updateProjectionMatrix()
+    const shadowRadius=Math.max(90,subject.size*1.1)
+    sun.position.copy(subject.position).addScaledVector(sunDirection,1400);sun.target.position.copy(subject.position)
+    Object.assign(sun.shadow.camera,{left:-shadowRadius,right:shadowRadius,top:shadowRadius,bottom:-shadowRadius})
+    sun.shadow.camera.updateProjectionMatrix()
+    if(process.env.NODE_ENV==='development'){
+      canvas.dataset.cinemaShot=shot.role ?? shot.kind
+      canvas.dataset.cinemaSubject=subjectActor?.ship.name ?? ''
+      canvas.dataset.cinemaTarget=targetActor?.ship.name ?? ''
+      canvas.dataset.cinemaSequence=sequence?.id ?? 'opening'
+      canvas.dataset.cinemaPixelRatio=String(renderer.getPixelRatio())
+      canvas.dataset.cinemaSamples=String(sceneTarget.samples)
+      canvas.dataset.cinemaCamera=frame.position.toArray().map(value=>value.toFixed(1)).join(',')
+      canvas.dataset.cinemaFocus=frame.target.toArray().map(value=>value.toFixed(1)).join(',')
     }
-    // Keep every camera path outside a conservative hull sphere, including neighboring ships.
-    keepCameraOutsideHulls(cameraPosition, actors.filter(actor=>isVisible(actor,time) && !(actor.ship.fate==='destroyed' && time>actor.ship.end+.32)).map(actor=>({position:actor.position,radius:actor.size*.78})))
-    camera.position.copy(cameraPosition)
-    if (!reduced) cameraTarget.y += Math.sin(time * 0.55) * 0.5
-    camera.lookAt(cameraTarget)
-    camera.fov = kind === 'reveal' ? 48 : 40
-    camera.updateProjectionMatrix()
 
     let beamCount = 0, sparkCount = 0, flashCount = 0, shieldCount = 0, shockwaveCount = 0
     pulseLight.intensity = 0
@@ -442,7 +475,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     // Reserve the effect budget for consequences before ordinary volleys.
     const activeCues = [...cueRange(film.cues, time - effectWindow, time + 0.00001)]
     const consequence = (kind: string) => ['death', 'knockout', 'capture'].includes(kind) ? 1 : 0
-    activeCues.sort((a,b) => (consequence(b.kind) * 2 + Number(b.to === subject?.ship.id)) - (consequence(a.kind) * 2 + Number(a.to === subject?.ship.id)))
+    activeCues.sort((a,b) => (consequence(b.kind) * 2 + Number(b.to === subject.id)) - (consequence(a.kind) * 2 + Number(a.to === subject.id)))
     for (const cue of activeCues) {
       const age = time - cue.time
       if (age < 0 || age > cueLifetime(cue)) continue
@@ -565,9 +598,10 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     for (let i = shieldCount; i < shields.length; i++) shields[i].visible = false
     for (let i = shockwaveCount; i < shockwaves.length; i++) shockwaves[i].visible = false
     grade.uniforms.time.value = reduced ? 0 : time
-    grade.uniforms.amount.value = actualQuality === 'low' ? 0 : 0.012
+    grade.uniforms.amount.value = 0
     audio.intensity(shot?.intensity ?? 0.1, time)
     renderer.info.reset()
+    renderer.setRenderTarget(sceneTarget);renderer.clear();renderer.render(scene,camera);renderer.setRenderTarget(null)
     composer.render()
   }
 

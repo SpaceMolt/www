@@ -7,7 +7,7 @@ type MaterialName = 'hull' | 'armor' | 'dark' | 'metal' | 'accent' | 'glass' | '
 
 /** Object-space plating stays welded to moving hulls and needs no image download. */
 function surfaceDetail(material: THREE.MeshStandardMaterial, seed: number, density: number) {
-  material.customProgramCacheKey = () => 'cinema-hull-panels-v1'
+  material.customProgramCacheKey = () => 'cinema-hull-machining-v4'
   material.onBeforeCompile = shader => {
     shader.uniforms.cinemaPanelSeed = { value: (seed >>> 0) % 8192 }
     shader.uniforms.cinemaPanelDensity = { value: density }
@@ -23,32 +23,69 @@ varying vec3 vCinemaHullNormal;
 uniform float cinemaPanelSeed;
 uniform float cinemaPanelDensity;
 float cinemaHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7)) + cinemaPanelSeed) * 43758.5453); }
-vec3 cinemaPlate(vec2 p) {
-  vec2 uv = p * vec2(18.0, 31.0) * cinemaPanelDensity;
-  float row = floor(uv.y);
-  uv.x += mod(row, 2.0) * 0.43;
-  uv.x *= 0.75 + floor(cinemaHash(vec2(row, 23.0)) * 3.0) * 0.35;
-  vec2 cell = floor(uv), f = fract(uv);
-  float h = cinemaHash(cell);
+float cinemaStroke(float distanceToLine, float halfWidth, float footprint) {
+  return clamp((halfWidth - distanceToLine) / max(footprint, 0.0001) + 0.5, 0.0, 1.0);
+}
+// This height field deliberately contains NO screen derivatives. Sampling it
+// at first-order position offsets avoids undefined higher-order derivatives.
+float cinemaRelief(vec2 p) {
+  vec2 baseUv = p * vec2(12.0, 29.0) * cinemaPanelDensity;
+  vec2 uv = baseUv + vec2(mod(floor(baseUv.y), 2.0) * 0.5, 0.0);
+  vec2 f = fract(uv);
   vec2 edge = min(f, 1.0 - f);
-  float d = min(edge.x, edge.y);
-  float aa = clamp(max(fwidth(uv.x), fwidth(uv.y)) * 0.7, 0.005, 0.3);
-  float seam = 1.0 - smoothstep(0.016 - aa, 0.016 + aa, d);
-  float wear = smoothstep(0.016, 0.028 + aa, d) * (1.0 - smoothstep(0.04, 0.07 + aa, d));
-  float tone = mix(0.72, 1.13, h) * (1.0 - seam * 0.68) + wear * 0.19;
-  // A few access panels have inset recesses and diagonal ochre hazard marks.
-  float inset = step(0.63, h) * step(0.17, f.x) * step(f.x, 0.79) * step(0.24, f.y) * step(f.y, 0.73);
-  tone *= 1.0 - inset * 0.12;
-  float scratch = pow(max(0.0, sin(p.x * 1811.0 + sin(p.y * 327.0) * 2.0)), 24.0);
-  scratch *= 1.0 - smoothstep(0.002, 0.013, length(fwidth(p)));
-  tone += scratch * 0.055;
-  float stencil = step(0.86, h) * step(0.64, f.x) * step(f.x, 0.91) * step(0.17, f.y) * step(f.y, 0.79);
-  stencil *= smoothstep(0.35, 0.55, fract((f.x + f.y) * 7.0));
-  return vec3(tone, (h - 0.4) * 0.22 + seam * 0.23, stencil);
+  float plate = smoothstep(0.006, 0.043, min(edge.x, edge.y));
+  vec2 hatchQ = abs(f - vec2(0.48, 0.50)) - vec2(0.25, 0.20);
+  float hatchDistance = length(max(hatchQ, vec2(0.0))) + min(max(hatchQ.x, hatchQ.y), 0.0);
+  float hasHatch = step(0.77, cinemaHash(floor(uv)));
+  float hatch = (1.0 - smoothstep(-0.014, 0.014, hatchDistance)) * hasHatch;
+  float hatchRim = (1.0 - smoothstep(0.002, 0.016, abs(hatchDistance))) * hasHatch;
+  float boltDistance = length(abs(f - 0.5) - vec2(0.405, 0.36));
+  float bolt = 1.0 - smoothstep(0.006, 0.023, boltDistance);
+  return plate * 0.00023 - hatch * 0.00008 - hatchRim * 0.000035 - bolt * 0.00006;
+}
+float cinemaReliefField(vec3 p, vec3 weights) {
+  return cinemaRelief(p.zy) * weights.x + cinemaRelief(p.xz) * weights.y + cinemaRelief(p.xy) * weights.z;
+}
+vec3 cinemaPlate(vec2 p) {
+  vec2 baseUv = p * vec2(12.0, 29.0) * cinemaPanelDensity;
+  // Derivatives MUST precede the stagger/floor/fract. Differentiating discontinuous
+  // cell coordinates turns every row boundary into a broad blurry patch.
+  vec2 footprint = max(fwidth(baseUv), vec2(0.0001));
+  float pixel = max(footprint.x, footprint.y);
+  float resolved = 1.0 - smoothstep(0.16, 0.48, pixel);
+  vec2 uv = baseUv + vec2(mod(floor(baseUv.y), 2.0) * 0.5, 0.0);
+  vec2 cell = floor(uv), f = fract(uv);
+  float identity = cinemaHash(cell);
+  vec2 edge = min(f, 1.0 - f);
+  float seam = max(cinemaStroke(edge.x, 0.010, footprint.x), cinemaStroke(edge.y, 0.010, footprint.y)) * resolved;
+  // Four recessed fasteners, and occasional inspection hatches; these are small
+  // physical features, not large random panels painted in contrasting colors.
+  float boltDistance = length(abs(f - 0.5) - vec2(0.405, 0.36));
+  float bolts = cinemaStroke(boltDistance, 0.017, pixel) * resolved;
+  vec2 hatchQ = abs(f - vec2(0.48, 0.50)) - vec2(0.25, 0.20);
+  float hatchDistance = length(max(hatchQ, vec2(0.0))) + min(max(hatchQ.x, hatchQ.y), 0.0);
+  float hasHatch = step(0.77, identity) * resolved;
+  float hatchRim = cinemaStroke(abs(hatchDistance), 0.008, pixel) * hasHatch;
+  // Brushed metal modulates roughness, with very little albedo noise. Frequency
+  // attenuation removes subpixel grain instead of smearing it across the hull.
+  float brushPhase = p.y * 2150.0 + sin(p.x * 41.0) * 0.6;
+  float brushFootprint = abs(dFdx(p.y) * 2150.0) + abs(dFdy(p.y) * 2150.0);
+  float brushed = sin(brushPhase) * exp2(-brushFootprint * brushFootprint * 0.5);
+  float tone = (0.965 + identity * 0.055) * (1.0 - seam * 0.47 - bolts * 0.25 - hatchRim * 0.27);
+  tone += brushed * 0.004;
+  float markingArea = step(0.90, identity) * smoothstep(0.61, 0.64, f.x) * (1.0 - smoothstep(0.86, 0.89, f.x))
+    * smoothstep(0.21, 0.24, f.y) * (1.0 - smoothstep(0.76, 0.79, f.y));
+  float stripeDistance = abs(fract((f.x + f.y) * 5.0) - 0.5);
+  float stencil = cinemaStroke(stripeDistance, 0.19, (footprint.x + footprint.y) * 5.0) * markingArea * resolved;
+  float roughnessChange = (identity - 0.5) * 0.045 + seam * 0.11 + brushed * 0.024;
+  return vec3(tone, roughnessChange, stencil);
 }`)
     shader.fragmentShader = shader.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
-vec3 cinemaWeights = pow(abs(normalize(vCinemaHullNormal)), vec3(8.0));
-cinemaWeights /= max(dot(cinemaWeights, vec3(1.0)), 0.0001);
+// Normalizing before this power is unnecessary: that scale cancels when the
+// weights are normalized. Avoid normalize(0) on degenerate/helper invocations.
+vec3 cinemaWeights = pow(clamp(abs(vCinemaHullNormal), vec3(0.0), vec3(1.0)), vec3(8.0));
+cinemaWeights.y += 1e-8;
+cinemaWeights /= max(dot(cinemaWeights, vec3(1.0)), 1e-8);
 vec3 cinemaSurface = cinemaPlate(vCinemaHullPosition.zy) * cinemaWeights.x
   + cinemaPlate(vCinemaHullPosition.xz) * cinemaWeights.y
   + cinemaPlate(vCinemaHullPosition.xy) * cinemaWeights.z;
@@ -56,19 +93,44 @@ diffuseColor.rgb *= cinemaSurface.x;
 diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.40, 0.27, 0.09), cinemaSurface.z * 0.62);`)
     shader.fragmentShader = shader.fragmentShader.replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
 roughnessFactor = clamp(roughnessFactor + cinemaSurface.y, 0.22, 0.86);`)
+    shader.fragmentShader = shader.fragmentShader.replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+// Surface-gradient bump mapping using derivative-free finite height differences.
+// Per-object distances preserve equal bevel slopes at every ship scale. Detail
+// filtering is applied AFTER sampling, never differentiated a second time.
+vec3 cinemaViewDx = dFdx(-vViewPosition);
+vec3 cinemaViewDy = dFdy(-vViewPosition);
+vec3 cinemaLocalDx = dFdx(vCinemaHullPosition);
+vec3 cinemaLocalDy = dFdy(vCinemaHullPosition);
+cinemaViewDx *= inversesqrt(max(dot(cinemaViewDx, cinemaViewDx), 1e-14));
+cinemaViewDy *= inversesqrt(max(dot(cinemaViewDy, cinemaViewDy), 1e-14));
+vec3 cinemaR1 = cross(cinemaViewDy, normal);
+vec3 cinemaR2 = cross(normal, cinemaViewDx);
+float cinemaDet = dot(cinemaViewDx, cinemaR1) * faceDirection;
+float cinemaBaseHeight = cinemaReliefField(vCinemaHullPosition, cinemaWeights);
+vec2 cinemaHeightGradient = vec2(
+  (cinemaReliefField(vCinemaHullPosition + cinemaLocalDx, cinemaWeights) - cinemaBaseHeight) / max(length(cinemaLocalDx), 1e-7),
+  (cinemaReliefField(vCinemaHullPosition + cinemaLocalDy, cinemaWeights) - cinemaBaseHeight) / max(length(cinemaLocalDy), 1e-7));
+vec3 cinemaFootprint = abs(cinemaLocalDx) + abs(cinemaLocalDy);
+float cinemaDetailFootprint = max(cinemaFootprint.x * 12.0, max(cinemaFootprint.y, cinemaFootprint.z) * 29.0) * cinemaPanelDensity;
+cinemaHeightGradient *= 1.0 - smoothstep(0.16, 0.48, cinemaDetailFootprint);
+cinemaHeightGradient = clamp(cinemaHeightGradient, vec2(-0.6), vec2(0.6));
+vec3 cinemaGradient = sign(cinemaDet) * (cinemaHeightGradient.x * cinemaR1 + cinemaHeightGradient.y * cinemaR2);
+cinemaGradient *= min(1.0, abs(cinemaDet) * 0.7 / max(length(cinemaGradient), 1e-7));
+vec3 cinemaBumpedNormal = abs(cinemaDet) * normal - cinemaGradient;
+if (abs(cinemaDet) > 1e-5) normal = cinemaBumpedNormal * inversesqrt(max(dot(cinemaBumpedNormal, cinemaBumpedNormal), 1e-14));`)
   }
 }
 
 /** Grown quartz has flowing internal veins rather than machined metal paneling. */
 function crystalDetail(material: THREE.MeshStandardMaterial) {
-  material.customProgramCacheKey = () => 'cinema-grown-crystal-v1'
+  material.customProgramCacheKey = () => 'cinema-grown-crystal-v2'
   material.onBeforeCompile = shader => {
     shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vCinemaCrystal;')
     shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvCinemaCrystal=position;')
     shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vCinemaCrystal;')
     shader.fragmentShader = shader.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
 float crystalWave = vCinemaCrystal.z * 70.0 + sin(vCinemaCrystal.x * 15.0) * 3.0 + vCinemaCrystal.y * 55.0;
-float crystalVein = pow(0.5 + 0.5 * sin(crystalWave), 26.0);
+float crystalVein = pow(clamp(0.5 + 0.5 * sin(crystalWave), 0.0, 1.0), 26.0);
 float crystalDepth = 0.78 + 0.22 * sin(vCinemaCrystal.x * 44.0 + vCinemaCrystal.y * 29.0);
 diffuseColor.rgb *= crystalDepth;
 diffuseColor.rgb += vec3(0.025, 0.12, 0.18) * crystalVein;`)
@@ -170,6 +232,12 @@ export function createShip(appearance: ShipAppearance, seed: number, detail: 'he
     if (hero) {
       slab(x - length * .1, y + h * .54, z, length * .62, w * .74, .0025, 'hull')
       slab(x + length * .24, y + h * .58, z, length * .055, w * .72, .003, 'metal')
+      // Actual chamfered fasteners catch moving specular light on close passes;
+      // they share the metal batch rather than becoming separate draw calls.
+      const radius = Math.min(length, w) * .043
+      for (const fore of [-1, 1]) for (const side of [-1, 1]) {
+        rod(x + fore * length * .34, y + h * .58, z + side * w * .29, radius, .0028, 'metal', false)
+      }
     }
   }
   const engine = (x: number, y: number, z: number, radius: number) => {
@@ -184,13 +252,15 @@ export function createShip(appearance: ShipAppearance, seed: number, detail: 'he
     core.userData.baseIntensity = 1
     group.add(core)
     const plumeMaterial = new THREE.MeshBasicMaterial({ color: accent, transparent: true, opacity: .3, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide })
-    plumeMaterial.customProgramCacheKey = () => 'cinema-engine-falloff-v1'
+    plumeMaterial.customProgramCacheKey = () => 'cinema-engine-falloff-v2'
     plumeMaterial.onBeforeCompile = shader => {
       shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vCinemaPlumeUv;')
       shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvCinemaPlumeUv = uv;')
       shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec2 vCinemaPlumeUv;')
       shader.fragmentShader = shader.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
-float engineTail = pow(1.0 - vCinemaPlumeUv.y, 2.5);
+// MSAA fragment centers may lie outside a covered triangle and extrapolate UVs
+// beyond the cone tip. Negative fractional powers produce NaN, poisoning bloom.
+float engineTail = pow(clamp(1.0 - vCinemaPlumeUv.y, 0.0, 1.0), 2.5);
 float engineFilament = 0.72 + 0.28 * sin(vCinemaPlumeUv.x * 37.699);
 diffuseColor.a *= engineTail * engineFilament * 0.65;`)
     }

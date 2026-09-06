@@ -59,10 +59,46 @@ export interface CinemaCue {
   weaponName?: string
 }
 
+export type CinemaShotRole = 'geography' | 'protagonist' | 'opposition' | 'setup' | 'fire' | 'impact' | 'reaction' | 'montage' | 'resolution'
+
+/** Canonical pair orientation; reciprocal firing never reverses screen geography. */
+export interface CinemaAxis {
+  from: string
+  to: string
+  side: 1 | -1
+}
+
+export interface CinemaSequence {
+  id: string
+  start: number
+  end: number
+  kind: 'confrontation' | 'reversal' | 'climax' | 'montage'
+  attacker?: string
+  defender?: string
+  causeCueId?: string
+  eventCueId?: string
+  actionTime: number
+  impactTime: number
+  consequenceTime?: number
+  axis?: CinemaAxis
+}
+
+export interface CinemaStory {
+  protagonistId?: string
+  adversaryId?: string
+  climaxCueId?: string
+  sequences: CinemaSequence[]
+}
+
 export interface CinemaShot {
   start: number
   end: number
   kind: CinemaShotKind
+  role?: CinemaShotRole
+  sequenceId?: string
+  axis?: CinemaAxis
+  /** Recorded action this shot anticipates or follows. */
+  actionTime?: number
   /** Consequential subjects in this shot; frame only upcoming/recent events within this group. */
   focusIds?: string[]
   subject?: string
@@ -88,6 +124,7 @@ export interface CinemaFilm {
   systemName: string
   ships: CinemaShip[]
   shots: CinemaShot[]
+  story?: CinemaStory
   cues: CinemaCue[]
   segments: CinemaSourceSegment[]
 }
