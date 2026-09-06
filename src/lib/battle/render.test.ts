@@ -36,7 +36,7 @@ function entry(snapshots: ParticipantSnapshot[]): BattleLogEntry {
 function attack(overrides: Partial<AttackLogEntry> = {}): AttackLogEntry {
   return {
     attacker_id: 'attacker', target_id: 'primary', zone_distance: 0, weapons: [], raw_damage: 10,
-    weapon_skill_pct: 0, off_buff_pct: 0, pre_hit_damage: 10, hit_chance: 1, hit_roll: 0,
+    weapon_skill_pct: 0, off_buff_pct: 0, landed_damage: 10, hit_chance: 1,
     hit_success: true, final_damage: 10, shield_damage: 0, hull_damage: 10, damage_type: 'void',
     ...overrides,
   }

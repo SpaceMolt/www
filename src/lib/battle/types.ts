@@ -127,6 +127,10 @@ export interface WeaponFireDetail {
   crit_chance: number
   crit_roll: number
   crit_fired: boolean
+  /** This gun's own hit chance, roll and outcome. Absent on ticks logged before per-gun rolls. */
+  hit_chance?: number
+  hit_roll?: number
+  hit_success?: boolean
   damage: number
   damage_type: string
   ammo_used?: string
@@ -142,9 +146,15 @@ export interface AttackLogEntry {
   weapon_skill_pct: number
   capital_bonus_pct?: number
   off_buff_pct?: number
-  pre_hit_damage: number
+  /** Damage of the guns that hit, after offensive bonuses, before stance and defenses. */
+  landed_damage?: number
+  /** Legacy (pre per-gun rolls): post-bonus volley damage before the single roll. */
+  pre_hit_damage?: number
+  /** Ship-level hit chance every gun starts from. */
   hit_chance: number
-  hit_roll: number
+  /** Legacy (pre per-gun rolls): the single volley roll. */
+  hit_roll?: number
+  /** At least one gun connected; per-gun outcomes are on weapons[]. */
   hit_success: boolean
   stance_mult?: number
   after_stance?: number
