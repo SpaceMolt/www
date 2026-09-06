@@ -110,8 +110,13 @@ export function buildFittedHardware(profile: CinemaHardware | undefined, family:
         rod(x+s*(torpedo?.89:.62),y+s*(.55+level*.14),z+offset*s*.25,s*.115,s*.045,'dark')
       }
     } else if(kind==='beam'||kind==='laser') {
-      rounded(x+s*.43,y+s*.42,z,s*1.42,s*.46,s*.37,'armor')
-      rod(x+s*1.17,y+s*.42,z,s*.18,s*.06,'glass')
+      rounded(x+s*.43,y+s*.42,z,s*1.42,s*.46,s*.37,'hull')
+      slab(x+s*.45,y+s*.235,z,s*1.32,s*.39,s*.035,'dark')
+      // Recess the optical emitter behind a machined rim. A solid glowing end
+      // cap reads like a toy barrel rather than an opening in a weapon housing.
+      add(new THREE.CircleGeometry(s*.146,16),'dark',x+s*1.168,y+s*.42,z,new THREE.Euler(0,Math.PI/2,0))
+      add(new THREE.CircleGeometry(s*.067,12),'glass',x+s*1.172,y+s*.42,z,new THREE.Euler(0,Math.PI/2,0))
+      add(new THREE.TorusGeometry(s*.13,s*.027,6,16),'metal',x+s*1.19,y+s*.42,z,new THREE.Euler(0,Math.PI/2,0))
       for(const side of [-1,1]) slab(x+s*.40,y+s*.65,z+side*s*.31,s*.67,s*.09,s*.12,'metal')
     } else if(kind==='railgun') {
       for(const side of [-1,1]) {

@@ -9,125 +9,10 @@ import type { CinemaHardware } from './hardware'
 import { createWeaponRig, tagWeaponGeometry, applyWeaponRig, createWeaponShadowMaterials } from './ship-weapons'
 import { addRetrothrusters } from './ship-thrusters'
 import { bindWeaponHullClearance } from './ship-clearance'
+import { applyShipSurface } from './ship-surfaces'
 
 type Ring = [x: number, halfWidth: number, halfHeight: number, centerY?: number]
 type MaterialName = 'hull' | 'armor' | 'dark' | 'metal' | 'accent' | 'glass' | 'windows'
-
-/** Object-space plating stays welded to moving hulls and needs no image download. */
-function surfaceDetail(material: THREE.MeshStandardMaterial, seed: number, density: number) {
-  material.customProgramCacheKey = () => 'cinema-hull-machining-v4'
-  material.onBeforeCompile = shader => {
-    shader.uniforms.cinemaPanelSeed = { value: (seed >>> 0) % 8192 }
-    shader.uniforms.cinemaPanelDensity = { value: density }
-    shader.vertexShader = shader.vertexShader.replace('#include <common>', `#include <common>
-varying vec3 vCinemaHullPosition;
-varying vec3 vCinemaHullNormal;`)
-    shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
-vCinemaHullPosition = position;
-vCinemaHullNormal = normal;`)
-    shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>
-varying vec3 vCinemaHullPosition;
-varying vec3 vCinemaHullNormal;
-uniform float cinemaPanelSeed;
-uniform float cinemaPanelDensity;
-float cinemaHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7)) + cinemaPanelSeed) * 43758.5453); }
-float cinemaStroke(float distanceToLine, float halfWidth, float footprint) {
-  return clamp((halfWidth - distanceToLine) / max(footprint, 0.0001) + 0.5, 0.0, 1.0);
-}
-// This height field deliberately contains NO screen derivatives. Sampling it
-// at first-order position offsets avoids undefined higher-order derivatives.
-float cinemaRelief(vec2 p) {
-  vec2 baseUv = p * vec2(12.0, 29.0) * cinemaPanelDensity;
-  vec2 uv = baseUv + vec2(mod(floor(baseUv.y), 2.0) * 0.5, 0.0);
-  vec2 f = fract(uv);
-  vec2 edge = min(f, 1.0 - f);
-  float plate = smoothstep(0.006, 0.043, min(edge.x, edge.y));
-  vec2 hatchQ = abs(f - vec2(0.48, 0.50)) - vec2(0.25, 0.20);
-  float hatchDistance = length(max(hatchQ, vec2(0.0))) + min(max(hatchQ.x, hatchQ.y), 0.0);
-  float hasHatch = step(0.77, cinemaHash(floor(uv)));
-  float hatch = (1.0 - smoothstep(-0.014, 0.014, hatchDistance)) * hasHatch;
-  float hatchRim = (1.0 - smoothstep(0.002, 0.016, abs(hatchDistance))) * hasHatch;
-  float boltDistance = length(abs(f - 0.5) - vec2(0.405, 0.36));
-  float bolt = 1.0 - smoothstep(0.006, 0.023, boltDistance);
-  return plate * 0.00023 - hatch * 0.00008 - hatchRim * 0.000035 - bolt * 0.00006;
-}
-float cinemaReliefField(vec3 p, vec3 weights) {
-  return cinemaRelief(p.zy) * weights.x + cinemaRelief(p.xz) * weights.y + cinemaRelief(p.xy) * weights.z;
-}
-vec3 cinemaPlate(vec2 p) {
-  vec2 baseUv = p * vec2(12.0, 29.0) * cinemaPanelDensity;
-  // Derivatives MUST precede the stagger/floor/fract. Differentiating discontinuous
-  // cell coordinates turns every row boundary into a broad blurry patch.
-  vec2 footprint = max(fwidth(baseUv), vec2(0.0001));
-  float pixel = max(footprint.x, footprint.y);
-  float resolved = 1.0 - smoothstep(0.16, 0.48, pixel);
-  vec2 uv = baseUv + vec2(mod(floor(baseUv.y), 2.0) * 0.5, 0.0);
-  vec2 cell = floor(uv), f = fract(uv);
-  float identity = cinemaHash(cell);
-  vec2 edge = min(f, 1.0 - f);
-  float seam = max(cinemaStroke(edge.x, 0.010, footprint.x), cinemaStroke(edge.y, 0.010, footprint.y)) * resolved;
-  // Four recessed fasteners, and occasional inspection hatches; these are small
-  // physical features, not large random panels painted in contrasting colors.
-  float boltDistance = length(abs(f - 0.5) - vec2(0.405, 0.36));
-  float bolts = cinemaStroke(boltDistance, 0.017, pixel) * resolved;
-  vec2 hatchQ = abs(f - vec2(0.48, 0.50)) - vec2(0.25, 0.20);
-  float hatchDistance = length(max(hatchQ, vec2(0.0))) + min(max(hatchQ.x, hatchQ.y), 0.0);
-  float hasHatch = step(0.77, identity) * resolved;
-  float hatchRim = cinemaStroke(abs(hatchDistance), 0.008, pixel) * hasHatch;
-  // Brushed metal modulates roughness, with very little albedo noise. Frequency
-  // attenuation removes subpixel grain instead of smearing it across the hull.
-  float brushPhase = p.y * 2150.0 + sin(p.x * 41.0) * 0.6;
-  float brushFootprint = abs(dFdx(p.y) * 2150.0) + abs(dFdy(p.y) * 2150.0);
-  float brushed = sin(brushPhase) * exp2(-brushFootprint * brushFootprint * 0.5);
-  float tone = (0.965 + identity * 0.055) * (1.0 - seam * 0.47 - bolts * 0.25 - hatchRim * 0.27);
-  tone += brushed * 0.004;
-  float markingArea = step(0.90, identity) * smoothstep(0.61, 0.64, f.x) * (1.0 - smoothstep(0.86, 0.89, f.x))
-    * smoothstep(0.21, 0.24, f.y) * (1.0 - smoothstep(0.76, 0.79, f.y));
-  float stripeDistance = abs(fract((f.x + f.y) * 5.0) - 0.5);
-  float stencil = cinemaStroke(stripeDistance, 0.19, (footprint.x + footprint.y) * 5.0) * markingArea * resolved;
-  float roughnessChange = (identity - 0.5) * 0.045 + seam * 0.11 + brushed * 0.024;
-  return vec3(tone, roughnessChange, stencil);
-}`)
-    shader.fragmentShader = shader.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
-// Normalizing before this power is unnecessary: that scale cancels when the
-// weights are normalized. Avoid normalize(0) on degenerate/helper invocations.
-vec3 cinemaWeights = pow(clamp(abs(vCinemaHullNormal), vec3(0.0), vec3(1.0)), vec3(8.0));
-cinemaWeights.y += 1e-8;
-cinemaWeights /= max(dot(cinemaWeights, vec3(1.0)), 1e-8);
-vec3 cinemaSurface = cinemaPlate(vCinemaHullPosition.zy) * cinemaWeights.x
-  + cinemaPlate(vCinemaHullPosition.xz) * cinemaWeights.y
-  + cinemaPlate(vCinemaHullPosition.xy) * cinemaWeights.z;
-diffuseColor.rgb *= cinemaSurface.x;
-diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.40, 0.27, 0.09), cinemaSurface.z * 0.62);`)
-    shader.fragmentShader = shader.fragmentShader.replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
-roughnessFactor = clamp(roughnessFactor + cinemaSurface.y, 0.22, 0.86);`)
-    shader.fragmentShader = shader.fragmentShader.replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
-// Surface-gradient bump mapping using derivative-free finite height differences.
-// Per-object distances preserve equal bevel slopes at every ship scale. Detail
-// filtering is applied AFTER sampling, never differentiated a second time.
-vec3 cinemaViewDx = dFdx(-vViewPosition);
-vec3 cinemaViewDy = dFdy(-vViewPosition);
-vec3 cinemaLocalDx = dFdx(vCinemaHullPosition);
-vec3 cinemaLocalDy = dFdy(vCinemaHullPosition);
-cinemaViewDx *= inversesqrt(max(dot(cinemaViewDx, cinemaViewDx), 1e-14));
-cinemaViewDy *= inversesqrt(max(dot(cinemaViewDy, cinemaViewDy), 1e-14));
-vec3 cinemaR1 = cross(cinemaViewDy, normal);
-vec3 cinemaR2 = cross(normal, cinemaViewDx);
-float cinemaDet = dot(cinemaViewDx, cinemaR1) * faceDirection;
-float cinemaBaseHeight = cinemaReliefField(vCinemaHullPosition, cinemaWeights);
-vec2 cinemaHeightGradient = vec2(
-  (cinemaReliefField(vCinemaHullPosition + cinemaLocalDx, cinemaWeights) - cinemaBaseHeight) / max(length(cinemaLocalDx), 1e-7),
-  (cinemaReliefField(vCinemaHullPosition + cinemaLocalDy, cinemaWeights) - cinemaBaseHeight) / max(length(cinemaLocalDy), 1e-7));
-vec3 cinemaFootprint = abs(cinemaLocalDx) + abs(cinemaLocalDy);
-float cinemaDetailFootprint = max(cinemaFootprint.x * 12.0, max(cinemaFootprint.y, cinemaFootprint.z) * 29.0) * cinemaPanelDensity;
-cinemaHeightGradient *= 1.0 - smoothstep(0.16, 0.48, cinemaDetailFootprint);
-cinemaHeightGradient = clamp(cinemaHeightGradient, vec2(-0.6), vec2(0.6));
-vec3 cinemaGradient = sign(cinemaDet) * (cinemaHeightGradient.x * cinemaR1 + cinemaHeightGradient.y * cinemaR2);
-cinemaGradient *= min(1.0, abs(cinemaDet) * 0.7 / max(length(cinemaGradient), 1e-7));
-vec3 cinemaBumpedNormal = abs(cinemaDet) * normal - cinemaGradient;
-if (abs(cinemaDet) > 1e-5) normal = cinemaBumpedNormal * inversesqrt(max(dot(cinemaBumpedNormal, cinemaBumpedNormal), 1e-14));`)
-  }
-}
 
 /** Grown quartz has flowing internal veins rather than machined metal paneling. */
 function crystalDetail(material: THREE.MeshStandardMaterial) {
@@ -225,7 +110,7 @@ export function createShip(appearance: ShipAppearance, seed: number, detail: 'he
     for (const key of ['hull', 'armor', 'glass'] as const) crystalDetail(materials[key])
   } else if (hero && family !== 'creature') {
     const density = family === 'fighter' || family === 'scout' || family === 'drone' ? .75 : 1.5
-    for (const key of ['hull', 'armor', 'dark', 'metal'] as const) surfaceDetail(materials[key], seed, density)
+    for (const key of ['hull', 'armor', 'dark', 'metal', 'accent'] as const) applyShipSurface(materials[key], { kind: key, empire, pirate, seed, density })
   }
   const rig=createWeaponRig()
   group.userData.weaponRig=rig
@@ -256,7 +141,10 @@ export function createShip(appearance: ShipAppearance, seed: number, detail: 'he
     add(loft([[-length / 2, w * .43, h * .38], [-length / 2 + chamfer, w / 2, h / 2], [length / 2 - chamfer, w / 2, h / 2], [length / 2, w * .38, h * .36]]), material, x, y, z)
   }
   const rounded = (x: number, y: number, z: number, length: number, w: number, h: number, material: MaterialName = 'armor') => {
-    add(new RoundedBoxGeometry(length, h, w, hero ? 3 : 1, Math.min(length, w, h) * .24), material, x, y, z)
+    // Pressure hulls can have generous fillets; gun housings are machined parts
+    // with broad flat faces and a small edge break, regardless of their empire.
+    const fillet = weaponIndex >= 0 ? .065 : empire === 'solarian' ? .16 : .24
+    add(new RoundedBoxGeometry(length, h, w, hero ? (weaponIndex >= 0 ? 2 : 3) : 1, Math.min(length, w, h) * fillet), material, x, y, z)
   }
   const rod = (x: number, y: number, z: number, radius: number, length: number, material: MaterialName = 'metal', alongX = true) => {
     add(new THREE.CylinderGeometry(radius * .8, radius, length, hero ? 8 : 5), material, x, y, z, alongX ? new THREE.Euler(0, 0, Math.PI / 2) : undefined)

@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { armorPlateGeometry } from './ship-plates'
 import type { ShipAppearance } from './appearance'
 import type { SpecialHullContext } from './ship-recipes'
 
@@ -15,7 +16,7 @@ export function buildEmpireHull(appearance: ShipAppearance, c: SpecialHullContex
     const radius=b/2, geometry=new THREE.CapsuleGeometry(radius,Math.max(0,l-b),hero?8:3,hero?20:10)
     geometry.rotateZ(Math.PI/2);geometry.scale(1,t/b,1);add(geometry,m,x,y,z)
   }
-  const box = (x:number,y:number,z:number,l:number,b:number,t:number,m:Parameters<typeof add>[1]='armor') => add(new THREE.BoxGeometry(l,t,b),m,x,y,z)
+  const box = (x:number,y:number,z:number,l:number,b:number,t:number,m:Parameters<typeof add>[1]='armor') => add(empire==='crimson'&&(m==='hull'||m==='armor')?armorPlateGeometry(l,b,t):new THREE.BoxGeometry(l,t,b),m,x,y,z)
   const vents = (x:number,y:number,z:number,l:number,b:number) => {
     slab(x,y,z,l,b,.006,'dark')
     if(hero) for(let i=0;i<9;i++) slab(x-l*.43+i*l*.105,y+.004,z,l*.024,b*.85,.003,'metal')
@@ -27,6 +28,8 @@ export function buildEmpireHull(appearance: ShipAppearance, c: SpecialHullContex
     rounded(-.24,h*.38,0,.37,w*1.88,h*1.9,'armor')
     rounded(.085,h*.72,0,.61,w*1.47,h*.48,'armor')
     rounded(.46,-h*.02,0,.019,w*1.23,h*1.14,'dark')
+    // A flush overlapping apron joins the raised stern shell to the foredeck.
+    add(armorPlateGeometry(Math.hypot(.15,h*.36),w*1.35,h*.08,.06,.025),'hull',-.045,h*1.11,0,new THREE.Euler(0,0,-Math.atan2(h*.36,.15)))
     // Fine gold bands wrap both sides; glazing remains recessed and restrained.
     for(const side of [-1,1]) {
       rounded(.015,-h*.08,side*w*.862,.78,.004,.007,'accent')
@@ -34,7 +37,7 @@ export function buildEmpireHull(appearance: ShipAppearance, c: SpecialHullContex
       rounded(-.31,h*.85,side*w*.60,.22,w*.40,h*.35,'armor')
       engine(-.49,-h*.18,side*w*.52,small?.030:.044)
       if(hero) for(let i=0;i<5;i++) {
-        rounded(-.25+i*.135,h*.91,side*w*.40,.10,w*.48,.004,'hull')
+        add(armorPlateGeometry(.10,w*.48,.004,.045,.025),'hull',-.25+i*.135,h*.91,side*w*.40)
         slab(-.235+i*.135,-h*.47,side*w*.865,.06,.004,h*.27,'dark')
       }
     }
@@ -74,12 +77,14 @@ export function buildEmpireHull(appearance: ShipAppearance, c: SpecialHullContex
       const holdWidth=w*(cargo?.97:.68), holdHeight=h*(cargo?1.95:1.3)
       const x=cargo?.015:-.08,z=side*w*(cargo?.81:.79)
       capsule(x,0,z,holdLength,holdWidth,holdHeight,'armor')
+      // Root fairings carry the pod collars into the central pressure hull.
+      rounded(-.08,h*.56,side*w*.53,.37,w*.38,h*.44,'hull')
       // Thin equatorial trim follows the same capsule outline.
       capsule(x,0,z,holdLength+.003,holdWidth+.004,holdHeight*.12,'accent')
       for(const band of [-1,1]) {
         const ring=new THREE.TorusGeometry(holdWidth*.505,.004,5,hero?24:12)
         ring.rotateY(Math.PI/2);ring.scale(1,holdHeight/holdWidth,1)
-        add(ring,'metal',x+band*(holdLength-holdWidth)*.28,0,z)
+        add(ring,'hull',x+band*(holdLength-holdWidth)*.28,0,z)
       }
       engine(-.46,-h*.12,side*w*.69,small?.032:.05)
       if(hero) vents(-.24,h*.70,side*w*.73,.13,w*.31)
@@ -93,7 +98,7 @@ export function buildEmpireHull(appearance: ShipAppearance, c: SpecialHullContex
       rounded(-.08,h*1.01,-w*.59,.43,w*.32,h*.49,'metal')
     }
   } else {
-    // Crimson: rectangular receiver blocks, open machinery gaps, flat red plates.
+    // Crimson: sloped shoulder armor, blunt inclined jaws, and open machinery gaps.
     box(-.015,0,0,.92,w*1.40,h*1.37,'dark')
     for(let i=0;i<3;i++) {
       const x=-.31+i*.29
@@ -108,6 +113,8 @@ export function buildEmpireHull(appearance: ShipAppearance, c: SpecialHullContex
         }
       }
     }
+    // Exposed steel collars carry the segmented armor across the machinery seams.
+    for(const x of [-.165,.125]) add(armorPlateGeometry(.115,w*1.44,h*.30),'metal',x,h*.63,0)
     // Twin blunt jaws leave a visible axial recess instead of a pointed nose.
     for(const side of [-1,1]) {
       box(.39,0,side*w*.53,.22,w*.59,h*1.85,'armor')
