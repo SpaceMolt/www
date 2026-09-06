@@ -8,17 +8,14 @@ const options: ShipMotionOptions = { size: 36, angle: 0, lane: 0, sideCount: 1, 
 const distance = (a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }) => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z)
 
 describe('cinema ship choreography', () => {
-  it('travels substantially even when the record holds one zone, with a bow facing its travel', () => {
+  it('holds a fixed formation and heading when the record holds one zone', () => {
     const actor = ship({ motion: [{ time: 0, position: 1 }, { time: 90, position: 1 }] })
     const early = sampleShipMotion(actor, 5, options)
     const late = sampleShipMotion(actor, 35, options)
-    expect(distance(early, late)).toBeGreaterThan(options.size * 1.5)
-    const before = sampleShipMotion(actor, 20, options)
-    const after = sampleShipMotion(actor, 20.01, options)
-    const dot = (after.x - before.x) * Math.cos(before.yaw) - (after.z - before.z) * Math.sin(before.yaw)
-    expect(dot).toBeGreaterThan(0)
-    expect(before.thrust).toBeGreaterThan(0)
-    expect(before.retroThrust).toBe(0)
+    expect(late).toEqual(early)
+    expect(early.yaw).toBe(Math.PI)
+    expect(early.bank).toBe(0)
+    expect(early.retroThrust).toBe(0)
   })
 
   it('reconstructs the same path on backward seeks and independent calls', () => {
@@ -26,17 +23,19 @@ describe('cinema ship choreography', () => {
     const first = sampleShipMotion(actor, 27.3, options)
     for (const time of [80, 0, 55, 3, 27.3]) sampleShipMotion(actor, time, options)
     expect(sampleShipMotion(actor, 27.3, options)).toEqual(first)
-    expect(sampleShipMotion(actor, 27.3, { ...options, seed: options.seed + 500 })).not.toEqual(first)
+    expect(sampleShipMotion(actor, 27.3, { ...options, seed: options.seed + 500 })).toEqual(first)
   })
 
-  it('gives small craft stronger banking and faster travel relative to hull length', () => {
-    const actor = ship()
-    const small = { ...options, size: 20 }
-    const large = { ...options, size: 260 }
-    const smallDistance = distance(sampleShipMotion(actor, 10, small), sampleShipMotion(actor, 30, small)) / small.size
-    const largeDistance = distance(sampleShipMotion(actor, 10, large), sampleShipMotion(actor, 30, large)) / large.size
-    expect(smallDistance).toBeGreaterThan(largeDistance * 2)
-    expect(Math.abs(sampleShipMotion(actor, 12, small).bank)).toBeGreaterThan(Math.abs(sampleShipMotion(actor, 12, large).bank) * 3)
+  it('keeps all combat ships parallel to their side axis regardless of lane or size', () => {
+    for (const angle of [0, Math.PI, Math.PI * .63]) {
+      for (const size of [20, 260]) {
+        for (let lane = 0; lane < 12; lane++) {
+          const frame = sampleShipMotion(ship(), 25, { ...options, angle, size, lane, sideCount: 12 })
+          expect(frame.yaw).toBeCloseTo(Math.PI - angle)
+          expect(frame.bank).toBe(0)
+        }
+      }
+    }
   })
 
   it('smoothly interpolates recorded zone approach and holds historical records without motion frames', () => {
@@ -63,7 +62,7 @@ describe('cinema ship choreography', () => {
     }
   })
 
-  it('keeps opposing formations on separated paths during the shared naval sweep', () => {
+  it('keeps opposing formations separated over time', () => {
     for (let time = 0; time <= 180; time += 5) {
       const left = sampleShipMotion(ship(), time, { ...options, size: 250, angle: 0 })
       const right = sampleShipMotion(ship({ sideIndex: 1, sideId: 2 }), time, { ...options, size: 250, angle: Math.PI })
@@ -92,7 +91,7 @@ describe('cinema ship choreography', () => {
     }
   })
 
-  it('keeps moving capital ships clear of a stationary station throughout their sweep', () => {
+  it('keeps capital ships clear of a stationary station', () => {
     const settings = { ...options, size: 400, sideCount: 2, spacing: 520, depth: 555 }
     const station = sampleShipMotion(ship({ kind: 'station' }), 0, { ...settings, lane: 1 })
     for (let time = 0; time <= 180; time += 0.5) {
@@ -101,17 +100,25 @@ describe('cinema ship choreography', () => {
     }
   })
 
-  it('closes the gap between fleets even with constant zones, creating parallax under a tracking camera', () => {
-    const left = ship()
-    const right = ship({ sideIndex: 1, sideId: 2 })
+  it('closes the gap only as recorded progress advances and preserves each formation lane', () => {
+    const motion = [{ time: 0, position: 0 }, { time: 50, position: 1 }]
+    const left = ship({ motion })
+    const right = ship({ sideIndex: 1, sideId: 2, motion })
     const separation = (time: number) => distance(sampleShipMotion(left, time, { ...options, size: 260 }),
       sampleShipMotion(right, time, { ...options, size: 260, angle: Math.PI }))
-    expect(separation(5) - separation(50)).toBeGreaterThan(200)
+    expect(separation(5) - separation(50)).toBeGreaterThan(120)
+    const lane = { ...options, angle: .7, lane: 5, sideCount: 12 }
+    const early = sampleShipMotion(left, 5, lane)
+    const late = sampleShipMotion(left, 50, lane)
+    expect(early.y).toBe(late.y)
+    expect(-Math.sin(lane.angle) * early.x + Math.cos(lane.angle) * early.z)
+      .toBeCloseTo(-Math.sin(lane.angle) * late.x + Math.cos(lane.angle) * late.z)
+    expect(early.yaw).toBe(late.yaw)
   })
 
-  it('continues position and velocity through fate, cuts engines, and rolls disabled hulls', () => {
+  it('continues recorded momentum through fate without adding gravity or roll', () => {
     for (const fate of ['knocked_out', 'destroyed', 'captured'] as const) {
-      const actor = ship({ fate, end: 20 })
+      const actor = ship({ fate, end: 20, motion: [{ time: 0, position: 0 }, { time: 40, position: 1 }] })
       const before = sampleShipMotion(actor, 19.999, options)
       const at = sampleShipMotion(actor, 20, options)
       const after = sampleShipMotion(actor, 20.001, options)
@@ -122,7 +129,12 @@ describe('cinema ship choreography', () => {
       expect(at.retroThrust).toBe(0)
       expect(sampleShipMotion(actor, 25, options).retroThrust).toBe(0)
       expect(sampleShipMotion(actor, 25, options).thrust).toBe(0)
-      if (fate !== 'captured') expect(Math.abs(sampleShipMotion(actor, 30, options).bank - at.bank)).toBeGreaterThan(0.3)
+      const later = sampleShipMotion(actor, 30, options)
+      expect(later.bank).toBe(at.bank)
+      expect(later.y).toBe(at.y)
+      expect(distance(later, at)).toBeGreaterThan(1)
+      expect(sampleShipMotion(ship({ fate, end: 20 }), 30, options))
+        .toEqual(sampleShipMotion(ship({ fate, end: 20 }), 20, options))
     }
   })
 
@@ -157,6 +169,22 @@ describe('cinema ship choreography', () => {
     expect(frame.thrust).toBeLessThan(.4)
     expect(frame.retroThrust).toBeGreaterThan(.1)
     expect(frame.retroThrust).toBeLessThanOrEqual(1)
+  })
+
+  it('keeps opposing headings and fixed elevations through advance and reverse maneuvers', () => {
+    const motion = [{ time: 0, position: 0 }, { time: 10, position: 1 }, { time: 20, position: 0 }]
+    for (const time of [5, 15]) {
+      const frames = [0, Math.PI].map(angle => sampleShipMotion(ship({ motion }), time,
+        { ...options, angle, lane: 8, sideCount: 12, formation: { lateral: 310, depth: 90, elevation: 42 } }))
+      expect(Math.cos(frames[0].yaw - frames[1].yaw)).toBeCloseTo(-1)
+      for (const frame of frames) {
+        expect(frame.y).toBe(42)
+        expect(frame.bank).toBe(0)
+        expect(time < 10 ? frame.thrust : frame.retroThrust).toBeGreaterThan(.1)
+      }
+      expect(frames[0].yaw).toBe(Math.PI)
+      expect(frames[1].yaw).toBe(0)
+    }
   })
 
   it('turns outward only after the recorded flee stance and restores combat facing when it ends', () => {
