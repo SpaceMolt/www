@@ -26,6 +26,8 @@ export interface ShipMotion {
   bank: number
   /** Engine strength: zero for disabled hulls, above one under escape thrust. */
   thrust: number
+  /** Forward-facing exhaust for reverse combat motion; zero under departure thrust. */
+  retroThrust: number
 }
 
 const clamp = (value: number, low: number, high: number) => Math.max(low, Math.min(high, value))
@@ -131,7 +133,7 @@ export function sampleShipMotion(ship: CinemaShip, time: number, options: ShipMo
     // A fixed installation occupies a separate orbital layer so a sweeping
     // neighboring flight lane cannot pass through its stationary structure.
     return { x: Math.cos(angle) * radius - Math.sin(angle) * slot, y: height - (size * 0.9 + 120),
-      z: Math.sin(angle) * radius + Math.cos(angle) * slot, yaw: Math.PI - angle, bank: 0, thrust: 0 }
+      z: Math.sin(angle) * radius + Math.cos(angle) * slot, yaw: Math.PI - angle, bank: 0, thrust: 0, retroThrust: 0 }
   }
 
   const sampledAt = Math.max(ship.start, ship.fate === 'survived' ? time : Math.min(time, ship.end))
@@ -153,7 +155,8 @@ export function sampleShipMotion(ship: CinemaShip, time: number, options: ShipMo
   const reversing = inwardVelocity < -.1
   const mainDrive = reversing ? .08 : .75
   const normalThrust = (mainDrive + Math.sin(local * .31 + phase) * agility * (reversing ? .025 : .12)) * (1 - flee) + 1.35 * flee
-  if (time < ship.end || ship.fate === 'survived') return { ...base, yaw, bank, thrust: normalThrust }
+  const retroThrust = reversing ? clamp((-inwardVelocity - .1) / 4, 0, 1) * (1 - flee) : 0
+  if (time < ship.end || ship.fate === 'survived') return { ...base, yaw, bank, thrust: normalThrust, retroThrust }
 
   if (ship.fate === 'escaped' || ship.fate === 'withdrawn') {
     // Velocity matches the live trajectory at departure; acceleration then
@@ -165,7 +168,7 @@ export function sampleShipMotion(ship: CinemaShip, time: number, options: ShipMo
     const forwardZ = velocity.z + Math.sin(bearing) * after * acceleration * 2
     return { x: base.x + velocity.x * after + Math.cos(bearing) * boost,
       y: base.y + velocity.y * after, z: base.z + velocity.z * after + Math.sin(bearing) * boost,
-      yaw: Math.atan2(-forwardZ, forwardX), bank: bank * Math.exp(-after), thrust: normalThrust + Math.min(1, after * 0.6) }
+      yaw: Math.atan2(-forwardZ, forwardX), bank: bank * Math.exp(-after), thrust: normalThrust + Math.min(1, after * 0.6), retroThrust: 0 }
   }
 
   // Preserve momentum through a knockout, capture, or destruction. The visible
@@ -174,5 +177,5 @@ export function sampleShipMotion(ship: CinemaShip, time: number, options: ShipMo
   const drift = drag * (1 - Math.exp(-after / drag))
   const roll = ship.fate === 'captured' ? 0 : (seed % 2 ? 1 : -1) * 0.045 * after
   return { x: base.x + velocity.x * drift, y: base.y + velocity.y * drift - after * after * 0.015,
-    z: base.z + velocity.z * drift, yaw, bank: bank + roll, thrust: 0 }
+    z: base.z + velocity.z * drift, yaw, bank: bank + roll, thrust: 0, retroThrust: 0 }
 }

@@ -112,6 +112,43 @@ export function buildSpecialHull(recipe: ShipRecipe | undefined, c: SpecialHullC
     for (const side of [-1, 1]) engine(x - length * .5, y, z + side * radius * .43, nozzle)
   }
 
+  if (recipe === 'shard') {
+    // The Crimson starter is an armored combat drone with a mining tool added,
+    // not a cargo ship. Its tiny pilot conversion leaves the original bulk intact.
+    slab(-.04, -h * .12, 0, .82, w * 1.5, h * 1.05, 'dark')
+    slab(-.13, h * .38, 0, .54, w * 1.22, h * .84, 'hull')
+    slab(-.24, h * .82, 0, .3, w * 1.08, .018, 'armor')
+    for (const side of [-1, 1]) {
+      const z = side * w * .59
+      // Thick armored shoulders house drives aft and weapon recesses forward.
+      slab(-.2, h * .12, z, .52, w * .72, h * 1.55, 'hull')
+      slab(.09, -h * .23, z, .57, w * .68, h * 1.05, 'hull')
+      slab(.04, h * .34, z, .44, w * .65, .032, 'armor')
+      slab(-.19, h * .9, z, .39, w * .54, .022, 'armor')
+      slab(-.19, -h * .52, z, .48, w * .69, .025, 'metal')
+      // Dark shallow circular sockets are structural housings, never a barrel.
+      rod(.377, -h * .23, z, w * .255, .009, 'dark')
+      add(new THREE.TorusGeometry(w * .26, .009, hero ? 8 : 5, hero ? 20 : 10), 'metal', .382, -h * .23, z, new THREE.Euler(0, Math.PI / 2, 0))
+      engine(-.455, -h * .05, z, .045)
+      for (let i = 0; i < (hero ? 6 : 3); i++) {
+        slab(-.35 + i * (hero ? .047 : .11), h * .28, side * w * .963, .024, .006, h * .7, 'dark')
+      }
+      if (hero) {
+        slab(-.05, h * .83, side * w * .44, .20, .016, .009, 'metal')
+        for (const x of [-.34, -.06, .22]) rod(x, h * .455, z, .006, .003, 'metal', false)
+      }
+    }
+    // A slit-like inset canopy just ahead of the raised drone electronics block.
+    // No panoramic bridge, habitation decks, or externally bolted cargo pods.
+    slab(.202, h * .415, 0, .15, .105, .026, 'hull')
+    slab(.219, h * .483, 0, .086, .066, .005, 'glass')
+    for (const side of [-1, 1]) slab(.205, h * .49, side * .042, .13, .012, .012, 'armor')
+    slab(.163, h * .49, 0, .012, .098, .014, 'armor')
+    slab(.26, h * .49, 0, .012, .098, .014, 'armor')
+    slab(.364, -h * .21, 0, .14, w * .39, h * .63, 'armor')
+    return true
+  }
+
   if (recipe === 'prayer') {
     container(.035, -h * .4, 0, .6, w * 1.4, h * .78, 0)
     container(.035, h * .42, 0, .6, w * 1.4, h * .78, 1)

@@ -1,7 +1,7 @@
 /** Compact public catalog projection. This module never imports the catalog bundle. */
 export type ShipFamily = 'fighter' | 'warship' | 'capital' | 'carrier' | 'industrial' | 'scout' | 'support' | 'drone' | 'station' | 'creature'
 export type ShipEmpire = 'solarian' | 'voidborn' | 'crimson' | 'nebula' | 'outerrim' | 'pirate' | 'neutral'
-export type ShipRecipe = 'prayer' | 'worship' | 'congregation' | 'comet' | 'concordia' | 'liquidity_event' | 'midas'
+export type ShipRecipe = 'shard' | 'prayer' | 'worship' | 'congregation' | 'comet' | 'concordia' | 'liquidity_event' | 'midas'
 export interface ShipAppearance {
   family: ShipFamily
   empire: ShipEmpire
@@ -85,6 +85,7 @@ export interface ShipAppearanceSource {
 }
 
 const recipeDimensions = new Map<ShipRecipe, [number, number]>([
+  ['shard', [.72, .40]],
   ['prayer', [.50, .36]], ['worship', [.65, .36]], ['congregation', [.32, .28]],
   ['comet', [.27, .20]], ['concordia', [.20, .12]], ['liquidity_event', [.48, .30]], ['midas', [.42, .25]],
 ])
@@ -97,7 +98,7 @@ const absentDonors = new Map<string, ShipAppearanceSource>([
 function projectHull(ship: ShipAppearanceSource): ShipAppearance {
   const appearance = resolveAppearance(ship.class ?? '', ship.faction, ship.scale, ship.category, ship.tier)
   const recipe = ship.id as ShipRecipe, dimensions = recipeDimensions.get(recipe)
-  return dimensions ? { ...appearance, recipe, beam: dimensions[0], height: dimensions[1] } : appearance
+  return dimensions ? { ...appearance, recipe, family: recipe === 'shard' ? 'drone' : appearance.family, beam: dimensions[0], height: dimensions[1] } : appearance
 }
 
 export function buildShipAppearances(ships: readonly ShipAppearanceSource[]): ShipAppearanceMap {

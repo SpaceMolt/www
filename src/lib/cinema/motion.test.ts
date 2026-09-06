@@ -18,6 +18,7 @@ describe('cinema ship choreography', () => {
     const dot = (after.x - before.x) * Math.cos(before.yaw) - (after.z - before.z) * Math.sin(before.yaw)
     expect(dot).toBeGreaterThan(0)
     expect(before.thrust).toBeGreaterThan(0)
+    expect(before.retroThrust).toBe(0)
   })
 
   it('reconstructs the same path on backward seeks and independent calls', () => {
@@ -118,6 +119,8 @@ describe('cinema ship choreography', () => {
       expect(distance(at, after)).toBeLessThan(0.1)
       expect(distance(before, at)).toBeCloseTo(distance(at, after), 4)
       expect(at.thrust).toBe(0)
+      expect(at.retroThrust).toBe(0)
+      expect(sampleShipMotion(actor, 25, options).retroThrust).toBe(0)
       expect(sampleShipMotion(actor, 25, options).thrust).toBe(0)
       if (fate !== 'captured') expect(Math.abs(sampleShipMotion(actor, 30, options).bank - at.bank)).toBeGreaterThan(0.3)
     }
@@ -132,12 +135,14 @@ describe('cinema ship choreography', () => {
     expect(distance(at, first)).toBeLessThan(0.1)
     expect(distance(second, third)).toBeGreaterThan(distance(at, second) * 2)
     expect(third.thrust).toBeGreaterThan(1)
+    for (const frame of [at, first, second, third]) expect(frame.retroThrust).toBe(0)
   })
 
   it('leaves stations fixed regardless of zone updates, time, or fate', () => {
     const station = ship({ kind: 'station', fate: 'destroyed', end: 10, motion: [{ time: 0, position: 0 }, { time: 8, position: 1 }] })
     const position = sampleShipMotion(station, 0, options)
     expect(position.thrust).toBe(0)
+    expect(position.retroThrust).toBe(0)
     for (const time of [4, 10, 20, 90]) expect(sampleShipMotion(station, time, options)).toEqual(position)
   })
 
@@ -150,6 +155,8 @@ describe('cinema ship choreography', () => {
     expect(forward.x * -frame.x + forward.z * -frame.z).toBeGreaterThan(Math.hypot(frame.x, frame.z) * .95)
     expect((after.x - before.x) * forward.x + (after.z - before.z) * forward.z).toBeLessThan(0)
     expect(frame.thrust).toBeLessThan(.4)
+    expect(frame.retroThrust).toBeGreaterThan(.1)
+    expect(frame.retroThrust).toBeLessThanOrEqual(1)
   })
 
   it('turns outward only after the recorded flee stance and restores combat facing when it ends', () => {
@@ -158,7 +165,7 @@ describe('cinema ship choreography', () => {
       const frame = sampleShipMotion(actor, time, options)
       const dot = Math.cos(frame.yaw) * frame.x - Math.sin(frame.yaw) * frame.z
       expect(outward ? dot : -dot).toBeGreaterThan(Math.hypot(frame.x, frame.z) * .9)
-      if (outward) expect(frame.thrust).toBeGreaterThan(1)
+      if (outward) { expect(frame.thrust).toBeGreaterThan(1); expect(frame.retroThrust).toBe(0) }
     }
     // A future flee frame must not rotate a currently fighting ship early.
     expect(sampleShipMotion(actor, 9.99, options).yaw).toBeCloseTo(sampleShipMotion(ship({ motion: [{ time: 0, position: 1 }] }), 9.99, options).yaw, 5)

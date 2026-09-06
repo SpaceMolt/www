@@ -70,3 +70,22 @@ test('Solarian slate and Nebula gold are large-surface identities', () => {
   expect(nebula.hull).toBe(0xb69a56)
   expect(nebula.accent).toBe(0x244b36)
 })
+
+test('Shard keeps its repurposed combat-drone construction despite the Miner catalog class', () => {
+  const result = buildShipAppearances([
+    { id: 'shard', class: 'Miner', category: 'Industrial', faction: 'crimson', scale: 1, tier: 0 },
+    { id: 'ordinary_miner', class: 'Miner', category: 'Industrial', faction: 'crimson', scale: 1, tier: 0 },
+    { id: 'converted_shard', class: 'Miner', faction: 'pirate', scale: 2, based_on: 'shard' },
+  ])
+  expect(result.shard.recipe).toBe('shard')
+  expect(result.shard.family).toBe('drone')
+  expect(result.shard.beam).toBe(.72)
+  expect(result.shard.height).toBe(.40)
+  expect(result.shard.length).toBe(resolveAppearance('Miner', 'crimson', 1).length)
+  expect(result.ordinary_miner.family).toBe('industrial')
+  expect(result.ordinary_miner.recipe).toBeUndefined()
+  expect(result.converted_shard.recipe).toBe('shard')
+  expect(result.converted_shard.family).toBe('drone')
+  expect(result.converted_shard.empire).toBe('pirate')
+  expect(result.converted_shard.length).toBeGreaterThan(result.shard.length)
+})

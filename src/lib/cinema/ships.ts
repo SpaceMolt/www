@@ -6,6 +6,8 @@ import { buildEmpireHull } from './ship-empires'
 import { buildSpecialHull } from './ship-recipes'
 import { buildFittedHardware } from './ship-hardware'
 import type { CinemaHardware } from './hardware'
+import { createWeaponRig, tagWeaponGeometry, applyWeaponRig, createWeaponShadowMaterials } from './ship-weapons'
+import { addRetrothrusters } from './ship-thrusters'
 
 type Ring = [x: number, halfWidth: number, halfHeight: number, centerY?: number]
 type MaterialName = 'hull' | 'armor' | 'dark' | 'metal' | 'accent' | 'glass' | 'windows'
@@ -224,6 +226,9 @@ export function createShip(appearance: ShipAppearance, seed: number, detail: 'he
     const density = family === 'fighter' || family === 'scout' || family === 'drone' ? .75 : 1.5
     for (const key of ['hull', 'armor', 'dark', 'metal'] as const) surfaceDetail(materials[key], seed, density)
   }
+  const rig=createWeaponRig()
+  group.userData.weaponRig=rig
+  let weaponIndex=-1
   const batches = new Map<MaterialName, THREE.BufferGeometry[]>()
   const add = (geometry: THREE.BufferGeometry, material: MaterialName, x = 0, y = 0, z = 0, rotation?: THREE.Euler) => {
     if (rotation) geometry.applyMatrix4(new THREE.Matrix4().makeRotationFromEuler(rotation))
@@ -232,6 +237,7 @@ export function createShip(appearance: ShipAppearance, seed: number, detail: 'he
     let flat = geometry
     if (geometry.index) { flat = geometry.toNonIndexed(); geometry.dispose() }
     for (const key of Object.keys(flat.attributes)) if (key !== 'position' && key !== 'normal') flat.deleteAttribute(key)
+    tagWeaponGeometry(flat,weaponIndex,weaponIndex>=0?rig.mounts[weaponIndex].pivot:undefined)
     const batch = batches.get(material) ?? []
     batch.push(flat)
     batches.set(material, batch)
@@ -522,7 +528,13 @@ diffuseColor.a *= engineTail * engineFilament * 0.65;`)
       }
       return top
     }
-    buildFittedHardware(hardware, family, { ...context, deckAt })
+    buildFittedHardware(hardware, family, { ...context, deckAt, appearance,
+      beginWeapon: (family,pivot,muzzle) => {
+        weaponIndex=rig.mounts.length
+        rig.mounts.push({family,pivot,muzzle,rotation:new THREE.Quaternion()})
+      },
+      endWeapon: () => { weaponIndex=-1 },
+    })
     if (pirate || empire === 'outerrim') {
       // A limited palette of donor plates gives readable repairs without extra draw calls.
       const colors: MaterialName[] = ['armor','metal','hull','accent','dark']
@@ -546,11 +558,14 @@ diffuseColor.a *= engineTail * engineFilament * 0.65;`)
     }
   }
 
+  const shadows=rig.mounts.length?createWeaponShadowMaterials(rig):undefined
   for (const [key, geometries] of batches) {
     const merged = mergeGeometries(geometries, false)
     for (const geometry of geometries) geometry.dispose()
     if (merged) {
+      if(rig.mounts.length) applyWeaponRig(materials[key],rig)
       const mesh = new THREE.Mesh(merged, materials[key])
+      if(shadows) { mesh.customDepthMaterial=shadows.depth;mesh.customDistanceMaterial=shadows.distance;mesh.frustumCulled=false }
       mesh.name = key
       mesh.castShadow = true
       mesh.receiveShadow = true
@@ -559,5 +574,6 @@ diffuseColor.a *= engineTail * engineFilament * 0.65;`)
   }
   // Families may not use every palette entry; dispose those immediately.
   for (const key of Object.keys(materials) as MaterialName[]) if (!batches.has(key)) materials[key].dispose()
+  if(family!=='station' && family!=='creature') addRetrothrusters(group,appearance,seed,hero)
   return group
 }

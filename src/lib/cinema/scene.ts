@@ -18,8 +18,10 @@ import { cinemaRenderSettings, initialCinemaQuality } from './quality'
 import { weaponVisual } from './weaponVisuals'
 import { getWeaponColor, resolveWeaponFamily } from './weapons'
 import { createShip } from './ships'
+import { aimWeaponMount, weaponMuzzleLocal, assignWeaponCues, type WeaponRig } from './ship-weapons'
+import { updateRetrothrusters } from './ship-thrusters'
 import { resolveAppearance, type ShipAppearance } from './appearance'
-import type { CinemaFilm, CinemaShip } from './types'
+import type { CinemaFilm, CinemaShip, CinemaCue } from './types'
 
 export type CinemaQuality = 'auto' | 'high' | 'medium' | 'low'
 export interface CinemaOptions {
@@ -75,6 +77,7 @@ interface Actor {
   rotation: number
   bank: number
   thrust: number
+  retroThrust: number
   size: number
   angle: number
   lane: number
@@ -98,6 +101,8 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     scene.traverse(object => {
       if (object instanceof THREE.Mesh || object instanceof THREE.Points || object instanceof THREE.Sprite) {
         if ('geometry' in object) geometries.add(object.geometry)
+        if (object.customDepthMaterial) materials.add(object.customDepthMaterial)
+        if (object.customDistanceMaterial) materials.add(object.customDistanceMaterial)
         if (object instanceof THREE.InstancedMesh) object.dispose()
         for (const material of Array.isArray(object.material) ? object.material : [object.material]) materials.add(material)
       }
@@ -237,14 +242,14 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     if (model) {
       model.scale.setScalar(size)
       model.traverse(object => {
-        if (object instanceof THREE.Mesh && object.userData.engine) {
+        if (object instanceof THREE.Mesh && object.userData.engine && !object.userData.retrothruster) {
           const material = object.material
           if (material instanceof THREE.MeshStandardMaterial || material instanceof THREE.MeshBasicMaterial) engineMaterials.push({ material, intensity: object.userData.baseIntensity ?? 1 })
         }
       })
       scene.add(model)
     }
-    return { ship, appearance, model, position: new THREE.Vector3(), rotation: 0, bank: 0, thrust: 1, size, angle, lane, seed, engineMaterials }
+    return { ship, appearance, model, position: new THREE.Vector3(), rotation: 0, bank: 0, thrust: 1, retroThrust: 0, size, angle, lane, seed, engineMaterials }
   })
   const fleetSpacing = new Map(sides.map(side => [side, fleetMotionSpacing(actors.filter(a=>a.ship.sideIndex===side && a.ship.kind!=='station').map(a=>({size:a.size,beam:a.appearance.beam})))]))
   const fleetDepth = new Map(sides.map(side => [side, Math.max(130,...actors.filter(a=>a.ship.sideIndex===side && a.ship.kind!=='station').map(a=>a.size*1.25+55))]))
@@ -252,6 +257,16 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     id: actor.ship.id, playerId: actor.ship.playerId, size: actor.size, beam: actor.appearance.beam, kind: actor.ship.kind, family: actor.appearance.family,
   })), sides.length)]))
   const byId = new Map(actors.map(a => [a.ship.id, a]))
+  const gunTracks = new Map<string, CinemaCue[][]>()
+  const cueMount = new Map<string, number>(), suppressedGuns = new Set<string>()
+  for(const actor of actors) {
+    const rig=actor.model?.userData.weaponRig as WeaponRig|undefined
+    if(!rig?.mounts.length) continue
+    const assigned=assignWeaponCues(rig,film.cues.filter(cue=>cue.from===actor.ship.id))
+    gunTracks.set(actor.ship.id,assigned.tracks)
+    for(const [id,index] of assigned.byCue) cueMount.set(id,index)
+    for(const id of assigned.suppressed) suppressedGuns.add(id)
+  }
   // Distant actors remain real participants, rendered with a bounded number of draw calls.
   const distantGroups = new Map<string,{mesh:THREE.InstancedMesh;count:number}>()
   const distantKey = (actor: Actor) => `${actor.appearance.empire}:${actor.appearance.hullEmpire}:${actor.appearance.family}:${actor.appearance.recipe ?? 'standard'}`
@@ -362,7 +377,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   const positionAt = (actor: Actor, t: number) => {
     const motion = sampleShipMotion(actor.ship,t,motionOptions(actor))
     actor.position.set(motion.x,motion.y,motion.z)
-    actor.rotation=motion.yaw; actor.bank=motion.bank; actor.thrust=motion.thrust
+    actor.rotation=motion.yaw; actor.bank=motion.bank; actor.thrust=motion.thrust; actor.retroThrust=motion.retroThrust
     return actor.position
   }
   const cascadePlans = buildCinemaCascades(film.cues,(id,at)=>{
@@ -394,6 +409,49 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   }
   const resize = new ResizeObserver(() => { setResolution(); if (!playing) safeDraw() }); cleanups.push(() => resize.disconnect()); resize.observe(canvas); setResolution()
 
+  const aimPoint = (cue: CinemaCue, output: THREE.Vector3, at?: number) => {
+    const target=byId.get(cue.to??'')
+    if(!target) return output.set(0,0,0)
+    if(at===undefined) output.copy(target.position)
+    else {const pose=sampleShipMotion(target.ship,at,motionOptions(target));output.set(pose.x,pose.y,pose.z)}
+    output.y+=target.size*.06
+    if(!cue.hit){output.y+=target.size*.8;output.z+=target.size*(hash(cue.id)%2?.7:-.7)}
+    return output
+  }
+  const previousAim=new THREE.Quaternion(), aimTarget=new THREE.Vector3(), frozenInverse=new THREE.Matrix4(), frozenRotation=new THREE.Quaternion()
+  function updateGuns() {
+    for(const actor of actors) {
+      const model=actor.model, tracks=gunTracks.get(actor.ship.id)
+      if(!model||!tracks) continue
+      model.updateMatrixWorld(true)
+      const rig=model.userData.weaponRig as WeaponRig
+      const retired=time>=actor.ship.end && actor.ship.fate!=='survived'
+      const aimAt=retired?actor.ship.end:time
+      if(retired) {
+        const pose=sampleShipMotion(actor.ship,Math.max(actor.ship.start,actor.ship.end-.00001),motionOptions(actor))
+        frozenRotation.setFromEuler(new THREE.Euler(reduced?0:pose.bank,pose.yaw,0,'YXZ'))
+        frozenInverse.compose(new THREE.Vector3(pose.x,pose.y,pose.z),frozenRotation,new THREE.Vector3(actor.size,actor.size,actor.size)).invert()
+      }
+      const targetLocal=(cue:CinemaCue)=>retired?aimPoint(cue,aimTarget,aimAt).applyMatrix4(frozenInverse):model.worldToLocal(aimPoint(cue,aimTarget))
+      for(let index=0;index<tracks.length;index++) {
+        const track=tracks[index]
+        let low=0,high=track.length
+        while(low<high){const mid=(low+high)>>>1;if(track[mid].time<=aimAt)low=mid+1;else high=mid}
+        const previous=track[low-1], next=track[low]
+        const approaching=next && aimAt>=next.time-1.2 && (!previous || aimAt>=previous.time+previous.duration)
+        if(previous) aimWeaponMount(rig,index,targetLocal(previous))
+        else {rig.mounts[index].rotation.identity();rig.uniforms[index].set(0,0,0,1)}
+        if(approaching) {
+          previousAim.copy(rig.mounts[index].rotation)
+          aimWeaponMount(rig,index,targetLocal(next))
+          const t=clamp((aimAt-next.time+1.2)/1.1,0,1), blend=t*t*(3-2*t)
+          rig.mounts[index].rotation.slerpQuaternions(previousAim,rig.mounts[index].rotation.clone(),blend)
+          const q=rig.mounts[index].rotation;rig.uniforms[index].set(q.x,q.y,q.z,q.w)
+        }
+      }
+    }
+  }
+
   function draw() {
     let engineCount = 0, trailCount = 0
     const activeCues = [...cueRange(film.cues, time - effectWindow, time + .00001)]
@@ -412,6 +470,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
         actor.model.visible = visible && !(actor.ship.fate === 'destroyed' && time > actor.ship.end + .32)
         actor.model.position.copy(actor.position)
         actor.model.rotation.set(reduced ? 0 : actor.bank, actor.rotation, 0, 'YXZ')
+        updateRetrothrusters(actor.model,actor.retroThrust*(1-cloak*.95))
         for (const { material, intensity } of actor.engineMaterials) { if (material instanceof THREE.MeshStandardMaterial) material.emissiveIntensity = actor.thrust * (2.4 + Math.sin(time * 8 + actor.seed) * .3) * (1-cloak*.95); else { material.transparent = true; material.opacity = actor.thrust * intensity * (.7 + Math.sin(time * 8 + actor.seed) * .06) * (1-cloak*.95) } }
       } else if (visible && !(actor.ship.fate === 'destroyed' && time > actor.ship.end + .32)) {
         dummy.position.copy(actor.position); dummy.rotation.set(reduced ? 0 : actor.bank, actor.rotation, 0, 'YXZ'); dummy.scale.setScalar(actor.size); dummy.updateMatrix()
@@ -425,6 +484,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
         sprite.material.color.setHex(actor.appearance.accent);sprite.material.opacity=1-cloak*.95
       }
     }
+    updateGuns()
     if (!reduced) for (const actor of actors) {
       if (!actor.model || actor.ship.kind==='station' || time < actor.ship.start || time > actor.ship.end+5) continue
       const settings=motionOptions(actor)
@@ -599,12 +659,13 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
       if (cue.kind === 'weapon' && from && to) {
         if(cascadeCollateral.has(cue.id))continue
         pointA.copy(from.position).add(new THREE.Vector3(Math.cos(from.rotation)*from.size*.42,from.size*.12,-Math.sin(from.rotation)*from.size*.42))
-        pointB.copy(to.position); pointB.y += to.size * 0.06
-        if (!cue.hit) { pointB.y += to.size * 0.8; pointB.z += to.size * (seed % 2 ? 0.7 : -0.7) }
+        aimPoint(cue,pointB)
+        const mount=cueMount.get(cue.id),rig=from.model?.userData.weaponRig as WeaponRig|undefined
+        if(mount!==undefined && rig && from.model && weaponMuzzleLocal(rig,mount,pointA)) from.model.localToWorld(pointA)
         if(cue.secondaryKind==='retaliation'||/galvanic hull grid/i.test(cue.weaponName??''))pointA.copy(from.position)
         const parent=cuesById.get(cue.parentId ?? '')
         const collateralOrigin=parent?.to ? byId.get(parent.to)?.position : undefined
-        const visual=weaponVisual(cue,age,pointA,pointB,from.size,to.size,reduced,collateralOrigin)
+        const visual=suppressedGuns.has(cue.id)?{lines:[],glows:[],rings:[],projectiles:[]}:weaponVisual(cue,age,pointA,pointB,from.size,to.size,reduced,collateralOrigin)
         for(const beam of visual.lines)addBeam(beam.from,beam.to,beam.width,beam.color)
         for(const flash of visual.glows)addFlash(flash.position,flash.radius,flash.color,flash.opacity)
         for(const wave of visual.rings){

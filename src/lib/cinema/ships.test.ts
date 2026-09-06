@@ -2,12 +2,15 @@ import { describe, expect, test } from 'bun:test'
 import * as THREE from 'three'
 import { buildShipAppearances, resolveAppearance, type ShipEmpire } from './appearance'
 import { createShip } from './ships'
+import { aimWeaponMount, weaponMuzzleLocal, type WeaponRig } from './ship-weapons'
 
 function dispose(group: THREE.Group) {
   const materials = new Set<THREE.Material>()
   group.traverse(object => {
     if (!(object instanceof THREE.Mesh)) return
     object.geometry.dispose()
+    if(object.customDepthMaterial) materials.add(object.customDepthMaterial)
+    if(object.customDistanceMaterial) materials.add(object.customDistanceMaterial)
     for (const material of Array.isArray(object.material) ? object.material : [object.material]) materials.add(material)
   })
   for (const material of materials) material.dispose()
@@ -23,7 +26,7 @@ describe('cinematic ship geometry', () => {
     expect(size.y).toBeGreaterThan(.06)
     expect(size.z).toBeGreaterThan(.1)
     expect(size.length()).toBeLessThan(2)
-    expect(group.children.filter(mesh => !mesh.userData.engine).length).toBeLessThanOrEqual(7)
+    expect(group.children.filter(mesh => !mesh.userData.engine && !mesh.userData.retrothruster).length).toBeLessThanOrEqual(7)
     for (const object of group.children) {
       const mesh = object as THREE.Mesh
       const positions = mesh.geometry.getAttribute('position')
@@ -56,7 +59,7 @@ describe('cinematic ship geometry', () => {
         const size = new THREE.Box3().setFromObject(group).getSize(new THREE.Vector3())
         const armor = group.getObjectByName('armor') as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>
         expect(armor.geometry.getAttribute('position').count).toBeGreaterThan(200)
-        expect(group.children.filter(child => !child.userData.engine).length).toBeLessThanOrEqual(7)
+        expect(group.children.filter(child => !child.userData.engine && !child.userData.retrothruster).length).toBeLessThanOrEqual(7)
         const silhouette = size.toArray().map(value => value.toFixed(3)).join(',')
         dispose(group)
         return silhouette
@@ -175,7 +178,7 @@ describe('fitted ship hardware', () => {
   test('large heterogeneous fits keep finite geometry and bounded static draw calls', () => {
     for (const empire of ['solarian','nebula','crimson','voidborn','outerrim'] as const) {
       const group = createShip(resolveAppearance('Dreadnought',empire), 7, 'hero', { ...empty, weapons:{laser:8,railgun:8,missile:8,exotic:8},cargo:8,mining:8,salvage:8,sensor:8,defense:8,utility:8 })
-      expect(group.children.filter(o=>!o.userData.engine).length).toBeLessThanOrEqual(7)
+      expect(group.children.filter(o=>!o.userData.engine && !o.userData.retrothruster).length).toBeLessThanOrEqual(7)
       expect(new THREE.Box3().setFromObject(group).getSize(new THREE.Vector3()).length()).toBeLessThan(2)
       for(const o of group.children) expect(Array.from((o as THREE.Mesh).geometry.getAttribute('position').array).every(Number.isFinite)).toBe(true)
       dispose(group)
@@ -193,4 +196,66 @@ describe('fitted ship hardware', () => {
       dispose(group)
     }
   })
+})
+
+test('weapon proportions grow with tier while hull scale remains physical', () => {
+  const lengths:number[]=[]
+  for(const tier of [1,3,5]) {
+    const appearance=resolveAppearance('Cruiser','solarian',3,'combat',tier)
+    const model=createShip(appearance,1,'hero',{source:'modules',weapons:{railgun:1},cargo:0,mining:0,salvage:0,sensor:0,defense:0,utility:0})
+    const mount=model.userData.weaponRig.mounts[0]
+    lengths.push(mount.muzzle.distanceTo(mount.pivot))
+    expect(appearance.length).toBe(resolveAppearance('Cruiser','solarian',3,'combat',1).length)
+    expect(model.children.filter(child=>child.userData.retrothruster).length).toBe(2)
+    dispose(model)
+  }
+  expect(lengths[0]).toBeGreaterThan(.20)
+  expect(lengths[1]).toBeGreaterThan(lengths[0])
+  expect(lengths[2]).toBeGreaterThan(lengths[1])
+})
+
+
+for (const family of ['autocannon', 'laser'] as const) test(`Shard ${family} mounts clear the hull through full yaw and modest battle pitch`, () => {
+  const appearance = buildShipAppearances([{ id: 'shard', class: 'Miner', category: 'Industrial', faction: 'crimson', scale: 1, tier: 0 }]).shard
+  const group = createShip(appearance, 90210, 'hero', { source: 'modules', weapons: { [family]: 2 }, cargo: 0, mining: 0, salvage: 0, sensor: 0, defense: 0, utility: 0 })
+  try {
+    group.updateMatrixWorld(true)
+    const rig = group.userData.weaponRig as WeaponRig
+    expect(rig.mounts).toHaveLength(2)
+    const hull = group.children.filter(object => !object.userData.engine && !object.userData.retrothruster) as THREE.Mesh[]
+    // Back faces detect muzzles embedded inside a closed hull, which a normal
+    // front-face raycast can miss. GPU-rotated gun triangles are excluded below.
+    for (const mesh of hull) for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) material.side = THREE.DoubleSide
+    const ray = new THREE.Raycaster()
+    const failures: { mount: number; yaw: number; pitch: number; segment: string; surface: string }[] = []
+    for (let index = 0; index < rig.mounts.length; index++) {
+      const mount = rig.mounts[index]
+      for (let yaw = -180; yaw < 180; yaw += 5) for (const pitch of [-10, -5, 0, 5, 10]) {
+        const heading = THREE.MathUtils.degToRad(yaw), elevation = THREE.MathUtils.degToRad(pitch)
+        const direction = new THREE.Vector3(Math.cos(heading) * Math.cos(elevation), Math.sin(elevation), Math.sin(heading) * Math.cos(elevation))
+        aimWeaponMount(rig, index, mount.pivot.clone().addScaledVector(direction, 10))
+        const muzzle = weaponMuzzleLocal(rig, index)!
+        // Check both the visible barrel axis and the beam/projectile leaving
+        // its animated muzzle. The old recessed mounts fail even at 60deg yaw.
+        for (const [segment, origin, far] of [
+          ['barrel', mount.pivot, mount.pivot.distanceTo(muzzle)],
+          ['shot', muzzle, 10],
+        ] as const) {
+          ray.set(origin.clone().addScaledVector(direction, .0001), direction)
+          ray.far = far
+          const blocked = ray.intersectObjects(hull, false).find(hit => {
+            if (!hit.face) return false
+            const tag = (hit.object as THREE.Mesh).geometry.getAttribute('cinemaMount')
+            return !tag || [hit.face.a, hit.face.b, hit.face.c].every(vertex => tag.getX(vertex) < 0)
+          })
+          if (blocked) failures.push({ mount: index, yaw, pitch, segment, surface: blocked.object.name })
+        }
+      }
+    }
+    // A bounded diagnostic avoids drowning the first failing headings in output.
+    expect(failures.slice(0, 4)).toEqual([])
+    expect(failures).toHaveLength(0)
+  } finally {
+    dispose(group)
+  }
 })

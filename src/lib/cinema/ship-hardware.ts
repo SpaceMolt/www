@@ -1,11 +1,17 @@
 import * as THREE from 'three'
 import type { CinemaHardware } from './hardware'
-import type { ShipFamily } from './appearance'
+import type { ShipFamily, ShipAppearance } from './appearance'
 import type { CinemaWeaponFamily } from './weapons'
 import type { SpecialHullContext } from './ship-recipes'
 
+export function cinemaGunSize(appearance: Pick<ShipAppearance, 'tier'|'hullEmpire'|'family'>): number {
+  const small=appearance.family==='fighter'||appearance.family==='scout'
+  const tier=Math.max(0,Math.min(5,Number.isFinite(appearance.tier)?appearance.tier:1))
+  return Math.min(.145,(small?.050:.064)*(1.4+tier*.19)*(appearance.hullEmpire==='crimson'?1.18:1))
+}
+
 /** Bounded representative external equipment; counts describe a fit, not literal sockets. */
-export function buildFittedHardware(profile: CinemaHardware | undefined, family: ShipFamily, c: SpecialHullContext & { deckAt?: (x:number,z:number)=>number }) {
+export function buildFittedHardware(profile: CinemaHardware | undefined, family: ShipFamily, c: SpecialHullContext & { deckAt?: (x:number,z:number)=>number; appearance?: ShipAppearance; beginWeapon?: (family:CinemaWeaponFamily,pivot:THREE.Vector3,muzzle:THREE.Vector3)=>void; endWeapon?: ()=>void }) {
   const { add,slab,rounded,rod,h,w,hero }=c
   const known=profile && profile.source!=='unknown'
   const legacyCount=family==='fighter'?2:family==='warship'?3:family==='capital'?4:0
@@ -13,19 +19,31 @@ export function buildFittedHardware(profile: CinemaHardware | undefined, family:
   // Distant hulls omit all fine equipment: their silhouettes remain a bounded set.
   if(!hero) return
   const entries=Object.entries(weapons).filter(([,count])=>count && count>0) as [CinemaWeaponFamily,number][]
-  // One of every family first, then extra mounts round-robin, at most twelve.
+  // One of every family first, then extra mounts round-robin, at most eight.
   const mounts:CinemaWeaponFamily[]=[]
-  for(let round=0;round<8 && mounts.length<12;round++) for(const [kind,count] of entries) {
-    if(round<count && mounts.length<12) mounts.push(kind)
+  for(let round=0;round<8 && mounts.length<8;round++) for(const [kind,count] of entries) {
+    if(round<count && mounts.length<8) mounts.push(kind)
   }
   for(let i=0;i<mounts.length;i++) {
     const kind=mounts[i],row=Math.floor(i/2),side=i%2?-1:1
-    let x=.30-row*.092,z=side*w*.35,deck=c.deckAt?.(x,z)??h*1.04
+    let x=.24-row*.185,z=side*w*.52,deck=c.deckAt?.(x,z)??h*1.04
     if(!Number.isFinite(deck)){z=0;deck=c.deckAt?.(x,z)??h}
     if(!Number.isFinite(deck)){x=0;deck=c.deckAt?.(x,z)??h}
     if(!Number.isFinite(deck)) continue
-    const y=deck+.003
-    const s=family==='fighter'||family==='scout'?.038:.052
+    const s=c.appearance?cinemaGunSize(c.appearance):.10
+    const lift=row*.008
+    const barrelHeight=kind==='missile'||kind==='torpedo'?.55:kind==='plasma'?.48:kind==='exotic'||kind==='disruptor'?.45:kind==='beam'||kind==='laser'?.42:kind==='mine'||kind==='smartbomb'?.62:.40
+    const shardShoulder=c.appearance?.recipe==='shard' && i<2
+    // Close dorsal supports let depressed broadside fire clear the opposite
+    // pedestal; widely separated pylons obstruct crossfire even above the hull.
+    if(shardShoulder){x=-.05;z=side*.085;deck=.285-s*barrelHeight-.003-lift}
+    const y=deck+.003+lift
+    if(shardShoulder) {
+      const roof=c.deckAt?.(x,z)??h
+      if(Number.isFinite(roof)) rod(x,(roof+y)*.5,z,s*.45,Math.max(.018,y-roof),'dark',false)
+    } else rod(x,deck+lift*.5,z,s*.45,lift+.018,'dark',false)
+    const muzzleLength=kind==='railgun'?2.10:kind==='torpedo'?.92:kind==='missile'?.65:kind==='beam'||kind==='laser'?1.20:kind==='plasma'?1.43:kind==='exotic'||kind==='disruptor'?1.25:kind==='mine'||kind==='smartbomb'?0:kind==='flak'?1.38:1.71
+    c.beginWeapon?.(kind,new THREE.Vector3(x,y+s*barrelHeight,z),new THREE.Vector3(x+s*muzzleLength,y+s*barrelHeight,z))
     rod(x,y,z,s*.48,s*.22,'dark',false)
     rounded(x,y+s*.22,z,s,s*.83,s*.40,'hull')
     if(kind==='missile'||kind==='torpedo') {
@@ -63,6 +81,7 @@ export function buildFittedHardware(profile: CinemaHardware | undefined, family:
         rod(x+s*(kind==='flak'?1.32:1.65),y+s*.40,z+offset,s*.09,s*.12,'dark')
       }
     }
+    c.endWeapon?.()
   }
   if(!known) return
   for(let i=0;i<Math.min(profile.cargo,4);i++) {
