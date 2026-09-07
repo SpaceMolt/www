@@ -22,7 +22,7 @@ describe('painted hull names', () => {
       expect(placements).toHaveLength(2)
       for (const p of placements) {
         expect(Math.abs(p.position.z)).toBeCloseTo(.25 + .008 / worldSize, 5)
-        expect(p.height * worldSize).toBeLessThanOrEqual(1.4)
+        expect(p.height * worldSize).toBeLessThanOrEqual(8)
         expect(new THREE.Vector3(0, 1, 0).applyQuaternion(p.rotation).y).toBeCloseTo(1)
         expect(p.width / p.height).toBeCloseTo(6)
       }
@@ -75,5 +75,46 @@ test('paint owns a single texture and material, is lit, and disposes without lea
   } finally {
     if (original) Object.defineProperty(globalThis, 'document', original)
     else Reflect.deleteProperty(globalThis, 'document')
+  }
+})
+
+
+test('large free panels support larger names while small hull lettering stays unchanged', () => {
+  const small = findHullMarkingPlacements(box().model, 16.2, 6)[0]
+  const capital = findHullMarkingPlacements(box().model, 362, 6)[0]
+  expect(small.height * 16.2).toBeCloseTo(.35)
+  expect(capital.height * 362).toBeGreaterThan(6)
+  expect(capital.height * 362).toBeLessThanOrEqual(8)
+  expect(capital.width).toBeLessThan(.34)
+})
+
+test('an isolated narrow panel falls back to smaller paint without overlapping surrounding equipment', () => {
+  const { model } = box('metal')
+  for (const side of [-1, 1]) {
+    const panel = new THREE.Mesh(new THREE.BoxGeometry(.026, .03, .02), new THREE.MeshStandardMaterial())
+    panel.name = 'armor'; panel.position.set(.12, 0, side * .26); model.add(panel)
+  }
+  const placements = findHullMarkingPlacements(model, 362, 6)
+  expect(placements).toHaveLength(2)
+  for (const p of placements) {
+    expect(p.height * 362).toBeCloseTo(1.4)
+    expect(p.width).toBeLessThan(.026)
+    expect(Math.abs(p.position.x - .12) + p.width / 2).toBeLessThan(.026 / 2)
+    expect(Math.abs(p.position.z)).toBeCloseTo(.27 + .008 / 362)
+  }
+})
+
+
+test('a later broad panel wins over the first narrow registration patch', () => {
+  const { model } = box('metal')
+  for (const side of [-1, 1]) for (const [x, width] of [[.12, .026], [-.12, .3]]) {
+    const panel = new THREE.Mesh(new THREE.BoxGeometry(width, .1, .02), new THREE.MeshStandardMaterial())
+    panel.name = 'armor'; panel.position.set(x, 0, side * .26); model.add(panel)
+  }
+  const placements = findHullMarkingPlacements(model, 362, 6)
+  expect(placements).toHaveLength(2)
+  for (const p of placements) {
+    expect(p.position.x).toBeCloseTo(-.12)
+    expect(p.height * 362).toBeGreaterThan(6)
   }
 })

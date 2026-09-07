@@ -16,7 +16,7 @@ export function hullMarkingText(name: string): string {
 
 /** Before model scaling: require an exposed, nearly planar patch, not a free-floating label.
  * Only hull/armor can support paint; all other meshes still block the placement rays.
- * The finite 2 sides x 15 candidates x 9 samples bounds startup work per detailed ship.
+ * Five descending sizes and 15 candidates per side bound startup work per detailed ship.
  */
 export function findHullMarkingPlacements(model: THREE.Group, worldSize: number, aspect: number): HullMarkingPlacement[] {
   if (!Number.isFinite(worldSize) || worldSize <= 0 || !Number.isFinite(aspect) || aspect <= 0) return []
@@ -26,10 +26,13 @@ export function findHullMarkingPlacements(model: THREE.Group, worldSize: number,
   if (!meshes.length) return []
   const bounds = new THREE.Box3().setFromObject(model), size = bounds.getSize(new THREE.Vector3())
   const center = bounds.getCenter(new THREE.Vector3())
-  const height = Math.min(Math.max(.35, Math.min(1.4, worldSize * .015)) / worldSize, size.y * .10)
-  const width = Math.min(height * aspect, size.x * .34)
-  const fittedHeight = Math.min(height, width / aspect)
-  if (fittedHeight * worldSize < .15) return []
+  // Keep familiar lettering on small craft, but use the free panel area of a
+  // capital instead of treating its registration as a person-sized fitting.
+  const legacyHeight = Math.min(Math.max(.35, Math.min(1.4, worldSize * .015)) / worldSize, size.y * .10)
+  const desiredHeight = Math.min(Math.max(legacyHeight * worldSize, Math.min(8, (worldSize - 60) * .025)) / worldSize, size.y * .25)
+  const heights = [...new Set([desiredHeight, desiredHeight * .75, desiredHeight * .5, desiredHeight * .25, legacyHeight]
+    .map(height => Math.min(Math.max(height, legacyHeight), size.x * .34 / aspect)))].sort((a, b) => b - a)
+  if (!heights.length || heights[0] * worldSize < .15) return []
   const ray = new THREE.Raycaster(), placements: HullMarkingPlacement[] = []
   const hitAt = (point: THREE.Vector3, outward: THREE.Vector3) => {
     ray.set(point.clone().addScaledVector(outward, size.length() + 1), outward.clone().negate())
@@ -41,23 +44,34 @@ export function findHullMarkingPlacements(model: THREE.Group, worldSize: number,
     return !mounts || [hit.face.a, hit.face.b, hit.face.c].every(i => mounts.getX(i) < 0)
   }
   for (const side of [-1, 1]) {
+    // Cache center hits once, then examine every candidate at a larger size
+    // before considering any smaller lettering. Never settle for the first
+    // small patch if a later panel can carry the full name more clearly.
+    const candidates: { point: THREE.Vector3; normal: THREE.Vector3; right: THREE.Vector3; up: THREE.Vector3; object: THREE.Object3D }[] = []
+    for (const x of [.12, -.12, .28, -.28, 0]) for (const y of [0, -.18, .18]) {
+      const hit = hitAt(new THREE.Vector3(center.x + x * size.x, center.y + y * size.y, center.z), new THREE.Vector3(0, 0, side))
+      if (!supports(hit)) continue
+      const normal = hit.face!.normal.clone().transformDirection(hit.object.matrixWorld)
+      if (normal.z * side < .85) continue
+      const right = new THREE.Vector3(side, 0, 0).addScaledVector(normal, -side * normal.x).normalize()
+      candidates.push({ point: hit.point, normal, right, up: new THREE.Vector3().crossVectors(normal, right).normalize(), object: hit.object })
+    }
     let found = false
-    for (const x of [.12, -.12, .28, -.28, 0]) {
-      for (const y of [0, -.18, .18]) {
-        const hit = hitAt(new THREE.Vector3(center.x + x * size.x, center.y + y * size.y, center.z), new THREE.Vector3(0, 0, side))
-        if (!supports(hit)) continue
-        const normal = hit.face!.normal.clone().transformDirection(hit.object.matrixWorld)
-        if (normal.z * side < .85) continue
-        const right = new THREE.Vector3(side, 0, 0).addScaledVector(normal, -side * normal.x).normalize()
-        const up = new THREE.Vector3().crossVectors(normal, right).normalize()
+    for (const height of heights) {
+      const width = height * aspect
+      for (const candidate of candidates) {
+        const { point, normal, right, up, object } = candidate
         let safe = true
-        for (const u of [-.5, 0, .5]) for (const v of [-.5, 0, .5]) {
-          const expected = hit.point.clone().addScaledVector(right, u * width).addScaledVector(up, v * fittedHeight)
+        sampleGrid: for (const u of [-.5, -.25, 0, .25, .5]) for (const v of [-.5, 0, .5]) {
+          const expected = point.clone().addScaledVector(right, u * width).addScaledVector(up, v * height)
           const sample = hitAt(expected, normal)
-          if (!supports(sample) || sample.object !== hit.object || sample.point.distanceTo(expected) > fittedHeight * .08 || sample.face!.normal.clone().transformDirection(sample.object.matrixWorld).dot(normal) < .98) safe = false
+          if (!supports(sample) || sample.object !== object || sample.point.distanceTo(expected) > Math.min(height * .08, .12 / worldSize) || sample.face!.normal.clone().transformDirection(sample.object.matrixWorld).dot(normal) < .98) {
+            safe = false
+            break sampleGrid
+          }
         }
         if (!safe) continue
-        placements.push({ position: hit.point.clone().addScaledVector(normal, .008 / worldSize), rotation: new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(right, up, normal)), width, height: fittedHeight })
+        placements.push({ position: point.clone().addScaledVector(normal, .008 / worldSize), rotation: new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(right, up, normal)), width, height })
         found = true
         break
       }
