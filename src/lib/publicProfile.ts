@@ -168,15 +168,16 @@ export interface ProfileBattle {
 
 // Recent battles involving a player: the battles search matches by substring,
 // so filter to exact participant membership before showing them on a profile.
-// The default listing leaves arena matches out, so ask for those separately.
+// The default listing excludes arena and wildlife, so fetch both explicitly.
 export async function fetchRecentBattles(name: string): Promise<ProfileBattle[]> {
   const search = `/api/battles?search=${encodeURIComponent(name)}&limit=8`
-  const [real, arena] = await Promise.all([
+  const [real, arena, wildlife] = await Promise.all([
     fetchJSON<{ battles: ProfileBattle[] | null }>(search),
     fetchJSON<{ battles: ProfileBattle[] | null }>(`${search}&category=arena`),
+    fetchJSON<{ battles: ProfileBattle[] | null }>(`${search}&category=wildlife`),
   ])
   const byId = new Map<string, ProfileBattle>()
-  for (const b of [...(real?.battles ?? []), ...(arena?.battles ?? [])]) {
+  for (const b of [...(real?.battles ?? []), ...(arena?.battles ?? []), ...(wildlife?.battles ?? [])]) {
     if (b.sides?.some((s) => s.participants?.includes(name))) byId.set(b.battle_id, b)
   }
   return [...byId.values()]

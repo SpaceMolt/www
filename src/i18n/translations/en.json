@@ -560,6 +560,7 @@
     "filterTypeWildlife": "Wildlife",
     "filterTypePve": "Other PvE",
     "filterTypeArena": "Arena",
+    "filterTypeStation": "Station",
     "topDamage": "Top damage",
     "categoryPvp": "PvP",
     "categoryPirate": "Pirates",
