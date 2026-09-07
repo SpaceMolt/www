@@ -204,3 +204,39 @@ test('contact arcs stay thin and entirely inside thirty percent of the smaller h
   for (const a of points) for (const b of points) expect(a.distanceTo(b)).toBeLessThanOrEqual(16.2 * .3 + 1e-6)
   expect(frame.glows[0].radius).toBeGreaterThan(12)
 })
+
+test('boarding hardware spans actual hull sockets instead of fractions of center separation', () => {
+  const source = new Vector3(), target = new Vector3(150, 0, 0)
+  const sockets = { from: new Vector3(140, 0, 0), to: new Vector3(142, 0, 0) }
+  const frame = boardingVisual(cue, cue.duration * .6, source, target, 362, 16.2, false, sockets)
+  expect(frame.structuralLines).toHaveLength(4)
+  expect(frame.structuralLines[0].from.x).toBeCloseTo(140)
+  expect(frame.structuralLines[0].to.x).toBeCloseTo(142)
+  expect(frame.structuralLines[0].from.distanceTo(frame.structuralLines[0].to)).toBeLessThanOrEqual(2.01)
+  const distant = boardingVisual(cue, cue.duration * .6, source, target, 362, 16.2, false,
+    { from: new Vector3(30, 0, 0), to: new Vector3(142, 0, 0) })
+  expect(distant.structuralLines).toHaveLength(0)
+})
+
+test('surface sockets use their own connection axis and never mutate caller positions', () => {
+  const sockets = { from: new Vector3(3, 7, 2), to: new Vector3(3, 9, 2) }
+  const original = { from: sockets.from.clone(), to: sockets.to.clone() }
+  const frame = boardingVisual(cue, cue.duration * .6, new Vector3(), new Vector3(100, 0, 0), 362, 16.2, false, sockets)
+  const [left, right] = frame.structuralLines
+  expect(left.from.clone().add(right.from).multiplyScalar(.5)).toEqual(sockets.from)
+  expect(left.to.clone().add(right.to).multiplyScalar(.5)).toEqual(sockets.to)
+  expect(left.to.y - left.from.y).toBeCloseTo(2)
+  expect(sockets).toEqual(original)
+  left.from.set(999, 999, 999)
+  expect(sockets).toEqual(original)
+})
+
+test('invalid or separated surface sockets suppress every contact effect', () => {
+  for (const phase of ['breach', 'assault', 'withdraw', 'plunder'] as const) {
+    for (const point of [new Vector3(NaN, 0, 0), new Vector3(Infinity, 0, 0), new Vector3(20, 0, 0)]) {
+      expect(boardingVisual({ ...cue, boardingPhase: phase }, cue.duration * .54,
+        new Vector3(), new Vector3(30, 0, 0), 362, 16.2, false,
+        { from: new Vector3(), to: point })).toEqual(empty)
+    }
+  }
+})

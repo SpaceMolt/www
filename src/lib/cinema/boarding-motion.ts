@@ -1,8 +1,10 @@
 import type { ShipMotion } from './motion'
 import type { CinemaCue } from './types'
+import { hullContactAnchors, hullsHaveClearance, hullSupportPoint, type HullContactProfile, type ContactPoint } from './hull-contact'
 
-export interface BoardingMotionBody { id: string; start: number; end: number; radius: number; kind?: string }
-type Sampler = (id: string, time: number) => ShipMotion
+export interface BoardingMotionBody { id: string; start: number; end: number; radius: number; kind?: string; hull?: HullContactProfile }
+export interface BoardingShipMotion extends ShipMotion { boardingContact?: {actor:ContactPoint;target:ContactPoint;normal:ContactPoint;gap:number} }
+type Sampler = (id: string, time: number) => BoardingShipMotion
 interface Operation { actor: BoardingMotionBody; target: BoardingMotionBody; events: CinemaCue[]; start: number; openingContact?: boolean }
 const smooth = (value: number) => { const p=Math.max(0,Math.min(1,value)); return p*p*(3-2*p) }
 
@@ -53,7 +55,15 @@ export function createBoardingMotionSampler(cues: readonly CinemaCue[], bodies: 
     const nx=Math.sin(openingTarget.yaw),nz=Math.cos(openingTarget.yaw)
     const side=dx*nx+dz*nz<0?-1:1
     const ux=nx*side*berth.side,uz=nz*side*berth.side
-    const clearance=Math.max(1,op.actor.radius)+Math.max(1,op.target.radius)+8
+        const physical=!!op.actor.hull?.points.length&&!!op.target.hull?.points.length
+    const normalLength=physical?Math.hypot(1,berth.elevation):1
+    const normal={x:ux/normalLength,y:physical?berth.elevation/normalLength:0,z:uz/normalLength}
+    const actorPatch=physical?hullSupportPoint(op.actor.hull!,{x:-normal.x,y:-normal.y,z:-normal.z},{yaw:actor.yaw,bank:0}):{x:0,y:0,z:0}
+    const targetPatch=physical?hullSupportPoint(op.target.hull!,normal,target):{x:0,y:0,z:0}
+    const gap=physical?Math.max(.5,Math.min(2,Math.min(op.actor.radius,op.target.radius)*.06)):8
+    const desired=physical?{x:targetPatch.x-actorPatch.x+normal.x*gap,y:targetPatch.y-actorPatch.y+normal.y*gap,z:targetPatch.z-actorPatch.z+normal.z*gap}:
+      {x:ux*(Math.max(1,op.actor.radius)+Math.max(1,op.target.radius)+8),y:berth.elevation,z:uz*(Math.max(1,op.actor.radius)+Math.max(1,op.target.radius)+8)}
+    const clearance=Math.hypot(desired.x,desired.z)
     let weight=op.openingContact?1:0,lastTime=op.start,fromWeight=weight,toWeight=weight,duration=1
     for(const event of op.events) {
       if(event.time>t)break
@@ -70,13 +80,18 @@ export function createBoardingMotionSampler(cues: readonly CinemaCue[], bodies: 
     }
     weight=berth.disabled?0:fromWeight+(toWeight-fromWeight)*smooth((t-lastTime)/duration)
     const initialAngle=Math.atan2(actor.z-target.z,actor.x-target.x)
-    const finalAngle=Math.atan2(uz,ux)
+    const finalAngle=Math.atan2(desired.z,desired.x)
     const turn=Math.atan2(Math.sin(finalAngle-initialAngle),Math.cos(finalAngle-initialAngle))
     const bearing=initialAngle+turn*weight
     const radius=Math.max(clearance,Math.hypot(actor.x-target.x,actor.z-target.z))*(1-weight)+clearance*weight
     const x=weight>0?target.x+Math.cos(bearing)*radius:actor.x
     const z=weight>0?target.z+Math.sin(bearing)*radius:actor.z
-    return {x:x-actor.x,y:(target.y-actor.y+berth.elevation)*weight,z:z-actor.z,yaw:0,weight}
+        const y=actor.y+(target.y-actor.y+desired.y)*weight
+    // Keep sockets while disengaging too. They track the actual rolled hulls;
+    // callers use their measured separation to fade only still-nearby hardware.
+    const contact=physical&&weight>0?hullContactAnchors(op.actor.hull!,op.target.hull!,
+      {...actor,x,y,z,bank:actor.bank*(1-weight)},target,normal):undefined
+    return {x:x-actor.x,y:y-actor.y,z:z-actor.z,yaw:0,weight,contact}
   }
   // Berths are chosen once for the complete operation, never in response to
   // a frame. Fixed work per candidate bounds planning even for long holds.
@@ -96,13 +111,15 @@ export function createBoardingMotionSampler(cues: readonly CinemaCue[], bodies: 
     const nearby=bodies.filter(body=>body.id!==op.actor.id&&body.id!==op.target.id&&body.start<finish&&body.end>op.start)
     if(!nearby.length){berths.set(op,{side:1,elevation:0});continue}
     const probes=[...times].sort((a,b)=>a-b).map(time=>({time,actor:base(op.actor.id,time),
-      obstacles:nearby.filter(body=>body.start<=time&&body.end>=time).map(body=>({radius:body.radius,pose:base(body.id,time)}))}))
-    const lift=(op.actor.radius+op.target.radius+8)*2
+      obstacles:nearby.filter(body=>body.start<=time&&body.end>=time).map(body=>({radius:body.radius,hull:body.hull,pose:base(body.id,time)}))}))
+    const lift=op.actor.hull&&op.target.hull?1:(op.actor.radius+op.target.radius+8)*2
     const candidates=[{side:1,elevation:0},{side:-1,elevation:0},
       {side:1,elevation:lift},{side:-1,elevation:lift},{side:1,elevation:-lift},{side:-1,elevation:-lift}]
     const berth=candidates.find(candidate=>probes.every(probe=>{
       const change=offset(op,probe.time,candidate)
-      return probe.obstacles.every(obstacle=>Math.hypot(probe.actor.x+change.x-obstacle.pose.x,
+            return probe.obstacles.every(obstacle=>op.actor.hull&&obstacle.hull?
+        hullsHaveClearance(op.actor.hull,{...probe.actor,x:probe.actor.x+change.x,y:probe.actor.y+change.y,z:probe.actor.z+change.z,bank:probe.actor.bank*(1-change.weight)},obstacle.hull,obstacle.pose,4):
+        Math.hypot(probe.actor.x+change.x-obstacle.pose.x,
         probe.actor.y+change.y-obstacle.pose.y,probe.actor.z+change.z-obstacle.pose.z)>=op.actor.radius+obstacle.radius+4)
     }))
     berths.set(op,berth??{side:1,elevation:0,disabled:true})
@@ -113,6 +130,6 @@ export function createBoardingMotionSampler(cues: readonly CinemaCue[], bodies: 
     if(!op)return pose
     const change=offset(op,time)
     return {...pose,x:pose.x+change.x,y:pose.y+change.y,z:pose.z+change.z,yaw:pose.yaw+change.yaw,
-      bank:pose.bank*(1-change.weight),thrust:pose.thrust*(1-change.weight),retroThrust:pose.retroThrust*(1-change.weight)}
+      bank:pose.bank*(1-change.weight),thrust:pose.thrust*(1-change.weight),retroThrust:pose.retroThrust*(1-change.weight),...(change.contact?{boardingContact:change.contact}:{})}
   }
 }

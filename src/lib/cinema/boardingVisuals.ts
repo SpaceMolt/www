@@ -10,31 +10,38 @@ const finite = (point: Vector3) => point.toArray().every(Number.isFinite)
 const smooth = (value: number) => { const p = clamp(value, 0, 1); return p * p * (3 - 2 * p) }
 const CONTACT_PHASE = .45
 
-/** Qualitative boarding choreography. Endpoints are actor centers; moving
+/** Qualitative boarding choreography. Optional sockets anchor to real hull surfaces; moving
  * accents show activity along an attached structure, never personnel counts.
  * Every frame is sampled from absolute cue age and owns its output vectors. */
 export function boardingVisual(cue: CinemaCue, age: number, from: Vector3, to: Vector3,
-  sourceSize: number, targetSize: number, reducedMotion = false): BoardingVisualFrame {
+  sourceSize: number, targetSize: number, reducedMotion = false,
+  sockets?: { from: Vector3; to: Vector3 }): BoardingVisualFrame {
   const frame: BoardingVisualFrame = { structuralLines: [], lines: [], glows: [], rings: [], projectiles: [] }
   if (cue.kind !== 'boarding' || !cue.boardingPhase || !Number.isFinite(age) ||
       !Number.isFinite(cue.duration) || cue.duration <= 0 || age < 0 || age >= cue.duration ||
       !finite(from) || !finite(to)) return frame
 
   const source = sizeOf(sourceSize), target = sizeOf(targetSize)
-  const direction = to.clone().sub(from), distance = direction.length()
+  if (sockets && (!finite(sockets.from) || !finite(sockets.to))) return frame
+  const centerDistance = from.distanceTo(to)
+  if (!Number.isFinite(centerDistance)) return frame
+  // Surface-aware calls must actually reach the hull. Legacy callers retain the
+  // conservative center-distance fallback until they can provide real sockets.
+  if (sockets ? sockets.from.distanceTo(sockets.to) > Math.max(3, Math.min(source, target) * .25)
+    : centerDistance > (source + target) * 1.15) return frame
+  const direction = (sockets ? sockets.to.clone().sub(sockets.from) : to.clone().sub(from))
+  const distance = direction.length()
   if (!Number.isFinite(distance)) return frame
-  // A historical cue or blocked motion path can leave the ships in separate
-  // formations. Every contact effect needs a plausible berth, including flashes
-  // and transfer accents. Elevated fallback berths may omit the hookup.
-  if (distance > (source + target) * 1.15) return frame
   if (distance > .00001) direction.divideScalar(distance)
   else direction.set(1, 0, 0)
   const side = new Vector3(-direction.z, 0, direction.x)
   if (side.lengthSq() < .00001) side.set(1, 0, 0)
   side.normalize()
   const up = direction.clone().cross(side).normalize()
-  const contact = to.clone().addScaledVector(direction, -Math.min(target * .42, distance * .25))
-  const sourceContact = from.clone().addScaledVector(direction, Math.min(source * .3, distance * .25))
+  const contact = sockets ? sockets.to.clone()
+    : to.clone().addScaledVector(direction, -Math.min(target * .42, centerDistance * .25))
+  const sourceContact = sockets ? sockets.from.clone()
+    : from.clone().addScaledVector(direction, Math.min(source * .3, centerDistance * .25))
   // A capital boarding a tiny hull still needs a readable contact. The geometric
   // mean gives the connection presence, while the target cap keeps its flare local.
   const unit = clamp(Math.min(target * .6, Math.max(target * .06, Math.sqrt(source * target) * .075)), .8, 20)

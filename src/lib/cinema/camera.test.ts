@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
-import { Vector3, PerspectiveCamera } from 'three'
-import { keepCameraOutsideHulls, sampleStoryCamera, clearStorySightline } from './camera'
+import { Vector3, PerspectiveCamera, Quaternion, Euler } from 'three'
+import { keepCameraOutsideHulls, keepCameraOutsideBodies, sampleStoryCamera, clearStorySightline } from './camera'
 test('overlapping capital ship guards cannot project the camera back into a hull', () => {
   const hulls=[{position:new Vector3(0,0,0),radius:283},{position:new Vector3(0,0,360),radius:283}]
   const camera=new Vector3(0,0,100)
@@ -357,4 +357,28 @@ test('scale masters add restrained lateral parallax and remain deterministic wit
   sampleStoryCamera({ ...options, time: 1 })
   expect(sampleStoryCamera({ ...options, time: 5 })).toEqual(late)
   expect(sampleStoryCamera({ ...options, time: 5, reduced: true })).toEqual(sampleStoryCamera({ ...options, time: 0, reduced: true }))
+})
+
+test('actual narrow capital hull permits readable close boarding inside its empty bounding sphere', () => {
+  const capital = { ...actor('a', 0, 362), contactHull: { min: new Vector3(-180,-30,-60), max: new Vector3(180,30,60), yaw:0, bank:0 } }
+  const victim = actor('b', 0, 16.2); victim.position.z=72
+  const sequence = { id:'boarding',start:0,end:10,kind:'confrontation' as const,attacker:'a',defender:'b',actionTime:1,impactTime:9,axis }
+  const frame=sampleStoryCamera({shot:{...shot,sequenceId:'boarding'},sequence,boarding:true,time:9,aspect:16/9,subject:capital,target:victim,axisFrom:capital.position,axisTo:victim.position})
+  expect(frame.position.distanceTo(frame.target)).toBeLessThan(100)
+  expect(frame.position.z).toBeGreaterThan(61)
+})
+
+
+test('actual hull clearance respects yaw and bank and preserves clear space beside the hull', () => {
+  for(const yaw of [0,.7,Math.PI/2])for(const bank of [0,.2,-.4]){
+    const rotation=new Quaternion().setFromEuler(new Euler(bank,yaw,0,'YXZ'))
+    const body={id:'a',position:new Vector3(40,20,-50),size:362,contactHull:{min:new Vector3(-180,-30,-60),max:new Vector3(180,30,60),yaw,bank}}
+    const outside=new Vector3(0,0,70).applyQuaternion(rotation).add(body.position), original=outside.clone()
+    keepCameraOutsideBodies(outside,[body]);expect(outside).toEqual(original)
+    const inside=new Vector3(0,0,59).applyQuaternion(rotation).add(body.position)
+    keepCameraOutsideBodies(inside,[body])
+    const local=inside.clone().sub(body.position).applyQuaternion(rotation.clone().invert())
+    expect(local.z).toBeGreaterThan(61)
+    expect(Math.abs(local.x)).toBeLessThan(.001)
+  }
 })

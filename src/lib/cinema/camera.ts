@@ -1,4 +1,4 @@
-import { Vector3 } from 'three'
+import { Vector3, Quaternion, Euler } from 'three'
 import type { CinemaShot, CinemaSequence } from './types'
 export interface HullBoundary { position: Vector3; radius: number }
 /** A later projection must not put the camera back inside an earlier hull. */
@@ -20,7 +20,55 @@ export function keepCameraOutsideHulls(position: Vector3, hulls: readonly HullBo
   }
 }
 
-export interface CameraBody { id: string; position: Vector3; size: number }
+export interface CameraBody { id: string; position: Vector3; size: number
+  /** World-sized model-space hull bounds, before rotation. */
+  contactHull?: { min: Vector3; max: Vector3; yaw: number; bank: number }
+}
+function hullRotation(body: CameraBody): Quaternion {
+  return new Quaternion().setFromEuler(new Euler(body.contactHull!.bank, body.contactHull!.yaw, 0, 'YXZ'))
+}
+/** Conservative physical clearance without treating empty space beside a capital as hull. */
+export function keepCameraOutsideBodies(position: Vector3, bodies: readonly CameraBody[]): void {
+  const inside = (body: CameraBody, project: boolean) => {
+    if (!body.contactHull) {
+      const offset=position.clone().sub(body.position), radius=body.size*.78
+      if(offset.lengthSq()>=radius*radius)return false
+      if(project){if(offset.lengthSq()<.00001)offset.set(0,1,0);position.copy(body.position).add(offset.normalize().multiplyScalar(radius+.01))}
+      return true
+    }
+    const rotation=hullRotation(body), local=position.clone().sub(body.position).applyQuaternion(rotation.clone().invert())
+    const min=body.contactHull.min.clone().addScalar(-1), max=body.contactHull.max.clone().addScalar(1)
+    if(local.x<min.x||local.x>max.x||local.y<min.y||local.y>max.y||local.z<min.z||local.z>max.z)return false
+    if(project){
+      let best=Infinity, component:'x'|'y'|'z'='y', value=max.y
+      for(const key of ['x','y','z'] as const)for(const face of [min[key]-.01,max[key]+.01]){
+        const distance=Math.abs(local[key]-face)
+        if(distance<best){best=distance;component=key;value=face}
+      }
+      local[component]=value;position.copy(local.applyQuaternion(rotation).add(body.position))
+    }
+    return true
+  }
+  for(let pass=0;pass<4;pass++){let changed=false;for(const body of bodies)changed=inside(body,true)||changed;if(!changed)return}
+  if(bodies.some(body=>inside(body,false)))position.y=bodies.reduce((height,body)=>Math.max(height,body.position.y+(body.contactHull?Math.max(body.contactHull.min.length(),body.contactHull.max.length()):body.size*.78)+2),position.y)
+}
+/** Furthest positive intersection on the proposed dolly ray. */
+function contactRayExit(body: CameraBody, origin: Vector3, direction: Vector3): number {
+  if(body.contactHull){
+    const inverse=hullRotation(body).invert(), p=origin.clone().sub(body.position).applyQuaternion(inverse), d=direction.clone().applyQuaternion(inverse)
+    let entry=-Infinity, exit=Infinity
+    for(const key of ['x','y','z'] as const){
+      const min=body.contactHull.min[key]-1,max=body.contactHull.max[key]+1
+      if(Math.abs(d[key])<1e-8){if(p[key]<min||p[key]>max)return 0;continue}
+      const a=(min-p[key])/d[key],b=(max-p[key])/d[key]
+      entry=Math.max(entry,Math.min(a,b));exit=Math.min(exit,Math.max(a,b))
+    }
+    return entry<=exit&&exit>0?exit+.01:0
+  }
+  const relative=body.position.clone().sub(origin),along=relative.dot(direction),radius=body.size*.78+1
+  const perpendicular=relative.lengthSq()-along*along
+  return perpendicular<radius*radius?Math.max(0,along+Math.sqrt(radius*radius-perpendicular)):0
+}
 export interface StoryCameraFrame { position: Vector3; target: Vector3; fov: number }
 export interface StoryCameraOptions {
   shot: CinemaShot
@@ -191,11 +239,7 @@ export function sampleStoryCamera(options: StoryCameraOptions): StoryCameraFrame
       // A camera dolly follows this outward ray, with an analytic bound for
       // both complete hulls. Cropping a capital never permits entering it.
       for (const body of [subject, target]) {
-        const relative = body.position.clone().sub(focus)
-        const along = relative.dot(viewing), radius = body.size * .78 + 1
-        const perpendicular = relative.lengthSq() - along * along
-        if (perpendicular < radius * radius) contactDistance = Math.max(contactDistance,
-          along + Math.sqrt(radius * radius - perpendicular))
+        contactDistance = Math.max(contactDistance, contactRayExit(body, focus, viewing))
       }
       position.copy(focus).addScaledVector(viewing, contactDistance)
     }
@@ -229,5 +273,5 @@ export function clearStorySightline(frame: StoryCameraFrame, focusId: string, bo
   }
   const step = Math.max(25,frame.position.distanceTo(frame.target)*.12)
   for(let attempt=0; attempt<5 && occluded(); attempt++) frame.position.y += step
-  keepCameraOutsideHulls(frame.position,bodies.map(body=>({position:body.position,radius:body.size*.78})))
+  keepCameraOutsideBodies(frame.position,bodies)
 }
