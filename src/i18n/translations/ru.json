@@ -305,6 +305,8 @@
     "statusLive": "ОНЛАЙН",
     "statusCompleted": "ЗАВЕРШЕНО",
     "outcomeVictory": "Победа",
+    "outcomeBoardingVictory": "Победа — захват абордажем",
+    "filterCaptured": "Абордажные захваты",
     "outcomeStalemate": "Ничья",
     "outcomeMutualDestruction": "Взаимное уничтожение",
     "participants": "участников",

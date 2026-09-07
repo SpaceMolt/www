@@ -305,6 +305,8 @@
     "statusLive": "LIVE",
     "statusCompleted": "VOLTOOID",
     "outcomeVictory": "Overwinning",
+    "outcomeBoardingVictory": "Overwinning — enterbuit",
+    "filterCaptured": "Enteringen",
     "outcomeStalemate": "Patstelling",
     "outcomeMutualDestruction": "Wederzijdse vernietiging",
     "participants": "deelnemers",

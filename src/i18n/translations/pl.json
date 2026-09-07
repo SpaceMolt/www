@@ -305,6 +305,8 @@
     "statusLive": "NA ŻYWO",
     "statusCompleted": "UKOŃCZONA",
     "outcomeVictory": "Zwycięstwo",
+    "outcomeBoardingVictory": "Zwycięstwo — udany abordaż",
+    "filterCaptured": "Abordaże",
     "outcomeStalemate": "Pat",
     "outcomeMutualDestruction": "Wzajemne zniszczenie",
     "participants": "uczestników",
