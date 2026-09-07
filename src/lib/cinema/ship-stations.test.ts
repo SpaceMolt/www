@@ -4,8 +4,32 @@ import { resolveAppearance } from './appearance'
 import { createShip } from './ships'
 import type { CinemaHardware } from './hardware'
 import type { WeaponRig } from './ship-weapons'
+import { buildStationHull } from './ship-stations'
 
 const empty: CinemaHardware = { source:'modules', weapons:{}, cargo:0, mining:0, salvage:0, sensor:0, defense:0, utility:0 }
+
+test('Voidborn surface veins remain outside their opaque spindle', () => {
+  const pieces: THREE.BufferGeometry[] = []
+  const noop=()=>{}
+  buildStationHull(resolveAppearance('station','voidborn',5,'',5,'station'),{
+    add:geometry=>{pieces.push(geometry)},slab:noop,rounded:noop,rod:noop,engine:noop,hero:true,h:.35,w:.45,
+  })
+  try {
+    const spindle=pieces.find(piece=>piece instanceof THREE.LatheGeometry) as THREE.LatheGeometry
+    const shell=new THREE.Mesh(spindle,new THREE.MeshBasicMaterial({side:THREE.DoubleSide}))
+    const raycaster=new THREE.Raycaster()
+    const veins=pieces.filter(piece=>piece instanceof THREE.TubeGeometry&&piece.parameters.radius===.003) as THREE.TubeGeometry[]
+    expect(veins.length).toBe(3)
+    for(const vein of veins)for(let i=0;i<=64;i++){
+      const point=vein.parameters.path.getPointAt(i/64),radial=new THREE.Vector3(point.x,0,point.z).normalize()
+      raycaster.set(new THREE.Vector3(radial.x,point.y,radial.z),radial.clone().negate())
+      const hit=raycaster.intersectObject(shell)[0]
+      expect(hit).toBeDefined()
+      expect(Math.hypot(point.x,point.z)).toBeGreaterThan(Math.hypot(hit.point.x,hit.point.z))
+    }
+    shell.material.dispose()
+  } finally {pieces.forEach(piece=>piece.dispose())}
+})
 function dispose(group: THREE.Group) {
   const materials = new Set<THREE.Material>()
   group.traverse(object => {

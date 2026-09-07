@@ -112,6 +112,12 @@ export function buildStationHull(appearance:ShipAppearance,c:SpecialHullContext)
   if(empire==='voidborn'){
     // A grown spindle and three overlapping shell crescents enclose real gaps.
     const profile=[[-.31,.016],[-.23,.065],[-.10,.105],[.07,.092],[.21,.060],[.34,.012]]
+    const spindleRadius=(y:number)=>{
+      const upper=profile.findIndex(([height])=>height>=y)
+      if(upper<=0)return profile[upper<0?profile.length-1:0][1]
+      const [lowY,lowR]=profile[upper-1],[highY,highR]=profile[upper]
+      return THREE.MathUtils.lerp(lowR,highR,(y-lowY)/(highY-lowY))
+    }
     add(new THREE.LatheGeometry(profile.map(([y,r])=>new THREE.Vector2(r,y)),hero?32:16),'hull')
     for(let i=0;i<3;i++){
       const a=i*Math.PI*2/3
@@ -127,8 +133,17 @@ export function buildStationHull(appearance:ShipAppearance,c:SpecialHullContext)
       if(hero){
         ring(.075,.003,.12,'glass',Math.PI*.42,a)
         part(a+.7,.26,-.065,.07,.025,.008,'glass')
-        const vein=new THREE.CatmullRomCurve3([point(.025,.27,a),point(.063,.17,a+.08),point(.091,.02,a+.19),point(.077,-.15,a+.28),point(.032,-.26,a+.4)])
-        add(new THREE.TubeGeometry(vein,18,.003,5,false),'glass')
+        // Evaluate the shell radius at every path sample: interpolating radial
+        // control points can pull an otherwise surface-bound vein into the hull.
+        const vein=new class extends THREE.Curve<THREE.Vector3>{
+          constructor(){super()}
+          getPoint(t:number,target=new THREE.Vector3()){
+            const y=THREE.MathUtils.lerp(.27,-.26,t),r=spindleRadius(y)+.0025
+            const angle=a+.4*t+.025*Math.sin(t*Math.PI*2)
+            return target.set(Math.cos(angle)*r,y,Math.sin(angle)*r)
+          }
+        }()
+        add(new THREE.TubeGeometry(vein,36,.003,5,false),'glass')
         const node=point(.092,.075,a+.1)
         add(new THREE.SphereGeometry(.017,12,8),'glass',node.x,node.y,node.z)
         for(let j=0;j<7;j++){
