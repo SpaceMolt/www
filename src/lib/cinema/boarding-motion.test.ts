@@ -70,3 +70,31 @@ it('plans a fixed elevated berth when a moving target has neighbors on both side
   sample('a',19);sample('a',0);expect(sample('a',7)).toEqual(expected)
   expect(sample('a',7).yaw).toBe(base('a',7).yaw)
 })
+
+it('keeps closing in motion until the recorded latch instead of attaching eight seconds early',()=>{
+  const sample=createBoardingMotionSampler([cue('approach',4.15),cue('approach',6.65),cue('approach',9.15),cue('approach',11.65),cue('breach',14.15)],bodies,base)
+  const distance=(t:number)=>{const a=sample('a',t),b=base('b',t);return Math.hypot(a.x-b.x,a.y-b.y,a.z-b.z)}
+  expect(distance(6)).toBeGreaterThan(200)
+  expect(distance(10)).toBeGreaterThan(distance(12))
+  expect(distance(12)).toBeGreaterThan(70)
+  expect(distance(14.15)).toBeCloseTo(58)
+})
+
+it('leaves an unlatched approach at standoff rather than implying contact',()=>{
+  const sample=createBoardingMotionSampler([cue('approach',1),cue('approach',5)],bodies,base)
+  const a=sample('a',8),b=base('b',8)
+  expect(Math.hypot(a.x-b.x,a.y-b.y,a.z-b.z)).toBeGreaterThan(100)
+})
+
+it('reaches a historical first latch before contact effects and preserves an already latched opening',()=>{
+  for(const phase of ['breach','assault'] as const){
+    const sample=createBoardingMotionSampler([cue(phase,3)],bodies,base)
+    const distance=(t:number)=>{const a=sample('a',t),b=base('b',t);return Math.hypot(a.x-b.x,a.y-b.y,a.z-b.z)}
+    expect(distance(1)).toBeCloseTo(400)
+    expect(distance(2)).toBeLessThan(400)
+    expect(distance(3)).toBeCloseTo(58)
+    const opening=createBoardingMotionSampler([cue(phase,0)],bodies,base)
+    const a=opening('a',0),b=base('b',0)
+    expect(Math.hypot(a.x-b.x,a.y-b.y,a.z-b.z)).toBeCloseTo(58)
+  }
+})

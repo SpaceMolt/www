@@ -3,7 +3,7 @@ import type { CinemaCue } from './types'
 
 export interface BoardingMotionBody { id: string; start: number; end: number; radius: number; kind?: string }
 type Sampler = (id: string, time: number) => ShipMotion
-interface Operation { actor: BoardingMotionBody; target: BoardingMotionBody; events: CinemaCue[]; start: number }
+interface Operation { actor: BoardingMotionBody; target: BoardingMotionBody; events: CinemaCue[]; start: number; openingContact?: boolean }
 const smooth = (value: number) => { const p=Math.max(0,Math.min(1,value)); return p*p*(3-2*p) }
 
 /** Pure cinematic blocking from observed links. Radii bound hulls, not personnel. */
@@ -18,6 +18,18 @@ export function createBoardingMotionSampler(cues: readonly CinemaCue[], bodies: 
     let op=grouped.get(key)
     if(!op){op={actor,target,events:[],start:cue.time};grouped.set(key,op)}
     op.events.push(cue)
+  }
+  for(const op of grouped.values()) {
+    const first=op.events[0]
+    if(!first.boardingEnded&&['breach','assault'].includes(first.boardingPhase??'')) {
+      // A historical record can begin after closing. Reserve only available
+      // lifecycle time before its first observed contact, never delay the latch.
+      const start=Math.max(op.actor.start,op.target.start,first.time-1.5)
+      if(start<first.time) {
+        op.start=start
+        op.events.unshift({...first,id:first.id+':motion-preroll',time:start,boardingPhase:'approach'})
+      } else op.openingContact=true
+    }
   }
   const byActor=new Map<string,Operation[]>()
   const accepted:Operation[]=[]
@@ -42,15 +54,19 @@ export function createBoardingMotionSampler(cues: readonly CinemaCue[], bodies: 
     const side=dx*nx+dz*nz<0?-1:1
     const ux=nx*side*berth.side,uz=nz*side*berth.side
     const clearance=Math.max(1,op.actor.radius)+Math.max(1,op.target.radius)+8
-    let weight=0,lastTime=op.start,fromWeight=0,toWeight=0,duration=1
+    let weight=op.openingContact?1:0,lastTime=op.start,fromWeight=weight,toWeight=weight,duration=1
     for(const event of op.events) {
       if(event.time>t)break
-      // Repeated reports retain the same transition instead of restarting it.
+      // Closing occupies the observed interval to contact; a closing report
+      // alone never authorizes parking at the attachment berth.
+      const following=event.boardingPhase==='approach'?op.events.find(candidate=>candidate.time>event.time&&candidate.boardingPhase!=='approach'):undefined
+      const contact=following&&!following.boardingEnded&&['breach','assault'].includes(following.boardingPhase??'')?following:undefined
       const next=event.boardingPhase==='withdraw'||event.boardingPhase==='plunder'||event.boardingEnded?0:
-        1
+        event.boardingPhase==='approach' && !contact ? .7 : 1
       if(next===toWeight)continue
       weight=fromWeight+(toWeight-fromWeight)*smooth((event.time-lastTime)/duration)
-      fromWeight=weight;toWeight=next;lastTime=event.time;duration=Math.max(.15,Math.min(1.5,event.duration))
+      fromWeight=weight;toWeight=next;lastTime=event.time
+      duration=contact?Math.max(.15,contact.time-event.time):Math.max(.15,Math.min(1.5,event.duration))
     }
     weight=berth.disabled?0:fromWeight+(toWeight-fromWeight)*smooth((t-lastTime)/duration)
     const initialAngle=Math.atan2(actor.z-target.z,actor.x-target.x)

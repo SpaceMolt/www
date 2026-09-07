@@ -173,6 +173,31 @@ export function sampleStoryCamera(options: StoryCameraOptions): StoryCameraFrame
     const distance = radius / Math.sin(angle) * (role === 'geography' ? 1.18 - progress*.12 : 1.08)
     position.copy(focus).addScaledVector(normal,distance*.95)
     position.y += distance*.31
+    if (continuousTake && options.boarding && Math.max(subject.size, target.size) > Math.min(subject.size, target.size) * 3) {
+      // Once the capital is established, show the small hull and its contact
+      // site. Fitting the entire capital would reduce this vessel to a dot.
+      const small = subject.size < target.size ? subject : target
+      const large = small === subject ? target : subject
+      const outward = small.position.clone().sub(large.position).normalize()
+      if (outward.lengthSq() < .001) outward.copy(axis)
+      const contactFocus = small.position.clone().addScaledVector(outward, -small.size * .35)
+      const viewing = normal.clone().addScaledVector(outward, .4).add(new Vector3(0, .32, 0)).normalize()
+      const approach = reduced ? 1 : ease(progress * 2)
+      const wideDistance = position.distanceTo(focus)
+      const closeDistance = Math.max(small.size * 3.2, small.size * .85 / horizontal, 24)
+      focus.lerp(contactFocus, approach)
+      let contactDistance = wideDistance + (closeDistance - wideDistance) * approach
+      // A camera dolly follows this outward ray, with an analytic bound for
+      // both complete hulls. Cropping a capital never permits entering it.
+      for (const body of [subject, target]) {
+        const relative = body.position.clone().sub(focus)
+        const along = relative.dot(viewing), radius = body.size * .78 + 1
+        const perpendicular = relative.lengthSq() - along * along
+        if (perpendicular < radius * radius) contactDistance = Math.max(contactDistance,
+          along + Math.sqrt(radius * radius - perpendicular))
+      }
+      position.copy(focus).addScaledVector(viewing, contactDistance)
+    }
   } else {
     // Frame the entire hull in portrait as well as landscape. A slow straight
     // dolly has a purpose (approach or release); there is no orbit or side flip.

@@ -293,3 +293,30 @@ test('boarding pan stays continuous past a right-angle approach and across react
     previous = frame.position
   }
 })
+
+test('boarding contact coverage keeps a real 22-to-1 victim readable while cropping the capital', () => {
+  const capital = actor('a', 0, 362), victim = actor('b', 0, 16.2)
+  victim.position.z = (capital.size + victim.size) * .78 + 8
+  const sequence = { id: 'boarding', start: 0, end: 10, kind: 'confrontation' as const,
+    attacker: 'a', defender: 'b', actionTime: 1, impactTime: 9, axis }
+  for (const aspect of [.46, 16 / 9, 2.4]) for (const reduced of [false, true]) {
+    let previous: Vector3 | undefined
+    for (let time = 0; time <= 10; time += .01) {
+      const frame = sampleStoryCamera({ shot: { ...shot, sequenceId: 'boarding', role: time > 5 ? 'reaction' : 'setup' },
+        sequence, boarding: true, reduced, time, aspect, subject: time > 5 ? victim : capital, target: time > 5 ? capital : victim,
+        axisFrom: new Vector3(), axisTo: new Vector3(1000, 0, 0) })
+      for (const body of [capital, victim]) expect(frame.position.distanceTo(body.position)).toBeGreaterThan(body.size * .78)
+      if (previous) expect(frame.position.distanceTo(previous)).toBeLessThan(20)
+      previous = frame.position
+      if (!reduced && time < 8) continue
+      const camera = new PerspectiveCamera(frame.fov, aspect, .1, 100000)
+      camera.position.copy(frame.position); camera.lookAt(frame.target); camera.updateMatrixWorld()
+      const points = [-.5, .5].flatMap(x => [-.15, .15].flatMap(y => [-.2, .2].map(z =>
+        victim.position.clone().add(new Vector3(x, y, z).multiplyScalar(victim.size)).project(camera))))
+      const width = (Math.max(...points.map(p => p.x)) - Math.min(...points.map(p => p.x))) * 455 * aspect / 2
+      const height = (Math.max(...points.map(p => p.y)) - Math.min(...points.map(p => p.y))) * 455 / 2
+      expect(Math.max(width, height)).toBeGreaterThan(35)
+      for (const p of points) { expect(Math.abs(p.x)).toBeLessThan(1); expect(Math.abs(p.y)).toBeLessThan(1) }
+    }
+  }
+})

@@ -319,6 +319,12 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   trails.frustumCulled=false; trails.instanceMatrix.setUsage(THREE.DynamicDrawUsage); scene.add(trails)
   const beams = new THREE.InstancedMesh(new THREE.CylinderGeometry(1, 1, 1, 5), new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false }), 160)
   beams.frustumCulled = false; beams.instanceMatrix.setUsage(THREE.DynamicDrawUsage); scene.add(beams)
+  // Physical boarding hardware uses opaque lit metal, never the additive
+  // weapon pool. One bounded draw covers all active rails and clamps.
+  const boardingStructures = new THREE.InstancedMesh(new THREE.CylinderGeometry(1,1,1,8),
+    new THREE.MeshStandardMaterial({color:0xffffff,metalness:.4,roughness:.6}),32)
+  boardingStructures.count=0;boardingStructures.frustumCulled=false
+  boardingStructures.instanceMatrix.setUsage(THREE.DynamicDrawUsage);scene.add(boardingStructures)
   const projectiles = new THREE.InstancedMesh(new THREE.ConeGeometry(.5, 2.8, 7), new THREE.MeshStandardMaterial({color:0xffffff,metalness:.75,roughness:.35}),96)
   projectiles.frustumCulled=false;projectiles.instanceMatrix.setUsage(THREE.DynamicDrawUsage);scene.add(projectiles)
   const sparks = new THREE.InstancedMesh(new THREE.BoxGeometry(1, .4, 1), new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: .55, roughness: .6 }), 800)
@@ -590,7 +596,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
         const sampledTarget=bodyAt(clearanceTargetId,sampleTime)
         const planned=sampleStoryCamera({shot,sequence,time:sampleTime,aspect:camera.aspect,subject:sampledSubject,target:sampledTarget,axisFrom,axisTo,reduced,boarding})
         const height=planned.position.y
-        clearStorySightline(planned,clearanceSubjectId,actors.filter(actor=>isVisible(actor,sampleTime) && !(actor.ship.fate==='destroyed' && sampleTime>actor.ship.end+.32)).flatMap(actor=>bodyAt(actor.ship.id,sampleTime) ?? []))
+        clearStorySightline(planned,clearanceSubjectId,actors.filter(actor=>(!boarding || actor.ship.id!==clearanceTargetId) && isVisible(actor,sampleTime) && !(actor.ship.fate==='destroyed' && sampleTime>actor.ship.end+.32)).flatMap(actor=>bodyAt(actor.ship.id,sampleTime) ?? []))
         lift=Math.max(lift,planned.position.y-height)
       }
       clearanceByShot.set(clearanceKey,lift)
@@ -614,7 +620,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
       canvas.dataset.cinemaFocus=frame.target.toArray().map(value=>value.toFixed(1)).join(',')
     }
 
-    let beamCount = 0, sparkCount = 0, flashCount = 0, shieldCount = 0, shockwaveCount = 0, projectileCount = 0
+    let boardingStructureCount = 0, beamCount = 0, sparkCount = 0, flashCount = 0, shieldCount = 0, shockwaveCount = 0, projectileCount = 0
     pulseLight.intensity = 0
     const addBeam = (a: THREE.Vector3, b: THREE.Vector3, width: number, color: number) => {
       if (beamCount >= (actualQuality === 'low' ? 48 : 160)) return
@@ -710,6 +716,17 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
       const seed = hash(cue.id)
       if (cue.kind === 'boarding' && from && to) {
         const visual=boardingVisual(cue,age,from.position,to.position,from.size,to.size,reduced)
+        for(const rail of visual.structuralLines){
+          if(boardingStructureCount>=32)break
+          direction.copy(rail.to).sub(rail.from)
+          const length=direction.length()
+          if(length<.001)continue
+          dummy.position.copy(rail.from).add(rail.to).multiplyScalar(.5)
+          dummy.quaternion.setFromUnitVectors(up,direction.divideScalar(length))
+          dummy.scale.set(rail.width,length,rail.width);dummy.updateMatrix()
+          boardingStructures.setMatrixAt(boardingStructureCount,dummy.matrix)
+          boardingStructures.setColorAt(boardingStructureCount++,tint.setHex(rail.color))
+        }
         for(const beam of visual.lines)addBeam(beam.from,beam.to,beam.width,beam.color)
         for(const flash of visual.glows)addFlash(flash.position,flash.radius,flash.color,flash.opacity)
         for(const wave of visual.rings){
@@ -851,6 +868,8 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
       wreck.mesh.rotation.set(reduced?0:actor.bank,actor.rotation,0,'YXZ')
     }
     projectiles.count=projectileCount;projectiles.instanceMatrix.needsUpdate=true;if(projectiles.instanceColor)projectiles.instanceColor.needsUpdate=true
+    boardingStructures.count=boardingStructureCount;boardingStructures.instanceMatrix.needsUpdate=true
+    if(boardingStructures.instanceColor)boardingStructures.instanceColor.needsUpdate=true
     beams.count = beamCount; beams.instanceMatrix.needsUpdate = true; if (beams.instanceColor) beams.instanceColor.needsUpdate = true
     sparks.count = sparkCount; sparks.instanceMatrix.needsUpdate = true; if (sparks.instanceColor) sparks.instanceColor.needsUpdate = true
     for (let i = flashCount; i < flashes.length; i++) flashes[i].visible = false
