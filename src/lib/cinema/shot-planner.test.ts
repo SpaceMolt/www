@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 import { Vector3 } from 'three'
-import { buildShotPlan, measureShotVisibility, sampleCameraCandidate, planTransition, sampleCameraTransition, detailFramingScore } from './shot-planner'
+import { buildShotPlan, measureShotVisibility, sampleCameraCandidate, samplePlannedCamera, planTransition, sampleCameraTransition, detailFramingScore, type ShotPlan } from './shot-planner'
 import type { CameraBody, StoryCameraOptions } from './camera'
 import type { CinemaFilm, CinemaShot } from './types'
 const a: CameraBody={id:'a',position:new Vector3(),size:40}
@@ -75,6 +75,23 @@ test('compatible adjacent compositions use an absolute-time pan and dolly',()=>{
  sampleCameraTransition(transition,incoming,4.2,[a,b])
  expect(sampleCameraTransition(transition,incoming,4.5,[a,b]).position.distanceTo(seek.position)).toBe(0)
  expect(sampleCameraTransition(transition,incoming,6,[a,b]).position.distanceTo(incoming.position)).toBe(0)
+})
+
+test('planned playback skips moving transitions in reduced motion and preserves ordinary seeking',()=>{
+ const from={position:new Vector3(70,60,300),target:new Vector3(90,0,0),fov:42}
+ const plan:ShotPlan={shots:new Map([[shot,{goal:'exchange',candidate:0,score:0,readableIds:['a','b'],concerns:[],
+  transition:{kind:'move',reason:'shared participants',start:0,duration:1.1,from}}]])}
+ const sample=(time:number,reduced:boolean)=>samplePlannedCamera(plan,shot,{...options(shot,time),reduced},[a,b])
+ for(const time of [0,.25,.75,1.1]){
+  const expected=sampleCameraCandidate({...options(shot,time),reduced:true},0,[a,b])
+  expect(sample(time,true)).toEqual(expected)
+ }
+ expect(sample(0,false)).toEqual(from)
+ const ordinary=sample(.5,false)
+ expect(ordinary.position.distanceTo(sampleCameraCandidate(options(shot,.5),0,[a,b]).position)).toBeGreaterThan(1)
+ sample(.9,false);sample(.1,false)
+ expect(sample(.5,false)).toEqual(ordinary)
+ expect(sample(1.1,false)).toEqual(sampleCameraCandidate(options(shot,1.1),0,[a,b]))
 })
 
 test('an unsafe orbit or immediate outcome receives an intentional cut',()=>{

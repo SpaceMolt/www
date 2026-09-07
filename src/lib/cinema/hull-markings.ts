@@ -14,6 +14,64 @@ export function hullMarkingText(name: string): string {
   return Array.from(name.normalize('NFC').replace(/[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/g, '').replace(/\s+/gu, ' ').trim()).slice(0, 48).join('')
 }
 
+interface PaintTriangle {
+  triangle: THREE.Triangle
+  normal: THREE.Vector3
+  object: THREE.Mesh
+  weapon: boolean
+}
+
+/** Index actual triangles, not merged-mesh boxes. A decal's entire projected
+ * footprint must be clear even when a thin fixture falls between sample rays. */
+function paintFootprintClearance(meshes: THREE.Mesh[], bounds: THREE.Box3, worldSize: number) {
+  const span = bounds.getSize(new THREE.Vector3()), cells = new Map<number, PaintTriangle[]>()
+  const cellX = (x: number) => Math.max(0, Math.min(15, Math.floor((x - bounds.min.x) / Math.max(span.x, 1e-6) * 16)))
+  const cellY = (y: number) => Math.max(0, Math.min(7, Math.floor((y - bounds.min.y) / Math.max(span.y, 1e-6) * 8)))
+  const triangleBounds = new THREE.Box3()
+  for (const mesh of meshes) {
+    const position = mesh.geometry.getAttribute('position'), index = mesh.geometry.index, mount = mesh.geometry.getAttribute('cinemaMount')
+    if (!position) continue
+    for (let i = 0, count = index?.count ?? position.count; i + 2 < count; i += 3) {
+      const ids = [0, 1, 2].map(offset => index ? index.getX(i + offset) : i + offset)
+      const vertices = ids.map(id => new THREE.Vector3().fromBufferAttribute(position, id).applyMatrix4(mesh.matrixWorld))
+      const triangle = new THREE.Triangle(vertices[0], vertices[1], vertices[2])
+      const item: PaintTriangle = { triangle, normal: triangle.getNormal(new THREE.Vector3()), object: mesh, weapon: Boolean(mount && ids.some(id => mount.getX(id) >= 0)) }
+      triangleBounds.setFromPoints(vertices)
+      for (let x = cellX(triangleBounds.min.x); x <= cellX(triangleBounds.max.x); x++) for (let y = cellY(triangleBounds.min.y); y <= cellY(triangleBounds.max.y); y++) {
+        const key = x + y * 16, bucket = cells.get(key) ?? []
+        bucket.push(item); cells.set(key, bucket)
+      }
+    }
+  }
+  const local = new THREE.Triangle(), queryBounds = new THREE.Box3(), prism = new THREE.Box3()
+  const relative = new THREE.Vector3(), corner = new THREE.Vector3()
+  return (point: THREE.Vector3, normal: THREE.Vector3, right: THREE.Vector3, up: THREE.Vector3, width: number, height: number, support: THREE.Object3D): boolean => {
+    const tolerance = Math.min(height * .08, .12 / worldSize), outward = span.length() + 1
+    prism.min.set(-width / 2, -height / 2, -tolerance)
+    prism.max.set(width / 2, height / 2, outward)
+    queryBounds.makeEmpty()
+    for (const x of [-width / 2, width / 2]) for (const y of [-height / 2, height / 2]) for (const z of [-tolerance, outward]) {
+      corner.copy(point).addScaledVector(right, x).addScaledVector(up, y).addScaledVector(normal, z)
+      queryBounds.expandByPoint(corner)
+    }
+    const seen = new Set<PaintTriangle>()
+    for (let x = cellX(queryBounds.min.x); x <= cellX(queryBounds.max.x); x++) for (let y = cellY(queryBounds.min.y); y <= cellY(queryBounds.max.y); y++) {
+      for (const item of cells.get(x + y * 16) ?? []) {
+        if (seen.has(item)) continue
+        seen.add(item)
+        for (const [source, target] of [[item.triangle.a, local.a], [item.triangle.b, local.b], [item.triangle.c, local.c]]) {
+          relative.copy(source).sub(point)
+          target.set(relative.dot(right), relative.dot(up), relative.dot(normal))
+        }
+        // The supporting flat paint surface is expected to intersect the prism.
+        // Other triangles of this same merged mesh still participate normally.
+        if (item.object === support && !item.weapon && item.normal.dot(normal) > .98 && [local.a, local.b, local.c].every(vertex => Math.abs(vertex.z) <= tolerance)) continue
+        if (prism.intersectsTriangle(local)) return false
+      }
+    }
+    return true
+  }
+}
 /** Before model scaling: require an exposed, nearly planar patch, not a free-floating label.
  * Only hull/armor can support paint; all other meshes still block the placement rays.
  * Five descending sizes and 15 candidates per side bound startup work per detailed ship.
@@ -26,6 +84,7 @@ export function findHullMarkingPlacements(model: THREE.Group, worldSize: number,
   if (!meshes.length) return []
   const bounds = new THREE.Box3().setFromObject(model), size = bounds.getSize(new THREE.Vector3())
   const center = bounds.getCenter(new THREE.Vector3())
+  const footprintClear = paintFootprintClearance(meshes, bounds, worldSize)
   // Keep familiar lettering on small craft, but use the free panel area of a
   // capital instead of treating its registration as a person-sized fitting.
   const legacyHeight = Math.min(Math.max(.35, Math.min(1.4, worldSize * .015)) / worldSize, size.y * .10)
@@ -70,7 +129,7 @@ export function findHullMarkingPlacements(model: THREE.Group, worldSize: number,
             break sampleGrid
           }
         }
-        if (!safe) continue
+        if (!safe || !footprintClear(point, normal, right, up, width, height, object)) continue
         placements.push({ position: point.clone().addScaledVector(normal, .008 / worldSize), rotation: new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(right, up, normal)), width, height })
         found = true
         break

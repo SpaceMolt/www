@@ -194,7 +194,7 @@ export function buildShotPlan(film: CinemaFilm, input: ShotPlannerInput): ShotPl
 export function samplePlannedCamera(plan: ShotPlan, shot: CinemaShot, options: StoryCameraOptions, bodies: readonly CameraBody[]): StoryCameraFrame {
   const selected=plan.shots.get(shot)
   const frame=sampleCameraCandidate(options,selected?.candidate??0,bodies)
-  return selected ? sampleCameraTransition(selected.transition,frame,options.time,bodies) : frame
+  return selected && !options.reduced ? sampleCameraTransition(selected.transition,frame,options.time,bodies) : frame
 }
 
 /** Absolute-time blending makes seeking identical to uninterrupted playback. */

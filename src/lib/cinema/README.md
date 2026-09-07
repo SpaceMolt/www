@@ -97,7 +97,8 @@ consequences and the decisive event override that preference. Reciprocal fire
 shares a take and a stable camera shoulder. Between takes, a short
 pan/dolly is accepted only when sampled views preserve required subjects and hull
 clearance; incompatible geography or immediate key events retain a deliberate
-cut. Sampling uses absolute time so seeking and replay agree. Plans are cached per
+cut. Reduced-motion playback skips these animated transitions. Sampling uses absolute
+time so seeking and replay agree. Plans are cached per
 viewport aspect and reduced-motion setting, not recomputed each frame. Development
 canvas diagnostics expose goals, candidates, scores, coverage and unresolved
 readability concerns. This is bounded heuristic planning, not a guarantee that all
@@ -109,7 +110,8 @@ or add extra editorial takes to the source film.
 `hull-markings.ts` paints the recorded participant name on up to two verified,
 exposed hull/armor panels of each detailed model. Names use a small generated
 canvas texture, nonemissive weathered ink and ordinary scene lighting. Lettering
-has bounded physical size; small or obstructed hulls may omit it. The marking is
+grows on larger hulls when a clear panel permits, with smaller placement fallbacks;
+small or obstructed hulls may omit it. The marking is
 attached to the hull, never billboarded or resized for readability. Unicode text
 is bounded and stripped of control characters. Both sides share one material and
 texture, which is released by ordinary material disposal. No external fonts or

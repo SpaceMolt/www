@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import * as THREE from 'three'
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
 import { findHullMarkingPlacements, hullMarkingText, addHullMarkings } from './hull-markings'
 
 function box(name = 'hull') {
@@ -117,4 +118,39 @@ test('a later broad panel wins over the first narrow registration patch', () => 
     expect(p.position.x).toBeCloseTo(-.12)
     expect(p.height * 362).toBeGreaterThan(6)
   }
+})
+
+test('an interior obstruction between support probes prevents paint crossing equipment', () => {
+  const { model } = box()
+  const baseline = findHullMarkingPlacements(model, 362, 6)
+  expect(baseline).toHaveLength(2)
+  // Place blockers between probe columns on every candidate panel, including
+  // every fallback size. None lies exactly on a support-grid ray.
+  for (const side of [-1, 1]) for (const x of [.12, -.12, .28, -.28, 0]) for (const y of [0, -.18 * .3, .18 * .3]) {
+    const blocker = new THREE.Mesh(new THREE.BoxGeometry(.001, .025, .012), new THREE.MeshStandardMaterial())
+    blocker.name = 'metal'; blocker.position.set(x + .0015, y, side * .251); model.add(blocker)
+  }
+  expect(findHullMarkingPlacements(model, 362, 6)).toEqual([])
+})
+
+
+test('protrusions inside the same merged armor batch also block the full footprint', () => {
+  const { model, mesh } = box()
+  const pieces = [mesh.geometry]
+  for (const side of [-1, 1]) for (const x of [.12, -.12, .28, -.28, 0]) for (const y of [0, -.18 * .3, .18 * .3]) {
+    pieces.push(new THREE.BoxGeometry(.001, .025, .012).translate(x + .0015, y, side * .251))
+  }
+  mesh.geometry = mergeGeometries(pieces)!
+  pieces.forEach(piece => piece.dispose())
+  expect(findHullMarkingPlacements(model, 362, 6)).toEqual([])
+})
+
+test('equipment on the opposite side of the hull does not block front-side paint', () => {
+  const { model } = box()
+  const blocker = new THREE.Mesh(new THREE.BoxGeometry(1, .3, .02), new THREE.MeshStandardMaterial())
+  blocker.name = 'metal'; blocker.position.z = -.3; model.add(blocker)
+  const placements = findHullMarkingPlacements(model, 362, 6)
+  expect(placements).toHaveLength(1)
+  expect(placements[0].position.z).toBeGreaterThan(0)
+  expect(placements[0].height * 362).toBeGreaterThan(6)
 })
