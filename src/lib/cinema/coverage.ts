@@ -54,11 +54,12 @@ export function addBattlefieldCoverage(film: CinemaFilm): CinemaShot[] {
     beats.push({ time: volley.time, kind: 'impact', score: 10 + volley.targets.size / Math.max(1, activeAt(volley.time - .001).length) * 10 })
   }
 
-  const windows: Interval[] = [{ start: 0, end: 4 }]
+  const openingEnd = Math.min(4, film.shots.find(shot => !['geography','protagonist','opposition'].includes(shot.role ?? ''))?.start ?? film.shots[0].end)
+  const windows: Interval[] = [{ start: 0, end: openingEnd }]
   const limit = Math.min(3, Math.max(1, Math.floor(film.duration / 45)))
   for (const beat of beats.sort((a, b) => b.score - a.score || a.time - b.time)) {
     if (windows.length > limit) break
-    const preferred = Math.max(6, beat.time + (beat.kind === 'loss' ? 2.4 : -.5))
+    const preferred = Math.max(openingEnd, beat.time + (beat.kind === 'loss' ? 2.4 : -.5))
     const latest = beat.kind === 'impact' ? beat.time : preferred + 8
     // Keep every selected muzzle readable. An area attack's impact is itself
     // the reason for its master shot, so only that impact may replace a closeup.

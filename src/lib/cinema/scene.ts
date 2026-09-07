@@ -18,6 +18,7 @@ import { cinemaRenderSettings, initialCinemaQuality } from './quality'
 import { weaponVisual } from './weaponVisuals'
 import { getWeaponColor, resolveWeaponFamily } from './weapons'
 import { createShip } from './ships'
+import { createShipWreckage, WRECK_BREAKUP_DELAY } from './ship-wreckage'
 import { bakeShipTemplateGeometry } from './ship-template'
 import { aimWeaponMount, canAimWeaponMount, weaponMuzzleLocal, assignWeaponCues, type WeaponRig } from './ship-weapons'
 import { updateRetrothrusters } from './ship-thrusters'
@@ -259,6 +260,14 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     id: actor.ship.id, playerId: actor.ship.playerId, size: actor.size, beam: actor.appearance.beam, kind: actor.ship.kind, family: actor.appearance.family,
   })), sides.length)]))
   const byId = new Map(actors.map(a => [a.ship.id, a]))
+  // Only the bounded detailed cast owns wreck geometry; each actor is one draw
+  // regardless of how many original hull components survive its breakup.
+  const wrecks = actors.filter(actor=>actor.model && actor.ship.fate==='destroyed').map(actor=>{
+    const wreck=createShipWreckage(actor.model!,actor.seed)
+    wreck.mesh.scale.setScalar(actor.size);scene.add(wreck.mesh)
+    cleanups.push(()=>wreck.dispose())
+    return {actor,wreck}
+  })
   const gunTracks = new Map<string, CinemaCue[][]>()
   const cueMount = new Map<string, number>(), suppressedGuns = new Set<string>()
   // Distant actors remain real participants, rendered with a bounded number of draw calls.
@@ -309,8 +318,6 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   beams.frustumCulled = false; beams.instanceMatrix.setUsage(THREE.DynamicDrawUsage); scene.add(beams)
   const projectiles = new THREE.InstancedMesh(new THREE.ConeGeometry(.5, 2.8, 7), new THREE.MeshStandardMaterial({color:0xffffff,metalness:.75,roughness:.35}),96)
   projectiles.frustumCulled=false;projectiles.instanceMatrix.setUsage(THREE.DynamicDrawUsage);scene.add(projectiles)
-  const wrecks = new THREE.InstancedMesh(new THREE.BoxGeometry(1,.45,.75),new THREE.MeshStandardMaterial({color:0xffffff,metalness:.6,roughness:.86}),168)
-  wrecks.frustumCulled=false;wrecks.instanceMatrix.setUsage(THREE.DynamicDrawUsage);scene.add(wrecks)
   const sparks = new THREE.InstancedMesh(new THREE.BoxGeometry(1, .4, 1), new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: .55, roughness: .6 }), 800)
   sparks.frustumCulled = false; sparks.instanceMatrix.setUsage(THREE.DynamicDrawUsage); scene.add(sparks)
   const flashes: THREE.Sprite[] = []
@@ -491,7 +498,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
       const cloak=cloakById.get(actor.ship.id) ?? 0
 
       if (actor.model) {
-        actor.model.visible = visible && !(actor.ship.fate === 'destroyed' && time > actor.ship.end + .32)
+        actor.model.visible = visible && !(actor.ship.fate === 'destroyed' && time >= actor.ship.end + WRECK_BREAKUP_DELAY)
         actor.model.position.copy(actor.position)
         actor.model.rotation.set(reduced ? 0 : actor.bank, actor.rotation, 0, 'YXZ')
         updateRetrothrusters(actor.model,actor.retroThrust*(1-cloak*.95))
@@ -586,7 +593,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
       canvas.dataset.cinemaFocus=frame.target.toArray().map(value=>value.toFixed(1)).join(',')
     }
 
-    let beamCount = 0, sparkCount = 0, flashCount = 0, shieldCount = 0, shockwaveCount = 0, projectileCount = 0, wreckCount = 0
+    let beamCount = 0, sparkCount = 0, flashCount = 0, shieldCount = 0, shockwaveCount = 0, projectileCount = 0
     pulseLight.intensity = 0
     const addBeam = (a: THREE.Vector3, b: THREE.Vector3, width: number, color: number) => {
       if (beamCount >= (actualQuality === 'low' ? 48 : 160)) return
@@ -808,18 +815,11 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
         addFlash(destination.position, destination.size * 0.5, 0xff8c40, 0.18 * Math.sin(age / cue.duration * Math.PI))
       }
     }
-    for(const actor of actors){
-      if(!actor.model || actor.ship.fate!=='destroyed' || time<actor.ship.end+.4)continue
-      const age=time-actor.ship.end
-      for(let j=0;j<6 && wreckCount<168;j++){
-        const r=random(actor.seed+j*997)
-        const offset=new THREE.Vector3(r()-.5,r()-.5,r()-.5).multiplyScalar(actor.size*(.35+Math.min(age,15)*.025))
-        dummy.position.copy(actor.position).add(offset);dummy.rotation.set(r()*6+age*.03,r()*6+age*.025,r()*6)
-        dummy.scale.set(actor.size*(.12+r()*.14),actor.size*(.08+r()*.07),actor.size*(.14+r()*.1));dummy.updateMatrix()
-        wrecks.setMatrixAt(wreckCount,dummy.matrix);wrecks.setColorAt(wreckCount++,tint.setHex(actor.appearance.hull).multiplyScalar(.42))
-      }
+    for(const {actor,wreck} of wrecks){
+      wreck.sample(time-actor.ship.end-WRECK_BREAKUP_DELAY,reduced)
+      wreck.mesh.position.copy(actor.position)
+      wreck.mesh.rotation.set(reduced?0:actor.bank,actor.rotation,0,'YXZ')
     }
-    wrecks.count=wreckCount;wrecks.instanceMatrix.needsUpdate=true;if(wrecks.instanceColor)wrecks.instanceColor.needsUpdate=true
     projectiles.count=projectileCount;projectiles.instanceMatrix.needsUpdate=true;if(projectiles.instanceColor)projectiles.instanceColor.needsUpdate=true
     beams.count = beamCount; beams.instanceMatrix.needsUpdate = true; if (beams.instanceColor) beams.instanceColor.needsUpdate = true
     sparks.count = sparkCount; sparks.instanceMatrix.needsUpdate = true; if (sparks.instanceColor) sparks.instanceColor.needsUpdate = true
