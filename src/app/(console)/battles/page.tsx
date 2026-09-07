@@ -155,6 +155,7 @@ export default function BattlesPage() {
           {(['all', 'active', 'completed'] as FilterStatus[]).map(status => (
             <button
               key={status}
+              aria-pressed={filter === status}
               className={`${styles.filterBtn} ${filter === status ? styles.filterBtnActive : ''}`}
               onClick={() => setFilter(status)}
             >
@@ -173,6 +174,7 @@ export default function BattlesPage() {
           {CATEGORY_FILTERS.map(c => (
             <button
               key={c.key}
+              aria-pressed={category === c.key}
               className={`${styles.filterBtn} ${styles.categoryBtn} ${category === c.key ? styles.filterBtnActive : ''}`}
               onClick={() => setCategory(c.key)}
             >
