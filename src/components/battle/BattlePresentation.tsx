@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
-import { Crosshair, ExternalLink, Radio, RotateCcw, Trophy } from 'lucide-react'
+import { Crosshair, ExternalLink, Film, Radio, RotateCcw, Trophy } from 'lucide-react'
 import styles from './BattleViewer.module.css'
 import { useTranslation } from '@/i18n'
 import type { BattleData } from '@/lib/battle/useBattleData'
@@ -10,6 +10,7 @@ import { battleMomentPath, acceptsPlaybackShortcut, reconcilePlayhead } from '@/
 import { writeClipboardText } from '@/lib/battle/clipboardFeedback'
 import { buildTimeline } from '@/lib/battle/timeline'
 import { arenaVenueName } from '@/lib/battle/format'
+import { getCinemaEligibility } from '@/lib/cinema/director'
 import {
   makeTransform,
   renderBackground,
@@ -43,6 +44,7 @@ export default function BattlePresentation({ battleId, data, embedded = false, f
   const { t } = useTranslation()
   const { summary, entries, isLive, loading, error } = data
   const timeline = useMemo(() => buildTimeline(entries, summary), [entries, summary])
+  const cinemaReady = useMemo(() => getCinemaEligibility(summary, entries, data.phase) === 'ready', [summary, entries, data.phase])
   const timelineRef = useRef(timeline)
   timelineRef.current = timeline
 
@@ -454,6 +456,11 @@ export default function BattlePresentation({ battleId, data, embedded = false, f
           </div>
         </div>
         <div className={styles.headerRight}>
+          {cinemaReady && (
+            <Link href={`/battles/${encodeURIComponent(battleId)}/cinematic`} className={styles.replayBtn}>
+              <Film size={13} aria-hidden /> {t('cinema.watch')}
+            </Link>
+          )}
           {summary?.category && BATTLE_CATEGORY_META[summary.category] && (
             <span
               className={styles.categoryBadge}
