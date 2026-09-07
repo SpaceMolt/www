@@ -8,6 +8,7 @@ import type { CinemaFilm } from '@/lib/cinema/types'
 import type { ShipAppearanceMap } from '@/lib/cinema/appearance'
 import type { mountCinema } from '@/lib/cinema/scene'
 import { cinemaShortcut } from './playbackControls'
+import { restoreSettingsFocus } from './settingsFocus'
 import styles from './Cinema.module.css'
 
 type Quality = 'auto' | 'high' | 'medium' | 'low'
@@ -17,6 +18,7 @@ const clock = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Math.fl
 export default function CinemaPlayer({ film, appearances }: { film: CinemaFilm; appearances: ShipAppearanceMap }) {
   const { t } = useTranslation()
   const root = useRef<HTMLElement>(null)
+  const settingsTrigger = useRef<HTMLButtonElement>(null)
   const canvas = useRef<HTMLCanvasElement>(null)
   const player = useRef<Player | null>(null)
   const mountQuality = useRef<Quality>('auto')
@@ -127,6 +129,12 @@ export default function CinemaPlayer({ film, appearances }: { film: CinemaFilm; 
   }
   const visible = active || !playing || settings
   const record = `/battles/${encodeURIComponent(film.battleId)}`
+  const closeSettings = () => {
+    if (!settings) return
+    setSettings(false)
+    restoreSettingsFocus(settingsTrigger.current, root.current)
+    showControls()
+  }
 
   return (
     <main ref={root} className={`${styles.shell} ${!visible ? styles.inactive : ''}`} tabIndex={0} aria-label={t('cinema.player')}
@@ -139,7 +147,7 @@ export default function CinemaPlayer({ film, appearances }: { film: CinemaFilm; 
         if (shortcut === 'forward') { event.preventDefault(); seek(time + 5) }
         if (shortcut === 'mute') toggleMuted()
         if (shortcut === 'fullscreen') void toggleFullscreen()
-        if (shortcut === 'close-settings') setSettings(false)
+        if (shortcut === 'close-settings') closeSettings()
         showControls()
       }}>
       <div className={styles.viewport}>
@@ -180,7 +188,7 @@ export default function CinemaPlayer({ film, appearances }: { film: CinemaFilm; 
 
       {started && !failed && <div className={`${styles.controls} ${visible ? styles.controlsVisible : ''}`}>
         {settings && <section className={styles.settings} aria-label={t('cinema.settings')}>
-          <div className={styles.settingsHeading}><span>{t('cinema.settings')}</span><button aria-label={t('cinema.close')} onClick={() => setSettings(false)}><X size={16} aria-hidden /></button></div>
+          <div className={styles.settingsHeading}><span>{t('cinema.settings')}</span><button type="button" aria-label={t('cinema.close')} onClick={closeSettings}><X size={16} aria-hidden /></button></div>
           <label className={styles.settingRow}>{t('cinema.quality')}<select value={quality} onChange={event => { const value = event.target.value as Quality; setQuality(value); player.current?.setQuality(value) }}>{(['auto', 'high', 'medium', 'low'] as const).map(value => <option key={value} value={value}>{t(`cinema.${value}`)}</option>)}</select></label>
           <button className={styles.settingRow} aria-pressed={reducedMotion} onClick={() => { setReducedMotion(!reducedMotion); player.current?.setReducedMotion(!reducedMotion) }}>{t('cinema.reducedMotion')}<span className={`${styles.checkbox} ${reducedMotion ? styles.checked : ''}`}>{reducedMotion && <Check size={13} aria-hidden />}</span></button>
           <p className={styles.settingsHint}>{t('cinema.shortcuts')}</p>
@@ -192,7 +200,7 @@ export default function CinemaPlayer({ film, appearances }: { film: CinemaFilm; 
           <input className={styles.volume} type="range" min={0} max={1} step={0.05} value={volume} aria-label={t('cinema.volume')} onChange={event => { const value = Number(event.target.value); setVolume(value); player.current?.setVolume(value); if (muted && value > 0) { setMuted(false); player.current?.setMuted(false) } }} />
           <span className={styles.time}>{clock(time)} <span>/ {clock(film.duration)}</span></span>
           <span className={styles.filmLabel}><Film size={13} aria-hidden />{film.systemName}</span>
-          <button type="button" className={styles.settingsButton} onClick={() => setSettings(!settings)} aria-expanded={settings} aria-label={t('cinema.settings')}><SlidersHorizontal size={18} aria-hidden /></button>
+          <button ref={settingsTrigger} type="button" className={styles.settingsButton} onClick={() => settings ? closeSettings() : setSettings(true)} aria-expanded={settings} aria-label={t('cinema.settings')}><SlidersHorizontal size={18} aria-hidden /></button>
           <button type="button" onClick={() => void toggleFullscreen()} aria-label={t(fullscreen ? 'cinema.exitFullscreen' : 'cinema.fullscreen')}>{fullscreen ? <Minimize size={19} aria-hidden /> : <Maximize size={19} aria-hidden />}</button>
         </div>
         {fullscreenError && <p className={styles.settingsHint} role="status">{t('cinema.fullscreenError')}</p>}

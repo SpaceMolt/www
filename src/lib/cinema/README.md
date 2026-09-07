@@ -115,6 +115,19 @@ The counters include the entire postprocessing frame. They are not product UI.
 
 ## Verification
 
+Station models use seven shared architecture recipes: five empire styles,
+salvaged pirate construction, and a neutral utility station. Hero models share
+the ships' procedural materials, recessed docks, service fittings, and articulated
+weapons; distant models keep the main structure and omit fine equipment. Exact
+known public base IDs can supply construction identity. Unknown bases stay neutral;
+player faction IDs and station names are not treated as empire evidence.
+
+Recorded station module entries supply battery types and counts, including empty
+batteries. Older attack-only records use the maximum repeated battery count in a
+single volley, never accumulated shots. Rendering uses at most twelve representative
+mounts on sampled upper/lower surfaces; an explicitly empty fit stays unarmed.
+Unknown fits receive a bounded generic battery. Samples use illustrative fits.
+
 Run the repository catalog generation, TypeScript/lint, Bun tests, and production
 build. Cinema tests exercise completion, editing, lifecycles, geometry, frame
 boundaries, camera clearance and audio scheduling. Browser review is also required:

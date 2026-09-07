@@ -1,9 +1,23 @@
 /** Motion/timbre identity comes from the recorded gun name, not its damage color. */
 export type CinemaWeaponFamily = 'laser' | 'beam' | 'railgun' | 'autocannon' | 'flak' | 'plasma' | 'missile' | 'torpedo' | 'disruptor' | 'exotic' | 'mine' | 'kinetic' | 'smartbomb'
 
+const normalizeWeaponName = (name: string) => name.toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim()
+// Public facility names from gameserver/data/facilities/defense.yaml. Snapshot
+// category is only "module"; even dry batteries remain installed hardware.
+const stationWeapons: ReadonlyMap<string, CinemaWeaponFamily> = new Map([
+  ['point defense battery', 'autocannon'], ['station defense turret', 'kinetic'],
+  ['heavy defense battery', 'kinetic'], ['siege lance', 'beam'],
+  ['scrap flak battery', 'flak'], ['harpoon emplacement', 'kinetic'],
+])
+export function resolveStationWeaponFamily(name: string): CinemaWeaponFamily | undefined {
+  return stationWeapons.get(normalizeWeaponName(name))
+}
+
 /** Accepts public names and catalog IDs; battle instance_id is opaque and is not a type ID. */
 export function resolveWeaponFamily(name = '', damageType = ''): CinemaWeaponFamily {
-  const gun = name.toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim()
+  const gun = normalizeWeaponName(name)
+  const stationFamily = stationWeapons.get(gun)
+  if (stationFamily) return stationFamily
   // Check delivery mechanism before payload: an EMP missile is still a missile,
   // and plasma/void torpedoes must not collapse into ordinary plasma/void bolts.
   if (/\bsmartbomb\b/.test(gun)) return 'smartbomb'

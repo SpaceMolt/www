@@ -3,6 +3,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
 import type { ShipAppearance } from './appearance'
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
 import { buildEmpireHull } from './ship-empires'
+import { buildStationHull } from './ship-stations'
 import { buildSpecialHull } from './ship-recipes'
 import { buildFittedHardware } from './ship-hardware'
 import type { CinemaHardware } from './hardware'
@@ -154,9 +155,13 @@ export function createShip(appearance: ShipAppearance, seed: number, detail: 'he
     materials.glass.emissiveIntensity = .035
     materials.glass.roughness = .37
     materials.glass.metalness = .3
+    if(family==='station') {
+      materials.hull.color.setHex(0x312942)
+      materials.glass.emissiveIntensity=.18
+    }
     for (const key of ['hull', 'armor', 'glass'] as const) crystalDetail(materials[key], width, height)
   } else if (hero && family !== 'creature') {
-    const density = family === 'fighter' || family === 'scout' || family === 'drone' ? .75 : 1.5
+    const density = family === 'station' ? 3 : family === 'fighter' || family === 'scout' || family === 'drone' ? .75 : 1.5
     for (const key of ['hull', 'armor', 'dark', 'metal', 'accent'] as const) applyShipSurface(materials[key], { kind: key, empire, pirate, seed, density })
   }
   const rig=createWeaponRig()
@@ -263,17 +268,59 @@ diffuseColor.a *= engineTail * engineFilament * 0.65;`)
     group.add(plume)
   }
 
-  if (family === 'station') {
-    add(new THREE.CylinderGeometry(.12, .17, .62, 10), 'hull')
-    add(new THREE.TorusGeometry(.35, .04, 6, hero ? 48 : 20), 'armor', 0, .08, 0, new THREE.Euler(Math.PI / 2, 0, 0))
-    add(new THREE.TorusGeometry(.24, .022, 6, hero ? 40 : 16), 'dark', 0, -.16, 0, new THREE.Euler(Math.PI / 2, 0, 0))
-    for (let i = 0; i < 6; i++) {
-      const a = i * Math.PI / 3
-      slab(Math.cos(a) * .21, .08, Math.sin(a) * .21, .22, .055, .045)
-      slab(Math.cos(a) * .35, .08, Math.sin(a) * .35, .16, .08, .12)
-      if (hero) for (let j = 0; j < 4; j++) slab(Math.cos(a) * .35, .04 + j * .019, Math.sin(a) * .35 + .042, .085, .004, .004, 'windows')
+  const h = height / 2, w = width / 2
+  const context = { add, slab, rounded, rod, engine, hero, h, w }
+  const fitHardware = () => {
+    // Seat mounts on the actual hull surface, including named exceptions and grown hulls.
+    const surfaces = [...batches.entries()].filter(([key])=>['hull','armor','dark','metal'].includes(key)).flatMap(([,pieces])=>pieces)
+    const deckAt = (x:number,z:number) => {
+      let top = -Infinity
+      for(const geometry of surfaces) {
+        const p=geometry.getAttribute('position')
+        for(let i=0;i<p.count;i+=3) {
+          const ax=p.getX(i),az=p.getZ(i),bx=p.getX(i+1),bz=p.getZ(i+1),cx=p.getX(i+2),cz=p.getZ(i+2)
+          const det=(bz-cz)*(ax-cx)+(cx-bx)*(az-cz)
+          if(Math.abs(det)<1e-10) continue
+          const u=((bz-cz)*(x-cx)+(cx-bx)*(z-cz))/det
+          const v=((cz-az)*(x-cx)+(ax-cx)*(z-cz))/det
+          if(u>=-1e-5 && v>=-1e-5 && u+v<=1.00001) top=Math.max(top,u*p.getY(i)+v*p.getY(i+1)+(1-u-v)*p.getY(i+2))
+        }
+      }
+      return top
     }
-    rod(0, .36, 0, .006, .2, 'metal', false)
+    const surfaceRay=new THREE.Ray(), a=new THREE.Vector3(), b=new THREE.Vector3(), c=new THREE.Vector3(), hit=new THREE.Vector3()
+    const hullSurface=(point:THREE.Vector3,outward:THREE.Vector3):THREE.Vector3|undefined => {
+      surfaceRay.origin.copy(point).addScaledVector(outward,2)
+      surfaceRay.direction.copy(outward).negate()
+      let nearest=Infinity, result:THREE.Vector3|undefined
+      for(const geometry of surfaces) {
+        const position=geometry.getAttribute('position')
+        for(let i=0;i<position.count;i+=3) {
+          a.fromBufferAttribute(position,i);b.fromBufferAttribute(position,i+1);c.fromBufferAttribute(position,i+2)
+          if(surfaceRay.intersectTriangle(a,b,c,false,hit)) {
+            const distance=surfaceRay.origin.distanceToSquared(hit)
+            if(distance<nearest){nearest=distance;result=hit.clone()}
+          }
+        }
+      }
+      return result
+    }
+    buildFittedHardware(hardware, family, { ...context, deckAt, hullSurface, appearance,
+      beginWeapon: (family,pivot,muzzle,constructionRoll=0,normal) => {
+        weaponRoll=constructionRoll
+        weaponElevates=false
+        weaponIndex=rig.mounts.length
+        rig.mounts.push({family,pivot,muzzle,normal,rotation:new THREE.Quaternion(),traverseRotation:new THREE.Quaternion()})
+      },
+      elevateWeapon: () => { weaponElevates=true },
+      endWeapon: () => { weaponIndex=-1; weaponRoll=0; weaponElevates=false },
+    })
+    return deckAt
+  }
+
+  if (family === 'station') {
+    buildStationHull(appearance, context)
+    fitHardware()
   } else if (family === 'creature') {
     materials.hull.roughness = .68
     materials.hull.metalness = .1
@@ -289,8 +336,6 @@ diffuseColor.a *= engineTail * engineFilament * 0.65;`)
     const small = family === 'fighter' || family === 'scout' || family === 'drone'
     const alien = empire === 'voidborn'
     const broad = empire === 'crimson'
-    const h = height / 2, w = width / 2
-    const context = { add, slab, rounded, rod, engine, hero, h, w }
     const bespoke = buildSpecialHull(appearance.recipe, context) || buildEmpireHull(appearance, context)
     if (!bespoke) {
     const nose = small ? .51 : .49
@@ -552,50 +597,7 @@ diffuseColor.a *= engineTail * engineFilament * 0.65;`)
       rod(-.31, -h * .3, w * 1.10, .026, .06, 'metal')
     }
     } // default empire / role assembly
-    // Seat mounts on the actual hull surface, including named exceptions and grown hulls.
-    const surfaces = [...batches.entries()].filter(([key])=>['hull','armor','dark','metal'].includes(key)).flatMap(([,pieces])=>pieces)
-    const deckAt = (x:number,z:number) => {
-      let top = -Infinity
-      for(const geometry of surfaces) {
-        const p=geometry.getAttribute('position')
-        for(let i=0;i<p.count;i+=3) {
-          const ax=p.getX(i),az=p.getZ(i),bx=p.getX(i+1),bz=p.getZ(i+1),cx=p.getX(i+2),cz=p.getZ(i+2)
-          const det=(bz-cz)*(ax-cx)+(cx-bx)*(az-cz)
-          if(Math.abs(det)<1e-10) continue
-          const u=((bz-cz)*(x-cx)+(cx-bx)*(z-cz))/det
-          const v=((cz-az)*(x-cx)+(ax-cx)*(z-cz))/det
-          if(u>=-1e-5 && v>=-1e-5 && u+v<=1.00001) top=Math.max(top,u*p.getY(i)+v*p.getY(i+1)+(1-u-v)*p.getY(i+2))
-        }
-      }
-      return top
-    }
-    const surfaceRay=new THREE.Ray(), a=new THREE.Vector3(), b=new THREE.Vector3(), c=new THREE.Vector3(), hit=new THREE.Vector3()
-    const hullSurface=(point:THREE.Vector3,outward:THREE.Vector3):THREE.Vector3|undefined => {
-      surfaceRay.origin.copy(point).addScaledVector(outward,2)
-      surfaceRay.direction.copy(outward).negate()
-      let nearest=Infinity, result:THREE.Vector3|undefined
-      for(const geometry of surfaces) {
-        const position=geometry.getAttribute('position')
-        for(let i=0;i<position.count;i+=3) {
-          a.fromBufferAttribute(position,i);b.fromBufferAttribute(position,i+1);c.fromBufferAttribute(position,i+2)
-          if(surfaceRay.intersectTriangle(a,b,c,false,hit)) {
-            const distance=surfaceRay.origin.distanceToSquared(hit)
-            if(distance<nearest){nearest=distance;result=hit.clone()}
-          }
-        }
-      }
-      return result
-    }
-    buildFittedHardware(hardware, family, { ...context, deckAt, hullSurface, appearance,
-      beginWeapon: (family,pivot,muzzle,constructionRoll=0,normal) => {
-        weaponRoll=constructionRoll
-        weaponElevates=false
-        weaponIndex=rig.mounts.length
-        rig.mounts.push({family,pivot,muzzle,normal,rotation:new THREE.Quaternion(),traverseRotation:new THREE.Quaternion()})
-      },
-      elevateWeapon: () => { weaponElevates=true },
-      endWeapon: () => { weaponIndex=-1; weaponRoll=0; weaponElevates=false },
-    })
+    const deckAt = fitHardware()
     if (pirate || empire === 'outerrim') {
       // Donor panels sit on supported deck areas, with a dark gasket and a
       // contrasting retaining strip. Fewer, larger repairs tell a clearer

@@ -5,6 +5,27 @@ const mod = (name: string, category = 'module') => ({ name, category })
 const gun = (instance_id: string, name: string, damage_type = 'energy') => ({ instance_id, name, damage_type })
 
 describe('recorded hull hardware', () => {
+  it('preserves installed station batteries including dry racks and names without ammo metadata', () => {
+    const profile = projectCinemaHardware([
+      mod('Point Defense Battery'), mod('station_defense_turret'),
+      { ...mod('Heavy Defense Battery'), magazine_size: 34, current_ammo: 34 },
+      { ...mod('Heavy Defense Battery'), magazine_size: 34, current_ammo: 0 },
+      { ...mod('Siege Lance'), magazine_size: 13 },
+      mod('SCRAP-FLAK BATTERY'), mod('Harpoon Emplacement'),
+    ])
+    expect(profile).toEqual({ source: 'modules', weapons: { autocannon: 1, kinetic: 4, beam: 1, flak: 1 },
+      cargo: 0, mining: 0, salvage: 0, sensor: 0, defense: 0, utility: 0 })
+    expect(projectCinemaHardware([mod('Defense Control Battery'), mod('Siege Lance', 'utility')]).weapons).toEqual({})
+  })
+  it('counts anonymous station batteries by simultaneous evidence rather than shots or described barrels', () => {
+    const first = [gun('', 'Harpoon Emplacement', 'kinetic'), gun('', 'Harpoon Emplacement', 'kinetic'),
+      ...Array.from({ length: 4 }, () => gun('', 'Scrap Flak Battery', 'kinetic'))]
+    let evidence = mergeRecordedHardwareWeapons([], first)
+    for (let i = 0; i < 14; i++) evidence = mergeRecordedHardwareWeapons(evidence, first.slice(1))
+    expect(projectCinemaHardware(undefined, evidence).weapons).toEqual({ kinetic: 2, flak: 4 })
+    expect(projectCinemaHardware([mod('Siege Lance')], evidence).weapons).toEqual({ beam: 1 })
+    expect(projectCinemaHardware([], evidence).weapons).toEqual({})
+  })
   it('cross-checks normalized names against public catalog types and actual utility stats', () => {
     const catalog = buildHardwareCatalog([{ name: 'Laser Survey Array', type: 'utility', scanner_power: 10 },
       { name: 'Silent Hold', type: 'utility', cargo_bonus: 50 }, { name: 'Exotic Blaster', type: 'mining' },

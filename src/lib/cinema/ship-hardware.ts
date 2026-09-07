@@ -7,6 +7,7 @@ import type { SpecialHullContext } from './ship-recipes'
 export function cinemaGunSize(appearance: Pick<ShipAppearance, 'tier'|'hullEmpire'|'family'>): number {
   const small=appearance.family==='fighter'||appearance.family==='scout'
   const tier=Math.max(0,Math.min(5,Number.isFinite(appearance.tier)?appearance.tier:1))
+  if(appearance.family==='station') return .04+tier*.002
   return Math.min(.145,(small?.050:.064)*(1.4+tier*.19)*(appearance.hullEmpire==='crimson'?1.18:1))
 }
 
@@ -29,13 +30,14 @@ export function weaponEnvelopesSeparate(a: WeaponEnvelope, b: WeaponEnvelope, ma
 export function buildFittedHardware(profile: CinemaHardware | undefined, family: ShipFamily, c: SpecialHullContext & { deckAt?: (x:number,z:number)=>number; appearance?: ShipAppearance; hullSurface?: (point:THREE.Vector3,outward:THREE.Vector3)=>THREE.Vector3|undefined; beginWeapon?: (family:CinemaWeaponFamily,pivot:THREE.Vector3,muzzle:THREE.Vector3,constructionRoll?:number,normal?:THREE.Vector3)=>void; elevateWeapon?: ()=>void; endWeapon?: ()=>void }) {
   const { add,slab,rounded,rod,h,w,hero }=c
   const known=profile && profile.source!=='unknown'
+  const station=family==='station'
   const voidborn=(c.appearance?.hullEmpire??c.appearance?.empire)==='voidborn'
   const legacyCount=family==='fighter'?2:family==='warship'?3:family==='capital'?4:0
-  const weapons=known?profile.weapons:({kinetic:legacyCount} as Partial<Record<CinemaWeaponFamily,number>>)
+  const weapons=known?profile.weapons:(station?{kinetic:4,laser:4,missile:2}:{kinetic:legacyCount}) as Partial<Record<CinemaWeaponFamily,number>>
   // Distant hulls omit all fine equipment: their silhouettes remain a bounded set.
   if(!hero) return
   const entries=Object.entries(weapons).filter(([,count])=>count && count>0) as [CinemaWeaponFamily,number][]
-  const s=c.appearance?cinemaGunSize(c.appearance):.10
+  const s=c.appearance?cinemaGunSize(c.appearance):station?.045:.10
   // Long barrels need real swept space, not merely a gap between their bases.
   // These conservative component bounds are checked against rendered triangles.
   const radiusOf=(kind:CinemaWeaponFamily)=>s*({railgun:2.13,autocannon:1.78,kinetic:1.75,flak:1.46,plasma:1.48,laser:1.27,beam:1.27,exotic:1.40,disruptor:1.40,torpedo:1.30,missile:1.04,mine:1.02,smartbomb:1.02}[kind])
@@ -46,6 +48,14 @@ export function buildFittedHardware(profile: CinemaHardware | undefined, family:
   const width=Math.min(.27,Math.max(w+.035,.22)),height=Math.min(.24,Math.max(h+.10,.20))
   const candidates:{point:THREE.Vector3;normal:THREE.Vector3;attachment:THREE.Vector3;sampled?:boolean;surface?:THREE.Vector3}[]=[]
   const candidate=(x:number,y:number,z:number)=>candidates.push({point:new THREE.Vector3(x,y,z),normal:new THREE.Vector3(0,y,z).normalize(),attachment:new THREE.Vector3(0,y,z).normalize()})
+  if(station) {
+    // Ring decks provide broad firing hemispheres without borrowing the
+    // ship's diagonal sponson normals. Only an actual surface can host a gun.
+    for(const radius of [.33,.32,.34]) for(let i=0;i<24;i++) for(const side of [1,-1]) {
+      const angle=i*Math.PI/12
+      candidates.push({point:new THREE.Vector3(Math.cos(angle)*radius,side*.4,Math.sin(angle)*radius),normal:new THREE.Vector3(0,side,0),attachment:new THREE.Vector3(0,side,0)})
+    }
+  } else {
   if(c.appearance?.recipe==='shard') {
     candidate(.20,.285,0)
     candidate(-.20,.285,0)
@@ -63,6 +73,7 @@ export function buildFittedHardware(profile: CinemaHardware | undefined, family:
   // The tetrahedral ordering fits four huge independent mounts before extras.
   for(const [x,y,z] of [[.32,height,width],[.32,-height,-width],[-.32,height,-width],[-.32,-height,width]]) candidate(x,y,z)
   for(const x of [.29,-.29,0,.13,-.13]) for(const [y,z] of [[height,0],[0,width],[-height,0],[0,-width],[height,width],[-height,-width],[height,-width],[-height,width]]) candidate(x,y,z)
+  }
   const placed:{kind:CinemaWeaponFamily;pivot:THREE.Vector3;normal:THREE.Vector3;surface:THREE.Vector3;attachment:THREE.Vector3;radius:number;inward:number}[]=[]
   const place=(kind:CinemaWeaponFamily,dorsalOnly=false)=>{
     const radius=radiusOf(kind)
@@ -90,8 +101,9 @@ export function buildFittedHardware(profile: CinemaHardware | undefined, family:
   // Represent loadout mechanisms first, then fill only genuinely free space with
   // duplicates. Largest mechanisms reserve their positions before small emitters.
   const ordered=entries.slice().sort((a,b)=>radiusOf(b[0])-radiusOf(a[0])||a[0].localeCompare(b[0]))
-  for(const [kind] of ordered) if(placed.length<8) { if(!place(kind,true)) place(kind) }
-  for(let round=1;round<8&&placed.length<8;round++) for(const [kind,count] of ordered) if(round<count&&placed.length<8) place(kind)
+  const mountLimit=station?12:8
+  for(const [kind] of ordered) if(placed.length<mountLimit) { if(!place(kind,true)) place(kind) }
+  for(let round=1;round<mountLimit&&placed.length<mountLimit;round++) for(const [kind,count] of ordered) if(round<count&&placed.length<mountLimit) place(kind)
   for(const {kind,pivot,normal,surface} of placed) {
     const barrelHeight=heightOf(kind),x=pivot.x,z=pivot.z,y=pivot.y-s*barrelHeight
     if(c.appearance?.empire==='pirate') {

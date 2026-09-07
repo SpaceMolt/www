@@ -22,6 +22,7 @@ import { bakeShipTemplateGeometry } from './ship-template'
 import { aimWeaponMount, canAimWeaponMount, weaponMuzzleLocal, assignWeaponCues, type WeaponRig } from './ship-weapons'
 import { updateRetrothrusters } from './ship-thrusters'
 import { resolveAppearance, type ShipAppearance } from './appearance'
+import { resolveStationAppearance } from './station-appearance'
 import type { CinemaFilm, CinemaShip, CinemaCue } from './types'
 
 export type CinemaQuality = 'auto' | 'high' | 'medium' | 'low'
@@ -231,7 +232,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   const priority = [...film.ships].sort((a, b) => Number(featured.has(b.id)) - Number(featured.has(a.id)))
   const detailed = new Set(priority.slice(0, 28).map(s => s.id))
   const actors = film.ships.map((ship): Actor => {
-    const known = appearances[ship.shipClass] ?? (ship.kind==='station' ? resolveAppearance('station',undefined,5,'',0,'station') : undefined)
+    const known = ship.kind==='station' ? resolveStationAppearance(ship.playerId) : appearances[ship.shipClass]
     const appearance = ['station', 'creature', 'drone'].includes(ship.kind) ? { ...(known ?? resolveAppearance(ship.shipClass)), family: ship.kind as ShipAppearance['family'] } : known ?? resolveAppearance(ship.shipClass)
     const size = clamp(appearance.length * 9, 16, 400)
     const seed = hash(ship.id)

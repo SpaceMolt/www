@@ -19,6 +19,19 @@ const catalog: Record<CinemaWeaponFamily, string[]> = {
 }
 
 describe('recorded weapon identity', () => {
+  it('uses station battery construction rather than ammo payload as its delivery mechanism', () => {
+    const facilities: [string, string, CinemaWeaponFamily][] = [
+      ['Point Defense Battery', 'kinetic', 'autocannon'], ['Station Defense Turret', 'kinetic', 'kinetic'],
+      ['Heavy Defense Battery', 'explosive', 'kinetic'], ['Siege Lance', 'energy', 'beam'],
+      ['Scrap Flak Battery', 'kinetic', 'flak'], ['Harpoon Emplacement', 'kinetic', 'kinetic'],
+    ]
+    for (const [name, payload, family] of facilities) {
+      expect(resolveWeaponFamily(name, payload)).toBe(family)
+      expect(resolveWeaponFamily(name.toLowerCase().replaceAll(' ', '_'))).toBe(family)
+      expect(resolveWeaponFamily(`  ${name.toUpperCase().replaceAll(' ', '-')}  `)).toBe(family)
+    }
+    expect(resolveWeaponFamily('Heavy Defense Battery', 'explosive')).not.toBe('missile')
+  })
   it('recognizes every audited public weapon and historical smartbomb by ID or display name', () => {
     expect(Object.values(catalog).flat()).toHaveLength(73)
     for (const [family, ids] of Object.entries(catalog)) for (const id of ids) {

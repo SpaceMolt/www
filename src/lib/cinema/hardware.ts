@@ -1,6 +1,6 @@
 import type { FittedModule, WeaponFireDetail } from '../battle/types'
 import type { RawCatalogItem } from '../../data/catalog'
-import { resolveWeaponFamily, type CinemaWeaponFamily } from './weapons'
+import { resolveStationWeaponFamily, resolveWeaponFamily, type CinemaWeaponFamily } from './weapons'
 
 /** Construction hints from public battle evidence, not an exact equipment manifest. */
 export interface CinemaHardware {
@@ -68,6 +68,8 @@ function moduleKind(module: FittedModule, catalog?: HardwareCatalog): EquipmentK
   // Public snapshots currently expose item category="module", not the module
   // type. Keep precise nonweapon names ahead of weapon recognition in that case.
   if (category !== 'module' && category !== '') return 'utility'
+  const stationWeapon = resolveStationWeaponFamily(name)
+  if (stationWeapon) return stationWeapon
   const equipment = equipmentKind(name)
   if (equipment) return equipment
   if ((module.magazine_size ?? 0) > 0 || /\blaser\b|\bbeam\b|\brailgun\b|\bautocannon\b|\bflak\b|\bcannon\b|\bblaster\b|\bmissile\b|\btorpedo\b|\bsmartbomb\b|\bmine\b|\bplasma repeater\b|\bmass driver\b|\bscrapgun\b|\bharpoon\b|\b(emp|em|neural|phase) disruptor\b|\bemp pulse\b|\bsystem disabler\b|\b(solar|void|storm) lance\b|\bdark matter\b|\bblood reaver\b|\benergy siphon\b|\bgalvanic hull grid\b/.test(name)) return resolveWeaponFamily(name)
