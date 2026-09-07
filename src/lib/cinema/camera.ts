@@ -34,21 +34,43 @@ export interface StoryCameraOptions {
   /** Reference positions sampled once at the sequence's opening. */
   axisFrom: Vector3
   axisTo: Vector3
+  /** Hold broadside coverage for a take containing a recorded boarding action. */
+  boarding?: boolean
   reduced?: boolean
 }
 const ease = (value: number) => { const p = Math.max(0, Math.min(1, value)); return p * p * (3 - 2 * p) }
 
 /** Authored coverage stays on one side of the line, independent of hull heading. */
 export function sampleStoryCamera(options: StoryCameraOptions): StoryCameraFrame {
-  const { shot, sequence, subject, target, time, reduced } = options
+  const { shot, sequence, time, reduced } = options
+  let { subject, target } = options
+  // Coverage labels identify the beat, not a new camera setup. Hold the
+  // attacker's shoulder through the hit even when the edit names its defender.
+  const continuousTake = !shot.battlefield && sequence && sequence.id === shot.sequenceId && target &&
+    ((subject.id === sequence.attacker && target.id === sequence.defender) ||
+      (target.id === sequence.attacker && subject.id === sequence.defender))
+  if (continuousTake && subject.id !== sequence?.attacker) [subject, target] = [target!, subject]
   const aspect = Math.max(.2, options.aspect)
-  const progress = reduced ? 0 : ease((time - shot.start) / Math.max(.01, shot.end - shot.start))
+  const start = continuousTake ? sequence!.start : shot.start
+  const end = continuousTake ? sequence!.end : shot.end
+  const progress = reduced ? 0 : ease((time - start) / Math.max(.01, end - start))
   const axis = options.axisTo.clone().sub(options.axisFrom); axis.y = 0
   if (axis.lengthSq() < .001) axis.set(1,0,0)
   axis.normalize()
   const normal = new Vector3(-axis.z,0,axis.x).multiplyScalar(shot.axis?.side ?? 1)
+  if (continuousTake && options.boarding && target) {
+    // Follow the actual docking line as the boarder rounds its target. Anchor
+    // handedness to actor identity, not a dot-product sign that flips at 90deg.
+    const liveAxis = target.position.clone().sub(subject.position); liveAxis.y = 0
+    if (liveAxis.lengthSq() > .001) {
+      liveAxis.normalize()
+      const canonicalFrom = shot.axis?.from ?? sequence?.axis?.from ?? sequence?.attacker
+      const handedness = canonicalFrom === sequence?.attacker ? 1 : -1
+      normal.set(-liveAxis.z, 0, liveAxis.x).multiplyScalar(handedness * (shot.axis?.side ?? 1))
+    }
+  }
   const authoredRole = shot.role ?? (shot.kind === 'reveal' ? 'geography' : shot.kind === 'aftermath' ? 'resolution' : 'reaction')
-  const role = reduced && authoredRole !== 'fire' && authoredRole !== 'setup' ? 'geography' : authoredRole
+  const role = continuousTake ? (options.boarding ? 'geography' : 'fire') : reduced && authoredRole !== 'fire' && authoredRole !== 'setup' ? 'geography' : authoredRole
   const focus = subject.position.clone()
   const position = new Vector3()
   const fov = ['geography','setup','fire','montage'].includes(role) ? 42 : 34
@@ -102,21 +124,46 @@ export function sampleStoryCamera(options: StoryCameraOptions): StoryCameraFrame
     let distance = size * 2.5 * Math.max(1, 1 / aspect)
     focus.addScaledVector(toward, Math.min(separation * .46, size * .8))
     const forward = new Vector3(), right = new Vector3(), cameraUp = new Vector3(), relative = new Vector3()
-    for (let attempt = 0; attempt < 24; attempt++) {
+    const pair = [subject, target]
+    const fitAt = (distance: number) => {
       const offset = Math.max(size * Math.hypot(.8, .5), clearance * (distance + separation) / tangent)
       position.copy(subject.position).addScaledVector(toward, -distance).addScaledVector(transverse, offset)
       forward.copy(focus).sub(position).normalize()
       right.crossVectors(forward, new Vector3(0, 1, 0)).normalize()
       if (right.lengthSq() < .001) right.copy(shoulder)
       cameraUp.crossVectors(right, forward).normalize()
-      const fits = [subject, target].every(body => {
+      return pair.every(body => {
         relative.copy(body.position).sub(position)
         const depth = relative.dot(forward), radius = body.size * .78
         return depth > radius && Math.abs(relative.dot(right)) + radius < depth * horizontal * .92 &&
           Math.abs(relative.dot(cameraUp)) + radius < depth * vertical * .92
       })
-      if (fits) break
+    }
+    let lower = distance
+    for (let attempt = 0; attempt < 24; attempt++) {
+      if (fitAt(distance)) {
+        if (continuousTake && distance > lower) {
+          // Refine the safety fit continuously: coarse 22% pullback steps are
+          // visible as cuts when a moving hull crosses a frustum threshold.
+          let upper = distance
+          for (let refinement = 0; refinement < 20; refinement++) {
+            const middle = (lower + upper) * .5
+            if (fitAt(middle)) upper = middle
+            else lower = middle
+          }
+          fitAt(upper)
+        }
+        break
+      }
+      lower = distance
       distance *= 1.22
+    }
+    if (continuousTake) {
+      // A restrained dolly follows the exchange without flying between the
+      // two hulls. The accompanying pan gives the receiving ship more room
+      // as the action lands; the fitted shoulder remains the safety envelope.
+      position.sub(focus).multiplyScalar(1.12 - progress * .10).add(focus)
+      focus.addScaledVector(toward, Math.min(size * .10, separation * .02) * progress)
     }
   } else if (wide && target) {
     // A master shot establishes BOTH participants before the close coverage.

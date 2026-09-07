@@ -13,9 +13,12 @@ import { sampleCinemaHealth } from './director'
 import { buildCinemaCascades, sampleCinemaCascade } from './cascades'
 import { buildFleetFormation } from './formation'
 import { sampleShipMotion, fleetMotionSpacing, type ShipMotionOptions } from './motion'
+import { createBoardingMotionSampler } from './boarding-motion'
 import { sampleStoryCamera, clearStorySightline, keepCameraOutsideHulls, type CameraBody } from './camera'
+import { buildCameraTakes } from './camera-takes'
 import { cinemaRenderSettings, initialCinemaQuality } from './quality'
 import { weaponVisual } from './weaponVisuals'
+import { boardingVisual } from './boardingVisuals'
 import { getWeaponColor, resolveWeaponFamily } from './weapons'
 import { createShip } from './ships'
 import { createShipWreckage, WRECK_BREAKUP_DELAY } from './ship-wreckage'
@@ -364,20 +367,27 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   const cuesById = new Map(film.cues.map(cue=>[cue.id,cue]))
   const effectWindow = film.cues.reduce((max, cue) => Math.max(max, cue.duration + 2), 7)
   const clearanceByShot = new Map<string,number>()
+  const cameraTakes = buildCameraTakes(film.story?.sequences ?? [], film.shots)
+  const boardingTakes = new Set((film.story?.sequences ?? []).filter(sequence=>
+    cuesById.get(sequence.causeCueId ?? '')?.kind==='boarding').map(sequence=>cameraTakes.get(sequence.id)?.id))
   const cameraTarget = new THREE.Vector3(), cameraPosition = new THREE.Vector3()
   const pointA = new THREE.Vector3(), pointB = new THREE.Vector3()
   const up = new THREE.Vector3(0, 1, 0), direction = new THREE.Vector3()
   const motionOptions = (actor: Actor): ShipMotionOptions => ({ size: actor.size, angle: actor.angle, lane: actor.lane, seed: actor.seed,
     formation: formations.get(actor.ship.id), fleetCount: sides.length, sideCount: sideCounts.get(actor.ship.sideIndex) ?? 1, spacing: fleetSpacing.get(actor.ship.sideIndex) ?? 90, depth: fleetDepth.get(actor.ship.sideIndex) ?? 130 })
+  const boardingMotion = createBoardingMotionSampler(film.cues,
+    actors.map(actor=>({id:actor.ship.id,start:actor.ship.start,end:actor.ship.end,radius:actor.size*.78,kind:actor.ship.kind})),
+    (id,at)=>{const actor=byId.get(id)!;return sampleShipMotion(actor.ship,at,motionOptions(actor))})
+  const motionAt = (actor: Actor, at: number) => boardingMotion(actor.ship.id,at)
   const positionAt = (actor: Actor, t: number) => {
-    const motion = sampleShipMotion(actor.ship,t,motionOptions(actor))
+    const motion = motionAt(actor,t)
     actor.position.set(motion.x,motion.y,motion.z)
     actor.rotation=motion.yaw; actor.bank=motion.bank; actor.thrust=motion.thrust; actor.retroThrust=motion.retroThrust
     return actor.position
   }
   const cascadePlans = buildCinemaCascades(film.cues,(id,at)=>{
     const actor=byId.get(id)
-    return actor ? sampleShipMotion(actor.ship,at,motionOptions(actor)) : undefined
+    return actor ? motionAt(actor,at) : undefined
   }).filter(plan=>plan.kind==='chain' || plan.recipients.length>=6)
   const cascadeGroups = new Set(cascadePlans.map(plan=>`${plan.sourceCueId}:${plan.kind==='chain'?'chain':'area'}`))
   const cascadeCollateral = new Set(film.cues.filter(cue=>cue.hit===true && cue.parentId &&
@@ -408,7 +418,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     const target=byId.get(cue.to??'')
     if(!target) return output.set(0,0,0)
     if(at===undefined) output.copy(target.position)
-    else {const pose=sampleShipMotion(target.ship,at,motionOptions(target));output.set(pose.x,pose.y,pose.z)}
+    else {const pose=motionAt(target,at);output.set(pose.x,pose.y,pose.z)}
     output.y+=target.size*.06
     if(!cue.hit){output.y+=target.size*.8;output.z+=target.size*(hash(cue.id)%2?.7:-.7)}
     return output
@@ -425,7 +435,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
       if(!targets) {
         targets=[]
         for(const phase of [0,.5,1]) {
-          const at=cue.time+cue.duration*phase, pose=sampleShipMotion(actor.ship,at,motionOptions(actor))
+          const at=cue.time+cue.duration*phase, pose=motionAt(actor,at)
           for(const bank of [0,pose.bank]) {
             rotation.setFromEuler(new THREE.Euler(bank,pose.yaw,0,'YXZ'))
             inverse.compose(new THREE.Vector3(pose.x,pose.y,pose.z),rotation,new THREE.Vector3(actor.size,actor.size,actor.size)).invert()
@@ -451,7 +461,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
       const retired=time>=actor.ship.end && actor.ship.fate!=='survived'
       const aimAt=retired?actor.ship.end:time
       if(retired) {
-        const pose=sampleShipMotion(actor.ship,Math.max(actor.ship.start,actor.ship.end-.00001),motionOptions(actor))
+        const pose=motionAt(actor,Math.max(actor.ship.start,actor.ship.end-.00001))
         frozenRotation.setFromEuler(new THREE.Euler(reduced?0:pose.bank,pose.yaw,0,'YXZ'))
         frozenInverse.compose(new THREE.Vector3(pose.x,pose.y,pose.z),frozenRotation,new THREE.Vector3(actor.size,actor.size,actor.size)).invert()
       }
@@ -518,11 +528,11 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     updateGuns()
     if (!reduced) for (const actor of actors) {
       if (!actor.model || actor.ship.kind==='station' || time < actor.ship.start || time > actor.ship.end+5) continue
-      const settings=motionOptions(actor)
+
       for (let segment=0;segment<8 && trailCount<240;segment++) {
         const now=time-segment*.65, before=now-.65
         if (before<actor.ship.start || now>actor.ship.end) continue
-        const head=sampleShipMotion(actor.ship,now,settings), tail=sampleShipMotion(actor.ship,before,settings)
+        const head=motionAt(actor,now), tail=motionAt(actor,before)
         if (head.thrust < .4 || tail.thrust < .4) continue
         pointA.set(head.x-Math.cos(head.yaw)*actor.size*.51,head.y,head.z+Math.sin(head.yaw)*actor.size*.51)
         pointB.set(tail.x-Math.cos(tail.yaw)*actor.size*.51,tail.y,tail.z+Math.sin(tail.yaw)*actor.size*.51)
@@ -539,13 +549,16 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     let shotIndex = film.shots.findIndex(s => time >= s.start && time < s.end)
     if (shotIndex < 0) shotIndex = Math.max(0, film.shots.length - 1)
     const shot = film.shots[shotIndex]
-    const sequence = film.story?.sequences.find(sequence=>sequence.id===shot?.sequenceId)
+    const storySequence = film.story?.sequences.find(sequence=>sequence.id===shot?.sequenceId)
+    const take = storySequence ? cameraTakes.get(storySequence.id) : undefined
+    const boarding = !!take && boardingTakes.has(take.id)
+    const sequence = storySequence && take ? {...storySequence,start:take.start,end:take.end} : storySequence
     const subjectActor = (shot.subject ? byId.get(shot.subject) : undefined) ?? actors.find(a=>isVisible(a,time))
     const targetActor = shot.target ? byId.get(shot.target) : undefined
     const bodyAt = (id: string | undefined, at: number): CameraBody | undefined => {
       const actor=id ? byId.get(id) : undefined
       if(!actor)return undefined
-      const motion=sampleShipMotion(actor.ship,at,motionOptions(actor))
+      const motion=motionAt(actor,at)
       return {id:actor.ship.id,size:actor.size,position:new THREE.Vector3(motion.x,motion.y,motion.z)}
     }
     const subject = subjectActor ? {id:subjectActor.ship.id,size:subjectActor.size,position:subjectActor.position} : {id:'empty',size:60,position:new THREE.Vector3()}
@@ -558,18 +571,26 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     // every destroyed hull at once would zoom away while its blast is visible.
     const battlefield=shot.battlefield ? actors.filter(actor=>isVisible(actor,time) &&
       !(actor.ship.fate==='destroyed' && shot.start>actor.ship.end+7)).map(actor=>({id:actor.ship.id,position:actor.position,size:actor.size})) : boundaries
-    const frame=sampleStoryCamera({shot,sequence,time,aspect:camera.aspect,subject,target,battlefield,axisFrom,axisTo,reduced})
-    // Clearance is planned over the shot, not switched frame-by-frame as another
-    // hull passes the edge of the view. This avoids sudden camera height jumps.
-    const clearanceKey=`${shotIndex}:${camera.aspect.toFixed(3)}:${reduced}`
+    const frame=sampleStoryCamera({shot,sequence,time,aspect:camera.aspect,subject,target,battlefield,axisFrom,axisTo,reduced,boarding})
+    // Plan the whole continuous take once. Beat labels and swapped reaction
+    // subjects must not change the clearance height halfway through a move.
+    const pairedTake = !shot.battlefield && sequence && target &&
+      ((subject.id===sequence.attacker && target.id===sequence.defender) ||
+       (target.id===sequence.attacker && subject.id===sequence.defender))
+    const clearanceStart=pairedTake ? sequence.start : shot.start
+    const clearanceEnd=pairedTake ? sequence.end : shot.end
+    const clearanceSubjectId=pairedTake ? sequence.attacker! : subject.id
+    const clearanceTargetId=pairedTake ? sequence.defender : target?.id
+    const clearanceKey=`${pairedTake ? `take:${take?.id}:${clearanceSubjectId}:${clearanceTargetId}` : `shot:${shotIndex}`}:${camera.aspect.toFixed(3)}:${reduced}`
     if(!shot.battlefield && !clearanceByShot.has(clearanceKey)) {
       let lift=0
-      for(const sampleTime of [shot.start,(shot.start+shot.end)*.5,shot.end-.001]) {
-        const sampledSubject=bodyAt(subject.id,sampleTime) ?? subject
-        const sampledTarget=bodyAt(target?.id,sampleTime)
-        const planned=sampleStoryCamera({shot,sequence,time:sampleTime,aspect:camera.aspect,subject:sampledSubject,target:sampledTarget,axisFrom,axisTo,reduced})
+      for(const fraction of [0,.25,.5,.75,1]) {
+        const sampleTime=clearanceStart+(clearanceEnd-clearanceStart)*fraction-(fraction===1 ? .001 : 0)
+        const sampledSubject=bodyAt(clearanceSubjectId,sampleTime) ?? subject
+        const sampledTarget=bodyAt(clearanceTargetId,sampleTime)
+        const planned=sampleStoryCamera({shot,sequence,time:sampleTime,aspect:camera.aspect,subject:sampledSubject,target:sampledTarget,axisFrom,axisTo,reduced,boarding})
         const height=planned.position.y
-        clearStorySightline(planned,subject.id,actors.filter(actor=>isVisible(actor,sampleTime) && !(actor.ship.fate==='destroyed' && sampleTime>actor.ship.end+.32)).flatMap(actor=>bodyAt(actor.ship.id,sampleTime) ?? []))
+        clearStorySightline(planned,clearanceSubjectId,actors.filter(actor=>isVisible(actor,sampleTime) && !(actor.ship.fate==='destroyed' && sampleTime>actor.ship.end+.32)).flatMap(actor=>bodyAt(actor.ship.id,sampleTime) ?? []))
         lift=Math.max(lift,planned.position.y-height)
       }
       clearanceByShot.set(clearanceKey,lift)
@@ -687,7 +708,16 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
       if (!destination) continue
       const color = getWeaponColor(cue.weaponFamily ?? resolveWeaponFamily(cue.weaponName,cue.damageType),cue.damageType)
       const seed = hash(cue.id)
-      if (cue.kind === 'weapon' && from && to) {
+      if (cue.kind === 'boarding' && from && to) {
+        const visual=boardingVisual(cue,age,from.position,to.position,from.size,to.size,reduced)
+        for(const beam of visual.lines)addBeam(beam.from,beam.to,beam.width,beam.color)
+        for(const flash of visual.glows)addFlash(flash.position,flash.radius,flash.color,flash.opacity)
+        for(const wave of visual.rings){
+          if(shockwaveCount>=shockwaves.length)break
+          const ring=shockwaves[shockwaveCount++];ring.visible=true;ring.position.copy(wave.position);ring.quaternion.copy(camera.quaternion)
+          ring.scale.setScalar(wave.radius);ring.material.color.setHex(wave.color);ring.material.opacity=wave.opacity
+        }
+      } else if (cue.kind === 'weapon' && from && to) {
         if(cascadeCollateral.has(cue.id))continue
         pointA.copy(from.position).add(new THREE.Vector3(Math.cos(from.rotation)*from.size*.42,from.size*.12,-Math.sin(from.rotation)*from.size*.42))
         aimPoint(cue,pointB)

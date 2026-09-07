@@ -18,8 +18,9 @@ cinema URLs. Completed does not automatically mean worth filming:
 - Confirmed wildlife/creature encounters are excluded. A creature snapshot or
   terminal participant is sufficient, including mixed battles. Unknown historical
   kinds are not guessed into this exclusion.
-- Records without damage, connected offensive force, a loss, or a capture are
-  excluded. Miss-only disengagements and empty/idle records get no film.
+- Records without damage, connected offensive force, a loss, a capture, or observed boarding contact are
+  excluded. A logged latch, assault or plunder can qualify without hull damage.
+  Rejected boarding orders, miss-only disengagements and empty/idle records get no film.
 - A lossless battle in which every side's final recorded appearances escape is
   excluded. `stalemate` alone is insufficient: it also describes single-sided
   retreats and timeouts. Returning pilots reset their escape state.
@@ -48,10 +49,38 @@ hulls. Missing or obsolete snapshots do not authorize extra destruction or
 resurrection. Recorded zone transitions drive approach and withdrawal in `motion.ts`.
 Formations hold fixed lanes and parallel headings toward the opposing side.
 Combat retreat reverses while retaining that heading; a flee stance turns the hull
-outward. There is no automatic orbit, approach, bobbing or banking. Formation lanes
+outward. There is no automatic orbit, bobbing or banking. Formation lanes
 allow room for hulls to turn, and stations occupy a separate layer.
 Source positions are not physical coordinates; scene formations are artistic. Captured prize IDs cannot always be mapped to the original hull
 from historical public records, so the compiler does not guess such links.
+
+### Boarding and continuous camera takes
+
+Public boarding rows produce approach, breach, assault, withdrawal and plunder
+cues. The exact event and operation identity remain attached to each cue;
+casualty flags are qualitative and never become troop counts or progress bars.
+Meaningful transitions retain screen time while repeated reports are sampled.
+A rejected order creates no boarding effect. `capture_ready` does not establish
+ownership transfer: only a capture record retires a hull as an intact prize.
+Plunder means cargo theft followed by disengagement, not hull capture. Capture
+sequences follow the matching boarding operation rather than unrelated gunfire.
+
+`boarding-motion.ts` supplies deterministic, absolute-time blocking around the
+recorded counterpart. The boarder approaches alongside the target with hull
+clearance, keeps its existing heading, holds during contact, and releases on
+withdrawal, plunder or a failed operation. Retirement freezes the applied offset
+so an intact prize or wreck cannot jump back to its original formation slot.
+Missing operation IDs use participant-pair context. These positions illustrate
+observed contact; they are not tactical coordinates or personnel simulations.
+
+Camera moves retain continuous takes across adjacent shots with the same subjects
+and screen axis. New subjects or geography changes still allow deliberate cuts.
+The continuous path remains subject to framing and ship-clearance constraints;
+it does not replace the chronological edit or manufacture additional action.
+
+Self-destruct records still have no bespoke countdown choreography. Confirmed
+losses use the existing recorded outcome handling. Boarding adds no downloaded
+models, textures, audio assets, external generation service or asset request.
 
 ## Rendering and audio
 
@@ -157,3 +186,9 @@ five retained and five excluded. Useful examples include
 The bounded recent sample contained no intact captures or confirmed disables,
 cloaks, or drains; regression fixtures and explicitly synthetic browser scenes
 cover those effects. Synthetic scenes are test tools, never production films.
+
+Boarding follow-up, September 7, 2026: `627178229d01ef77d719015ca68e3493`
+records LT1428 and Yor Graves against Zaggle in Skyreach. Yor Graves closes,
+loses and regains ground, then latches and captures Zaggle in the same source
+tick. The public fixture exercises an authentic intact capture and preserves
+that within-tick ordering.

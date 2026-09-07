@@ -163,3 +163,133 @@ test('downrange targets remain outside the foreground hull silhouette after port
     }
   }
 })
+
+test('one exchange uses a continuous camera move across its fire-to-impact boundary',()=>{
+  const a=actor('a',-180),b=actor('b',180)
+  const sequence={id:'take',start:0,end:6,kind:'confrontation' as const,attacker:'a',defender:'b',actionTime:1,impactTime:3,axis}
+  const before=sampleStoryCamera({shot:{...shot,start:0,end:3,sequenceId:'take'},sequence,time:2.999,aspect:16/9,subject:a,target:b,axisFrom:a.position,axisTo:b.position})
+  const after=sampleStoryCamera({shot:{...shot,start:3,end:6,role:'impact',sequenceId:'take'},sequence,time:3.001,aspect:16/9,subject:b,target:a,axisFrom:a.position,axisTo:b.position})
+  expect(before.position.distanceTo(after.position)).toBeLessThan(1)
+  expect(before.target.distanceTo(after.target)).toBeLessThan(1)
+  expect(Math.abs(before.fov-after.fov)).toBeLessThan(.1)
+})
+
+test('a firing take has a deliberate camera move instead of a frozen camera',()=>{
+  const a=actor('a',-180),b=actor('b',180)
+  const sequence={id:'take',start:0,end:6,kind:'confrontation' as const,attacker:'a',defender:'b',actionTime:1,impactTime:3,axis}
+  const options={shot:{...shot,sequenceId:'take'},sequence,aspect:16/9,subject:a,target:b,axisFrom:a.position,axisTo:b.position}
+  const early=sampleStoryCamera({...options,time:.2}),late=sampleStoryCamera({...options,time:2.5})
+  expect(early.position.distanceTo(late.position)+early.target.distanceTo(late.target)).toBeGreaterThan(4)
+})
+
+test('continuous takes retain framing, hull clearance, and geography throughout the move', () => {
+  for (const aspect of [.46, 16 / 9, 2.4]) for (const reversed of [false, true]) {
+    const a = actor('a', -180, 100), b = actor('b', 600, 140)
+    const attacker = reversed ? b : a, defender = reversed ? a : b
+    const sequence = { id: 'take', start: 0, end: 6, kind: 'confrontation' as const,
+      attacker: attacker.id, defender: defender.id, actionTime: 1, impactTime: 3, axis }
+    for (const time of [0, 1, 2.999, 3.001, 4, 6]) {
+      const impact = time >= 3
+      const frame = sampleStoryCamera({ shot: { ...shot, sequenceId: 'take', role: impact ? 'impact' : 'fire' },
+        sequence, time, aspect, subject: impact ? defender : attacker, target: impact ? attacker : defender,
+        axisFrom: a.position, axisTo: b.position })
+      const camera = new PerspectiveCamera(frame.fov, aspect, .1, 100000)
+      camera.position.copy(frame.position); camera.lookAt(frame.target); camera.updateMatrixWorld()
+      expect(a.position.clone().project(camera).x).toBeLessThan(b.position.clone().project(camera).x)
+      for (const body of [a, b]) {
+        expect(frame.position.distanceTo(body.position)).toBeGreaterThan(body.size * .78)
+        for (const x of [-.6, .6]) for (const y of [-.25, .4]) for (const z of [-.3, .3]) {
+          const p = body.position.clone().add(new Vector3(x, y, z).multiplyScalar(body.size)).project(camera)
+          expect(Math.abs(p.x)).toBeLessThan(1)
+          expect(Math.abs(p.y)).toBeLessThan(1)
+        }
+      }
+    }
+  }
+})
+
+test('reduced-motion takes stay fixed and seeking directly reproduces the authored frame', () => {
+  const a = actor('a', -180), b = actor('b', 180)
+  const sequence = { id: 'take', start: 0, end: 6, kind: 'confrontation' as const,
+    attacker: 'a', defender: 'b', actionTime: 1, impactTime: 3, axis }
+  const options = { shot: { ...shot, sequenceId: 'take' }, sequence, aspect: 16 / 9,
+    subject: a, target: b, axisFrom: a.position, axisTo: b.position }
+  const early = sampleStoryCamera({ ...options, time: 0, reduced: true })
+  const late = sampleStoryCamera({ ...options, time: 5, reduced: true })
+  expect(late).toEqual(early)
+  const sought = sampleStoryCamera({ ...options, time: 4 })
+  sampleStoryCamera({ ...options, time: .2 })
+  expect(sampleStoryCamera({ ...options, time: 4 })).toEqual(sought)
+})
+
+test('tracking moving ships does not step between discrete portrait fit distances', () => {
+  const a = actor('a', 0, 40), b = actor('b', 600, 180)
+  const sequence = { id: 'take', start: 0, end: 6, kind: 'confrontation' as const,
+    attacker: 'a', defender: 'b', actionTime: 1, impactTime: 3, axis }
+  let previous: Vector3 | undefined
+  for (let separation = 600; separation < 1600; separation += 2) {
+    b.position.x = separation
+    const frame = sampleStoryCamera({ shot: { ...shot, sequenceId: 'take' }, sequence, time: 2, aspect: .46,
+      subject: a, target: b, axisFrom: a.position, axisTo: new Vector3(600, 0, 0) })
+    if (previous) expect(frame.position.distanceTo(previous)).toBeLessThan(4)
+    previous = frame.position
+  }
+})
+
+test('boarding takes frame close hulls together without the downrange shoulder pullback', () => {
+  const a = actor('a', 0, 180), b = actor('b', 240, 150)
+  const sequence = { id: 'boarding', start: 0, end: 6, kind: 'confrontation' as const,
+    attacker: 'a', defender: 'b', actionTime: 1, impactTime: 3, axis }
+  for (const aspect of [.46, 16 / 9, 2.4]) for (const time of [0, 2.999, 3.001, 6]) {
+    const impact = time >= 3
+    const frame = sampleStoryCamera({ shot: { ...shot, sequenceId: 'boarding', role: impact ? 'reaction' : 'setup' },
+      sequence, boarding: true, time, aspect, subject: impact ? b : a, target: impact ? a : b,
+      axisFrom: a.position, axisTo: b.position })
+    const camera = new PerspectiveCamera(frame.fov, aspect, .1, 100000)
+    camera.position.copy(frame.position); camera.lookAt(frame.target); camera.updateMatrixWorld()
+    for (const body of [a, b]) for (const x of [-.6, .6]) for (const y of [-.25, .4]) for (const z of [-.3, .3]) {
+      const p = body.position.clone().add(new Vector3(x, y, z).multiplyScalar(body.size)).project(camera)
+      expect(Math.abs(p.x)).toBeLessThan(1)
+      expect(Math.abs(p.y)).toBeLessThan(1)
+    }
+    const left = a.position.clone().add(new Vector3(-a.size * .6, 0, 0)).project(camera)
+    const right = b.position.clone().add(new Vector3(b.size * .6, 0, 0)).project(camera)
+    if (aspect === 16 / 9) {
+      expect(right.x - left.x).toBeGreaterThan(.65)
+      expect(frame.position.distanceTo(frame.target)).toBeLessThan(900)
+    }
+  }
+})
+
+test('boarding broadside follows a side berth without hiding the boarder behind its target', () => {
+  const a = actor('a', 0, 100), b = actor('b', 0, 180)
+  b.position.z = 260
+  const sequence = { id: 'boarding', start: 0, end: 6, kind: 'confrontation' as const,
+    attacker: 'a', defender: 'b', actionTime: 1, impactTime: 3, axis }
+  for (const aspect of [.46, 16 / 9]) {
+    const frame = sampleStoryCamera({ shot: { ...shot, sequenceId: 'boarding' }, sequence, boarding: true,
+      time: 3, aspect, subject: a, target: b, axisFrom: new Vector3(), axisTo: new Vector3(260, 0, 0) })
+    for (const [focus, obstruction] of [[a, b], [b, a]]) {
+      const ray = focus.position.clone().sub(frame.position)
+      const t = Math.max(0, Math.min(1, obstruction.position.clone().sub(frame.position).dot(ray) / ray.lengthSq()))
+      const closest = frame.position.clone().addScaledVector(ray, t)
+      expect(closest.distanceTo(obstruction.position)).toBeGreaterThan(obstruction.size * .78)
+    }
+  }
+})
+
+test('boarding pan stays continuous past a right-angle approach and across reaction subject swaps', () => {
+  const a = actor('a', 0, 80), b = actor('b', 0, 120)
+  const sequence = { id: 'boarding', start: 0, end: 6, kind: 'confrontation' as const,
+    attacker: 'a', defender: 'b', actionTime: 1, impactTime: 3, axis }
+  let previous: Vector3 | undefined
+  for (let angle = 0; angle <= 110; angle++) {
+    b.position.set(Math.cos(angle * Math.PI / 180) * 260, 0, Math.sin(angle * Math.PI / 180) * 260)
+    const swapped = angle > 90
+    const frame = sampleStoryCamera({ shot: { ...shot, role: swapped ? 'reaction' : 'setup', sequenceId: 'boarding' },
+      sequence, boarding: true, time: angle / 110 * 6, aspect: 16 / 9, subject: swapped ? b : a, target: swapped ? a : b,
+      axisFrom: new Vector3(), axisTo: new Vector3(260, 0, 0) })
+    if (previous) expect(frame.position.distanceTo(previous)).toBeLessThan(20)
+    previous = frame.position
+  }
+})

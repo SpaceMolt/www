@@ -733,3 +733,72 @@ it('retains causal volleys inside tiny outcome beats when a very dense battle re
     if(index) expect(shot.start).toBeCloseTo(film.shots[index-1].end,8)
   }
 })
+
+describe('observable boarding cinema',()=>{
+  const board=(event:string,phase:string)=>({operation_id:'boarding-one',actor_id:'a',target_id:'b',event,phase})
+  it('recognizes a recorded pirate plunder even without hull damage or capture',()=>{
+    const entries=[row(100,{boarding:[board('closing_started','latching')]}),row(101,{boarding:[board('latched','assault')]}),terminal(102,{boarding:[board('plundered','resolved')],battle_ended:{...terminal(102).battle_ended!,total_damage:0}})]
+    expect(getCinemaEligibility(summary({total_damage:0}),entries,'complete')).toBe('ready')
+  })
+  it('gives approach, attachment, assault and plunder visible time without inventing a capture',()=>{
+    const entries=[row(100,{boarding:[board('closing_started','latching')]}),row(101,{boarding:[board('latched','assault')]}),row(102,{boarding:[{...board('assault_continues','assault'),casualties_occurred:true}]}),terminal(103,{boarding:[board('plundered','resolved')]})]
+    const film=compile(entries)
+    const boarding=film.cues.filter(cue=>String(cue.kind)==='boarding')
+    expect(boarding.map(cue=>'boardingPhase' in cue?cue.boardingPhase:null)).toEqual(['approach','breach','assault','plunder'])
+    expect(boarding.every(cue=>cue.from==='a:0'&&cue.to==='b:0'&&cue.duration>0&&cue.time+cue.duration<=film.duration)).toBe(true)
+    expect(film.ships.every(ship=>ship.fate==='survived')).toBe(true)
+    expect(film.cues.some(cue=>cue.kind==='capture'||cue.kind==='death')).toBe(false)
+    expect(film.duration).toBeLessThanOrEqual(20)
+  })
+  it('does not let an empty self-destruct operation redirect a later historical capture',()=>{
+    const capture={boarding_operation_id:'',captor_id:'a',captor_username:'a',former_owner_id:'b',former_owner_username:'b',ship_id:'prize',ship_class:'vanguard'}
+    const film=compile([row(100,{snapshots:[snap('a',1),snap('b',2),snap('c',2)],boarding:[{operation_id:'',actor_id:'b',target_id:'c',phase:'self_destruct',event:'self_destruct_attached_blast',hull_damage:1}]}),terminal(101,{snapshots:[snap('a',1),snap('b',2),snap('c',2)],captures:[capture]})])
+    expect(film.ships.find(ship=>ship.playerId==='b')!.fate).toBe('captured')
+    expect(film.ships.find(ship=>ship.playerId==='c')!.fate).toBe('survived')
+  })
+})
+
+it('does not turn rejected boarding or capture-ready into hull capture',()=>{
+  const board=(event:string,phase:string)=>({operation_id:'op',actor_id:'a',target_id:'b',event,phase})
+  const entries=[row(100,{boarding:[board('boarding_rejected','')]}),terminal(101,{battle_ended:{...terminal(101).battle_ended!,total_damage:0}})]
+  expect(getCinemaEligibility(summary({total_damage:0}),entries,'complete')).toBe('uneventful')
+  expect(()=>compile(entries)).toThrow('complete, reconciled')
+  const film=compile([row(100,{boarding:[board('latched','assault')]}),terminal(101,{boarding:[board('capture_ready','resolved')]})])
+  expect(film.ships.every(ship=>ship.fate==='survived')).toBe(true)
+  expect(film.cues.some(cue=>cue.kind==='capture')).toBe(false)
+})
+
+it('samples repetitive boarding while retaining terminal plunder',()=>{
+  const board=(event:string,phase:string)=>({operation_id:'op',actor_id:'a',target_id:'b',event,phase})
+  const film=compile([row(100,{boarding:[board('latched','assault')]}),...Array.from({length:1000},(_,i)=>row(101+i,{boarding:[board('assault_continues','assault')]})),terminal(1101,{boarding:[board('plundered','resolved')]})])
+  const cues=film.cues.filter(cue=>cue.kind==='boarding')
+  expect(cues.length).toBeLessThanOrEqual(14)
+  expect(cues.at(-1)?.boardingPhase).toBe('plunder')
+  expect(film.duration).toBeLessThan(30)
+})
+
+it('directs an intact capture from its recorded boarding operation rather than simultaneous gunfire',()=>{
+  const capture={boarding_operation_id:'op',captor_id:'a',captor_username:'a',former_owner_id:'b',former_owner_username:'b',ship_id:'prize',ship_class:'vanguard'}
+  const film=compile([row(100,{boarding:[{operation_id:'op',actor_id:'a',target_id:'b',event:'closing_started',phase:'latching'}]}),terminal(101,{attacks:[attack('a','b')],boarding:[{operation_id:'op',actor_id:'a',target_id:'b',event:'latched',phase:'assault'},{operation_id:'op',actor_id:'a',target_id:'b',event:'captured',phase:'resolved'}],captures:[capture]})])
+  const cue=film.cues.find(cue=>cue.kind==='capture')!
+  const sequence=film.story!.sequences.find(sequence=>sequence.eventCueId===cue.id)!
+  expect(film.cues.find(cue=>cue.id===sequence.causeCueId)?.kind).toBe('boarding')
+  expect(sequence.impactTime).toBeLessThan(cue.time)
+})
+it('preserves simultaneous legacy boarding operations for different pairs',()=>{
+  const boarding=[['a','b'],['c','d']].map(([actor_id,target_id])=>({operation_id:'',actor_id,target_id,event:'latched',phase:'assault'}))
+  const snapshots=[snap('a',1),snap('b',2),snap('c',1),snap('d',2)]
+  const film=compile([row(100,{snapshots,boarding}),terminal(101,{snapshots})])
+  expect(film.cues.filter(cue=>cue.kind==='boarding').map(cue=>[cue.from,cue.to])).toEqual([['a:0','b:0'],['c:0','d:0']])
+})
+it('preserves a terminal withdrawal after a same-tick withdrawal transition',()=>{
+  const board=(event:string,phase:string)=>({operation_id:'op',actor_id:'a',target_id:'b',event,phase})
+  const film=compile([row(100,{boarding:[board('latched','assault')]}),terminal(101,{boarding:[
+    board('withdrawal_started','withdrawing'),board('withdrawal_started','withdrawing'),board('withdrawn','resolved'),
+  ]})])
+  const withdrawal=film.cues.filter(cue=>cue.kind==='boarding'&&cue.boardingPhase==='withdraw')
+  expect(withdrawal.map(cue=>cue.boardingEvent)).toEqual(['withdrawal_started','withdrawn'])
+  expect(withdrawal[0].boardingEnded).toBe(false)
+  expect(withdrawal[1].boardingEnded).toBe(true)
+  expect(withdrawal[1].time).toBeGreaterThanOrEqual(withdrawal[0].time+withdrawal[0].duration)
+})

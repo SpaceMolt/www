@@ -37,6 +37,7 @@ const eventSounds: Readonly<Record<string, Readonly<SoundProfile>>> = {
   contact: { duration: .22, attack: .003, peak: .085, wave: 'square', frequency: [920, 95], filter: 'bandpass', cutoff: [2600, 420], noise: .70, tone: .22 },
   death: { duration: 2.8, attack: .014, peak: .75, wave: 'sine', frequency: [90, 22], filter: 'lowpass', cutoff: [2400, 80], noise: 1, tone: .70 },
   knockout: { duration: 1.8, attack: .014, peak: .26, wave: 'triangle', frequency: [420, 45], filter: 'bandpass', cutoff: [1500, 160], noise: .60, tone: .55 },
+  boarding: { duration: .65, attack: .025, peak: .09, wave: 'triangle', frequency: [130, 75], filter: 'bandpass', cutoff: [950, 260], noise: .3, tone: .45 },
   capture: { duration: 1.4, attack: .040, peak: .16, wave: 'sine', frequency: [260, 140], filter: 'bandpass', cutoff: [1000, 220], noise: .15, tone: .60 },
   arrival: { duration: 1.4, attack: .09, peak: .15, wave: 'sine', frequency: [65, 340], filter: 'bandpass', cutoff: [160, 2200], noise: .62, tone: .40 },
   escape: { duration: 1.4, attack: .02, peak: .15, wave: 'sine', frequency: [340, 48], filter: 'lowpass', cutoff: [2400, 90], noise: .68, tone: .35 },
