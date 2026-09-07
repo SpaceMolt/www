@@ -434,7 +434,7 @@ describe('authored narrative sequences', () => {
     const film = compile(entries)
     expect(film.story?.protagonistId).toBe('a:0')
     expect(film.story?.adversaryId).toBe('b:0')
-    expect(film.shots[0]).toMatchObject({start:0,end:1.2,role:'geography',battlefield:true})
+    expect(film.shots[0]).toMatchObject({start:0,end:2.5,role:'geography',battlefield:true})
     expect(film.shots.find(shot=>shot.role==='fire')!.start).toBeLessThan(3)
     expect(film.story!.sequences.length).toBeGreaterThanOrEqual(3)
     expect(film.story!.sequences.length).toBeLessThanOrEqual(26)
@@ -801,4 +801,13 @@ it('preserves a terminal withdrawal after a same-tick withdrawal transition',()=
   expect(withdrawal[0].boardingEnded).toBe(false)
   expect(withdrawal[1].boardingEnded).toBe(true)
   expect(withdrawal[1].time).toBeGreaterThanOrEqual(withdrawal[0].time+withdrawal[0].duration)
+})
+it('uses a perceptible battlefield master in compiled films before chronological action begins',()=>{
+  const film=compile([row(100,{attacks:[attack('a','b')]}),terminal(101)])
+  const opening=film.shots[0]
+  expect(opening.battlefield).toBe(true)
+  expect(opening.end-opening.start).toBeGreaterThanOrEqual(2.5)
+  expect(film.segments[0].start).toBe(opening.end)
+  expect(film.cues.filter(cue=>cue.kind==='weapon').every(cue=>cue.time>=opening.end)).toBe(true)
+  for(let index=1;index<film.shots.length;index++) expect(film.shots[index].start).toBeCloseTo(film.shots[index-1].end,8)
 })

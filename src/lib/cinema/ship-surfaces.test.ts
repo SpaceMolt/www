@@ -104,3 +104,15 @@ test('surface shader composes with earlier detail and later articulation while s
     expect(shader.fragmentShader).not.toMatch(/dFd[xy]\(cinema(LocalD|ViewD)/)
   } finally { material.dispose() }
 })
+
+test('microdetail keeps the same world frequency across hull sizes and macro densities', () => {
+  for (const worldSize of [16.2, 81.2, 179, 362.7]) for (const density of [.75, 1.5, 3]) {
+    const material = applyShipSurface(new THREE.MeshStandardMaterial(), { kind: 'hull', worldSize, density })
+    try {
+      const uniforms = compile(material).uniforms
+      expect(uniforms.cinemaMicroScale.value * uniforms.cinemaSurfaceDensity.value / worldSize).toBeCloseTo(1 / 32, 8)
+      expect(uniforms.cinemaMicroStrength.value).toBeGreaterThanOrEqual(0)
+      expect(uniforms.cinemaMicroStrength.value).toBeLessThanOrEqual(1)
+    } finally { material.dispose() }
+  }
+})

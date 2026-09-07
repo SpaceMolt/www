@@ -7,7 +7,7 @@ import { mergeRecordedHardwareWeapons, projectCinemaHardware, type HardwareCatal
 import type { CinemaAxis, CinemaCue, CinemaFilm, CinemaHealth, CinemaSequence, CinemaShip, CinemaShot, CinemaSourceSegment } from './types'
 
 export const DIRECTOR_VERSION = 7
-const OPENING = 1.2
+const OPENING = 2.5
 const AFTERMATH = 3.5
 const clamp = (value: number, low = 0, high = 1) => Math.min(high, Math.max(low, Number.isFinite(value) ? value : low))
 const fraction = (value: number, max: number) => max > 0 ? clamp(value / max) : 0

@@ -86,9 +86,10 @@ export function sampleStoryCamera(options: StoryCameraOptions): StoryCameraFrame
       upper.max(body.position.clone().addScalar(radius))
     }
     focus.copy(lower).add(upper).multiplyScalar(.5)
-    // The formation has depth as well as width. An elevated three-quarter
-    // direction exposes that depth rather than stacking every row edge-on.
-    const viewing = normal.clone().multiplyScalar(.7).addScaledVector(axis, .6).add(new Vector3(0, .65, 0)).normalize()
+    // A scale-establishing view keeps opposing hulls at comparable depth.
+    // Elevation reveals decks and formation rows; a restrained lateral move
+    // provides parallax without making a nearer small hull rival a capital.
+    const viewing = normal.clone().addScaledVector(axis, .02 + progress * .04).add(new Vector3(0, .38, 0)).normalize()
     const forward = viewing.clone().negate(), right = new Vector3().crossVectors(forward, new Vector3(0, 1, 0)).normalize()
     const cameraUp = new Vector3().crossVectors(right, forward).normalize(), relative = new Vector3()
     const sinHorizontal = Math.sin(Math.atan(horizontal)), sinVertical = Math.sin(Math.atan(vertical))

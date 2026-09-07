@@ -119,7 +119,7 @@ test('nonfiring detail coverage remains close even with a large battlefield avai
 })
 
 
-test('asymmetric fleet masters use an elevated three-quarter view and fill the available frame', () => {
+test('asymmetric fleet masters reveal their decks and fill the available frame without strong depth foreshortening', () => {
   const capital = actor('capital', -160, 220)
   const swarm = Array.from({ length: 100 }, (_, index) => ({ id: `shard:${index}`, size: 16,
     position: new Vector3(650 + Math.floor(index / 10) * 120, (index % 3 - 1) * 40, (index % 10 - 4.5) * 100) }))
@@ -128,8 +128,9 @@ test('asymmetric fleet masters use an elevated three-quarter view and fill the a
     const frame = sampleStoryCamera({ shot: { ...shot, role: 'geography', battlefield: true }, time: 2, aspect,
       subject: capital, target: swarm[0], axisFrom: capital.position, axisTo: new Vector3(1000, 0, 0), battlefield: bodies })
     const viewing = frame.position.clone().sub(frame.target).normalize()
-    expect(viewing.x).toBeGreaterThan(.35)
-    expect(viewing.z).toBeGreaterThan(.35)
+    expect(viewing.x).toBeGreaterThan(.025)
+    expect(viewing.x).toBeLessThan(.15)
+    expect(viewing.z).toBeGreaterThan(.8)
     expect(viewing.y).toBeGreaterThan(.25)
     const camera = new PerspectiveCamera(frame.fov, aspect, .1, 100000)
     camera.position.copy(frame.position); camera.lookAt(frame.target); camera.updateMatrixWorld()
@@ -319,4 +320,41 @@ test('boarding contact coverage keeps a real 22-to-1 victim readable while cropp
       for (const p of points) { expect(Math.abs(p.x)).toBeLessThan(1); expect(Math.abs(p.y)).toBeLessThan(1) }
     }
   }
+})
+
+test('scale-establishing masters keep real two-to-one and twenty-two-to-one hull ratios legible', () => {
+  for (const smallSize of [179, 16.2]) for (const aspect of [.46, 16 / 9, 2.4]) for (const time of [0, 2.5, 5]) {
+    const capital = actor('a', -500, 362), smaller = actor('b', 500, smallSize)
+    const frame = sampleStoryCamera({ shot: { ...shot, role: 'geography', battlefield: true }, time, aspect,
+      subject: capital, target: smaller, battlefield: [capital, smaller], axisFrom: capital.position, axisTo: smaller.position })
+    const camera = new PerspectiveCamera(frame.fov, aspect, .1, 100000)
+    camera.position.copy(frame.position); camera.lookAt(frame.target); camera.updateMatrixWorld()
+    const depth = (body: typeof capital) => -body.position.clone().applyMatrix4(camera.matrixWorldInverse).z
+    expect(Math.max(depth(capital), depth(smaller)) / Math.min(depth(capital), depth(smaller))).toBeLessThan(1.15)
+    const width = (body: typeof capital) => {
+      const left = body.position.clone().add(new Vector3(-body.size * .5, 0, 0)).project(camera)
+      const right = body.position.clone().add(new Vector3(body.size * .5, 0, 0)).project(camera)
+      return Math.abs(right.x - left.x)
+    }
+    const perceivedRatio = width(capital) / width(smaller)
+    const actualRatio = capital.size / smaller.size
+    expect(perceivedRatio / actualRatio).toBeGreaterThan(.85)
+    expect(perceivedRatio / actualRatio).toBeLessThan(1.15)
+  }
+})
+
+
+test('scale masters add restrained lateral parallax and remain deterministic with reduced motion', () => {
+  const a = actor('a', -500, 362), b = actor('b', 500, 179)
+  const options = { shot: { ...shot, role: 'geography' as const, battlefield: true }, aspect: 16 / 9,
+    subject: a, target: b, battlefield: [a, b], axisFrom: a.position, axisTo: b.position }
+  const early = sampleStoryCamera({ ...options, time: 0 }), late = sampleStoryCamera({ ...options, time: 5 })
+  const earlyView = early.position.clone().sub(early.target).normalize(), lateView = late.position.clone().sub(late.target).normalize()
+  expect(lateView.x - earlyView.x).toBeGreaterThan(.03)
+  expect(lateView.x - earlyView.x).toBeLessThan(.05)
+  expect(early.position.z).toBeGreaterThan(0)
+  expect(late.position.z).toBeGreaterThan(0)
+  sampleStoryCamera({ ...options, time: 1 })
+  expect(sampleStoryCamera({ ...options, time: 5 })).toEqual(late)
+  expect(sampleStoryCamera({ ...options, time: 5, reduced: true })).toEqual(sampleStoryCamera({ ...options, time: 0, reduced: true }))
 })

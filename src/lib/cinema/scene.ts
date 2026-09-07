@@ -1,3 +1,4 @@
+import { cinemaHullWorldSize } from './ship-scale'
 import * as THREE from 'three'
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
 import { TexturePass } from 'three/addons/postprocessing/TexturePass.js'
@@ -238,7 +239,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   const actors = film.ships.map((ship): Actor => {
     const known = ship.kind==='station' ? resolveStationAppearance(ship.playerId) : appearances[ship.shipClass]
     const appearance = ['station', 'creature', 'drone'].includes(ship.kind) ? { ...(known ?? resolveAppearance(ship.shipClass)), family: ship.kind as ShipAppearance['family'] } : known ?? resolveAppearance(ship.shipClass)
-    const size = clamp(appearance.length * 9, 16, 400)
+    const size = cinemaHullWorldSize(appearance)
     const seed = hash(ship.id)
     const side = sides.indexOf(ship.sideIndex)
     const angle = side / Math.max(2, sides.length) * Math.PI * 2
