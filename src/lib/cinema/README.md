@@ -82,6 +82,39 @@ Self-destruct records still have no bespoke countdown choreography. Confirmed
 losses use the existing recorded outcome handling. Boarding adds no downloaded
 models, textures, audio assets, external generation service or asset request.
 
+### Goal-based camera planning
+
+The chronological film remains the source of events. `shot-planner.ts` then plans
+camera coverage against the assembled, posed hulls and current viewport. It scores
+five candidate views per continuous take at up to six times, including selected
+impact, capture and boarding-contact moments. Goals distinguish establishment,
+scale, exchanges, contact and outcomes. Scoring uses clipped screen coverage,
+minimum projected size, hull-bound occlusion, relative depth, prior participant
+coverage, repeated compositions and transition cost.
+
+The edit briefly favors an ongoing exchange over ordinary competing fire; recorded
+consequences and the decisive event override that preference. Reciprocal fire
+shares a take and a stable camera shoulder. Between takes, a short
+pan/dolly is accepted only when sampled views preserve required subjects and hull
+clearance; incompatible geography or immediate key events retain a deliberate
+cut. Sampling uses absolute time so seeking and replay agree. Plans are cached per
+viewport aspect and reduced-motion setting, not recomputed each frame. Development
+canvas diagnostics expose goals, candidates, scores, coverage and unresolved
+readability concerns. This is bounded heuristic planning, not a guarantee that all
+participants in a large fleet are individually readable. It does not invent events
+or add extra editorial takes to the source film.
+
+### Painted participant names
+
+`hull-markings.ts` paints the recorded participant name on up to two verified,
+exposed hull/armor panels of each detailed model. Names use a small generated
+canvas texture, nonemissive weathered ink and ordinary scene lighting. Lettering
+has bounded physical size; small or obstructed hulls may omit it. The marking is
+attached to the hull, never billboarded or resized for readability. Unicode text
+is bounded and stripped of control characters. Both sides share one material and
+texture, which is released by ordinary material disposal. No external fonts or
+image requests are added.
+
 ## Rendering and audio
 
 `appearance.ts` projects the public catalog server-side into visual metadata.

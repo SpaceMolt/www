@@ -13,8 +13,8 @@ test('consecutive exchanges share a stable take window independent of input orde
   expect(takes.get(c.id)).toBe(takes.get(a.id))
 })
 
-test('reciprocal fire, new targets, gaps, and strategic masters start new takes', () => {
-  for (const next of [sequence('next', 3, 'b', 'a'), sequence('next', 3, 'a', 'c'), sequence('next', 4)]) {
+test('new targets, gaps, and strategic masters start new takes', () => {
+  for (const next of [sequence('next', 3, 'a', 'c'), sequence('next', 4)]) {
     const takes = buildCameraTakes([sequence('first', 0), next], [])
     expect(takes.get('first')).not.toBe(takes.get('next'))
   }
@@ -39,4 +39,9 @@ test('a shared take preserves camera progress across consecutive exchanges', asy
   const before = frameAt(first, 2.999), after = frameAt(second, 3.001)
   expect(before.position.distanceTo(after.position)).toBeLessThan(1)
   expect(before.target.distanceTo(after.target)).toBeLessThan(1)
+})
+
+test('reciprocal exchanges share a take', () => {
+ const takes=buildCameraTakes([sequence('first',0),sequence('second',3,'b','a')],[])
+ expect(takes.get('first')).toBe(takes.get('second'))
 })

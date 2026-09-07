@@ -811,3 +811,32 @@ it('uses a perceptible battlefield master in compiled films before chronological
   expect(film.cues.filter(cue=>cue.kind==='weapon').every(cue=>cue.time>=opening.end)).toBe(true)
   for(let index=1;index<film.shots.length;index++) expect(film.shots[index].start).toBeCloseTo(film.shots[index-1].end,8)
 })
+
+it('holds an ongoing exchange through ordinary competing fire but yields to a recorded loss', () => {
+  const snapshots=[snap('a',1),snap('b',2),snap('c',2)]
+  const film=compile([
+    row(100,{snapshots,attacks:[attack('a','c')]}),
+    row(101,{snapshots,attacks:[attack('a','b'),attack('a','b'),attack('a','c')]}),
+    row(102,{snapshots,attacks:[attack('a','b'),attack('a','b'),attack('a','c')]}),
+    row(103,{snapshots,attacks:[attack('a','b',{hull_damage:100})],kills:[kill('a','b')]}),
+    terminal(104,{snapshots:[snap('a',1),snap('c',2)]}),
+  ])
+  const sequences=film.story!.sequences
+  expect(sequences[0].defender).toBe('c:0')
+  expect(sequences[1].defender).toBe('c:0')
+  expect(sequences.at(-1)!.defender).toBe('b:0')
+})
+
+it('lets continuity preference expire so ordinary higher-relevance exchanges can take over', () => {
+  const snapshots=[snap('a',1),snap('b',2),snap('c',2)]
+  const film=compile([
+    row(100,{snapshots,attacks:[attack('a','c')]}),
+    ...Array.from({length:10},(_,i)=>row(101+i,{snapshots,attacks:[attack('a','b'),attack('a','b'),attack('c','a')]})),
+    terminal(111,{snapshots}),
+  ])
+  const sequences=film.story!.sequences
+  expect([sequences[1].attacker,sequences[1].defender].sort()).toEqual(['a:0','c:0'])
+  const ordinarySwitch=sequences.slice(1,-1).find(sequence=>sequence.defender==='b:0')
+  expect(ordinarySwitch).toBeDefined()
+  expect(ordinarySwitch!.start-sequences[0].start).toBeGreaterThanOrEqual(6)
+})

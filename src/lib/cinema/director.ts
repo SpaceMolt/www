@@ -6,7 +6,7 @@ import { resolveWeaponFamily } from './weapons'
 import { mergeRecordedHardwareWeapons, projectCinemaHardware, type HardwareCatalog, type RecordedHardwareWeapon } from './hardware'
 import type { CinemaAxis, CinemaCue, CinemaFilm, CinemaHealth, CinemaSequence, CinemaShip, CinemaShot, CinemaSourceSegment } from './types'
 
-export const DIRECTOR_VERSION = 7
+export const DIRECTOR_VERSION = 8
 const OPENING = 2.5
 const AFTERMATH = 3.5
 const clamp = (value: number, low = 0, high = 1) => Math.min(high, Math.max(low, Number.isFinite(value) ? value : low))
@@ -302,13 +302,24 @@ function directShots(film: CinemaFilm, entries: BattleLogEntry[]): CinemaShot[] 
   // Cut on actual action. Camera choices never stretch the quiet around it,
   // so muzzle releases, impacts and recorded state all share one clock.
   const selected: StoryBeat[] = []
+  let heldPair = '', pairStart = 0
+  const beatPair = (beat: StoryBeat) => beat.attacker && beat.defender ? pairKey(beat.attacker, beat.defender) : ''
   for (const segment of film.segments) {
     if (segment.end <= segment.start) continue
     const losses = consequenceBeats.filter(beat => beat.event?.tick === segment.tick)
     const fire = weaponBeats.filter(beat => beat.event?.tick === segment.tick)
     const candidates = losses.length ? losses : fire
-    const beat = decisive && candidates.includes(decisive) ? decisive : [...candidates].sort((a,b) => b.relevance-a.relevance)[0]
-    if (beat) selected.push(beat)
+    // Ordinary exchanges need time to read. Keep an available reciprocal pair
+    // for six seconds, then let the normal relevance ranking resume by eight.
+    // Recorded losses and the decisive beat always outrank this preference.
+    const continuity = losses.length ? 0 : 4 * Math.max(0, Math.min(1, (8 - (segment.start - pairStart)) / 2))
+    const score = (beat: StoryBeat) => beat.relevance + (heldPair && beatPair(beat) === heldPair ? continuity : 0)
+    const beat = decisive && candidates.includes(decisive) ? decisive : [...candidates].sort((a,b) => score(b)-score(a))[0]
+    if (beat) {
+      const pair = beatPair(beat)
+      if (pair !== heldPair) { heldPair = pair; pairStart = segment.start }
+      selected.push(beat)
+    }
   }
   const lastConsequence = consequences.at(-1)?.time ?? coreEnd
   const aftermathStart = Math.min(film.duration, Math.max(coreEnd, lastConsequence + .8))
