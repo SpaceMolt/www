@@ -1,5 +1,7 @@
 'use client'
 
+import { EMPIRE_COLORS, EMPIRE_LINK_COLORS } from './empireMeta'
+
 import { useState, useEffect, useCallback, Fragment } from 'react'
 import Link from 'next/link'
 import { ArrowLeftRight, ArrowRight, ChevronRight, Database } from 'lucide-react'
@@ -74,22 +76,6 @@ interface StationInfo {
   empire: string
   empire_name: string
   services: { market: boolean }
-}
-
-export const EMPIRE_COLORS: Record<string, string> = {
-  solarian: styles.empireSolarian,
-  voidborn: styles.empireVoidborn,
-  crimson: styles.empireCrimson,
-  nebula: styles.empireNebula,
-  outerrim: styles.empireOuterrim,
-}
-
-export const EMPIRE_LINK_COLORS: Record<string, string> = {
-  solarian: '#ffd700',
-  voidborn: '#c39bd3',
-  crimson: '#e63946',
-  nebula: '#00d4ff',
-  outerrim: '#2dd4bf',
 }
 
 const srOnly: React.CSSProperties = {

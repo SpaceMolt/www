@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'bun:test'
-import { EMPIRE_COLORS, EMPIRE_NAMES } from './page'
+import { EMPIRE_COLORS, EMPIRE_NAMES } from './empireMeta'
 import { CANONICAL_EMPIRE_SHORT_NAMES, expectExactEmpireKeys } from '@/test/canonicalEmpires'
 
 describe('dashboard EMPIRE_COLORS', () => {
