@@ -134,7 +134,7 @@ describe('deterministic edit', () => {
     const first = compile(entries)
     const second = compile(entries)
     expect(first).toEqual(second)
-    expect(first.duration).toBeGreaterThanOrEqual(40)
+    expect(first.duration).toBeGreaterThan(0)
     expect(first.duration).toBeLessThanOrEqual(180)
     expect(first.cues.length).toBeLessThan(entries.length)
     expect(first.ships).toHaveLength(2)
@@ -306,16 +306,16 @@ describe('weapon semantics and seeking', () => {
 })
 
 describe('editorial pacing', () => {
-  it('reserves most of the action for consequences even when a long exchange alternates fire and idle ticks', () => {
+  it('cuts idle rows while keeping a readable decisive beat in long repetitive exchanges', () => {
     const entries = Array.from({ length: 4000 }, (_, i) => row(100 + i, {
       attacks: i % 2 === 0 ? [attack('a', 'b')] : [],
     }))
     entries[3998].kills = [kill('a', 'b')]
     entries[3999] = terminal(4099, { snapshots: [snap('a')] })
     const film = compile(entries)
-    const coreDuration = film.duration - 18
-    const meaningfulTime = film.segments.slice(3996).reduce((sum, segment) => sum + segment.end - segment.start, 0)
-    expect(meaningfulTime / coreDuration).toBeGreaterThan(0.65)
+    expect(film.segments.filter((_, index) => index % 2 === 1).every(segment => segment.end === segment.start)).toBe(true)
+    const decisiveSegment = film.segments[3998]
+    expect(decisiveSegment.end - decisiveSegment.start).toBeGreaterThanOrEqual(3.5)
     const volleys = film.cues.filter(cue => cue.kind === 'weapon')
     expect(volleys.length).toBeLessThan(50)
     expect(volleys.every(cue => cue.duration >= 0.08)).toBe(true)
@@ -366,7 +366,7 @@ describe('consequential camera coverage', () => {
     const film = compile(entries)
     expect(film.cues.filter(cue => cue.kind === 'death')).toHaveLength(3)
     for (const sequence of film.story!.sequences.filter(sequence => sequence.consequenceTime !== undefined)) {
-      for (const offset of [0, 1, 2]) {
+      for (const offset of [0, .5, 1]) {
         const shot = sampleCinemaShot(film, sequence.consequenceTime! + offset)
         expect(shot.subject).toBe(sequence.defender)
         expect(shot.sequenceId).toBe(sequence.id)
@@ -384,7 +384,7 @@ describe('consequential camera coverage', () => {
     const focusIds = (shot as typeof shot & { focusIds?: string[] }).focusIds ?? [shot.subject]
     expect(focusIds).toContain('b:0')
     expect(focusIds).toContain('c:0')
-    const held = sampleCinemaShot(film,deaths[0].time+2)
+    const held = sampleCinemaShot(film,deaths[0].time+1)
     expect(held.focusIds).toContain('b:0')
     expect(held.focusIds).toContain('c:0')
   })
@@ -434,10 +434,10 @@ describe('authored narrative sequences', () => {
     const film = compile(entries)
     expect(film.story?.protagonistId).toBe('a:0')
     expect(film.story?.adversaryId).toBe('b:0')
-    expect(film.shots[0]).toMatchObject({start:0,end:4,role:'geography',battlefield:true})
-    expect(film.shots[1].role).toBe('opposition')
+    expect(film.shots[0]).toMatchObject({start:0,end:1.2,role:'geography',battlefield:true})
+    expect(film.shots.find(shot=>shot.role==='fire')!.start).toBeLessThan(3)
     expect(film.story!.sequences.length).toBeGreaterThanOrEqual(3)
-    expect(film.story!.sequences.length).toBeLessThanOrEqual(6)
+    expect(film.story!.sequences.length).toBeLessThanOrEqual(26)
     for (const sequence of film.story!.sequences) {
       const shots=film.shots.filter(shot=>shot.sequenceId===sequence.id)
       expect(shots.length).toBeGreaterThanOrEqual(2)
@@ -486,7 +486,7 @@ describe('authored narrative sequences', () => {
     expect(cause.from).toBe('c:0')
     expect(cause.to).toBe('a:0')
     expect(cause.time+cause.duration).toBeLessThanOrEqual(event.time)
-    expect(climax.end).toBeGreaterThanOrEqual(event.time+2)
+    expect(climax.end).toBeGreaterThanOrEqual(event.time+1)
     const resolution=film.shots.at(-1)!
     expect(resolution.role).toBe('resolution')
     expect(resolution.subject).toBe('c:0')
@@ -494,7 +494,7 @@ describe('authored narrative sequences', () => {
   })
 })
 
-it('retimes selected causes and every dependent state together without moving events out of chronology', () => {
+it('keeps selected causes and every dependent state together without moving events out of chronology', () => {
   const snapshots = [snap('a'),snap('b',2),snap('c',2)]
   const entries=Array.from({length:200},(_,index)=>row(100+index,{
     snapshots:snapshots.filter(ship=>ship.player_id!=='b'||index<=70),
@@ -508,12 +508,12 @@ it('retimes selected causes and every dependent state together without moving ev
   for(const sequence of film.story!.sequences){
     if(!sequence.causeCueId)continue
     const cause=film.cues.find(cue=>cue.id===sequence.causeCueId)!
-    expect(cause.duration).toBeGreaterThanOrEqual(1.19)
+    expect(cause.duration).toBeGreaterThanOrEqual(1)
     expect(cause.duration).toBeLessThanOrEqual(2.81)
     expect(sequence.impactTime).toBeCloseTo(cause.time+cause.duration,8)
     if(sequence.consequenceTime!==undefined){
       expect(sequence.consequenceTime).toBeGreaterThanOrEqual(sequence.impactTime)
-      expect(sequence.end-sequence.consequenceTime).toBeGreaterThanOrEqual(2.49)
+      expect(sequence.end-sequence.consequenceTime).toBeGreaterThanOrEqual(1.49)
       const victim=film.ships.find(ship=>ship.id===sequence.defender)!
       expect(victim.end).toBeCloseTo(sequence.consequenceTime,8)
     }
@@ -557,7 +557,7 @@ it('never frames a future arrival in a setup, closeup, or engagement axis', () =
 
 it('does not invent an opening participant when the first recorded row is empty', () => {
   const film=compile([row(100,{snapshots:[]}),row(101,{joins:[{player_id:'a',username:'a',side_id:1},{player_id:'b',username:'b',side_id:2}],attacks:[attack('a','b')]}),terminal(102)])
-  for(const shot of film.shots.slice(0,3)){
+  for(const shot of film.shots.filter(shot=>shot.start<film.ships[0].start)){
     expect(shot.subject).toBeUndefined()
     expect(shot.target).toBeUndefined()
     expect(shot.axis).toBeUndefined()
@@ -667,4 +667,69 @@ describe('collateral consequence direction', () => {
     expect(film.cues.filter(cue => cue.parentId && cue.secondaryKind === 'chain').map(cue => cue.to))
       .toEqual(targets.map(id => `${id}:0`))
   })
+})
+
+describe('action-driven edit pacing', () => {
+  it('does not stretch a brief exchange into a minute-long film', () => {
+    const film=compile([
+      row(100,{attacks:[attack('a','b')]}),
+      terminal(101,{attacks:[attack('a','b',{hull_damage:100})],kills:[kill('a','b')]}),
+    ])
+    expect(film.duration).toBeLessThanOrEqual(16)
+    expect(film.cues.find(cue=>cue.kind==='weapon')!.time).toBeLessThanOrEqual(3)
+    expect(film.duration-Math.max(...film.cues.map(cue=>cue.time+cue.duration))).toBeLessThanOrEqual(3)
+  })
+  it('does not add screen time for idle cooldown rows between the same actions', () => {
+    const first=row(100,{attacks:[attack('a','b')]}),last=terminal(200,{attacks:[attack('a','b')],kills:[kill('a','b')]})
+    const sparse=compile([first,last])
+    const withIdle=compile([first,...Array.from({length:99},(_,i)=>row(101+i)),last])
+    expect(withIdle.duration).toBe(sparse.duration)
+    expect(withIdle.segments.slice(1,-1).every(segment=>segment.end===segment.start)).toBe(true)
+    const action=withIdle.cues.filter(cue=>cue.kind==='weapon').sort((a,b)=>a.time-b.time)
+    expect(action).toHaveLength(2)
+    expect(action[1].time-(action[0].time+action[0].duration)).toBeLessThanOrEqual(2)
+  })
+})
+
+it('keeps same-beat repair frames before the recorded death and leaves the complete loss effect visible', () => {
+  const film=compile([row(100,{attacks:[attack('a','b',{hull_damage:100})],kills:[kill('a','b')],
+    regen:[{player_id:'b',hull_before:0,hull_after:10,shield_before:0,shield_after:0}]}),terminal(101,{snapshots:[snap('a')]})])
+  const victim=film.ships.find(ship=>ship.playerId==='b')!
+  expect(victim.health.every((frame,index)=>!index||frame.time>=victim.health[index-1].time)).toBe(true)
+  expect(sampleCinemaHealth(victim,victim.end+.01).hull).toBe(0)
+  for(const cue of film.cues.filter(cue=>['death','knockout','escape','capture'].includes(cue.kind))) {
+    expect(cue.time+cue.duration).toBeLessThanOrEqual(film.duration)
+  }
+})
+
+it('retains causal volleys inside tiny outcome beats when a very dense battle reaches the runtime cap', () => {
+  const weapons=['energy','kinetic','thermal','em','void','explosive'].map((type,index)=>gun(String(index),type))
+  const rows=Array.from({length:1200},(_,index)=>row(100+index,{
+    snapshots:[snap('a'),snap('anchor',2),snap('victim:'+index,2)],
+    attacks:index%2 ? [attack('a','anchor',{weapons}),attack('a','victim:'+index,{weapons:[],secondary_kind:'aoe',hull_damage:100})] :
+      [attack('a','victim:'+index,{weapons,hull_damage:100})],
+    kills:[kill('a','victim:'+index)],
+  }))
+  const film=compile([...rows,terminal(1300,{snapshots:[snap('a'),snap('anchor',2)]})])
+  expect(film.duration).toBeLessThanOrEqual(180.000001)
+  expect(film.cues.filter(cue=>cue.kind==='death')).toHaveLength(1200)
+  const weaponsByTick=new Map<number,typeof film.cues>()
+  for(const cue of film.cues.filter(cue=>cue.kind==='weapon')) {
+    const existing=weaponsByTick.get(cue.tick)??[]
+    existing.push(cue);weaponsByTick.set(cue.tick,existing)
+  }
+  for(const death of film.cues.filter(cue=>cue.kind==='death')) {
+    const volley=weaponsByTick.get(death.tick)??[]
+    expect(volley.length).toBeGreaterThan(0)
+    expect(volley.some(cue=>cue.to===death.to)).toBe(true)
+    for(const cue of volley) {
+      expect(cue.duration).toBeGreaterThan(0)
+      expect(cue.time+cue.duration).toBeLessThanOrEqual(death.time)
+      if(cue.parentId) expect(volley.some(parent=>parent.id===cue.parentId)).toBe(true)
+    }
+  }
+  for(const [index,shot] of film.shots.entries()) {
+    expect(shot.end).toBeGreaterThan(shot.start)
+    if(index) expect(shot.start).toBeCloseTo(film.shots[index-1].end,8)
+  }
 })

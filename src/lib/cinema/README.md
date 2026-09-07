@@ -37,7 +37,9 @@ milestones. It follows a recurring protagonist/opponent through selected setup,
 firing, impact and reaction sequences, then resolves the actual outcome. Screen
 direction stays consistent within an exchange. Repetitive exchanges are sampled;
 chronology, health, movement, weapon flights and actor lifetimes are retimed
-together. Major wreck chunks persist through the final shot, including a battle
+together. Idle server ticks consume no screen time. Selected volleys and consequences
+receive short action budgets, with a brief opening and resolution; the edit does
+not pad a sparse record to a minimum film length. Major wreck chunks persist through the final shot, including a battle
 with no surviving ships.
 The version and battle ID seed all choreography. Bump `DIRECTOR_VERSION` when intentionally changing that edit.
 
@@ -65,7 +67,11 @@ Representative 16/48/150/450/1200-meter hulls receive modest cinematic compressi
 Nearby featured ships use detailed meshes; other ships use instanced reduced
 hull geometry by family. Effect and sound ranges are binary-searchable for
 seeking and bounded playback work. Destruction replaces the intact silhouette
-with fragments and a shockwave; arena knockouts cascade electrically and drift
+with fractured pieces of that assembled hull and a shockwave. Structural wrecks
+retain original surface details and construction colors, separate from their
+original positions, and persist with bounded drift. Their geometry and materials
+are independently owned, and absolute-time animation supports reversible seeking.
+Arena knockouts cascade electrically and drift
 with engines and running lights disabled. Consequences take priority over ordinary
 volleys in the visual and sound pools. The renderer has automatic, high, medium and
 low quality, pauses when hidden, and exposes a reduced-motion setting. Automatic
@@ -135,9 +141,9 @@ node tests cannot validate actual shader compilation or perceived sound quality.
 
 Useful completed records checked during development:
 
-- `e0ac0417818bd70c4af2421d228b7106`: 24-tick arena encounter, 10 actors, six knockouts; 73-second film.
-- `2a76e1a1c796e9d8877fdeedb76867ec`: 4,430 ticks with repetitive middle, 14 recorded ship losses; 118-second film.
-- `242b5fd8676d27c997f9dcd6b76a8cb7`: 1,735 ticks, returning pilots, 62 ship losses plus one station; 142-second film.
+- `e0ac0417818bd70c4af2421d228b7106`: 24-tick arena encounter, 10 actors, six knockouts.
+- `2a76e1a1c796e9d8877fdeedb76867ec`: 4,430 ticks with repetitive middle, 14 recorded ship losses.
+- `242b5fd8676d27c997f9dcd6b76a8cb7`: 1,735 ticks, returning pilots, 62 ship losses plus one station.
 
 These IDs are test references, not bundled production fixtures. Always preserve
 old-record fallbacks; live catalog details and log availability may change.

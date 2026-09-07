@@ -12,7 +12,7 @@ import { NextResponse } from 'next/server'
 const STOREFRONT_TOKEN = process.env.FOURTHWALL_STOREFRONT_TOKEN
 const STOREFRONT_API = 'https://storefront-api.fourthwall.com/v1'
 // Public hosted storefront — buy links hand off to Fourthwall's hosted checkout.
-export const SHOP_BASE_URL =
+const SHOP_BASE_URL =
   process.env.FOURTHWALL_SHOP_URL || 'https://spacemolt-shop.fourthwall.com'
 
 // Revalidate the catalog every 5 minutes.

@@ -167,7 +167,10 @@ export function createShip(appearance: ShipAppearance, seed: number, detail: 'he
   const rig=createWeaponRig()
   const engineHeatCenters: THREE.Vector4[] = []
   group.userData.weaponRig=rig
-  let weaponIndex=-1, weaponRoll=0, weaponElevates=false
+  let weaponIndex=-1, weaponRoll=0, weaponElevates=false, structuralPart=0
+  const wreckPartRoles:Record<number,string>={}
+  group.userData.wreckPartRoles=wreckPartRoles
+  group.userData.wreckSurface={empire,pirate,seed,density:family==='station'?3:family==='fighter'||family==='scout'||family==='drone'?.75:1.5}
   const batches = new Map<MaterialName, THREE.BufferGeometry[]>()
   const add = (geometry: THREE.BufferGeometry, material: MaterialName, x = 0, y = 0, z = 0, rotation?: THREE.Euler) => {
     if (rotation) geometry.applyMatrix4(new THREE.Matrix4().makeRotationFromEuler(rotation))
@@ -186,6 +189,11 @@ export function createShip(appearance: ShipAppearance, seed: number, detail: 'he
     for (const key of Object.keys(flat.attributes)) if (key !== 'position' && key !== 'normal') flat.deleteAttribute(key)
     if(salvagePaint&&(material==='hull'||material==='armor')) colorSalvagePart(flat,salvagePaint[material],seed,weaponIndex<0)
     tagWeaponGeometry(flat,weaponIndex,weaponIndex>=0?rig.mounts[weaponIndex].pivot:undefined,weaponElevates)
+    // Preserve actual construction boundaries through material batching. Wrecks
+    // can recover hull/armor/engine components without retaining source meshes.
+    const part=material!=='windows' ? ++structuralPart : 0
+    if(part)wreckPartRoles[part]=weaponIndex>=0?'hardware':material
+    flat.setAttribute('cinemaStructuralPart',new THREE.Float32BufferAttribute(new Float32Array(flat.getAttribute('position').count).fill(part),1))
     const batch = batches.get(material) ?? []
     batch.push(flat)
     batches.set(material, batch)

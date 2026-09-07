@@ -1,5 +1,7 @@
 'use client'
 
+import { EMPIRE_COLORS } from './empireMeta'
+
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -39,14 +41,6 @@ interface Empire {
 interface StationsResponse {
   stations: Station[]
   empires: Empire[]
-}
-
-export const EMPIRE_COLORS: Record<string, string> = {
-  solarian: '#ffd700',
-  voidborn: '#9b59b6',
-  crimson: '#e63946',
-  nebula: '#00d4ff',
-  outerrim: '#2dd4bf',
 }
 
 const CONDITION_COLORS: Record<string, string> = {

@@ -457,7 +457,7 @@ export default function BattlePresentation({ battleId, data, embedded = false, f
         </div>
         <div className={styles.headerRight}>
           {cinemaReady && (
-            <Link href={`/battles/${encodeURIComponent(battleId)}/cinematic`} className={styles.replayBtn}>
+            <Link href={`/battles/${encodeURIComponent(battleId)}/cinematic`} className={styles.headerAction}>
               <Film size={13} aria-hidden /> {t('cinema.watch')}
             </Link>
           )}

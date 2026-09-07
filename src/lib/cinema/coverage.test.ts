@@ -97,3 +97,16 @@ test('a mass impact cut starts at the existing cut instead of leaving a subsecon
   expect(shots.find(shot => shot.battlefield && shot.start > 6)!.start).toBe(72.6)
   continuous(shots, film.duration)
 })
+
+test('a compact opening never replaces the first muzzle release with a fleet master', () => {
+  const film=movie([ship('capital'),ship('shard:0',{sideId:2})])
+  film.duration=10
+  film.shots=[{start:0,end:1.2,kind:'reveal',role:'geography',intensity:.2},
+    {start:1.2,end:1.5,kind:'tracking',role:'setup',intensity:.4},
+    {start:1.5,end:2.5,kind:'broadside',role:'fire',intensity:.7},
+    {start:2.5,end:10,kind:'impact',role:'impact',intensity:.7}]
+  const shots=addBattlefieldCoverage(film)
+  expect(shots[0].end).toBe(1.2)
+  expect(at(shots,1.7).role).toBe('fire')
+  expect(at(shots,1.7).battlefield).not.toBe(true)
+})

@@ -136,26 +136,11 @@
   justify-content: flex-end;
 }
 
-/* Storage */
-.storageBtn {
-  composes: formBtn;
-  width: 100%;
-  background: rgba(155, 89, 182, 0.08);
-  border-color: var(--void-purple);
-  color: var(--void-purple);
-}
-
-.storageBtn:hover:not(:disabled) {
-  background: rgba(155, 89, 182, 0.18);
-  box-shadow: 0 0 12px rgba(155, 89, 182, 0.25);
-}
-
 /* Mobile */
 @media (max-width: 768px) {
   .formLabel { font-size: 0.72rem; }
   .formInput,
   .formSelect { font-size: 16px; padding: 0.5rem; min-height: 44px; }
-  .formBtn { font-size: 0.75rem; padding: 0.5rem 0.75rem; min-height: 44px; }
   .formRow { flex-wrap: wrap; }
   .tradeFrom { font-size: 0.85rem; }
   .tradeItems { font-size: 0.72rem; }

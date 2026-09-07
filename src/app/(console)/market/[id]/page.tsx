@@ -1,5 +1,7 @@
 'use client'
 
+import { EMPIRE_COLORS } from './empireMeta'
+
 import { useState, useEffect, useCallback, useRef, lazy, Suspense, Fragment } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
@@ -47,14 +49,6 @@ interface DepthResponse {
   item_name: string
   bids: DepthLevel[]
   asks: DepthLevel[]
-}
-
-export const EMPIRE_COLORS: Record<string, string> = {
-  solarian: '#ffd700',
-  voidborn: '#9b59b6',
-  crimson: '#e63946',
-  nebula: '#00d4ff',
-  outerrim: '#2dd4bf',
 }
 
 type OrderFilter = 'bids' | 'asks' | 'both' | null
