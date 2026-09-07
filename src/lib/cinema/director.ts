@@ -6,8 +6,8 @@ import { resolveWeaponFamily } from './weapons'
 import { mergeRecordedHardwareWeapons, projectCinemaHardware, type HardwareCatalog, type RecordedHardwareWeapon } from './hardware'
 import type { CinemaAxis, CinemaCue, CinemaFilm, CinemaHealth, CinemaSequence, CinemaShip, CinemaShot, CinemaSourceSegment } from './types'
 
-export const DIRECTOR_VERSION = 6
-const OPENING = 1.2
+export const DIRECTOR_VERSION = 8
+const OPENING = 2.5
 const AFTERMATH = 3.5
 const clamp = (value: number, low = 0, high = 1) => Math.min(high, Math.max(low, Number.isFinite(value) ? value : low))
 const fraction = (value: number, max: number) => max > 0 ? clamp(value / max) : 0
@@ -48,7 +48,7 @@ export function getCinemaEligibility(
   if (!hasActors) return 'unavailable'
   const consequential = terminal.ships_destroyed > 0 || (terminal.captures?.length ?? 0) > 0 ||
     entries.some(entry => (entry.kills?.length ?? 0) > 0 || (entry.captures?.length ?? 0) > 0 || entry.burns?.some(burn => burn.destroyed))
-  const combat = consequential || terminal.total_damage > 0 || entries.some(entry =>
+  const combat = consequential || entries.some(entry => entry.boarding?.some(event => boardingAction(event) && ['latched', 'assault_continues', 'plundered', 'capture_ready'].includes(event.event))) || terminal.total_damage > 0 || entries.some(entry =>
     entry.burns?.some(burn => burn.damage > 0) || entry.attacks?.some(attack =>
       attack.final_damage > 0 || attack.shield_damage > 0 || attack.hull_damage > 0 ||
       (attack.hit_success && (attack.landed_damage ?? attack.pre_hit_damage ?? attack.raw_damage) > 0)))
@@ -72,6 +72,18 @@ export function getCinemaEligibility(
   }
   return 'ready'
 }
+
+const boardingPhases: Readonly<Record<string, NonNullable<CinemaCue['boardingPhase']>>> = {
+  closing_started: 'approach', closing_progressed: 'approach', closing_regressed: 'approach',
+  latched: 'breach', assault_continues: 'assault', capture_ready: 'assault',
+  boarding_force_defeated: 'withdraw', closing_stalled: 'withdraw', restart_canceled: 'withdraw',
+  attacker_destroyed: 'withdraw', attacker_incapacitated: 'withdraw', target_destroyed: 'withdraw', target_self_destructed: 'withdraw',
+  withdrawal_started: 'withdraw', withdrawal_progressed: 'withdraw', withdrawn: 'withdraw', plundered: 'plunder',
+}
+const boardingAction = (event: NonNullable<BattleLogEntry['boarding']>[number]) =>
+  Boolean(event.actor_id && event.target_id && boardingPhases[event.event])
+const boardingTransition = (event: NonNullable<BattleLogEntry['boarding']>[number]) =>
+  boardingAction(event) && !['closing_progressed', 'closing_regressed', 'assault_continues', 'withdrawal_progressed'].includes(event.event)
 
 function majorCount(entry: BattleLogEntry): number {
   return (entry.kills?.length ?? 0) + (entry.captures?.length ?? 0) +
@@ -98,19 +110,19 @@ function editSegments(entries: BattleLogEntry[]): CinemaSourceSegment[] {
       present.add(snap.player_id)
     }
     for (const join of entry.joins ?? []) present.add(join.player_id)
-    for (const boarding of entry.boarding ?? []) if (boarding.target_id) captureTargets.set(boarding.operation_id, boarding.target_id)
+    for (const boarding of entry.boarding ?? []) if (boarding.operation_id && boarding.target_id && boarding.phase !== 'self_destruct') captureTargets.set(boarding.operation_id, boarding.target_id)
     for (const kill of entry.kills ?? []) present.delete(kill.victim_id)
     for (const flee of entry.flee ?? []) if (flee.escaped) present.delete(flee.player_id)
     for (const capture of entry.captures ?? []) present.delete(captureTargets.get(capture.boarding_operation_id) ?? capture.former_owner_id)
     const major = majorCount(entry) - (index === 0 ? (entry.joins?.length ?? 0) : 0)
     if (entry.kills?.length || entry.captures?.length || entry.flee?.some(flee => flee.escaped) ||
         entry.burns?.some(burn => burn.destroyed) || entry.battle_ended?.captures?.length) outcomes.add(index)
-    if (appearance || major > 0 || entry.burns?.some(burn => burn.destroyed) || entry.battle_ended?.captures?.length) meaningful.add(index)
+    if (entry.boarding?.some(boardingTransition) || appearance || major > 0 || entry.burns?.some(burn => burn.destroyed) || entry.battle_ended?.captures?.length) meaningful.add(index)
     if (entry.zone_moves?.length || entry.commands?.some(command => command.stance) ||
         entry.regen?.some(regen => regen.hull_after !== regen.hull_before || regen.shield_after !== regen.shield_before)) stateChanges.add(index)
   })
   const selected = new Set(meaningful)
-  const action = entries.flatMap((entry, index) => entry.attacks?.length || entry.burns?.some(burn => burn.damage > 0) ? [index] : [])
+  const action = entries.flatMap((entry, index) => entry.boarding?.some(boardingAction) || entry.attacks?.length || entry.burns?.some(burn => burn.damage > 0) ? [index] : [])
   const ordinary = action.filter(index => !meaningful.has(index))
   // Sample actual volleys, independent of idle rows between them.
   const samples = Math.min(ordinary.length, 12)
@@ -254,6 +266,7 @@ function directShots(film: CinemaFilm, entries: BattleLogEntry[]): CinemaShot[] 
   ]
   const coreEnd = film.duration - AFTERMATH
   const weaponCues = film.cues.filter(cue => cue.kind === 'weapon' && cue.from && cue.to)
+  const boardingCues = film.cues.filter(cue => cue.kind === 'boarding' && cue.from && cue.to)
   const weapons = weaponCues.filter(cue => !cue.secondaryKind)
   const cueById = new Map(weaponCues.map(cue => [cue.id, cue]))
   const consequences = film.cues.filter(cue => ['death','knockout','capture','escape'].includes(cue.kind) && cue.to)
@@ -266,7 +279,9 @@ function directShots(film: CinemaFilm, entries: BattleLogEntry[]): CinemaShot[] 
     // A recorded capture/escape is not caused by a gunshot. A collateral loss
     // follows its connected hit back to the actual primary volley; the gun
     // still fires at that primary victim, not at the collateral casualty.
-    const cause = ['death','knockout'].includes(event.kind) && !byId.get(event.to ?? '')?.capturedShipId ? weaponCues.flatMap(cue => {
+    const cause = (event.kind === 'capture' || byId.get(event.to ?? '')?.capturedShipId) ? boardingCues.filter(cue =>
+      cue.to === event.to && cue.from === event.from && Boolean(event.operationId) && cue.operationId === event.operationId && cue.time + cue.duration <= event.time + .000001 &&
+      ['breach', 'assault'].includes(cue.boardingPhase ?? '')).at(-1) : ['death','knockout'].includes(event.kind) && !byId.get(event.to ?? '')?.capturedShipId ? weaponCues.flatMap(cue => {
       if (cue.to !== event.to || cue.tick !== event.tick || cue.hit !== true ||
         (event.from && cue.from !== event.from) || cue.time + cue.duration > event.time + .000001) return []
       if (!cue.secondaryKind && !cue.parentId) return [cue]
@@ -278,22 +293,33 @@ function directShots(film: CinemaFilm, entries: BattleLogEntry[]): CinemaShot[] 
     return {time:event.time,actionTime:cause?.time ?? event.time,impactTime:cause ? cause.time + cause.duration : event.time,
       event,cause,attacker:cause?.from ?? event.from,defender:event.to,consequence:true,relevance:relevance(event.from,event.to)}
   })
-  const weaponBeats: StoryBeat[] = weapons.map(cause => ({time:cause.time + cause.duration,actionTime:cause.time,
+  const weaponBeats: StoryBeat[] = [...weapons, ...boardingCues].map(cause => ({time:cause.time + cause.duration,actionTime:cause.time,
     impactTime:cause.time + cause.duration,event:cause,cause,attacker:cause.from,defender:cause.to,
-    consequence:false,relevance:relevance(cause.from,cause.to)}))
+    consequence:false,relevance:relevance(cause.from,cause.to) + (cause.kind === 'boarding' ? 1 : 0)}))
   const victorious = film.outcome === 'victory' ? consequenceBeats.filter(beat =>
     byId.get(beat.defender ?? '')?.sideId !== film.winningSide) : []
   const decisive = victorious.at(-1) ?? consequenceBeats.at(-1) ?? weaponBeats.at(-1)
   // Cut on actual action. Camera choices never stretch the quiet around it,
   // so muzzle releases, impacts and recorded state all share one clock.
   const selected: StoryBeat[] = []
+  let heldPair = '', pairStart = 0
+  const beatPair = (beat: StoryBeat) => beat.attacker && beat.defender ? pairKey(beat.attacker, beat.defender) : ''
   for (const segment of film.segments) {
     if (segment.end <= segment.start) continue
     const losses = consequenceBeats.filter(beat => beat.event?.tick === segment.tick)
     const fire = weaponBeats.filter(beat => beat.event?.tick === segment.tick)
     const candidates = losses.length ? losses : fire
-    const beat = decisive && candidates.includes(decisive) ? decisive : [...candidates].sort((a,b) => b.relevance-a.relevance)[0]
-    if (beat) selected.push(beat)
+    // Ordinary exchanges need time to read. Keep an available reciprocal pair
+    // for six seconds, then let the normal relevance ranking resume by eight.
+    // Recorded losses and the decisive beat always outrank this preference.
+    const continuity = losses.length ? 0 : 4 * Math.max(0, Math.min(1, (8 - (segment.start - pairStart)) / 2))
+    const score = (beat: StoryBeat) => beat.relevance + (heldPair && beatPair(beat) === heldPair ? continuity : 0)
+    const beat = decisive && candidates.includes(decisive) ? decisive : [...candidates].sort((a,b) => score(b)-score(a))[0]
+    if (beat) {
+      const pair = beatPair(beat)
+      if (pair !== heldPair) { heldPair = pair; pairStart = segment.start }
+      selected.push(beat)
+    }
   }
   const lastConsequence = consequences.at(-1)?.time ?? coreEnd
   const aftermathStart = Math.min(film.duration, Math.max(coreEnd, lastConsequence + .8))
@@ -326,7 +352,13 @@ function directShots(film: CinemaFilm, entries: BattleLogEntry[]): CinemaShot[] 
     sequences.push(sequence)
     const focusIds = [...new Set(consequences.filter(cue=>cue.time >= cursor && cue.time < end).flatMap(cue=>cue.to?[cue.to]:[]))]
     const common = {sequenceId:sequence.id,axis,intensity:beat.event?.intensity ?? .4}
-    if (beat.cause) {
+    if (beat.cause?.kind === 'boarding') {
+      const reactionStart = Math.min(end, Math.max(pairReady, beat.time))
+      if (reactionStart > pairReady) result.push({...common,start:pairReady,end:reactionStart,kind:'tracking',role:'setup',
+        subject:beat.attacker,target:beat.defender,focusIds:[beat.attacker,beat.defender].filter((id):id is string=>Boolean(id)),actionTime:beat.actionTime})
+      if (end > reactionStart) result.push({...common,start:reactionStart,end,kind:'impact',role:'reaction',
+        subject:beat.defender,target:beat.attacker,focusIds,actionTime:beat.time})
+    } else if (beat.cause) {
       const fireStart = Math.min(beat.actionTime,Math.max(pairReady+.5,Math.min(beat.actionTime-1,pairReady+(beat.impactTime-pairReady)*.48)))
       // Read the muzzle release, then recognize the target before the strike.
       const impactLead = Math.max(0,Math.min(.75,beat.cause.duration*.55,beat.cause.duration-.5))
@@ -442,7 +474,7 @@ export function compileBattleFilm(summary: BattleSummary, source: BattleLogEntry
     const impactTime = segment.start + actionSpan * 0.72
     const fateTime = Math.min(segment.end, impactTime + Math.min(.4, span * .16))
     const explicitJoins = new Set((entry.joins ?? []).map(join => join.player_id))
-    for (const boarding of entry.boarding ?? []) if (boarding.target_id) boardingTargets.set(boarding.operation_id, boarding.target_id)
+    for (const boarding of entry.boarding ?? []) if (boarding.operation_id && boarding.target_id && boarding.phase !== 'self_destruct') boardingTargets.set(boarding.operation_id, boarding.target_id)
     for (const snap of entry.snapshots) {
       if (retired.has(snap.player_id) && snap.hull <= 0 && !explicitJoins.has(snap.player_id)) continue
       // Snapshot rows are the start of a tick. A new row after a recorded exit is
@@ -474,6 +506,22 @@ export function compileBattleFilm(summary: BattleSummary, source: BattleLogEntry
       const ship = active.get(command.player_id)
       const snap = latestSnapshots.get(command.player_id)
       if (ship && snap && command.stance) appendMotion(ship, segment.start + span * .02, snap.zone, command.stance)
+    }
+    if (span > 0) {
+      // Preserve within-tick phase order (a latch and capture can occur together).
+      const boarding = (entry.boarding ?? []).filter(boardingAction).filter((event, i, all) =>
+        !all.slice(0, i).some(previous => previous.operation_id === event.operation_id &&
+          previous.actor_id === event.actor_id && previous.target_id === event.target_id &&
+          previous.event === event.event))
+      boarding.forEach((event, i) => {
+        const from = active.get(event.actor_id ?? ''), to = active.get(event.target_id ?? '')
+        if (!from || !to) return
+        const beat = Math.min(span * .66, 1.8) / Math.max(1, boarding.length)
+        addCue({ kind: 'boarding', time: segment.start + i * beat, duration: beat, tick: entry.tick,
+          from: from.id, to: to.id, intensity: event.casualties_occurred ? .7 : .5,
+          boardingPhase: boardingPhases[event.event], boardingEvent: event.event,
+          boardingEnded: event.phase === 'resolved', operationId: event.operation_id || undefined, casualtiesOccurred: event.casualties_occurred })
+      })
     }
     const tickActors = new Map(active)
     const attacks = entry.attacks ?? []
@@ -628,7 +676,11 @@ export function compileBattleFilm(summary: BattleSummary, source: BattleLogEntry
       if (!active.has(targetId) && !retired.has(targetId)) ensureShip(targetId, segment.start)
       const captor = active.get(capture.captor_id)
       const ship = retire(targetId, arena ? 'knocked_out' : 'captured', arena ? 'knockout' : 'capture', captor?.id)
-      if (ship) { ship.capturedBy = capture.captor_id; ship.capturedShipId = capture.ship_id }
+      if (ship) {
+        ship.capturedBy = capture.captor_id; ship.capturedShipId = capture.ship_id
+        const cue = film.cues.at(-1)
+        if (cue && (cue.kind === 'capture' || cue.kind === 'knockout')) cue.operationId = capture.boarding_operation_id || undefined
+      }
     }
     for (const flee of entry.flee ?? []) if (flee.escaped) retire(flee.player_id, 'escaped', 'escape')
     // A burn may be the only historical death record. Never manufacture another

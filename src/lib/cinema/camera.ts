@@ -1,4 +1,4 @@
-import { Vector3 } from 'three'
+import { Vector3, Quaternion, Euler } from 'three'
 import type { CinemaShot, CinemaSequence } from './types'
 export interface HullBoundary { position: Vector3; radius: number }
 /** A later projection must not put the camera back inside an earlier hull. */
@@ -20,7 +20,55 @@ export function keepCameraOutsideHulls(position: Vector3, hulls: readonly HullBo
   }
 }
 
-export interface CameraBody { id: string; position: Vector3; size: number }
+export interface CameraBody { id: string; position: Vector3; size: number
+  /** World-sized model-space hull bounds, before rotation. */
+  contactHull?: { min: Vector3; max: Vector3; yaw: number; bank: number }
+}
+function hullRotation(body: CameraBody): Quaternion {
+  return new Quaternion().setFromEuler(new Euler(body.contactHull!.bank, body.contactHull!.yaw, 0, 'YXZ'))
+}
+/** Conservative physical clearance without treating empty space beside a capital as hull. */
+export function keepCameraOutsideBodies(position: Vector3, bodies: readonly CameraBody[]): void {
+  const inside = (body: CameraBody, project: boolean) => {
+    if (!body.contactHull) {
+      const offset=position.clone().sub(body.position), radius=body.size*.78
+      if(offset.lengthSq()>=radius*radius)return false
+      if(project){if(offset.lengthSq()<.00001)offset.set(0,1,0);position.copy(body.position).add(offset.normalize().multiplyScalar(radius+.01))}
+      return true
+    }
+    const rotation=hullRotation(body), local=position.clone().sub(body.position).applyQuaternion(rotation.clone().invert())
+    const min=body.contactHull.min.clone().addScalar(-1), max=body.contactHull.max.clone().addScalar(1)
+    if(local.x<min.x||local.x>max.x||local.y<min.y||local.y>max.y||local.z<min.z||local.z>max.z)return false
+    if(project){
+      let best=Infinity, component:'x'|'y'|'z'='y', value=max.y
+      for(const key of ['x','y','z'] as const)for(const face of [min[key]-.01,max[key]+.01]){
+        const distance=Math.abs(local[key]-face)
+        if(distance<best){best=distance;component=key;value=face}
+      }
+      local[component]=value;position.copy(local.applyQuaternion(rotation).add(body.position))
+    }
+    return true
+  }
+  for(let pass=0;pass<4;pass++){let changed=false;for(const body of bodies)changed=inside(body,true)||changed;if(!changed)return}
+  if(bodies.some(body=>inside(body,false)))position.y=bodies.reduce((height,body)=>Math.max(height,body.position.y+(body.contactHull?Math.max(body.contactHull.min.length(),body.contactHull.max.length()):body.size*.78)+2),position.y)
+}
+/** Furthest positive intersection on the proposed dolly ray. */
+function contactRayExit(body: CameraBody, origin: Vector3, direction: Vector3): number {
+  if(body.contactHull){
+    const inverse=hullRotation(body).invert(), p=origin.clone().sub(body.position).applyQuaternion(inverse), d=direction.clone().applyQuaternion(inverse)
+    let entry=-Infinity, exit=Infinity
+    for(const key of ['x','y','z'] as const){
+      const min=body.contactHull.min[key]-1,max=body.contactHull.max[key]+1
+      if(Math.abs(d[key])<1e-8){if(p[key]<min||p[key]>max)return 0;continue}
+      const a=(min-p[key])/d[key],b=(max-p[key])/d[key]
+      entry=Math.max(entry,Math.min(a,b));exit=Math.min(exit,Math.max(a,b))
+    }
+    return entry<=exit&&exit>0?exit+.01:0
+  }
+  const relative=body.position.clone().sub(origin),along=relative.dot(direction),radius=body.size*.78+1
+  const perpendicular=relative.lengthSq()-along*along
+  return perpendicular<radius*radius?Math.max(0,along+Math.sqrt(radius*radius-perpendicular)):0
+}
 export interface StoryCameraFrame { position: Vector3; target: Vector3; fov: number }
 export interface StoryCameraOptions {
   shot: CinemaShot
@@ -34,21 +82,43 @@ export interface StoryCameraOptions {
   /** Reference positions sampled once at the sequence's opening. */
   axisFrom: Vector3
   axisTo: Vector3
+  /** Hold broadside coverage for a take containing a recorded boarding action. */
+  boarding?: boolean
   reduced?: boolean
 }
 const ease = (value: number) => { const p = Math.max(0, Math.min(1, value)); return p * p * (3 - 2 * p) }
 
 /** Authored coverage stays on one side of the line, independent of hull heading. */
 export function sampleStoryCamera(options: StoryCameraOptions): StoryCameraFrame {
-  const { shot, sequence, subject, target, time, reduced } = options
+  const { shot, sequence, time, reduced } = options
+  let { subject, target } = options
+  // Coverage labels identify the beat, not a new camera setup. Hold the
+  // attacker's shoulder through the hit even when the edit names its defender.
+  const continuousTake = !shot.battlefield && sequence && sequence.id === shot.sequenceId && target &&
+    ((subject.id === sequence.attacker && target.id === sequence.defender) ||
+      (target.id === sequence.attacker && subject.id === sequence.defender))
+  if (continuousTake && subject.id !== sequence?.attacker) [subject, target] = [target!, subject]
   const aspect = Math.max(.2, options.aspect)
-  const progress = reduced ? 0 : ease((time - shot.start) / Math.max(.01, shot.end - shot.start))
+  const start = continuousTake ? sequence!.start : shot.start
+  const end = continuousTake ? sequence!.end : shot.end
+  const progress = reduced ? 0 : ease((time - start) / Math.max(.01, end - start))
   const axis = options.axisTo.clone().sub(options.axisFrom); axis.y = 0
   if (axis.lengthSq() < .001) axis.set(1,0,0)
   axis.normalize()
   const normal = new Vector3(-axis.z,0,axis.x).multiplyScalar(shot.axis?.side ?? 1)
+  if (continuousTake && options.boarding && target) {
+    // Follow the actual docking line as the boarder rounds its target. Anchor
+    // handedness to actor identity, not a dot-product sign that flips at 90deg.
+    const liveAxis = target.position.clone().sub(subject.position); liveAxis.y = 0
+    if (liveAxis.lengthSq() > .001) {
+      liveAxis.normalize()
+      const canonicalFrom = shot.axis?.from ?? sequence?.axis?.from ?? sequence?.attacker
+      const handedness = canonicalFrom === sequence?.attacker ? 1 : -1
+      normal.set(-liveAxis.z, 0, liveAxis.x).multiplyScalar(handedness * (shot.axis?.side ?? 1))
+    }
+  }
   const authoredRole = shot.role ?? (shot.kind === 'reveal' ? 'geography' : shot.kind === 'aftermath' ? 'resolution' : 'reaction')
-  const role = reduced && authoredRole !== 'fire' && authoredRole !== 'setup' ? 'geography' : authoredRole
+  const role = continuousTake ? (options.boarding ? 'geography' : 'fire') : reduced && authoredRole !== 'fire' && authoredRole !== 'setup' ? 'geography' : authoredRole
   const focus = subject.position.clone()
   const position = new Vector3()
   const fov = ['geography','setup','fire','montage'].includes(role) ? 42 : 34
@@ -64,9 +134,10 @@ export function sampleStoryCamera(options: StoryCameraOptions): StoryCameraFrame
       upper.max(body.position.clone().addScalar(radius))
     }
     focus.copy(lower).add(upper).multiplyScalar(.5)
-    // The formation has depth as well as width. An elevated three-quarter
-    // direction exposes that depth rather than stacking every row edge-on.
-    const viewing = normal.clone().multiplyScalar(.7).addScaledVector(axis, .6).add(new Vector3(0, .65, 0)).normalize()
+    // A scale-establishing view keeps opposing hulls at comparable depth.
+    // Elevation reveals decks and formation rows; a restrained lateral move
+    // provides parallax without making a nearer small hull rival a capital.
+    const viewing = normal.clone().addScaledVector(axis, .02 + progress * .04).add(new Vector3(0, .38, 0)).normalize()
     const forward = viewing.clone().negate(), right = new Vector3().crossVectors(forward, new Vector3(0, 1, 0)).normalize()
     const cameraUp = new Vector3().crossVectors(right, forward).normalize(), relative = new Vector3()
     const sinHorizontal = Math.sin(Math.atan(horizontal)), sinVertical = Math.sin(Math.atan(vertical))
@@ -102,21 +173,46 @@ export function sampleStoryCamera(options: StoryCameraOptions): StoryCameraFrame
     let distance = size * 2.5 * Math.max(1, 1 / aspect)
     focus.addScaledVector(toward, Math.min(separation * .46, size * .8))
     const forward = new Vector3(), right = new Vector3(), cameraUp = new Vector3(), relative = new Vector3()
-    for (let attempt = 0; attempt < 24; attempt++) {
+    const pair = [subject, target]
+    const fitAt = (distance: number) => {
       const offset = Math.max(size * Math.hypot(.8, .5), clearance * (distance + separation) / tangent)
       position.copy(subject.position).addScaledVector(toward, -distance).addScaledVector(transverse, offset)
       forward.copy(focus).sub(position).normalize()
       right.crossVectors(forward, new Vector3(0, 1, 0)).normalize()
       if (right.lengthSq() < .001) right.copy(shoulder)
       cameraUp.crossVectors(right, forward).normalize()
-      const fits = [subject, target].every(body => {
+      return pair.every(body => {
         relative.copy(body.position).sub(position)
         const depth = relative.dot(forward), radius = body.size * .78
         return depth > radius && Math.abs(relative.dot(right)) + radius < depth * horizontal * .92 &&
           Math.abs(relative.dot(cameraUp)) + radius < depth * vertical * .92
       })
-      if (fits) break
+    }
+    let lower = distance
+    for (let attempt = 0; attempt < 24; attempt++) {
+      if (fitAt(distance)) {
+        if (continuousTake && distance > lower) {
+          // Refine the safety fit continuously: coarse 22% pullback steps are
+          // visible as cuts when a moving hull crosses a frustum threshold.
+          let upper = distance
+          for (let refinement = 0; refinement < 20; refinement++) {
+            const middle = (lower + upper) * .5
+            if (fitAt(middle)) upper = middle
+            else lower = middle
+          }
+          fitAt(upper)
+        }
+        break
+      }
+      lower = distance
       distance *= 1.22
+    }
+    if (continuousTake) {
+      // A restrained dolly follows the exchange without flying between the
+      // two hulls. The accompanying pan gives the receiving ship more room
+      // as the action lands; the fitted shoulder remains the safety envelope.
+      position.sub(focus).multiplyScalar(1.12 - progress * .10).add(focus)
+      focus.addScaledVector(toward, Math.min(size * .10, separation * .02) * progress)
     }
   } else if (wide && target) {
     // A master shot establishes BOTH participants before the close coverage.
@@ -126,6 +222,27 @@ export function sampleStoryCamera(options: StoryCameraOptions): StoryCameraFrame
     const distance = radius / Math.sin(angle) * (role === 'geography' ? 1.18 - progress*.12 : 1.08)
     position.copy(focus).addScaledVector(normal,distance*.95)
     position.y += distance*.31
+    if (continuousTake && options.boarding && Math.max(subject.size, target.size) > Math.min(subject.size, target.size) * 3) {
+      // Once the capital is established, show the small hull and its contact
+      // site. Fitting the entire capital would reduce this vessel to a dot.
+      const small = subject.size < target.size ? subject : target
+      const large = small === subject ? target : subject
+      const outward = small.position.clone().sub(large.position).normalize()
+      if (outward.lengthSq() < .001) outward.copy(axis)
+      const contactFocus = small.position.clone().addScaledVector(outward, -small.size * .35)
+      const viewing = normal.clone().addScaledVector(outward, .4).add(new Vector3(0, .32, 0)).normalize()
+      const approach = reduced ? 1 : ease(progress * 2)
+      const wideDistance = position.distanceTo(focus)
+      const closeDistance = Math.max(small.size * 3.2, small.size * .85 / horizontal, 24)
+      focus.lerp(contactFocus, approach)
+      let contactDistance = wideDistance + (closeDistance - wideDistance) * approach
+      // A camera dolly follows this outward ray, with an analytic bound for
+      // both complete hulls. Cropping a capital never permits entering it.
+      for (const body of [subject, target]) {
+        contactDistance = Math.max(contactDistance, contactRayExit(body, focus, viewing))
+      }
+      position.copy(focus).addScaledVector(viewing, contactDistance)
+    }
   } else {
     // Frame the entire hull in portrait as well as landscape. A slow straight
     // dolly has a purpose (approach or release); there is no orbit or side flip.
@@ -156,5 +273,5 @@ export function clearStorySightline(frame: StoryCameraFrame, focusId: string, bo
   }
   const step = Math.max(25,frame.position.distanceTo(frame.target)*.12)
   for(let attempt=0; attempt<5 && occluded(); attempt++) frame.position.y += step
-  keepCameraOutsideHulls(frame.position,bodies.map(body=>({position:body.position,radius:body.size*.78})))
+  keepCameraOutsideBodies(frame.position,bodies)
 }

@@ -18,8 +18,9 @@ cinema URLs. Completed does not automatically mean worth filming:
 - Confirmed wildlife/creature encounters are excluded. A creature snapshot or
   terminal participant is sufficient, including mixed battles. Unknown historical
   kinds are not guessed into this exclusion.
-- Records without damage, connected offensive force, a loss, or a capture are
-  excluded. Miss-only disengagements and empty/idle records get no film.
+- Records without damage, connected offensive force, a loss, a capture, or observed boarding contact are
+  excluded. A logged latch, assault or plunder can qualify without hull damage.
+  Rejected boarding orders, miss-only disengagements and empty/idle records get no film.
 - A lossless battle in which every side's final recorded appearances escape is
   excluded. `stalemate` alone is insufficient: it also describes single-sided
   retreats and timeouts. Returning pilots reset their escape state.
@@ -48,10 +49,73 @@ hulls. Missing or obsolete snapshots do not authorize extra destruction or
 resurrection. Recorded zone transitions drive approach and withdrawal in `motion.ts`.
 Formations hold fixed lanes and parallel headings toward the opposing side.
 Combat retreat reverses while retaining that heading; a flee stance turns the hull
-outward. There is no automatic orbit, approach, bobbing or banking. Formation lanes
+outward. There is no automatic orbit, bobbing or banking. Formation lanes
 allow room for hulls to turn, and stations occupy a separate layer.
 Source positions are not physical coordinates; scene formations are artistic. Captured prize IDs cannot always be mapped to the original hull
 from historical public records, so the compiler does not guess such links.
+
+### Boarding and continuous camera takes
+
+Public boarding rows produce approach, breach, assault, withdrawal and plunder
+cues. The exact event and operation identity remain attached to each cue;
+casualty flags are qualitative and never become troop counts or progress bars.
+Meaningful transitions retain screen time while repeated reports are sampled.
+A rejected order creates no boarding effect. `capture_ready` does not establish
+ownership transfer: only a capture record retires a hull as an intact prize.
+Plunder means cargo theft followed by disengagement, not hull capture. Capture
+sequences follow the matching boarding operation rather than unrelated gunfire.
+
+`boarding-motion.ts` supplies deterministic, absolute-time blocking around the
+recorded counterpart. The boarder approaches alongside the target with hull
+clearance, keeps its existing heading, holds during contact, and releases on
+withdrawal, plunder or a failed operation. Retirement freezes the applied offset
+so an intact prize or wreck cannot jump back to its original formation slot.
+Missing operation IDs use participant-pair context. These positions illustrate
+observed contact; they are not tactical coordinates or personnel simulations.
+
+Camera moves retain continuous takes across adjacent shots with the same subjects
+and screen axis. New subjects or geography changes still allow deliberate cuts.
+The continuous path remains subject to framing and ship-clearance constraints;
+it does not replace the chronological edit or manufacture additional action.
+
+Self-destruct records still have no bespoke countdown choreography. Confirmed
+losses use the existing recorded outcome handling. Boarding adds no downloaded
+models, textures, audio assets, external generation service or asset request.
+
+### Goal-based camera planning
+
+The chronological film remains the source of events. `shot-planner.ts` then plans
+camera coverage against the assembled, posed hulls and current viewport. It scores
+five candidate views per continuous take at up to six times, including selected
+impact, capture and boarding-contact moments. Goals distinguish establishment,
+scale, exchanges, contact and outcomes. Scoring uses clipped screen coverage,
+minimum projected size, hull-bound occlusion, relative depth, prior participant
+coverage, repeated compositions and transition cost.
+
+The edit briefly favors an ongoing exchange over ordinary competing fire; recorded
+consequences and the decisive event override that preference. Reciprocal fire
+shares a take and a stable camera shoulder. Between takes, a short
+pan/dolly is accepted only when sampled views preserve required subjects and hull
+clearance; incompatible geography or immediate key events retain a deliberate
+cut. Reduced-motion playback skips these animated transitions. Sampling uses absolute
+time so seeking and replay agree. Plans are cached per
+viewport aspect and reduced-motion setting, not recomputed each frame. Development
+canvas diagnostics expose goals, candidates, scores, coverage and unresolved
+readability concerns. This is bounded heuristic planning, not a guarantee that all
+participants in a large fleet are individually readable. It does not invent events
+or add extra editorial takes to the source film.
+
+### Painted participant names
+
+`hull-markings.ts` paints the recorded participant name on up to two verified,
+exposed hull/armor panels of each detailed model. Names use a small generated
+canvas texture, nonemissive weathered ink and ordinary scene lighting. Lettering
+grows on larger hulls when a clear panel permits, with smaller placement fallbacks;
+small or obstructed hulls may omit it. The marking is
+attached to the hull, never billboarded or resized for readability. Unicode text
+is bounded and stripped of control characters. Both sides share one material and
+texture, which is released by ordinary material disposal. No external fonts or
+image requests are added.
 
 ## Rendering and audio
 
@@ -157,3 +221,9 @@ five retained and five excluded. Useful examples include
 The bounded recent sample contained no intact captures or confirmed disables,
 cloaks, or drains; regression fixtures and explicitly synthetic browser scenes
 cover those effects. Synthetic scenes are test tools, never production films.
+
+Boarding follow-up, September 7, 2026: `627178229d01ef77d719015ca68e3493`
+records LT1428 and Yor Graves against Zaggle in Skyreach. Yor Graves closes,
+loses and regains ground, then latches and captures Zaggle in the same source
+tick. The public fixture exercises an authentic intact capture and preserves
+that within-tick ordering.

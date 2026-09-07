@@ -4,6 +4,7 @@ export interface ShipSurfaceOptions {
   kind: 'hull' | 'armor' | 'dark' | 'metal' | 'accent'
   empire?: string
   pirate?: boolean
+  worldSize?: number
   density?: number
   seed?: number
 }
@@ -102,6 +103,8 @@ varying vec3 vCinemaSurfacePosition;
 varying vec3 vCinemaSurfaceNormal;
 uniform sampler2D cinemaSurfaceAtlas;
 uniform float cinemaSurfaceDensity;
+uniform float cinemaMicroScale;
+uniform float cinemaMicroStrength;
 uniform vec2 cinemaSurfaceOffset;
 uniform float cinemaSurfaceRelief;
 vec4 cinemaReadSurface(vec3 p, vec3 weights, vec3 dx, vec3 dy) {
@@ -136,12 +139,15 @@ export function applyShipSurface<T extends THREE.MeshStandardMaterial>(material:
   material.roughness = THREE.MathUtils.clamp(base[0] + empireRoughness + (options.pirate ? .09 : 0), .2, .85)
   material.metalness = base[1]
   const density = THREE.MathUtils.clamp(Number.isFinite(options.density) ? options.density! : 1, .25, 4)
+  const worldSize = THREE.MathUtils.clamp(Number.isFinite(options.worldSize) ? options.worldSize! : 32, 16, 400)
   const previousCompile = material.onBeforeCompile, previousKey = material.customProgramCacheKey()
   material.customProgramCacheKey = () => `${previousKey}|cinema-surface-atlas-v1`
   material.onBeforeCompile = function (shader, renderer) {
     previousCompile.call(this, shader, renderer)
     shader.uniforms.cinemaSurfaceAtlas = { value: owned.texture }
     shader.uniforms.cinemaSurfaceDensity = { value: density }
+    shader.uniforms.cinemaMicroScale = { value: worldSize / (32 * density) }
+    shader.uniforms.cinemaMicroStrength = { value: THREE.MathUtils.smoothstep(worldSize, 28, 70) }
     shader.uniforms.cinemaSurfaceOffset = { value: new THREE.Vector2((seed % 251) / 251, ((seed >>> 8) % 241) / 241) }
     shader.uniforms.cinemaSurfaceRelief = { value: (options.kind === 'dark' ? .0007 : .0017) / density }
     shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vCinemaSurfacePosition;\nvarying vec3 vCinemaSurfaceNormal;')
@@ -155,12 +161,15 @@ cinemaWeights.y += 1e-8;
 cinemaWeights /= dot(cinemaWeights, vec3(1.0));
 vec3 cinemaLocalDx = dFdx(vCinemaSurfacePosition), cinemaLocalDy = dFdy(vCinemaSurfacePosition);
 vec4 cinemaPacked = cinemaReadSurface(vCinemaSurfacePosition, cinemaWeights, cinemaLocalDx, cinemaLocalDy);
+vec4 cinemaMicro = cinemaReadSurface(vCinemaSurfacePosition * cinemaMicroScale + vec3(0.173), cinemaWeights, cinemaLocalDx * cinemaMicroScale, cinemaLocalDy * cinemaMicroScale);
 diffuseColor.rgb *= mix(0.16, 1.08, cinemaPacked.r);
+diffuseColor.rgb *= mix(1.0, mix(0.87, 1.04, cinemaMicro.r), cinemaMicroStrength);
 // Exposed chips reveal neutral substrate without recoloring broad painted areas.
 diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.22), cinemaPacked.a * 0.32);`)
     shader.fragmentShader = shader.fragmentShader.replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
 roughnessFactor = clamp(roughnessFactor + (cinemaPacked.b - 0.50) * 0.45, 0.20, 0.91);
-roughnessFactor = mix(roughnessFactor, 0.34, cinemaPacked.a * 0.65);`)
+roughnessFactor = mix(roughnessFactor, 0.34, cinemaPacked.a * 0.65);
+roughnessFactor = clamp(roughnessFactor + (cinemaMicro.b - 0.5) * 0.12 * cinemaMicroStrength, 0.2, 0.94);`)
     shader.fragmentShader = shader.fragmentShader.replace('#include <metalnessmap_fragment>', `#include <metalnessmap_fragment>
 metalnessFactor = mix(metalnessFactor, 0.88, cinemaPacked.a);`)
     shader.fragmentShader = shader.fragmentShader.replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>

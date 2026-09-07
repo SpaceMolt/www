@@ -1,3 +1,5 @@
+import { createHullContactProfile, type HullContactProfile } from './hull-contact'
+import { cinemaHullWorldSize } from './ship-scale'
 import * as THREE from 'three'
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
 import { TexturePass } from 'three/addons/postprocessing/TexturePass.js'
@@ -13,9 +15,14 @@ import { sampleCinemaHealth } from './director'
 import { buildCinemaCascades, sampleCinemaCascade } from './cascades'
 import { buildFleetFormation } from './formation'
 import { sampleShipMotion, fleetMotionSpacing, type ShipMotionOptions } from './motion'
-import { sampleStoryCamera, clearStorySightline, keepCameraOutsideHulls, type CameraBody } from './camera'
+import { createBoardingMotionSampler } from './boarding-motion'
+import { type CameraBody, type StoryCameraOptions } from './camera'
+import { buildShotPlan, samplePlannedCamera, type ShotPlan } from './shot-planner'
+import { addHullMarkings } from './hull-markings'
+import { buildCameraTakes } from './camera-takes'
 import { cinemaRenderSettings, initialCinemaQuality } from './quality'
 import { weaponVisual } from './weaponVisuals'
+import { boardingVisual } from './boardingVisuals'
 import { getWeaponColor, resolveWeaponFamily } from './weapons'
 import { createShip } from './ships'
 import { createShipWreckage, WRECK_BREAKUP_DELAY } from './ship-wreckage'
@@ -24,7 +31,7 @@ import { aimWeaponMount, canAimWeaponMount, weaponMuzzleLocal, assignWeaponCues,
 import { updateRetrothrusters } from './ship-thrusters'
 import { resolveAppearance, type ShipAppearance } from './appearance'
 import { resolveStationAppearance } from './station-appearance'
-import type { CinemaFilm, CinemaShip, CinemaCue } from './types'
+import type { CinemaFilm, CinemaShip, CinemaCue, CinemaShot } from './types'
 
 export type CinemaQuality = 'auto' | 'high' | 'medium' | 'low'
 export interface CinemaOptions {
@@ -76,6 +83,8 @@ interface Actor {
   ship: CinemaShip
   appearance: ShipAppearance
   model: THREE.Group | null
+  contactHull?: HullContactProfile
+  contactBounds?: THREE.Box3
   position: THREE.Vector3
   rotation: number
   bank: number
@@ -230,19 +239,43 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   }
   // Hero detail is reserved for participants the director actually follows.
   const featured = new Set(film.shots.flatMap(s => [s.subject, s.target]).filter(Boolean))
-  const priority = [...film.ships].sort((a, b) => Number(featured.has(b.id)) - Number(featured.has(a.id)))
+  const boardingParticipants = new Set(film.cues.filter(cue=>cue.kind==='boarding').flatMap(cue=>[cue.from,cue.to]).filter(Boolean))
+  const priority = [...film.ships].sort((a, b) => Number(boardingParticipants.has(b.id))-Number(boardingParticipants.has(a.id)) || Number(featured.has(b.id)) - Number(featured.has(a.id)))
   const detailed = new Set(priority.slice(0, 28).map(s => s.id))
+  let markingMilliseconds = 0
   const actors = film.ships.map((ship): Actor => {
     const known = ship.kind==='station' ? resolveStationAppearance(ship.playerId) : appearances[ship.shipClass]
     const appearance = ['station', 'creature', 'drone'].includes(ship.kind) ? { ...(known ?? resolveAppearance(ship.shipClass)), family: ship.kind as ShipAppearance['family'] } : known ?? resolveAppearance(ship.shipClass)
-    const size = clamp(appearance.length * 9, 16, 400)
+    const size = cinemaHullWorldSize(appearance)
     const seed = hash(ship.id)
     const side = sides.indexOf(ship.sideIndex)
     const angle = side / Math.max(2, sides.length) * Math.PI * 2
     const lane = shipRanks.get(`${ship.sideIndex}:${ship.playerId}`) ?? 0
     const model = detailed.has(ship.id) ? createShip(appearance, seed, 'hero', ship.hardware) : null
+    let contactHull: HullContactProfile | undefined
+    let contactBounds: THREE.Box3 | undefined
+    if (model) {
+      const points: THREE.Vector3[] = []
+      model.traverse(object => {
+        if (!(object instanceof THREE.Mesh) || !['hull', 'armor', 'dark', 'metal'].includes(object.name)) return
+        const vertices = object.geometry.getAttribute('position'), mounts = object.geometry.getAttribute('cinemaMount')
+        for (let i = 0; i < vertices.count; i++) {
+          if (mounts && mounts.getX(i) >= 0) continue
+          points.push(new THREE.Vector3().fromBufferAttribute(vertices, i).multiplyScalar(size))
+        }
+      })
+      if (points.length) {
+        contactBounds = new THREE.Box3().setFromPoints(points)
+        if (boardingParticipants.size) contactHull = createHullContactProfile(points, boardingParticipants.has(ship.id))
+      }
+    }
     const engineMaterials: { material: THREE.MeshStandardMaterial | THREE.MeshBasicMaterial; intensity: number }[] = []
     if (model) {
+      if (!['creature','drone'].includes(ship.kind)) {
+        const started=performance.now()
+        addHullMarkings(model, {name:ship.name,worldSize:size,empire:appearance.empire,seed})
+        markingMilliseconds+=performance.now()-started
+      }
       model.scale.setScalar(size)
       model.traverse(object => {
         if (object instanceof THREE.Mesh && object.userData.engine && !object.userData.retrothruster) {
@@ -252,7 +285,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
       })
       scene.add(model)
     }
-    return { ship, appearance, model, position: new THREE.Vector3(), rotation: 0, bank: 0, thrust: 1, retroThrust: 0, size, angle, lane, seed, engineMaterials }
+    return { ship, appearance, model, contactHull, contactBounds, position: new THREE.Vector3(), rotation: 0, bank: 0, thrust: 1, retroThrust: 0, size, angle, lane, seed, engineMaterials }
   })
   const fleetSpacing = new Map(sides.map(side => [side, fleetMotionSpacing(actors.filter(a=>a.ship.sideIndex===side && a.ship.kind!=='station').map(a=>({size:a.size,beam:a.appearance.beam})))]))
   const fleetDepth = new Map(sides.map(side => [side, Math.max(130,...actors.filter(a=>a.ship.sideIndex===side && a.ship.kind!=='station').map(a=>a.size*1.25+55))]))
@@ -316,6 +349,12 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   trails.frustumCulled=false; trails.instanceMatrix.setUsage(THREE.DynamicDrawUsage); scene.add(trails)
   const beams = new THREE.InstancedMesh(new THREE.CylinderGeometry(1, 1, 1, 5), new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false }), 160)
   beams.frustumCulled = false; beams.instanceMatrix.setUsage(THREE.DynamicDrawUsage); scene.add(beams)
+  // Physical boarding hardware uses opaque lit metal, never the additive
+  // weapon pool. One bounded draw covers all active rails and clamps.
+  const boardingStructures = new THREE.InstancedMesh(new THREE.CylinderGeometry(1,1,1,8),
+    new THREE.MeshStandardMaterial({color:0xffffff,metalness:.4,roughness:.6}),32)
+  boardingStructures.count=0;boardingStructures.frustumCulled=false
+  boardingStructures.instanceMatrix.setUsage(THREE.DynamicDrawUsage);scene.add(boardingStructures)
   const projectiles = new THREE.InstancedMesh(new THREE.ConeGeometry(.5, 2.8, 7), new THREE.MeshStandardMaterial({color:0xffffff,metalness:.75,roughness:.35}),96)
   projectiles.frustumCulled=false;projectiles.instanceMatrix.setUsage(THREE.DynamicDrawUsage);scene.add(projectiles)
   const sparks = new THREE.InstancedMesh(new THREE.BoxGeometry(1, .4, 1), new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: .55, roughness: .6 }), 800)
@@ -363,27 +402,57 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   const audioCues = buildAudioSchedule(film.cues)
   const cuesById = new Map(film.cues.map(cue=>[cue.id,cue]))
   const effectWindow = film.cues.reduce((max, cue) => Math.max(max, cue.duration + 2), 7)
-  const clearanceByShot = new Map<string,number>()
+  let shotPlan: ShotPlan | undefined
+  let shotPlanKey = ''
+  const cameraTakes = buildCameraTakes(film.story?.sequences ?? [], film.shots)
+  const boardingTakes = new Set((film.story?.sequences ?? []).filter(sequence=>
+    cuesById.get(sequence.causeCueId ?? '')?.kind==='boarding').map(sequence=>cameraTakes.get(sequence.id)?.id))
   const cameraTarget = new THREE.Vector3(), cameraPosition = new THREE.Vector3()
   const pointA = new THREE.Vector3(), pointB = new THREE.Vector3()
   const up = new THREE.Vector3(0, 1, 0), direction = new THREE.Vector3()
   const motionOptions = (actor: Actor): ShipMotionOptions => ({ size: actor.size, angle: actor.angle, lane: actor.lane, seed: actor.seed,
     formation: formations.get(actor.ship.id), fleetCount: sides.length, sideCount: sideCounts.get(actor.ship.sideIndex) ?? 1, spacing: fleetSpacing.get(actor.ship.sideIndex) ?? 90, depth: fleetDepth.get(actor.ship.sideIndex) ?? 130 })
+  const boardingMotion = createBoardingMotionSampler(film.cues,
+    actors.map(actor=>({id:actor.ship.id,start:actor.ship.start,end:actor.ship.end,radius:actor.size*.78,kind:actor.ship.kind,hull:actor.contactHull})),
+    (id,at)=>{const actor=byId.get(id)!;const pose=sampleShipMotion(actor.ship,at,motionOptions(actor));return reduced?{...pose,bank:0}:pose})
+  const motionAt = (actor: Actor, at: number) => boardingMotion(actor.ship.id,at)
   const positionAt = (actor: Actor, t: number) => {
-    const motion = sampleShipMotion(actor.ship,t,motionOptions(actor))
+    const motion = motionAt(actor,t)
     actor.position.set(motion.x,motion.y,motion.z)
     actor.rotation=motion.yaw; actor.bank=motion.bank; actor.thrust=motion.thrust; actor.retroThrust=motion.retroThrust
     return actor.position
   }
   const cascadePlans = buildCinemaCascades(film.cues,(id,at)=>{
     const actor=byId.get(id)
-    return actor ? sampleShipMotion(actor.ship,at,motionOptions(actor)) : undefined
+    return actor ? motionAt(actor,at) : undefined
   }).filter(plan=>plan.kind==='chain' || plan.recipients.length>=6)
   const cascadeGroups = new Set(cascadePlans.map(plan=>`${plan.sourceCueId}:${plan.kind==='chain'?'chain':'area'}`))
   const cascadeCollateral = new Set(film.cues.filter(cue=>cue.hit===true && cue.parentId &&
     ['aoe','ammo_splash','chain'].includes(cue.secondaryKind??'') &&
     cascadeGroups.has(`${cue.parentId}:${cue.secondaryKind==='chain'?'chain':'area'}`)).map(cue=>cue.id))
   const isVisible = (actor: Actor, t: number) => t >= actor.ship.start && (t <= actor.ship.end || !['escaped', 'withdrawn'].includes(actor.ship.fate) || t < actor.ship.end + 2.5)
+  const cameraBodyAt = (id: string | undefined, at: number): CameraBody | undefined => {
+    const actor=id ? byId.get(id) : undefined
+    if (!actor) return undefined
+    const motion=motionAt(actor,at)
+    return {id:actor.ship.id,size:actor.size,position:new THREE.Vector3(motion.x,motion.y,motion.z),
+      ...(actor.contactBounds ? {contactHull:{min:actor.contactBounds.min,max:actor.contactBounds.max,yaw:motion.yaw,bank:reduced?0:motion.bank}} : {})}
+  }
+  const cameraBodiesAt = (at: number) => actors.filter(actor=>isVisible(actor,at) &&
+    !(actor.ship.fate==='destroyed' && at>actor.ship.end+.32)).map(actor=>cameraBodyAt(actor.ship.id,at)!)
+  const cameraOptionsAt = (shot: CinemaShot, at: number): StoryCameraOptions => {
+    const storySequence=film.story?.sequences.find(sequence=>sequence.id===shot.sequenceId)
+    const take=storySequence ? cameraTakes.get(storySequence.id) : undefined
+    const sequence=storySequence && take ? {...storySequence,start:take.start,end:take.end} : storySequence
+    const subject=cameraBodyAt(shot.subject,at) ?? cameraBodiesAt(at)[0] ?? {id:'empty',size:60,position:new THREE.Vector3()}
+    const target=cameraBodyAt(shot.target,at)
+    const referenceTime=sequence?.start ?? shot.start
+    const axisFrom=cameraBodyAt(shot.axis?.from ?? subject.id,referenceTime)?.position ?? subject.position
+    const axisTo=cameraBodyAt(shot.axis?.to ?? target?.id,referenceTime)?.position ?? subject.position.clone().add(new THREE.Vector3(100,0,0))
+    const battlefield=shot.battlefield ? actors.filter(actor=>isVisible(actor,at) &&
+      !(actor.ship.fate==='destroyed' && shot.start>actor.ship.end+7)).map(actor=>cameraBodyAt(actor.ship.id,at)!) : cameraBodiesAt(at)
+    return {shot,sequence,time:at,aspect:camera.aspect,subject,target,battlefield,axisFrom,axisTo,reduced,boarding:!!take && boardingTakes.has(take.id)}
+  }
   const setResolution = () => {
     const width = canvas.clientWidth || 1280, height = canvas.clientHeight || 720
     const settings=cinemaRenderSettings(actualQuality,window.devicePixelRatio || 1,renderer.capabilities.maxSamples,
@@ -408,7 +477,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     const target=byId.get(cue.to??'')
     if(!target) return output.set(0,0,0)
     if(at===undefined) output.copy(target.position)
-    else {const pose=sampleShipMotion(target.ship,at,motionOptions(target));output.set(pose.x,pose.y,pose.z)}
+    else {const pose=motionAt(target,at);output.set(pose.x,pose.y,pose.z)}
     output.y+=target.size*.06
     if(!cue.hit){output.y+=target.size*.8;output.z+=target.size*(hash(cue.id)%2?.7:-.7)}
     return output
@@ -425,7 +494,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
       if(!targets) {
         targets=[]
         for(const phase of [0,.5,1]) {
-          const at=cue.time+cue.duration*phase, pose=sampleShipMotion(actor.ship,at,motionOptions(actor))
+          const at=cue.time+cue.duration*phase, pose=motionAt(actor,at)
           for(const bank of [0,pose.bank]) {
             rotation.setFromEuler(new THREE.Euler(bank,pose.yaw,0,'YXZ'))
             inverse.compose(new THREE.Vector3(pose.x,pose.y,pose.z),rotation,new THREE.Vector3(actor.size,actor.size,actor.size)).invert()
@@ -451,7 +520,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
       const retired=time>=actor.ship.end && actor.ship.fate!=='survived'
       const aimAt=retired?actor.ship.end:time
       if(retired) {
-        const pose=sampleShipMotion(actor.ship,Math.max(actor.ship.start,actor.ship.end-.00001),motionOptions(actor))
+        const pose=motionAt(actor,Math.max(actor.ship.start,actor.ship.end-.00001))
         frozenRotation.setFromEuler(new THREE.Euler(reduced?0:pose.bank,pose.yaw,0,'YXZ'))
         frozenInverse.compose(new THREE.Vector3(pose.x,pose.y,pose.z),frozenRotation,new THREE.Vector3(actor.size,actor.size,actor.size)).invert()
       }
@@ -518,11 +587,11 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     updateGuns()
     if (!reduced) for (const actor of actors) {
       if (!actor.model || actor.ship.kind==='station' || time < actor.ship.start || time > actor.ship.end+5) continue
-      const settings=motionOptions(actor)
+
       for (let segment=0;segment<8 && trailCount<240;segment++) {
         const now=time-segment*.65, before=now-.65
         if (before<actor.ship.start || now>actor.ship.end) continue
-        const head=sampleShipMotion(actor.ship,now,settings), tail=sampleShipMotion(actor.ship,before,settings)
+        const head=motionAt(actor,now), tail=motionAt(actor,before)
         if (head.thrust < .4 || tail.thrust < .4) continue
         pointA.set(head.x-Math.cos(head.yaw)*actor.size*.51,head.y,head.z+Math.sin(head.yaw)*actor.size*.51)
         pointB.set(tail.x-Math.cos(tail.yaw)*actor.size*.51,tail.y,tail.z+Math.sin(tail.yaw)*actor.size*.51)
@@ -539,43 +608,18 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     let shotIndex = film.shots.findIndex(s => time >= s.start && time < s.end)
     if (shotIndex < 0) shotIndex = Math.max(0, film.shots.length - 1)
     const shot = film.shots[shotIndex]
-    const sequence = film.story?.sequences.find(sequence=>sequence.id===shot?.sequenceId)
-    const subjectActor = (shot.subject ? byId.get(shot.subject) : undefined) ?? actors.find(a=>isVisible(a,time))
-    const targetActor = shot.target ? byId.get(shot.target) : undefined
-    const bodyAt = (id: string | undefined, at: number): CameraBody | undefined => {
-      const actor=id ? byId.get(id) : undefined
-      if(!actor)return undefined
-      const motion=sampleShipMotion(actor.ship,at,motionOptions(actor))
-      return {id:actor.ship.id,size:actor.size,position:new THREE.Vector3(motion.x,motion.y,motion.z)}
+    const cameraOptions=cameraOptionsAt(shot,time)
+    const {subject,target,sequence}=cameraOptions
+    const subjectActor=byId.get(subject.id), targetActor=target ? byId.get(target.id) : undefined
+    const battlefield=cameraOptions.battlefield ?? []
+    const planKey=`${camera.aspect.toFixed(4)}:${reduced}`
+    if (!shotPlan || shotPlanKey!==planKey) {
+      const started=performance.now()
+      shotPlan=buildShotPlan(film,{optionsAt:cameraOptionsAt,bodiesAt:cameraBodiesAt})
+      if(process.env.NODE_ENV==='development') {canvas.dataset.cinemaPlanningMs=(performance.now()-started).toFixed(1);canvas.dataset.cinemaMarkingMs=markingMilliseconds.toFixed(1)}
+      shotPlanKey=planKey
     }
-    const subject = subjectActor ? {id:subjectActor.ship.id,size:subjectActor.size,position:subjectActor.position} : {id:'empty',size:60,position:new THREE.Vector3()}
-    const target = targetActor ? {id:targetActor.ship.id,size:targetActor.size,position:targetActor.position} : undefined
-    const referenceTime=sequence?.start ?? 0
-    const axisFrom=bodyAt(shot.axis?.from ?? subject.id,referenceTime)?.position ?? subject.position
-    const axisTo=bodyAt(shot.axis?.to ?? target?.id,referenceTime)?.position ?? subject.position.clone().add(new THREE.Vector3(100,0,0))
-    const boundaries=actors.filter(actor=>isVisible(actor,time) && !(actor.ship.fate==='destroyed' && time>actor.ship.end+.32)).map(actor=>({id:actor.ship.id,position:actor.position,size:actor.size}))
-    // Hold recent wreck/impact anchors for the entire master shot. Removing
-    // every destroyed hull at once would zoom away while its blast is visible.
-    const battlefield=shot.battlefield ? actors.filter(actor=>isVisible(actor,time) &&
-      !(actor.ship.fate==='destroyed' && shot.start>actor.ship.end+7)).map(actor=>({id:actor.ship.id,position:actor.position,size:actor.size})) : boundaries
-    const frame=sampleStoryCamera({shot,sequence,time,aspect:camera.aspect,subject,target,battlefield,axisFrom,axisTo,reduced})
-    // Clearance is planned over the shot, not switched frame-by-frame as another
-    // hull passes the edge of the view. This avoids sudden camera height jumps.
-    const clearanceKey=`${shotIndex}:${camera.aspect.toFixed(3)}:${reduced}`
-    if(!shot.battlefield && !clearanceByShot.has(clearanceKey)) {
-      let lift=0
-      for(const sampleTime of [shot.start,(shot.start+shot.end)*.5,shot.end-.001]) {
-        const sampledSubject=bodyAt(subject.id,sampleTime) ?? subject
-        const sampledTarget=bodyAt(target?.id,sampleTime)
-        const planned=sampleStoryCamera({shot,sequence,time:sampleTime,aspect:camera.aspect,subject:sampledSubject,target:sampledTarget,axisFrom,axisTo,reduced})
-        const height=planned.position.y
-        clearStorySightline(planned,subject.id,actors.filter(actor=>isVisible(actor,sampleTime) && !(actor.ship.fate==='destroyed' && sampleTime>actor.ship.end+.32)).flatMap(actor=>bodyAt(actor.ship.id,sampleTime) ?? []))
-        lift=Math.max(lift,planned.position.y-height)
-      }
-      clearanceByShot.set(clearanceKey,lift)
-    }
-    frame.position.y+=clearanceByShot.get(clearanceKey) ?? 0
-    keepCameraOutsideHulls(frame.position,boundaries.map(body=>({position:body.position,radius:body.size*.78})))
+    const frame=samplePlannedCamera(shotPlan,shot,cameraOptions,cameraBodiesAt(time))
     cameraPosition.copy(frame.position);cameraTarget.copy(frame.target)
     camera.position.copy(frame.position);sky.position.copy(camera.position);stars.position.copy(camera.position);camera.fov=frame.fov;camera.far=Math.max(14000,...battlefield.map(body=>camera.position.distanceTo(body.position)+body.size*2+500));camera.lookAt(frame.target);camera.updateProjectionMatrix()
     const shadowRadius=Math.max(90,subject.size*1.1)
@@ -583,6 +627,13 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     Object.assign(sun.shadow.camera,{left:-shadowRadius,right:shadowRadius,top:shadowRadius,bottom:-shadowRadius})
     sun.shadow.camera.updateProjectionMatrix()
     if(process.env.NODE_ENV==='development'){
+      const planned = shotPlan?.shots.get(shot)
+      canvas.dataset.cinemaTransition=planned ? planned.transition.kind+': '+planned.transition.reason : ''
+      canvas.dataset.cinemaGoal=planned?.goal ?? ''
+      canvas.dataset.cinemaCandidate=String(planned?.candidate ?? 0)
+      canvas.dataset.cinemaScore=planned?.score.toFixed(1) ?? ''
+      canvas.dataset.cinemaCoverage=planned?.readableIds.join(',') ?? ''
+      canvas.dataset.cinemaConcerns=planned?.concerns.join('; ') ?? ''
       canvas.dataset.cinemaShot=shot.role ?? shot.kind
       canvas.dataset.cinemaSubject=subjectActor?.ship.name ?? ''
       canvas.dataset.cinemaTarget=targetActor?.ship.name ?? ''
@@ -593,7 +644,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
       canvas.dataset.cinemaFocus=frame.target.toArray().map(value=>value.toFixed(1)).join(',')
     }
 
-    let beamCount = 0, sparkCount = 0, flashCount = 0, shieldCount = 0, shockwaveCount = 0, projectileCount = 0
+    let boardingStructureCount = 0, beamCount = 0, sparkCount = 0, flashCount = 0, shieldCount = 0, shockwaveCount = 0, projectileCount = 0
     pulseLight.intensity = 0
     const addBeam = (a: THREE.Vector3, b: THREE.Vector3, width: number, color: number) => {
       if (beamCount >= (actualQuality === 'low' ? 48 : 160)) return
@@ -687,7 +738,30 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
       if (!destination) continue
       const color = getWeaponColor(cue.weaponFamily ?? resolveWeaponFamily(cue.weaponName,cue.damageType),cue.damageType)
       const seed = hash(cue.id)
-      if (cue.kind === 'weapon' && from && to) {
+      if (cue.kind === 'boarding' && from && to) {
+        const contact = boardingMotion(from.ship.id, time).boardingContact
+        if (!contact) continue
+        const sockets = contact ? { from: new THREE.Vector3(contact.actor.x, contact.actor.y, contact.actor.z), to: new THREE.Vector3(contact.target.x, contact.target.y, contact.target.z) } : undefined
+        const visual=boardingVisual(cue,age,from.position,to.position,from.size,to.size,reduced,sockets)
+        for(const rail of visual.structuralLines){
+          if(boardingStructureCount>=32)break
+          direction.copy(rail.to).sub(rail.from)
+          const length=direction.length()
+          if(length<.001)continue
+          dummy.position.copy(rail.from).add(rail.to).multiplyScalar(.5)
+          dummy.quaternion.setFromUnitVectors(up,direction.divideScalar(length))
+          dummy.scale.set(rail.width,length,rail.width);dummy.updateMatrix()
+          boardingStructures.setMatrixAt(boardingStructureCount,dummy.matrix)
+          boardingStructures.setColorAt(boardingStructureCount++,tint.setHex(rail.color))
+        }
+        for(const beam of visual.lines)addBeam(beam.from,beam.to,beam.width,beam.color)
+        for(const flash of visual.glows)addFlash(flash.position,flash.radius,flash.color,flash.opacity)
+        for(const wave of visual.rings){
+          if(shockwaveCount>=shockwaves.length)break
+          const ring=shockwaves[shockwaveCount++];ring.visible=true;ring.position.copy(wave.position);ring.quaternion.copy(camera.quaternion)
+          ring.scale.setScalar(wave.radius);ring.material.color.setHex(wave.color);ring.material.opacity=wave.opacity
+        }
+      } else if (cue.kind === 'weapon' && from && to) {
         if(cascadeCollateral.has(cue.id))continue
         pointA.copy(from.position).add(new THREE.Vector3(Math.cos(from.rotation)*from.size*.42,from.size*.12,-Math.sin(from.rotation)*from.size*.42))
         aimPoint(cue,pointB)
@@ -821,6 +895,8 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
       wreck.mesh.rotation.set(reduced?0:actor.bank,actor.rotation,0,'YXZ')
     }
     projectiles.count=projectileCount;projectiles.instanceMatrix.needsUpdate=true;if(projectiles.instanceColor)projectiles.instanceColor.needsUpdate=true
+    boardingStructures.count=boardingStructureCount;boardingStructures.instanceMatrix.needsUpdate=true
+    if(boardingStructures.instanceColor)boardingStructures.instanceColor.needsUpdate=true
     beams.count = beamCount; beams.instanceMatrix.needsUpdate = true; if (beams.instanceColor) beams.instanceColor.needsUpdate = true
     sparks.count = sparkCount; sparks.instanceMatrix.needsUpdate = true; if (sparks.instanceColor) sparks.instanceColor.needsUpdate = true
     for (let i = flashCount; i < flashes.length; i++) flashes[i].visible = false

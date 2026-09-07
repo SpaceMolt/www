@@ -3,7 +3,7 @@ import type { CinemaWeaponFamily } from './weapons'
 import type { CinemaHardware, HardwareCatalog } from './hardware'
 
 export type CinemaFate = 'survived' | 'destroyed' | 'knocked_out' | 'escaped' | 'captured' | 'withdrawn'
-export type CinemaCueKind = 'weapon' | 'death' | 'knockout' | 'escape' | 'capture' | 'arrival' | 'burn' | 'repair' | 'disable' | 'cloak' | 'drain'
+export type CinemaCueKind = 'boarding' | 'weapon' | 'death' | 'knockout' | 'escape' | 'capture' | 'arrival' | 'burn' | 'repair' | 'disable' | 'cloak' | 'drain'
 export type CinemaShotKind = 'reveal' | 'tracking' | 'broadside' | 'pursuit' | 'impact' | 'aftermath'
 
 export interface CinemaHealth {
@@ -54,6 +54,13 @@ export interface CinemaCue {
   /** Lifecycle IDs, not raw player IDs. */
   from?: string
   to?: string
+  /** Qualitative public boarding evidence, never force counts or progress percentages. */
+  boardingPhase?: 'approach' | 'breach' | 'assault' | 'withdraw' | 'plunder'
+  operationId?: string
+  boardingEvent?: string
+  /** Operation ended; withdrawal imagery must not imply surviving personnel. */
+  boardingEnded?: boolean
+  casualtiesOccurred?: boolean
   damageType?: string
   hit?: boolean
   shieldDamage?: number

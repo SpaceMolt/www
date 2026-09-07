@@ -11,6 +11,9 @@ import { createWeaponRig, tagWeaponGeometry, applyWeaponRig, createWeaponShadowM
 import { addRetrothrusters } from './ship-thrusters'
 import { bindWeaponHullClearance } from './ship-clearance'
 import { applyShipSurface } from './ship-surfaces'
+import { cinemaHullWorldSize } from './ship-scale'
+import { calibrateCrewWindows } from './ship-scale-windows'
+import { addShipScaleDetails } from './ship-scale-details'
 import { colorSalvagePart } from './ship-salvage'
 import { applyEngineHeat } from './ship-engine-heat'
 
@@ -100,6 +103,7 @@ export function createShip(appearance: ShipAppearance, seed: number, detail: 'he
   const group = new THREE.Group()
   group.name = `${appearance.empire}-${appearance.family}`
   const hero = detail === 'hero'
+  const worldSize = cinemaHullWorldSize(appearance)
   const { family, beam: width, height, accent } = appearance
   const empire = appearance.hullEmpire ?? appearance.empire
   const pirate = appearance.empire === 'pirate'
@@ -162,7 +166,7 @@ export function createShip(appearance: ShipAppearance, seed: number, detail: 'he
     for (const key of ['hull', 'armor', 'glass'] as const) crystalDetail(materials[key], width, height)
   } else if (hero && family !== 'creature') {
     const density = family === 'station' ? 3 : family === 'fighter' || family === 'scout' || family === 'drone' ? .75 : 1.5
-    for (const key of ['hull', 'armor', 'dark', 'metal', 'accent'] as const) applyShipSurface(materials[key], { kind: key, empire, pirate, seed, density })
+    for (const key of ['hull', 'armor', 'dark', 'metal', 'accent'] as const) applyShipSurface(materials[key], { kind: key, empire, pirate, seed, density, worldSize })
   }
   const rig=createWeaponRig()
   const engineHeatCenters: THREE.Vector4[] = []
@@ -170,9 +174,10 @@ export function createShip(appearance: ShipAppearance, seed: number, detail: 'he
   let weaponIndex=-1, weaponRoll=0, weaponElevates=false, structuralPart=0
   const wreckPartRoles:Record<number,string>={}
   group.userData.wreckPartRoles=wreckPartRoles
-  group.userData.wreckSurface={empire,pirate,seed,density:family==='station'?3:family==='fighter'||family==='scout'||family==='drone'?.75:1.5}
+  group.userData.wreckSurface={empire,pirate,seed,worldSize,density:family==='station'?3:family==='fighter'||family==='scout'||family==='drone'?.75:1.5}
   const batches = new Map<MaterialName, THREE.BufferGeometry[]>()
   const add = (geometry: THREE.BufferGeometry, material: MaterialName, x = 0, y = 0, z = 0, rotation?: THREE.Euler) => {
+    if (material === 'windows' && hero && family !== 'station' && family !== 'carrier' && empire !== 'voidborn' && family !== 'creature') geometry = calibrateCrewWindows(geometry, worldSize)
     if (rotation) geometry.applyMatrix4(new THREE.Matrix4().makeRotationFromEuler(rotation))
     geometry.translate(x, y, z)
     // Side and ventral batteries share the same +X firing axis while their
@@ -279,6 +284,7 @@ diffuseColor.a *= engineTail * engineFilament * 0.65;`)
   const h = height / 2, w = width / 2
   const context = { add, slab, rounded, rod, engine, hero, h, w }
   const fitHardware = () => {
+    const detailSurfaces = [...batches.entries()].filter(([key])=>key==='hull'||key==='armor'||key==='metal').flatMap(([,pieces])=>pieces)
     // Seat mounts on the actual hull surface, including named exceptions and grown hulls.
     const surfaces = [...batches.entries()].filter(([key])=>['hull','armor','dark','metal'].includes(key)).flatMap(([,pieces])=>pieces)
     const deckAt = (x:number,z:number) => {
@@ -323,7 +329,7 @@ diffuseColor.a *= engineTail * engineFilament * 0.65;`)
       elevateWeapon: () => { weaponElevates=true },
       endWeapon: () => { weaponIndex=-1; weaponRoll=0; weaponElevates=false },
     })
-    return deckAt
+    return { deckAt, detailSurfaces }
   }
 
   if (family === 'station') {
@@ -605,7 +611,7 @@ diffuseColor.a *= engineTail * engineFilament * 0.65;`)
       rod(-.31, -h * .3, w * 1.10, .026, .06, 'metal')
     }
     } // default empire / role assembly
-    const deckAt = fitHardware()
+    const { deckAt, detailSurfaces } = fitHardware()
     if (pirate || empire === 'outerrim') {
       // Donor panels sit on supported deck areas, with a dark gasket and a
       // contrasting retaining strip. Fewer, larger repairs tell a clearer
@@ -628,14 +634,12 @@ diffuseColor.a *= engineTail * engineFilament * 0.65;`)
         rod(-.28,h*1.8,-w*.44,.003,.18,'dark',false)
       }
     }
-    if (hero && !alien && !appearance.recipe && !pirate && empire !== 'outerrim') {
-      // Seeded small-scale topology supplies parallax in close passes.
-      for (let i = 0; i < (bespoke ? (small ? 3 : 10) : small ? 8 : 38); i++) {
-        const x = -.38 + random() * .54, z = (random() - .5) * width * .5
-        const deck=deckAt(x,z)
-        if(Number.isFinite(deck)) slab(x, deck + .002, z, .012 + random() * .028, .008 + random() * .016, .004 + random() * .01, i % 3 === 0 ? 'dark' : 'hull')
-      }
-    }
+    const detailExclusions = [...batches.values()].flatMap(pieces=>pieces).filter(geometry=>
+      (geometry.getAttribute('cinemaMount')?.getX(0) ?? -1)>=0).map(geometry=>{
+        geometry.computeBoundingBox();return geometry.boundingBox!.clone()
+      })
+    group.userData.scaleDetails = addShipScaleDetails({surfaces:detailSurfaces,worldSize,family,empire,seed,hero,
+      exclusions:detailExclusions,add:(geometry,material)=>add(geometry,material)})
   }
 
   if (pirate || empire === 'outerrim') applyEngineHeat(['hull', 'armor', 'dark', 'metal'].map(key => materials[key as MaterialName]), engineHeatCenters)
