@@ -30,6 +30,8 @@ export interface BattleSummary {
   status: 'active' | 'completed'
   /** Absent on servers that predate battle categorization */
   category?: BattleCategory
+  /** Whether any participant is a station; independent of battle category. */
+  has_station?: boolean
   start_tick: number
   duration_ticks: number
   participant_count: number
