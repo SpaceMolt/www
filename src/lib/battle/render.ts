@@ -12,6 +12,7 @@ import { damageTypeColor, zoneIndex } from './types'
 import type { AttackLogEntry, ParticipantSnapshot } from './types'
 import type { BattleTimeline, ParticipantMeta } from './timeline'
 import { GLYPH_NOSE_X, strokeGlyphDetail, traceGlyphPath } from './shipGlyphs'
+import { shieldRemoved } from './combatTelemetry'
 
 // --- Deterministic pseudo-randomness (stable across frames) ---
 
@@ -267,7 +268,7 @@ export function sampleShips(timeline: BattleTimeline, playhead: number, timeMs: 
     if (!a.hit_success) return
     const t = visualTiming.timings[idx]
     if (p >= t.impact) {
-      landedShield.set(a.target_id, (landedShield.get(a.target_id) ?? 0) + a.shield_damage)
+      landedShield.set(a.target_id, (landedShield.get(a.target_id) ?? 0) + shieldRemoved(a))
       landedHull.set(a.target_id, (landedHull.get(a.target_id) ?? 0) + a.hull_damage)
     }
   })
@@ -1480,10 +1481,11 @@ function drawFloaters(
       return
     }
     let y = pos.y - size * 2 - rise
-    if (a.shield_damage > 0) {
+    const shieldHit = shieldRemoved(a)
+    if (shieldHit > 0) {
       ctx.font = `${crit ? '700 13px' : '600 11px'} "JetBrains Mono", monospace`
       ctx.fillStyle = `rgba(120,210,255,${alpha.toFixed(2)})`
-      ctx.fillText(`-${a.shield_damage}`, pos.x + jx, y)
+      ctx.fillText(`-${shieldHit}`, pos.x + jx, y)
       y -= 12
     }
     if (a.hull_damage > 0) {

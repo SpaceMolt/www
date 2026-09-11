@@ -6,7 +6,7 @@
 
 import { getShip, type RawShip } from '@/data/catalog'
 import { archetypeForShip, type GlyphArchetype } from './shipGlyphs'
-import { secondaryAttackKind } from './combatTelemetry'
+import { secondaryAttackKind, shieldDrained } from './combatTelemetry'
 import { humanizeID } from './format'
 import {
   type BattleLogEntry,
@@ -412,12 +412,13 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
       const secondary = secondaryAttackKind(a)
       if (a.hit_success && attackerSide !== undefined) {
         const si = sideIndexById.get(attackerSide)
-        if (si !== undefined) damageBySide[si] += a.final_damage
+        if (si !== undefined) damageBySide[si] += a.final_damage + shieldDrained(a)
       }
       const crit = a.weapons?.some(w => w.crit_fired)
       if (a.hit_success) {
         const dmgParts = []
         if (a.shield_damage > 0) dmgParts.push(`${a.shield_damage} shield`)
+        if (shieldDrained(a) > 0) dmgParts.push(`${shieldDrained(a)} drained`)
         if (a.hull_damage > 0) dmgParts.push(`${a.hull_damage} hull`)
         const dmgStr = dmgParts.length > 0 ? dmgParts.join(' + ') : `${a.final_damage}`
         const ammo = a.weapons?.find(w => w.ammo_used)?.ammo_used
