@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'bun:test'
-import { storageStationIds } from './StorageView'
+import { storageStationOptions } from './storageLocations'
 
 /*
  * gh#2070 — the remote storage picker went empty in the play UI.
@@ -11,17 +11,20 @@ import { storageStationIds } from './StorageView'
  * the server already sends, so hint wording cannot break it again.
  */
 
-describe('storageStationIds', () => {
-  it('reads the station ids from locations, whatever the hint says', () => {
+describe('storageStationOptions', () => {
+  it('reads station options from locations, whatever the hint says', () => {
     const view = {
       hint: '120 items in storage at ironhearth_station, haven_depot\n\nDock, or pass station_id, to read one station’s contents.',
       locations: [{ base_id: 'ironhearth_station' }, { base_id: 'haven_depot' }],
     }
-    expect(storageStationIds(view as never)).toEqual(['ironhearth_station', 'haven_depot'])
+    expect(storageStationOptions(view)).toEqual([
+      { id: 'ironhearth_station', label: 'Ironhearth Station' },
+      { id: 'haven_depot', label: 'Haven Depot' },
+    ])
   })
 
   it('returns no stations when the player stores nothing', () => {
-    expect(storageStationIds({ hint: 'No items in storage at any station.', locations: [] } as never)).toEqual([])
-    expect(storageStationIds(undefined)).toEqual([])
+    expect(storageStationOptions({ locations: [] })).toEqual([])
+    expect(storageStationOptions(undefined)).toEqual([])
   })
 })
