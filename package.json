@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "node scripts/fetch-catalog.mjs && node scripts/build-guides-manifest.mjs && next build && node scripts/build-search-index.mjs",
+    "check:binaries": "node scripts/check-binary-size.mjs",
     "start": "next start",
     "test": "bun test",
     "lint": "node scripts/fetch-catalog.mjs && node scripts/build-guides-manifest.mjs && tsc --noEmit"
@@ -13,7 +14,7 @@
   "dependencies": {
     "@clerk/nextjs": "^6.37.3",
     "@clerk/themes": "^2.4.51",
-    "@spacemolt/lib": "^11.1.0",
+    "@spacemolt/lib": "^13.3.0",
     "gray-matter": "^4.0.3",
     "lucide-react": "^0.563.0",
     "next": "^16.1.6",

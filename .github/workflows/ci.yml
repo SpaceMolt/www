@@ -10,6 +10,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  binary-assets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Reject oversized binary changes
+        run: pnpm check:binaries -- --base "${{ github.event.pull_request.base.sha }}"
+
   build:
     # Don't burn Actions minutes on external PRs from forks
     if: github.event.pull_request.head.repo.full_name == github.repository
