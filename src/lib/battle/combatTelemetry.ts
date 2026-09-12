@@ -16,6 +16,16 @@ const SECONDARY_KEYS: Record<string, string> = {
   ammo_splash: 'secondaryAmmoSplash',
 }
 
+// The gameserver counts a siphon as damage (db.go: FinalDamage + ShieldDrained), so
+// every shield figure the replay shows has to include the drained amount too.
+export function shieldDrained(attack: AttackLogEntry): number {
+  return attack.shield_drained ?? 0
+}
+
+export function shieldRemoved(attack: AttackLogEntry): number {
+  return attack.shield_damage + shieldDrained(attack)
+}
+
 export function secondaryAttackKind(attack: AttackLogEntry): string | undefined {
   return attack.secondary_kind || (attack.splash ? 'ammo_splash' : undefined)
 }
@@ -53,9 +63,9 @@ export function combatEffectBadges(attack: AttackLogEntry): CombatEffectBadge[] 
   if ((attack.aoe_radius ?? 0) > 0) add('aoe', 'areaRadius', 'special', { radius: attack.aoe_radius ?? 0 })
   if ((attack.chain_targets ?? 0) > 0) add('chain', attack.chain_targets === 1 ? 'chainsOne' : 'chainsMany', 'special', { count: attack.chain_targets ?? 0 })
   if ((attack.capacitor_drain ?? 0) > 0) add('capacitor-drain', 'capacitorDrain', 'danger', { amount: attack.capacitor_drain ?? 0 })
-  if ((attack.shield_drained ?? 0) > 0 || (attack.shield_drain_requested ?? 0) > 0) {
-    const requested = attack.shield_drain_requested ?? attack.shield_drained ?? 0
-    const actual = attack.shield_drained ?? 0
+  if (shieldDrained(attack) > 0 || (attack.shield_drain_requested ?? 0) > 0) {
+    const requested = attack.shield_drain_requested ?? shieldDrained(attack)
+    const actual = shieldDrained(attack)
     add('shield-drain', requested === actual ? 'shieldDrained' : 'shieldDrainedRequested', 'danger', { actual, requested })
   }
   if ((attack.shield_transferred ?? 0) > 0 || (attack.shield_transfer_pct ?? 0) > 0) {

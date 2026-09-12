@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'bun:test'
 import { buildTimeline } from './timeline'
 import { buildAttackVisualPlan, sampleShips } from './render'
+import { shieldRemoved } from './combatTelemetry'
 import type { AttackLogEntry, BattleLogEntry, ParticipantSnapshot } from './types'
 
 function snap(over: Partial<ParticipantSnapshot>): ParticipantSnapshot {
@@ -247,5 +248,41 @@ describe('frame outcome sampling', () => {
 
     sampleShips(timeline, 0.9, 0, true)
     expect(captureLookups).toBe(tick.captures.length)
+  })
+})
+
+describe('shield siphon accounting (dc#998932)', () => {
+  // Real prod row: battle cde2bbf54f083db193f7dc4b9dc3115b, tick 1851285,
+  // Yor Graves -> Zipp. 40 shield - 21 damage - 19 drained + 2 regen = 2.
+  const siphon: AttackLogEntry = attack({
+    attacker_id: 'yor', target_id: 'zipp', damage_type: 'energy',
+    raw_damage: 21, landed_damage: 21, final_damage: 21,
+    shield_damage: 21, shield_drained: 19, hull_damage: 0,
+  })
+
+  it('counts the drained shield in the log line, the floater, the live bar, and the tick total', () => {
+    const tickEntry = entry([
+      snap({ player_id: 'yor', username: 'Yor Graves', side_id: 1 }),
+      snap({ player_id: 'zipp', username: 'Zipp', side_id: 2, shield: 40, max_shield: 40 }),
+    ])
+    tickEntry.tick = 1851285
+    tickEntry.attacks = [siphon]
+    tickEntry.regen = [{
+      player_id: 'zipp', shield_regen: 2, armor_repair: 0, remote_repair: 0, passive_repair: 0,
+      shield_before: 40, shield_after: 2, hull_before: 100, hull_after: 100,
+    }]
+    const timeline = buildTimeline([tickEntry], null)
+
+    expect(timeline.events.find(event => event.kind === 'attack')?.text)
+      .toBe('Yor Graves hit Zipp for 21 shield + 19 drained energy')
+    // The floating damage number prints exactly this.
+    expect(shieldRemoved(siphon)).toBe(40)
+    expect(sampleShips(timeline, 0.99, 0, true).get('zipp')?.shield).toBe(2)
+    expect(timeline.tickDamage[0]?.total).toBe(40)
+  })
+
+  it('leaves an attack with no shield_drained field unchanged', () => {
+    const plain = attack({ shield_damage: 21, hull_damage: 0, final_damage: 21 })
+    expect(shieldRemoved(plain)).toBe(21)
   })
 })
