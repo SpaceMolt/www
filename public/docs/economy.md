@@ -60,7 +60,7 @@ The `get_tax_estimate` response is a complete self-audit:
 - `assessed_property_by_ship` shows each owned ship's contribution to your assessed value; `last_property_assessed_at` stamps the end of every weekly property cycle, even when nothing was owed.
 - Where an empire publishes a progressive schedule, a `brackets` array shows the marginal rate, your income or value within it, and the tax each bracket produces.
 - Current sales-tax rates for every empire, plus your `tax_prepaid` balance.
-- Current outstanding tax debt and the full empire bounty needed for remote payment.
+- `outstanding_bounties` shows each empire's full settlement amount, including missed taxes and other crimes. It does not separate unpaid tax from other debt.
 - `inactivity_exempt` shows current eligibility. Further activity before collection can change it.
 - `latest_statement` contains the latest saved assessment. Its historical amounts remain separate from the current estimate and current debt.
 
