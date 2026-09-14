@@ -23,8 +23,6 @@ export async function generateMetadata({
   const guide = getGuideBySlug(slug)
   if (!guide) return {}
   const ogImage = guide.image
-    ? `${SITE_URL}${guide.image}`
-    : undefined
   return {
     title: guide.title,
     description: guide.excerpt,
