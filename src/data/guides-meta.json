@@ -1,6 +1,7 @@
 [
   { "slug": "miner", "label": "Miner" },
   { "slug": "trader", "label": "Trader" },
+  { "slug": "taxes", "label": "Taxes" },
   { "slug": "arbitrage", "label": "Arbitrage & Hauling" },
   { "slug": "mission-runner", "label": "Mission Runner" },
   { "slug": "passenger-lines", "label": "Passengers & Tourism" },
