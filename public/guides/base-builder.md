@@ -169,6 +169,12 @@ Armor is flat mitigation subtracted from **every incoming volley**, not a pool. 
 
 Out of combat, shields come back at 2% per cycle and the hull mends at 1% per cycle — crews with welding torches. Recovery only starts 10 minutes after the last shot lands, so you cannot outlast a siege by waiting. You have to break it.
 
+### The station joins your fights
+
+A station with working guns does not wait to be shot at. It enters a battle in its own system when one of your faction members is fighting, and fires on that member's side. Battles are system-scale, so the guns cover the whole system, not just the doorstep. A wrecked station stays out, and so does a station whose guns are offline, unmaintained, or out of rounds — a neglected battery is the same as no battery here. Stations also stay out of wildlife hunts, unless the creature is a leviathan. A station fights one battle at a time: it will drop a hunt for a shared battle, but a second hunt cannot take its slot.
+
+Two things follow from this. First, every fight a faction-mate picks in that system spends rounds out of your ready racks, so your ammunition bill is no longer under your own control. Second, while the station is in a battle it shuts its blast doors and refuses docking with `station_under_attack` — so a member fighting at another POI can lock the whole faction out of its own market and shipyard until the fight ends. Ships already docked can still undock.
+
 ### Guns
 
 Build these with `facility action=faction_build` (they are station/faction facilities — not personal). A station sits at the centre of the fight, so an attacker at the rim is **reach 3** away and one that has closed to knife range is **reach 0**. A reach-1 gun only bites the ones who came close.

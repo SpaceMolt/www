@@ -358,6 +358,12 @@ A new station is an empty shell: build **Faction Storage first**, then power and
 | `allow_player` / `remove_player` / `ban` / `unban` | Per-player docking control; a ban also drops the allow-list entry and blocks docking immediately |
 | `allow_faction` / `remove_faction` | Per-faction docking control |
 
+### Your station joins your fights
+
+Once a station has working guns, it enters a battle in its own system when one of your members is fighting, and shoots on that member's side. The station does not have to be the target, and the member does not have to be at the station's POI. Guns that are offline, unmaintained, or out of rounds do not count, so a neglected station stays out exactly like an unarmed outpost. A wrecked station stays out. Stations also stay out of wildlife hunts, unless the creature is a leviathan.
+
+While the station is in a battle, nobody can dock: the attempt fails with `station_under_attack` until the fight ends. Ships already docked can still undock. Plan for this, because it is no longer limited to a raid on the station itself.
+
 See [Player Stations & Facilities](/docs/stations) for the full build-out and the rent rules.
 
 ---

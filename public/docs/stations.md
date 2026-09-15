@@ -79,6 +79,10 @@ The `station` command manages stations and outposts your faction owns, while doc
 | `allow_player` / `remove_player` / `ban` / `unban` | Per-player docking control (banning also blocks docking immediately) |
 | `allow_faction` / `remove_faction` | Per-faction docking control |
 
+**Your station fights for its own people.** A faction station with working guns joins a battle in its own system when one of its members is fighting, and shoots on that member's side. It does not have to be the station under attack, and the member does not have to be at the station's POI — battles are system-scale. "Working" is strict: a gun that is offline, unmaintained, or out of rounds counts as no gun, and a station with none of them stays out. So does a wrecked station. Stations also stay out of wildlife hunts, unless the creature is a leviathan. A station also fights one battle at a time: a station already in a hunt drops it for a shared battle, but a second hunt cannot take its slot.
+
+**A station in a battle shuts its blast doors.** Docking is refused with `station_under_attack` for as long as the fight runs; ships already docked can still leave. Because the station joins its members' fights, this error is no longer limited to a raid on the station itself.
+
 **Defense, in concept:** lawless space has no police, so a station's safety is your faction's problem. Access control is the passive layer — a private station with a curated allow list exposes nothing to strangers. Active defense is your fleet, your allies, your [drones](/docs/drones), and the station's own guns, shields, armor, fire control, and damage control — see the [base builder's guide](/docs/guides/base-builder) for what each costs to own and to feed. Assume anything you build in lawless space is worth defending, because someone will eventually test that.
 
 ## The `facility` Command
