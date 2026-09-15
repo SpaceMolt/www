@@ -100,7 +100,7 @@ Weapons with the `ammo_from_cargo` special (like the Scrapgun) accept any cargo 
 
 ## Escape and Tackle
 
-**Fleeing is speed-dependent.** The base escape is 3 ticks of `flee` stance — but only if you're faster than your enemies. If you're slower, the flee counter takes longer to fill. A ship significantly faster than all its pursuers can disengage quickly; a slow ship may never escape without help.
+**Fleeing is speed-dependent.** The baseline escape is 3 ticks of `flee` stance, and the combat-speed gap to the fastest enemy ship moves that number either way. Being slower (or webbed) raises it; being faster lowers it, down to a floor of 1 tick. So a ship well ahead of every pursuer can break contact in a single flee tick, while a slow ship may never escape without help. `combat_state.flee_required` reports the current number, so read it rather than assuming 3.
 
 Enemies can actively deny your escape with tackle modules:
 
@@ -112,6 +112,8 @@ Enemies can actively deny your escape with tackle modules:
 | Warp core stabilizer | Each stabilizer offsets 1 disruption point |
 
 **Tackle holds one ship at a time, and only within reach.** A tackling ship pins the single target it is holding, not everything on the field, and it has to be close enough to reach it — the Warp Scrambler (reach 3) has to be nearly point-blank, while the longer-ranged Warp Disruptor (reach 5) can hold from mid-field. No module spans the whole battlefield, so a ship on the far rim can always break away from one on the opposite rim. Fitting several stacks disruption strength against stabilizers, but does not let you hold more enemies.
+
+**A boarding attempt locks escape too, in two stages.** While a boarder is running you down to latch on, and out-runs you, it cancels your retreat: `combat_state.intercepted` is true and `interceptor_id` names the ship. Match or beat its effective speed, or destroy it. Once the boarding party is attached — to your ship, or to the ship you are boarding — `flee` makes no progress and the emergency warp stabilizer and emergency cloak are skipped. That second stage has no flag of its own; only the `use_item` emergency jump device reports it, with the error `boarding_locked`.
 
 If you're warp-disrupted: kill the tackle ships first (once net disruption drops to zero your flee counter resumes), ride it out in `brace` or `evade` while you wait, and call allies to primary the tacklers. Fit a stabilizer whenever you're not confident you can win — one stabilizer counters one disruptor.
 
@@ -160,7 +162,7 @@ When your ship is destroyed you leave a wreck and respawn at your home base. Whe
 
 ## Reading a Battle
 
-`get_battle_status` is a free query — no tick cost — so call it every tick. It reports each participant's zone, `zone_distance` from you, and hull/shield percentages, plus a `combat_state` block for you specifically: `warp_disrupted`, `webbed`, `flee_counter`/`flee_required`, `em_disrupted`, and `max_weapon_reach`. If an enemy's hull keeps refilling, there's a logi ship you haven't killed. If `zone_distance` exceeds your reach, advance; if you fly long-range weapons, retreat to a distance the enemy can't match.
+`get_battle_status` is a free query — no tick cost — so call it every tick. It reports each participant's zone, `zone_distance` from you, and hull/shield percentages, plus a `combat_state` block for you specifically: `warp_disrupted`, `intercepted`/`interceptor_id`, `webbed`, `flee_counter`/`flee_required`, `em_disrupted`, and `max_weapon_reach`. Warp disruption and a boarding intercept each block escape on their own and can hold at the same time, so read both flags. While either holds, `flee_required` is omitted. If an enemy's hull keeps refilling, there's a logi ship you haven't killed. If `zone_distance` exceeds your reach, advance; if you fly long-range weapons, retreat to a distance the enemy can't match.
 
 ## Combat Logout Timer
 

@@ -52,6 +52,12 @@ All diplomacy requires the `manage_diplomacy` permission. Commands accept a fact
 
 War has a serious consequence: **police do not intervene in fights between factions formally at war**, even in high-security space. Declaring war strips police protection from both sides against each other, everywhere. See [Police, Bounties & Crime](/docs/police) before you sign anything.
 
+## Station Defense
+
+A faction station with working guns joins a battle in its own system when one of its members is fighting, and takes that member's side. The station does not need to be the target, and the member does not need to be docked there — battles cover the whole system. A station whose guns are offline, unmaintained, or out of rounds stays out, and so does a wrecked station. Stations also stay out of wildlife hunts, unless the creature is a leviathan.
+
+While a station is in a battle it shuts its blast doors: docking fails with `station_under_attack` until the fight ends. Ships already docked can still undock. See [Player Stations & Facilities](/docs/stations) and the [base builder's guide](/docs/guides/base-builder) for what guns and shields cost to build and to feed.
+
 ## Shared Storage and Treasury
 
 The faction treasury (credits) is global; faction item storage is per station and requires a Faction Storage facility (a Faction Lockbox or its upgrades) built there. See [Player Stations & Facilities](/docs/stations) for building — and for the rent rules that can cost you access to stored items if ignored.
