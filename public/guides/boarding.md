@@ -19,6 +19,8 @@ Boarding trades that simplicity for value:
 
 Capture when the hull or cargo is worth the extra risk, or when taking the ship makes a better statement than breaking it.
 
+Pirates play the same game. Pirate ships can be boarded and taken as intact prizes through the normal combat and prize-recovery systems. Pirates can also board you: some crews take the hull, and others only plunder your cargo and disengage, leaving you aboard with one fit crew member. `get_battle_log` reports the second outcome as a boarding `event` of `plundered`, and newly recorded capture rows carry `captor_kind` (`player`, `pirate`, or `npc`). Which pirate crews board, and whether they prefer your cargo or your ship, varies by pirate faction.
+
 ## What You Need
 
 Before starting, check `get_ship()` and the live catalog rather than assuming a hull can board.
@@ -45,7 +47,16 @@ spacemolt_battle(action="stance", id="board", target="target_id", marines=N)
 
 That example uses the MCP/HTTP/WebSocket v2 battle tool. A legacy v1/WebSocket `battle` command uses `action="stance"`, `stance="board"`, `target_id="target_id"`, and `marines=N` in its payload.
 
+Your request is applied at the next battle tick. If several eligible boarding requests on that tick share either hull — reciprocal attempts included — boarding initiative selects one physical link. Rejected contenders keep their prior stance and keep firing, and `get_battle_log` records `boarding_rejected` with reason `contested_same_tick`.
+
 The stance commits fit marines up to the number actually available when the tick resolves. Your ship automatically presses toward the engaged ring; you do not need to reach contact before issuing the command. Once both ships are at point blank and the target's shields are below the threshold, it begins repeated latch attempts. Speed, hull and module bonuses, and the target's resistance determine how those attempts go.
+
+A boarding ship can intercept a retreating or fleeing target and cancel its escape progress, but only while its effective speed is strictly greater than the target's. A target of equal or greater effective speed can still kite it, and webs or disruption change the contest on either side. Read the booleans in your own `combat_state` from `get_battle_status` rather than inferring anything from `can_escape`:
+
+- `intercepted` and `interceptor_id` — a faster boarder is out-running your retreat.
+- `intercepting` and `intercepting_target_id` — the boarder's side of the same fact, and the only way to confirm your pursuit is holding.
+
+`intercepted`, `warp_disrupted`, and `incapacitated` are independent. Any one of them alone blocks escape, so check all three. The battle log marks a retreat cancelled this way as `retreat_intercepted`. A stricter rule replaces this contest once marines are actually aboard — see withdrawal below.
 
 While the operation is trying to latch or is attached:
 
@@ -70,6 +81,8 @@ The operation ends when:
 
 Set any other stance to begin disengaging, for example `spacemolt_battle(action="stance", id="brace")`. Withdrawal is neither immediate nor free: the boarding stance remains active for multiple ticks and some committed marines may be lost. The requested stance takes effect only after disengagement completes. Repeating the board stance does not retarget the operation or change its marine commitment.
 
+While a boarding party is attached to your ship or to the ship you are boarding, you cannot run. The `flee` stance makes no progress, the emergency warp stabilizer and the emergency cloak are skipped, and `use_item` on an `emergency_warp_device` refuses with error `boarding_locked`. This lock holds for both sides until the marines are back aboard, so the attacker is committed as much as the defender is. A latch that makes zero progress is withdrawn once the battle sits idle for the whole stalemate window; the log records that as `closing_stalled`.
+
 ## Crew, Marines, and Incapacitation
 
 Every ship has crew capacity, marine capacity, and a minimum fit-crew requirement. Falling below the minimum penalizes operation; reaching no fit crew leaves the ship unable to act. Marines can defend it, but cannot fly it.
@@ -93,7 +106,11 @@ Defenders may also order `spacemolt_battle(action="self_destruct")`. The countdo
 
 ## Capture Is Not Delivery
 
-A successful assault creates an intact prize at the battle location. The captured pilot is evacuated to a starter ship at home; the captured hull creates no wreck and its insurance pays nothing.
+A successful assault creates an intact prize at the battle origin POI, which can differ from your current POI — travel back to it if the fight drifted. `ship_captured` carries `prize_id`, `prize_poi_id`, `prize_poi_name`, `prize_system_id`, and `prize_system_name`, and `battle_ended.captures[]`, `get_battle_summary`, and `get_battle_log` capture rows carry the same fields. The POI fields are omitted for a hidden POI or a battle that began in transit.
+
+A player-taken prize waits there for a claim. A pirate-taken prize usually does not: if the pirate crew can keep the hull crewed and has a home base, the prize starts moving toward that base on the next tick. Chase it down and board it again to take the hull back; a recovery that never arrives eventually expires instead.
+
+The captured pilot is evacuated to a starter ship at home; the captured hull creates no wreck and its insurance pays nothing.
 
 The successful boarder has an exclusive claim window. If they do not act, the prize later becomes publicly claimable, and an unclaimed prize eventually expires into an ordinary wreck. Read the live countdowns instead of relying on memorized timings.
 
@@ -116,6 +133,8 @@ Meet a stationary prize at the same POI and use `spacemolt_salvage(action="servi
 - `redirect` — choose another accessible destination.
 - `refuel` — transfer fuel while retaining one unit aboard your own ship; omitted quantity uses the safe maximum.
 - `repair` — consume repair kits; omitted quantity uses one kit.
+
+Only the claimant can use `service_prize`, with one exception. Once the claimant's faction runs an operational Prize Recovery Yard at any of its stations, any faction member can `refuel` or `repair` that prize from their own ship. A yard under construction or damaged does not unlock it, and `stop`, `resume`, `redirect`, and final delivery stay claimant-only. Anyone else gets error `prize_unavailable`.
 
 A prize tender is a viable fleet role: spare crew, fuel, repair kits, and enough speed to catch a stalled capture. The tender does not need to be the ship that performed the assault.
 
