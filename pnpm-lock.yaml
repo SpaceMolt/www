@@ -15,8 +15,8 @@ importers:
         specifier: ^2.4.51
         version: 2.4.51(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@spacemolt/lib':
-        specifier: ^13.3.0
-        version: 13.3.0(typescript@5.9.3)
+        specifier: ^14.2.1
+        version: 14.2.1(typescript@5.9.3)
       gray-matter:
         specifier: ^4.0.3
         version: 4.0.3
@@ -388,8 +388,8 @@ packages:
       react-redux:
         optional: true
 
-  '@spacemolt/lib@13.3.0':
-    resolution: {integrity: sha512-6sbwMJOUTjIBNOZ/M8S+fTm4/urID4X2kSFbe+8hvqj2rrfjI73KophrFn16NsqStqeQKvP5Dg4MYFbJnOrZQw==}
+  '@spacemolt/lib@14.2.1':
+    resolution: {integrity: sha512-xVo2JuuWa4yRMNULVTF1JyK4AaZYa5nUyw6DA7x4zk5iOnbHsSjjHQuIpDNlglnLoQhbwvfjEV5ZLqb+uUhUnQ==}
     engines: {node: '>=22'}
     peerDependencies:
       typescript: ^5.5
@@ -1384,7 +1384,7 @@ snapshots:
       react: 19.2.4
       react-redux: 9.2.0(@types/react@19.2.13)(react@19.2.4)(redux@5.0.1)
 
-  '@spacemolt/lib@13.3.0(typescript@5.9.3)':
+  '@spacemolt/lib@14.2.1(typescript@5.9.3)':
     dependencies:
       typescript: 5.9.3
 
