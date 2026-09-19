@@ -15,13 +15,15 @@ export default function AttackTelemetry({ attack, compact = false }: Props) {
   const { t } = useTranslation()
   const effects = combatEffectBadges(attack)
   const components = attack.defense_components ?? []
+  const landed = attack.landed_damage ?? attack.pre_hit_damage ?? 0
+  const landedLabel = attack.landed_damage !== undefined ? t('battles.telemetry.landed') : t('battles.telemetry.preHit')
 
   return (
     <div className={`${styles.attackTelemetry} ${compact ? styles.attackTelemetryCompact : ''}`}>
       <div className={styles.telemetryMetrics}>
         <span title={t('battles.telemetry.chanceTitle')}>
           <Crosshair size={11} aria-hidden /> {Math.round(attack.hit_chance * 100)}%
-          <small> {t('battles.telemetry.roll')} {Math.round(attack.hit_roll * 100)}</small>
+          {attack.hit_roll !== undefined && <small> {t('battles.telemetry.roll')} {Math.round(attack.hit_roll * 100)}</small>}
           <b className={attack.hit_success ? styles.telemetryHit : styles.telemetryMiss}>
             {t(attack.hit_success ? 'battles.hit' : 'battles.miss')}
           </b>
@@ -30,12 +32,12 @@ export default function AttackTelemetry({ attack, compact = false }: Props) {
           <>
             <span title={t('battles.telemetry.damageFlowTitle')}>
               <Activity size={11} aria-hidden />
-              {attack.pre_hit_damage > 0 ? (
+              {landed > 0 ? (
                 <>
-                  {attack.raw_damage > 0 && attack.raw_damage !== attack.pre_hit_damage ? (
+                  {attack.raw_damage > 0 && attack.raw_damage !== landed ? (
                     <>{attack.raw_damage}<small>{t('battles.telemetry.raw')}</small><ArrowRight size={10} aria-hidden /></>
                   ) : null}
-                  {attack.pre_hit_damage}<small>{t('battles.telemetry.preHit')}</small>
+                  {landed}<small>{landedLabel}</small>
                   <ArrowRight size={10} aria-hidden />
                   <b>{attack.final_damage} {t('battles.telemetry.final')}</b>
                 </>
@@ -65,11 +67,19 @@ export default function AttackTelemetry({ attack, compact = false }: Props) {
       {!compact && attack.weapons?.length > 0 && (
         <div className={styles.telemetryWeapons}>
           {attack.weapons.map(weapon => (
-            <div key={weapon.instance_id || `${weapon.name}-${weapon.damage_type}`} className={styles.telemetryWeaponRow}>
+            <div
+              key={weapon.instance_id || `${weapon.name}-${weapon.damage_type}`}
+              className={`${styles.telemetryWeaponRow} ${weapon.hit_roll !== undefined && !weapon.hit_success ? styles.telemetryWeaponMissed : ''}`}
+            >
               <div className={styles.telemetryWeaponMain}>
                 <span>
                   <i style={{ background: damageTypeColor(weapon.damage_type) }} />
                   {weapon.name}
+                  {weapon.hit_roll !== undefined && (
+                    <b className={weapon.hit_success ? styles.telemetryHit : styles.telemetryMiss}>
+                      {t(weapon.hit_success ? 'battles.hit' : 'battles.miss')}
+                    </b>
+                  )}
                   {weapon.crit_fired && <b className={styles.criticalTag}>{t('battles.telemetry.critical')}</b>}
                 </span>
                 <span>
@@ -78,8 +88,9 @@ export default function AttackTelemetry({ attack, compact = false }: Props) {
                   {weapon.ammo_used ? ` · ${weapon.ammo_used}` : ''}
                 </span>
               </div>
-              {(weapon.after_disruption !== weapon.base_damage || weapon.type_bonus_pct !== 0 || weapon.crit_chance > 0 || (weapon.ammo_mod !== undefined && weapon.ammo_mod !== 1)) && (
+              {(weapon.hit_roll !== undefined || weapon.after_disruption !== weapon.base_damage || weapon.type_bonus_pct !== 0 || weapon.crit_chance > 0 || (weapon.ammo_mod !== undefined && weapon.ammo_mod !== 1)) && (
                 <div className={styles.telemetryWeaponMeta}>
+                  {weapon.hit_roll !== undefined && weapon.hit_chance !== undefined && <span>{t('battles.telemetry.weaponRoll', { chance: Math.round(weapon.hit_chance * 100), roll: Math.round(weapon.hit_roll * 100) })}</span>}
                   {weapon.after_disruption !== weapon.base_damage && <span>{t('battles.telemetry.weaponDisruption')} {weapon.base_damage} → {weapon.after_disruption}</span>}
                   {weapon.type_bonus_pct !== 0 && <span>{t('battles.telemetry.typeBonus')} {signedPercent(weapon.type_bonus_pct)}</span>}
                   {weapon.crit_chance > 0 && <span>{t('battles.telemetry.criticalRoll', { chance: Math.round(weapon.crit_chance * 100), roll: Math.round(weapon.crit_roll * 100) })}</span>}

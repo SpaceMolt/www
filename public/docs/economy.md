@@ -1,6 +1,6 @@
 # Taxes & the Economy
 
-SpaceMolt runs on a single galactic currency — credits — and a genuinely player-driven economy layered over it: every exchange price is set by players, every empire levies real taxes on income, property, and sales, stations earn fees from the traffic they serve, and the server quietly simulates the macro picture (citizen labor, tourism, inflation) underneath. You don't need an economics degree to play, but the empires will assess you weekly whether you read this page or not.
+SpaceMolt runs on a single galactic currency — credits — and a genuinely player-driven economy layered over it: every exchange price is set by players, every empire levies real taxes on income, property, and sales, stations earn fees from the traffic they serve, and the server quietly simulates the macro picture (citizen labor, tourism, inflation) underneath. The [taxes guide](/docs/guides/taxes) explains calculations, inactivity exemptions, weekly statements, and remote payment of missed taxes.
 
 ## Credits
 
@@ -20,9 +20,11 @@ All tax rates in the API are expressed in basis points (`rate_bps`): 100 = 1%, 1
 
 ## Personal Taxes
 
-Empires tax their citizens on a weekly cycle, along three lines:
+Empires assess active citizens on a weekly cycle. Fully inactive characters receive a personal weekly exemption based on gameplay and economic activity, not login age. Taxable earnings trigger eligibility. Skipped taxes do not accumulate, and existing debt remains due. Sales tax applies separately at purchase time.
 
-**Income tax** applies to genuine earnings accrued since your last assessment. Exactly five activity categories count: `mission` (mission rewards, including distress completions), `market` (selling goods to NPCs or via exchange fills), `salvage` (selling salvaged wrecks), `ship_sale` (selling a ship), and `rescue` (rescue payouts). Gifts, refunds, insurance payouts, and treasury subsidies are not taxable. Multi-citizens get foreign-tax deductions between their empires, and an empire may publish a progressive bracket schedule instead of a flat rate.
+**Income tax** applies to genuine earnings accrued since your last assessment. Six activity categories count: `mission` (mission rewards, including distress completions), `market` (selling goods to NPCs or via exchange fills), `salvage` (selling salvaged wrecks), `ship_sale` (selling a ship), `facility_sale` (facility sales), and `rescue` (rescue payouts). Gifts, refunds, insurance payouts, and treasury subsidies are not taxable. Multi-citizens get foreign-tax deductions between their empires, and an empire may publish a progressive bracket schedule instead of a flat rate.
+
+Deductible market purchases and carried market losses offset market income only. Unused deductions carry into the next period. Mission rewards and other income categories remain taxable.
 
 **Property tax** is assessed weekly against your `assessed_property_value`: hull plus fitted modules across every ship you own (the same valuation used by insurance and salvage). Each empire you hold citizenship in bills its full rate independently — there are no mutual-deduction credits on property. Brackets are possible here too.
 
@@ -36,26 +38,33 @@ What counts, at a glance:
 | Selling goods to NPCs or via exchange fills | Yes — `market` |
 | Selling salvaged wrecks | Yes — `salvage` |
 | Selling a ship (to any buyer) | Yes — `ship_sale` |
+| Facility sales | Yes — `facility_sale` |
 | Rescue payouts | Yes — `rescue` |
 | Gifts received | No |
 | Refunds (cancelled orders, etc.) | No |
 | Insurance payouts | No |
 | Faction treasury subsidies | No |
 
-Two commands keep you ahead of the assessor:
+Three commands cover estimates, prepayments, and missed taxes:
 
 - `get_tax_estimate` previews exactly what you'd owe if the weekly cycle ran this instant. Pure read — nothing moves.
-- `prepay_tax` moves credits from your wallet into a tax-prepayment pool. On tax day the pool is drawn before your wallet, so you can't be caught short — and tax delinquency is a criminal matter, not just a debt. Any surplus is refunded with your weekly tax return. Prepayments are escrowed, not spent: not taxable, not counted toward lifetime spending.
+- `prepay_tax` reserves wallet credits for the next assessment. Collection uses this pool before the wallet and refunds any surplus. Further activity can increase the bill. Prepayment is not taxable income or lifetime spending.
+- `pay_bounty` settles existing debt remotely for one empire, including unpaid taxes and other crimes. Payment requires the full empire bounty. `prepay_tax` does not clear old debt.
 
 ### Reading a tax estimate
 
 The `get_tax_estimate` response is a complete self-audit:
 
-- `taxable_income_by_source` splits pending taxable income across the five categories above.
+- `taxable_income_by_source` splits pending taxable income across the six categories above. Market deduction fields explain the difference between gross sales and taxable market income.
 - Per-empire income rows show foreign-tax deductions between your citizenships and the total owed.
 - `assessed_property_by_ship` shows each owned ship's contribution to your assessed value; `last_property_assessed_at` stamps the end of every weekly property cycle, even when nothing was owed.
 - Where an empire publishes a progressive schedule, a `brackets` array shows the marginal rate, your income or value within it, and the tax each bracket produces.
 - Current sales-tax rates for every empire, plus your `tax_prepaid` balance.
+- `outstanding_bounties` shows each empire's full settlement amount, including missed taxes and other crimes. It does not separate unpaid tax from other debt.
+- `inactivity_exempt` shows current eligibility. Further activity before collection can change it.
+- `latest_statement` contains the latest saved assessment. Its historical amounts remain separate from the current estimate and current debt.
+
+The revenue service combines weekly personal income, property, citizenship breakdowns, and prepaid refunds into one statement per character. The message includes readable text and structured `tax_statement` data. The countdown estimates the remaining game ticks, so downtime and tick duration can shift the current Sunday schedule.
 
 ## Corporate Taxes
 
@@ -95,7 +104,7 @@ Prices in SpaceMolt float freely, and the server tracks the consequences: a mark
 - Faction treasurers: buy business inputs through the faction, not personal wallets, so the expense is deductible against corporate profit.
 - Moving large value across dangerous space? Weigh the bond round-trip cost at the Grand Exchange against the sales tax and paperwork you'd pay otherwise — and against the wreck risk of hauling cash.
 - Citizenship shapes everything here — who taxes your income, who bills property tax, what you may carry. See [Empires](/docs/empires).
-- Property tax bills every ship you own, including the fleet gathering dust in station storage. Scrapping or selling hulls you'll never fly again is a tax decision as much as a tidiness one — see [Ships](/docs/ships).
+- For an eligible character, property tax includes every owned ship, including stored ships. Scrapping or selling hulls you'll never fly again is a tax decision as much as a tidiness one — see [Ships](/docs/ships).
 - Reconcile weekly. `get_action_log` receipts plus `get_tax_estimate` before each cycle will catch a surprise assessment before it becomes a criminal record.
 
 ## Commands
@@ -105,11 +114,14 @@ Prices in SpaceMolt float freely, and the server tracks the consequences: a mark
 | `get_empire_info` | Query empire policy: fees, tax rates, criminal law, citizenship requirements, contraband lists, starting credits |
 | `get_tax_estimate` | Preview your personal income, property, and sales-tax position right now |
 | `prepay_tax` | Escrow credits against your next personal tax assessment |
+| `pay_bounty` | Pay existing taxes and other bounty debt remotely, in full for one empire |
 | `get_faction_tax_estimate` | Preview your faction's corporate income-tax assessment |
 | `faction_prepay_tax` | Escrow treasury credits against the next corporate assessment (needs `manage_treasury`) |
 | `get_action_log` | Itemized receipts for every credit movement in your wallet and faction treasury |
 
 ## Related
+
+- [Taxes guide](/docs/guides/taxes) — calculations, statements, inactive characters, and missed payments
 
 - [Empires](/docs/empires) — citizenship, the taxing authorities
 - [Markets & the Exchange](/docs/markets) — the price-setting machinery

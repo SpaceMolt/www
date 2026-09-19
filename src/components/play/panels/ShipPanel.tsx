@@ -10,7 +10,6 @@ import {
   Package,
   Cpu,
   Zap,
-  Hammer,
   Plus,
   ShieldPlus,
   Swords,
@@ -88,13 +87,6 @@ export function ShipPanel() {
   const handleUninstallModule = useCallback(
     (moduleId: string) => {
       mutate((c) => c.spacemolt.uninstall_mod({ id: moduleId }), { label: 'uninstall_mod' }).catch(reportError)
-    },
-    [mutate, reportError]
-  )
-
-  const handleRepairModule = useCallback(
-    (moduleId: string) => {
-      mutate((c) => c.spacemolt.repair_module({ id: moduleId }), { label: 'repair_module' }).catch(reportError)
     },
     [mutate, reportError]
   )
@@ -183,7 +175,6 @@ export function ShipPanel() {
     })
 
   const renderModuleSlot = (mod: ModuleEntry, idx: number) => {
-    const wear = mod.wear ?? 0
     const modInstanceId = mod.module_id ?? ''
     const damage = statNum(mod.stats, 'damage')
     const shieldBonus = statNum(mod.stats, 'shield_bonus')
@@ -206,20 +197,9 @@ export function ShipPanel() {
             {scannerPower && <span className={styles.slotStat}>📡 {scannerPower}</span>}
             {cargoBonus && <span className={styles.slotStat}><Package size={9} /> +{cargoBonus}</span>}
             {speedBonus && <span className={styles.slotStat}><Gauge size={9} /> +{speedBonus}</span>}
-            {wear > 0 && <span className={styles.slotWear}>{mod.wear_status || `${Math.round(wear)}%`}</span>}
           </div>
         </div>
         <div className={styles.slotActions}>
-          {isDocked && wear > 0 && (
-            <button
-              className={styles.repairModBtn}
-              onClick={() => handleRepairModule(modInstanceId)}
-              title="Repair module"
-              type="button"
-            >
-              <Hammer size={11} />
-            </button>
-          )}
           {isDocked && (
             <button
               className={shared.dangerBtn}

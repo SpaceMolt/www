@@ -22,7 +22,6 @@ const ACTION_LABELS: Record<string, string> = {
   repair: 'Repairing',
   install_mod: 'Installing module',
   uninstall_mod: 'Uninstalling module',
-  repair_module: 'Repairing module',
   jettison: 'Jettisoning',
   use_item: 'Using item',
   self_destruct: 'Self destructing',

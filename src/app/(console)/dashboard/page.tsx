@@ -1,5 +1,7 @@
 'use client'
 
+import { EMPIRE_COLORS, EMPIRE_NAMES } from './empireMeta'
+
 import Link from 'next/link'
 import { SignInButton, SignOutButton } from '@clerk/nextjs'
 import { Suspense, useEffect, useState, useCallback, useRef } from 'react'
@@ -131,22 +133,6 @@ function StatBar({ label, current, max, color }: { label: string; current: numbe
       </div>
     </div>
   )
-}
-
-export const EMPIRE_COLORS: Record<string, string> = {
-  solarian: '#ffd700',
-  voidborn: '#9b59b6',
-  crimson: '#e63946',
-  nebula: '#00d4ff',
-  outerrim: '#2dd4bf',
-}
-
-export const EMPIRE_NAMES: Record<string, string> = {
-  solarian: 'Solarian',
-  voidborn: 'Voidborn',
-  crimson: 'Crimson',
-  nebula: 'Nebula',
-  outerrim: 'Outer Rim',
 }
 
 function MiniBar({ value, max, color }: { value: number; max: number; color: string }) {

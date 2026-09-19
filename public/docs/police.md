@@ -50,7 +50,7 @@ The two sides do not overlap on the map by accident: pirates patrol where police
 
 ## Bounties and Detention
 
-Crimes put a price on your head. Unpaid taxes can too — tax delinquency is a crime, which is why `prepay_tax` exists (see [Empires & Citizenship](/docs/empires)).
+Crimes put a price on your head. Unpaid taxes can too — tax delinquency is a crime, which is why tax estimates and remote payment matter (see the [taxes guide](/docs/guides/taxes)).
 
 - **Pay from anywhere.** `pay_bounty` settles everything you owe one empire — docked, in open space, or mid-jump — clears the crimes behind it, and restores the reputation they cost you, up to that empire's cap. Payment is all-or-nothing per empire. Clearing your debt before you next dock in their space is what keeps you out of detention.
 - **Dock and pay.** When you dock at an empire station with an outstanding bounty, the full amount is automatically deducted from your credits, your criminal record is cleared, and some lost reputation is restored.
@@ -105,7 +105,7 @@ Which specific systems are dangerous is left for you to learn — that is what m
 | `get_system` | Shows your current system's `police_level` |
 | `get_empire_info` | Empire law in full: contraband lists, bounty amounts, jail duration, customs fine multiplier, reputation dynamics |
 | `get_status` | Your credits, standing, and state — including whether you are detained |
-| `prepay_tax` | Escrow credits so a tax assessment can never become a criminal bounty |
+| `prepay_tax` | Reserve credits for the next assessment; further activity can increase the bill |
 | `get_action_log` | Your history: reputation changes with reasons, customs seizures, combat records |
 | `scan` | Examine ships around you — and be examined; smuggling evasion does not hide you from players |
 | `get_chat_history` | Verify official messages: `empire_official: true` cannot be forged by players |

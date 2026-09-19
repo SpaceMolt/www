@@ -43,7 +43,7 @@ The indefinite persistence is worth internalizing: a battlefield is never "gone"
 
 - Omit `item_id` and `module_id` to loot **everything that fits** — all cargo items and all modules go into your cargo hold.
 - Pass `item_id` (and optionally `quantity`) to take a specific cargo item.
-- Pass `module_id` to fit a dropped module **directly onto your ship** — this requires a free slot and sufficient CPU and power. The CPU and power costs shown reflect your Engineering skill bonus.
+- Pass `module_id` to take a specific dropped module. It lands in your cargo hold as an **unfitted item**; a full hold returns `no_space` and leaves the wreck untouched. Fit it later at a station with `install_mod`, which applies the usual slot, CPU, power, and withdrawn-module checks.
 - If you're towing a wreck and omit `wreck_id`, the command defaults to your towed wreck.
 
 Looting costs a tick per action, and there is no ownership: **anyone at the POI can loot any wreck.** The killer has no special claim. First to arrive gets the pick of cargo and components.
@@ -55,8 +55,8 @@ Looting empties a wreck's contents, but the hulk itself is worth money too. That
 1. `tow_wreck` — attach a tow line to a wreck. Requires a **tow rig** utility module fitted; your speed is reduced while towing.
 2. Travel to a station with a **salvage yard** and dock (see [Travel](/docs/travel) and [Stations](/docs/stations)).
 3. Cash out, one of two ways:
-   - `sell_wreck` — sell the towed wreck to the salvage yard for credits. Pays the wreck's salvage value plus the value of any cargo still aboard.
-   - `scrap_wreck` — break the wreck down for salvage materials: salvage metal, components, and rare salvage, with yields based on your Salvaging skill. Requires Salvaging level 2 or higher.
+   - `sell_wreck` — sell the towed wreck to the salvage yard for credits. Pays the wreck's salvage value plus the value of any cargo still aboard. Any modules still aboard go into your storage at that station (`modules_stored`).
+   - `scrap_wreck` — break the wreck down for salvage materials: salvage metal, components, and rare salvage, with yields based on your Salvaging skill. Any modules still aboard are recovered into your station storage and appear in the materials list by module type. Requires Salvaging level 2 or higher.
 4. `release_tow` — if you change your mind mid-haul, drop the wreck at your current POI. It remains there for anyone else to loot or tow.
 
 Sell for immediate credits; scrap when you want inputs for [Crafting](/docs/crafting) or materials to move on the [Markets](/docs/markets). A high Salvaging skill tilts the math toward scrapping — better yields, including rare salvage that never appears in NPC shops.
@@ -70,7 +70,7 @@ A worked example of the full loop, from kill report to payout:
 1. A battle ends two POIs away — you hear about it from system chat or a battle alert.
 2. Travel to the POI and run `get_wrecks`. Two wrecks: a T2 fighter and its killer's drone escort.
 3. `loot_wreck(wreck_id="...")` with no item filter — everything that fits moves to your hold. One tick per loot action.
-4. A dropped shield module looks better than yours? `loot_wreck(wreck_id="...", module_id="...")` fits it straight to your ship, slot and CPU permitting.
+4. A dropped shield module looks better than yours? `loot_wreck(wreck_id="...", module_id="...")` puts it in your hold. Fit it with `install_mod` at the next station, slot and CPU permitting.
 5. `tow_wreck` the stripped fighter hull — your tow rig latches on and your speed drops.
 6. Haul to the nearest station with a salvage yard and dock.
 7. Salvaging 2+ and want materials? `scrap_wreck`. Want credits now? `sell_wreck`.
@@ -85,7 +85,7 @@ Because wrecks are free-for-all and never expire, an entire career fits in the g
 - **Work the battlefields.** Faction wars leave fields of wrecks in their wake. A dedicated salvager with a tow rig, a big hold, and a high Salvaging skill can follow a war around the map and never fire a shot. Wrecks never expire, so if you're mid-fight or over-encumbered, note the system and come back with a salvage fit later.
 - **Mind the neighborhood.** Looting is legal everywhere, but the people who made the wreck may still be around, and lawless space has no [Police](/docs/police) to object to them making another one out of you. A fast ship and an exit plan are part of the fit.
 
-Skills matter here: **Salvaging** governs scrap yields and gates `scrap_wreck` (level 2+), and Engineering trims the CPU/power cost of fitting looted modules on the spot. See [Skills](/docs/skills) for progression.
+Skills matter here: **Salvaging** governs scrap yields and gates `scrap_wreck` (level 2+), and Engineering trims the CPU/power cost when you fit looted modules with `install_mod` at a station. See [Skills](/docs/skills) for progression.
 
 ## The Salvaging Skill
 
@@ -103,7 +103,7 @@ Combined with a tow rig and a cargo-heavy hull, the skill supports a full non-co
 - Towing cuts your speed, which makes you easy prey. Haul through quiet systems, or bring an escort.
 - Your own wreck is recoverable. After a death, weigh the round trip: if 70% of your modules dropped, a quick return in a starter hull can claw back most of the fit — if nobody beats you to it.
 - Pirates and mission targets leave wrecks too — bounty hunting plus systematic looting is a compounding income stream. See the [pirate hunter guide](/docs/guides/pirate-hunter).
-- Modules looted with `module_id` fit directly, but everything else lands in your cargo hold. Salvage runs fill holds fast — a big-cargo hull earns more per trip than a fast one.
+- Looted modules land in your cargo hold as unfitted items, like everything else. Salvage runs fill holds fast — a big-cargo hull earns more per trip than a fast one.
 - `sell_wreck` pays for cargo still aboard the wreck, so if you plan to sell the hulk anyway, don't waste ticks looting items you'd only re-sell — tow the whole thing and let the yard price it.
 - Selling wrecks and scrapping both happen while docked, so a salvage run ends in complete safety even if it starts in a war zone. Getting the tow there is the only dangerous part.
 - Where the pickings are richest — active war fronts, pirate-heavy frontier belts — is exactly where new wrecks get made. Treat every salvage field as a potential ambush site and check [Scanning & Stealth](/docs/scanning) for reading who else is around before you commit to a slow tow.
@@ -113,11 +113,11 @@ Combined with a tow rig and a cargo-heavy hull, the skill supports a full non-co
 | Command | What it does |
 |---------|--------------|
 | `get_wrecks` | List all wrecks at your current POI with their cargo and modules |
-| `loot_wreck` | Take cargo and modules from a wreck — everything, a specific item, or a module fitted straight to your ship |
+| `loot_wreck` | Take cargo and modules from a wreck into your hold — everything, a specific item, or a specific module (unfitted) |
 | `tow_wreck` | Attach a tow line to a wreck for hauling (requires a tow rig module; reduces speed) |
 | `release_tow` | Drop your towed wreck at your current POI |
-| `sell_wreck` | Sell your towed wreck at a salvage yard for credits (salvage value plus cargo value) |
-| `scrap_wreck` | Break your towed wreck down at a salvage yard into salvage materials (Salvaging 2+) |
+| `sell_wreck` | Sell your towed wreck at a salvage yard for credits (salvage value plus cargo value); modules aboard go to station storage |
+| `scrap_wreck` | Break your towed wreck down at a salvage yard into salvage materials; modules aboard go to station storage (Salvaging 2+) |
 | `jettison` | Dump cargo into space as a container (containers despawn after 10 minutes) |
 
 ## Related Pages

@@ -149,13 +149,83 @@ Get a better laser when you unlock the skill level. Don't overthink it.
 
 Asteroid deposits get mined down over time, and a heavily depleted deposit can't support a big mining laser. If your array is too powerful for what's left, `mine` fails with a message like *"the beam disperses what little remains"* instead of extracting ore.
 
-**Before you commit to a POI, check it:**
-- `get_poi` (or `survey_system`) on the deposit — each resource entry shows `remaining` (how much ore is left) and `supported_power` (the most beam power that deposit can support)
-- `get_ship` — shows each fitted mining laser's `mining_power`; add them up if you've got more than one
+**Two things have to be true at once for that to happen.** The deposit must be drawn down below **a quarter of its capacity**, *and* your array must be more than **4x** what the remaining stock supports. A deposit at 30% is never refused however big your laser is. This is why a belt you have been working for an hour suddenly stops accepting your beam while a freshly-found one never does.
 
-**The rule:** if your total mining power is more than about 4x a deposit's `supported_power`, you can't get a lock on it at all.
+**The server does this math for you.** `get_poi` and `survey_system` report three values per deposit, each computed for the ship you are flying right now:
 
-**If you hit this:** move to a richer deposit (fresh asteroid belts, or ones other miners haven't picked over), or swap in a smaller/lower-tier laser for that spot. Upgrading your laser is usually a win, but it can leave your favorite depleted belt behind — that's expected, not a bug.
+| Field | What it tells you |
+| --- | --- |
+| `supported_power` | The most beam power this deposit takes at full rate. More than this isn't wasted — it's capped down, so you mine slower, not never. |
+| `lock_minimum_stock` | How far the deposit can fall before your array refuses it. **Absent means your rig can always finish this deposit**, however thin. |
+| `too_sparse` | `true` if your current fit is refused right now. |
+
+Filter on `too_sparse` and rank on `supported_power`. Ranking candidate belts on `remaining` alone will send you to deposits you cannot work.
+
+**If you hit this:** move to a richer deposit, or swap in a smaller or finer laser for that spot. Note that beam power is the **sum of every mining module you have fitted** — a second laser makes the problem worse, not better. A finer beam is the other lever: a module with a `precision_factor` below 1 works thinner deposits than its raw power suggests, and low-tier gear never locks at all.
+
+**Deep core deposits are exempt.** Hidden deep core POIs need a Deep Core Extractor to enter, and you cannot refit below that extractor's own power without losing access. So the hard cutoff never applies there — deep core deposits always mine down to zero, just slowly at the end.
+
+### Doing the math yourself (fleets and shared intel)
+
+`supported_power`, `lock_minimum_stock` and `too_sparse` are computed for **your** ship, so they can't be stored in shared data. Faction intel records a deposit's `remaining` and `max_remaining` for the whole fleet and has no ship to compute against — so if you route miners off intel, run the arithmetic yourself.
+
+`GET /api/catalog.json` publishes the constants under `mining`:
+
+```json
+{ "mining": { "precision_k": 20, "overkill_ratio": 4, "depletion_floor": 0.25 } }
+```
+
+Take **P** as your summed `mining_power` for that resource's extraction type and **F** as your power-weighted `precision_factor` (both from `get_ship`, with each module's `precision_factor` in the catalog; treat a missing one as 1.0):
+
+```
+supported_power    = remaining / (precision_k * F)
+lock_minimum_stock = P * precision_k * F / overkill_ratio
+depleted           = remaining < max_remaining * depletion_floor
+can_lock           = P * F > precision_k
+too_sparse         = depleted and can_lock and remaining < lock_minimum_stock
+```
+
+Worked example — a Deep Core Extractor III (power 40, precision 1.0) against an intel row reading `remaining: 74, max_remaining: 300`:
+
+- `lock_minimum_stock` = 40 x 20 x 1.0 / 4 = **200**
+- `depleted` = 74 < 300 x 0.25 = 75 → **true**
+- `can_lock` = 40 x 1.0 > 20 → **true**
+- `too_sparse` = **true** — unless it's a deep core POI, where the cutoff never applies
+
+Same rig, same node at `remaining: 120`: `depleted` is false (120 > 75), so it's workable at `supported_power` = 120/20 = 6.
+
+A rig that can't lock at all is the simplest fleet answer: any array whose `P * F` is 20 or under finishes every deposit, so a scout ship carrying one Mining Laser I never reports a dead end.
+
+---
+
+## What the Two Mining Skills Actually Do
+
+**Mining** does two separate things, and only the first is obvious.
+
+1. **Yield** — +1% per level, on every resource type. Straightforward.
+2. **Deposit selection** — as the skill climbs, a mining cycle is more likely to pick the *rarer* deposit at a POI that holds several.
+
+That second one matters more than it sounds. When you mine at a POI with four deposits, the game picks one. Left alone it favours the richest, which in practice means the common ore — richness runs about 42 on average for common down to 9 for legendary. A high Mining skill flips that preference.
+
+The weight for each deposit is:
+
+```
+weight = richness * (1 + rare_ore_rarity_weight_per_level * mining_level * rarity_rank)
+rarity_rank: common 0, uncommon 1, rare 2, exotic 3, legendary 4
+```
+
+`rare_ore_rarity_weight_per_level` is published at `/api/catalog.json` under `mining`. At Mining 0 the term vanishes and you get plain richness weighting. Sitting on a belt with iron (richness 90) next to an antimatter trace (richness 10, legendary):
+
+| Mining level | Chance the cycle picks the antimatter |
+| --- | --- |
+| 0 | 10% |
+| 20 | 50% |
+| 60 | 73% |
+| 100 | 82% |
+
+This is selection only — it never changes how much you extract, just which vein the beam picks. If you want the common ore instead, fit an extraction filter for the rare one, or mine somewhere it isn't.
+
+**Deep Core Mining** is yield only: +5% per level, and only at hidden deep core POIs. It stacks on top of Mining's yield bonus, so a maxed miner working a deep core vein is running both. It does nothing at an ordinary belt.
 
 ---
 

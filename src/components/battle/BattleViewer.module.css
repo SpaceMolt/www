@@ -719,18 +719,18 @@
   color: var(--star-white);
 }
 
-.telemetryMetrics .telemetryHit,
-.telemetryMetrics .telemetryMiss {
+.telemetryHit,
+.telemetryMiss {
   margin-left: 0.18rem;
   font-size: 0.56rem;
   letter-spacing: 0.08em;
 }
 
-.telemetryMetrics .telemetryHit {
+.telemetryHit {
   color: #5ee6a8;
 }
 
-.telemetryMetrics .telemetryMiss {
+.telemetryMiss {
   color: var(--hull-grey);
 }
 
@@ -789,6 +789,12 @@
 
 .telemetryWeaponRow:last-child {
   border-bottom: 0;
+}
+
+/* A missed gun keeps its name and MISS tag legible; only its damage figures fade. */
+.telemetryWeaponMissed .telemetryWeaponMain > span:last-child,
+.telemetryWeaponMissed .telemetryWeaponMeta {
+  opacity: 0.55;
 }
 
 .telemetryWeaponMain {
@@ -980,11 +986,11 @@
   color: var(--chrome-silver);
 }
 
+.headerAction,
 .replayBtn {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  margin-top: 0.4rem;
   font-family: var(--font-jetbrains), monospace;
   font-size: 0.75rem;
   color: var(--plasma-cyan);
@@ -996,6 +1002,15 @@
   transition: background 0.15s;
 }
 
+.headerAction {
+  text-decoration: none;
+}
+
+.replayBtn {
+  margin-top: 0.4rem;
+}
+
+.headerAction:hover,
 .replayBtn:hover {
   background: rgba(0, 212, 255, 0.18);
 }

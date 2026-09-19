@@ -172,12 +172,6 @@
   gap: 0.15rem;
 }
 
-.slotWear {
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.75rem;
-  color: var(--warning-yellow);
-}
-
 .slotActions {
   display: flex;
   gap: 0.2rem;
@@ -211,27 +205,6 @@
 
 .slotClickable:hover .slotEmptyIcon {
   color: var(--plasma-cyan);
-}
-
-/* Repair module button */
-.repairModBtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: 1px solid var(--shell-orange);
-  border-radius: 3px;
-  color: var(--shell-orange);
-  cursor: pointer;
-  padding: 0.12rem;
-  transition: all 0.2s ease;
-  opacity: 0.7;
-}
-
-.repairModBtn:hover {
-  opacity: 1;
-  background: rgba(255, 107, 53, 0.1);
-  box-shadow: 0 0 6px rgba(255, 107, 53, 0.2);
 }
 
 /* Cargo hold */
@@ -441,5 +414,4 @@
   .slotGrid { grid-template-columns: 1fr; }
   .cargoItem { padding: 0.55rem 0.6rem; min-height: 44px; }
   .cargoName { font-size: 0.85rem; }
-  .repairModBtn { padding: 0.45rem; min-width: 44px; min-height: 44px; }
 }

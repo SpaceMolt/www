@@ -12,6 +12,7 @@ import { damageTypeColor, zoneIndex } from './types'
 import type { AttackLogEntry, ParticipantSnapshot } from './types'
 import type { BattleTimeline, ParticipantMeta } from './timeline'
 import { GLYPH_NOSE_X, strokeGlyphDetail, traceGlyphPath } from './shipGlyphs'
+import { shieldRemoved } from './combatTelemetry'
 
 // --- Deterministic pseudo-randomness (stable across frames) ---
 
@@ -173,59 +174,8 @@ interface AttackTiming {
   impact: number
 }
 
-export interface AttackVisualGroup {
-  primaryIndex: number
-  kind: string
-  secondaryIndices: number[]
-}
-
-export interface AttackVisualPlan {
-  primaryIndices: number[]
-  orphanSecondaryIndices: number[]
-  groups: AttackVisualGroup[]
-}
-
-function cascadingAttackKind(attack: AttackLogEntry): string {
-  if (attack.secondary_kind === 'aoe' || attack.secondary_kind === 'chain' || attack.secondary_kind === 'ammo_splash') {
-    return attack.secondary_kind
-  }
-  return attack.splash ? 'ammo_splash' : ''
-}
-
-/**
- * Associates the server's per-target secondary rows with the direct strike
- * that produced them. Current and historical logs append those rows directly
- * after their primary attack; the attacker check makes the fallback fail
- * closed if that ordering contract is ever broken.
- */
-export function buildAttackVisualPlan(attacks: AttackLogEntry[]): AttackVisualPlan {
-  const primaryIndices: number[] = []
-  const orphanSecondaryIndices: number[] = []
-  const groups: AttackVisualGroup[] = []
-  const primaryByAttacker = new Map<string, number>()
-
-  attacks.forEach((attack, index) => {
-    const kind = cascadingAttackKind(attack)
-    if (!kind) {
-      primaryIndices.push(index)
-      // Retaliation (and unknown future secondary effects) remains visible as
-      // its own shot, but cannot displace the direct volley that subsequent
-      // collateral rows name as their attacker.
-      if (!attack.secondary_kind) primaryByAttacker.set(attack.attacker_id, index)
-      return
-    }
-    const primaryIndex = primaryByAttacker.get(attack.attacker_id)
-    if (primaryIndex === undefined) {
-      orphanSecondaryIndices.push(index)
-      return
-    }
-    const previous = groups[groups.length - 1]
-    if (previous?.primaryIndex === primaryIndex && previous.kind === kind) previous.secondaryIndices.push(index)
-    else groups.push({ primaryIndex, kind, secondaryIndices: [index] })
-  })
-
-  return { primaryIndices, orphanSecondaryIndices, groups }
-}
+import { buildAttackVisualPlan, type AttackVisualGroup, type AttackVisualPlan } from './attackVisualPlan'
+export { buildAttackVisualPlan } from './attackVisualPlan'
 
 const attackVisualPlanCache = new WeakMap<AttackLogEntry[], AttackVisualPlan>()
 
@@ -318,7 +268,7 @@ export function sampleShips(timeline: BattleTimeline, playhead: number, timeMs: 
     if (!a.hit_success) return
     const t = visualTiming.timings[idx]
     if (p >= t.impact) {
-      landedShield.set(a.target_id, (landedShield.get(a.target_id) ?? 0) + a.shield_damage)
+      landedShield.set(a.target_id, (landedShield.get(a.target_id) ?? 0) + shieldRemoved(a))
       landedHull.set(a.target_id, (landedHull.get(a.target_id) ?? 0) + a.hull_damage)
     }
   })
@@ -1531,10 +1481,11 @@ function drawFloaters(
       return
     }
     let y = pos.y - size * 2 - rise
-    if (a.shield_damage > 0) {
+    const shieldHit = shieldRemoved(a)
+    if (shieldHit > 0) {
       ctx.font = `${crit ? '700 13px' : '600 11px'} "JetBrains Mono", monospace`
       ctx.fillStyle = `rgba(120,210,255,${alpha.toFixed(2)})`
-      ctx.fillText(`-${a.shield_damage}`, pos.x + jx, y)
+      ctx.fillText(`-${shieldHit}`, pos.x + jx, y)
       y -= 12
     }
     if (a.hull_damage > 0) {

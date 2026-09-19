@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
-import { Anchor, Search, Skull, Trophy, Zap } from 'lucide-react'
+import { Anchor, Search, Skull, Trophy, Warehouse, Zap } from 'lucide-react'
 import styles from './page.module.css'
 import { useTranslation } from '@/i18n'
 import { useVisiblePoll } from '@/lib/useVisiblePoll'
@@ -10,11 +10,12 @@ import { CategoryIcon } from '@/components/battle/CategoryIcon'
 import {
   BATTLE_CATEGORY_META,
   sideColor,
-  type BattleCategory,
   type BattleSummary,
 } from '@/lib/battle/types'
 import { battleVenue, formatDuration, winnerNames } from '@/lib/battle/format'
 import { timeAgo } from '@/lib/format'
+import { createListRequest } from '@/lib/battle/listRequest'
+import { battleListParams, type FilterCategory } from '@/lib/battle/listFilters'
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 const POLL_INTERVAL = 10_000
@@ -29,7 +30,6 @@ interface BattlesResponse {
 }
 
 type FilterStatus = 'all' | 'active' | 'completed'
-type FilterCategory = 'all' | BattleCategory
 
 const srOnly: React.CSSProperties = {
   position: 'absolute',
@@ -50,6 +50,7 @@ const CATEGORY_FILTERS: { key: FilterCategory; labelKey: string }[] = [
   { key: 'police', labelKey: 'battles.filterTypePolice' },
   { key: 'wildlife', labelKey: 'battles.filterTypeWildlife' },
   { key: 'pve', labelKey: 'battles.filterTypePve' },
+  { key: 'station', labelKey: 'battles.filterTypeStation' },
   { key: 'arena', labelKey: 'battles.filterTypeArena' },
 ]
 
@@ -68,6 +69,19 @@ export default function BattlesPage() {
   const [hasMore, setHasMore] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [request] = useState(() => createListRequest<BattlesResponse>({
+    success: data => {
+      setBattles(data.battles || [])
+      setTotal(data.total ?? 0)
+      setHasMore(Boolean(data.has_more))
+      setError(false)
+    },
+    failure: () => setError(true),
+    settled: () => {
+      setLoading(false)
+      setLoadingMore(false)
+    },
+  }))
 
   useEffect(() => {
     document.title = 'Battle Records - SpaceMolt'
@@ -85,53 +99,49 @@ export default function BattlesPage() {
   }, [search])
 
   const fetchBattles = useCallback(
-    async (fetchLimit: number, isInitial: boolean) => {
-      if (isInitial) setLoading(true)
-      try {
-        const params = new URLSearchParams({ status: filter, limit: String(fetchLimit), offset: '0' })
-        if (category !== 'all') params.set('category', category)
-        if (debouncedSearch.trim()) params.set('search', debouncedSearch.trim())
-        if (captured) params.set('captured', 'true')
-        const res = await fetch(`${API_BASE}/api/battles?${params}`)
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        const data: BattlesResponse = await res.json()
-        setBattles(data.battles || [])
-        setTotal(data.total ?? 0)
-        setHasMore(Boolean(data.has_more))
-        if (isInitial) setError(false)
-      } catch {
-        if (isInitial) setError(true)
-      } finally {
-        if (isInitial) setLoading(false)
-        setLoadingMore(false)
-      }
+    (fetchLimit: number, background = false) => {
+      const params = battleListParams(filter, category, debouncedSearch, fetchLimit, captured)
+      return request.run(`${API_BASE}/api/battles?${params}`, background)
     },
-    [filter, category, debouncedSearch, captured],
+    [filter, category, debouncedSearch, captured, request],
   )
 
   // A changed filter, category, or search term is a fresh first page — reset
   // the growing "load more" window back to PAGE_SIZE.
   useEffect(() => {
     setLimit(PAGE_SIZE)
-    fetchBattles(PAGE_SIZE, true)
-  }, [fetchBattles])
+    setLoading(true)
+    setLoadingMore(false)
+    setError(false)
+    setBattles([])
+    setTotal(0)
+    setHasMore(false)
+    void fetchBattles(PAGE_SIZE)
+    return () => request.cancel()
+  }, [fetchBattles, request])
 
   // Every poll re-requests offset=0 with the CURRENT limit, so it refreshes
   // the whole revealed window in place instead of resetting it.
-  useVisiblePoll(() => fetchBattles(limit, false), POLL_INTERVAL)
+  useVisiblePoll(() => fetchBattles(limit, true), POLL_INTERVAL)
 
   const handleLoadMore = useCallback(() => {
-    if (loadingMore) return
+    if (loading || loadingMore) return
     const nextLimit = Math.min(limit + PAGE_SIZE, MAX_LIMIT)
     setLimit(nextLimit)
     setLoadingMore(true)
     fetchBattles(nextLimit, false)
-  }, [limit, loadingMore, fetchBattles])
+  }, [limit, loading, loadingMore, fetchBattles])
 
   // Servers that predate the category or captured params return everything —
-  // filter here too so the chips always mean what they say.
+  // retain both fallbacks so the chips always mean what they say. Station
+  // participation is filtered by the server.
   const visible = useMemo(
-    () => battles.filter(b => (category === 'all' || b.category === category) && (!captured || (b.ships_captured ?? 0) > 0)),
+    () =>
+      battles.filter(
+        b =>
+          (category === 'all' || category === 'station' || b.category === category) &&
+          (!captured || (b.ships_captured ?? 0) > 0),
+      ),
     [battles, category, captured],
   )
 
@@ -152,6 +162,7 @@ export default function BattlesPage() {
           {(['all', 'active', 'completed'] as FilterStatus[]).map(status => (
             <button
               key={status}
+              aria-pressed={filter === status}
               className={`${styles.filterBtn} ${filter === status ? styles.filterBtnActive : ''}`}
               onClick={() => setFilter(status)}
             >
@@ -170,12 +181,13 @@ export default function BattlesPage() {
           {CATEGORY_FILTERS.map(c => (
             <button
               key={c.key}
+              aria-pressed={category === c.key}
               className={`${styles.filterBtn} ${styles.categoryBtn} ${category === c.key ? styles.filterBtnActive : ''}`}
               onClick={() => setCategory(c.key)}
             >
               {c.key !== 'all' && (
                 <span className={styles.filterGlyph}>
-                  <CategoryIcon category={c.key} size={13} />
+                  {c.key === 'station' ? <Warehouse size={13} /> : <CategoryIcon category={c.key} size={13} />}
                 </span>
               )}
               {t(c.labelKey)}
@@ -220,13 +232,13 @@ export default function BattlesPage() {
         </div>
       )}
 
-      {!loading && !error && visible.length > 0 && (
+      {!loading && visible.length > 0 && (
         <div className={styles.resultsCount}>
           {t('battles.showingCount', { shown: visible.length, total })}
         </div>
       )}
 
-      {!loading && !error && visible.length > 0 && (
+      {!loading && visible.length > 0 && (
         <div className={styles.battleGrid}>
           {visible.map(battle => {
             const catMeta = battle.category ? BATTLE_CATEGORY_META[battle.category] : undefined
@@ -345,7 +357,7 @@ export default function BattlesPage() {
         </div>
       )}
 
-      {!loading && !error && canLoadMore && (
+      {!loading && canLoadMore && (
         <div className={styles.loadMoreWrap}>
           <button className={styles.loadMoreBtn} onClick={handleLoadMore} disabled={loadingMore}>
             {loadingMore ? t('battles.loadingMore') : t('battles.loadMore')}

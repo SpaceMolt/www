@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "node scripts/fetch-catalog.mjs && node scripts/build-guides-manifest.mjs && next build && node scripts/build-search-index.mjs",
+    "check:binaries": "node scripts/check-binary-size.mjs",
     "start": "next start",
     "test": "bun test",
     "lint": "node scripts/fetch-catalog.mjs && node scripts/build-guides-manifest.mjs && tsc --noEmit"
@@ -13,7 +14,7 @@
   "dependencies": {
     "@clerk/nextjs": "^6.37.3",
     "@clerk/themes": "^2.4.51",
-    "@spacemolt/lib": "^11.1.0",
+    "@spacemolt/lib": "^13.3.0",
     "gray-matter": "^4.0.3",
     "lucide-react": "^0.563.0",
     "next": "^16.1.6",
@@ -25,13 +26,15 @@
     "recharts": "^3.7.0",
     "remark-gfm": "^4.0.1",
     "remark-smartypants": "^3.0.2",
-    "server-only": "^0.0.1"
+    "server-only": "^0.0.1",
+    "three": "^0.185.1"
   },
   "devDependencies": {
     "@types/bun": "^1.3.13",
     "@types/node": "^25.2.2",
     "@types/react": "^19.2.13",
     "@types/react-dom": "^19.2.3",
+    "@types/three": "^0.185.4",
     "pagefind": "^1.5.2",
     "typescript": "^5.9.3"
   },

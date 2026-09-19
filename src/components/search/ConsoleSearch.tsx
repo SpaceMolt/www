@@ -5,11 +5,12 @@ import { usePathname } from 'next/navigation'
 import { Search } from 'lucide-react'
 import { useTranslation } from '@/i18n'
 import { SearchDialog } from './SearchDialog'
+import { shouldShowConsoleSearchField } from './consoleSearchRoutes'
 import styles from './search.module.css'
 
 /**
  * Owns the single search dialog for the whole console: Cmd-K / Ctrl-K opens it
- * from any page, and every console page also shows the visible field at the top
+ * from any page, and most console pages also show the visible field at the top
  * right of the content area — that field is only a trigger for the same dialog,
  * never a second search implementation. (Pages with their own local filter box,
  * like the codex tables, keep it: that filters the list in place, while this
@@ -19,16 +20,14 @@ import styles from './search.module.css'
  * slash shortcut would swallow keystrokes in them.
  *
  * The field is hidden on the full-bleed workspace pages, whose own chrome owns
- * that corner: on Recon it sat on top of the system panel's header and hid the
- * system's name. Only the trigger goes away — Cmd-K still opens the dialog
- * there, and those pages have their own local filter box anyway.
+ * that corner: Recon has its system panel, and battle replays have header
+ * actions and results. Only the trigger goes away — Cmd-K still opens the
+ * dialog there.
  */
-const FIELDLESS_ROUTES = new Set(['/intel'])
-
 export function ConsoleSearch() {
   const { t } = useTranslation()
   const pathname = usePathname()
-  const showField = !FIELDLESS_ROUTES.has(pathname)
+  const showField = shouldShowConsoleSearchField(pathname)
   const [open, setOpen] = useState(false)
   const [isMac, setIsMac] = useState(true)
 

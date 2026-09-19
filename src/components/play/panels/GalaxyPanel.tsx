@@ -37,7 +37,6 @@ function toMapSystemData(raw: MapSystem): MapSystemData | null {
     empire_color: stringField(raw.empire_color),
     is_home: booleanField(raw.is_home),
     is_stronghold: booleanField(raw.is_stronghold),
-    has_station: booleanField(raw.has_station),
     connections: stringArrayField(raw.connections),
   }
 }
