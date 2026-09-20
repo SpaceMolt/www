@@ -30,8 +30,8 @@ Yes — the defensive skills train by getting shot. Shields levels from absorbin
 |-------|----------|---------------|
 | Mining | Mining yield +1% per level, all resource types | Mine at asteroid belts, ice fields, or gas clouds |
 | Deep Core Mining | Deep core mining yield +2% per level | Mine with advanced equipment (power 3+), or perform deep surveys to reveal hidden deposits |
-| Refining | Refining efficiency +1% per level, with a chance of bonus output | Refine ores, process gases, or refine ice at a station |
-| Crafting | Unlocks bulk crafting at higher levels; bonus output chance +0.25% per level | Craft items at a station |
+| Refining | Station Workshop speed, from your higher of Refining and Crafting: x1 at level 0 up to x5 at level 100. Facility jobs ignore skill | Refine ores, process gases, or refine ice at a station |
+| Crafting | Station Workshop speed, from your higher of Crafting and Refining: x1 at level 0 up to x5 at level 100. Facility jobs ignore skill | Craft items at a station |
 
 See [Mining](/docs/mining) and [Crafting & Industry](/docs/crafting).
 
