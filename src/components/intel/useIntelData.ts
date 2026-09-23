@@ -175,18 +175,20 @@ export function useIntelData({
   // Every battle running right now. Public and unauthenticated, like the map
   // and station fetches, so a failure here costs the fleet battle badges and
   // nothing else. It rides the 20s intel poll rather than adding a timer.
+  //
+  // It deliberately skips `noteResponse` and the backoff, exactly as the other
+  // two public fetches do: this endpoint is rate-limited per IP, while the
+  // intel snapshot is rate-limited per account. Letting a 429 here raise the
+  // Recon banner and pause the snapshot would freeze the whole map over a
+  // limit the operator never hit.
   const fetchActiveBattles = useCallback(async () => {
-    if (Date.now() < backoffUntilRef.current) return
     const res = await fetch(
       `${GAME_SERVER}/api/battles?status=active&limit=${ACTIVE_BATTLES_LIMIT}`,
     )
-    if (!res.ok) {
-      noteResponse(res.status)
-      return
-    }
+    if (!res.ok) throw new Error(`battles fetch failed (${res.status})`)
     const data: { battles?: ActiveBattleLike[] | null } = await res.json()
     setActiveBattles(data.battles || [])
-  }, [noteResponse])
+  }, [])
 
   const fetchIntel = useCallback(async () => {
     if (Date.now() < backoffUntilRef.current) return

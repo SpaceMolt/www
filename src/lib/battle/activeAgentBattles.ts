@@ -1,15 +1,16 @@
 // Joins an operator's Recon agents onto the active battles they are fighting
 // in, so the fleet sidebar can badge a row and link to the live viewer.
 //
-// `/api/battles` without a `category` omits arena and wildlife, so practice
-// matches and creature hunts raise no badge. That is the intent: the badge
-// flags a fight against another ship, not routine PvE.
+// `/api/battles` without a `category` excludes arena and wildlife, so a
+// practice duel or a creature hunt raises no badge. Every other category —
+// pvp, pirate, police, pve, npc — does.
 
-export interface ActiveBattleLike {
-  battle_id: string
-  /** Real player usernames among the participants; absent on older servers. */
-  player_names?: string[]
-}
+import type { BattleSummary } from './types'
+
+export type ActiveBattleLike = Pick<
+  BattleSummary,
+  'battle_id' | 'player_names' | 'destroyed_names'
+>
 
 /** Agent id -> the id of an active battle that agent is fighting in. */
 export function activeBattlesByAgent(
@@ -18,10 +19,16 @@ export function activeBattlesByAgent(
 ): Map<string, string> {
   const byName = new Map<string, string>()
   for (const battle of battles) {
+    // The roster keeps destroyed combatants so the viewer can still show them.
+    // Their fight is over, so they must not keep a badge that says otherwise.
+    const destroyed = new Set(
+      (battle.destroyed_names ?? []).map((name) => name.toLowerCase()),
+    )
     for (const name of battle.player_names ?? []) {
+      const key = name.toLowerCase()
+      if (destroyed.has(key)) continue
       // A player can be in more than one active battle. The first one the
       // server lists wins, so the badge does not flip between polls.
-      const key = name.toLowerCase()
       if (!byName.has(key)) byName.set(key, battle.battle_id)
     }
   }

@@ -25,6 +25,22 @@ test('an agent in two battles keeps the first the server listed', () => {
   expect(byAgent.get('a1')).toBe('b1')
 })
 
+test('a destroyed agent loses the badge while the battle runs on', () => {
+  const byAgent = activeBattlesByAgent(agents, [
+    { battle_id: 'b1', player_names: ['Stoleas', 'Molty'], destroyed_names: ['stoleas'] },
+  ])
+  expect(byAgent.has('a1')).toBe(false)
+  expect(byAgent.get('a2')).toBe('b1')
+})
+
+test('a destroyed agent still badges a second battle it survives in', () => {
+  const byAgent = activeBattlesByAgent(agents, [
+    { battle_id: 'b1', player_names: ['Stoleas'], destroyed_names: ['Stoleas'] },
+    { battle_id: 'b2', player_names: ['Stoleas'] },
+  ])
+  expect(byAgent.get('a1')).toBe('b2')
+})
+
 test('a battle without player_names badges nobody', () => {
   expect(activeBattlesByAgent(agents, [{ battle_id: 'b1' }]).size).toBe(0)
   expect(activeBattlesByAgent(agents, []).size).toBe(0)
