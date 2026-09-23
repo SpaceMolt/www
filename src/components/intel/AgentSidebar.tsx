@@ -5,6 +5,7 @@
 // pans the map to its system (handled by the page via onAgentSelect).
 
 import { useMemo, useState } from 'react'
+import Link from 'next/link'
 import {
   Anchor,
   ChevronDown,
@@ -13,6 +14,7 @@ import {
   ChevronsRight,
   EyeOff,
   Search,
+  Swords,
   Users,
 } from 'lucide-react'
 import type { IntelAgent, IntelMapSystem } from '@/lib/intelTypes'
@@ -46,6 +48,8 @@ interface AgentSidebarProps {
   onShowHiddenChange: (show: boolean) => void
   selectedAgentId: string | null
   onAgentSelect: (agent: IntelAgent) => void
+  /** Agent id -> id of an active battle that agent is fighting in. */
+  agentBattles: Map<string, string>
 }
 
 interface AgentGroup {
@@ -67,6 +71,7 @@ export function AgentSidebar({
   onShowHiddenChange,
   selectedAgentId,
   onAgentSelect,
+  agentBattles,
 }: AgentSidebarProps) {
   const [collapsed, setCollapsed] = useState(false)
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
@@ -207,45 +212,60 @@ export function AgentSidebar({
                 group.agents.map((agent) => {
                   const system = systemsById.get(agent.system)
                   const empireColor = EMPIRE_COLORS[agent.empire] || 'var(--chrome-silver)'
+                  const battleId = agentBattles.get(agent.id)
                   return (
-                    <button
+                    <div
                       key={agent.id}
-                      className={`${styles.agentRow} ${
+                      className={`${styles.agentRowWrap} ${
                         agent.id === selectedAgentId ? styles.agentRowActive : ''
                       }`}
-                      onClick={() => onAgentSelect(agent)}
                     >
-                      <span
-                        className={`${styles.onlineDot} ${
-                          agent.online ? styles.onlineDotActive : ''
-                        }`}
-                        title={agent.online ? 'Online' : 'Offline'}
-                      />
-                      <span className={styles.agentInfo}>
-                        <span className={styles.agentName} style={{ color: empireColor }}>
-                          {agent.username}
+                      <button
+                        className={styles.agentRow}
+                        onClick={() => onAgentSelect(agent)}
+                      >
+                        <span
+                          className={`${styles.onlineDot} ${
+                            agent.online ? styles.onlineDotActive : ''
+                          }`}
+                          title={agent.online ? 'Online' : 'Offline'}
+                        />
+                        <span className={styles.agentInfo}>
+                          <span className={styles.agentName} style={{ color: empireColor }}>
+                            {agent.username}
+                          </span>
+                          <span className={styles.agentMeta}>
+                            {agent.in_transit?.type === 'pathfinder'
+                              ? 'Pathfinder drift'
+                              : agent.in_transit?.type === 'jump'
+                                ? 'In transit'
+                                : system?.name || agent.system}
+                            {agent.ship_class ? ` · ${agent.ship_class}` : ''}
+                          </span>
                         </span>
-                        <span className={styles.agentMeta}>
-                          {agent.in_transit?.type === 'pathfinder'
-                            ? 'Pathfinder drift'
-                            : agent.in_transit?.type === 'jump'
-                              ? 'In transit'
-                              : system?.name || agent.system}
-                          {agent.ship_class ? ` · ${agent.ship_class}` : ''}
+                        <span className={styles.agentBadges}>
+                          {agent.cloaked && (
+                            <EyeOff size={11} className={styles.badgeIcon} aria-label="Cloaked" />
+                          )}
+                          {agent.docked_at && (
+                            <Anchor size={11} className={styles.badgeIcon} aria-label="Docked" />
+                          )}
+                          {agent.hidden && (
+                            <span className={styles.hiddenBadge}>hidden</span>
+                          )}
                         </span>
-                      </span>
-                      <span className={styles.agentBadges}>
-                        {agent.cloaked && (
-                          <EyeOff size={11} className={styles.badgeIcon} aria-label="Cloaked" />
-                        )}
-                        {agent.docked_at && (
-                          <Anchor size={11} className={styles.badgeIcon} aria-label="Docked" />
-                        )}
-                        {agent.hidden && (
-                          <span className={styles.hiddenBadge}>hidden</span>
-                        )}
-                      </span>
-                    </button>
+                      </button>
+                      {battleId && (
+                        <Link
+                          href={`/battles/${battleId}`}
+                          className={styles.battleBadge}
+                          title={`${agent.username} is in a battle — open the live viewer`}
+                        >
+                          <Swords size={11} aria-hidden="true" />
+                          <span>battle</span>
+                        </Link>
+                      )}
+                    </div>
                   )
                 })}
             </div>
