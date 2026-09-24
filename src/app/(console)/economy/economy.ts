@@ -121,7 +121,8 @@ export interface EconomyDay {
   sinks: EconomySinks | null
   trade: EconomyTrade
   taxes_and_fines: number
-  active_players: number
+  /** Players who issued a command in the previous 24h. Null before detailed accounting. */
+  active_players: number | null
   ore_mined: number
   items_crafted: number
   price_index: EconomyPriceIndex
@@ -504,8 +505,9 @@ export function bondSummary(days: EconomyDay[], stock: EconomyBondStock) {
   const last = bonds.at(-1)
   // Circulation is unknown on summary-only days: compare the first and last days that have it.
   const counted = days.filter((d) => d.trade_authenticators.in_circulation !== null)
-  const circFrom = counted[0]?.trade_authenticators.in_circulation ?? null
-  const circTo = counted.at(-1)?.trade_authenticators.in_circulation ?? null
+  // One counted day is a level, not a change.
+  const circFrom = counted.length > 1 ? counted[0].trade_authenticators.in_circulation : null
+  const circTo = counted.length > 1 ? counted.at(-1)!.trade_authenticators.in_circulation : null
   const pct = (from: number, to: number) => (from ? ((to - from) / from) * 100 : null)
   const segments = BOND_SEGMENTS.map(([key, label]) => {
     const t = { units: sum((b) => b[key].units), credits: sum((b) => b[key].credits) }
@@ -520,7 +522,7 @@ export function bondSummary(days: EconomyDay[], stock: EconomyBondStock) {
     boughtBack: sum((b) => b.window_bought_back.units),
     reserveChangePct: first && last ? pct(first.reserve, last.reserve) : null,
     circulationFrom: counted[0]?.date ?? null,
-    circulationChange: circFrom !== null && circTo !== null ? circTo - circFrom : 0,
+    circulationChange: circFrom !== null && circTo !== null ? circTo - circFrom : null,
     circulationChangePct: circFrom !== null && circTo !== null ? pct(circFrom, circTo) : null,
     soldPerDay: spanDays ? sold / spanDays : 0,
     /** Days the current reserve lasts at the span's average window sales; null with no sales. */
@@ -541,8 +543,10 @@ export function bondHeadline(b: BondSummary, from: string): string {
     const c = b.circulationChangePct
     // Circulation is only counted from detailed accounting on, which can start later than the span.
     const circSince = b.circulationFrom && b.circulationFrom !== from ? ` since ${dayLabel(b.circulationFrom)}` : ''
-    const circ = c === null || Math.abs(c) < 1 ? 'circulation held steady' : `circulation ${c > 0 ? 'grew' : 'shrank'} ${Math.abs(c).toFixed(0)}%`
-    return `The reserve ${r < 0 ? 'fell' : 'grew'} ${Math.abs(r).toFixed(0)}% since ${dayLabel(from)}; ${circ}${c === null ? '' : circSince}`
+    const reserve = `The reserve ${r < 0 ? 'fell' : 'grew'} ${Math.abs(r).toFixed(0)}% since ${dayLabel(from)}`
+    if (c === null) return reserve
+    const circ = Math.abs(c) < 1 ? 'circulation held steady' : `circulation ${c > 0 ? 'grew' : 'shrank'} ${Math.abs(c).toFixed(0)}%`
+    return `${reserve}; ${circ}${circSince}`
   }
   if (b.premium !== null) return `Stations pay ${b.premium.toFixed(2)}× the window price; the reserve is steady`
   return 'The reserve is steady'

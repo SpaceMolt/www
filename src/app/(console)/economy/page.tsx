@@ -173,7 +173,11 @@ export default async function EconomyPage() {
   const gapFit = s.gapPct === null ? null : s.gapPct < 10 ? 'almost exactly' : s.gapPct < 25 ? 'closely' : 'only in part'
   const caption = flowCaption(recent)
   const topCategory = report.top_categories[0]
-  const firstActive = recent[0]?.active_players ?? 0
+  // Active players are counted only from detailed accounting on.
+  const activeDays = recent.filter((d) => d.active_players !== null)
+  const firstActive = activeDays.length > 1 ? activeDays[0].active_players! : 0
+  const lastActive = activeDays.at(-1)?.active_players ?? 0
+  const activeSpan = activeDays.length > 1 ? `${activeDays.length} days` : span
   const bonds = bondSummary(recent, current.trade_authenticators)
   const bondStock = current.trade_authenticators
   const signedCount = (n: number) => `${n > 0 ? '+' : n < 0 ? '\u2212' : ''}${formatNumber(Math.abs(n))}`
@@ -181,7 +185,10 @@ export default async function EconomyPage() {
     window_sold_to_players: C.window, window_sold_to_stations: C.window, window_bought_back: C.window,
     players_to_stations: C.p2s, stations_to_players: C.s2p, player_to_player: C.p2p, station_to_station: C.neutral,
   }
-  const activeChange = firstActive && last ? ((last.active_players - firstActive) / firstActive) * 100 : 0
+  const activeChange = firstActive ? ((lastActive - firstActive) / firstActive) * 100 : 0
+  const fillNote = summaryUntil && s.detailedFrom
+    ? `Before ${dayLabel(s.detailedFrom)}, trades that matched the moment an order was placed were not recorded, so figures for those days leave some trades out.`
+    : null
 
   return (
     <div className="console-page">
@@ -327,8 +334,9 @@ export default async function EconomyPage() {
               {s.detailedChange >= 0 ? 'grew' : 'shrank'} <strong>{cr(Math.abs(s.detailedChange))}</strong>
               {s.partial && <> over those {flowSpan}</>}. The{' '}
               <strong>{cr(Math.abs(s.gap))}</strong> reconciliation gap{s.gapPct !== null && <> ({s.gapPct.toFixed(0)}%)</>} is
-              mostly credits parked in contracts (freight payments, ship orders, passenger fares), which leave the
-              supply while held and come back when paid out.
+              not split further. It includes credits moving into and out of contracts (freight payments, ship
+              orders, commissions, passenger fares), which the supply does not count while they are held, and any
+              path we do not count yet.
             </p>}
             <div className={styles.pair}>
               <BarList
@@ -403,7 +411,10 @@ export default async function EconomyPage() {
             }
           >
             <div className={styles.split}>
-              {categories.length > 0 ? <PriceChart rows={rows} categories={categories} /> : <p className={styles.muted}>No category traded in the base week yet.</p>}
+              <div className={styles.chart}>
+                {categories.length > 0 ? <PriceChart rows={rows} categories={categories} /> : <p className={styles.muted}>No category traded in the base week yet.</p>}
+                {fillNote && <p className={styles.caption}>{fillNote}</p>}
+              </div>
               <div className={styles.barList}>
                 <h3 className={styles.subhead}>Price change vs. a week ago</h3>
                 {current.inflation_7d.basket_items === 0 ? (
@@ -496,7 +507,7 @@ export default async function EconomyPage() {
               <div>
                 <dt>In circulation</dt>
                 <dd>{formatNumber(bondStock.in_circulation)}</dd>
-                <span>{bonds.circulationFrom ? `${signedCount(bonds.circulationChange)} since ${dayLabel(bonds.circulationFrom)}` : 'not counted before detailed accounting'}</span>
+                <span>{bonds.circulationChange !== null && bonds.circulationFrom ? `${signedCount(bonds.circulationChange)} since ${dayLabel(bonds.circulationFrom)}` : bonds.circulationFrom ? `counted from ${dayLabel(bonds.circulationFrom)}` : 'not counted yet'}</span>
               </div>
               <div>
                 <dt>Stations paid players</dt>
@@ -535,6 +546,7 @@ export default async function EconomyPage() {
                 <h3 className={styles.subhead}>Price per authenticator, daily average</h3>
                 <BondPriceChart rows={rows} summaryUntil={summaryUntil} />
                 {accountingNote && <p className={styles.caption}>{accountingNote} On those days the window line is the average price of that day&apos;s window trades.</p>}
+                {fillNote && <p className={styles.caption}>{fillNote}</p>}
               </div>
               <BarList
                 title={`Where they changed hands · ${span}`}
@@ -557,7 +569,7 @@ export default async function EconomyPage() {
                 <>
                   Market trade by item category over the last 30 complete days, trades with NPC stations included.
                   It leaves out private company-store sales and item-days under 500 cr, so it does not add up to the
-                  trade total above.
+                  trade total above.{fillNote && <> {fillNote}</>}
                 </>
               }
             >
@@ -576,11 +588,18 @@ export default async function EconomyPage() {
               n="07"
               topic="Activity"
               title={
-                Math.abs(activeChange) < 1
-                  ? `Player activity is steady over ${span}`
-                  : `Active players ${activeChange > 0 ? 'up' : 'down'} ${Math.abs(activeChange).toFixed(0)}% in ${span}`
+                !firstActive
+                  ? activeDays.length ? `${formatNumber(lastActive)} active players on ${dayLabel(activeDays[0].date)}` : 'What players did each day'
+                  : Math.abs(activeChange) < 1
+                    ? `Player activity is steady over ${activeSpan}`
+                    : `Active players ${activeChange > 0 ? 'up' : 'down'} ${Math.abs(activeChange).toFixed(0)}% in ${activeSpan}`
               }
-              lede={<>What players did each day: how many played, how much ore they mined, and how many items they crafted.</>}
+              lede={
+                <>
+                  What players did each day: how many issued a command, how much ore they mined, and how many items
+                  they crafted.{activeDays.length > 0 && activeDays[0].date !== recent[0]?.date && <> Active players are counted from {dayLabel(activeDays[0].date)}.</>}
+                </>
+              }
             >
               <div className={styles.multiples}>
                 {([['active', 'Active players', 'Players'], ['mined', 'Ore mined', 'Units'], ['crafted', 'Items crafted', 'Units']] as const).map(([field, title, unit]) => (
@@ -588,7 +607,7 @@ export default async function EconomyPage() {
                     <h3 className={styles.subhead}>
                       {title}
                       <span>
-                        <small>{dayLabel(last.date)}</small> {formatNumber(rows.at(-1)?.[field] ?? 0)}
+                        <small>{dayLabel(last.date)}</small> {rows.at(-1)?.[field] == null ? '—' : formatNumber(rows.at(-1)![field]!)}
                       </span>
                     </h3>
                     <ActivityChart rows={rows} field={field} unit={unit} />
@@ -606,7 +625,9 @@ export default async function EconomyPage() {
           <dt>Credits (cr)</dt>
           <dd>The galaxy&apos;s single currency. Figures are rounded to 3 digits: 8.05B is about 8.05 billion credits.</dd>
           <dt>Money supply</dt>
-          <dd>Every credit that exists: player wallets, player buy orders and faction treasuries (held by players), plus station managers, empire treasuries, citizen pools, NPC buy orders, the ship insurer and other NPC accounts. Credits parked in contracts (freight payments, ship orders, passenger fares) sit outside it until paid out.</dd>
+          <dd>Credits held in accounts and on the market: player wallets, player buy orders and faction treasuries (held by players), plus station managers, empire treasuries, citizen pools, NPC buy orders, the ship insurer and other NPC accounts. Credits held in contracts (freight payments, ship buy orders, ship and sourcing commissions, facility job fees, faction mission rewards, passenger fares) are not counted until paid out.</dd>
+          <dt>Active player</dt>
+          <dd>A player account that issued a command in the previous 24 hours. Game-run accounts are not counted.</dd>
           <dt>Faucet</dt>
           <dd>A game event that creates credits, such as a pirate bounty or a mission no empire or faction pays for.</dd>
           <dt>Sink</dt>
@@ -614,7 +635,7 @@ export default async function EconomyPage() {
           <dt>Transfer</dt>
           <dd>Credits moving from one holder to another: trades, taxes, fees, rewards an empire treasury pays. Transfers never change the supply, so they are neither faucets nor sinks.</dd>
           <dt>Reconciliation gap</dt>
-          <dd>The change in supply minus (created − destroyed). Mostly credits entering or leaving contracts; anything else is a path we do not count yet.</dd>
+          <dd>The change in supply minus (created − destroyed). It includes credits entering or leaving contracts and any path we do not count yet. We do not measure the two parts separately.</dd>
           <dt>NPC</dt>
           <dd>A game-run account. In trade figures, NPC stations are the station managers and empire treasuries. In the money supply, every non-player account listed above.</dd>
           <dt>Price index</dt>

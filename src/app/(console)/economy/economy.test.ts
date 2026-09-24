@@ -277,6 +277,13 @@ describe('trade authenticators', () => {
     expect(b.circulationChangePct).toBe(10)
   })
 
+  it('one day of circulation is no history: no change is claimed', () => {
+    const one = bondSummary([{ ...BONDS[0], trade_authenticators: { ...BONDS[0].trade_authenticators, in_circulation: null } }, BONDS[1]], { reserve: 600, in_circulation: 5600, window_sell_price: 1000, window_buy_price: 900 })
+    expect(one.circulationFrom).toBe('2026-09-03')
+    expect(one.circulationChange).toBeNull()
+    expect(one.circulationChangePct).toBeNull()
+  })
+
   it('station price is volume-weighted over the span, and its premium over the window price', () => {
     expect(b.stationPrice).toBe(1240)
     expect(b.premium).toBe(1.24)
@@ -306,6 +313,8 @@ describe('trade authenticators', () => {
     expect(bondHeadline({ ...b, circulationFrom: '2026-09-03' }, '2026-09-01')).toBe('The reserve fell 20% since Sep 1; circulation grew 10% since Sep 3')
     expect(bondHeadline({ ...b, reserveChangePct: 3 }, '2026-09-01')).toBe('Stations pay 1.24× the window price; the reserve is steady')
     expect(bondHeadline({ ...b, reserveChangePct: null, premium: null }, '2026-09-01')).toBe('The reserve is steady')
+    // No circulation history: say nothing about its trend.
+    expect(bondHeadline({ ...b, circulationChangePct: null }, '2026-09-01')).toBe('The reserve fell 20% since Sep 1')
   })
 })
 
