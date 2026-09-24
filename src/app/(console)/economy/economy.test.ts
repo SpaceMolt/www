@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'bun:test'
 import {
-  calendar, chartRows, compact, dayLabel, flowCaption, holders, inBrief, indexedCategories, lastDays, niceCeil,
-  playerHeld, priceHeadline, signed, signedPct, summarize, ticksFor, tradeHeadline, utcDateTime,
-  type EconomyCurrent, type EconomyDay, type EconomyMoneySupply,
+  avgPrice, bondHeadline, bondSummary, calendar, chartRows, compact, dayLabel, flowCaption, holders, inBrief, indexedCategories, lastDays, niceCeil,
+  playerHeld, priceHeadline, signed, signedPct, summarize, summaryOnlyUntil, ticksFor, tradeHeadline, utcDateTime,
+  type EconomyBondDay, type EconomyCurrent, type EconomyDay, type EconomyMoneySupply,
 } from './economy'
 
 function day(date: string, over: Partial<EconomyDay> = {}): EconomyDay {
@@ -27,6 +27,19 @@ function day(date: string, over: Partial<EconomyDay> = {}): EconomyDay {
     ore_mined: 0,
     items_crafted: 0,
     price_index: { ore: null, refined: null, component: null },
+    trade_authenticators: bond(),
+    ...over,
+  }
+}
+
+const NONE = { units: 0, credits: 0 }
+
+function bond(over: Partial<EconomyBondDay> = {}): EconomyBondDay {
+  return {
+    reserve: 0, in_circulation: 0, window_sell_price: 1000, window_buy_price: 900,
+    minted: 0, burned: 0, used_in_shipbuilding: 0,
+    window_sold_to_players: NONE, window_sold_to_stations: NONE, window_bought_back: NONE,
+    players_to_stations: NONE, stations_to_players: NONE, player_to_player: NONE, station_to_station: NONE,
     ...over,
   }
 }
@@ -114,6 +127,7 @@ const CURRENT: EconomyCurrent = {
   factions: 1,
   active_facilities: 1,
   inflation_7d: { composite_pct: 1.84, basket_items: 12, by_category: {} },
+  trade_authenticators: { reserve: 600, in_circulation: 0, window_sell_price: 1000, window_buy_price: 900 },
 }
 
 describe('inBrief', () => {
@@ -219,5 +233,133 @@ describe('helpers', () => {
     expect(signedPct(1.84)).toBe('+1.8%')
     expect(signedPct(-1.2)).toBe('\u22121.2%')
     expect(signedPct(-0.01)).toBe('0.0%')
+  })
+})
+
+describe('trade authenticators', () => {
+  // Reserve 1000 -> 800, circulation 5000 -> 5500 over 2 entries covering 3 days.
+  const BONDS = [
+    day('2026-09-01', {
+      trade_authenticators: bond({
+        reserve: 1000, in_circulation: 5000, minted: 100, burned: 20, used_in_shipbuilding: 5,
+        window_sold_to_players: { units: 80, credits: 80_000 },
+        window_sold_to_stations: { units: 10, credits: 10_000 },
+        players_to_stations: { units: 50, credits: 60_000 },
+      }),
+    }),
+    day('2026-09-03', {
+      period_days: 2,
+      trade_authenticators: bond({
+        reserve: 800, in_circulation: 5500, minted: 50, burned: 10,
+        window_sold_to_players: { units: 210, credits: 210_000 },
+        window_bought_back: { units: 4, credits: 3_600 },
+        players_to_stations: { units: 50, credits: 64_000 },
+      }),
+    }),
+  ]
+  const b = bondSummary(BONDS, { reserve: 600, in_circulation: 5600, window_sell_price: 1000, window_buy_price: 900 })
+
+  it('sums minting, window sales and use', () => {
+    expect(b.minted).toBe(150)
+    expect(b.sold).toBe(300)
+    expect(b.used).toBe(35)
+    expect(b.boughtBack).toBe(4)
+  })
+
+  it('days of cover: current reserve over average daily window sales across period_days', () => {
+    expect(b.soldPerDay).toBe(100)
+    expect(b.coverDays).toBe(6)
+  })
+
+  it('stock changes compare the first and last day', () => {
+    expect(b.reserveChangePct).toBe(-20)
+    expect(b.circulationChange).toBe(500)
+    expect(b.circulationChangePct).toBe(10)
+  })
+
+  it('station price is volume-weighted over the span, and its premium over the window price', () => {
+    expect(b.stationPrice).toBe(1240)
+    expect(b.premium).toBe(1.24)
+    expect(b.segments.find((x) => x.key === 'player_to_player')?.avg).toBeNull()
+  })
+
+  it('has no cover without sales and no premium with the window closed', () => {
+    const quiet = bondSummary([day('2026-09-01')], { reserve: 10, in_circulation: 0, window_sell_price: 0, window_buy_price: 0 })
+    expect(quiet.coverDays).toBeNull()
+    expect(quiet.premium).toBeNull()
+  })
+
+  it('avgPrice guards zero units', () => {
+    expect(avgPrice({ units: 0, credits: 0 })).toBeNull()
+    expect(avgPrice({ units: 4, credits: 3_600 })).toBe(900)
+  })
+
+  it('chart rows: used plots below the axis, closed window and untraded segments are gaps', () => {
+    const rows = chartRows([day('2026-09-01', {
+      trade_authenticators: bond({ minted: 7, burned: 3, used_in_shipbuilding: 2, window_buy_price: 0, player_to_player: { units: 2, credits: 2_200 } }),
+    })])
+    expect(rows[0]).toMatchObject({ bMinted: 7, bUsed: -5, bWindowSell: 1000, bWindowBuy: null, bP2P: 1100, bP2S: null })
+  })
+
+  it('headline leads with a moving reserve, else the station premium', () => {
+    expect(bondHeadline(b, '2026-09-01')).toBe('The reserve fell 20% since Sep 1; circulation grew 10%')
+    expect(bondHeadline({ ...b, circulationFrom: '2026-09-03' }, '2026-09-01')).toBe('The reserve fell 20% since Sep 1; circulation grew 10% since Sep 3')
+    expect(bondHeadline({ ...b, reserveChangePct: 3 }, '2026-09-01')).toBe('Stations pay 1.24× the window price; the reserve is steady')
+    expect(bondHeadline({ ...b, reserveChangePct: null, premium: null }, '2026-09-01')).toBe('The reserve is steady')
+  })
+})
+
+describe('summary-only days (before detailed accounting)', () => {
+  const summaryOnly = (date: string, over: Partial<EconomyDay> = {}) => day(date, {
+    faucets: null,
+    sinks: null,
+    supply_change: { change: 30, unattributed: null },
+    trade_authenticators: bond({ reserve: 900, in_circulation: null, burned: null, used_in_shipbuilding: null, window_sell_price: 990, window_buy_price: null }),
+    ...over,
+  })
+  const MIXED = [summaryOnly('2026-08-31'), ...TWO]
+
+  it('finds the last summary-only day', () => {
+    expect(summaryOnlyUntil(MIXED)).toBe('2026-08-31')
+    expect(summaryOnlyUntil(TWO)).toBeNull()
+  })
+
+  it('created, destroyed and the gap cover only detailed days; supply change covers all', () => {
+    const s = summarize(MIXED)
+    const d = summarize(TWO)
+    expect(s.partial).toBe(true)
+    expect(s.detailedFrom).toBe('2026-09-01')
+    expect(s.detailedDays).toBe(3)
+    expect(s.days).toBe(4)
+    expect([s.created, s.destroyed, s.net, s.gap, s.gapPct]).toEqual([d.created, d.destroyed, d.net, d.gap, d.gapPct])
+    expect(s.detailedChange).toBe(d.change)
+    expect(s.change).toBe(d.change + 30)
+    expect(s.faucets).toEqual(d.faucets)
+  })
+
+  it('in brief says when the flow totals start', () => {
+    expect(inBrief(summarize(MIXED), CURRENT)[1]).toBe(
+      'Since detailed accounting began on Sep 1, the game created 90 new credits and destroyed 35, a net +55.',
+    )
+    expect(inBrief(summarize([summaryOnly('2026-08-31')]), CURRENT)).toHaveLength(2)
+    expect(flowCaption([summaryOnly('2026-08-31')])).toBeNull()
+  })
+
+  it('chart rows leave the missing figures as gaps', () => {
+    expect(chartRows([summaryOnly('2026-08-31')])[0]).toMatchObject({
+      faucets: null, sinks: null, net: null, unattributed: null, dev: null,
+      bUsed: null, bCirculating: null, bReserve: 900, bWindowSell: 990, bWindowBuy: null,
+    })
+  })
+
+  it('authenticator circulation change starts at the first counted day', () => {
+    const b = bondSummary([
+      summaryOnly('2026-08-31'),
+      day('2026-09-01', { trade_authenticators: bond({ in_circulation: 100, burned: 4, used_in_shipbuilding: 1 }) }),
+      day('2026-09-02', { trade_authenticators: bond({ in_circulation: 130 }) }),
+    ], { reserve: 0, in_circulation: 130, window_sell_price: 1000, window_buy_price: 900 })
+    expect(b.circulationFrom).toBe('2026-09-01')
+    expect(b.circulationChange).toBe(30)
+    expect(b.used).toBe(5)
   })
 })

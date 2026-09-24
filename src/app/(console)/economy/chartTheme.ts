@@ -19,6 +19,11 @@ export const C = {
   ore: '#ffd93d', // --warning-yellow
   refined: '#f472b6',
   component: '#4dabf7', // --laser-blue
+  // Trade authenticators: the Federation window, and the three market segments.
+  window: '#f5a524',
+  p2s: '#fb7185', // players selling to stations
+  s2p: '#c4b5fd', // stations selling to players
+  p2p: '#a3e635', // between players
   // Single-series charts and bars with no category meaning.
   neutral: '#a8c5d6', // --chrome-silver
   reference: '#8aa9bb', // reference lines (price base = 100)

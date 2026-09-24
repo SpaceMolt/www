@@ -30,6 +30,43 @@ export interface EconomyCurrent {
   factions: number
   active_facilities: number
   inflation_7d: { composite_pct: number; basket_items: number; by_category: Record<string, number> }
+  trade_authenticators: EconomyBondStock
+}
+
+/** Trade authenticators: counts are items, prices credits. A 0 price means that window side is off. */
+export interface EconomyBondStock {
+  reserve: number
+  in_circulation: number
+  window_sell_price: number
+  window_buy_price: number
+}
+
+/** One segment of authenticator trade. Average price = credits ÷ units. */
+export interface EconomyBondTrades {
+  units: number
+  credits: number
+}
+
+/**
+ * On summary-only days (before detailed accounting) in_circulation, burned and
+ * used_in_shipbuilding are null, and the window prices are the average price
+ * of that day's window trades (null with none).
+ */
+export interface EconomyBondDay {
+  reserve: number
+  in_circulation: number | null
+  window_sell_price: number | null
+  window_buy_price: number | null
+  minted: number
+  burned: number | null
+  used_in_shipbuilding: number | null
+  window_sold_to_players: EconomyBondTrades
+  window_sold_to_stations: EconomyBondTrades
+  window_bought_back: EconomyBondTrades
+  players_to_stations: EconomyBondTrades
+  stations_to_players: EconomyBondTrades
+  player_to_player: EconomyBondTrades
+  station_to_station: EconomyBondTrades
 }
 
 export interface EconomyFaucets {
@@ -78,15 +115,17 @@ export interface EconomyDay {
   supply_total: number
   supply_players: number
   supply_npc: number
-  supply_change: { change: number; unattributed: number }
-  faucets: EconomyFaucets
-  sinks: EconomySinks
+  /** unattributed, faucets and sinks are null on summary-only days, before detailed accounting. */
+  supply_change: { change: number; unattributed: number | null }
+  faucets: EconomyFaucets | null
+  sinks: EconomySinks | null
   trade: EconomyTrade
   taxes_and_fines: number
   active_players: number
   ore_mined: number
   items_crafted: number
   price_index: EconomyPriceIndex
+  trade_authenticators: EconomyBondDay
 }
 
 export interface EconomyReport {
@@ -94,6 +133,8 @@ export interface EconomyReport {
   series_start: string
   price_index_base_start: string
   price_index_base_end: string
+  /** First day with detailed accounting (faucets, sinks, authenticator use); "" or absent when there is none. */
+  detailed_accounting_since?: string
   current: EconomyCurrent
   days: EconomyDay[]
   top_categories: { category: string; notional: number; units: number; share_pct: number }[]
@@ -170,18 +211,35 @@ export function exchangeVolume(t: EconomyTrade): number {
   return t.player_to_player + t.players_sold_to_npc + t.players_bought_from_npc
 }
 
+type DetailedDay = EconomyDay & { faucets: EconomyFaucets; sinks: EconomySinks }
+
+/** False on summary-only days, before detailed accounting: no faucets, sinks or gap. */
+export function isDetailed(d: EconomyDay): d is DetailedDay {
+  return d.faucets !== null && d.sinks !== null
+}
+
+/** The last summary-only day in `days`, or null when every day is detailed. */
+export function summaryOnlyUntil(days: EconomyDay[]): string | null {
+  return days.filter((d) => !isDetailed(d)).at(-1)?.date ?? null
+}
+
 /**
  * Everything the page says about one span of days. Every period figure on the
  * page comes from here, so they all cover the same days. The first day's
  * flows start at the previous day's last snapshot, so the span's supply change
  * runs from `supplyStart` (the supply just before `from`) to `supplyEnd`.
+ *
+ * Created, destroyed and the gap exist only on detailed days, so they (and the
+ * supply change they reconcile against, `detailedChange`) cover only those.
  */
 export function summarize(days: EconomyDay[]) {
   const sum = (f: (d: EconomyDay) => number) => days.reduce((s, d) => s + f(d), 0)
-  const created = sum((d) => d.faucets.total)
-  const destroyed = sum((d) => d.sinks.total)
+  const detailed = days.filter(isDetailed)
+  const dsum = (f: (d: DetailedDay) => number) => detailed.reduce((s, d) => s + f(d), 0)
+  const created = dsum((d) => d.faucets.total)
+  const destroyed = dsum((d) => d.sinks.total)
   const change = sum((d) => d.supply_change.change)
-  const gap = sum((d) => d.supply_change.unattributed)
+  const gap = dsum((d) => d.supply_change.unattributed ?? 0)
   const net = created - destroyed
   const supplyEnd = days.at(-1)?.supply_total ?? 0
   const supplyStart = supplyEnd - change
@@ -189,13 +247,19 @@ export function summarize(days: EconomyDay[]) {
     from: days[0]?.date ?? '',
     to: days.at(-1)?.date ?? '',
     days: sum((d) => d.period_days),
-    faucets: sumBy(days.map((d) => d.faucets), FAUCET_LABELS),
-    sinks: sumBy(days.map((d) => d.sinks), SINK_LABELS),
+    /** First detailed day, and the days the detailed figures cover. */
+    detailedFrom: detailed[0]?.date ?? null,
+    detailedDays: dsum((d) => d.period_days),
+    /** True when some days in the span are summary-only. */
+    partial: detailed.length < days.length,
+    faucets: sumBy(detailed.map((d) => d.faucets), FAUCET_LABELS),
+    sinks: sumBy(detailed.map((d) => d.sinks), SINK_LABELS),
     created,
     destroyed,
     net,
     change,
-    /** change − net: credits the counters do not explain. */
+    detailedChange: dsum((d) => d.supply_change.change),
+    /** detailedChange − net: credits the counters do not explain. */
     gap,
     /** |gap| as a percentage of |net|; null when net is 0. */
     gapPct: net ? Math.abs(gap / net) * 100 : null,
@@ -237,7 +301,10 @@ export function inBrief(s: Summary, current: EconomyCurrent): string[] {
   out.push(
     `${pct === '0.00' ? `The money supply held steady at ${compact(s.supplyEnd)} credits` : `The money supply ${s.change > 0 ? 'grew' : 'shrank'} ${pct}% over ${s.days} days, to ${compact(s.supplyEnd)} credits`}. Players hold ${share.toFixed(0)}% of it.`,
   )
-  out.push(`The game created ${compact(s.created)} new credits and destroyed ${compact(s.destroyed)}, a net ${signed(s.net)}.`)
+  if (s.detailedFrom) {
+    const lead = s.partial ? `Since detailed accounting began on ${dayLabel(s.detailedFrom)}, the game` : 'The game'
+    out.push(`${lead} created ${compact(s.created)} new credits and destroyed ${compact(s.destroyed)}, a net ${signed(s.net)}.`)
+  }
   const [source, drain] = [s.faucets[0], s.sinks[0]]
   if (source && drain && source.value > 0 && drain.value > 0) {
     out.push(`Biggest source of new credits: ${source.label.toLowerCase()} (${compact(source.value)}). Biggest drain: ${drain.label.toLowerCase()} (${compact(drain.value)}).`)
@@ -271,7 +338,7 @@ export function priceHeadline(last: EconomyPriceIndex, cats: (keyof EconomyPrice
 
 /** Caption under the created/destroyed chart: the biggest day, and any dev-team money in it. */
 export function flowCaption(days: EconomyDay[]): string | null {
-  const top = days.reduce<EconomyDay | null>((m, d) => (!m || d.faucets.total > m.faucets.total ? d : m), null)
+  const top = days.filter(isDetailed).reduce<DetailedDay | null>((m, d) => (!m || d.faucets.total > m.faucets.total ? d : m), null)
   if (!top || top.faucets.total === 0) return null
   const head = `The biggest day was ${dayLabel(top.date)}, with ${compact(top.faucets.total)} created`
   return top.faucets.dev_team > 0
@@ -340,6 +407,19 @@ export interface ChartRow {
   ore: number | null
   refined: number | null
   component: number | null
+  /** Trade authenticators: units minted, sold by the window, and used up (negative). */
+  bMinted: number | null
+  bSold: number | null
+  bUsed: number | null
+  bReserve: number | null
+  bCirculating: number | null
+  /** Window prices; null when that side is off. */
+  bWindowSell: number | null
+  bWindowBuy: number | null
+  /** Average price per segment; null on days it did not trade. */
+  bP2S: number | null
+  bS2P: number | null
+  bP2P: number | null
 }
 
 /** One flat, serialisable row per calendar day for the client charts; null on missing days. */
@@ -352,12 +432,12 @@ export function chartRows(days: EconomyDay[]): ChartRow[] {
     total: d?.supply_total ?? null,
     players: d?.supply_players ?? null,
     npc: d?.supply_npc ?? null,
-    faucets: d?.faucets.total ?? null,
-    sinks: d ? -d.sinks.total : null,
-    net: d ? d.faucets.total - d.sinks.total : null,
+    faucets: d?.faucets?.total ?? null,
+    sinks: d?.sinks ? -d.sinks.total : null,
+    net: d?.faucets && d.sinks ? d.faucets.total - d.sinks.total : null,
     change: d?.supply_change.change ?? null,
     unattributed: d?.supply_change.unattributed ?? null,
-    dev: d ? d.faucets.dev_team + d.sinks.dev_team : null,
+    dev: d?.faucets && d.sinks ? d.faucets.dev_team + d.sinks.dev_team : null,
     p2p: d?.trade.player_to_player ?? null,
     sold: d?.trade.players_sold_to_npc ?? null,
     bought: d?.trade.players_bought_from_npc ?? null,
@@ -369,7 +449,103 @@ export function chartRows(days: EconomyDay[]): ChartRow[] {
     ore: d?.price_index.ore ?? null,
     refined: d?.price_index.refined ?? null,
     component: d?.price_index.component ?? null,
+    ...bondRow(d?.trade_authenticators),
   }))
+}
+
+function bondRow(b: EconomyBondDay | undefined) {
+  return {
+    bMinted: b ? b.minted : null,
+    bSold: b ? windowSold(b) : null,
+    bUsed: b && b.burned !== null && b.used_in_shipbuilding !== null ? -(b.burned + b.used_in_shipbuilding) : null,
+    bReserve: b ? b.reserve : null,
+    bCirculating: b?.in_circulation ?? null,
+    bWindowSell: b?.window_sell_price || null,
+    bWindowBuy: b?.window_buy_price || null,
+    bP2S: b ? avgPrice(b.players_to_stations) : null,
+    bS2P: b ? avgPrice(b.stations_to_players) : null,
+    bP2P: b ? avgPrice(b.player_to_player) : null,
+  }
+}
+
+/** Credits per unit, or null when nothing traded. */
+export function avgPrice(t: EconomyBondTrades): number | null {
+  return t.units ? t.credits / t.units : null
+}
+
+function windowSold(b: EconomyBondDay): number {
+  return b.window_sold_to_players.units + b.window_sold_to_stations.units
+}
+
+type Segment = 'window_sold_to_players' | 'window_sold_to_stations' | 'window_bought_back' | 'players_to_stations'
+  | 'stations_to_players' | 'player_to_player' | 'station_to_station'
+
+export const BOND_SEGMENTS: [Segment, string][] = [
+  ['window_sold_to_players', 'Window sales to players'],
+  ['window_sold_to_stations', 'Window sales to stations'],
+  ['window_bought_back', 'Window buy-backs'],
+  ['players_to_stations', 'Players selling to stations'],
+  ['stations_to_players', 'Stations selling to players'],
+  ['player_to_player', 'Between players'],
+  ['station_to_station', 'Between stations'],
+]
+
+/**
+ * The authenticator market over a span. Stock figures compare the first and
+ * last day's end; cover uses the current reserve and the span's average daily
+ * window sales.
+ */
+export function bondSummary(days: EconomyDay[], stock: EconomyBondStock) {
+  const bonds = days.map((d) => d.trade_authenticators)
+  const sum = (f: (b: EconomyBondDay) => number) => bonds.reduce((s, b) => s + f(b), 0)
+  const spanDays = days.reduce((s, d) => s + d.period_days, 0)
+  const sold = sum(windowSold)
+  const first = bonds[0]
+  const last = bonds.at(-1)
+  // Circulation is unknown on summary-only days: compare the first and last days that have it.
+  const counted = days.filter((d) => d.trade_authenticators.in_circulation !== null)
+  const circFrom = counted[0]?.trade_authenticators.in_circulation ?? null
+  const circTo = counted.at(-1)?.trade_authenticators.in_circulation ?? null
+  const pct = (from: number, to: number) => (from ? ((to - from) / from) * 100 : null)
+  const segments = BOND_SEGMENTS.map(([key, label]) => {
+    const t = { units: sum((b) => b[key].units), credits: sum((b) => b[key].credits) }
+    return { key, label, units: t.units, avg: avgPrice(t) }
+  })
+  const stationPrice = segments.find((x) => x.key === 'players_to_stations')!.avg
+  return {
+    minted: sum((b) => b.minted),
+    sold,
+    /** Burned plus built into ships, over the days that count them. */
+    used: sum((b) => (b.burned ?? 0) + (b.used_in_shipbuilding ?? 0)),
+    boughtBack: sum((b) => b.window_bought_back.units),
+    reserveChangePct: first && last ? pct(first.reserve, last.reserve) : null,
+    circulationFrom: counted[0]?.date ?? null,
+    circulationChange: circFrom !== null && circTo !== null ? circTo - circFrom : 0,
+    circulationChangePct: circFrom !== null && circTo !== null ? pct(circFrom, circTo) : null,
+    soldPerDay: spanDays ? sold / spanDays : 0,
+    /** Days the current reserve lasts at the span's average window sales; null with no sales. */
+    coverDays: sold && spanDays ? stock.reserve / (sold / spanDays) : null,
+    segments,
+    stationPrice,
+    /** Average price stations paid players ÷ the window sell price; null if either is missing. */
+    premium: stationPrice !== null && stock.window_sell_price ? stationPrice / stock.window_sell_price : null,
+  }
+}
+
+export type BondSummary = ReturnType<typeof bondSummary>
+
+/** Chapter title for authenticators: the reserve's direction first, else the station premium. */
+export function bondHeadline(b: BondSummary, from: string): string {
+  const r = b.reserveChangePct
+  if (r !== null && Math.abs(r) >= 10) {
+    const c = b.circulationChangePct
+    // Circulation is only counted from detailed accounting on, which can start later than the span.
+    const circSince = b.circulationFrom && b.circulationFrom !== from ? ` since ${dayLabel(b.circulationFrom)}` : ''
+    const circ = c === null || Math.abs(c) < 1 ? 'circulation held steady' : `circulation ${c > 0 ? 'grew' : 'shrank'} ${Math.abs(c).toFixed(0)}%`
+    return `The reserve ${r < 0 ? 'fell' : 'grew'} ${Math.abs(r).toFixed(0)}% since ${dayLabel(from)}; ${circ}${c === null ? '' : circSince}`
+  }
+  if (b.premium !== null) return `Stations pay ${b.premium.toFixed(2)}× the window price; the reserve is steady`
+  return 'The reserve is steady'
 }
 
 /** Price-index categories that have at least one value in the series. */

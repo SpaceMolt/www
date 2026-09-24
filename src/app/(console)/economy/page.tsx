@@ -1,9 +1,9 @@
 import { ArrowDown, ArrowDownRight, ArrowUp, ArrowUpRight, ExternalLink } from 'lucide-react'
 import { formatCompact, formatNumber, titleCase } from '@/lib/format'
-import { ActivityChart, FlowsChart, Legend, PriceChart, SupplyChart, TradeChart } from './charts'
+import { ActivityChart, BondFlowChart, BondPriceChart, FlowsChart, Legend, PriceChart, SupplyChart, TradeChart } from './charts'
 import { C } from './chartTheme'
 import {
-  chartRows, compact, dayLabel, exchangeVolume, flowCaption, holders, inBrief, INDEX_NAME, indexedCategories, lastDays,
+  bondHeadline, bondSummary, chartRows, compact, summaryOnlyUntil, dayLabel, exchangeVolume, flowCaption, holders, inBrief, INDEX_NAME, indexedCategories, lastDays,
   playerHeld, priceHeadline, signed, signedPct, summarize, tradeHeadline, utcDateTime, type EconomyReport,
 } from './economy'
 import styles from './page.module.css'
@@ -164,6 +164,12 @@ export default async function EconomyPage() {
   const indexName = (cat: string) => INDEX_NAME[cat as keyof typeof INDEX_NAME] ?? titleCase(cat)
   const inflation = Object.entries(current.inflation_7d.by_category).sort((a, b) => b[1] - a[1])
   const maxInflation = Math.max(0.1, ...inflation.map(([, v]) => Math.abs(v)))
+  // Days before detailed accounting carry totals only: no created/destroyed split, gap or authenticator use.
+  const summaryUntil = summaryOnlyUntil(recent)
+  const flowSpan = `${s.detailedDays} days`
+  const accountingNote = summaryUntil && s.detailedFrom
+    ? `Detailed accounting starts ${dayLabel(s.detailedFrom)}; the shaded days before it show totals only.`
+    : null
   const pct = Math.abs(s.changePct)
   const supplyTitle = pct < 1
     ? `Supply is steady: ${signedPct(s.changePct, 2)} in ${span}`
@@ -172,6 +178,13 @@ export default async function EconomyPage() {
   const caption = flowCaption(recent)
   const topCategory = report.top_categories[0]
   const firstActive = recent[0]?.active_players ?? 0
+  const bonds = bondSummary(recent, current.trade_authenticators)
+  const bondStock = current.trade_authenticators
+  const signedCount = (n: number) => `${n > 0 ? '+' : n < 0 ? '\u2212' : ''}${formatNumber(Math.abs(n))}`
+  const segmentColor: Record<string, string> = {
+    window_sold_to_players: C.window, window_sold_to_stations: C.window, window_bought_back: C.window,
+    players_to_stations: C.p2s, stations_to_players: C.s2p, player_to_player: C.p2p, station_to_station: C.neutral,
+  }
   const activeChange = firstActive && last ? ((last.active_players - firstActive) / firstActive) * 100 : 0
 
   return (
@@ -209,10 +222,10 @@ export default async function EconomyPage() {
         <Kpi label="Held by players" window="now" value={`${playerShare.toFixed(1)}%`} sub={`${compact(players)} of ${cr(ms.total)}`} />
         <Kpi
           label="Net new credits"
-          window={span}
-          value={last ? signed(s.net) : '—'}
-          unit={last ? 'cr' : undefined}
-          sub={last ? `Yesterday: ${signed(last.faucets.total - last.sinks.total)}` : 'No complete day yet'}
+          window={flowSpan}
+          value={s.detailedFrom ? signed(s.net) : '—'}
+          unit={s.detailedFrom ? 'cr' : undefined}
+          sub={last?.faucets && last.sinks ? `Yesterday: ${signed(last.faucets.total - last.sinks.total)}` : 'Detailed accounting not started'}
         />
         <Kpi
           label="Market trade"
@@ -292,9 +305,11 @@ export default async function EconomyPage() {
             n="02"
             topic="Credits created and destroyed"
             title={
-              s.net === 0
-                ? `Credits created and destroyed balanced out over ${span}`
-                : `More credits ${s.net > 0 ? 'created than destroyed' : 'destroyed than created'}: net ${signedCr(s.net)} in ${span}`
+              !s.detailedFrom
+                ? 'Detailed accounting has not started yet'
+                : s.net === 0
+                  ? `Credits created and destroyed balanced out over ${flowSpan}`
+                  : `More credits ${s.net > 0 ? 'created than destroyed' : 'destroyed than created'}: net ${signedCr(s.net)} in ${flowSpan}`
             }
             lede={
               <>
@@ -303,26 +318,29 @@ export default async function EconomyPage() {
                 to build a ship. (Economists call these faucets and sinks.) Taxes, trades and fees only move credits
                 from one holder to another, so they count as neither. If creation keeps outpacing destruction,
                 prices tend to rise.
+                {s.partial && s.detailedFrom && <> The totals below cover only the {flowSpan} since detailed accounting began on {dayLabel(s.detailedFrom)}.</>}
               </>
             }
           >
-            <FlowsChart rows={rows} />
+            <FlowsChart rows={rows} summaryUntil={summaryUntil} />
+            {accountingNote && <p className={styles.caption}>{accountingNote}</p>}
             {caption && <p className={styles.caption}>{caption}</p>}
-            <p className={styles.note}>
+            {s.detailedFrom && <p className={styles.note}>
               {gapFit ? <>Our counters explain the change in money supply {gapFit}: </> : <>Created and destroyed cancel out, </>}
               created minus destroyed is <strong>{signedCr(s.net)}</strong>, and the supply actually{' '}
-              {s.change >= 0 ? 'grew' : 'shrank'} <strong>{cr(Math.abs(s.change))}</strong>. The{' '}
+              {s.detailedChange >= 0 ? 'grew' : 'shrank'} <strong>{cr(Math.abs(s.detailedChange))}</strong>
+              {s.partial && <> over those {flowSpan}</>}. The{' '}
               <strong>{cr(Math.abs(s.gap))}</strong> reconciliation gap{s.gapPct !== null && <> ({s.gapPct.toFixed(0)}%)</>} is
               mostly credits parked in contracts (freight payments, ship orders, passenger fares), which leave the
               supply while held and come back when paid out.
-            </p>
+            </p>}
             <div className={styles.pair}>
               <BarList
-                title={`Where new credits came from · ${span}`}
+                title={`Where new credits came from · ${flowSpan}`}
                 rows={s.faucets.map((f) => ({ ...f, color: C.created, note: FAUCET_NOTES[f.key] }))}
               />
               <BarList
-                title={`Where credits were destroyed · ${span}`}
+                title={`Where credits were destroyed · ${flowSpan}`}
                 rows={s.sinks.map((f) => ({ ...f, color: C.destroyed, note: SINK_NOTES[f.key] }))}
               />
             </div>
@@ -436,9 +454,107 @@ export default async function EconomyPage() {
             </div>
           </Chapter>
 
+          <Chapter
+            n="05"
+            topic="Trade authenticators"
+            title={bondHeadline(bonds, s.from)}
+            lede={
+              <>
+                The galaxy&apos;s one fixed-price asset: a bond the Nebula Trade Federation sells and buys back at a set
+                price. A fixed price holds only while the reserve keeps up with sales and the market price stays near
+                the window price, so these are the signals to watch.
+              </>
+            }
+          >
+            <div className={styles.explainer}>
+              <h3 className={styles.subhead}>What is a trade authenticator?</h3>
+              <dl>
+                <dt>A bearer bond</dt>
+                <dd>Whoever holds one owns it. The Nebula Trade Federation mints them at its Federation Foundry into a reserve.</dd>
+                <dt>The window</dt>
+                <dd>The Federation&apos;s redemption window at Grand Exchange Station sells them at a fixed price and buys them back for a little less.</dd>
+                <dt>What they are for</dt>
+                <dd>Stations burn them as upkeep for trade facilities (commerce hubs, trade nexuses, player trade concourses), and a few top-tier Nebula hulls need them as build material.</dd>
+                <dt>Why stations pay more</dt>
+                <dd>Station managers bid about 1.2× the window price, so haulers can buy at the window and carry them to stations.</dd>
+                <dt>Reading the charts</dt>
+                <dd>Green bars are minted, orange bars are used up, and the amber line is what the window sold. In the price chart, lines near the amber window line mean the fixed price holds.</dd>
+              </dl>
+            </div>
+
+            <dl className={`${styles.figures} ${styles.figureRow4}`}>
+              <div>
+                <dt>Window price</dt>
+                <dd>{bondStock.window_sell_price ? `${formatNumber(bondStock.window_sell_price)} cr` : 'Closed'}</dd>
+                <span>{bondStock.window_buy_price ? `buys back at ${formatNumber(bondStock.window_buy_price)} cr` : 'not buying back'}</span>
+              </div>
+              <div>
+                <dt>In the reserve</dt>
+                <dd>{formatNumber(bondStock.reserve)}</dd>
+                <span>
+                  {bonds.coverDays === null
+                    ? `no window sales in ${span}`
+                    : `about ${bonds.coverDays.toFixed(0)} days of window sales at ${formatNumber(Math.round(bonds.soldPerDay))} a day`}
+                </span>
+              </div>
+              <div>
+                <dt>In circulation</dt>
+                <dd>{formatNumber(bondStock.in_circulation)}</dd>
+                <span>{bonds.circulationFrom ? `${signedCount(bonds.circulationChange)} since ${dayLabel(bonds.circulationFrom)}` : 'not counted before detailed accounting'}</span>
+              </div>
+              <div>
+                <dt>Stations paid players</dt>
+                <dd>{bonds.stationPrice === null ? '—' : `${formatNumber(Math.round(bonds.stationPrice))} cr`}</dd>
+                <span>
+                  {bonds.premium === null ? `no sales to stations in ${span}` : `${bonds.premium.toFixed(2)}× the window price, ${span} average`}
+                </span>
+              </div>
+            </dl>
+
+            <div className={styles.split}>
+              <div className={styles.chart}>
+                <h3 className={styles.subhead}>Made, sold and used up each day</h3>
+                <BondFlowChart rows={rows} summaryUntil={summaryUntil} />
+              </div>
+              <div className={styles.multiples}>
+                <div>
+                  <h3 className={styles.subhead}>
+                    In the reserve
+                    <span><small>{dayLabel(last.date)}</small> {formatNumber(last.trade_authenticators.reserve)}</span>
+                  </h3>
+                  <ActivityChart rows={rows} field="bReserve" unit="In the reserve" color={C.window} />
+                </div>
+                <div>
+                  <h3 className={styles.subhead}>
+                    In circulation
+                    <span><small>{dayLabel(last.date)}</small> {last.trade_authenticators.in_circulation === null ? '—' : formatNumber(last.trade_authenticators.in_circulation)}</span>
+                  </h3>
+                  <ActivityChart rows={rows} field="bCirculating" unit="In circulation" summaryUntil={summaryUntil} />
+                </div>
+              </div>
+            </div>
+
+            <div className={`${styles.split} ${styles.splitGap}`}>
+              <div className={styles.chart}>
+                <h3 className={styles.subhead}>Price per authenticator, daily average</h3>
+                <BondPriceChart rows={rows} summaryUntil={summaryUntil} />
+                {accountingNote && <p className={styles.caption}>{accountingNote} On those days the window line is the average price of that day&apos;s window trades.</p>}
+              </div>
+              <BarList
+                title={`Where they changed hands · ${span}`}
+                rows={bonds.segments.map((x) => ({
+                  label: x.label,
+                  value: x.units,
+                  color: segmentColor[x.key],
+                  figure: `${formatNumber(x.units)}${x.avg === null ? '' : ` · ${formatNumber(Math.round(x.avg))} cr`}`,
+                }))}
+              />
+            </div>
+          </Chapter>
+
           <div className={styles.pair}>
             <Chapter
-              n="05"
+              n="06"
               topic="Most traded"
               title={topCategory ? `Top category: ${indexName(topCategory.category).toLowerCase()}, ${topCategory.share_pct.toFixed(0)}% of market trade by value` : 'No market trade in the last 30 days'}
               lede={
@@ -461,7 +577,7 @@ export default async function EconomyPage() {
             </Chapter>
 
             <Chapter
-              n="06"
+              n="07"
               topic="Activity"
               title={
                 Math.abs(activeChange) < 1
@@ -507,6 +623,16 @@ export default async function EconomyPage() {
           <dd>A game-run account. In trade figures, NPC stations are the station managers and empire treasuries. In the money supply, every non-player account listed above.</dd>
           <dt>Price index</dt>
           <dd>A fixed basket per category, weighted by traded value in the base week ({baseWeek}). 100 means base-week prices. A gap in a line means no data, not zero.</dd>
+          <dt>Trade authenticator</dt>
+          <dd>A bearer bond the Nebula Trade Federation mints at its Federation Foundry. Stations burn them as upkeep for trade facilities; some Nebula hulls need them to build.</dd>
+          <dt>Window</dt>
+          <dd>The Federation&apos;s redemption window at Grand Exchange Station, which sells authenticators and buys them back at fixed prices.</dd>
+          <dt>Reserve</dt>
+          <dd>Authenticators held by the empire treasuries, including those on the window&apos;s own sell order.</dd>
+          <dt>In circulation</dt>
+          <dd>Authenticators outside the reserve: in ship cargo, station and faction storage, and on other sell orders. Those in wrecks, packages and ship orders are not counted.</dd>
+          <dt>Days of cover</dt>
+          <dd>The current reserve divided by the average number the window sold per day over the period.</dd>
           <dt>Cadence</dt>
           <dd>The server rebuilds the report hourly. Daily figures cover complete UTC days, so the latest day is yesterday. Period figures cover the last {WINDOW} days, or every day so far when there are fewer. This page refreshes every 15 minutes.</dd>
         </dl>
