@@ -3,7 +3,7 @@ import { formatCompact, formatNumber, titleCase } from '@/lib/format'
 import { ActivityChart, BondFlowChart, BondPriceChart, FlowsChart, Legend, PriceChart, SupplyChart, TradeChart } from './charts'
 import { C } from './chartTheme'
 import {
-  bondHeadline, bondSummary, chartRows, compact, summaryOnlyUntil, dayLabel, exchangeVolume, flowCaption, holders, inBrief, INDEX_NAME, indexedCategories, lastDays,
+  bondHeadline, bondSummary, chartRows, compact, summaryOnlyUntil, tradeGapNote, dayLabel, exchangeVolume, flowCaption, holders, inBrief, INDEX_NAME, indexedCategories, lastDays,
   playerHeld, priceHeadline, signed, signedPct, summarize, tradeHeadline, utcDateTime, type EconomyReport,
 } from './economy'
 import styles from './page.module.css'
@@ -186,8 +186,14 @@ export default async function EconomyPage() {
     players_to_stations: C.p2s, stations_to_players: C.s2p, player_to_player: C.p2p, station_to_station: C.neutral,
   }
   const activeChange = firstActive ? ((lastActive - firstActive) / firstActive) * 100 : 0
-  const fillNote = summaryUntil && s.detailedFrom
-    ? `Before ${dayLabel(s.detailedFrom)}, trades that matched the moment an order was placed were not recorded, so figures for those days leave some trades out.`
+  // Fill-based figures miss instant matches before detailed accounting; the report dates it.
+  const tradesSince = report.detailed_accounting_since
+  const fillNote = tradeGapNote(tradesSince, recent[0]?.date ?? '')
+  const categoriesFrom = last ? new Date(Date.parse(`${last.date}T00:00:00Z`) - 29 * 86_400_000).toISOString().slice(0, 10) : ''
+  const categoriesNote = tradeGapNote(tradesSince, categoriesFrom)
+  // The fixed base week keeps its gap even after the days in view are complete.
+  const baseNote = tradeGapNote(tradesSince, baseStart)
+    ? `The base week (${baseWeek}) predates complete trade records, so it leaves out trades that matched the moment an order was placed.`
     : null
 
   return (
@@ -253,7 +259,7 @@ export default async function EconomyPage() {
             title={supplyTitle}
             lede={
               <>
-                Every credit in existence, counted daily. When the game creates credits faster than it destroys
+                Credits held in accounts and on the market, counted daily. Credits held in contracts are not counted. When the game creates credits faster than it destroys
                 them, each credit buys less, so a steady supply is a healthy sign. Players hold{' '}
                 <strong>{playerShare.toFixed(1)}%</strong>; the rest belongs to NPCs, the game-run accounts behind
                 station markets, empire treasuries and citizen pools.
@@ -414,6 +420,7 @@ export default async function EconomyPage() {
               <div className={styles.chart}>
                 {categories.length > 0 ? <PriceChart rows={rows} categories={categories} /> : <p className={styles.muted}>No category traded in the base week yet.</p>}
                 {fillNote && <p className={styles.caption}>{fillNote}</p>}
+                {baseNote && <p className={styles.caption}>{baseNote}</p>}
               </div>
               <div className={styles.barList}>
                 <h3 className={styles.subhead}>Price change vs. a week ago</h3>
@@ -569,7 +576,7 @@ export default async function EconomyPage() {
                 <>
                   Market trade by item category over the last 30 complete days, trades with NPC stations included.
                   It leaves out private company-store sales and item-days under 500 cr, so it does not add up to the
-                  trade total above.{fillNote && <> {fillNote}</>}
+                  trade total above.{categoriesNote && <> {categoriesNote}</>}
                 </>
               }
             >

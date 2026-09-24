@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'bun:test'
 import {
   avgPrice, bondHeadline, bondSummary, calendar, chartRows, compact, dayLabel, flowCaption, holders, inBrief, indexedCategories, lastDays, niceCeil,
-  playerHeld, priceHeadline, signed, signedPct, summarize, summaryOnlyUntil, ticksFor, tradeHeadline, utcDateTime,
+  playerHeld, priceHeadline, signed, tradeGapNote, signedPct, summarize, summaryOnlyUntil, ticksFor, tradeHeadline, utcDateTime,
   type EconomyBondDay, type EconomyCurrent, type EconomyDay, type EconomyMoneySupply,
 } from './economy'
 
@@ -370,5 +370,22 @@ describe('summary-only days (before detailed accounting)', () => {
     expect(b.circulationFrom).toBe('2026-09-01')
     expect(b.circulationChange).toBe(30)
     expect(b.used).toBe(5)
+  })
+})
+
+describe('trade record coverage', () => {
+  it('warns when the span starts before complete trade records, with no detailed day needed', () => {
+    expect(tradeGapNote('2026-09-25', '2026-09-01')).toBe(
+      'Before Sep 25, trades that matched the moment an order was placed were not recorded, so figures for those days leave some trades out.',
+    )
+  })
+  it('says nothing once the span starts on or after the coverage date', () => {
+    expect(tradeGapNote('2026-09-25', '2026-09-25')).toBeNull()
+    expect(tradeGapNote('2026-09-25', '2026-10-01')).toBeNull()
+  })
+  it('warns without a date before any complete day exists', () => {
+    expect(tradeGapNote('', '2026-09-01')).toBe(
+      'Trades that matched the moment an order was placed are not yet recorded, so these figures leave some trades out.',
+    )
   })
 })

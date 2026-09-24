@@ -134,8 +134,8 @@ export interface EconomyReport {
   series_start: string
   price_index_base_start: string
   price_index_base_end: string
-  /** First day with detailed accounting (faucets, sinks, authenticator use); "" or absent when there is none. */
-  detailed_accounting_since?: string
+  /** First day with detailed accounting (faucets, sinks, authenticator use) and complete market fill records; "" when there is none. */
+  detailed_accounting_since: string
   current: EconomyCurrent
   days: EconomyDay[]
   top_categories: { category: string; notional: number; units: number; share_pct: number }[]
@@ -555,6 +555,17 @@ export function bondHeadline(b: BondSummary, from: string): string {
 /** Price-index categories that have at least one value in the series. */
 export function indexedCategories(days: EconomyDay[]): (keyof EconomyPriceIndex)[] {
   return (['ore', 'refined', 'component'] as const).filter((k) => days.some((d) => d.price_index[k] !== null))
+}
+
+/**
+ * Warning for figures built from market fill records, which miss trades matched at order
+ * placement before `since` (the report's detailed_accounting_since). `from` is the first
+ * day the figure covers.
+ */
+export function tradeGapNote(since: string, from: string): string | null {
+  if (!since) return 'Trades that matched the moment an order was placed are not yet recorded, so these figures leave some trades out.'
+  if (from >= since) return null
+  return `Before ${dayLabel(since)}, trades that matched the moment an order was placed were not recorded, so figures for those days leave some trades out.`
 }
 
 /** "Sep 23" for a YYYY-MM-DD UTC date, in UTC so no viewer sees the day before. */
