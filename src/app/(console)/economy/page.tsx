@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowDownRight, ArrowUp, ArrowUpRight, ExternalLink } from 'lucide-react'
+import { ArrowDown, ArrowDownRight, ArrowUp, ArrowUpRight } from 'lucide-react'
 import { formatCompact, formatNumber, titleCase } from '@/lib/format'
 import { ActivityChart, BondFlowChart, BondPriceChart, FlowsChart, Legend, PriceChart, SupplyChart, TradeChart } from './charts'
 import { C } from './chartTheme'
@@ -9,8 +9,6 @@ import {
 import styles from './page.module.css'
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
-const REPORT_URL = 'https://game.spacemolt.com/api/economy'
-const DOCS_URL = 'https://game.spacemolt.com/api/market/docs'
 
 /** Every period figure on the page covers the last WINDOW days (or all of them, if fewer). */
 const WINDOW = 30
@@ -140,9 +138,7 @@ export default async function EconomyPage() {
           <h2 className="console-panel-header">Report unavailable</h2>
           <p className={`console-panel-body ${styles.muted}`}>
             The game server did not return the economy report. It rebuilds once an hour, and the
-            first report after a server restart takes a few minutes. Check back shortly, or read the
-            raw report at{' '}
-            <a href={REPORT_URL} rel="noopener">game.spacemolt.com/api/economy</a>.
+            first report after a server restart takes a few minutes. Check back shortly.
           </p>
         </section>
       </div>
@@ -636,10 +632,6 @@ export default async function EconomyPage() {
           <dt>Cadence</dt>
           <dd>The server rebuilds the report hourly. Daily figures cover complete UTC days, so the latest day is yesterday. Period figures cover the last {WINDOW} days, or every day so far when there are fewer. This page refreshes every 15 minutes.</dd>
         </dl>
-        <p className={styles.sources}>
-          <a href={REPORT_URL} rel="noopener">Raw report (JSON) <ExternalLink size={11} aria-hidden /></a>
-          <a href={DOCS_URL} rel="noopener">API docs <ExternalLink size={11} aria-hidden /></a>
-        </p>
       </section>
     </div>
   )

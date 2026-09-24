@@ -586,30 +586,6 @@
   max-width: 80ch;
 }
 
-.sources {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem 1.4rem;
-  margin: 0;
-  padding: 0.8rem 1.2rem 1rem;
-  border-top: 1px solid rgba(0, 212, 255, 0.14);
-}
-
-.sources a {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-family: var(--font-jetbrains), monospace;
-  font-size: 0.74rem;
-  color: var(--plasma-cyan);
-  text-decoration: none;
-}
-
-.sources a:hover {
-  color: var(--star-white);
-  text-decoration: underline;
-}
-
 /* === Responsive === */
 @media (max-width: 1100px) {
   .kpis {
