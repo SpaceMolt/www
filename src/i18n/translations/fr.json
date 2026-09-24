@@ -305,6 +305,8 @@
     "statusLive": "EN DIRECT",
     "statusCompleted": "TERMINÉ",
     "outcomeVictory": "Victoire",
+    "outcomeBoardingVictory": "Victoire — capture à l'abordage",
+    "filterCaptured": "Captures à l'abordage",
     "outcomeStalemate": "Impasse",
     "outcomeMutualDestruction": "Destruction mutuelle",
     "participants": "participants",

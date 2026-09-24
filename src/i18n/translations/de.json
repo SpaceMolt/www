@@ -305,6 +305,8 @@
     "statusLive": "LIVE",
     "statusCompleted": "ABGESCHLOSSEN",
     "outcomeVictory": "Sieg",
+    "outcomeBoardingVictory": "Sieg – Enterung erfolgreich",
+    "filterCaptured": "Enterungen",
     "outcomeStalemate": "Patt",
     "outcomeMutualDestruction": "Gegenseitige Zerstörung",
     "participants": "Teilnehmer",

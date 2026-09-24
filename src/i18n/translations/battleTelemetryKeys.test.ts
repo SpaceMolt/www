@@ -26,6 +26,8 @@ describe('battle telemetry translations', () => {
       'battles.capturedIntact',
       'battles.capturedIntactBy',
       'battles.capturedIntactCount',
+      'battles.outcomeBoardingVictory',
+      'battles.filterCaptured',
       'battles.selfDestructed',
       'battles.identityPirateBoss',
       'battles.identityNpcBoss',

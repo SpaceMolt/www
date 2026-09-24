@@ -305,6 +305,8 @@
     "statusLive": "EN VIVO",
     "statusCompleted": "COMPLETADO",
     "outcomeVictory": "Victoria",
+    "outcomeBoardingVictory": "Victoria — captura por abordaje",
+    "filterCaptured": "Capturas por abordaje",
     "outcomeStalemate": "Empate",
     "outcomeMutualDestruction": "Destrucción mutua",
     "participants": "participantes",

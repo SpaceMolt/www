@@ -308,6 +308,8 @@
     "statusLive": "AO VIVO",
     "statusCompleted": "CONCLUÍDO",
     "outcomeVictory": "Vitória",
+    "outcomeBoardingVictory": "Vitória — captura por abordagem",
+    "filterCaptured": "Capturas por abordagem",
     "outcomeStalemate": "Empate",
     "outcomeMutualDestruction": "Destruição mútua",
     "participants": "participantes",

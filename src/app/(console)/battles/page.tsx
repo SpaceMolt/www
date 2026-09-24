@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
-import { Search, Skull, Trophy, Zap, Warehouse } from 'lucide-react'
+import { Anchor, Search, Skull, Trophy, Warehouse, Zap } from 'lucide-react'
 import styles from './page.module.css'
 import { useTranslation } from '@/i18n'
 import { useVisiblePoll } from '@/lib/useVisiblePoll'
@@ -62,6 +62,7 @@ export default function BattlesPage() {
   const [filter, setFilter] = useState<FilterStatus>('all')
   const [category, setCategory] = useState<FilterCategory>('all')
   const [search, setSearch] = useState('')
+  const [captured, setCaptured] = useState(false)
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [limit, setLimit] = useState(PAGE_SIZE)
   const [total, setTotal] = useState(0)
@@ -99,10 +100,10 @@ export default function BattlesPage() {
 
   const fetchBattles = useCallback(
     (fetchLimit: number, background = false) => {
-      const params = battleListParams(filter, category, debouncedSearch, fetchLimit)
+      const params = battleListParams(filter, category, debouncedSearch, fetchLimit, captured)
       return request.run(`${API_BASE}/api/battles?${params}`, background)
     },
-    [filter, category, debouncedSearch, request],
+    [filter, category, debouncedSearch, captured, request],
   )
 
   // A changed filter, category, or search term is a fresh first page — reset
@@ -131,11 +132,17 @@ export default function BattlesPage() {
     fetchBattles(nextLimit, false)
   }, [limit, loading, loadingMore, fetchBattles])
 
-  // Servers that predate category filtering return everything — retain the
-  // category fallback. Station participation is filtered by the server.
+  // Servers that predate the category or captured params return everything —
+  // retain both fallbacks so the chips always mean what they say. Station
+  // participation is filtered by the server.
   const visible = useMemo(
-    () => (category === 'all' || category === 'station' ? battles : battles.filter(b => b.category === category)),
-    [battles, category],
+    () =>
+      battles.filter(
+        b =>
+          (category === 'all' || category === 'station' || b.category === category) &&
+          (!captured || (b.ships_captured ?? 0) > 0),
+      ),
+    [battles, category, captured],
   )
 
   const activeBattles = battles.filter(b => b.status === 'active')
@@ -186,6 +193,16 @@ export default function BattlesPage() {
               {t(c.labelKey)}
             </button>
           ))}
+          <button
+            className={`${styles.filterBtn} ${styles.categoryBtn} ${captured ? styles.filterBtnActive : ''}`}
+            aria-pressed={captured}
+            onClick={() => setCaptured(v => !v)}
+          >
+            <span className={styles.filterGlyph}>
+              <Anchor size={13} aria-hidden />
+            </span>
+            {t('battles.filterCaptured')}
+          </button>
         </div>
         <div className={styles.searchRow}>
           <div className={styles.searchInputWrap}>
@@ -226,6 +243,7 @@ export default function BattlesPage() {
           {visible.map(battle => {
             const catMeta = battle.category ? BATTLE_CATEGORY_META[battle.category] : undefined
             const winners = battle.outcome === 'victory' ? winnerNames(battle) : []
+            const capturedNames = (battle.captures ?? []).map(c => c.former_owner_username)
             return (
               <Link
                 key={battle.battle_id}
@@ -305,11 +323,11 @@ export default function BattlesPage() {
                   )}
                 </div>
 
-                {(winners.length > 0 || (battle.destroyed_names?.length ?? 0) > 0 || battle.outcome === 'stalemate' || battle.outcome === 'mutual_destruction') && (
+                {(winners.length > 0 || capturedNames.length > 0 || (battle.destroyed_names?.length ?? 0) > 0 || battle.outcome === 'stalemate' || battle.outcome === 'mutual_destruction') && (
                   <div className={styles.cardOutcome}>
                     {winners.length > 0 && (
                       <span className={styles.winnerLine}>
-                        <Trophy size={11} aria-hidden /> {t(battle.category === 'arena' ? 'battles.arena.winner' : 'battles.outcomeVictory')}: {winners.join(', ')}
+                        <Trophy size={11} aria-hidden /> {t(battle.category === 'arena' ? 'battles.arena.winner' : capturedNames.length > 0 ? 'battles.outcomeBoardingVictory' : 'battles.outcomeVictory')}: {winners.join(', ')}
                       </span>
                     )}
                     {battle.outcome === 'stalemate' && (
@@ -324,6 +342,11 @@ export default function BattlesPage() {
                           ? <><Trophy size={11} aria-hidden /> {t('battles.knockedOut')}: </>
                           : <><Skull size={11} aria-hidden /> </>}
                         {battle.destroyed_names!.join(', ')}
+                      </span>
+                    )}
+                    {capturedNames.length > 0 && (
+                      <span className={styles.capturedLine}>
+                        <Anchor size={11} aria-hidden /> {t('battles.capturedIntact')}: {capturedNames.join(', ')}
                       </span>
                     )}
                   </div>

@@ -308,6 +308,8 @@
     "statusLive": "ライブ",
     "statusCompleted": "完了",
     "outcomeVictory": "勝利",
+    "outcomeBoardingVictory": "勝利 — 拿捕成功",
+    "filterCaptured": "拿捕あり",
     "outcomeStalemate": "膠着",
     "outcomeMutualDestruction": "相互破壊",
     "participants": "参加者",
