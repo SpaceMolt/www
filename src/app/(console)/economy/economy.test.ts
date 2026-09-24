@@ -348,7 +348,7 @@ describe('summary-only days (before detailed accounting)', () => {
 
   it('in brief says when the flow totals start', () => {
     expect(inBrief(summarize(MIXED), CURRENT)[1]).toBe(
-      'Since detailed accounting began on Sep 1, the game created 90 new credits and destroyed 35, a net +55.',
+      'Since Sep 1, the game created 90 new credits and destroyed 35, a net +55.',
     )
     expect(inBrief(summarize([summaryOnly('2026-08-31')]), CURRENT)).toHaveLength(2)
     expect(flowCaption([summaryOnly('2026-08-31')])).toBeNull()
@@ -376,7 +376,7 @@ describe('summary-only days (before detailed accounting)', () => {
 describe('trade record coverage', () => {
   it('warns when the span starts before complete trade records, with no detailed day needed', () => {
     expect(tradeGapNote('2026-09-25', '2026-09-01')).toBe(
-      'Before Sep 25, trades that matched the moment an order was placed were not recorded, so figures for those days leave some trades out.',
+      'Before Sep 25, orders that filled instantly were not recorded, so earlier figures miss some trades.',
     )
   })
   it('says nothing once the span starts on or after the coverage date', () => {
@@ -385,7 +385,7 @@ describe('trade record coverage', () => {
   })
   it('warns without a date before any complete day exists', () => {
     expect(tradeGapNote('', '2026-09-01')).toBe(
-      'Trades that matched the moment an order was placed are not yet recorded, so these figures leave some trades out.',
+      'Orders that fill instantly are not recorded yet, so these figures miss some trades.',
     )
   })
 })

@@ -112,7 +112,7 @@ export function FlowsChart({ rows, summaryUntil }: { rows: ChartRow[]; summaryUn
     ['Destroyed', cr(r.sinks === null ? null : -r.sinks), C.destroyed],
     ['Net created', cr(r.net), C.net],
     ['Supply change', cr(r.change)],
-    ['Reconciliation gap', cr(r.unattributed), C.gap],
+    ['Unexplained', cr(r.unattributed), C.gap],
     ...(r.dev ? [['Dev team credits', cr(r.dev)] as TipRow] : []),
   ])
   return (
@@ -136,7 +136,7 @@ export function FlowsChart({ rows, summaryUntil }: { rows: ChartRow[]; summaryUn
       </ResponsiveContainer>
       <div className={styles.stripLabel}>
         <i className={styles.swatch} style={{ background: C.gap }} />
-        Reconciliation gap
+        Unexplained difference
       </div>
       <ResponsiveContainer width="100%" height={100}>
         <BarChart data={rows} margin={MARGIN}>

@@ -175,11 +175,11 @@ export interface Holder {
 export function holders(ms: EconomyMoneySupply): Holder[] {
   return [
     { label: 'Player wallets', note: 'credits players carry', value: ms.player_wallets, side: 'player' },
-    { label: 'Faction treasuries', note: 'shared funds of player groups', value: ms.faction_treasuries, side: 'player' },
-    { label: 'Player buy orders', note: 'locked in open bids on the market', value: ms.player_order_escrow, side: 'player' },
-    { label: 'Station managers', note: 'run the NPC station markets', value: ms.station_managers, side: 'npc' },
+    { label: 'Faction treasuries', note: 'shared faction funds', value: ms.faction_treasuries, side: 'player' },
+    { label: 'Player buy orders', note: 'locked in open bids', value: ms.player_order_escrow, side: 'player' },
+    { label: 'Station managers', note: 'run station markets', value: ms.station_managers, side: 'npc' },
     { label: 'Empire treasuries', note: 'collect taxes and fines', value: ms.empire_treasuries, side: 'npc' },
-    { label: 'NPC buy orders', note: 'locked in open NPC bids on the market', value: ms.npc_order_escrow, side: 'npc' },
+    { label: 'NPC buy orders', note: 'locked in open bids', value: ms.npc_order_escrow, side: 'npc' },
     { label: 'Citizen pools', note: 'earned from station labor, spent on citizens\' travel', value: ms.citizen_pools, side: 'npc' },
     { label: 'Ship insurer', note: 'premiums received minus claims paid', value: ms.insurer, side: 'npc' },
     { label: 'Other NPCs', note: 'the pirate fleet and prize money awaiting payout', value: ms.other_npc, side: 'npc' },
@@ -303,7 +303,7 @@ export function inBrief(s: Summary, current: EconomyCurrent): string[] {
     `${pct === '0.00' ? `The money supply held steady at ${compact(s.supplyEnd)} credits` : `The money supply ${s.change > 0 ? 'grew' : 'shrank'} ${pct}% over ${s.days} days, to ${compact(s.supplyEnd)} credits`}. Players hold ${share.toFixed(0)}% of it.`,
   )
   if (s.detailedFrom) {
-    const lead = s.partial ? `Since detailed accounting began on ${dayLabel(s.detailedFrom)}, the game` : 'The game'
+    const lead = s.partial ? `Since ${dayLabel(s.detailedFrom)}, the game` : 'The game'
     out.push(`${lead} created ${compact(s.created)} new credits and destroyed ${compact(s.destroyed)}, a net ${signed(s.net)}.`)
   }
   const [source, drain] = [s.faucets[0], s.sinks[0]]
@@ -563,9 +563,9 @@ export function indexedCategories(days: EconomyDay[]): (keyof EconomyPriceIndex)
  * day the figure covers.
  */
 export function tradeGapNote(since: string, from: string): string | null {
-  if (!since) return 'Trades that matched the moment an order was placed are not yet recorded, so these figures leave some trades out.'
+  if (!since) return 'Orders that fill instantly are not recorded yet, so these figures miss some trades.'
   if (from >= since) return null
-  return `Before ${dayLabel(since)}, trades that matched the moment an order was placed were not recorded, so figures for those days leave some trades out.`
+  return `Before ${dayLabel(since)}, orders that filled instantly were not recorded, so earlier figures miss some trades.`
 }
 
 /** "Sep 23" for a YYYY-MM-DD UTC date, in UTC so no viewer sees the day before. */

@@ -137,8 +137,7 @@ export default async function EconomyPage() {
         <section className="console-panel">
           <h2 className="console-panel-header">Report unavailable</h2>
           <p className={`console-panel-body ${styles.muted}`}>
-            The game server did not return the economy report. It rebuilds once an hour, and the
-            first report after a server restart takes a few minutes. Check back shortly.
+            The report is not available right now. After a server restart it takes a few minutes. Check back shortly.
           </p>
         </section>
       </div>
@@ -164,13 +163,12 @@ export default async function EconomyPage() {
   const summaryUntil = summaryOnlyUntil(recent)
   const flowSpan = `${s.detailedDays} days`
   const accountingNote = summaryUntil && s.detailedFrom
-    ? `Detailed accounting starts ${dayLabel(s.detailedFrom)}; the shaded days before it show totals only.`
+    ? `Breakdowns start ${dayLabel(s.detailedFrom)}. Shaded days show totals only.`
     : null
   const pct = Math.abs(s.changePct)
   const supplyTitle = pct < 1
     ? `Supply is steady: ${signedPct(s.changePct, 2)} in ${span}`
     : `Supply ${s.change > 0 ? 'grew' : 'shrank'} ${pct.toFixed(1)}% in ${span}`
-  const gapFit = s.gapPct === null ? null : s.gapPct < 10 ? 'almost exactly' : s.gapPct < 25 ? 'closely' : 'only in part'
   const caption = flowCaption(recent)
   const topCategory = report.top_categories[0]
   // Active players are counted only from detailed accounting on.
@@ -193,7 +191,7 @@ export default async function EconomyPage() {
   const categoriesNote = tradeGapNote(tradesSince, categoriesFrom)
   // The fixed base week keeps its gap even after the days in view are complete.
   const baseNote = tradeGapNote(tradesSince, baseStart)
-    ? `The base week (${baseWeek}) predates complete trade records, so it leaves out trades that matched the moment an order was placed.`
+    ? `The base week (${baseWeek}) also misses orders that filled instantly.`
     : null
 
   return (
@@ -234,7 +232,7 @@ export default async function EconomyPage() {
           window={flowSpan}
           value={s.detailedFrom ? signed(s.net) : '—'}
           unit={s.detailedFrom ? 'cr' : undefined}
-          sub={last?.faucets && last.sinks ? `Yesterday: ${signed(last.faucets.total - last.sinks.total)}` : 'Detailed accounting not started'}
+          sub={last?.faucets && last.sinks ? `Yesterday: ${signed(last.faucets.total - last.sinks.total)}` : 'No breakdown yet'}
         />
         <Kpi
           label="Market trade"
@@ -259,10 +257,9 @@ export default async function EconomyPage() {
             title={supplyTitle}
             lede={
               <>
-                Credits held in accounts and on the market, counted daily. Credits held in contracts are not counted. When the game creates credits faster than it destroys
-                them, each credit buys less, so a steady supply is a healthy sign. Players hold{' '}
-                <strong>{playerShare.toFixed(1)}%</strong>; the rest belongs to NPCs, the game-run accounts behind
-                station markets, empire treasuries and citizen pools.
+                All credits in wallets, treasuries and market orders, counted daily. Money held in contracts is not
+                counted. If the game creates credits faster than it destroys them, prices rise. Players hold{' '}
+                <strong>{playerShare.toFixed(1)}%</strong>; NPCs hold the rest.
               </>
             }
           >
@@ -275,7 +272,7 @@ export default async function EconomyPage() {
                   <div>
                     <dt>Richest 10% of earners</dt>
                     <dd>{current.players.top_10pct_share.toFixed(1)}%</dd>
-                    <span>of the credits in wallets of players who have ever earned</span>
+                    <span>of wallet credits, among players who have earned</span>
                   </div>
                   <div>
                     <dt>Median wallet</dt>
@@ -285,12 +282,12 @@ export default async function EconomyPage() {
                   <div>
                     <dt>Player factions</dt>
                     <dd>{formatNumber(current.factions)}</dd>
-                    <span>groups of players with a shared treasury</span>
+                    <span>player groups with a shared treasury</span>
                   </div>
                   <div>
                     <dt>Station facilities</dt>
                     <dd>{formatNumber(current.active_facilities)}</dd>
-                    <span>built and running across all stations</span>
+                    <span>running at all stations</span>
                   </div>
                 </dl>
               </div>
@@ -315,19 +312,17 @@ export default async function EconomyPage() {
             topic="Credits created and destroyed"
             title={
               !s.detailedFrom
-                ? 'Detailed accounting has not started yet'
+                ? 'No breakdown yet'
                 : s.net === 0
                   ? `Credits created and destroyed balanced out over ${flowSpan}`
                   : `More credits ${s.net > 0 ? 'created than destroyed' : 'destroyed than created'}: net ${signedCr(s.net)} in ${flowSpan}`
             }
             lede={
               <>
-                New credits enter the galaxy when the game itself pays out: pirate bounties, some mission rewards,
-                starting money for new pilots. They leave it when players pay the game, for example the labor
-                to build a ship. (Economists call these faucets and sinks.) Taxes, trades and fees only move credits
-                from one holder to another, so they count as neither. If creation keeps outpacing destruction,
-                prices tend to rise.
-                {s.partial && s.detailedFrom && <> The totals below cover only the {flowSpan} since detailed accounting began on {dayLabel(s.detailedFrom)}.</>}
+                The game creates credits when it pays players directly: pirate bounties, some mission rewards,
+                starting money. It destroys them when players pay the game, such as shipbuilding labor. Trades,
+                taxes and fees only move credits between holders.
+                {s.partial && s.detailedFrom && <> Totals cover the {flowSpan} since {dayLabel(s.detailedFrom)}.</>}
               </>
             }
           >
@@ -335,14 +330,10 @@ export default async function EconomyPage() {
             {accountingNote && <p className={styles.caption}>{accountingNote}</p>}
             {caption && <p className={styles.caption}>{caption}</p>}
             {s.detailedFrom && <p className={styles.note}>
-              {gapFit ? <>Our counters explain the change in money supply {gapFit}: </> : <>Created and destroyed cancel out, </>}
-              created minus destroyed is <strong>{signedCr(s.net)}</strong>, and the supply actually{' '}
-              {s.detailedChange >= 0 ? 'grew' : 'shrank'} <strong>{cr(Math.abs(s.detailedChange))}</strong>
-              {s.partial && <> over those {flowSpan}</>}. The{' '}
-              <strong>{cr(Math.abs(s.gap))}</strong> reconciliation gap{s.gapPct !== null && <> ({s.gapPct.toFixed(0)}%)</>} is
-              not split further. It includes credits moving into and out of contracts (freight payments, ship
-              orders, commissions, passenger fares), which the supply does not count while they are held, and any
-              path we do not count yet.
+              Created minus destroyed: <strong>{signedCr(s.net)}</strong>. Actual supply change:{' '}
+              <strong>{signedCr(s.detailedChange)}</strong>. The <strong>{cr(Math.abs(s.gap))}</strong> difference
+              {s.gapPct !== null && <> ({s.gapPct.toFixed(0)}%)</>} is money moving in and out of contracts, plus
+              anything we do not track yet.
             </p>}
             <div className={styles.pair}>
               <BarList
@@ -362,10 +353,8 @@ export default async function EconomyPage() {
             title={tradeHeadline(s.trade)}
             lede={
               <>
-                The market lets players post buy and sell orders at stations. NPC stations run each market: they buy
-                what players mine and make, and sell supplies back. Trade between players shows how much of the
-                economy players run themselves. Over {span}, players traded <strong>{cr(s.trade.total)}</strong> on
-                the market.
+                NPC stations buy what players mine and make, and sell supplies back. Players also trade with each
+                other. Total over {span}: <strong>{cr(s.trade.total)}</strong>.
               </>
             }
           >
@@ -375,18 +364,18 @@ export default async function EconomyPage() {
                 <div>
                   <dt>Taxes & fines</dt>
                   <dd>{cr(s.taxes)}</dd>
-                  <span>{span} · goes to the five empire governments</span>
+                  <span>{span} · paid to the five empires</span>
                 </div>
                 <div>
                   <dt>Direct player deals</dt>
                   <dd>{cr(s.trade.direct)}</dd>
-                  <span>{span} · hand-to-hand trades, off the market</span>
+                  <span>{span} · trades off the market</span>
                 </div>
                 <div>
                   <dt>Waiting on the market</dt>
                   <dd>{cr(current.exchange.player_sell_value + current.exchange.player_buy_value)}</dd>
                   <span>
-                    now · {formatNumber(current.exchange.player_sell_orders)} open player sell orders and{' '}
+                    now · {formatNumber(current.exchange.player_sell_orders)} player sell orders,{' '}
                     {formatNumber(current.exchange.player_buy_orders)} buy orders
                   </span>
                 </div>
@@ -400,10 +389,10 @@ export default async function EconomyPage() {
             title={priceHeadline(last.price_index, categories)}
             lede={
               <>
-                We track what a fixed basket of goods costs, where 100 = the average price over {baseWeek}.
+                The price of a fixed basket of goods. 100 = the average over {baseWeek}.
                 {categories.some((k) => last.price_index[k] !== null) && (
                   <>
-                    {' '}Compared with then:{' '}
+                    {' '}Since then:{' '}
                     {categories.filter((k) => last.price_index[k] !== null).map((k, i, all) => (
                       <span key={k}>
                         {INDEX_NAME[k].toLowerCase()} <strong>{signedPct(last.price_index[k]! - 100)}</strong>
@@ -412,7 +401,6 @@ export default async function EconomyPage() {
                     ))}
                   </>
                 )}
-                {' '}Rising prices mean each credit buys less.
               </>
             }
           >
@@ -433,8 +421,7 @@ export default async function EconomyPage() {
                       all traded items
                     </p>
                     <p className={styles.muted}>
-                      Last 24 hours compared with the same 24 hours a week earlier, across{' '}
-                      {formatNumber(current.inflation_7d.basket_items)} items.
+                      Last 24 hours vs. the same hours a week earlier, {formatNumber(current.inflation_7d.basket_items)} items.
                     </p>
                     <ul className={styles.diverging}>
                       {inflation.map(([cat, p]) => (
@@ -454,14 +441,14 @@ export default async function EconomyPage() {
                       ))}
                     </ul>
                     {inflation.some(([cat]) => !categories.includes(cat as keyof typeof INDEX_NAME)) && (
-                      <p className={styles.muted}>This list covers every traded category, including some the index chart does not track.</p>
+                      <p className={styles.muted}>Includes categories the chart does not show.</p>
                     )}
                   </>
                 )}
                 {categories.length < 3 && (
                   <p className={styles.muted}>
                     {(['ore', 'refined', 'component'] as const).filter((k) => !categories.includes(k)).map((k) => INDEX_NAME[k]).join(', ')}:
-                    no trades in the base week, so no index yet.
+                    no trades in the base week, so no index.
                   </p>
                 )}
               </div>
@@ -474,9 +461,8 @@ export default async function EconomyPage() {
             title={bondHeadline(bonds, s.from)}
             lede={
               <>
-                The galaxy&apos;s one fixed-price asset: a bond the Nebula Trade Federation sells and buys back at a set
-                price. A fixed price holds only while the reserve keeps up with sales and the market price stays near
-                the window price, so these are the signals to watch.
+                A bond the Nebula Trade Federation sells and buys back at a fixed price. The price holds only while
+                the reserve keeps up with sales and market prices stay close to it.
               </>
             }
           >
@@ -484,15 +470,15 @@ export default async function EconomyPage() {
               <h3 className={styles.subhead}>What is a trade authenticator?</h3>
               <dl>
                 <dt>A bearer bond</dt>
-                <dd>Whoever holds one owns it. The Nebula Trade Federation mints them at its Federation Foundry into a reserve.</dd>
+                <dd>Whoever holds one owns it. The Federation mints them into its reserve.</dd>
                 <dt>The window</dt>
-                <dd>The Federation&apos;s redemption window at Grand Exchange Station sells them at a fixed price and buys them back for a little less.</dd>
+                <dd>At Grand Exchange Station. It sells at a fixed price and buys back for a little less.</dd>
                 <dt>What they are for</dt>
-                <dd>Stations burn them as upkeep for trade facilities (commerce hubs, trade nexuses, player trade concourses), and a few top-tier Nebula hulls need them as build material.</dd>
+                <dd>Stations burn them to run trade facilities. A few top Nebula ships need them to build.</dd>
                 <dt>Why stations pay more</dt>
-                <dd>Station managers bid about 1.2× the window price, so haulers can buy at the window and carry them to stations.</dd>
+                <dd>Stations bid about 1.2× the window price, so haulers profit by carrying them over.</dd>
                 <dt>Reading the charts</dt>
-                <dd>Green bars are minted, orange bars are used up, and the amber line is what the window sold. In the price chart, lines near the amber window line mean the fixed price holds.</dd>
+                <dd>Green: minted. Orange: used up. Amber line: sold by the window. Prices near the amber line mean the fixed price holds.</dd>
               </dl>
             </div>
 
@@ -508,7 +494,7 @@ export default async function EconomyPage() {
                 <span>
                   {bonds.coverDays === null
                     ? `no window sales in ${span}`
-                    : `about ${bonds.coverDays.toFixed(0)} days of window sales at ${formatNumber(Math.round(bonds.soldPerDay))} a day`}
+                    : `about ${bonds.coverDays.toFixed(0)} days of sales at ${formatNumber(Math.round(bonds.soldPerDay))} a day`}
                 </span>
               </div>
               <div>
@@ -520,7 +506,7 @@ export default async function EconomyPage() {
                 <dt>Stations paid players</dt>
                 <dd>{bonds.stationPrice === null ? '—' : `${formatNumber(Math.round(bonds.stationPrice))} cr`}</dd>
                 <span>
-                  {bonds.premium === null ? `no sales to stations in ${span}` : `${bonds.premium.toFixed(2)}× the window price, ${span} average`}
+                  {bonds.premium === null ? `no sales to stations in ${span}` : `${bonds.premium.toFixed(2)}× window price, ${s.days}-day average`}
                 </span>
               </div>
             </dl>
@@ -552,7 +538,7 @@ export default async function EconomyPage() {
               <div className={styles.chart}>
                 <h3 className={styles.subhead}>Price per authenticator, daily average</h3>
                 <BondPriceChart rows={rows} summaryUntil={summaryUntil} />
-                {accountingNote && <p className={styles.caption}>{accountingNote} On those days the window line is the average price of that day&apos;s window trades.</p>}
+                {accountingNote && <p className={styles.caption}>{accountingNote} On those days the window line is the average window trade price.</p>}
                 {fillNote && <p className={styles.caption}>{fillNote}</p>}
               </div>
               <BarList
@@ -574,9 +560,8 @@ export default async function EconomyPage() {
               title={topCategory ? `Top category: ${indexName(topCategory.category).toLowerCase()}, ${topCategory.share_pct.toFixed(0)}% of market trade by value` : 'No market trade in the last 30 days'}
               lede={
                 <>
-                  Market trade by item category over the last 30 complete days, trades with NPC stations included.
-                  It leaves out private company-store sales and item-days under 500 cr, so it does not add up to the
-                  trade total above.{categoriesNote && <> {categoriesNote}</>}
+                  Trade value by item category over the last 30 days, NPC stations included. Private company-store
+                  sales and tiny trades are left out, so it will not match the total above.{categoriesNote && <> {categoriesNote}</>}
                 </>
               }
             >
@@ -603,8 +588,7 @@ export default async function EconomyPage() {
               }
               lede={
                 <>
-                  What players did each day: how many issued a command, how much ore they mined, and how many items
-                  they crafted.{activeDays.length > 0 && activeDays[0].date !== recent[0]?.date && <> Active players are counted from {dayLabel(activeDays[0].date)}.</>}
+                  Each day: players who sent a command, ore mined, and items crafted.{activeDays.length > 0 && activeDays[0].date !== recent[0]?.date && <> Active players are counted from {dayLabel(activeDays[0].date)}.</>}
                 </>
               }
             >
@@ -630,35 +614,29 @@ export default async function EconomyPage() {
         <h2 id="method" className="console-panel-header">How we measure</h2>
         <dl className="console-panel-body">
           <dt>Credits (cr)</dt>
-          <dd>The galaxy&apos;s single currency. Figures are rounded to 3 digits: 8.05B is about 8.05 billion credits.</dd>
+          <dd>The one currency. Rounded to 3 digits: 8.05B is about 8.05 billion.</dd>
           <dt>Money supply</dt>
-          <dd>Credits held in accounts and on the market: player wallets, player buy orders and faction treasuries (held by players), plus station managers, empire treasuries, citizen pools, NPC buy orders, the ship insurer and other NPC accounts. Credits held in contracts (freight payments, ship buy orders, ship and sourcing commissions, facility job fees, faction mission rewards, passenger fares) are not counted until paid out.</dd>
+          <dd>Credits in player and NPC wallets, treasuries and market buy orders. Money held in contracts (freight, ship orders, commissions, job fees, mission rewards, passenger fares) is not counted until paid out.</dd>
           <dt>Active player</dt>
-          <dd>A player account that issued a command in the previous 24 hours. Game-run accounts are not counted.</dd>
-          <dt>Faucet</dt>
-          <dd>A game event that creates credits, such as a pirate bounty or a mission no empire or faction pays for.</dd>
-          <dt>Sink</dt>
-          <dd>A game event that destroys credits, such as shipbuilding labor or a station founding fee.</dd>
-          <dt>Transfer</dt>
-          <dd>Credits moving from one holder to another: trades, taxes, fees, rewards an empire treasury pays. Transfers never change the supply, so they are neither faucets nor sinks.</dd>
-          <dt>Reconciliation gap</dt>
-          <dd>The change in supply minus (created − destroyed). It includes credits entering or leaving contracts and any path we do not count yet. We do not measure the two parts separately.</dd>
+          <dd>A player who sent a command in the last 24 hours. NPCs are not counted.</dd>
+          <dt>Unexplained difference</dt>
+          <dd>Supply change minus (created − destroyed): contract money moving in or out, plus anything we do not track yet.</dd>
           <dt>NPC</dt>
-          <dd>A game-run account. In trade figures, NPC stations are the station managers and empire treasuries. In the money supply, every non-player account listed above.</dd>
+          <dd>A game-run account, such as a station manager or empire treasury.</dd>
           <dt>Price index</dt>
-          <dd>A fixed basket per category, weighted by traded value in the base week ({baseWeek}). 100 means base-week prices. A gap in a line means no data, not zero.</dd>
+          <dd>A fixed basket per category, weighted by value traded in the base week ({baseWeek}). 100 = base-week prices. A gap means no data.</dd>
           <dt>Trade authenticator</dt>
-          <dd>A bearer bond the Nebula Trade Federation mints at its Federation Foundry. Stations burn them as upkeep for trade facilities; some Nebula hulls need them to build.</dd>
+          <dd>A Nebula Trade Federation bond. Stations burn them as upkeep; some Nebula ships need them to build.</dd>
           <dt>Window</dt>
-          <dd>The Federation&apos;s redemption window at Grand Exchange Station, which sells authenticators and buys them back at fixed prices.</dd>
+          <dd>The Federation desk at Grand Exchange Station that sells and buys back authenticators at fixed prices.</dd>
           <dt>Reserve</dt>
-          <dd>Authenticators held by the empire treasuries, including those on the window&apos;s own sell order.</dd>
+          <dd>Authenticators the empire treasuries hold, including those for sale at the window.</dd>
           <dt>In circulation</dt>
-          <dd>Authenticators outside the reserve: in ship cargo, station and faction storage, and on other sell orders. Those in wrecks, packages and ship orders are not counted.</dd>
+          <dd>Authenticators outside the reserve: cargo, storage and other sell orders. Wrecks, packages and ship orders are not counted.</dd>
           <dt>Days of cover</dt>
-          <dd>The current reserve divided by the average number the window sold per day over the period.</dd>
+          <dd>The reserve divided by average daily window sales.</dd>
           <dt>Cadence</dt>
-          <dd>The server rebuilds the report hourly. Daily figures cover complete UTC days, so the latest day is yesterday. Period figures cover the last {WINDOW} days, or every day so far when there are fewer. This page refreshes every 15 minutes.</dd>
+          <dd>Rebuilt hourly. Daily figures are full UTC days, so the latest is yesterday. Period figures cover up to the last {WINDOW} days.</dd>
         </dl>
       </section>
     </div>
