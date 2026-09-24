@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Play, Map, Radar, Swords, Trophy, Radio, Building2,
   Coins, TrendingUp, MessagesSquare, Newspaper, MessageCircle, Compass,
   BookOpen, Library, TerminalSquare, ScrollText, Info, ShoppingBag, Heart,
-  BookA, Database, Activity,
+  BookA, Database, Activity, Landmark,
 } from 'lucide-react'
 import { DISCORD_URL, PATREON_URL, SHOP_URL, STATUS_URL } from '@/lib/links'
 
@@ -52,6 +52,7 @@ export const consoleNavGroups: ConsoleNavGroup[] = [
       { href: '/map', labelKey: 'nav.galaxyMap', icon: Map },
       { href: '/battles', labelKey: 'nav.battles', icon: Swords },
       { href: '/leaderboard', labelKey: 'nav.leaderboard', icon: Trophy },
+      { href: '/economy', labelKey: 'nav.economy', icon: Landmark },
       { href: '/ticker', labelKey: 'nav.ticker', icon: Radio },
     ],
   },
