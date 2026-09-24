@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'bun:test'
 import {
-  calendar, chartRows, dayLabel, flowTotals, holders, indexedCategories, lastDays, playerHeld, signedPct,
-  supplyChange, utcDateTime, type EconomyDay, type EconomyMoneySupply,
+  calendar, chartRows, compact, dayLabel, flowCaption, holders, inBrief, indexedCategories, lastDays, niceCeil,
+  playerHeld, priceHeadline, signed, signedPct, summarize, ticksFor, tradeHeadline, utcDateTime,
+  type EconomyCurrent, type EconomyDay, type EconomyMoneySupply,
 } from './economy'
 
 function day(date: string, over: Partial<EconomyDay> = {}): EconomyDay {
@@ -47,45 +48,124 @@ describe('money supply holders', () => {
   })
 })
 
-describe('flowTotals', () => {
-  it('sums each category and keeps unattributed separate from faucets and sinks', () => {
-    const days = [
-      day('2026-09-01', {
-        faucets: { ...day('x').faucets, missions: 30, respawns: 5, total: 35 },
-        sinks: { ...day('x').sinks, shipbuilding: 10, total: 10 },
-        supply_change: { change: 20, unattributed: -5 },
-      }),
-      day('2026-09-02', {
-        faucets: { ...day('x').faucets, missions: 10, total: 10 },
-        sinks: { ...day('x').sinks, labor: 25, total: 25 },
-        supply_change: { change: -12, unattributed: 3 },
-      }),
-    ]
-    const t = flowTotals(days)
-    expect(t.created).toBe(45)
-    expect(t.destroyed).toBe(35)
-    expect(t.change).toBe(8)
-    expect(t.unattributed).toBe(-2)
-    expect(t.change - (t.created - t.destroyed)).toBe(t.unattributed)
-    expect(t.faucets[0]).toEqual({ key: 'missions', label: 'Missions with no treasury', value: 40 })
-    expect(t.sinks.map((s) => s.key).slice(0, 2)).toEqual(['labor', 'shipbuilding'])
+const F0 = day('x').faucets
+const S0 = day('x').sinks
+
+// Two days: supply 1000 -> 1020 -> 1008, before the first day it was 1000.
+const TWO = [
+  day('2026-09-01', {
+    supply_total: 1020,
+    faucets: { ...F0, missions: 30, respawns: 5, total: 35 },
+    sinks: { ...S0, shipbuilding: 10, total: 10 },
+    supply_change: { change: 20, unattributed: -5 },
+    trade: { player_to_player: 10, players_sold_to_npc: 50, players_bought_from_npc: 20, direct_trades: 3, fills: 99 },
+    taxes_and_fines: 4,
+  }),
+  day('2026-09-02', {
+    supply_total: 1008,
+    period_days: 2,
+    faucets: { ...F0, missions: 10, dev_team: 45, total: 55 },
+    sinks: { ...S0, labor: 25, total: 25 },
+    supply_change: { change: -12, unattributed: -42 },
+    trade: { player_to_player: 20, players_sold_to_npc: 0, players_bought_from_npc: 0, direct_trades: 0, fills: 5 },
+    taxes_and_fines: 1,
+  }),
+]
+
+describe('summarize', () => {
+  const s = summarize(TWO)
+
+  it('sums each category and keeps the gap separate from created and destroyed', () => {
+    expect(s.created).toBe(90)
+    expect(s.destroyed).toBe(35)
+    expect(s.net).toBe(55)
+    expect(s.change).toBe(8)
+    expect(s.gap).toBe(-47)
+    expect(s.change - s.net).toBe(s.gap)
+    expect(s.gapPct).toBeCloseTo((47 / 55) * 100)
+    expect(s.faucets[0]).toEqual({ key: 'dev_team', label: 'Dev team grants', value: 45 })
+    expect(s.sinks.map((x) => x.key).slice(0, 2)).toEqual(['labor', 'shipbuilding'])
+  })
+
+  it('measures the supply change over the same span as the flows', () => {
+    expect(s.supplyStart).toBe(1000)
+    expect(s.supplyEnd).toBe(1008)
+    expect(s.changePct).toBeCloseTo(0.8)
+    expect(s.days).toBe(3) // period_days, not entries
+    expect(s.from).toBe('2026-09-01')
+    expect(s.to).toBe('2026-09-02')
+  })
+
+  it('totals trade without the direct trades or fills', () => {
+    expect(s.trade).toEqual({ p2p: 30, sold: 50, bought: 20, direct: 3, total: 100 })
+    expect(s.taxes).toBe(5)
+  })
+
+  it('has no gap percentage when nothing net was created', () => {
+    expect(summarize([day('2026-09-01')]).gapPct).toBeNull()
   })
 })
 
-describe('supplyChange', () => {
-  it('compares the last day with the day n days before it', () => {
-    const days = [day('2026-09-01', { supply_total: 900 }), day('2026-09-02', { supply_total: 950 }), day('2026-09-03', { supply_total: 1000 })]
-    expect(supplyChange(days, 1)).toEqual({ from: '2026-09-02', delta: 50, pct: (50 / 950) * 100 })
+const CURRENT: EconomyCurrent = {
+  captured_at: '2026-09-03T00:00:00Z',
+  money_supply: { ...({} as EconomyMoneySupply), total: 100, player_wallets: 60, player_order_escrow: 0, faction_treasuries: 3 },
+  players: { registered: 10, active_24h: 5, median_wallet: 100, top_10pct_share: 90 },
+  exchange: { player_sell_orders: 0, player_sell_value: 0, player_buy_orders: 0, player_buy_value: 0, npc_sell_value: 0, npc_buy_value: 0 },
+  factions: 1,
+  active_facilities: 1,
+  inflation_7d: { composite_pct: 1.84, basket_items: 12, by_category: {} },
+}
+
+describe('inBrief', () => {
+  it('states supply, creation, the biggest source and drain, and prices', () => {
+    expect(inBrief(summarize(TWO), CURRENT)).toEqual([
+      'The money supply grew 0.80% over 3 days, to 1.01K credits. Players hold 63% of it.',
+      'The game created 90 new credits and destroyed 35, a net +55.',
+      'Biggest source of new credits: dev team grants (45). Biggest drain: facility labor (25).',
+      'Traded prices were 1.8% higher than a week earlier.',
+    ])
   })
 
-  it('falls back to the first day when the series is shorter than n', () => {
-    const days = [day('2026-09-01', { supply_total: 800 }), day('2026-09-02', { supply_total: 1000 })]
-    expect(supplyChange(days, 30)?.from).toBe('2026-09-01')
-    expect(supplyChange(days, 30)?.pct).toBe(25)
+  it('skips the price line without a basket and says when supply did not move', () => {
+    const lines = inBrief(summarize([day('2026-09-01')]), { ...CURRENT, inflation_7d: { composite_pct: 0, basket_items: 0, by_category: {} } })
+    expect(lines).toHaveLength(2)
+    expect(lines[0]).toStartWith('The money supply held steady at 1K credits.')
+  })
+})
+
+describe('headlines', () => {
+  it('trade: names the biggest side and the player-to-player share', () => {
+    expect(tradeHeadline(summarize(TWO).trade)).toBe('Most market trade is players selling to NPC stations; 30% is between players')
+    expect(tradeHeadline({ p2p: 60, sold: 30, bought: 10, direct: 0, total: 100 })).toBe('Most market trade is between players (60%)')
+    expect(tradeHeadline({ p2p: 0, sold: 0, bought: 0, direct: 0, total: 0 })).toBe('No market trade in this period')
   })
 
-  it('is null with fewer than two days', () => {
-    expect(supplyChange([day('2026-09-01')], 30)).toBeNull()
+  it('prices: picks the index furthest from 100', () => {
+    expect(priceHeadline({ ore: 111.8, refined: 128.87, component: null }, ['ore', 'refined'])).toBe('Refined goods cost 28.9% more than in the base week')
+    expect(priceHeadline({ ore: 94, refined: null, component: null }, ['ore'])).toBe('Ore costs 6.0% less than in the base week')
+    expect(priceHeadline({ ore: null, refined: null, component: null }, [])).toBe('Not enough trade to price the basket yet')
+  })
+
+  it('flow caption: the biggest day, calling out dev team money', () => {
+    expect(flowCaption(TWO)).toBe('The biggest day was Sep 2, with 55 created, including 45 the dev team handed out.')
+    expect(flowCaption([TWO[0]])).toBe('The biggest day was Sep 1, with 35 created.')
+    expect(flowCaption([])).toBeNull()
+  })
+})
+
+describe('number formatting', () => {
+  it('compact keeps 3 significant digits and a true minus sign', () => {
+    expect(compact(8_048_251_090)).toBe('8.05B')
+    expect(compact(-1_950_000)).toBe('\u22121.95M')
+    expect(signed(48_400_000)).toBe('+48.4M')
+    expect(signed(0)).toBe('0')
+  })
+
+  it('niceCeil and ticksFor give round axis ticks', () => {
+    expect(niceCeil(2.65e6)).toBe(5e6)
+    expect(niceCeil(1.7)).toBe(2)
+    expect(niceCeil(100)).toBe(100)
+    expect(ticksFor(-18.7e6, 43.4e6, 3)).toEqual([-25e6, 0, 25e6, 50e6])
   })
 })
 
@@ -137,7 +217,7 @@ describe('helpers', () => {
 
   it('signs percentages and never prints -0.0', () => {
     expect(signedPct(1.84)).toBe('+1.8%')
-    expect(signedPct(-1.2)).toBe('-1.2%')
+    expect(signedPct(-1.2)).toBe('\u22121.2%')
     expect(signedPct(-0.01)).toBe('0.0%')
   })
 })

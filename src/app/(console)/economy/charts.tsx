@@ -7,7 +7,7 @@ import {
 } from 'recharts'
 import { formatNumber } from '@/lib/format'
 import { C, CURSOR, MARGIN, X_AXIS, Y_AXIS } from './chartTheme'
-import { dayLabel, type ChartRow } from './economy'
+import { dayLabel, INDEX_NAME, signed, ticksFor, type ChartRow } from './economy'
 import styles from './page.module.css'
 
 type TipRow = [label: string, value: string, color?: string]
@@ -17,11 +17,11 @@ function tip(rows: (r: ChartRow) => TipRow[]) {
   function Tip({ active, payload }: TooltipContentProps<number, string>) {
     const r = payload?.[0]?.payload as ChartRow | undefined
     if (!active || !r) return null
-    const lines = r.faucets === null && r.players === null ? null : rows(r)
+    const lines = r.total === null ? null : rows(r)
     return (
       <div className={styles.tip}>
         <div className={styles.tipDate}>
-          {dayLabel(r.date)} UTC{r.period !== null && r.period > 1 && ` · flows cover ${r.period} days`}
+          {dayLabel(r.date)} UTC{r.period !== null && r.period > 1 && ` · covers ${r.period} days`}
         </div>
         {lines === null ? (
           <div className={styles.tipRow}>No snapshot this day</div>
@@ -42,8 +42,10 @@ function tip(rows: (r: ChartRow) => TipRow[]) {
   return Tip
 }
 
-const cr = (v: number | null) => (v === null ? 'no data' : `${formatNumber(v)} cr`)
-const idx = (v: number | null) => (v === null ? 'no data' : v.toFixed(1))
+/** Full figure with a true minus sign: "−1,234 cr". */
+const num = (v: number) => `${v < 0 ? '\u2212' : ''}${formatNumber(Math.abs(v))}`
+const cr = (v: number | null) => (v === null ? 'No data' : `${num(v)} cr`)
+const idx = (v: number | null) => (v === null ? 'No data' : v.toFixed(1))
 
 export function Legend({ items }: { items: [label: string, color: string, line?: boolean][] }) {
   return (
@@ -58,25 +60,33 @@ export function Legend({ items }: { items: [label: string, color: string, line?:
   )
 }
 
-export function SupplyChart({ rows }: { rows: ChartRow[] }) {
+const extent = (rows: ChartRow[], f: (r: ChartRow) => number | null) => {
+  const v = rows.map(f).filter((x): x is number => x !== null)
+  return [Math.min(0, ...v), Math.max(0, ...v)] as const
+}
+
+export function SupplyChart({ rows, since }: { rows: ChartRow[]; since: string }) {
+  // The first day usually dips a little below 0; do not spend a whole tick band on it.
+  const [lo, hi] = extent(rows, (r) => r.supply)
+  const ticks = ticksFor(lo, hi, 3).filter((t) => t >= lo)
   return (
     <div className={styles.chart}>
-      <Legend items={[['Held by players', C.player], ['Held by NPCs', C.npc]]} />
-      <ResponsiveContainer width="100%" height={260}>
+      <ResponsiveContainer width="100%" height={240}>
         <AreaChart data={rows} margin={MARGIN}>
           <CartesianGrid vertical={false} stroke={C.grid} />
           <XAxis {...X_AXIS} />
-          <YAxis {...Y_AXIS} />
+          <YAxis {...Y_AXIS} ticks={ticks} domain={[Math.min(lo, ticks[0]), ticks.at(-1)!]} tickFormatter={(v: number) => signed(v)} />
           <Tooltip
             cursor={{ stroke: C.axis }}
             content={tip((r) => [
+              [`Change since ${since}`, `${r.supply === null ? 'No data' : `${signed(r.supply)} cr`}`, C.net],
+              ['Money supply', cr(r.total)],
               ['Held by players', cr(r.players), C.player],
               ['Held by NPCs', cr(r.npc), C.npc],
-              ['Total', cr(r.players === null || r.npc === null ? null : r.players + r.npc)],
             ])}
           />
-          <Area dataKey="players" stackId="s" stroke={C.player} strokeWidth={2} fill={C.player} fillOpacity={0.14} isAnimationActive={false} />
-          <Area dataKey="npc" stackId="s" stroke={C.npc} strokeWidth={2} fill={C.npc} fillOpacity={0.14} isAnimationActive={false} />
+          <ReferenceLine y={0} stroke={C.axis} />
+          <Area dataKey="supply" stroke={C.net} strokeWidth={2} fill={C.net} fillOpacity={0.08} isAnimationActive={false} />
         </AreaChart>
       </ResponsiveContainer>
     </div>
@@ -84,39 +94,50 @@ export function SupplyChart({ rows }: { rows: ChartRow[] }) {
 }
 
 export function FlowsChart({ rows }: { rows: ChartRow[] }) {
+  const [lo, hi] = extent(rows, (r) => r.faucets)
+  const [sinkLo] = extent(rows, (r) => r.sinks)
+  const ticks = ticksFor(Math.min(lo, sinkLo), hi, 3)
+  const [gapLo, gapHi] = extent(rows, (r) => r.unattributed)
+  const gapMax = Math.max(-gapLo, gapHi, 1)
+  const gapTick = ticksFor(0, gapMax, 2)[1]
+  const devDays = rows.filter((r) => r.dev)
   const flowTip = tip((r) => [
-    ['Created (faucets)', cr(r.faucets), C.faucet],
-    ['Destroyed (sinks)', cr(r.sinks === null ? null : -r.sinks), C.sink],
+    ['Created', cr(r.faucets), C.created],
+    ['Destroyed', cr(r.sinks === null ? null : -r.sinks), C.destroyed],
     ['Net created', cr(r.net), C.net],
-    ['Unattributed', cr(r.unattributed), C.unattributed],
     ['Supply change', cr(r.change)],
+    ['Reconciliation gap', cr(r.unattributed), C.gap],
+    ...(r.dev ? [['Dev team credits', cr(r.dev)] as TipRow] : []),
   ])
   return (
     <div className={styles.chart}>
-      <Legend items={[['Created', C.faucet], ['Destroyed', C.sink], ['Net', C.net, true]]} />
-      <ResponsiveContainer width="100%" height={260}>
-        <ComposedChart data={rows} margin={MARGIN} stackOffset="sign">
+      <Legend items={[['Created', C.created], ['Destroyed', C.destroyed], ['Net created', C.net, true]]} />
+      <ResponsiveContainer width="100%" height={270}>
+        <ComposedChart data={rows} margin={{ ...MARGIN, top: devDays.length ? 22 : MARGIN.top, bottom: 8 }} stackOffset="sign">
           <CartesianGrid vertical={false} stroke={C.grid} />
-          <XAxis {...X_AXIS} hide />
-          <YAxis {...Y_AXIS} />
+          <XAxis {...X_AXIS} tick={false} axisLine={false} height={4} />
+          <YAxis {...Y_AXIS} ticks={ticks} domain={[ticks[0], ticks.at(-1)!]} />
           <Tooltip cursor={CURSOR} content={flowTip} />
           <ReferenceLine y={0} stroke={C.axis} />
-          <Bar dataKey="faucets" stackId="f" fill={C.faucet} maxBarSize={18} radius={[3, 3, 0, 0]} isAnimationActive={false} />
-          <Bar dataKey="sinks" stackId="f" fill={C.sink} maxBarSize={18} radius={[0, 0, 3, 3]} isAnimationActive={false} />
+          {devDays.map((r) => (
+            <ReferenceLine key={r.date} x={r.date} stroke={C.neutral} strokeOpacity={0.5} label={{ value: 'Dev team grant', position: 'top', fill: '#a8c5d6', fontSize: 11 }} />
+          ))}
+          <Bar dataKey="faucets" stackId="f" fill={C.created} maxBarSize={18} radius={[3, 3, 0, 0]} isAnimationActive={false} />
+          <Bar dataKey="sinks" stackId="f" fill={C.destroyed} maxBarSize={18} radius={[0, 0, 3, 3]} isAnimationActive={false} />
           <Line dataKey="net" stroke={C.net} strokeWidth={2} dot={false} isAnimationActive={false} />
         </ComposedChart>
       </ResponsiveContainer>
       <div className={styles.stripLabel}>
-        <i className={styles.swatch} style={{ background: C.unattributed }} />
-        Unattributed
+        <i className={styles.swatch} style={{ background: C.gap }} />
+        Reconciliation gap
       </div>
-      <ResponsiveContainer width="100%" height={96}>
+      <ResponsiveContainer width="100%" height={100}>
         <BarChart data={rows} margin={MARGIN}>
           <XAxis {...X_AXIS} />
-          <YAxis {...Y_AXIS} tickCount={3} />
+          <YAxis {...Y_AXIS} ticks={[-gapTick, 0, gapTick]} domain={[-Math.max(gapMax, gapTick), Math.max(gapMax, gapTick)]} />
           <Tooltip cursor={CURSOR} content={flowTip} />
           <ReferenceLine y={0} stroke={C.axis} />
-          <Bar dataKey="unattributed" fill={C.unattributed} maxBarSize={18} radius={[2, 2, 0, 0]} isAnimationActive={false} />
+          <Bar dataKey="unattributed" fill={C.gap} maxBarSize={18} radius={[2, 2, 0, 0]} isAnimationActive={false} />
         </BarChart>
       </ResponsiveContainer>
     </div>
@@ -127,7 +148,7 @@ export function TradeChart({ rows }: { rows: ChartRow[] }) {
   const seg = { stackId: 't', maxBarSize: 18, stroke: C.surface, strokeWidth: 1, isAnimationActive: false }
   return (
     <div className={styles.chart}>
-      <Legend items={[['Player to player', C.p2p], ['Players selling to NPCs', C.sold], ['Players buying from NPCs', C.bought]]} />
+      <Legend items={[['Between players', C.player], ['Players selling to NPC stations', C.npc], ['Players buying from NPC stations', C.npcAlt]]} />
       <ResponsiveContainer width="100%" height={260}>
         <BarChart data={rows} margin={MARGIN}>
           <CartesianGrid vertical={false} stroke={C.grid} />
@@ -136,28 +157,26 @@ export function TradeChart({ rows }: { rows: ChartRow[] }) {
           <Tooltip
             cursor={CURSOR}
             content={tip((r) => [
-              ['Player to player', cr(r.p2p), C.p2p],
-              ['Selling to NPCs', cr(r.sold), C.sold],
-              ['Buying from NPCs', cr(r.bought), C.bought],
-              ['Direct trades', cr(r.direct)],
+              ['Between players', cr(r.p2p), C.player],
+              ['Selling to NPC stations', cr(r.sold), C.npc],
+              ['Buying from NPC stations', cr(r.bought), C.npcAlt],
+              ['Direct player deals', cr(r.direct)],
               ['Taxes & fines', cr(r.taxes)],
             ])}
           />
-          <Bar dataKey="p2p" fill={C.p2p} {...seg} />
-          <Bar dataKey="sold" fill={C.sold} {...seg} />
-          <Bar dataKey="bought" fill={C.bought} radius={[3, 3, 0, 0]} {...seg} />
+          <Bar dataKey="p2p" fill={C.player} {...seg} />
+          <Bar dataKey="sold" fill={C.npc} {...seg} />
+          <Bar dataKey="bought" fill={C.npcAlt} radius={[3, 3, 0, 0]} {...seg} />
         </BarChart>
       </ResponsiveContainer>
     </div>
   )
 }
 
-const INDEX_LABEL = { ore: 'Ore', refined: 'Refined', component: 'Components' } as const
-
-export function PriceChart({ rows, categories }: { rows: ChartRow[]; categories: (keyof typeof INDEX_LABEL)[] }) {
+export function PriceChart({ rows, categories }: { rows: ChartRow[]; categories: (keyof typeof INDEX_NAME)[] }) {
   return (
     <div className={styles.chart}>
-      <Legend items={categories.map((k) => [INDEX_LABEL[k], C[k], true])} />
+      <Legend items={[...categories.map((k): [string, string, boolean] => [INDEX_NAME[k], C[k], true]), ['100 = base week', C.reference, true]]} />
       <ResponsiveContainer width="100%" height={260}>
         <LineChart data={rows} margin={MARGIN}>
           <CartesianGrid vertical={false} stroke={C.grid} />
@@ -165,9 +184,9 @@ export function PriceChart({ rows, categories }: { rows: ChartRow[]; categories:
           <YAxis {...Y_AXIS} domain={['auto', 'auto']} tickFormatter={(v: number) => v.toFixed(0)} />
           <Tooltip
             cursor={{ stroke: C.axis }}
-            content={tip((r) => categories.map((k) => [INDEX_LABEL[k], idx(r[k]), C[k]]))}
+            content={tip((r) => categories.map((k) => [INDEX_NAME[k], idx(r[k]), C[k]]))}
           />
-          <ReferenceLine y={100} stroke={C.axis} label={{ value: 'BASE 100', position: 'insideTopRight', fill: '#6b8fa3', fontSize: 9 }} />
+          <ReferenceLine y={100} stroke={C.reference} />
           {categories.map((k) => (
             <Line key={k} dataKey={k} stroke={C[k]} strokeWidth={2} dot={false} isAnimationActive={false} />
           ))}
@@ -187,9 +206,9 @@ export function ActivityChart({ rows, field, unit }: { rows: ChartRow[]; field: 
         <YAxis {...Y_AXIS} tickCount={3} />
         <Tooltip
           cursor={{ stroke: C.axis }}
-          content={tip((r) => [[unit, r[field] === null ? 'no data' : formatNumber(r[field])]])}
+          content={tip((r) => [[unit, r[field] === null ? 'No data' : formatNumber(r[field])]])}
         />
-        <Area dataKey={field} stroke={C.player} strokeWidth={2} fill={C.player} fillOpacity={0.1} isAnimationActive={false} />
+        <Area dataKey={field} stroke={C.neutral} strokeWidth={2} fill={C.neutral} fillOpacity={0.1} isAnimationActive={false} />
       </AreaChart>
     </ResponsiveContainer>
   )
