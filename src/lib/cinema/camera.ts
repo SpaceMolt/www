@@ -188,7 +188,7 @@ export function sampleStoryCamera(options: StoryCameraOptions): StoryCameraFrame
     toward.normalize()
     const side = normal.clone().addScaledVector(toward, -normal.dot(toward)).normalize()
     if (side.lengthSq() < .001) side.set(-toward.z, 0, toward.x)
-    const viewing = near === field ? bearing(side, toward.clone().negate(), 15, .5) : bearing(toward.clone().negate(), side, 38, .34)
+    const viewing = near === field ? bearing(side, toward.clone().negate(), 25, .34) : bearing(toward.clone().negate(), side, 38, .34)
     if (!reduced) viewing.applyAxisAngle(UP, (progress - .5) * .18)
     focus.copy(near === field ? nearCenter : nearCenter.clone().lerp(farCenter, .3))
     const spheres = near.map(body => ({ position: body.position, radius: framingRadius(body) }))
@@ -199,42 +199,13 @@ export function sampleStoryCamera(options: StoryCameraOptions): StoryCameraFrame
     position.copy(viewing).multiplyScalar(distance * (role === 'resolution' ? 1 + progress * .15 : 1.04 - progress * .08)).add(focus)
     return { position, target: focus, fov }
   }
-  if (continuousTake && target) {
-    // Boarding master: establish both hulls, then close on the small hull's contact site.
-    const fov = 42, vertical = Math.tan(fov * Math.PI / 360), horizontal = vertical * aspect
-    focus.lerp(target.position,.5)
-    const radius = Math.max(focus.distanceTo(subject.position)+subject.size*.72,focus.distanceTo(target.position)+target.size*.72)
-    const distance = radius / Math.sin(Math.atan(Math.min(vertical,horizontal))) * (1.18 - progress*.12)
-    position.copy(focus).addScaledVector(normal,distance*.95)
-    position.y += distance*.31
-    if (Math.max(subject.size, target.size) > Math.min(subject.size, target.size) * 3) {
-      // Once the capital is established, show the small hull and its contact
-      // site. Fitting the entire capital would reduce this vessel to a dot.
-      const small = subject.size < target.size ? subject : target
-      const large = small === subject ? target : subject
-      const outward = small.position.clone().sub(large.position).normalize()
-      if (outward.lengthSq() < .001) outward.copy(axis)
-      const contactFocus = small.position.clone().addScaledVector(outward, -small.size * .35)
-      const viewing = normal.clone().addScaledVector(outward, .4).add(new Vector3(0, .32, 0)).normalize()
-      const approach = reduced ? 1 : ease(progress * 2)
-      const wideDistance = position.distanceTo(focus)
-      const closeDistance = Math.max(small.size * 3.2, small.size * .85 / horizontal, 24)
-      focus.lerp(contactFocus, approach)
-      let contactDistance = wideDistance + (closeDistance - wideDistance) * approach
-      // A camera dolly follows this outward ray, with an analytic bound for
-      // both complete hulls. Cropping a capital never permits entering it.
-      for (const body of [subject, target]) contactDistance = Math.max(contactDistance, contactRayExit(body, focus, viewing))
-      position.copy(focus).addScaledVector(viewing, contactDistance)
-    }
-    return { position, target: focus, fov }
-  }
   // A hull that dies during this shot is the victim: it becomes the framed primary.
   const victim = options.dying && [subject, target].find(body => body?.id === options.dying)
   let near = victim || subject
   let far = near === subject ? target : subject
   // Scale contrast: the smaller hull takes the foreground so it reads, while a
   // capital fills the background (fighter against a star destroyer).
-  const swapped = !victim && role !== 'resolution' && !!far && framingRadius(near) > framingRadius(far) * (role === 'geography' ? 1 : 2.2)
+  const swapped = !victim && role !== 'resolution' && !!far && framingRadius(near) > framingRadius(far) * (role === 'geography' || continuousTake ? 1 : 2.2)
   if (swapped) [near, far] = [far!, near]
   const toward = far ? far.position.clone().sub(near.position).setY(0) : axis.clone()
   if (toward.lengthSq() < .001) toward.copy(axis)
@@ -246,8 +217,12 @@ export function sampleStoryCamera(options: StoryCameraOptions): StoryCameraFrame
   const variant = options.variant ?? { angle: 0, lift: 0, distance: 1 }
   // Lens (fov), bearing, foreground share (hull length over frame width), aim
   // weight toward the foreground hull, counterpart inclusion, dolly and arc.
-  let fov: number, viewing: Vector3, share: number, weight = .5, include: 'full' | 'loose' | 'none' = 'loose', dolly = 1, arc = 0
-  if (victim) {
+  let fov: number, viewing: Vector3, share: number, weight = .5, looseLimit = 2.5, include: 'full' | 'loose' | 'none' = 'loose', dolly = 1, arc = 0
+  if (continuousTake) {
+    // Boarding: one continuous take over the smaller hull's shoulder onto its
+    // counterpart, following the live docking line through contact.
+    fov = 36; viewing = bearing(away, side, 42, .22); share = .34; weight = .6; looseLimit = 1.5; dolly = 1 - progress * .05
+  } else if (victim) {
     // Room for the fireball; the killer sits beyond the victim.
     fov = 30; viewing = bearing(away, side, 30, .16); share = .14; weight = .72; dolly = 1 + progress * .2; arc = 6
   } else if (role === 'fire') {
@@ -303,9 +278,9 @@ export function sampleStoryCamera(options: StoryCameraOptions): StoryCameraFrame
     return upper
   }
   const opening = near.size / (2 * horizontal * share) * variant.distance
-  // A loose counterpart may cost at most a 2.5x pullback; beyond that the
+  // A loose counterpart may cost a bounded pullback; beyond that the
   // foreground hull keeps its size and the counterpart leaves the frame.
-  let distance = include === 'loose' ? fit(opening, opening * 2.5) : fit(opening)
+  let distance = include === 'loose' ? fit(opening, opening * looseLimit) : fit(opening)
   if (distance === undefined) { include = 'none'; distance = fit(opening) ?? opening }
   place(distance * dolly)
   return { position, target: focus, fov }

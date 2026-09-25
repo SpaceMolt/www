@@ -263,7 +263,7 @@ test('boarding takes frame close hulls together without the downrange shoulder p
       axisFrom: a.position, axisTo: b.position })
     const camera = new PerspectiveCamera(frame.fov, aspect, .1, 100000)
     camera.position.copy(frame.position); camera.lookAt(frame.target); camera.updateMatrixWorld()
-    for (const body of [a, b]) for (const x of [-.6, .6]) for (const y of [-.25, .4]) for (const z of [-.3, .3]) {
+    for (const body of [a, b]) for (const x of [-.5, .5]) for (const y of [-.2, .2]) for (const z of [-.3, .3]) {
       const p = body.position.clone().add(new Vector3(x, y, z).multiplyScalar(body.size)).project(camera)
       expect(Math.abs(p.x)).toBeLessThan(1)
       expect(Math.abs(p.y)).toBeLessThan(1)

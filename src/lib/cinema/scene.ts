@@ -17,7 +17,7 @@ import { buildFleetFormation } from './formation'
 import { sampleShipMotion, fleetMotionSpacing, type ShipMotionOptions } from './motion'
 import { createBoardingMotionSampler } from './boarding-motion'
 import { type CameraBody, type StoryCameraOptions } from './camera'
-import { buildShotPlan, samplePlannedCamera, type ShotPlan } from './shot-planner'
+import { buildShotPlan, measureShotVisibility, samplePlannedCamera, type ShotPlan } from './shot-planner'
 import { addHullMarkings } from './hull-markings'
 import { buildCameraTakes } from './camera-takes'
 import { cinemaRenderSettings, initialCinemaQuality } from './quality'
@@ -387,6 +387,11 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: glow, color: 0x75dfff, toneMapped: false, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }))
     sprite.visible = false; scene.add(sprite); engineSprites.push(sprite)
   }
+  // Blinking side-colored running lights at the beam tips of detailed hulls.
+  const navLights = Array.from({ length: 64 }, () => {
+    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: glow, toneMapped: false, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }))
+    sprite.visible = false; scene.add(sprite); return sprite
+  })
   // Near-field particulate and exhaust give tracked shots visible parallax.
   // Particles wrap in a box around the camera, so every shot has a near field.
   const dustGeometry = new THREE.BufferGeometry()
@@ -438,13 +443,13 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   }
   // Explosion fireballs: noise-textured shells with a white-yellow-orange-red
   // temperature ramp. Additive, so they read as light, never as smoke.
-  const fireballs = Array.from({ length: 10 }, () => {
+  const fireballs = Array.from({ length: 16 }, () => {
     const ball = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 20), new THREE.ShaderMaterial({
       transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false,
       uniforms: { age: { value: 0 }, seed: { value: 0 }, heat: { value: 1 } },
       vertexShader: 'varying vec3 vN;varying vec3 vV;varying vec3 vP;void main(){vec4 p=modelViewMatrix*vec4(position,1.);vN=normalize(normalMatrix*normal);vV=normalize(-p.xyz);vP=position;gl_Position=projectionMatrix*p;}',
       fragmentShader: `varying vec3 vN;varying vec3 vV;varying vec3 vP;uniform float age,seed,heat;${FIRE_NOISE}
-        void main(){float f=fb(vP*2.6+vec3(seed,-age*1.4,seed*.5));float core=pow(max(0.,dot(normalize(vN),normalize(vV))),1.3);
+        void main(){float f=fb(vP*4.2+vec3(seed,-age*1.6,seed*.5));float core=pow(max(0.,dot(normalize(vN),normalize(vV))),1.3);
         float t=clamp(core*(1.3-age*.42)+(f-.5)*1.1,0.,1.6)*heat;
         vec3 c=mix(vec3(.35,.04,.01),vec3(1.,.38,.06),smoothstep(.12,.5,t));c=mix(c,vec3(1.,.82,.42),smoothstep(.5,.9,t));c=mix(c,vec3(1.),smoothstep(.95,1.35,t));
         float a=smoothstep(.06,.4,t)*(1.-smoothstep(1.4,3.4,age));
@@ -497,7 +502,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   const boardingTakes = new Set((film.story?.sequences ?? []).filter(sequence=>
     cuesById.get(sequence.causeCueId ?? '')?.kind==='boarding').map(sequence=>cameraTakes.get(sequence.id)?.id))
   const cameraTarget = new THREE.Vector3(), cameraPosition = new THREE.Vector3()
-  const pointA = new THREE.Vector3(), pointB = new THREE.Vector3(), pointC = new THREE.Vector3()
+  const pointA = new THREE.Vector3(), pointB = new THREE.Vector3(), pointC = new THREE.Vector3(), pointQuaternion = new THREE.Quaternion()
   const up = new THREE.Vector3(0, 1, 0), direction = new THREE.Vector3(), viewForward = new THREE.Vector3(), viewRight = new THREE.Vector3(), keyDirection = new THREE.Vector3()
   const motionOptions = (actor: Actor): ShipMotionOptions => ({ size: actor.size, angle: actor.angle, lane: actor.lane, seed: actor.seed,
     formation: formations.get(actor.ship.id), fleetCount: sides.length, sideCount: sideCounts.get(actor.ship.sideIndex) ?? 1, spacing: fleetSpacing.get(actor.ship.sideIndex) ?? 90, depth: fleetDepth.get(actor.ship.sideIndex) ?? 130 })
@@ -755,6 +760,10 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
       canvas.dataset.cinemaSamples=String(sceneTarget.samples)
       canvas.dataset.cinemaCamera=frame.position.toArray().map(value=>value.toFixed(1)).join(',')
       canvas.dataset.cinemaFocus=frame.target.toArray().map(value=>value.toFixed(1)).join(',')
+      // Projected hull size as a fraction of the frame (planner measure), for capture review.
+      const sized=cameraBodiesAt(time)
+      canvas.dataset.cinemaSubjectSize=measureShotVisibility(frame,camera.aspect,subject,sized).size.toFixed(3)
+      canvas.dataset.cinemaTargetSize=target?measureShotVisibility(frame,camera.aspect,target,sized).size.toFixed(3):''
       canvas.dataset.cinemaBodies=[subject,target].filter(Boolean).map(body=>body!.id.slice(0,6)+':'+body!.size.toFixed(0)+'@'+body!.position.toArray().map(value=>value.toFixed(0)).join(',')).join(' ')
     }
 
@@ -765,6 +774,21 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     const pixelAt = (point: THREE.Vector3) => Math.max(0, pointC.copy(point).sub(camera.position).dot(viewForward)) * pixelScale
     // Engines stay readable as points of side-colored light from any range.
     for (let i = 0; i < engineCount; i++) engineSprites[i].scale.setScalar(Math.max(engineSprites[i].scale.x, pixelAt(engineSprites[i].position) * 7))
+    let navCount = 0
+    for (const actor of actors) {
+      const bounds = actor.contactBounds
+      if (!actor.model?.visible || !bounds || navCount > navLights.length - 2 || (time >= actor.ship.end && ['destroyed','knocked_out','captured'].includes(actor.ship.fate))) continue
+      actor.model.updateMatrixWorld()
+      for (const tip of [bounds.min.z, bounds.max.z]) {
+        const phase = (time * .7 + (actor.seed % 1000) / 1000 + (tip > 0 ? .5 : 0)) % 1
+        const light = navLights[navCount++]; light.visible = true
+        light.position.set((bounds.min.x + bounds.max.x) * .5 / actor.size, bounds.max.y * .9 / actor.size, tip * 1.02 / actor.size)
+        actor.model.localToWorld(light.position)
+        light.scale.setScalar(Math.max(actor.size * .05, pixelAt(light.position) * 5) * (phase < .1 ? 1 : .45))
+        light.material.color.setHex(actor.color).multiplyScalar(phase < .1 ? 4 : 1.2)
+      }
+    }
+    for (let i = navCount; i < navLights.length; i++) navLights[i].visible = false
     const addBeam = (a: THREE.Vector3, b: THREE.Vector3, width: number, color: number, brightness = 2.2) => {
       if (beamCount >= (actualQuality === 'low' ? 96 : 320)) return
       direction.copy(b).sub(a)
@@ -948,21 +972,26 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
         const knockout = cue.kind === 'knockout'
         // Knockouts leave an intact unpowered hull; destruction breaks into fragments.
         if (age < 3.8) {
-          addFlash(destination.position, radius * (death ? 1.6 + age * 1.2 : 1.7 + age), effectColor, Math.exp(-age * 1.1) * (death ? .7 : .9), death ? 1.5 : 3)
+          addFlash(destination.position, radius * (death ? 1.6 + age * 1.2 : 1.7 + age), effectColor, Math.exp(-age * 1.1) * (death ? .45 : .9), death ? 1.5 : 3)
           // White-hot flash that clips, then the core light that lingers.
           if (age < .25) addFlash(destination.position, radius * 2 * (.6 + age), 0xffffff, 1 - age / .25, 4)
           if (death && age < 1.4) addFlash(destination.position, radius * (.6 + age * .6), 0xfff0cc, 1 - age / 1.4, 3)
         }
-        if (death && age < 3.4 && fireballCount < fireballs.length) {
+        // A main fireball and a smaller, later lobe give an irregular, rolling blast.
+        if (death) for (let lobe = 0; lobe < 2; lobe++) {
+          const lobeAge = age - lobe * .14
+          if (lobeAge < 0 || lobeAge >= 3.4 || fireballCount >= fireballs.length) continue
           const ball = fireballs[fireballCount++]; ball.visible = true; ball.position.copy(destination.position)
-          ball.scale.setScalar(radius * (.25 + .8 * (1 - Math.exp(-age * 2.6))))
-          ball.rotation.set(seed % 7, seed % 5, 0)
-          ball.material.uniforms.age.value = age; ball.material.uniforms.seed.value = seed % 97
+          if (lobe) { const r = random(seed + 5); ball.position.add(pointA.set(r() - .5, r() - .5, r() - .5).normalize().multiplyScalar(radius * .35)) }
+          ball.scale.setScalar(radius * (lobe ? .6 : 1) * (.25 + .8 * (1 - Math.exp(-lobeAge * 2.6))))
+          ball.rotation.set(seed % 7 + lobe, seed % 5, 0)
+          ball.material.uniforms.age.value = lobeAge; ball.material.uniforms.seed.value = seed % 97 + lobe * 13
           ball.material.uniforms.heat.value = reduced ? .6 : 1
         }
         if (!reduced && age < 1.4 && blastRingCount < blastRings.length) {
           const ring = blastRings[blastRingCount++]; ring.visible = true; ring.position.copy(destination.position)
-          ring.rotation.set(Math.PI * .5 + (seed % 5 - 2) * .12, 0, (seed % 3 - 1) * .2)
+          // Face the camera, tilted a little: a spherical blast front, not a planetary ring.
+          ring.quaternion.copy(camera.quaternion).multiply(pointQuaternion.setFromEuler(new THREE.Euler((seed % 5 - 2) * .15, (seed % 3 - 1) * .2, 0)))
           ring.scale.setScalar(radius * (.4 + age * (death ? 1.6 : 1.2)))
           ring.material.uniforms.color.value.setHex(death ? 0xffc890 : effectColor)
           ring.material.uniforms.opacity.value = Math.pow(1 - age / 1.4, 2) * .8
