@@ -335,6 +335,8 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
           if (material instanceof THREE.MeshStandardMaterial || material instanceof THREE.MeshBasicMaterial) {
             engineMaterials.push({ material, intensity: object.userData.baseIntensity ?? 1 })
             if (material instanceof THREE.MeshBasicMaterial) material.color.setHex(object.userData.plume ? sideColor.get(ship.sideIndex)! : mixColor(sideColor.get(ship.sideIndex)!, 0xffffff, .35)).multiplyScalar(object.userData.plume ? .9 : 1)
+            // Nozzle cores glow from a hot center instead of reading as flat painted disks.
+            if (material instanceof THREE.MeshBasicMaterial && !object.userData.plume) Object.assign(material, { map: glow, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false })
             else material.emissive.setHex(sideColor.get(ship.sideIndex)!)
           }
         }
@@ -1011,7 +1013,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
         const flashCap = pixelAt(destination.position) * (canvas.clientHeight || 720) / 4
         // Knockouts leave an intact unpowered hull; destruction breaks into fragments.
         if (!death && age < 3.8) {
-          addFlash(destination.position, Math.min(radius * (1.2 + age * .6), flashCap * 2), effectColor, Math.exp(-age * 1.3) * (knockout ? .7 : .4), knockout ? 2 : 1.2)
+          addFlash(destination.position, Math.min(radius * (1.2 + age * .6), flashCap * (knockout ? 2 : 1)), effectColor, Math.exp(-age * 1.3) * (knockout ? .7 : .3), knockout ? 2 : 1)
           if (age < .15) addFlash(destination.position, Math.min(radius, flashCap), 0xffffff, 1 - age / .15, 2.5)
         }
         if (death) {
@@ -1037,7 +1039,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
             if (lobe && lobeAge < .08) addFlash(ball.position, Math.min(size * 1.4, flashCap * .5), 0xffffff, 1 - lobeAge / .08, 2.2)
           }
         }
-        if (!reduced && age < 1.4 && (!death || radius >= 150) && blastRingCount < blastRings.length) {
+        if (!reduced && age < 1.4 && death && radius >= 150 && blastRingCount < blastRings.length) {
           const ring = blastRings[blastRingCount++]; ring.visible = true; ring.position.copy(destination.position)
           // Face the camera, tilted a little: a spherical blast front, not a planetary ring.
           ring.quaternion.copy(camera.quaternion).multiply(pointQuaternion.setFromEuler(new THREE.Euler((seed % 5 - 2) * .15, (seed % 3 - 1) * .2, 0)))
@@ -1050,7 +1052,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
           const shield = shields[shieldCount++]; shield.visible = true; shield.position.copy(destination.position); shield.rotation.y = destination.rotation
           if (death) shield.scale.setScalar(radius * (.5 + age * 1.4))
           else shield.scale.set(radius * (.68 + age * .12), radius * .38, radius * .5)
-          shield.material.uniforms.opacity.value = Math.exp(-age * 1.2) * (reduced ? .08 : .25)
+          shield.material.uniforms.opacity.value = Math.exp(-age * 1.2) * (reduced ? .05 : .12)
           shield.material.uniforms.local.value = 0; shield.material.uniforms.whole.value = 1
           shield.material.uniforms.time.value = age * (knockout ? 3 : 1); shield.material.uniforms.color.value.setHex(effectColor)
         }
@@ -1058,7 +1060,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
           const ring = shockwaves[shockwaveCount++]; ring.visible = true; ring.position.copy(destination.position)
           ring.rotation.set(Math.PI * .43, 0, destination.rotation)
           ring.scale.setScalar(radius * (.55 + age * (death ? 1.8 : .65)))
-          ring.material.color.setHex(effectColor); ring.material.opacity = Math.pow(1 - age / 3.2, 2) * .8
+          ring.material.color.setHex(effectColor); ring.material.opacity = Math.pow(1 - age / 3.2, 2) * .35
         }
         if (knockout && age < 1.8 && !reduced) {
           for (let branch = 0; branch < 3; branch++) {
