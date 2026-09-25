@@ -65,7 +65,8 @@ describe('cinema synthesis', () => {
     const near = renderCue(cue({ kind: 'death' }), rate)!, far = renderCue(cue({ kind: 'death', audioDistant: true }), rate)!
     expect(rms(far, 0, 1.5)).toBeLessThan(rms(near, 0, 1.5) - 2)
     expect(far.l.length).toBeLessThan(near.l.length)
-    expect(brightness(far)).toBeLessThan(brightness(near))
+    const head = (s: Sound) => ({ ...s, l: s.l.slice(0, Math.round(1.5 * s.rate)), r: s.r.slice(0, Math.round(1.5 * s.rate)) })
+    expect(brightness(head(far))).toBeLessThan(brightness(head(near)))
   })
 
   it('gives knockouts, captures, boarding and arrivals their own sounds', () => {
