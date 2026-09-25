@@ -68,7 +68,8 @@ The edit follows setup, stakes, first exchange, development, climax and resoluti
   first and the killing volley lands last; the edit shows that return fire.
 - Recorded arrivals get a lead-in before the tick's action, so reinforcements are
   seen arriving before they fire.
-- The resolution frames the victor with the climax victim's wreck or prize.
+- The resolution frames the victor, preferably the climax killer, with the climax
+  victim's wreck or prize.
 
 Shot roles and what they frame (the camera planner decides the exact composition):
 
@@ -76,18 +77,20 @@ Shot roles and what they frame (the camera planner decides the exact composition
   active hull. A large size difference between the pair makes it a scale shot.
 - `introduction`: one principal alone, close enough to read its painted hull name.
   No `target`; `axis` keeps its side's screen direction.
-- `arrival`: recorded reinforcements entering. `subject` leads the wave and
-  `focusIds` lists all of it; `target` is an opposing hull for direction. A wave of
-  four or more is a `battlefield` shot.
+- `arrival`: recorded reinforcements entering, framed on the lead hull (`subject`)
+  as it appears. `focusIds` lists the whole wave. No `target`; `axis` points at an
+  opposing hull for screen direction.
 - `setup` and `fire`: the shooter (`subject`) with its line of fire toward `target`.
   A `fire` shot whose subject is the sequence defender is return fire.
 - `impact` with a `target` or without one: the hit hull (`subject`) large in frame.
   In a loss sequence, each `impact` shot without `target` belongs to one victim
   (`focusIds` holds everyone lost in that beat). A mass loss uses one victim shot,
   then a `battlefield` impact shot of all of them.
-- `montage`: one short shot of an exchange, shooter and target together.
+- `montage`: one short shot of an exchange. Montage beats alternate between the
+  shooter with its `target` and the hit hull alone (no `target`).
 - `reaction`: a secondary recipient or the boarding target after contact.
-- `resolution`: the victor (`subject`) with the climax's wreck or prize (`target`).
+- `resolution`: the victor (`subject`, the climax killer when it survived) with the
+  climax's wreck or prize (`target`).
 
 Each pilot appearance has a separate lifecycle. Arena losses disable intact
 hulls. Missing or obsolete snapshots do not authorize extra destruction or

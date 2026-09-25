@@ -904,7 +904,7 @@ describe('dramatic structure', () => {
     const segment = film.segments.find(item => item.tick === 102)!
     expect(arrival.start).toBeCloseTo(segment.start, 8)
     expect(arrival.focusIds).toHaveLength(5)
-    expect(arrival.battlefield).toBe(true)
+    expect(arrival.target).toBeUndefined()
     expect(film.ships.find(ship => ship.id === arrival.subject)!.start).toBeLessThanOrEqual(arrival.start)
     const volleys = film.cues.filter(cue => cue.kind === 'weapon' && cue.tick === 102)
     expect(volleys.every(cue => cue.time >= arrival.end - .000001)).toBe(true)

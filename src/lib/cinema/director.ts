@@ -485,6 +485,7 @@ function directShots(film: CinemaFilm, entries: BattleLogEntry[], edit: TickEdit
   const sequences: CinemaSequence[] = []
   let cursor = OPENING
   let previousBeat: StoryBeat | undefined
+  let montageCount = 0
   blocks.forEach((block, index) => {
     const end = blocks[index + 1]?.segment.start ?? aftermathStart
     const plan = edit[block.index]
@@ -498,8 +499,7 @@ function directShots(film: CinemaFilm, entries: BattleLogEntry[], edit: TickEdit
       const lead = arrivals[0]
       const opposing = film.ships.filter(ship => ship.start <= cursor + .000001 && ship.end >= leadEnd && ship.sideId !== lead?.sideId).sort(rank)[0]
       if (leadEnd > cursor) result.push({start:cursor,end:leadEnd,kind:'reveal',role:'arrival',sequenceId:`arrival:${block.segment.tick}`,
-        subject:lead?.id,target:opposing?.id,axis:axisFor(lead?.id,opposing?.id),focusIds:arrivals.map(ship => ship.id),
-        ...(arrivals.length >= 4 ? {battlefield:true} : {}),intensity:.3})
+        subject:lead?.id,axis:axisFor(lead?.id,opposing?.id),focusIds:arrivals.map(ship => ship.id),intensity:.3})
       cursor = Math.max(cursor, leadEnd)
     }
     const beat = block.beat
@@ -544,7 +544,9 @@ function directShots(film: CinemaFilm, entries: BattleLogEntry[], edit: TickEdit
     } else if (plan.montage || (repeatKiller && beat.consequence && !plan.climax)) {
       // Repeats collapse: one shot per beat, on the loss if there is one.
       if (beat.consequence) victims(pairReady)
-      else result.push({...common,start:pairReady,end,kind:'tracking',role:'montage',subject:beat.attacker,target:impactTarget,actionTime:beat.actionTime})
+      // Alternate the shooter and the ship it hits, so quick beats don't repeat one framing.
+      else result.push({...common,start:pairReady,end,kind:'tracking',role:'montage',...(montageCount++ % 2 ?
+        {subject:impactTarget,actionTime:beat.impactTime} : {subject:beat.attacker,target:impactTarget,actionTime:beat.actionTime})})
     } else if (beat.cause) {
       // When the target shoots back first in the same tick, show its return fire.
       const counter = weapons.find(cue => cue.tick === beat.cause!.tick && cue.from === impactTarget && cue.to === beat.attacker &&
@@ -589,9 +591,10 @@ function directShots(film: CinemaFilm, entries: BattleLogEntry[], edit: TickEdit
     contextShot(cursor,firstAppearance,'quiet-approach')
     contextShot(firstAppearance,aftermathStart,'quiet-encounter')
   } else contextShot(cursor,aftermathStart,'quiet-close')
-  // Resolve on the victor beside the climax's wreck or prize.
-  const survivor = film.ships.filter(ship=>ship.fate==='survived' && ship.end >= aftermathStart &&
-    (film.outcome !== 'victory' || ship.sideId===film.winningSide)).sort(rank)[0]
+  // Resolve on the victor beside the climax's wreck or prize: its killer when it survived.
+  const survivors = film.ships.filter(ship=>ship.fate==='survived' && ship.end >= aftermathStart &&
+    (film.outcome !== 'victory' || ship.sideId===film.winningSide)).sort(rank)
+  const survivor = (decisive?.consequence ? survivors.find(ship => ship.id === decisive.attacker) : undefined) ?? survivors[0]
   const lostHero = film.ships.filter(ship=>ship.playerId===protagonist?.playerId && ship.fate!=='survived').at(-1)
   const reminder = (decisive?.consequence ? byId.get(decisive.defender ?? '') : undefined) ?? lostHero ?? (adversary?.fate !== 'survived' ? adversary : undefined)
   result.push({start:aftermathStart,end:film.duration,kind:'aftermath',role:'resolution',sequenceId:'resolve',
