@@ -175,7 +175,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   cleanups.push(()=>sun.shadow.dispose())
   sun.castShadow=true; sun.shadow.bias=-.00008; sun.shadow.normalBias=.025
   sun.shadow.camera.near=10;sun.shadow.camera.far=3000
-  const rim = new THREE.DirectionalLight(0x86b8ff, 4.2)
+  const rim = new THREE.DirectionalLight(0x86b8ff, 2.6)
   scene.add(rim); scene.add(rim.target)
   const fill = new THREE.DirectionalLight(0x6f8fc0, .5)
   scene.add(fill); scene.add(fill.target)
@@ -435,8 +435,8 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
         void main(){float rim=pow(1.-abs(dot(vN,vV)),2.);float band=pow(max(0.,sin(vP.x*22.-time*12.)),12.);
         vec3 d=normalize(vP);float angle=acos(clamp(dot(d,hit),-1.,1.));
         vec2 q=vec2(atan(d.z,d.x)*5.,d.y*8.);q.x+=floor(q.y)*.5;vec2 cell=abs(fract(q)-.5);float lattice=smoothstep(.38,.5,max(cell.x,cell.y));
-        float wave=exp(-pow((angle-time*1.6)*7.,2.))*(1.-smoothstep(.15,.8,time))*(1.-smoothstep(.35,.9,angle));float spot=exp(-angle*angle*14.)*exp(-time*5.);
-        float a=local*(spot*1.4+wave*(.25+lattice*.8)+lattice*spot*.6)+whole*(rim*.6+band*.35);
+        float wave=exp(-pow((angle-time*1.4)*7.,2.))*(1.-smoothstep(.15,.7,time))*(1.-smoothstep(.25,.6,angle));float spot=exp(-angle*angle*14.)*exp(-time*5.);
+        float a=local*(spot*1.4+wave*(.3+lattice*.4))+whole*(rim*.6+band*.35);
         gl_FragColor=vec4(color*(1.+spot*2.5),a*opacity);}`,
     }))
     shield.visible = false; scene.add(shield); shields.push(shield)
@@ -544,8 +544,10 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     const referenceTime=sequence?.start ?? shot.start
     const axisFrom=cameraBodyAt(shot.axis?.from ?? subject.id,referenceTime)?.position ?? subject.position
     const axisTo=cameraBodyAt(shot.axis?.to ?? target?.id,referenceTime)?.position ?? subject.position.clone().add(new THREE.Vector3(100,0,0))
-    const battlefield=shot.battlefield ? actors.filter(actor=>isVisible(actor,at) &&
-      !(actor.ship.fate==='destroyed' && shot.start>actor.ship.end+7)).map(actor=>cameraBodyAt(actor.ship.id,at)!) : cameraBodiesAt(at)
+    // Membership is fixed at the shot's first frame, so an arrival or loss
+    // mid-shot cannot flip the composition; positions follow the playhead.
+    const battlefield=actors.filter(actor=>isVisible(actor,shot.start) &&
+      !(actor.ship.fate==='destroyed' && shot.start>actor.ship.end+(shot.battlefield?7:.32))).map(actor=>cameraBodyAt(actor.ship.id,at)!)
     const dying=[shot.subject,shot.target].find(id=>{const end=lossAt.get(id??'');return end!==undefined && end>=shot.start-.2 && end<=shot.end})
     return {shot,sequence,time:at,aspect:camera.aspect,subject,target,battlefield,axisFrom,axisTo,reduced,boarding:!!take && boardingTakes.has(take.id),dying}
   }
@@ -740,7 +742,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     const keySide=Math.sign(viewRight.dot(sunDirection))||1
     keyDirection.copy(viewRight).multiplyScalar(keySide*.6).addScaledVector(viewForward,-.55).addScaledVector(up,.6).normalize().multiplyScalar(.5).addScaledVector(sunDirection,.5).normalize()
     sun.position.copy(subject.position).addScaledVector(keyDirection,1400);sun.target.position.copy(subject.position)
-    rim.position.copy(subject.position).addScaledVector(viewForward,600).addScaledVector(up,260).addScaledVector(viewRight,-keySide*240);rim.target.position.copy(subject.position)
+    rim.position.copy(subject.position).addScaledVector(viewForward,450).addScaledVector(up,300).addScaledVector(viewRight,-keySide*420);rim.target.position.copy(subject.position)
     fill.position.copy(subject.position).addScaledVector(viewForward,-500).addScaledVector(up,-250).addScaledVector(viewRight,-keySide*400);fill.target.position.copy(subject.position)
     Object.assign(sun.shadow.camera,{left:-shadowRadius,right:shadowRadius,top:shadowRadius,bottom:-shadowRadius})
     sun.shadow.camera.updateProjectionMatrix()
@@ -972,9 +974,9 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
         const knockout = cue.kind === 'knockout'
         // Knockouts leave an intact unpowered hull; destruction breaks into fragments.
         if (age < 3.8) {
-          addFlash(destination.position, radius * (death ? 1.6 + age * 1.2 : 1.7 + age), effectColor, Math.exp(-age * 1.1) * (death ? .45 : .9), death ? 1.5 : 3)
+          addFlash(destination.position, radius * (death ? 1.3 + age : 1.7 + age), effectColor, Math.exp(-age * 1.3) * (death ? .3 : .9), death ? 1.5 : 3)
           // White-hot flash that clips, then the core light that lingers.
-          if (age < .25) addFlash(destination.position, radius * 2 * (.6 + age), 0xffffff, 1 - age / .25, 4)
+          if (age < .25) addFlash(destination.position, radius * 1.5 * (.6 + age), 0xffffff, 1 - age / .25, 4)
           if (death && age < 1.4) addFlash(destination.position, radius * (.6 + age * .6), 0xfff0cc, 1 - age / 1.4, 3)
         }
         // A main fireball and a smaller, later lobe give an irregular, rolling blast.
@@ -983,7 +985,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
           if (lobeAge < 0 || lobeAge >= 3.4 || fireballCount >= fireballs.length) continue
           const ball = fireballs[fireballCount++]; ball.visible = true; ball.position.copy(destination.position)
           if (lobe) { const r = random(seed + 5); ball.position.add(pointA.set(r() - .5, r() - .5, r() - .5).normalize().multiplyScalar(radius * .35)) }
-          ball.scale.setScalar(radius * (lobe ? .6 : 1) * (.25 + .8 * (1 - Math.exp(-lobeAge * 2.6))))
+          ball.scale.setScalar(radius * (lobe ? .6 : 1) * (.2 + .65 * (1 - Math.exp(-lobeAge * 2.6))))
           ball.rotation.set(seed % 7 + lobe, seed % 5, 0)
           ball.material.uniforms.age.value = lobeAge; ball.material.uniforms.seed.value = seed % 97 + lobe * 13
           ball.material.uniforms.heat.value = reduced ? .6 : 1
@@ -994,7 +996,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
           ring.quaternion.copy(camera.quaternion).multiply(pointQuaternion.setFromEuler(new THREE.Euler((seed % 5 - 2) * .15, (seed % 3 - 1) * .2, 0)))
           ring.scale.setScalar(radius * (.4 + age * (death ? 1.6 : 1.2)))
           ring.material.uniforms.color.value.setHex(death ? 0xffc890 : effectColor)
-          ring.material.uniforms.opacity.value = Math.pow(1 - age / 1.4, 2) * .8
+          ring.material.uniforms.opacity.value = Math.pow(1 - age / 1.4, 2) * .5
         }
         if (!death && shieldCount < shields.length && age < 3.2) {
           const shield = shields[shieldCount++]; shield.visible = true; shield.position.copy(destination.position); shield.rotation.y = destination.rotation
