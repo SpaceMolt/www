@@ -565,9 +565,9 @@ function directShots(film: CinemaFilm, entries: BattleLogEntry[], edit: TickEdit
     } else if (beat.cause) {
       // When the target shoots back first in the same tick, show its return fire.
       const counter = weapons.find(cue => cue.tick === beat.cause!.tick && cue.from === impactTarget && cue.to === beat.attacker &&
-        cue.time >= pairReady && cue.time <= beat.actionTime - .3)
+        cue.time >= pairReady && cue.time <= beat.actionTime - .4)
       let fireStart = Math.min(beat.actionTime,Math.max(pairReady+.5,Math.min(beat.actionTime-1,pairReady+(beat.impactTime-pairReady)*.48)))
-      if (counter) fireStart = Math.min(beat.actionTime, Math.max(fireStart, counter.time + .3))
+      if (counter) fireStart = Math.min(beat.actionTime, Math.max(fireStart, Math.min(counter.time + .5, beat.actionTime - .15)))
       // A setup too brief to read merges into the firing shot.
       else if (fireStart - pairReady < .6) fireStart = pairReady
       // Read the muzzle release, then recognize the target before the strike.
@@ -606,14 +606,17 @@ function directShots(film: CinemaFilm, entries: BattleLogEntry[], edit: TickEdit
     contextShot(cursor,firstAppearance,'quiet-approach')
     contextShot(firstAppearance,aftermathStart,'quiet-encounter')
   } else contextShot(cursor,aftermathStart,'quiet-close')
-  // Resolve on the victor beside the climax's wreck or prize: its killer when it survived.
+  // Resolve on the victor, its climax killer when it survived.
   const survivors = film.ships.filter(ship=>ship.fate==='survived' && ship.end >= aftermathStart &&
     (film.outcome !== 'victory' || ship.sideId===film.winningSide)).sort(rank)
   const survivor = (decisive?.consequence ? survivors.find(ship => ship.id === decisive.attacker) : undefined) ?? survivors[0]
   const lostHero = film.ships.filter(ship=>ship.playerId===protagonist?.playerId && ship.fate!=='survived').at(-1)
   const reminder = (decisive?.consequence ? byId.get(decisive.defender ?? '') : undefined) ?? lostHero ?? (adversary?.fate !== 'survived' ? adversary : undefined)
+  // A prize stays docked beside its captor, so both share the frame. A wreck can
+  // drift far from the victor; the climax already held on it, so the victor closes alone.
+  const prize = reminder?.fate === 'captured' && reminder.capturedBy === survivor?.playerId
   result.push({start:aftermathStart,end:film.duration,kind:'aftermath',role:'resolution',sequenceId:'resolve',
-    subject:survivor?.id,target:reminder?.id,axis:axisFor(survivor?.id,reminder?.id),intensity:.12})
+    subject:survivor?.id,...(prize || !survivor ? {target:reminder?.id} : {}),axis:axisFor(survivor?.id,reminder?.id),intensity:.12})
   film.story={protagonistId:protagonist?.id,adversaryId:adversary?.id,climaxCueId:decisive?.event?.id,sequences}
   return result
 }
@@ -822,7 +825,7 @@ export function compileBattleFilm(summary: BattleSummary, source: BattleLogEntry
         const jitter = cinemaHash(`${film.seed}:${entry.tick}:${attackIndex}`)
         // Within one tick the record has no order. In a loss, the doomed ship's
         // own guns speak first and the decisive volley lands last.
-        const fire = actionStart + actionSpan * (victims.size ? (decisiveAttacks.has(attackIndex) ? .26 : .04) + (jitter % 8) / 100 + weaponIndex * .03 :
+        const fire = actionStart + actionSpan * (victims.size ? (decisiveAttacks.has(attackIndex) ? edit[index].climax ? .38 : .26 : .04) + (jitter % 8) / 100 + weaponIndex * .03 :
           0.08 + (jitter % 23) / 100 + weaponIndex * 0.04)
         const cue = addCue({ kind: 'weapon', time: parent?.time ?? fire,
           duration: Math.max(Number.EPSILON, impactTime - (parent?.time ?? fire)), tick: entry.tick, from: from.id, to: to.id,

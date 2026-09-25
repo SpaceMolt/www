@@ -491,7 +491,8 @@ describe('authored narrative sequences', () => {
     const resolution=film.shots.at(-1)!
     expect(resolution.role).toBe('resolution')
     expect(resolution.subject).toBe('c:0')
-    expect(resolution.target).toBe('a:0')
+    expect(resolution.target).toBeUndefined()
+    expect(resolution.axis).toBeDefined()
   })
 })
 
@@ -937,7 +938,7 @@ describe('dramatic structure', () => {
     const drop = film.segments.find(segment => segment.tick === 115)!
     expect(drop.end - drop.start).toBeGreaterThanOrEqual(2.5)
   })
-  it('gives the decisive loss the longest hold and resolves on its wreck', () => {
+  it('gives the decisive loss the longest hold and resolves on its victor', () => {
     const snapshots = [snap('a'), snap('b', 2), snap('c', 2)]
     const film = compile([
       row(100, { snapshots, attacks: [attack('a', 'b', { hull_damage: 100 })], kills: [kill('a', 'b')] }),
@@ -949,7 +950,7 @@ describe('dramatic structure', () => {
     expect(climax.defender).toBe('c:0')
     const holds = film.story!.sequences.filter(sequence => sequence.consequenceTime !== undefined).map(sequence => sequence.end - sequence.consequenceTime!)
     expect(climax.end - climax.consequenceTime!).toBe(Math.max(...holds))
-    expect(film.shots.at(-1)).toMatchObject({ role: 'resolution', subject: 'a:0', target: 'c:0' })
+    expect(film.shots.at(-1)).toMatchObject({ role: 'resolution', subject: 'a:0', axis: { from: 'a:0', to: 'c:0' } })
   })
   it('lets the doomed ship fire its last shot before the killing volley', () => {
     const film = compile([row(100, { attacks: [attack('a', 'b')] }),
@@ -958,6 +959,13 @@ describe('dramatic structure', () => {
     const killing = film.cues.find(cue => cue.kind === 'weapon' && cue.from === 'a:0' && cue.tick === 101)!
     expect(last.time).toBeLessThan(killing.time)
     expect(film.shots.some(shot => shot.role === 'fire' && shot.subject === 'b:0' && shot.start <= last.time && shot.end > last.time)).toBe(true)
+  })
+  it('closes a capture on the captor beside its prize', () => {
+    const board = (event: string, phase: string) => ({ operation_id: 'op', actor_id: 'a', target_id: 'b', event, phase })
+    const film = compile([row(100, { attacks: [attack('a', 'b')] }), row(101, { boarding: [board('closing_started', 'latching')] }),
+      terminal(102, { boarding: [board('latched', 'assault')], captures: [{ boarding_operation_id: 'op', captor_id: 'a', captor_username: 'a',
+        former_owner_id: 'b', former_owner_username: 'b', ship_id: 'prize', ship_class: 'vanguard' }] })])
+    expect(film.shots.at(-1)).toMatchObject({ role: 'resolution', subject: 'a:0', target: 'b:0' })
   })
   it('is deterministic for the same record', () => {
     const entries = [row(100, { attacks: [attack('a', 'b')] }), terminal(101, { attacks: [attack('a', 'b', { hull_damage: 100 })], kills: [kill('a', 'b')] })]

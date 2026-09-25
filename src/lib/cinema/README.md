@@ -68,8 +68,9 @@ The edit follows setup, stakes, first exchange, development, climax and resoluti
   first and the killing volley lands last; the edit shows that return fire.
 - Recorded arrivals get a lead-in before the tick's action, so reinforcements are
   seen arriving before they fire.
-- The resolution frames the victor, preferably the climax killer, with the climax
-  victim's wreck or prize.
+- The resolution frames the victor, preferably the climax killer. A captor shares
+  the frame with its prize; after a destruction the climax already held on the
+  wreck, so the victor closes alone.
 
 Shot roles and what they frame (the camera planner decides the exact composition):
 
@@ -89,8 +90,9 @@ Shot roles and what they frame (the camera planner decides the exact composition
 - `montage`: one short shot of an exchange. Montage beats alternate between the
   shooter with its `target` and the hit hull alone (no `target`).
 - `reaction`: a secondary recipient or the boarding target after contact.
-- `resolution`: the victor (`subject`, the climax killer when it survived) with the
-  climax's wreck or prize (`target`).
+- `resolution`: the victor (`subject`, the climax killer when it survived). `target`
+  is set only for a captured prize, which is docked beside its captor; `axis` still
+  points at the climax victim.
 
 Each pilot appearance has a separate lifecycle. Arena losses disable intact
 hulls. Missing or obsolete snapshots do not authorize extra destruction or
