@@ -189,19 +189,23 @@ export function sampleStoryCamera(options: StoryCameraOptions): StoryCameraFrame
     toward.normalize()
     const side = normal.clone().addScaledVector(toward, -normal.dot(toward)).normalize()
     if (side.lengthSq() < .001) side.set(-toward.z, 0, toward.x)
-    const viewing = near === field ? bearing(side, toward.clone().negate(), 25, .34) : bearing(toward.clone().negate(), side, 38, .34)
-    if (!reduced) viewing.applyAxisAngle(UP, (progress - .5) * .18)
+    const base = near === field ? bearing(side, toward.clone().negate(), 25, .34) : bearing(toward.clone().negate(), side, 38, .34)
     focus.copy(near === field ? nearCenter : nearCenter.clone().lerp(farCenter, .3))
     const spheres = near.map(body => ({ position: body.position, radius: framingRadius(body) }))
-    const nearDistance = fitDistance(viewing, vertical * .92, horizontal * .92, focus, spheres)
+    const others = near === field ? [] : rest.map(body => ({ position: body.position, radius: 0 }))
     // Far-flung stragglers may leave the frame rather than shrink the formation.
-    const distance = Math.min(nearDistance * 2, fitDistance(viewing, vertical * .92, horizontal * .92, focus,
-      [...spheres, ...(near === field ? [] : rest.map(body => ({ position: body.position, radius: 0 })))]))
-    position.copy(viewing).multiplyScalar(distance * (role === 'resolution' ? 1 + progress * .15 : 1.04 - progress * .08)).add(focus)
+    const fleetDistance = (viewing: Vector3) => Math.min(fitDistance(viewing, vertical * .92, horizontal * .92, focus, spheres) * 2,
+      fitDistance(viewing, vertical * .92, horizontal * .92, focus, [...spheres, ...others]))
     // A mass too large to read as hulls: frame the principal of the larger
     // fleet from the enemy's side, with its mass stretching away behind it.
+    // Decided on the unmoved master, so the choice cannot flip mid-shot.
     const principal = target && target.size < subject.size ? target : subject
-    if (!target || role === 'resolution' || principal.size / (2 * horizontal * Math.max(1, position.distanceTo(principal.position))) >= .02) return { position, target: focus, fov }
+    const reference = focus.clone().addScaledVector(base, fleetDistance(base))
+    if (!target || role === 'resolution' || principal.size / (2 * horizontal * Math.max(1, reference.distanceTo(principal.position))) >= .02) {
+      const viewing = base.clone().applyAxisAngle(UP, reduced ? 0 : (progress - .5) * .18)
+      position.copy(viewing).multiplyScalar(fleetDistance(viewing) * (role === 'resolution' ? 1 + progress * .15 : 1.04 - progress * .08)).add(focus)
+      return { position, target: focus, fov }
+    }
     const count = (body: CameraBody) => field.filter(other => other.side === body.side).length
     mass = count(target) > count(subject) ? target : subject
     massAway = mass.position.clone().sub(centroid(field.filter(body => body.side === mass!.side))).setY(0)
