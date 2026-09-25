@@ -23,24 +23,6 @@ test('new targets, gaps, and strategic masters start new takes', () => {
   expect(takes.get('first')).not.toBe(takes.get('second'))
 })
 
-test('a shared take preserves camera progress across consecutive exchanges', async () => {
-  const { sampleStoryCamera } = await import('./camera')
-  const { Vector3 } = await import('three')
-  const first = sequence('first', 0), second = sequence('second', 3)
-  const takes = buildCameraTakes([first, second], [])
-  const subject = { id: 'a', position: new Vector3(0, 0, 0), size: 80 }
-  const target = { id: 'b', position: new Vector3(600, 0, 0), size: 100 }
-  const frameAt = (story: CinemaSequence, time: number) => {
-    const take = takes.get(story.id)!
-    return sampleStoryCamera({ shot: { start: story.start, end: story.end, sequenceId: story.id,
-      kind: 'tracking', role: 'fire', intensity: .5 }, sequence: { ...story, start: take.start, end: take.end },
-      time, aspect: 16 / 9, subject, target, axisFrom: subject.position, axisTo: target.position })
-  }
-  const before = frameAt(first, 2.999), after = frameAt(second, 3.001)
-  expect(before.position.distanceTo(after.position)).toBeLessThan(1)
-  expect(before.target.distanceTo(after.target)).toBeLessThan(1)
-})
-
 test('reciprocal exchanges share a take', () => {
  const takes=buildCameraTakes([sequence('first',0),sequence('second',3,'b','a')],[])
  expect(takes.get('first')).toBe(takes.get('second'))

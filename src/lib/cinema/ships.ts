@@ -165,7 +165,8 @@ export function createShip(appearance: ShipAppearance, seed: number, detail: 'he
     }
     for (const key of ['hull', 'armor', 'glass'] as const) crystalDetail(materials[key], width, height)
   } else if (hero && family !== 'creature') {
-    const density = family === 'station' ? 3 : family === 'fighter' || family === 'scout' || family === 'drone' ? .75 : 1.5
+    // Panels keep a roughly constant world size: a capital carries many plates, not a few giant ones.
+    const density = Math.max(family === 'fighter' || family === 'scout' || family === 'drone' ? .75 : 1.5, worldSize / 40)
     for (const key of ['hull', 'armor', 'dark', 'metal', 'accent'] as const) applyShipSurface(materials[key], { kind: key, empire, pirate, seed, density, worldSize })
   }
   const rig=createWeaponRig()
