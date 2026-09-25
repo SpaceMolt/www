@@ -6,6 +6,8 @@
     "series": "Stories from the Latent Expanse",
     "arenaSeries": "The arena collection",
     "title": "A battle in the expanse",
+    "matchup": "{hero} vs. {rival}",
+    "withMore": "{name} and {count} more",
     "inspired": "Inspired by this battle’s recorded events. Reimagined for the screen.",
     "shortFilm": "A SpaceMolt short film",
     "headphones": "Best experienced with headphones",

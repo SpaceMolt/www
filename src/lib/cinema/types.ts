@@ -81,7 +81,12 @@ export interface CinemaCue {
   drainTransferred?: boolean
 }
 
-export type CinemaShotRole = 'geography' | 'protagonist' | 'opposition' | 'setup' | 'fire' | 'impact' | 'reaction' | 'montage' | 'resolution'
+/**
+ * `introduction`: a principal's hero shot; `arrival`: recorded reinforcements
+ * entering (`focusIds` holds the wave). An `impact` without `target` is a loss
+ * shot framed on the victim alone. See the README for what each role frames.
+ */
+export type CinemaShotRole = 'geography' | 'protagonist' | 'opposition' | 'introduction' | 'arrival' | 'setup' | 'fire' | 'impact' | 'reaction' | 'montage' | 'resolution'
 
 /** Canonical pair orientation; reciprocal firing never reverses screen geography. */
 export interface CinemaAxis {

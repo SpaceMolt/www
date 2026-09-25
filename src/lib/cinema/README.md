@@ -38,11 +38,56 @@ milestones. It follows a recurring protagonist/opponent through selected setup,
 firing, impact and reaction sequences, then resolves the actual outcome. Screen
 direction stays consistent within an exchange. Repetitive exchanges are sampled;
 chronology, health, movement, weapon flights and actor lifetimes are retimed
-together. Idle server ticks consume no screen time. Selected volleys and consequences
-receive short action budgets, with a brief opening and resolution; the edit does
-not pad a sparse record to a minimum film length. Major wreck chunks persist through the final shot, including a battle
-with no surviving ships.
+together. Idle server ticks consume no screen time. The edit does not pad a sparse
+record to a minimum film length. Major wreck chunks persist through the final shot,
+including a battle with no surviving ships.
 The version and battle ID seed all choreography. Bump `DIRECTOR_VERSION` when intentionally changing that edit.
+
+### Story structure
+
+The film tells its story through the edit and the camera only. There are no
+captions, name tags, health bars or score cards over the picture; ships carry their
+painted names. The pre-roll title names the two principals and the size of each side.
+
+Every tick gets a drama score from the record: losses, captures and escapes, flee
+attempts, boarding progress and setbacks, arrivals (more for a new side), a survivor
+brought under a fifth of its hull, the top damage dealer's biggest tick, and an
+underdog win. The same pairs or the same targets trading fire again score lower.
+Scores only decide screen time and shot choice; they never add or reorder events.
+
+The edit follows setup, stakes, first exchange, development, climax and resolution:
+
+- The opening establishes the field (the whole battlefield for a crowd or lopsided
+  odds, otherwise the principal pair), then introduces each principal alone.
+- The first exchange and the first loss get full treatment. Longer fights keep a few
+  high-scoring ticks in full; other exchanges become one-shot montage beats, and a
+  run of one side taking the same kind of hull from the other tightens as it goes.
+- The climax is the losing side's last loss (otherwise the last loss). Its most
+  involved victim is the subject, and it gets the longest hold after impact.
+- Within a loss tick the record has no order, so the doomed ship's own guns fire
+  first and the killing volley lands last; the edit shows that return fire.
+- Recorded arrivals get a lead-in before the tick's action, so reinforcements are
+  seen arriving before they fire.
+- The resolution frames the victor with the climax victim's wreck or prize.
+
+Shot roles and what they frame (the camera planner decides the exact composition):
+
+- `geography`: both `subject` and `target` in one frame; with `battlefield`, every
+  active hull. A large size difference between the pair makes it a scale shot.
+- `introduction`: one principal alone, close enough to read its painted hull name.
+  No `target`; `axis` keeps its side's screen direction.
+- `arrival`: recorded reinforcements entering. `subject` leads the wave and
+  `focusIds` lists all of it; `target` is an opposing hull for direction. A wave of
+  four or more is a `battlefield` shot.
+- `setup` and `fire`: the shooter (`subject`) with its line of fire toward `target`.
+  A `fire` shot whose subject is the sequence defender is return fire.
+- `impact` with a `target` or without one: the hit hull (`subject`) large in frame.
+  In a loss sequence, each `impact` shot without `target` belongs to one victim
+  (`focusIds` holds everyone lost in that beat). A mass loss uses one victim shot,
+  then a `battlefield` impact shot of all of them.
+- `montage`: one short shot of an exchange, shooter and target together.
+- `reaction`: a secondary recipient or the boarding target after contact.
+- `resolution`: the victor (`subject`) with the climax's wreck or prize (`target`).
 
 Each pilot appearance has a separate lifecycle. Arena losses disable intact
 hulls. Missing or obsolete snapshots do not authorize extra destruction or

@@ -54,7 +54,9 @@ export function addBattlefieldCoverage(film: CinemaFilm): CinemaShot[] {
     beats.push({ time: volley.time, kind: 'impact', score: 10 + volley.targets.size / Math.max(1, activeAt(volley.time - .001).length) * 10 })
   }
 
-  const openingEnd = Math.min(4, film.shots.find(shot => !['geography','protagonist','opposition'].includes(shot.role ?? ''))?.start ?? film.shots[0].end)
+  // The director opens on the battlefield itself when a crowd needs it; its
+  // character introductions are never replaced by a master.
+  const openingEnd = film.shots[0].battlefield ? film.shots[0].end : 0
   const windows: Interval[] = [{ start: 0, end: openingEnd }]
   const limit = Math.min(3, Math.max(1, Math.floor(film.duration / 45)))
   for (const beat of beats.sort((a, b) => b.score - a.score || a.time - b.time)) {
@@ -63,7 +65,7 @@ export function addBattlefieldCoverage(film: CinemaFilm): CinemaShot[] {
     const latest = beat.kind === 'impact' ? beat.time : preferred + 8
     // Keep every selected muzzle readable. An area attack's impact is itself
     // the reason for its master shot, so only that impact may replace a closeup.
-    const protectedSpans: Interval[] = film.shots.filter(shot => shot.role === 'fire').map(shot => ({ start: shot.start, end: shot.end }))
+    const protectedSpans: Interval[] = film.shots.filter(shot => ['fire', 'introduction', 'arrival'].includes(shot.role ?? '') || shot.battlefield).map(shot => ({ start: shot.start, end: shot.end }))
     for (const sequence of film.story?.sequences ?? []) {
       const end = Math.max(sequence.impactTime, sequence.consequenceTime ?? sequence.impactTime) + 2.4
       const areaImpact = beat.kind === 'impact' && beat.time >= sequence.impactTime - 1.5 && beat.time <= end
@@ -93,7 +95,7 @@ export function addBattlefieldCoverage(film: CinemaFilm): CinemaShot[] {
   }
 
   let result = film.shots.map(shot => ({ ...shot }))
-  for (const window of windows.sort((a, b) => a.start - b.start)) {
+  for (const window of windows.filter(window => window.end > window.start).sort((a, b) => a.start - b.start)) {
     const base = film.shots.find(shot => shot.start <= window.start && shot.end > window.start) ?? film.shots[0]
     result = result.flatMap(shot => {
       if (shot.end <= window.start || shot.start >= window.end) return [shot]
