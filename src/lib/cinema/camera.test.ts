@@ -87,22 +87,30 @@ test('firing coverage stays behind the attacker and includes its target', () => 
   }
 })
 
-test('strategic masters show an asymmetric fleet rather than only the selected duel', () => {
-  const capital = actor('capital', -160, 220)
-  const swarm = Array.from({ length: 100 }, (_, index) => ({
-    id: `shard:${index}`, size: 16,
-    position: new Vector3(650 + Math.floor(index / 10) * 120, (index % 3 - 1) * 40, (index % 10 - 4.5) * 100),
-  }))
+test('fleet masters fit a readable formation, and a speck-sized swarm yields to its principals with the mass behind', () => {
+  const capital = { ...actor('capital', -160, 220), side: 0 }
+  const wing = Array.from({ length: 12 }, (_, index) => ({ id: `wing:${index}`, size: 60, side: 1,
+    position: new Vector3(650 + Math.floor(index / 4) * 150, 0, (index % 4 - 1.5) * 120) }))
+  const swarm = Array.from({ length: 100 }, (_, index) => ({ id: `shard:${index}`, size: 16, side: 1,
+    position: new Vector3(650 + Math.floor(index / 10) * 120, (index % 3 - 1) * 40, (index % 10 - 4.5) * 100) }))
   for (const aspect of [.46, 16 / 9, 2.4]) for (const time of [0, 2, 3.99]) {
-    const frame = sampleStoryCamera({ shot: { ...shot, role: 'geography', battlefield: true }, time, aspect,
-      subject: capital, target: swarm[0], axisFrom: capital.position, axisTo: swarm[0].position, battlefield: [capital, ...swarm] })
-    const camera = new PerspectiveCamera(frame.fov, aspect, .1, 100000)
-    camera.position.copy(frame.position); camera.lookAt(frame.target); camera.updateMatrixWorld()
-    for (const body of [capital, ...swarm]) for (const x of [-.6, .6]) for (const y of [-.3, .3]) for (const z of [-.4, .4]) {
-      const projected = body.position.clone().add(new Vector3(x, y, z).multiplyScalar(body.size)).project(camera)
-      expect(Math.abs(projected.x)).toBeLessThan(.95)
-      expect(Math.abs(projected.y)).toBeLessThan(.95)
+    const view = (target: typeof capital, field: typeof capital[]) => {
+      const frame = sampleStoryCamera({ shot: { ...shot, role: 'geography', battlefield: true }, time, aspect,
+        subject: capital, target, axisFrom: capital.position, axisTo: target.position, battlefield: field })
+      const camera = new PerspectiveCamera(frame.fov, aspect, .1, 100000)
+      camera.position.copy(frame.position); camera.lookAt(frame.target); camera.updateMatrixWorld()
+      return { frame, camera }
     }
+    // Readable wing: every hull is inside the frame, seen from above.
+    const fleet = view(wing[0], [capital, ...wing])
+    expect(fleet.frame.position.clone().sub(fleet.frame.target).normalize().y).toBeGreaterThan(.25)
+    for (const body of [capital, ...wing]) { const p = body.position.clone().project(fleet.camera); expect(Math.abs(p.x)).toBeLessThan(1); expect(Math.abs(p.y)).toBeLessThan(1) }
+    // Swarm: the principal shard reads with a large part of its mass behind it.
+    const mass = view(swarm[0], [capital, ...swarm])
+    if (aspect < 1) continue
+    expect(screenWidth(mass.camera, swarm[0])).toBeGreaterThan(.03)
+    const inside = (p: Vector3) => Math.abs(p.x) < 1 && Math.abs(p.y) < 1 && p.z < 1
+    expect(swarm.filter(body => inside(body.position.clone().project(mass.camera))).length).toBeGreaterThan(10)
   }
 })
 
@@ -111,27 +119,6 @@ test('nonfiring detail coverage remains close even with a large battlefield avai
   const frame = sampleStoryCamera({ shot: { ...shot, role: 'reaction' }, time: 2, aspect: 16 / 9,
     subject: a, target: b, axisFrom: a.position, axisTo: b.position, battlefield: [a, b, actor('distant', 6000)] })
   expect(frame.position.distanceTo(a.position)).toBeLessThan(a.size * 4.5)
-})
-
-
-test('asymmetric fleet masters look down on their decks and fill the available frame', () => {
-  const capital = actor('capital', -160, 220)
-  const swarm = Array.from({ length: 100 }, (_, index) => ({ id: `shard:${index}`, size: 16,
-    position: new Vector3(650 + Math.floor(index / 10) * 120, (index % 3 - 1) * 40, (index % 10 - 4.5) * 100) }))
-  const bodies = [capital, ...swarm]
-  for (const aspect of [.46, 16 / 9, 2.4]) {
-    const frame = sampleStoryCamera({ shot: { ...shot, role: 'geography', battlefield: true }, time: 2, aspect,
-      subject: capital, target: swarm[0], axisFrom: capital.position, axisTo: new Vector3(1000, 0, 0), battlefield: bodies })
-    const viewing = frame.position.clone().sub(frame.target).normalize()
-    expect(viewing.y).toBeGreaterThan(.25)
-    const camera = new PerspectiveCamera(frame.fov, aspect, .1, 100000)
-    camera.position.copy(frame.position); camera.lookAt(frame.target); camera.updateMatrixWorld()
-    const projected = bodies.flatMap(body => [-.6, .6].flatMap(x => [-.3, .3].flatMap(y => [-.4, .4].map(z =>
-      body.position.clone().add(new Vector3(x, y, z).multiplyScalar(body.size)).project(camera)))))
-    const width = Math.max(...projected.map(p => p.x)) - Math.min(...projected.map(p => p.x))
-    const height = Math.max(...projected.map(p => p.y)) - Math.min(...projected.map(p => p.y))
-    expect(Math.max(width, height)).toBeGreaterThan(1.25)
-  }
 })
 
 

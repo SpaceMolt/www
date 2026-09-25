@@ -173,6 +173,7 @@ export function sampleStoryCamera(options: StoryCameraOptions): StoryCameraFrame
   const role = continuousTake ? 'geography' : authoredRole
   const focus = subject.position.clone()
   const position = new Vector3()
+  let mass: CameraBody | undefined, massAway: Vector3 | undefined
   // Establishing and closing shots frame the fleets whenever more than a pair is present.
   if ((shot.battlefield || role === 'geography' || role === 'resolution') && !continuousTake && options.battlefield && options.battlefield.length > 2) {
     // Fleet master: from behind and above the subject's formation toward the
@@ -197,15 +198,23 @@ export function sampleStoryCamera(options: StoryCameraOptions): StoryCameraFrame
     const distance = Math.min(nearDistance * 2, fitDistance(viewing, vertical * .92, horizontal * .92, focus,
       [...spheres, ...(near === field ? [] : rest.map(body => ({ position: body.position, radius: 0 })))]))
     position.copy(viewing).multiplyScalar(distance * (role === 'resolution' ? 1 + progress * .15 : 1.04 - progress * .08)).add(focus)
-    return { position, target: focus, fov }
+    // A mass too large to read as hulls: frame the principal of the larger
+    // fleet from the enemy's side, with its mass stretching away behind it.
+    const principal = target && target.size < subject.size ? target : subject
+    if (!target || principal.size / (2 * horizontal * Math.max(1, position.distanceTo(principal.position))) >= .02) return { position, target: focus, fov }
+    const count = (body: CameraBody) => field.filter(other => other.side === body.side).length
+    mass = count(target) > count(subject) ? target : subject
+    massAway = mass.position.clone().sub(centroid(field.filter(body => body.side === mass!.side))).setY(0)
+    if (massAway.lengthSq() < .001) massAway = undefined
+    focus.copy(subject.position)
   }
   // A hull that dies during this shot is the victim: it becomes the framed primary.
-  const victim = options.dying && [subject, target].find(body => body?.id === options.dying)
-  let near = victim || subject
+  const victim = options.dying ? [subject, target].find(body => body?.id === options.dying) : undefined
+  let near = mass ?? victim ?? subject
   let far = near === subject ? target : subject
   // Scale contrast: the smaller hull takes the foreground so it reads, while a
   // capital fills the background (fighter against a star destroyer).
-  const swapped = !victim && role !== 'resolution' && !!far && framingRadius(near) > framingRadius(far) * (role === 'geography' || continuousTake ? 1 : 2.2)
+  const swapped = !mass && !victim && role !== 'resolution' && !!far && framingRadius(near) > framingRadius(far) * (role === 'geography' || continuousTake ? 1 : 2.2)
   if (swapped) [near, far] = [far!, near]
   const toward = far ? far.position.clone().sub(near.position).setY(0) : axis.clone()
   if (toward.lengthSq() < .001) toward.copy(axis)
@@ -218,13 +227,16 @@ export function sampleStoryCamera(options: StoryCameraOptions): StoryCameraFrame
   // Lens (fov), bearing, foreground share (hull length over frame width), aim
   // weight toward the foreground hull, counterpart inclusion, dolly and arc.
   let fov: number, viewing: Vector3, share: number, weight = .5, looseLimit = 2.5, include: 'full' | 'loose' | 'none' = 'loose', dolly = 1, arc = 0
-  if (continuousTake) {
+  if (mass) {
+    // Camera on the open side of the principal, so its fleet recedes behind it.
+    fov = 36; viewing = bearing(massAway?.normalize() ?? toward, side, 25, .22); share = .3; weight = .7; include = 'none'; arc = 8
+  } else if (continuousTake) {
     // Boarding: one continuous take over the smaller hull's shoulder onto its
     // counterpart, following the live docking line through contact.
     fov = 36; viewing = bearing(away, side, 42, .22); share = .34; weight = .6; looseLimit = 1.5; dolly = 1 - progress * .05
   } else if (victim) {
     // Room for the fireball; the killer sits beyond the victim.
-    fov = 30; viewing = bearing(away, side, 30, .16); share = .14; weight = .72; dolly = 1 + progress * .2; arc = 6
+    fov = 30; viewing = bearing(away, side, 30, .16); share = .2; weight = .72; dolly = 1 + progress * .2; arc = 6
   } else if (role === 'fire') {
     // Long-lens over-the-shoulder: foreground hull, counterpart downrange.
     fov = 26; viewing = bearing(away, side, 20, .1); share = .3; weight = .45; include = 'full'; dolly = 1 - progress * .07
@@ -232,6 +244,12 @@ export function sampleStoryCamera(options: StoryCameraOptions): StoryCameraFrame
     fov = 34; viewing = bearing(away, side, 28, .18); share = .3; weight = .55; include = 'full'; arc = 7
   } else if (role === 'impact' || role === 'reaction') {
     fov = 26; viewing = bearing(away, side, 22, .12); share = .34; dolly = 1 - progress * .09
+  } else if ((role as string) === 'introduction') {
+    // A slow pass along the hull, close enough to read its painted name.
+    fov = 28; viewing = bearing(side, toward, 22, .1); share = .72; weight = .9; include = 'none'; arc = -16; dolly = 1 - progress * .05
+  } else if ((role as string) === 'arrival') {
+    // From ahead of the arriving hull as it drops in.
+    fov = 34; viewing = bearing(toward, side, 42, .14); share = .32; weight = .8; include = 'none'; dolly = 1 + progress * .1
   } else if (role === 'protagonist' || role === 'opposition') {
     // Hero three-quarter from ahead of the bow, slowly arcing.
     fov = 30; viewing = bearing(side, toward, 48, .16); share = .45; weight = .82; include = 'none'; arc = -9; dolly = 1 - progress * .07
