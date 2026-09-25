@@ -334,10 +334,11 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
           const material = object.material
           if (material instanceof THREE.MeshStandardMaterial || material instanceof THREE.MeshBasicMaterial) {
             engineMaterials.push({ material, intensity: object.userData.baseIntensity ?? 1 })
-            if (material instanceof THREE.MeshBasicMaterial) material.color.setHex(object.userData.plume ? sideColor.get(ship.sideIndex)! : mixColor(sideColor.get(ship.sideIndex)!, 0xffffff, .35)).multiplyScalar(object.userData.plume ? .9 : 1)
-            // Nozzle cores glow from a hot center instead of reading as flat painted disks.
-            if (material instanceof THREE.MeshBasicMaterial && !object.userData.plume) Object.assign(material, { map: glow, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false })
-            else material.emissive.setHex(sideColor.get(ship.sideIndex)!)
+            if (material instanceof THREE.MeshBasicMaterial) {
+              material.color.setHex(object.userData.plume ? sideColor.get(ship.sideIndex)! : mixColor(sideColor.get(ship.sideIndex)!, 0xffffff, .35)).multiplyScalar(object.userData.plume ? .9 : 1)
+              // Nozzle cores glow from a hot center instead of reading as flat painted disks.
+              if (!object.userData.plume) Object.assign(material, { map: glow, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false })
+            } else material.emissive.setHex(sideColor.get(ship.sideIndex)!)
           }
         }
       })
