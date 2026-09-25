@@ -2,7 +2,8 @@ import { Vector3 } from 'three'
 import type { CinemaCue } from './types'
 import { resolveWeaponFamily, getWeaponColor } from './weapons'
 
-export interface WeaponLine { from: Vector3; to: Vector3; width: number; color: number }
+/** `brightness` scales emission (default 1); `smoke` lines are unlit grey trails, not light. */
+export interface WeaponLine { from: Vector3; to: Vector3; width: number; color: number; brightness?: number; smoke?: boolean }
 export interface WeaponGlow { position: Vector3; radius: number; color: number; opacity: number }
 export interface WeaponRing { position: Vector3; radius: number; color: number; opacity: number }
 export interface WeaponProjectile { position: Vector3; direction: Vector3; size: number; color: number }
@@ -24,7 +25,7 @@ export function weaponVisual(cue: CinemaCue, age: number, from: Vector3, to: Vec
   const side=new Vector3(-direction.z,0,direction.x).normalize()
   if(side.lengthSq()<.01)side.set(1,0,0)
   const glow=(position:Vector3,radius:number,opacity:number,tint=color)=>frame.glows.push({position:position.clone(),radius,color:tint,opacity:clamp(opacity)*(reduced?.55:1)})
-  const line=(a:Vector3,b:Vector3,width:number,tint=color)=>frame.lines.push({from:a.clone(),to:b.clone(),width:width*strength,color:tint})
+  const line=(a:Vector3,b:Vector3,width:number,tint=color,brightness=1,smoke=false)=>frame.lines.push({from:a.clone(),to:b.clone(),width:width*strength,color:tint,brightness,smoke})
   const ring=(position:Vector3,radius:number,opacity:number,tint=color)=>frame.rings.push({position:position.clone(),radius,color:tint,opacity:clamp(opacity)*(reduced?.35:1)})
   const along=(progress:number)=>from.clone().lerp(to,clamp(progress))
   const arc=(progress:number,index:number,height:number)=>along(progress).addScaledVector(side,Math.sin(progress*Math.PI)*(index-1)*height*.65).add(new Vector3(0,Math.sin(progress*Math.PI)*height,0))
@@ -56,8 +57,8 @@ export function weaponVisual(cue: CinemaCue, age: number, from: Vector3, to: Vec
     // Muzzle flash at the source: a white-hot core inside the weapon color.
     if(age<.22&&family!=='mine'&&family!=='smartbomb'){
       const flash=1-age/.22
-      glow(from,Math.max(unit*12,sourceSize*.14)*(.6+flash*.4),flash)
-      glow(from,Math.max(unit*5,sourceSize*.05),flash,0xffffff)
+      glow(from,unit*12*(.6+flash*.4),flash)
+      glow(from,unit*4,flash,0xffffff)
     }
     if(family==='missile'||family==='torpedo'){
       const heavy=family==='torpedo', count=reduced||heavy?1:3
@@ -66,23 +67,28 @@ export function weaponVisual(cue: CinemaCue, age: number, from: Vector3, to: Vec
         if(p<i*.055)continue
         const flight=heavy?progress*progress:progress
         const height=Math.min(distance*.18,sourceSize*(heavy?.45:1.1))
-        const head=arc(flight,i,height), tail=arc(Math.max(0,flight-.09),i,height)
+        // Light missiles corkscrew around their arc; torpedoes run straight and heavy.
+        const screw=(t:number)=>arc(t,i,height).add(heavy?new Vector3():new Vector3(0,Math.cos(t*18+i*2),0).addScaledVector(side,Math.sin(t*18+i*2)).multiplyScalar(unit*2.2*Math.sin(t*Math.PI)))
+        const head=screw(flight), tail=screw(Math.max(0,flight-.09))
+        // Grey smoke hangs along the flown path behind the exhaust.
+        for(let k=1;k<=6;k++){const a=Math.max(0,flight-.09-k*.06),b=Math.max(0,flight-.09-(k-1)*.06);if(b>a)line(screw(a),screw(b),unit*(heavy?1.4:.8)*(1+k*.25),0x8d9197,1-k/7,true)}
         const tangent=head.clone().sub(tail)
         if(tangent.lengthSq()<.0001)tangent.copy(direction)
         frame.projectiles.push({position:head,direction:tangent.normalize(),size:unit*(heavy?2.6:1.2),color:0xb9c3cc})
-        line(tail,head,unit*(heavy?.55:.22),0xffb05e)
+        line(tail,head,unit*(heavy?.55:.22),0xffb05e,2)
         glow(head,unit*(heavy?7:4),.85,0xffbc72)
       }
     }else if(family==='railgun'){
       const fire=clamp((p-.5)*2)
       glow(from,sourceSize*.24*(1-p),.7,0xa0daff)
-      if(p>=.5){line(along(Math.max(0,fire-.46)),along(fire),unit*.25,0xe1f5ff);line(from,along(fire),unit*.065,0x759dcc)}
+      if(p>=.5){line(along(Math.max(0,fire-.08)),along(fire),unit*.12,0xf0fbff,4);line(along(Math.max(0,fire-.5)),along(fire),unit*.05,0x759dcc,.6)}
     }else if(family==='autocannon'||family==='flak'||family==='kinetic'){
-      const count=family==='kinetic'?1:reduced?2:5
+      // Streams of short tracers, not a few long rods.
+      const count=family==='kinetic'?1:reduced?3:family==='flak'?5:9
       for(let i=0;i<count;i++){
-        const head=clamp((p-i*.075)/(1-i*.075))
-        if(p<i*.075)continue
-        const a=along(Math.max(0,head-.095)),b=along(head)
+        const head=clamp((p-i*.05)/(1-i*.05))
+        if(p<i*.05)continue
+        const a=along(Math.max(0,head-.045)),b=along(head)
         if(family==='flak'){const spread=(i-(count-1)/2)*targetSize*.1;a.addScaledVector(side,spread*head);b.addScaledVector(side,spread*head)}
         line(a,b,unit*(family==='flak'?.22:.17))
       }
@@ -125,8 +131,9 @@ export function weaponVisual(cue: CinemaCue, age: number, from: Vector3, to: Vec
     }else{
       const beam=family==='beam', pulse=reduced?1:.55+.45*Math.pow(Math.sin(age*(beam?7:24)),2)
       const head=along(p), tail=beam?from:along(Math.max(0,p-.32))
-      line(tail,head,unit*(beam?.36:.36)*pulse)
-      line(tail,head,unit*(beam?.1:.09),0xebfdff)
+      // A thin white-hot core inside a dim, wider colored glow: light, not a lit tube.
+      line(tail,head,unit*(beam?.5:.3)*pulse,sideTint===undefined?color:mixColor(color,sideTint,.5),.3)
+      line(tail,head,unit*(beam?.07:.05),mixColor(color,0xffffff,.6),2)
       glow(from,unit*(beam?10:5),.4*pulse)
     }
   }else if(cue.hit){

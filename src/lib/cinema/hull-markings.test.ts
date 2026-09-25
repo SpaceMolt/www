@@ -16,14 +16,14 @@ describe('painted hull names', () => {
     expect(hullMarkingText('e\u0301')).toBe('é')
     expect(hullMarkingText(' \u0001 ')).toBe('')
   })
-  test('names sit on both actual hull sides, upright and bounded in physical size', () => {
+  test('names sit on both actual hull sides, upright and about a sixth of the hull long', () => {
     for (const worldSize of [16.2, 179, 362]) {
       const { model } = box()
       const placements = findHullMarkingPlacements(model, worldSize, 6)
       expect(placements).toHaveLength(2)
       for (const p of placements) {
         expect(Math.abs(p.position.z)).toBeCloseTo(.25 + .008 / worldSize, 5)
-        expect(p.height * worldSize).toBeLessThanOrEqual(8)
+        expect(p.width).toBeCloseTo(1 / 6, 3)
         expect(new THREE.Vector3(0, 1, 0).applyQuaternion(p.rotation).y).toBeCloseTo(1)
         expect(p.width / p.height).toBeCloseTo(6)
       }
@@ -66,7 +66,9 @@ test('paint owns a single texture and material, is lit, and disposes without lea
     const paint = model.children.filter(child => child.userData.hullMarking) as THREE.Mesh<THREE.PlaneGeometry, THREE.MeshStandardMaterial>[]
     expect(paint).toHaveLength(2)
     expect(paint[0].material).toBe(paint[1].material)
-    expect(paint[0].material.emissive.getHex()).toBe(0)
+    // Lit by the scene, with only a faint self-glow through its own lettering.
+    expect(paint[0].material.emissiveMap).toBe(paint[0].material.map)
+    expect(paint[0].material.emissiveIntensity).toBeLessThan(.3)
     expect(paint[0].castShadow).toBe(false)
     let disposed = 0
     paint[0].material.map!.addEventListener('dispose', () => disposed++)
@@ -80,13 +82,12 @@ test('paint owns a single texture and material, is lit, and disposes without lea
 })
 
 
-test('large free panels support larger names while small hull lettering stays unchanged', () => {
-  const small = findHullMarkingPlacements(box().model, 16.2, 6)[0]
-  const capital = findHullMarkingPlacements(box().model, 362, 6)[0]
-  expect(small.height * 16.2).toBeCloseTo(.35)
-  expect(capital.height * 362).toBeGreaterThan(6)
-  expect(capital.height * 362).toBeLessThanOrEqual(8)
-  expect(capital.width).toBeLessThan(.34)
+test('lettering scales with the hull, so small craft and capitals both carry readable names', () => {
+  for (const worldSize of [16.2, 362]) {
+    const placement = findHullMarkingPlacements(box().model, worldSize, 6)[0]
+    expect(placement.width).toBeCloseTo(1 / 6, 3)
+    expect(placement.width).toBeLessThan(.34)
+  }
 })
 
 test('an isolated narrow panel falls back to smaller paint without overlapping surrounding equipment', () => {

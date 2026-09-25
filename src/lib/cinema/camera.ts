@@ -72,6 +72,8 @@ export interface StoryCameraOptions {
   reduced?: boolean
   /** Subject or target that dies or is knocked out during this shot. */
   dying?: string
+  /** Target is a prize captured by the subject: keep it beside the victor. */
+  prize?: boolean
   /** Planner candidate: bearing rotation (radians), extra lift and distance scale. */
   variant?: { angle: number; lift: number; distance: number }
 }
@@ -158,11 +160,17 @@ export function sampleStoryCamera(options: StoryCameraOptions): StoryCameraFrame
   const position = new Vector3()
   let mass: CameraBody | undefined, massAway: Vector3 | undefined
   // Establishing and closing shots frame the fleets whenever more than a pair is present.
-  if ((shot.battlefield || role === 'geography' || role === 'resolution') && !continuousTake && options.battlefield && options.battlefield.length > 2) {
+  // A lone victor closes on itself with the field behind it instead.
+  // A lone or dominant victor (a station or capital among escorts) closes on
+  // itself with the field behind it instead of a fleet master.
+  const allies = options.battlefield?.filter(body => body.side === subject.side) ?? []
+  const loneVictor = role === 'resolution' && (allies.length <= 1 || subject.size >= 2.5 * [...allies].sort((a, b) => a.size - b.size)[allies.length >> 1].size)
+  if ((shot.battlefield || role === 'geography' || role === 'resolution') && !loneVictor && !continuousTake && options.battlefield && options.battlefield.length > 2) {
     // Fleet master: from behind and above the subject's formation toward the
     // opposing one, so the near line fills the foreground and the enemy line
     // recedes into depth. Resolution masters rise over the whole field.
-    const field = options.battlefield, fov = 40, vertical = Math.tan(fov * Math.PI / 360), horizontal = vertical * aspect
+    // A long lens compresses depth, so the fleets stack up behind each other.
+    const field = options.battlefield, fov = 28, vertical = Math.tan(fov * Math.PI / 360), horizontal = vertical * aspect
     const own = field.filter(body => body.side === subject.side), rest = field.filter(body => body.side !== subject.side)
     const near = own.length && rest.length && role !== 'resolution' ? own : field
     const centroid = (bodies: readonly CameraBody[]) => bodies.reduce((sum, body) => sum.add(body.position), new Vector3()).divideScalar(bodies.length)
@@ -195,14 +203,15 @@ export function sampleStoryCamera(options: StoryCameraOptions): StoryCameraFrame
     if (massAway.lengthSq() < .001) massAway = undefined
     focus.copy(subject.position)
   }
-  // A hull that dies during this shot is the victim: it becomes the framed primary.
+  // A hull that dies during this shot is the victim: it becomes the framed hull.
   const victim = options.dying ? [subject, target].find(body => body?.id === options.dying) : undefined
+  // `near` is the hull the camera is built around, `far` its counterpart.
   let near = mass ?? victim ?? subject
   let far = near === subject ? target : subject
-  // Scale contrast: the smaller hull takes the foreground so it reads, while a
-  // capital fills the background (fighter against a star destroyer).
-  const swapped = !mass && !victim && role !== 'resolution' && !!far && framingRadius(near) > framingRadius(far) * (role === 'geography' || continuousTake ? 1 : 2.2)
-  if (swapped) [near, far] = [far!, near]
+  // Scale shot: in a pair establishing shot the smaller hull takes the
+  // foreground so it reads, and the larger one fills the background.
+  // Boarding always shoulders the smaller hull, whose contact site is the story.
+  if (!mass && !victim && role === 'geography' && far && framingRadius(near) > framingRadius(far) * (continuousTake ? 1 : 2.2)) [near, far] = [far, near]
   const toward = far ? far.position.clone().sub(near.position).setY(0) : axis.clone()
   if (toward.lengthSq() < .001) toward.copy(axis)
   toward.normalize()
@@ -211,85 +220,139 @@ export function sampleStoryCamera(options: StoryCameraOptions): StoryCameraFrame
   const side = normal.clone().addScaledVector(toward, -normal.dot(toward)).normalize()
   if (side.lengthSq() < .001) side.set(-toward.z, 0, toward.x)
   const variant = options.variant ?? { angle: 0, lift: 0, distance: 1 }
-  // Lens (fov), bearing, foreground share (hull length over frame width), aim
-  // weight toward the foreground hull, counterpart inclusion, dolly and arc.
-  let fov: number, viewing: Vector3, share: number, weight = .5, looseLimit = 2.5, include: 'full' | 'loose' | 'none' = 'loose', dolly = 1, arc = 0
+  const swing = (viewing: Vector3, arc: number) => {
+    viewing.applyAxisAngle(UP, variant.angle + (reduced ? 0 : (progress - .5) * arc * Math.PI / 180))
+    viewing.y += variant.lift
+    return viewing.normalize()
+  }
+  // Over-the-shoulder coverage: camera just behind `front`, which fills a
+  // shoulder of the frame, looking downrange at `back`, which stays whole.
+  // The distance is chosen so `back` reads at about 7% of the frame width
+  // whenever sizes and separation allow it (telephoto compression), rather
+  // than fitting both hulls whole and shrinking `back` to a speck.
+  const overShoulder = (front: CameraBody, back: CameraBody, degrees: number, lift: number, dolly: number) => {
+    const line = back.position.clone().sub(front.position).setY(0)
+    if (line.lengthSq() < .001) line.copy(toward)
+    line.normalize()
+    const lateral = side.clone().addScaledVector(line, -side.dot(line)).normalize()
+    const separation = Math.max(1, front.position.distanceTo(back.position))
+    const ratio = .42 / .07 * back.size / front.size
+    let distance = Math.max(framingRadius(front) * 1.5, ratio > 1.05 ? separation / (ratio - 1) : 0) * variant.distance * dolly
+    // Offset just enough to clear the front hull from the sightline, so a long
+    // lens can hold both: a fixed angle would force a wide lens at range.
+    const clear = Math.asin(Math.min(1, 1.7 * framingRadius(front) / distance)) * 180 / Math.PI
+    const viewing = swing(bearing(line.clone().negate(), lateral.lengthSq() > .001 ? lateral : side, Math.max(4, Math.min(degrees, clear)), lift), 5)
+    position.copy(front.position).addScaledVector(viewing, distance)
+    let horizontal = Math.min(front.size / (2 * .42 * distance), Math.tan(28 * Math.PI / 180) * aspect)
+    const backCorners = hullCorners(back)
+    // Widen the lens until both read (refined continuously, so moving hulls
+    // never step the lens); past 56 degrees, back away instead.
+    const aim = (h: number) => {
+      focus.copy(position).addScaledVector(front.position.clone().sub(position).normalize().multiplyScalar(.45)
+        .addScaledVector(back.position.clone().sub(position).normalize(), .55).normalize(), distance)
+      return inFrame(position, focus, h / aspect, h, backCorners, .88) && inFrame(position, focus, h / aspect, h, [front.position], .8)
+    }
+    const widest = Math.tan(28 * Math.PI / 180) * aspect
+    const at = (value: number) => { distance = value; position.copy(front.position).addScaledVector(viewing, distance); return aim(widest) }
+    if (!at(distance)) {
+      let lower = distance, upper = distance * 5.4
+      if (at(upper)) for (let refinement = 0; refinement < 16; refinement++) { const middle = (lower + upper) / 2; if (at(middle)) upper = middle; else lower = middle }
+      at(upper)
+    }
+    if (!aim(horizontal)) {
+      let lower = horizontal, upper = widest
+      for (let refinement = 0; refinement < 16; refinement++) { const middle = (lower + upper) / 2; if (aim(middle)) upper = middle; else lower = middle }
+      horizontal = upper; aim(horizontal)
+    }
+    const vertical = Math.max(Math.tan(2.5 * Math.PI / 180), horizontal / aspect)
+    return { position, target: focus, fov: Math.atan(vertical) * 360 / Math.PI }
+  }
+  // The camera sits behind the smaller hull of a very uneven pair: a capital
+  // cannot shoulder a fighter at readable size, but it fills the far frame.
+  const exchange = (from: CameraBody, to: CameraBody, dolly: number) =>
+    from.size > to.size * 6 ? overShoulder(to, from, 20, .08, dolly) : overShoulder(from, to, 16, .07, dolly)
+  // Single or two-shot: `near` spans `share` of the frame width (whole), and
+  // `far` is whole ('full'), center-only within a bounded pullback ('loose')
+  // or ignored ('none'). The distance is refined continuously.
+  const framed = (fov: number, viewing: Vector3, share: number, include: 'full' | 'loose' | 'none', weight: number, dolly: number, pullback = 2) => {
+    const counterpart = include === 'none' ? undefined : far
+    const vertical = Math.tan(fov * Math.PI / 360), horizontal = vertical * aspect
+    const nearCorners = hullCorners(near), farCorners = counterpart ? hullCorners(counterpart) : []
+    const lookAt = new Vector3(), toNear = new Vector3(), toFar = new Vector3()
+    let requireLoose = include === 'loose'
+    const place = (distance: number) => {
+      position.copy(near.position).addScaledVector(viewing, distance)
+      toNear.copy(near.position).sub(position).normalize()
+      if (counterpart && (requireLoose || include === 'full')) toFar.copy(counterpart.position).sub(position).normalize()
+      else toFar.copy(toNear).addScaledVector(toward, .12).normalize()
+      lookAt.copy(toNear).multiplyScalar(weight).addScaledVector(toFar, 1 - weight).normalize()
+      focus.copy(position).addScaledVector(lookAt, near.position.distanceTo(position))
+    }
+    const fits = (distance: number) => {
+      place(distance)
+      return inFrame(position, focus, vertical, horizontal, nearCorners, .86) &&
+        (include !== 'full' || inFrame(position, focus, vertical, horizontal, farCorners, .92)) &&
+        (!requireLoose || inFrame(position, focus, vertical, horizontal, [counterpart!.position], .85))
+    }
+    const fit = (start: number, limit = Infinity) => {
+      let distance = start
+      if (fits(distance)) return distance
+      let lower = distance
+      for (let attempt = 0; attempt < 30 && distance < limit && !fits(distance = Math.min(limit, distance * 1.25)); attempt++) lower = distance
+      if (!fits(distance)) return undefined
+      let upper = distance
+      for (let refinement = 0; refinement < 18; refinement++) { const middle = (lower + upper) / 2; if (fits(middle)) upper = middle; else lower = middle }
+      return upper
+    }
+    const opening = near.size / (2 * horizontal * share) * variant.distance
+    // A loose counterpart costs a bounded pullback, then may leave the frame.
+    let distance = counterpart ? fit(opening, include === 'loose' ? opening * pullback : Infinity) : undefined
+    if (distance === undefined) { requireLoose = false; distance = fit(opening) ?? opening }
+    place(distance * dolly)
+    return { position, target: focus, fov }
+  }
+  // Montage alternates the exchange and the hit hull by shot start.
+  const alternate = Math.floor(shot.start * 7) % 2 === 0
   if (mass) {
-    // Long lens from the open side of the principal: its fleet compresses
-    // into a dense wall behind it.
-    fov = 14; viewing = bearing(massAway?.normalize() ?? toward, side, 12, .02); share = .22; weight = .85; include = 'none'; arc = 4
-  } else if (continuousTake) {
+    // Long lens from the open side of the principal: its fleet compresses behind it.
+    return framed(14, swing(bearing(massAway?.normalize() ?? toward, side, 12, .02), 4), .22, 'none', .85, 1)
+  }
+  if (continuousTake) {
     // Boarding: one continuous take over the smaller hull's shoulder onto its
     // counterpart, following the live docking line through contact.
-    fov = 36; viewing = bearing(away, side, 42, .22); share = .34; weight = .6; looseLimit = 1.5; dolly = 1 - progress * .05
-  } else if (victim) {
-    // Room for the fireball; the killer sits beyond the victim.
-    fov = 30; viewing = bearing(away, side, 30, .16); share = .2; weight = .72; dolly = 1 + progress * .2; arc = 6
-  } else if (role === 'fire') {
-    // Long-lens over-the-shoulder: foreground hull, counterpart downrange.
-    fov = 26; viewing = bearing(away, side, 20, .1); share = .3; weight = .45; include = 'full'; dolly = 1 - progress * .07
-  } else if (role === 'setup') {
-    fov = 34; viewing = bearing(away, side, 28, .18); share = .3; weight = .55; include = 'full'; arc = 7
-  } else if (role === 'impact' || role === 'reaction') {
-    fov = 26; viewing = bearing(away, side, 22, .12); share = .34; dolly = 1 - progress * .09
-  } else if ((role as string) === 'introduction') {
+    return framed(36, swing(bearing(away, side, 42, .22), 0), .34, 'loose', .6, 1 - progress * .05, 1.5)
+  }
+  if (victim) {
+    // Medium on the victim from its front quarter, room for the fireball.
+    return framed(28, swing(bearing(toward, side, 62, .14), 6), .28, 'none', 1, 1 + progress * .2)
+  }
+  if (far && (role === 'fire' || (role === 'montage' && alternate))) return exchange(near, far, 1 - progress * .08)
+  // Reverse: over the receiving hull's shoulder back toward its attacker.
+  if (far && role === 'reaction') return exchange(near, far, 1 - progress * .06)
+  if (role === 'impact' || role === 'montage') {
+    // The hit hull at medium size from its front quarter, incoming fire from behind camera.
+    return framed(26, swing(bearing(toward, side, 58, .12), 5), .36, 'none', 1, 1 - progress * .1)
+  }
+  if (role === 'setup') {
+    // Low three-quarter from ahead of the shooter, arcing toward its line of fire.
+    return framed(30, swing(bearing(toward, side, 52, .05), 12), .46, 'none', .8, 1)
+  }
+  if ((role as string) === 'introduction') {
     // A slow pass along the hull, close enough to read its painted name.
-    fov = 28; viewing = bearing(side, toward, 22, .1); share = .72; weight = .9; include = 'none'; arc = -16; dolly = 1 - progress * .05
-  } else if ((role as string) === 'arrival') {
-    // From ahead of the arriving hull as it drops in.
-    fov = 34; viewing = bearing(toward, side, 42, .14); share = .32; weight = .8; include = 'none'; dolly = 1 + progress * .1
-  } else if (role === 'protagonist' || role === 'opposition') {
-    // Hero three-quarter from ahead of the bow, slowly arcing.
-    fov = 30; viewing = bearing(side, toward, 48, .16); share = .45; weight = .82; include = 'none'; arc = -9; dolly = 1 - progress * .07
-  } else if (role === 'montage') {
-    fov = 34; viewing = bearing(side, away, 42, .22); share = .3; arc = 12
-  } else if (role === 'resolution') {
-    fov = 34; viewing = bearing(side, away, 18, .3); share = .22; weight = .7; dolly = 1 + progress * .35; arc = 10
-  } else {
-    // Geography between a pair: from behind the foreground hull toward the other.
-    fov = 38; viewing = bearing(away, side, 30, .24); share = .22; include = 'full'; arc = 8; dolly = 1 - progress * .06
+    return framed(26, swing(bearing(side, toward, 12, .06), -16), .8, 'none', .9, 1 - progress * .05)
   }
-  if (!far) include = 'none'
-  // A capital behind a small foreground hull needs a wider lens to stay whole.
-  if (swapped) fov = Math.max(fov, 40)
-  viewing.applyAxisAngle(UP, variant.angle + (reduced ? 0 : (progress - .5) * arc * Math.PI / 180))
-  viewing.y += variant.lift; viewing.normalize()
-  const vertical = Math.tan(fov * Math.PI / 360), horizontal = vertical * aspect
-  const nearCorners = hullCorners(near), farCorners = far ? hullCorners(far) : []
-  const lookAt = new Vector3(), toNear = new Vector3(), toFar = new Vector3()
-  const place = (distance: number) => {
-    position.copy(near.position).addScaledVector(viewing, distance)
-    toNear.copy(near.position).sub(position).normalize()
-    if (far && include !== 'none') toFar.copy(far.position).sub(position).normalize()
-    else toFar.copy(toNear).addScaledVector(toward, .12).normalize()
-    lookAt.copy(toNear).multiplyScalar(weight).addScaledVector(toFar, 1 - weight).normalize()
-    focus.copy(position).addScaledVector(lookAt, near.position.distanceTo(position))
+  if ((role as string) === 'arrival') return framed(34, swing(bearing(toward, side, 42, .14), 0), .32, 'none', .8, 1 + progress * .1)
+  if (role === 'protagonist' || role === 'opposition') return framed(30, swing(bearing(side, toward, 48, .16), -9), .45, 'none', .82, 1 - progress * .07)
+  if (role === 'resolution') {
+    // The victor from its rear quarter, pulling away; a captured prize stays in frame.
+    return framed(loneVictor ? 20 : 32, swing(bearing(side, away, 35, loneVictor ? .12 : .26), 10), .24, options.prize ? 'full' : 'none', .7, 1 + progress * .3)
   }
-  const fits = (distance: number) => {
-    place(distance)
-    return inFrame(position, focus, vertical, horizontal, nearCorners, .86) &&
-      (include !== 'full' || inFrame(position, focus, vertical, horizontal, farCorners, .96)) &&
-      (include !== 'loose' || inFrame(position, focus, vertical, horizontal, [far!.position], .85))
-  }
-  // Start at the foreground share, back off until the frame holds, then refine
-  // continuously so moving hulls never step between discrete distances.
-  const fit = (start: number, limit = Infinity) => {
-    let distance = start
-    if (fits(distance)) return distance
-    let lower = distance
-    for (let attempt = 0; attempt < 30 && distance < limit && !fits(distance = Math.min(limit, distance * 1.25)); attempt++) lower = distance
-    if (!fits(distance)) return undefined
-    let upper = distance
-    for (let refinement = 0; refinement < 18; refinement++) { const middle = (lower + upper) / 2; if (fits(middle)) upper = middle; else lower = middle }
-    return upper
-  }
-  const opening = near.size / (2 * horizontal * share) * variant.distance
-  // A loose counterpart may cost a bounded pullback; beyond that the
-  // foreground hull keeps its size and the counterpart leaves the frame.
-  let distance = include === 'loose' ? fit(opening, opening * looseLimit) : fit(opening)
-  if (distance === undefined) { include = 'none'; distance = fit(opening) ?? opening }
-  place(distance * dolly)
-  return { position, target: focus, fov }
+  // Geography between a pair: side-on two-shot with both hulls whole, or a
+  // scale shot from behind the small foreground hull onto a capital.
+  // A widely separated pair: a long-lens shoulder shot from the smaller hull.
+  if (far && near.position.distanceTo(far.position) > 6 * (near.size + far.size)) return overShoulder(near, far, 28, .14, 1 - progress * .06)
+  if (far && framingRadius(far) > framingRadius(near) * 2.2) return framed(40, swing(bearing(away, side, 30, .2), 8), .22, 'full', .5, 1 - progress * .06)
+  return framed(30, swing(bearing(side, away, 12, .22), 8), .2, far ? 'full' : 'none', .5, 1 - progress * .06)
 }
 
 /** Move only upward to clear foreground hulls, never across the engagement axis. */

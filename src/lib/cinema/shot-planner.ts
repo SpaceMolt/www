@@ -10,12 +10,14 @@ export interface ShotPlannerInput {
   optionsAt(shot: CinemaShot, time: number): StoryCameraOptions | undefined
   bodiesAt(time: number): readonly CameraBody[]
 }
+// Small bearing, height and distance variations around each role's
+// composition. They never change the role: fire stays over the shoulder.
 const variants = [
-  { angle: 0, lift: 0, distance: 1, broadside: false },
-  { angle: .20, lift: .12, distance: 1.04, broadside: false },
-  { angle: -.20, lift: .25, distance: 1.10, broadside: false },
-  { angle: 0, lift: .12, distance: 1, broadside: true },
-  { angle: .08, lift: .42, distance: 1.12, broadside: true },
+  { angle: 0, lift: 0, distance: 1 },
+  { angle: .14, lift: .06, distance: 1.04 },
+  { angle: -.14, lift: .12, distance: 1.08 },
+  { angle: .06, lift: -.05, distance: .94 },
+  { angle: -.06, lift: .2, distance: 1.12 },
 ] as const
 
 /** Every candidate goes through the same physical safety pass during planning
@@ -26,10 +28,9 @@ export function sampleCameraCandidate(options: StoryCameraOptions, candidate: nu
     options = { ...options, sequence: { ...options.sequence, attacker, defender } }
   }
   const variant = variants[candidate] ?? variants[0]
-  const broadside = variant.broadside && !options.boarding && !options.shot.battlefield
   if (!options.boarding && !options.shot.battlefield) {
     // Composed shots take the variant as a bearing change, so framing is refitted.
-    const frame = sampleStoryCamera({ ...(broadside ? { ...options, shot: { ...options.shot, role: 'geography' as const } } : options), variant })
+    const frame = sampleStoryCamera({ ...options, variant })
     keepCameraOutsideBodies(frame.position, bodies)
     return frame
   }
