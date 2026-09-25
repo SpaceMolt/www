@@ -1,45 +1,38 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { CinemaAudio } from './audio'
-import type { CinemaWeaponFamily } from './weapons'
-import type { CinemaCue } from './types'
+import { composeScore } from './score'
+import type { CinemaAudioCue } from './audioSchedule'
+import type { CinemaFilm } from './types'
 
 // Model scheduling and graph lifetime, not audible output. Future stop() calls
 // remain pending until end() or an immediate stop(), just as browser voices do.
 class FakeParam {
   value = 0
-  calls: { method: string; value: number; time: number; constant?: number }[] = []
-  private record(method: string, value: number, time: number, constant?: number) {
-    if (!Number.isFinite(value) || !Number.isFinite(time) || time < 0) throw new Error('Invalid audio automation')
-    if (method === 'exponential' && value <= 0) throw new Error('Exponential ramp must be positive')
-    if (constant !== undefined && (!Number.isFinite(constant) || constant <= 0)) throw new Error('Invalid time constant')
-    this.calls.push({ method, value, time, constant })
+  calls: { method: string; value: number; time: number }[] = []
+  private record(method: string, value: number, time: number, constant = 1) {
+    if (!Number.isFinite(value) || !Number.isFinite(time) || time < 0 || !(constant > 0)) throw new Error('Invalid audio automation')
+    this.calls.push({ method, value, time })
     this.value = value
   }
   setTargetAtTime(value: number, time: number, constant: number) { this.record('target', value, time, constant) }
   setValueAtTime(value: number, time: number) { this.record('value', value, time) }
-  exponentialRampToValueAtTime(value: number, time: number) { this.record('exponential', value, time) }
+  cancelScheduledValues(time: number) { if (!Number.isFinite(time)) throw new Error('Invalid cancel') }
 }
-
 class FakeNode {
   connections: FakeNode[] = []
   disconnected = false
-  connect(target: FakeNode) { this.connections.push(target); return target }
+  gain = new FakeParam(); pan = new FakeParam(); frequency = new FakeParam()
+  threshold = new FakeParam(); knee = new FakeParam(); ratio = new FakeParam(); attack = new FakeParam(); release = new FakeParam()
+  type = ''; curve: unknown = null; normalize = true; buffer: unknown = null; loop = false
+  connect(target: FakeNode | FakeParam) { if (target instanceof FakeNode) this.connections.push(target); return target }
   disconnect() { this.disconnected = true; this.connections = [] }
 }
-class FakeGain extends FakeNode { gain = new FakeParam() }
-class FakeFilter extends FakeNode { type = ''; frequency = new FakeParam() }
-class FakePanner extends FakeNode { pan = new FakeParam() }
-class FakeCompressor extends FakeNode { threshold = new FakeParam(); ratio = new FakeParam() }
 class FakeSource extends FakeNode {
-  frequency = new FakeParam()
-  detune = new FakeParam()
-  type = ''
-  buffer: unknown = null
   onended: (() => void) | null = null
-  starts: number[] = []
+  starts: [number, number][] = []
   stops: (number | undefined)[] = []
   ended = false
-  start(time = 0) { this.starts.push(time) }
+  start(time = 0, offset = 0) { this.starts.push([time, offset]) }
   stop(time?: number) { this.stops.push(time); if (time === undefined) this.end() }
   end() { if (!this.ended) { this.ended = true; this.onended?.() } }
 }
@@ -48,31 +41,62 @@ class FakeContext {
   currentTime = 10
   sampleRate = 8000
   destination = new FakeNode()
-  gains: FakeGain[] = []
-  filters: FakeFilter[] = []
-  panners: FakePanner[] = []
-  oscillators: FakeSource[] = []
-  buffers: FakeSource[] = []
+  gains: FakeNode[] = []
+  panners: FakeNode[] = []
+  sources: FakeSource[] = []
+  continuous: FakeSource[] = []
   resumes = 0
   closes = 0
   constructor() { FakeContext.instances.push(this) }
-  createDynamicsCompressor() { return new FakeCompressor() }
-  createGain() { const node = new FakeGain(); this.gains.push(node); return node }
-  createBiquadFilter() { const node = new FakeFilter(); this.filters.push(node); return node }
-  createStereoPanner() { const node = new FakePanner(); this.panners.push(node); return node }
-  createOscillator() { const node = new FakeSource(); this.oscillators.push(node); return node }
-  createBufferSource() { const node = new FakeSource(); this.buffers.push(node); return node }
-  createBuffer(_channels: number, length: number) { const samples = new Float32Array(length); return { getChannelData: () => samples } }
+  createGain() { const node = new FakeNode(); this.gains.push(node); return node }
+  createWaveShaper() { return new FakeNode() }
+  createDynamicsCompressor() { return new FakeNode() }
+  createBiquadFilter() { return new FakeNode() }
+  createConvolver() { return new FakeNode() }
+  createStereoPanner() { const node = new FakeNode(); this.panners.push(node); return node }
+  createOscillator() { const node = new FakeSource(); this.continuous.push(node); return node }
+  createBufferSource() { const node = new FakeSource(); this.sources.push(node); return node }
+  createBuffer(channels: number, length: number) { const data = Array.from({ length: channels }, () => new Float32Array(length)); return { getChannelData: (c: number) => data[c] } }
   resume() { this.resumes++; return Promise.resolve() }
   close() { this.closes++; return Promise.resolve() }
-  get transients() { return [...this.buffers, ...this.oscillators.slice(5)] }
-  get master() { return this.gains[0].gain }
+  /** One-shot voices: everything but the looping ambience beds. */
+  get transients() { return this.sources.filter(source => !source.loop) }
+  get output() { return this.gains[0].gain }
+}
+class FakeWorker {
+  static instances: FakeWorker[] = []
+  posted: { film?: unknown; keys?: string[]; reset?: boolean }[] = []
+  onmessage: ((event: { data: unknown }) => void) | null = null
+  onerror: (() => void) | null = null
+  terminated = false
+  constructor() { FakeWorker.instances.push(this) }
+  postMessage(data: { keys?: string[] }) { this.posted.push(data) }
+  terminate() { this.terminated = true }
+  reply(key: string) { this.onmessage?.({ data: { key, sound: { rate: 8000, l: new Float32Array(80), r: new Float32Array(80), lead: 0, short: 0, long: 0 } } }) }
+  get keys() { return this.posted.flatMap(message => message.keys ?? []) }
 }
 
-const originalContext = Object.getOwnPropertyDescriptor(globalThis, 'AudioContext')
+const film: CinemaFilm = {
+  version: 1, battleId: 'b', seed: 3, duration: 12, arena: false, outcome: 'victory', winningSide: 2, systemName: 's',
+  ships: [
+    { id: 'a', playerId: 'a', name: 'a', shipClass: 'x', kind: 'ship', sideId: 2, sideIndex: 0, start: 0, end: 12, fate: 'survived', health: [] },
+    { id: 'b', playerId: 'b', name: 'b', shipClass: 'x', kind: 'ship', sideId: 1, sideIndex: 0, start: 0, end: 7, fate: 'destroyed', health: [] },
+  ],
+  shots: [{ start: 0, end: 2.5, kind: 'reveal', intensity: .12 }, { start: 2.5, end: 9, kind: 'broadside', intensity: .8, subject: 'a', target: 'b' }, { start: 9, end: 12, kind: 'aftermath', intensity: .12 }],
+  story: { protagonistId: 'a', adversaryId: 'b', climaxCueId: 'loss', sequences: [] },
+  cues: [
+    { id: 'gun', time: 3, duration: .4, tick: 1, kind: 'weapon', from: 'a', to: 'b', hit: true, hullDamage: 10, intensity: .7, weaponFamily: 'laser' },
+    { id: 'loss', time: 7, duration: 3, tick: 2, kind: 'death', to: 'b', intensity: 1 },
+  ],
+  segments: [],
+}
+const score = composeScore(film)
+const weapon: CinemaAudioCue = { id: 'volley', time: 3, tick: 1, duration: 0.4, kind: 'weapon', from: 'a', to: 'b', intensity: 0.7, weaponFamily: 'laser', audioPhase: 'release' }
+const death: CinemaAudioCue = { id: 'loss', time: 7, tick: 2, duration: 3, kind: 'death', to: 'b', intensity: 1 }
+
+const originals = Object.fromEntries(['AudioContext', 'Worker'].map(name => [name, Object.getOwnPropertyDescriptor(globalThis, name)]))
 const instances: CinemaAudio[] = []
-const makeAudio = () => { const audio = new CinemaAudio(); instances.push(audio); return audio }
-const weapon: CinemaCue = { id: 'volley', time: 12, tick: 1, duration: 0.4, kind: 'weapon', damageType: 'energy', intensity: 0.7 }
+const makeAudio = () => { const audio = new CinemaAudio(film); instances.push(audio); return audio }
 const started = () => {
   const audio = makeAudio()
   audio.setMuted(false)
@@ -82,250 +106,173 @@ const started = () => {
 
 beforeEach(() => {
   FakeContext.instances = []
+  FakeWorker.instances = []
   Object.defineProperty(globalThis, 'AudioContext', { configurable: true, writable: true, value: FakeContext })
+  Object.defineProperty(globalThis, 'Worker', { configurable: true, writable: true, value: undefined })
 })
 afterEach(() => {
   for (const audio of instances.splice(0)) audio.dispose()
-  if (originalContext) Object.defineProperty(globalThis, 'AudioContext', originalContext)
-  else Reflect.deleteProperty(globalThis, 'AudioContext')
+  for (const [name, descriptor] of Object.entries(originals)) {
+    if (descriptor) Object.defineProperty(globalThis, name, descriptor)
+    else Reflect.deleteProperty(globalThis, name)
+  }
 })
 
-describe('cinema audio lifecycle', () => {
-  it('creates no audio resources before Play, including configuration, preview intensity, and seeks', () => {
+describe('cinema audio engine', () => {
+  it('creates no audio resources before Play, including configuration, clock updates, cues and seeks', () => {
     const audio = makeAudio()
     audio.setVolume(0.7)
     audio.setMuted(false)
-    audio.intensity(1, 12)
+    audio.update(3)
     audio.cue(weapon)
     audio.clear()
     audio.setPlaying(false)
     expect(FakeContext.instances).toHaveLength(0)
   })
 
-  it('resumes synchronously on muted Play and can unlock sound from a later unmute gesture', () => {
+  it('resumes synchronously on muted Play and unlocks sound from a later unmute gesture', () => {
     const audio = makeAudio()
     audio.setPlaying(true)
     const context = FakeContext.instances[0]
     expect(context.resumes).toBe(1)
-    expect(context.master.value).toBe(0)
+    expect(context.output.value).toBe(0)
+    audio.update(3)
     audio.cue(weapon)
     expect(context.transients).toHaveLength(0)
     audio.setMuted(false)
     expect(context.resumes).toBe(2)
-    expect(context.master.value).toBeCloseTo(0.65 * 0.6)
+    expect(context.output.value).toBeCloseTo(0.65)
     expect(FakeContext.instances).toHaveLength(1)
   })
 
-  it('clears every transient immediately on seek and disconnects completed effect graphs', () => {
+  it('queues score events a short lookahead ahead on the audio clock', () => {
     const { audio, context } = started()
-    audio.cue(weapon)
-    audio.cue({ ...weapon, id: 'death', kind: 'death' })
-    expect(context.transients).toHaveLength(4)
-    expect(context.transients.every(source => !source.ended)).toBe(true)
-    audio.clear()
-    expect(context.transients.every(source => source.stops.at(-1) === undefined && source.ended && source.disconnected)).toBe(true)
-    expect(context.panners.every(node => node.disconnected)).toBe(true)
-    expect(context.gains.slice(2).every(node => node.disconnected)).toBe(true)
-    expect(context.filters.slice(1).every(node => node.disconnected)).toBe(true)
-    expect(context.oscillators.slice(0, 5).every(source => !source.ended)).toBe(true)
+    audio.update(2.4)
+    const expected = score.filter(note => note.instrument !== 'drop' && note.time >= 2.4 && note.time < 2.75 && note.time + note.duration > 2.4)
+    const starts = context.transients.map(source => source.starts[0][0])
+    expect(starts.length).toBeGreaterThanOrEqual(expected.length)
+    for (const note of expected) expect(starts.some(start => Math.abs(start - (10 + note.time - 2.4)) < 1e-6)).toBe(true)
+    const count = context.transients.length
+    audio.update(2.45)
+    expect(context.transients.slice(count).every(source => source.starts[0][0] >= 10 + .3)).toBe(true)
   })
 
-  it('pauses by stopping current effects and ramping the master to silence without spawning new voices', () => {
+  it('resumes a sustained note mid-way after a seek instead of skipping it', () => {
     const { audio, context } = started()
+    const pad = score.find(note => note.instrument === 'pad' && note.duration > 1)!
+    audio.update(pad.time + .5)
+    expect(context.transients.some(source => Math.abs(source.starts[0][1] - .5) < 1e-6)).toBe(true)
+  })
+
+  it('clears every scheduled note and effect on seek and disconnects their graphs', () => {
+    const { audio, context } = started()
+    audio.update(2.4)
+    audio.cue(weapon)
+    audio.cue(death)
+    expect(context.transients.length).toBeGreaterThan(2)
+    audio.clear()
+    expect(context.transients.every(source => source.ended && source.disconnected)).toBe(true)
+    expect(context.panners.every(node => node.disconnected)).toBe(true)
+    expect(context.sources.filter(source => source.loop).every(source => !source.ended)).toBe(true)
+  })
+
+  it('pauses by stopping everything and ramping the output to silence without spawning new voices', () => {
+    const { audio, context } = started()
+    audio.update(2.4)
     audio.cue(weapon)
     audio.setPlaying(false)
     expect(context.transients.every(source => source.ended)).toBe(true)
-    expect(context.master.calls.at(-1)).toEqual({ method: 'target', value: 0, time: 10, constant: 0.08 })
+    expect(context.output.calls.at(-1)).toEqual({ method: 'target', value: 0, time: 10 })
     const count = context.transients.length
+    audio.update(3)
     audio.cue(weapon)
     expect(context.transients).toHaveLength(count)
   })
 
-  it('disconnects and stops the continuous bed and closes its context on disposal', () => {
+  it('lets the final chord ring out when the film reaches its end, until the next seek', () => {
     const { audio, context } = started()
-    audio.cue(weapon)
-    audio.dispose()
-    expect(context.closes).toBe(1)
-    expect([...context.oscillators, ...context.buffers].every(source => source.ended && source.disconnected)).toBe(true)
-    expect(context.gains[0].disconnected).toBe(true)
-    expect(context.gains[1].disconnected).toBe(true)
-    audio.dispose()
-    expect(context.closes).toBe(1)
-  })
-
-  it('bounds active transient sources to 24 and admits new effects after existing voices end', () => {
-    const { audio, context } = started()
-    for (let i = 0; i < 100; i++) audio.cue({ ...weapon, id: String(i) })
-    expect(context.transients.length).toBeLessThanOrEqual(24)
+    audio.update(11.9)
+    audio.update(12)
+    audio.setPlaying(false)
     expect(context.transients.length).toBeGreaterThan(0)
-    for (const source of context.transients) source.end()
-    const prior = context.transients.length
-    audio.cue(weapon)
-    expect(context.transients).toHaveLength(prior + 2)
-  })
-
-  it('lets a recorded loss interrupt a saturated volley instead of dropping its sound', () => {
-    const { audio, context } = started()
-    for (let i = 0; i < 30; i++) audio.cue({ ...weapon, id: String(i) })
-    const prior = context.transients.length
-    audio.cue({ ...weapon, kind: 'death', id: 'decisive-loss' })
-    expect(context.transients).toHaveLength(prior + 2)
-  })
-
-  it('reuses a single context and continuous bed across pause, seek, and repeated replay', () => {
-    const { audio, context } = started()
-    const continuous = [...context.oscillators]
-    for (let i = 0; i < 4; i++) {
-      audio.cue(weapon)
-      audio.clear()
-      audio.setPlaying(false)
-      audio.setPlaying(true)
-      audio.intensity(0.8, 0)
-    }
-    expect(FakeContext.instances).toHaveLength(1)
-    expect(context.oscillators.filter(source => !source.ended)).toEqual(continuous)
-    expect(continuous.every(source => source.starts.length === 1)).toBe(true)
-  })
-
-  it('schedules positive, bounded envelopes and panning and clamps user volume', () => {
-    const { audio, context } = started()
-    audio.setVolume(2)
-    expect(context.master.value).toBe(0.6)
-    audio.setVolume(-3)
-    expect(context.master.value).toBe(0)
-    audio.setVolume(0.5)
-    expect(context.master.value).toBe(0.3)
-    audio.cue(weapon, 500)
-    expect(context.panners[0].pan.value).toBe(0.8)
-    const envelope = context.gains[2].gain.calls
-    expect(envelope[0]).toMatchObject({ method: 'value', value: 0.0001, time: 10 })
-    expect(envelope[1].time).toBeGreaterThan(envelope[0].time)
-    expect(envelope[2].time).toBeGreaterThan(envelope[1].time)
-    expect(envelope[2].value).toBe(0.0001)
-    expect(context.transients.every(source => source.starts[0] === 10 && source.stops[0]! > envelope[2].time)).toBe(true)
-    audio.cue(weapon, -500)
-    expect(context.panners[1].pan.value).toBe(-0.8)
-    for (const time of [0, 22, 44, 66, 88]) audio.intensity(0.7, time)
-    expect(context.oscillators.slice(0, 5).every(source => source.frequency.calls.length === 5)).toBe(true)
-  })
-
-  it('keeps silent playback usable if AudioContext is unavailable', () => {
-    Reflect.deleteProperty(globalThis, 'AudioContext')
-    const audio = makeAudio()
-    expect(() => { audio.setMuted(false); audio.setPlaying(true); audio.cue(weapon); audio.clear(); audio.setPlaying(false); audio.dispose() }).not.toThrow()
-    expect(FakeContext.instances).toHaveLength(0)
-  })
-
-  it('schedules thirteen distinct family spectra/envelopes with exactly two sources each', () => {
-    const { audio, context } = started()
-    const names: [CinemaWeaponFamily, string][] = [
-      ['laser', 'Pulse Laser I'], ['beam', 'Graviton Beam I'], ['railgun', 'Railgun II'],
-      ['autocannon', 'Autocannon I'], ['flak', 'Flak Cannon III'], ['plasma', 'Plasma Cannon I'],
-      ['missile', 'EMP Missile Launcher'], ['torpedo', 'Void Torpedo Launcher'],
-      ['disruptor', 'EMP Cannon I'], ['exotic', 'Dark Matter Projector'], ['mine', 'Tracking Mine Launcher'],
-      ['kinetic', 'Scrap Harpoon'], ['smartbomb', 'EM Smartbomb'],
-    ]
-    const signatures = new Set<string>()
-    for (const [family, name] of names) {
-      const sourcesBefore = context.transients.length, gainsBefore = context.gains.length
-      audio.cue({ ...weapon, weaponName: name, damageType: 'kinetic' })
-      expect(context.transients.length - sourcesBefore).toBe(2)
-      const tone = context.oscillators.at(-1)!, filter = context.filters.at(-1)!
-      const envelope = context.gains[gainsBefore].gain.calls
-      signatures.add(JSON.stringify({ wave: tone.type, pitch: tone.frequency.calls, filter: filter.type, cutoff: filter.frequency.calls, envelope }))
-      expect(Math.max(...envelope.map(call => call.value))).toBeLessThanOrEqual(.23)
-      expect(tone.stops[0]! - tone.starts[0]).toBeLessThanOrEqual(1.7)
-      if (family === 'autocannon') expect(envelope.filter(call => call.method === 'value')).toHaveLength(4)
-      if (family === 'beam') expect(tone.stops[0]! - tone.starts[0]).toBeGreaterThan(1)
-      audio.clear()
-    }
-    expect(signatures.size).toBe(13)
-    expect(context.panners.every(node => node.disconnected)).toBe(true)
-    expect(context.gains.slice(2).every(node => node.disconnected)).toBe(true)
-  })
-
-  it('uses the compiler family when present and limits a recorded critical to a 15 percent peak increase', () => {
-    const { audio, context } = started()
-    audio.cue({ ...weapon, weaponFamily: 'railgun', weaponName: 'Historical mount' })
-    const normalPeak = Math.max(...context.gains[2].gain.calls.map(call => call.value))
-    expect(context.oscillators.at(-1)!.frequency.calls[0].value).toBe(180)
+    expect(context.transients.every(source => !source.ended)).toBe(true)
+    expect(context.output.calls.at(-1)!.value).toBeGreaterThan(0)
     audio.clear()
-    const gainsBefore = context.gains.length
-    audio.cue({ ...weapon, weaponFamily: 'railgun', critical: true })
-    const criticalPeak = Math.max(...context.gains[gainsBefore].gain.calls.map(call => call.value))
-    expect(criticalPeak / normalPeak).toBeCloseTo(1.15)
-    expect(criticalPeak).toBeLessThanOrEqual(.23)
+    expect(context.transients.every(source => source.ended)).toBe(true)
+    expect(context.output.calls.at(-1)!.value).toBe(0)
   })
 
-  it('gives observed repair, disable, cloak and drain different bounded accents and cleans their graphs', () => {
+  it('stops the ambience, terminates the render worker and closes its context on disposal', () => {
+    Object.defineProperty(globalThis, 'Worker', { configurable: true, writable: true, value: FakeWorker })
     const { audio, context } = started()
-    const signatures = new Set<string>()
-    for (const kind of ['repair', 'disable', 'cloak', 'drain'] as const) {
-      const before = context.transients.length, gainIndex = context.gains.length
-      audio.cue({ ...weapon, kind })
-      expect(context.transients.length - before).toBe(2)
-      const tone = context.oscillators.at(-1)!
-      const envelope = context.gains[gainIndex].gain.calls
-      signatures.add(JSON.stringify([tone.type, tone.frequency.calls, envelope]))
-      expect(Math.max(...envelope.map(call => call.value))).toBeLessThanOrEqual(.12)
-      audio.clear()
-    }
-    expect(signatures.size).toBe(4)
-    expect(context.transients.every(source => source.ended && source.disconnected)).toBe(true)
+    audio.dispose()
+    expect(context.closes).toBe(1)
+    expect([...context.continuous, ...context.sources].every(source => source.ended && source.disconnected)).toBe(true)
+    expect(FakeWorker.instances[0].terminated).toBe(true)
+    audio.dispose()
+    expect(context.closes).toBe(1)
   })
 
-  it('keeps non-finite external control values out of AudioParam automation', () => {
+  it('renders ahead in the worker, plays only what has arrived, and ignores renders made stale by a seek', () => {
+    Object.defineProperty(globalThis, 'Worker', { configurable: true, writable: true, value: FakeWorker })
     const { audio, context } = started()
-    expect(() => { audio.setVolume(NaN); audio.intensity(NaN, Infinity); audio.cue(weapon, NaN) }).not.toThrow()
-    expect(context.master.value).toBe(0)
-    expect(context.panners[0].pan.value).toBe(0)
-  })
-
-  it('uses a short contact crack for retaliation and Galvanic defenses instead of replaying their weapon family', () => {
-    const { audio, context } = started()
-    for (const fields of [{ secondaryKind: 'retaliation', weaponFamily: 'torpedo' as const }, { weaponName: 'Galvanic Hull Grid', weaponFamily: 'disruptor' as const }]) {
-      const before = context.transients.length, gainIndex = context.gains.length
-      audio.cue({ ...weapon, ...fields })
-      expect(context.transients.length - before).toBe(2)
-      const tone = context.oscillators.at(-1)!
-      expect(tone.stops[0]! - tone.starts[0]).toBeLessThan(.3)
-      expect(Math.max(...context.gains[gainIndex].gain.calls.map(call => call.value))).toBeLessThanOrEqual(.1)
-      audio.clear()
-    }
-    expect(context.transients.every(source => source.ended && source.disconnected)).toBe(true)
-  })
-
-  it('gives charge, release, hull impact and shield impact separate bounded sound envelopes', () => {
-    const { audio, context } = started()
-    const signatures = new Set<string>()
-    for (const audioPhase of ['charge', 'release', 'impact', 'shield-impact'] as const) {
-      const gainIndex = context.gains.length
-      audio.cue({ ...weapon, duration: 1.4, weaponFamily: 'railgun', audioPhase })
-      const tone = context.oscillators.at(-1)!
-      signatures.add(JSON.stringify([tone.type, tone.frequency.calls, context.gains[gainIndex].gain.calls]))
-      expect(Math.max(...context.gains[gainIndex].gain.calls.map(call => call.value))).toBeLessThanOrEqual(.23)
-      if (audioPhase === 'charge') {
-        expect(tone.frequency.calls.at(-1)!.value).toBeGreaterThan(tone.frequency.calls[0].value)
-        expect(tone.stops[0]! - tone.starts[0]).toBeCloseTo(1.45)
-      }
-      audio.clear()
-    }
-    expect(signatures.size).toBe(4)
-  })
-
-  it('lets an impact replace a firing voice but preserves decisive loss voices and the 24-source cap', () => {
-    const { audio, context } = started()
-    for (let i = 0; i < 12; i++) audio.cue({ ...weapon, id: String(i), audioPhase: 'release' })
-    audio.cue({ ...weapon, audioPhase: 'impact' })
-    expect(context.transients).toHaveLength(26)
-    expect(context.transients.filter(source => !source.ended)).toHaveLength(24)
+    const worker = FakeWorker.instances[0]
+    expect(worker.posted[0].film).toBeDefined()
+    audio.update(2.4)
+    expect(worker.keys).toContain('cgun:audio:release')
+    expect(context.transients).toHaveLength(0)
+    const first = score.findIndex(note => note.instrument !== 'drop' && note.time >= 2.4)
+    worker.reply(`n${first}`)
+    audio.update(2.41)
+    expect(context.transients.length).toBe(Math.min(1, Number(score[first].time < 2.76)))
     audio.clear()
-    for (let i = 0; i < 12; i++) audio.cue({ ...weapon, id: String(i), kind: 'death' })
+    expect(worker.posted.at(-1)).toEqual({ reset: true })
+    worker.reply('cgun:audio:release')
+    audio.cue({ ...weapon, id: 'gun:audio:release' })
+    expect(context.transients.filter(source => !source.ended)).toHaveLength(0)
+  })
+
+  it('bounds concurrent effects and lets a loss interrupt a saturated volley', () => {
+    const { audio, context } = started()
+    for (let i = 0; i < 60; i++) audio.cue({ ...weapon, id: String(i) })
+    expect(context.transients.filter(source => !source.ended)).toHaveLength(32)
+    audio.cue(death)
+    expect(context.transients.filter(source => !source.ended)).toHaveLength(32)
+    expect(context.transients.at(-1)!.ended).toBe(false)
+    for (let i = 0; i < 40; i++) audio.cue({ ...death, id: `d${i}` })
     const before = context.transients.length
-    audio.cue({ ...weapon, audioPhase: 'impact' })
+    audio.cue({ ...weapon, id: 'late' })
     expect(context.transients).toHaveLength(before)
-    expect(context.transients.filter(source => !source.ended)).toHaveLength(24)
-    audio.clear()
-    expect(context.panners.every(node => node.disconnected)).toBe(true)
+  })
+
+  it('ducks the music under losses and clamps pan and user volume', () => {
+    const { audio, context } = started()
+    audio.cue(death, 5)
+    expect(context.panners.at(-1)!.pan.value).toBeCloseTo(.85 * .6)
+    expect(context.gains.some(node => node.gain.calls.some(call => call.method === 'target' && Math.abs(call.value - 10 ** (-10 / 20)) < 1e-6))).toBe(true)
+    audio.cue(weapon, -500)
+    expect(context.panners.at(-1)!.pan.value).toBe(-.85)
+    audio.setVolume(2)
+    expect(context.output.value).toBe(1)
+    audio.setVolume(-3)
+    expect(context.output.value).toBe(0)
+  })
+
+  it('keeps silent playback usable if AudioContext is unavailable, and non-finite values out of automation', () => {
+    const { audio, context } = started()
+    expect(() => { audio.setVolume(NaN); audio.update(NaN); audio.update(Infinity); audio.cue(weapon, NaN) }).not.toThrow()
+    expect(context.output.value).toBe(0)
+    Reflect.deleteProperty(globalThis, 'AudioContext')
+    const silent = makeAudio()
+    expect(() => { silent.setMuted(false); silent.setPlaying(true); silent.update(3); silent.cue(weapon); silent.clear(); silent.setPlaying(false); silent.dispose() }).not.toThrow()
+  })
+
+  it('renders the whole score into an offline context without a worker', () => {
+    const context = new FakeContext()
+    const audio = new CinemaAudio(film, {}, context as unknown as BaseAudioContext)
+    instances.push(audio)
+    expect(context.transients).toHaveLength(score.filter(note => note.instrument !== 'drop').length)
+    audio.cue(death, 0, 7)
+    expect(context.transients.at(-1)!.starts[0][0]).toBeCloseTo(7 - .07)
   })
 })
