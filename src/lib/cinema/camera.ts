@@ -64,6 +64,8 @@ export interface StoryCameraOptions {
   target?: CameraBody
   /** Active battlefield bodies; only strategic masters use the full envelope. */
   battlefield?: readonly CameraBody[]
+  /** The same battlefield at the shot's first frame, for decisions that must hold through the shot. */
+  battlefieldAtStart?: readonly CameraBody[]
   /** Reference positions sampled once at the sequence's opening. */
   axisFrom: Vector3
   axisTo: Vector3
@@ -170,33 +172,38 @@ export function sampleStoryCamera(options: StoryCameraOptions): StoryCameraFrame
     // opposing one, so the near line fills the foreground and the enemy line
     // recedes into depth. Resolution masters rise over the whole field.
     // A long lens compresses depth, so the fleets stack up behind each other.
-    const field = options.battlefield, fov = 28, vertical = Math.tan(fov * Math.PI / 360), horizontal = vertical * aspect
-    const own = field.filter(body => body.side === subject.side), rest = field.filter(body => body.side !== subject.side)
-    const near = own.length && rest.length && role !== 'resolution' ? own : field
+    const fov = 28, vertical = Math.tan(fov * Math.PI / 360), horizontal = vertical * aspect
     const centroid = (bodies: readonly CameraBody[]) => bodies.reduce((sum, body) => sum.add(body.position), new Vector3()).divideScalar(bodies.length)
-    const nearCenter = centroid(near), farCenter = near === field ? nearCenter.clone().add(axis) : centroid(rest)
-    const toward = farCenter.clone().sub(nearCenter).setY(0)
-    if (toward.lengthSq() < .001) toward.copy(axis)
-    toward.normalize()
-    const side = normal.clone().addScaledVector(toward, -normal.dot(toward)).normalize()
-    if (side.lengthSq() < .001) side.set(-toward.z, 0, toward.x)
-    const base = near === field ? bearing(side, toward.clone().negate(), 25, .34) : bearing(toward.clone().negate(), side, 38, .34)
-    focus.copy(near === field ? nearCenter : nearCenter.clone().lerp(farCenter, .3))
-    const spheres = near.map(body => ({ position: body.position, radius: framingRadius(body) }))
-    const others = near === field ? [] : rest.map(body => ({ position: body.position, radius: 0 }))
-    // Far-flung stragglers may leave the frame rather than shrink the formation.
-    const fleetDistance = (viewing: Vector3) => Math.min(fitDistance(viewing, vertical * .92, horizontal * .92, focus, spheres) * 2,
-      fitDistance(viewing, vertical * .92, horizontal * .92, focus, [...spheres, ...others]))
+    const master = (field: readonly CameraBody[], swingAngle: number, dolly: number) => {
+      const lead = field.find(body => body.id === subject.id) ?? subject
+      const own = field.filter(body => body.side === lead.side), rest = field.filter(body => body.side !== lead.side)
+      const near = own.length && rest.length && role !== 'resolution' ? own : field
+      const nearCenter = centroid(near), farCenter = near === field ? nearCenter.clone().add(axis) : centroid(rest)
+      const toward = farCenter.clone().sub(nearCenter).setY(0)
+      if (toward.lengthSq() < .001) toward.copy(axis)
+      toward.normalize()
+      const side = normal.clone().addScaledVector(toward, -normal.dot(toward)).normalize()
+      if (side.lengthSq() < .001) side.set(-toward.z, 0, toward.x)
+      const viewing = (near === field ? bearing(side, toward.clone().negate(), 25, .34) : bearing(toward.clone().negate(), side, 38, .34)).applyAxisAngle(UP, swingAngle)
+      const center = near === field ? nearCenter : nearCenter.clone().lerp(farCenter, .3)
+      const spheres = near.map(body => ({ position: body.position, radius: framingRadius(body) }))
+      const others = near === field ? [] : rest.map(body => ({ position: body.position, radius: 0 }))
+      // Far-flung stragglers may leave the frame rather than shrink the formation.
+      const distance = Math.min(fitDistance(viewing, vertical * .92, horizontal * .92, center, spheres) * 2,
+        fitDistance(viewing, vertical * .92, horizontal * .92, center, [...spheres, ...others]))
+      return { position: center.clone().addScaledVector(viewing, distance * dolly), center }
+    }
     // A mass too large to read as hulls: frame the principal of the larger
     // fleet from the enemy's side, with its mass stretching away behind it.
-    // Decided on the unmoved master, so the choice cannot flip mid-shot.
+    // Decided once from the field at the shot's first frame, so it cannot flip mid-shot.
+    const opening = options.battlefieldAtStart ?? options.battlefield
     const principal = target && target.size < subject.size ? target : subject
-    const reference = focus.clone().addScaledVector(base, fleetDistance(base))
-    if (!target || role === 'resolution' || principal.size / (2 * horizontal * Math.max(1, reference.distanceTo(principal.position))) >= .02) {
-      const viewing = base.clone().applyAxisAngle(UP, reduced ? 0 : (progress - .5) * .18)
-      position.copy(viewing).multiplyScalar(fleetDistance(viewing) * (role === 'resolution' ? 1 + progress * .15 : 1.04 - progress * .08)).add(focus)
-      return { position, target: focus, fov }
+    const reference = master(opening, 0, 1), principalAtStart = opening.find(body => body.id === principal.id) ?? principal
+    if (!target || role === 'resolution' || principal.size / (2 * horizontal * Math.max(1, reference.position.distanceTo(principalAtStart.position))) >= .02) {
+      const shotFrame = master(options.battlefield, reduced ? 0 : (progress - .5) * .18, role === 'resolution' ? 1 + progress * .15 : 1.04 - progress * .08)
+      return { position: shotFrame.position, target: shotFrame.center, fov }
     }
+    const field = options.battlefield
     const count = (body: CameraBody) => field.filter(other => other.side === body.side).length
     mass = count(target) > count(subject) ? target : subject
     massAway = mass.position.clone().sub(centroid(field.filter(body => body.side === mass!.side))).setY(0)
@@ -345,13 +352,13 @@ export function sampleStoryCamera(options: StoryCameraOptions): StoryCameraFrame
   if (role === 'protagonist' || role === 'opposition') return framed(30, swing(bearing(side, toward, 48, .16), -9), .45, 'none', .82, 1 - progress * .07)
   if (role === 'resolution') {
     // The victor from its rear quarter, pulling away; a captured prize stays in frame.
-    return framed(loneVictor ? 20 : 32, swing(bearing(side, away, 35, loneVictor ? .12 : .26), 10), .24, options.prize ? 'full' : 'none', .7, 1 + progress * .3)
+    return framed(loneVictor ? 20 : 32, swing(bearing(side, away, 35, loneVictor ? .12 : .26), 10), loneVictor ? .34 : .24, options.prize ? 'full' : 'none', .7, 1 + progress * .3)
   }
   // Geography between a pair: side-on two-shot with both hulls whole, or a
   // scale shot from behind the small foreground hull onto a capital.
   // A widely separated pair: a long-lens shoulder shot from the smaller hull.
   if (far && near.position.distanceTo(far.position) > 6 * (near.size + far.size)) return overShoulder(near, far, 28, .14, 1 - progress * .06)
-  if (far && framingRadius(far) > framingRadius(near) * 2.2) return framed(40, swing(bearing(away, side, 30, .2), 8), .22, 'full', .5, 1 - progress * .06)
+  if (far && framingRadius(far) > framingRadius(near) * 2.2) return framed(40, swing(bearing(side, away, 40, .3), 8), .22, 'full', .5, 1 - progress * .06)
   return framed(30, swing(bearing(side, away, 12, .22), 8), .2, far ? 'full' : 'none', .5, 1 - progress * .06)
 }
 

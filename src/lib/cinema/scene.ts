@@ -561,11 +561,13 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     const axisTo=cameraBodyAt(shot.axis?.to ?? target?.id,referenceTime)?.position ?? subject.position.clone().add(new THREE.Vector3(100,0,0))
     // Membership is fixed at the shot's first frame, so an arrival or loss
     // mid-shot cannot flip the composition; positions follow the playhead.
-    const battlefield=actors.filter(actor=>isVisible(actor,shot.start) &&
-      !(actor.ship.fate==='destroyed' && shot.start>actor.ship.end+(shot.battlefield?7:.32))).map(actor=>cameraBodyAt(actor.ship.id,at)!)
+    const members=actors.filter(actor=>isVisible(actor,shot.start) &&
+      !(actor.ship.fate==='destroyed' && shot.start>actor.ship.end+(shot.battlefield?7:.32)))
+    const battlefield=members.map(actor=>cameraBodyAt(actor.ship.id,at)!)
+    const battlefieldAtStart=members.map(actor=>cameraBodyAt(actor.ship.id,shot.start)!)
     const dying=[shot.subject,shot.target].find(id=>{const end=lossAt.get(id??'');return end!==undefined && end>=shot.start-.2 && end<=shot.end})
     const prize=!!target && byId.get(target.id)?.ship.fate==='captured' && at>=byId.get(target.id)!.ship.end
-    return {shot,sequence,time:at,aspect:camera.aspect,subject,target,battlefield,axisFrom,axisTo,reduced,boarding:!!take && boardingTakes.has(take.id),dying,prize}
+    return {shot,sequence,time:at,aspect:camera.aspect,subject,target,battlefield,battlefieldAtStart,axisFrom,axisTo,reduced,boarding:!!take && boardingTakes.has(take.id),dying,prize}
   }
   const setResolution = () => {
     const width = canvas.clientWidth || 1280, height = canvas.clientHeight || 720
@@ -1116,9 +1118,9 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
       } else if ((cue.kind === 'arrival' || cue.kind === 'escape') && age < 1.7) {
         addFlash(destination.position, destination.size * (1.1 + age), mixColor(0x80d8ff, destination.color, .4), Math.exp(-age * 3) * 0.35)
         // Warp streak: an arrival decelerates out of a long streak along its heading.
-        if (cue.kind === 'arrival' && age < .6 && !reduced) {
+        if (cue.kind === 'arrival' && age < .6 && !reduced && destination.ship.kind !== 'station') {
           pointA.set(Math.cos(destination.rotation), 0, -Math.sin(destination.rotation)).multiplyScalar(-destination.size * 8 * (1 - age / .6)).add(destination.position)
-          addBeam(pointA, destination.position, destination.size * .05 * (1 - age / .6), mixColor(0xcfefff, destination.color, .3), 3)
+          addBeam(pointA, destination.position, destination.size * .02 * (1 - age / .6), mixColor(0xcfefff, destination.color, .3), 2)
         }
       } else if (cue.kind === 'burn' && age < cue.duration) {
         addFlash(destination.position, destination.size * 0.5, 0xff8c40, 0.18 * Math.sin(age / cue.duration * Math.PI))
