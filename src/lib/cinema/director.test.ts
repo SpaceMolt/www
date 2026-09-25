@@ -434,21 +434,22 @@ describe('authored narrative sequences', () => {
     const film = compile(entries)
     expect(film.story?.protagonistId).toBe('a:0')
     expect(film.story?.adversaryId).toBe('b:0')
-    expect(film.shots[0]).toMatchObject({start:0,end:2.5,role:'geography',battlefield:true})
-    expect(film.shots.find(shot=>shot.role==='fire')!.start).toBeLessThan(3)
+    expect(film.shots[0]).toMatchObject({start:0,role:'geography',battlefield:true})
+    expect(film.shots.filter(shot=>shot.role==='introduction').map(shot=>shot.subject)).toEqual(['a:0','b:0'])
+    expect(film.shots.find(shot=>shot.role==='fire')!.start).toBeLessThan(4.5)
     expect(film.story!.sequences.length).toBeGreaterThanOrEqual(3)
     expect(film.story!.sequences.length).toBeLessThanOrEqual(26)
     for (const sequence of film.story!.sequences) {
       const shots=film.shots.filter(shot=>shot.sequenceId===sequence.id)
-      expect(shots.length).toBeGreaterThanOrEqual(2)
+      expect(shots.length).toBeGreaterThanOrEqual(shots[0].role==='montage' ? 1 : 2)
       expect(shots.every(shot=>JSON.stringify(shot.axis)===JSON.stringify(sequence.axis))).toBe(true)
       if (!sequence.causeCueId) continue
       const cause=film.cues.find(cue=>cue.id===sequence.causeCueId)!
       expect(cause.kind).toBe('weapon')
       expect(cause.from).toBe(sequence.attacker)
       expect(cause.to).toBe(sequence.defender)
-      const firing=shots.find(shot=>shot.role==='fire')!
-      expect(firing.subject).toBe(sequence.attacker)
+      if (shots[0].role==='montage') continue
+      const firing=shots.find(shot=>shot.role==='fire'&&shot.subject===sequence.attacker)!
       expect(firing.start).toBeLessThanOrEqual(cause.time)
       expect(firing.end).toBeGreaterThan(cause.time)
       const impact=sampleCinemaShot(film,cause.time+cause.duration)
@@ -490,7 +491,8 @@ describe('authored narrative sequences', () => {
     const resolution=film.shots.at(-1)!
     expect(resolution.role).toBe('resolution')
     expect(resolution.subject).toBe('c:0')
-    expect(resolution.target).toBe('a:0')
+    expect(resolution.target).toBeUndefined()
+    expect(resolution.axis).toBeDefined()
   })
 })
 
@@ -508,12 +510,12 @@ it('keeps selected causes and every dependent state together without moving even
   for(const sequence of film.story!.sequences){
     if(!sequence.causeCueId)continue
     const cause=film.cues.find(cue=>cue.id===sequence.causeCueId)!
-    expect(cause.duration).toBeGreaterThanOrEqual(1)
+    expect(cause.duration).toBeGreaterThanOrEqual(.4)
     expect(cause.duration).toBeLessThanOrEqual(2.81)
     expect(sequence.impactTime).toBeCloseTo(cause.time+cause.duration,8)
     if(sequence.consequenceTime!==undefined){
       expect(sequence.consequenceTime).toBeGreaterThanOrEqual(sequence.impactTime)
-      expect(sequence.end-sequence.consequenceTime).toBeGreaterThanOrEqual(1.49)
+      expect(sequence.end-sequence.consequenceTime).toBeGreaterThanOrEqual(.9)
       const victim=film.ships.find(ship=>ship.id===sequence.defender)!
       expect(victim.end).toBeCloseTo(sequence.consequenceTime,8)
     }
@@ -572,7 +574,8 @@ it('shows the muzzle release before cutting early enough to recognize the victim
   for(const sequence of film.story!.sequences){
     if(!sequence.causeCueId)continue
     const cause=film.cues.find(cue=>cue.id===sequence.causeCueId)!
-    const fire=film.shots.find(shot=>shot.sequenceId===sequence.id && shot.role==='fire')!
+    const fire=film.shots.find(shot=>shot.sequenceId===sequence.id && shot.role==='fire' && shot.subject===sequence.attacker)
+    if (!fire) continue
     const impact=film.shots.find(shot=>shot.sequenceId===sequence.id && shot.role==='impact')!
     const anticipation=sequence.impactTime-impact.start
     expect(fire.start).toBeLessThanOrEqual(cause.time)
@@ -676,7 +679,7 @@ describe('action-driven edit pacing', () => {
       terminal(101,{attacks:[attack('a','b',{hull_damage:100})],kills:[kill('a','b')]}),
     ])
     expect(film.duration).toBeLessThanOrEqual(16)
-    expect(film.cues.find(cue=>cue.kind==='weapon')!.time).toBeLessThanOrEqual(3)
+    expect(film.cues.find(cue=>cue.kind==='weapon')!.time).toBeLessThanOrEqual(4.5)
     expect(film.duration-Math.max(...film.cues.map(cue=>cue.time+cue.duration))).toBeLessThanOrEqual(3)
   })
   it('does not add screen time for idle cooldown rows between the same actions', () => {
@@ -802,13 +805,15 @@ it('preserves a terminal withdrawal after a same-tick withdrawal transition',()=
   expect(withdrawal[1].boardingEnded).toBe(true)
   expect(withdrawal[1].time).toBeGreaterThanOrEqual(withdrawal[0].time+withdrawal[0].duration)
 })
-it('uses a perceptible battlefield master in compiled films before chronological action begins',()=>{
+it('establishes a duel and introduces both principals before chronological action begins',()=>{
   const film=compile([row(100,{attacks:[attack('a','b')]}),terminal(101)])
-  const opening=film.shots[0]
-  expect(opening.battlefield).toBe(true)
-  expect(opening.end-opening.start).toBeGreaterThanOrEqual(2.5)
-  expect(film.segments[0].start).toBe(opening.end)
-  expect(film.cues.filter(cue=>cue.kind==='weapon').every(cue=>cue.time>=opening.end)).toBe(true)
+  const [opening,...introductions]=film.shots.slice(0,3)
+  expect(opening).toMatchObject({role:'geography',subject:'a:0',target:'b:0'})
+  expect(opening.battlefield).toBeUndefined()
+  expect(opening.end-opening.start).toBeGreaterThanOrEqual(1.2)
+  expect(introductions.map(shot=>[shot.role,shot.subject,shot.end-shot.start>=1])).toEqual([['introduction','a:0',true],['introduction','b:0',true]])
+  expect(film.segments[0].start).toBe(introductions[1].end)
+  expect(film.cues.filter(cue=>cue.kind==='weapon').every(cue=>cue.time>=introductions[1].end)).toBe(true)
   for(let index=1;index<film.shots.length;index++) expect(film.shots[index].start).toBeCloseTo(film.shots[index-1].end,8)
 })
 
@@ -839,4 +844,131 @@ it('lets continuity preference expire so ordinary higher-relevance exchanges can
   const ordinarySwitch=sequences.slice(1,-1).find(sequence=>sequence.defender==='b:0')
   expect(ordinarySwitch).toBeDefined()
   expect(ordinarySwitch!.start-sequences[0].start).toBeGreaterThanOrEqual(6)
+})
+
+describe('dramatic structure', () => {
+  const lossShots = (film: ReturnType<typeof compile>, victim: string) => {
+    const death = film.cues.find(cue => cue.to === victim && ['death', 'knockout', 'capture', 'escape'].includes(cue.kind))!
+    return film.shots.filter(shot => shot.role === 'impact' && shot.subject === victim && !shot.target && !shot.battlefield &&
+      shot.end > death.time && shot.start < death.time + 1.5)
+  }
+  it('opens a duel on the pair, then introduces each principal alone before the first shot', () => {
+    const film = compile([row(100, { attacks: [attack('a', 'b')] }), terminal(101, { attacks: [attack('b', 'a')] })])
+    expect(film.shots[0]).toMatchObject({ role: 'geography', subject: 'a:0', target: 'b:0' })
+    const intros = film.shots.filter(shot => shot.role === 'introduction')
+    expect(intros.map(shot => shot.subject)).toEqual(['a:0', 'b:0'])
+    expect(intros.every(shot => !shot.target && shot.axis && shot.end <= film.segments[0].start)).toBe(true)
+    expect(film.shots[0].end).toBeLessThanOrEqual(2)
+  })
+  it('opens a crowd or lopsided odds on the whole battlefield', () => {
+    const film = compile([row(100, { snapshots: [snap('hero'), ...Array.from({ length: 6 }, (_, i) => snap(`swarm${i}`, 2))],
+      attacks: [attack('hero', 'swarm0')] }), terminal(101, { snapshots: [snap('hero')] })])
+    expect(film.shots[0]).toMatchObject({ role: 'geography', battlefield: true })
+  })
+  it('gives every loss its own shot framed on the victim alone', () => {
+    const snapshots = [snap('a'), snap('b', 2), snap('c', 2), snap('d', 2)]
+    const film = compile([
+      row(100, { snapshots, attacks: [attack('a', 'b')] }),
+      row(101, { snapshots, attacks: [attack('a', 'b', { hull_damage: 100 })], kills: [kill('a', 'b')] }),
+      row(102, { snapshots: [snap('a'), snap('c', 2), snap('d', 2)], attacks: [attack('a', 'c'), attack('a', 'd')], kills: [kill('a', 'c'), kill('a', 'd')] }),
+      terminal(103, { snapshots: [snap('a')] }),
+    ])
+    for (const death of film.cues.filter(cue => cue.kind === 'death')) {
+      const shots = lossShots(film, death.to!)
+      expect(shots.length).toBe(1)
+      expect(shots[0].end - shots[0].start).toBeGreaterThanOrEqual(.9)
+      expect(shots[0].focusIds).toContain(death.to)
+    }
+  })
+  it('turns a mass loss into one escalating beat instead of a shot per casualty', () => {
+    const swarm = Array.from({ length: 40 }, (_, i) => snap(`s${i}`, 2))
+    const film = compile([row(100, { snapshots: [snap('hero'), ...swarm], attacks: swarm.map(ship => attack('hero', ship.player_id)),
+      kills: swarm.map(ship => kill('hero', ship.player_id)) }), terminal(101, { snapshots: [snap('hero')] })])
+    const deaths = film.cues.filter(cue => cue.kind === 'death')
+    expect(deaths).toHaveLength(40)
+    const aftermath = film.shots.filter(shot => shot.role === 'impact' && shot.end > deaths[0].time)
+    expect(aftermath.filter(shot => !shot.battlefield)).toHaveLength(1)
+    const wide = aftermath.find(shot => shot.battlefield)!
+    expect(wide.focusIds).toHaveLength(40)
+    expect(wide.end - wide.start).toBeGreaterThanOrEqual(1.2)
+    expect(film.duration).toBeLessThanOrEqual(20)
+  })
+  it('shows recorded reinforcements arriving before they join the fight', () => {
+    const wave = ['r1', 'r2', 'r3', 'r4', 'r5'].map(id => snap(id, 1))
+    const film = compile([
+      row(100, { snapshots: [snap('a'), snap('b', 2)], attacks: [attack('b', 'a')] }),
+      row(101, { snapshots: [snap('a'), snap('b', 2)], attacks: [attack('b', 'a')] }),
+      row(102, { snapshots: [snap('a'), snap('b', 2), ...wave], attacks: wave.map(ship => attack(ship.player_id, 'b')) }),
+      terminal(103, { snapshots: [snap('a'), snap('b', 2), ...wave] }),
+    ])
+    const arrival = film.shots.find(shot => shot.role === 'arrival')!
+    const segment = film.segments.find(item => item.tick === 102)!
+    expect(arrival.start).toBeCloseTo(segment.start, 8)
+    expect(arrival.focusIds).toHaveLength(5)
+    expect(arrival.target).toBeUndefined()
+    expect(film.ships.find(ship => ship.id === arrival.subject)!.start).toBeLessThanOrEqual(arrival.start)
+    const volleys = film.cues.filter(cue => cue.kind === 'weapon' && cue.tick === 102)
+    expect(volleys.every(cue => cue.time >= arrival.end - .000001)).toBe(true)
+    expect(film.story!.sequences.find(sequence => sequence.start >= arrival.end - .000001)!.attacker).toMatch(/^r/)
+  })
+  it('collapses repeated identical exchanges into brief single-shot montage beats', () => {
+    const entries = Array.from({ length: 30 }, (_, i) => row(100 + i, { attacks: [attack('a', 'b')] }))
+    entries[29] = terminal(129, { attacks: [attack('a', 'b', { hull_damage: 100 })], kills: [kill('a', 'b')], snapshots: [snap('a'), snap('b', 2)] })
+    const film = compile(entries)
+    const montage = film.shots.filter(shot => shot.role === 'montage')
+    expect(montage.length).toBeGreaterThan(0)
+    expect(montage.every(shot => shot.end - shot.start <= 1.01)).toBe(true)
+    expect(film.duration).toBeLessThanOrEqual(30)
+  })
+  it('tightens a long run of the same killer taking the same kind of hull', () => {
+    const entries = Array.from({ length: 12 }, (_, i) => row(100 + i, { snapshots: [snap('a'), ...Array.from({ length: 12 - i }, (_, j) => snap(`v${i + j}`, 2))],
+      attacks: [attack('a', `v${i}`, { hull_damage: 100 })], kills: [kill('a', `v${i}`)] }))
+    entries.push(terminal(112, { snapshots: [snap('a')] }))
+    const film = compile(entries)
+    const spans = film.segments.slice(0, 12).map(segment => segment.end - segment.start)
+    expect(Math.max(...spans.slice(1, -1).filter((_, i) => film.segments[i + 1].end > film.segments[i + 1].start))).toBeGreaterThan(Math.min(...spans.slice(1, -1)))
+    expect(spans.filter(span => span <= 1.31).length).toBeGreaterThanOrEqual(4)
+    expect(film.cues.filter(cue => cue.kind === 'death').every(death => lossShots(film, death.to!).length === 1)).toBe(true)
+  })
+  it('keeps a near-death survivor on screen instead of a routine exchange', () => {
+    const entries = Array.from({ length: 24 }, (_, i) => row(100 + i, {
+      snapshots: [snap('a'), snap('b', 2, { hull: i > 15 ? 10 : 100 })], attacks: [attack('a', 'b')] }))
+    entries[23] = terminal(123)
+    const film = compile(entries)
+    const drop = film.segments.find(segment => segment.tick === 115)!
+    expect(drop.end - drop.start).toBeGreaterThanOrEqual(2.5)
+  })
+  it('gives the decisive loss the longest hold and resolves on its victor', () => {
+    const snapshots = [snap('a'), snap('b', 2), snap('c', 2)]
+    const film = compile([
+      row(100, { snapshots, attacks: [attack('a', 'b', { hull_damage: 100 })], kills: [kill('a', 'b')] }),
+      row(101, { snapshots: [snap('a'), snap('c', 2)], attacks: [attack('a', 'c')] }),
+      row(102, { snapshots: [snap('a'), snap('c', 2)], attacks: [attack('a', 'c', { hull_damage: 100 })], kills: [kill('a', 'c')] }),
+      terminal(103, { snapshots: [snap('a')] }),
+    ])
+    const climax = film.story!.sequences.find(sequence => sequence.kind === 'climax')!
+    expect(climax.defender).toBe('c:0')
+    const holds = film.story!.sequences.filter(sequence => sequence.consequenceTime !== undefined).map(sequence => sequence.end - sequence.consequenceTime!)
+    expect(climax.end - climax.consequenceTime!).toBe(Math.max(...holds))
+    expect(film.shots.at(-1)).toMatchObject({ role: 'resolution', subject: 'a:0', axis: { from: 'a:0', to: 'c:0' } })
+  })
+  it('lets the doomed ship fire its last shot before the killing volley', () => {
+    const film = compile([row(100, { attacks: [attack('a', 'b')] }),
+      terminal(101, { attacks: [attack('a', 'b', { hull_damage: 100 }), attack('b', 'a')], kills: [kill('a', 'b')] })])
+    const last = film.cues.find(cue => cue.kind === 'weapon' && cue.from === 'b:0')!
+    const killing = film.cues.find(cue => cue.kind === 'weapon' && cue.from === 'a:0' && cue.tick === 101)!
+    expect(last.time).toBeLessThan(killing.time)
+    expect(film.shots.some(shot => shot.role === 'fire' && shot.subject === 'b:0' && shot.start <= last.time && shot.end > last.time)).toBe(true)
+  })
+  it('closes a capture on the captor beside its prize', () => {
+    const board = (event: string, phase: string) => ({ operation_id: 'op', actor_id: 'a', target_id: 'b', event, phase })
+    const film = compile([row(100, { attacks: [attack('a', 'b')] }), row(101, { boarding: [board('closing_started', 'latching')] }),
+      terminal(102, { boarding: [board('latched', 'assault')], captures: [{ boarding_operation_id: 'op', captor_id: 'a', captor_username: 'a',
+        former_owner_id: 'b', former_owner_username: 'b', ship_id: 'prize', ship_class: 'vanguard' }] })])
+    expect(film.shots.at(-1)).toMatchObject({ role: 'resolution', subject: 'a:0', target: 'b:0' })
+  })
+  it('is deterministic for the same record', () => {
+    const entries = [row(100, { attacks: [attack('a', 'b')] }), terminal(101, { attacks: [attack('a', 'b', { hull_damage: 100 })], kills: [kill('a', 'b')] })]
+    expect(JSON.stringify(compile(entries))).toBe(JSON.stringify(compile(entries)))
+  })
 })

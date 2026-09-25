@@ -16,26 +16,34 @@ function movie(ships: CinemaShip[]): CinemaFilm {
     story: { sequences: [{ id: 'climax', start: 60, end: 80, kind: 'climax', actionTime: 68, impactTime: 72, consequenceTime: 74 }] } }
 }
 const at = (shots: CinemaShot[], time: number) => shots.find(shot => time >= shot.start && time < shot.end)!
-function continuous(shots: CinemaShot[], duration: number) {
+function continuous(shots: CinemaShot[], duration: number, authored: CinemaShot[] = []) {
   expect(shots[0].start).toBe(0)
   expect(shots.at(-1)!.end).toBe(duration)
   shots.forEach((shot, index) => {
     expect(shot.end).toBeGreaterThan(shot.start)
     if (index) expect(shot.start).toBe(shots[index - 1].end)
-    if (shot.battlefield) {
+    if (shot.battlefield && !authored.some(original => original.battlefield && original.start === shot.start)) {
       expect(shot.end - shot.start).toBeGreaterThanOrEqual(4)
       expect(shot.end - shot.start).toBeLessThanOrEqual(6)
     }
   })
 }
 
-test('the opening establishes the whole fleet for four seconds before detail coverage', () => {
+test('keeps the director\'s fleet opening and never replaces its character introductions', () => {
   const film = movie([ship('capital', { sideId: 2 }), ...Array.from({ length: 100 }, (_, index) => ship(`shard:${index}`))])
+  film.shots[0].battlefield = true
+  film.shots[1].role = 'introduction'
+  film.shots[2].role = 'introduction'
   const shots = addBattlefieldCoverage(film)
-  expect(shots[0].battlefield).toBe(true)
-  expect(shots[0].end).toBe(4)
+  expect(shots[0]).toMatchObject({ start: 0, end: 2, battlefield: true })
+  for (const time of [2.5, 4.5]) expect(at(shots, time)).toMatchObject({ role: 'introduction' })
   expect(at(shots, 4.5).battlefield).not.toBe(true)
-  continuous(shots, film.duration)
+  continuous(shots, film.duration, film.shots)
+})
+
+test('a duel opening on the pair gets no fleet master', () => {
+  const shots = addBattlefieldCoverage(movie([ship('capital', { sideId: 2 }), ship('shard:0')]))
+  expect(shots.some(shot => shot.battlefield)).toBe(false)
 })
 
 test('mass arena knockouts get a battlefield view during the pulse while the muzzle keeps close coverage', () => {
@@ -64,7 +72,7 @@ test('isolated losses in a large fleet do not generate a cutaway for every casua
   const film = movie([ship('capital', { sideId: 2 }), ...Array.from({ length: 100 }, (_, index) =>
     ship(`shard:${index}`, index < 5 ? { end: 35 + index * 4, fate: 'knocked_out' } : {}))])
   const shots = addBattlefieldCoverage(film)
-  expect(shots.filter(shot => shot.battlefield)).toHaveLength(1)
+  expect(shots.filter(shot => shot.battlefield)).toHaveLength(0)
   continuous(shots, film.duration)
 })
 
