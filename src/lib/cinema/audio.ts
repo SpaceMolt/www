@@ -29,7 +29,10 @@ export class CinemaAudio {
   private battle: GainNode | null = null
   private shortIn: GainNode | null = null
   private longIn: GainNode | null = null
-  private voices = new Map<AudioScheduledSourceNode, number>()
+  private voices = new Map<AudioScheduledSourceNode, { priority: number; trim: GainNode }>()
+  private build: GainNode | null = null
+  private climaxTime: number
+  private dipped = new Set<string>()
   private notes = new Set<AudioScheduledSourceNode>()
   private continuous: AudioScheduledSourceNode[] = []
   private score: ScoreNote[]
@@ -61,6 +64,7 @@ export class CinemaAudio {
     // Massed-battle bed: weapon activity over two seconds plus the ships still fighting.
     for (let t = 0; t <= film.duration + .25; t += .25) this.density.push(film.cues.filter(cue => cue.kind === 'weapon' && Math.abs(cue.time - t) < 1).length / 2
       + .15 * film.ships.filter(ship => ship.start <= t && t < ship.end).length)
+    this.climaxTime = film.cues.find(cue => cue.id === film.story?.climaxCueId)?.time ?? film.duration * .7
     this.offline = offline ?? null
     if (!offline) return
     this.muted = false; this.playing = true
@@ -69,6 +73,7 @@ export class CinemaAudio {
     for (const note of this.score) if (note.instrument === 'drop') this.dip(note, note.time)
     else this.playNote(note, renderNote(note, offline.sampleRate), note.time)
     this.density.forEach((_, i) => this.bed(i * .25, i * .25))
+    this.preDip(0, film.duration + 1, 0)
     this.amb?.gain.setTargetAtTime(0, Math.max(0, film.duration - 2.5), .7)
   }
 
@@ -115,9 +120,11 @@ export class CinemaAudio {
     }
     this.shortIn = verb(.6, 11)
     this.longIn = verb(4, 23)
-    this.sfx = gain(1, master)
+    // The mix builds: effects and music start about 5 dB back and reach full level at the climax.
+    this.build = gain(1, master)
+    this.sfx = gain(1, this.build)
     this.loss = gain(1, master)
-    const music = gain(.4, master)
+    const music = gain(.4, this.build)
     music.connect(gain(.22, this.longIn))
     this.drop = gain(1, music)
     this.duck = gain(1, this.drop)
@@ -145,9 +152,23 @@ export class CinemaAudio {
     if (this.film.ships.some(ship => ship.kind === 'station')) loop(1, ch => { for (let i = 0; i < ch.length; i++) { const t = i / ctx.sampleRate; ch[i] = .006 * (Math.sin(2 * Math.PI * 100 * t) + .6 * Math.sin(2 * Math.PI * 150 * t) + .3 * Math.sin(2 * Math.PI * 201 * t)) } }, amb)
   }
 
+  /** Effects and music step back just before each loss, so the blast lands on a clearer bed. */
+  private preDip(from: number, to: number, offset: number) {
+    const gain = this.sfx?.gain
+    // The climax has its own, deeper drop.
+    for (const cue of audioCueRange(this.schedule, from, to)) if ((cue.kind === 'death' || cue.kind === 'knockout') && !cue.audioCascade && !this.dipped.has(cue.id) && cue.id !== this.film.story?.climaxCueId) {
+      this.dipped.add(cue.id)
+      gain?.setTargetAtTime(cue.audioDistant ? .6 : .3, Math.max(0, offset + cue.time - .6), .06)
+      gain?.setTargetAtTime(1, offset + cue.time + 1.3, .3)
+      this.drop?.gain.setTargetAtTime(cue.audioDistant ? .7 : .4, Math.max(0, offset + cue.time - .6), .06)
+      this.drop?.gain.setTargetAtTime(1, offset + cue.time + .8, .4)
+    }
+  }
+
   private bed(time: number, at: number) {
     const d = this.density[Math.max(0, Math.min(this.density.length - 1, Math.round(time / .25)))] ?? 0
     this.battle?.gain.setTargetAtTime(Math.min(1, Math.log2(1 + d) / 4), at, .6)
+    this.build?.gain.setTargetAtTime(10 ** (-5 * Math.max(0, 1 - time / Math.max(1, this.climaxTime)) / 20), at, .5)
   }
 
   setPlaying(playing: boolean) {
@@ -200,11 +221,11 @@ export class CinemaAudio {
     })
     source.onended = () => { this.voices.delete(source); this.notes.delete(source); source.disconnect(); trim.disconnect(); panner.disconnect(); for (const send of sends) send.disconnect() }
     source.start(at, offset)
-    return source
+    return { source, trim }
   }
 
   private playNote(note: ScoreNote, sound: Sound, at: number, offset = 0) {
-    this.notes.add(this.play(sound, at, STINGS.has(note.instrument) ? this.sting! : this.duck!, 0, offset))
+    this.notes.add(this.play(sound, at, STINGS.has(note.instrument) ? this.sting! : this.duck!, 0, offset).source)
   }
 
   /** Clears the music, then pulls the effects back, so the decisive hit lands on near silence. */
@@ -254,6 +275,7 @@ export class CinemaAudio {
     }
     while (this.done.has(this.next)) this.next++
     this.bed(this.time, now)
+    this.preDip(this.time, this.time + .8, this.anchor)
     // Ambience fades out with the score before the picture ends.
     this.amb?.gain.setTargetAtTime(this.time > this.film.duration - 2.5 ? 0 : 1, now, .7)
   }
@@ -279,24 +301,33 @@ export class CinemaAudio {
       : cue.audioPhase === 'impact' || cue.audioPhase === 'shield-impact' || cue.audioPhase === 'contact' ? 2 : cue.audioDistant ? 0 : 1
     if (!this.offline && this.voices.size >= MAX_VOICES) {
       // Hits may replace launches; only decisive events may replace a loss.
-      const replaced = [...this.voices].find(([, p]) => p < priority || priority === 3)
+      const replaced = [...this.voices].find(([, voice]) => voice.priority < priority || priority === 3)
       if (!replaced) return
-      try { replaced[0].stop() } catch { /* Already ended. */ }
-      this.voices.delete(replaced[0])
+      // A stolen voice fades over 40 ms instead of cutting off.
+      const [source, { trim }] = replaced
+      trim.gain.setTargetAtTime(0, now, .012)
+      try { source.stop(now + .05) } catch { /* Already ended. */ }
+      this.voices.delete(source)
     }
     const start = Math.max(this.offline ? 0 : now, when - sound.lead)
     if (sound.duck) this.duckMusic(start + sound.lead, sound.duck)
     // Losses play on their own bus and the rest of the effects step back under
     // them; the story's decisive loss is the biggest sound in the film.
-    const loss = priority === 3, climax = cue.id === this.film.story?.climaxCueId
-    if (loss) { this.sfx.gain.setTargetAtTime(cue.audioDistant ? .6 : .4, start + sound.lead, .01); this.sfx.gain.setTargetAtTime(1, start + sound.lead + 1.2, .3) }
-    this.voices.set(this.play(sound, start, loss ? this.loss! : this.sfx, bounded(pan, -.85, .85, 0) * (cue.kind === 'death' ? .6 : 1), Math.max(0, start - (when - sound.lead)), climax ? 10 ** (6 / 20) : loss ? 10 ** (-3.5 / 20) : 1), priority)
+    // A mass climax plays bigger still, by the number lost.
+    // Story events (losses, arrivals, boarding, repairs, escapes) skip the build and the dips.
+    const loss = priority === 3, climax = cue.id === this.film.story?.climaxCueId, story = loss || (cue.kind !== 'weapon' && !cue.audioCascade)
+    const weight = climax ? 3 + Math.min(4, Math.log2(cue.audioMass ?? 1) / 1.6) : cue.kind === 'arrival' ? -3 : 0
+    if (loss && cue.audioCascade !== 'pop') { this.sfx.gain.setTargetAtTime(cue.audioDistant ? .5 : .3, start + sound.lead - .02, .02); this.sfx.gain.setTargetAtTime(1, start + sound.lead + 1.2, .3) }
+    // Screen position spreads wide: the pan curve pushes off-center sources outward.
+    const wide = Math.sign(pan) * Math.abs(bounded(pan, -1, 1, 0)) ** .6
+    const voice = this.play(sound, start, story ? this.loss! : this.sfx, wide * (cue.kind === 'death' ? .7 : 1), Math.max(0, start - (when - sound.lead)), 10 ** (weight / 20))
+    this.voices.set(voice.source, { priority, trim: voice.trim })
   }
 
   clear() {
     for (const source of [...this.voices.keys(), ...this.notes]) { try { source.stop() } catch { /* Already ended. */ } }
     this.voices.clear(); this.notes.clear()
-    this.ready.clear(); this.requested.clear(); this.done.clear(); this.next = 0
+    this.ready.clear(); this.requested.clear(); this.done.clear(); this.dipped.clear(); this.next = 0
     this.worker?.postMessage({ reset: true })
     this.anchored = false; this.duckEnd = 0; this.duckLevel = 1; this.ending = false
     for (const bus of [this.duck, this.drop, this.sfx]) if (bus && this.context) { bus.gain.cancelScheduledValues(0); bus.gain.setTargetAtTime(1, this.context.currentTime, .01) }

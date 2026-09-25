@@ -48,6 +48,8 @@ describe('cinema score', () => {
     expect(hit.time).toBeCloseTo(11)
     const drop = notes.find(note => note.instrument === 'drop')!
     expect(drop.time + drop.duration).toBeCloseTo(11)
+    const swell = notes.find(note => note.instrument === 'swell')
+    if (swell) expect(swell.time + swell.duration).toBeLessThan(10.8)
     const band = ['pulse', 'kick', 'drum', 'hat', 'bass', 'pad', 'horn']
     expect(notes.filter(note => band.includes(note.instrument) && note.time >= drop.time - 1e-6 && note.time < 11)).toHaveLength(0)
     const early = notes.filter(note => note.time >= 2.5 && note.time < 6 && ['kick', 'drum', 'hat'].includes(note.instrument)).length
@@ -103,5 +105,16 @@ describe('cinema score', () => {
     const shapes = new Set<string>()
     for (let start = 5; start < 105; start += 16) shapes.add(JSON.stringify(notes.filter(note => note.instrument === 'pulse' && note.time >= start && note.time < start + 4).map(note => note.pitches[0] - notes.find(n => n.instrument === 'pulse' && n.time >= start)!.pitches[0])))
     expect(shapes.size).toBeGreaterThanOrEqual(3)
+  })
+
+  it('states leitmotifs on a lead voice, hero or enemy by the side the shot features, at a tempo set by scale', () => {
+    const base = film({ duration: 40, shots: [film().shots[0], { ...film().shots[1], end: 20 }, { ...film().shots[1], start: 20, end: 34, subject: 'foe', target: 'hero' }, { ...film().shots[3], start: 34, end: 40 }],
+      cues: [film().cues[0], { ...film().cues[1], time: 34 }] })
+    const lead = composeScore(base).filter(note => note.instrument === 'lead' && note.time < 34)
+    expect(lead.some(note => note.time < 20 && (note.pan ?? 0) > 0)).toBe(true)
+    expect(lead.some(note => note.time >= 20 && (note.pan ?? 0) < 0)).toBe(true)
+    const beat = (f: CinemaFilm) => { const kicks = composeScore(f).filter(note => note.instrument === 'bass').map(note => note.time); return Math.min(...kicks.slice(1).map((t, i) => t - kicks[i]).filter(d => d > .05)) }
+    const fleet = film({ ships: Array.from({ length: 40 }, (_, i) => ship(i ? `s${i}` : 'hero', i % 2 ? 1 : 2, 'survived')) })
+    expect(beat(fleet)).toBeLessThan(beat(film()))
   })
 })

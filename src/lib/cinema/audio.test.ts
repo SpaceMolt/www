@@ -235,9 +235,11 @@ describe('cinema audio engine', () => {
   it('bounds concurrent effects and lets a loss interrupt a saturated volley', () => {
     const { audio, context } = started()
     for (let i = 0; i < 80; i++) audio.cue({ ...weapon, id: String(i) })
-    expect(context.transients.filter(source => !source.ended)).toHaveLength(48)
+    expect(context.transients.filter(source => !source.ended && !source.stops.length)).toHaveLength(48)
     audio.cue(death)
-    expect(context.transients.filter(source => !source.ended)).toHaveLength(48)
+    expect(context.transients.filter(source => !source.ended && !source.stops.length)).toHaveLength(48)
+    // The stolen voice fades out and stops shortly after, rather than cutting.
+    expect(context.transients.find(source => source.stops.length && !source.ended)!.stops[0]).toBeCloseTo(10.05)
     expect(context.transients.at(-1)!.ended).toBe(false)
     for (let i = 0; i < 60; i++) audio.cue({ ...death, id: `d${i}` })
     const before = context.transients.length
@@ -248,10 +250,12 @@ describe('cinema audio engine', () => {
   it('ducks the music under losses and clamps pan and user volume', () => {
     const { audio, context } = started()
     audio.cue(death, 5)
-    expect(context.panners.at(-1)!.pan.value).toBeCloseTo(.85 * .6)
+    expect(context.panners.at(-1)!.pan.value).toBeCloseTo(.7)
     expect(context.gains.some(node => node.gain.calls.some(call => call.method === 'target' && Math.abs(call.value - 10 ** (-10 / 20)) < 1e-6))).toBe(true)
     audio.cue(weapon, -500)
-    expect(context.panners.at(-1)!.pan.value).toBe(-.85)
+    expect(context.panners.at(-1)!.pan.value).toBe(-1)
+    audio.cue({ ...weapon, id: 'half' }, .25)
+    expect(context.panners.at(-1)!.pan.value).toBeCloseTo(.25 ** .6)
     audio.setVolume(2)
     expect(context.output.value).toBe(1)
     audio.setVolume(-3)
