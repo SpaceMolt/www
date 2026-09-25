@@ -54,23 +54,6 @@ export function keepCameraOutsideBodies(position: Vector3, bodies: readonly Came
   for(let pass=0;pass<4;pass++){let changed=false;for(const body of bodies)changed=inside(body,true)||changed;if(!changed)return}
   if(bodies.some(body=>inside(body,false)))position.y=bodies.reduce((height,body)=>Math.max(height,body.position.y+(body.contactHull?Math.max(body.contactHull.min.length(),body.contactHull.max.length()):body.size*.78)+2),position.y)
 }
-/** Furthest positive intersection on the proposed dolly ray. */
-function contactRayExit(body: CameraBody, origin: Vector3, direction: Vector3): number {
-  if(body.contactHull){
-    const inverse=hullRotation(body).invert(), p=origin.clone().sub(body.position).applyQuaternion(inverse), d=direction.clone().applyQuaternion(inverse)
-    let entry=-Infinity, exit=Infinity
-    for(const key of ['x','y','z'] as const){
-      const min=body.contactHull.min[key]-1,max=body.contactHull.max[key]+1
-      if(Math.abs(d[key])<1e-8){if(p[key]<min||p[key]>max)return 0;continue}
-      const a=(min-p[key])/d[key],b=(max-p[key])/d[key]
-      entry=Math.max(entry,Math.min(a,b));exit=Math.min(exit,Math.max(a,b))
-    }
-    return entry<=exit&&exit>0?exit+.01:0
-  }
-  const relative=body.position.clone().sub(origin),along=relative.dot(direction),radius=body.size*.78+1
-  const perpendicular=relative.lengthSq()-along*along
-  return perpendicular<radius*radius?Math.max(0,along+Math.sqrt(radius*radius-perpendicular)):0
-}
 export interface StoryCameraFrame { position: Vector3; target: Vector3; fov: number }
 export interface StoryCameraOptions {
   shot: CinemaShot
