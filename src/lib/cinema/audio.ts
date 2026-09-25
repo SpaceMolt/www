@@ -12,14 +12,6 @@ const MAX_VOICES = 32
 const STINGS = new Set<ScoreNote['instrument']>(['hit', 'swell', 'riser'])
 const bounded = (value: number, low: number, high: number, fallback = low) => Number.isFinite(value) ? Math.max(low, Math.min(high, value)) : fallback
 
-/** Hull scale 0 (fighter) to 1 (capital or station) from the rendered length. */
-function hullSize(film: CinemaFilm, appearances: Record<string, ShipAppearance>, id?: string) {
-  const ship = film.ships.find(s => s.id === id)
-  if (!ship) return 0
-  if (ship.kind === 'station') return 1
-  return bounded(Math.log2((appearances[ship.shipClass]?.length ?? 2) / 1.8) / 4.5, 0, 1)
-}
-
 /**
  * Original, locally synthesized soundtrack. The score is composed from the whole
  * film in advance; effects are rendered per cue. Buses (music, stings, effects,
@@ -30,7 +22,6 @@ export class CinemaAudio {
   private out: GainNode | null = null
   private sfx: GainNode | null = null
   private loss: GainNode | null = null
-  private music: GainNode | null = null
   private duck: GainNode | null = null
   private drop: GainNode | null = null
   private sting: GainNode | null = null
@@ -65,7 +56,8 @@ export class CinemaAudio {
   constructor(private film: CinemaFilm, appearances: Record<string, ShipAppearance> = {}, offline?: BaseAudioContext) {
     this.score = composeScore(film)
     this.schedule = buildAudioSchedule(film.cues, film.shots)
-    this.sizes = Object.fromEntries(film.ships.map(ship => [ship.id, hullSize(film, appearances, ship.id)]))
+    // Hull scale 0 (fighter) to 1 (capital or station) from the rendered length.
+    this.sizes = Object.fromEntries(film.ships.map(ship => [ship.id, ship.kind === 'station' ? 1 : bounded(Math.log2((appearances[ship.shipClass]?.length ?? 2) / 1.8) / 4.5, 0, 1)]))
     // Massed-battle bed: weapon activity over two seconds plus the ships still fighting.
     for (let t = 0; t <= film.duration + .25; t += .25) this.density.push(film.cues.filter(cue => cue.kind === 'weapon' && Math.abs(cue.time - t) < 1).length / 2
       + .15 * film.ships.filter(ship => ship.start <= t && t < ship.end).length)
@@ -107,7 +99,7 @@ export class CinemaAudio {
     const highpass = ctx.createBiquadFilter()
     highpass.type = 'highpass'; highpass.frequency.value = 30
     highpass.connect(glue)
-    const master = gain(.6, highpass)
+    const master = gain(.55, highpass)
     const verb = (seconds: number, seed: number) => {
       const convolver = ctx.createConvolver(), [l, r] = impulseResponse(ctx.sampleRate, seconds, seed)
       const ir = ctx.createBuffer(2, l.length, ctx.sampleRate)
@@ -123,7 +115,7 @@ export class CinemaAudio {
     this.longIn = verb(4, 23)
     this.sfx = gain(1, master)
     this.loss = gain(1, master)
-    const music = this.music = gain(.4, master)
+    const music = gain(.4, master)
     music.connect(gain(.22, this.longIn))
     this.drop = gain(1, music)
     this.duck = gain(1, this.drop)

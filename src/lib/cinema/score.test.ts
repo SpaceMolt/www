@@ -77,4 +77,31 @@ describe('cinema score', () => {
     const extra = composeScore(arrival).filter(note => note.instrument === 'horn' && note.time >= 6 && note.time < 6.6)
     expect(extra.length).toBeGreaterThan(0)
   })
+
+  it('introduces each principal with a leitmotif before the first shot is fired', () => {
+    const base = film()
+    const intro = film({ shots: [
+      { start: 0, end: 1.4, kind: 'reveal', role: 'geography', intensity: .12 },
+      { start: 1.4, end: 2.5, kind: 'tracking', role: 'introduction', intensity: .2, subject: 'hero' },
+      { start: 2.5, end: 3.6, kind: 'tracking', role: 'introduction', intensity: .2, subject: 'foe' },
+      ...base.shots.slice(1).map(shot => ({ ...shot, start: Math.max(3.6, shot.start) })),
+    ], cues: base.cues.map(cue => cue.kind === 'weapon' ? { ...cue, time: 3.8 } : cue) })
+    const notes = composeScore(intro)
+    expect(notes.some(note => note.instrument === 'horn' && note.time >= 1.4 && note.time < 2.5)).toBe(true)
+    expect(notes.some(note => note.instrument === 'horn' && note.time >= 2.5 && note.time < 3.6 && note.pitches.length === 2)).toBe(true)
+    expect(notes.filter(note => note.instrument === 'pulse' && note.time < 3.55)).toHaveLength(0)
+  })
+
+  it('develops a long battle in sections instead of looping one texture', () => {
+    const base = film()
+    const long = film({ duration: 130, shots: [base.shots[0], { ...base.shots[1], end: 120 }, { ...base.shots[3], start: 120, end: 130 }],
+      cues: [base.cues[0], { ...base.cues[1], time: 118 }] })
+    const notes = composeScore(long).filter(note => note.time > 3 && note.time < 110)
+    // Breakdowns: stretches of several seconds with the drums out.
+    const kicks = notes.filter(note => note.instrument === 'kick').map(note => note.time)
+    expect(Math.max(...kicks.slice(1).map((time, i) => time - kicks[i]))).toBeGreaterThan(5)
+    const shapes = new Set<string>()
+    for (let start = 5; start < 105; start += 16) shapes.add(JSON.stringify(notes.filter(note => note.instrument === 'pulse' && note.time >= start && note.time < start + 4).map(note => note.pitches[0] - notes.find(n => n.instrument === 'pulse' && n.time >= start)!.pitches[0])))
+    expect(shapes.size).toBeGreaterThanOrEqual(3)
+  })
 })

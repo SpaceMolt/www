@@ -74,9 +74,9 @@ export function composeScore(film: CinemaFilm): ScoreNote[] {
   const climaxCue = cues.find(cue => cue.id === film.story?.climaxCueId) ?? cues.filter(decisive).at(-1)
   const loudest = [...film.shots].sort((a, b) => b.intensity - a.intensity)[0]
   const climax = Math.min(end, climaxCue?.time ?? loudest?.actionTime ?? end * .7)
+  const openingRoles = new Set(['geography', 'introduction', 'protagonist', 'opposition', 'arrival'])
   const firstAction = Math.min(
-    film.story?.sequences[0]?.start ?? Infinity,
-    film.shots.find(shot => shot.role !== 'geography')?.start ?? Infinity,
+    film.shots.find(shot => shot.role && !openingRoles.has(shot.role))?.start ?? Infinity,
     cues.find(cue => cue.kind === 'weapon' || cue.kind === 'boarding')?.time ?? Infinity,
   )
   const action = Math.max(0, Math.min(Number.isFinite(firstAction) ? firstAction : end * .2, climax - beat))
@@ -85,6 +85,7 @@ export function composeScore(film: CinemaFilm): ScoreNote[] {
   const grid = climax - bar * Math.ceil((climax - action) / bar + 1e-9)
   const resolution = filmResolution(film)
   const heroSide = film.ships.find(ship => ship.id === film.story?.protagonistId)?.sideId
+  const side = (id?: string) => film.ships.find(ship => ship.id === id)?.sideId
   const shotIntensity = (t: number) => film.shots.find(shot => t >= shot.start && t < shot.end)?.intensity ?? .1
   const reversal = film.story?.sequences.find(sequence => sequence.kind === 'reversal' && sequence.start < cut)?.start ?? Infinity
   // Long passages get form: eight-bar sections, breakdowns, and a lift into the final third.
@@ -102,7 +103,14 @@ export function composeScore(film: CinemaFilm): ScoreNote[] {
   // Setup: sparse and ominous. Open fifths, one seeded voice, a riser into the action.
   if (action > .6) {
     note(.15, action + beat - .15, 'pad', voiced([root, root + 7, root + 12], 45), .45)
-    if (action > 1.5) {
+    // Each introduced principal gets a leitmotif: the hero's side bright, the other side low.
+    const introductions = film.shots.filter(shot => shot.role === 'introduction' && shot.start < action)
+    for (const shot of introductions) {
+      const hero = side(shot.subject) === heroSide
+      if (hero) motif.slice(0, 2).reduce((t, [d, beats]) => { note(t, Math.min(beats * beat, shot.end - t) - .03, 'horn', [degree(d, root + 24)], .5); return t + beats * beat }, shot.start + .1)
+      else { note(shot.start + .1, shot.end - shot.start - .2, 'horn', [root + 12, root + 13], .45); note(shot.start + .1, .5, 'drum', [], .6) }
+    }
+    if (action > 1.5 && !introductions.length) {
       let t = .5
       for (const [d, beats] of motif.slice(0, 3)) {
         if (t > action - .3) break
@@ -132,7 +140,7 @@ export function composeScore(film: CinemaFilm): ScoreNote[] {
   for (let barIndex = 0, start = grid; start < cut - 1e-6; barIndex++, start += bar) {
     const section = long ? Math.floor(barIndex / 8) : 0, pattern = PATTERNS[(patternIndex + section) % PATTERNS.length]
     const breakdown = section % 2 === 1 && barIndex % 8 < 4
-    const E = Math.min(breakdown ? .4 : 1, energy(start + bar / 2)), chord = triad(progression[(barIndex + section) % progression.length]).map(p => p + lift(start))
+    const E = Math.min(breakdown ? .3 : 1, energy(start + bar / 2)), chord = triad(progression[(barIndex + section) % progression.length]).map(p => p + lift(start))
     const tones = [chord[0], chord[2] > chord[0] + 7 ? chord[0] + 7 : chord[2], chord[0] + 12, chord[1]]
     const barEnd = Math.min(start + bar, cut)
     if (barEnd > action) note(Math.max(start, action), barEnd - Math.max(start, action), 'pad', voiced(chord), .25 + .35 * E)
@@ -161,7 +169,6 @@ export function composeScore(film: CinemaFilm): ScoreNote[] {
     note(t, .5, 'drum', [], .8)
     lastStab = t
   }
-  const side = (id?: string) => film.ships.find(ship => ship.id === id)?.sideId
   const events = [
     ...waves.map(wave => ({ time: grid + Math.ceil((wave.time - grid) / (beat / 2) - 1e-6) * beat / 2, good: wave.friendly })),
     ...cues.filter(cue => decisive(cue) && cue !== climaxCue && cue.time > action).map(cue => ({ time: cue.time, good: (cue.kind === 'capture' ? side(cue.from) === heroSide : side(cue.to) !== heroSide) })),
