@@ -92,7 +92,7 @@ const FAUCET_NOTES: Record<string, string> = {
   npc_seeding: 'start-up money for new NPC stations',
 }
 const SINK_NOTES: Record<string, string> = {
-  shipbuilding: 'the labor part of new ship orders',
+  shipbuilding: 'cancelled ship orders, and builds at outposts',
   labor: 'station work no citizen pool is paid for',
   dev_team: 'credits the dev team took out',
 }
@@ -320,7 +320,7 @@ export default async function EconomyPage() {
             lede={
               <>
                 The game creates credits when it pays players directly: pirate bounties, some mission rewards,
-                starting money. It destroys them when players pay the game, such as shipbuilding labor. Trades,
+                starting money. It destroys them when players pay the game, such as a station founding fee. Trades,
                 taxes and fees only move credits between holders.
                 {s.partial && s.detailedFrom && <> Totals cover the {flowSpan} since {dayLabel(s.detailedFrom)}.</>}
               </>
