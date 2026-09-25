@@ -73,10 +73,10 @@ so an intact prize or wreck cannot jump back to its original formation slot.
 Missing operation IDs use participant-pair context. These positions illustrate
 observed contact; they are not tactical coordinates or personnel simulations.
 
-Camera moves retain continuous takes across adjacent shots with the same subjects
-and screen axis. New subjects or geography changes still allow deliberate cuts.
-The continuous path remains subject to framing and ship-clearance constraints;
-it does not replace the chronological edit or manufacture additional action.
+A boarding operation keeps one continuous take over the smaller hull's shoulder,
+following the live docking line. Other exchanges cut between role compositions
+on the same side of the axis. Every path stays inside the framing and
+ship-clearance constraints; the camera does not manufacture additional action.
 
 Self-destruct records still have no bespoke countdown choreography. Confirmed
 losses use the existing recorded outcome handling. Boarding adds no downloaded
@@ -92,9 +92,34 @@ scale, exchanges, contact and outcomes. Scoring uses clipped screen coverage,
 minimum projected size, hull-bound occlusion, relative depth, prior participant
 coverage, repeated compositions and transition cost.
 
-The edit briefly favors an ongoing exchange over ordinary competing fire; recorded
-consequences and the decisive event override that preference. Reciprocal fire
-shares a take and a stable camera shoulder. Between takes, a short
+`camera.ts` composes each shot from its role. All shots stay on the camera side
+of the pair axis, so screen direction holds across cuts:
+
+| Role | Composition |
+|---|---|
+| geography, resolution (more than a pair) | Fleet master from behind and above the subject's formation toward the enemy; resolution rises over the field |
+| geography (pair) | From behind the smaller hull toward the larger, both whole |
+| introduction | Slow pass along one hull, close enough to read its painted name |
+| arrival | From ahead of the arriving hull |
+| protagonist, opposition | Three-quarter view from ahead of the bow, slow arc |
+| setup, fire | Long-lens over-the-shoulder shot of the shooter; the target stays whole in frame |
+| impact, reaction | Reverse shoulder from the receiving hull toward its attacker |
+| any shot whose subject or target dies in it | The victim at medium size, room for the explosion, killer beyond it |
+
+The hull length fills a fixed share of the frame width. The distance is then
+refined continuously until the projected hull box of the foreground hull (and a
+required counterpart) fits, so moving ships never step between fitted distances.
+A counterpart that only needs its center in frame may cost a bounded pullback.
+When hulls differ more than 2.2 times in size, the smaller hull takes the
+foreground and the capital fills the background. A fleet whose principal would
+be a speck yields to a long-lens view of that principal with its fleet
+compressed behind it. Each role has a lens and a move (dolly, push-in or arc)
+driven by shot progress. The renderer adds handheld drift and a decaying shake
+from nearby losses and hull hits; both rotate the aim only. Reduced motion
+removes arcs, dollies, drift and shake.
+
+Candidates are cheap to cut between: the planner charges only a small cost for
+changing composition. Between takes, a short
 pan/dolly is accepted only when sampled views preserve required subjects and hull
 clearance; incompatible geography or immediate key events retain a deliberate
 cut. Reduced-motion playback skips these animated transitions. Sampling uses absolute
@@ -142,6 +167,20 @@ low quality, pauses when hidden, and exposes a reduced-motion setting. Automatic
 quality starts at medium on desktop and low on narrow screens. Render targets
 have total-pixel ceilings (4/2/1 megapixels for high/medium/low), including large
 HiDPI displays; graphics-error retries explicitly use low quality.
+
+Lighting is a warm key from the visible star, leaning toward the camera side so
+visible faces stay lit, a cold rim opposite the camera and a faint cool fill.
+ACES tone mapping, bloom and a split-tone grade (cool shadows, warm highlights,
+lifted midtones) let effects clip to white while space stays black. Each side
+has one accent color on engine glow, trails, blinking running lights and a tint
+of its weapon fire. Bolts keep a minimum screen thickness and flash at the
+muzzle and at the hit. Shields ripple locally from the side facing the shooter;
+only big hits light the whole shell, and shells fade as the camera nears them.
+Destruction has a clipping white flash, two noise-shaded fireball lobes, a
+camera-facing shockwave, ember trails on fragments and a light pulse, scaled by
+hull size. A seeded gas giant or rocky world with clouds, a terminator and a lit
+limb sits at sky distance, and dust wrapped around the camera gives parallax.
+Stations are scaled well above the largest capital.
 
 `weapons.ts` identifies 13 delivery families independently of damage type:
 laser pulses, sustained beams, railgun needles, autocannon bursts, flak fans,

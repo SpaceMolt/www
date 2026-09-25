@@ -201,7 +201,7 @@ export function sampleStoryCamera(options: StoryCameraOptions): StoryCameraFrame
     // A mass too large to read as hulls: frame the principal of the larger
     // fleet from the enemy's side, with its mass stretching away behind it.
     const principal = target && target.size < subject.size ? target : subject
-    if (!target || principal.size / (2 * horizontal * Math.max(1, position.distanceTo(principal.position))) >= .02) return { position, target: focus, fov }
+    if (!target || role === 'resolution' || principal.size / (2 * horizontal * Math.max(1, position.distanceTo(principal.position))) >= .02) return { position, target: focus, fov }
     const count = (body: CameraBody) => field.filter(other => other.side === body.side).length
     mass = count(target) > count(subject) ? target : subject
     massAway = mass.position.clone().sub(centroid(field.filter(body => body.side === mass!.side))).setY(0)
@@ -228,8 +228,9 @@ export function sampleStoryCamera(options: StoryCameraOptions): StoryCameraFrame
   // weight toward the foreground hull, counterpart inclusion, dolly and arc.
   let fov: number, viewing: Vector3, share: number, weight = .5, looseLimit = 2.5, include: 'full' | 'loose' | 'none' = 'loose', dolly = 1, arc = 0
   if (mass) {
-    // Camera on the open side of the principal, so its fleet recedes behind it.
-    fov = 36; viewing = bearing(massAway?.normalize() ?? toward, side, 25, .22); share = .3; weight = .7; include = 'none'; arc = 8
+    // Long lens from the open side of the principal: its fleet compresses
+    // into a dense wall behind it.
+    fov = 14; viewing = bearing(massAway?.normalize() ?? toward, side, 12, .02); share = .22; weight = .85; include = 'none'; arc = 4
   } else if (continuousTake) {
     // Boarding: one continuous take over the smaller hull's shoulder onto its
     // counterpart, following the live docking line through contact.
