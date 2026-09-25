@@ -76,6 +76,8 @@ export interface StoryCameraOptions {
   dying?: string
   /** Target is a prize captured by the subject: keep it beside the victor. */
   prize?: boolean
+  /** A burning wreck near the subject, for resolution foregrounds. */
+  wreck?: CameraBody
   /** Planner candidate: bearing rotation (radians), extra lift and distance scale. */
   variant?: { angle: number; lift: number; distance: number }
 }
@@ -161,23 +163,19 @@ export function sampleStoryCamera(options: StoryCameraOptions): StoryCameraFrame
   const focus = subject.position.clone()
   const position = new Vector3()
   let mass: CameraBody | undefined, massAway: Vector3 | undefined
-  // Establishing and closing shots frame the fleets whenever more than a pair is present.
-  // A lone victor closes on itself with the field behind it instead.
-  // A lone or dominant victor (a station or capital among escorts) closes on
-  // itself with the field behind it instead of a fleet master.
-  const allies = options.battlefield?.filter(body => body.side === subject.side) ?? []
-  const loneVictor = role === 'resolution' && (allies.length <= 1 || subject.size >= 2.5 * [...allies].sort((a, b) => a.size - b.size)[allies.length >> 1].size)
-  if ((shot.battlefield || role === 'geography' || role === 'resolution') && !loneVictor && !continuousTake && options.battlefield && options.battlefield.length > 2) {
+  // Establishing shots frame the fleets whenever more than a pair is present.
+  // Endings stay on the victor: fleet masters establish, they do not resolve.
+  if ((shot.battlefield || role === 'geography') && role !== 'resolution' && !continuousTake && options.battlefield && options.battlefield.length > 2) {
     // Fleet master: from behind and above the subject's formation toward the
     // opposing one, so the near line fills the foreground and the enemy line
-    // recedes into depth. Resolution masters rise over the whole field.
+    // recedes into depth.
     // A long lens compresses depth, so the fleets stack up behind each other.
     const fov = 28, vertical = Math.tan(fov * Math.PI / 360), horizontal = vertical * aspect
     const centroid = (bodies: readonly CameraBody[]) => bodies.reduce((sum, body) => sum.add(body.position), new Vector3()).divideScalar(bodies.length)
     const master = (field: readonly CameraBody[], swingAngle: number, dolly: number) => {
       const lead = field.find(body => body.id === subject.id) ?? subject
       const own = field.filter(body => body.side === lead.side), rest = field.filter(body => body.side !== lead.side)
-      const near = own.length && rest.length && role !== 'resolution' ? own : field
+      const near = own.length && rest.length ? own : field
       const nearCenter = centroid(near), farCenter = near === field ? nearCenter.clone().add(axis) : centroid(rest)
       const toward = farCenter.clone().sub(nearCenter).setY(0)
       if (toward.lengthSq() < .001) toward.copy(axis)
@@ -199,8 +197,8 @@ export function sampleStoryCamera(options: StoryCameraOptions): StoryCameraFrame
     const opening = options.battlefieldAtStart ?? options.battlefield
     const principal = target && target.size < subject.size ? target : subject
     const reference = master(opening, 0, 1), principalAtStart = opening.find(body => body.id === principal.id) ?? principal
-    if (!target || role === 'resolution' || principal.size / (2 * horizontal * Math.max(1, reference.position.distanceTo(principalAtStart.position))) >= .02) {
-      const shotFrame = master(options.battlefield, reduced ? 0 : (progress - .5) * .18, role === 'resolution' ? 1 + progress * .15 : 1.04 - progress * .08)
+    if (!target || principal.size / (2 * horizontal * Math.max(1, reference.position.distanceTo(principalAtStart.position))) >= .02) {
+      const shotFrame = master(options.battlefield, reduced ? 0 : (progress - .5) * .18, 1.04 - progress * .08)
       return { position: shotFrame.position, target: shotFrame.center, fov }
     }
     const field = options.battlefield
@@ -257,7 +255,8 @@ export function sampleStoryCamera(options: StoryCameraOptions): StoryCameraFrame
     const aim = (h: number) => {
       focus.copy(position).addScaledVector(front.position.clone().sub(position).normalize().multiplyScalar(.45)
         .addScaledVector(back.position.clone().sub(position).normalize(), .55).normalize(), distance)
-      return inFrame(position, focus, h / aspect, h, backCorners, .88) && inFrame(position, focus, h / aspect, h, [front.position], .8)
+      // A tighter vertical margin keeps both clear of the letterbox edges.
+      return inFrame(position, focus, h / aspect * .9, h, backCorners, .88) && inFrame(position, focus, h / aspect * .9, h, [front.position], .8)
     }
     const widest = Math.tan(28 * Math.PI / 180) * aspect
     const at = (value: number) => { distance = value; position.copy(front.position).addScaledVector(viewing, distance); return aim(widest) }
@@ -274,10 +273,42 @@ export function sampleStoryCamera(options: StoryCameraOptions): StoryCameraFrame
     const vertical = Math.max(Math.tan(2.5 * Math.PI / 180), horizontal / aspect)
     return { position, target: focus, fov: Math.atan(vertical) * 360 / Math.PI }
   }
-  // The camera sits behind the smaller hull of a very uneven pair: a capital
-  // cannot shoulder a fighter at readable size, but it fills the far frame.
+  // Turret shot for a hull far larger than its target: the camera rides just
+  // off the flank near the bow, so the bow and its guns fill one edge of the
+  // frame and the bolt leaves them to cross the gap to the target downrange,
+  // which a long lens holds at readable size.
+  const turret = (shooter: CameraBody, target: CameraBody, dolly: number) => {
+    const line = target.position.clone().sub(shooter.position).setY(0)
+    if (line.lengthSq() < .001) line.copy(toward)
+    line.normalize()
+    const lateral = side.clone().addScaledVector(line, -side.dot(line)).normalize()
+    const radius = framingRadius(shooter)
+    const bow = shooter.position.clone().addScaledVector(line, radius * .45)
+    // Clear the hull's actual beam and height, not a bounding sphere, so the
+    // camera hugs the flank without entering it.
+    const hull = shooter.contactHull
+    const beam = hull ? Math.max(-hull.min.z, hull.max.z, -hull.min.y, hull.max.y) : shooter.size * .3
+    position.copy(shooter.position).addScaledVector(lateral.lengthSq() > .001 ? lateral : side, beam * 1.4 + shooter.size * .04)
+      .addScaledVector(line, -radius * (.8 + .3 * (1 - dolly))).add(new Vector3(0, beam * .5, 0))
+    const targetCorners = hullCorners(target)
+    const aim = (h: number) => {
+      focus.copy(position).addScaledVector(bow.clone().sub(position).normalize().multiplyScalar(.3)
+        .addScaledVector(target.position.clone().sub(position).normalize(), .7).normalize(), position.distanceTo(target.position))
+      return inFrame(position, focus, h / aspect, h, targetCorners, .8) && inFrame(position, focus, h / aspect, h, [bow], .95)
+    }
+    const widest = Math.tan(30 * Math.PI / 180) * aspect
+    let horizontal = Math.min(widest, target.size / (2 * .07 * Math.max(1, position.distanceTo(target.position))))
+    if (!aim(horizontal)) {
+      let lower = horizontal, upper = widest
+      for (let refinement = 0; refinement < 16; refinement++) { const middle = (lower + upper) / 2; if (aim(middle)) upper = middle; else lower = middle }
+      horizontal = upper; aim(horizontal)
+    }
+    return { position, target: focus, fov: Math.atan(Math.max(Math.tan(2.5 * Math.PI / 180), horizontal / aspect)) * 360 / Math.PI }
+  }
+  // The shooter always owns the shot: over its shoulder onto the target, or a
+  // turret shot when it dwarfs the target.
   const exchange = (from: CameraBody, to: CameraBody, dolly: number) =>
-    from.size > to.size * 6 ? overShoulder(to, from, 20, .08, dolly) : overShoulder(from, to, 16, .07, dolly)
+    from.size >= to.size * 6 ? turret(from, to, dolly) : overShoulder(from, to, 16, .07, dolly)
   // Single or two-shot: `near` spans `share` of the frame width (whole), and
   // `far` is whole ('full'), center-only within a bounded pullback ('loose')
   // or ignored ('none'). The distance is refined continuously.
@@ -330,8 +361,9 @@ export function sampleStoryCamera(options: StoryCameraOptions): StoryCameraFrame
     return framed(36, swing(bearing(away, side, 42, .22), 0), .34, 'loose', .6, 1 - progress * .05, 1.5)
   }
   if (victim) {
-    // Medium on the victim from its front quarter, room for the fireball.
-    return framed(28, swing(bearing(toward, side, 62, .14), 6), .28, 'none', 1, 1 + progress * .2)
+    // Medium on the victim from its front quarter, room for the fireball; the
+    // killer stays in the background when a bounded pullback allows it.
+    return framed(28, swing(bearing(toward, side, 62, .14), 6), .28, 'loose', .75, 1 + progress * .2, 1.8)
   }
   if (far && (role === 'fire' || (role === 'montage' && alternate))) return exchange(near, far, 1 - progress * .08)
   // Reverse: over the receiving hull's shoulder back toward its attacker.
@@ -341,8 +373,10 @@ export function sampleStoryCamera(options: StoryCameraOptions): StoryCameraFrame
     return framed(26, swing(bearing(toward, side, 58, .12), 5), .36, 'none', 1, 1 - progress * .1)
   }
   if (role === 'setup') {
-    // Low three-quarter from ahead of the shooter, arcing toward its line of fire.
-    return framed(30, swing(bearing(toward, side, 52, .05), 12), .46, 'none', .8, 1)
+    // Alternates a low three-quarter from ahead of the shooter with a long
+    // tracking move alongside it, sweeping past toward its line of fire.
+    return alternate ? framed(30, swing(bearing(toward, side, 52, .05), 12), .46, 'none', .8, 1)
+      : framed(34, swing(bearing(side, away, 25, .06), 34), .4, 'none', .85, 1 - progress * .12)
   }
   if ((role as string) === 'introduction') {
     // A slow pass along the hull, close enough to read its painted name.
@@ -351,8 +385,11 @@ export function sampleStoryCamera(options: StoryCameraOptions): StoryCameraFrame
   if ((role as string) === 'arrival') return framed(34, swing(bearing(toward, side, 42, .14), 0), .32, 'none', .8, 1 + progress * .1)
   if (role === 'protagonist' || role === 'opposition') return framed(30, swing(bearing(side, toward, 48, .16), -9), .45, 'none', .82, 1 - progress * .07)
   if (role === 'resolution') {
-    // The victor from its rear quarter, pulling away; a captured prize stays in frame.
-    return framed(loneVictor ? 20 : 32, swing(bearing(side, away, 35, loneVictor ? .12 : .26), 10), loneVictor ? .34 : .24, options.prize ? 'full' : 'none', .7, 1 + progress * .3)
+    // A low, slow push past the captured prize or the burning wreck in the
+    // foreground onto the victor; with neither, a low push on the victor.
+    const foreground = options.prize && target ? target : options.wreck
+    if (foreground && foreground.id !== subject.id) return overShoulder(foreground, subject, 22, .03, 1.15 - progress * .3)
+    return framed(24, swing(bearing(side, away, 35, .04), 10), .36, 'none', .7, 1.1 - progress * .2)
   }
   // Geography between a pair: side-on two-shot with both hulls whole, or a
   // scale shot from behind the small foreground hull onto a capital.

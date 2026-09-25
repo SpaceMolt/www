@@ -41,8 +41,9 @@ function random(seed: number) {
  * approach a limit, so long aftermaths cannot scatter recognizable pieces away. */
 export function sampleWreckFragment(fragment: WreckFragment, age: number, reducedMotion=false) {
   const seconds=Math.max(0,Number.isFinite(age)?age:0)*(reducedMotion?.25:1)
-  const travel=.38*(1-Math.exp(-seconds*.7))+.12*(1-Math.exp(-seconds*.055))
-  const turn=(1-Math.exp(-seconds*.11))*fragment.spin
+  // Pieces are thrown clear in the first seconds, then drift; both limits stay bounded.
+  const travel=.85*(1-Math.exp(-seconds*1.4))+.45*(1-Math.exp(-seconds*.06))
+  const turn=(1-Math.exp(-seconds*.35))*fragment.spin*2.4
   return {
     offset:fragment.drift.clone().multiplyScalar(travel),
     rotation:new THREE.Quaternion().setFromAxisAngle(fragment.axis,turn),
@@ -173,14 +174,14 @@ export function createShipWreckage(source: THREE.Group, seed: number): ShipWreck
       attribute vec3 wreckPivot; attribute vec3 wreckDrift; attribute vec4 wreckSpin;
       attribute vec2 wreckFinish; varying vec2 vWreckFinish;
       vec3 wreckRotate(vec3 p){
-        float angle=(1.-exp(-wreckAge*.11))*wreckSpin.w;
+        float angle=(1.-exp(-wreckAge*.35))*wreckSpin.w*2.4;
         float s=sin(angle),c=cos(angle);vec3 axis=wreckSpin.xyz;
         return p*c+cross(axis,p)*s+axis*dot(axis,p)*(1.-c);
       }`)
       .replace('#include <beginnormal_vertex>','#include <beginnormal_vertex>\nobjectNormal=wreckRotate(objectNormal);')
       .replace('#include <begin_vertex>',`#include <begin_vertex>
         vWreckFinish=wreckFinish;
-        float travel=.38*(1.-exp(-wreckAge*.7))+.12*(1.-exp(-wreckAge*.055));
+        float travel=.85*(1.-exp(-wreckAge*1.4))+.45*(1.-exp(-wreckAge*.06));
         transformed=wreckRotate(transformed-wreckPivot)+wreckPivot+wreckDrift*travel;`)
     shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nvarying vec2 vWreckFinish;')
       .replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nroughnessFactor=vWreckFinish.y;')

@@ -83,14 +83,15 @@ test('a monolithic hull is cut into distinct open sections rather than an intact
   } finally {wreck.dispose();disposeShip(ship)}
 })
 
-test('wreck animation and seeking are deterministic, slow after breakup and bounded at long ages',()=>{
+test('wreck animation and seeking are deterministic, thrown clear then slow, and bounded at long ages',()=>{
   const ship=createShip(resolveAppearance('Cruiser','outerrim'),19)
   const wreck=createShipWreckage(ship,93),again=createShipWreckage(ship,93)
   try {
     for(const key of Object.keys(wreck.mesh.geometry.attributes))expect(wreck.mesh.geometry.getAttribute(key).array).toEqual(again.mesh.geometry.getAttribute(key).array)
     for(const fragment of wreck.fragments) {
       const early=sampleWreckFragment(fragment,2),late=sampleWreckFragment(fragment,60),end=sampleWreckFragment(fragment,60000)
-      expect(end.offset.length()).toBeLessThanOrEqual(.5)
+      // Pieces are thrown clear of the hull, but never scatter beyond about a hull length.
+      expect(end.offset.length()).toBeLessThanOrEqual(1.3)
       expect(late.offset.distanceTo(end.offset)).toBeLessThan(.02)
       expect(sampleWreckFragment(fragment,61).offset.distanceTo(late.offset)).toBeLessThan(sampleWreckFragment(fragment,3).offset.distanceTo(early.offset))
       expect(sampleWreckFragment(fragment,2).offset.equals(early.offset)).toBe(true)

@@ -19,7 +19,8 @@ export function weaponVisual(cue: CinemaCue, age: number, from: Vector3, to: Vec
   const family=cue.weaponFamily ?? resolveWeaponFamily(cue.weaponName,cue.damageType)
   // The firing side's accent tints every family, so viewers can tell who shoots.
   const color=sideTint===undefined?getWeaponColor(family,cue.damageType):mixColor(getWeaponColor(family,cue.damageType),sideTint,.6)
-  const unit=Math.max(.35,Math.min(3,sourceSize*.012))
+  // Bolt scale follows the shooter but stays slimmer than small hulls.
+  const unit=Math.max(.25,Math.min(1.5,sourceSize*.007))
   const strength=cue.critical ? 1.3 : 1
   const direction=to.clone().sub(from), distance=direction.length()
   const side=new Vector3(-direction.z,0,direction.x).normalize()

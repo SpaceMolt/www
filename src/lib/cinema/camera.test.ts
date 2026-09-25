@@ -249,14 +249,16 @@ test('fire is an over-the-shoulder shot: shooter in the foreground, target whole
   }
 })
 
-test('a capital firing on a fighter is shot over the fighter toward the whole capital', () => {
+test('a capital firing on a fighter is a turret shot: its bow at the frame edge, the fighter readable downrange', () => {
   const capital = actor('a', 0, 363), fighter = actor('b', 700, 16)
   for (const aspect of [16 / 9, 2.2]) {
     const frame = sampleStoryCamera({ shot, time: 2, aspect, subject: capital, target: fighter, axisFrom: capital.position, axisTo: fighter.position })
     const camera = view(frame, aspect)
-    expect(frame.position.distanceTo(fighter.position)).toBeLessThan(frame.position.distanceTo(capital.position))
-    expect(whole(camera, capital)).toBe(true)
-    expect(centered(camera, fighter)).toBe(true)
+    expect(frame.position.distanceTo(capital.position)).toBeLessThan(frame.position.distanceTo(fighter.position))
+    expect(frame.position.distanceTo(capital.position)).toBeGreaterThan(capital.size * .3)
+    expect(whole(camera, fighter)).toBe(true)
+    expect(screenWidth(camera, fighter)).toBeGreaterThan(.03)
+    expect(centered(camera, { position: capital.position.clone().add(new Vector3(capital.size * .5 * .78 * .45 / .39, 0, 0)) }, 1)).toBe(true)
   }
 })
 

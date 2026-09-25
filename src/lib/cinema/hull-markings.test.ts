@@ -16,14 +16,14 @@ describe('painted hull names', () => {
     expect(hullMarkingText('e\u0301')).toBe('é')
     expect(hullMarkingText(' \u0001 ')).toBe('')
   })
-  test('names sit on both actual hull sides, upright and about a sixth of the hull long', () => {
+  test('names sit on both actual hull sides, upright and about a quarter of the hull long', () => {
     for (const worldSize of [16.2, 179, 362]) {
       const { model } = box()
       const placements = findHullMarkingPlacements(model, worldSize, 6)
       expect(placements).toHaveLength(2)
       for (const p of placements) {
         expect(Math.abs(p.position.z)).toBeCloseTo(.25 + .008 / worldSize, 5)
-        expect(p.width).toBeCloseTo(1 / 6, 3)
+        expect(p.width).toBeCloseTo(1 / 4, 3)
         expect(new THREE.Vector3(0, 1, 0).applyQuaternion(p.rotation).y).toBeCloseTo(1)
         expect(p.width / p.height).toBeCloseTo(6)
       }
@@ -85,7 +85,7 @@ test('paint owns a single texture and material, is lit, and disposes without lea
 test('lettering scales with the hull, so small craft and capitals both carry readable names', () => {
   for (const worldSize of [16.2, 362]) {
     const placement = findHullMarkingPlacements(box().model, worldSize, 6)[0]
-    expect(placement.width).toBeCloseTo(1 / 6, 3)
+    expect(placement.width).toBeCloseTo(1 / 4, 3)
     expect(placement.width).toBeLessThan(.34)
   }
 })

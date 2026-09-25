@@ -167,8 +167,8 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
 
   // Warm key from the visible star, a cold camera-opposed rim that separates
   // silhouettes from black space, and a faint cool fill for the shadow side.
-  scene.add(new THREE.HemisphereLight(0x8fa6c4, 0x07080d, .5))
-  const sun = new THREE.DirectionalLight(0xffd3a1, 5.2)
+  scene.add(new THREE.HemisphereLight(0x8fa6c4, 0x07080d, .16))
+  const sun = new THREE.DirectionalLight(0xffd3a1, 7)
   scene.add(sun); scene.add(sun.target)
   const starSeed = random(film.seed ^ 0x5f3759df), starAzimuth = starSeed() * Math.PI * 2
   const sunDirection = new THREE.Vector3(Math.cos(starAzimuth), .28 + starSeed() * .3, Math.sin(starAzimuth)).normalize()
@@ -177,7 +177,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   sun.shadow.camera.near=10;sun.shadow.camera.far=3000
   const rim = new THREE.DirectionalLight(0x86b8ff, 2.6)
   scene.add(rim); scene.add(rim.target)
-  const fill = new THREE.DirectionalLight(0x6f8fc0, .5)
+  const fill = new THREE.DirectionalLight(0x6f8fc0, .22)
   scene.add(fill); scene.add(fill.target)
   // A restrained stellar reflection field lets machined metal reveal its
   // roughness and tiny bevels without placing studio scenery in the battle.
@@ -193,7 +193,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   reflectionScene.add(reflectionShell)
   const pmrem = new THREE.PMREMGenerator(renderer)
   const reflectionMap = pmrem.fromScene(reflectionScene,.025,.1,50)
-  scene.environment=reflectionMap.texture; scene.environmentIntensity=.45
+  scene.environment=reflectionMap.texture; scene.environmentIntensity=.3
   pmrem.dispose();reflectionShell.geometry.dispose();reflectionMaterial.dispose()
   cleanups.push(()=>reflectionMap.dispose())
   const glow = glowTexture()
@@ -236,7 +236,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   const planetOffset = new THREE.Vector3(Math.cos(worldAzimuth), -.22 - worldSeed() * .25, Math.sin(worldAzimuth)).normalize().multiplyScalar(6400)
   const palettes = [[0x9a6b45,0xd9b58a,0x5a3524,0xffb27a],[0x3d5f86,0x9cc3e0,0x1d2c48,0x7fc4ff],[0x6b7f5a,0xc7b98f,0x2c3a2e,0x9fdcff],[0x7a4a6e,0xd6a0b8,0x3a2340,0xffa0d0],[0x8c8f96,0xd8dce2,0x44474d,0xb8d8ff]]
   const palette = palettes[Math.floor(worldSeed() * palettes.length)]
-  const planetRadius = 700 + worldSeed() * 650
+  const planetRadius = 380 + worldSeed() * 300
   const planetNoise = `float h(vec3 p){return fract(sin(dot(p,vec3(127.1,311.7,74.7)))*43758.5453);}
       float n(vec3 p){vec3 i=floor(p),f=fract(p); f=f*f*(3.-2.*f);return mix(mix(mix(h(i),h(i+vec3(1,0,0)),f.x),mix(h(i+vec3(0,1,0)),h(i+vec3(1,1,0)),f.x),f.y),mix(mix(h(i+vec3(0,0,1)),h(i+vec3(1,0,1)),f.x),mix(h(i+vec3(0,1,1)),h(i+vec3(1,1,1)),f.x),f.y),f.z);}
       float fb(vec3 p){float v=0.;float a=.5;for(int i=0;i<5;i++){v+=n(p)*a;p=p*2.03+1.7;a*=.5;}return v;}`
@@ -253,6 +253,8 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
       float nl=dot(n,light),lit=smoothstep(-.06,.45,nl);
       float rim=pow(1.-max(0.,dot(n,vV)),2.5);
       vec3 c=albedo*lit*.42+air*rim*smoothstep(-.25,.4,nl)*.6+albedo*.006;
+      // Distance haze: soften contrast toward the nebula so the world reads as far away.
+      c=mix(c,vec3(.03,.045,.07),.3);
       gl_FragColor=vec4(c,1.);}`,
   }))
   scene.add(planet)
@@ -361,6 +363,12 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     const burning=[...wreck.fragments].sort((a,b)=>b.count-a.count).slice(0,actor.size<40?2:actor.size<150?3:4)
     return {actor,wreck,burning}
   })
+  // A captured prize's lights switch to the captor's color.
+  const captorSide = new Map(film.cues.filter(cue => cue.kind === 'capture' && cue.to && cue.from).map(cue => [cue.to!, sideOf(cue.from)]))
+  const lightColor = (actor: Actor) => {
+    const side = actor.ship.fate === 'captured' && time >= actor.ship.end ? captorSide.get(actor.ship.id) : undefined
+    return side === undefined ? actor.color : sideColor.get(side) ?? actor.color
+  }
   const gunTracks = new Map<string, CinemaCue[][]>()
   const cueMount = new Map<string, number>(), suppressedGuns = new Set<string>()
   // Distant actors remain real participants, rendered with a bounded number of draw calls.
@@ -570,7 +578,10 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     const battlefieldAtStart=members.map(actor=>cameraBodyAt(actor.ship.id,shot.start)!)
     const dying=[shot.subject,shot.target].find(id=>{const end=lossAt.get(id??'');return end!==undefined && end>=shot.start-.2 && end<=shot.end})
     const prize=!!target && byId.get(target.id)?.ship.fate==='captured' && at>=byId.get(target.id)!.ship.end
-    return {shot,sequence,time:at,aspect:camera.aspect,subject,target,battlefield,battlefieldAtStart,axisFrom,axisTo,reduced,boarding:!!take && boardingTakes.has(take.id),dying,prize}
+    // The latest detailed hull destroyed before this shot ends, still burning as wreckage.
+    const lost=shot.role==='resolution' ? wrecks.map(entry=>entry.actor).filter(actor=>actor.ship.end<=shot.end && actor.ship.id!==subject.id).sort((a,b)=>b.ship.end-a.ship.end)[0] : undefined
+    const wreck=lost ? {id:lost.ship.id,size:lost.size*.7,side:lost.ship.sideIndex,position:new THREE.Vector3().copy(motionAt(lost,at))} : undefined
+    return {shot,sequence,time:at,aspect:camera.aspect,subject,target,battlefield,battlefieldAtStart,axisFrom,axisTo,reduced,boarding:!!take && boardingTakes.has(take.id),dying,prize,wreck}
   }
   const setResolution = () => {
     const width = canvas.clientWidth || 1280, height = canvas.clientHeight || 720
@@ -758,10 +769,11 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     cameraPosition.copy(frame.position);cameraTarget.copy(frame.target)
     camera.position.copy(frame.position);sky.position.copy(camera.position);stars.position.copy(camera.position);planet.position.copy(camera.position).add(planetOffset);atmosphere.position.copy(planet.position);solar.position.copy(camera.position).addScaledVector(sunDirection,7000);solarCore.position.copy(solar.position);camera.fov=frame.fov;camera.far=Math.max(14000,...battlefield.map(body=>camera.position.distanceTo(body.position)+body.size*2+500));camera.lookAt(frame.target);camera.updateProjectionMatrix()
     const shadowRadius=Math.max(90,subject.size*1.1)
-    // Key leans toward the camera's side of the star so visible faces stay lit.
+    // Hard side key from the star's side of frame, slightly from behind: one
+    // lit flank and a deep shadow side, not flat frontal light.
     camera.getWorldDirection(viewForward);viewRight.crossVectors(viewForward,up).normalize()
     const keySide=Math.sign(viewRight.dot(sunDirection))||1
-    keyDirection.copy(viewRight).multiplyScalar(keySide*.6).addScaledVector(viewForward,-.55).addScaledVector(up,.6).normalize().multiplyScalar(.5).addScaledVector(sunDirection,.5).normalize()
+    keyDirection.copy(viewRight).multiplyScalar(keySide*.85).addScaledVector(viewForward,.2).addScaledVector(up,.45).normalize().multiplyScalar(.6).addScaledVector(sunDirection,.4).normalize()
     sun.position.copy(subject.position).addScaledVector(keyDirection,1400);sun.target.position.copy(subject.position)
     rim.position.copy(subject.position).addScaledVector(viewForward,450).addScaledVector(up,300).addScaledVector(viewRight,-keySide*420);rim.target.position.copy(subject.position)
     fill.position.copy(subject.position).addScaledVector(viewForward,-500).addScaledVector(up,-250).addScaledVector(viewRight,-keySide*400);fill.target.position.copy(subject.position)
@@ -802,7 +814,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     let navCount = 0
     for (const actor of actors) {
       const bounds = actor.contactBounds
-      if (!actor.model?.visible || !bounds || navCount > navLights.length - 2 || (time >= actor.ship.end && ['destroyed','knocked_out','captured'].includes(actor.ship.fate))) continue
+      if (!actor.model?.visible || !bounds || navCount > navLights.length - 2 || (time >= actor.ship.end && ['destroyed','knocked_out'].includes(actor.ship.fate))) continue
       actor.model.updateMatrixWorld()
       for (const tip of [bounds.min.z, bounds.max.z]) {
         const phase = (time * .7 + (actor.seed % 1000) / 1000 + (tip > 0 ? .5 : 0)) % 1
@@ -810,7 +822,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
         light.position.set((bounds.min.x + bounds.max.x) * .5 / actor.size, bounds.max.y * .9 / actor.size, tip * 1.02 / actor.size)
         actor.model.localToWorld(light.position)
         light.scale.setScalar(Math.max(actor.size * .05, pixelAt(light.position) * 5) * (phase < .1 ? 1 : .45))
-        light.material.color.setHex(actor.color).multiplyScalar(phase < .1 ? 4 : 1.2)
+        light.material.color.setHex(lightColor(actor)).multiplyScalar(phase < .1 ? 4 : 1.2)
       }
     }
     for (let i = navCount; i < navLights.length; i++) navLights[i].visible = false
