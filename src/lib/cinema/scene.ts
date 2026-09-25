@@ -51,6 +51,7 @@ export interface CinemaController {
   setVolume: (volume: number) => void
   setQuality: (quality: CinemaQuality) => void
   setReducedMotion: (reduced: boolean) => void
+  capture: { frame: (seconds: number) => void; audio: (sampleRate?: number) => Promise<AudioBuffer> }
   dispose: () => void
 }
 
@@ -913,14 +914,35 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   function safeDraw() {
     try { draw() } catch (error) { playing = false; audio.setPlaying(false); options.onError?.(error instanceof Error ? error.message : 'The renderer stopped.') }
   }
-  const emitCues = (previous: number, current: number) => {
+  const emitCues = (previous: number, current: number, sink: (cue: typeof audioCues[number], pan: number) => void = (cue, pan) => audio.cue(cue, pan)) => {
     for (const cue of audioCueRange(audioCues, previous, current)) {
       if (cue.parentId) continue
       const actor = byId.get(cue.audioActorId ?? cue.from ?? cue.to ?? '')
       let pan = 0
       if (actor) { pointA.copy(actor.position).project(camera); pan = pointA.x }
-      audio.cue(cue, pan)
+      sink(cue, pan)
     }
+  }
+  // Development capture: step frames deterministically and render the matching
+  // soundtrack offline, so reviews can watch and listen to exactly what plays.
+  const captured: { cue: typeof audioCues[number]; pan: number }[] = []
+  const capturedIntensity: [number, number][] = []
+  const capture = {
+    frame(seconds: number) {
+      const previous = time
+      time = clamp(seconds, 0, film.duration)
+      draw()
+      capturedIntensity.push([time, film.shots.find(s => time >= s.start && time < s.end)?.intensity ?? 0.1])
+      if (time > previous) emitCues(previous, time, (cue, pan) => captured.push({ cue, pan }))
+      options.onTime?.(time)
+    },
+    async audio(sampleRate = 44100) {
+      const context = new OfflineAudioContext(2, Math.ceil((film.duration + 3) * sampleRate), sampleRate)
+      const offline = new CinemaAudio(context)
+      for (const [at, value] of capturedIntensity) offline.intensity(value, at, at)
+      for (const { cue, pan } of captured) offline.cue(cue, pan, cue.time)
+      return context.startRendering()
+    },
   }
   const loop = (now: number) => {
     if (disposed) return
@@ -960,6 +982,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     setVolume(value) { audio.setVolume(value) },
     setQuality(value) { requestedQuality = value; actualQuality = value === 'auto' ? initialCinemaQuality(canvas.clientWidth || window.innerWidth) : value; sampleFrames=0;sampleElapsed=0;qualityAge=0;setResolution(); safeDraw() },
     setReducedMotion(value) { reduced = value; safeDraw() },
+    capture,
     dispose() {
       if (disposed) return
       disposed = true

@@ -72,6 +72,7 @@ export default function CinemaPlayer({ film, appearances }: { film: CinemaFilm; 
         onEnd: () => { if (!disposed) { setPlaying(false); setEnded(true) } },
         onError: () => { if (!disposed) { setFailed(true); setPlaying(false); setReady(false) } },
       })
+      if (process.env.NODE_ENV === 'development') Object.assign(window, { __cinema: { film, controller: player.current } })
       if (!disposed) setReady(true)
     }).catch(() => { if (!disposed) { setFailed(true); setReady(false) } })
     return () => { disposed = true; player.current?.dispose(); player.current = null }

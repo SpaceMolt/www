@@ -84,10 +84,17 @@ export class CinemaAudio {
   private volume = 0.65
   private playing = false
   private chord = -1
+  private offline: BaseAudioContext | null
+
+  /** An offline context renders the whole film at scheduled times (development capture). */
+  constructor(offline?: BaseAudioContext) {
+    this.offline = offline ?? null
+    if (offline) { this.muted = false; this.playing = true; this.initialize(); this.updateGain() }
+  }
 
   private initialize() {
-    if (this.context || typeof AudioContext === 'undefined') return
-    const ctx = this.context = new AudioContext()
+    if (this.context || (!this.offline && typeof AudioContext === 'undefined')) return
+    const ctx = this.context = (this.offline ?? new AudioContext()) as AudioContext
     const compressor = ctx.createDynamicsCompressor()
     compressor.threshold.value = -18
     compressor.ratio.value = 5
@@ -144,31 +151,32 @@ export class CinemaAudio {
     if (this.master && this.context) this.master.gain.setTargetAtTime(this.playing && !this.muted ? this.volume * 0.6 : 0, this.context.currentTime, 0.08)
   }
 
-  intensity(value: number, time: number) {
+  intensity(value: number, time: number, at?: number) {
     if (!this.context || !this.bed) return
+    const now = at ?? this.context.currentTime
     value = bounded(value, 0, 1)
     time = Number.isFinite(time) ? Math.max(0, time) : 0
     const chord = Math.floor(time / 22) % 4
     if (chord !== this.chord) {
       this.chord = chord
       const harmony = [[36.71,55,73.42,87.31,110],[32.7,49,65.4,82.41,98],[43.65,65.4,87.31,110,130.81],[36.71,55,73.42,98,110]][chord]
-      this.continuous.forEach((osc,index)=>osc.frequency.setTargetAtTime(harmony[index],this.context!.currentTime,2.5))
+      this.continuous.forEach((osc,index)=>osc.frequency.setTargetAtTime(harmony[index],now,2.5))
     }
-    this.bed.gain.setTargetAtTime(0.026 + value * 0.027 + Math.sin(time * 0.32) * 0.008, this.context.currentTime, 0.5)
+    this.bed.gain.setTargetAtTime(0.026 + value * 0.027 + Math.sin(time * 0.32) * 0.008, now, 0.5)
   }
 
-  cue(cue: CinemaAudioCue, pan = 0) {
+  cue(cue: CinemaAudioCue, pan = 0, at?: number) {
     const ctx = this.context
     if (!ctx || !this.master || !this.noise || !this.playing || this.muted) return
     const weapon = cue.kind === 'weapon'
     const contact = weapon && (cue.audioPhase === 'contact' || cue.secondaryKind === 'retaliation' || /galvanic hull grid/i.test(cue.weaponName ?? ''))
     const profile = contact ? eventSounds.contact : weapon ? weaponSound(cue, cue.weaponFamily ?? resolveWeaponFamily(cue.weaponName, cue.damageType)) : eventSounds[cue.kind]
     if (!profile) return
-    const now = ctx.currentTime
+    const now = at ?? ctx.currentTime
     const explosion = cue.kind === 'death'
     const impact = cue.kind === 'knockout' || cue.kind === 'capture'
     const priority = explosion || impact ? 2 : cue.audioPhase === 'impact' || cue.audioPhase === 'shield-impact' || contact ? 1 : 0
-    if (this.voices.size >= 24) {
+    if (!this.offline && this.voices.size >= 24) {
       // Hits may replace launches; only decisive events may replace a loss.
       const replaced = [...this.voices].filter(source => priority === 2 || (this.voicePriority.get(source) ?? 0) < priority).slice(0, 2)
       if (replaced.length < 2) return
