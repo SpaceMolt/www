@@ -138,7 +138,7 @@ export function applyShipSurface<T extends THREE.MeshStandardMaterial>(material:
   const empireRoughness = crimsonPaint ? .14 : options.empire === 'outerrim' ? .13 : options.empire === 'crimson' ? .025 : options.empire === 'nebula' && !gold ? -.035 : 0
   material.roughness = THREE.MathUtils.clamp(base[0] + empireRoughness + (options.pirate ? .09 : 0), .2, .85)
   material.metalness = base[1]
-  const density = THREE.MathUtils.clamp(Number.isFinite(options.density) ? options.density! : 1, .25, 4)
+  const density = THREE.MathUtils.clamp(Number.isFinite(options.density) ? options.density! : 1, .25, 12)
   const worldSize = THREE.MathUtils.clamp(Number.isFinite(options.worldSize) ? options.worldSize! : 32, 16, 400)
   const previousCompile = material.onBeforeCompile, previousKey = material.customProgramCacheKey()
   material.customProgramCacheKey = () => `${previousKey}|cinema-surface-atlas-v1`

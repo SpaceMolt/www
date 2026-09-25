@@ -8,14 +8,16 @@ const options: ShipMotionOptions = { size: 36, angle: 0, lane: 0, sideCount: 1, 
 const distance = (a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }) => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z)
 
 describe('cinema ship choreography', () => {
-  it('holds a fixed formation and heading when the record holds one zone', () => {
+  it('holds station with only a small seeded sway when the record holds one zone', () => {
     const actor = ship({ motion: [{ time: 0, position: 1 }, { time: 90, position: 1 }] })
     const early = sampleShipMotion(actor, 5, options)
     const late = sampleShipMotion(actor, 35, options)
-    expect(late).toEqual(early)
-    expect(early.yaw).toBe(Math.PI)
-    expect(early.bank).toBe(0)
-    expect(early.retroThrust).toBe(0)
+    expect(distance(early, late)).toBeLessThan(options.size * .15)
+    for (const frame of [early, late]) {
+      expect(Math.abs(frame.yaw - Math.PI)).toBeLessThan(.06)
+      expect(Math.abs(frame.bank)).toBeLessThan(.07)
+      expect(frame.retroThrust).toBe(0)
+    }
   })
 
   it('reconstructs the same path on backward seeks and independent calls', () => {
@@ -23,7 +25,6 @@ describe('cinema ship choreography', () => {
     const first = sampleShipMotion(actor, 27.3, options)
     for (const time of [80, 0, 55, 3, 27.3]) sampleShipMotion(actor, time, options)
     expect(sampleShipMotion(actor, 27.3, options)).toEqual(first)
-    expect(sampleShipMotion(actor, 27.3, { ...options, seed: options.seed + 500 })).toEqual(first)
   })
 
   it('keeps all combat ships parallel to their side axis regardless of lane or size', () => {
@@ -31,8 +32,8 @@ describe('cinema ship choreography', () => {
       for (const size of [20, 260]) {
         for (let lane = 0; lane < 12; lane++) {
           const frame = sampleShipMotion(ship(), 25, { ...options, angle, size, lane, sideCount: 12 })
-          expect(frame.yaw).toBeCloseTo(Math.PI - angle)
-          expect(frame.bank).toBe(0)
+          expect(Math.abs(frame.yaw - (Math.PI - angle))).toBeLessThan(.06)
+          expect(Math.abs(frame.bank)).toBeLessThan(.07)
         }
       }
     }
@@ -110,10 +111,11 @@ describe('cinema ship choreography', () => {
     const lane = { ...options, angle: .7, lane: 5, sideCount: 12 }
     const early = sampleShipMotion(left, 5, lane)
     const late = sampleShipMotion(left, 50, lane)
-    expect(early.y).toBe(late.y)
-    expect(-Math.sin(lane.angle) * early.x + Math.cos(lane.angle) * early.z)
-      .toBeCloseTo(-Math.sin(lane.angle) * late.x + Math.cos(lane.angle) * late.z)
-    expect(early.yaw).toBe(late.yaw)
+    // The lane holds within the sway: no drift across lanes or rows.
+    expect(Math.abs(early.y - late.y)).toBeLessThan(lane.size * .1)
+    expect(Math.abs((-Math.sin(lane.angle) * early.x + Math.cos(lane.angle) * early.z) -
+      (-Math.sin(lane.angle) * late.x + Math.cos(lane.angle) * late.z))).toBeLessThan(lane.size * .1)
+    expect(Math.abs(early.yaw - late.yaw)).toBeLessThan(.1)
   })
 
   it('continues recorded momentum through fate without adding gravity or roll', () => {
@@ -124,7 +126,7 @@ describe('cinema ship choreography', () => {
       const after = sampleShipMotion(actor, 20.001, options)
       expect(distance(before, at)).toBeLessThan(0.1)
       expect(distance(at, after)).toBeLessThan(0.1)
-      expect(distance(before, at)).toBeCloseTo(distance(at, after), 4)
+      expect(distance(before, at)).toBeCloseTo(distance(at, after), 2)
       expect(at.thrust).toBe(0)
       expect(at.retroThrust).toBe(0)
       expect(sampleShipMotion(actor, 25, options).retroThrust).toBe(0)
@@ -178,12 +180,12 @@ describe('cinema ship choreography', () => {
         { ...options, angle, lane: 8, sideCount: 12, formation: { lateral: 310, depth: 90, elevation: 42 } }))
       expect(Math.cos(frames[0].yaw - frames[1].yaw)).toBeCloseTo(-1)
       for (const frame of frames) {
-        expect(frame.y).toBe(42)
-        expect(frame.bank).toBe(0)
+        expect(Math.abs(frame.y - 42)).toBeLessThan(options.size * .1 + 90 * .08)
+        expect(Math.abs(frame.bank)).toBeLessThan(.07)
         expect(time < 10 ? frame.thrust : frame.retroThrust).toBeGreaterThan(.1)
       }
-      expect(frames[0].yaw).toBe(Math.PI)
-      expect(frames[1].yaw).toBe(0)
+      expect(Math.abs(frames[0].yaw - Math.PI)).toBeLessThan(.06)
+      expect(Math.abs(frames[1].yaw)).toBeLessThan(.06)
     }
   })
 

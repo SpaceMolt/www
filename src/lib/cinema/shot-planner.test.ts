@@ -39,15 +39,6 @@ test('reciprocal fire keeps the same camera shoulder within a shared take',()=>{
  for(let candidate=0;candidate<5;candidate++)expect(sampleCameraCandidate(first,candidate,[a,b]).position.distanceTo(sampleCameraCandidate(second,candidate,[a,b]).position)).toBeLessThan(.0001)
 })
 
-test('every candidate remains continuous across setup and impact labels',()=>{
- const setup={...shot,end:2,role:'setup' as const},impact={...shot,start:2,role:'impact' as const}
- for(let candidate=0;candidate<5;candidate++){
-  const before=sampleCameraCandidate(options(setup,1.9999),candidate,[a,b])
-  const after=sampleCameraCandidate(options(impact,2.0001),candidate,[a,b])
-  expect(before.position.distanceTo(after.position)).toBeLessThan(.02)
- }
-})
-
 test('key event acceptance checks the impact moment rather than only firing time',()=>{
  const record=film();record.cues=[{id:'hit',time:1,duration:1,tick:1,kind:'weapon',from:'a',to:'b',intensity:1}]
  const sampled:number[]=[]

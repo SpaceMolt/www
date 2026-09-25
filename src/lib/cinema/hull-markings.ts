@@ -88,7 +88,8 @@ export function findHullMarkingPlacements(model: THREE.Group, worldSize: number,
   // Keep familiar lettering on small craft, but use the free panel area of a
   // capital instead of treating its registration as a person-sized fitting.
   const legacyHeight = Math.min(Math.max(.35, Math.min(1.4, worldSize * .015)) / worldSize, size.y * .10)
-  const desiredHeight = Math.min(Math.max(legacyHeight * worldSize, Math.min(8, (worldSize - 60) * .025)) / worldSize, size.y * .25)
+  // Lettering spans about a sixth of the hull length, so it reads in a close pass.
+  const desiredHeight = Math.min(size.x / (6 * aspect), size.y * .3)
   const heights = [...new Set([desiredHeight, desiredHeight * .75, desiredHeight * .5, desiredHeight * .25, legacyHeight]
     .map(height => Math.min(Math.max(height, legacyHeight), size.x * .34 / aspect)))].sort((a, b) => b - a)
   if (!heights.length || heights[0] * worldSize < .15) return []
@@ -170,7 +171,8 @@ export function addHullMarkings(model: THREE.Group, options: HullMarkingOptions)
   const texture = new THREE.CanvasTexture(canvas)
   texture.colorSpace = THREE.SRGBColorSpace
   texture.anisotropy = 4
-  const material = new THREE.MeshStandardMaterial({ map: texture, transparent: true, opacity: .8, alphaTest: .08, metalness: .08, roughness: .88, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 })
+  // A faint self-glow keeps the name legible on the shadowed flank.
+  const material = new THREE.MeshStandardMaterial({ map: texture, emissiveMap: texture, emissive: 0xffffff, emissiveIntensity: .18, transparent: true, opacity: .9, alphaTest: .08, metalness: .08, roughness: .88, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 })
   material.addEventListener('dispose', () => texture.dispose())
   for (const placement of placements) {
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(placement.width, placement.height), material)

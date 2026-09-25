@@ -88,7 +88,6 @@ function fleeTurn(ship: CinemaShip, time: number): number {
 export function sampleShipMotion(ship: CinemaShip, time: number, options: ShipMotionOptions): ShipMotion {
   const { size, angle, lane, sideCount, spacing, depth } = options
   const formation = options.formation ?? balancedFormationSlot(lane, sideCount, spacing, depth)
-  const slot = formation.lateral
   // The compiled formation carries an exact shared sector offset. Standalone
   // motion callers use a conservative footprint estimate with the same offset
   // for every member, rather than clamping rows together at a sector boundary.
@@ -101,8 +100,12 @@ export function sampleShipMotion(ship: CinemaShip, time: number, options: ShipMo
   const zoneSpan = clamp(depth * 0.4, 65, 200)
   // Row spacing covers the entire zone excursion and hull length.
   // Zone changes cannot send a rear row through the row ahead of it.
-  const rowDepth = formation.depth
-  const height = formation.elevation
+  // Organic formation: a shallow wedge (outer lanes trail the center) with
+  // seeded depth and height jitter well inside the lane clearance.
+  const jitter = (salt: number) => (Math.imul((options.seed ^ salt) >>> 0, 2654435761) >>> 0) / 4294967296 - .5
+  const rowDepth = formation.depth + Math.min(Math.abs(formation.lateral) * .25, depth * .45) + jitter(0x51) * Math.min(spacing, depth) * .2
+  const height = formation.elevation + jitter(0x73) * spacing * .15
+  const slot = formation.lateral + jitter(0x2b) * spacing * .1
 
   const position = (at: number) => {
     const progress = sampleMotionProgress(ship, at)
@@ -134,8 +137,14 @@ export function sampleShipMotion(ship: CinemaShip, time: number, options: ShipMo
   // A recorded flee stance alone turns the bow and its main drive outward.
   const inwardYaw = Math.PI - angle
   const flee = fleeTurn(ship, sampledAt)
-  const yaw = inwardYaw + Math.PI * flee
-  const bank = 0
+  // Live hulls hold station loosely: slow seeded sway, heading wander and banking.
+  const phase = (options.seed % 1000) / 159
+  const yaw = inwardYaw + Math.PI * flee + Math.sin(sampledAt * .23 + phase) * .05
+  const bank = Math.sin(sampledAt * .29 + phase * 1.7) * .06
+  // Sway freezes at fate with the rest of the pose, so momentum stays continuous.
+  base.x += Math.sin(sampledAt * .41 + phase) * size * .035
+  base.y += Math.sin(sampledAt * .33 + phase * 2.3) * size * .04
+  base.z += Math.cos(sampledAt * .37 + phase * 1.3) * size * .035
   const after = Math.max(0, time - ship.end)
   const inwardVelocity = -(velocity.x * Math.cos(angle) + velocity.z * Math.sin(angle))
   const reversing = inwardVelocity < -.1
