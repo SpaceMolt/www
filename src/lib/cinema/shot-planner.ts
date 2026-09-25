@@ -1,5 +1,5 @@
 import { Euler, Quaternion, Vector3 } from 'three'
-import { keepCameraOutsideBodies, sampleStoryCamera, type CameraBody, type StoryCameraFrame, type StoryCameraOptions } from './camera'
+import { hullCorners, keepCameraOutsideBodies, sampleStoryCamera, type CameraBody, type StoryCameraFrame, type StoryCameraOptions } from './camera'
 import type { CinemaCue, CinemaFilm, CinemaShot } from './types'
 
 export type ShotGoal = 'establish' | 'scale' | 'exchange' | 'contact' | 'outcome'
@@ -27,7 +27,13 @@ export function sampleCameraCandidate(options: StoryCameraOptions, candidate: nu
   }
   const variant = variants[candidate] ?? variants[0]
   const broadside = variant.broadside && !options.boarding && !options.shot.battlefield
-  const frame = sampleStoryCamera(broadside ? { ...options, sequence: undefined, shot: { ...options.shot, start: options.sequence?.start ?? options.shot.start, end: options.sequence?.end ?? options.shot.end, role: 'geography' } } : options)
+  if (!options.boarding && !options.shot.battlefield) {
+    // Composed shots take the variant as a bearing change, so framing is refitted.
+    const frame = sampleStoryCamera({ ...(broadside ? { ...options, shot: { ...options.shot, role: 'geography' as const } } : options), variant })
+    keepCameraOutsideBodies(frame.position, bodies)
+    return frame
+  }
+  const frame = sampleStoryCamera(options)
   const offset = frame.position.clone().sub(frame.target)
   const length = offset.length()
   offset.applyAxisAngle(new Vector3(0, 1, 0), variant.angle).multiplyScalar(variant.distance)
@@ -35,16 +41,6 @@ export function sampleCameraCandidate(options: StoryCameraOptions, candidate: nu
   frame.position.copy(frame.target).add(offset)
   keepCameraOutsideBodies(frame.position, bodies)
   return frame
-}
-
-function corners(body: CameraBody): Vector3[] {
-  const bounds = body.contactHull
-  const rotation = bounds ? new Quaternion().setFromEuler(new Euler(bounds.bank, bounds.yaw, 0, 'YXZ')) : new Quaternion()
-  const min = bounds?.min ?? new Vector3(-body.size * .5, -body.size * .2, -body.size * .3)
-  const max = bounds?.max ?? min.clone().negate()
-  const result: Vector3[] = []
-  for (const x of [min.x,max.x]) for (const y of [min.y,max.y]) for (const z of [min.z,max.z]) result.push(new Vector3(x,y,z).applyQuaternion(rotation).add(body.position))
-  return result
 }
 
 /** Hull-local slab test; a capital's empty bounding sphere is not an occluder. */
@@ -72,7 +68,7 @@ export function measureShotVisibility(frame: StoryCameraFrame, aspect: number, b
   const up=new Vector3().crossVectors(right,forward).normalize()
   const vertical=Math.tan(frame.fov*Math.PI/360), horizontal=vertical*Math.max(.2,aspect)
   let left=Infinity,bottom=Infinity,top=-Infinity,rightmost=-Infinity,behind=false
-  for(const corner of corners(body)){
+  for(const corner of hullCorners(body)){
     corner.sub(frame.position);const depth=corner.dot(forward)
     if(depth<=.01){behind=true;continue}
     const x=corner.dot(right)/(depth*horizontal),y=corner.dot(up)/(depth*vertical)
@@ -169,12 +165,11 @@ export function buildShotPlan(film: CinemaFilm, input: ShotPlannerInput): ShotPl
           const newDirection=frame.position.clone().sub(frame.target).normalize()
           const angle=Math.acos(Math.max(-1,Math.min(1,oldDirection.dot(newDirection))))
                     const travel=previous.frame.position.distanceTo(frame.position)/Math.max(1,previous.frame.position.distanceTo(previous.frame.target),frame.position.distanceTo(frame.target))
-          score-=travel*10
-          score-=angle*(previous.pair===pair?12:4)
-          // Short edits must earn a camera change. Recorded consequences can
-          // justify a new composition; ordinary exchanges favor a held setup.
-          if(goal==='exchange')score-=angle*Math.max(0,3-(closing.end-opening.start))*8
-          if(previous.pair===pair&&previous.candidate===candidate)score+=10
+          // Cuts are cheap: a new composition per beat keeps the film alive.
+          // Only a small preference remains for continuity of the same pair.
+          score-=travel*2
+          score-=angle*(previous.pair===pair?3:1)
+          if(previous.pair===pair&&previous.candidate===candidate)score+=2
           if(previous.pair!==pair&&previous.candidate===candidate&&previous.repeats>2)score-=Math.min(6,previous.repeats)
         }
       }

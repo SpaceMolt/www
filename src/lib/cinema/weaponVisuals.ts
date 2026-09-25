@@ -8,14 +8,16 @@ export interface WeaponRing { position: Vector3; radius: number; color: number; 
 export interface WeaponProjectile { position: Vector3; direction: Vector3; size: number; color: number }
 export interface WeaponVisualFrame { lines: WeaponLine[]; glows: WeaponGlow[]; rings: WeaponRing[]; projectiles: WeaponProjectile[] }
 const clamp = (value: number) => Math.max(0,Math.min(1,value))
+export const mixColor = (a: number, b: number, t: number) => [16,8,0].reduce((out,shift)=>out|Math.round(((a>>shift)&255)*(1-t)+((b>>shift)&255)*t)<<shift,0)
 
 /** Bounded, deterministic choreography. Misses use the caller's off-hull endpoint. */
-export function weaponVisual(cue: CinemaCue, age: number, from: Vector3, to: Vector3, sourceSize: number, targetSize: number, reduced = false, collateralOrigin?: Vector3): WeaponVisualFrame {
+export function weaponVisual(cue: CinemaCue, age: number, from: Vector3, to: Vector3, sourceSize: number, targetSize: number, reduced = false, collateralOrigin?: Vector3, sideTint?: number): WeaponVisualFrame {
   const frame: WeaponVisualFrame = {lines:[],glows:[],rings:[],projectiles:[]}
   const travel=Math.max(.015,cue.duration), impact=age-travel
   if(age<0 || impact>1.2)return frame
   const family=cue.weaponFamily ?? resolveWeaponFamily(cue.weaponName,cue.damageType)
-  const color=getWeaponColor(family,cue.damageType)
+  // The firing side's accent tints every family, so viewers can tell who shoots.
+  const color=sideTint===undefined?getWeaponColor(family,cue.damageType):mixColor(getWeaponColor(family,cue.damageType),sideTint,.6)
   const unit=Math.max(.35,Math.min(3,sourceSize*.012))
   const strength=cue.critical ? 1.3 : 1
   const direction=to.clone().sub(from), distance=direction.length()
@@ -51,6 +53,12 @@ export function weaponVisual(cue: CinemaCue, age: number, from: Vector3, to: Vec
 
   if(age<travel){
     const p=clamp(age/travel)
+    // Muzzle flash at the source: a white-hot core inside the weapon color.
+    if(age<.22&&family!=='mine'&&family!=='smartbomb'){
+      const flash=1-age/.22
+      glow(from,Math.max(unit*12,sourceSize*.14)*(.6+flash*.4),flash)
+      glow(from,Math.max(unit*5,sourceSize*.05),flash,0xffffff)
+    }
     if(family==='missile'||family==='torpedo'){
       const heavy=family==='torpedo', count=reduced||heavy?1:3
       for(let i=0;i<count;i++){
@@ -117,8 +125,8 @@ export function weaponVisual(cue: CinemaCue, age: number, from: Vector3, to: Vec
     }else{
       const beam=family==='beam', pulse=reduced?1:.55+.45*Math.pow(Math.sin(age*(beam?7:24)),2)
       const head=along(p), tail=beam?from:along(Math.max(0,p-.32))
-      line(tail,head,unit*(beam?.9:.36)*pulse)
-      line(tail,head,unit*(beam?.22:.09),0xebfdff)
+      line(tail,head,unit*(beam?.36:.36)*pulse)
+      line(tail,head,unit*(beam?.1:.09),0xebfdff)
       glow(from,unit*(beam?10:5),.4*pulse)
     }
   }else if(cue.hit){
