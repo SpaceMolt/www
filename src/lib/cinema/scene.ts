@@ -1008,7 +1008,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
         const effectColor = death ? 0xffa058 : cue.kind === 'capture' ? 0x8cf1cd : 0x8acbff
         const knockout = cue.kind === 'knockout'
         // Flashes never exceed about an eighth of the frame height, however close the camera is.
-        const flashCap = pixelAt(destination.position) * (canvas.clientHeight || 720) / 3
+        const flashCap = pixelAt(destination.position) * (canvas.clientHeight || 720) / 4
         // Knockouts leave an intact unpowered hull; destruction breaks into fragments.
         if (!death && age < 3.8) {
           addFlash(destination.position, Math.min(radius * (1.2 + age * .6), flashCap * 2), effectColor, Math.exp(-age * 1.3) * (knockout ? .7 : .4), knockout ? 2 : 1.2)
@@ -1021,7 +1021,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
           const r = random(seed ^ 0x9e3779b9), heat = [0xffa04a, 0xffc978, 0xff7036, 0xffb060][seed % 4]
           const pops = radius < 40 ? 2 : radius < 150 ? 4 : 6
           if (age < .12) addFlash(destination.position, Math.min(radius * .9, flashCap), 0xffffff, 1 - age / .12, 3)
-          if (age < 1.2) addFlash(destination.position, Math.min(radius * .45, flashCap), heat, (1 - age / 1.2) * .35, 1.4)
+          if (age < 1) addFlash(destination.position, Math.min(radius * .4, flashCap * .8), heat, (1 - age) * .22, 1.3)
           for (let lobe = 0; lobe <= pops; lobe++) {
             // Lobe 0 is the main blast; the rest are secondary pops across the hull.
             const at = lobe ? .18 + r() * (radius < 150 ? 1.1 : 1.8) : 0, lobeAge = age - at
@@ -1037,13 +1037,13 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
             if (lobe && lobeAge < .08) addFlash(ball.position, Math.min(size * 1.4, flashCap * .5), 0xffffff, 1 - lobeAge / .08, 2.2)
           }
         }
-        if (!reduced && age < 1.4 && (!death || radius >= 40) && blastRingCount < blastRings.length) {
+        if (!reduced && age < 1.4 && (!death || radius >= 150) && blastRingCount < blastRings.length) {
           const ring = blastRings[blastRingCount++]; ring.visible = true; ring.position.copy(destination.position)
           // Face the camera, tilted a little: a spherical blast front, not a planetary ring.
           ring.quaternion.copy(camera.quaternion).multiply(pointQuaternion.setFromEuler(new THREE.Euler((seed % 5 - 2) * .15, (seed % 3 - 1) * .2, 0)))
           ring.scale.setScalar(radius * (.4 + age * (death ? 1.6 : 1.2)))
           ring.material.uniforms.color.value.setHex(death ? 0xffc890 : effectColor)
-          ring.material.uniforms.opacity.value = Math.pow(1 - age / 1.4, 2) * .3
+          ring.material.uniforms.opacity.value = Math.pow(1 - age / 1.4, 2) * .22
         }
         // Knockouts keep their electrical identity; only captures light a shell.
         if (cue.kind === 'capture' && shieldCount < shields.length && age < 3.2) {

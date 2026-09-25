@@ -88,7 +88,6 @@ function fleeTurn(ship: CinemaShip, time: number): number {
 export function sampleShipMotion(ship: CinemaShip, time: number, options: ShipMotionOptions): ShipMotion {
   const { size, angle, lane, sideCount, spacing, depth } = options
   const formation = options.formation ?? balancedFormationSlot(lane, sideCount, spacing, depth)
-  const slot = formation.lateral
   // The compiled formation carries an exact shared sector offset. Standalone
   // motion callers use a conservative footprint estimate with the same offset
   // for every member, rather than clamping rows together at a sector boundary.
@@ -106,6 +105,7 @@ export function sampleShipMotion(ship: CinemaShip, time: number, options: ShipMo
   const jitter = (salt: number) => (Math.imul((options.seed ^ salt) >>> 0, 2654435761) >>> 0) / 4294967296 - .5
   const rowDepth = formation.depth + Math.min(Math.abs(formation.lateral) * .25, depth * .45) + jitter(0x51) * Math.min(spacing, depth) * .2
   const height = formation.elevation + jitter(0x73) * spacing * .15
+  const slot = formation.lateral + jitter(0x2b) * spacing * .1
 
   const position = (at: number) => {
     const progress = sampleMotionProgress(ship, at)
