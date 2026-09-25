@@ -121,6 +121,7 @@ function editSegments(entries: BattleLogEntry[]): { segments: CinemaSourceSegmen
   const classes = new Map<string, string>()
   const drama = entries.map(() => 0)
   const arrivals = entries.map(() => 0)
+  const arrivingSides = entries.map(() => new Set<number>())
   const losses: { victims: string[]; loserSide: boolean }[] = entries.map(() => ({ victims: [], loserSide: false }))
   const terminal = entries.at(-1)?.battle_ended
   const doomed = new Set(entries.flatMap(entry => [...(entry.kills ?? []).map(kill => kill.victim_id),
@@ -138,6 +139,7 @@ function editSegments(entries: BattleLogEntry[]): { segments: CinemaSourceSegmen
       if (!present.has(snap.player_id) && index > 0) {
         appearance = true
         arrivals[index]++
+        arrivingSides[index].add(snap.side_id)
         if (!knownSides.has(snap.side_id)) newSide = true
       }
       const previous = snapshots.get(snap.player_id)
@@ -155,7 +157,10 @@ function editSegments(entries: BattleLogEntry[]): { segments: CinemaSourceSegmen
       present.add(snap.player_id)
     }
     for (const join of entry.joins ?? []) {
-      if (!present.has(join.player_id) && index > 0 && !entry.snapshots.some(snap => snap.player_id === join.player_id)) arrivals[index]++
+      if (!present.has(join.player_id) && index > 0 && !entry.snapshots.some(snap => snap.player_id === join.player_id)) {
+        arrivals[index]++
+        arrivingSides[index].add(join.side_id)
+      }
       present.add(join.player_id)
       sides.set(join.player_id, join.side_id)
     }
@@ -232,6 +237,7 @@ function editSegments(entries: BattleLogEntry[]): { segments: CinemaSourceSegmen
   const featured = new Set([...ranked.slice(0, Math.min(5, featuredCount)), ...(first !== undefined && !meaningful.has(first) ? [first] : [])])
   // Plain exchanges make a short montage; recorded losses already carry a long fight.
   const montage = new Set(ranked.filter(index => !featured.has(index)).slice(0, Math.max(2, 6 - Math.floor(outcomeList.length / 2))))
+  const shownSides = new Set<number>()
   entries.forEach((entry, index) => {
     const acting = action.includes(index)
     if (!outcomes.has(index)) {
@@ -241,9 +247,12 @@ function editSegments(entries: BattleLogEntry[]): { segments: CinemaSourceSegmen
       edit[index].action = Math.min(2.5, durations[index])
     }
     // Arrivals get their own moment before the tick's action.
+    // A side's later waves are shown briefly: the audience already knows them.
     if (arrivals[index]) {
-      edit[index].lead = arrivals[index] >= 4 ? 1.6 : 1.2
+      const known = [...arrivingSides[index]].every(side => shownSides.has(side))
+      edit[index].lead = known ? .8 : arrivals[index] >= 4 ? 1.6 : 1.2
       durations[index] += edit[index].lead
+      for (const side of arrivingSides[index]) shownSides.add(side)
     }
   })
   // Repetitive health/stance changes are also an edited montage. Keep their
@@ -530,9 +539,15 @@ function directShots(film: CinemaFilm, entries: BattleLogEntry[], edit: TickEdit
       const wide = ids.length > 3 ? Math.max(0, span - Math.min(1.3, span * .45)) : 0
       let count = Math.min(ids.length, ids.length > 3 ? 1 : 3)
       while (count > 1 && (span - wide) / count < .9) count--
-      const each = (span - wide) / count
-      for (let shot = 0; shot < count; shot++) result.push({...common,start:from+shot*each,end:shot === count - 1 && !wide ? end : from+(shot+1)*each,
-        kind:'impact',role:'impact',subject:ids[shot],focusIds,actionTime:shot ? beat.time : beat.impactTime})
+      // The climax ends on its decisive victim: simultaneous losses come first,
+      // briefly, and the decisive one keeps the rest of the hold.
+      const climax = beat === decisive && count > 1
+      const order = climax ? [...ids.slice(1, count), ids[0]] : ids.slice(0, count)
+      const lead = climax ? Math.min(Math.max(.9, beat.time + .6 - from), (span - .9 * (count - 1)) / 2) : (span - wide) / count
+      const bounds = Array.from({ length: count + 1 }, (_, shot) => shot === count && !wide ? end :
+        from + (climax ? (shot ? lead + (shot - 1) * .9 : 0) : shot * lead))
+      for (let shot = 0; shot < count; shot++) result.push({...common,start:bounds[shot],end:bounds[shot + 1],
+        kind:'impact',role:'impact',subject:order[shot],focusIds,actionTime:shot ? beat.time : beat.impactTime})
       if (wide > 0) result.push({...common,start:end-wide,end,kind:'impact',role:'impact',battlefield:true,subject:ids[0],focusIds,actionTime:beat.time})
     }
     if (beat.cause?.kind === 'boarding') {

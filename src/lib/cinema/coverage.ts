@@ -65,7 +65,7 @@ export function addBattlefieldCoverage(film: CinemaFilm): CinemaShot[] {
     const latest = beat.kind === 'impact' ? beat.time : preferred + 8
     // Keep every selected muzzle readable. An area attack's impact is itself
     // the reason for its master shot, so only that impact may replace a closeup.
-    const protectedSpans: Interval[] = film.shots.filter(shot => ['fire', 'introduction', 'arrival'].includes(shot.role ?? '') || shot.battlefield).map(shot => ({ start: shot.start, end: shot.end }))
+    const protectedSpans: Interval[] = film.shots.filter(shot => ['fire', 'introduction', 'arrival', 'resolution'].includes(shot.role ?? '') || shot.battlefield).map(shot => ({ start: shot.start, end: shot.end }))
     for (const sequence of film.story?.sequences ?? []) {
       const end = Math.max(sequence.impactTime, sequence.consequenceTime ?? sequence.impactTime) + 2.4
       const areaImpact = beat.kind === 'impact' && beat.time >= sequence.impactTime - 1.5 && beat.time <= end
