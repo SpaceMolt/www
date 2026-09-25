@@ -1089,7 +1089,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
             sparks.setMatrixAt(sparkCount, dummy.matrix); sparks.setColorAt(sparkCount++, tint.setHex(age < 1.3 ? 0xffc280 : age < 2.6 ? 0xd75625 : 0x42464d))
           }
         }
-        if (cue.id === pulseCue?.id && !reduced) { pulseLight.position.copy(destination.position); pulseLight.color.setHex(effectColor); pulseLight.intensity = radius * radius * 30 * Math.exp(-age * 2.5); pulseLight.distance = radius * 8 }
+        if (cue.id === pulseCue?.id && !reduced) { pulseLight.position.copy(destination.position); pulseLight.color.setHex(effectColor); pulseLight.intensity = radius * radius * (death ? 30 : 8) * Math.exp(-age * 2.5); pulseLight.distance = radius * (death ? 8 : 4) }
       } else if (cue.kind === 'repair' && age < cue.duration) {
         const progress=age/Math.max(.01,cue.duration), wave=Math.sin(progress*Math.PI), repairColor=cue.repairKind==='shield'?0x70cbe6:0x70e6b4
         const center=destination.position.clone();center.y+=destination.size*(progress-.5)*.45
