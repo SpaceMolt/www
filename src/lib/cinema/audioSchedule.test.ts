@@ -54,18 +54,22 @@ describe('cinema audio choreography', () => {
     expect(JSON.stringify(source)).toBe(before)
   })
 
-  it('staggers simultaneous losses and rolls a massed loss off as one distant cascade', () => {
-    const losses: CinemaCue[] = Array.from({ length: 40 }, (_, i) => ({ id: `ko:${i}`, kind: 'knockout', time: 5, duration: 1, tick: 3, to: `s${i}`, intensity: 1 }))
+  it('staggers simultaneous losses and spreads a mass loss into a wide cascade of pops', () => {
+    const losses: CinemaCue[] = Array.from({ length: 100 }, (_, i) => ({ id: `ko:${i}`, kind: 'knockout', time: 5, duration: 1, tick: 3, to: `s${i}`, intensity: 1 }))
     const schedule = buildAudioSchedule(losses)
-    expect(schedule).toHaveLength(12)
-    const times = schedule.map(cue => cue.time)
-    for (let i = 1; i < times.length; i++) expect(times[i] - times[i - 1]).toBeGreaterThan(.1)
-    expect(times.at(-1)! - times[0]).toBeLessThan(4)
-    expect(schedule[0].audioMass).toBe(40)
-    expect(schedule.slice(4).every(cue => cue.audioDistant)).toBe(true)
+    expect(schedule).toHaveLength(52)
+    expect(schedule[0].audioMass).toBe(100)
+    const pops = schedule.filter(cue => cue.audioCascade)
+    expect(pops).toHaveLength(48)
+    expect(pops.every(cue => cue.audioDistant)).toBe(true)
+    const times = pops.map(cue => cue.time)
+    expect(Math.min(...times) - 5).toBeGreaterThan(.5)
+    expect(Math.max(...times) - Math.min(...times)).toBeGreaterThan(3)
+    expect(Math.max(...times) - 5).toBeLessThan(6)
     const pair = buildAudioSchedule(losses.slice(0, 2))
     expect(pair[1].time - pair[0].time).toBeGreaterThanOrEqual(.15)
     expect(pair[1].time - pair[0].time).toBeLessThanOrEqual(.3)
+    expect(pair.some(cue => cue.audioCascade)).toBe(false)
   })
 
   it('hears the shot\'s featured ships up close and keeps a massed battle to a few transients per moment', () => {
@@ -82,6 +86,8 @@ describe('cinema audio choreography', () => {
 
   it('starts a warp-in riser before the arrival and climbs grapple pitch through one boarding operation', () => {
     expect(buildAudioSchedule([{ id: 'w', kind: 'arrival', time: 4, duration: 1, tick: 1, to: 'c', intensity: .5 }])[0].time).toBeCloseTo(4 - ARRIVAL_LEAD)
+    const waves = buildAudioSchedule([4, 4, 4, 9].map((time, i): CinemaCue => ({ id: `w${i}`, kind: 'arrival', time, duration: 1, tick: 1, to: `c${i}`, intensity: .5 })))
+    expect(waves.map(cue => [cue.audioMass ?? 1, cue.audioStep])).toEqual([[3, 0], [1, 1]])
     const boarding = [1, 2, 3].map((time): CinemaCue => ({ id: `b${time}`, kind: 'boarding', time, duration: 1, tick: time, from: 'a', to: 'b', operationId: 'op', boardingPhase: 'approach', intensity: .5 }))
     expect(buildAudioSchedule(boarding).map(cue => cue.audioStep)).toEqual([0, 1, 2])
   })

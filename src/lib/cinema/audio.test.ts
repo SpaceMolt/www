@@ -191,7 +191,7 @@ describe('cinema audio engine', () => {
 
   it('lets the final chord ring out when the film reaches its end, until the next seek', () => {
     const { audio, context } = started()
-    audio.update(11.9)
+    audio.update(9.5)
     audio.update(12)
     audio.setPlaying(false)
     expect(context.transients.length).toBeGreaterThan(0)
@@ -234,12 +234,12 @@ describe('cinema audio engine', () => {
 
   it('bounds concurrent effects and lets a loss interrupt a saturated volley', () => {
     const { audio, context } = started()
-    for (let i = 0; i < 60; i++) audio.cue({ ...weapon, id: String(i) })
-    expect(context.transients.filter(source => !source.ended)).toHaveLength(32)
+    for (let i = 0; i < 80; i++) audio.cue({ ...weapon, id: String(i) })
+    expect(context.transients.filter(source => !source.ended)).toHaveLength(48)
     audio.cue(death)
-    expect(context.transients.filter(source => !source.ended)).toHaveLength(32)
+    expect(context.transients.filter(source => !source.ended)).toHaveLength(48)
     expect(context.transients.at(-1)!.ended).toBe(false)
-    for (let i = 0; i < 40; i++) audio.cue({ ...death, id: `d${i}` })
+    for (let i = 0; i < 60; i++) audio.cue({ ...death, id: `d${i}` })
     const before = context.transients.length
     audio.cue({ ...weapon, id: 'late' })
     expect(context.transients).toHaveLength(before)

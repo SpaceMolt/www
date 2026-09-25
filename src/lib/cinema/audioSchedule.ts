@@ -10,8 +10,10 @@ export interface CinemaAudioCue extends CinemaCue {
   audioDistant?: boolean
   /** Losses sharing one moment; the first carries a cascade sized by the count. */
   audioMass?: number
-  /** Ordinal of a boarding cue within its operation; grapples climb in pitch. */
+  /** Ordinal of a boarding cue within its operation (grapples climb) or of an arrival wave (later waves are shorter). */
   audioStep?: number
+  /** One pop in the wide cascade that follows a mass loss. */
+  audioCascade?: boolean
 }
 
 const explosive = ['missile', 'torpedo', 'plasma', 'mine', 'smartbomb', 'flak']
@@ -43,8 +45,12 @@ export function buildAudioSchedule(cues: readonly CinemaCue[], shots: readonly C
     if (cue.kind !== 'weapon') {
       const time = cue.kind === 'arrival' ? Math.max(0, cue.time - ARRIVAL_LEAD) : cue.time
       const operation = cue.operationId ?? `${cue.from}:${cue.to}`
-      const audioStep = cue.kind === 'boarding' ? steps.get(operation) ?? 0 : undefined
-      if (audioStep !== undefined) steps.set(operation, audioStep + 1)
+      const key = cue.kind === 'arrival' ? 'arrival' : operation
+      const previous = schedule.findLast(other => other.kind === 'arrival')
+      // Ships warping in together are one wave: one sound sized by the wave.
+      if (cue.kind === 'arrival' && previous && time - previous.time < .3) { previous.audioMass = (previous.audioMass ?? 1) + 1; continue }
+      const audioStep = cue.kind === 'boarding' || cue.kind === 'arrival' ? steps.get(key) ?? 0 : undefined
+      if (audioStep !== undefined) steps.set(key, audioStep + 1)
       schedule.push({ ...cue, time, audioActorId: cue.to ?? cue.from, audioDistant: !featured(cue, cue.time), audioStep })
       continue
     }
@@ -75,18 +81,20 @@ export function buildAudioSchedule(cues: readonly CinemaCue[], shots: readonly C
   }
   schedule.push(...impacts.values())
 
-  // Simultaneous losses: the first few are staggered and heard in full, the
-  // rest roll off into the distance as one cascade instead of stacking.
+  // Simultaneous losses: the first few are staggered and heard in full. A mass
+  // loss then spreads into a wide cascade of small, separately pitched pops.
   lost.sort((a, b) => a.time - b.time || a.id.localeCompare(b.id))
   for (let i = 0; i < lost.length;) {
     let j = i
     while (j < lost.length && lost[j].time - lost[i].time < .12) j++
     const group = lost.slice(i, j).sort((a, b) => Number(featured(b, b.time)) - Number(featured(a, a.time)) || b.intensity - a.intensity || a.id.localeCompare(b.id))
+    const mass = group.length >= 8, heard = group.slice(0, mass ? 52 : 12), spread = Math.min(4.5, 1.5 + .04 * group.length)
     let offset = 0
-    group.slice(0, 12).forEach((cue, k) => {
+    heard.forEach((cue, k) => {
       const r = hashString(cue.id) / 4294967296
-      if (k) offset += k < 4 ? .15 + .15 * r : Math.min(.35, 2.2 / Math.max(1, Math.min(group.length, 12) - 4)) * (.6 + .8 * r)
-      schedule.push({ ...cue, time: cue.time + offset, audioActorId: cue.to ?? cue.from, audioDistant: k >= 4 || !featured(cue, cue.time), audioMass: k ? undefined : group.length })
+      if (mass && k >= 4) offset = .9 + spread * ((k - 4 + r) / (heard.length - 4)) ** 1.5
+      else if (k) offset += k < 4 ? .15 + .15 * r : Math.min(.35, 2.2 / Math.max(1, heard.length - 4)) * (.6 + .8 * r)
+      schedule.push({ ...cue, time: cue.time + offset, audioActorId: cue.to ?? cue.from, audioDistant: k >= 4 || !featured(cue, cue.time), audioMass: k ? undefined : group.length, audioCascade: mass && k >= 4 ? true : undefined })
     })
     i = j
   }

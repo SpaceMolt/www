@@ -58,7 +58,7 @@ describe('cinema score', () => {
 
   it('resolves to fit the outcome', () => {
     const final = (f: CinemaFilm) => { const notes = composeScore(f); return notes.filter(note => note.instrument === 'pad').at(-1)! }
-    const third = (f: CinemaFilm) => { const pad = final(f), low = Math.min(...pad.pitches); return pad.pitches.map(p => (p - low) % 12) }
+    const majorTriad = (f: CinemaFilm) => { const classes = new Set(final(f).pitches.map(p => p % 12)); return [...classes].some(p => classes.has((p + 4) % 12) && classes.has((p + 7) % 12)) }
     expect(filmResolution(film())).toBe('victory')
     expect(filmResolution(film({ winningSide: 1 }))).toBe('defeat')
     expect(filmResolution(film({ ships: [ship('hero', 2, 'destroyed'), ship('foe', 1, 'destroyed')] }))).toBe('mutual')
@@ -66,8 +66,8 @@ describe('cinema score', () => {
     const captured = film({ cues: [...film().cues.slice(0, 1), { id: 'loss', time: 11, duration: 1, tick: 2, kind: 'capture', from: 'hero', to: 'foe', intensity: 1 }] })
     expect(filmResolution(captured)).toBe('capture')
     // A major tonic ends a victory; a defeat stays minor.
-    expect(third(film()).some(interval => interval === 4)).toBe(true)
-    expect(third(film({ winningSide: 1 })).some(interval => interval === 4)).toBe(false)
+    expect(majorTriad(film())).toBe(true)
+    expect(majorTriad(film({ winningSide: 1 }))).toBe(false)
     expect(composeScore(captured).filter(note => note.instrument === 'horn' && note.time > 12).length).toBeGreaterThanOrEqual(5)
   })
 

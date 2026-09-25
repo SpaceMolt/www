@@ -8,8 +8,8 @@ import { impulseResponse, renderCue, renderNote, seeded, type Sound } from './sy
 const LOOKAHEAD = .35
 /** Events are requested from the render worker this far ahead. */
 const PREPARE = 3
-const MAX_VOICES = 32
-const STINGS = new Set<ScoreNote['instrument']>(['hit', 'swell', 'riser'])
+const MAX_VOICES = 48
+const STINGS = new Set<ScoreNote['instrument']>(['hit', 'swell', 'riser', 'fanfare'])
 const bounded = (value: number, low: number, high: number, fallback = low) => Number.isFinite(value) ? Math.max(low, Math.min(high, value)) : fallback
 
 /**
@@ -69,7 +69,7 @@ export class CinemaAudio {
     for (const note of this.score) if (note.instrument === 'drop') this.dip(note, note.time)
     else this.playNote(note, renderNote(note, offline.sampleRate), note.time)
     this.density.forEach((_, i) => this.bed(i * .25, i * .25))
-    this.amb?.gain.setTargetAtTime(0, film.duration, 1)
+    this.amb?.gain.setTargetAtTime(0, Math.max(0, film.duration - 2.5), .7)
   }
 
   private initialize() {
@@ -84,22 +84,26 @@ export class CinemaAudio {
     } catch { this.worker = null }
     const gain = (value: number, to?: AudioNode) => { const node = ctx.createGain(); node.gain.value = value; if (to) node.connect(to); return node }
     const out = this.out = gain(0, ctx.destination)
-    // Soft clip at -1 dBFS after the limiter catches what its attack lets through.
+    // Soft clip at -1.9 dBFS (true peak under -1 dBTP) after the limiter catches what its attack lets through.
     const clip = ctx.createWaveShaper()
     const curve = new Float32Array(2048)
-    for (let i = 0; i < curve.length; i++) { const x = i / 1023.5 - 1, a = Math.abs(x); curve[i] = Math.sign(x) * (a < .7 ? a : .7 + .19 * Math.tanh((a - .7) / .19)) }
+    for (let i = 0; i < curve.length; i++) { const x = i / 1023.5 - 1, a = Math.abs(x); curve[i] = Math.sign(x) * (a < .6 ? a : .6 + .2 * Math.tanh((a - .6) / .2)) }
     clip.curve = curve
-    clip.connect(out)
+    // Band-limit around the clipper so its corners do not overshoot between samples.
+    const smooth = ctx.createBiquadFilter()
+    smooth.type = 'lowpass'; smooth.frequency.value = 15000
+    clip.connect(smooth).connect(out)
     const limiter = ctx.createDynamicsCompressor()
     limiter.threshold.value = -4.5; limiter.knee.value = 0; limiter.ratio.value = 20; limiter.attack.value = .001; limiter.release.value = .12
     limiter.connect(clip)
     const glue = ctx.createDynamicsCompressor()
     glue.threshold.value = -16; glue.knee.value = 8; glue.ratio.value = 2.5; glue.attack.value = .01; glue.release.value = .3
     glue.connect(limiter)
-    const highpass = ctx.createBiquadFilter()
+    const highpass = ctx.createBiquadFilter(), band = ctx.createBiquadFilter()
     highpass.type = 'highpass'; highpass.frequency.value = 30
-    highpass.connect(glue)
-    const master = gain(.55, highpass)
+    band.type = 'lowpass'; band.frequency.value = 15000
+    highpass.connect(band).connect(glue)
+    const master = gain(.45, highpass)
     const verb = (seconds: number, seed: number) => {
       const convolver = ctx.createConvolver(), [l, r] = impulseResponse(ctx.sampleRate, seconds, seed)
       const ir = ctx.createBuffer(2, l.length, ctx.sampleRate)
@@ -179,7 +183,7 @@ export class CinemaAudio {
     if (this.out && this.context) this.out.gain.setTargetAtTime((this.playing || this.ending) && !this.muted ? (this.offline ? 1 : this.volume) : 0, this.context.currentTime, 0.08)
   }
 
-  private play(sound: Sound, at: number, bus: AudioNode, pan = 0, offset = 0) {
+  private play(sound: Sound, at: number, bus: AudioNode, pan = 0, offset = 0, level = 1) {
     const ctx = this.context!
     const buffer = ctx.createBuffer(2, sound.l.length, sound.rate)
     buffer.getChannelData(0).set(sound.l); buffer.getChannelData(1).set(sound.r)
@@ -187,14 +191,16 @@ export class CinemaAudio {
     source.buffer = buffer
     const panner = ctx.createStereoPanner()
     panner.pan.value = pan
-    source.connect(panner).connect(bus)
+    const trim = ctx.createGain()
+    trim.gain.value = level
+    source.connect(trim).connect(panner).connect(bus)
     const sends = ([[sound.short, this.shortIn], [sound.long, this.longIn]] as const).filter(([level]) => level > 0).map(([level, input]) => {
       const send = ctx.createGain()
       send.gain.value = level
       panner.connect(send).connect(input!)
       return send
     })
-    source.onended = () => { this.voices.delete(source); this.notes.delete(source); source.disconnect(); panner.disconnect(); for (const send of sends) send.disconnect() }
+    source.onended = () => { this.voices.delete(source); this.notes.delete(source); source.disconnect(); trim.disconnect(); panner.disconnect(); for (const send of sends) send.disconnect() }
     source.start(at, offset)
     return source
   }
@@ -208,7 +214,7 @@ export class CinemaAudio {
     const end = at + note.duration, music = this.drop?.gain, sfx = this.sfx?.gain
     music?.setTargetAtTime(.03, at, .06)
     music?.setTargetAtTime(1, end, .004)
-    sfx?.setTargetAtTime(.3, Math.max(at, end - .6), .12)
+    sfx?.setTargetAtTime(.15, Math.max(at, end - 1), .12)
     sfx?.setTargetAtTime(1, end, .004)
   }
 
@@ -250,6 +256,8 @@ export class CinemaAudio {
     }
     while (this.done.has(this.next)) this.next++
     this.bed(this.time, now)
+    // Ambience fades out with the score before the picture ends.
+    this.amb?.gain.setTargetAtTime(this.time > this.film.duration - 2.5 ? 0 : 1, now, .7)
   }
 
   private duckMusic(at: number, [level, hold, release]: [number, number, number]) {
@@ -269,7 +277,7 @@ export class CinemaAudio {
     const when = at ?? Math.max(now, this.anchored ? this.anchor + cue.time : now)
     const sound = this.take(`c${cue.id}`, () => renderCue(cue, ctx.sampleRate, this.sizes[cue.to ?? ''] ?? 0, this.film.seed))
     if (!sound) return
-    const priority = cue.kind === 'death' || cue.kind === 'knockout' || cue.kind === 'capture' ? 3
+    const priority = cue.audioCascade ? 0 : cue.kind === 'death' || cue.kind === 'knockout' || cue.kind === 'capture' ? 3
       : cue.audioPhase === 'impact' || cue.audioPhase === 'shield-impact' || cue.audioPhase === 'contact' ? 2 : cue.audioDistant ? 0 : 1
     if (!this.offline && this.voices.size >= MAX_VOICES) {
       // Hits may replace launches; only decisive events may replace a loss.
@@ -280,10 +288,11 @@ export class CinemaAudio {
     }
     const start = Math.max(this.offline ? 0 : now, when - sound.lead)
     if (sound.duck) this.duckMusic(start + sound.lead, sound.duck)
-    // A nearby loss plays on its own bus; the rest of the effects step back under it.
-    const featuredLoss = priority === 3 && !cue.audioDistant
-    if (featuredLoss) { this.sfx.gain.setTargetAtTime(.5, start + sound.lead, .01); this.sfx.gain.setTargetAtTime(1, start + sound.lead + .7, .2) }
-    this.voices.set(this.play(sound, start, featuredLoss ? this.loss! : this.sfx, bounded(pan, -.85, .85, 0) * (cue.kind === 'death' ? .6 : 1), Math.max(0, start - (when - sound.lead))), priority)
+    // Losses play on their own bus and the rest of the effects step back under
+    // them; the story's decisive loss is the biggest sound in the film.
+    const loss = priority === 3, climax = cue.id === this.film.story?.climaxCueId
+    if (loss) { this.sfx.gain.setTargetAtTime(cue.audioDistant ? .6 : .4, start + sound.lead, .01); this.sfx.gain.setTargetAtTime(1, start + sound.lead + 1.2, .3) }
+    this.voices.set(this.play(sound, start, loss ? this.loss! : this.sfx, bounded(pan, -.85, .85, 0) * (cue.kind === 'death' ? .6 : 1), Math.max(0, start - (when - sound.lead)), climax ? 10 ** (6 / 20) : loss ? 10 ** (-3.5 / 20) : 1), priority)
   }
 
   clear() {

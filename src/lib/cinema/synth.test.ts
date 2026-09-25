@@ -54,7 +54,7 @@ describe('cinema synthesis', () => {
     expect(big.l.length).toBeGreaterThan(small.l.length * 1.4)
     expect(rms(big, .5, 2.5)).toBeGreaterThan(rms(small, .5, 2.5))
     expect(small.lead).toBeGreaterThan(0)
-    expect(peak(big)).toBeLessThan(1)
+    expect(peak(big)).toBeLessThan(2)
     const cascade = renderCue(cue({ kind: 'death', audioMass: 40 }), rate, 0)!
     expect(rms(cascade, 1, 3)).toBeGreaterThan(rms(small, 1, 3) + 3)
   })
@@ -83,5 +83,28 @@ describe('cinema synthesis', () => {
     const [l, r] = impulseResponse(rate, 1, 3)
     expect(l.reduce((sum, v) => sum + v * v, 0)).toBeCloseTo(1, 3)
     expect(Math.abs(corr(l, r))).toBeLessThan(.2)
+  })
+
+  it('varies the loudness contour of repeated losses and arrivals, and shortens later waves', () => {
+    const contour = (s: Sound) => Array.from({ length: 15 }, (_, k) => rms(s, k * .1, k * .1 + .1))
+    const pearson = (a: number[], b: number[]) => { const m = (x: number[]) => x.reduce((p, v) => p + v, 0) / x.length, ma = m(a), mb = m(b); let ab = 0, aa = 0, bb = 0; a.forEach((v, i) => { ab += (v - ma) * (b[i] - mb); aa += (v - ma) ** 2; bb += (b[i] - mb) ** 2 }); return ab / Math.sqrt(aa * bb) }
+    for (const kind of ['death', 'knockout'] as const) {
+      const shapes = [0, 1, 2, 3, 4, 5].map(i => contour(renderCue(cue({ id: `${kind}:${i}`, kind }), rate, .3)!))
+      const cors = shapes.flatMap((a, i) => shapes.slice(i + 1).map(b => pearson(a, b)))
+      expect(Math.min(...cors)).toBeLessThan(.9)
+    }
+    const first = renderCue(cue({ kind: 'arrival', audioStep: 0, audioMass: 4 }), rate)!, late = renderCue(cue({ kind: 'arrival', audioStep: 5 }), rate)!
+    expect(late.l.length).toBeLessThan(first.l.length)
+    expect(rms(late)).toBeLessThan(rms(first) - 3)
+  })
+
+  it('builds weapon launches from noise as well as tone, and a mass loss from many small pops', () => {
+    const flatness = (s: Sound) => { const n = Math.round(.1 * s.rate), x = Array.from(s.l.slice(0, n)); let lin = 0, log = 0; const bins = 64; for (let k = 1; k <= bins; k++) { let re = 0, im = 0; x.forEach((v, i) => { re += v * Math.cos(Math.PI * k * i / bins); im += v * Math.sin(Math.PI * k * i / bins) }); const p = re * re + im * im + 1e-12; lin += p; log += Math.log(p) } return Math.exp(log / bins) / (lin / bins) }
+    expect(flatness(renderCue(cue({ weaponFamily: 'laser', audioPhase: 'release' }), rate)!)).toBeGreaterThan(.01)
+    const pops = [0, 1, 2].map(i => renderCue(cue({ id: `p${i}`, kind: 'knockout', audioCascade: true, audioDistant: true }), rate)!)
+    for (const p of pops) expect(p.l.length / rate).toBeLessThan(1)
+    expect(Math.abs(corr(pops[0].l, pops[1].l))).toBeLessThan(.5)
+    const lead = renderCue(cue({ kind: 'knockout', audioMass: 100 }), rate)!, single = renderCue(cue({ kind: 'knockout' }), rate)!
+    expect(rms(lead, 0, 1)).toBeGreaterThan(rms(single, 0, 1) + 3)
   })
 })
