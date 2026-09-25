@@ -154,7 +154,7 @@ export const FAUCET_LABELS: Record<Exclude<keyof EconomyFaucets, 'total'>, strin
 }
 
 export const SINK_LABELS: Record<Exclude<keyof EconomySinks, 'total'>, string> = {
-  shipbuilding: 'Shipbuilding labor',
+  shipbuilding: 'Forfeited ship labor',
   labor: 'Facility labor',
   station_facilities: 'Station facility builds',
   station_founding: 'Station founding',
