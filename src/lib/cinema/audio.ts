@@ -29,6 +29,7 @@ export class CinemaAudio {
   private context: AudioContext | null = null
   private out: GainNode | null = null
   private sfx: GainNode | null = null
+  private loss: GainNode | null = null
   private music: GainNode | null = null
   private duck: GainNode | null = null
   private drop: GainNode | null = null
@@ -65,8 +66,9 @@ export class CinemaAudio {
     this.score = composeScore(film)
     this.schedule = buildAudioSchedule(film.cues, film.shots)
     this.sizes = Object.fromEntries(film.ships.map(ship => [ship.id, hullSize(film, appearances, ship.id)]))
-    // Massed-battle bed: weapon activity per quarter second, smoothed over two seconds.
-    for (let t = 0; t <= film.duration + .25; t += .25) this.density.push(film.cues.filter(cue => cue.kind === 'weapon' && Math.abs(cue.time - t) < 1).length / 2)
+    // Massed-battle bed: weapon activity over two seconds plus the ships still fighting.
+    for (let t = 0; t <= film.duration + .25; t += .25) this.density.push(film.cues.filter(cue => cue.kind === 'weapon' && Math.abs(cue.time - t) < 1).length / 2
+      + .15 * film.ships.filter(ship => ship.start <= t && t < ship.end).length)
     this.offline = offline ?? null
     if (!offline) return
     this.muted = false; this.playing = true
@@ -97,7 +99,7 @@ export class CinemaAudio {
     clip.curve = curve
     clip.connect(out)
     const limiter = ctx.createDynamicsCompressor()
-    limiter.threshold.value = -3; limiter.knee.value = 0; limiter.ratio.value = 20; limiter.attack.value = .001; limiter.release.value = .12
+    limiter.threshold.value = -4.5; limiter.knee.value = 0; limiter.ratio.value = 20; limiter.attack.value = .001; limiter.release.value = .12
     limiter.connect(clip)
     const glue = ctx.createDynamicsCompressor()
     glue.threshold.value = -16; glue.knee.value = 8; glue.ratio.value = 2.5; glue.attack.value = .01; glue.release.value = .3
@@ -120,6 +122,7 @@ export class CinemaAudio {
     this.shortIn = verb(.6, 11)
     this.longIn = verb(4, 23)
     this.sfx = gain(1, master)
+    this.loss = gain(1, master)
     const music = this.music = gain(.4, master)
     music.connect(gain(.22, this.longIn))
     this.drop = gain(1, music)
@@ -285,7 +288,10 @@ export class CinemaAudio {
     }
     const start = Math.max(this.offline ? 0 : now, when - sound.lead)
     if (sound.duck) this.duckMusic(start + sound.lead, sound.duck)
-    this.voices.set(this.play(sound, start, this.sfx, bounded(pan, -.85, .85, 0) * (cue.kind === 'death' ? .6 : 1), Math.max(0, start - (when - sound.lead))), priority)
+    // A nearby loss plays on its own bus; the rest of the effects step back under it.
+    const featuredLoss = priority === 3 && !cue.audioDistant
+    if (featuredLoss) { this.sfx.gain.setTargetAtTime(.5, start + sound.lead, .01); this.sfx.gain.setTargetAtTime(1, start + sound.lead + .7, .2) }
+    this.voices.set(this.play(sound, start, featuredLoss ? this.loss! : this.sfx, bounded(pan, -.85, .85, 0) * (cue.kind === 'death' ? .6 : 1), Math.max(0, start - (when - sound.lead))), priority)
   }
 
   clear() {

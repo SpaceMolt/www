@@ -57,7 +57,7 @@ export function filmResolution(film: CinemaFilm): Resolution {
 export function composeScore(film: CinemaFilm): ScoreNote[] {
   const r = seeded(film.seed ^ 0x5eed5)
   const pick = <T>(list: readonly T[]) => list[Math.floor(r() * list.length)]
-  const mode = pick(MODES), motif = pick(MOTIFS), progression = pick(PROGRESSIONS), pattern = pick(PATTERNS)
+  const mode = pick(MODES), motif = pick(MOTIFS), progression = pick(PROGRESSIONS), patternIndex = Math.floor(r() * PATTERNS.length)
   const setupVoice = pick(['bell', 'horn', 'tick'] as const), silentDrop = r() < .5
   const root = 36 + Math.floor(r() * 12), bpm = 104 + Math.floor(r() * 8) * 5
   const beat = 60 / bpm, bar = beat * 4, end = film.duration
@@ -87,7 +87,9 @@ export function composeScore(film: CinemaFilm): ScoreNote[] {
   const heroSide = film.ships.find(ship => ship.id === film.story?.protagonistId)?.sideId
   const shotIntensity = (t: number) => film.shots.find(shot => t >= shot.start && t < shot.end)?.intensity ?? .1
   const reversal = film.story?.sequences.find(sequence => sequence.kind === 'reversal' && sequence.start < cut)?.start ?? Infinity
-  const lift = (t: number) => t >= reversal ? 2 : 0
+  // Long passages get form: eight-bar sections, breakdowns, and a lift into the final third.
+  const long = cut - action > 16 * bar
+  const lift = (t: number) => t >= reversal || (long && t >= action + (cut - action) * 2 / 3) ? 2 : 0
 
   // Reinforcements: one stab per arrival wave, and each wave raises the energy.
   const waves: { time: number; friendly: boolean }[] = []
@@ -128,7 +130,9 @@ export function composeScore(film: CinemaFilm): ScoreNote[] {
   const onBeat = (t: number) => grid + Math.ceil((t - grid) / beat - 1e-6) * beat
   const statements = [action, ...(film.story?.sequences ?? []).filter(sequence => sequence.kind === 'confrontation' || sequence.kind === 'reversal').map(sequence => sequence.start)]
   for (let barIndex = 0, start = grid; start < cut - 1e-6; barIndex++, start += bar) {
-    const E = energy(start + bar / 2), chord = triad(progression[barIndex % progression.length]).map(p => p + lift(start))
+    const section = long ? Math.floor(barIndex / 8) : 0, pattern = PATTERNS[(patternIndex + section) % PATTERNS.length]
+    const breakdown = section % 2 === 1 && barIndex % 8 < 4
+    const E = Math.min(breakdown ? .4 : 1, energy(start + bar / 2)), chord = triad(progression[(barIndex + section) % progression.length]).map(p => p + lift(start))
     const tones = [chord[0], chord[2] > chord[0] + 7 ? chord[0] + 7 : chord[2], chord[0] + 12, chord[1]]
     const barEnd = Math.min(start + bar, cut)
     if (barEnd > action) note(Math.max(start, action), barEnd - Math.max(start, action), 'pad', voiced(chord), .25 + .35 * E)
@@ -176,6 +180,7 @@ export function composeScore(film: CinemaFilm): ScoreNote[] {
   const major = resolution === 'victory' || resolution === 'capture'
   const scale = major ? MAJOR : mode
   const back = climax + (end - climax > 3 * bar ? bar : 2 * beat)
+  const pattern = PATTERNS[patternIndex]
   const final = Math.max(back, climax + bar * Math.floor((end - 1.5 * bar - climax) / bar))
   const route = { victory: [5, 6], capture: [3, 4], defeat: [3, 5], mutual: [5, 3], stalemate: [5, 3] }[resolution]
   for (let barIndex = 0, start = back; start < final - 1e-6; barIndex++, start += bar) {

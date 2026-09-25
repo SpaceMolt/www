@@ -261,9 +261,9 @@ function hit(cue: CinemaAudioCue, family: CinemaWeaponFamily, rate: number, r: R
 /** Ship loss in stages; size 0 (fighter) to 1 (capital/station). */
 function death(size: number, rate: number, r: Rng): Sound {
   const len = 3 + size * 2, lead = .07, o = blank(rate, len + .2, lead)
-  const g = .35 + .15 * size
+  const g = .42 + .18 * size
   burst(o, 0, lead, 0, .12 * g, r, t => 800 + 6000 * t / lead, 2, t => (t / lead) ** 3)
-  burst(o, lead, .02, 0, .7 * g, r, () => 7000, 2, t => ad(t, .0002, .004))
+  burst(o, lead, .02, 0, .5 * g, r, () => 7000, 2, t => ad(t, .0002, .004))
   thump(o, lead, (70 - size * 15) * (.85 + .3 * r()), 26 + r() * 8, (.9 + size * .8) * (.8 + .4 * r()), (.55 + size * .6) * (.8 + .4 * r()), .7 * g)
   const body = brown(r), bodyLp = svf(rate), bodyLen = 1.4 + size * 1.4, pitch = .8 + r() * .4
   add(o, lead, bodyLen * 1.6, (r() - .5) * .3, .75 * g, t => bodyLp(body(), 3000 * pitch * Math.exp(-t * 2.2 / bodyLen) + 180, .9, 0) * ad(t, .006, bodyLen / 3))

@@ -170,15 +170,31 @@ prove an effect occurred. Unknown remote repair sources never acquire invented
 beams. These are short cinematic accents, not representations of mechanical
 status durations or exact hardpoint positions.
 
-`audio.ts` synthesizes the score and effects locally through Web Audio. It creates
-or resumes its context from the Play gesture, limits transient voices, and
-cancels existing sources on pause, seek and disposal. Families have distinct
-onsets, burst envelopes, pitch, filter sweeps and noise/tone balance. A separate
-audio schedule aligns railgun charge/release and victim-local impact sounds with
-the final edited film. Misses have no impact sound; simultaneous batteries share
-one representative impact and nearby destruction supplies its own sound. Behavior
-accents remain quiet; casualty sounds can displace ordinary volley voices. No audio files, external
-asset services, generation credentials or paid requests are required.
+The soundtrack is synthesized locally; there are no audio files, samples or
+external services. `score.ts` composes the whole score in advance as a pure
+function of the film. The film seed chooses the key, mode, tempo, motif,
+progression and ostinato. The setup is sparse. Layers enter as the story's shot
+intensity and progress rise, and each reinforcement wave or earlier loss gets a
+stab: bright for the hero's side, dark against it. Before the climax cue, the music
+clears and the effects dip, then a hit lands on the decisive event. The ending
+follows `filmResolution`: victory, defeat, capture, mutual destruction or stalemate.
+
+`audioSchedule.ts` places effect cues on the edited film: railgun charge and
+release, impacts at the visible hit, misses as quiet passes, and warp-in risers
+before an arrival. Cues outside the shot's featured ships are rendered distant.
+Simultaneous losses are staggered; a mass loss rolls off as one cascade. A density
+budget keeps a few transients per moment in a large battle.
+
+`synth.ts` renders every note and effect as seeded sample buffers, so repeats vary.
+Shield, hull and miss impacts differ and scale with damage. Losses have stages
+and scale with hull size. `audio.ts` routes music, stings, effects and ambience
+through two synthetic reverbs, music ducking and a limited master. A density-driven
+battle bed sits under large fights. `synth.worker.ts` renders events ahead of the
+playhead. `audio.ts` schedules them on the AudioContext clock with a short
+lookahead from the film clock. Play creates or resumes the context. Pause, seek
+and disposal cancel queued sources; the film's natural end lets the final chord
+ring out. Effects have a voice cap in which losses outrank hits and hits outrank
+launches. The development capture renders the same design offline.
 
 Development builds expose diagnostic `data-cinema-*` attributes on the canvas.
 The counters include the entire postprocessing frame. They are not product UI.
