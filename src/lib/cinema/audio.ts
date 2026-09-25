@@ -84,15 +84,13 @@ export class CinemaAudio {
     } catch { this.worker = null }
     const gain = (value: number, to?: AudioNode) => { const node = ctx.createGain(); node.gain.value = value; if (to) node.connect(to); return node }
     const out = this.out = gain(0, ctx.destination)
-    // Soft clip at -1.9 dBFS (true peak under -1 dBTP) after the limiter catches what its attack lets through.
+    // Oversampled soft clip at -2 dBFS (true peak under -1 dBTP) after the limiter catches what its attack lets through.
     const clip = ctx.createWaveShaper()
     const curve = new Float32Array(2048)
     for (let i = 0; i < curve.length; i++) { const x = i / 1023.5 - 1, a = Math.abs(x); curve[i] = Math.sign(x) * (a < .6 ? a : .6 + .2 * Math.tanh((a - .6) / .2)) }
     clip.curve = curve
-    // Band-limit around the clipper so its corners do not overshoot between samples.
-    const smooth = ctx.createBiquadFilter()
-    smooth.type = 'lowpass'; smooth.frequency.value = 15000
-    clip.connect(smooth).connect(out)
+    clip.oversample = '4x'
+    clip.connect(out)
     const limiter = ctx.createDynamicsCompressor()
     limiter.threshold.value = -4.5; limiter.knee.value = 0; limiter.ratio.value = 20; limiter.attack.value = .001; limiter.release.value = .12
     limiter.connect(clip)
@@ -101,7 +99,7 @@ export class CinemaAudio {
     glue.connect(limiter)
     const highpass = ctx.createBiquadFilter(), band = ctx.createBiquadFilter()
     highpass.type = 'highpass'; highpass.frequency.value = 30
-    band.type = 'lowpass'; band.frequency.value = 15000
+    band.type = 'lowpass'; band.frequency.value = 14000
     highpass.connect(band).connect(glue)
     const master = gain(.45, highpass)
     const verb = (seconds: number, seed: number) => {

@@ -119,7 +119,7 @@ export function composeScore(film: CinemaFilm): ScoreNote[] {
       const t = grid + k * beat
       if (setupVoice === 'tick') note(t, .05, 'tick', [root + 60 + (k % 4 ? 0 : 7)], k % 4 ? .5 : .8, { pan: k % 2 ? .3 : -.3 })
       else if (k % 2 === 0) { note(t, .4, 'drum', [], .45); note(t + beat / 3, .4, 'drum', [], .3) }
-    } else if (setupVoice === 'cluster') note(.3, action - .3, 'swell', voiced([root + 1, root + 7, root + 13], 60), .35)
+    } else if (setupVoice === 'cluster') note(.3, action - .3, 'swell', voiced([root, root + 1, root + 7], 60), .35)
     else {
       let t = .5
       for (const [d, beats] of motif.slice(0, 3)) {
