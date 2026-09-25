@@ -91,7 +91,7 @@ function majorCount(entry: BattleLogEntry): number {
 }
 
 /** Screen treatment of one source tick, shared by cue timing and shot direction. */
-export interface TickEdit {
+interface TickEdit {
   /** Seconds reserved at the start of the beat to show recorded arrivals. */
   lead: number
   /** Fire-to-impact window after the lead. */
@@ -99,8 +99,6 @@ export interface TickEdit {
   /** A short montage beat: one shot, no setup/fire/impact breakdown. */
   montage: boolean
   climax: boolean
-  /** Editorial interest of the tick; never changes what happened. */
-  drama: number
 }
 
 // Drama weights. They decide screen time, never events.
@@ -132,7 +130,7 @@ function editSegments(entries: BattleLogEntry[]): { segments: CinemaSourceSegmen
   let previousExchange = '', previousTargets = ''
   entries.forEach((entry, index) => {
     let appearance = false
-    const knownSides = new Set(present.size ? [...present].map(id => sides.get(id)) : [])
+    const knownSides = new Set([...present].map(id => sides.get(id)))
     let newSide = false
     for (const snap of entry.snapshots) {
       if (snap.hull <= 0 && !present.has(snap.player_id) && index > 0) continue
@@ -206,7 +204,7 @@ function editSegments(entries: BattleLogEntry[]): { segments: CinemaSourceSegmen
     const count = (winner: boolean) => opening.filter(snap => (snap.side_id === terminal.winning_side) === winner).length
     if (count(true) < count(false)) drama[climax] += 8
   }
-  const edit: TickEdit[] = entries.map((_, index) => ({ lead: 0, action: 0, montage: false, climax: index === climax, drama: drama[index] }))
+  const edit: TickEdit[] = entries.map((_, index) => ({ lead: 0, action: 0, montage: false, climax: index === climax }))
   const durations = entries.map(() => 0)
   // Losses: the first and the climax get room, a few more are featured, and a
   // long run of the same killers taking the same kind of hull becomes a montage.
@@ -470,9 +468,12 @@ function directShots(film: CinemaFilm, entries: BattleLogEntry[], edit: TickEdit
     const continuity = losses.length ? 0 : 4 * Math.max(0, Math.min(1, (8 - (segment.start - pairStart)) / 2))
     // Reinforcements join the action on screen; a character not yet seen firing is fresh.
     const arriving = new Set(film.cues.filter(cue => cue.kind === 'arrival' && cue.tick === segment.tick).map(cue => cue.to))
+    // A ship trying to flee under fire is a story; follow the shots at it.
+    const fleeing = new Set(entries[index].flee?.map(flee => flee.player_id))
     const score = (beat: StoryBeat) => beat.relevance + (heldPair && beatPair(beat) === heldPair ? (montage ? -3 : continuity) : 0) +
       (byId.get(beat.attacker ?? '')?.playerId === topDamage ? 2 : 0) + (nearDeath.has(beat.defender ?? '') ? 4 : 0) +
-      (arriving.has(beat.attacker) ? 6 : 0) + (shooters.has(beat.attacker ?? '') ? 0 : 2)
+      (arriving.has(beat.attacker) ? 6 : 0) + (shooters.has(beat.attacker ?? '') ? 0 : 2) +
+      (fleeing.has(byId.get(beat.defender ?? '')?.playerId ?? '') ? 3 : 0)
     const beat = decisive && candidates.includes(decisive) ? decisive : [...candidates].sort((a,b) => score(b)-score(a))[0]
     if (beat) {
       shooters.add(beat.attacker ?? '')
