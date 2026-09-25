@@ -132,7 +132,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   scene.background = new THREE.Color(0x02050b)
   scene.fog = new THREE.FogExp2(0x08151f, 0.00010)
   const camera = new THREE.PerspectiveCamera(42, 1, 0.5, 14000)
-  const audio = new CinemaAudio()
+  const audio = new CinemaAudio(film, appearances)
   cleanups.push(() => audio.dispose())
   audio.setMuted(options.muted ?? true)
   audio.setVolume(options.volume ?? 0.65)
@@ -519,7 +519,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   let requestedQuality: CinemaQuality = options.quality ?? 'auto'
   let actualQuality = requestedQuality === 'auto' ? initialCinemaQuality(canvas.clientWidth || window.innerWidth) : requestedQuality
   let raf = 0, last = performance.now(), reportAt = 0, sampleFrames = 0, sampleElapsed = 0, qualityAge = 0
-  const audioCues = buildAudioSchedule(film.cues)
+  const audioCues = buildAudioSchedule(film.cues, film.shots)
   const cuesById = new Map(film.cues.map(cue=>[cue.id,cue]))
   const effectWindow = film.cues.reduce((max, cue) => Math.max(max, cue.duration + 2), 7)
   let shotPlan: ShotPlan | undefined
@@ -1175,7 +1175,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     for (let i = shockwaveCount; i < shockwaves.length; i++) shockwaves[i].visible = false
     grade.uniforms.time.value = reduced ? 0 : time
     grade.uniforms.amount.value = 0
-    audio.intensity(shot?.intensity ?? 0.1, time)
+    audio.update(time)
     renderer.info.reset()
     renderer.setRenderTarget(sceneTarget);renderer.clear();renderer.render(scene,camera);renderer.setRenderTarget(null)
     composer.render()
@@ -1196,20 +1196,19 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
   // Development capture: step frames deterministically and render the matching
   // soundtrack offline, so reviews can watch and listen to exactly what plays.
   const captured: { cue: typeof audioCues[number]; pan: number }[] = []
-  const capturedIntensity: [number, number][] = []
   const capture = {
     frame(seconds: number) {
       const previous = time
       time = clamp(seconds, 0, film.duration)
       draw()
-      capturedIntensity.push([time, film.shots.find(s => time >= s.start && time < s.end)?.intensity ?? 0.1])
       if (time > previous) emitCues(previous, time, (cue, pan) => captured.push({ cue, pan }))
       options.onTime?.(time)
     },
     async audio(sampleRate = 44100) {
+      // Without stepped frames (audio-only capture), every cue uses the current camera's pan.
+      if (!captured.length) emitCues(0, film.duration + 1, (cue, pan) => captured.push({ cue, pan }))
       const context = new OfflineAudioContext(2, Math.ceil((film.duration + 3) * sampleRate), sampleRate)
-      const offline = new CinemaAudio(context)
-      for (const [at, value] of capturedIntensity) offline.intensity(value, at, at)
+      const offline = new CinemaAudio(film, appearances, context)
       for (const { cue, pan } of captured) offline.cue(cue, pan, cue.time)
       return context.startRendering()
     },

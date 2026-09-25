@@ -128,6 +128,14 @@ export default function CinemaPlayer({ film, appearances }: { film: CinemaFilm; 
       setFullscreenError(false)
     } catch { setFullscreenError(true) }
   }
+  // Name each principal and the size of the side behind it.
+  const side = (id?: string) => {
+    const ship = film.ships.find(item => item.id === id)
+    if (!ship) return undefined
+    const more = new Set(film.ships.filter(item => item.sideId === ship.sideId).map(item => item.playerId)).size - 1
+    return more ? t('cinema.withMore', { name: ship.name, count: more }) : ship.name
+  }
+  const hero = side(film.story?.protagonistId), rival = side(film.story?.adversaryId)
   const visible = active || !playing || settings
   const record = `/battles/${encodeURIComponent(film.battleId)}`
   const closeSettings = () => {
@@ -166,7 +174,7 @@ export default function CinemaPlayer({ film, appearances }: { film: CinemaFilm; 
         <div className={styles.titleRule} aria-hidden="true" />
         <p className={styles.eyebrow}>{t(film.arena ? 'cinema.arenaSeries' : 'cinema.series')}</p>
         <h1>{film.systemName}</h1>
-        <p className={styles.subtitle}>{t('cinema.title')}</p>
+        <p className={styles.subtitle}>{hero && rival ? t('cinema.matchup', { hero, rival }) : t('cinema.title')}</p>
         <p className={styles.description}>{t(failed ? 'cinema.graphicsError' : 'cinema.inspired')}</p>
         <div className={styles.startActions}>
           {failed ? <button className={styles.primary} onClick={() => { mountQuality.current = 'low'; setReload(value => value + 1) }}><RotateCcw size={18} aria-hidden />{t('cinema.retryLow')}</button> : <>

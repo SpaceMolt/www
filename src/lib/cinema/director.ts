@@ -6,9 +6,9 @@ import { resolveWeaponFamily } from './weapons'
 import { mergeRecordedHardwareWeapons, projectCinemaHardware, type HardwareCatalog, type RecordedHardwareWeapon } from './hardware'
 import type { CinemaAxis, CinemaCue, CinemaFilm, CinemaHealth, CinemaSequence, CinemaShip, CinemaShot, CinemaSourceSegment } from './types'
 
-export const DIRECTOR_VERSION = 8
-const OPENING = 2.5
-const AFTERMATH = 3.5
+export const DIRECTOR_VERSION = 9
+const OPENING = 3.6
+const AFTERMATH = 3.2
 const clamp = (value: number, low = 0, high = 1) => Math.min(high, Math.max(low, Number.isFinite(value) ? value : low))
 const fraction = (value: number, max: number) => max > 0 ? clamp(value / max) : 0
 
@@ -90,27 +90,90 @@ function majorCount(entry: BattleLogEntry): number {
     (entry.joins?.length ?? 0) + (entry.flee?.filter(event => event.escaped).length ?? 0)
 }
 
-/** Screen time belongs to observed action, never to the number of server ticks. */
-function editSegments(entries: BattleLogEntry[]): CinemaSourceSegment[] {
+/** Screen treatment of one source tick, shared by cue timing and shot direction. */
+interface TickEdit {
+  /** Seconds reserved at the start of the beat to show recorded arrivals. */
+  lead: number
+  /** Fire-to-impact window after the lead. */
+  action: number
+  /** A short montage beat: one shot, no setup/fire/impact breakdown. */
+  montage: boolean
+  climax: boolean
+}
+
+// Drama weights. They decide screen time, never events.
+const boardingDrama: Readonly<Record<string, number>> = {
+  closing_started: 3, closing_progressed: 2, closing_regressed: 6, latched: 5, capture_ready: 3,
+  plundered: 6, boarding_force_defeated: 5, withdrawn: 3,
+}
+
+/** Screen time belongs to recorded drama, never to the number of server ticks. */
+function editSegments(entries: BattleLogEntry[]): { segments: CinemaSourceSegment[]; edit: TickEdit[] } {
   const meaningful = new Set<number>()
   const outcomes = new Set<number>()
   const stateChanges = new Set<number>()
   const present = new Set<string>()
   const snapshots = new Map<string, ParticipantSnapshot>()
   const captureTargets = new Map<string, string>()
+  const sides = new Map<string, number>()
+  const classes = new Map<string, string>()
+  const drama = entries.map(() => 0)
+  const arrivals = entries.map(() => 0)
+  const arrivingSides = entries.map(() => new Set<number>())
+  const losses: { victims: string[]; loserSide: boolean }[] = entries.map(() => ({ victims: [], loserSide: false }))
+  const terminal = entries.at(-1)?.battle_ended
+  const doomed = new Set(entries.flatMap(entry => [...(entry.kills ?? []).map(kill => kill.victim_id),
+    ...(entry.burns ?? []).filter(burn => burn.destroyed).map(burn => burn.target_id)]))
+  const nearDeath = new Set<string>()
+  const topDamage = [...(terminal?.participants ?? [])].sort((a, b) => b.damage_dealt - a.damage_dealt)[0]
+  let topHit = { index: -1, damage: 0 }
+  let previousExchange = '', previousTargets = ''
   entries.forEach((entry, index) => {
     let appearance = false
+    const knownSides = new Set([...present].map(id => sides.get(id)))
+    let newSide = false
     for (const snap of entry.snapshots) {
       if (snap.hull <= 0 && !present.has(snap.player_id) && index > 0) continue
-      if (!present.has(snap.player_id) && index > 0) appearance = true
+      if (!present.has(snap.player_id) && index > 0) {
+        appearance = true
+        arrivals[index]++
+        arrivingSides[index].add(snap.side_id)
+        if (!knownSides.has(snap.side_id)) newSide = true
+      }
       const previous = snapshots.get(snap.player_id)
       if (previous && (previous.zone !== snap.zone || previous.stance !== snap.stance ||
           previous.hull !== snap.hull || previous.shield !== snap.shield)) stateChanges.add(index)
+      // A survivor brought below a fifth of its hull is a story the edit keeps.
+      if (index > 0 && snap.max_hull > 0 && snap.hull > 0 && snap.hull < snap.max_hull * .2 &&
+          !doomed.has(snap.player_id) && !nearDeath.has(snap.player_id)) {
+        nearDeath.add(snap.player_id)
+        drama[index - 1] += 8
+      }
       snapshots.set(snap.player_id, snap)
+      sides.set(snap.player_id, snap.side_id)
+      if (snap.ship_class) classes.set(snap.player_id, snap.ship_class)
       present.add(snap.player_id)
     }
-    for (const join of entry.joins ?? []) present.add(join.player_id)
-    for (const boarding of entry.boarding ?? []) if (boarding.operation_id && boarding.target_id && boarding.phase !== 'self_destruct') captureTargets.set(boarding.operation_id, boarding.target_id)
+    for (const join of entry.joins ?? []) {
+      if (!present.has(join.player_id) && index > 0 && !entry.snapshots.some(snap => snap.player_id === join.player_id)) {
+        arrivals[index]++
+        arrivingSides[index].add(join.side_id)
+      }
+      present.add(join.player_id)
+      sides.set(join.player_id, join.side_id)
+    }
+    if (arrivals[index]) drama[index] += 4 + Math.min(6, arrivals[index]) * .5 + (newSide ? 4 : 0)
+    for (const boarding of entry.boarding ?? []) {
+      if (boarding.operation_id && boarding.target_id && boarding.phase !== 'self_destruct') captureTargets.set(boarding.operation_id, boarding.target_id)
+      if (boardingAction(boarding)) drama[index] += boardingDrama[boarding.event] ?? 1
+    }
+    const victims = [...(entry.kills ?? []).map(kill => kill.victim_id),
+      ...[...(entry.captures ?? []), ...(entry.battle_ended?.captures ?? [])].map(capture => captureTargets.get(capture.boarding_operation_id) ?? capture.former_owner_id),
+      ...(entry.flee ?? []).filter(flee => flee.escaped).map(flee => flee.player_id),
+      ...(entry.burns ?? []).filter(burn => burn.destroyed).map(burn => burn.target_id)]
+    losses[index] = { victims: [...new Set(victims)], loserSide: terminal?.outcome === 'victory' && victims.some(id => sides.get(id) !== terminal.winning_side) }
+    drama[index] += (entry.kills?.length ?? 0) * 10 + ((entry.captures?.length ?? 0) + (entry.battle_ended?.captures?.length ?? 0)) * 12 +
+      (entry.flee ?? []).filter(flee => flee.escaped).length * 6 + (entry.flee ?? []).filter(flee => !flee.escaped && flee.flee_counter === 1).length * 3
     for (const kill of entry.kills ?? []) present.delete(kill.victim_id)
     for (const flee of entry.flee ?? []) if (flee.escaped) present.delete(flee.player_id)
     for (const capture of entry.captures ?? []) present.delete(captureTargets.get(capture.boarding_operation_id) ?? capture.former_owner_id)
@@ -120,34 +183,99 @@ function editSegments(entries: BattleLogEntry[]): CinemaSourceSegment[] {
     if (entry.boarding?.some(boardingTransition) || appearance || major > 0 || entry.burns?.some(burn => burn.destroyed) || entry.battle_ended?.captures?.length) meaningful.add(index)
     if (entry.zone_moves?.length || entry.commands?.some(command => command.stance) ||
         entry.regen?.some(regen => regen.hull_after !== regen.hull_before || regen.shield_after !== regen.shield_before)) stateChanges.add(index)
+    const damage = (entry.attacks ?? []).reduce((sum, attack) => sum + Math.max(0, attack.final_damage), 0)
+    if (damage > 0) drama[index] += Math.log10(1 + damage)
+    const topDealt = (entry.attacks ?? []).filter(attack => attack.attacker_id === topDamage?.player_id).reduce((sum, attack) => sum + Math.max(0, attack.final_damage), 0)
+    if (topDealt > topHit.damage) topHit = { index, damage: topDealt }
+    // The same pairs trading fire again is a repeat, not a new beat.
+    const exchange = [...new Set((entry.attacks ?? []).map(attack => `${attack.attacker_id}>${attack.target_id}`))].sort().join('|')
+    const targets = [...new Set((entry.attacks ?? []).map(attack => attack.target_id))].sort().join('|')
+    if (exchange && !victims.length && !entry.boarding?.some(boardingAction)) drama[index] -= exchange === previousExchange ? 5 : targets === previousTargets ? 3 : 0
+    if (exchange) { previousExchange = exchange; previousTargets = targets }
   })
-  const selected = new Set(meaningful)
+  if (topHit.index >= 0) drama[topHit.index] += 5
   const action = entries.flatMap((entry, index) => entry.boarding?.some(boardingAction) || entry.attacks?.length || entry.burns?.some(burn => burn.damage > 0) ? [index] : [])
-  const ordinary = action.filter(index => !meaningful.has(index))
-  // Sample actual volleys, independent of idle rows between them.
-  const samples = Math.min(ordinary.length, 12)
-  for (let index = 0; index < samples; index++) {
-    selected.add(ordinary[Math.floor(index * (ordinary.length - 1) / Math.max(1, samples - 1))])
+  const outcomeList = [...outcomes].sort((a, b) => a - b)
+  // The climax is the loser's last loss, otherwise the last recorded loss.
+  const climax = outcomeList.filter(index => losses[index].loserSide).at(-1) ?? outcomeList.at(-1) ?? -1
+  if (climax >= 0 && terminal?.outcome === 'victory') {
+    // An underdog win: the winners opened with fewer hulls than the losers.
+    const opening = entries[0].snapshots
+    const count = (winner: boolean) => opening.filter(snap => (snap.side_id === terminal.winning_side) === winner).length
+    if (count(true) < count(false)) drama[climax] += 8
   }
+  const edit: TickEdit[] = entries.map((_, index) => ({ lead: 0, action: 0, montage: false, climax: index === climax }))
+  const durations = entries.map(() => 0)
+  // Losses: the first and the climax get room, a few more are featured, and a
+  // long run of the same killers taking the same kind of hull becomes a montage.
+  const featuredLosses = new Set(outcomeList.filter(index => index !== outcomeList[0] && index !== climax)
+    .sort((a, b) => drama[b] - drama[a] || a - b).slice(0, 3))
+  let repeats = 0
+  outcomeList.forEach((index, order) => {
+    const previous = outcomeList[order - 1]
+    // One side picking off the other's hulls, one after another, is a run.
+    const signature = (at: number) => [...new Set([...(entries[at].kills ?? []).map(kill => `>${sides.get(kill.killer_id)}`),
+      ...losses[at].victims.map(id => `${sides.get(id)}:${classes.get(id) ?? ''}`)])].sort().join(',')
+    const repeat = outcomeList.length >= 4 && order > 0 && index !== climax && !featuredLosses.has(index) &&
+      previous !== undefined && signature(previous) === signature(index)
+    const victims = losses[index].victims.length
+    if (repeat) repeats++
+    // A long attrition run tightens as it goes on.
+    const [base, hold] = index === climax ? [4.6, 2.1] : order === 0 ? [3.6, 1.3] : featuredLosses.has(index) ? [3.2, 1.2] :
+      repeat ? (repeats > 6 ? [1, .6] : [1.3, .8]) : [2.3, 1.1]
+    edit[index].montage = repeat
+    edit[index].action = Math.max(.5, Math.min(2.5, base - hold))
+    // Each additional victim gets its own short shot; a mass loss ends on a wide.
+    durations[index] = base + (repeat ? (victims > 1 ? .8 : 0) : victims > 3 ? 1.6 : (victims - 1) * 1)
+  })
+  const ordinary = action.filter(index => !meaningful.has(index))
+  const first = action[0]
+  const ranked = ordinary.filter(index => index !== first).sort((a, b) => drama[b] - drama[a] || a - b)
+  const featuredCount = Math.min(ranked.length, Math.min(3, Math.floor(ordinary.length / 6)) + ranked.filter(index => drama[index] >= 6).length)
+  const featured = new Set([...ranked.slice(0, Math.min(5, featuredCount)), ...(first !== undefined && !meaningful.has(first) ? [first] : [])])
+  // Plain exchanges make a short montage; recorded losses already carry a long fight.
+  const montage = new Set(ranked.filter(index => !featured.has(index)).slice(0, Math.max(2, 6 - Math.floor(outcomeList.length / 2))))
+  const shownSides = new Set<number>()
+  entries.forEach((entry, index) => {
+    const acting = action.includes(index)
+    if (!outcomes.has(index)) {
+      if (meaningful.has(index)) durations[index] = acting ? 2.5 : .6
+      else if (featured.has(index)) durations[index] = 2.5
+      else if (montage.has(index)) { durations[index] = 1; edit[index].montage = true }
+      edit[index].action = Math.min(2.5, durations[index])
+    }
+    // Arrivals get their own moment before the tick's action.
+    // A side's later waves are shown briefly: the audience already knows them.
+    if (arrivals[index]) {
+      const known = [...arrivingSides[index]].every(side => shownSides.has(side))
+      edit[index].lead = known ? .8 : arrivals[index] >= 4 ? 1.6 : 1.2
+      durations[index] += edit[index].lead
+      for (const side of arrivingSides[index]) shownSides.add(side)
+    }
+  })
   // Repetitive health/stance changes are also an edited montage. Keep their
   // projected state, but only show a bounded selection of movement-only beats.
-  const stateOnly = [...stateChanges].filter(index => !selected.has(index) && !action.includes(index))
-  const selectedState = new Set<number>()
-  const stateSamples = Math.min(8, stateOnly.length)
-  for (let index = 0; index < stateSamples; index++) selectedState.add(stateOnly[Math.floor(index * (stateOnly.length - 1) / Math.max(1, stateSamples - 1))])
-  const durations: number[] = entries.map((entry, index) => selected.has(index) ?
-    (outcomes.has(index) ? 3.8 : entry.attacks?.length || entry.burns?.some(burn => burn.damage > 0) ? 2.5 : 1.2) : selectedState.has(index) ? .45 : 0)
+  const stateOnly = [...stateChanges].filter(index => durations[index] === 0 && index > (action[0] ?? Infinity) && !action.includes(index))
+  const stateSamples = Math.min(4, stateOnly.length)
+  for (let index = 0; index < stateSamples; index++) {
+    const pick = stateOnly[Math.floor(index * (stateOnly.length - 1) / Math.max(1, stateSamples - 1))]
+    durations[pick] = .45
+    edit[pick].action = .45
+  }
   const total = durations.reduce((sum, span) => sum + span, 0)
   const scale = Math.min(1, (180 - OPENING - AFTERMATH) / Math.max(1, total))
   let cursor = OPENING
-  return entries.map((entry, index) => {
+  const segments = entries.map((entry, index) => {
     const start = cursor
     cursor += durations[index] * scale
+    edit[index].lead *= scale
+    edit[index].action *= scale
     // Unselected ticks remain in the source mapping with zero screen duration.
     // Their state transitions are folded into the next visible beat; actual
     // joins, exits and casualties always belong to the meaningful set above.
     return { start, end: cursor, tick: entry.tick }
   })
+  return { segments, edit }
 }
 const rangeProgress: Record<string, number> = { outer: 0, mid: 1 / 3, inner: 2 / 3, engaged: 1 }
 
@@ -224,8 +352,11 @@ interface StoryBeat {
   relevance: number
 }
 
-/** A small authored story follows recurring rivals, not whichever cue happens to arrive next. */
-function directShots(film: CinemaFilm, entries: BattleLogEntry[]): CinemaShot[] {
+/** Seconds for each principal's introduction in the opening. */
+const INTRO = 1.1
+
+/** A small authored story: establish the sides, give recorded drama room, resolve on the outcome. */
+function directShots(film: CinemaFilm, entries: BattleLogEntry[], edit: TickEdit[]): CinemaShot[] {
   const byId = new Map(film.ships.map(ship => [ship.id, ship]))
   const involvement = new Map<string, number>()
   const pairInvolvement = new Map<string, number>()
@@ -261,8 +392,18 @@ function directShots(film: CinemaFilm, entries: BattleLogEntry[]): CinemaShot[] 
     return { from: order[0], to: order[1], side: 1 }
   }
   const openingAxis = axisFor(opening[0]?.id, adversary?.id)
+  // Establish the field, then introduce each principal alone, close enough to
+  // read the name painted on its hull. A crowd or
+  // lopsided odds open on the whole battlefield; a duel opens on the pair.
+  const introduced = [opening[0], adversary].filter((ship): ship is CinemaShip => Boolean(ship))
+  const establishEnd = OPENING - introduced.length * INTRO
+  const counts = [...new Set(opening.map(ship => ship.sideId))].map(side => opening.filter(ship => ship.sideId === side).length)
+  const crowd = opening.length > 2 || (counts.length > 1 && Math.max(...counts) >= 3 * Math.min(...counts))
   const result: CinemaShot[] = [
-    {start:0,end:OPENING,kind:'reveal',role:'geography',sequenceId:'establish',subject:opening[0]?.id,target:adversary?.id,axis:openingAxis,intensity:.12},
+    {start:0,end:establishEnd,kind:'reveal',role:'geography',sequenceId:'establish',subject:opening[0]?.id,target:adversary?.id,axis:openingAxis,
+      ...(crowd ? {battlefield:true} : {}),intensity:.12},
+    ...introduced.map((ship, index): CinemaShot => ({start:establishEnd+index*INTRO,end:establishEnd+(index+1)*INTRO,kind:'tracking',role:'introduction',
+      sequenceId:`introduce:${ship.id}`,subject:ship.id,axis:openingAxis,intensity:.2})),
   ]
   const coreEnd = film.duration - AFTERMATH
   const weaponCues = film.cues.filter(cue => cue.kind === 'weapon' && cue.from && cue.to)
@@ -296,37 +437,53 @@ function directShots(film: CinemaFilm, entries: BattleLogEntry[]): CinemaShot[] 
   const weaponBeats: StoryBeat[] = [...weapons, ...boardingCues].map(cause => ({time:cause.time + cause.duration,actionTime:cause.time,
     impactTime:cause.time + cause.duration,event:cause,cause,attacker:cause.from,defender:cause.to,
     consequence:false,relevance:relevance(cause.from,cause.to) + (cause.kind === 'boarding' ? 1 : 0)}))
-  const victorious = film.outcome === 'victory' ? consequenceBeats.filter(beat =>
-    byId.get(beat.defender ?? '')?.sideId !== film.winningSide) : []
-  const decisive = victorious.at(-1) ?? consequenceBeats.at(-1) ?? weaponBeats.at(-1)
+  const climaxTick = film.segments[edit.findIndex(tick => tick.climax)]?.tick
+  const losing = (beat: StoryBeat) => film.outcome === 'victory' && byId.get(beat.defender ?? '')?.sideId !== film.winningSide
+  const inClimax = (beat: StoryBeat) => beat.event?.tick === climaxTick
+  // The climax belongs to its most significant victim: the one the battle revolved around.
+  const weight = (beat: StoryBeat) => involvement.get(byId.get(beat.defender ?? '')?.playerId ?? '') ?? 0
+  const decisive = consequenceBeats.filter(beat => inClimax(beat) && losing(beat)).sort((a, b) => weight(b) - weight(a))[0] ??
+    consequenceBeats.filter(inClimax).sort((a, b) => weight(b) - weight(a))[0] ??
+    weaponBeats.filter(inClimax).sort((a, b) => b.relevance - a.relevance)[0] ??
+    consequenceBeats.filter(losing).at(-1) ?? consequenceBeats.at(-1) ?? weaponBeats.at(-1)
+  const terminalRoster = entries.at(-1)?.battle_ended?.participants ?? []
+  const topDamage = [...terminalRoster].sort((a, b) => b.damage_dealt - a.damage_dealt)[0]?.player_id
+  const nearDeath = new Set(film.ships.filter(ship => !['destroyed', 'knocked_out'].includes(ship.fate) &&
+    ship.health.some(frame => frame.hull > 0 && frame.hull < .2)).map(ship => ship.id))
   // Cut on actual action. Camera choices never stretch the quiet around it,
   // so muzzle releases, impacts and recorded state all share one clock.
-  const selected: StoryBeat[] = []
+  const blocks: { index: number; segment: CinemaSourceSegment; beat?: StoryBeat }[] = []
   let heldPair = '', pairStart = 0
+  const shooters = new Set<string>()
   const beatPair = (beat: StoryBeat) => beat.attacker && beat.defender ? pairKey(beat.attacker, beat.defender) : ''
-  for (const segment of film.segments) {
-    if (segment.end <= segment.start) continue
+  film.segments.forEach((segment, index) => {
+    if (segment.end <= segment.start) return
+    const montage = edit[index].montage
     const losses = consequenceBeats.filter(beat => beat.event?.tick === segment.tick)
     const fire = weaponBeats.filter(beat => beat.event?.tick === segment.tick)
     const candidates = losses.length ? losses : fire
     // Ordinary exchanges need time to read. Keep an available reciprocal pair
     // for six seconds, then let the normal relevance ranking resume by eight.
-    // Recorded losses and the decisive beat always outrank this preference.
+    // A montage prefers a new pair; recorded losses and the decisive beat outrank both.
     const continuity = losses.length ? 0 : 4 * Math.max(0, Math.min(1, (8 - (segment.start - pairStart)) / 2))
-    const score = (beat: StoryBeat) => beat.relevance + (heldPair && beatPair(beat) === heldPair ? continuity : 0)
+    // Reinforcements join the action on screen; a character not yet seen firing is fresh.
+    const arriving = new Set(film.cues.filter(cue => cue.kind === 'arrival' && cue.tick === segment.tick).map(cue => cue.to))
+    // A ship trying to flee under fire is a story; follow the shots at it.
+    const fleeing = new Set(entries[index].flee?.map(flee => flee.player_id))
+    const score = (beat: StoryBeat) => beat.relevance + (heldPair && beatPair(beat) === heldPair ? (montage ? -3 : continuity) : 0) +
+      (byId.get(beat.attacker ?? '')?.playerId === topDamage ? 2 : 0) + (nearDeath.has(beat.defender ?? '') ? 4 : 0) +
+      (arriving.has(beat.attacker) ? 6 : 0) + (shooters.has(beat.attacker ?? '') ? 0 : 2) +
+      (fleeing.has(byId.get(beat.defender ?? '')?.playerId ?? '') ? 3 : 0)
     const beat = decisive && candidates.includes(decisive) ? decisive : [...candidates].sort((a,b) => score(b)-score(a))[0]
     if (beat) {
+      shooters.add(beat.attacker ?? '')
       const pair = beatPair(beat)
       if (pair !== heldPair) { heldPair = pair; pairStart = segment.start }
-      selected.push(beat)
     }
-  }
+    if (beat || edit[index].lead > 0) blocks.push({ index, segment, beat })
+  })
   const lastConsequence = consequences.at(-1)?.time ?? coreEnd
   const aftermathStart = Math.min(film.duration, Math.max(coreEnd, lastConsequence + .8))
-  const sequenceEnds = selected.map((beat,index) => {
-    const next = selected[index+1]
-    return next ? film.segments.find(segment => segment.tick === next.event?.tick)!.start : aftermathStart
-  })
   const contextShot = (start:number,end:number,id:string) => {
     if(end<=start)return
     const available=film.ships.filter(ship=>ship.start<=start+.000001 && ship.end>=end).sort(rank)
@@ -337,8 +494,28 @@ function directShots(film: CinemaFilm, entries: BattleLogEntry[]): CinemaShot[] 
   }
   const sequences: CinemaSequence[] = []
   let cursor = OPENING
-  selected.forEach((beat,index) => {
-    const end = sequenceEnds[index]
+  let previousBeat: StoryBeat | undefined
+  let montageCount = 0
+  blocks.forEach((block, index) => {
+    const end = blocks[index + 1]?.segment.start ?? aftermathStart
+    const plan = edit[block.index]
+    contextShot(cursor, block.segment.start, `approach:${index}`)
+    cursor = Math.max(cursor, block.segment.start)
+    if (plan.lead > 0) {
+      // Reinforcements are seen arriving, before they join the action.
+      const leadEnd = block.beat ? Math.min(end, block.segment.start + plan.lead) : end
+      const arrivals = [...new Set(film.cues.filter(cue => cue.kind === 'arrival' && cue.tick === block.segment.tick && cue.to).map(cue => cue.to!))]
+        .flatMap(id => byId.get(id) ?? []).sort(rank)
+      const lead = arrivals[0]
+      const opposing = film.ships.filter(ship => ship.start <= cursor + .000001 && ship.end >= leadEnd && ship.sideId !== lead?.sideId).sort(rank)[0]
+      if (leadEnd > cursor) result.push({start:cursor,end:leadEnd,kind:'reveal',role:'arrival',sequenceId:`arrival:${block.segment.tick}`,
+        subject:lead?.id,axis:axisFor(lead?.id,opposing?.id),focusIds:arrivals.map(ship => ship.id),intensity:.3})
+      cursor = Math.max(cursor, leadEnd)
+    }
+    const beat = block.beat
+    if (!beat) return
+    // The same killer again: show only the new victim.
+    const repeatKiller = previousBeat?.consequence && previousBeat.attacker === beat.attacker && Boolean(beat.attacker)
     const impactTarget = beat.cause?.to ?? beat.defender
     const pairReady=Math.max(cursor,byId.get(beat.attacker??'')?.start??0,byId.get(beat.defender??'')?.start??0,
       byId.get(impactTarget??'')?.start??0)
@@ -352,29 +529,66 @@ function directShots(film: CinemaFilm, entries: BattleLogEntry[]): CinemaShot[] 
     sequences.push(sequence)
     const focusIds = [...new Set(consequences.filter(cue=>cue.time >= cursor && cue.time < end).flatMap(cue=>cue.to?[cue.to]:[]))]
     const common = {sequenceId:sequence.id,axis,intensity:beat.event?.intensity ?? .4}
+    // Every recorded loss gets the camera: each victim individually, then a
+    // wide for a mass loss. No target: the victim alone is the subject.
+    const victims = (from: number) => {
+      const ids = [...new Set([beat.defender, ...focusIds.filter(id => id !== beat.defender)
+        .sort((a, b) => rank(byId.get(a)!, byId.get(b)!))])].filter((id): id is string => Boolean(id))
+      const span = end - from
+      if (span <= 0) return
+      // A mass loss is one escalating beat: the first victim, then everyone.
+      const wide = ids.length > 3 ? Math.max(0, span - Math.min(1.3, span * .45)) : 0
+      let count = Math.min(ids.length, ids.length > 3 ? 1 : 3)
+      while (count > 1 && (span - wide) / count < .9) count--
+      // The climax ends on its decisive victim: simultaneous losses come first,
+      // briefly, and the decisive one keeps the rest of the hold.
+      const climax = beat === decisive && count > 1
+      const order = climax ? [...ids.slice(1, count), ids[0]] : ids.slice(0, count)
+      const lead = climax ? Math.min(Math.max(.9, beat.time + .6 - from), (span - .9 * (count - 1)) / 2) : (span - wide) / count
+      const bounds = Array.from({ length: count + 1 }, (_, shot) => shot === count && !wide ? end :
+        from + (climax ? (shot ? lead + (shot - 1) * .9 : 0) : shot * lead))
+      for (let shot = 0; shot < count; shot++) result.push({...common,start:bounds[shot],end:bounds[shot + 1],
+        kind:'impact',role:'impact',subject:order[shot],focusIds,actionTime:shot ? beat.time : beat.impactTime})
+      if (wide > 0) result.push({...common,start:end-wide,end,kind:'impact',role:'impact',battlefield:true,subject:ids[0],focusIds,actionTime:beat.time})
+    }
     if (beat.cause?.kind === 'boarding') {
       const reactionStart = Math.min(end, Math.max(pairReady, beat.time))
       if (reactionStart > pairReady) result.push({...common,start:pairReady,end:reactionStart,kind:'tracking',role:'setup',
         subject:beat.attacker,target:beat.defender,focusIds:[beat.attacker,beat.defender].filter((id):id is string=>Boolean(id)),actionTime:beat.actionTime})
       if (end > reactionStart) result.push({...common,start:reactionStart,end,kind:'impact',role:'reaction',
         subject:beat.defender,target:beat.attacker,focusIds,actionTime:beat.time})
+    } else if (plan.montage || (repeatKiller && beat.consequence && !plan.climax)) {
+      // Repeats collapse: one shot per beat, on the loss if there is one.
+      if (beat.consequence) victims(pairReady)
+      // Alternate the shooter and the ship it hits, so quick beats don't repeat one framing.
+      else result.push({...common,start:pairReady,end,kind:'tracking',role:'montage',...(montageCount++ % 2 ?
+        {subject:impactTarget,actionTime:beat.impactTime} : {subject:beat.attacker,target:impactTarget,actionTime:beat.actionTime})})
     } else if (beat.cause) {
-      const fireStart = Math.min(beat.actionTime,Math.max(pairReady+.5,Math.min(beat.actionTime-1,pairReady+(beat.impactTime-pairReady)*.48)))
+      // When the target shoots back first in the same tick, show its return fire.
+      const counter = weapons.find(cue => cue.tick === beat.cause!.tick && cue.from === impactTarget && cue.to === beat.attacker &&
+        cue.time >= pairReady && cue.time <= beat.actionTime - .4)
+      let fireStart = Math.min(beat.actionTime,Math.max(pairReady+.5,Math.min(beat.actionTime-1,pairReady+(beat.impactTime-pairReady)*.48)))
+      if (counter) fireStart = Math.min(beat.actionTime, Math.max(fireStart, Math.min(counter.time + .5, beat.actionTime - .15)))
+      // A setup too brief to read merges into the firing shot.
+      else if (fireStart - pairReady < .6) fireStart = pairReady
       // Read the muzzle release, then recognize the target before the strike.
       const impactLead = Math.max(0,Math.min(.75,beat.cause.duration*.55,beat.cause.duration-.5))
       const impactStart = beat.impactTime-impactLead
-      if (fireStart > pairReady) result.push({...common,start:pairReady,end:fireStart,kind:'tracking',role:'setup',
+      if (fireStart > pairReady) result.push(counter ? {...common,start:pairReady,end:fireStart,kind:'broadside',role:'fire',
+        subject:impactTarget,target:beat.attacker,actionTime:counter.time} : {...common,start:pairReady,end:fireStart,kind:'tracking',role:'setup',
         subject:beat.attacker,target:impactTarget,actionTime:beat.actionTime})
       result.push({...common,start:fireStart,end:impactStart,kind:'broadside',role:'fire',
         subject:beat.attacker,target:impactTarget,actionTime:beat.actionTime})
-      const reactionStart = impactTarget !== beat.defender ? Math.min(end, beat.time) : end
-      result.push({...common,start:impactStart,end:reactionStart,kind:'impact',role:'impact',subject:impactTarget,target:beat.attacker,
+      if (!beat.consequence) result.push({...common,start:impactStart,end,kind:'impact',role:'impact',subject:impactTarget,
         focusIds,actionTime:beat.impactTime})
-      if (reactionStart < end) result.push({...common,start:reactionStart,end,kind:'impact',role:'reaction',subject:beat.defender,target:beat.attacker,
-        focusIds,actionTime:beat.time})
+      else if (impactTarget !== beat.defender) {
+        const reactionStart = Math.min(end, beat.time)
+        result.push({...common,start:impactStart,end:reactionStart,kind:'impact',role:'impact',subject:impactTarget,target:beat.attacker,
+          focusIds,actionTime:beat.impactTime})
+        victims(reactionStart)
+      } else victims(impactStart)
     } else {
       const impactStart = Math.max(pairReady,beat.time-1.4)
-      const reactionStart = Math.min(end,beat.time+.6)
       const available = (id:string|undefined) => {
         const ship=byId.get(id??'')
         return ship && ship.start<=pairReady && ship.end>=impactStart
@@ -383,24 +597,27 @@ function directShots(film: CinemaFilm, entries: BattleLogEntry[]): CinemaShot[] 
       const setupTarget=[beat.defender,beat.attacker].find(id=>id!==setupSubject && available(id))
       if (impactStart > pairReady) result.push({...common,start:pairReady,end:impactStart,kind:'tracking',role:'setup',
         subject:setupSubject,target:setupTarget,axis:axisFor(setupSubject,setupTarget),actionTime:beat.time})
-      if (reactionStart > impactStart) result.push({...common,start:impactStart,end:reactionStart,kind:'impact',role:'impact',
-        subject:beat.defender,target:beat.attacker,focusIds,actionTime:beat.time})
-      if (end > reactionStart) result.push({...common,start:reactionStart,end,kind:'impact',role:'reaction',
-        subject:beat.defender,target:beat.attacker,focusIds,actionTime:beat.time})
+      victims(impactStart)
     }
+    previousBeat = beat
     cursor=end
   })
   if (!sequences.length && cursor < aftermathStart) {
     const firstAppearance=Math.min(aftermathStart,Math.max(cursor,film.ships.reduce((time,ship)=>Math.min(time,ship.start),aftermathStart)))
     contextShot(cursor,firstAppearance,'quiet-approach')
     contextShot(firstAppearance,aftermathStart,'quiet-encounter')
-  }
-  const survivor = film.ships.filter(ship=>ship.fate==='survived' && ship.end >= aftermathStart &&
-    (film.outcome !== 'victory' || ship.sideId===film.winningSide)).sort(rank)[0]
+  } else contextShot(cursor,aftermathStart,'quiet-close')
+  // Resolve on the victor, its climax killer when it survived.
+  const survivors = film.ships.filter(ship=>ship.fate==='survived' && ship.end >= aftermathStart &&
+    (film.outcome !== 'victory' || ship.sideId===film.winningSide)).sort(rank)
+  const survivor = (decisive?.consequence ? survivors.find(ship => ship.id === decisive.attacker) : undefined) ?? survivors[0]
   const lostHero = film.ships.filter(ship=>ship.playerId===protagonist?.playerId && ship.fate!=='survived').at(-1)
-  const reminder = lostHero ?? (adversary?.fate !== 'survived' ? adversary : undefined)
+  const reminder = (decisive?.consequence ? byId.get(decisive.defender ?? '') : undefined) ?? lostHero ?? (adversary?.fate !== 'survived' ? adversary : undefined)
+  // A prize stays docked beside its captor, so both share the frame. A wreck can
+  // drift far from the victor; the climax already held on it, so the victor closes alone.
+  const prize = reminder?.fate === 'captured' && reminder.capturedBy === survivor?.playerId
   result.push({start:aftermathStart,end:film.duration,kind:'aftermath',role:'resolution',sequenceId:'resolve',
-    subject:survivor?.id,target:reminder?.id,axis:axisFor(survivor?.id,reminder?.id),intensity:.12})
+    subject:survivor?.id,...(prize || !survivor ? {target:reminder?.id} : {}),axis:axisFor(survivor?.id,reminder?.id),intensity:.12})
   film.story={protagonistId:protagonist?.id,adversaryId:adversary?.id,climaxCueId:decisive?.event?.id,sequences}
   return result
 }
@@ -419,7 +636,7 @@ export function compileBattleFilm(summary: BattleSummary, source: BattleLogEntry
   if (terminalIndex !== entries.length - 1) throw new Error('The battle record has rows after its terminal event.')
   const terminal = entries[terminalIndex].battle_ended!
   const arena = summary.category === 'arena' || entries.some(entry => entry.arena || entry.battle_ended?.category === 'arena')
-  const segments = editSegments(entries)
+  const { segments, edit } = editSegments(entries)
   const duration = segments.at(-1)!.end + AFTERMATH
   const sideIds = [...new Set([...summary.sides.map(side => side.side_id), ...entries.flatMap(entry =>
     [...entry.snapshots.map(snap => snap.side_id), ...(entry.joins ?? []).map(join => join.side_id)])])].sort((a, b) => a - b)
@@ -470,8 +687,11 @@ export function compileBattleFilm(summary: BattleSummary, source: BattleLogEntry
   entries.forEach((entry, index) => {
     const segment = segments[index]
     const span = segment.end - segment.start
-    const actionSpan = Math.min(span, 2.5)
-    const impactTime = segment.start + actionSpan * 0.72
+    // Recorded arrivals are shown first; the tick's action follows them.
+    const { lead } = edit[index]
+    const actionSpan = Math.min(span - lead, edit[index].action)
+    const actionStart = segment.start + lead
+    const impactTime = actionStart + actionSpan * 0.72
     const fateTime = Math.min(segment.end, impactTime + Math.min(.4, span * .16))
     const explicitJoins = new Set((entry.joins ?? []).map(join => join.player_id))
     for (const boarding of entry.boarding ?? []) if (boarding.operation_id && boarding.target_id && boarding.phase !== 'self_destruct') boardingTargets.set(boarding.operation_id, boarding.target_id)
@@ -516,8 +736,8 @@ export function compileBattleFilm(summary: BattleSummary, source: BattleLogEntry
       boarding.forEach((event, i) => {
         const from = active.get(event.actor_id ?? ''), to = active.get(event.target_id ?? '')
         if (!from || !to) return
-        const beat = Math.min(span * .66, 1.8) / Math.max(1, boarding.length)
-        addCue({ kind: 'boarding', time: segment.start + i * beat, duration: beat, tick: entry.tick,
+        const beat = Math.min((span - lead) * .66, 1.8) / Math.max(1, boarding.length)
+        addCue({ kind: 'boarding', time: actionStart + i * beat, duration: beat, tick: entry.tick,
           from: from.id, to: to.id, intensity: event.casualties_occurred ? .7 : .5,
           boardingPhase: boardingPhases[event.event], boardingEvent: event.event,
           boardingEnded: event.phase === 'resolved', operationId: event.operation_id || undefined, casualtiesOccurred: event.casualties_occurred })
@@ -603,7 +823,11 @@ export function compileBattleFilm(summary: BattleSummary, source: BattleLogEntry
       volley.forEach((weapon, weaponIndex) => {
         const hit = weapon?.hit_success ?? attack.hit_success
         const component = weapon ? attack.defense_components?.find(part => part.weapon_instance_id === weapon.instance_id) : undefined
-        const fire = segment.start + actionSpan * (0.08 + (cinemaHash(`${film.seed}:${entry.tick}:${attackIndex}`) % 23) / 100 + weaponIndex * 0.04)
+        const jitter = cinemaHash(`${film.seed}:${entry.tick}:${attackIndex}`)
+        // Within one tick the record has no order. In a loss, the doomed ship's
+        // own guns speak first and the decisive volley lands last.
+        const fire = actionStart + actionSpan * (victims.size ? (decisiveAttacks.has(attackIndex) ? edit[index].climax ? .38 : .26 : .04) + (jitter % 8) / 100 + weaponIndex * .03 :
+          0.08 + (jitter % 23) / 100 + weaponIndex * 0.04)
         const cue = addCue({ kind: 'weapon', time: parent?.time ?? fire,
           duration: Math.max(Number.EPSILON, impactTime - (parent?.time ?? fire)), tick: entry.tick, from: from.id, to: to.id,
           damageType: weapon?.damage_type || attack.damage_type || 'kinetic', hit,
@@ -633,15 +857,15 @@ export function compileBattleFilm(summary: BattleSummary, source: BattleLogEntry
     for (const regen of entry.regen ?? []) {
       const ship = active.get(regen.player_id)
       const snap = latestSnapshots.get(regen.player_id)
-      if (ship && snap) appendHealth(ship, { time: segment.start + actionSpan * 0.82,
+      if (ship && snap) appendHealth(ship, { time: actionStart + actionSpan * 0.82,
         hull: fraction(regen.hull_after, snap.max_hull), shield: fraction(regen.shield_after, snap.max_shield) })
       if (ship && snap) {
         const hullGain = Math.max(0, regen.hull_after - regen.hull_before)
         const shieldGain = Math.max(0, regen.shield_after - regen.shield_before)
         if (hullGain > 0 && (fraction(hullGain, snap.max_hull) >= .02 || (regen.remote_repair ?? 0) > 0))
-          behavior({ kind: 'repair', to: ship.id, repairKind: 'hull', intensity: clamp(.2 + fraction(hullGain, snap.max_hull)) }, segment.start + actionSpan * .82)
+          behavior({ kind: 'repair', to: ship.id, repairKind: 'hull', intensity: clamp(.2 + fraction(hullGain, snap.max_hull)) }, actionStart + actionSpan * .82)
         if (fraction(shieldGain, snap.max_shield) >= .02)
-          behavior({ kind: 'repair', to: ship.id, repairKind: 'shield', intensity: clamp(.15 + fraction(shieldGain, snap.max_shield)) }, segment.start + actionSpan * .82)
+          behavior({ kind: 'repair', to: ship.id, repairKind: 'shield', intensity: clamp(.15 + fraction(shieldGain, snap.max_shield)) }, actionStart + actionSpan * .82)
       }
     }
     for (const move of entry.zone_moves ?? []) {
@@ -692,7 +916,7 @@ export function compileBattleFilm(summary: BattleSummary, source: BattleLogEntry
   // Stable ties retain the source ordering of simultaneous chain recipients;
   // lexical IDs would put cue:10 ahead of cue:2 and redirect the chain.
   film.cues.sort((a, b) => a.time - b.time)
-  film.shots = directShots(film, entries)
+  film.shots = directShots(film, entries, edit)
   film.shots = addBattlefieldCoverage(film)
   return film
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
-import { audioCueRange, buildAudioSchedule } from './audioSchedule'
-import type { CinemaCue } from './types'
+import { ARRIVAL_LEAD, audioCueRange, buildAudioSchedule } from './audioSchedule'
+import type { CinemaCue, CinemaShot } from './types'
 
 const weapon: CinemaCue = { id: 'gun', time: 10, duration: 2.8, tick: 4, kind: 'weapon', from: 'a', to: 'b', hit: true, hullDamage: 12, shieldDamage: 0, intensity: .7, weaponFamily: 'missile' }
 
@@ -20,8 +20,8 @@ describe('cinema audio choreography', () => {
     expect(schedule[0].duration).toBeCloseTo(1.4)
   })
 
-  it('gives absorbed/shield hits an impact but does not invent a hit for misses', () => {
-    expect(buildAudioSchedule([{ ...weapon, hit: false }]).map(cue => cue.audioPhase)).toEqual(['release'])
+  it('gives absorbed/shield hits an impact and a miss a passing whoosh at the target', () => {
+    expect(buildAudioSchedule([{ ...weapon, hit: false }]).map(cue => [cue.audioPhase, cue.audioActorId])).toEqual([['release', 'a'], ['miss', 'b']])
     for (const shieldDamage of [0, 20]) {
       expect(buildAudioSchedule([{ ...weapon, hullDamage: 0, shieldDamage }]).at(-1)?.audioPhase).toBe('shield-impact')
     }
@@ -52,5 +52,43 @@ describe('cinema audio choreography', () => {
     expect(emitted.map(cue => cue.audioPhase)).toEqual(['charge', 'release', 'impact'])
     expect(new Set(emitted.map(cue => cue.id)).size).toBe(3)
     expect(JSON.stringify(source)).toBe(before)
+  })
+
+  it('staggers simultaneous losses and spreads a mass loss into a wide cascade of pops', () => {
+    const losses: CinemaCue[] = Array.from({ length: 100 }, (_, i) => ({ id: `ko:${i}`, kind: 'knockout', time: 5, duration: 1, tick: 3, to: `s${i}`, intensity: 1 }))
+    const schedule = buildAudioSchedule(losses)
+    expect(schedule).toHaveLength(52)
+    expect(schedule[0].audioMass).toBe(100)
+    const pops = schedule.filter(cue => cue.audioCascade)
+    expect(pops).toHaveLength(48)
+    expect(pops.every(cue => cue.audioDistant)).toBe(true)
+    const times = pops.map(cue => cue.time)
+    expect(Math.min(...times) - 5).toBeGreaterThan(.5)
+    expect(Math.max(...times) - Math.min(...times)).toBeGreaterThan(3)
+    expect(Math.max(...times) - 5).toBeLessThan(6)
+    const pair = buildAudioSchedule(losses.slice(0, 2))
+    expect(pair[1].time - pair[0].time).toBeGreaterThanOrEqual(.15)
+    expect(pair[1].time - pair[0].time).toBeLessThanOrEqual(.3)
+    expect(pair.some(cue => cue.audioCascade)).toBe(false)
+  })
+
+  it('hears the shot\'s featured ships up close and keeps a massed battle to a few transients per moment', () => {
+    const shots: CinemaShot[] = [{ start: 0, end: 20, kind: 'broadside', intensity: .5, subject: 'a', target: 'b' }]
+    const volley = Array.from({ length: 30 }, (_, i): CinemaCue => ({ ...weapon, id: `v${i}`, from: i % 2 ? 'a' : `x${i}`, to: i % 2 ? 'b' : `y${i}`, weaponFamily: 'laser', hit: false }))
+    const schedule = buildAudioSchedule(volley, shots)
+    const near = schedule.filter(cue => cue.audioPhase === 'release' && !cue.audioDistant)
+    const far = schedule.filter(cue => cue.audioPhase === 'release' && cue.audioDistant)
+    expect(near.every(cue => cue.from === 'a')).toBe(true)
+    expect(near.length).toBeLessThanOrEqual(3)
+    expect(far.length).toBeLessThanOrEqual(1)
+    expect(schedule.filter(cue => cue.audioPhase === 'miss').length).toBeLessThanOrEqual(1)
+  })
+
+  it('starts a warp-in riser before the arrival and climbs grapple pitch through one boarding operation', () => {
+    expect(buildAudioSchedule([{ id: 'w', kind: 'arrival', time: 4, duration: 1, tick: 1, to: 'c', intensity: .5 }])[0].time).toBeCloseTo(4 - ARRIVAL_LEAD)
+    const waves = buildAudioSchedule([4, 4, 4, 9].map((time, i): CinemaCue => ({ id: `w${i}`, kind: 'arrival', time, duration: 1, tick: 1, to: `c${i}`, intensity: .5 })))
+    expect(waves.map(cue => [cue.audioMass ?? 1, cue.audioStep])).toEqual([[3, 0], [1, 1]])
+    const boarding = [1, 2, 3].map((time): CinemaCue => ({ id: `b${time}`, kind: 'boarding', time, duration: 1, tick: time, from: 'a', to: 'b', operationId: 'op', boardingPhase: 'approach', intensity: .5 }))
+    expect(buildAudioSchedule(boarding).map(cue => cue.audioStep)).toEqual([0, 1, 2])
   })
 })

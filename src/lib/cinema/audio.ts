@@ -1,137 +1,167 @@
-import type { CinemaAudioCue } from './audioSchedule'
-import { resolveWeaponFamily, type CinemaWeaponFamily } from './weapons'
+import { audioCueRange, buildAudioSchedule, type CinemaAudioCue } from './audioSchedule'
+import type { ShipAppearance } from './appearance'
+import type { CinemaFilm } from './types'
+import { composeScore, type ScoreNote } from './score'
+import { impulseResponse, renderCue, renderNote, seeded, type Sound } from './synth'
 
-interface SoundProfile {
-  duration: number
-  attack: number
-  peak: number
-  wave: OscillatorType
-  frequency: [number, number]
-  filter: BiquadFilterType
-  cutoff: [number, number]
-  noise: number
-  tone: number
-  pulses?: number
-  hold?: number
-}
-
-/** Two scheduled sources per event, with distinct measured envelopes and spectra. */
-export const WEAPON_AUDIO_PROFILES: Readonly<Record<CinemaWeaponFamily, Readonly<SoundProfile>>> = {
-  laser: { duration: .26, attack: .005, peak: .10, wave: 'sawtooth', frequency: [1450, 480], filter: 'bandpass', cutoff: [4800, 950], noise: .16, tone: .75 },
-  beam: { duration: 1.05, attack: .055, peak: .10, wave: 'triangle', frequency: [220, 150], filter: 'lowpass', cutoff: [900, 380], noise: .13, tone: .62, hold: .60 },
-  railgun: { duration: .72, attack: .003, peak: .18, wave: 'sine', frequency: [180, 35], filter: 'lowpass', cutoff: [6500, 90], noise: .95, tone: .60 },
-  autocannon: { duration: .48, attack: .003, peak: .12, wave: 'square', frequency: [160, 55], filter: 'lowpass', cutoff: [4500, 1100], noise: .65, tone: .27, pulses: 4 },
-  flak: { duration: .50, attack: .006, peak: .16, wave: 'triangle', frequency: [95, 32], filter: 'lowpass', cutoff: [3400, 220], noise: 1, tone: .30, pulses: 2 },
-  plasma: { duration: .86, attack: .034, peak: .13, wave: 'sawtooth', frequency: [520, 64], filter: 'bandpass', cutoff: [1200, 210], noise: .42, tone: .50 },
-  missile: { duration: 1.20, attack: .045, peak: .11, wave: 'triangle', frequency: [130, 310], filter: 'bandpass', cutoff: [480, 1700], noise: .80, tone: .25, hold: .38 },
-  torpedo: { duration: 1.60, attack: .085, peak: .15, wave: 'sine', frequency: [90, 145], filter: 'lowpass', cutoff: [520, 190], noise: .85, tone: .42, hold: .40 },
-  disruptor: { duration: .65, attack: .008, peak: .10, wave: 'square', frequency: [2100, 130], filter: 'bandpass', cutoff: [2800, 320], noise: .26, tone: .50, pulses: 2 },
-  exotic: { duration: 1.05, attack: .090, peak: .12, wave: 'sine', frequency: [74, 260], filter: 'bandpass', cutoff: [350, 950], noise: .17, tone: .60, hold: .20 },
-  mine: { duration: .80, attack: .025, peak: .12, wave: 'triangle', frequency: [120, 38], filter: 'lowpass', cutoff: [2400, 100], noise: .60, tone: .38 },
-  kinetic: { duration: .37, attack: .004, peak: .12, wave: 'triangle', frequency: [120, 42], filter: 'lowpass', cutoff: [4300, 140], noise: .75, tone: .40 },
-  smartbomb: { duration: 1.40, attack: .015, peak: .19, wave: 'sine', frequency: [190, 28], filter: 'lowpass', cutoff: [3200, 130], noise: 1, tone: .60 },
-}
-
-const eventSounds: Readonly<Record<string, Readonly<SoundProfile>>> = {
-  // A reactive hull/contact discharge has no launch motor or firing burst.
-  contact: { duration: .22, attack: .003, peak: .085, wave: 'square', frequency: [920, 95], filter: 'bandpass', cutoff: [2600, 420], noise: .70, tone: .22 },
-  death: { duration: 2.8, attack: .014, peak: .75, wave: 'sine', frequency: [90, 22], filter: 'lowpass', cutoff: [2400, 80], noise: 1, tone: .70 },
-  knockout: { duration: 1.8, attack: .014, peak: .26, wave: 'triangle', frequency: [420, 45], filter: 'bandpass', cutoff: [1500, 160], noise: .60, tone: .55 },
-  boarding: { duration: .65, attack: .025, peak: .09, wave: 'triangle', frequency: [130, 75], filter: 'bandpass', cutoff: [950, 260], noise: .3, tone: .45 },
-  capture: { duration: 1.4, attack: .040, peak: .16, wave: 'sine', frequency: [260, 140], filter: 'bandpass', cutoff: [1000, 220], noise: .15, tone: .60 },
-  arrival: { duration: 1.4, attack: .09, peak: .15, wave: 'sine', frequency: [65, 340], filter: 'bandpass', cutoff: [160, 2200], noise: .62, tone: .40 },
-  escape: { duration: 1.4, attack: .02, peak: .15, wave: 'sine', frequency: [340, 48], filter: 'lowpass', cutoff: [2400, 90], noise: .68, tone: .35 },
-  repair: { duration: 1.1, attack: .10, peak: .065, wave: 'sine', frequency: [330, 660], filter: 'bandpass', cutoff: [480, 1300], noise: .06, tone: .65, hold: .45 },
-  disable: { duration: .85, attack: .007, peak: .12, wave: 'square', frequency: [1700, 48], filter: 'bandpass', cutoff: [3100, 100], noise: .45, tone: .45, pulses: 3 },
-  cloak: { duration: 1.3, attack: .04, peak: .075, wave: 'sine', frequency: [680, 42], filter: 'lowpass', cutoff: [1900, 80], noise: .26, tone: .45 },
-  drain: { duration: 1.1, attack: .05, peak: .085, wave: 'triangle', frequency: [100, 540], filter: 'bandpass', cutoff: [260, 1800], noise: .10, tone: .55, hold: .45 },
-}
-
-const hitSounds: Readonly<Record<string, Readonly<SoundProfile>>> = {
-  shield: { duration: .44, attack: .006, peak: .12, wave: 'sine', frequency: [760, 230], filter: 'bandpass', cutoff: [2100, 420], noise: .28, tone: .60 },
-  ballistic: { duration: .34, attack: .003, peak: .16, wave: 'triangle', frequency: [140, 39], filter: 'lowpass', cutoff: [5400, 240], noise: .85, tone: .30 },
-  explosive: { duration: .76, attack: .009, peak: .22, wave: 'sine', frequency: [110, 31], filter: 'lowpass', cutoff: [2600, 110], noise: 1, tone: .55 },
-  energy: { duration: .40, attack: .004, peak: .14, wave: 'triangle', frequency: [650, 120], filter: 'bandpass', cutoff: [3400, 530], noise: .55, tone: .40 },
-  exotic: { duration: .62, attack: .015, peak: .15, wave: 'sine', frequency: [290, 56], filter: 'bandpass', cutoff: [1800, 150], noise: .35, tone: .65 },
-}
-
-function weaponSound(cue: CinemaAudioCue, family: CinemaWeaponFamily): Readonly<SoundProfile> {
-  if (cue.audioPhase === 'charge') {
-    const duration = bounded(cue.duration, .025, 3, .4)
-    return { duration, attack: Math.min(.08, duration * .15), peak: .07, wave: 'sine', frequency: [100, 1100], filter: 'bandpass', cutoff: [180, 1600], noise: .16, tone: .65, hold: .78 }
-  }
-  if (cue.audioPhase === 'shield-impact') return hitSounds.shield
-  if (cue.audioPhase === 'impact') {
-    if (['missile', 'torpedo', 'plasma', 'mine', 'smartbomb', 'flak'].includes(family)) return hitSounds.explosive
-    if (family === 'exotic') return hitSounds.exotic
-    if (['laser', 'beam', 'disruptor'].includes(family)) return hitSounds.energy
-    return hitSounds.ballistic
-  }
-  return WEAPON_AUDIO_PROFILES[family]
-}
+/** Score events are queued this far ahead of the film clock on the audio clock. */
+const LOOKAHEAD = .35
+/** Events are requested from the render worker this far ahead. */
+const PREPARE = 3
+const MAX_VOICES = 48
+const STINGS = new Set<ScoreNote['instrument']>(['hit', 'swell', 'riser', 'fanfare'])
 const bounded = (value: number, low: number, high: number, fallback = low) => Number.isFinite(value) ? Math.max(low, Math.min(high, value)) : fallback
 
-/** Original, locally synthesized soundtrack. No samples or external audio requests. */
+/**
+ * Original, locally synthesized soundtrack. The score is composed from the whole
+ * film in advance; effects are rendered per cue. Buses (music, stings, effects,
+ * ambience) share two synthetic reverbs and a limited master.
+ */
 export class CinemaAudio {
   private context: AudioContext | null = null
-  private master: GainNode | null = null
-  private bed: GainNode | null = null
-  private noise: AudioBuffer | null = null
-  private voices = new Set<AudioScheduledSourceNode>()
-  private voicePriority = new Map<AudioScheduledSourceNode, number>()
-  private continuous: OscillatorNode[] = []
+  private out: GainNode | null = null
+  private sfx: GainNode | null = null
+  private loss: GainNode | null = null
+  private duck: GainNode | null = null
+  private drop: GainNode | null = null
+  private sting: GainNode | null = null
+  private amb: GainNode | null = null
+  private battle: GainNode | null = null
+  private shortIn: GainNode | null = null
+  private longIn: GainNode | null = null
+  private voices = new Map<AudioScheduledSourceNode, number>()
+  private notes = new Set<AudioScheduledSourceNode>()
+  private continuous: AudioScheduledSourceNode[] = []
+  private score: ScoreNote[]
+  private schedule: CinemaAudioCue[]
+  private sizes: Record<string, number>
+  private density: number[] = []
+  private worker: Worker | null = null
+  private ready = new Map<string, Sound | null>()
+  private requested = new Set<string>()
+  private done = new Set<number>()
+  private next = 0
+  private anchored = false
+  private anchor = 0
+  private duckEnd = 0
+  private duckLevel = 1
   private muted = true
   private volume = 0.65
   private playing = false
-  private chord = -1
+  private ending = false
+  private time = 0
   private offline: BaseAudioContext | null
 
   /** An offline context renders the whole film at scheduled times (development capture). */
-  constructor(offline?: BaseAudioContext) {
+  constructor(private film: CinemaFilm, appearances: Record<string, ShipAppearance> = {}, offline?: BaseAudioContext) {
+    this.score = composeScore(film)
+    this.schedule = buildAudioSchedule(film.cues, film.shots)
+    // Hull scale 0 (fighter) to 1 (capital or station) from the rendered length.
+    this.sizes = Object.fromEntries(film.ships.map(ship => [ship.id, ship.kind === 'station' ? 1 : bounded(Math.log2((appearances[ship.shipClass]?.length ?? 2) / 1.8) / 4.5, 0, 1)]))
+    // Massed-battle bed: weapon activity over two seconds plus the ships still fighting.
+    for (let t = 0; t <= film.duration + .25; t += .25) this.density.push(film.cues.filter(cue => cue.kind === 'weapon' && Math.abs(cue.time - t) < 1).length / 2
+      + .15 * film.ships.filter(ship => ship.start <= t && t < ship.end).length)
     this.offline = offline ?? null
-    if (offline) { this.muted = false; this.playing = true; this.initialize(); this.updateGain() }
+    if (!offline) return
+    this.muted = false; this.playing = true
+    this.initialize()
+    this.updateGain()
+    for (const note of this.score) if (note.instrument === 'drop') this.dip(note, note.time)
+    else this.playNote(note, renderNote(note, offline.sampleRate), note.time)
+    this.density.forEach((_, i) => this.bed(i * .25, i * .25))
+    this.amb?.gain.setTargetAtTime(0, Math.max(0, film.duration - 2.5), .7)
   }
 
   private initialize() {
     if (this.context || (!this.offline && typeof AudioContext === 'undefined')) return
     const ctx = this.context = (this.offline ?? new AudioContext()) as AudioContext
-    const compressor = ctx.createDynamicsCompressor()
-    compressor.threshold.value = -18
-    compressor.ratio.value = 5
-    compressor.connect(ctx.destination)
-    const master = this.master = ctx.createGain()
-    master.gain.value = 0
-    master.connect(compressor)
-    const bed = this.bed = ctx.createGain()
-    bed.gain.value = 0.06
-    const filter = ctx.createBiquadFilter()
-    filter.type = 'lowpass'
-    filter.frequency.value = 340
-    bed.connect(filter).connect(master)
-    for (const [index, frequency] of [36.71, 55, 73.42, 110.12, 146.83].entries()) {
-      const osc = ctx.createOscillator()
-      osc.type = index < 2 ? 'sine' : 'triangle'
-      osc.frequency.value = frequency
-      osc.detune.value = index % 2 ? -5 : 5
-      osc.connect(bed)
-      osc.start()
-      this.continuous.push(osc)
+    // Synthesis runs in a worker ahead of the playhead; without one it runs inline.
+    if (!this.offline && typeof Worker !== 'undefined') try {
+      const worker = this.worker = new Worker(new URL('./synth.worker.ts', import.meta.url))
+      worker.onmessage = (event: MessageEvent<{ key: string; sound?: Sound }>) => { if (this.requested.has(event.data.key)) this.ready.set(event.data.key, event.data.sound ?? null) }
+      worker.onerror = () => { this.worker = null }
+      worker.postMessage({ film: this.film, sizes: this.sizes, rate: ctx.sampleRate })
+    } catch { this.worker = null }
+    const gain = (value: number, to?: AudioNode) => { const node = ctx.createGain(); node.gain.value = value; if (to) node.connect(to); return node }
+    const out = this.out = gain(0, ctx.destination)
+    // Oversampled soft clip at -2 dBFS (true peak under -1 dBTP) after the limiter catches what its attack lets through.
+    const clip = ctx.createWaveShaper()
+    const curve = new Float32Array(2048)
+    for (let i = 0; i < curve.length; i++) { const x = i / 1023.5 - 1, a = Math.abs(x); curve[i] = Math.sign(x) * (a < .6 ? a : .6 + .2 * Math.tanh((a - .6) / .2)) }
+    clip.curve = curve
+    clip.oversample = '4x'
+    clip.connect(out)
+    const limiter = ctx.createDynamicsCompressor()
+    limiter.threshold.value = -4.5; limiter.knee.value = 0; limiter.ratio.value = 20; limiter.attack.value = .001; limiter.release.value = .12
+    limiter.connect(clip)
+    const glue = ctx.createDynamicsCompressor()
+    glue.threshold.value = -16; glue.knee.value = 8; glue.ratio.value = 2.5; glue.attack.value = .01; glue.release.value = .3
+    glue.connect(limiter)
+    const highpass = ctx.createBiquadFilter(), band = ctx.createBiquadFilter()
+    highpass.type = 'highpass'; highpass.frequency.value = 30
+    band.type = 'lowpass'; band.frequency.value = 14000
+    highpass.connect(band).connect(glue)
+    const master = gain(.45, highpass)
+    const verb = (seconds: number, seed: number) => {
+      const convolver = ctx.createConvolver(), [l, r] = impulseResponse(ctx.sampleRate, seconds, seed)
+      const ir = ctx.createBuffer(2, l.length, ctx.sampleRate)
+      ir.getChannelData(0).set(l); ir.getChannelData(1).set(r)
+      convolver.normalize = false
+      convolver.buffer = ir
+      const ret = ctx.createBiquadFilter()
+      ret.type = 'highpass'; ret.frequency.value = 180
+      convolver.connect(ret).connect(master)
+      return gain(1, convolver)
     }
-    const buffer = this.noise = ctx.createBuffer(1, ctx.sampleRate * 3, ctx.sampleRate)
-    const values = buffer.getChannelData(0)
-    let seed = 7187, previous = 0
-    for (let i = 0; i < values.length; i++) {
-      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0
-      previous = (previous + ((seed / 4294967296) * 2 - 1) * 0.12) / 1.12
-      values[i] = previous * 3
+    this.shortIn = verb(.6, 11)
+    this.longIn = verb(4, 23)
+    this.sfx = gain(1, master)
+    this.loss = gain(1, master)
+    const music = gain(.4, master)
+    music.connect(gain(.22, this.longIn))
+    this.drop = gain(1, music)
+    this.duck = gain(1, this.drop)
+    this.sting = gain(.5, master)
+    this.sting.connect(gain(.3, this.longIn))
+    const amb = this.amb = gain(1, master)
+    // Ambience: slow, wide, decorrelated air; a density-driven battle rumble; a station hum.
+    const r = seeded(this.film.seed ^ 0xa1b)
+    const loop = (seconds: number, fill: (ch: Float32Array, c: number) => void, to: AudioNode) => {
+      const buffer = ctx.createBuffer(2, Math.ceil(seconds * ctx.sampleRate), ctx.sampleRate)
+      for (const c of [0, 1]) fill(buffer.getChannelData(c), c)
+      const source = ctx.createBufferSource()
+      source.buffer = buffer; source.loop = true
+      source.connect(to); source.start()
+      this.continuous.push(source)
     }
+    const lowNoise = (a: number, level: number) => (ch: Float32Array) => { let y = 0, z = 0; for (let i = 0; i < ch.length; i++) { y += a * (r() * 2 - 1 - y); z += a * (y - z); ch[i] = z * level } }
+    const air = gain(.7, amb)
+    const lfo = ctx.createOscillator(), depth = gain(.3)
+    lfo.frequency.value = .05; lfo.connect(depth).connect(air.gain); lfo.start()
+    this.continuous.push(lfo)
+    loop(7, lowNoise(.08, .05), air)
+    this.battle = gain(0, amb)
+    loop(5, lowNoise(.03, .28), this.battle)
+    if (this.film.ships.some(ship => ship.kind === 'station')) loop(1, ch => { for (let i = 0; i < ch.length; i++) { const t = i / ctx.sampleRate; ch[i] = .006 * (Math.sin(2 * Math.PI * 100 * t) + .6 * Math.sin(2 * Math.PI * 150 * t) + .3 * Math.sin(2 * Math.PI * 201 * t)) } }, amb)
+  }
+
+  private bed(time: number, at: number) {
+    const d = this.density[Math.max(0, Math.min(this.density.length - 1, Math.round(time / .25)))] ?? 0
+    this.battle?.gain.setTargetAtTime(Math.min(1, Math.log2(1 + d) / 4), at, .6)
   }
 
   setPlaying(playing: boolean) {
+    // The film clock reaching its end lets the final chord and reverb ring out.
+    if (!playing && this.playing && this.time >= this.film.duration - .05 && this.context) {
+      this.playing = false; this.ending = true
+      this.amb?.gain.setTargetAtTime(0, this.context.currentTime, 1)
+      return
+    }
     this.playing = playing
     if (playing) {
       // Called directly by the Play gesture, before any await.
       try { this.initialize(); void this.context?.resume().catch(() => {}) } catch { /* Silent playback remains available. */ }
+      if (this.context) this.amb?.gain.setTargetAtTime(1, this.context.currentTime, .3)
     } else this.clear()
     this.updateGain()
   }
@@ -148,97 +178,140 @@ export class CinemaAudio {
   }
 
   private updateGain() {
-    if (this.master && this.context) this.master.gain.setTargetAtTime(this.playing && !this.muted ? this.volume * 0.6 : 0, this.context.currentTime, 0.08)
+    if (this.out && this.context) this.out.gain.setTargetAtTime((this.playing || this.ending) && !this.muted ? (this.offline ? 1 : this.volume) : 0, this.context.currentTime, 0.08)
   }
 
-  intensity(value: number, time: number, at?: number) {
-    if (!this.context || !this.bed) return
-    const now = at ?? this.context.currentTime
-    value = bounded(value, 0, 1)
-    time = Number.isFinite(time) ? Math.max(0, time) : 0
-    const chord = Math.floor(time / 22) % 4
-    if (chord !== this.chord) {
-      this.chord = chord
-      const harmony = [[36.71,55,73.42,87.31,110],[32.7,49,65.4,82.41,98],[43.65,65.4,87.31,110,130.81],[36.71,55,73.42,98,110]][chord]
-      this.continuous.forEach((osc,index)=>osc.frequency.setTargetAtTime(harmony[index],now,2.5))
+  private play(sound: Sound, at: number, bus: AudioNode, pan = 0, offset = 0, level = 1) {
+    const ctx = this.context!
+    const buffer = ctx.createBuffer(2, sound.l.length, sound.rate)
+    buffer.getChannelData(0).set(sound.l); buffer.getChannelData(1).set(sound.r)
+    const source = ctx.createBufferSource()
+    source.buffer = buffer
+    const panner = ctx.createStereoPanner()
+    panner.pan.value = pan
+    const trim = ctx.createGain()
+    trim.gain.value = level
+    source.connect(trim).connect(panner).connect(bus)
+    const sends = ([[sound.short, this.shortIn], [sound.long, this.longIn]] as const).filter(([level]) => level > 0).map(([level, input]) => {
+      const send = ctx.createGain()
+      send.gain.value = level
+      panner.connect(send).connect(input!)
+      return send
+    })
+    source.onended = () => { this.voices.delete(source); this.notes.delete(source); source.disconnect(); trim.disconnect(); panner.disconnect(); for (const send of sends) send.disconnect() }
+    source.start(at, offset)
+    return source
+  }
+
+  private playNote(note: ScoreNote, sound: Sound, at: number, offset = 0) {
+    this.notes.add(this.play(sound, at, STINGS.has(note.instrument) ? this.sting! : this.duck!, 0, offset))
+  }
+
+  /** Clears the music, then pulls the effects back, so the decisive hit lands on near silence. */
+  private dip(note: ScoreNote, at: number) {
+    const end = at + note.duration, music = this.drop?.gain, sfx = this.sfx?.gain
+    music?.setTargetAtTime(.03, at, .06)
+    music?.setTargetAtTime(1, end, .004)
+    sfx?.setTargetAtTime(.15, Math.max(at, end - 1), .12)
+    sfx?.setTargetAtTime(1, end, .004)
+  }
+
+  /** A worker-rendered sound once it has arrived, or an inline render without a worker. */
+  private take(key: string, render: () => Sound | undefined) {
+    if (!this.worker) return render()
+    const sound = this.ready.get(key)
+    this.ready.delete(key)
+    return sound ?? undefined
+  }
+
+  /** Follows the film clock: prepares upcoming events and queues score events on the audio clock. */
+  update(time: number) {
+    this.time = Number.isFinite(time) ? time : 0
+    const ctx = this.context
+    if (!ctx || this.offline) return
+    if (!this.playing || this.muted) { this.anchored = false; return }
+    const now = ctx.currentTime
+    if (!this.anchored || Math.abs(now - this.time - this.anchor) > .1) this.anchor = now - this.time
+    this.anchored = true
+    if (this.worker) {
+      const keys: string[] = []
+      for (let i = this.next; i < this.score.length && this.score[i].time < this.time + PREPARE; i++) if (!this.done.has(i) && this.score[i].instrument !== 'drop') keys.push(`n${i}`)
+      for (const cue of audioCueRange(this.schedule, this.time, this.time + PREPARE)) keys.push(`c${cue.id}`)
+      const fresh = keys.filter(key => !this.requested.has(key))
+      for (const key of fresh) this.requested.add(key)
+      if (fresh.length) this.worker.postMessage({ keys: fresh })
     }
-    this.bed.gain.setTargetAtTime(0.026 + value * 0.027 + Math.sin(time * 0.32) * 0.008, now, 0.5)
+    for (let i = this.next; i < this.score.length && this.score[i].time < this.time + LOOKAHEAD; i++) {
+      if (this.done.has(i)) continue
+      const note = this.score[i], at = this.anchor + note.time, key = `n${i}`
+      // A sustained note already sounding at a seek resumes mid-note; a late short one is dropped.
+      if (note.time + note.duration <= this.time || (now - at > .05 && note.duration < 1)) { this.done.add(i); this.ready.delete(key); continue }
+      if (note.instrument === 'drop') { this.done.add(i); this.dip(note, Math.max(now, at)); continue }
+      if (this.worker && !this.ready.has(key)) continue
+      this.done.add(i)
+      const sound = this.take(key, () => renderNote(note, ctx.sampleRate))
+      if (sound) this.playNote(note, sound, Math.max(now, at), Math.max(0, now - at))
+    }
+    while (this.done.has(this.next)) this.next++
+    this.bed(this.time, now)
+    // Ambience fades out with the score before the picture ends.
+    this.amb?.gain.setTargetAtTime(this.time > this.film.duration - 2.5 ? 0 : 1, now, .7)
+  }
+
+  private duckMusic(at: number, [level, hold, release]: [number, number, number]) {
+    const gain = this.duck?.gain
+    if (!gain) return
+    if (at < this.duckEnd) { level = Math.min(level, this.duckLevel); hold = Math.max(hold, this.duckEnd - at) }
+    gain.cancelScheduledValues(at)
+    gain.setTargetAtTime(level, at, .004)
+    gain.setTargetAtTime(1, at + hold, release / 4)
+    this.duckEnd = at + hold; this.duckLevel = level
   }
 
   cue(cue: CinemaAudioCue, pan = 0, at?: number) {
     const ctx = this.context
-    if (!ctx || !this.master || !this.noise || !this.playing || this.muted) return
-    const weapon = cue.kind === 'weapon'
-    const contact = weapon && (cue.audioPhase === 'contact' || cue.secondaryKind === 'retaliation' || /galvanic hull grid/i.test(cue.weaponName ?? ''))
-    const profile = contact ? eventSounds.contact : weapon ? weaponSound(cue, cue.weaponFamily ?? resolveWeaponFamily(cue.weaponName, cue.damageType)) : eventSounds[cue.kind]
-    if (!profile) return
-    const now = at ?? ctx.currentTime
-    const explosion = cue.kind === 'death'
-    const impact = cue.kind === 'knockout' || cue.kind === 'capture'
-    const priority = explosion || impact ? 2 : cue.audioPhase === 'impact' || cue.audioPhase === 'shield-impact' || contact ? 1 : 0
-    if (!this.offline && this.voices.size >= 24) {
+    if (!ctx || !this.sfx || !this.playing || this.muted) return
+    const now = ctx.currentTime
+    const when = at ?? Math.max(now, this.anchored ? this.anchor + cue.time : now)
+    const sound = this.take(`c${cue.id}`, () => renderCue(cue, ctx.sampleRate, this.sizes[cue.to ?? ''] ?? 0, this.film.seed))
+    if (!sound) return
+    const priority = cue.audioCascade ? 0 : cue.kind === 'death' || cue.kind === 'knockout' || cue.kind === 'capture' ? 3
+      : cue.audioPhase === 'impact' || cue.audioPhase === 'shield-impact' || cue.audioPhase === 'contact' ? 2 : cue.audioDistant ? 0 : 1
+    if (!this.offline && this.voices.size >= MAX_VOICES) {
       // Hits may replace launches; only decisive events may replace a loss.
-      const replaced = [...this.voices].filter(source => priority === 2 || (this.voicePriority.get(source) ?? 0) < priority).slice(0, 2)
-      if (replaced.length < 2) return
-      for (const source of replaced) {
-        try { source.stop() } catch { /* Already ended. */ }
-        this.voices.delete(source)
-        this.voicePriority.delete(source)
-      }
+      const replaced = [...this.voices].find(([, p]) => p < priority || priority === 3)
+      if (!replaced) return
+      try { replaced[0].stop() } catch { /* Already ended. */ }
+      this.voices.delete(replaced[0])
     }
-    const duration = profile.duration
-    const peak = Math.min(weapon ? .23 : .75, profile.peak * (weapon && cue.critical ? 1.15 : 1))
-    const gain = ctx.createGain()
-    const panner = ctx.createStereoPanner()
-    panner.pan.value = bounded(pan, -.8, .8, 0)
-    gain.connect(panner).connect(this.master)
-    const pulses = profile.pulses ?? 1
-    for (let pulse = 0; pulse < pulses; pulse++) {
-      const start = now + pulse * duration / pulses
-      const end = pulse === pulses - 1 ? now + duration : start + duration / pulses * .8
-      gain.gain.setValueAtTime(0.0001, start)
-      gain.gain.exponentialRampToValueAtTime(peak, start + profile.attack)
-      if (profile.hold && pulses === 1) gain.gain.exponentialRampToValueAtTime(peak * .72, now + duration * profile.hold)
-      gain.gain.exponentialRampToValueAtTime(0.0001, end)
-    }
-    const noiseGain = ctx.createGain()
-    const toneGain = ctx.createGain()
-    noiseGain.gain.setValueAtTime(profile.noise, now)
-    toneGain.gain.setValueAtTime(profile.tone, now)
-    noiseGain.connect(gain); toneGain.connect(gain)
-    let remaining = 2
-    const track = (source: AudioScheduledSourceNode) => {
-      this.voices.add(source)
-      this.voicePriority.set(source, priority)
-      source.onended = () => { this.voices.delete(source); this.voicePriority.delete(source); source.disconnect(); if (--remaining === 0) { gain.disconnect(); panner.disconnect(); filter.disconnect(); noiseGain.disconnect(); toneGain.disconnect() } }
-      source.start(now)
-      source.stop(now + duration + 0.05)
-    }
-    const noise = ctx.createBufferSource()
-    noise.buffer = this.noise
-    const filter = ctx.createBiquadFilter()
-    filter.type = profile.filter
-    filter.frequency.setValueAtTime(profile.cutoff[0], now)
-    filter.frequency.exponentialRampToValueAtTime(profile.cutoff[1], now + duration)
-    noise.connect(filter).connect(noiseGain)
-    track(noise)
-    const oscillator = ctx.createOscillator()
-    oscillator.type = profile.wave
-    oscillator.frequency.setValueAtTime(profile.frequency[0], now)
-    oscillator.frequency.exponentialRampToValueAtTime(profile.frequency[1], now + duration)
-    oscillator.connect(toneGain)
-    track(oscillator)
+    const start = Math.max(this.offline ? 0 : now, when - sound.lead)
+    if (sound.duck) this.duckMusic(start + sound.lead, sound.duck)
+    // Losses play on their own bus and the rest of the effects step back under
+    // them; the story's decisive loss is the biggest sound in the film.
+    const loss = priority === 3, climax = cue.id === this.film.story?.climaxCueId
+    if (loss) { this.sfx.gain.setTargetAtTime(cue.audioDistant ? .6 : .4, start + sound.lead, .01); this.sfx.gain.setTargetAtTime(1, start + sound.lead + 1.2, .3) }
+    this.voices.set(this.play(sound, start, loss ? this.loss! : this.sfx, bounded(pan, -.85, .85, 0) * (cue.kind === 'death' ? .6 : 1), Math.max(0, start - (when - sound.lead)), climax ? 10 ** (6 / 20) : loss ? 10 ** (-3.5 / 20) : 1), priority)
   }
 
-  clear() { for (const source of this.voices) { try { source.stop() } catch { /* Already ended. */ } }; this.voices.clear(); this.voicePriority.clear() }
+  clear() {
+    for (const source of [...this.voices.keys(), ...this.notes]) { try { source.stop() } catch { /* Already ended. */ } }
+    this.voices.clear(); this.notes.clear()
+    this.ready.clear(); this.requested.clear(); this.done.clear(); this.next = 0
+    this.worker?.postMessage({ reset: true })
+    this.anchored = false; this.duckEnd = 0; this.duckLevel = 1; this.ending = false
+    for (const bus of [this.duck, this.drop, this.sfx]) if (bus && this.context) { bus.gain.cancelScheduledValues(0); bus.gain.setTargetAtTime(1, this.context.currentTime, .01) }
+    this.updateGain()
+  }
+
   dispose() {
     this.clear()
-    for (const osc of this.continuous) { osc.stop(); osc.disconnect() }
+    for (const source of this.continuous) { source.stop(); source.disconnect() }
     this.continuous = []
-    this.master?.disconnect()
-    this.bed?.disconnect()
+    this.worker?.terminate()
+    this.worker = null
+    this.out?.disconnect()
+    this.amb?.disconnect()
     void this.context?.close().catch(() => {})
     this.context = null
-    this.chord = -1
   }
 }

@@ -38,11 +38,61 @@ milestones. It follows a recurring protagonist/opponent through selected setup,
 firing, impact and reaction sequences, then resolves the actual outcome. Screen
 direction stays consistent within an exchange. Repetitive exchanges are sampled;
 chronology, health, movement, weapon flights and actor lifetimes are retimed
-together. Idle server ticks consume no screen time. Selected volleys and consequences
-receive short action budgets, with a brief opening and resolution; the edit does
-not pad a sparse record to a minimum film length. Major wreck chunks persist through the final shot, including a battle
-with no surviving ships.
+together. Idle server ticks consume no screen time. The edit does not pad a sparse
+record to a minimum film length. Major wreck chunks persist through the final shot,
+including a battle with no surviving ships.
 The version and battle ID seed all choreography. Bump `DIRECTOR_VERSION` when intentionally changing that edit.
+
+### Story structure
+
+The film tells its story through the edit and the camera only. There are no
+captions, name tags, health bars or score cards over the picture; ships carry their
+painted names. The pre-roll title names the two principals and the size of each side.
+
+Every tick gets a drama score from the record: losses, captures and escapes, flee
+attempts, boarding progress and setbacks, arrivals (more for a new side), a survivor
+brought under a fifth of its hull, the top damage dealer's biggest tick, and an
+underdog win. The same pairs or the same targets trading fire again score lower.
+Scores only decide screen time and shot choice; they never add or reorder events.
+
+The edit follows setup, stakes, first exchange, development, climax and resolution:
+
+- The opening establishes the field (the whole battlefield for a crowd or lopsided
+  odds, otherwise the principal pair), then introduces each principal alone.
+- The first exchange and the first loss get full treatment. Longer fights keep a few
+  high-scoring ticks in full; other exchanges become one-shot montage beats, and a
+  run of one side taking the same kind of hull from the other tightens as it goes.
+- The climax is the losing side's last loss (otherwise the last loss). Its most
+  involved victim is the subject, and it gets the longest hold after impact.
+- Within a loss tick the record has no order, so the doomed ship's own guns fire
+  first and the killing volley lands last; the edit shows that return fire.
+- Recorded arrivals get a lead-in before the tick's action, so reinforcements are
+  seen arriving before they fire.
+- The resolution frames the victor, preferably the climax killer. A captor shares
+  the frame with its prize; after a destruction the climax already held on the
+  wreck, so the victor closes alone.
+
+Shot roles and what they frame (the camera planner decides the exact composition):
+
+- `geography`: both `subject` and `target` in one frame; with `battlefield`, every
+  active hull. A large size difference between the pair makes it a scale shot.
+- `introduction`: one principal alone, close enough to read its painted hull name.
+  No `target`; `axis` keeps its side's screen direction.
+- `arrival`: recorded reinforcements entering, framed on the lead hull (`subject`)
+  as it appears. `focusIds` lists the whole wave. No `target`; `axis` points at an
+  opposing hull for screen direction.
+- `setup` and `fire`: the shooter (`subject`) with its line of fire toward `target`.
+  A `fire` shot whose subject is the sequence defender is return fire.
+- `impact` with a `target` or without one: the hit hull (`subject`) large in frame.
+  In a loss sequence, each `impact` shot without `target` belongs to one victim
+  (`focusIds` holds everyone lost in that beat). A mass loss uses one victim shot,
+  then a `battlefield` impact shot of all of them.
+- `montage`: one short shot of an exchange. Montage beats alternate between the
+  shooter with its `target` and the hit hull alone (no `target`).
+- `reaction`: a secondary recipient or the boarding target after contact.
+- `resolution`: the victor (`subject`, the climax killer when it survived). `target`
+  is set only for a captured prize, which is docked beside its captor; `axis` still
+  points at the climax victim.
 
 Each pilot appearance has a separate lifecycle. Arena losses disable intact
 hulls. Missing or obsolete snapshots do not authorize extra destruction or
@@ -225,15 +275,40 @@ prove an effect occurred. Unknown remote repair sources never acquire invented
 beams. These are short cinematic accents, not representations of mechanical
 status durations or exact hardpoint positions.
 
-`audio.ts` synthesizes the score and effects locally through Web Audio. It creates
-or resumes its context from the Play gesture, limits transient voices, and
-cancels existing sources on pause, seek and disposal. Families have distinct
-onsets, burst envelopes, pitch, filter sweeps and noise/tone balance. A separate
-audio schedule aligns railgun charge/release and victim-local impact sounds with
-the final edited film. Misses have no impact sound; simultaneous batteries share
-one representative impact and nearby destruction supplies its own sound. Behavior
-accents remain quiet; casualty sounds can displace ordinary volley voices. No audio files, external
-asset services, generation credentials or paid requests are required.
+The soundtrack is synthesized locally; there are no audio files, samples or
+external services. `score.ts` composes the whole score in advance as a pure
+function of the film. The film seed chooses the key, mode, tempo, motif,
+progression, ostinato, opening chord and opening gesture. Each introduced
+principal gets a leitmotif. Through the build, layers stack in stages: ostinato,
+then drums, then brass chords with motif returns, then taiko and fills. Long
+battles move in eight-bar sections with breakdowns. Each reinforcement wave or
+earlier loss gets a stab: bright for the hero's side, dark against it. The key
+lifts for the last two bars before the climax cue. The music then clears, the
+effects dip, and a hit with a brass stinger lands on the decisive event. A capture
+gets its own rising stinger. The ending follows `filmResolution` (victory, defeat,
+capture, mutual destruction or stalemate) and dies away before the picture ends.
+
+`audioSchedule.ts` places effect cues on the edited film: railgun charge and
+release, impacts at the visible hit, misses as quiet passes, and warp-in risers
+before an arrival. Ships warping in together are one wave; later waves are
+briefer. Cues outside the shot's featured ships are rendered distant.
+Simultaneous losses are staggered. A mass loss is one big blow followed by a
+wide cascade of small, separately pitched pops. A density budget keeps a few
+transients per moment in a large battle.
+
+`synth.ts` renders every note and effect as seeded sample buffers, so repeats vary.
+Weapon shots layer a noise crack, the family's body, a noise tail and a thump.
+Shield, hull and miss impacts differ and scale with damage. Losses have several
+shapes, with a saturated sub, a mid-band fireball and debris crackle so they
+carry on small speakers. `audio.ts` routes music, stings, effects, losses and
+ambience through two synthetic reverbs, ducking and a limited master with an
+oversampled soft clip. Every loss ducks the music and the other effects; the
+climax loss plays louder and the others quieter. `synth.worker.ts` renders events
+ahead of the playhead. `audio.ts` schedules them on the AudioContext clock with
+a short lookahead from the film clock. Play creates or resumes the context.
+Pause, seek and disposal cancel queued sources. Effects have a voice cap in which
+losses outrank hits and hits outrank launches. The development capture renders
+the same design offline.
 
 Development builds expose diagnostic `data-cinema-*` attributes on the canvas.
 The counters include the entire postprocessing frame. They are not product UI.
