@@ -2,7 +2,7 @@ import type { CinemaCue, CinemaFilm } from './types'
 import { seeded } from './synth'
 
 /** `drop` is not a sound: it clears the music, then dips the effects, before the decisive moment. */
-export type Instrument = 'pad' | 'bass' | 'pulse' | 'kick' | 'hat' | 'drum' | 'snare' | 'horn' | 'fanfare' | 'bell' | 'tick' | 'hit' | 'swell' | 'riser' | 'drop'
+export type Instrument = 'pad' | 'bass' | 'pulse' | 'kick' | 'hat' | 'drum' | 'snare' | 'horn' | 'lead' | 'fanfare' | 'bell' | 'tick' | 'hit' | 'swell' | 'riser' | 'drop'
 /** One score event; times in film seconds, pitches as MIDI numbers. */
 export interface ScoreNote {
   time: number
@@ -28,6 +28,14 @@ const MOTIFS: [number, number][][] = [
   [[0, .75], [2, .25], [4, 1], [6, 1], [4, 2]],
   [[0, 1], [5, 1], [4, .5], [2, .5], [3, 2]],
   [[2, 1], [1, .5], [0, .5], [4, 1.5], [0, .5], [7, 2]],
+]
+/** Enemy leitmotifs: [semitones from the tonic, beats]; chromatic and tritone-shaded. */
+const ENEMY_MOTIFS: [number, number][][] = [
+  [[0, 1], [1, 1], [0, .5], [-2, .5], [6, 2]],
+  [[0, .5], [0, .5], [1, 1], [-1, 1], [-6, 2]],
+  [[7, 1], [6, 1], [0, 1], [1, 2]],
+  [[0, 1.5], [3, .5], [1, 1], [0, .5], [-5, 1.5]],
+  [[12, .5], [11, .5], [7, 1], [6, 1], [0, 2]],
 ]
 const PROGRESSIONS = [[0, 5, 2, 6], [0, 3, 5, 4], [0, 5, 3, 4], [0, 6, 5, 6], [0, 3, 0, 5], [0, 2, 5, 6]]
 /** Sixteenth-step ostinati over chord tones [root, fifth, octave, third]; -1 rests. */
@@ -57,11 +65,13 @@ export function filmResolution(film: CinemaFilm): Resolution {
 export function composeScore(film: CinemaFilm): ScoreNote[] {
   const r = seeded(film.seed ^ 0x5eed5)
   const pick = <T>(list: readonly T[]) => list[Math.floor(r() * list.length)]
-  const mode = pick(MODES), motif = pick(MOTIFS), progression = pick(PROGRESSIONS), patternIndex = Math.floor(r() * PATTERNS.length)
+  const mode = pick(MODES), motif = pick(MOTIFS), enemyMotif = pick(ENEMY_MOTIFS), progression = pick(PROGRESSIONS), patternIndex = Math.floor(r() * PATTERNS.length)
   const setupVoice = pick(['bell', 'horn', 'tick', 'heartbeat', 'cluster'] as const), silentDrop = r() < .5
   const openChord = pick([[0, 7, 12], [0, 3, 7], [0, 2, 7], [0, 1, 7], [0, 5, 10]]), riseIn = r() < .6, liftBy = r() < .5 ? 1 : 2
   let root = 36 + Math.floor(r() * 12)
-  const bpm = 92 + Math.floor(r() * 12) * 5
+  // Tempo grows with the battle's scale: a duel broods, a fleet action drives.
+  const scaleBpm = 90 + 13 * Math.log2(Math.max(2, film.ships.length))
+  const bpm = Math.round(Math.max(88, Math.min(150, scaleBpm + (r() - .5) * 16)))
   const beat = 60 / bpm, bar = beat * 4, end = film.duration
   const notes: ScoreNote[] = []
   const note = (time: number, duration: number, instrument: ScoreNote['instrument'], pitches: number[], velocity: number, extra: Partial<ScoreNote> = {}) => {
@@ -170,19 +180,31 @@ export function composeScore(film: CinemaFilm): ScoreNote[] {
       if (barEnd >= cut - 1e-6 && t >= cut - 2 * beat && E >= .4) note(t, .1, 'snare', [], .3 + .6 * (1 - (cut - t) / (2 * beat)), { pan: .1 })
     }
   }
-  // The motif returns every four bars from the midpoint, and at each confrontation.
-  const middle = action + (cut - action) / 2
-  for (let t = onBeat(middle); t < cut - bar; t += 4 * bar) statements.push(t)
+  // Leitmotifs on a lead voice: every four bars (and at confrontations) the lead
+  // states the hero's motif or the enemy's, whichever side the shot features.
+  const shotSide = (t: number) => side(film.shots.find(shot => t >= shot.start && t < shot.end)?.subject)
+  const phrase = (at: number, until: number, velocity: number) => {
+    const hero = shotSide(at) !== undefined ? shotSide(at) === heroSide : true, key = root + 36 + lift(at)
+    let t = at
+    for (const [step, beats] of hero ? motif : enemyMotif) {
+      if (t >= until - .05) break
+      note(t, Math.min(beats * beat, until - t) - .03, 'lead', [hero ? degree(step, key) : key + step - 12], velocity, { pan: hero ? .15 : -.15 })
+      t += beats * beat
+    }
+    lastMotif = at
+  }
+  for (let t = onBeat(action + bar); t < cut - bar; t += 4 * bar) statements.push(t)
   for (const at of statements.sort((a, b) => a - b)) {
     const t = onBeat(Math.max(at, action))
-    if (t - lastMotif >= 2 * bar && t < cut - bar) motifStatement(t, root + 24 + lift(t), .55 + .3 * energy(t), cut)
+    if (t - lastMotif >= 2 * bar && t < cut - bar) phrase(t, cut, .5 + .35 * energy(t))
   }
   // Story stabs: reinforcements on the next eighth, earlier losses on their own frame.
   // Good news for the hero's side is bright and high, bad news low and dissonant.
   let lastStab = -Infinity
   const stab = (t: number, good: boolean) => {
-    if ((t >= cut && t < climax + bar) || t - lastStab < bar) return
-    note(t, beat * 1.5, 'horn', good ? voiced(triad(5).map(p => p + 12), 62) : [root + 12, root + 13, root + 19], good ? .7 : .6)
+    if ((t >= cut && t < climax + bar) || t - lastStab < 2 * bar) return
+    // Good news: the relative major, high. Bad news: a low Neapolitan (flat-two) chord.
+    note(t, beat * 1.5, 'horn', good ? voiced(triad(5).map(p => p + 12), 62) : voiced([root + 1, root + 5, root + 8], 49), good ? .7 : .6)
     note(t, .5, 'drum', [], .8)
     lastStab = t
   }
@@ -195,8 +217,9 @@ export function composeScore(film: CinemaFilm): ScoreNote[] {
   // The decisive event: silence or a reverse swell, then a hit and a brass stinger.
   const key = root + lift(climax - 1e-3)
   const climaxChord = triad(resolution === 'defeat' || resolution === 'mutual' ? 0 : 5).map(p => p + key - root)
-  const swell = silentDrop ? beat : climax - cut
-  if (climax - swell > 0) note(climax - swell, swell, 'swell', voiced(climaxChord, 55), .8)
+  // The swell stops short, so the hit always lands after a breath of silence.
+  const gap = Math.min(.35, (climax - cut) / 3), swell = (silentDrop ? beat : climax - cut) - gap
+  if (swell > .1 && climax - gap - swell > 0) note(climax - gap - swell, swell, 'swell', voiced(climaxChord, 55), .8)
   note(cut, climax - cut, 'drop', [], 1)
   note(climax, 3, 'hit', [...voiced(climaxChord, 48), climaxChord[0] + 24], 1)
   note(climax, .5, 'drum', [], 1)
@@ -236,6 +259,7 @@ export function composeScore(film: CinemaFilm): ScoreNote[] {
   if (resolution === 'victory') {
     note(final, tail, 'pad', voiced(triad(0, MAJOR).concat(root + 14), 50), .6)
     note(final, Math.min(tail, 2 * bar), 'horn', [root + 24, root + 28, root + 31], .65)
+    ;[[0, .5], [4, .5], [7, 1], [12, 2]].reduce((t, [step, beats]) => { note(t, Math.min(beats * beat, final + tail - t), 'lead', [root + 36 + step], .8); return t + beats * beat }, final)
     ;[0, 2, 4, 7].forEach((d, k) => note(final + k * beat / 2, beat, 'bell', [degree(d, root + 48, MAJOR)], .45, { pan: (k - 1.5) * .25 }))
   } else if (resolution === 'capture') {
     note(final, beat * 2, 'pad', voiced([root, root + 5, root + 7]), .55)

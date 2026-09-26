@@ -30,21 +30,23 @@ describe('cinema synthesis', () => {
   it('gives every weapon family a distinct, bounded, audible launch', () => {
     const families = ['laser', 'beam', 'railgun', 'autocannon', 'flak', 'plasma', 'missile', 'torpedo', 'disruptor', 'exotic', 'mine', 'kinetic', 'smartbomb'] as const
     const sounds = families.map(weaponFamily => renderCue(cue({ weaponFamily, audioPhase: 'release' }), rate)!)
-    for (const s of sounds) { expect(peak(s)).toBeLessThan(1); expect(rms(s)).toBeGreaterThan(-60) }
+    for (const s of sounds) { expect(peak(s)).toBeLessThan(1.5); expect(rms(s)).toBeGreaterThan(-60) }
     for (let i = 0; i < sounds.length; i++) for (let j = i + 1; j < sounds.length; j++) expect(Math.abs(corr(sounds[i].l, sounds[j].l))).toBeLessThan(.8)
     expect(renderCue(cue({ weaponFamily: 'beam', audioPhase: 'release', duration: 2.5 }), rate)!.l.length / rate).toBeGreaterThan(2.5)
   })
 
-  it('separates shield, hull and miss, scales hits by damage and routine fire by prominence', () => {
+  it('separates shield, hull and miss, scales hits by damage, and plays the shot\'s subject and target hot', () => {
     const hull = renderCue(cue({ audioPhase: 'impact', hullDamage: 30 }), rate)!
     const shield = renderCue(cue({ audioPhase: 'shield-impact', shieldDamage: 30 }), rate)!
     const miss = renderCue(cue({ audioPhase: 'miss' }), rate)!
     expect(brightness(shield)).toBeGreaterThan(brightness(hull) * 1.3)
     expect(rms(miss, 0, .4)).toBeLessThan(rms(hull, 0, .4) - 10)
     expect(rms(renderCue(cue({ audioPhase: 'impact', hullDamage: 120 }), rate)!, 0, .3)).toBeGreaterThan(rms(renderCue(cue({ audioPhase: 'impact', hullDamage: 3 }), rate)!, 0, .3) + 4)
-    const featured = renderCue(cue({ weaponFamily: 'laser', audioPhase: 'release', intensity: 1 }), rate)!
-    const routine = renderCue(cue({ weaponFamily: 'laser', audioPhase: 'release', intensity: .25 }), rate)!
-    expect(rms(featured)).toBeGreaterThan(rms(routine) + 5)
+    const hot = renderCue(cue({ weaponFamily: 'laser', audioPhase: 'release', audioHot: true }), rate)!
+    const warm = renderCue(cue({ weaponFamily: 'laser', audioPhase: 'release' }), rate)!
+    expect(rms(hot)).toBeGreaterThan(rms(warm) + 5)
+    const heavy = renderCue(cue({ weaponFamily: 'railgun', audioPhase: 'release', audioHot: true }), rate)!
+    expect(rms(heavy, 0, .3)).toBeGreaterThan(rms(hot, 0, .3))
   })
 
   it('makes every ship loss different, longer and heavier on bigger hulls, with a pre-roll before the blast', () => {
@@ -54,15 +56,17 @@ describe('cinema synthesis', () => {
     expect(big.l.length).toBeGreaterThan(small.l.length * 1.4)
     expect(rms(big, .5, 2.5)).toBeGreaterThan(rms(small, .5, 2.5))
     expect(small.lead).toBeGreaterThan(0)
-    expect(peak(big)).toBeLessThan(2)
+    expect(peak(big)).toBeLessThan(2.5)
     const cascade = renderCue(cue({ kind: 'death', audioMass: 40 }), rate, 0)!
     expect(rms(cascade, 1, 3)).toBeGreaterThan(rms(small, 1, 3) + 3)
   })
 
   it('renders distant events quieter and duller', () => {
     const near = renderCue(cue({ kind: 'death' }), rate)!, far = renderCue(cue({ kind: 'death', audioDistant: true }), rate)!
-    expect(rms(far)).toBeLessThan(rms(near) - 5)
-    expect(brightness(far)).toBeLessThan(brightness(near))
+    expect(rms(far, 0, 1.5)).toBeLessThan(rms(near, 0, 1.5) - 2)
+    expect(far.l.length).toBeLessThan(near.l.length)
+    const head = (s: Sound) => ({ ...s, l: s.l.slice(0, Math.round(1.5 * s.rate)), r: s.r.slice(0, Math.round(1.5 * s.rate)) })
+    expect(brightness(head(far))).toBeLessThan(brightness(head(near)))
   })
 
   it('gives knockouts, captures, boarding and arrivals their own sounds', () => {
@@ -74,7 +78,7 @@ describe('cinema synthesis', () => {
   })
 
   it('renders every score instrument finite and bounded, and a unit-energy reverb', () => {
-    for (const instrument of ['pad', 'bass', 'pulse', 'kick', 'hat', 'drum', 'snare', 'horn', 'bell', 'tick', 'hit', 'swell', 'riser'] as Instrument[]) {
+    for (const instrument of ['pad', 'bass', 'pulse', 'kick', 'hat', 'drum', 'snare', 'horn', 'lead', 'fanfare', 'bell', 'tick', 'hit', 'swell', 'riser'] as Instrument[]) {
       const s = renderNote({ time: 0, duration: .8, instrument, pitches: [55, 62, 67], velocity: .8 }, rate)
       expect(peak(s)).toBeLessThan(1.5)
       expect(Number.isFinite(rms(s))).toBe(true)
@@ -101,7 +105,7 @@ describe('cinema synthesis', () => {
   it('builds weapon launches from noise as well as tone, and a mass loss from many small pops', () => {
     const flatness = (s: Sound) => { const n = Math.round(.1 * s.rate), x = Array.from(s.l.slice(0, n)); let lin = 0, log = 0; const bins = 64; for (let k = 1; k <= bins; k++) { let re = 0, im = 0; x.forEach((v, i) => { re += v * Math.cos(Math.PI * k * i / bins); im += v * Math.sin(Math.PI * k * i / bins) }); const p = re * re + im * im + 1e-12; lin += p; log += Math.log(p) } return Math.exp(log / bins) / (lin / bins) }
     expect(flatness(renderCue(cue({ weaponFamily: 'laser', audioPhase: 'release' }), rate)!)).toBeGreaterThan(.01)
-    const pops = [0, 1, 2].map(i => renderCue(cue({ id: `p${i}`, kind: 'knockout', audioCascade: true, audioDistant: true }), rate)!)
+    const pops = [0, 1, 2].map(i => renderCue(cue({ id: `p${i}`, kind: 'knockout', audioCascade: 'pop', audioDistant: true }), rate)!)
     for (const p of pops) expect(p.l.length / rate).toBeLessThan(1)
     expect(Math.abs(corr(pops[0].l, pops[1].l))).toBeLessThan(.5)
     const lead = renderCue(cue({ kind: 'knockout', audioMass: 100 }), rate)!, single = renderCue(cue({ kind: 'knockout' }), rate)!

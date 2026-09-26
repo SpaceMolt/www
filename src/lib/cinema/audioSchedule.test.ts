@@ -33,13 +33,15 @@ describe('cinema audio choreography', () => {
     expect(buildAudioSchedule([{ ...weapon, secondaryKind: 'retaliation', hit: false }])).toHaveLength(0)
   })
 
-  it('lets a nearby death own the final boom and bounds a six-gun volley to one victim impact', () => {
+  it('lets a simultaneous death own the final boom and bounds a six-gun volley to one victim impact', () => {
     const guns = Array.from({ length: 6 }, (_, index) => ({ ...weapon, id: `gun:${index}`, weaponFamily: index ? 'laser' as const : 'torpedo' as const }))
     const schedule = buildAudioSchedule(guns)
     expect(schedule.filter(cue => cue.audioPhase === 'impact')).toHaveLength(1)
     expect(schedule.find(cue => cue.audioPhase === 'impact')?.weaponFamily).toBe('torpedo')
-    const death: CinemaCue = { id: 'loss', kind: 'death', time: 13.2, duration: 3.5, tick: 4, to: 'b', intensity: 1 }
+    // A loss within 0.3 s owns the boom; one a second later leaves the hit audible.
+    const death: CinemaCue = { id: 'loss', kind: 'death', time: 13.0, duration: 3.5, tick: 4, to: 'b', intensity: 1 }
     expect(buildAudioSchedule([...guns, death]).filter(cue => cue.audioPhase === 'impact')).toHaveLength(0)
+    expect(buildAudioSchedule([...guns, { ...death, time: 13.9 }]).filter(cue => cue.audioPhase === 'impact')).toHaveLength(1)
     expect(buildAudioSchedule([...guns, death]).filter(cue => cue.kind === 'death')).toHaveLength(1)
     expect(buildAudioSchedule([{ ...weapon, parentId: 'other' }])).toHaveLength(0)
   })
@@ -54,18 +56,18 @@ describe('cinema audio choreography', () => {
     expect(JSON.stringify(source)).toBe(before)
   })
 
-  it('staggers simultaneous losses and spreads a mass loss into a wide cascade of pops', () => {
+  it('staggers simultaneous losses; a mass loss is one blow, wide detonations, then a rain of pops', () => {
     const losses: CinemaCue[] = Array.from({ length: 100 }, (_, i) => ({ id: `ko:${i}`, kind: 'knockout', time: 5, duration: 1, tick: 3, to: `s${i}`, intensity: 1 }))
     const schedule = buildAudioSchedule(losses)
-    expect(schedule).toHaveLength(52)
     expect(schedule[0].audioMass).toBe(100)
-    const pops = schedule.filter(cue => cue.audioCascade)
-    expect(pops).toHaveLength(48)
-    expect(pops.every(cue => cue.audioDistant)).toBe(true)
-    const times = pops.map(cue => cue.time)
-    expect(Math.min(...times) - 5).toBeGreaterThan(.5)
-    expect(Math.max(...times) - Math.min(...times)).toBeGreaterThan(3)
-    expect(Math.max(...times) - 5).toBeLessThan(6)
+    const detonations = schedule.filter(cue => cue.audioCascade === 'detonation'), pops = schedule.filter(cue => cue.audioCascade === 'pop')
+    expect(detonations).toHaveLength(19)
+    expect(detonations.every(cue => cue.time > 5.1 && cue.time < 7)).toBe(true)
+    expect(pops).toHaveLength(30)
+    expect(pops.every(cue => cue.audioDistant && cue.time > 6.8)).toBe(true)
+    expect(Math.max(...pops.map(cue => cue.time)) - 5).toBeLessThan(6)
+    const small = buildAudioSchedule(losses.slice(0, 8)).filter(cue => cue.audioCascade === 'detonation')
+    expect(small.length).toBeLessThan(detonations.length)
     const pair = buildAudioSchedule(losses.slice(0, 2))
     expect(pair[1].time - pair[0].time).toBeGreaterThanOrEqual(.15)
     expect(pair[1].time - pair[0].time).toBeLessThanOrEqual(.3)

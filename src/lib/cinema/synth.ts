@@ -105,6 +105,21 @@ function crackle(o: Sound, start: number, len: number, pan: number, gain: number
   add(o, start, len, pan, gain, t => f(r() < density * Math.exp(-t * 2.5 / len) ? r() * 6 - 3 : 0, 4500, .5, 2))
 }
 
+/** Truncates a sound with a 60 ms fade. */
+function shorten(o: Sound, seconds: number) {
+  const n = Math.round((seconds + o.lead) * o.rate)
+  if (n >= o.l.length) return
+  o.l = o.l.slice(0, n); o.r = o.r.slice(0, n)
+  const f = Math.round(.06 * o.rate)
+  for (let i = 0; i < f; i++) { const g = 1 - i / f; o.l[n - f + i] *= g; o.r[n - f + i] *= g }
+}
+/** Every buffer ends on a short fade, never a cut. */
+function fadeEnd(o: Sound) {
+  const f = Math.min(o.l.length, Math.round(.015 * o.rate)), n = o.l.length
+  for (let i = 0; i < f; i++) { const g = i / f; o.l[n - 1 - i] *= g; o.r[n - 1 - i] *= g }
+  return o
+}
+
 function lowpassAll(o: Sound, cutoff: number) {
   const a = 1 - Math.exp(-TAU * cutoff / o.rate)
   for (const ch of [o.l, o.r]) { let y = 0; for (let i = 0; i < ch.length; i++) ch[i] = y += a * (ch[i] - y) }
@@ -124,7 +139,7 @@ function release(family: CinemaWeaponFamily, cue: CinemaAudioCue, rate: number, 
     thump(o, 0, 120 * (.9 + .2 * r()), 65, .04, .04, .12 * level)
     o.duck = [db(-3), .06, .3]
   }
-  scale(o, prominence(cue))
+  scale(o, tierGain(cue) * db(-2) * (HEAVY.has(family) ? db(3) : LIGHT.has(family) ? db(-3) : 1))
   return o
 }
 function launch(family: CinemaWeaponFamily, cue: CinemaAudioCue, rate: number, r: Rng): Sound {
@@ -138,8 +153,8 @@ function launch(family: CinemaWeaponFamily, cue: CinemaAudioCue, rate: number, r
       for (let s = 0; s < shots; s++) {
         const t0 = s * (.07 + r() * .04), f0 = (1300 + r() * 900) * pitch, f1 = f0 * (.35 + .3 * r())
         const a = osc(rate, glide(f0, f1, .07 + r() * .05), square), b = osc(rate, glide(f0 * 1.012, f1 * 1.02, .08 + r() * .05), saw), bp = svf(rate)
-        add(o, t0, .22, j(.3), .22 * level, t => bp(a(t) * .6 + b(t) * .5, glide(2600 * cut, 700, .14)(t), .5, 1) * ad(t, .002, .05))
-        burst(o, t0, .03, 0, .08 * level, r, () => 6000, 2, t => ad(t, .001, .006))
+        add(o, t0, .22, j(.3), .2 * level, t => Math.tanh(2.5 * bp(a(t) * .6 + b(t) * .5, glide(2600 * cut, 700, .14)(t), .5, 1)) * ad(t, .002, .05))
+        burst(o, t0, .12, 0, .14 * level, r, t => 3500 * cut * Math.exp(-t * 8) + 900, 1, t => ad(t, .002, .035), .5)
       }
       o.short = .25; o.long = .08
       return o
@@ -165,12 +180,14 @@ function launch(family: CinemaWeaponFamily, cue: CinemaAudioCue, rate: number, r
         return o
       }
       const o = blank(rate, 1.6)
-      level *= .6
-      burst(o, 0, .008, 0, .3 * level, r, () => 7000, 2, t => ad(t, .0003, .002))
+      level *= .7
+      burst(o, 0, .02, 0, .7 * level, r, () => 9000, 2, t => ad(t, .0002, .004))
+      burst(o, 0, .06, 0, .35 * level, r, () => 2500, 1, t => ad(t, .0005, .012), .4)
+      fireball(o, .005, .18, 0, .35 * level, r)
+      sub(o, 0, 110, 55, .1, .12, .3 * level, 3)
       const zing = osc(rate, glide(3200 * pitch, 260, .08))
-      add(o, 0, .3, 0, .18 * level, t => zing(t) * ad(t, .001, .05))
-      thump(o, 0, 120, 70, .08, .08, .15 * level)
-      burst(o, 0, 1.4, 0, .22 * level, r, t => 5000 * cut * Math.exp(-t * 3) + 200, 0, t => ad(t, .003, .35))
+      add(o, 0, .3, 0, .06 * level, t => zing(t) * ad(t, .001, .05))
+      burst(o, .02, 1.4, 0, .22 * level, r, t => 5000 * cut * Math.exp(-t * 3) + 200, 0, t => ad(t, .01, .35))
       o.short = .3; o.long = .25
       return o
     }
@@ -201,11 +218,15 @@ function launch(family: CinemaWeaponFamily, cue: CinemaAudioCue, rate: number, r
       return o
     }
     case 'missile': case 'torpedo': {
-      const heavy = family === 'torpedo', o = blank(rate, heavy ? 1.6 : 1.2)
-      thump(o, 0, heavy ? 100 : 140, 70, .08, .08, .18 * level)
-      burst(o, 0, heavy ? 1.4 : 1.0, 0, .3 * level, r, t => (400 + 2600 * Math.min(1, t / .35)) * cut, 0, t => Math.min(1, t / .06) * Math.exp(-t / (heavy ? .45 : .3)))
-      const dop = osc(rate, glide(820 * pitch, 520 * pitch, heavy ? 1 : .7), saw), lp = svf(rate)
-      add(o, .02, heavy ? 1.2 : .9, 0, .05 * level, t => lp(dop(t), 1500, .7, 0) * Math.min(1, t / .05) * Math.exp(-t / .3))
+      const heavy = family === 'torpedo', o = blank(rate, heavy ? 1.8 : 1.4), len = heavy ? 1.3 : .9
+      // Ignition pop, then a noise whoosh that sweeps up and falls away with a Doppler drop.
+      burst(o, 0, .03, 0, .5 * level, r, () => 5000, 2, t => ad(t, .0003, .006))
+      fireball(o, 0, heavy ? .25 : .15, 0, .35 * level, r)
+      sub(o, 0, heavy ? 90 : 120, 55, .08, .1, .25 * level)
+      const n = noise(r), bp = svf(rate), peakAt = len * .35
+      add(o, .03, len, 0, .4 * level, t => bp(n(), (700 + 2600 * Math.min(1, t / peakAt)) * (t > peakAt ? Math.exp(-(t - peakAt) * 1.5) : 1) * cut, .6, 1) * Math.min(1, t / .05) * Math.exp(-Math.max(0, t - peakAt) / (len / 3)))
+      const dop = osc(rate, t => (t < peakAt ? 900 : 900 * Math.exp(-(t - peakAt) * 1.2)) * pitch, saw), lp = svf(rate)
+      add(o, .03, len, 0, .06 * level, t => lp(dop(t), 1800, .7, 0) * Math.min(1, t / .05) * Math.exp(-t / (len / 2)))
       o.short = .2; o.long = .2
       return o
     }
@@ -238,45 +259,50 @@ function launch(family: CinemaWeaponFamily, cue: CinemaAudioCue, rate: number, r
   }
 }
 
-/** Routine fire sits back; the story's featured exchanges play at full level. */
-const prominence = (cue: CinemaAudioCue) => db(-8 * (1 - clamp((cue.intensity - .2) / .5, 0, 1)))
+/** The shot's subject and target play hot; the rest of the focus group sits back. Far cues are handled after rendering. */
+const tierGain = (cue: CinemaAudioCue, impact = false) => cue.audioHot ? db(2 * clamp((cue.intensity - .5) * 2, -1, 1)) : db(impact ? -3 : -7)
+const HEAVY = new Set<CinemaWeaponFamily>(['railgun', 'missile', 'torpedo', 'smartbomb', 'mine'])
+const LIGHT = new Set<CinemaWeaponFamily>(['laser', 'beam', 'disruptor', 'exotic'])
 
 /** Damage 0..1 on a log scale: a graze is quiet, a heavy blow is loud. */
 const weight = (damage: number) => clamp(Math.log1p(Math.max(0, damage)) / Math.log1p(120), 0, 1)
 
 function impact(cue: CinemaAudioCue, family: CinemaWeaponFamily, rate: number, r: Rng): Sound {
+  // Impacts are the payoff: they sit above launches.
   const o = hit(cue, family, rate, r)
-  scale(o, prominence(cue))
+  scale(o, tierGain(cue, true) * db(2))
   return o
 }
 function hit(cue: CinemaAudioCue, family: CinemaWeaponFamily, rate: number, r: Rng): Sound {
   const pitch = 1 + (r() - .5) * .12
   if (cue.audioPhase === 'miss') {
     const o = blank(rate, .45), level = db(-3 + (r() - .5) * 4)
-    burst(o, 0, .42, (r() - .5) * 1.4, .09 * level, r, glide(2800 * pitch, 650, .35), 1, t => Math.sin(Math.PI * Math.min(1, t / .4)) ** 2, .45)
+    burst(o, 0, .42, (r() - .5) * 1.4, .12 * level, r, glide(2800 * pitch, 650, .35), 1, t => Math.sin(Math.PI * Math.min(1, t / .4)) ** 2, .45)
     o.short = .1
     return o
   }
+  const crit = cue.critical ? db(3) : 1
   if (cue.audioPhase === 'shield-impact') {
-    const w = weight(cue.shieldDamage ?? 0), o = blank(rate, 1.2), g = .35 + .65 * w
-    ring(o, 0, (380 + r() * 260) * pitch, [1, 2.76, 5.4], .16 + .14 * w, 0, .16 * g, r)
-    burst(o, 0, .35, 0, .16 * g, r, () => 5200, 2, t => Math.min(1, t / .03) * Math.exp(-t / .07))
-    const sweep = osc(rate, glide(1400 * pitch, 500, .25))
-    add(o, 0, .3, 0, .05 * g, t => sweep(t) * ad(t, .004, .08))
-    o.short = .3; o.long = .12
+    // A shield hit is an electric zap and a glassy ring, level by damage.
+    const w = weight(cue.shieldDamage ?? 0), o = blank(rate, 1), g = db(-12 + 12 * w) * crit
+    const zap = osc(rate, glide(2400 * pitch, 900 * pitch, .12), square), bp = svf(rate), n = noise(r)
+    add(o, 0, .18, 0, .3 * g, t => bp(zap(t) * .6 + n() * .4, 2800 * pitch, .5, 1) * ad(t, .001, .05))
+    ring(o, 0, (520 + r() * 300) * pitch, [1, 2.76, 5.4], .12 + .1 * w, 0, .25 * g, r)
+    burst(o, 0, .25, 0, .25 * g, r, () => 5500, 2, t => ad(t, .002, .05))
+    o.short = .25; o.long = .08
     o.duck = [db(-4), .08, .4]
     return o
   }
-  const w = weight(cue.hullDamage ?? 0), big = explosive.has(family), g = .4 + .6 * w
-  const o = blank(rate, big ? 1.6 : 1.1)
-  crunch(o, 0, big ? .32 : .18, 200 + r() * 600, (r() - .5) * .3, .32 * g, r)
-  thump(o, 0, 90 * pitch, 50, .1, big ? .14 : .07, .3 * g)
-  if (big) burst(o, 0, 1.3, 0, .32 * g, r, t => 2200 * Math.exp(-t * 2) + 180, 0, t => ad(t, .004, .22))
-  for (let k = 0; k < 2; k++) {
-    const f = 300 + r() * 600, c = osc(rate, glide(f, f * (.85 + r() * .1), .5))
-    add(o, .03 + r() * .05, .6, (r() - .5), .03 * g, t => c(t) * Math.sin(Math.PI * Math.min(1, t / .5)) * (.7 + .3 * Math.sin(TAU * 23 * t)))
-  }
-  o.short = .35; o.long = big ? .25 : .12
+  // A hull hit is a metallic crunch with a clang, level by damage.
+  const w = weight(cue.hullDamage ?? 0), big = explosive.has(family), g = db(-12 + 12 * w) * crit
+  const o = blank(rate, big ? 1.4 : 1)
+  crunch(o, 0, big ? .3 : .18, 500 + r() * 900, (r() - .5) * .3, .9 * g, r)
+  burst(o, 0, .015, 0, .6 * g, r, () => 6000, 2, t => ad(t, .0003, .003))
+  ring(o, 0, (300 + r() * 400) * pitch, [1, 2.4, 3.9, 5.3], .07 + .05 * w, 0, .18 * g, r)
+  sub(o, 0, 90 * pitch, 50, .1, big ? .12 : .07, .3 * g)
+  if (big) fireball(o, 0, .4, 0, .5 * g, r)
+  if (cue.critical) crackle(o, .02, .5, 0, .3, r, .08)
+  o.short = .3; o.long = big ? .2 : .08
   o.duck = [db(-5), .12, .5]
   return o
 }
@@ -288,8 +314,10 @@ function death(size: number, rate: number, r: Rng): Sound {
   const g = .38 + .16 * size
   burst(o, 0, lead, 0, .12 * g, r, t => 800 + 6000 * t / lead, 2, t => (t / lead) ** 3)
   burst(o, lead, .02, 0, .45 * g, r, () => 7000, 2, t => ad(t, .0002, .004))
-  sub(o, lead, (70 - size * 15) * (.85 + .3 * r()), 26 + r() * 8, (.9 + size * .8) * (.8 + .4 * r()), (.45 + size * .5) * (.8 + .4 * r()), .6 * g, 2 + r() * 2)
+  sub(o, lead, (48 + 60 * r()) * (1 - .25 * size), 26 + r() * 8, (.9 + size * .8) * (.8 + .4 * r()), (.45 + size * .5) * (.8 + .4 * r()), .6 * g, 2 + r() * 2)
   fireball(o, lead, (.8 + .8 * size) * (.8 + .5 * r()), (r() - .5) * .4, 1.1 * g, r)
+  crunch(o, lead, .25 + .15 * size, 900 + r() * 1200, (r() - .5) * .4, 2 * g, r)
+  burst(o, lead, .2, 0, .9 * g, r, t => 4000 * Math.exp(-t * 6) + 600, 1, t => ad(t, .002, .06), .5)
   const body = brown(r), bodyLp = svf(rate), bodyLen = (1.4 + size * 1.4) * (shape === 0 ? .5 + .4 * r() : .8 + .6 * r()), pitch = .8 + r() * .4
   add(o, lead, bodyLen * 1.6, (r() - .5) * .3, .55 * g, t => bodyLp(body(), 3000 * pitch * Math.exp(-t * 2.2 / bodyLen) + 180, .9, 0) * ad(t, .006, bodyLen / 3))
   const blasts = shape === 0 ? 0 : shape === 1 ? 1 : 2 + Math.floor(r() * 3)
@@ -337,6 +365,19 @@ function knockout(rate: number, r: Rng): Sound {
   return o
 }
 
+/** One of a mass loss's staggered detonations: a mid-size blast, placed wide. */
+function detonation(kind: string, rate: number, r: Rng): Sound {
+  const o = blank(rate, 1.6), pan = (r() - .5) * 1.8, g = db(-2 - r() * 5)
+  burst(o, 0, .015, pan, .5 * g, r, () => 6000, 2, t => ad(t, .0003, .003))
+  crunch(o, 0, .2, 800 + r() * 1400, pan, .7 * g, r)
+  fireball(o, 0, .4 + r() * .5, pan, .7 * g, r)
+  sub(o, 0, 60 + r() * 40, 32, .3, .2, .35 * g, 3)
+  if (kind === 'knockout') crackle(o, 0, .5, pan, .4 * g, r, .1)
+  else crackle(o, .05, .9, pan, .25 * g, r)
+  o.short = .2; o.long = .25
+  return o
+}
+
 /** One small, far loss in a mass cascade: pitch, pan and distance of its own. */
 function pop(kind: string, rate: number, r: Rng): Sound {
   const o = blank(rate, .7), pan = (r() - .5) * 1.8, pitch = .6 + r() * .9
@@ -356,9 +397,10 @@ function pop(kind: string, rate: number, r: Rng): Sound {
 function boarding(phase: CinemaAudioCue['boardingPhase'], step: number, rate: number, r: Rng): Sound {
   const o = blank(rate, 1.6), f = (170 + r() * 40) * 2 ** (Math.min(step, 8) / 12)
   const clank = (t0: number, pitch: number, pan: number, gain: number) => {
-    ring(o, t0, pitch, [1, 2.31, 3.93, 5.1], .12, pan, .3 * gain, r)
-    thump(o, t0, 110, 60, .05, .08, .4 * gain)
-    burst(o, t0, .05, pan, .25 * gain, r, () => 3500, 1, t => ad(t, .0005, .01))
+    ring(o, t0, pitch, [1, 2.31, 3.93, 5.1], .12, pan, .45 * gain, r)
+    crunch(o, t0, .12, 1200 + r() * 800, pan, .5 * gain, r)
+    sub(o, t0, 110, 60, .05, .08, .35 * gain)
+    burst(o, t0, .05, pan, .35 * gain, r, () => 3500, 1, t => ad(t, .0005, .01))
   }
   if (phase === 'approach' || phase === undefined) {
     burst(o, 0, .8, 0, .22, r, () => 1600, 0, t => Math.sin(Math.PI * Math.min(1, t / .8)))
@@ -388,16 +430,20 @@ function capture(rate: number, r: Rng): Sound {
 }
 
 function arrival(rate: number, r: Rng, wave: number, order: number): Sound {
-  // The riser is one of three kinds; a bigger wave lands harder, later waves are briefer.
-  const lead = .6, size = Math.min(1, Math.log2(wave) / 3), brief = order > 2 ? .6 : 1, o = blank(rate, lead + 1.6 * brief)
-  const pitch = 1 + (r() - .5) * .3, kind = Math.floor(r() * 3), g = db(-1.5 * Math.min(order, 4)) * (.8 + .4 * size)
-  if (kind === 0) { const rise = osc(rate, glide(180 * pitch, 1500 * pitch, lead)); add(o, 0, lead, 0, .16 * g, t => rise(t) * (t / lead) ** 2) }
-  if (kind === 2) for (const m of [1, 1.5, 2.02]) { const rise = osc(rate, glide(400 * pitch * m, 1200 * pitch * m, lead)); add(o, 0, lead, (m - 1.5), .05 * g, t => rise(t) * (t / lead) ** 3) }
-  burst(o, 0, lead, 0, (kind === 1 ? .45 : .3) * g, r, glide(300 * pitch, 5000, lead), 1, t => (t / lead) ** 2.5, .5)
-  sub(o, lead, (80 + r() * 40) * (1 - .2 * size), 40, .25, .2 + .15 * size, .45 * g)
-  burst(o, lead, 1.2 * brief, 0, .35 * g, r, t => 3500 * Math.exp(-t * 3) + 200, 0, t => ad(t, .004, .2 * brief))
-  ring(o, lead, 700 * pitch, [1, 1.5, 2.02], .5 * brief, 0, .03 * g, r)
-  o.short = .2; o.long = .4
+  // A hyperspace rip: torn, fluttering midrange noise climbing to a sharp crack as
+  // the ship appears. A bigger wave tears wider; later waves are briefer.
+  const lead = .6, size = Math.min(1, Math.log2(wave) / 3), brief = order > 2 ? .6 : 1, o = blank(rate, lead + 1.3 * brief)
+  const pitch = 1 + (r() - .5) * .3, g = db(-1.5 * Math.min(order, 4)) * (.8 + .4 * size), flutter = 25 + r() * 35
+  for (const pan of size > .3 ? [-.5, .5] : [0]) {
+    const n = noise(r), bp = svf(rate)
+    add(o, 0, lead + .05, pan, .45 * g, t => Math.tanh(2 * bp(n(), (500 + 2800 * (t / lead) ** 2) * pitch, .35, 1)) * (t / lead) ** 5 * (.6 + .4 * Math.sin(TAU * flutter * t + r() * .3)))
+  }
+  burst(o, lead, .02, 0, .8 * g, r, () => 6000, 2, t => ad(t, .0003, .004))
+  fireball(o, lead, .35 * brief, 0, .9 * g, r)
+  crunch(o, lead, .15, 1500 + r() * 1000, 0, .5 * g, r)
+  sub(o, lead, 90, 50, .15, .12, .2 * g)
+  ring(o, lead, 700 * pitch, [1, 1.5, 2.02], .4 * brief, 0, .05 * g, r)
+  o.short = .2; o.long = .35
   return o
 }
 
@@ -408,7 +454,11 @@ function accent(kind: string, rate: number, r: Rng): Sound {
     add(o, 0, 1.2, 0, .08, t => d(t) * ad(t, .05, .4))
     burst(o, 0, 1.2, 0, .2, r, glide(3500, 300, 1), 0, t => ad(t, .04, .35))
   } else if (kind === 'repair') {
-    for (const [k, f] of [660, 990].entries()) { const c = osc(rate, () => f); add(o, k * .12, .8, 0, .05, t => c(t) * ad(t, .01, .25)) }
+    // A rising shimmer: arpeggiated partials with a tremolo.
+    const base = 520 * (1 + (r() - .5) * .2)
+    for (const [k, m] of [1, 1.25, 1.5, 2].entries()) { const c = osc(rate, () => base * m); add(o, k * .09, .9, (k - 1.5) * .3, .3, t => c(t) * (.7 + .3 * Math.sin(TAU * 11 * t)) * ad(t, .005, .3)) }
+    ring(o, 0, base * 2, [1, 2.76], .25, 0, .25, r)
+    burst(o, 0, .8, 0, .06, r, glide(1500, 5000, .7), 1, t => Math.sin(Math.PI * Math.min(1, t / .8)), .4)
   } else if (kind === 'drain') {
     const w = osc(rate, glide(600, 90, .9)); add(o, 0, 1, 0, .08, t => w(t) * (1 + .5 * Math.sin(TAU * 9 * t)) * ad(t, .08, .3))
   } else if (kind === 'cloak') {
@@ -430,7 +480,8 @@ export function renderCue(cue: CinemaAudioCue, rate: number, size = 0, seed = 0)
   const contact = weapon && (cue.audioPhase === 'contact' || cue.secondaryKind === 'retaliation' || /galvanic hull grid/i.test(cue.weaponName ?? ''))
   const o = contact ? accent('contact', rate, r)
     : weapon ? (cue.audioPhase === 'impact' || cue.audioPhase === 'shield-impact' || cue.audioPhase === 'miss' ? impact(cue, family, rate, r) : release(family, cue, rate, r))
-    : cue.audioCascade ? pop(cue.kind, rate, r)
+    : cue.audioCascade === 'pop' ? pop(cue.kind, rate, r)
+    : cue.audioCascade === 'detonation' ? detonation(cue.kind, rate, r)
     : cue.kind === 'death' ? death(Math.max(size, (cue.audioMass ?? 1) >= 8 ? .9 : 0), rate, r)
     : cue.kind === 'knockout' ? knockout(rate, r)
     : cue.kind === 'capture' ? capture(rate, r)
@@ -443,16 +494,21 @@ export function renderCue(cue: CinemaAudioCue, rate: number, size = 0, seed = 0)
     // Many losses at once: a bigger, wider blow and a rolling tail sized by the count.
     const extra = Math.min(1, Math.log2(cue.audioMass!) / 6), roll = brown(r), lp = svf(rate), len = Math.min(3, o.l.length / rate - .3)
     sub(o, o.lead, 60, 28, 1.2, .8, .5 * extra, 3)
+    // A dense shockwave that holds for about a second: loud, not just peaky.
+    for (const pan of [-.7, 0, .7]) { const n = noise(r), f = svf(rate); add(o, o.lead, 2.5, pan, .45 * extra, t => Math.tanh(1.5 * f(n(), 3500 * Math.exp(-t * 1.2) + 300, .9, 0)) * Math.min(1, t / .01) * Math.exp(-Math.max(0, t - .8) / .4)) }
     fireball(o, o.lead, 1.4, -.5, .35 * extra, r); fireball(o, o.lead + .03, 1.4, .5, .35 * extra, r)
     add(o, .25, len, 0, .4 * extra, t => lp(roll(), 900, 1, 0) * Math.sin(Math.PI * Math.min(1, t / len)) * (.6 + .4 * Math.sin(TAU * 2.3 * t)))
   }
-  if (cue.audioDistant && !cue.audioCascade) {
-    lowpassAll(o, 1400)
-    scale(o, db(cue.kind === 'death' || cue.kind === 'knockout' ? -7 : -9))
-    o.long = Math.min(.8, o.long * 1.8 + .1); o.short *= .5
-    if (o.duck) o.duck = [Math.sqrt(o.duck[0]), o.duck[1], o.duck[2]]
+  if (cue.audioDistant && cue.audioCascade !== 'pop') {
+    // Far away: dull, quieter and short, so a dense scene does not smear into a wall.
+    const loss = cue.kind === 'death' || cue.kind === 'knockout'
+    lowpassAll(o, loss ? 4500 : 1400)
+    scale(o, db(loss ? -3 : -12))
+    shorten(o, loss ? 1.6 : .45)
+    o.long = Math.min(.4, o.long); o.short *= .5
+    if (o.duck) o.duck = [Math.sqrt(o.duck[0]), o.duck[1] * .5, o.duck[2] * .5]
   }
-  return o
+  return fadeEnd(o)
 }
 
 // ---- Score instruments -------------------------------------------------------
@@ -494,7 +550,7 @@ export function renderNote(note: ScoreNote, fullRate: number): Sound {
     }
     case 'kick': {
       const o = blank(rate, .45)
-      thump(o, 0, 150, 45, .08, .12, .4 * v)
+      thump(o, 0, 150, 45, .08, .12, .55 * v)
       burst(o, 0, .01, 0, .2 * v, r, () => 4000, 1, t => ad(t, .0003, .002))
       return o
     }
@@ -505,7 +561,7 @@ export function renderNote(note: ScoreNote, fullRate: number): Sound {
     }
     case 'drum': {
       const o = blank(rate, 1.2)
-      thump(o, 0, 115, 62, .12, .28, .55 * v)
+      thump(o, 0, 115, 62, .12, .28, .7 * v)
       burst(o, 0, .08, pan, .22 * v, r, () => 380, 1, t => ad(t, .002, .03))
       o.long = .35
       return o
@@ -530,6 +586,14 @@ export function renderNote(note: ScoreNote, fullRate: number): Sound {
         })
       }
       o.long = .5
+      return o
+    }
+    case 'lead': {
+      // A singing lead: detuned saw and square, filter swell, delayed vibrato.
+      const rel = .25, o = blank(rate, dur + rel), f = hz(note.pitches[0])
+      const a = osc(rate, t => f * (1 + .006 * Math.sin(TAU * 5.5 * t) * Math.min(1, Math.max(0, t - .2) * 3)), saw, r()), b = osc(rate, () => f * 1.003, square, r()), lp = svf(rate)
+      add(o, 0, dur + rel, pan, .1 * v, t => lp(a(t) * .7 + b(t) * .3, 900 + 2600 * v * Math.min(1, t / .08), .6, 0) * Math.min(1, t / .02) * (t < dur ? 1 - .2 * Math.min(1, t) : Math.exp(-(t - dur) / (rel / 3)) * .8))
+      o.long = .45
       return o
     }
     case 'bell': {

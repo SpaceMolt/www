@@ -277,38 +277,49 @@ status durations or exact hardpoint positions.
 
 The soundtrack is synthesized locally; there are no audio files, samples or
 external services. `score.ts` composes the whole score in advance as a pure
-function of the film. The film seed chooses the key, mode, tempo, motif,
-progression, ostinato, opening chord and opening gesture. Each introduced
-principal gets a leitmotif. Through the build, layers stack in stages: ostinato,
-then drums, then brass chords with motif returns, then taiko and fills. Long
-battles move in eight-bar sections with breakdowns. Each reinforcement wave or
-earlier loss gets a stab: bright for the hero's side, dark against it. The key
+function of the film. The film seed chooses the key, mode, motifs, progression,
+ostinato, opening chord and opening gesture; the tempo grows with the number of
+ships. Each introduced principal gets a leitmotif. Through the build, layers stack
+in stages: ostinato, then drums, then brass chords, then taiko and fills. A lead
+voice states the hero's or the enemy's motif, whichever side the shot features.
+Long battles move in eight-bar sections with breakdowns. Reinforcement waves and
+earlier losses get stabs: bright for the hero's side, dark against it. The key
 lifts for the last two bars before the climax cue. The music then clears, the
-effects dip, and a hit with a brass stinger lands on the decisive event. A capture
-gets its own rising stinger. The ending follows `filmResolution` (victory, defeat,
-capture, mutual destruction or stalemate) and dies away before the picture ends.
+effects dip, and after a short silence a hit and brass stinger land on the
+decisive event. A capture gets its own rising stinger. The ending follows
+`filmResolution` (victory, defeat, capture, mutual destruction or stalemate) and
+dies away before the picture ends.
 
-`audioSchedule.ts` places effect cues on the edited film: railgun charge and
-release, impacts at the visible hit, misses as quiet passes, and warp-in risers
-before an arrival. Ships warping in together are one wave; later waves are
-briefer. Cues outside the shot's featured ships are rendered distant.
-Simultaneous losses are staggered. A mass loss is one big blow followed by a
-wide cascade of small, separately pitched pops. A density budget keeps a few
-transients per moment in a large battle.
+`audioSchedule.ts` places effect cues on the edited film and assigns each a mix
+tier from the shot. Cues involving the shot's subject or target (the ships the
+camera frames) are hot. The rest of the shot's focus group is warm, and all other
+cues are far: dull, quiet and short. Warm and far cues are thinned hard, so a
+dense scene stays articulate. Hits are kept per victim per quarter second; a loss
+within 0.3 s of a hit owns that boom. Misses are quiet passes near the target.
+Arrivals start a short riser before the ship appears; ships warping in together
+are one wave. Simultaneous losses are staggered. A mass loss is one blow, a wide
+run of detonations over about two seconds (more for a bigger count), then a rain
+of small, separately pitched pops.
 
 `synth.ts` renders every note and effect as seeded sample buffers, so repeats vary.
-Weapon shots layer a noise crack, the family's body, a noise tail and a thump.
-Shield, hull and miss impacts differ and scale with damage. Losses have several
-shapes, with a saturated sub, a mid-band fireball and debris crackle so they
-carry on small speakers. `audio.ts` routes music, stings, effects, losses and
-ambience through two synthetic reverbs, ducking and a limited master with an
-oversampled soft clip. Every loss ducks the music and the other effects; the
-climax loss plays louder and the others quieter. `synth.worker.ts` renders events
-ahead of the playhead. `audio.ts` schedules them on the AudioContext clock with
-a short lookahead from the film clock. Play creates or resumes the context.
-Pause, seek and disposal cancel queued sources. Effects have a voice cap in which
-losses outrank hits and hits outrank launches. The development capture renders
-the same design offline.
+Weapon shots layer a noise crack, the family's body, a noise tail and a thump;
+railguns, missiles and torpedoes are heavier than beams and lasers. Shield hits
+zap, hull hits crunch and clang, both scaled by damage, with a layer for
+criticals. Losses have several shapes, with a midrange crunch, a fireball, debris
+crackle and a saturated sub, so they carry on small speakers. Arrivals tear in,
+boarding clamps clank, and repairs shimmer. Every buffer ends on a fade.
+
+`audio.ts` routes music, stings, effects, story events and ambience through two
+synthetic reverbs, ducking and a limited master with an oversampled soft clip.
+Effects and music build about 5 dB toward the climax; story events are exempt.
+Effects and music step back just before every loss, and the climax loss plays
+louder, more so for a mass loss. Panning follows screen position on a widening
+curve. `synth.worker.ts` renders events ahead of the playhead. `audio.ts`
+schedules them on the AudioContext clock with a short lookahead from the film
+clock. Play creates or resumes the context. Pause, seek and disposal cancel
+queued sources. Effects have a voice cap in which losses outrank hits and hits
+outrank launches; a stolen voice fades out. The development capture renders the
+same design offline.
 
 Development builds expose diagnostic `data-cinema-*` attributes on the canvas.
 The counters include the entire postprocessing frame. They are not product UI.
