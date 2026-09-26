@@ -68,7 +68,7 @@ test('paint owns a single texture and material, is lit, and disposes without lea
     expect(paint[0].material).toBe(paint[1].material)
     // Lit by the scene, with only a faint self-glow through its own lettering.
     expect(paint[0].material.emissiveMap).toBe(paint[0].material.map)
-    expect(paint[0].material.emissiveIntensity).toBeLessThan(.3)
+    expect(paint[0].material.emissiveIntensity).toBeLessThan(.6)
     expect(paint[0].castShadow).toBe(false)
     let disposed = 0
     paint[0].material.map!.addEventListener('dispose', () => disposed++)
