@@ -580,7 +580,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     const prize=!!target && byId.get(target.id)?.ship.fate==='captured' && at>=byId.get(target.id)!.ship.end
     // The latest detailed hull destroyed before this shot ends, still burning as wreckage.
     const lost=shot.role==='resolution' ? wrecks.map(entry=>entry.actor).filter(actor=>actor.ship.end<=shot.end && actor.ship.id!==subject.id).sort((a,b)=>b.ship.end-a.ship.end)[0] : undefined
-    const wreck=lost ? {id:lost.ship.id,size:lost.size*.7,side:lost.ship.sideIndex,position:new THREE.Vector3().copy(motionAt(lost,at))} : undefined
+    const wreck=lost ? {id:lost.ship.id,size:lost.size*2.5,side:lost.ship.sideIndex,position:new THREE.Vector3().copy(motionAt(lost,at))} : undefined
     return {shot,sequence,time:at,aspect:camera.aspect,subject,target,battlefield,battlefieldAtStart,axisFrom,axisTo,reduced,boarding:!!take && boardingTakes.has(take.id),dying,prize,wreck}
   }
   const setResolution = () => {
@@ -773,7 +773,9 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
     // lit flank and a deep shadow side, not flat frontal light.
     camera.getWorldDirection(viewForward);viewRight.crossVectors(viewForward,up).normalize()
     const keySide=Math.sign(viewRight.dot(sunDirection))||1
-    keyDirection.copy(viewRight).multiplyScalar(keySide*.85).addScaledVector(viewForward,.2).addScaledVector(up,.45).normalize().multiplyScalar(.6).addScaledVector(sunDirection,.4).normalize()
+    // Name passes light the flank facing the camera, so the painted name reads.
+    if(shot.role===('introduction' as string))keyDirection.copy(viewRight).multiplyScalar(keySide*.6).addScaledVector(viewForward,-.6).addScaledVector(up,.45).normalize()
+    else keyDirection.copy(viewRight).multiplyScalar(keySide*.85).addScaledVector(viewForward,.2).addScaledVector(up,.45).normalize().multiplyScalar(.6).addScaledVector(sunDirection,.4).normalize()
     sun.position.copy(subject.position).addScaledVector(keyDirection,1400);sun.target.position.copy(subject.position)
     rim.position.copy(subject.position).addScaledVector(viewForward,450).addScaledVector(up,300).addScaledVector(viewRight,-keySide*420);rim.target.position.copy(subject.position)
     fill.position.copy(subject.position).addScaledVector(viewForward,-500).addScaledVector(up,-250).addScaledVector(viewRight,-keySide*400);fill.target.position.copy(subject.position)
@@ -831,7 +833,7 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
       direction.copy(b).sub(a)
       dummy.position.copy(a).add(b).multiplyScalar(0.5)
       // Bolts keep a readable screen thickness at any range.
-      width = Math.max(width, pixelAt(dummy.position) * .9)
+      width = Math.max(width, pixelAt(dummy.position) * 2.2)
       dummy.quaternion.setFromUnitVectors(up, direction.clone().normalize())
       dummy.scale.set(width, Math.max(0.01, direction.length()), width); dummy.updateMatrix()
       beams.setMatrixAt(beamCount, dummy.matrix); beams.setColorAt(beamCount++, tint.setHex(color).multiplyScalar(brightness))
@@ -961,7 +963,10 @@ export function mountCinema(canvas: HTMLCanvasElement, film: CinemaFilm, appeara
         const parent=cuesById.get(cue.parentId ?? '')
         const collateralOrigin=parent?.to ? byId.get(parent.to)?.position : undefined
         const outsideArc=mount!==undefined && rig && from.model && !canAimWeaponMount(rig,mount,from.model.worldToLocal(pointB.clone()))
-        const visual=suppressedGuns.has(cue.id)||outsideArc?{lines:[],glows:[],rings:[],projectiles:[]}:weaponVisual(cue,age,pointA,pointB,from.size,to.size,reduced,collateralOrigin,from.color)
+        // Recorded fire is never hidden: without a free gun or firing arc, the bolt
+        // leaves the hull face toward the target instead of a mount.
+        if(suppressedGuns.has(cue.id)||outsideArc){direction.copy(pointB).sub(from.position).normalize();pointA.copy(from.position).addScaledVector(direction,from.size*.4)}
+        const visual=weaponVisual(cue,age,pointA,pointB,from.size,to.size,reduced,collateralOrigin,from.color)
         if(visual.lines.length && age<.18 && !reduced && muzzleCount<muzzleLights.length){
           const light=muzzleLights[muzzleCount++];light.position.copy(pointA);light.color.setHex(mixColor(color,from.color,.6))
           light.intensity=from.size*from.size*6*(1-age/.18);light.distance=from.size*1.2

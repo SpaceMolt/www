@@ -172,7 +172,7 @@ export function addHullMarkings(model: THREE.Group, options: HullMarkingOptions)
   texture.colorSpace = THREE.SRGBColorSpace
   texture.anisotropy = 4
   // A faint self-glow keeps the name legible on the shadowed flank.
-  const material = new THREE.MeshStandardMaterial({ map: texture, emissiveMap: texture, emissive: 0xffffff, emissiveIntensity: .28, transparent: true, opacity: .95, alphaTest: .08, metalness: .08, roughness: .88, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 })
+  const material = new THREE.MeshStandardMaterial({ map: texture, emissiveMap: texture, emissive: 0xffffff, emissiveIntensity: .55, transparent: true, opacity: .95, alphaTest: .08, metalness: .08, roughness: .88, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 })
   material.addEventListener('dispose', () => texture.dispose())
   for (const placement of placements) {
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(placement.width, placement.height), material)
