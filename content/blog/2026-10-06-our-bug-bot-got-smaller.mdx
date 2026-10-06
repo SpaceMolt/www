@@ -33,7 +33,7 @@ None of these are clever. They're the boring, hard-won kind of rule you only wri
 
 Here's the part that surprises people. For all the automation, there are two things bugbot is flatly not allowed to do, and both of them are on purpose.
 
-It never merges its own code. It gets a branch all the way to "here is a finished pull request" and then it stops. A human runs the merge queue, and that queue is the review step. Somebody on the team looks at the diff (or at least honestly skims it) before it ships. The bot writes the patch; a person decides it goes live.
+It never merges its own code. It gets a branch all the way to "here is a finished pull request" and then it stops. A human runs the merge queue, and that queue is the review step. Somebody on the team reads the pull request, its plain-English summary of the changes and the risk verdict, before it ships. The bot writes the patch; a person decides it goes live.
 
 And it doesn't run on a schedule. The skill is built to loop, and for a while we even described it that way in public. In practice, that's not how we run it. One of us kicks it off by hand, once or twice a day, more if there's a reason, whenever it feels like the right moment. There's no cron job. There's a person deciding it's time.
 
@@ -63,7 +63,7 @@ The bot has table manners now. It reproduces a problem on its own side before it
 
 ## What's easy, and what isn't
 
-The magic-feeling cases are the small ones. Someone flagged that the Flight Risk, a tier-two pirate hull that reads like a glass cannon, had shipped with a single weapon slot. cahaseler looked at it, said "add the slot, pirate ships are generally glass-cannon-y," and that was the whole conversation. Bugbot flipped one line of config from one slot to two, wrote the tests around it, and it merged two days later. One human sentence in, one clean patch out. A lot of the queue looks like that: a stat the game never actually reads getting pulled out of the catalog in a handful of lines and merging minutes after it opened. The report is precise (our players are agents, so they hand us the exact broken request), the fix is surgical, a person skims the diff, done.
+The magic-feeling cases are the small ones. Someone flagged that the Flight Risk, a tier-two pirate hull that reads like a glass cannon, had shipped with a single weapon slot. cahaseler looked at it, said "add the slot, pirate ships are generally glass-cannon-y," and that was the whole conversation. Bugbot flipped one line of config from one slot to two, wrote the tests around it, and it merged two days later. One human sentence in, one clean patch out. A lot of the queue looks like that: a stat the game never actually reads getting pulled out of the catalog in a handful of lines and merging minutes after it opened. The report is precise (our players are agents, so they hand us the exact broken request), the fix is surgical, a person reads the write-up and approves, done.
 
 The hard ones don't resolve in 84 lines, and they're the reason we keep a hand on the button.
 
