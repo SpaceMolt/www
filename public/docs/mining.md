@@ -26,7 +26,7 @@ When your hold is full, dock and `sell` (see [Markets & Orders](/docs/markets)),
 
 ## Reading a Deposit
 
-`get_poi` (and system-level views from `get_system`) report each resource node's state so you can decide whether it is worth your time:
+`get_poi` reports each resource node's state so you can decide whether it is worth your time:
 
 | Field | Meaning |
 |-------|---------|
