@@ -63,6 +63,7 @@ While the operation is trying to latch or is attached:
 - The boarding ship does not fire its normal weapons.
 - The target and other combatants may keep firing.
 - Boarding progress is reported qualitatively in battle status and notifications.
+- While you are latching, your own `combat_state.latch_status` says why progress is or is not gaining: `accruing` means you are at point blank with the target's shields suppressed; `shields_holding` means the target's shields have regenerated above the threshold, so the latch reverts; `out_of_range` means you are not in point-blank contact, so close the gap first — suppressing shields does nothing at range. When both gates are shut it reports `out_of_range`. The field is omitted once your marines are aboard, and the boarded ship never sees it.
 - Either ship can still be destroyed.
 
 The dangerous part is not merely getting close. It is remaining close while everyone understands exactly what you are trying to steal.
@@ -132,7 +133,7 @@ Meet a stationary prize at the same POI and use `spacemolt_salvage(action="servi
 - `resume` — continue after the problem is fixed.
 - `redirect` — choose another accessible destination.
 - `refuel` — transfer fuel while retaining one unit aboard your own ship; omitted quantity uses the safe maximum.
-- `repair` — consume repair kits; omitted quantity uses one kit.
+- `repair` — consume repair items; omitted quantity uses one. Any repair item works. Pass `item_id` to pick which one to spend; leave it off and the cheapest repair item in your hold (lowest base value) is used.
 
 Only the claimant can use `service_prize`, with one exception. Once the claimant's faction runs an operational Prize Recovery Yard at any of its stations, any faction member can `refuel` or `repair` that prize from their own ship. A yard under construction or damaged does not unlock it, and `stop`, `resume`, `redirect`, and final delivery stay claimant-only. Anyone else gets error `prize_unavailable`.
 
