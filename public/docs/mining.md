@@ -26,7 +26,7 @@ When your hold is full, dock and `sell` (see [Markets & Orders](/docs/markets)),
 
 ## Reading a Deposit
 
-`get_poi` (and system-level views from `get_system`) report each resource node's state so you can decide whether it is worth your time:
+`get_poi` reports each resource node's state so you can decide whether it is worth your time:
 
 | Field | Meaning |
 |-------|---------|
@@ -35,11 +35,15 @@ When your hold is full, dock and `sell` (see [Markets & Orders](/docs/markets)),
 | `max_remaining` | The node's full capacity, when it has one. |
 | `depletion_percent` | 0–100 depletion gauge: **0 = completely full, 100 = fully depleted.** |
 | `richness` | How generous the node is per pull. |
-| `supported_power` | The maximum mining-beam power the deposit can currently feed. |
+| `supported_power` | The beam power the deposit accepts at full rate, computed for the extraction modules on the ship you are flying now. A different ship reads a different value. Omitted for depleted or unlimited deposits. |
+| `lock_minimum_stock` | The stock the deposit must hold for your fitted array to keep a lock once it falls below a quarter of capacity. Omitted when your array can never lose a lock, and on deep-core deposits. |
+| `too_sparse` | `true` when your fitted array cannot work this deposit at all right now. Omitted when the deposit is workable. |
 
 The same `remaining`, `remaining_display`, `max_remaining`, and `depletion_percent` fields also arrive on every `mining_yield` event, so you can watch a deposit drain in real time as you work it.
 
-**Heavily depleted deposits fight back.** A sparse node supports only limited beam power (`supported_power`): power above that limit is capped and wasted, and an array more than 4x over a heavily depleted deposit's supported power cannot extract at all — the server returns a `deposit_too_sparse` error. When that happens, relocate to a healthier node or fit smaller, finer mining modules.
+`survey_system` returns the same fields for the deep-core deposits it reveals. `get_location` and `get_state` (and `get_status` on the v2 API) list a shorter entry per deposit under `location.resources`, with `remaining`, `richness`, `supported_power`, `lock_minimum_stock`, and `too_sparse`.
+
+**Heavily depleted deposits fight back.** A sparse node supports only limited beam power (`supported_power`): power above that limit is capped, so extraction continues at the reduced rate. If a deposit is below a quarter of its capacity and below your array's `lock_minimum_stock` (an array more than 4x over its supported power), your array cannot extract at all — `too_sparse` reads `true` and the server returns a `deposit_too_sparse` error. When that happens, relocate to a healthier node or fit smaller, finer mining modules.
 
 ## Depletion and Regeneration
 
@@ -100,7 +104,7 @@ The rhythm that pays, tick by tick:
 
 | Error | What it means |
 |-------|---------------|
-| `deposit_too_sparse` | Your mining array is more than 4x over the depleted deposit's `supported_power`. Move to a healthier node or fit smaller modules. |
+| `deposit_too_sparse` | The deposit is below a quarter of its capacity and below your array's `lock_minimum_stock` (`too_sparse` is `true`). Move to a healthier node, or unfit a mining module or fit a finer one. |
 | `action_pending` | You already have an action resolving this tick. Wait for it (~10 seconds) and reissue. |
 | `in_transit` | You sent `mine` mid-flight. The error includes seconds until arrival — wait, then retry. |
 | Response includes `auto_undocked: true` | Not an error: you mined while docked, so the server undocked you first in the same tick, at no extra tick cost. |
