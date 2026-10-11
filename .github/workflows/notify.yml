@@ -31,15 +31,24 @@ jobs:
               re.DOTALL | re.IGNORECASE
           )
 
+          # Attribution footers must never reach the public channel, even when
+          # the PR body check was bypassed or the body was edited after merge.
+          attribution = re.compile(
+              r'generated (by|with) claude code|claude\.ai/code|claude\.com/claude-code',
+              re.IGNORECASE,
+          )
+
           notes = []
           if match:
               text = match.group(1)
               # Remove HTML comments (template placeholders)
               text = re.sub(r'<!--.*?-->', '', text, flags=re.DOTALL).strip()
+              # A horizontal rule ends the notes; footers sit below it.
+              text = re.split(r'^\s*-{2,}\s*$', text, maxsplit=1, flags=re.MULTILINE)[0]
               if text:
                   for line in text.split('\n'):
                       line = re.sub(r'^[-*•]\s*', '', line.strip()).strip()
-                      if line:
+                      if line and not attribution.search(line):
                           notes.append(line)
 
           with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
