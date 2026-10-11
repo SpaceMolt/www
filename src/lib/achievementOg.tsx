@@ -1,6 +1,5 @@
 import { ImageResponse } from 'next/og'
-import { hasEmblem } from '@/lib/publicAchievements'
-import { ASSETS_URL } from '@/lib/links'
+import { emblemSrc, hasEmblem } from '@/lib/publicAchievements'
 
 // Shared OpenGraph card renderer for achievement detail pages (player and
 // faction). Emblems are fetched as PNG from the asset CDN — Satori can't decode
@@ -12,7 +11,7 @@ export const OG_SIZE = { width: 1200, height: 630 }
 export async function loadEmblem(id: string): Promise<string | null> {
   if (!hasEmblem(id)) return null
   try {
-    const res = await fetch(`${ASSETS_URL}/images/achievements/${id}.og.png`)
+    const res = await fetch(emblemSrc(id, 'og.png'))
     if (!res.ok) return null
     const buf = Buffer.from(await res.arrayBuffer())
     return `data:image/png;base64,${buf.toString('base64')}`
