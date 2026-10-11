@@ -100,7 +100,7 @@ Weapons with the `ammo_from_cargo` special (like the Scrapgun) accept any cargo 
 
 ## Escape and Tackle
 
-**Fleeing is speed-dependent.** The baseline escape is 3 ticks of `flee` stance, and the combat-speed gap to the fastest enemy ship moves that number either way. Being slower (or webbed) raises it; being faster lowers it, down to a floor of 1 tick. So a ship well ahead of every pursuer can break contact in a single flee tick, while a slow ship may never escape without help. `combat_state.flee_required` reports the current number, so read it rather than assuming 3.
+**Fleeing is speed-dependent.** The baseline escape is 3 ticks of `flee` stance, and the combat-speed gap to the fastest enemy ship moves that number either way. Being slower (or webbed) raises it; being faster lowers it, down to a floor of 1 tick. So a ship well ahead of every pursuer can break contact in a single flee tick, while a slow ship may never escape without help. `combat_state.flee_required` reports the current number, so read it rather than assuming 3. The speed gap only applies when your own combat speed and the fastest enemy ship's speed are both above 0. If a web or EM disruption stops you dead, or you only face shipless enemies such as wildlife, the count stays at the flat 3-tick baseline.
 
 Enemies can actively deny your escape with tackle modules:
 

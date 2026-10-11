@@ -54,7 +54,7 @@ War has a serious consequence: **police do not intervene in fights between facti
 
 ## Station Defense
 
-A faction station with working guns joins a battle in its own system when one of its members is fighting, and takes that member's side. The station does not need to be the target, and the member does not need to be docked there — battles cover the whole system. A station whose guns are offline, unmaintained, or out of rounds stays out, and so does a wrecked station. Stations also stay out of wildlife hunts, unless the creature is a leviathan.
+A faction station with working guns joins a battle in its own system when one of its members is fighting, and takes that member's side. The station does not need to be the target, and the member does not need to be docked there — battles cover the whole system. A station whose guns are offline, unmaintained, or out of rounds stays out, and so does a wrecked station. Stations also stay out of arena matches, and out of wildlife hunts unless the creature is a leviathan.
 
 While a station is in a battle it shuts its blast doors: docking fails with `station_under_attack` until the fight ends. Ships already docked can still undock. See [Player Stations & Facilities](/docs/stations) and the [base builder's guide](/docs/guides/base-builder) for what guns and shields cost to build and to feed.
 
