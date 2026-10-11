@@ -23,6 +23,7 @@ import type {
   TransitMarker,
 } from '@/lib/intelTypes'
 import { stationsVisibleInRecon } from '@/lib/stationPresentation'
+import { activeBattlesByAgent, type ActiveBattleLike } from '@/lib/battle/activeAgentBattles'
 import { TickClock } from '@/lib/transitMotion'
 
 const GAME_SERVER = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
@@ -31,6 +32,8 @@ const INTEL_POLL_MS = 20_000
 const MOVEMENTS_POLL_MS = 60_000
 const MOVEMENTS_LIMIT = 2000
 const RATE_LIMIT_BACKOFF_MS = 60_000
+/** The server caps `limit` at 200, and rarely are that many battles running. */
+const ACTIVE_BATTLES_LIMIT = 200
 
 /** Debounce for movements refetch while the user is typing in the agent filter */
 const FILTER_REFETCH_DEBOUNCE_MS = 600
@@ -92,6 +95,8 @@ export interface UseIntelDataResult {
   exploredSet: Set<string>
   intelSet: Set<string>
   agentsBySystem: Map<string, IntelAgent[]>
+  /** Agent id -> id of an active battle that agent is fighting in. */
+  agentBattles: Map<string, string>
   trails: TrailSegment[]
   transits: TransitMarker[]
   trailColors: Map<string, string>
@@ -127,6 +132,7 @@ export function useIntelData({
   const observeTick = useCallback((tick: number) => {
     tickClockRef.current.observe(tick)
   }, [])
+  const [activeBattles, setActiveBattles] = useState<ActiveBattleLike[]>([])
   const [movements, setMovements] = useState<IntelMovement[]>([])
   const [movementsTruncated, setMovementsTruncated] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -164,6 +170,24 @@ export function useIntelData({
     if (!res.ok) throw new Error(`stations fetch failed (${res.status})`)
     const data: PublicStationsResponse = await res.json()
     setStations(data.stations || [])
+  }, [])
+
+  // Every battle running right now. Public and unauthenticated, like the map
+  // and station fetches, so a failure here costs the fleet battle badges and
+  // nothing else. It rides the 20s intel poll rather than adding a timer.
+  //
+  // It deliberately skips `noteResponse` and the backoff, exactly as the other
+  // two public fetches do: this endpoint is rate-limited per IP, while the
+  // intel snapshot is rate-limited per account. Letting a 429 here raise the
+  // Recon banner and pause the snapshot would freeze the whole map over a
+  // limit the operator never hit.
+  const fetchActiveBattles = useCallback(async () => {
+    const res = await fetch(
+      `${GAME_SERVER}/api/battles?status=active&limit=${ACTIVE_BATTLES_LIMIT}`,
+    )
+    if (!res.ok) throw new Error(`battles fetch failed (${res.status})`)
+    const data: { battles?: ActiveBattleLike[] | null } = await res.json()
+    setActiveBattles(data.battles || [])
   }, [])
 
   const fetchIntel = useCallback(async () => {
@@ -285,6 +309,7 @@ export function useIntelData({
         fetchIntel(),
         fetchMovements(trailsWindowRef.current, null),
         fetchStations(),
+        fetchActiveBattles(),
       ])
       // Galaxy topology and the fleet snapshot are both required; a failed
       // movements or stations fetch just costs that one layer.
@@ -296,7 +321,7 @@ export function useIntelData({
     } finally {
       setLoading(false)
     }
-  }, [fetchGalaxy, fetchIntel, fetchMovements, fetchStations])
+  }, [fetchGalaxy, fetchIntel, fetchMovements, fetchStations, fetchActiveBattles])
 
   useEffect(() => {
     if (!enabled || initialLoadedRef.current) return
@@ -317,6 +342,7 @@ export function useIntelData({
     // Transient network failures during a poll keep the stale snapshot on
     // screen; the next poll retries.
     fetchIntel().catch(() => {})
+    fetchActiveBattles().catch(() => {})
   }, INTEL_POLL_MS)
 
   useVisiblePoll(() => {
@@ -484,6 +510,13 @@ export function useIntelData({
     return map
   }, [filteredAgents])
 
+  // Keyed on every agent, not the filtered list, so a row keeps its badge
+  // whatever the sidebar filters are showing.
+  const agentBattles = useMemo(
+    () => activeBattlesByAgent(agents, activeBattles),
+    [agents, activeBattles],
+  )
+
   const transits = useMemo<TransitMarker[]>(
     () =>
       filteredAgents
@@ -550,6 +583,7 @@ export function useIntelData({
     exploredSet,
     intelSet,
     agentsBySystem,
+    agentBattles,
     trails,
     transits,
     trailColors,

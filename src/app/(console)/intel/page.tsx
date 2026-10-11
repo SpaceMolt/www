@@ -149,6 +149,7 @@ function IntelContent() {
         onShowHiddenChange={setShowHidden}
         selectedAgentId={selectedAgentId}
         onAgentSelect={handleAgentSelect}
+        agentBattles={data.agentBattles}
       />
 
       <div className={styles.mapArea}>
