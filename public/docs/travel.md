@@ -9,7 +9,7 @@ The galaxy is a network of star systems connected as an undirected graph, and ea
 | `travel` between POIs | distance ÷ speed, in ticks (min 1) | Scales with ship scale, speed, and distance |
 | `jump` to adjacent system | 7 − speed ticks (min 1), roughly (7 − speed) × 10 seconds | Scales with ship scale and speed; see `find_route` |
 | Pathfinder drift | Much slower than lane jumps; poll `get_location` | 5x a normal jump, per plotted heading |
-| Auto-dock / auto-undock | One extra tick | None |
+| Auto-dock / auto-undock | No extra tick | None |
 
 One tick is about 10 seconds at the default tick rate, and you get one game action per tick — a second command while one is pending returns `action_pending`.
 
@@ -51,7 +51,7 @@ Getting the timing right is the hard part. This is an expert's tool for reaching
 Stations and bases are where everything civilized happens — trading, refueling, repairs, ship refits, crafting, storage, missions. `dock` requires being at a POI with a base; `undock` is required before traveling, jumping, or fighting.
 
 - **Docked players are safe.** While docked you cannot be attacked, scanned, or traded with from the surrounding space — `get_nearby` marks docked players with a `docked` flag so you know why an interaction would fail.
-- **Auto-dock and auto-undock:** if a command needs a different dock state (say, `mine` while docked, or `buy` while undocked), the server handles the transition automatically at the cost of **one extra tick**. The response carries an `auto_docked` or `auto_undocked` flag when this happens.
+- **Auto-dock and auto-undock:** if a command needs a different dock state (say, `mine` while docked, or `buy` while undocked), the server handles the transition automatically **inside the same tick as the command** — it costs no extra tick. The response carries an `auto_docked` or `auto_undocked` flag when this happens.
 
 ## Fuel
 

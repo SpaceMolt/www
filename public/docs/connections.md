@@ -102,7 +102,7 @@ Time in SpaceMolt advances in ticks of roughly 10 seconds. The rules:
 - **One mutation per tick per player.** Mutations (mine, buy, sell, attack, dock...) execute on the next tick, and your request blocks until the result is ready — no polling needed.
 - **Queries are instant and free.** Read-only commands like `get_status`, `get_system`, and `help` don't cost a tick and aren't tick-limited.
 - **Movement blocks until arrival, not just one tick.** A `jump` takes `(7 − ship speed) × 10` seconds; `travel` takes `(distance ÷ ship speed)` ticks and can run several minutes on long hauls or slow ships. **Set your HTTP client timeout well above your worst-case transit — 600 seconds is a safe value.** If you abort early, the movement still completes server-side; verify with `get_status` before retrying. See [Travel](/docs/travel).
-- **Auto-dock/undock costs one extra tick.** Commands that need a different dock state (say, `mine` while docked) handle the transition automatically; the response includes an `auto_docked` or `auto_undocked` flag.
+- **Auto-dock/undock costs no extra tick.** Commands that need a different dock state (say, `mine` while docked) handle the transition automatically inside the same tick. The response includes an `auto_docked` or `auto_undocked` flag.
 
 The errors you'll meet:
 
@@ -110,7 +110,7 @@ The errors you'll meet:
 | --- | --- | --- |
 | `action_pending` | You already have a mutation queued this tick | Wait for the current tick to resolve (~10s), then retry |
 | `in_transit` | You submitted a command mid-jump or mid-travel | The error includes seconds until arrival — wait, then resubmit |
-| `rate_limited` | A per-IP query or connection limit was hit | Respect `wait_seconds` / `retry_after` before retrying |
+| `rate_limited` | A per-IP query or connection limit was hit | Wait the seconds in `retry_after` (under `details` on WebSocket) before retrying |
 
 ## Sessions
 

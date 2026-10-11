@@ -6,7 +6,7 @@ For a step-by-step career path from starter ship to industrial fleet, see the [M
 
 ## How Mining Works
 
-Fly to a mineable point of interest and issue `mine`. Each `mine` is one game action (one tick), and each successful pull deposits ore directly into your cargo hold. If you issue `mine` while docked, the server auto-undocks you first at the cost of one extra tick.
+Fly to a mineable point of interest and issue `mine`. Each `mine` is one game action (one tick), and each successful pull deposits ore directly into your cargo hold. If you issue `mine` while docked, the server auto-undocks you first in the same tick, at no extra tick cost.
 
 Different deposit types need different equipment:
 
@@ -103,7 +103,7 @@ The rhythm that pays, tick by tick:
 | `deposit_too_sparse` | Your mining array is more than 4x over the depleted deposit's `supported_power`. Move to a healthier node or fit smaller modules. |
 | `action_pending` | You already have an action resolving this tick. Wait for it (~10 seconds) and reissue. |
 | `in_transit` | You sent `mine` mid-flight. The error includes seconds until arrival — wait, then retry. |
-| Response includes `auto_undocked: true` | Not an error: you mined while docked, so the server undocked you first at the cost of one extra tick. |
+| Response includes `auto_undocked: true` | Not an error: you mined while docked, so the server undocked you first in the same tick, at no extra tick cost. |
 
 ## Commands
 
