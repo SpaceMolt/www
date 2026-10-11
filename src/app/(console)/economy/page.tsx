@@ -86,14 +86,20 @@ function BarList({ title, rows }: { title?: string; rows: BarRow[] }) {
 
 /** Plain notes for the created/destroyed rows that need one. */
 const FAUCET_NOTES: Record<string, string> = {
-  missions: 'rewards no empire or faction pays for',
+  missions: 'treasury shortfalls and historical unfunded rewards',
+  pirate_bounties: 'treasury shortfalls and historical unfunded bounties',
+  achievements: 'treasury shortfalls and historical unfunded rewards',
   respawns: 'topping pilots up to the minimum balance after a death',
   dev_team: 'credits the dev team handed out',
-  npc_seeding: 'start-up money for new NPC stations',
+  npc_seeding: 'initial balances for NPC station managers and empire treasuries',
 }
 const SINK_NOTES: Record<string, string> = {
-  shipbuilding: 'the labor part of new ship orders',
-  labor: 'station work no citizen pool is paid for',
+  shipbuilding: 'historical ship labor and cancellation charges without a recipient',
+  labor: 'historical wages that never reached a citizen pool',
+  station_founding: 'historical founding fees without a treasury recipient',
+  station_facilities: 'historical NPC construction payments without a citizen pool recipient',
+  war_declarations: 'historical war fees without a treasury recipient',
+  penalties: 'historical service and penalty charges without a recipient',
   dev_team: 'credits the dev team took out',
 }
 
@@ -319,9 +325,9 @@ export default async function EconomyPage() {
             }
             lede={
               <>
-                The game creates credits when it pays players directly: pirate bounties, some mission rewards,
-                starting money. It destroys them when players pay the game, such as shipbuilding labor. Trades,
-                taxes and fees only move credits between holders.
+                The game creates credits for starting money, respawn grants, NPC seed capital, and reward or insurance shortfalls.
+                Treasury-funded rewards and payments to citizen pools move existing credits between holders.
+                Older records include fees and wages that had no recipient. Those historical losses remain in these totals after routing fixes.
                 {s.partial && s.detailedFrom && <> Totals cover the {flowSpan} since {dayLabel(s.detailedFrom)}.</>}
               </>
             }
@@ -620,7 +626,13 @@ export default async function EconomyPage() {
           <dt>Active player</dt>
           <dd>A player who sent a command in the last 24 hours. NPCs are not counted.</dd>
           <dt>Unexplained difference</dt>
-          <dd>Supply change minus (created − destroyed): contract money moving in or out, plus anything we do not track yet.</dd>
+          <dd>Supply change minus (created − destroyed): contract money moving in or out, plus anything we do not track yet. This difference alone does not prove credit creation or destruction.</dd>
+          <dt>Reward funding</dt>
+          <dd>Mission issuers and reserved funds pay their own rewards. Otherwise, the player&apos;s starting empire funds mission and achievement rewards. Pirate bounties use the empire nearest the pirate&apos;s home station. Treasury shortages create only the uncovered amount.</dd>
+          <dt>Fees and wages</dt>
+          <dd>Station labor and NPC construction payments reach citizen pools. Outpost workers use the nearest reachable station pool. Founding and war fees reach empire treasuries; other service fees go to their recipients. These payments move existing credits.</dd>
+          <dt>Historical losses</dt>
+          <dd>Past wages, founding fees, ship labor, construction payments and penalties sometimes removed credits without paying a recipient. The report keeps those losses in the days when they occurred.</dd>
           <dt>NPC</dt>
           <dd>A game-run account, such as a station manager or empire treasury.</dd>
           <dt>Price index</dt>

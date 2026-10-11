@@ -142,7 +142,7 @@ export interface EconomyReport {
 }
 
 export const FAUCET_LABELS: Record<Exclude<keyof EconomyFaucets, 'total'>, string> = {
-  missions: 'Missions with no treasury',
+  missions: 'Mission reward credit creation',
   pirate_bounties: 'Pirate bounties',
   new_players: 'New player grants',
   respawns: 'Respawn top-ups',
@@ -156,7 +156,7 @@ export const FAUCET_LABELS: Record<Exclude<keyof EconomyFaucets, 'total'>, strin
 export const SINK_LABELS: Record<Exclude<keyof EconomySinks, 'total'>, string> = {
   shipbuilding: 'Shipbuilding labor',
   labor: 'Facility labor',
-  station_facilities: 'Station facility builds',
+  station_facilities: 'NPC station construction',
   station_founding: 'Station founding',
   war_declarations: 'War declarations',
   penalties: 'Penalties & fees',
@@ -178,9 +178,9 @@ export function holders(ms: EconomyMoneySupply): Holder[] {
     { label: 'Faction treasuries', note: 'shared faction funds', value: ms.faction_treasuries, side: 'player' },
     { label: 'Player buy orders', note: 'locked in open bids', value: ms.player_order_escrow, side: 'player' },
     { label: 'Station managers', note: 'run station markets', value: ms.station_managers, side: 'npc' },
-    { label: 'Empire treasuries', note: 'collect taxes and fines', value: ms.empire_treasuries, side: 'npc' },
+    { label: 'Empire treasuries', note: 'collect taxes and fees; fund rewards and stations', value: ms.empire_treasuries, side: 'npc' },
     { label: 'NPC buy orders', note: 'locked in open bids', value: ms.npc_order_escrow, side: 'npc' },
-    { label: 'Citizen pools', note: 'earned from station labor, spent on citizens\' travel', value: ms.citizen_pools, side: 'npc' },
+    { label: 'Citizen pools', note: 'worker income, spent on citizens\' travel and services', value: ms.citizen_pools, side: 'npc' },
     { label: 'Ship insurer', note: 'premiums received minus claims paid', value: ms.insurer, side: 'npc' },
     { label: 'Other NPCs', note: 'the pirate fleet and prize money awaiting payout', value: ms.other_npc, side: 'npc' },
   ]
