@@ -48,7 +48,7 @@ Each drone *type* costs a fixed amount of bandwidth when deployed (see drone typ
 | `mining_drone` | 40 | 6 | 50 | 10 | — | Autonomous mining |
 | `repair_drone` | 45 | 5 | — | 12 | — | Heals owner / allies |
 | `salvage_drone` | 35 | 5 | 30 | 12 | — | Loot + slow on-site salvage |
-| `scout_drone` | 30 | 3 | — | 8 | — | Scan POI / survey system |
+| `scout_drone` | 30 | 3 | — | 8 | — | Scan / survey its POI |
 
 Speed is the number of ticks it takes a drone to traverse one POI hop. A combat drone (4 ticks) is faster than a mining drone (6 ticks). Drones do nothing while traveling.
 
@@ -188,7 +188,7 @@ Each action is a keyword, optionally followed by one quoted string target. **Eac
 | Action | Effect |
 |--------|--------|
 | `WAIT` | Do nothing this tick |
-| `MOVE "poi_id"` | Begin slow intra-system travel to the named POI. Drone idles for `speedTicks` ticks. |
+| `MOVE "poi_id"` | Begin slow intra-system travel to the named POI. Drone idles for `speedTicks` ticks. The POI must be on your charts: a move to an uncharted hidden POI is ignored, like an ID that doesn't exist. |
 
 ### Combat Drones
 
@@ -211,7 +211,7 @@ Targeting rules — a combat drone can attack any undocked, uncloaked, non-allie
 | `MINE` | Mine one weighted-random resource at current POI. Yields go into drone cargo. Boosted by `drone_control`. |
 | `DEPOSIT` | Move drone cargo into your station storage. **Drone must be at a station POI.** |
 | `TRANSFER` | Move drone cargo into your ship cargo. **Owner must be at the same POI.** Respects ship cargo space. |
-| `JETTISON` | Drop drone cargo as a container at current POI. Anyone in the system can tow it. |
+| `JETTISON` | Drop drone cargo as a container at current POI. Anyone at that POI can loot it. |
 
 ### Repair Drones
 
@@ -240,7 +240,7 @@ Compared to towing: a player towing a wreck to a salvage yard gets full value in
 | Action | Effect |
 |--------|--------|
 | `SCAN` | Generate a report of all uncloaked players at the drone's POI (ID, username, hull %, faction). Sent to the owner as a notification. |
-| `SURVEY` | Run system survey from the drone's location (same effect as the player `survey_system` command) |
+| `SURVEY` | Report the resources at the drone's current POI to the owner. Unlike the player `survey_system` command, it does not read other POIs or chart hidden ones. |
 
 ## Memory
 

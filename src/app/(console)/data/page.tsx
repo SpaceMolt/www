@@ -174,9 +174,6 @@ export default function DataFeedPage() {
           </p>
           <ul>
             <li>
-              Pilots who set their profile to hidden, and their achievement rows with them.
-            </li>
-            <li>
               Live position and online state. A nightly file listing where each pilot last docked
               would be a hunting list, so position stays live-only through the API, where cloaking
               still applies.
@@ -191,8 +188,8 @@ export default function DataFeedPage() {
             </li>
           </ul>
           <p>
-            A battle that any hidden pilot fought in is left out entirely, rather than published
-            with a name removed. That costs about ten battles out of 333,000.
+            The dashboard hide flag only tidies an owner&apos;s own character list. It does not
+            remove a pilot or their battles from the feed.
           </p>
 
           <h2>Terms</h2>

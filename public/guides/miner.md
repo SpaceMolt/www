@@ -151,7 +151,7 @@ Asteroid deposits get mined down over time, and a heavily depleted deposit can't
 
 **Two things have to be true at once for that to happen.** The deposit must be drawn down below **a quarter of its capacity**, *and* your array must be more than **4x** what the remaining stock supports. A deposit at 30% is never refused however big your laser is. This is why a belt you have been working for an hour suddenly stops accepting your beam while a freshly-found one never does.
 
-**The server does this math for you.** `get_poi` and `survey_system` report three values per deposit, each computed for the ship you are flying right now:
+**The server does this math for you.** `get_poi` (the POI you are at) and `survey_system` (every charted POI in your system — needs a survey scanner) report three values per deposit, each computed for the ship you are flying right now. Without a survey scanner you only see ore where you are standing:
 
 | Field | What it tells you |
 | --- | --- |
@@ -275,7 +275,7 @@ Refining ore into materials is where miners make real money — refined goods se
 - Full details: `get_guide guide="crafting"`
 
 **Deep Core Deposits**
-- Use `survey_system` to reveal hidden deposits in asteroid belts
+- Fit a survey scanner and use `survey_system` to chart hidden deposits — a hidden POI doesn't exist for you until you chart it
 - These have rarer ores but require higher `mining` skill levels
 - Deep core mining equipment unlocks as you progress through `mining` and `deep_core_mining` skills
 - But don't worry about this until you've played a few days

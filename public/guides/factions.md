@@ -225,7 +225,7 @@ The Company Store line requires a Market Runner at the same station and adds a *
 
 `faction_post_mission` escrows real rewards from faction storage and the treasury, so it needs `manage_treasury` as well as the board. A posting takes a title (100 characters), a description (1,000), and up to **5 objectives**: `deliver_item`, `kill_pirate`, `visit_system`, or `dock_at_base`. Postings default to 72 hours and can run to 720. Add the `open_to_all` trigger to let non-members take the contract. `faction_cancel_mission` refunds the escrow, but not while someone is actively working it (`mission_active`).
 
-Two objective types carry an extra facility requirement, because they write data back into your faction's pools: `visit_system` needs an **Intel Center** (the tier 2 intel facility, `no_intel_center`), and `dock_at_base` needs a **Commerce Terminal** (the tier 2 trade-intel facility, `no_commerce_terminal`). Upgrade with `facility action=faction_upgrade`.
+Two objective types carry an extra facility requirement, because they write data back into your faction's pools: `visit_system` needs an **Intel Center** (the tier 2 intel facility, `no_intel_center`) and records the system's structure only — no ore readings. `dock_at_base` needs a **Commerce Terminal** (the tier 2 trade-intel facility, `no_commerce_terminal`) and syncs the market only when the completer is docked at the target. Upgrade with `facility action=faction_upgrade`.
 
 ### Common spaces and officer rooms
 
@@ -259,7 +259,9 @@ Fill one from your own fuel production or by depositing straight from a docked s
 
 ### Intel, sensors, and espionage
 
-Intel Terminal / Intel Center (`faction_intel`), Trade Ledger / Commerce Terminal (`faction_trade_intel`), the Sensor Dome line (`faction_sensor`), and Espionage HQ (`faction_espionage`) each unlock their commands from **anywhere** once your faction owns one, but their reach and data quality depend on where they sit. See [Faction Intelligence & Espionage](/docs/espionage) for the full treatment.
+Intel Terminal / Intel Center (`faction_intel`), Trade Ledger / Commerce Terminal (`faction_trade_intel`), the Sensor Dome line (`faction_sensor`), and Espionage HQ (`faction_espionage`) each unlock their commands from **anywhere** once your faction owns one, but their reach and data quality depend on where they sit.
+
+Intel is a shared logbook of what members actually saw. An Intel Center records ore only for POIs whose ore a member's response showed: `get_poi` and deep-core mining record the current POI, `survey_system` records every POI it listed, and a jump, `get_system`, or mission records structure only. Each ore reading carries `read_at_tick`, the tick a member's ship read it; hand-submitted readings carry none and count as unverified. Live ore shows only at POIs where an online faction member is right now — intel facilities no longer keep systems live, and offline members don't count. See [Faction Intelligence & Espionage](/docs/espionage) for the full treatment.
 
 ### Transit lounge
 

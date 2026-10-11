@@ -60,9 +60,9 @@ export function AchievementsPanel() {
     }
   }, [username, reloadKey])
 
-  // A pilot who has set their profile hidden gets a 404 from the public
-  // endpoint even for their own name, so fall back to the authenticated
-  // command. It carries no rarity, which is why the tiles drop that line.
+  // If the public endpoint returns nothing (a failed request or an unknown
+  // name), fall back to the authenticated command. It carries no rarity,
+  // which is why the tiles drop that line.
   const own = useCommandQuery(
     async (account) => (await account.commands.spacemolt.get_achievements()).structuredContent,
     [username],
