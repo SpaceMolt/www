@@ -118,8 +118,9 @@ export function hasEmblem(id: string): boolean {
   return EMBLEM_IDS.has(id)
 }
 
-export function emblemSrc(id: string): string {
-  return `${ASSETS_URL}/images/achievements/${id}.webp`
+export function emblemSrc(id: string, format: 'webp' | 'og.png' = 'webp'): string {
+  const filename = id === 'maiden_jump' ? `${id}-v2` : id
+  return `${ASSETS_URL}/images/achievements/${filename}.${format}`
 }
 
 // Prestige tier from points — drives the medallion's frame metal (and any
