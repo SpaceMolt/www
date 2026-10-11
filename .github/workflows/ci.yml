@@ -21,8 +21,11 @@ jobs:
         with:
           version: 10
 
+      # The checkout is the PR merge commit; its first parent is current main and
+      # is always within fetch-depth 2. pull_request.base.sha can be an older
+      # fork point that the shallow checkout does not contain.
       - name: Reject oversized binary changes
-        run: pnpm check:binaries -- --base "${{ github.event.pull_request.base.sha }}"
+        run: pnpm check:binaries -- --base HEAD^1
 
   build:
     # Don't burn Actions minutes on external PRs from forks
