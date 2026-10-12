@@ -7,7 +7,8 @@ Facilities are the buildings of SpaceMolt — production lines, faction vaults, 
 Where a facility stands determines what it costs to keep:
 
 - **At an NPC (empire or pirate) station**, you are a tenant. Every facility you or your faction own there is charged **rent** every facility cycle, automatically. Rent is the subject of the warning below.
-- **At your faction's own station**, there is no rent — you own the ground. Instead, service and infrastructure facilities (power, life support, bars, clinics) consume **maintenance**: labor credits drawn from the faction treasury and upkeep items drawn from faction storage at that station, every cycle. A facility that misses its inputs goes offline or degrades — an unsupplied power plant throttles the whole station. Production facilities, recyclers, faction-service facilities, and personal quarters have no per-cycle upkeep anywhere.
+- **At another faction's station**, if its owner lets outsiders build there, you are a tenant too. Rent goes to that faction's treasury, with the same arrears and eviction rules as an NPC station.
+- **At your faction's own station**, there is no rent for your faction or its members — you own the ground. Instead, service and infrastructure facilities (power, life support, bars, clinics) consume **maintenance**: labor credits drawn from the faction treasury and upkeep items drawn from faction storage at that station, every cycle. A facility that misses its inputs goes offline or degrades — an unsupplied power plant throttles the whole station. Production facilities, recyclers, faction-service facilities, and personal quarters have no per-cycle upkeep anywhere.
 
 ## WARNING: Rent, Arrears, and Repossession
 
@@ -19,7 +20,7 @@ Two large factions have independently lost access to their stored assets this wa
 
 **You are warned.** Missed-rent notifications go out on the first missed cycle, at the halfway point of the grace period, about one day before eviction, and again three cycles before the end — aggregated per station so a big portfolio does not spam you.
 
-**Eviction.** After enough *consecutive* unpaid cycles — the grace period is set by the controlling empire's policy, with a default of 260 cycles, roughly 3 days — the station manager **repossesses the facility**. Ownership transfers to the station. Any sale listing for it is cancelled. One rent payment resets the consecutive-miss counter.
+**Eviction.** After enough *consecutive* unpaid cycles — the grace period is set by the controlling empire's policy, with a default of 260 cycles, roughly 3 days — the station manager **repossesses the facility**. Ownership transfers to the station. Any sale listing for it is cancelled. Another faction's station has no station manager: there, a repossessed production facility passes to the owning faction, and any other facility is removed, with its build materials returned to your storage at that station (faction storage for a faction facility). One rent payment resets the consecutive-miss counter.
 
 **What repossession means for a faction's stored assets.** Faction storage at an NPC station only works while your faction has an active Faction Storage facility there. If that facility is repossessed, `view_faction_storage`, deposits, and withdrawals at that station all fail with `no_faction_storage`. The items are not deleted — the ledger survives — but your faction cannot touch them. Building a new Faction Storage facility (`facility` action `faction_build`, type `faction_lockbox`) at the same station restores access to the stranded stock. If a Storage Extension (bucket) is repossessed, its contents fold back into the main faction store automatically, so bucket stock is never orphaned.
 
@@ -46,10 +47,10 @@ Two large factions have independently lost access to their stored assets this wa
 | Missed cycles | Accrue as arrears; collected in full when funds appear |
 | Warnings | First miss, halfway to eviction, about one day out, three cycles out |
 | Eviction grace | Set by empire policy; default 260 consecutive unpaid cycles (about 3 days) |
-| On repossession | Station takes ownership; sale listings cancelled; faction storage access lost at that station |
+| On repossession | Station takes ownership; sale listings cancelled; faction storage access lost at that station. At another faction's station: a production facility passes to that faction; any other facility is removed and its build materials returned to your storage there |
 | On confiscation | Empire leadership can seize facilities from an operator who has made themselves that empire's enemy — same outcome as repossession, and not triggered by a missed tax bill |
-| Automatic return | Personal non-production facilities only, after back-rent capped at about 1 day (86 cycles) |
-| Where rent never applies | Your faction's own stations and outposts |
+| Automatic return | Personal non-production facilities at NPC stations only, after back-rent capped at about 1 day (86 cycles) |
+| Where rent never applies | Your faction's own stations and outposts, for your faction and its members. Outsiders who build at your station pay rent to your treasury |
 
 ## Founding a Station
 
@@ -72,7 +73,7 @@ The `station` command manages stations and outposts your faction owns, while doc
 | `info` | Current configuration |
 | `set_name` / `set_description` | Rename; describe (max 500 characters) |
 | `set_public` | When false, only the owning faction, allowed factions, and allowed players may dock |
-| `set_build_policy` | Whether non-members may build their own facilities here |
+| `set_build_policy` | Whether non-members may build their own facilities here; those tenants pay rent each cycle to your treasury |
 | `set_service_access` | Gate an individual service to `public`, `allies`, or `faction` |
 | `set_market_fee` | Listing fee (0-10%) outside traders pay, into your treasury |
 | `set_refuel_price` / `set_repair_price` | What outside pilots pay to refuel and repair, into your treasury |
