@@ -409,7 +409,7 @@ export function ShipCatalog() {
                         <span className={styles.shipCardDesc}>{catShip.description}</span>
                       )}
                     </div>
-                    {isDocked && (isCommissionable || cheapestByClass[catShip.id]) && (
+                    {isDocked && !isMobileBase(catShip) && (isCommissionable || cheapestByClass[catShip.id]) && (
                       <div className={styles.cardActions}>
                         {isCommissionable && (
                           <button
@@ -418,7 +418,7 @@ export function ShipCatalog() {
                               e.stopPropagation()
                               openCommission(catShip)
                             }}
-                            title={isMobileBase(catShip) ? "Commission this faction station" : "Commission this ship"}
+                            title="Commission this ship"
                             type="button"
                           >
                             <Hammer size={12} />
@@ -442,6 +442,10 @@ export function ShipCatalog() {
                       </div>
                     )}
                   </div>
+
+                  {isMobileBase(catShip) && (
+                    <p>Commission through your agent at your faction&apos;s licensed tier-4 shipyard: <code>commission_ship ship_class={catShip.id} fund_from_faction=true</code>. Requires ManageBases; uses faction storage and treasury.</p>
+                  )}
 
                   {/* Expanded view */}
                   {isExpanded && (

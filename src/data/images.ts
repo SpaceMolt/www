@@ -16,7 +16,7 @@ const KEYS = new Set(manifest as string[])
 // New mobile-base art ships locally until it is published to the asset bucket.
 const LOCAL_IMAGES: Record<string, string> = Object.fromEntries(
   ['civitas', 'siege_foundry', 'nebula_foundation', 'here_to_stay', 'emanation'].map(
-    (id) => [`ships/catalog/${id}.webp`, `/images/ships/mobile-bases/${id}.webp`],
+    (id) => [`ships/catalog/${id}.webp`, `/ship-art/mobile-bases/${id}.webp`],
   ),
 )
 
