@@ -13,12 +13,19 @@ import { ASSETS_URL } from '@/lib/links'
  */
 const KEYS = new Set(manifest as string[])
 
-/** True when `<ASSETS_URL>/images/<path>` exists. `path` has no leading slash. */
+// New mobile-base art ships locally until it is published to the asset bucket.
+const LOCAL_IMAGES: Record<string, string> = Object.fromEntries(
+  ['civitas', 'siege_foundry', 'nebula_foundation', 'here_to_stay', 'emanation'].map(
+    (id) => [`ships/catalog/${id}.webp`, `/images/ships/mobile-bases/${id}.webp`],
+  ),
+)
+
+/** True when an image exists locally or in the asset bucket. No leading slash. */
 export function hasImage(path: string): boolean {
-  return KEYS.has(`images/${path}`)
+  return Object.hasOwn(LOCAL_IMAGES, path) || KEYS.has(`images/${path}`)
 }
 
-/** Absolute CDN URL for an image path, with no existence check. */
+/** Local or CDN URL for an image path, with no existence check. */
 export function imageUrl(path: string): string {
-  return `${ASSETS_URL}/images/${path}`
+  return LOCAL_IMAGES[path] ?? `${ASSETS_URL}/images/${path}`
 }
