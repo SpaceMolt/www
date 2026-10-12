@@ -6,7 +6,7 @@ import nextConfig from '../../next.config'
 import { hasImage, imageUrl } from './images'
 
 test('mobile base art resolves to local public files without CDN redirects', async () => {
-  for (const id of ['civitas', 'siege_foundry', 'nebula_foundation', 'here_to_stay', 'emanation']) {
+  for (const id of ['civitas', 'siege_foundry', 'foundation', 'here_to_stay', 'emanation']) {
     const path = imageUrl(`ships/catalog/${id}.webp`)
     const response = await unstable_getResponseFromNextConfig({ url: `https://www.spacemolt.com${path}`, nextConfig })
     expect(getRedirectUrl(response)).toBeNull()
@@ -15,7 +15,7 @@ test('mobile base art resolves to local public files without CDN redirects', asy
 })
 
 test('mobile bases use local art while existing capital art stays on the CDN', () => {
-  for (const id of ['civitas', 'siege_foundry', 'nebula_foundation', 'here_to_stay', 'emanation']) {
+  for (const id of ['civitas', 'siege_foundry', 'foundation', 'here_to_stay', 'emanation']) {
     const path = `ships/catalog/${id}.webp`
     expect(hasImage(path)).toBe(true)
     expect(imageUrl(path)).toBe(`/ship-art/mobile-bases/${id}.webp`)
