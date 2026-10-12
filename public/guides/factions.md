@@ -273,7 +273,7 @@ Transit Lounge (`transit_lounge`, 500,000, 20 seats) through Transit Concourse (
 - **A faction may hold at most one facility of each service type per station.** Storage Extensions (up to 10) and faction shipyard slots are the exceptions.
 - **On your faction's own station, storage and a market come free** — faction storage at the top-tier capacity and unlimited faction listings — so `faction_lockbox`, `market_runner`, and a private fuel bunker are all refused there as redundant. Build the station's own shared tank instead.
 - **Faction shipyard slots** (`faction_shipyard_berth` through `faction_shipyard_complex`) are stackable and each adds one build slot with member priority at a station that already has a shipyard of at least that level. They are the only faction facilities with a declared power and life-support draw.
-- **At NPC stations, faction facilities pay rent from the treasury every cycle**, and unpaid rent eventually means repossession — which locks your faction out of the stock inside its storage there until a new storage facility is built. At your faction's own station there is no rent, but service and infrastructure facilities consume maintenance instead. Read [Player Stations & Facilities](/docs/stations) before you build widely; that page exists because two large factions have already lost access to their vaults this way.
+- **At NPC stations, faction facilities pay rent from the treasury every cycle**, and unpaid rent eventually means repossession — which locks your faction out of the stock inside its storage there until a new storage facility is built. At your faction's own station your faction and its members pay no rent, but service and infrastructure facilities consume maintenance instead. Outsiders who build there pay rent to your treasury. Read [Player Stations & Facilities](/docs/stations) before you build widely; that page exists because two large factions have already lost access to their vaults this way.
 
 ---
 
@@ -293,7 +293,7 @@ Factions pay a weekly corporate income tax, and it is profit-based rather than r
 - `get_faction_tax_estimate` previews the whole assessment: taxable income to date, deductible expenses, per-empire rows, prepaid balance, and any carried debt from a cycle the treasury could not cover. It is a pure read — nothing moves.
 - `faction_prepay_tax amount=<credits>` escrows treasury credits against the next bill so tax day cannot catch you short. Surplus is refunded. Needs `manage_treasury`.
 
-Member deposits, gifts, and refunds are **not** taxable income — only genuine earnings like exchange sell-order proceeds, fuel-bunker sales, and facility sales. See [Economy](/docs/economy) for the wider system.
+Member deposits, gifts, and refunds are **not** taxable income — only genuine earnings like exchange sell-order proceeds, fuel-bunker sales, facility sales, and rent paid by tenants at your faction's stations. See [Economy](/docs/economy) for the wider system.
 
 ---
 
@@ -350,7 +350,7 @@ A new station is an empty shell: build **Faction Storage first**, then power and
 |--------|--------------|
 | `set_name` / `set_description` | Rename; description up to 500 characters |
 | `set_public` | When `false`, only your faction, allowed factions, and allowed players may dock |
-| `set_build_policy` | Whether outsiders may build their own facilities here |
+| `set_build_policy` | Whether outsiders may build their own facilities here; they pay rent each cycle to your treasury |
 | `set_service_access` | Gate one service (`market`, `refuel`, `repair`, `shipyard`, `crafting`, `salvage_yard`, `missions`) to `public`, `allies`, or `faction` |
 | `set_market_fee` | Listing fee outsiders pay, 0–10%, to your treasury |
 | `set_refuel_price` / `set_repair_price` | Per-unit charges for outside pilots, paid to your treasury |
