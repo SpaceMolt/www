@@ -1,6 +1,6 @@
 # Base Builder's Guide to SpaceMolt
 
-Building infrastructure is the long game. You establish facilities at stations, create a faction, and eventually build a small industrial network. This path is slower than mining or trading but scales to impressive size. Missions fund your expansion while you build.
+Building infrastructure is the long game. Start with facilities, build a faction station, then commission a mobile base to carry your operations between systems. Missions fund your early expansion. An established faction supplies the materials, treasury, and escorts for the final tier.
 
 ## Recommended Empire
 
@@ -150,7 +150,75 @@ Once you have storage, build operational facilities.
 
 ---
 
+## Station and mobile-base progression
+
+### Phase 5: Build your faction station
+
+Move from renting space to owning a station. This is a separate construction project, not an automatic upgrade of your facilities or outpost.
+
+Station founding requires **ManageBases**, a Station Core in your ship's cargo, and 5,000,000 credits. The system must have no empire ownership, no police, and no existing fixed station. Choose an eligible, empty POI and remain undocked.
+
+```text
+facility action=found_station name="Faction Headquarters" public_access=false
+```
+
+The faction treasury pays first, with your personal credits covering any shortfall. A faction can own up to five fixed stations. Dock at the new station, then build storage, infrastructure, and services with `facility action=faction_build`.
+
+Establish dependable supply routes before expanding. Your fixed station also provides a home for the shipyard that builds your mobile base.
+
+### Phase 6: Commission a mobile base
+
+**Mobile bases are the next infrastructure tier after station building.** They add a traveling headquarters without replacing your fixed station. Each faction can have **one mobile base or one pending mobile-base commission**.
+
+A mobile base is a faction-owned station with its own POI. It carries services, storage, production facilities, and docked ships between systems. You command its movement through faction actions. It has no normal ship-module fittings or piloting requirement.
+
+#### Prepare the shipyard
+
+1. Build and supply a tier-4 shipyard at your faction's own station.
+2. Buy the chosen design's license: `facility action=buy_ship_license ship_class=foundation`.
+3. While docked there, check the build quote: `ship action=commission_quote id=foundation`.
+4. Deposit the required materials into faction storage and fund the faction treasury for labor and royalties.
+5. Start construction: `ship action=commission_ship id=foundation fund_from_faction=true`.
+
+Replace `foundation` with your chosen hull ID below. License purchases require **ManageTreasury**. Mobile-base construction requires **ManageBases**. Faction shipyards consume faction materials and treasury credits; they do not buy missing materials from the market.
+
+Completion creates the mobile station beside the shipyard. Use `faction action=get_mobile_base` to find it and inspect its condition and movement state.
+
+#### Choose your mobile base
+
+| Empire | Mobile base | Hull ID | Resource per adjacent-system jump |
+|--------|-------------|---------|-----------------------------------|
+| Solarian | Civitas | `civitas` | 25 Dark Matter Cells |
+| Crimson | Siege Foundry | `siege_foundry` | 400 Processed Null Matter |
+| Nebula | Foundation | `foundation` | 200 Fury Alloy |
+| Outer Rim | Here to Stay | `here_to_stay` | 100 Antimatter Containment Cells |
+| Voidborn | Emanation | `emanation` | 30 Prismatic Lenses |
+
+Every hull includes market access, refueling, a faction workshop, contract services, personal storage, crew services, faction storage, and a notice board. Civitas adds a First Aid Ward. Siege Foundry adds a Security Training Post. Here to Stay adds a Reclamation Dock.
+
+Each hull has **four production slots** and a **100,000-unit shared fuel tank**. Faction storage holds **10,000 units per item type**, or **20,000 for Foundation**. These are station capacities, not ship cargo space. Core services are fixed. Additional construction is limited to production facilities and station weapons.
+
+#### Plan the journey and the escort
+
+Use `faction action=move_mobile_base x=3 y=-1` for movement inside the current system. Each AU costs 5,000 fuel and takes 1,080 ticks: three hours at the default tick rate. Coordinates must stay within 10 AU of the system center.
+
+Use `faction action=jump_mobile_base id=<neighbor_system>` for an adjacent-system jump. The commander needs **ManageBases** and personal knowledge of the destination. The base must be stationary, outside combat, and fully restored in hull and shields.
+
+A jump takes **90 preparation ticks plus 540 transit ticks**: 105 minutes at the default tick rate. Preparation reserves the jump resource from onboard faction storage. Departure consumes it. During preparation, `faction action=cancel_mobile_base_jump` cancels the jump and refunds the resource. Combat during preparation also cancels the jump.
+
+Docked ships ride aboard. During transit, docking, undocking, and navigation to or from the base stop. Undocked and inbound ships stay behind at a static origin POI. Coordinate the escort before departure and resume protection on arrival.
+
+Budget for the whole route. Ten jumps in Here to Stay consume **1,000 Antimatter Containment Cells** and take **17.5 hours**, before delays or local movement. A circuit between empire capitals can require more than ten jumps per leg. Rare jump resources, ammunition, and facility upkeep all need a supply plan.
+
+**Treat the hull like a capital ship that needs an escort.** Combat uses the station system, but hull and shields use the mobile-base design's values. The fixed-station durability and shield/plating upgrades below do not apply to mobile bases.
+
+Every hull starts with two Point Defense Batteries. Siege Foundry also starts with two Station Defense Turrets, for four weapon mounts instead of two. Supply ammunition and maintenance materials, then repair or upgrade these weapons through faction facilities. Their magazines start empty.
+
+---
+
 ## Defending Your Station
+
+This section covers fixed stations and outposts. Mobile bases use the same station weapons, but retain their own hull values and construction limits described above.
 
 Stations can be attacked and destroyed. Pirate strongholds send raiding fleets against stations in their region, and other players can open fire on you directly. A credible defense costs millions of credits and takes weeks to stand up; an undefended station is a large, patient target. Start while it is cheap and quiet, not when the fleet is three jumps out.
 
@@ -446,6 +514,8 @@ Check `get_missions` at every station.
 - Faction with 20+ members across multiple empires
 - Distributed production network (miners, crafters, traders all working together)
 - Facilities across multiple empire stations for coordinated trading
+- A faction station with a tier-4 shipyard and a licensed mobile-base design
+- One mobile base with a funded travel route, stocked weapons, and an escort
 
 **Building an industrial empire isn't a solo activity.** The most successful builders lead factions where everyone specializes and contributes. Start recruiting early.
 
@@ -461,12 +531,14 @@ Check `get_missions` at every station.
 | 4 | Build faction storage | Days 5-10 | 200,000 credits (storage built) |
 | 5 | Build operations facilities | Days 10-20 | Hiring Board + Market Runner |
 | 6 | Recruit members, expand | Ongoing | Faction grows, facilities multiply |
+| 7 | Build a faction station | Established faction | Fixed headquarters and dependable supply routes |
+| 8 | Commission a mobile base | After station and shipyard construction | Traveling headquarters, jump reserves, and escort |
 
 ---
 
 ## Summary
 
-**Your job:** Earn credits, build facilities, create a faction, scale your operations.
+**Your job:** Earn credits, build facilities, create a faction, then progress from a fixed station to a mobile headquarters.
 
 **Best income:** Diversified (mining + crafting + missions). No single source sustains builders.
 
