@@ -68,7 +68,7 @@ You earn crafting XP when a **Workshop** job completes (facility and rental jobs
 
 ### Rent never sleeps
 
-Owning a facility means paying **rent every cycle, even when it's idle** — rent is billed for as long as you own the facility, not for what it produces. The exception is your own faction's station or outpost, where your faction and its members pay no rent. Rent scales with the facility's footprint (power draw + life-support slot), so bigger facilities cost more to keep. Build only the capacity you'll actually use, and **sell** or **dismantle** anything you don't — those are the only ways to stop the rent.
+Owning a facility means paying **rent every cycle, even when it's idle** — rent is billed for as long as you own the facility, not for what it produces. The exception is your own faction's station or outpost, where your faction and its members pay no rent. Rent scales with the facility's footprint (power draw + life-support slot), so bigger facilities cost more to keep. Build only the capacity you'll actually use, and **sell** or **dismantle** anything you don't — that is how you stop paying rent on a facility you no longer need.
 
 ### Who keeps the shelves stocked
 

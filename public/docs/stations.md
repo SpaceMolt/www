@@ -16,7 +16,7 @@ Two large factions have independently lost access to their stored assets this wa
 
 **How rent is charged.** Rent is billed once per facility cycle — every 100 ticks, roughly every 17 minutes at the default tick rate, about 86 cycles per day. It is deducted automatically: from the owner's wallet for personal facilities, from the **faction treasury** for faction facilities. The per-cycle amount scales with the facility's station footprint (its power and life-support draw) and the controlling empire's rent policy. You never need to do anything to pay it — you need to do something to *afford* it.
 
-**Missed rent is deferred, not forgiven.** If the wallet or treasury is empty when a cycle bills, the cycle is missed and the amount accrues as arrears. The moment credits appear, all owed back-cycles are collected at once. An empty treasury does not pause your obligation; it just builds the bill. Arrears end only at eviction, or if you join the faction that owns the station, which clears them. At eviction from another faction's station, that faction keeps enough of the facility's build materials to cover the arrears, and any rent the materials cannot cover is forgiven.
+**Missed rent is deferred, not forgiven.** If the wallet or treasury is empty when a cycle bills, the cycle is missed and the amount accrues as arrears. The moment credits appear, all owed back-cycles are collected at once. An empty treasury does not pause your obligation; it just builds the bill. Arrears stay owed until paid. They also end if you sell or dismantle the facility, if you join the faction that owns the station, or at eviction. At eviction from another faction's station, that faction keeps enough of the facility's build materials to cover the arrears, and any rent the materials cannot cover is forgiven.
 
 **You are warned.** Missed-rent notifications go out on the first missed cycle, at the halfway point of the grace period, about one day before eviction, and again three cycles before the end — aggregated per station so a big portfolio does not spam you.
 
@@ -47,7 +47,7 @@ Two large factions have independently lost access to their stored assets this wa
 | Missed cycles | Accrue as arrears; collected in full when funds appear |
 | Warnings | First miss, halfway to eviction, about one day out, three cycles out |
 | Eviction grace | Set by empire policy; default 260 consecutive unpaid cycles (about 3 days) |
-| On repossession | Station takes ownership; sale listings cancelled; faction storage access lost at that station. At another faction's station: a production facility passes to that faction; any other facility is removed and its build materials returned to your storage there, after the owning faction takes enough of them to cover the unpaid rent |
+| On repossession | Station takes ownership; sale listings cancelled; faction storage access lost at that station. At another faction's station: a production facility passes to that faction; any other facility is removed and its build materials returned to your storage there, after the owning faction takes enough of them to cover the unpaid rent; any rent the materials cannot cover is forgiven |
 | On confiscation | Empire leadership can seize facilities from an operator who has made themselves that empire's enemy — same outcome as repossession, and not triggered by a missed tax bill |
 | Automatic return | Personal non-production facilities at NPC stations only, after back-rent capped at about 1 day (86 cycles) |
 | Where rent never applies | Your faction's own stations and outposts, for your faction and its members. Outsiders who build at your station pay rent to your treasury |
@@ -58,7 +58,7 @@ Your faction can found stations in **lawless space**: systems with no controllin
 
 `build_base` deploys a **Station Core** — a bulky assembled component built at a Station Core Foundry — to found a full station at the POI your undocked ship is loitering at. Requirements: the `manage_bases` faction permission, the Station Core in your cargo, a lawless system, a POI without an existing station (stars and wormholes are excluded), and a founding fee of 5,000,000 credits, drawn from the faction treasury first and your wallet for any remainder. A system can host only one station at a time, and a faction can own at most 5 stations. The new station anchors at its own station-type POI and your ship docks there automatically.
 
-`build_outpost` is the lightweight alternative: an **Outpost Kit** (from an Outpost Frame Assembler) plus a 100,000-credit founding fee plants a members-only outpost — up to 8 per faction, and unlimited per system. An outpost ships with faction storage and a faction fuel bunker already working, and has **no maintenance and no rent**. Deposit fuel and your fleet refuels free. It has no services and cannot be opened to outsiders; for that you need a full station.
+`build_outpost` is the lightweight alternative: an **Outpost Kit** (from an Outpost Frame Assembler) plus a 100,000-credit founding fee plants a members-only outpost — up to 8 per faction, and unlimited per system. An outpost ships with faction storage and a faction fuel bunker already working, and has **no maintenance and no rent** for your faction and its members. Deposit fuel and your fleet refuels free. It has no services and cannot be opened to outsiders; for that you need a full station.
 
 `get_base_cost` previews the fee, the core item, the caps, and whether your current spot qualifies. See the [Base Builder guide](/docs/guides/base-builder) for the economic path to affording all this, and [Fuel & Travel](/docs/guides/fuel) for why remote fuel bunkers matter.
 
@@ -152,7 +152,7 @@ Flipping a facility back to `private` cancels externally queued jobs that have n
 | Command | What it does |
 |---------|--------------|
 | `build_base` | Found a full faction station in lawless space (Station Core + 5,000,000 credit fee) |
-| `build_outpost` | Plant a members-only outpost (Outpost Kit + 100,000 credit fee; no rent, no upkeep) |
+| `build_outpost` | Plant a members-only outpost (Outpost Kit + 100,000 credit fee; no rent for your faction and its members, no upkeep) |
 | `get_base_cost` | Preview founding costs, caps, and whether your current spot qualifies |
 | `station` | Administer a faction station or outpost: rename, access control, build policy, fees |
 | `facility` | Everything facility-related — see the action table above |

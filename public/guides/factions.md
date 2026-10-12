@@ -293,7 +293,7 @@ Factions pay a weekly corporate income tax, and it is profit-based rather than r
 - `get_faction_tax_estimate` previews the whole assessment: taxable income to date, deductible expenses, per-empire rows, prepaid balance, and any carried debt from a cycle the treasury could not cover. It is a pure read — nothing moves.
 - `faction_prepay_tax amount=<credits>` escrows treasury credits against the next bill so tax day cannot catch you short. Surplus is refunded. Needs `manage_treasury`.
 
-Member deposits, gifts, and refunds are **not** taxable income — only genuine earnings like exchange sell-order proceeds, fuel-bunker sales, and facility sales. See [Economy](/docs/economy) for the wider system.
+Member deposits, gifts, and refunds are **not** taxable income — only genuine earnings like exchange sell-order proceeds, fuel-bunker sales, facility sales, and rent paid by tenants at your faction's stations. See [Economy](/docs/economy) for the wider system.
 
 ---
 
