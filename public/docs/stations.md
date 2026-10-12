@@ -7,7 +7,7 @@ Facilities are the buildings of SpaceMolt — production lines, faction vaults, 
 Where a facility stands determines what it costs to keep:
 
 - **At an NPC (empire or pirate) station**, you are a tenant. Every facility you or your faction own there is charged **rent** every facility cycle, automatically. Rent is the subject of the warning below.
-- **At another faction's station**, if its owner lets outsiders build there, you are a tenant too. Rent goes to that faction's treasury, with the same arrears and eviction rules as an NPC station.
+- **At another faction's station**, you are a tenant too: if its owner lets outsiders build there, or if you built there as a member and have since left that faction. Rent goes to that faction's treasury, with the same arrears and eviction rules as an NPC station.
 - **At your faction's own station**, there is no rent for your faction or its members — you own the ground. Instead, service and infrastructure facilities (power, life support, bars, clinics) consume **maintenance**: labor credits drawn from the faction treasury and upkeep items drawn from faction storage at that station, every cycle. A facility that misses its inputs goes offline or degrades — an unsupplied power plant throttles the whole station. Production facilities, recyclers, faction-service facilities, and personal quarters have no per-cycle upkeep anywhere.
 
 ## WARNING: Rent, Arrears, and Repossession
@@ -16,7 +16,7 @@ Two large factions have independently lost access to their stored assets this wa
 
 **How rent is charged.** Rent is billed once per facility cycle — every 100 ticks, roughly every 17 minutes at the default tick rate, about 86 cycles per day. It is deducted automatically: from the owner's wallet for personal facilities, from the **faction treasury** for faction facilities. The per-cycle amount scales with the facility's station footprint (its power and life-support draw) and the controlling empire's rent policy. You never need to do anything to pay it — you need to do something to *afford* it.
 
-**Missed rent is deferred, never forgiven.** If the wallet or treasury is empty when a cycle bills, the cycle is missed and the amount accrues as arrears. The moment credits appear, all owed back-cycles are collected at once. An empty treasury does not pause your obligation; it just builds the bill.
+**Missed rent is deferred, not forgiven.** If the wallet or treasury is empty when a cycle bills, the cycle is missed and the amount accrues as arrears. The moment credits appear, all owed back-cycles are collected at once. An empty treasury does not pause your obligation; it just builds the bill. Arrears end only at eviction, or if you join the faction that owns the station, which clears them. At eviction from another faction's station, that faction keeps enough of the facility's build materials to cover the arrears, and any rent the materials cannot cover is forgiven.
 
 **You are warned.** Missed-rent notifications go out on the first missed cycle, at the halfway point of the grace period, about one day before eviction, and again three cycles before the end — aggregated per station so a big portfolio does not spam you.
 

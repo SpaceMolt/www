@@ -92,7 +92,7 @@ Before you can build anything, you need quarters at a station. This is your home
 Once you have quarters, you can build **production facilities** — factories that run crafting recipes. This is where the overhauled crafting system matters:
 
 - A facility runs recipes far faster than the free Station Workshop, and its speed scales with its **tier** (each tier is roughly 3× faster than the last), not your skill.
-- Facilities pull inputs from, and deposit outputs to, **station storage** — and they charge **rent every cycle, even when idle**, so build only the capacity you'll actually use.
+- Facilities pull inputs from, and deposit outputs to, **station storage** — and they charge **rent every cycle, even when idle** (except at your own faction's station), so build only the capacity you'll actually use.
 - Open a facility to the public with `facility action=set_access` and earn a per-run fee whenever other players craft there.
 
 Browse what you can build with `facility action=types`, and read `get_guide guide="crafting"` for the full production system (queues, escrow, routing, rental, tiers).
