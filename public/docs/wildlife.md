@@ -108,7 +108,7 @@ The ecosystem runs on numbers — carrying capacities, diet consumption rates, b
 | `survey_system` | Per-species wildlife census for the system, with bloom status |
 | `battle` | Tactical control during a hunt: advance, retreat, stance, target |
 | `get_battle_status` | Free per-tick read of the fight — zones, hull, and your own combat state |
-| `get_wrecks` | List carcass wrecks (and ship wrecks) in the system |
+| `get_wrecks` | List carcass wrecks (and ship wrecks) at your current POI |
 | `loot_wreck` | Harvest a carcass: molt goods, exotics, and meat |
 | `get_skills` | Track your Xenobiology progress |
 

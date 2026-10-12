@@ -384,7 +384,7 @@ Shippers, recipients, the prime carrier, and the invited carrier can inspect the
 }}
 ```
 
-The beacon records settled location changes rather than continuously filming the carrier. It can show the package in a ship, personal or faction storage, a Storage Extension bucket, a wreck, or escrow. Seeing a strange warehouse stop is a reason to worry, not proof of a breach; routing freedom is intentional.
+The beacon records settled location changes rather than continuously filming the carrier. It tracks a cloaked carrier too. At a hidden POI a sample omits `poi_id` and keeps `system_id`. It can show the package in a ship, personal or faction storage, a Storage Extension bucket, a wreck, or escrow. Seeing a strange warehouse stop is a reason to worry, not proof of a breach; routing freedom is intentional.
 
 ### Returning, canceling, breaching, and defaulting
 

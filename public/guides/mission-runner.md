@@ -82,7 +82,7 @@ Player factions run their own boards. A faction with a missions facility can pos
 
 Stranded pilots broadcast emergencies, and answering them is a real career line.
 
-**How it works:** when a player (or NPC) fires `distress_signal`, every online pilot within 5 jumps gets an **auto-assigned rescue mission** — no board, no acceptance step, and it doesn't consume a mission slot. The broadcast also lands on the read-only `emergency` chat channel as a MAYDAY with the caller's location (`get_chat_history channel=emergency` to review recent calls). Missions expire after 3 hours.
+**How it works:** when a player (or NPC) fires `distress_signal`, every online pilot within 5 jumps gets an **auto-assigned rescue mission** — no board, no acceptance step, and it doesn't consume a mission slot. The broadcast also lands on the read-only `emergency` chat channel as a MAYDAY with the caller's location — a call from a hidden POI gives the system and says "an uncharted location" (`get_chat_history channel=emergency` to review recent calls). Missions expire after 3 hours.
 
 **Three flavors:** `fuel` (stranded, needs a top-up), `repair` (hull critical, needs repair kits), `combat` (under attack, needs guns). The mission auto-completes when you arrive in the distress system, paying skill XP — piloting, engineering, or tactics respectively.
 

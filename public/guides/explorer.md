@@ -143,7 +143,7 @@ Keep it simple. One module per category.
 |--------|------|--------|-------------|
 | Afterburner I | 400 | +1 speed | Immediately |
 | Afterburner II | 1,200 | +2 speed | navigation 2 |
-| Scanner I | 500 | Ship counts at every POI in your system; `scan` other POIs | Early |
+| Ship Scanner I | 500 | Ship counts at every charted POI in your system; `scan` other POIs | Early |
 | Scanner II | 1,500 | Better scans | scanning 2 |
 | Cloaking Device I | 2,000 | Go invisible | When exploring dangerous space |
 

@@ -9,7 +9,7 @@ All of these are faction systems: they require membership in a [faction](/docs/f
 | Facility | Tier | Build cost | Unlocks |
 |----------|------|-----------|---------|
 | Intel Terminal | 1 | 150,000 | Shared system map, manual submission |
-| Intel Center | 2 | 750,000 | Automatic intel collection, advanced query filters, live deposits at covered systems |
+| Intel Center | 2 | 750,000 | Automatic intel collection, advanced query filters, live deposits where an online member is now |
 | Trade Ledger | 1 | 200,000 | Market-price ledger, manual submission |
 | Commerce Terminal | 2 | 1,500,000 | Automatic price collection on every member dock, per-item search, live order books at covered stations |
 | Sensor Dome | 1 | 600,000 | `faction_scan_poi` within the station's own system |
@@ -23,11 +23,11 @@ Costs are credits, on top of build materials — check `facility` action `types`
 
 Every pilot keeps their own map ([Exploration](/docs/exploration)); an Intel Terminal turns those private notes into a faction asset.
 
-- `faction_submit_intel` writes system intel into the faction database: systems with descriptions, police levels, connections, and POIs down to individual resource deposits and their remaining quantities. The payload uses the same JSON shapes as game responses, so you can pipe what you see straight back in. The server stores exactly what you submit — schema is validated, accuracy is not. Every entry is tagged with the submitter's name and the game tick, so your faction knows who to trust and how stale a reading is.
-- `faction_query_intel` searches the database by system ID or name, paginated (default 50, max 100). Resource entries echo back capacity, a depletion percentage, and a display value that distinguishes "depleted" from "unknown".
+- `faction_submit_intel` writes system intel into the faction database: systems with descriptions, police levels, connections, and POIs down to individual resource deposits and their remaining quantities. The payload uses the same JSON shapes as game responses, so you can pipe what you see straight back in. The server stores what you submit — schema is validated, accuracy is not — except that it drops any POI ID that is not on your own charts (unknown and uncharted IDs alike). Every entry is tagged with the submitter's name and the game tick, so your faction knows who to trust and how stale a reading is. Hand-submitted resource readings never carry `read_at_tick`, so they always read as unverified.
+- `faction_query_intel` searches the database by system ID or name, paginated (default 50, max 100). Resource entries echo back capacity, a depletion percentage, and a display value that distinguishes "depleted" from "unknown". Each POI carries `read_at_tick`, the tick a member's ship read its resources, and the response lists `live_systems`: the systems with at least one live POI.
 - `faction_intel_status` reports coverage: systems known, POIs known, galaxy coverage percentage, the most active contributor, and your intel level.
 
-The facility tier changes how data gets in. At level 1 (**Intel Terminal**), everything is manual submission — snapshots of what the scout saw. At level 2 (**Intel Center**), collection is automatic: whenever a member visits a system, docks, or queries system or POI info, canonical server-verified data is written to the database with no action needed. L2 also unlocks query filters (`resource_type`, `poi_type`, `empire`), and systems that host one of your own intel facilities — or where a member is currently present — report their deposits live at query time rather than as-last-seen.
+The facility tier changes how data gets in. At level 1 (**Intel Terminal**), everything is manual submission — snapshots of what the scout saw. At level 2 (**Intel Center**), collection is automatic: canonical server-verified data is written to the database with no action needed. It records only what the member's ship read. `get_poi` and deep-core mining record the ore at the current POI, and `survey_system` records the ore at every POI it listed. A jump arrival, `get_system`, or a mission records structure only (system, POIs, connections), not ore. L2 also unlocks query filters (`resource_type`, `poi_type`, `empire`). Deposits read live at query time only at POIs where an online faction member is right now; everywhere else they are last-seen snapshots. Intel facilities do not keep a system live.
 
 Neither command requires docking. Intel is one of the most tradeable things in the game: factions sell map data, and explorers earn a living feeding it — see the [Explorer guide](/docs/guides/explorer).
 
@@ -39,7 +39,7 @@ The market-price equivalent of the intel map. It requires a trade-intel facility
 - `faction_query_trade_intel` searches by station; at level 2 (**Commerce Terminal**) it also filters by `item_id` to find the best known prices for one item across every station your faction has eyes on. Paginated (default 20, max 50).
 - `faction_trade_intel_status` shows stations known, items tracked, coverage, top contributor, and tier.
 
-At level 2, price data streams back automatically every time a member docks anywhere. Stations that host one of your own trade-intel facilities go further: their prices are rebuilt live from the current order books on every query, no member visit needed — so planting Commerce Terminals at key trading hubs gives your faction a permanently fresh feed there. This is the backbone of serious [arbitrage](/docs/guides/arbitrage) operations; see [Markets](/docs/markets) for what the numbers mean.
+At level 2, price data streams back automatically every time a member docks anywhere. It records what `view_market` shows that member: other factions' private orders, fuel sell orders, and contraband the member cannot trade stay out. Stations that host one of your own trade-intel facilities go further: their prices are rebuilt live from the current order books on every query, no member visit needed — so planting Commerce Terminals at key trading hubs gives your faction a permanently fresh feed there. This is the backbone of serious [arbitrage](/docs/guides/arbitrage) operations; see [Markets](/docs/markets) for what the numbers mean.
 
 ## Sharing With Allies
 
@@ -57,7 +57,7 @@ The scan is projected from the facility's station, and power falls off with dist
 | 2 | Deep Space Scanner | One jump out |
 | 3 | Long-Range Subspace Sensor | Two jumps out |
 
-A scan reveals players present at the POI — contesting cloaks with its scan power in a tiered reveal, so a strong cloak close to the dome can still be pierced — plus non-cloaked empire NPCs and pirates. Build at most one sensor facility per station; factions that want coverage build domes across their territory. See [Scanning](/docs/scanning) for how cloak-versus-scan contests work in general.
+A scan reveals players present at the POI — contesting cloaks with its scan power in a tiered reveal, so a strong cloak close to the dome can still be pierced — plus empire NPCs, pirates, and leviathans that pass the same contest. A hidden POI your faction has not charted returns `poi_not_found`. Build at most one sensor facility per station; factions that want coverage build domes across their territory. See [Scanning](/docs/scanning) for how cloak-versus-scan contests work in general.
 
 ## Espionage Operations
 
@@ -75,8 +75,8 @@ A practical progression for a faction that wants eyes everywhere:
 
 1. **Start with an Intel Terminal** at your home station and make submission a habit. Explorers already running `survey_system` and `get_poi` sweeps produce exactly the JSON the terminal ingests — a scout who submits after every system doubles the value of every trip.
 2. **Add a Trade Ledger** once you have traders. Even manual submissions from two or three active haulers give the faction a price map competitors lack.
-3. **Upgrade to level 2 as membership grows.** Automatic collection means every member dock and every casual `get_system` call feeds the database. From here, coverage scales with activity, not discipline.
-4. **Plant facilities where you want live data.** Systems and stations hosting your own intel or trade-intel facilities report live at query time — no member presence needed. A Commerce Terminal at each hub of a trade route is a permanently fresh price feed.
+3. **Upgrade to level 2 as membership grows.** Automatic collection means every member's `get_poi`, survey, and casual `get_system` call feeds the database — `get_system` and jumps feed structure, `get_poi` and surveys feed ore. From here, coverage scales with activity, not discipline.
+4. **Plant trade-intel facilities where you want live prices.** Stations hosting your own trade-intel facilities rebuild their prices live at query time — no member presence needed. A Commerce Terminal at each hub of a trade route is a permanently fresh price feed. System intel works differently: deposits are live only where an online member is right now.
 5. **Add sensors where it matters.** A Sensor Dome at a lawless-space station is an early-warning system: who is loitering at the belt next door, and are they cloaked? Tier up to watch adjacent systems.
 6. **Espionage HQ last.** It is cheap, but its product is qualitative. Run it against rival hubs when you want texture — what they are building, what they are buying — and against your own station to learn what the experience feels like from the other side.
 

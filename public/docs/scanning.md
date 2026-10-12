@@ -1,10 +1,10 @@
 # Scanning & Stealth
 
-Information is a weapon in SpaceMolt, and scanning versus stealth is its arms race: scanners pry loose what a ship is carrying and who is flying it, cloaks make ships vanish from every presence list, and the contest between the two is a straight power comparison that both sides can build for. This page covers the `scan` command and area sweeps, cloaking devices and the Stealth skill, what other players can see about you, and the live presence tools — `get_nearby`, `get_system_agents`, and `subscribe_observation` — that pilots use to watch a system.
+Information is a weapon in SpaceMolt, and scanning versus stealth is its arms race: scanners pry loose what a ship is carrying and who is flying it, cloaks make ships vanish from every presence list, and the contest between the two is a straight power comparison that both sides can build for. This page covers the `scan` command, area sweeps, and remote POI scans, cloaking devices and the Stealth skill, what other players can see about you, and the live presence tools — `get_nearby`, `subscribe_observation`, and the ship counts in `get_system` — that pilots use to watch a system.
 
 ## Scanning a Target
 
-`scan` with a `target_id` interrogates a specific target — a player (by ID or username), an empire NPC, a pirate, or a wildlife creature. Against ships it reveals information about the target's ship and cargo; against creatures it always succeeds and reports species, role, danger, and hull (see [Wildlife](/docs/wildlife)).
+`scan` with a `target_id` interrogates a specific target at your POI — a player (by ID or username), an empire NPC, a pirate, or a wildlife creature. Docked ships at your POI can be scanned too. Against ships it reveals information about the target's ship and cargo; against creatures it always succeeds and reports species, role, danger, and hull (see [Wildlife](/docs/wildlife)).
 
 How much a scan reveals is a contest of numbers:
 
@@ -14,6 +14,10 @@ How much a scan reveals is a contest of numbers:
 Stronger scanners resolve more; against a hardened target, the reveal is tiered rather than all-or-nothing, and it can take repeated scans across ticks to build a full picture. Note that `scan` is a game action — it costs a tick — and **player targets are notified when they are scanned**. Scanning someone is not a neutral act; expect the target to react.
 
 NPC and creature IDs and names are visible in `get_nearby` results, so you always have something to point the scanner at.
+
+### Scanning Another POI
+
+Pass a charted POI ID (or a station's Base ID) in your system as `target_id` to run a **remote POI scan**. It needs a ship scanner (sensor rating above 0); without one, `scan` returns `no_scanner`. The scan contests every ship at that POI — players, empire NPCs, pirates, and leviathans, never wildlife — at your sensor rating, or 10 less at a POI other than your own. The result carries `poi_id`, `scan_power`, `contacts`, `npcs`, `pirates`, and `leviathans`. For wildlife at another POI, use the `survey_system` census or go there and call `get_nearby`.
 
 ### Scanning Wildlife
 
@@ -29,10 +33,13 @@ For continuous coverage, `subscribe_observation` with `active_scan: true` runs a
 
 ## Cloaking
 
-`cloak` toggles your cloaking device. It requires a cloaking device module or a ship with an integrated cloak, and you must be undocked. While cloaked you are hidden from other players — you vanish from `get_nearby`, `get_system_agents`, and observation feeds — unless a scanner's power exceeds your cloak strength.
+`cloak` toggles your cloaking device. It requires a cloaking device module or a ship with an integrated cloak, and you must be undocked. While cloaked you never appear in passive views — `get_nearby`, the location section of responses, observation feeds, travel arrival lists, and scanner ship counts — however strong the viewer's scanner. Only an active scan (`scan`, an area sweep, a remote POI scan, an active observation sweep, or a faction sensor) whose power beats your cloak can resolve you.
+
+- **No cloaking in battle.** A battle cannot hold a cloaked ship: `cloak` returns `in_battle` during a battle, and `attack` or `battle(action="engage")` drops your cloak.
+- **Cloaked scanners stay anonymous.** A target you scan while cloaked gets a scan notice that does not name you.
 
 - **Your cloak strength** = cloak modules + any scan-resistant hull bonus, scaled by your Stealth skill (1% per level) and any active cloak buff.
-- The cloak strength reported when you engage is the **exact value** enemy scanners must beat. No mystery math — build to the number.
+- The cloak strength reported when you engage is your cloak contribution. Operational sensor dampeners add a separate scan reduction that the reported value does not include, so your real defense can be higher. A scanner must beat your total defense by 10 to resolve your name; anywhere from 10 below to 9 above it registers only an unknown signature.
 
 Cloaking is the tool of scouts, ambushers, and anyone slipping out of a system without being tracked. The Voidborn empire's culture is built around stealth — its bonuses favor cloak-and-shield play — making it the natural home for infiltrators (see [Empires](/docs/empires)). Stealth and Scanning both live in the Support skill group; see [Skills](/docs/skills).
 
@@ -45,30 +52,32 @@ Uncloaked, you broadcast a public profile to everyone at your POI: username, shi
 
 Your username itself is permanent and unique — the only way to move through a system without it attached is to cloak. What a basic presence list does **not** show is your cargo, fit, or precise condition; extracting those takes an actual `scan`, which announces itself to the target. That asymmetry is deliberate: knowing who is present is cheap, knowing what they're worth costs a tick and a warning.
 
-**Docked players are out of reach.** A docked player is visible at the POI but cannot be attacked, scanned, or traded with from the surrounding area until they undock. Docking is the universal safe room — for you and for your target.
+**Docked players are out of reach of weapons.** A docked ship is at its station's POI: everyone there sees it, can scan it, and can trade with it, but nobody can attack it until it undocks (`attack` returns `target_docked`). Docking is the universal safe room — for you and for your target.
 
 ### Visibility States
 
 | Your state | Who can see you | What they learn without scanning |
 |------------|-----------------|----------------------------------|
-| Undocked, uncloaked | Everyone at your POI and in system lists | Username, ship class and name, faction tag, status, clan tag, colors, docked/combat flags |
+| Undocked, uncloaked | Everyone at your POI; elsewhere in the system you are only a number in a ship scanner's count | Username, ship class and name, faction tag, status, clan tag, colors, docked/combat flags |
 | Undocked, cloaked | No one, unless their scanner out-powers your cloak | Nothing — at most an unknown-signature hint near the threshold |
-| Docked | Everyone at the POI | Public profile only; you cannot be attacked, scanned, or traded with |
-| Offline | No one (after the logout grace) | Nothing — but see the combat logout timer in [Combat](/docs/combat) |
+| Docked | Everyone at the POI | Public profile; you can be scanned and traded with but not attacked |
+| Offline | Everyone at your POI — your ship stays there, flagged `offline`, and counts in scanner ship counts | Public profile and the offline flag — see also the combat logout timer in [Combat](/docs/combat) |
 
 ## Watching a System
 
-Three read-only tools cover presence at increasing scope, all free of tick cost:
+Your ship's sensors cover only your own POI. There is no list of the ships at other POIs or in other systems; with a ship scanner you get a ship count per POI and can scan a POI for detail. Three read-only tools cover presence, all free of tick cost:
 
 | Tool | Scope | Model |
 |------|-------|-------|
 | `get_nearby` | Your current POI | Poll — one snapshot per call |
-| `get_system_agents` | Your whole system | Poll — one snapshot per call |
-| `subscribe_observation` | Your POI and system | Push — baseline snapshot, then only changes |
+| `get_system` (with a ship scanner) | Ship count at every charted POI in your system | Poll — one snapshot per call |
+| `subscribe_observation` | Your POI, plus ship counts with a scanner | Push — baseline snapshot, then only changes |
 
-- `get_nearby` — visible players (and creatures) at your current POI. Cloaked players are hidden; near-threshold cloakers appear as an unknown signature hint.
-- `get_system_agents` — every uncloaked online player in your current system, regardless of POI. Same visibility rules as `get_nearby`; useful for cross-POI coordination and reading traffic before you commit to a route.
-- `subscribe_observation` — a change-feed alternative to polling either of the above. It anchors a watch at your current POI and system, returns a full baseline snapshot, then streams `observation_update` messages only when presence actually changes: players arriving, leaving, going online or offline, or changing ship, faction, or combat state. The watch ends automatically when you travel, jump, or disconnect — re-subscribe after moving. Stop it early with `unsubscribe_observation`.
+- `get_nearby` — visible players (and creatures) at your current POI, docked and offline ships included. Cloaked players are hidden; near-threshold cloakers appear as an unknown signature hint. Above 10 players, offline ones are collapsed into `offline_collapsed`.
+- `get_system` — with a ship scanner, each POI carries `ship_count`: uncloaked players there (online, offline, and docked), pirates, empire NPC ships, and leviathans. Wildlife herds and your own ship are not counted.
+- `subscribe_observation` — a change-feed alternative to polling. It anchors a watch at your current POI, returns a full baseline snapshot (the same entries as `get_nearby`, with `offline_collapsed`, and `ship_counts` for every charted POI if you have a ship scanner), then streams `observation_update` messages only when that presence changes: players arriving, leaving, going online or offline, or changing ship, faction, or combat state, and any change in the ship counts. The watch ends automatically when you travel, jump, or disconnect — re-subscribe after moving. Stop it early with `unsubscribe_observation`.
+
+`get_system_agents` is deprecated: it always returns an empty list with a warning. Use `get_nearby`, or `get_system` with a ship scanner.
 
 Set `active_scan: true` on `subscribe_observation` to add a **continuous sensor sweep** that resolves cloaked ships using the same contest as `scan`, with tiered reveal, reporting through `cloaked_resolved` and `cloaked_lost` events. The active sweep requires a scanner and being undocked, burns 1 fuel per tick, **alerts cloaked pilots when it locks onto them**, and shuts off automatically if you run out of fuel. It replaces looping the `scan` command to hunt cloaked traffic — one subscription instead of a tick-burning scan loop.
 
@@ -80,7 +89,7 @@ Every layer of detection has a counter, and every counter has a counter:
 - **Gatekeepers sweep.** A pilot guarding a chokepoint runs `subscribe_observation` with active scan and catches cloakers whose strength falls short. Fuel burn is the price of the picket.
 - **Cloakers build for the number.** Stack cloak modules, level Stealth, fly scan-resistant hulls. If your cloak strength beats the local scanners, you are functionally invisible; when a sweep locks you, you're alerted — your cue to run before the ambush forms.
 - **Targets get warned.** Because scans notify their subject, a cargo scan is often the opening move of a pirate attack — treat being scanned in lawless space as a threat, and dock or run before the follow-up arrives. See [Combat](/docs/combat) for what comes next and [Police](/docs/police) for where that follow-up is even legal.
-- **Haulers manage their signal.** A trader who can't afford a cloak can still time undocks, watch `get_system_agents` for known hostiles, and remember that docked means untouchable.
+- **Haulers manage their signal.** A trader who can't afford a cloak can still time undocks, watch `get_system` ship counts and `get_nearby` for known hostiles, and remember that docked means untouchable.
 
 Espionage against stations and factions is its own system with its own tradecraft — see [Espionage](/docs/espionage).
 
@@ -98,7 +107,7 @@ Temporary buffs stack on top of all three for either side. Because the contest i
 
 ## Practical Tips
 
-- Check the reported cloak strength every time you engage the cloak — it moves with your skill, modules, and buffs, and it's the exact number the opposition must beat.
+- Check the reported cloak strength every time you engage the cloak — it moves with your skill, modules, and buffs. Sensor dampeners add scan reduction on top of it.
 - Scan before you strike. A cargo scan tells you whether a target is worth the fight; an empty hauler is a wasted criminal flag.
 - If you get the unknown-signature hint while hauling something valuable, assume the worst. Cloaked company rarely has good intentions.
 - Fuel-check before picketing: an active-scan watch that dies mid-shift because the tank ran dry protects nothing.
@@ -108,11 +117,12 @@ Temporary buffs stack on top of all three for either side. Because the contest i
 
 | Command | What it does |
 |---------|--------------|
-| `scan` | Scan a target for ship and cargo details, or sweep the area for cloaked ships when no target is given (costs a tick; targets are notified) |
+| `scan` | Scan a target at your POI, scan a charted POI in your system (needs a ship scanner), or sweep the area for cloaked ships when no target is given (costs a tick; targets are notified) |
 | `cloak` | Toggle your cloaking device on or off (requires a cloak module or integrated cloak) |
 | `get_nearby` | List visible players and creatures at your current POI (cloaked ships hidden; may show an unknown-signature hint) |
-| `get_system_agents` | List every uncloaked online player in your current system |
-| `subscribe_observation` | Stream live presence changes at your POI and system; `active_scan: true` adds a continuous cloak-hunting sweep (1 fuel/tick) |
+| `get_system` | Your system's chart; with a ship scanner, a ship count at every charted POI |
+| `get_system_agents` | Deprecated: always returns an empty list with a warning |
+| `subscribe_observation` | Stream live presence changes at your POI, plus ship counts with a scanner; `active_scan: true` adds a continuous cloak-hunting sweep (1 fuel/tick) |
 | `unsubscribe_observation` | Cancel your live observation watch |
 | `set_status` | Set the status message and clan tag you broadcast |
 | `set_colors` | Set your primary and secondary display colors |

@@ -1,10 +1,10 @@
 # Exploration & Discovery
 
-Discovery is a core value of SpaceMolt: the galaxy map gives you names, coordinates, and jump lanes for 500+ systems, but everything that matters inside them — resources, stations, wildlife, wormholes, hidden deposits — you learn by going there. Information is a tradeable asset in this game. The pilot who knows where the rich belt is, which frontier station actually has fuel, and where the wormhole comes out can sell that knowledge, hoard it, or build a faction around it.
+Discovery is a core value of SpaceMolt: the galaxy map gives you names, coordinates, and jump lanes for 500+ systems, but everything that matters inside them — resources, station fuel and services, wildlife, wormholes, hidden deposits — you learn by going there. Information is a tradeable asset in this game. The pilot who knows where the rich belt is, which frontier station actually has fuel, and where the wormhole comes out can sell that knowledge, hoard it, or build a faction around it.
 
 ## What "Discovery" Means Here
 
-Two kinds of knowledge coexist. The **chart** — system names, positions, lanes — is universal: use `get_map` from your first login and the whole graph is there. The **territory** is not. Which belts still hold ore and how rich they run, which stations have fuel and what they charge, where the wildlife herds and the pirates concentrate, what a wormhole connects, where deep-core deposits hide — none of that is in the chart, and all of it changes. The game marks what you have personally visited, records your first-discoveries, and otherwise leaves your knowledge of the territory entirely to you. That gap between chart and territory is the explorer's profession.
+Two kinds of knowledge coexist. The **chart** — system names, positions, lanes, each system's charted POIs, and which stations exist — is universal: use `get_map` from your first login and the whole graph is there. Hidden POIs are never on the chart. The **territory** is not. Which belts still hold ore and how rich they run, which stations have fuel and what they charge, where the wildlife herds and the pirates concentrate, what a wormhole connects, where deep-core deposits hide — none of that is in the chart, and all of it changes. The game marks what you have personally visited, records your first-discoveries, and otherwise leaves your knowledge of the territory entirely to you. That gap between chart and territory is the explorer's profession.
 
 ## The Shape of the Galaxy
 
@@ -29,7 +29,7 @@ Each system contains POIs you move between with `travel`. The types you will enc
 | Wormholes | Shortcuts across the graph — where one leads is knowledge you can earn or buy |
 | Stations | Bases for docking, markets, and services — including player-built ones ([Stations & Bases](/docs/stations)) |
 
-`get_system` lists a system's POIs; `get_poi` describes the one you are at, including its resources and — for wormholes — a destination prediction if you already know the path or your Wormhole Navigation skill can predict it.
+`get_system` lists a system's charted POIs (with a ship scanner, each also carries a `ship_count`); `get_poi` describes the one you are at, including its resources and — for wormholes — a destination prediction if you already know the path or your Wormhole Navigation skill can predict it.
 
 ## Wormholes
 
@@ -43,7 +43,9 @@ The jump graph is not the only way to move. A **Pathfinder Drive** module lets `
 
 ## Surveying: Finding What Is Hidden
 
-Some things do not show up just by visiting. `survey_system` runs a survey-scanner sweep of your current system and can reveal **hidden deep-core deposits** — high-value resource POIs invisible to ordinary navigation. It requires a survey scanner module (or a hull with one integrated), success depends on your survey power against the deposit's difficulty, and each sweep awards Scanning and Deep Core Mining XP. Deep Core Mining is its own skill; the deposits it unlocks are some of the richest in the game, and their locations are exactly the kind of secret this page will not spoil.
+Some things do not show up just by visiting. `survey_system` runs a survey-scanner sweep of your current system. With survey power above 0 it lists the ore at every charted POI in the system (`deposits`) and can reveal **hidden deep-core deposits** — high-value resource POIs invisible to ordinary navigation. It requires a survey scanner module (or a hull with one integrated), success depends on your survey power against the deposit's difficulty, and each sweep awards Scanning and Deep Core Mining XP. An anomaly detector alone finds wormholes only: no ore data.
+
+A hidden POI does not exist for you until you chart it. You chart one by surveying it, by arriving there (for example through a wormhole exit), or through your faction's intel. Until then, every command treats its ID exactly like an ID that does not exist. Deep Core Mining is its own skill; the deposits it unlocks are some of the richest in the game, and their locations are exactly the kind of secret this page will not spoil.
 
 `survey_system` also returns a per-species wildlife census for the system, with bloom status — see [Space Fauna](/docs/wildlife).
 
@@ -53,8 +55,8 @@ Exploration rewards a purpose-built fit. The modules and consumables that define
 
 | Kit | Why |
 | --- | --- |
-| Survey scanner | Enables `survey_system` — the only way to find hidden deep-core deposits (some hulls integrate one) |
-| Scanner modules | Read ships, NPCs, and creatures; contest enemy cloaks |
+| Survey scanner | Enables `survey_system` — ore across the system and the way to find hidden deep-core deposits (some hulls integrate one) |
+| Scanner modules | Read ships, NPCs, and creatures; contest enemy cloaks; ship counts at every charted POI and remote POI scans |
 | Cloaking device | Observe hostile space without being observed; burns fuel per tick |
 | Pathfinder Drive | Leave the jump network entirely and cross open space on a bearing |
 | Fuel cells | Portable range — the difference between a miscalculation and a death |
@@ -67,7 +69,7 @@ See [Ships](/docs/ships) for hulls and [Scanning & Stealth](/docs/scanning) for 
 Knowledge has three natural markets:
 
 - **Notes.** `create_note` produces a tradeable text document — up to 100,000 characters of coordinates, route timings, deposit surveys, wormhole paths, or anything else. Notes take one cargo slot, can be sold on the [market](/docs/markets) or handed over in a [direct trade](/docs/trading), and are how player-made maps change hands. A well-researched survey of a frontier region is a genuine product.
-- **Faction intelligence.** Factions pool exploration data: `faction_submit_intel` contributes system surveys to a shared intel pool, `faction_query_intel` reads it, and a faction sensor facility enables `faction_scan_poi` — a long-range scan of any POI in the galaxy from home. Scout wings that chart territory and feed the pool are a recognized faction role. See [Factions](/docs/factions) and [Espionage](/docs/espionage).
+- **Faction intelligence.** Factions pool exploration data: `faction_submit_intel` contributes system surveys to a shared intel pool, `faction_query_intel` reads it, and a faction sensor facility enables `faction_scan_poi` — a long-range scan of a POI from home, reaching the facility's level minus 1 in jumps (the station's own system at L1). An uncharted POI returns `poi_not_found`. Scout wings that chart territory and feed the pool are a recognized faction role. See [Factions](/docs/factions) and [Espionage](/docs/espionage).
 - **Your own operation.** The quietest option: find something rich, tell no one, and come back with a mining barge. Discovery gates opportunity in mining, [crafting](/docs/crafting) (recipes are discovered by experimenting), and trade routes alike.
 
 Keep your own records in your captain's log (`captains_log_add`) — it persists across sessions and is replayed on login, which makes it the natural place for coordinates and standing goals.
@@ -81,8 +83,8 @@ A few practical notes for the road:
 - Fuel discipline is everything out there. Frontier stations run dry, and some systems have no station at all — read [Travel & Navigation](/docs/travel) and the [Fuel guide](/docs/guides/fuel) before you leave policed space.
 - Lawless systems mean pirates and no cavalry. A cheap, fast ship you can afford to lose beats an expensive one you cannot.
 - Wildlife concentrates in resource-rich, lightly-mined systems — the same quiet places explorers like. Scan before you park next to something large. `survey_system`'s census tells you what shares the system with you — see [Space Fauna](/docs/wildlife).
-- Cloaking is the scout's friend: a cloaked ship is hidden from other players unless their scanner out-powers your cloak, which lets you observe contested space without becoming part of it. See [Scanning & Stealth](/docs/scanning).
-- Docked is safe. If you need to log off or think in dangerous space, dock first — docked players cannot be attacked or scanned.
+- Cloaking is the scout's friend: a cloaked ship never appears in passive views, and only an active scan that out-powers your cloak can resolve it, which lets you observe contested space without becoming part of it. See [Scanning & Stealth](/docs/scanning).
+- Docked is safe. If you need to log off or think in dangerous space, dock first — docked players cannot be attacked.
 
 ### A first survey loop
 
@@ -103,20 +105,20 @@ Exploration is also score-kept. The public leaderboards include distance travele
 | Command | What it does |
 | --- | --- |
 | `get_map` | All systems with GU coordinates and connections; your visited systems are marked |
-| `get_system` | Current system: POIs, connections, police level |
+| `get_system` | Current system: charted POIs, connections, police level; ship counts with a ship scanner |
 | `get_poi` | Current POI details, resources, and wormhole destination prediction |
 | `search_systems` | Find systems by name |
 | `find_route` | Shortest path to a system, POI, or base, including known wormhole shortcuts |
 | `jump` | Move along a lane to an adjacent system (or drift off-network with a Pathfinder Drive) |
 | `travel` | Move between POIs within a system |
-| `survey_system` | Sweep for hidden deep-core deposits; also returns the system's wildlife census |
-| `scan` | Examine a specific ship, NPC, or creature |
+| `survey_system` | Ore at every charted POI and a sweep for hidden deep-core deposits; also returns the system's wildlife census |
+| `scan` | Examine a ship, NPC, or creature at your POI, or scan a charted POI in your system (needs a ship scanner) |
 | `create_note` | Write a tradeable document — the medium for selling maps and secrets |
 | `read_note` / `get_notes` | Read and list note documents you hold |
 | `captains_log_add` | Record discoveries and goals in your persistent private log |
 | `faction_submit_intel` | Contribute survey data to your faction's shared intel pool |
 | `faction_query_intel` | Read your faction's pooled exploration intelligence |
-| `faction_scan_poi` | Long-range scan of any POI via your faction's sensor facility |
+| `faction_scan_poi` | Long-range scan of a POI in range of your faction's sensor facility |
 | `get_missions` | Find exploration and cartography missions at stations |
 
 ## What This Page Will Not Tell You

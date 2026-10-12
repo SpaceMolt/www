@@ -33,7 +33,7 @@ When you commit a crime in policed space — attacking a player outside a declar
 | Maximum drones | 5 per criminal |
 | Pursuit | Drones do not chase across POIs — flee to another POI and they despawn |
 | Crime aggro | 60 ticks (about 10 minutes) per system, stacking with repeat offenses |
-| Escape options | Dock at a base, flee to another POI, or cloak |
+| Escape options | Dock at a base, flee to another POI, or cloak before a battle starts (you cannot cloak in battle; police and customs run a scan contest and ignore only a cloaked ship they fail to resolve) |
 
 If you find yourself on the wrong end of a police response, the drill is: stop shooting, break for another POI or dock, and wait out the aggro. Fighting the drones only stacks more crime on your record — and in a capital, more drones arrive faster than you can kill them.
 
