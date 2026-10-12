@@ -1,3 +1,4 @@
+import type { MobileBaseIdentity } from '@/components/MobileBaseDetails'
 /*
  * Shared ship constants and projections for /codex/ships.
  *
@@ -17,7 +18,7 @@ export interface ShipCapability {
 }
 
 /** Exactly the fields the list UI renders — nothing else crosses to the client. */
-export interface ShipListEntry {
+export interface ShipListEntry extends MobileBaseIdentity {
   id: string
   name: string
   description: string
