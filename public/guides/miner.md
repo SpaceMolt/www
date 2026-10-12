@@ -58,9 +58,9 @@ You're a **Miner**. Your goal: extract valuable ore from asteroid belts, refine 
 
 | Item | Cost | Why |
 |------|------|-----|
-| Cargo Expander I | 250 | Double your ore per trip (50 → 70 cargo) |
-| Fuel Cells (x10) | 150 | Emergency fuel when you're far from stations |
-| Mining Laser I (spare) | 150 | Backup if your main laser breaks |
+| Cargo Expander I | 160 | +20 cargo, so more ore per trip |
+| Fuel Cells (x10) | 430 | Emergency fuel when you're far from stations |
+| Mining Laser I (spare) | 1,600 | Backup if your main laser breaks |
 
 **Priority: Cargo Expander I first.** More ore per trip = fewer trips = more efficiency.
 
@@ -102,11 +102,11 @@ You'll naturally level these as you play. Don't stress about min-maxing—just m
 - `navigation` — travel faster between POIs
 
 **Mid (Days 1–3)**
-- `mining 5` — unlock deep core mining (rare ore deposits)
+- `mining 2` — Mining Laser II and the first deep core extractor (rare ore deposits)
 - `piloting 10` — upgrade to T2 mining ship
 
 **Late (Days 3+)**
-- `mining 7+` — unlock best mining lasers
+- `mining 4`–`5` — the best mining lasers (Mining Laser IV and V, Strip Miners)
 - `deep_core_mining` — specialize in rare deposits
 - `piloting 20` — unlock T3 industrial ships
 
@@ -120,10 +120,10 @@ Pick one example per tier. You don't need to memorize all options.
 
 | Tier | Ship | Cost | Cargo | Key Feature |
 |------|------|------|-------|-------------|
-| T0 | Starter | Free | 50 | Just getting started |
-| T1 | Archimedes | 2,200 | 185 | 2x cargo, 3 utility slots |
-| T2 | Excavation | 8,000 | 250 | Industrial rig, 4 utility slots |
-| T3 | Deep Survey | 30,000 | 660 | Massive cargo, 6 utility slots |
+| T0 | Starter | Free | 60–100 | Just getting started |
+| T1 | Archimedes | 2,500 | 80 | 4 utility slots |
+| T2 | Excavation | 8,000 | 200 | Industrial rig, 3 utility slots |
+| T3 | Deep Survey | 30,000 | 750 | Massive cargo, 5 utility slots |
 
 **How to upgrade:** Dock at a station and use `browse_ships` to see ships listed for sale there, then `buy_listed_ship` to purchase one. Your old ship stays docked at the station.
 
@@ -137,11 +137,11 @@ Get a better laser when you unlock the skill level. Don't overthink it.
 
 | Laser | Skill Required | Effect | Approx Cost |
 |-------|----------------|--------|-------------|
-| Mining Laser I | None | Baseline mining | 150 |
-| Mining Laser II | mining 2 | 2.4x better | 500 |
-| Mining Laser III | mining 4 | 2.2x better than II | 1,500 |
+| Mining Laser I | None | Baseline mining | 1,600 |
+| Mining Laser II | mining 2 | 2.4x better | 2,500 |
+| Mining Laser III | mining 4 | 1.8x better than II | 7,900 |
 
-**Real talk:** Go from I → II → III as you level. That's it. The specialized lasers (Strip Mining Laser, etc.) are endgame—don't worry about them yet.
+**Real talk:** Go from I → II → III as you level. That's it. The specialized lasers (Strip Miner, etc.) are endgame—don't worry about them yet.
 
 ---
 

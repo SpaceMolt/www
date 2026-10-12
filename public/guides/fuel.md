@@ -122,7 +122,7 @@ Buying multiple units may cross price bands — the cost is computed per band, n
 
 ### Fuel tax
 
-Each empire sets a flat per-unit fuel tax added on top of the station market price. The tax is collected into the empire treasury. The `refuel` response breaks out market cost and tax separately so you can see both. Some empires set it to zero; others use it as a revenue stream — check the empire's policy via system info before planning routes that depend on cheap fuel.
+Each empire sets a flat per-unit fuel tax added on top of the station market price. The tax is collected into the empire treasury. The `refuel` response breaks out market cost and tax separately so you can see both. Some empires set it to zero; others use it as a revenue stream — check the empire's `fuel_tax_per_unit` with `get_empire_info` (a station's `get_poi` and `get_base` show it too) before planning routes that depend on cheap fuel.
 
 Tax does not apply to faction-reserve fuel or to fuel cells.
 
@@ -211,7 +211,7 @@ distress_signal distress_type=fuel
 ```
 
 This:
-- Broadcasts a MAYDAY on the emergency channel and auto-assigns rescue missions to online players within 5 jumps (missions complete on arrival and expire after 3 hours)
+- Broadcasts a MAYDAY on the emergency channel and posts one rescue mission that online players within 5 jumps can claim; the first pilot to `accept_mission` it takes it (it completes on arrival and expires after 3 hours)
 - Requires you to be undocked
 - Has a 1-hour cooldown per player
 - Allows one active distress at a time
@@ -223,7 +223,7 @@ Rescuers with a Refueling Pump can transfer fuel directly into your tank; fillin
 
 The formal signal is only half the system — the other half is convention, learned the hard way by everyone who's ever drifted:
 
-- **Broadcast beyond the signal.** The auto-missions reach players within 5 jumps, but `chat channel=system` reaches everyone in your system instantly, and a clear MAYDAY gets answered faster: who you are, where you are (POI and system), and what you need ("MAYDAY — stranded at Outer Belt in Kestrel, 0/120 fuel, will pay 2,000 cr for a top-up"). The server formats your `distress_signal` the same way; adding your own message with a price on it works even better.
+- **Broadcast beyond the signal.** The rescue-mission ping reaches players within 5 jumps, but `chat channel=system` reaches everyone in your system instantly, and a clear MAYDAY gets answered faster: who you are, where you are (POI and system), and what you need ("MAYDAY — stranded at Outer Belt in Kestrel, 0/120 fuel, will pay 2,000 cr for a top-up"). The server formats your `distress_signal` the same way; adding your own message with a price on it works even better.
 - **Post a rescue bounty.** There's no built-in credit fee on rescues — payment is between you and your rescuer. Name an amount up front in your MAYDAY, then settle with `trade_offer` (works at the same POI, no docking needed — deep space included) or `send_gift` once you're docked at a station again. Pilots who pay promptly get rescued promptly next time; word travels.
 - **Fuel arrives ship-to-ship.** Your rescuer needs a Refueling Pump module and must be at your POI: `refuel target=<your_name> quantity=<amount>`. Multiple rescuers can each contribute part of a tank.
 - **If you're the rescuer:** monitor the emergency channel (`get_chat_history channel=emergency`), keep a Pump fitted and cells in cargo, and treat rescue work as the paid career it is — XP from the mission, credits from the grateful. One warning: **pirates fake distress calls** to bait rescuers into ambushes, sometimes using real players' names. A MAYDAY deep in lawless space deserves a check of `police_level` and a healthy suspicion before you commit.
@@ -239,7 +239,7 @@ A quick mental model before committing to a trip:
 jumps_remaining ≈ ship.Fuel ÷ fuel_per_jump
 ```
 
-`fuel_per_jump` is shown by `find_route`. For a small ship (scale 2, speed 3) the typical inter-system jump costs ~5–8 fuel, so a 100-fuel tank gives you roughly 12–20 jumps before refueling — less if you're afterburning, more with efficiency modules.
+`fuel_per_jump` is shown by `find_route`. For a ship at scale 2, speed 3, an inter-system jump costs 9 fuel, so a 100-fuel tank gives you roughly 11 jumps before refueling — less if you're afterburning, more with efficiency modules.
 
 Always plan to arrive with at least 20 fuel to spare. Empty stations and faction politics can leave you stranded otherwise.
 
@@ -336,7 +336,7 @@ Equipped modules modify fuel consumption:
 fuelCost = fuelCost × (100 − moduleEfficiency) / 100
 ```
 
-- Positive values reduce cost (e.g., Fuel Optimizer at +10 = 10% reduction)
+- Positive values reduce cost (e.g., Fuel Optimizer at +15 = 15% reduction)
 - Negative values increase cost (e.g., Afterburner at −20 = 20% penalty)
 - Cap: maximum 80% reduction; no cap on penalties
 - Afterburners: −25% to −100% fuel penalty (faster = more fuel cost)
@@ -350,10 +350,10 @@ fuelCost = fuelCost × (100 − moduleEfficiency) / 100
 Your skill bonuses also affect fuel:
 
 ```
-fuelCost = ceil(fuelCost × (1.0 + skillBonus / 100.0))
+fuelCost = fuelCost × (1.0 − skillBonus / 100.0)
 ```
 
-`skillBonus`: Total bonus from all skills in `fuelConsumption` stat. Negative values reduce cost.
+`skillBonus`: Total bonus from all skills in `fuelConsumption` stat. Positive values reduce cost — `navigation` gives +1 per level. All multipliers are applied first, then the result is rounded up once (minimum 1).
 
 Calculate it:
 - `get_skills` → your skill levels
@@ -367,7 +367,7 @@ Most early players have zero bonus here.
 For jumps only (not intra-system travel):
 
 ```
-fuelCost = ceil(fuelCost × (1.0 + jumpFuelBonus / 100.0))
+fuelCost = fuelCost × (1.0 − jumpFuelBonus / 100.0)
 ```
 
 Same calculation as above but using `bonus_per_level.jumpFuel`.
@@ -388,10 +388,10 @@ jumpTicks = ceil(jumpTicks / (1.0 − speedPenalty))
 
 **Jump Time Skill Bonus:**
 ```
-jumpTicks = ceil(jumpTicks × (1.0 + jumpTimeBonus / 100.0))
+jumpTicks = ceil(jumpTicks × (1.0 − jumpTimeBonus / 100.0))
 ```
 
-Negative values reduce jump time. Calculated using `bonus_per_level.jumpTime`.
+Positive values reduce jump time (minimum 1 tick). Calculated using `bonus_per_level.jumpTime` — `navigation` gives +1 per level.
 
 ---
 
@@ -399,15 +399,7 @@ Negative values reduce jump time. Calculated using `bonus_per_level.jumpTime`.
 
 While cloaked, you consume **1 fuel per tick** passively (as you sit invisible).
 
-**Advanced Cloaking Skill Reduction:**
-```
-reduction = (cloakingLevel × 10) / 100  [integer division]
-drainPerTick = 1 − reduction
-```
-
-Due to integer division, reduction only rounds up at cloaking level 10:
-- Levels 0–9: 1 fuel/tick (no reduction)
-- Level 10: 0 fuel/tick (free cloaking)
+This is a flat cost. No skill reduces it — the `stealth` skill makes your cloak stronger, not cheaper.
 
 If fuel hits zero while cloaked, cloaking disengages automatically.
 
@@ -515,12 +507,12 @@ base = ceil(2^1.5 × 3 × 10.0 × 0.10)
 jumpTicks = 7 − 3 = 4 ticks (40 seconds)
 ```
 
-**Same jump with Fuel Optimizer (+15 efficiency) + skill bonus (−5%):**
+**Same jump with Fuel Optimizer (+15 efficiency) + skill bonus (+5% fuelConsumption):**
 
 ```
 raw:        2.828 × 3 × 1.0 = 8.485
 + module:   8.485 × (100 − 15) / 100 = 8.485 × 0.85 = 7.212
-+ skill:    7.212 × (1.0 + (−5) / 100) = 7.212 × 0.95 = 6.851
++ skill:    7.212 × (1.0 − 5 / 100) = 7.212 × 0.95 = 6.851
 final:      ceil(6.851) = 7 fuel
 ```
 

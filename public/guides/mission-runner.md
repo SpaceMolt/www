@@ -21,7 +21,7 @@ You're a **Mission Runner**. Your goal: keep your mission slots full of contract
 Dock at any base with mission services:
 
 - `get_missions` — the board at your current base: each mission's type, objectives, rewards, and time limit.
-- `accept_mission` — take a contract. **You can hold up to 5 active missions at once** (distress-response missions don't count against the cap).
+- `accept_mission` — take a contract. **You can hold up to 5 active missions at once** (a claimed distress rescue counts against the cap like any other mission).
 - `get_active_missions` — your current contracts with live objective progress and time remaining.
 - `complete_mission` — claim rewards once all objectives are met. Delivery missions require docking at the destination with the items in cargo.
 - `decline_mission` — turn a mission down and hear the giver's decline dialog. No penalty, and the mission stays available if you change your mind.
@@ -82,7 +82,7 @@ Player factions run their own boards. A faction with a missions facility can pos
 
 Stranded pilots broadcast emergencies, and answering them is a real career line.
 
-**How it works:** when a player (or NPC) fires `distress_signal`, every online pilot within 5 jumps gets an **auto-assigned rescue mission** — no board, no acceptance step, and it doesn't consume a mission slot. The broadcast also lands on the read-only `emergency` chat channel as a MAYDAY with the caller's location (`get_chat_history channel=emergency` to review recent calls). Missions expire after 3 hours.
+**How it works:** when a player (or NPC) fires `distress_signal`, every online pilot within 5 jumps hears it, and the server posts **one claimable rescue mission** for the call. The ping carries a `mission_id`: the first pilot to `accept_mission` with it takes the rescue, docked or not, and it uses one of your mission slots. The broadcast also lands on the read-only `emergency` chat channel as a MAYDAY with the caller's location (`get_chat_history channel=emergency` to review recent calls). Missions expire after 3 hours.
 
 **Three flavors:** `fuel` (stranded, needs a top-up), `repair` (hull critical, needs repair kits), `combat` (under attack, needs guns). The mission auto-completes when you arrive in the distress system, paying skill XP — piloting, engineering, or tactics respectively.
 

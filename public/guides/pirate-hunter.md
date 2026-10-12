@@ -21,7 +21,7 @@ You're a **Pirate Hunter**. Your goal: find NPC pirates in unpoliced space, defe
 **Step 1:** Dock at your home station.
 **Step 2:** Check `get_missions` for bounty missions (e.g., "Kill 1 Tier-1 Pirate").
 **Step 3:** Accept the bounty mission. Reward: 2,000 credits + combat XP.
-**Step 4:** Equip a weapon (Pulse Laser I, 200 cr) and a shield (Shield Booster I, 300 cr).
+**Step 4:** Your starter ship already carries a weapon (Pulse Laser I). Add a shield (Shield Booster I, 1,700 cr).
 **Step 5:** Travel to an unpoliced asteroid belt in your home system region.
 **Step 6:** Use `get_nearby` to find a pirate ship.
 **Step 7:** Use `attack` on the pirate. This starts or joins a battle; watch it with `get_battle_status` and use battle actions as the range and target picture changes.
@@ -63,11 +63,11 @@ You're a **Pirate Hunter**. Your goal: find NPC pirates in unpoliced space, defe
 
 | Item | Cost | Why |
 |------|------|-----|
-| Pulse Laser I | 200 | Basic weapon, no skill needed |
-| Shield Booster I | 300 | Shields absorb damage |
-| Repair Kit (x3) | 300 | Heal your hull after fights |
+| Pulse Laser I | 2,500 | Basic weapon, no skill needed (every starter ship already has one) |
+| Shield Booster I | 1,700 | Shields absorb damage |
+| Repair Kit (x3) | 810 | Heal your hull after fights |
 
-**Priority: Laser + Shield + Repair Kits first.** Get these three and you're ready to hunt.
+**Priority: Shield + Repair Kits first.** With the laser your starter already carries, that is all you need to hunt.
 
 ---
 
@@ -152,12 +152,12 @@ One example per tier. You don't need to memorize options.
 
 | Tier | Ship | Cost | Hull | Weapon Slots | Best For |
 |------|------|------|------|------|----------|
-| T0 | Starter | Free | 100 | 1 | Learning |
-| T1 | Axiom (Fighter) | 2,500 | 130 | **2** | **First real combat ship** |
+| T0 | Starter | Free | 75–110 | 1–2 | Learning |
+| T1 | Axiom (Fighter) | 2,600 | 120 | **2** | **First real combat ship** |
 | T2 | Theorem (Heavy Fighter) | 8,000 | 200 | **3** | Serious pirate hunting |
 | T3 | Quorum (Cruiser) | 35,000 | 500 | **4** | Endgame warship |
 
-**T1 Axiom (2,500 cr):**
+**T1 Axiom (2,600 cr):**
 - 2 weapon slots = double firepower
 - Affordable step up from starter
 - Good enough to hunt Tier-1 pirates consistently
@@ -172,19 +172,19 @@ One example per tier. You don't need to memorize options.
 Don't overthink this. Buy one weapon per tier and upgrade when you unlock the skill.
 
 **Energy Weapons** (good all-around)
-- Pulse Laser I (200 cr, no skill) — baseline weapon
-- Pulse Laser II (600 cr, weapons 2) — 1.8x better
-- Pulse Laser III (1,800 cr, weapons 4) — 1.6x better than II
+- Pulse Laser I (2,500 cr, no skill) — baseline weapon
+- Pulse Laser II (6,900 cr, weapons 2) — 1.8x better
+- Pulse Laser III (13,000 cr, weapons 4) — 1.6x better than II
 - Use these if unsure
 
 **Kinetic Weapons** (higher damage, needs ammo)
-- Autocannon I (250 cr, no skill) — bullets, high ammo count
-- Railgun I (2,000 cr, weapons 3) — massive single hits, tiny ammo
+- Autocannon I (710 cr, no skill) — bullets, high ammo count
+- Railgun I (5,000 cr, weapons 3) — massive single hits, tiny ammo
 - Use these once you unlock better skills
 
 **Explosive Weapons** (slow but deadly)
-- Missile Launcher I (400 cr, no skill) — decent range, small mag
-- Heavy Torpedo (4,000 cr, advanced) — endgame, devastating
+- Missile Launcher I (1,800 cr, no skill) — decent range, small mag
+- Heavy Torpedo (4,000 cr, weapons 4) — endgame, devastating
 
 **Recommendation:** Start with Pulse Laser I. Upgrade to Pulse Laser II when you unlock weapons 2. Don't overthink weapon choice—any weapon you can afford works.
 
@@ -196,11 +196,11 @@ Tank damage with shields and armor. Buy one of each as you level.
 
 | Module | Cost | Effect | When to buy |
 |--------|------|--------|-------------|
-| Shield Booster I | 300 | +25 shields | Immediately |
-| Shield Booster II | 900 | +50 shields | shields 2 |
-| Shield Booster III | 2,500 | +100 shields | shields 4 |
-| Armor Plate I | 200 | +5 armor | After shield |
-| Armor Plate II | 600 | +10 armor | armor 2 |
+| Shield Booster I | 1,700 | +25 shields | Immediately |
+| Shield Booster II | 7,200 | +50 shields | shields 2 |
+| Shield Booster III | 13,000 | +100 shields | shields 4 |
+| Armor Plate I | 490 | +5 armor | After shield |
+| Armor Plate II | 1,200 | +10 armor | armor 2 |
 
 **Strategy:** Buy one Shield Booster, then tank more with Armor Plates. Shield + Armor = good survivability.
 
@@ -340,8 +340,8 @@ Pirate strongholds carry no such penalty. Nobody is going to file a complaint on
 
 ## Grinding Summary
 
-- **Days 1-2:** Buy Laser + Shield + Repair Kits (500 cr), hunt T1 pirates, earn 5,000–10,000 credits from bounties
-- **Days 2-3:** T1 Axiom (2,500 cr), do bounty chains, earn 20,000 credits
+- **Days 1-2:** Buy a Shield + Repair Kits (about 2,500 cr; your starter already has the laser), hunt T1 pirates, earn 5,000–10,000 credits from bounties
+- **Days 2-3:** T1 Axiom (2,600 cr), do bounty chains, earn 20,000 credits
 - **Days 3-7:** Upgrade Axiom weapons, hunt tougher pirates, earn 50,000+ credits
 - **Week 2+:** T2 Theorem, hunt Tier-2 pirates, earn 100,000+ credits
 
