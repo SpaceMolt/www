@@ -1,5 +1,6 @@
 'use client'
 
+import { isMobileBase, MobileBaseDetails, type MobileBaseIdentity } from '@/components/MobileBaseDetails'
 import { useCallback, useMemo, useState } from 'react'
 import {
   Heart,
@@ -23,15 +24,16 @@ import { Credits, Loading, Modal, shared } from '../../shared'
 import { BugReportButton } from '../../BugReportButton'
 import { buildShipCatalogContext } from '../../bugReportContext'
 import styles from './ShipCatalog.module.css'
-import { ASSETS_URL } from '@/lib/links'
+import { imageUrl } from '@/data/images'
 
 export const EMPIRES = ['solarian', 'voidborn', 'crimson', 'nebula', 'outerrim']
 const TIERS = [1, 2, 3, 4, 5]
 const CATEGORIES = ['Civilian', 'Combat', 'Commercial', 'Exploration', 'Industrial']
-const CLASSES = ['Assault', 'Courier', 'Explorer', 'Fighter', 'Freighter', 'Gas Harvester', 'Ice Harvester', 'Miner', 'Raider', 'Salvager', 'Scout', 'Shuttle']
+const CLASSES = ['Assault', 'Courier', 'Explorer', 'Fighter', 'Freighter', 'Gas Harvester', 'Ice Harvester', 'Miner', 'Mobile Base', 'Raider', 'Salvager', 'Scout', 'Shuttle']
 const PAGE_SIZE = 20
 
-export interface CatalogShip {
+export interface CatalogShip extends MobileBaseIdentity {
+  base_shield_recharge?: number
   id: string
   name: string
   class: string
@@ -379,7 +381,7 @@ export function ShipCatalog() {
             {ships.map((catShip) => {
               const isExpanded = expandedShip === catShip.id
               const imgName = catShip.id.toLowerCase().replace(/\s+/g, '_')
-              const imgSrc = `${ASSETS_URL}/images/ships/catalog/${imgName}.webp`
+              const imgSrc = imageUrl(`ships/catalog/${imgName}.webp`)
               const isCommissionable = commissionableIds.has(catShip.id)
               return (
                 <div key={catShip.id} className={styles.shipCard}>
@@ -407,7 +409,7 @@ export function ShipCatalog() {
                         <span className={styles.shipCardDesc}>{catShip.description}</span>
                       )}
                     </div>
-                    {isDocked && (isCommissionable || cheapestByClass[catShip.id]) && (
+                    {isDocked && !isMobileBase(catShip) && (isCommissionable || cheapestByClass[catShip.id]) && (
                       <div className={styles.cardActions}>
                         {isCommissionable && (
                           <button
@@ -441,6 +443,10 @@ export function ShipCatalog() {
                     )}
                   </div>
 
+                  {isMobileBase(catShip) && (
+                    <p>Commission through your agent at your faction&apos;s licensed tier-4 shipyard: <code>commission_ship ship_class={catShip.id} fund_from_faction=true</code>. Requires ManageBases; uses faction storage and treasury.</p>
+                  )}
+
                   {/* Expanded view */}
                   {isExpanded && (
                     <div className={styles.shipDetails}>
@@ -465,21 +471,26 @@ export function ShipCatalog() {
                       </div>
 
                       <div className={styles.shipDetailsRight}>
-                        <div className={styles.shipStatsRow}>
-                          <div className={styles.shipStat}><Heart size={10} /><StatWithDelta label="Hull" value={catShip.base_hull} currentValue={ship?.max_hull} /></div>
-                          <div className={styles.shipStat}><Shield size={10} /><StatWithDelta label="Shield" value={catShip.base_shield} currentValue={ship?.max_shield} /></div>
-                          <div className={styles.shipStat}><Gauge size={10} /><StatWithDelta label="Speed" value={catShip.base_speed} currentValue={ship?.speed} /></div>
-                        </div>
-                        <div className={styles.shipStatsRow}>
-                          <div className={styles.shipStat}><Fuel size={10} /><StatWithDelta label="Fuel" value={catShip.base_fuel} currentValue={ship?.max_fuel} /></div>
-                          <div className={styles.shipStat}><Package size={10} /><StatWithDelta label="Cargo" value={catShip.cargo_capacity} currentValue={ship?.cargo_capacity} /></div>
-                        </div>
-                        <div className={styles.shipStatsRow}>
-                          <div className={styles.shipStat}><Crosshair size={10} /><StatWithDelta label="Wpn" value={catShip.weapon_slots} currentValue={ship?.weapon_slots} /></div>
-                          <div className={styles.shipStat}><Shield size={10} /><StatWithDelta label="Def" value={catShip.defense_slots} currentValue={ship?.defense_slots} /></div>
-                          <div className={styles.shipStat}><CircuitBoard size={10} /><StatWithDelta label="Util" value={catShip.utility_slots} currentValue={ship?.utility_slots} /></div>
-                        </div>
+                        {isMobileBase(catShip) ? <>
+                          <p>Hull {catShip.base_hull} · Shield {catShip.base_shield} · Armor {catShip.base_armor} · Shield recharge {catShip.base_shield_recharge ?? 0}/tick</p>
+                          <MobileBaseDetails ship={catShip} />
+                        </> : <>
+                          <div className={styles.shipStatsRow}>
+                            <div className={styles.shipStat}><Heart size={10} /><StatWithDelta label="Hull" value={catShip.base_hull} currentValue={ship?.max_hull} /></div>
+                            <div className={styles.shipStat}><Shield size={10} /><StatWithDelta label="Shield" value={catShip.base_shield} currentValue={ship?.max_shield} /></div>
+                            <div className={styles.shipStat}><Gauge size={10} /><StatWithDelta label="Speed" value={catShip.base_speed} currentValue={ship?.speed} /></div>
+                          </div>
+                          <div className={styles.shipStatsRow}>
+                            <div className={styles.shipStat}><Fuel size={10} /><StatWithDelta label="Fuel" value={catShip.base_fuel} currentValue={ship?.max_fuel} /></div>
+                            <div className={styles.shipStat}><Package size={10} /><StatWithDelta label="Cargo" value={catShip.cargo_capacity} currentValue={ship?.cargo_capacity} /></div>
+                          </div>
+                          <div className={styles.shipStatsRow}>
+                            <div className={styles.shipStat}><Crosshair size={10} /><StatWithDelta label="Wpn" value={catShip.weapon_slots} currentValue={ship?.weapon_slots} /></div>
+                            <div className={styles.shipStat}><Shield size={10} /><StatWithDelta label="Def" value={catShip.defense_slots} currentValue={ship?.defense_slots} /></div>
+                            <div className={styles.shipStat}><CircuitBoard size={10} /><StatWithDelta label="Util" value={catShip.utility_slots} currentValue={ship?.utility_slots} /></div>
+                          </div>
 
+                        </>}
                         {catShip.build_materials && catShip.build_materials.length > 0 && (
                           <div className={styles.buildMats}>
                             <span className={styles.buildLabel}>Build materials:</span>

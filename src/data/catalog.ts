@@ -1,3 +1,4 @@
+import type { MobileBaseIdentity } from '@/components/MobileBaseDetails'
 /**
  * Static game catalog data — items (including modules), recipes, and ships.
  * Fetched at build time by scripts/fetch-catalog.mjs.
@@ -174,7 +175,7 @@ export interface RawRecipe {
   required_skills?: Record<string, number>
 }
 
-export interface RawShip {
+export interface RawShip extends MobileBaseIdentity {
   id: string
   name: string
   description?: string

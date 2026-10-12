@@ -26,7 +26,7 @@ import { ItemName } from '../ItemTooltip'
 import { getItem as getCatalogRawItem, isModule } from '@/data/catalog'
 import type { RawCatalogItem } from '@/data/catalog'
 import styles from './ShipPanel.module.css'
-import { ASSETS_URL } from '@/lib/links'
+import { imageUrl } from '@/data/images'
 
 type ModuleEntry = NonNullable<GameState['modules']>[number]
 type CargoEntry = NonNullable<GameState['cargo']>[number]
@@ -231,7 +231,7 @@ export function ShipPanel() {
         {/* Ship overview */}
         <div className={styles.shipOverview}>
           <img
-            src={`${ASSETS_URL}/images/ships/catalog/${ship.class_id ?? ''}.webp`}
+            src={imageUrl(`ships/catalog/${ship.class_id ?? ''}.webp`)}
             alt={ship.name ?? ''}
             className={styles.shipImage}
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}

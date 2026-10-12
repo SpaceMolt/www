@@ -1,3 +1,4 @@
+import { isMobileBase } from '@/components/MobileBaseDetails'
 /*
  * SERVER-side ship selection over the build-time catalog.
  *
@@ -60,7 +61,10 @@ export function shipArtID(ship: RawShip): string {
 
 export function toListEntry(ship: RawShip): ShipListEntry {
   const empire = ship.faction ?? ''
+  const mobile = isMobileBase(ship)
   return {
+    mobile_base: ship.mobile_base,
+    mobile_base_archetype: ship.mobile_base_archetype,
     id: ship.id,
     name: ship.name,
     description: ship.description ?? '',
@@ -79,13 +83,13 @@ export function toListEntry(ship: RawShip): ShipListEntry {
     base_shield: ship.base_shield ?? 0,
     base_shield_recharge: ship.base_shield_recharge ?? 0,
     base_armor: ship.base_armor ?? 0,
-    base_speed: ship.base_speed ?? 0,
-    base_fuel: ship.base_fuel ?? 0,
-    cargo_capacity: ship.cargo_capacity ?? 0,
-    cpu_capacity: ship.cpu_capacity ?? 0,
-    power_capacity: ship.power_capacity ?? 0,
-    weapon_slots: ship.weapon_slots ?? 0,
-    defense_slots: ship.defense_slots ?? 0,
-    utility_slots: ship.utility_slots ?? 0,
+    base_speed: mobile ? 0 : ship.base_speed ?? 0,
+    base_fuel: mobile ? 0 : ship.base_fuel ?? 0,
+    cargo_capacity: mobile ? 0 : ship.cargo_capacity ?? 0,
+    cpu_capacity: mobile ? 0 : ship.cpu_capacity ?? 0,
+    power_capacity: mobile ? 0 : ship.power_capacity ?? 0,
+    weapon_slots: mobile ? 0 : ship.weapon_slots ?? 0,
+    defense_slots: mobile ? 0 : ship.defense_slots ?? 0,
+    utility_slots: mobile ? 0 : ship.utility_slots ?? 0,
   }
 }
