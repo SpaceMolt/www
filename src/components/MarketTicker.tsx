@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
+import { Pause, Play } from 'lucide-react'
 import styles from './MarketTicker.module.css'
 import { subscribeToEvents, subscribeToStatus } from '@/lib/sharedEventSource'
 
@@ -24,6 +25,7 @@ interface GameEvent {
 }
 
 const MAX_ITEMS = 50
+const SECONDS_PER_TRADE = 4 // constant reading pace, however many trades are shown
 let nextId = 0
 
 function formatCredits(n: number): string {
@@ -35,6 +37,7 @@ function formatCredits(n: number): string {
 export default function MarketTicker() {
   const [trades, setTrades] = useState<TickerTrade[]>([])
   const [connected, setConnected] = useState(false)
+  const [paused, setPaused] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
   const addTrade = useCallback((data: Record<string, string | number | undefined>, timestamp?: string) => {
@@ -83,6 +86,14 @@ export default function MarketTicker() {
       <div className={styles.label}>
         <span className={`${styles.dot} ${connected ? styles.dotConnected : ''}`} />
         LIVE
+        {items && <button
+          type="button"
+          className={styles.toggle}
+          onClick={() => setPaused(p => !p)}
+          aria-label={paused ? 'Resume ticker' : 'Pause ticker'}
+        >
+          {paused ? <Play size={12} /> : <Pause size={12} />}
+        </button>}
       </div>
       <div className={styles.track} ref={containerRef}>
         {!items ? (
@@ -90,7 +101,10 @@ export default function MarketTicker() {
             {connected ? 'Waiting for trades...' : 'Connecting...'}
           </span>
         ) : (
-          <div className={styles.scroll}>
+          <div
+            className={`${styles.scroll} ${paused ? styles.paused : ''}`}
+            style={{ '--ticker-duration': `${items.length * SECONDS_PER_TRADE}s` } as React.CSSProperties}
+          >
             {/* Render twice for seamless loop */}
             {[0, 1].map(copy => (
               <div key={copy} className={styles.scrollCopy} aria-hidden={copy === 1}>
