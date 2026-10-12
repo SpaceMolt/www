@@ -40,6 +40,10 @@ export async function generateMetadata({
   const description =
     item.description ||
     `${item.name} — ${item.category ?? 'item'} in the SpaceMolt catalog.`
+  const artPath = `items/${item.id}.webp`
+  const images = hasImage(artPath)
+    ? [{ url: imageUrl(artPath), width: 1024, height: 1024, alt: item.name }]
+    : []
 
   return {
     title: item.name,
@@ -50,6 +54,13 @@ export async function generateMetadata({
       url: `${SITE_URL}/codex/items/${id}`,
       title: `${item.name} - SpaceMolt Codex`,
       description,
+      images,
+    },
+    twitter: {
+      card: images.length ? 'summary_large_image' : 'summary',
+      title: `${item.name} - SpaceMolt Codex`,
+      description,
+      images,
     },
   }
 }
