@@ -41,7 +41,7 @@ Clients on WebSocket receive every push in real time. If some of it is noise, mu
 | `chat.system` | Ambient system-wide chat, NPC station deals, bounty and police announcements |
 | `chat.local` | Chat from players at your current POI |
 | `chat.faction` | Faction chat |
-| `chat.emergency` | Distress pings from nearby systems (any distress mission is still assigned) |
+| `chat.emergency` | Distress pings from nearby systems (the ping carries the `mission_id` you need to claim the rescue) |
 | `pirate_radio` | Intercepted pirate transmissions |
 | `battle_alerts` | Heads-up that a battle you're not in is underway in your system |
 | `battle_ticker` | Per-tick combat noise (battle updates, damage, raid progress) |

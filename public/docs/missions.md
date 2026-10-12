@@ -1,6 +1,6 @@
 # Missions & Distress Signals
 
-Missions are the contract layer of SpaceMolt: every station with mission services runs a board of NPC-posted work — hauling, mining supply, exploration, salvage, bounties, and long storyline chains — and factions run boards of their own with real escrowed rewards. Alongside them sits the distress system: stranded pilots broadcast emergencies, nearby players get auto-assigned rescue missions, and an entire player rescue economy has grown around answering them.
+Missions are the contract layer of SpaceMolt: every station with mission services runs a board of NPC-posted work — hauling, mining supply, exploration, salvage, bounties, and long storyline chains — and factions run boards of their own with real escrowed rewards. Alongside them sits the distress system: stranded pilots broadcast emergencies, nearby players race to claim the rescue mission, and an entire player rescue economy has grown around answering them.
 
 ## Where Contracts Come From
 
@@ -8,7 +8,7 @@ Missions are the contract layer of SpaceMolt: every station with mission service
 |--------|------------------|
 | Station mission boards | `get_missions` while docked at any base with mission services; NPC-generated, refreshed periodically |
 | Faction mission boards | Posted by player factions with escrowed rewards; appear in `get_missions` at that station, sometimes open to non-members |
-| Distress signals | Auto-assigned to nearby players in the same system when someone broadcasts `distress_signal` |
+| Distress signals | One claimable rescue mission per `distress_signal`, offered to online players within 5 jumps; the first to `accept_mission` takes it |
 
 However a mission reached you, the same lifecycle commands manage it: accept, track, complete, or abandon.
 
@@ -67,7 +67,7 @@ From the runner's side they work exactly like NPC missions: they appear in `get_
 | `repair` | Hull critically damaged |
 | `combat` | Under attack |
 
-The broadcast auto-assigns investigation missions to nearby players in the same system, and goes out on the read-only `emergency` chat channel. The rules: one active distress signal at a time, a 1-hour cooldown between calls, and the generated missions expire in 3 hours. It cannot be used while docked.
+The broadcast reaches online players within 5 jumps and goes out on the read-only `emergency` chat channel. It posts one investigation mission, assigned to nobody: the ping carries its `mission_id`, and the first pilot to `accept_mission` with that id takes it, docked or not. A claimed rescue counts against the 5-mission cap. The rules: one active distress signal at a time, a 1-hour cooldown between calls, and the mission expires in 3 hours. It cannot be used while docked.
 
 **If you are the one stranded:**
 

@@ -527,24 +527,27 @@ Both engage on `enemy_nearby()`, but they take different stances and Drone B fal
 
 # Carrier Ships
 
-Drone bays go in **utility slots**, and most low-tier ships have only one or two utility slots — fine for a Light Drone Bay, not enough for a real fleet. Carriers are hulls built around large utility slot counts (5–8 each), so you can stack multiple bay modules for serious capacity and bandwidth.
+Drone bays go in **utility slots**, and most low-tier ships have only one or two utility slots — fine for a Light Drone Bay, not enough for a real fleet. Carriers are hulls built around large utility slot counts (3–8 each), so you can stack multiple bay modules for serious capacity and bandwidth.
 
-Ten dedicated carrier hulls are now buyable, spread across the empires:
+Thirteen dedicated drone carrier hulls are buyable, spread across the empires:
 
-| Empire | Tier | Ship | Utility slots |
-|--------|------|------|---------------|
-| Voidborn | T3 | Gestalt | 5 |
-| Crimson | T4 | Executioner | 4 |
-| Outer Rim | T4 | Excessive Force | 6 |
-| Solarian | T4 | Pantheon | 6 |
-| Voidborn | T4 | Superposition | 6 |
-| Crimson | T5 | Subjugator | 6 |
-| Outer Rim | T5 | Controlled Chaos | 8 |
-| Nebula | T5 | Exchange | 8 |
-| Voidborn | T5 | Overmind | 8 |
-| Solarian | T5 | Symposium | 8 |
+| Empire | Tier | Ship | Utility slots | Drone bays installed by default |
+|--------|------|------|---------------|---------------------------------|
+| Crimson | T2 | Cudgel | 3 | 2× Light Drone Bay |
+| Nebula | T2 | Franchise | 4 | 2× Light Drone Bay |
+| Outer Rim | T2 | Swarm Boss | 4 | 2× Light Drone Bay |
+| Solarian | T2 | Postulate | 4 | 2× Light Drone Bay |
+| Voidborn | T3 | Gestalt | 5 | None |
+| Crimson | T4 | Executioner | 4 | Advanced + Combat Drone Bay |
+| Outer Rim | T4 | Excessive Force | 6 | Advanced + Combat Drone Bay |
+| Solarian | T4 | Pantheon | 6 | Advanced + Combat Drone Bay |
+| Voidborn | T4 | Superposition | 6 | Advanced + Combat Drone Bay |
+| Crimson | T5 | Subjugator | 6 | None |
+| Outer Rim | T5 | Controlled Chaos | 8 | None |
+| Nebula | T5 | Exchange | 8 | None |
+| Voidborn | T5 | Overmind | 8 | None |
 
-Carriers ship with **no drone bays installed by default** — their `defaultModules` lists are either empty or non-drone equipment. You buy the carrier, then buy bay modules separately and `install_mod` them into utility slots.
+The T2 and T4 carriers come with drone bays already installed, so you can load and launch drones on day one. The Gestalt and the T5 carriers ship with **no drone bays** — their `defaultModules` lists hold non-drone equipment. Buy bay modules separately and `install_mod` them into utility slots.
 
 A typical mid-game build: Gestalt (T3, 5 utility slots) + 2× Combat Drone Bay = 6 capacity / 100 bandwidth. End-game: Exchange (T5, 8 utility slots) + 2× Advanced Drone Bay = 10 capacity / 160 bandwidth, leaving slots for non-drone utilities. Carriers trade weapon slots for utility slots — they are not solo brawlers, they're platforms for the things you deploy.
 
@@ -552,14 +555,14 @@ A typical mid-game build: Gestalt (T3, 5 utility slots) + 2× Combat Drone Bay =
 
 # Drone Control Skill
 
-`drone_control` is in the Engineering category and trains by deploying drones and letting their scripts execute. **Each non-`WAIT` drone action awards 5 XP** to the owner's `drone_control` skill.
+`drone_control` is in the Drones category and trains by deploying drones and letting their scripts execute. **Each non-`WAIT` drone action awards 5 XP** to the owner's `drone_control` skill.
 
 | Level | Effect |
 |-------|--------|
 | Per level | +1% drone damage, +1% mining yield, +1% repair rate |
-| Max | 20 |
+| Max | 100 |
 
-At level 20: drones do 40% more damage, mine 40% faster, and repair 40% faster. Skill XP is generous — a fleet of mining drones working a belt for a few hours puts you at level 5+ trivially.
+At level 20: drones do 20% more damage, mine 20% more, and repair 20% faster. At level 100 each bonus is +100%. Skill XP is generous — a fleet of mining drones working a belt for a few hours puts you at level 5+ trivially.
 
 Skill does **not** raise bay capacity or bandwidth. Hardware does that.
 

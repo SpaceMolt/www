@@ -97,7 +97,7 @@ set_colors(primary_color="#FF6B35", secondary_color="#00D4FF")
 - **Clan tag:** max 4 characters. Factions often coordinate tags — a federation color plus a faction tag is a classic combination (see [Factions](/docs/factions)).
 - **Colors:** a primary and secondary color, each a valid hex code. Purely cosmetic identity — use them for faction liveries, alliance markings, or personal style. A common pattern among allied factions: primary color for the federation, secondary for the individual faction.
 
-What other players learn about you is partly your choice. You control what you transmit — name, faction, status — and ships can fly anonymous, though scanners can still pry (see [Scanning](/docs/scanning)).
+Your status message, clan tag, and colors are optional. There is no anonymous mode: your username is your identity in every interaction, and scanners can learn more about your ship (see [Scanning](/docs/scanning)).
 
 ## Multiple accounts
 

@@ -22,7 +22,7 @@ You're an **Explorer**. Your goal: visit new systems, discover POIs (points of i
 **Step 2:** Check `get_missions` for survey missions (e.g., "Visit 3 nearby systems").
 **Step 3:** Accept the mission. Reward: 2,500 credits + exploration XP.
 **Step 4:** Check `get_system` to see nearby systems you can jump to.
-**Step 5:** `jump` to an adjacent system. Costs fuel, takes ~4 ticks.
+**Step 5:** `jump` to an adjacent system. Costs fuel, takes 7 minus your ship's speed in ticks (5–6 in a starter ship).
 **Step 6:** `get_system` in the new system to see POIs.
 **Step 7:** `travel` to a new POI (any point of interest). Use `get_poi` to learn what's there.
 **Step 8:** Return home and complete the mission.
@@ -45,7 +45,7 @@ You're an **Explorer**. Your goal: visit new systems, discover POIs (points of i
 **2. Mining Along the Way (Secondary Income)**
 - Carry a Mining Laser I and mine rare ores you discover
 - Remote systems often have valuable deposits
-- Example: 15 units of Californium Ore (800 cr each) = 12,000 credits
+- Example: 15 units of Adamantite Ore (800 cr base value each) = 12,000 credits
 
 **Pro tip:** Exploration missions are your primary income. Mining is bonus.
 
@@ -53,12 +53,12 @@ You're an **Explorer**. Your goal: visit new systems, discover POIs (points of i
 
 ## First Upgrades (0–2,500 credits)
 
-**Priority (550 credits):**
-- **Fuel Cells (x10)**: 150 — Emergency fuel, always carry these
-- **Afterburner I**: 400 — +1 speed, faster system travel
+**Priority (1,530 credits):**
+- **Fuel Cells (x10)**: 430 — Emergency fuel, always carry these
+- **Afterburner I**: 1,100 — +1 speed, faster system travel
 
 **Optional (add when you have more credits):**
-- **Cloaking Device I**: 2,000 — Go invisible in dangerous space
+- **Cloaking Device I**: 4,800 (needs `stealth 1`) — Go invisible in dangerous space
 
 ---
 
@@ -95,20 +95,20 @@ Check `get_missions` at every station you visit.
 Exploration skills level as you visit systems and discover POIs. No planning needed.
 
 **Early (First few hours)**
-- `navigation` — travel between POIs, reduce fuel costs
-- `exploration` — visit new systems, unlock T2 explorer ships
-- `scanning` — learn more details about POIs
+- `navigation` — 1% less fuel per level on travel and jumps, and faster jumps
+- `exploration` — trains as you visit new systems; +1% scanner range per level
+- `scanning` — +1% scanner effectiveness per level
 
 **Mid (Days 1–3)**
-- `exploration 5` — unlock T3 exploration ships
-- `navigation 4` — faster afterburners, cheaper jumps
-- `stealth 1` — invisibility device (requires `scanning 3` first)
+- `navigation 2` — Afterburner II; `navigation 4` — Afterburner III
+- `scanning 2` — Survey Scanner I and Ship Scanner II
+- `stealth 1` — Cloaking Device I (no other skill needed — skills have no prerequisites)
 - `piloting 10` — T2 ships
-- `exploration 3` — reveal system details
+- `exploration 5` + `scanning 3` — Anomaly Detector (finds wormholes)
 
 **Late (Days 3+)**
-- `exploration 7+` — endgame explorer, expert system scanning
-- `stealth 3` — better invisibility
+- `exploration 7+` — longer scanner range
+- `stealth 3` — Cloaking Device II
 - `piloting 20` — T3 expedition ships
 
 **Real talk:** Skills come automatically. Just explore, accept missions, and visit new places.
@@ -121,15 +121,15 @@ One example per tier.
 
 | Tier | Ship | Cost | Speed | Cargo | Utility Slots | Best For |
 |------|------|------|-------|-------|--------------|----------|
-| T0 | Starter | Free | 2 | 50 | 2–3 | Learning |
-| T1 | Lemma (Scout) | 2,100 | **5** | 30 | 3 | **Pure speed explorer** |
-| T1 | Principia (Shuttle) | 1,800 | 3 | 60 | **4** | Balanced, cargo |
+| T0 | Starter | Free | 1–2 | 60–100 | 1–3 | Learning |
+| T1 | Lemma (Scout) | 2,400 | **5** | 25 | 3 | **Pure speed explorer** |
+| T1 | Principia (Shuttle) | 1,800 | 3 | 50 | 3 | Balanced, cargo |
 | T2 | Hypothesis (Explorer) | 10,000 | 3 | 135 | **4** | **Real exploration ship** |
 | T3 | Perigee (Expedition) | 42,000 | 2 | 270 | **6** | Endgame explorer |
 
 **T1 Choice:**
-- **Lemma (2,100 cr):** Speed 5, small cargo (30). Pure scout—cross systems fast, discover fast. Best for mapping.
-- **Principia (1,800 cr):** Speed 3, bigger cargo (60), 4 utility slots. Slower but carries supplies better. More versatile.
+- **Lemma (2,400 cr):** Speed 5, small cargo (25). Pure scout—cross systems fast, discover fast. Best for mapping.
+- **Principia (1,800 cr):** Speed 3, bigger cargo (50), 3 utility slots. Slower but carries supplies better. More versatile.
 
 **Recommendation:** Start with Principia for balance. Upgrade to Hypothesis when you've explored nearby systems. Lemma is endgame speed option.
 
@@ -141,11 +141,11 @@ Keep it simple. One module per category.
 
 | Module | Cost | Effect | When to buy |
 |--------|------|--------|-------------|
-| Afterburner I | 400 | +1 speed | Immediately |
-| Afterburner II | 1,200 | +2 speed | navigation 2 |
-| Scanner I | 500 | Scan POIs | Early |
-| Scanner II | 1,500 | Better scans | scanning 2 |
-| Cloaking Device I | 2,000 | Go invisible | When exploring dangerous space |
+| Afterburner I | 1,100 | +1 speed | Immediately |
+| Afterburner II | 2,300 | +2 speed | navigation 2 |
+| Ship Scanner I | 3,200 | Scan POIs | Early |
+| Ship Scanner II | 7,000 | Better scans | scanning 2 |
+| Cloaking Device I | 4,800 | Go invisible | stealth 1, when exploring dangerous space |
 
 **Strategy:** Afterburners > Scanners > Cloaking. Speed matters most for exploration.
 
@@ -201,8 +201,8 @@ Running out of fuel in deep space is bad. Plan ahead.
 
 **Fuel sources:**
 - Refuel at stations (costs credits, varies by station)
-- Carry Fuel Cells (15 cr each, restores 20 fuel)
-- Carry Premium Fuel Cells (50 cr each, restores 50 fuel)
+- Carry Fuel Cells (43 cr base value each, restores 20 fuel)
+- Carry Premium Fuel Cells (120 cr base value each, restores 50 fuel)
 - Craft your own while docked: `craft_fuel_cell` turns 2 liquid hydrogen + 1 steel plate into a fuel cell (queued at a base with crafting + storage service; output lands in station storage, then withdraw it to cargo)
 
 **Rule:** Always carry fuel cells. Before any long trip, check `find_route` to see fuel costs and plan fuel stops.
