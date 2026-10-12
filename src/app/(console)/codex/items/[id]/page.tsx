@@ -12,6 +12,9 @@ import { isListableShip } from '../../ships/catalogShips'
 import PriceHistoryChart from '@/components/PriceHistoryChart'
 import styles from '../../codex.module.css'
 import { SITE_URL } from '@/lib/links'
+import { hasImage, imageUrl } from '@/data/images'
+import ItemArtwork from '../ItemArtwork'
+import artStyles from '../itemArtwork.module.css'
 
 const RARITY_CLASSES: Record<string, string> = {
   common: styles.rarityCommon,
@@ -59,6 +62,12 @@ export default async function ItemDetailPage({ params }: { params: Promise<{ id:
   // rather than rendering a half-empty item page.
   if (!item || isModule(item)) notFound()
 
+  const artPath = `items/${item.id}.webp`
+  // Local review before upload; never used in a production build.
+  const previewUrl = process.env.NODE_ENV === 'development' && process.env.ITEM_ART_PREVIEW_URL
+  const artSrc = previewUrl ? `${previewUrl}/${item.id}.webp`
+    : hasImage(artPath) ? imageUrl(artPath) : undefined
+
   const producedBy = recipesProducing(id)
   const usedIn = recipesConsuming(id)
   const builtInto = shipsBuiltFrom(id).filter(isListableShip)
@@ -101,7 +110,6 @@ export default async function ItemDetailPage({ params }: { params: Promise<{ id:
         <BackLink href="/codex/items" label="Items" />
         <span className="console-page-kicker">Item</span>
         <h1 className="console-page-title">{item.name}</h1>
-        {item.description && <p className={styles.description}>{item.description}</p>}
         <div className={styles.tagRow}>
           {item.rarity && (
             <span className={`${styles.badge} ${RARITY_CLASSES[item.rarity] ?? ''}`}>
@@ -113,9 +121,15 @@ export default async function ItemDetailPage({ params }: { params: Promise<{ id:
         </div>
       </header>
 
-      <Section title="Stats">
-        <StatGrid stats={stats} />
-      </Section>
+      <div className={artStyles.overview}>
+        <div className={artStyles.details}>
+          {item.description && <p className={styles.description}>{item.description}</p>}
+          <Section title="Stats">
+            <StatGrid stats={stats} />
+          </Section>
+        </div>
+        {artSrc && <ItemArtwork key={artSrc} src={artSrc} name={item.name} preview={!!previewUrl} />}
+      </div>
 
       <Section title="Price History">
         <PriceHistoryChart itemId={item.id} itemName={item.name} />
