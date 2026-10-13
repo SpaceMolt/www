@@ -4,7 +4,8 @@ import { useEffect, useLayoutEffect, useRef, useState, useCallback, type ReactNo
 import {
   Hand, Bomb, Star, Flag, Swords, Coins, Hammer, Building2, Crosshair,
   Sparkles, Megaphone, Timer, Satellite, MessageSquare, Compass, Rocket,
-  Pickaxe, Handshake, Skull, UserCircle, ShoppingCart, Receipt, BarChart3, BookOpen,
+  Pickaxe, Handshake, Skull, ShoppingCart, Receipt, BarChart3,
+  Radio, Anchor, Unlink,
 } from 'lucide-react'
 import styles from './LiveFeed.module.css'
 import { subscribeToEvents, subscribeToStatus } from '@/lib/sharedEventSource'
@@ -202,14 +203,6 @@ const eventConfig: Record<string, EventConfigEntry> = {
       return `${pp(d.sender, pi)}${loc}: ${escapeHtml(d.content)}`
     },
   },
-  captains_log: {
-    icon: <BookOpen size={SZ} />,
-    format: (d, pi) => {
-      const len = Number(d.entry_length || 0)
-      const kb = (len / 1024).toFixed(1)
-      return `${pp(d.player, pi)} wrote ${kb} KB to their captain's log`
-    },
-  },
   mining_summary: {
     icon: <Pickaxe size={SZ} />,
     format: (d) => {
@@ -226,13 +219,29 @@ const eventConfig: Record<string, EventConfigEntry> = {
   pirate_destroyed: {
     icon: <Skull size={SZ} />,
     format: (d, pi) => {
-      const tier = d.is_boss ? `boss ${escapeHtml(d.pirate_tier)}` : escapeHtml(d.pirate_tier)
-      return `${pp(d.killer, pi)} destroyed ${sp(I, d.pirate_name)} (${tier}) in ${sp(S, d.system_name)}`
+      const role = d.is_boss ? `boss ${escapeHtml(d.pirate_role)}` : escapeHtml(d.pirate_role)
+      return `${pp(d.killer, pi)} destroyed ${sp(I, d.pirate_name)} (${role}) in ${sp(S, d.system_name)}`
     },
   },
-  player_profile_update: {
-    icon: <UserCircle size={SZ} />,
-    format: (d, pi) => `${pp(d.username, pi)} updated their profile`,
+  ship_captured: {
+    icon: <Anchor size={SZ} />,
+    format: (d, pi) => `${pp(d.captor, pi)} captured ${pp(d.former_owner, pi)}'s ${sp(I, d.ship_class)} in ${sp(S, d.system_name)}`,
+  },
+  battle_highlight: {
+    icon: <Swords size={SZ} />,
+    format: (d) => `<a data-cls="eventItem" href="/battles/${encodeURIComponent(String(d.battle_id || ''))}">${escapeHtml(d.reason)}</a>`,
+  },
+  pirate_radio: {
+    icon: <Radio size={SZ} />,
+    format: (d) => `${sp(I, d.pirate_name)}: ${escapeHtml(d.message)}`,
+  },
+  faction_alliance_formed: {
+    icon: <Handshake size={SZ} />,
+    format: (d) => `${sp(F, d.faction1_name)} formed an alliance with ${sp(F, d.faction2_name)}`,
+  },
+  faction_alliance_broken: {
+    icon: <Unlink size={SZ} />,
+    format: (d) => `${sp(F, d.faction1_name)} broke their alliance with ${sp(F, d.faction2_name)}`,
   },
   ship_purchase: {
     icon: <ShoppingCart size={SZ} />,
@@ -301,17 +310,20 @@ const eventTypeToStyleClass: Record<string, string> = {
   tick: styles.liveEventTick,
   forum_post: styles.liveEventForumPost,
   chat: styles.liveEventChat,
-  captains_log: styles.liveEventCaptainsLog,
   mining_summary: styles.liveEventMining,
   faction_peace: styles.liveEventFactionCreated,
   pirate_destroyed: styles.liveEventPirateDestroyed,
-  player_profile_update: styles.liveEventPlayerJoined,
   ship_purchase: styles.liveEventShipPurchase,
   ship_sale: styles.liveEventShipSale,
   forum_reply: styles.liveEventForumPost,
   exchange_fill: styles.liveEventExchangeFill,
   travel: styles.liveEventTravel,
   mining: styles.liveEventMining,
+  ship_captured: styles.liveEventPlayerDestroyed,
+  battle_highlight: styles.liveEventCombat,
+  pirate_radio: styles.liveEventChat,
+  faction_alliance_formed: styles.liveEventFactionCreated,
+  faction_alliance_broken: styles.liveEventFactionCreated,
 }
 
 interface LiveEventEntry {
@@ -363,11 +375,35 @@ function eventKey(type: string, timestamp?: string): string | null {
 // against rows that have already scrolled out of the feed.
 const MAX_SEEN_KEYS = 200
 
-// Event types the feed never renders (tick is noise, player_stats is not a feed row).
-const HIDDEN_TYPES = new Set(['tick', 'player_stats'])
+// Event types the feed never renders. tick is noise, player_stats is not a feed
+// row, and profile edits and captain's log writes fire constantly and say nothing.
+const HIDDEN_TYPES = new Set(['tick', 'player_stats', 'player_profile_update', 'captains_log'])
 
-function isDisplayable(event?: GameEvent): boolean {
-  return Boolean(event?.type && event?.data && !HIDDEN_TYPES.has(event.type))
+// Groups a reader can switch off. Types not listed here (server announcements)
+// are always shown.
+const FEED_CATEGORIES = {
+  combat: ['player_destroyed', 'pirate_destroyed', 'ship_captured', 'battle_highlight', 'base_destroyed', 'combat', 'weapon_fired'],
+  factions: ['faction_created', 'faction_war', 'faction_peace', 'faction_alliance_formed', 'faction_alliance_broken', 'base_constructed'],
+  market: ['exchange_fill', 'trade', 'ship_purchase', 'ship_sale', 'mining_summary', 'crafting_summary'],
+  chat: ['chat', 'pirate_radio'],
+  community: ['player_joined', 'forum_post', 'forum_reply', 'system_discovered', 'rare_loot'],
+  // Every jump of every pilot: thousands an hour, so off until a reader asks.
+  movement: ['jump', 'travel', 'system_activity'],
+} as const
+type FeedCategory = keyof typeof FEED_CATEGORIES
+
+const CATEGORY_OF: Record<string, string> = Object.fromEntries(
+  Object.entries(FEED_CATEGORIES).flatMap(([cat, types]) => types.map((t) => [t, cat])),
+)
+
+const FILTER_STORAGE_KEY = 'spacemolt-live-feed-hidden'
+const DEFAULT_HIDDEN: FeedCategory[] = ['movement']
+
+export function isDisplayable(event?: GameEvent): boolean {
+  if (!event?.type || !event.data || HIDDEN_TYPES.has(event.type)) return false
+  // Faction and DM chat reach the stream only as "X sent a message" stubs.
+  if (event.type === 'chat' && (event.data.channel === 'faction' || event.data.channel === 'dm')) return false
+  return true
 }
 
 function toEntry(event: GameEvent): LiveEventEntry {
@@ -403,6 +439,29 @@ export function LiveFeed({ onClose, onStatusChange, hideHeader }: LiveFeedProps)
   const [, setTick] = useState(0)
   const feedRef = useRef<HTMLDivElement>(null)
   const pendingRef = useRef<LiveEventEntry[]>([])
+  const [hidden, setHidden] = useState<Set<string>>(() => new Set(DEFAULT_HIDDEN))
+  const hiddenRef = useRef(hidden)
+  hiddenRef.current = hidden
+  const isShown = useCallback((type: string) => !hiddenRef.current.has(CATEGORY_OF[type]), [])
+
+  // Load the reader's saved filter after mount (localStorage is not there during SSR).
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(FILTER_STORAGE_KEY)
+      if (saved) setHidden(new Set(JSON.parse(saved) as string[]))
+    } catch {
+      // localStorage unavailable or corrupt: keep the defaults
+    }
+  }, [])
+
+  const toggleCategory = useCallback((cat: FeedCategory) => {
+    setHidden((prev) => {
+      const next = new Set(prev)
+      if (!next.delete(cat)) next.add(cat)
+      try { localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify([...next])) } catch {}
+      return next
+    })
+  }, [])
 
   // Keys of everything already shown, so the seed fetch and the SSE replay burst
   // (which overlap, and which the stream repeats after every reconnect) cannot
@@ -457,6 +516,8 @@ export function LiveFeed({ onClose, onStatusChange, hideHeader }: LiveFeedProps)
       if (seenRef.current.has(key)) return
       remember(key)
     }
+    // Drop hidden categories on arrival so they do not push shown rows out of the buffer.
+    if (!isShown(type)) return
 
     pendingRef.current.push(toEntry({ type, data, timestamp, player_info: playerInfo }))
 
@@ -469,7 +530,7 @@ export function LiveFeed({ onClose, onStatusChange, hideHeader }: LiveFeedProps)
         flush()
       }, 150)
     }
-  }, [flush, remember])
+  }, [flush, remember, isShown])
 
   useEffect(() => {
     const id = setInterval(flush, 2000)
@@ -496,7 +557,7 @@ export function LiveFeed({ onClose, onStatusChange, hideHeader }: LiveFeedProps)
           const key = eventKey(event.type, event.timestamp)
           if (!key || seenRef.current.has(key)) return false
           remember(key)
-          return true
+          return isShown(event.type)
         })
         if (fresh.length === 0) return
         initialFlushRef.current = true
@@ -511,7 +572,7 @@ export function LiveFeed({ onClose, onStatusChange, hideHeader }: LiveFeedProps)
     return () => {
       cancelled = true
     }
-  }, [remember])
+  }, [remember, isShown])
 
   // After a batch renders, keep the viewport anchored on the old content, then
   // smooth-scroll up to reveal the new rows — but only when the reader was
@@ -576,8 +637,21 @@ export function LiveFeed({ onClose, onStatusChange, hideHeader }: LiveFeedProps)
           <span className={styles.closeBtn} aria-hidden>{'\u2715'}</span>
         </div>
       )}
+      <div className={styles.filters} role="group" aria-label="Show event types">
+        {(Object.keys(FEED_CATEGORIES) as FeedCategory[]).map((cat) => (
+          <button
+            key={cat}
+            type="button"
+            className={styles.filterChip}
+            aria-pressed={!hidden.has(cat)}
+            onClick={() => toggleCategory(cat)}
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
       <div className={styles.liveFeed} ref={feedRef} tabIndex={0} role="region" aria-label="Live event feed">
-        {events.map((event) => {
+        {events.filter((event) => !hidden.has(CATEGORY_OF[event.type])).map((event) => {
           const typeClass = eventTypeToStyleClass[event.type] || ''
           return (
             <div
