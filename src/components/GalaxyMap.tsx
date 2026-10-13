@@ -50,6 +50,7 @@ interface MapData {
 interface POIData {
   id: string
   name: string
+  description?: string
   type: string
   class?: string
   has_base: boolean
@@ -1342,6 +1343,13 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
       }
 
       info.appendChild(meta)
+
+      if (poi.description && isExpanded) {
+        const desc = document.createElement('div')
+        desc.className = styles.poiPanelDesc
+        desc.textContent = poi.description
+        info.appendChild(desc)
+      }
 
       // Station detail link
       if (poi.has_base && poi.base_id && isExpanded) {

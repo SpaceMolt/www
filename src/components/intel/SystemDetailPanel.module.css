@@ -339,6 +339,21 @@
   flex-direction: column;
 }
 
+.description {
+  margin: 0.3rem 0 0;
+  font-size: 0.72rem;
+  font-style: italic;
+  line-height: 1.5;
+  color: rgba(168, 197, 214, 0.7);
+}
+
+/* Long lore stays readable without pushing the POI list off-screen. */
+.systemDescription {
+  max-height: 7.5em;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
 .poiItem {
   padding: 0.25rem 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
