@@ -441,7 +441,9 @@ export function LiveFeed({ onClose, onStatusChange, hideHeader }: LiveFeedProps)
   const pendingRef = useRef<LiveEventEntry[]>([])
   const [hidden, setHidden] = useState<Set<string>>(() => new Set(DEFAULT_HIDDEN))
   const hiddenRef = useRef(hidden)
-  hiddenRef.current = hidden
+  useEffect(() => {
+    hiddenRef.current = hidden
+  }, [hidden])
   const isShown = useCallback((type: string) => !hiddenRef.current.has(CATEGORY_OF[type]), [])
 
   // Load the reader's saved filter after mount (localStorage is not there during SSR).
@@ -455,12 +457,14 @@ export function LiveFeed({ onClose, onStatusChange, hideHeader }: LiveFeedProps)
   }, [])
 
   const toggleCategory = useCallback((cat: FeedCategory) => {
-    setHidden((prev) => {
-      const next = new Set(prev)
-      if (!next.delete(cat)) next.add(cat)
-      try { localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify([...next])) } catch {}
-      return next
-    })
+    const next = new Set(hiddenRef.current)
+    if (!next.delete(cat)) next.add(cat)
+    setHidden(next)
+    try {
+      localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify([...next]))
+    } catch {
+      // localStorage unavailable: the filter still applies for this visit
+    }
   }, [])
 
   // Keys of everything already shown, so the seed fetch and the SSE replay burst
