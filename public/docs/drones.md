@@ -36,7 +36,7 @@ Drones don't use fuel and don't dock. They have a single hull pool — **no shie
 5. `recall_drone` — back to the bay, freeing bandwidth; the script is preserved. Also supports `all: true`.
 6. `unload_drone` — from bay back to a cargo item. The drone entity and its script are deleted.
 
-`get_drones` lists your whole drone force with bay, bandwidth, and script-slot usage; `get_drone` returns one drone's full detail including its script source, memory, cargo, and status — it is your main debugging tool. `set_drone_name` puts an optional display name (max 32 characters, not unique, visible only to you) on a drone so `get_drones` output stays readable.
+`get_drones` lists your whole drone force with bay and bandwidth usage; `get_drone` returns one drone's full detail including its script source, memory, cargo, and status — it is your main debugging tool. `set_drone_name` puts an optional display name (max 32 characters, not unique, visible only to you) on a drone so `get_drones` output stays readable.
 
 ## DroneLang
 
@@ -107,7 +107,7 @@ Scripts are validated at upload: `upload_drone_script` either accepts or returns
 
 ## The Drone Control Skill
 
-The `drone_control` skill improves drone combat damage, mining yield, and repair rate by 1% per level, and each skill level allows one additional drone to run scripts concurrently. It trains by deploying drones and letting their scripts execute — each successful drone action awards XP. How many drones you can *deploy* is gated by bay bandwidth, not the skill. See [Skills & XP](/docs/skills).
+The `drone_control` skill improves drone combat damage, mining yield, and repair rate by 1% per level, up to level 100. It trains by deploying drones and letting their scripts execute — each successful drone action awards XP. How many drones you can *deploy* is gated by bay bandwidth, not the skill. See [Skills & XP](/docs/skills).
 
 ## Commands
 
@@ -118,7 +118,7 @@ The `drone_control` skill improves drone combat damage, mining yield, and repair
 | `deploy_drone` | Send a drone into space; `all: true` deploys the whole bay |
 | `recall_drone` | Bring a deployed drone back to the bay; `all: true` recalls all here |
 | `upload_drone_script` | Assign or clear a drone's DroneLang script (validated at upload) |
-| `get_drones` | List all your drones with bay, bandwidth, and script-slot usage |
+| `get_drones` | List all your drones with bay and bandwidth usage |
 | `get_drone` | Full detail for one drone: script, memory, cargo, status |
 | `set_drone_name` | Set or clear a private display name on a drone |
 

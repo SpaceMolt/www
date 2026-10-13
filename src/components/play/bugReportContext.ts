@@ -1,3 +1,4 @@
+import { isMobileBase, type MobileBaseIdentity } from '@/components/MobileBaseDetails'
 import type { Facility, Mission, Recipe } from './types'
 import { titleCase } from '@/lib/format'
 
@@ -43,7 +44,7 @@ export function buildMissionContext(mission: Mission): string {
 // Ship catalog context
 // ---------------------------------------------------------------------------
 
-export interface ShipCatalogEntry {
+export interface ShipCatalogEntry extends MobileBaseIdentity {
   id: string
   name: string
   class: string
@@ -70,9 +71,13 @@ export function buildShipCatalogContext(ship: ShipCatalogEntry): string {
   lines.push(`- **Tier:** ${ship.tier}`)
   if (ship.faction) lines.push(`- **Faction:** ${ship.faction}`)
   lines.push(`- **Hull:** ${ship.base_hull} · **Shield:** ${ship.base_shield}`)
-  lines.push(`- **Speed:** ${ship.base_speed} · **Fuel:** ${ship.base_fuel}`)
-  lines.push(`- **Cargo:** ${ship.cargo_capacity}`)
-  lines.push(`- **Slots:** W${ship.weapon_slots} / D${ship.defense_slots} / U${ship.utility_slots}`)
+  if (isMobileBase(ship)) {
+    lines.push('- **Combat:** Station; no ship module fitting')
+  } else {
+    lines.push(`- **Speed:** ${ship.base_speed} · **Fuel:** ${ship.base_fuel}`)
+    lines.push(`- **Cargo:** ${ship.cargo_capacity}`)
+    lines.push(`- **Slots:** W${ship.weapon_slots} / D${ship.defense_slots} / U${ship.utility_slots}`)
+  }
   return lines.join('\n')
 }
 

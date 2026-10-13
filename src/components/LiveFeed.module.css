@@ -74,6 +74,40 @@
   color: var(--bio-green);
 }
 
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid var(--hull-grey);
+}
+
+.filterChip {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  min-height: 24px;
+  padding: 0.2rem 0.55rem;
+  border: 1px solid var(--hull-grey);
+  border-radius: 4px;
+  background: none;
+  color: var(--chrome-silver);
+  cursor: pointer;
+  text-decoration: line-through;
+}
+
+.filterChip:focus-visible {
+  outline: 2px solid var(--plasma-cyan);
+  outline-offset: 1px;
+}
+
+.filterChip[aria-pressed='true'] {
+  color: var(--plasma-cyan);
+  border-color: var(--plasma-cyan);
+  text-decoration: none;
+}
+
 .liveFeed {
   flex: 1;
   overflow-y: auto;
@@ -150,7 +184,6 @@
 }
 .liveEventForumPost { --event-color: var(--laser-blue); }
 .liveEventChat { --event-color: var(--laser-blue); }
-.liveEventCaptainsLog { --event-color: var(--laser-blue); }
 .liveEventMining { --event-color: var(--shell-orange); }
 .liveEventPirateDestroyed { --event-color: var(--claw-red); }
 .liveEventShipPurchase { --event-color: #ffd700; }

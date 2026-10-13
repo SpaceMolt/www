@@ -1,3 +1,4 @@
+import { isMobileBase, MobileBaseDetails } from '@/components/MobileBaseDetails'
 import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -56,6 +57,7 @@ export default async function ShipDetailPage({ params }: { params: Promise<{ id:
 
   if (!ship || !isListableShip(ship)) notFound()
 
+  const mobile = isMobileBase(ship)
   const empire = ship.faction ?? ''
   const empireName = SHIP_FACTION_NAMES[empire] ?? ''
   const prestige = isPrestige(ship)
@@ -67,13 +69,15 @@ export default async function ShipDetailPage({ params }: { params: Promise<{ id:
     { label: 'Shield', value: String(ship.base_shield ?? 0) },
     { label: 'Shield Regen', value: `${ship.base_shield_recharge ?? 0}/tick` },
     { label: 'Armor', value: String(ship.base_armor ?? 0) },
-    { label: 'Speed', value: `${ship.base_speed ?? 0} AU/tick` },
-    { label: 'Fuel', value: String(ship.base_fuel ?? 0) },
-    { label: 'Cargo', value: String(ship.cargo_capacity ?? 0) },
-    { label: 'CPU', value: String(ship.cpu_capacity ?? 0) },
-    { label: 'Power', value: String(ship.power_capacity ?? 0) },
+    ...(!mobile ? [
+      { label: 'Speed', value: `${ship.base_speed ?? 0} AU/tick` },
+      { label: 'Fuel', value: String(ship.base_fuel ?? 0) },
+      { label: 'Cargo', value: String(ship.cargo_capacity ?? 0) },
+      { label: 'CPU', value: String(ship.cpu_capacity ?? 0) },
+      { label: 'Power', value: String(ship.power_capacity ?? 0) },
+    ] : []),
   ]
-  if (ship.tow_speed_bonus) {
+  if (!mobile && ship.tow_speed_bonus) {
     stats.push({ label: 'Tow Speed Bonus', value: `+${ship.tow_speed_bonus}` })
   }
   if (ship.build_time) stats.push({ label: 'Build Time', value: `${ship.build_time} ticks` })
@@ -88,20 +92,20 @@ export default async function ShipDetailPage({ params }: { params: Promise<{ id:
     { label: 'Utility Slots', value: String(ship.utility_slots ?? 0) },
   ]
 
-  const capabilities: StatEntry[] = (ship.inherent_capabilities ?? []).map((cap) => ({
+  const capabilities: StatEntry[] = (mobile ? [] : ship.inherent_capabilities ?? []).map((cap) => ({
     label: capabilityLabel(cap),
     value: capabilityValue(cap),
   }))
 
   const buildMaterials = ship.build_materials ?? []
-  const defaultModules = ship.default_modules ?? []
-  const piloting = ship.piloting_required ?? 0
+  const defaultModules = mobile ? [] : ship.default_modules ?? []
+  const piloting = mobile ? 0 : ship.piloting_required ?? 0
 
   return (
     <div className={`console-page ${styles.page}`}>
       <header className="console-page-header">
         <BackLink href="/codex/ships" label="Ships" />
-        <span className="console-page-kicker">Ship</span>
+        <span className="console-page-kicker">{mobile ? 'Mobile station' : 'Ship'}</span>
         <h1 className="console-page-title">{ship.name}</h1>
         {ship.description && <p className={styles.description}>{ship.description}</p>}
         <div className={styles.tagRow}>
@@ -135,8 +139,8 @@ export default async function ShipDetailPage({ params }: { params: Promise<{ id:
         <StatGrid stats={stats} />
       </Section>
 
-      <Section title="Slots">
-        <StatGrid stats={slots} />
+      <Section title={mobile ? "Station services and defenses" : "Slots"}>
+        {mobile ? <MobileBaseDetails ship={ship} /> : <StatGrid stats={slots} />}
       </Section>
 
       {ship.npc_role && (
@@ -209,7 +213,7 @@ export default async function ShipDetailPage({ params }: { params: Promise<{ id:
         </Section>
       )}
 
-      {ship.flavor_tags && ship.flavor_tags.length > 0 && (
+      {!mobile && ship.flavor_tags && ship.flavor_tags.length > 0 && (
         <div className={styles.tagRow}>
           {ship.flavor_tags.map((tag) => (
             <span key={tag} className={styles.badge}>{tag}</span>

@@ -88,10 +88,6 @@ const SECTIONS: Section[] = [
         name: 'Empire Home System',
         def: 'A fixed, heavily policed origin system for each empire, packed with rich basic resources and fixed bootstrap prices to help new players get started.',
       },
-      {
-        name: 'Anonymous Transmission',
-        def: 'Players choose what identity data they broadcast. Traveling anonymously hides your name, guild, and status from other ships unless they successfully scan you.',
-      },
     ],
   },
   {
@@ -128,7 +124,7 @@ const SECTIONS: Section[] = [
       },
       {
         name: 'Cloaking Device',
-        def: 'An expensive module that hides a ship from passive sensors, letting scouts and anonymous travelers avoid detection. An active scan that beats the cloak still resolves the ship.',
+        def: 'An expensive module that hides a ship from passive sensors, letting scouts and smugglers avoid detection. An active scan that beats the cloak still resolves the ship.',
       },
     ],
   },
@@ -138,7 +134,7 @@ const SECTIONS: Section[] = [
     terms: [
       {
         name: 'Wreck',
-        def: 'The debris left at a POI when a ship is destroyed. Wrecks hold a portion of the lost cargo, surviving modules, and salvage, and persist for about 30 minutes.',
+        def: 'The debris left at a POI when a ship is destroyed. Wrecks hold a portion of the lost cargo, surviving modules, and salvage. Ship wrecks persist until someone salvages or scraps them; jettisoned cargo containers despawn after 10 minutes.',
       },
       {
         name: 'Loot',
@@ -180,7 +176,7 @@ const SECTIONS: Section[] = [
       },
       {
         name: 'Direct Trade',
-        def: 'A one-to-one exchange of items and credits between two players docked at the same POI. It completes atomically only when both sides accept.',
+        def: 'A one-to-one exchange of items and credits between two players at the same POI (docking is not required). It completes atomically only when both sides accept.',
       },
       {
         name: 'Note / Document',

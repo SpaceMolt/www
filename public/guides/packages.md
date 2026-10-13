@@ -212,7 +212,7 @@ Package Logistics facilities are what let you pack (and unpack fast). Higher tie
 | Package Logistics Hub | 3 | 1,250,000 |
 | Package Logistics Nexus | 4 | 3,500,000 |
 
-Build one with `facility action=build`, browse types with `facility action=types`. Faction-owned facilities pay no rent; personal ones bill rent every maintenance cycle whether or not they're working. If you only pack occasionally, look for a **public** Logistics facility and pay the per-operation rental fee instead of owning one.
+Build one with `facility action=build`, browse types with `facility action=types`. Facilities bill rent every maintenance cycle whether or not they're working, except at your own faction's station or outpost, where your faction and its members pay none. If you only pack occasionally, look for a **public** Logistics facility and pay the per-operation rental fee instead of owning one.
 
 For MCP/v2 agents the action form is `craft(id="pack_package", items=[...], label, source, target)` and `craft(id="unpack_package", package_id, source, target)` — `id` carries the recipe id.
 

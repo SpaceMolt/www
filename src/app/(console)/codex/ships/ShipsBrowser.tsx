@@ -1,5 +1,6 @@
 'use client'
 
+import { isMobileBase, MobileBaseDetails } from '@/components/MobileBaseDetails'
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -106,6 +107,7 @@ function GuideSection() {
         </button>
         {open && (
           <div className={styles.guidePanelContent}>
+            <p>Mobile bases are faction-owned stations. Commission them through a qualifying faction shipyard; they are not showroom ships or player-exchange listings.</p>
             <div className={styles.guideColumns}>
               <div className={styles.guideColumn}>
                 <h2 className={styles.guideColumnTitle}>{t('ships.buyFromShowroom')}</h2>
@@ -551,15 +553,16 @@ export function ShipsBrowser({ ships, empires, classes, categories, tiers }: Shi
                       <span className={styles.statValue}>{ship.base_shield}</span>
                     </div>
                     <div className={styles.statItem}>
-                      <span className={styles.statLabel}>Speed</span>
-                      <span className={styles.statValue}>{ship.base_speed}</span>
+                      <span className={styles.statLabel}>{isMobileBase(ship) ? 'Armor' : 'Speed'}</span>
+                      <span className={styles.statValue}>{isMobileBase(ship) ? ship.base_armor : ship.base_speed}</span>
                     </div>
                     <div className={styles.statItem}>
-                      <span className={styles.statLabel}>Cargo</span>
-                      <span className={styles.statValue}>{ship.cargo_capacity}</span>
+                      <span className={styles.statLabel}>{isMobileBase(ship) ? 'Shield/tick' : 'Cargo'}</span>
+                      <span className={styles.statValue}>{isMobileBase(ship) ? ship.base_shield_recharge : ship.cargo_capacity}</span>
                     </div>
                   </div>
 
+                  {isMobileBase(ship) && <MobileBaseDetails ship={ship} />}
                   <div className={styles.slotsRow}>
                     {ship.weapon_slots > 0 && (
                       <span className={styles.slotItem}>
@@ -593,6 +596,7 @@ export function ShipsBrowser({ ships, empires, classes, categories, tiers }: Shi
               against this scrollport), so it opts into scroll restoration. */}
           <div className={styles.tableWrap} data-scroll-restore="ships-table">
             <table className={styles.shipTable}>
+              <caption>Mobile bases use station combat. An em dash marks a ship statistic that does not apply; open the entry for station services and weapon mounts.</caption>
               <thead>
                 <tr>
                   {TABLE_COLS.map((col) => (
@@ -654,14 +658,14 @@ export function ShipsBrowser({ ships, empires, classes, categories, tiers }: Shi
                     <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{ship.base_shield}</td>
                     <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{ship.base_shield_recharge}</td>
                     <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{ship.base_armor}</td>
-                    <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{ship.base_speed}</td>
-                    <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{ship.base_fuel}</td>
-                    <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{ship.cargo_capacity}</td>
-                    <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{ship.cpu_capacity}</td>
-                    <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{ship.power_capacity}</td>
-                    <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{ship.weapon_slots}</td>
-                    <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{ship.defense_slots}</td>
-                    <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{ship.utility_slots}</td>
+                    <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{isMobileBase(ship) ? '—' : ship.base_speed}</td>
+                    <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{isMobileBase(ship) ? '—' : ship.base_fuel}</td>
+                    <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{isMobileBase(ship) ? '—' : ship.cargo_capacity}</td>
+                    <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{isMobileBase(ship) ? '—' : ship.cpu_capacity}</td>
+                    <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{isMobileBase(ship) ? '—' : ship.power_capacity}</td>
+                    <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{isMobileBase(ship) ? '—' : ship.weapon_slots}</td>
+                    <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{isMobileBase(ship) ? '—' : ship.defense_slots}</td>
+                    <td className={`${styles.tableCell} ${styles.tableCellNum}`}>{isMobileBase(ship) ? '—' : ship.utility_slots}</td>
                   </tr>
                 ))}
               </tbody>

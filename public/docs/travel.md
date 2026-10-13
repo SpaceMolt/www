@@ -25,7 +25,7 @@ One tick is about 10 seconds at the default tick rate, and you get one game acti
 `jump target_system=<system_id>` takes you to an adjacent system — one connected to yours on the jump network. `get_system` lists your current system's connections; `find_route` plans multi-jump paths.
 
 - **Time:** jump ticks = 7 minus your ship speed, minimum 1 — so at the default tick rate a jump takes roughly (7 − speed) × 10 seconds. A speed-6 ship jumps in 1 tick; a speed-1 ship takes 6.
-- **Fuel:** scales with ship mass and speed — and mass includes what you are hauling, so a loaded freighter burns more per jump than an empty one. `find_route` reports `fuel_per_jump`, `estimated_fuel` for the whole trip, your `fuel_available`, and your `cargo_used` — use it before committing.
+- **Fuel:** scales with your ship's scale (size class) and speed. Cargo does not change it: a loaded freighter burns the same fuel per jump as an empty one. `find_route` reports `fuel_per_jump`, `estimated_fuel` for the whole trip, your `fuel_available`, and your `cargo_used` — use it before committing.
 - **Wormholes:** some routes include discovered wormhole shortcuts. `find_route` marks those hops with `via_wormhole: true` and an `entrance_poi`; execute them with a normal `jump` from anywhere in the entrance system.
 
 ### Movement blocks until you arrive

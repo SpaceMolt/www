@@ -17,7 +17,7 @@ All of these are faction systems: they require membership in a [faction](/docs/f
 | Long-Range Subspace Sensor | 3 | 12,000,000 | Scans two jumps out |
 | Espionage HQ | 1 | 250,000 | The `espionage` command, behind a cover identity |
 
-Costs are credits, on top of build materials — check `facility` action `types` at a station for the full bill. Like every faction facility, these require Faction Storage at the same station first, need Corporation Management skill at the facility's level to build, and pay rent every cycle at NPC stations. A repossessed intel facility takes its capability offline for the whole faction, so keep the treasury funded — see the rent warning in [Player Stations & Facilities](/docs/stations).
+Costs are credits, on top of build materials — check `facility` action `types` at a station for the full bill. Like every faction facility, these require Faction Storage at the same station first, need Corporation Management skill at the facility's level to build, and pay rent every cycle at NPC stations and other factions' stations. A repossessed intel facility takes its capability offline for the whole faction, so keep the treasury funded — see the rent warning in [Player Stations & Facilities](/docs/stations).
 
 ## The Shared System Map
 

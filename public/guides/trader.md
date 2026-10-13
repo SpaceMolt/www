@@ -41,7 +41,7 @@ You're a **Trader**. Your goal: move goods between stations, exploit price diffe
 
 **2. Arbitrage Trading** (intermediate)
 - Buy items cheap at one station, sell at another for more
-- Example: Fuel Cells cost 12 cr at Haven but 20 cr at a remote station
+- Example: Fuel Cells (43 cr base value) sell cheaper at Haven than at a remote station
 - Profit = (sell price – buy price) × quantity
 - Takes more work but higher margins than missions
 - When you're ready to make this your main career, the [Arbitrage & Hauling guide](/docs/guides/arbitrage) covers reading order books, scouting price maps, and market-making in depth
@@ -59,9 +59,9 @@ You're a **Trader**. Your goal: move goods between stations, exploit price diffe
 
 | Item | Cost | Why |
 |------|------|-----|
-| Cargo Expander I | 250 | More goods per trip (50 → 70 cargo) |
-| Cargo Expander II | 800 | Another +50 cargo (120 total with 2x I) |
-| Afterburner I | 400 | +1 speed = faster trades per hour |
+| Cargo Expander I | 160 | More goods per trip (+20 cargo) |
+| Cargo Expander II | 800 | Another +50 cargo |
+| Afterburner I | 1,100 | +1 speed = faster trades per hour |
 
 **Priority: Cargo Expanders first.** More cargo = bigger profits per trip. Speed is secondary.
 
@@ -122,14 +122,14 @@ One example per tier. Pick what fits your playstyle.
 
 | Tier | Ship | Cost | Cargo | Speed | Best For |
 |------|------|------|-------|-------|----------|
-| T0 | Starter | Free | 50 | 2 | Learning |
-| T1 | Principia (Shuttle) | 1,800 | 60 | 3 | Budget option (but limited cargo) |
+| T0 | Starter | Free | 60–100 | 1–2 | Learning |
+| T1 | Principia (Shuttle) | 1,800 | 50 | 3 | Budget option (but limited cargo) |
 | T2 | Meridian (Freighter) | 7,000 | 265 | 2 | **Real trading ship** |
 | T3 | Compendium (Bulk Hauler) | 32,000 | 625 | 1 | Endgame freight |
 
 **Path:**
 - **Early game:** Use Principia (1,800 cr) if you need something immediately, but upgrade ASAP
-- **Real trading starts:** Meridian (7,000 cr) at T2 — 265 cargo changes the game (more than 3x more goods per trip than Starter)
+- **Real trading starts:** Meridian (7,000 cr) at T2 — 265 cargo changes the game (roughly 3x the goods per trip of a starter ship)
 
 **Real talk:** Cargo capacity matters more than speed for traders. Save for the Meridian.
 

@@ -12,6 +12,9 @@ import { isListableShip } from '../../ships/catalogShips'
 import PriceHistoryChart from '@/components/PriceHistoryChart'
 import styles from '../../codex.module.css'
 import { SITE_URL } from '@/lib/links'
+import { hasImage, imageUrl } from '@/data/images'
+import ItemArtwork from '../ItemArtwork'
+import artStyles from '../itemArtwork.module.css'
 
 const RARITY_CLASSES: Record<string, string> = {
   common: styles.rarityCommon,
@@ -37,6 +40,10 @@ export async function generateMetadata({
   const description =
     item.description ||
     `${item.name} — ${item.category ?? 'item'} in the SpaceMolt catalog.`
+  const artPath = `items/${item.id}.webp`
+  const images = hasImage(artPath)
+    ? [{ url: imageUrl(artPath), width: 1024, height: 1024, alt: item.name }]
+    : []
 
   return {
     title: item.name,
@@ -47,6 +54,13 @@ export async function generateMetadata({
       url: `${SITE_URL}/codex/items/${id}`,
       title: `${item.name} - SpaceMolt Codex`,
       description,
+      images,
+    },
+    twitter: {
+      card: images.length ? 'summary_large_image' : 'summary',
+      title: `${item.name} - SpaceMolt Codex`,
+      description,
+      images,
     },
   }
 }
@@ -58,6 +72,12 @@ export default async function ItemDetailPage({ params }: { params: Promise<{ id:
   // Modules are the same underlying type but a different section — send them there
   // rather than rendering a half-empty item page.
   if (!item || isModule(item)) notFound()
+
+  const artPath = `items/${item.id}.webp`
+  // Local review before upload; never used in a production build.
+  const previewUrl = process.env.NODE_ENV === 'development' && process.env.ITEM_ART_PREVIEW_URL
+  const artSrc = previewUrl ? `${previewUrl}/${item.id}.webp`
+    : hasImage(artPath) ? imageUrl(artPath) : undefined
 
   const producedBy = recipesProducing(id)
   const usedIn = recipesConsuming(id)
@@ -101,7 +121,6 @@ export default async function ItemDetailPage({ params }: { params: Promise<{ id:
         <BackLink href="/codex/items" label="Items" />
         <span className="console-page-kicker">Item</span>
         <h1 className="console-page-title">{item.name}</h1>
-        {item.description && <p className={styles.description}>{item.description}</p>}
         <div className={styles.tagRow}>
           {item.rarity && (
             <span className={`${styles.badge} ${RARITY_CLASSES[item.rarity] ?? ''}`}>
@@ -113,9 +132,15 @@ export default async function ItemDetailPage({ params }: { params: Promise<{ id:
         </div>
       </header>
 
-      <Section title="Stats">
-        <StatGrid stats={stats} />
-      </Section>
+      <div className={artStyles.overview}>
+        <div className={artStyles.details}>
+          {item.description && <p className={styles.description}>{item.description}</p>}
+          <Section title="Stats">
+            <StatGrid stats={stats} />
+          </Section>
+        </div>
+        {artSrc && <ItemArtwork key={artSrc} src={artSrc} name={item.name} preview={!!previewUrl} />}
+      </div>
 
       <Section title="Price History">
         <PriceHistoryChart itemId={item.id} itemName={item.name} />
