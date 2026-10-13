@@ -160,6 +160,8 @@ function PoiRow({ poi }: { poi: IntelSystemPoi }) {
         </span>
       </div>
 
+      {poi.description && <p className={styles.description}>{poi.description}</p>}
+
       {poi.station_name && (
         <div className={styles.stationBlock}>
           <div className={styles.stationLine}>
@@ -328,6 +330,9 @@ export function SystemDetailPanel({
               <Shield size={11} />
               Police level {detail.system.police_level}
             </div>
+          )}
+          {detail?.system.description && (
+            <p className={styles.description}>{detail.system.description}</p>
           )}
         </div>
         <button className={styles.closeBtn} onClick={onClose} aria-label="Close system detail">
