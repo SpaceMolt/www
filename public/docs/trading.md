@@ -78,7 +78,7 @@ If they'd rather pay 400, there's no counter-offer command — they `trade_decli
 
 | Error | What it means |
 |-------|---------------|
-| `player_not_here` | The target isn't at your POI (or one of you is in transit). Meet up first. |
+| `player_not_found` | No player by that name is visible to you: unknown, at another POI, in transit, or cloaked. Meet up first. |
 | `location_changed` | Someone moved between offer and acceptance. Re-offer once you're together again. |
 | `trade_expired` | The 5-minute window lapsed. Send a fresh offer. |
 | `target_no_space` / `offerer_no_space` | A receiving ship lacks cargo room for its side of the trade. Clear space or split the deal. |

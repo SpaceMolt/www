@@ -107,7 +107,7 @@ Defenders may also order `spacemolt_battle(action="self_destruct")`. The countdo
 
 ## Capture Is Not Delivery
 
-A successful assault creates an intact prize at the battle origin POI, which can differ from your current POI — travel back to it if the fight drifted. `ship_captured` carries `prize_id`, `prize_poi_id`, `prize_poi_name`, `prize_system_id`, and `prize_system_name`, and `battle_ended.captures[]`, `get_battle_summary`, and `get_battle_log` capture rows carry the same fields. The POI fields are omitted for a hidden POI or a battle that began in transit.
+A successful assault creates an intact prize at the captor's POI at the moment of capture. If that POI is hidden, the prize goes to the nearest charted POI in the system. `ship_captured` carries `prize_id`, `prize_poi_id`, `prize_poi_name`, `prize_system_id`, and `prize_system_name`, and `battle_ended.captures[]`, `get_battle_summary`, and `get_battle_log` capture rows carry the same fields. The POI fields are omitted only when no POI is known, or when the system has no charted POI to place the prize at.
 
 A player-taken prize waits there for a claim. A pirate-taken prize usually does not: if the pirate crew can keep the hull crewed and has a home base, the prize starts moving toward that base on the next tick. Chase it down and board it again to take the hull back; a recovery that never arrives eventually expires instead.
 

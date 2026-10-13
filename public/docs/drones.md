@@ -23,7 +23,7 @@ Multiple bays stack. Carrier hulls exist specifically for this: they trade weapo
 | Mining drone | Mines autonomously; has its own cargo hold |
 | Repair drone | Heals your ship or faction allies at its POI. Stacked repair drones have diminishing returns, and one supporting a ship in combat joins that battle and can be shot |
 | Salvage drone | Loots and slowly salvages wrecks; has its own cargo hold |
-| Scout drone | Scans players at a POI and runs system surveys |
+| Scout drone | Scans players at its POI and reports the resources there |
 
 Drones don't use fuel and don't dock. They have a single hull pool — **no shields and no fitted modules** — so every hit lands straight on hull, much like the shieldless [wildlife](/docs/wildlife) that roams the galaxy. Recalling a damaged drone does not repair it.
 
@@ -87,9 +87,9 @@ Actions are gated by drone type — uploading a script with a forbidden action i
 | Mining | `MINE`, `DEPOSIT` (into station storage), `TRANSFER` (into your ship at same POI), `JETTISON` |
 | Repair | `REPAIR` (`"owner"`, `"nearest_ally"`, or a player ID) |
 | Salvage | `LOOT`, `SALVAGE` (a wreck ID or `"nearest"`), plus `DEPOSIT` / `TRANSFER` / `JETTISON` |
-| Scout | `SCAN` (report uncloaked players at the POI), `SURVEY` (system survey) |
+| Scout | `SCAN` (report uncloaked players at the POI), `SURVEY` (report the resources at the drone's current POI; charts nothing) |
 
-Combat drones use the full battle system — zones, stances, real damage. Scout reports and survey results arrive as notifications to you.
+Combat drones use the full battle system — zones, stances, real damage. Like a pilot, a drone starts a battle only against a target at its own POI that it can see; it can join a battle already running in its system against any participant. Scout reports and survey results arrive as notifications to you.
 
 ### Memory
 

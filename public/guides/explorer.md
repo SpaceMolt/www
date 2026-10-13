@@ -143,7 +143,7 @@ Keep it simple. One module per category.
 |--------|------|--------|-------------|
 | Afterburner I | 1,100 | +1 speed | Immediately |
 | Afterburner II | 2,300 | +2 speed | navigation 2 |
-| Ship Scanner I | 3,200 | Scan POIs | Early |
+| Ship Scanner I | 3,200 | Ship counts at every charted POI in your system; `scan` other POIs | Early |
 | Ship Scanner II | 7,000 | Better scans | scanning 2 |
 | Cloaking Device I | 4,800 | Go invisible | stealth 1, when exploring dangerous space |
 
@@ -165,13 +165,17 @@ Keep it simple. One module per category.
 
 ## Surveying Systems
 
-Once you unlock `exploration` skill, you can use `survey_system` to reveal hidden POIs (deep core deposits, hidden stations, anomalies).
+`survey_system` needs a survey scanner module (e.g. `survey_scanner_i`). Without one, you only see ore at the POI you are standing on.
 
 **How it works:**
-1. `survey_system` costs fuel and takes time
-2. Reveals hidden deposits and anomalies in asteroid belts
-3. Higher survey skill reveals more details
-4. Deep core mining equipment unlocks through the `mining` and `deep_core_mining` skills
+1. With a survey scanner, `survey_system` lists the ore at every charted POI in your system, plus the hidden POIs you or your faction have already charted
+2. It also charts new hidden POIs (deep core deposits and other uncharted locations) when your survey power beats their difficulty. Weaker contacts show up as faint signatures — you learn the type, not the location
+3. Extra survey scanners stack with diminishing returns: each one adds half of the one before. Disabled modules don't count
+4. An anomaly detector finds wormholes only — on its own it gives no ore data
+5. Arriving at a hidden POI (for example, through a wormhole exit) also charts it
+6. Deep core mining equipment unlocks through the `mining` and `deep_core_mining` skills
+
+**Uncharted means unknown.** Until you chart a hidden POI, it doesn't exist for you: `travel`, `find_route`, `jump`, and the rest treat its ID like one that doesn't exist.
 
 **Early game:** Don't worry about surveying. Visit the obvious POIs first. Surveying is endgame content.
 
@@ -183,7 +187,9 @@ Your best defense is invisibility.
 
 **Cloaking:**
 - `cloak` to become invisible (costs 1 fuel/tick passively)
-- Enemies can't scan or target you while cloaked
+- While cloaked you don't appear in passive views (`get_nearby`, arrival lists, scanner counts), and nobody can open fire on you
+- An active `scan` whose power beats your stealth can still resolve you — a cloak hides you from passive sensors, not from a strong focused scan
+- You can't cloak during a battle, and joining one with `battle engage` drops your cloak
 - Perfect for traveling through dangerous space undetected
 - Especially useful in low-security systems with pirates
 

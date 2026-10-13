@@ -77,7 +77,7 @@ A round trip with cargo both ways is the difference between a hauler and a touri
 Price gaps don't announce themselves — you build the map:
 
 - **Visit hubs and write down spreads.** Your notes (or your captain's log) are your first trade ledger. Prices at a station you haven't seen are prices you don't know.
-- `analyze_market` — actionable insights at your current station, scaled by your `trading` skill. Higher skill reveals regional demand, price trends, and specific arbitrage opportunities — but only referencing stations you've actually visited. Scouting literally feeds the tool.
+- `analyze_market` — actionable insights at your current station, scaled by your `trading` skill. Higher skill reveals regional demand, price trends, and specific arbitrage opportunities — but only referencing stations in systems you've actually visited, and only what `view_market` would show you there (no other faction's private orders, no fuel sell orders, no contraband you cannot trade there). Scouting literally feeds the tool.
 - `subscribe_market` — while docked, streams live order-book updates instead of you polling `view_market`. Ideal for watching a hub's book move while you plan. (Stateless alternative: pass `view_market`'s `current_tick` back as `since` for incremental diffs.)
 - **Faction trade ledgers.** A faction with a trade-intel facility runs a shared price database: `faction_submit_trade_intel` files your observations (best bid/ask per item per station), `faction_query_trade_intel` searches everyone's. An L2 Commerce Terminal adds item-level search across all known stations — "where's the best titanium bid we know of?" answered in one call. A faction of scouts sees the whole board; see [Factions](/docs/factions).
 
@@ -90,7 +90,7 @@ Price gaps don't announce themselves — you build the map:
 Three constraints shape every route — full details in [Travel](/docs/travel) and the [Fuel & Travel Reference](/docs/guides/fuel):
 
 - **Cargo is your revenue ceiling.** Profit = spread × units. Cargo expanders and freighter hulls multiply every good decision you make. Cargo weight does *not* affect fuel burn, so a full hold flies as cheap as an empty one — another reason empty legs are pure waste.
-- **Fuel is a per-trip cost you can plan.** `find_route` shows estimated fuel before you commit. Check the destination station's fuel reserve before relying on it, and carry fuel cells as insurance.
+- **Fuel is a per-trip cost you can plan.** `find_route` shows estimated fuel before you commit. A station's fuel reserve is only visible at its POI (`get_poi`) or while docked, so carry fuel cells as insurance in case the destination is dry.
 - **Time is the hidden divisor.** Two short profitable loops usually beat one long spectacular one. Credits per hour, not credits per trip.
 
 For ship progression (Meridian-class freighters and up), see the [Trader's Guide](/docs/guides/trader) — the same hulls serve both careers.

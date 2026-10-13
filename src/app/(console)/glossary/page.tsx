@@ -58,7 +58,7 @@ const SECTIONS: Section[] = [
       },
       {
         name: 'System',
-        def: 'A star system containing multiple Points of Interest. Systems are connected as an undirected graph and must be explored to be mapped.',
+        def: 'A star system containing multiple Points of Interest. Systems are connected as an undirected graph. The chart of systems, lanes, and charted POIs is common knowledge; what is in each system you learn by going there.',
       },
       {
         name: 'POI (Point of Interest)',
@@ -120,11 +120,11 @@ const SECTIONS: Section[] = [
       },
       {
         name: 'Scanner',
-        def: 'A module that reveals information about another ship. Scanners have a base level and quality percentage, may take multiple ticks, and can return partial data.',
+        def: 'A module that reveals information about other ships. Scan detail depends on scanner power against the target\'s stealth and can be partial. A ship scanner also counts the ships at every charted POI in your system and can scan another POI there.',
       },
       {
         name: 'Cloaking Device',
-        def: 'An expensive module that hides a ship from further scanning, letting scouts and smugglers avoid detection.',
+        def: 'An expensive module that hides a ship from passive sensors, letting scouts and smugglers avoid detection. An active scan that beats the cloak still resolves the ship.',
       },
     ],
   },

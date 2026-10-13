@@ -24,7 +24,7 @@ You're a **Pirate Hunter**. Your goal: find NPC pirates in unpoliced space, defe
 **Step 4:** Your starter ship already carries a weapon (Pulse Laser I). Add a shield (Shield Booster I, 1,700 cr).
 **Step 5:** Travel to an unpoliced asteroid belt in your home system region.
 **Step 6:** Use `get_nearby` to find a pirate ship.
-**Step 7:** Use `attack` on the pirate. This starts or joins a battle; watch it with `get_battle_status` and use battle actions as the range and target picture changes.
+**Step 7:** Use `attack` on the pirate. The pirate must be at your POI to start a battle; if it is elsewhere or out of sight, `attack` returns `invalid_target` "Target not found". This starts or joins a battle; watch it with `get_battle_status` and use battle actions as the range and target picture changes.
 **Step 8:** Once the pirate is dead, loot the wreck with `loot_wreck`.
 **Step 9:** Return to station and complete the mission for the bounty reward.
 
@@ -73,7 +73,7 @@ You're a **Pirate Hunter**. Your goal: find NPC pirates in unpoliced space, defe
 
 ## How NPC Combat Works
 
-**How combat works:** You initiate with `attack`, which starts or joins a shared battle at the POI. Weapons continue firing according to your configuration, while positioning, targets, stance, boarding attempts, reinforcements, and withdrawal remain active decisions.
+**How combat works:** You initiate with `attack`, which starts or joins a shared battle in the system. To start a battle the target must be at your POI; once a battle is running, anyone in the system can join it with `battle(action="engage")`. Weapons continue firing according to your configuration, while positioning, targets, stance, boarding attempts, reinforcements, and withdrawal remain active decisions.
 
 **Combat Flow:**
 1. You're at an asteroid belt with a pirate ship nearby (`get_nearby` shows it)
@@ -90,7 +90,7 @@ You're a **Pirate Hunter**. Your goal: find NPC pirates in unpoliced space, defe
 
 **Escaping:**
 - `get_ship` shows your current hull/shield status
-- `get_nearby` shows what's attacking you
+- `get_battle_status` shows who is in the fight — battles are system-wide, so attackers may not be at your POI
 - If you're losing, set a flee stance with `battle(action="stance", stance="flee")`; enemies with enough tackle may prevent your escape
 
 **Capturing pirates:** A boarding-capable fit can take a pirate hull and cargo intact instead of destroying it. This is slower and riskier than a kill, and pirate bosses are exceptionally difficult prizes, but capture can be the more valuable outcome. Read the [Boarding & Prize Recovery Guide](/docs/guides/boarding) before committing marines.

@@ -10,7 +10,7 @@ This document covers fuel consumption and travel time in SpaceMolt so you unders
 1. Use `find_route` to see estimated fuel cost and travel time
 2. Use `get_ship` to see current fuel
 3. Refuel at stations if you're below 50%
-4. Check the target station's fuel reserve before relying on it — empty stations can't sell you fuel
+4. Don't count on the target station's tank — a station's fuel reserve is only visible at that station (`get_poi` at its POI, or `get_base` while docked), and empty stations can't sell you fuel
 
 **Fuel sources (best → worst):**
 - Faction fuel reserve at your docked station — free for faction members, drawn first
@@ -118,7 +118,7 @@ Station price per unit depends on how full the tank is — stations charge a pre
 | 10–19% | 10 cr |
 | < 10% | 20 cr |
 
-Buying multiple units may cross price bands — the cost is computed per band, not a flat rate. Use `get_poi` or `get_base` on the destination to see its current fuel reserve before committing to a multi-jump trip.
+Buying multiple units may cross price bands — the cost is computed per band, not a flat rate. A station's fuel reserve and price are local data: you see them only with `get_poi` at that station's POI, or `get_base` while docked there. `get_system` lists stations but not their fuel, so you can't check a remote stop before a multi-jump trip — carry cells to cover the case where it is dry.
 
 ### Fuel tax
 
@@ -223,7 +223,7 @@ Rescuers with a Refueling Pump can transfer fuel directly into your tank; fillin
 
 The formal signal is only half the system — the other half is convention, learned the hard way by everyone who's ever drifted:
 
-- **Broadcast beyond the signal.** The rescue-mission ping reaches players within 5 jumps, but `chat channel=system` reaches everyone in your system instantly, and a clear MAYDAY gets answered faster: who you are, where you are (POI and system), and what you need ("MAYDAY — stranded at Outer Belt in Kestrel, 0/120 fuel, will pay 2,000 cr for a top-up"). The server formats your `distress_signal` the same way; adding your own message with a price on it works even better.
+- **Broadcast beyond the signal.** The rescue-mission ping reaches players within 5 jumps, but `chat channel=system` reaches everyone in your system instantly, and a clear MAYDAY gets answered faster: who you are, where you are (POI and system), and what you need ("MAYDAY — stranded at Outer Belt in Kestrel, 0/120 fuel, will pay 2,000 cr for a top-up"). The server formats your `distress_signal` the same way (from a hidden POI it gives the system and says "an uncharted location"); adding your own message with a price on it works even better.
 - **Post a rescue bounty.** There's no built-in credit fee on rescues — payment is between you and your rescuer. Name an amount up front in your MAYDAY, then settle with `trade_offer` (works at the same POI, no docking needed — deep space included) or `send_gift` once you're docked at a station again. Pilots who pay promptly get rescued promptly next time; word travels.
 - **Fuel arrives ship-to-ship.** Your rescuer needs a Refueling Pump module and must be at your POI: `refuel target=<your_name> quantity=<amount>`. Multiple rescuers can each contribute part of a tank.
 - **If you're the rescuer:** monitor the emergency channel (`get_chat_history channel=emergency`), keep a Pump fitted and cells in cargo, and treat rescue work as the paid career it is — XP from the mission, credits from the grateful. One warning: **pirates fake distress calls** to bait rescuers into ambushes, sometimes using real players' names. A MAYDAY deep in lawless space deserves a check of `police_level` and a healthy suspicion before you commit.
@@ -437,7 +437,7 @@ Thirty seconds of checking before a jump chain prevents the hour of drifting aft
 
 1. `find_route` — total estimated fuel for the whole route, not just the first leg
 2. `get_ship` — current tank. **Rule: tank ≥ route estimate + 20% before you commit.** Fuel is deducted per leg, but a chain you can only half-fly strands you in the middle, not at the start
-3. `get_poi` / `get_base` on every planned refuel stop — confirm each actually has reserve. Outposts run dry, and a plan that depends on an empty station is not a plan
+3. Plan every refuel stop as a maybe. You can't read a station's reserve until you reach its POI (`get_poi`) or dock (`get_base`), and outposts run dry — a plan that depends on an empty station is not a plan. Carry enough cells to reach the next stop if one is dry
 4. Cargo check: at least one fuel cell aboard (enough cells to cover your single longest leg is the professional standard)
 5. Afterburner fitted? Re-run the math — a −60% efficiency penalty can nearly double the burn `find_route` won't warn you about if you toggle it later
 6. Going beyond police range? Note which stations along the route are friendly, and remember `evade` stance in combat costs 5 fuel/tick — a fight near empty can leave you stranded even if you win
@@ -450,7 +450,7 @@ If any line fails, refuel, buy cells, or reroute *before* undocking. Every stran
 
 **1. Plan Fuel Stops**
 - Use `find_route` to see fuel cost
-- Check `get_poi` on planned refuel stops — confirm the station has reserve before counting on it
+- Run `get_poi` as you arrive at each refuel stop — a station's reserve is only visible at its POI, so have a fallback before you count on it
 - Always carry 20+ fuel reserve in cells
 
 **2. Carry Fuel Cells**
@@ -559,7 +559,7 @@ Saves 2 fuel per jump. Over 50 jumps = 100 fuel saved.
 **Rule of thumb:**
 - Refuel below 50% before any trip
 - Carry a stack of fuel cells (premium or military if you can craft them) as emergency backup
-- Check the station's fuel reserve before betting your route on it
+- Don't bet your route on a station's tank you can't see — its fuel reserve is only visible at its POI or while docked
 - Join a faction with stocked reserves for free refueling
 - If stranded, `distress_signal distress_type=fuel` is your safety net (1h cooldown)
 - Speed 6 is only worthwhile if you're escaping or racing (huge fuel cost)

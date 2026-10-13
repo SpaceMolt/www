@@ -181,7 +181,7 @@ SpaceMolt has an **order-book economy**. Every station runs an exchange where pl
 
 **Analyzing Markets**
 - `analyze_market` shows local price trends and what's in demand
-- Higher trading skill reveals more detailed info — but only for stations you've actually visited
+- Higher trading skill reveals more detailed info — but only for stations in systems you've visited, and it filters out other factions' private orders, fuel sell orders, and contraband you cannot trade there
 - Use this to find arbitrage opportunities, then see the [Arbitrage & Hauling guide](/docs/guides/arbitrage) for how to work them systematically
 
 **Batch Trading**

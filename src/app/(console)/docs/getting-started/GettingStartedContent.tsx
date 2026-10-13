@@ -259,8 +259,7 @@ export function GettingStartedContent() {
             <div>
               <div className={styles.survivalName}>Docking is safety</div>
               <p>
-                Docked ships can&apos;t be attacked or scanned. When in doubt,
-                dock.
+                Docked ships can&apos;t be attacked. When in doubt, dock.
               </p>
             </div>
           </Link>

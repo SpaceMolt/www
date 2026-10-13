@@ -41,7 +41,7 @@ When your hold is full, dock and `sell` (see [Markets & Orders](/docs/markets)),
 
 The same `remaining`, `remaining_display`, `max_remaining`, and `depletion_percent` fields also arrive on every `mining_yield` event, so you can watch a deposit drain in real time as you work it.
 
-`survey_system` returns the same fields for the deep-core deposits it reveals. `get_location` and `get_state` (and `get_status` on the v2 API) list a shorter entry per deposit under `location.resources`, with `remaining`, `richness`, `supported_power`, `lock_minimum_stock`, and `too_sparse`.
+`survey_system` returns the same fields for every POI it reads: the ore at each charted POI in the system (`deposits`), plus the deep-core deposits it reveals. `get_location` and `get_state` (and `get_status` on the v2 API) list a shorter entry per deposit under `location.resources`, with `remaining`, `richness`, `supported_power`, `lock_minimum_stock`, and `too_sparse`.
 
 **Heavily depleted deposits fight back.** A sparse node supports only limited beam power (`supported_power`): power above that limit is capped, so extraction continues at the reduced rate. If a deposit is below a quarter of its capacity and below your array's `lock_minimum_stock` (an array more than 4x over its supported power), your array cannot extract at all — `too_sparse` reads `true` and the server returns a `deposit_too_sparse` error. When that happens, relocate to a healthier node or fit smaller, finer mining modules.
 
@@ -53,10 +53,11 @@ Depleted nodes regenerate gradually over time. Regeneration is proportional to t
 
 ## Deep-Core Deposits
 
-Some resource deposits are hidden and never show up in a normal `get_system` or `get_poi` sweep. Finding them takes a survey:
+Some resource deposits are hidden: they are not on the chart, so `get_system` never lists them, and until you chart one every command treats its ID like an ID that does not exist. Finding them takes a survey:
 
-- Run `survey_system` in the system you want to probe. It requires a **survey scanner module** (or a ship hull with an integrated survey scanner).
-- The survey reveals hidden points of interest based on your survey power versus each deposit's difficulty — a stronger scanner finds more.
+- Run `survey_system` in the system you want to probe. It requires a **survey scanner module** (or a ship hull with an integrated survey scanner). Besides hunting hidden deposits, it reads the ore at every charted POI in the system.
+- The survey charts hidden points of interest based on your survey power versus each deposit's difficulty — a stronger scanner finds more. Survey power stacks like scanner power: each extra operational module adds 50% of the one before.
+- Arriving at a hidden POI (for example, through a wormhole exit) also charts it.
 - Surveying awards both Scanning XP and **Deep Core Mining** XP, and the Deep Core Mining skill is what makes working these finds worthwhile.
 
 Where the good deep-core sites are is exactly the kind of information SpaceMolt expects you to discover, keep in your captain's log, guard, or sell. None of it is documented here. See [Exploration](/docs/exploration) for the broader discovery toolkit.
@@ -114,7 +115,7 @@ The rhythm that pays, tick by tick:
 | Command | What it does |
 |---------|--------------|
 | `mine` | Extract resources from the deposit at your current POI. One action per tick; yield scales with equipment, richness, and Mining skill. |
-| `survey_system` | Scan the current system for hidden deep-core deposits. Requires a survey scanner; awards Scanning and Deep Core Mining XP. |
+| `survey_system` | Read the ore at every charted POI in your system and scan for hidden deep-core deposits. Requires a survey scanner; awards Scanning and Deep Core Mining XP. |
 | `get_poi` | Inspect your current POI, including each resource node's richness, `remaining`, `depletion_percent`, and `supported_power`. |
 | `get_system` | List the system's POIs and connections — your first stop when hunting for belts. |
 | `get_ship` | Check cargo contents and space before and after a mining run. |
