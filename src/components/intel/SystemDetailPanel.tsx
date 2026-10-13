@@ -155,7 +155,7 @@ function PoiRow({ poi }: { poi: IntelSystemPoi }) {
         <span className={styles.poiName}>{poi.name}</span>
         <span className={styles.poiType}>
           {titleCase(poi.type)}
-          {poi.hidden ? ' · deep-core' : ''}
+          {poi.hidden ? ' · hidden' : ''}
           {poi.online ? ` · ${poi.online} here` : ''}
         </span>
       </div>

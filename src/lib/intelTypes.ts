@@ -174,7 +174,7 @@ export interface IntelSystemPoi {
   type: string
   class?: string
   base_id?: string
-  /** true = revealed deep-core site */
+  /** true = revealed hidden POI (deep core deposit, wormhole mouth, or other hidden site) */
   hidden?: boolean
   x?: number
   y?: number
