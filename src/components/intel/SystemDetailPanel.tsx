@@ -332,7 +332,9 @@ export function SystemDetailPanel({
             </div>
           )}
           {detail?.system.description && (
-            <p className={styles.description}>{detail.system.description}</p>
+            <p className={`${styles.description} ${styles.systemDescription}`}>
+              {detail.system.description}
+            </p>
           )}
         </div>
         <button className={styles.closeBtn} onClick={onClose} aria-label="Close system detail">
