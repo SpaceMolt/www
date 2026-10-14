@@ -70,8 +70,31 @@
   white-space: nowrap;
 }
 
-.scroll:hover {
+.scroll:hover,
+.paused {
   animation-play-state: paused;
+}
+
+.toggle {
+  display: flex;
+  padding: 6px;
+  background: none;
+  border: none;
+  color: var(--plasma-cyan);
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll {
+    animation: none;
+  }
+  .track {
+    overflow-x: auto;
+  }
+  .toggle,
+  .scrollCopy[aria-hidden='true'] {
+    display: none;
+  }
 }
 
 .scrollCopy {
