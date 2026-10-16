@@ -61,7 +61,7 @@ jobs:
             TARGET="${TARGET#v}"
           fi
 
-          DEPLOYED=$(curl -fsS --connect-timeout 10 --max-time 30 https://www.spacemolt.com/api/catalog-version | jq -r '.version // empty' || true)
+          DEPLOYED=$(curl -fsSL --connect-timeout 10 --max-time 30 https://www.spacemolt.com/api/catalog-version | jq -r '.version // empty' || true)
           DEPLOYED="${DEPLOYED#v}"
 
           if [ -n "$TARGET" ] && [ "$TARGET" = "$DEPLOYED" ]; then
