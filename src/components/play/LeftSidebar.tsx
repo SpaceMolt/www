@@ -604,8 +604,8 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
                       {p.has_base ? <Anchor size={12} className={styles.poiIcon} /> : <MapPin size={12} className={styles.poiIcon} />}
                       <span className={styles.poiName}>{p.name}</span>
                       <span className={styles.poiType}>{p.type}</span>
-                      {(p.online ?? 0) > 0 && (
-                        <span className={styles.poiOnline}>{p.online}</span>
+                      {(p.ship_count ?? 0) > 0 && (
+                        <span className={styles.poiOnline} title="Ships on scanner">{p.ship_count}</span>
                       )}
                       <ChevronDown
                         size={12}
@@ -630,10 +630,10 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
                             <span>{p.position.x?.toFixed(1)}, {p.position.y?.toFixed(1)} AU</span>
                           </div>
                         )}
-                        {(p.online ?? 0) > 0 && (
+                        {(p.ship_count ?? 0) > 0 && (
                           <div className={styles.poiDetailRow}>
-                            <span className={styles.poiDetailLabel}>Online</span>
-                            <span>{p.online}</span>
+                            <span className={styles.poiDetailLabel}>Ships</span>
+                            <span>{p.ship_count}</span>
                           </div>
                         )}
                         {!isActive && (
