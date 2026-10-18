@@ -2,7 +2,7 @@
 
 import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, ComposedChart, Line, LineChart,
-  ReferenceArea, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
+  ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
   type TooltipContentProps,
 } from 'recharts'
 import { formatNumber } from '@/lib/format'
@@ -60,12 +60,6 @@ export function Legend({ items }: { items: [label: string, color: string, line?:
   )
 }
 
-/** Grey band over the summary-only days (before detailed accounting), or nothing. */
-function summaryBand(rows: ChartRow[], until: string | null | undefined) {
-  if (!until || !rows.length) return null
-  return <ReferenceArea x1={rows[0].date} x2={until} fill={C.gap} fillOpacity={0.12} stroke="none" ifOverflow="visible" />
-}
-
 const extent = (rows: ChartRow[], f: (r: ChartRow) => number | null) => {
   const v = rows.map(f).filter((x): x is number => x !== null)
   return [Math.min(0, ...v), Math.max(0, ...v)] as const
@@ -99,7 +93,7 @@ export function SupplyChart({ rows, since }: { rows: ChartRow[]; since: string }
   )
 }
 
-export function FlowsChart({ rows, summaryUntil }: { rows: ChartRow[]; summaryUntil?: string | null }) {
+export function FlowsChart({ rows }: { rows: ChartRow[] }) {
   const [lo, hi] = extent(rows, (r) => r.faucets)
   const [sinkLo] = extent(rows, (r) => r.sinks)
   const ticks = ticksFor(Math.min(lo, sinkLo), hi, 3)
@@ -124,7 +118,6 @@ export function FlowsChart({ rows, summaryUntil }: { rows: ChartRow[]; summaryUn
           <XAxis {...X_AXIS} tick={false} axisLine={false} height={4} />
           <YAxis {...Y_AXIS} ticks={ticks} domain={[ticks[0], ticks.at(-1)!]} />
           <Tooltip cursor={CURSOR} content={flowTip} />
-          {summaryBand(rows, summaryUntil)}
           <ReferenceLine y={0} stroke={C.axis} />
           {devDays.map((r) => (
             <ReferenceLine key={r.date} x={r.date} stroke={C.neutral} strokeOpacity={0.5} label={{ value: 'Dev team grant', position: 'top', fill: '#a8c5d6', fontSize: 11 }} />
@@ -143,7 +136,6 @@ export function FlowsChart({ rows, summaryUntil }: { rows: ChartRow[]; summaryUn
           <XAxis {...X_AXIS} />
           <YAxis {...Y_AXIS} ticks={[-gapTick, 0, gapTick]} domain={[-Math.max(gapMax, gapTick), Math.max(gapMax, gapTick)]} />
           <Tooltip cursor={CURSOR} content={flowTip} />
-          {summaryBand(rows, summaryUntil)}
           <ReferenceLine y={0} stroke={C.axis} />
           <Bar dataKey="unattributed" fill={C.gap} maxBarSize={18} radius={[2, 2, 0, 0]} isAnimationActive={false} />
         </BarChart>
@@ -205,12 +197,11 @@ export function PriceChart({ rows, categories }: { rows: ChartRow[]; categories:
 }
 
 /** One small multiple: a single measure per day. */
-export function ActivityChart({ rows, field, unit, color = C.neutral, summaryUntil }: {
+export function ActivityChart({ rows, field, unit, color = C.neutral }: {
   rows: ChartRow[]
   field: 'active' | 'mined' | 'crafted' | 'bReserve' | 'bCirculating'
   unit: string
   color?: string
-  summaryUntil?: string | null
 }) {
   return (
     <ResponsiveContainer width="100%" height={96}>
@@ -222,7 +213,6 @@ export function ActivityChart({ rows, field, unit, color = C.neutral, summaryUnt
           cursor={{ stroke: C.axis }}
           content={tip((r) => [[unit, r[field] === null ? 'No data' : formatNumber(r[field])]])}
         />
-        {summaryBand(rows, summaryUntil)}
         <Area dataKey={field} stroke={color} strokeWidth={2} fill={color} fillOpacity={0.1} isAnimationActive={false} />
       </AreaChart>
     </ResponsiveContainer>
@@ -232,7 +222,7 @@ export function ActivityChart({ rows, field, unit, color = C.neutral, summaryUnt
 const units = (v: number | null) => (v === null ? 'No data' : num(v))
 
 /** Authenticators made (up), used up (down), and sold by the window (line), per day. */
-export function BondFlowChart({ rows, summaryUntil }: { rows: ChartRow[]; summaryUntil?: string | null }) {
+export function BondFlowChart({ rows }: { rows: ChartRow[] }) {
   return (
     <div className={styles.chart}>
       <Legend items={[['Minted', C.created], ['Burned or built into ships', C.destroyed], ['Sold by the window', C.window, true]]} />
@@ -249,7 +239,6 @@ export function BondFlowChart({ rows, summaryUntil }: { rows: ChartRow[]; summar
               ['Sold by the window', units(r.bSold), C.window],
             ])}
           />
-          {summaryBand(rows, summaryUntil)}
           <ReferenceLine y={0} stroke={C.axis} />
           <Bar dataKey="bMinted" stackId="b" fill={C.created} maxBarSize={18} radius={[3, 3, 0, 0]} isAnimationActive={false} />
           <Bar dataKey="bUsed" stackId="b" fill={C.destroyed} maxBarSize={18} radius={[0, 0, 3, 3]} isAnimationActive={false} />
@@ -261,7 +250,7 @@ export function BondFlowChart({ rows, summaryUntil }: { rows: ChartRow[]; summar
 }
 
 /** Average daily price per market segment against the window's prices. */
-export function BondPriceChart({ rows, summaryUntil }: { rows: ChartRow[]; summaryUntil?: string | null }) {
+export function BondPriceChart({ rows }: { rows: ChartRow[] }) {
   const price = (v: number | null) => (v === null ? 'No trades' : `${num(Math.round(v))} cr`)
   return (
     <div className={styles.chart}>
@@ -289,7 +278,6 @@ export function BondPriceChart({ rows, summaryUntil }: { rows: ChartRow[]; summa
               ['Window buys back at', price(r.bWindowBuy)],
             ])}
           />
-          {summaryBand(rows, summaryUntil)}
           <Line dataKey="bWindowSell" type="stepAfter" stroke={C.window} strokeWidth={2} dot={false} isAnimationActive={false} />
           <Line dataKey="bWindowBuy" type="stepAfter" stroke={C.window} strokeOpacity={0.5} strokeWidth={2} dot={false} isAnimationActive={false} />
           <Line dataKey="bP2S" stroke={C.p2s} strokeWidth={2} dot={false} isAnimationActive={false} />
@@ -303,12 +291,11 @@ export function BondPriceChart({ rows, summaryUntil }: { rows: ChartRow[]; summa
 
 /**
  * Average station fuel price per day (lines) over units bought (bars), with the
- * cheapest-to-dearest station band and the switch to market pricing marked.
+ * cheapest-to-dearest station band and the start of market pricing marked.
  */
 export function FuelChart({ rows }: { rows: ChartRow[] }) {
   const price = (v: number | null) => (v === null ? 'No sales' : `${v.toFixed(1)} cr`)
   const range = (v: [number, number] | null) => (v === null ? 'No data' : `${v[0].toFixed(1)}–${v[1].toFixed(1)} cr`)
-  const marked = rows.some((r) => r.date === FUEL_MARKET_SINCE)
   return (
     <div className={styles.chart}>
       <Legend items={[['Pump price', C.fuel, true], ['Paid with tax', `${C.fuel}80`, true], ['Cheapest to dearest station', `${C.fuel}33`], ['Units bought', C.neutral]]} />
@@ -327,7 +314,8 @@ export function FuelChart({ rows }: { rows: ChartRow[] }) {
               ['Units bought', units(r.fuelUnits), C.neutral],
             ])}
           />
-          {marked && (
+          {/* Only while the switch falls inside the window, not on its first day. */}
+          {rows.some((r, i) => i > 0 && r.date === FUEL_MARKET_SINCE) && (
             <ReferenceLine
               yAxisId="price"
               x={FUEL_MARKET_SINCE}

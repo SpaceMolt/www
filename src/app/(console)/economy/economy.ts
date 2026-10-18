@@ -243,11 +243,6 @@ export function isDetailed(d: EconomyDay): d is DetailedDay {
   return d.faucets !== null && d.sinks !== null
 }
 
-/** The last summary-only day in `days`, or null when every day is detailed. */
-export function summaryOnlyUntil(days: EconomyDay[]): string | null {
-  return days.filter((d) => !isDetailed(d)).at(-1)?.date ?? null
-}
-
 /**
  * Everything the page says about one span of days. Every period figure on the
  * page comes from here, so they all cover the same days. The first day's
@@ -327,7 +322,7 @@ export function inBrief(s: Summary, current: EconomyCurrent): string[] {
     `${pct === '0.00' ? `The money supply held steady at ${compact(s.supplyEnd)} credits` : `The money supply ${s.change > 0 ? 'grew' : 'shrank'} ${pct}% over ${s.days} days, to ${compact(s.supplyEnd)} credits`}. Players hold ${share.toFixed(0)}% of it.`,
   )
   if (s.detailedFrom) {
-    const lead = s.partial ? `Since ${dayLabel(s.detailedFrom)}, the game` : 'The game'
+    const lead = s.partial ? `Over ${s.detailedDays} days, the game` : 'The game'
     out.push(`${lead} created ${compact(s.created)} new credits and destroyed ${compact(s.destroyed)}, a net ${signed(s.net)}.`)
   }
   const [source, drain] = [s.faucets[0], s.sinks[0]]
@@ -481,12 +476,18 @@ export function chartRows(days: EconomyDay[]): ChartRow[] {
     refined: d?.price_index.refined ?? null,
     component: d?.price_index.component ?? null,
     ...bondRow(d?.trade_authenticators),
-    fuelPrice: d?.fuel ? avgPrice(d.fuel) : null,
-    fuelPaid: d?.fuel ? avgPrice({ units: d.fuel.units, credits: d.fuel.credits + d.fuel.tax }) : null,
-    fuelUnits: d?.fuel?.units ?? null,
-    fuelRange: d?.fuel && d.fuel.min_station_price !== null && d.fuel.max_station_price !== null
-      ? [d.fuel.min_station_price, d.fuel.max_station_price] : null,
+    ...fuelRow(d?.fuel),
   }))
+}
+
+function fuelRow(f: EconomyFuelDay | null | undefined) {
+  return {
+    fuelPrice: f ? avgPrice(f) : null,
+    fuelPaid: f ? avgPrice({ units: f.units, credits: f.credits + f.tax }) : null,
+    fuelUnits: f?.units ?? null,
+    fuelRange: f && f.min_station_price !== null && f.max_station_price !== null
+      ? [f.min_station_price, f.max_station_price] as [number, number] : null,
+  }
 }
 
 function bondRow(b: EconomyBondDay | undefined) {
@@ -590,32 +591,22 @@ export function bondHeadline(b: BondSummary, from: string): string {
 /** First UTC day of market-based station fuel prices (gameserver v0.632.0, deployed early that day). */
 export const FUEL_MARKET_SINCE = '2026-10-17'
 
-/**
- * Station fuel over a span, split at FUEL_MARKET_SINCE. Averages are weighted
- * by units; null when that part of the span sold no fuel.
- */
+/** Station fuel over a span. Averages are weighted by units; null when the span sold no fuel. */
 export function fuelSummary(days: EconomyDay[]) {
   const fuel = days.flatMap((d) => (d.fuel ? [{ date: d.date, ...d.fuel }] : []))
-  const avg = (rows: typeof fuel) => avgPrice({
-    units: rows.reduce((s, f) => s + f.units, 0),
-    credits: rows.reduce((s, f) => s + f.credits, 0),
-  })
-  const before = fuel.filter((f) => f.date < FUEL_MARKET_SINCE)
-  const after = fuel.filter((f) => f.date >= FUEL_MARKET_SINCE)
-  const beforePrice = avg(before)
-  const afterPrice = avg(after)
+  const units = fuel.reduce((s, f) => s + f.units, 0)
+  const credits = fuel.reduce((s, f) => s + f.credits, 0)
+  const tax = fuel.reduce((s, f) => s + f.tax, 0)
   const latest = fuel.filter((f) => f.units > 0).at(-1) ?? null
   return {
     /** First day with a fuel record in the span, or null when there is none. */
     from: fuel[0]?.date ?? null,
-    units: fuel.reduce((s, f) => s + f.units, 0),
+    units,
     purchases: fuel.reduce((s, f) => s + f.purchases, 0),
-    /** Average pump price over the whole span. */
-    price: avg(fuel),
-    beforePrice,
-    afterPrice,
-    /** Market-priced average against the old formula's; null if either side is missing. */
-    changePct: beforePrice && afterPrice !== null ? ((afterPrice - beforePrice) / beforePrice) * 100 : null,
+    /** Average pump price over the span, before tax. */
+    price: avgPrice({ units, credits }),
+    /** Average price paid over the span, tax included. */
+    paid: avgPrice({ units, credits: credits + tax }),
     latest: latest && {
       date: latest.date,
       price: latest.credits / latest.units,
@@ -634,46 +625,32 @@ const FUEL_REGION_NAME: Record<string, string> = {
 
 /**
  * Each region over the span, dearest first: average price paid (tax
- * included), its change against the fixed-rate days, and its latest day's
- * station count and cheapest and dearest station price.
+ * included), and its latest day's station count and cheapest and dearest
+ * station price.
  */
 function fuelRegions(days: EconomyDay[]) {
   const by = new Map<string, { date: string; f: EconomyFuelSales }[]>()
   for (const d of days) for (const r of d.fuel?.regions ?? []) by.set(r.region, [...(by.get(r.region) ?? []), { date: d.date, f: r }])
-  const paid = (rows: { f: EconomyFuelSales }[]) => avgPrice({
-    units: rows.reduce((s, r) => s + r.f.units, 0),
-    credits: rows.reduce((s, r) => s + r.f.credits + r.f.tax, 0),
-  })
   return [...by].map(([region, rows]) => {
     const last = rows[rows.length - 1]
-    const before = paid(rows.filter((r) => r.date < FUEL_MARKET_SINCE))
-    const after = paid(rows.filter((r) => r.date >= FUEL_MARKET_SINCE))
+    const units = rows.reduce((s, r) => s + r.f.units, 0)
     return {
       region,
       label: FUEL_REGION_NAME[region] ?? region,
-      paid: paid(rows) ?? 0,
-      /** Market-priced average paid; null before market pricing. */
-      after,
-      changePct: before && after !== null ? ((after - before) / before) * 100 : null,
-      units: rows.reduce((s, r) => s + r.f.units, 0),
+      paid: avgPrice({ units, credits: rows.reduce((s, r) => s + r.f.credits + r.f.tax, 0) }) ?? 0,
+      units,
       date: last.date,
       stations: last.f.stations,
       min: last.f.min_station_price,
       max: last.f.max_station_price,
     }
-  }).sort((a, b) => (b.after ?? b.paid) - (a.after ?? a.paid))
+  }).sort((a, b) => b.paid - a.paid)
 }
 
 export type FuelSummary = ReturnType<typeof fuelSummary>
 
-/** Chapter title for fuel: market price against the old formula, else the plain average. */
+/** Chapter title for fuel: the average pump price over the span. */
 export function fuelHeadline(f: FuelSummary): string {
-  if (f.changePct !== null && f.afterPrice !== null) {
-    const p = Math.abs(f.changePct)
-    const at = `${f.afterPrice.toFixed(1)} cr a unit`
-    if (p < 0.5) return `Market fuel prices match the old fixed prices: ${at}`
-    return `Fuel costs ${p.toFixed(0)}% ${f.changePct > 0 ? 'more' : 'less'} since market pricing: ${at}`
-  }
   if (f.price !== null) return `Station fuel averaged ${f.price.toFixed(1)} cr a unit`
   return 'No station fuel sold in this period'
 }
@@ -683,29 +660,9 @@ export function indexedCategories(days: EconomyDay[]): (keyof EconomyPriceIndex)
   return (['ore', 'refined', 'component'] as const).filter((k) => days.some((d) => d.price_index[k] !== null))
 }
 
-/**
- * Warning for figures built from market fill records, which miss trades matched at order
- * placement before `since` (the report's detailed_accounting_since). `from` is the first
- * day the figure covers.
- */
-export function tradeGapNote(since: string, from: string): string | null {
-  if (!since) return 'Orders that fill instantly are not recorded yet, so these figures miss some trades.'
-  if (from >= since) return null
-  return `Before ${dayLabel(since)}, orders that filled instantly were not recorded, so earlier figures miss some trades.`
-}
-
 /** "Sep 23" for a YYYY-MM-DD UTC date, in UTC so no viewer sees the day before. */
 export function dayLabel(date: string): string {
   return new Date(`${date}T00:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })
-}
-
-/** "Sep 24, 2026, 23:55 UTC". */
-export function utcDateTime(iso: string): string {
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return iso
-  return `${d.toLocaleString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'UTC',
-  })} UTC`
 }
 
 /** "+1.8%" / "−0.4%" / "0.0%". */

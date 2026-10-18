@@ -3,8 +3,8 @@ import { formatCompact, formatNumber, titleCase } from '@/lib/format'
 import { ActivityChart, BondFlowChart, BondPriceChart, FlowsChart, FuelChart, Legend, PriceChart, SupplyChart, TradeChart } from './charts'
 import { C } from './chartTheme'
 import {
-  bondHeadline, bondSummary, chartRows, FUEL_MARKET_SINCE, fuelHeadline, fuelSummary, compact, summaryOnlyUntil, tradeGapNote, dayLabel, exchangeVolume, flowCaption, holders, inBrief, INDEX_NAME, indexedCategories, lastDays,
-  playerHeld, priceHeadline, signed, signedPct, summarize, tradeHeadline, utcDateTime, type EconomyReport,
+  bondHeadline, bondSummary, chartRows, fuelHeadline, fuelSummary, compact, dayLabel, exchangeVolume, flowCaption, holders, inBrief, INDEX_NAME, indexedCategories, lastDays,
+  playerHeld, priceHeadline, signed, signedPct, summarize, tradeHeadline, type EconomyReport,
 } from './economy'
 import styles from './page.module.css'
 
@@ -86,20 +86,14 @@ function BarList({ title, rows }: { title?: string; rows: BarRow[] }) {
 
 /** Plain notes for the created/destroyed rows that need one. */
 const FAUCET_NOTES: Record<string, string> = {
-  missions: 'treasury shortfalls and historical unfunded rewards',
-  pirate_bounties: 'treasury shortfalls and historical unfunded bounties',
-  achievements: 'treasury shortfalls and historical unfunded rewards',
+  missions: 'rewards a treasury could not cover',
+  pirate_bounties: 'bounties a treasury could not cover',
+  achievements: 'rewards a treasury could not cover',
   respawns: 'topping pilots up to the minimum balance after a death',
   dev_team: 'credits the dev team handed out',
   npc_seeding: 'initial balances for NPC station managers and empire treasuries',
 }
 const SINK_NOTES: Record<string, string> = {
-  shipbuilding: 'historical ship labor and cancellation charges without a recipient',
-  labor: 'historical wages that never reached a citizen pool',
-  station_founding: 'historical founding fees without a treasury recipient',
-  station_facilities: 'historical NPC construction payments without a citizen pool recipient',
-  war_declarations: 'historical war fees without a treasury recipient',
-  penalties: 'historical service and penalty charges without a recipient',
   dev_team: 'credits the dev team took out',
 }
 
@@ -165,12 +159,7 @@ export default async function EconomyPage() {
   const indexName = (cat: string) => INDEX_NAME[cat as keyof typeof INDEX_NAME] ?? titleCase(cat)
   const inflation = Object.entries(current.inflation_7d.by_category).sort((a, b) => b[1] - a[1])
   const maxInflation = Math.max(0.1, ...inflation.map(([, v]) => Math.abs(v)))
-  // Days before detailed accounting carry totals only: no created/destroyed split, gap or authenticator use.
-  const summaryUntil = summaryOnlyUntil(recent)
   const flowSpan = `${s.detailedDays} days`
-  const accountingNote = summaryUntil && s.detailedFrom
-    ? `Breakdowns start ${dayLabel(s.detailedFrom)}. Shaded days show totals only.`
-    : null
   const pct = Math.abs(s.changePct)
   const supplyTitle = pct < 1
     ? `Supply is steady: ${signedPct(s.changePct, 2)} in ${span}`
@@ -194,23 +183,12 @@ export default async function EconomyPage() {
     players_to_stations: C.p2s, stations_to_players: C.s2p, player_to_player: C.p2p, station_to_station: C.neutral,
   }
   const activeChange = firstActive ? ((lastActive - firstActive) / firstActive) * 100 : 0
-  // Fill-based figures miss instant matches before detailed accounting; the report dates it.
-  const tradesSince = report.detailed_accounting_since
-  const fillNote = tradeGapNote(tradesSince, recent[0]?.date ?? '')
-  const categoriesFrom = last ? new Date(Date.parse(`${last.date}T00:00:00Z`) - 29 * 86_400_000).toISOString().slice(0, 10) : ''
-  const categoriesNote = tradeGapNote(tradesSince, categoriesFrom)
-  // The fixed base week keeps its gap even after the days in view are complete.
-  const baseNote = tradeGapNote(tradesSince, baseStart)
-    ? `The base week (${baseWeek}) also misses orders that filled instantly.`
-    : null
 
   return (
     <div className="console-page">
       <Header>
         <p className={styles.meta}>
-          <span>Data as of {utcDateTime(current.captured_at)}</span>
-          {last && <span>Daily figures {dayLabel(s.from)}–{dayLabel(s.to)} ({span}, UTC)</span>}
-          <span>Updated hourly</span>
+          {last && <span>{dayLabel(s.from)}–{dayLabel(s.to)} ({span})</span>}
         </p>
       </Header>
 
@@ -331,13 +309,10 @@ export default async function EconomyPage() {
               <>
                 The game creates credits for starting money, respawn grants, NPC seed capital, and reward or insurance shortfalls.
                 Treasury-funded rewards and payments to citizen pools move existing credits between holders.
-                Older records include fees and wages that had no recipient. Those historical losses remain in these totals after routing fixes.
-                {s.partial && s.detailedFrom && <> Totals cover the {flowSpan} since {dayLabel(s.detailedFrom)}.</>}
               </>
             }
           >
-            <FlowsChart rows={rows} summaryUntil={summaryUntil} />
-            {accountingNote && <p className={styles.caption}>{accountingNote}</p>}
+            <FlowsChart rows={rows} />
             {caption && <p className={styles.caption}>{caption}</p>}
             {s.detailedFrom && <p className={styles.note}>
               Created minus destroyed: <strong>{signedCr(s.net)}</strong>. Actual supply change:{' '}
@@ -417,8 +392,6 @@ export default async function EconomyPage() {
             <div className={styles.split}>
               <div className={styles.chart}>
                 {categories.length > 0 ? <PriceChart rows={rows} categories={categories} /> : <p className={styles.muted}>No category traded in the base week yet.</p>}
-                {fillNote && <p className={styles.caption}>{fillNote}</p>}
-                {baseNote && <p className={styles.caption}>{baseNote}</p>}
               </div>
               <div className={styles.barList}>
                 <h3 className={styles.subhead}>Price change vs. a week ago</h3>
@@ -473,8 +446,7 @@ export default async function EconomyPage() {
               lede={
                 <>
                   What players paid per unit of fuel at station pumps.
-                  Until {dayLabel(FUEL_MARKET_SINCE)}, stations charged a fixed rate set by how full their tank was. Since then
-                  the price follows what the fuel cost the station to make or buy, and rises when reserves run low.
+                  Each station sets its price from what the fuel cost it to make or buy, and raises it when its reserves run low.
                   Prices differ from station to station, so the list breaks them down by empire, pirate strongholds
                   and player-founded stations. Free fuel from faction reserves is left out.
                 </>
@@ -491,14 +463,14 @@ export default async function EconomyPage() {
                   </span>
                 </div>
                 <div>
-                  <dt>Fixed-rate average</dt>
-                  <dd>{fuelPrice(fuel.beforePrice)}</dd>
-                  <span>before {dayLabel(FUEL_MARKET_SINCE)}, before tax</span>
+                  <dt>Average pump price</dt>
+                  <dd>{fuelPrice(fuel.price)}</dd>
+                  <span>since {dayLabel(fuel.from)}, before tax</span>
                 </div>
                 <div>
-                  <dt>Market average</dt>
-                  <dd>{fuelPrice(fuel.afterPrice)}</dd>
-                  <span>{fuel.changePct === null ? `from ${dayLabel(FUEL_MARKET_SINCE)}, before tax` : `${signedPct(fuel.changePct)} vs. the fixed rate`}</span>
+                  <dt>Average paid</dt>
+                  <dd>{fuelPrice(fuel.paid)}</dd>
+                  <span>since {dayLabel(fuel.from)}, with tax</span>
                 </div>
                 <div>
                   <dt>Fuel bought</dt>
@@ -510,23 +482,20 @@ export default async function EconomyPage() {
                 <div className={styles.chart}>
                   <h3 className={styles.subhead}>Average price per unit and units bought, each day</h3>
                   <FuelChart rows={rows} />
-                  {fuel.from !== recent[0]?.date && (
-                    <p className={styles.caption}>The fuel record starts {dayLabel(fuel.from)}, the oldest refuel log the server still kept.</p>
-                  )}
                 </div>
                 <div>
                   <BarList
                     title="Average price paid by region, tax included"
                     rows={fuel.regions.map((r) => ({
                       label: r.label,
-                      value: r.after ?? r.paid,
+                      value: r.paid,
                       color: C.fuel,
-                      figure: `${(r.after ?? r.paid).toFixed(1)} cr${r.changePct === null ? '' : ` · ${signedPct(r.changePct)}`}`,
+                      figure: `${r.paid.toFixed(1)} cr`,
                       note: `${r.min !== null && r.max !== null ? `${r.min.toFixed(1)}–${r.max.toFixed(1)} cr across ` : ''}${formatNumber(r.stations)} station${r.stations === 1 ? '' : 's'} on ${dayLabel(r.date)}`,
                     }))}
                   />
                   <p className={styles.muted}>
-                    {fuel.afterPrice === null ? `Average over ${span}.` : `Average since ${dayLabel(FUEL_MARKET_SINCE)}; the change is against the fixed rate before.`}{' '}
+                    Average since {dayLabel(fuel.from)}.{' '}
                     The range covers stations that sold at least 100 units that day.
                   </p>
                 </div>
@@ -579,7 +548,7 @@ export default async function EconomyPage() {
               <div>
                 <dt>In circulation</dt>
                 <dd>{formatNumber(bondStock.in_circulation)}</dd>
-                <span>{bonds.circulationChange !== null && bonds.circulationFrom ? `${signedCount(bonds.circulationChange)} since ${dayLabel(bonds.circulationFrom)}` : bonds.circulationFrom ? `counted from ${dayLabel(bonds.circulationFrom)}` : 'not counted yet'}</span>
+                <span>{bonds.circulationChange !== null && bonds.circulationFrom ? `${signedCount(bonds.circulationChange)} since ${dayLabel(bonds.circulationFrom)}` : 'outside the reserve'}</span>
               </div>
               <div>
                 <dt>Stations paid players</dt>
@@ -593,7 +562,7 @@ export default async function EconomyPage() {
             <div className={styles.split}>
               <div className={styles.chart}>
                 <h3 className={styles.subhead}>Made, sold and used up each day</h3>
-                <BondFlowChart rows={rows} summaryUntil={summaryUntil} />
+                <BondFlowChart rows={rows} />
               </div>
               <div className={styles.multiples}>
                 <div>
@@ -608,7 +577,7 @@ export default async function EconomyPage() {
                     In circulation
                     <span><small>{dayLabel(last.date)}</small> {last.trade_authenticators.in_circulation === null ? '—' : formatNumber(last.trade_authenticators.in_circulation)}</span>
                   </h3>
-                  <ActivityChart rows={rows} field="bCirculating" unit="In circulation" summaryUntil={summaryUntil} />
+                  <ActivityChart rows={rows} field="bCirculating" unit="In circulation" />
                 </div>
               </div>
             </div>
@@ -616,9 +585,7 @@ export default async function EconomyPage() {
             <div className={`${styles.split} ${styles.splitGap}`}>
               <div className={styles.chart}>
                 <h3 className={styles.subhead}>Price per authenticator, daily average</h3>
-                <BondPriceChart rows={rows} summaryUntil={summaryUntil} />
-                {accountingNote && <p className={styles.caption}>{accountingNote} On those days the window line is the average window trade price.</p>}
-                {fillNote && <p className={styles.caption}>{fillNote}</p>}
+                <BondPriceChart rows={rows} />
               </div>
               <BarList
                 title={`Where they changed hands · ${span}`}
@@ -640,7 +607,7 @@ export default async function EconomyPage() {
               lede={
                 <>
                   Trade value by item category over the last 30 days, NPC stations included. Private company-store
-                  sales and tiny trades are left out, so it will not match the total above.{categoriesNote && <> {categoriesNote}</>}
+                  sales and tiny trades are left out, so it will not match the total above.
                 </>
               }
             >
@@ -667,7 +634,7 @@ export default async function EconomyPage() {
               }
               lede={
                 <>
-                  Each day: players who sent a command, ore mined, and items crafted.{activeDays.length > 0 && activeDays[0].date !== recent[0]?.date && <> Active players are counted from {dayLabel(activeDays[0].date)}.</>}
+                  Each day: players who sent a command, ore mined, and items crafted.
                 </>
               }
             >
@@ -701,11 +668,9 @@ export default async function EconomyPage() {
           <dt>Unexplained difference</dt>
           <dd>Supply change minus (created − destroyed): contract money moving in or out, plus anything we do not track yet. This difference alone does not prove credit creation or destruction.</dd>
           <dt>Reward funding</dt>
-          <dd>Mission issuers and reserved funds pay their own rewards. Otherwise, the player&apos;s starting empire funds mission and achievement rewards. Pirate bounties use the empire nearest the pirate&apos;s home station. Treasury shortages create only the uncovered amount.</dd>
+          <dd>Mission issuers pay their own rewards. Otherwise, the player&apos;s starting empire pays mission and achievement rewards, and the nearest empire pays pirate bounties. If a treasury runs short, only the uncovered amount is new credits.</dd>
           <dt>Fees and wages</dt>
-          <dd>Station labor and NPC construction payments reach citizen pools. Outpost workers use the nearest reachable station pool. Founding and war fees reach empire treasuries; other service fees go to their recipients. These payments move existing credits.</dd>
-          <dt>Historical losses</dt>
-          <dd>Past wages, founding fees, ship labor, construction payments and penalties sometimes removed credits without paying a recipient. The report keeps those losses in the days when they occurred.</dd>
+          <dd>Station labor and construction payments go to citizen pools. Founding and war fees go to empire treasuries. These payments move existing credits.</dd>
           <dt>NPC</dt>
           <dd>A game-run account, such as a station manager or empire treasury.</dd>
           <dt>Price index</dt>
@@ -720,8 +685,8 @@ export default async function EconomyPage() {
           <dd>Authenticators outside the reserve: cargo, storage and other sell orders. Wrecks, packages and ship orders are not counted.</dd>
           <dt>Days of cover</dt>
           <dd>The reserve divided by average daily window sales.</dd>
-          <dt>Cadence</dt>
-          <dd>Rebuilt hourly. Daily figures are full UTC days, so the latest is yesterday. Period figures cover up to the last {WINDOW} days.</dd>
+          <dt>Days</dt>
+          <dd>Daily figures are full UTC days. Period figures cover the last {WINDOW} days.</dd>
         </dl>
       </section>
     </div>

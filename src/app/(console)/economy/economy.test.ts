@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'bun:test'
 import {
   avgPrice, bondHeadline, fuelHeadline, fuelSummary, bondSummary, calendar, chartRows, compact, dayLabel, flowCaption, holders, inBrief, indexedCategories, lastDays, niceCeil,
-  playerHeld, priceHeadline, signed, tradeGapNote, signedPct, summarize, summaryOnlyUntil, ticksFor, tradeHeadline, utcDateTime,
+  playerHeld, priceHeadline, signed, signedPct, summarize, ticksFor, tradeHeadline,
   type EconomyBondDay, type EconomyCurrent, type EconomyDay, type EconomyMoneySupply,
 } from './economy'
 
@@ -227,7 +227,6 @@ describe('helpers', () => {
 
   it('formats dates in UTC', () => {
     expect(dayLabel('2026-09-01')).toBe('Sep 1')
-    expect(utcDateTime('2026-09-24T23:55:00Z')).toBe('Sep 24, 2026, 23:55 UTC')
   })
 
   it('signs percentages and never prints -0.0', () => {
@@ -329,11 +328,6 @@ describe('summary-only days (before detailed accounting)', () => {
   })
   const MIXED = [summaryOnly('2026-08-31'), ...TWO]
 
-  it('finds the last summary-only day', () => {
-    expect(summaryOnlyUntil(MIXED)).toBe('2026-08-31')
-    expect(summaryOnlyUntil(TWO)).toBeNull()
-  })
-
   it('created, destroyed and the gap cover only detailed days; supply change covers all', () => {
     const s = summarize(MIXED)
     const d = summarize(TWO)
@@ -347,9 +341,9 @@ describe('summary-only days (before detailed accounting)', () => {
     expect(s.faucets).toEqual(d.faucets)
   })
 
-  it('in brief says when the flow totals start', () => {
+  it('in brief says how many days the flow totals cover', () => {
     expect(inBrief(summarize(MIXED), CURRENT)[1]).toBe(
-      'Since Sep 1, the game created 90 new credits and destroyed 35, a net +55.',
+      'Over 3 days, the game created 90 new credits and destroyed 35, a net +55.',
     )
     expect(inBrief(summarize([summaryOnly('2026-08-31')]), CURRENT)).toHaveLength(2)
     expect(flowCaption([summaryOnly('2026-08-31')])).toBeNull()
@@ -374,22 +368,6 @@ describe('summary-only days (before detailed accounting)', () => {
   })
 })
 
-describe('trade record coverage', () => {
-  it('warns when the span starts before complete trade records, with no detailed day needed', () => {
-    expect(tradeGapNote('2026-09-25', '2026-09-01')).toBe(
-      'Before Sep 25, orders that filled instantly were not recorded, so earlier figures miss some trades.',
-    )
-  })
-  it('says nothing once the span starts on or after the coverage date', () => {
-    expect(tradeGapNote('2026-09-25', '2026-09-25')).toBeNull()
-    expect(tradeGapNote('2026-09-25', '2026-10-01')).toBeNull()
-  })
-  it('warns without a date before any complete day exists', () => {
-    expect(tradeGapNote('', '2026-09-01')).toBe(
-      'Orders that fill instantly are not recorded yet, so these figures miss some trades.',
-    )
-  })
-})
 
 describe('station fuel', () => {
   const sales = (units: number, credits: number, tax = 0, min: number | null = null, max: number | null = null) =>
@@ -411,34 +389,32 @@ describe('station fuel', () => {
     day('2026-10-17', { fuel: fuel({ solarian: sales(100, 400, 40, 3, 6), pirates: sales(100, 600, 0, 6, 6) }) }),
   ]
 
-  it('weights averages by units and splits at the start of market pricing', () => {
+  it('weights averages by units over every fuel day in the span', () => {
     const f = fuelSummary(days)
     expect(f.from).toBe('2026-10-15')
     expect(f.units).toBe(600)
-    expect(f.beforePrice).toBeCloseTo(1300 / 400)
-    expect(f.afterPrice).toBe(5)
-    expect(f.changePct).toBeCloseTo((5 / 3.25 - 1) * 100)
+    expect(f.price).toBeCloseTo(2300 / 600)
+    expect(f.paid).toBeCloseTo(2360 / 600)
     expect(f.latest).toEqual({ date: '2026-10-17', price: 5, paid: 5.2, min: 3, max: 6 })
-    expect(fuelHeadline(f)).toBe('Fuel costs 54% more since market pricing: 5.0 cr a unit')
+    expect(fuelHeadline(f)).toBe('Station fuel averaged 3.8 cr a unit')
   })
 
   it('breaks prices down by region, dearest first, with the latest station range', () => {
     const [pirates, solarian] = fuelSummary(days).regions
-    expect(pirates).toMatchObject({ region: 'pirates', label: 'Pirate strongholds', after: 6, changePct: 50, min: 6, max: 6 })
-    expect(solarian.after).toBeCloseTo(4.4)
-    expect(solarian.changePct).toBeCloseTo((4.4 / (920 / 300) - 1) * 100)
+    expect(pirates).toMatchObject({ region: 'pirates', label: 'Pirate strongholds', paid: 5, min: 6, max: 6 })
+    expect(solarian.paid).toBeCloseTo(1360 / 400)
     expect(solarian).toMatchObject({ units: 400, date: '2026-10-17', min: 3, max: 6 })
   })
 
-  it('has no comparison before market pricing, and no record when no day has fuel', () => {
-    expect(fuelHeadline(fuelSummary(days.slice(0, 3)))).toBe('Station fuel averaged 3.3 cr a unit')
+  it('has no record when no day has fuel', () => {
     expect(fuelSummary([day('2026-10-14')]).from).toBeNull()
+    expect(fuelHeadline(fuelSummary([day('2026-10-14')]))).toBe('No station fuel sold in this period')
   })
 
-  it('chart rows carry price before and with tax, and the station range', () => {
+  it('chart rows carry every fuel day: price before and with tax, and the station range', () => {
     const rows = chartRows(days)
     expect(rows[0].fuelPrice).toBeNull()
     expect(rows[1]).toMatchObject({ fuelPrice: 3, fuelPaid: 3.2, fuelUnits: 100, fuelRange: null })
-    expect(rows[3].fuelRange).toEqual([3, 6])
+    expect(rows[3]).toMatchObject({ fuelPrice: 5, fuelPaid: 5.2, fuelUnits: 200, fuelRange: [3, 6] })
   })
 })
