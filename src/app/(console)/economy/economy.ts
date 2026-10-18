@@ -127,6 +127,20 @@ export interface EconomyDay {
   items_crafted: number
   price_index: EconomyPriceIndex
   trade_authenticators: EconomyBondDay
+  /** Null on days before the fuel record starts. */
+  fuel: EconomyFuelDay | null
+}
+
+/**
+ * Fuel players bought from station tanks in one UTC day. Free faction and
+ * ally fuel, fuel cells and exchange trades are excluded. credits is before
+ * empire fuel tax; tax is paid on top.
+ */
+export interface EconomyFuelDay {
+  units: number
+  credits: number
+  tax: number
+  purchases: number
 }
 
 export interface EconomyReport {
@@ -421,6 +435,10 @@ export interface ChartRow {
   bP2S: number | null
   bS2P: number | null
   bP2P: number | null
+  /** Fuel: average pump price (before tax), average price paid (with tax), units bought. */
+  fuelPrice: number | null
+  fuelPaid: number | null
+  fuelUnits: number | null
 }
 
 /** One flat, serialisable row per calendar day for the client charts; null on missing days. */
@@ -451,6 +469,9 @@ export function chartRows(days: EconomyDay[]): ChartRow[] {
     refined: d?.price_index.refined ?? null,
     component: d?.price_index.component ?? null,
     ...bondRow(d?.trade_authenticators),
+    fuelPrice: d?.fuel ? avgPrice(d.fuel) : null,
+    fuelPaid: d?.fuel ? avgPrice({ units: d.fuel.units, credits: d.fuel.credits + d.fuel.tax }) : null,
+    fuelUnits: d?.fuel?.units ?? null,
   }))
 }
 
@@ -550,6 +571,54 @@ export function bondHeadline(b: BondSummary, from: string): string {
   }
   if (b.premium !== null) return `Stations pay ${b.premium.toFixed(2)}× the window price; the reserve is steady`
   return 'The reserve is steady'
+}
+
+/** First UTC day of market-based station fuel prices (gameserver v0.632.0, deployed early that day). */
+export const FUEL_MARKET_SINCE = '2026-10-17'
+
+/**
+ * Station fuel over a span, split at FUEL_MARKET_SINCE. Averages are weighted
+ * by units; null when that part of the span sold no fuel.
+ */
+export function fuelSummary(days: EconomyDay[]) {
+  const fuel = days.flatMap((d) => (d.fuel ? [{ date: d.date, ...d.fuel }] : []))
+  const avg = (rows: typeof fuel, withTax = false) => avgPrice({
+    units: rows.reduce((s, f) => s + f.units, 0),
+    credits: rows.reduce((s, f) => s + f.credits + (withTax ? f.tax : 0), 0),
+  })
+  const before = fuel.filter((f) => f.date < FUEL_MARKET_SINCE)
+  const after = fuel.filter((f) => f.date >= FUEL_MARKET_SINCE)
+  const beforePrice = avg(before)
+  const afterPrice = avg(after)
+  const latest = fuel.filter((f) => f.units > 0).at(-1) ?? null
+  return {
+    /** First day with a fuel record in the span, or null when there is none. */
+    from: fuel[0]?.date ?? null,
+    units: fuel.reduce((s, f) => s + f.units, 0),
+    purchases: fuel.reduce((s, f) => s + f.purchases, 0),
+    /** Average pump price and price paid with tax over the whole span. */
+    price: avg(fuel),
+    paid: avg(fuel, true),
+    beforePrice,
+    afterPrice,
+    /** Market-priced average against the old formula's; null if either side is missing. */
+    changePct: beforePrice && afterPrice !== null ? ((afterPrice - beforePrice) / beforePrice) * 100 : null,
+    latest: latest && { date: latest.date, price: latest.credits / latest.units, paid: (latest.credits + latest.tax) / latest.units },
+  }
+}
+
+export type FuelSummary = ReturnType<typeof fuelSummary>
+
+/** Chapter title for fuel: market price against the old formula, else the plain average. */
+export function fuelHeadline(f: FuelSummary): string {
+  if (f.changePct !== null && f.afterPrice !== null) {
+    const p = Math.abs(f.changePct)
+    const at = `${f.afterPrice.toFixed(1)} cr a unit`
+    if (p < 0.5) return `Market fuel prices match the old fixed prices: ${at}`
+    return `Fuel costs ${p.toFixed(0)}% ${f.changePct > 0 ? 'more' : 'less'} since market pricing: ${at}`
+  }
+  if (f.price !== null) return `Station fuel averaged ${f.price.toFixed(1)} cr a unit`
+  return 'No station fuel sold in this period'
 }
 
 /** Price-index categories that have at least one value in the series. */
