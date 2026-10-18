@@ -596,9 +596,9 @@ export const FUEL_MARKET_SINCE = '2026-10-17'
  */
 export function fuelSummary(days: EconomyDay[]) {
   const fuel = days.flatMap((d) => (d.fuel ? [{ date: d.date, ...d.fuel }] : []))
-  const avg = (rows: typeof fuel, withTax = false) => avgPrice({
+  const avg = (rows: typeof fuel) => avgPrice({
     units: rows.reduce((s, f) => s + f.units, 0),
-    credits: rows.reduce((s, f) => s + f.credits + (withTax ? f.tax : 0), 0),
+    credits: rows.reduce((s, f) => s + f.credits, 0),
   })
   const before = fuel.filter((f) => f.date < FUEL_MARKET_SINCE)
   const after = fuel.filter((f) => f.date >= FUEL_MARKET_SINCE)
@@ -610,9 +610,8 @@ export function fuelSummary(days: EconomyDay[]) {
     from: fuel[0]?.date ?? null,
     units: fuel.reduce((s, f) => s + f.units, 0),
     purchases: fuel.reduce((s, f) => s + f.purchases, 0),
-    /** Average pump price and price paid with tax over the whole span. */
+    /** Average pump price over the whole span. */
     price: avg(fuel),
-    paid: avg(fuel, true),
     beforePrice,
     afterPrice,
     /** Market-priced average against the old formula's; null if either side is missing. */
@@ -628,7 +627,7 @@ export function fuelSummary(days: EconomyDay[]) {
   }
 }
 
-export const FUEL_REGION_NAME: Record<string, string> = {
+const FUEL_REGION_NAME: Record<string, string> = {
   solarian: 'Solarian', voidborn: 'Voidborn', crimson: 'Crimson', nebula: 'Nebula', outerrim: 'Outer Rim',
   pirates: 'Pirate strongholds', player: 'Player stations',
 }
@@ -638,7 +637,7 @@ export const FUEL_REGION_NAME: Record<string, string> = {
  * included), its change against the fixed-rate days, and its latest day's
  * station count and cheapest and dearest station price.
  */
-export function fuelRegions(days: EconomyDay[]) {
+function fuelRegions(days: EconomyDay[]) {
   const by = new Map<string, { date: string; f: EconomyFuelSales }[]>()
   for (const d of days) for (const r of d.fuel?.regions ?? []) by.set(r.region, [...(by.get(r.region) ?? []), { date: d.date, f: r }])
   const paid = (rows: { f: EconomyFuelSales }[]) => avgPrice({
