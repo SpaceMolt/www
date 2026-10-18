@@ -473,7 +473,8 @@ export default async function EconomyPage() {
                   What players paid per unit of fuel at station pumps, a common gauge of an economy&apos;s health.
                   Until {dayLabel(FUEL_MARKET_SINCE)}, stations charged a fixed rate set by how full their tank was. Since then
                   the price follows what the fuel cost the station to make or buy, and rises when reserves run low.
-                  Free fuel from faction reserves is left out.
+                  Prices differ from station to station, so the list breaks them down by empire, pirate strongholds
+                  and player-founded stations. Free fuel from faction reserves is left out.
                 </>
               }
             >
@@ -481,7 +482,11 @@ export default async function EconomyPage() {
                 <div>
                   <dt>Latest pump price</dt>
                   <dd>{fuelPrice(fuel.latest?.price ?? null)}</dd>
-                  <span>{fuel.latest ? `${dayLabel(fuel.latest.date)} average · ${fuelPrice(fuel.latest.paid)} with tax` : `no sales in ${span}`}</span>
+                  <span>
+                    {fuel.latest
+                      ? `${dayLabel(fuel.latest.date)} average · ${fuelPrice(fuel.latest.paid)} with tax${fuel.latest.min !== null && fuel.latest.max !== null ? ` · stations ${fuel.latest.min.toFixed(1)}–${fuel.latest.max.toFixed(1)} cr` : ''}`
+                      : `no sales in ${span}`}
+                  </span>
                 </div>
                 <div>
                   <dt>Fixed-rate average</dt>
@@ -499,11 +504,31 @@ export default async function EconomyPage() {
                   <span>units in {formatNumber(fuel.purchases)} refuels since {dayLabel(fuel.from)}</span>
                 </div>
               </dl>
-              <h3 className={styles.subhead}>Average price per unit and units bought, each day</h3>
-              <FuelChart rows={rows} />
-              {fuel.from !== recent[0]?.date && (
-                <p className={styles.caption}>The fuel record starts {dayLabel(fuel.from)}, the oldest refuel log the server still kept.</p>
-              )}
+              <div className={styles.split}>
+                <div className={styles.chart}>
+                  <h3 className={styles.subhead}>Average price per unit and units bought, each day</h3>
+                  <FuelChart rows={rows} />
+                  {fuel.from !== recent[0]?.date && (
+                    <p className={styles.caption}>The fuel record starts {dayLabel(fuel.from)}, the oldest refuel log the server still kept.</p>
+                  )}
+                </div>
+                <div>
+                  <BarList
+                    title="Average price paid by region, tax included"
+                    rows={fuel.regions.map((r) => ({
+                      label: r.label,
+                      value: r.after ?? r.paid,
+                      color: C.fuel,
+                      figure: `${(r.after ?? r.paid).toFixed(1)} cr${r.changePct === null ? '' : ` · ${signedPct(r.changePct)}`}`,
+                      note: `${r.min !== null && r.max !== null ? `${r.min.toFixed(1)}–${r.max.toFixed(1)} cr across ` : ''}${formatNumber(r.stations)} station${r.stations === 1 ? '' : 's'} on ${dayLabel(r.date)}`,
+                    }))}
+                  />
+                  <p className={styles.muted}>
+                    {fuel.afterPrice === null ? `Average over ${span}.` : `Average since ${dayLabel(FUEL_MARKET_SINCE)}; the change is against the fixed rate before.`}{' '}
+                    The range covers stations that sold at least 100 units that day.
+                  </p>
+                </div>
+              </div>
             </Chapter>
           )}
 

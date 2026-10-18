@@ -132,15 +132,25 @@ export interface EconomyDay {
 }
 
 /**
- * Fuel players bought from station tanks in one UTC day. Free faction and
- * ally fuel, fuel cells and exchange trades are excluded. credits is before
- * empire fuel tax; tax is paid on top.
+ * Station fuel sales in one UTC day. Free faction and ally fuel, fuel cells
+ * and exchange trades are excluded. credits is before empire fuel tax; tax is
+ * paid on top. The station prices are per-station averages paid, tax
+ * included, over stations that sold at least 100 units; null when none did.
  */
-export interface EconomyFuelDay {
+export interface EconomyFuelSales {
   units: number
   credits: number
   tax: number
   purchases: number
+  stations: number
+  min_station_price: number | null
+  max_station_price: number | null
+}
+
+/** A day's galaxy totals plus one row per region that sold fuel. */
+export interface EconomyFuelDay extends EconomyFuelSales {
+  /** An empire id, "pirates" or "player" (player-founded stations). */
+  regions: (EconomyFuelSales & { region: string })[]
 }
 
 export interface EconomyReport {
@@ -439,6 +449,8 @@ export interface ChartRow {
   fuelPrice: number | null
   fuelPaid: number | null
   fuelUnits: number | null
+  /** Cheapest and dearest station's average price paid, tax included. */
+  fuelRange: [number, number] | null
 }
 
 /** One flat, serialisable row per calendar day for the client charts; null on missing days. */
@@ -472,6 +484,8 @@ export function chartRows(days: EconomyDay[]): ChartRow[] {
     fuelPrice: d?.fuel ? avgPrice(d.fuel) : null,
     fuelPaid: d?.fuel ? avgPrice({ units: d.fuel.units, credits: d.fuel.credits + d.fuel.tax }) : null,
     fuelUnits: d?.fuel?.units ?? null,
+    fuelRange: d?.fuel && d.fuel.min_station_price !== null && d.fuel.max_station_price !== null
+      ? [d.fuel.min_station_price, d.fuel.max_station_price] : null,
   }))
 }
 
@@ -603,8 +617,52 @@ export function fuelSummary(days: EconomyDay[]) {
     afterPrice,
     /** Market-priced average against the old formula's; null if either side is missing. */
     changePct: beforePrice && afterPrice !== null ? ((afterPrice - beforePrice) / beforePrice) * 100 : null,
-    latest: latest && { date: latest.date, price: latest.credits / latest.units, paid: (latest.credits + latest.tax) / latest.units },
+    latest: latest && {
+      date: latest.date,
+      price: latest.credits / latest.units,
+      paid: (latest.credits + latest.tax) / latest.units,
+      min: latest.min_station_price,
+      max: latest.max_station_price,
+    },
+    regions: fuelRegions(days),
   }
+}
+
+export const FUEL_REGION_NAME: Record<string, string> = {
+  solarian: 'Solarian', voidborn: 'Voidborn', crimson: 'Crimson', nebula: 'Nebula', outerrim: 'Outer Rim',
+  pirates: 'Pirate strongholds', player: 'Player stations',
+}
+
+/**
+ * Each region over the span, dearest first: average price paid (tax
+ * included), its change against the fixed-rate days, and its latest day's
+ * station count and cheapest and dearest station price.
+ */
+export function fuelRegions(days: EconomyDay[]) {
+  const by = new Map<string, { date: string; f: EconomyFuelSales }[]>()
+  for (const d of days) for (const r of d.fuel?.regions ?? []) by.set(r.region, [...(by.get(r.region) ?? []), { date: d.date, f: r }])
+  const paid = (rows: { f: EconomyFuelSales }[]) => avgPrice({
+    units: rows.reduce((s, r) => s + r.f.units, 0),
+    credits: rows.reduce((s, r) => s + r.f.credits + r.f.tax, 0),
+  })
+  return [...by].map(([region, rows]) => {
+    const last = rows[rows.length - 1]
+    const before = paid(rows.filter((r) => r.date < FUEL_MARKET_SINCE))
+    const after = paid(rows.filter((r) => r.date >= FUEL_MARKET_SINCE))
+    return {
+      region,
+      label: FUEL_REGION_NAME[region] ?? region,
+      paid: paid(rows) ?? 0,
+      /** Market-priced average paid; null before market pricing. */
+      after,
+      changePct: before && after !== null ? ((after - before) / before) * 100 : null,
+      units: rows.reduce((s, r) => s + r.f.units, 0),
+      date: last.date,
+      stations: last.f.stations,
+      min: last.f.min_station_price,
+      max: last.f.max_station_price,
+    }
+  }).sort((a, b) => (b.after ?? b.paid) - (a.after ?? a.paid))
 }
 
 export type FuelSummary = ReturnType<typeof fuelSummary>
