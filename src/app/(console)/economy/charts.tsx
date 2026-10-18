@@ -315,7 +315,8 @@ export function FuelChart({ rows }: { rows: ChartRow[] }) {
               ['Units bought', units(r.fuelUnits), C.neutral],
             ])}
           />
-          {rows.some((r) => r.date === FUEL_MARKET_SINCE) && (
+          {/* Only while the switch falls inside the window, not on its first day. */}
+          {rows.some((r, i) => i > 0 && r.date === FUEL_MARKET_SINCE) && (
             <ReferenceLine
               yAxisId="price"
               x={FUEL_MARKET_SINCE}

@@ -389,25 +389,26 @@ describe('station fuel', () => {
     day('2026-10-17', { fuel: fuel({ solarian: sales(100, 400, 40, 3, 6), pirates: sales(100, 600, 0, 6, 6) }) }),
   ]
 
-  it('weights averages by units and counts only days from the start of market pricing', () => {
+  it('weights averages by units over every fuel day in the span', () => {
     const f = fuelSummary(days)
-    expect(f.from).toBe('2026-10-17')
-    expect(f.units).toBe(200)
-    expect(f.price).toBe(5)
-    expect(f.paid).toBe(5.2)
+    expect(f.from).toBe('2026-10-15')
+    expect(f.units).toBe(600)
+    expect(f.price).toBeCloseTo(2300 / 600)
+    expect(f.paid).toBeCloseTo(2360 / 600)
     expect(f.latest).toEqual({ date: '2026-10-17', price: 5, paid: 5.2, min: 3, max: 6 })
-    expect(fuelHeadline(f)).toBe('Station fuel averaged 5.0 cr a unit')
+    expect(fuelHeadline(f)).toBe('Station fuel averaged 3.8 cr a unit')
   })
 
   it('breaks prices down by region, dearest first, with the latest station range', () => {
     const [pirates, solarian] = fuelSummary(days).regions
-    expect(pirates).toMatchObject({ region: 'pirates', label: 'Pirate strongholds', paid: 6, min: 6, max: 6 })
-    expect(solarian).toMatchObject({ paid: 4.4, units: 100, date: '2026-10-17', min: 3, max: 6 })
+    expect(pirates).toMatchObject({ region: 'pirates', label: 'Pirate strongholds', paid: 5, min: 6, max: 6 })
+    expect(solarian.paid).toBeCloseTo(1360 / 400)
+    expect(solarian).toMatchObject({ units: 400, date: '2026-10-17', min: 3, max: 6 })
   })
 
-  it('has no record when no day has market-priced fuel', () => {
-    expect(fuelSummary(days.slice(0, 3)).from).toBeNull()
-    expect(fuelHeadline(fuelSummary(days.slice(0, 3)))).toBe('No station fuel sold in this period')
+  it('has no record when no day has fuel', () => {
+    expect(fuelSummary([day('2026-10-14')]).from).toBeNull()
+    expect(fuelHeadline(fuelSummary([day('2026-10-14')]))).toBe('No station fuel sold in this period')
   })
 
   it('chart rows carry every fuel day: price before and with tax, and the station range', () => {

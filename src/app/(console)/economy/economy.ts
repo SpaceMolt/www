@@ -591,14 +591,9 @@ export function bondHeadline(b: BondSummary, from: string): string {
 /** First UTC day of market-based station fuel prices (gameserver v0.632.0, deployed early that day). */
 export const FUEL_MARKET_SINCE = '2026-10-17'
 
-/** A day's station fuel sales under market pricing; null before FUEL_MARKET_SINCE. */
-function marketFuel(d: EconomyDay) {
-  return d.date >= FUEL_MARKET_SINCE ? d.fuel : null
-}
-
-/** Station fuel under market pricing over a span. Averages are weighted by units; null when the span sold no fuel. */
+/** Station fuel over a span. Averages are weighted by units; null when the span sold no fuel. */
 export function fuelSummary(days: EconomyDay[]) {
-  const fuel = days.flatMap((d) => { const f = marketFuel(d); return f ? [{ date: d.date, ...f }] : [] })
+  const fuel = days.flatMap((d) => (d.fuel ? [{ date: d.date, ...d.fuel }] : []))
   const units = fuel.reduce((s, f) => s + f.units, 0)
   const credits = fuel.reduce((s, f) => s + f.credits, 0)
   const tax = fuel.reduce((s, f) => s + f.tax, 0)
@@ -635,7 +630,7 @@ const FUEL_REGION_NAME: Record<string, string> = {
  */
 function fuelRegions(days: EconomyDay[]) {
   const by = new Map<string, { date: string; f: EconomyFuelSales }[]>()
-  for (const d of days) for (const r of marketFuel(d)?.regions ?? []) by.set(r.region, [...(by.get(r.region) ?? []), { date: d.date, f: r }])
+  for (const d of days) for (const r of d.fuel?.regions ?? []) by.set(r.region, [...(by.get(r.region) ?? []), { date: d.date, f: r }])
   return [...by].map(([region, rows]) => {
     const last = rows[rows.length - 1]
     const units = rows.reduce((s, r) => s + r.f.units, 0)
