@@ -243,11 +243,6 @@ export function isDetailed(d: EconomyDay): d is DetailedDay {
   return d.faucets !== null && d.sinks !== null
 }
 
-/** The last summary-only day in `days`, or null when every day is detailed. */
-export function summaryOnlyUntil(days: EconomyDay[]): string | null {
-  return days.filter((d) => !isDetailed(d)).at(-1)?.date ?? null
-}
-
 /**
  * Everything the page says about one span of days. Every period figure on the
  * page comes from here, so they all cover the same days. The first day's
@@ -327,7 +322,7 @@ export function inBrief(s: Summary, current: EconomyCurrent): string[] {
     `${pct === '0.00' ? `The money supply held steady at ${compact(s.supplyEnd)} credits` : `The money supply ${s.change > 0 ? 'grew' : 'shrank'} ${pct}% over ${s.days} days, to ${compact(s.supplyEnd)} credits`}. Players hold ${share.toFixed(0)}% of it.`,
   )
   if (s.detailedFrom) {
-    const lead = s.partial ? `Since ${dayLabel(s.detailedFrom)}, the game` : 'The game'
+    const lead = s.partial ? `Over ${s.detailedDays} days, the game` : 'The game'
     out.push(`${lead} created ${compact(s.created)} new credits and destroyed ${compact(s.destroyed)}, a net ${signed(s.net)}.`)
   }
   const [source, drain] = [s.faucets[0], s.sinks[0]]
@@ -670,29 +665,9 @@ export function indexedCategories(days: EconomyDay[]): (keyof EconomyPriceIndex)
   return (['ore', 'refined', 'component'] as const).filter((k) => days.some((d) => d.price_index[k] !== null))
 }
 
-/**
- * Warning for figures built from market fill records, which miss trades matched at order
- * placement before `since` (the report's detailed_accounting_since). `from` is the first
- * day the figure covers.
- */
-export function tradeGapNote(since: string, from: string): string | null {
-  if (!since) return 'Orders that fill instantly are not recorded yet, so these figures miss some trades.'
-  if (from >= since) return null
-  return `Before ${dayLabel(since)}, orders that filled instantly were not recorded, so earlier figures miss some trades.`
-}
-
 /** "Sep 23" for a YYYY-MM-DD UTC date, in UTC so no viewer sees the day before. */
 export function dayLabel(date: string): string {
   return new Date(`${date}T00:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })
-}
-
-/** "Sep 24, 2026, 23:55 UTC". */
-export function utcDateTime(iso: string): string {
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return iso
-  return `${d.toLocaleString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'UTC',
-  })} UTC`
 }
 
 /** "+1.8%" / "−0.4%" / "0.0%". */

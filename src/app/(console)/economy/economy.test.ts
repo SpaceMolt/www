@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'bun:test'
 import {
   avgPrice, bondHeadline, fuelHeadline, fuelSummary, bondSummary, calendar, chartRows, compact, dayLabel, flowCaption, holders, inBrief, indexedCategories, lastDays, niceCeil,
-  playerHeld, priceHeadline, signed, tradeGapNote, signedPct, summarize, summaryOnlyUntil, ticksFor, tradeHeadline, utcDateTime,
+  playerHeld, priceHeadline, signed, signedPct, summarize, ticksFor, tradeHeadline,
   type EconomyBondDay, type EconomyCurrent, type EconomyDay, type EconomyMoneySupply,
 } from './economy'
 
@@ -227,7 +227,6 @@ describe('helpers', () => {
 
   it('formats dates in UTC', () => {
     expect(dayLabel('2026-09-01')).toBe('Sep 1')
-    expect(utcDateTime('2026-09-24T23:55:00Z')).toBe('Sep 24, 2026, 23:55 UTC')
   })
 
   it('signs percentages and never prints -0.0', () => {
@@ -329,11 +328,6 @@ describe('summary-only days (before detailed accounting)', () => {
   })
   const MIXED = [summaryOnly('2026-08-31'), ...TWO]
 
-  it('finds the last summary-only day', () => {
-    expect(summaryOnlyUntil(MIXED)).toBe('2026-08-31')
-    expect(summaryOnlyUntil(TWO)).toBeNull()
-  })
-
   it('created, destroyed and the gap cover only detailed days; supply change covers all', () => {
     const s = summarize(MIXED)
     const d = summarize(TWO)
@@ -347,9 +341,9 @@ describe('summary-only days (before detailed accounting)', () => {
     expect(s.faucets).toEqual(d.faucets)
   })
 
-  it('in brief says when the flow totals start', () => {
+  it('in brief says how many days the flow totals cover', () => {
     expect(inBrief(summarize(MIXED), CURRENT)[1]).toBe(
-      'Since Sep 1, the game created 90 new credits and destroyed 35, a net +55.',
+      'Over 3 days, the game created 90 new credits and destroyed 35, a net +55.',
     )
     expect(inBrief(summarize([summaryOnly('2026-08-31')]), CURRENT)).toHaveLength(2)
     expect(flowCaption([summaryOnly('2026-08-31')])).toBeNull()
@@ -374,22 +368,6 @@ describe('summary-only days (before detailed accounting)', () => {
   })
 })
 
-describe('trade record coverage', () => {
-  it('warns when the span starts before complete trade records, with no detailed day needed', () => {
-    expect(tradeGapNote('2026-09-25', '2026-09-01')).toBe(
-      'Before Sep 25, orders that filled instantly were not recorded, so earlier figures miss some trades.',
-    )
-  })
-  it('says nothing once the span starts on or after the coverage date', () => {
-    expect(tradeGapNote('2026-09-25', '2026-09-25')).toBeNull()
-    expect(tradeGapNote('2026-09-25', '2026-10-01')).toBeNull()
-  })
-  it('warns without a date before any complete day exists', () => {
-    expect(tradeGapNote('', '2026-09-01')).toBe(
-      'Orders that fill instantly are not recorded yet, so these figures miss some trades.',
-    )
-  })
-})
 
 describe('station fuel', () => {
   const sales = (units: number, credits: number, tax = 0, min: number | null = null, max: number | null = null) =>
