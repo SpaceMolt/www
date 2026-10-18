@@ -185,6 +185,8 @@ export default async function EconomyPage() {
   const bonds = bondSummary(recent, current.trade_authenticators)
   const bondStock = current.trade_authenticators
   const fuel = fuelSummary(recent)
+  // Chapters after Fuel move up one while Fuel is hidden (no fuel record yet).
+  const chapterNum = (n: number) => String(fuel.from ? n : n - 1).padStart(2, '0')
   const fuelPrice = (v: number | null) => (v === null ? '—' : `${v.toFixed(1)} cr`)
   const signedCount = (n: number) => `${n > 0 ? '+' : n < 0 ? '\u2212' : ''}${formatNumber(Math.abs(n))}`
   const segmentColor: Record<string, string> = {
@@ -533,7 +535,7 @@ export default async function EconomyPage() {
           )}
 
           <Chapter
-            n="06"
+            n={chapterNum(6)}
             topic="Trade authenticators"
             title={bondHeadline(bonds, s.from)}
             lede={
@@ -632,7 +634,7 @@ export default async function EconomyPage() {
 
           <div className={styles.pair}>
             <Chapter
-              n="07"
+              n={chapterNum(7)}
               topic="Most traded"
               title={topCategory ? `Top category: ${indexName(topCategory.category).toLowerCase()}, ${topCategory.share_pct.toFixed(0)}% of market trade by value` : 'No market trade in the last 30 days'}
               lede={
@@ -654,7 +656,7 @@ export default async function EconomyPage() {
             </Chapter>
 
             <Chapter
-              n="08"
+              n={chapterNum(8)}
               topic="Activity"
               title={
                 !firstActive
