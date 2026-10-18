@@ -470,7 +470,7 @@ export default async function EconomyPage() {
               title={fuelHeadline(fuel)}
               lede={
                 <>
-                  What players paid per unit of fuel at station pumps, a common gauge of an economy&apos;s health.
+                  What players paid per unit of fuel at station pumps.
                   Until {dayLabel(FUEL_MARKET_SINCE)}, stations charged a fixed rate set by how full their tank was. Since then
                   the price follows what the fuel cost the station to make or buy, and rises when reserves run low.
                   Prices differ from station to station, so the list breaks them down by empire, pirate strongholds
