@@ -60,7 +60,6 @@ export function Legend({ items }: { items: [label: string, color: string, line?:
   )
 }
 
-/** Grey band over the summary-only days (before detailed accounting), or nothing. */
 const extent = (rows: ChartRow[], f: (r: ChartRow) => number | null) => {
   const v = rows.map(f).filter((x): x is number => x !== null)
   return [Math.min(0, ...v), Math.max(0, ...v)] as const
