@@ -410,9 +410,10 @@ describe('station fuel', () => {
     expect(fuelHeadline(fuelSummary(days.slice(0, 3)))).toBe('No station fuel sold in this period')
   })
 
-  it('chart rows carry price before and with tax, and the station range, from market pricing on', () => {
+  it('chart rows carry every fuel day: price before and with tax, and the station range', () => {
     const rows = chartRows(days)
-    expect(rows[1].fuelPrice).toBeNull()
+    expect(rows[0].fuelPrice).toBeNull()
+    expect(rows[1]).toMatchObject({ fuelPrice: 3, fuelPaid: 3.2, fuelUnits: 100, fuelRange: null })
     expect(rows[3]).toMatchObject({ fuelPrice: 5, fuelPaid: 5.2, fuelUnits: 200, fuelRange: [3, 6] })
   })
 })

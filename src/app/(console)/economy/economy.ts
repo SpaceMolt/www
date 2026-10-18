@@ -476,7 +476,7 @@ export function chartRows(days: EconomyDay[]): ChartRow[] {
     refined: d?.price_index.refined ?? null,
     component: d?.price_index.component ?? null,
     ...bondRow(d?.trade_authenticators),
-    ...fuelRow(d && marketFuel(d)),
+    ...fuelRow(d?.fuel),
   }))
 }
 
@@ -591,12 +591,12 @@ export function bondHeadline(b: BondSummary, from: string): string {
 /** First UTC day of market-based station fuel prices (gameserver v0.632.0, deployed early that day). */
 export const FUEL_MARKET_SINCE = '2026-10-17'
 
-/** A day's station fuel sales; null before the fuel record starts at FUEL_MARKET_SINCE. */
+/** A day's station fuel sales under market pricing; null before FUEL_MARKET_SINCE. */
 function marketFuel(d: EconomyDay) {
   return d.date >= FUEL_MARKET_SINCE ? d.fuel : null
 }
 
-/** Station fuel over a span. Averages are weighted by units; null when the span sold no fuel. */
+/** Station fuel under market pricing over a span. Averages are weighted by units; null when the span sold no fuel. */
 export function fuelSummary(days: EconomyDay[]) {
   const fuel = days.flatMap((d) => { const f = marketFuel(d); return f ? [{ date: d.date, ...f }] : [] })
   const units = fuel.reduce((s, f) => s + f.units, 0)
