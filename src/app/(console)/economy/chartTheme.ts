@@ -24,6 +24,8 @@ export const C = {
   p2s: '#fb7185', // players selling to stations
   s2p: '#c4b5fd', // stations selling to players
   p2p: '#a3e635', // between players
+  // Station fuel price (with tax: the same colour at half opacity).
+  fuel: '#7dd3fc',
   // Single-series charts and bars with no category meaning.
   neutral: '#a8c5d6', // --chrome-silver
   reference: '#8aa9bb', // reference lines (price base = 100)

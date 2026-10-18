@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'bun:test'
 import {
-  avgPrice, bondHeadline, bondSummary, calendar, chartRows, compact, dayLabel, flowCaption, holders, inBrief, indexedCategories, lastDays, niceCeil,
+  avgPrice, bondHeadline, fuelHeadline, fuelSummary, bondSummary, calendar, chartRows, compact, dayLabel, flowCaption, holders, inBrief, indexedCategories, lastDays, niceCeil,
   playerHeld, priceHeadline, signed, tradeGapNote, signedPct, summarize, summaryOnlyUntil, ticksFor, tradeHeadline, utcDateTime,
   type EconomyBondDay, type EconomyCurrent, type EconomyDay, type EconomyMoneySupply,
 } from './economy'
@@ -28,6 +28,7 @@ function day(date: string, over: Partial<EconomyDay> = {}): EconomyDay {
     items_crafted: 0,
     price_index: { ore: null, refined: null, component: null },
     trade_authenticators: bond(),
+    fuel: null,
     ...over,
   }
 }
@@ -387,5 +388,57 @@ describe('trade record coverage', () => {
     expect(tradeGapNote('', '2026-09-01')).toBe(
       'Orders that fill instantly are not recorded yet, so these figures miss some trades.',
     )
+  })
+})
+
+describe('station fuel', () => {
+  const sales = (units: number, credits: number, tax = 0, min: number | null = null, max: number | null = null) =>
+    ({ units, credits, tax, purchases: 1, stations: 1, min_station_price: min, max_station_price: max })
+  const fuel = (regions: Record<string, ReturnType<typeof sales>>) => {
+    const rows = Object.entries(regions).map(([region, f]) => ({ region, ...f }))
+    const sum = (k: 'units' | 'credits' | 'tax' | 'purchases' | 'stations') => rows.reduce((s, r) => s + r[k], 0)
+    const mins = rows.map((r) => r.min_station_price).filter((x) => x !== null) as number[]
+    const maxs = rows.map((r) => r.max_station_price).filter((x) => x !== null) as number[]
+    return {
+      units: sum('units'), credits: sum('credits'), tax: sum('tax'), purchases: sum('purchases'), stations: sum('stations'),
+      min_station_price: mins.length ? Math.min(...mins) : null, max_station_price: maxs.length ? Math.max(...maxs) : null, regions: rows,
+    }
+  }
+  const days = [
+    day('2026-10-14'),
+    day('2026-10-15', { fuel: fuel({ solarian: sales(100, 300, 20) }) }),
+    day('2026-10-16', { fuel: fuel({ solarian: sales(200, 600), pirates: sales(100, 400) }) }),
+    day('2026-10-17', { fuel: fuel({ solarian: sales(100, 400, 40, 3, 6), pirates: sales(100, 600, 0, 6, 6) }) }),
+  ]
+
+  it('weights averages by units and splits at the start of market pricing', () => {
+    const f = fuelSummary(days)
+    expect(f.from).toBe('2026-10-15')
+    expect(f.units).toBe(600)
+    expect(f.beforePrice).toBeCloseTo(1300 / 400)
+    expect(f.afterPrice).toBe(5)
+    expect(f.changePct).toBeCloseTo((5 / 3.25 - 1) * 100)
+    expect(f.latest).toEqual({ date: '2026-10-17', price: 5, paid: 5.2, min: 3, max: 6 })
+    expect(fuelHeadline(f)).toBe('Fuel costs 54% more since market pricing: 5.0 cr a unit')
+  })
+
+  it('breaks prices down by region, dearest first, with the latest station range', () => {
+    const [pirates, solarian] = fuelSummary(days).regions
+    expect(pirates).toMatchObject({ region: 'pirates', label: 'Pirate strongholds', after: 6, changePct: 50, min: 6, max: 6 })
+    expect(solarian.after).toBeCloseTo(4.4)
+    expect(solarian.changePct).toBeCloseTo((4.4 / (920 / 300) - 1) * 100)
+    expect(solarian).toMatchObject({ units: 400, date: '2026-10-17', min: 3, max: 6 })
+  })
+
+  it('has no comparison before market pricing, and no record when no day has fuel', () => {
+    expect(fuelHeadline(fuelSummary(days.slice(0, 3)))).toBe('Station fuel averaged 3.3 cr a unit')
+    expect(fuelSummary([day('2026-10-14')]).from).toBeNull()
+  })
+
+  it('chart rows carry price before and with tax, and the station range', () => {
+    const rows = chartRows(days)
+    expect(rows[0].fuelPrice).toBeNull()
+    expect(rows[1]).toMatchObject({ fuelPrice: 3, fuelPaid: 3.2, fuelUnits: 100, fuelRange: null })
+    expect(rows[3].fuelRange).toEqual([3, 6])
   })
 })

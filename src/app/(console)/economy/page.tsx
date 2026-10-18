@@ -1,9 +1,9 @@
 import { ArrowDown, ArrowDownRight, ArrowUp, ArrowUpRight } from 'lucide-react'
 import { formatCompact, formatNumber, titleCase } from '@/lib/format'
-import { ActivityChart, BondFlowChart, BondPriceChart, FlowsChart, Legend, PriceChart, SupplyChart, TradeChart } from './charts'
+import { ActivityChart, BondFlowChart, BondPriceChart, FlowsChart, FuelChart, Legend, PriceChart, SupplyChart, TradeChart } from './charts'
 import { C } from './chartTheme'
 import {
-  bondHeadline, bondSummary, chartRows, compact, summaryOnlyUntil, tradeGapNote, dayLabel, exchangeVolume, flowCaption, holders, inBrief, INDEX_NAME, indexedCategories, lastDays,
+  bondHeadline, bondSummary, chartRows, FUEL_MARKET_SINCE, fuelHeadline, fuelSummary, compact, summaryOnlyUntil, tradeGapNote, dayLabel, exchangeVolume, flowCaption, holders, inBrief, INDEX_NAME, indexedCategories, lastDays,
   playerHeld, priceHeadline, signed, signedPct, summarize, tradeHeadline, utcDateTime, type EconomyReport,
 } from './economy'
 import styles from './page.module.css'
@@ -184,6 +184,10 @@ export default async function EconomyPage() {
   const activeSpan = activeDays.length > 1 ? `${activeDays.length} days` : span
   const bonds = bondSummary(recent, current.trade_authenticators)
   const bondStock = current.trade_authenticators
+  const fuel = fuelSummary(recent)
+  // Chapters after Fuel move up one while Fuel is hidden (no fuel record yet).
+  const chapterNum = (n: number) => String(fuel.from ? n : n - 1).padStart(2, '0')
+  const fuelPrice = (v: number | null) => (v === null ? '—' : `${v.toFixed(1)} cr`)
   const signedCount = (n: number) => `${n > 0 ? '+' : n < 0 ? '\u2212' : ''}${formatNumber(Math.abs(n))}`
   const segmentColor: Record<string, string> = {
     window_sold_to_players: C.window, window_sold_to_stations: C.window, window_bought_back: C.window,
@@ -461,8 +465,77 @@ export default async function EconomyPage() {
             </div>
           </Chapter>
 
+          {fuel.from && (
+            <Chapter
+              n="05"
+              topic="Fuel"
+              title={fuelHeadline(fuel)}
+              lede={
+                <>
+                  What players paid per unit of fuel at station pumps.
+                  Until {dayLabel(FUEL_MARKET_SINCE)}, stations charged a fixed rate set by how full their tank was. Since then
+                  the price follows what the fuel cost the station to make or buy, and rises when reserves run low.
+                  Prices differ from station to station, so the list breaks them down by empire, pirate strongholds
+                  and player-founded stations. Free fuel from faction reserves is left out.
+                </>
+              }
+            >
+              <dl className={`${styles.figures} ${styles.figureRow4}`}>
+                <div>
+                  <dt>Latest pump price</dt>
+                  <dd>{fuelPrice(fuel.latest?.price ?? null)}</dd>
+                  <span>
+                    {fuel.latest
+                      ? `${dayLabel(fuel.latest.date)} average · ${fuelPrice(fuel.latest.paid)} with tax${fuel.latest.min !== null && fuel.latest.max !== null ? ` · stations ${fuel.latest.min.toFixed(1)}–${fuel.latest.max.toFixed(1)} cr` : ''}`
+                      : `no sales in ${span}`}
+                  </span>
+                </div>
+                <div>
+                  <dt>Fixed-rate average</dt>
+                  <dd>{fuelPrice(fuel.beforePrice)}</dd>
+                  <span>before {dayLabel(FUEL_MARKET_SINCE)}, before tax</span>
+                </div>
+                <div>
+                  <dt>Market average</dt>
+                  <dd>{fuelPrice(fuel.afterPrice)}</dd>
+                  <span>{fuel.changePct === null ? `from ${dayLabel(FUEL_MARKET_SINCE)}, before tax` : `${signedPct(fuel.changePct)} vs. the fixed rate`}</span>
+                </div>
+                <div>
+                  <dt>Fuel bought</dt>
+                  <dd>{compact(fuel.units)}</dd>
+                  <span>units in {formatNumber(fuel.purchases)} refuels since {dayLabel(fuel.from)}</span>
+                </div>
+              </dl>
+              <div className={styles.split}>
+                <div className={styles.chart}>
+                  <h3 className={styles.subhead}>Average price per unit and units bought, each day</h3>
+                  <FuelChart rows={rows} />
+                  {fuel.from !== recent[0]?.date && (
+                    <p className={styles.caption}>The fuel record starts {dayLabel(fuel.from)}, the oldest refuel log the server still kept.</p>
+                  )}
+                </div>
+                <div>
+                  <BarList
+                    title="Average price paid by region, tax included"
+                    rows={fuel.regions.map((r) => ({
+                      label: r.label,
+                      value: r.after ?? r.paid,
+                      color: C.fuel,
+                      figure: `${(r.after ?? r.paid).toFixed(1)} cr${r.changePct === null ? '' : ` · ${signedPct(r.changePct)}`}`,
+                      note: `${r.min !== null && r.max !== null ? `${r.min.toFixed(1)}–${r.max.toFixed(1)} cr across ` : ''}${formatNumber(r.stations)} station${r.stations === 1 ? '' : 's'} on ${dayLabel(r.date)}`,
+                    }))}
+                  />
+                  <p className={styles.muted}>
+                    {fuel.afterPrice === null ? `Average over ${span}.` : `Average since ${dayLabel(FUEL_MARKET_SINCE)}; the change is against the fixed rate before.`}{' '}
+                    The range covers stations that sold at least 100 units that day.
+                  </p>
+                </div>
+              </div>
+            </Chapter>
+          )}
+
           <Chapter
-            n="05"
+            n={chapterNum(6)}
             topic="Trade authenticators"
             title={bondHeadline(bonds, s.from)}
             lede={
@@ -561,7 +634,7 @@ export default async function EconomyPage() {
 
           <div className={styles.pair}>
             <Chapter
-              n="06"
+              n={chapterNum(7)}
               topic="Most traded"
               title={topCategory ? `Top category: ${indexName(topCategory.category).toLowerCase()}, ${topCategory.share_pct.toFixed(0)}% of market trade by value` : 'No market trade in the last 30 days'}
               lede={
@@ -583,7 +656,7 @@ export default async function EconomyPage() {
             </Chapter>
 
             <Chapter
-              n="07"
+              n={chapterNum(8)}
               topic="Activity"
               title={
                 !firstActive
