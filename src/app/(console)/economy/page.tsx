@@ -3,7 +3,7 @@ import { formatCompact, formatNumber, titleCase } from '@/lib/format'
 import { ActivityChart, BondFlowChart, BondPriceChart, FlowsChart, FuelChart, Legend, PriceChart, SupplyChart, TradeChart } from './charts'
 import { C } from './chartTheme'
 import {
-  bondHeadline, bondSummary, chartRows, FUEL_MARKET_SINCE, fuelHeadline, fuelSummary, compact, summaryOnlyUntil, tradeGapNote, dayLabel, exchangeVolume, flowCaption, holders, inBrief, INDEX_NAME, indexedCategories, lastDays,
+  bondHeadline, bondSummary, chartRows, fuelHeadline, fuelSummary, compact, summaryOnlyUntil, tradeGapNote, dayLabel, exchangeVolume, flowCaption, holders, inBrief, INDEX_NAME, indexedCategories, lastDays,
   playerHeld, priceHeadline, signed, signedPct, summarize, tradeHeadline, utcDateTime, type EconomyReport,
 } from './economy'
 import styles from './page.module.css'
@@ -473,8 +473,7 @@ export default async function EconomyPage() {
               lede={
                 <>
                   What players paid per unit of fuel at station pumps.
-                  Until {dayLabel(FUEL_MARKET_SINCE)}, stations charged a fixed rate set by how full their tank was. Since then
-                  the price follows what the fuel cost the station to make or buy, and rises when reserves run low.
+                  Each station sets its price from what the fuel cost it to make or buy, and raises it when its reserves run low.
                   Prices differ from station to station, so the list breaks them down by empire, pirate strongholds
                   and player-founded stations. Free fuel from faction reserves is left out.
                 </>
@@ -491,14 +490,14 @@ export default async function EconomyPage() {
                   </span>
                 </div>
                 <div>
-                  <dt>Fixed-rate average</dt>
-                  <dd>{fuelPrice(fuel.beforePrice)}</dd>
-                  <span>before {dayLabel(FUEL_MARKET_SINCE)}, before tax</span>
+                  <dt>Average pump price</dt>
+                  <dd>{fuelPrice(fuel.price)}</dd>
+                  <span>since {dayLabel(fuel.from)}, before tax</span>
                 </div>
                 <div>
-                  <dt>Market average</dt>
-                  <dd>{fuelPrice(fuel.afterPrice)}</dd>
-                  <span>{fuel.changePct === null ? `from ${dayLabel(FUEL_MARKET_SINCE)}, before tax` : `${signedPct(fuel.changePct)} vs. the fixed rate`}</span>
+                  <dt>Average paid</dt>
+                  <dd>{fuelPrice(fuel.paid)}</dd>
+                  <span>since {dayLabel(fuel.from)}, with tax</span>
                 </div>
                 <div>
                   <dt>Fuel bought</dt>
@@ -511,7 +510,7 @@ export default async function EconomyPage() {
                   <h3 className={styles.subhead}>Average price per unit and units bought, each day</h3>
                   <FuelChart rows={rows} />
                   {fuel.from !== recent[0]?.date && (
-                    <p className={styles.caption}>The fuel record starts {dayLabel(fuel.from)}, the oldest refuel log the server still kept.</p>
+                    <p className={styles.caption}>The fuel record starts {dayLabel(fuel.from)}.</p>
                   )}
                 </div>
                 <div>
@@ -519,14 +518,14 @@ export default async function EconomyPage() {
                     title="Average price paid by region, tax included"
                     rows={fuel.regions.map((r) => ({
                       label: r.label,
-                      value: r.after ?? r.paid,
+                      value: r.paid,
                       color: C.fuel,
-                      figure: `${(r.after ?? r.paid).toFixed(1)} cr${r.changePct === null ? '' : ` · ${signedPct(r.changePct)}`}`,
+                      figure: `${r.paid.toFixed(1)} cr`,
                       note: `${r.min !== null && r.max !== null ? `${r.min.toFixed(1)}–${r.max.toFixed(1)} cr across ` : ''}${formatNumber(r.stations)} station${r.stations === 1 ? '' : 's'} on ${dayLabel(r.date)}`,
                     }))}
                   />
                   <p className={styles.muted}>
-                    {fuel.afterPrice === null ? `Average over ${span}.` : `Average since ${dayLabel(FUEL_MARKET_SINCE)}; the change is against the fixed rate before.`}{' '}
+                    Average since {dayLabel(fuel.from)}.{' '}
                     The range covers stations that sold at least 100 units that day.
                   </p>
                 </div>

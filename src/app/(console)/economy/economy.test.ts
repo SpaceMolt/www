@@ -411,34 +411,30 @@ describe('station fuel', () => {
     day('2026-10-17', { fuel: fuel({ solarian: sales(100, 400, 40, 3, 6), pirates: sales(100, 600, 0, 6, 6) }) }),
   ]
 
-  it('weights averages by units and splits at the start of market pricing', () => {
+  it('weights averages by units and counts only days from the start of market pricing', () => {
     const f = fuelSummary(days)
-    expect(f.from).toBe('2026-10-15')
-    expect(f.units).toBe(600)
-    expect(f.beforePrice).toBeCloseTo(1300 / 400)
-    expect(f.afterPrice).toBe(5)
-    expect(f.changePct).toBeCloseTo((5 / 3.25 - 1) * 100)
+    expect(f.from).toBe('2026-10-17')
+    expect(f.units).toBe(200)
+    expect(f.price).toBe(5)
+    expect(f.paid).toBe(5.2)
     expect(f.latest).toEqual({ date: '2026-10-17', price: 5, paid: 5.2, min: 3, max: 6 })
-    expect(fuelHeadline(f)).toBe('Fuel costs 54% more since market pricing: 5.0 cr a unit')
+    expect(fuelHeadline(f)).toBe('Station fuel averaged 5.0 cr a unit')
   })
 
   it('breaks prices down by region, dearest first, with the latest station range', () => {
     const [pirates, solarian] = fuelSummary(days).regions
-    expect(pirates).toMatchObject({ region: 'pirates', label: 'Pirate strongholds', after: 6, changePct: 50, min: 6, max: 6 })
-    expect(solarian.after).toBeCloseTo(4.4)
-    expect(solarian.changePct).toBeCloseTo((4.4 / (920 / 300) - 1) * 100)
-    expect(solarian).toMatchObject({ units: 400, date: '2026-10-17', min: 3, max: 6 })
+    expect(pirates).toMatchObject({ region: 'pirates', label: 'Pirate strongholds', paid: 6, min: 6, max: 6 })
+    expect(solarian).toMatchObject({ paid: 4.4, units: 100, date: '2026-10-17', min: 3, max: 6 })
   })
 
-  it('has no comparison before market pricing, and no record when no day has fuel', () => {
-    expect(fuelHeadline(fuelSummary(days.slice(0, 3)))).toBe('Station fuel averaged 3.3 cr a unit')
-    expect(fuelSummary([day('2026-10-14')]).from).toBeNull()
+  it('has no record when no day has market-priced fuel', () => {
+    expect(fuelSummary(days.slice(0, 3)).from).toBeNull()
+    expect(fuelHeadline(fuelSummary(days.slice(0, 3)))).toBe('No station fuel sold in this period')
   })
 
-  it('chart rows carry price before and with tax, and the station range', () => {
+  it('chart rows carry price before and with tax, and the station range, from market pricing on', () => {
     const rows = chartRows(days)
-    expect(rows[0].fuelPrice).toBeNull()
-    expect(rows[1]).toMatchObject({ fuelPrice: 3, fuelPaid: 3.2, fuelUnits: 100, fuelRange: null })
-    expect(rows[3].fuelRange).toEqual([3, 6])
+    expect(rows[1].fuelPrice).toBeNull()
+    expect(rows[3]).toMatchObject({ fuelPrice: 5, fuelPaid: 5.2, fuelUnits: 200, fuelRange: [3, 6] })
   })
 })

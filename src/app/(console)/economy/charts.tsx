@@ -7,7 +7,7 @@ import {
 } from 'recharts'
 import { formatNumber } from '@/lib/format'
 import { C, CURSOR, MARGIN, X_AXIS, Y_AXIS } from './chartTheme'
-import { dayLabel, FUEL_MARKET_SINCE, INDEX_NAME, signed, ticksFor, type ChartRow } from './economy'
+import { dayLabel, INDEX_NAME, signed, ticksFor, type ChartRow } from './economy'
 import styles from './page.module.css'
 
 type TipRow = [label: string, value: string, color?: string]
@@ -303,12 +303,11 @@ export function BondPriceChart({ rows, summaryUntil }: { rows: ChartRow[]; summa
 
 /**
  * Average station fuel price per day (lines) over units bought (bars), with the
- * cheapest-to-dearest station band and the switch to market pricing marked.
+ * cheapest-to-dearest station band.
  */
 export function FuelChart({ rows }: { rows: ChartRow[] }) {
   const price = (v: number | null) => (v === null ? 'No sales' : `${v.toFixed(1)} cr`)
   const range = (v: [number, number] | null) => (v === null ? 'No data' : `${v[0].toFixed(1)}–${v[1].toFixed(1)} cr`)
-  const marked = rows.some((r) => r.date === FUEL_MARKET_SINCE)
   return (
     <div className={styles.chart}>
       <Legend items={[['Pump price', C.fuel, true], ['Paid with tax', `${C.fuel}80`, true], ['Cheapest to dearest station', `${C.fuel}33`], ['Units bought', C.neutral]]} />
@@ -327,15 +326,6 @@ export function FuelChart({ rows }: { rows: ChartRow[] }) {
               ['Units bought', units(r.fuelUnits), C.neutral],
             ])}
           />
-          {marked && (
-            <ReferenceLine
-              yAxisId="price"
-              x={FUEL_MARKET_SINCE}
-              stroke={C.reference}
-              strokeDasharray="3 3"
-              label={{ value: 'Market pricing', position: 'insideTopLeft', fill: C.reference, fontSize: 11 }}
-            />
-          )}
           <Bar yAxisId="units" dataKey="fuelUnits" fill={C.neutral} fillOpacity={0.25} maxBarSize={18} radius={[3, 3, 0, 0]} isAnimationActive={false} />
           <Area yAxisId="price" dataKey="fuelRange" stroke="none" fill={C.fuel} fillOpacity={0.2} isAnimationActive={false} />
           <Line yAxisId="price" dataKey="fuelPaid" stroke={C.fuel} strokeOpacity={0.5} strokeWidth={2} dot={false} isAnimationActive={false} />
