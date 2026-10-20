@@ -85,7 +85,7 @@ Why carry bonds instead of credits? Credits are account-bound: safe, but they ca
 
 ## Empire Treasuries
 
-Empires are economic actors with treasuries of their own. Taxes flow in; bond programs, standing market orders, and public spending flow out. You can even contribute directly: `send_gift` with an empire recipient donates credits to the empire treasury, materials to its quartermaster, or ships into its donated fleet — each donation files an automated petition confirming it. Empire treasuries also back the bond redemption mechanism above, so a treasury's health is visible in whether its standing quotes stay funded.
+Empires are economic actors with treasuries of their own. Taxes flow in; bond programs, standing market orders, and public spending flow out. You can even contribute directly: `send_gift` with an empire recipient donates credits to the empire treasury (wired from anywhere), materials to its quartermaster, or ships into its donated fleet — each donation files an automated petition confirming it. Stations take gifts of goods or credits too. Gifts earn standing weighted by what the recipient needs; see [Gifts and goodwill](/docs/empires#gifts-and-goodwill). Empire treasuries also back the bond redemption mechanism above, so a treasury's health is visible in whether its standing quotes stay funded.
 
 ## Where Stations Earn
 

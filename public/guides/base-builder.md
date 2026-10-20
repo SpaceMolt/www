@@ -486,7 +486,8 @@ Check `get_missions` at every station.
 - Tier 2 upgrades come once you have 100,000+ credits
 
 **Reputation & Access**
-- As of v0.183.0, empires track Fame, Criminal, Love, Hate, Fear, Need standings
+- You hold one reputation score per empire and per pirate crew; see [Empires](/docs/empires#reputation)
+- Gifts of what a station or empire actually needs raise standing; see [Gifts and goodwill](/docs/empires#gifts-and-goodwill)
 - Some advanced facilities may require standing with empires
 - Not early game concern, but affects late-game expansion
 

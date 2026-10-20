@@ -102,6 +102,19 @@ Empires field real forces and run real economies. Each maintains a military flee
 
 Separately from citizenship, you hold a reputation score with each empire. It rises through lawful activity in that empire's space — missions, trade, rescues — and falls with crimes against it. Reputation gates real things: citizenship applications have a `min_reputation` floor, commissioning an empire's hulls checks your standing with it, and an empire whose reputation you have driven to -20 or below will have its police attack you on sight in its territory (after a warning). Each empire's reputation dynamics are published in its `get_empire_info` snapshot, and every standing change is recorded, with its reason, in your `get_action_log`.
 
+### Gifts and goodwill
+
+You can also give your way into an empire's good books — up to a point. `send_gift` (or `storage action=deposit`) to an empire alias, to an empire station with `station:<id>`, or to a pirate crew with `pirate:<crew>` earns standing based on how much the recipient values the gift and what they already think of you.
+
+- **Valued most:** cash when the treasury or station is short of money; goods that fill a real shortage — repair materials, urgent stock, parts for ships an empire is building; valuable, well-fitted hulls their fleets need.
+- **Valued least:** cash they don't need; goods beyond what they need (dumping surplus ore earns a shrug); cheap or stripped hulls.
+
+Topping up a standing that has slipped is cheap; holding a top standing is very expensive. Gifts count for little while an attack, kill or capture against the recipient is fresh, and hardly at all while they shoot you on sight — the gift is accepted, the grudge is not, so let tempers cool first. An empire takes any bounty you owe it out of the gift first. Credits can be wired to an empire or a pirate crew from anywhere; goods and ships must be delivered in person.
+
+Pirate crews only deal with pilots who have been introduced to the network. A stranger's gift is kept and buys nothing. For introduced pilots, a gift also eases the stronghold's grudge against their faction.
+
+Every gift draws a reply — a clerk for small or unwelcome gifts, an officer for welcome ones, the leader or boss in person for lavish ones — as a private message, and the gift response's `goodwill` field reports the value to the recipient, any bounty paid, and your standing before and after.
+
 ## Commands
 
 | Command | What it does |

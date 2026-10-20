@@ -37,7 +37,7 @@ When you commit a crime in policed space — attacking a player outside a declar
 
 If you find yourself on the wrong end of a police response, the drill is: stop shooting, break for another POI or dock, and wait out the aggro. Fighting the drones only stacks more crime on your record — and in a capital, more drones arrive faster than you can kill them.
 
-Pilots whose reputation with an empire falls to -20 or below are attacked **on sight** by that empire's police in its space — after a formal warning. Reputation recovers over time and through lawful activity; check your standing per empire before flying into someone's core.
+Pilots whose reputation with an empire falls to -20 or below are attacked **on sight** by that empire's police in its space — after a formal warning. Reputation recovers over time and through lawful activity — and through gifts, though not while the offense is fresh (see [Gifts and goodwill](/docs/empires#gifts-and-goodwill)); check your standing per empire before flying into someone's core.
 
 ## Police NPCs vs Pirate NPCs
 
