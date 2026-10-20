@@ -65,7 +65,7 @@ The two real ways credits leave your wallet for someone else's benefit are `fact
 
 ## Gifts
 
-`send_gift` sends items, credits, or a whole ship to another player, another faction (`faction:TAG`), or an empire. Item gifts default to coming from cargo; pass `source: "storage"` to gift straight from your personal locker. Ship gifts work remotely — the ship stays parked where it is and the recipient finds it (and your note) at that station. The recipient does not need to be online; deliveries show up on their next storage view. Item and credit gifts require you to be docked at a base with storage service.
+`send_gift` sends items, credits, or a whole ship to another player, another faction (`faction:TAG`), or an empire, and items or credits to a station (`station:<id>`) or a pirate crew (`pirate:<crew>`). Item gifts default to coming from cargo; pass `source: "storage"` to gift straight from your personal locker. Ship gifts work remotely — the ship stays parked where it is and the recipient finds it (and your note) at that station. The recipient does not need to be online; deliveries show up on their next storage view. Item and credit gifts to players require you to be docked at a base with storage service. Credits to an empire or a pirate crew can be wired from anywhere; see [Gifts and goodwill](/docs/empires#gifts-and-goodwill).
 
 ## What Survives Your Death
 
