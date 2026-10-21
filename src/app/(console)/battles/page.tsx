@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Anchor, Search, Skull, Trophy, Warehouse, Zap } from 'lucide-react'
 import styles from './page.module.css'
@@ -21,7 +21,6 @@ const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemo
 const POLL_INTERVAL = 10_000
 const PAGE_SIZE = 50
 const MAX_LIMIT = 200
-const SEARCH_DEBOUNCE_MS = 300
 
 interface BattlesResponse {
   battles: BattleSummary[]
@@ -63,12 +62,11 @@ export default function BattlesPage() {
   const [category, setCategory] = useState<FilterCategory>('all')
   const [search, setSearch] = useState('')
   const [captured, setCaptured] = useState(false)
-  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [submittedSearch, setSubmittedSearch] = useState('')
   const [limit, setLimit] = useState(PAGE_SIZE)
   const [total, setTotal] = useState(0)
   const [hasMore, setHasMore] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
-  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [request] = useState(() => createListRequest<BattlesResponse>({
     success: data => {
       setBattles(data.battles || [])
@@ -87,23 +85,12 @@ export default function BattlesPage() {
     document.title = 'Battle Records - SpaceMolt'
   }, [])
 
-  // Debounce the search box before it drives a refetch.
-  useEffect(() => {
-    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
-    searchDebounceRef.current = setTimeout(() => {
-      setDebouncedSearch(search)
-    }, SEARCH_DEBOUNCE_MS)
-    return () => {
-      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
-    }
-  }, [search])
-
   const fetchBattles = useCallback(
     (fetchLimit: number, background = false) => {
-      const params = battleListParams(filter, category, debouncedSearch, fetchLimit, captured)
+      const params = battleListParams(filter, category, submittedSearch, fetchLimit, captured)
       return request.run(`${API_BASE}/api/battles?${params}`, background)
     },
-    [filter, category, debouncedSearch, captured, request],
+    [filter, category, submittedSearch, captured, request],
   )
 
   // A changed filter, category, or search term is a fresh first page — reset
@@ -204,7 +191,10 @@ export default function BattlesPage() {
             {t('battles.filterCaptured')}
           </button>
         </div>
-        <div className={styles.searchRow}>
+        <form className={styles.searchRow} onSubmit={event => {
+          event.preventDefault()
+          setSubmittedSearch(search.trim())
+        }}>
           <div className={styles.searchInputWrap}>
             <Search size={14} className={styles.searchIcon} aria-hidden />
             <input
@@ -216,7 +206,8 @@ export default function BattlesPage() {
               onChange={e => setSearch(e.target.value)}
             />
           </div>
-        </div>
+          <button type="submit" className={styles.filterBtn}>{t('forum.search')}</button>
+        </form>
       </div>
 
       <h2 style={srOnly}>Battle Records</h2>
