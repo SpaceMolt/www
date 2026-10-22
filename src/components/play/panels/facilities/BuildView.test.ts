@@ -5,7 +5,8 @@ import { combinedQuantity } from './BuildView'
 // have/need indicator on facility build materials. It must mirror the
 // inventory pools the gameserver will draw from on the matching build:
 //   - personal/station builds:  ship cargo + station storage
-//   - faction builds:           ship cargo + station storage + faction lockbox
+//   - faction builds:           ship cargo + faction storage (the lockbox build
+//                               itself is personal: cargo + station storage)
 // It must also degrade gracefully when any pool is missing/loading and
 // must not return NaN/Infinity for malformed inputs.
 

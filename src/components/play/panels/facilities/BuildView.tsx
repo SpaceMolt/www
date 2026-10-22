@@ -17,11 +17,8 @@ import styles from './facilities.module.css'
 
 /**
  * Sum of `itemId` quantities across the inventory pools the gameserver will
- * draw from on a build. Personal/station builds draw from ship cargo + station
- * storage; faction builds also draw from the faction lockbox at the current
- * base. We combine all available pools so the have/need indicator never
- * under-reports relative to what the server would accept — the server still
- * does the authoritative check on the actual `facility_build` call.
+ * draw from on a build (callers pass only the pools that apply — see
+ * `materialHave`). The server still does the authoritative check on the build.
  *
  * Any pool may be undefined (no ship, not docked, not in a faction, response
  * not yet loaded); those cases collapse to a 0 contribution. Non-finite
@@ -47,7 +44,6 @@ export function combinedQuantity(
 // are unique discriminators for each (grepped node_modules/@spacemolt/lib).
 type FacilityTypesDiscovery = Extract<FacilityResponse, { categories: unknown }>
 type FacilityTypesFiltered = Extract<FacilityResponse, { types: unknown }>
-type FacilityTypeSummary = FacilityTypesFiltered['types'][number]
 // Extract requires the discriminator field to be REQUIRED (not `?`) on the
 // target member — `type_id` is required on the detail variant, `build_materials` is not.
 type FacilityTypeDetail = Extract<FacilityResponse, { type_id: unknown }>
@@ -122,10 +118,7 @@ export function BuildView({ onRefresh }: BuildViewProps) {
     [],
   )
 
-  // Faction resources for client-side buildable evaluation. Only fetched if the
-  // player belongs to a faction — server's `buildable` flag for faction-typed
-  // facilities ignores faction treasury/storage and only checks the player's
-  // personal credits/inventory, which hides faction-buildable entries.
+  // Faction storage for the have/need indicator on faction-paid builds.
   const { data: factionStorage, refetch: refetchFactionStorage } = useCommandQuery(
     async (account) => {
       const resp = await account.commands.spacemolt_storage.view({ target: 'faction' })
@@ -134,27 +127,16 @@ export function BuildView({ onRefresh }: BuildViewProps) {
     [factionId],
     { enabled: Boolean(factionId) },
   )
-  const { data: factionInfo, refetch: refetchFactionInfo } = useCommandQuery(
-    async (account) => {
-      const resp = await account.commands.spacemolt_faction.info()
-      return resp.structuredContent
-    },
-    [factionId],
-    { enabled: Boolean(factionId) },
-  )
-  const factionTreasury = typeof factionInfo?.treasury === 'number' ? factionInfo.treasury : null
 
-  // Faction-aware buildable check for a facility type summary. Only used for
-  // the "Buildable Only" filter; the server still validates on actual build.
-  // Without a fetched detail we can only check credits, not materials — this
-  // is intentional, since the cheap path is enough to surface the entry so the
-  // user can expand it and see the breakdown.
-  const isFactionBuildable = useCallback((ft: FacilityTypeSummary): boolean => {
-    if (ft.category !== 'faction') return Boolean(ft.buildable)
-    if (!factionId) return Boolean(ft.buildable)
-    if (factionTreasury == null) return Boolean(ft.buildable)
-    return factionTreasury >= ft.build_cost
-  }, [factionId, factionTreasury])
+  // Mirrors the gameserver's material pools: Faction Storage itself (the
+  // lockbox) is paid personally from cargo + station storage; every other
+  // faction facility draws from faction storage + cargo, never station storage.
+  const materialHave = useCallback((detail: FacilityTypeDetail, itemId: string): number => {
+    const factionPaid = detail.category === 'faction' && detail.faction_service !== 'faction_storage'
+    return factionPaid
+      ? combinedQuantity(itemId, cargoItems, null, factionStorage?.items)
+      : combinedQuantity(itemId, cargoItems, stationStorageItems, null)
+  }, [cargoItems, stationStorageItems, factionStorage])
 
   const fetchFiltered = useCallback(async (category: string, name: string, page: number) => {
     setFilteredLoading(true)
@@ -235,16 +217,13 @@ export function BuildView({ onRefresh }: BuildViewProps) {
       uiStore.dispatch({ type: 'event', kind: 'info', text: message })
       setBuildConfirm(null)
       // Refresh faction resources so subsequent build evaluations are accurate
-      if (detail.category === 'faction' && factionId) {
-        refetchFactionStorage()
-        refetchFactionInfo()
-      }
+      if (detail.category === 'faction' && factionId) refetchFactionStorage()
       onRefresh()
     } catch (err) {
       reportError(err)
     }
     setBuilding(false)
-  }, [mutate, onRefresh, uiStore, factionId, refetchFactionStorage, refetchFactionInfo, reportError])
+  }, [mutate, onRefresh, uiStore, factionId, refetchFactionStorage, reportError])
 
   if (discoveryLoading) return <Loading message="Loading facility catalog..." />
 
@@ -302,7 +281,7 @@ export function BuildView({ onRefresh }: BuildViewProps) {
           <div className={styles.section}>
             {(() => {
               const visibleTypes = buildableOnly
-                ? filteredData.types.filter(ft => isFactionBuildable(ft))
+                ? filteredData.types.filter(ft => ft.buildable)
                 : filteredData.types
               if (visibleTypes.length === 0) return (
                 <div className={shared.emptyState}>
@@ -351,16 +330,7 @@ export function BuildView({ onRefresh }: BuildViewProps) {
                                 <span className={styles.costLabel}>Materials</span>
                                 <span className={styles.materialList}>
                                   {typeDetail.build_materials.map(m => {
-                                    // Faction-typed builds also draw from the
-                                    // faction lockbox; personal/station builds
-                                    // do not. Pass the faction pool only when
-                                    // it applies so we don't double-count.
-                                    const factionPool = typeDetail.category === 'faction'
-                                      ? factionStorage?.items
-                                      : null
-                                    const have = combinedQuantity(
-                                      m.item_id, cargoItems, stationStorageItems, factionPool,
-                                    )
+                                    const have = materialHave(typeDetail, m.item_id)
                                     const enough = have >= m.quantity
                                     return (
                                       <span
@@ -420,44 +390,17 @@ export function BuildView({ onRefresh }: BuildViewProps) {
                             </div>
                           )}
 
-                          {(() => {
-                            // Faction-aware buildable check for the detail view.
-                            // The server's `buildable` flag is computed against the
-                            // player's personal credits/inventory only — for
-                            // faction-typed facilities we instead consult the
-                            // faction treasury + faction storage. Final auth
-                            // is still the server's job; this just unhides the
-                            // Build button so the user can attempt the action.
-                            let canBuild = typeDetail.buildable
-                            if (!canBuild && typeDetail.category === 'faction' && factionId) {
-                              const treasuryOk = factionTreasury != null
-                                && factionTreasury >= typeDetail.build_cost
-                              const matsOk = !typeDetail.build_materials?.length
-                                || (factionStorage != null && typeDetail.build_materials.every(m => {
-                                  const have = (factionStorage.items || []).find(i => i.item_id === m.item_id)
-                                  return (have?.quantity ?? 0) >= m.quantity
-                                }))
-                              if (treasuryOk && matsOk) canBuild = true
-                            }
-                            if (canBuild) {
-                              return (
-                                <button
-                                  className={shared.confirmBtn}
-                                  onClick={() => setBuildConfirm(typeDetail)}
-                                  type="button"
-                                >
-                                  <Hammer size={11} /> Build {typeDetail.name}
-                                </button>
-                              )
-                            }
-                            return (
-                              <div className={shared.emptyState}>
-                                {typeDetail.category === 'faction' && factionId
-                                  ? 'Insufficient faction credits or materials to build this facility.'
-                                  : 'This facility type cannot be built by players.'}
-                              </div>
-                            )
-                          })()}
+                          {typeDetail.buildable ? (
+                            <button
+                              className={shared.confirmBtn}
+                              onClick={() => setBuildConfirm(typeDetail)}
+                              type="button"
+                            >
+                              <Hammer size={11} /> Build {typeDetail.name}
+                            </button>
+                          ) : (
+                            <div className={shared.emptyState}>This facility type cannot be built by players.</div>
+                          )}
                         </>
                       ) : null
                     )}
@@ -521,12 +464,7 @@ export function BuildView({ onRefresh }: BuildViewProps) {
                 <span className={styles.costLabel}>Materials</span>
                 <span className={styles.materialList}>
                   {buildConfirm.build_materials.map(m => {
-                    const factionPool = buildConfirm.category === 'faction'
-                      ? factionStorage?.items
-                      : null
-                    const have = combinedQuantity(
-                      m.item_id, cargoItems, stationStorageItems, factionPool,
-                    )
+                    const have = materialHave(buildConfirm, m.item_id)
                     const enough = have >= m.quantity
                     return (
                       <span
