@@ -64,7 +64,7 @@ A very long queue takes a very long time to finish — cancel jobs you no longer
 
 `recycle` runs a recipe in reverse at a recycler facility. You feed in the recipe's **output** items (escrowed from station storage, `quantity` rounded up to whole runs) and get back about 35% of each input's quantity, rounded, over subsequent ticks, with the same `crafting_update` notifications as crafting.
 
-Recycling returns about 35% of each input's quantity per run, rounded. An input the recipe uses only once, such as the lower-tier module in a tier II+ module, never comes back, and a recipe whose inputs are all single units returns nothing.
+Because of that rounding, an input the recipe uses only once, such as the lower-tier module in a tier II+ module, never comes back, and a recipe whose inputs are all single units returns nothing.
 
 **Recycling is always a net loss by design.** It is for recovering some value from surplus or looted goods, not a free conversion. `dry_run: true` quotes the feedstock, fees, venue, and ETA first; bulk `jobs` and `job_id` cancellation work the same as `craft`.
 

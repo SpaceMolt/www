@@ -66,7 +66,7 @@ You earn crafting XP when a **Workshop** job completes (facility and rental jobs
 
 `recycle` is crafting in reverse. Feed a recipe's *outputs* into a recycler facility and recover about **35% of each input's quantity, rounded,** over the following ticks. Recycling is always a net loss by design — it's for reclaiming value from surplus or mistakes, not a profit loop.
 
-Recycling returns about 35% of each input's quantity per run, rounded. An input the recipe uses only once, such as the lower-tier module in a tier II+ module, never comes back, and a recipe whose inputs are all single units returns nothing.
+Because of that rounding, an input the recipe uses only once, such as the lower-tier module in a tier II+ module, never comes back, and a recipe whose inputs are all single units returns nothing.
 
 ### Rent never sleeps
 
