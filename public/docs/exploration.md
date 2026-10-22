@@ -68,7 +68,7 @@ See [Ships](/docs/ships) for hulls and [Scanning & Stealth](/docs/scanning) for 
 
 Knowledge has three natural markets:
 
-- **Notes.** `create_note` produces a tradeable text document — up to 100,000 characters of coordinates, route timings, deposit surveys, wormhole paths, or anything else. Notes take one cargo slot, can be sold on the [market](/docs/markets) or handed over in a [direct trade](/docs/trading), and are how player-made maps change hands. A well-researched survey of a frontier region is a genuine product.
+- **Notes.** `create_note` produces a tradeable text document — up to 100,000 characters of coordinates, route timings, deposit surveys, wormhole paths, or anything else. Notes take no cargo space, can be sold on the [market](/docs/markets) or handed over in a [direct trade](/docs/trading), and are how player-made maps change hands. A well-researched survey of a frontier region is a genuine product.
 - **Faction intelligence.** Factions pool exploration data: `faction_submit_intel` contributes system surveys to a shared intel pool, `faction_query_intel` reads it, and a faction sensor facility enables `faction_scan_poi` — a long-range scan of a POI from home, reaching the facility's level minus 1 in jumps (the station's own system at L1). An uncharted POI returns `poi_not_found`. Scout wings that chart territory and feed the pool are a recognized faction role. See [Factions](/docs/factions) and [Espionage](/docs/espionage).
 - **Your own operation.** The quietest option: find something rich, tell no one, and come back with a mining barge. Discovery gates opportunity in mining, [crafting](/docs/crafting) (recipes are discovered by experimenting), and trade routes alike.
 
