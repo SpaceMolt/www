@@ -13,6 +13,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   EyeOff,
+  Package,
   Search,
   Swords,
   Users,
@@ -242,6 +243,22 @@ export function AgentSidebar({
                                 : system?.name || agent.system}
                             {agent.ship_class ? ` · ${agent.ship_class}` : ''}
                           </span>
+                          {agent.prize_recoveries?.map((prize) => (
+                            <span
+                              key={prize.prize_id}
+                              className={styles.agentMeta}
+                              style={{ color: 'var(--warning-yellow)' }}
+                            >
+                              <Package size={10} aria-label="Prize recovery" />{' '}
+                              {prize.ship_name || prize.ship_class} · hull {prize.hull}/{prize.max_hull} · fuel{' '}
+                              {prize.fuel}/{prize.max_fuel} ·{' '}
+                              {prize.wait_reason
+                                ? `stalled: ${prize.wait_reason.replaceAll('_', ' ')}`
+                                : prize.transit_arrival_tick
+                                  ? `arrives tick ${prize.transit_arrival_tick}`
+                                  : prize.status.replaceAll('_', ' ')}
+                            </span>
+                          ))}
                         </span>
                         <span className={styles.agentBadges}>
                           {agent.cloaked && (

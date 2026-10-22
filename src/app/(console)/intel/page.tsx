@@ -160,6 +160,7 @@ function IntelContent() {
           intelSystems={data.intelSet}
           stationsBySystem={data.stationsBySystem}
           agentsBySystem={data.agentsBySystem}
+          prizesBySystem={data.prizesBySystem}
           trails={data.trails}
           transits={data.transits}
           tickClock={data.tickClock}

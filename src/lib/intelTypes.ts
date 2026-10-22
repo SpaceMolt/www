@@ -105,6 +105,38 @@ export interface IntelAgent {
   fuel: number
   max_fuel: number
   last_active_at: string
+  /** Prizes this agent claimed and is flying home, in the get_status shape. */
+  prize_recoveries?: PrizeRecovery[]
+}
+
+/** A claimed prize hull flying to its destination base (gameserver apiresponses.PrizeRecoveryInfo). */
+export interface PrizeRecovery {
+  prize_id: string
+  actor_id: string
+  ship_id: string
+  ship_class: string
+  ship_name?: string
+  status: 'available' | 'claimed' | 'in_transit' | 'delivered' | 'destroyed' | 'expired' | 'recaptured'
+  /** Why an in_transit prize is stalled; absent while it moves. */
+  wait_reason?: 'no_route' | 'no_fuel' | 'destination_missing' | 'incapacitated' | 'manual_stop'
+  destination_base_id: string
+  /** While a leg is in flight, the system the leg started from. */
+  system_id?: string
+  poi_id?: string
+  transit_kind?: 'jump' | 'travel'
+  transit_from_system_id?: string
+  transit_from_poi_id?: string
+  transit_to_system_id?: string
+  transit_to_poi_id?: string
+  /** Absolute tick the current leg completes on. */
+  transit_arrival_tick?: number
+  prize_crew_fit: number
+  crew_disposition: 'aboard' | 'faction_reserve'
+  return_crew_faction_id?: string
+  hull: number
+  max_hull: number
+  fuel: number
+  max_fuel: number
 }
 
 export interface KnownWormhole {
