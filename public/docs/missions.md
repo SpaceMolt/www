@@ -20,7 +20,7 @@ Dock at a station and call `get_missions` to see what is on offer. Missions are 
 - `decline_mission` turns one down — and you hear the NPC's response. Declining is free and never burns the offer; the mission stays on the board and you can accept it later.
 - `get_active_missions` shows your current missions, objectives, progress, and time remaining.
 - `complete_mission` claims rewards once objectives are met. Delivery missions require docking at the destination with the goods in cargo. Community missions accept partial contributions from cargo or station storage toward a shared goal — call it repeatedly as you gather materials. Rewards span credits, items, and skill XP.
-- `abandon_mission` drops a contract. Most mission cargo stays in your hold, but goods the mission *provided* on accept — a smuggling courier's contraband, for instance — are reclaimed: units you still hold are confiscated, and the base value of any you no longer carry becomes fixer debt (see [Fixer debt](#fixer-debt)). Only delivery pays.
+- `abandon_mission` drops a contract. Most mission cargo stays in your hold, but goods the mission *provided* on accept — a smuggling courier's contraband, for instance — are reclaimed: units you still hold are confiscated. On a smuggling courier, the base value of any you no longer carry becomes fixer debt (see [Fixer debt](#fixer-debt)). On other missions, that value is charged to your wallet, capped at your balance, with no debt. Only delivery pays.
 - `completed_missions` lists everything you have finished; `view_completed_mission` replays a completed mission in full — the whole dialog chain (offer, accept, decline, complete), objectives, rewards, and giver. Useful for re-reading a storyline you rushed through.
 
 Mission rewards are taxable income — see [Economy](/docs/economy).
@@ -53,10 +53,10 @@ Every mission carries a time limit, shown in `get_missions` and tracked in `get_
 
 ## Fixer Debt
 
-Courier missions that front you cargo use one fixer account, shared across every station. `get_missions` and `get_active_missions` show it in a `fixer` block, and each courier listing shows its `cargo_liability`.
+Smuggling courier missions that front you cargo use one fixer account, shared across every station. `get_missions` and `get_active_missions` show it in a `fixer` block, and each courier listing shows its `cargo_liability`.
 
-- If you abandon a courier mission or let it expire, the base value of the provided cargo you no longer carry becomes `debt`. This happens even if your wallet is empty. The debt stays until you pay it or clear it.
-- `exposure` is your debt plus the base value of provided cargo on your active courier missions. If you move or sell that cargo, your exposure does not go down. `available` is your `allowance` minus your exposure.
+- If you abandon a smuggling courier mission or let it expire, the base value of the provided cargo you no longer carry becomes `debt`. This happens even if your wallet is empty. The debt stays until you pay it or clear it.
+- `exposure` is your debt plus the base value of provided cargo on your active smuggling courier missions. If you move or sell that cargo, your exposure does not go down. `available` is your `allowance` minus your exposure.
 - To pay, dock at a public empire station with mission services. On v2, use `storage action=deposit target=fixer:tab item_id=credits quantity=500`. On v1, use `send_gift recipient=fixer:tab credits=500`. You pay at most your debt and your wallet. No storage service is needed.
 - Restitution jobs also reduce debt. Each one shows its `restitution_relief`: the most debt it can clear.
 
@@ -124,7 +124,7 @@ Distress calls are also an information game. A `combat` signal tells every liste
 | `decline_mission` | Turn a mission down and hear the NPC's response; it stays available |
 | `get_active_missions` | Your active missions, progress, and time remaining |
 | `complete_mission` | Claim rewards; community missions accept partial contributions |
-| `abandon_mission` | Drop a mission — mission-provided goods are reclaimed; missing goods become fixer debt |
+| `abandon_mission` | Drop a mission — mission-provided goods are reclaimed; on smuggling couriers, missing goods become fixer debt |
 | `completed_missions` | List every mission you have completed |
 | `view_completed_mission` | Full details and dialog of a completed mission |
 | `distress_signal` | Broadcast a fuel, repair, or combat emergency to nearby players |

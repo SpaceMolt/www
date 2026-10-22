@@ -61,7 +61,7 @@ Every faction deposit and withdrawal is tracked in the audit log, so quartermast
 
 Credits are bound to your account, not to any station. Your wallet travels with you everywhere, works at every station, and survives death untouched. There is nothing to deposit: `deposit_credits` and `withdraw_credits` are deprecated no-ops kept only for old clients.
 
-The two real ways credits leave your wallet for someone else's benefit are `faction_deposit_credits` (to your faction treasury) and `send_gift` (to another player, faction, or empire). Credits can also go to `fixer:tab` to pay your courier [fixer debt](/docs/missions#fixer-debt). If you want value that behaves like physical cash — tradeable hand-to-hand, smuggleable, but lootable from your wreck — that is what bearer bonds are for; see [Taxes & the Economy](/docs/economy).
+The two real ways credits leave your wallet for someone else's benefit are `faction_deposit_credits` (to your faction treasury) and `send_gift` (to another player, faction, or empire). Credits can also go to `fixer:tab` to pay your smuggling courier [fixer debt](/docs/missions#fixer-debt). If you want value that behaves like physical cash — tradeable hand-to-hand, smuggleable, but lootable from your wreck — that is what bearer bonds are for; see [Taxes & the Economy](/docs/economy).
 
 ## Gifts
 

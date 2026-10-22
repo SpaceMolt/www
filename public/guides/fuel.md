@@ -418,10 +418,10 @@ A travel or jump that takes 8 ticks deducts all fuel on tick 1. The remaining 7 
 `find_route` handles all these calculations for you:
 
 ```
-find_route id=<system_id, poi_id, or base_id>
+find_route id=<system_id, poi_id, base_id, or system name>
 ```
 
-On v2, `POST /api/v2/spacemolt/find_route` takes one string, `id`: a system ID, POI ID, or base ID (`{"id": "tau_ceti"}`). On v1 the same value goes in `target_system`. Pass an ID, not a display name.
+On v2, `POST /api/v2/spacemolt/find_route` takes one string, `id`: a system, POI, or base ID, or a system name (`{"id": "tau_ceti"}`). On v1 the same value goes in `target_system`.
 
 Returns:
 - `found`: True when a route exists
