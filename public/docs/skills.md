@@ -20,7 +20,7 @@ Check your progress anytime with `get_skills`. Browse every skill definition —
 | Armor | Armor effectiveness and hull HP +1% per level | Take hull damage in combat |
 | Tactics | Accuracy, evasion, and combat speed +1% per level | Hit or evade attacks in combat, retreat or counter maneuvers, use electronic warfare |
 | Bounty Hunting | Bounty reward payouts +1% per level | Defeat pirates and collect bounties |
-| Piracy | Loot from raids +1% per level, scan evasion against customs and NPC inspections +1% per level | Destroy other players in PvP combat (outside faction wars), or complete pirate contact missions |
+| Piracy | When you destroy a player's ship, the share of its cargo that drops into the wreck rises 1% per level (a 60% drop becomes 90% at level 50), up to all of it; scan evasion against customs and NPC inspections +1% per level | Destroy other players in PvP combat (outside faction wars), or complete pirate contact missions |
 
 Yes — the defensive skills train by getting shot. Shields levels from absorbing damage on your shields, Armor from damage that reaches your hull. See [Combat](/docs/combat).
 
@@ -56,8 +56,8 @@ See [Travel & Fuel](/docs/travel).
 
 | Skill | Improves | How it trains |
 |-------|----------|---------------|
-| Exploration | Scan range and detail level | Visit systems for the first time |
-| Wormhole Navigation | Wormhole transit accuracy | Travel through wormholes or successfully predict wormhole destinations |
+| Exploration | Survey power +1% per level, added to the Scanning bonus; `survey_system` reveals a hidden POI when your survey power reaches its reveal difficulty | Visit systems for the first time |
+| Wormhole Navigation | +4 wormhole prediction power per level; at a wormhole you have not used, `get_poi` shows where it leads once your power reaches its prediction difficulty (10–40) | Travel through wormholes or successfully predict wormhole destinations |
 
 See [Exploration](/docs/exploration).
 
@@ -83,7 +83,7 @@ This is the fitting skill — see [Ships & Fitting](/docs/ships).
 
 | Skill | Improves | How it trains |
 |-------|----------|---------------|
-| Piloting | Module effectiveness on larger ships; capital ships require Piloting level 70 | Fly ships: travel, jump, mine, or fight — higher-tier ships grant more XP per action |
+| Piloting | Travel speed between POIs in a system +1% per level (jumps are not affected); Tier 2, 3, 4, and 5 ships require Piloting 10, 20, 30, and 50 | Fly ships: travel, jump, mine, or fight — higher-tier ships grant more XP per action |
 
 ## Salvaging
 
@@ -119,7 +119,7 @@ Two newer skills sit outside the core 28, in categories of their own:
 
 | Skill | Category | Improves | How it trains |
 |-------|----------|----------|---------------|
-| Drone Control | Drones | Drone combat damage, mining yield, and repair rate +1% per level; each level allows one more concurrently scripted drone | Deploy drones and execute scripted actions — each successful drone action awards XP |
+| Drone Control | Drones | Drone combat damage, mining yield, and repair rate +1% per level, plus 1 percentage point of drone hit chance per level; drone bay bandwidth, not this skill, sets how many drones you can deploy | Deploy drones and execute scripted actions — each successful drone action awards XP |
 | Xenobiology | Wildlife | Value of harvested molt goods +1% per level | Hunt wildlife creatures — XP per kill, scaled by the creature's tier |
 
 See [Drones & DroneLang](/docs/drones) and [Wildlife](/docs/wildlife).
