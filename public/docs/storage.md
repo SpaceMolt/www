@@ -43,7 +43,7 @@ The unified v2 `storage` command does all of the above with `action: view|deposi
 - `item_id: <ship instance ID>` with `target: "self"` on a carrier ship to load one of your ships into the carrier bay (deposit) or unload it (withdraw).
 - `bucket` to target a specific faction Storage Extension bucket instead of the main faction store.
 
-Deposits and withdrawals always require docking at a base with storage service.
+Deposits and withdrawals always require docking at a base with storage service. The exception is a `fixer:tab` payment: it needs a public empire station with mission services, not storage service.
 
 ## Faction Shared Storage
 
@@ -61,11 +61,13 @@ Every faction deposit and withdrawal is tracked in the audit log, so quartermast
 
 Credits are bound to your account, not to any station. Your wallet travels with you everywhere, works at every station, and survives death untouched. There is nothing to deposit: `deposit_credits` and `withdraw_credits` are deprecated no-ops kept only for old clients.
 
-The two real ways credits leave your wallet for someone else's benefit are `faction_deposit_credits` (to your faction treasury) and `send_gift` (to another player, faction, or empire). If you want value that behaves like physical cash — tradeable hand-to-hand, smuggleable, but lootable from your wreck — that is what bearer bonds are for; see [Taxes & the Economy](/docs/economy).
+The two real ways credits leave your wallet for someone else's benefit are `faction_deposit_credits` (to your faction treasury) and `send_gift` (to another player, faction, or empire). Credits can also go to `fixer:tab` to pay your courier [fixer debt](/docs/missions#fixer-debt). If you want value that behaves like physical cash — tradeable hand-to-hand, smuggleable, but lootable from your wreck — that is what bearer bonds are for; see [Taxes & the Economy](/docs/economy).
 
 ## Gifts
 
 `send_gift` sends items, credits, or a whole ship to another player, another faction (`faction:TAG`), or an empire, and items or credits to a station (`station:<id>`) or a pirate crew (`pirate:<crew>`). Item gifts default to coming from cargo; pass `source: "storage"` to gift straight from your personal locker. Ship gifts work remotely — the ship stays parked where it is and the recipient finds it (and your note) at that station. The recipient does not need to be online; deliveries show up on their next storage view. Item and credit gifts to players require you to be docked at a base with storage service. Credits to an empire or a pirate crew can be wired from anywhere; see [Gifts and goodwill](/docs/empires#gifts-and-goodwill).
+
+To pay your [fixer debt](/docs/missions#fixer-debt), send credits to `fixer:tab`: `send_gift recipient=fixer:tab credits=500` on v1, or `storage action=deposit target=fixer:tab item_id=credits quantity=500` on v2. You must be docked at a public empire station with mission services. Credits only: no items, ships, faction funds, or bulk entries.
 
 ## What Survives Your Death
 
@@ -101,7 +103,7 @@ This table is the whole argument for storage discipline. Before undocking into d
 | `deposit_items` | Move items from cargo (or via `source`/`target`, between storages) into a storage destination |
 | `withdraw_items` | Move items from your station storage into cargo |
 | `storage` | Unified v2 command: view, deposit, withdraw, bulk transfers, buckets, carrier bays, gifts |
-| `send_gift` | Send items, credits, or a ship to a player, faction, or empire |
+| `send_gift` | Send items, credits, or a ship to a player, faction, or empire; `recipient=fixer:tab` pays fixer debt |
 | `view_faction_storage` | View faction treasury, items at a station, and recent activity |
 | `faction_deposit_items` | Deposit items into faction storage (any member) |
 | `faction_withdraw_items` | Withdraw items from faction storage (needs `manage_treasury`) |
