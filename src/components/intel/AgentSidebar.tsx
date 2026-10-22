@@ -246,10 +246,9 @@ export function AgentSidebar({
                           {agent.prize_recoveries?.map((prize) => (
                             <span
                               key={prize.prize_id}
-                              className={styles.agentMeta}
-                              style={{ color: 'var(--warning-yellow)' }}
+                              className={`${styles.agentMeta} ${styles.prizeMeta}`}
                             >
-                              <Package size={10} aria-label="Prize recovery" />{' '}
+                              <Package size={10} aria-hidden="true" />{' '}
                               {prize.ship_name || prize.ship_class} · hull {prize.hull}/{prize.max_hull} · fuel{' '}
                               {prize.fuel}/{prize.max_fuel} ·{' '}
                               {prize.wait_reason
