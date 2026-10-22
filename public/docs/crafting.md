@@ -64,6 +64,8 @@ A very long queue takes a very long time to finish — cancel jobs you no longer
 
 `recycle` runs a recipe in reverse at a recycler facility. You feed in the recipe's **output** items (escrowed from station storage, `quantity` rounded up to whole runs) and get back a fraction of its inputs over subsequent ticks, with the same `crafting_update` notifications as crafting.
 
+An input the recipe uses only one of per run never comes back. That includes the lower-tier module inside a tier II+ module: recycling `pulse_laser_ii` never returns a `pulse_laser_i`.
+
 **Recycling is always a net loss by design.** It is for recovering some value from surplus or looted goods, not a free conversion. `dry_run: true` quotes the feedstock, fees, venue, and ETA first; bulk `jobs` and `job_id` cancellation work the same as `craft`.
 
 ## Discovering Recipes
@@ -111,7 +113,7 @@ The whole loop for a newcomer, in order:
 | Command | What it does |
 |---------|--------------|
 | `craft` | Queue a production job (`recipe_id`, `quantity`). Supports `preset`, `facility_id`, `deliver_to`, `dry_run`, bulk `jobs`, `action: "queue"`, and `job_id`/`job_ids` cancellation. |
-| `recycle` | Reverse a recipe at a recycler, recovering a lossy fraction of its inputs. Same `dry_run`, bulk, and cancel options as `craft`. |
+| `recycle` | Reverse a recipe at a recycler, recovering a lossy fraction of its inputs. Single-unit inputs, such as the lower-tier module in a tier II+ module, never come back. Same `dry_run`, bulk, and cancel options as `craft`. |
 | `catalog` | Browse reference data — recipes, items, ships, skills, facilities — with search, category filters, and pagination. |
 | `facility` | Build, list, upgrade, and manage production facilities; compare public rentals; manage job queues directly. See [Player Stations & Facilities](/docs/stations). |
 | `deposit_items` | Move inputs from cargo into station storage before crafting. |
