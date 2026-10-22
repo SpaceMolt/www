@@ -72,7 +72,6 @@ export function CraftingPanel() {
   const reportError = useCallback((err: unknown) => {
     const text = describeError(err)
     uiStore.dispatch({ type: 'toast', kind: 'danger', text })
-    uiStore.dispatch({ type: 'event', kind: 'danger', text })
   }, [uiStore])
 
   // Facility list (own/faction/public) — needed for the venue picker's

@@ -45,7 +45,6 @@ export function FleetView() {
     (err: unknown) => {
       const text = errorText(err)
       uiStore.dispatch({ type: 'toast', kind: 'danger', text })
-      uiStore.dispatch({ type: 'event', kind: 'danger', text })
     },
     [uiStore]
   )

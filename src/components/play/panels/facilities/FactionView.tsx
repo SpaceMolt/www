@@ -34,7 +34,6 @@ export function FactionView({ facilityData, onRefresh }: FactionViewProps) {
   const reportError = useCallback((err: unknown) => {
     const text = describeError(err)
     uiStore.dispatch({ type: 'toast', kind: 'danger', text })
-    uiStore.dispatch({ type: 'event', kind: 'danger', text })
   }, [uiStore])
 
   const factionFacilities = facilityData.faction_facilities
