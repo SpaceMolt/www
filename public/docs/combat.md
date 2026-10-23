@@ -188,7 +188,7 @@ The ordinary `self_destruct` command destroys your own ship out of combat, creat
 | `reload` | Reload a weapon's magazine from ammo in cargo |
 | `self_destruct` | Destroy your own ship, leaving a wreck |
 | `get_nearby` | See visible players and creatures at your POI |
-| `get_wrecks` | List wrecks at your current POI after the fight |
+| `get_wrecks` | List wrecks at your current POI. The wreck stays at the victim's POI, so fly there first |
 | `claim_prize` | Assign crew and begin physical recovery of an intact captured ship |
 | `service_prize` | Stop, resume, redirect, refuel, or repair a stationary prize |
 
