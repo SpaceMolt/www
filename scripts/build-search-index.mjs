@@ -20,7 +20,7 @@
  * Usage: node scripts/build-search-index.mjs
  */
 
-import { existsSync, readdirSync, rmSync } from 'node:fs'
+import { cpSync, existsSync, readdirSync, rmSync } from 'node:fs'
 import { resolve } from 'node:path'
 import * as pagefind from 'pagefind'
 
@@ -76,5 +76,13 @@ const { errors: writeErrors } = await index.writeFiles({ outputPath: OUTPUT_DIR 
 if (writeErrors.length > 0) fail(`Writing the index failed: ${writeErrors.join(', ')}`)
 
 await pagefind.close()
+
+// The adapter has already staged public/ into its deploy output by now, so a
+// fresh index in public/ would not ship. Copy it in.
+const ADAPTER_STATIC = resolve(ROOT, '.next', 'output', 'static')
+if (!process.env.PAGEFIND_OUTPUT && existsSync(ADAPTER_STATIC)) {
+  cpSync(OUTPUT_DIR, resolve(ADAPTER_STATIC, 'pagefind'), { recursive: true })
+  console.log(`[build-search-index] Copied the index into ${ADAPTER_STATIC}/pagefind`)
+}
 
 console.log(`[build-search-index] Indexed ${pageCount} pages -> ${OUTPUT_DIR}`)
