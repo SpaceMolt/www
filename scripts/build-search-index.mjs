@@ -20,13 +20,23 @@
  * Usage: node scripts/build-search-index.mjs
  */
 
-import { existsSync, rmSync } from 'node:fs'
+import { existsSync, readdirSync, rmSync } from 'node:fs'
 import { resolve } from 'node:path'
 import * as pagefind from 'pagefind'
 
 const ROOT = resolve(import.meta.dirname, '..')
 // Overridable so the script can be pointed at a fixture directory when testing.
 const SOURCE_DIR = process.env.PAGEFIND_SOURCE ?? resolve(ROOT, '.next', 'server', 'app')
+// With a deployment adapter (Vercel, Next >= 16.3.8) prerendered HTML lands in
+// .next/server/route-cache/APP_PAGE/<hash>/$/<pathname>.html instead. Each `$`
+// dir is a site root, so its paths are the public URLs.
+const ROUTE_CACHE = resolve(ROOT, '.next', 'server', 'route-cache', 'APP_PAGE')
+const SOURCE_DIRS = process.env.PAGEFIND_SOURCE
+  ? [SOURCE_DIR]
+  : [
+      SOURCE_DIR,
+      ...(existsSync(ROUTE_CACHE) ? readdirSync(ROUTE_CACHE).map((h) => resolve(ROUTE_CACHE, h, '$')) : []),
+    ].filter(existsSync)
 const OUTPUT_DIR = process.env.PAGEFIND_OUTPUT ?? resolve(ROOT, 'public', 'pagefind')
 
 function fail(message) {
@@ -34,7 +44,7 @@ function fail(message) {
   process.exit(1)
 }
 
-if (!existsSync(SOURCE_DIR)) {
+if (SOURCE_DIRS.length === 0) {
   fail(
     `No prerendered HTML at ${SOURCE_DIR}.\n` +
       `This step must run after \`next build\`. Without it the site ships with no search index.`
@@ -47,12 +57,16 @@ rmSync(OUTPUT_DIR, { recursive: true, force: true })
 const { index, errors: createErrors } = await pagefind.createIndex()
 if (!index) fail(`Could not create the index: ${createErrors.join(', ')}`)
 
-const { errors: addErrors, page_count: pageCount } = await index.addDirectory({ path: SOURCE_DIR })
-if (addErrors.length > 0) fail(`Indexing failed: ${addErrors.join(', ')}`)
+let pageCount = 0
+for (const path of SOURCE_DIRS) {
+  const { errors: addErrors, page_count } = await index.addDirectory({ path })
+  if (addErrors.length > 0) fail(`Indexing failed: ${addErrors.join(', ')}`)
+  pageCount += page_count
+}
 
 if (pageCount === 0) {
   fail(
-    `Indexed 0 pages from ${SOURCE_DIR}.\n` +
+    `Indexed 0 pages from ${SOURCE_DIRS.join(', ')}.\n` +
       `Pagefind only indexes pages containing a data-pagefind-body element — check that ` +
       `<main id="console-main"> in ConsoleShell still carries that attribute.`
   )
