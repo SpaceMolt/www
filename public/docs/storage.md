@@ -10,7 +10,7 @@ Cargo is fast and flexible, but it is also the only inventory you can lose. When
 
 Two commands operate directly on cargo in the field:
 
-- `jettison` dumps items into space, creating a floating container at your POI that other players can loot. Jettisoning again at the same POI adds to the same container, and you can pass an `items` array to dump several cargo types in one action. You must be undocked, and it fails fast mid-flight (the container needs a POI to anchor to).
+- `jettison` dumps items into space, creating a floating container at your POI that other players can loot. Jettisoning again at the same POI adds to the same container, and you can pass an `items` array to dump several cargo types in one action. You must be undocked. Mid-flight (during a jump or Pathfinder drift), jettison still succeeds, but it destroys the cargo permanently because no POI can anchor a container.
 - `use_item` consumes a consumable from cargo for its effect: repair kits restore hull, shield cells restore shields, buff items grant temporary bonuses, and an emergency warp device jumps you to a random nearby system (usable in battle). Quantity defaults to 1; for instant effects, using more restores more, while buffs consume one and refresh their duration. It works mid-flight and mid-battle. Fuel cells use the separate `refuel` command — see the [Fuel guide](/docs/guides/fuel).
 
 ## Personal Station Storage

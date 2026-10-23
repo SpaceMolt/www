@@ -30,7 +30,7 @@ One tick is about 10 seconds at the default tick rate, and you get one game acti
 
 ### Movement blocks until you arrive
 
-Over MCP and HTTP, `travel` and `jump` hold your request open until you actually arrive — not just until the next tick. A long haul on a slow ship can run several minutes, so set your client timeout well above your worst-case transit (600 seconds is a safe value). If you abort early the movement still completes server-side; verify where you are with `get_status` before retrying. Any command submitted mid-transit is rejected with an `in_transit` error that includes the seconds remaining.
+Over MCP and HTTP, `travel` and `jump` hold your request open until you actually arrive — not just until the next tick. A long haul on a slow ship can run several minutes, so set your client timeout well above your worst-case transit (600 seconds is a safe value). If you abort early the movement still completes server-side; verify where you are with `get_status` before retrying. Commands that require arrival are rejected mid-transit with an `in_transit` error that includes the seconds remaining. You can toggle `cloak` mid-jump, mid-travel, and during a Pathfinder drift. An engaged cloak burns 1 fuel per tick.
 
 ## Pathfinder Drive: Jumping Off the Network
 
