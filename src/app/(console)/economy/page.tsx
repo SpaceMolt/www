@@ -16,8 +16,8 @@ const WINDOW = 30
 async function fetchReport(): Promise<EconomyReport | null> {
   try {
     // The server rebuilds the report hourly; Vercel serves this page from cache
-    // for 15 minutes, so browsers never hit the gameserver for it.
-    const res = await fetch(`${API_BASE}/api/economy`, { next: { revalidate: 900 } })
+    // for an hour, so browsers never hit the gameserver for it.
+    const res = await fetch(`${API_BASE}/api/economy`, { next: { revalidate: 3600 } })
     if (!res.ok) return null
     return (await res.json()) as EconomyReport
   } catch {

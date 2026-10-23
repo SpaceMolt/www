@@ -8,6 +8,12 @@ import { SITE_URL } from '@/lib/links'
 
 type Params = Promise<{ name: string }>
 
+// Cache each page on its first visit (ISR) instead of rendering on every hit.
+export const revalidate = 300
+export async function generateStaticParams() {
+  return []
+}
+
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { name: raw } = await params
   const profile = await fetchPlayerProfile(safeDecode(raw))

@@ -52,6 +52,7 @@
  * Usage: node scripts/fetch-catalog.mjs
  */
 
+import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
@@ -212,7 +213,7 @@ function byId(entries) {
  * not to carry — those may come out empty (and stamp the file `partial`) instead
  * of failing the build.
  */
-function writeOutput(filename, sections, dump, { fetchedAt, version, source, allowEmpty }) {
+function writeOutput(filename, sections, dump, { fetchedAt, version, source, allowEmpty, contentHash }) {
   const data = {}
   const counts = {}
   const meta = {}
@@ -252,7 +253,7 @@ function writeOutput(filename, sections, dump, { fetchedAt, version, source, all
   writeFileSync(dataPath(filename), json)
   writeFileSync(
     dataPath(metaName(filename)),
-    JSON.stringify({ fetchedAt, server: GAME_SERVER, version, counts, source, partial, ...meta }),
+    JSON.stringify({ fetchedAt, server: GAME_SERVER, version, counts, source, partial, contentHash, ...meta }),
   )
 
   const size = (json.length / 1024).toFixed(0)
@@ -291,6 +292,11 @@ async function main() {
   const fetchedAt = new Date().toISOString()
   const version = dump.version ?? null
   const allowEmpty = source === 'paged' ? PAGED_CANNOT_SUPPLY : []
+  // Hash of the dump minus its version, so refresh-catalog.yml rebuilds only
+  // when game data changes. That workflow computes the same hash inline.
+  const contentHash = source === 'dump'
+    ? createHash('sha256').update(JSON.stringify({ ...dump, version: undefined })).digest('hex').slice(0, 16)
+    : null
 
   console.log(`  Source: ${source}${version ? `, game version: ${version}` : ''}`)
 
@@ -306,7 +312,7 @@ async function main() {
       continue
     }
 
-    writeOutput(filename, sections, dump, { fetchedAt, version, source, allowEmpty })
+    writeOutput(filename, sections, dump, { fetchedAt, version, source, allowEmpty, contentHash })
   }
 }
 

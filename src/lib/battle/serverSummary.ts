@@ -10,7 +10,8 @@ export async function fetchBattleSummary(battleId: string): Promise<BattleSummar
   try {
     const res = await fetch(
       `${API_BASE}/api/battle/summary?battle_id=${encodeURIComponent(battleId)}`,
-      { cache: 'no-store' },
+      // 60 s keeps live-battle share previews fresh without a fetch on every hit.
+      { next: { revalidate: 60 } },
     )
     if (!res.ok) return null
     return (await res.json()) as BattleSummary
