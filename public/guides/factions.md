@@ -167,9 +167,9 @@ Note the split: storage, markets, missions, commons, and the Admin Office are ch
 
 Faction facilities are built with `facility action=faction_build facility_type=<id>` while docked, and they all need the `manage_facilities` permission. Browse what is available with `facility action=types category=faction`, and see what you already own with `facility action=faction_list` (here) or `facility action=faction_owned` (everywhere).
 
-### Faction Storage comes first, always
+### Faction storage comes first
 
-`faction_lockbox` is the prerequisite for **every other faction facility at that station**. Try to build anything else first and you are told plainly: *your faction must build a Faction Storage facility at this station first*.
+At another faction's station or an NPC station, `faction_lockbox` is the prerequisite for other faction facilities. At your own full station, ownership includes faction storage and blocks a redundant Lockbox.
 
 Storage tiers raise the per-item-type capacity:
 
@@ -335,14 +335,26 @@ Your faction can found its own bases, but only in **lawless space**: a system wi
 | Per-system limit | 1 station, any owner | Unlimited |
 | Permission | `manage_bases` | `manage_bases` |
 | Position | **Undocked**, loitering at the POI | **Undocked**, loitering at the POI |
-| Comes with | A bare shell — build everything | Faction storage and a fuel bunker, working |
+| Comes with | Owner faction storage; build infrastructure and services | Faction storage and a fuel bunker, working |
 | Services | Buildable: market, refuel, repair, shipyard, crafting, power, life support | None, ever |
 | Access | Configurable, can be opened to outsiders | Members-only, permanently |
 | Running cost | Maintenance from treasury and storage each cycle | None |
 
 The fee comes from the faction treasury first and your own wallet for the remainder. Stars and wormholes cannot host either. Your ship docks at the new base automatically. Use `get_base_cost` to preview the requirements and check whether your current spot qualifies before you haul a Station Core across the galaxy.
 
-A new station is an empty shell: build **Faction Storage first**, then power and life support, then services. Each service and infrastructure facility draws maintenance from faction storage at that base and labor from the treasury every cycle, and an undersupplied power plant throttles the whole station.
+A new station includes faction storage for its owner. Build power, life support, and services. A working station market supplies faction market access without a separate Market Runner. Each service and infrastructure facility draws maintenance from faction storage at that base and labor from the treasury every cycle, and an undersupplied power plant throttles the whole station.
+
+### Buying or selling an assembled base
+
+The leaders of two different factions can transfer an assembled stationary station or outpost through `trade_offer`. Mobile bases are excluded. `manage_bases` alone is not enough.
+
+Both leaders must remain at the same POI until acceptance; docking is not required. The seller passes the station Base ID as `station_id`. `request_credits` sets the price between faction treasuries. The receiving leader accepts with `trade_accept` and the returned `trade_id`.
+
+The seller treasury must have **4,000,000 credits upfront**. Labor costs 1,000,000 credits for local citizens, or the nearest reachable station citizens for an outpost. Transfer tax costs another 3,000,000 credits. The tax goes to the seller's primary taxable empire, using its founder's empire with its leader's empire as fallback. Fees settle on acceptance. Sale proceeds cannot fund the initial fee requirement.
+
+The buyer receives the seller's facilities, faction storage contents, and personnel reserve at the base. Personal assets and other factions' assets keep their owners. The buyer cannot exceed **five stations or eight outposts**. The receiving leader must meet facility skill requirements. Duplicate or prohibited faction facilities block acceptance, including redundant storage, market, and fuel facilities on a full station.
+
+The server rechecks ownership, leadership, balances, location, and facility limits at acceptance. Facility jobs, listings, dismantling, ship commissions, inbound prizes, and buyer storage or reserve conflicts require resolution first. See [Buying or selling an assembled station](/docs/guides/base-builder#buying-or-selling-an-assembled-station) for the full checklist and command example.
 
 ### Administering one
 
@@ -444,6 +456,7 @@ Each of these is a real error code with one concrete fix.
 | `faction_submit_trade_intel` / `faction_query_trade_intel` / `faction_trade_intel_status` | Market-price pool |
 | `faction_scan_poi` / `espionage` | Remote sensing and covert operations |
 | `build_base` / `build_outpost` / `station` | Found and administer faction bases |
+| `trade_offer station_id=...` / `trade_accept` | Sell an assembled station or outpost between faction leaders |
 | `facility action=faction_build` / `faction_upgrade` / `faction_dismantle` / `faction_list` / `faction_owned` | Faction facilities |
 
 ---
@@ -453,7 +466,7 @@ Each of these is a real error code with one concrete fix.
 - **A faction is free to create** — name 3–32 characters, tag exactly 4, both unique and both permanent.
 - **Permissions are the first gate.** Officers get everything except `promote`, `manage_roles`, and `manage_diplomacy`; plain members get nothing except the right to deposit. `faction_info` is the authoritative list for your faction.
 - **Facilities are the second gate, and they are per-station.** Storage, markets, missions, commons, and the Admin Office are checked where you are standing. Intel, trade intel, sensors, and espionage are checked anywhere your faction owns one.
-- **Faction Storage is the prerequisite for every other faction facility at a station**, and the first one is paid for out of your own pocket.
+- **Faction storage is the foundation for faction facilities.** Your own full station includes it; at other stations, build the storage facility first.
 - **`faction_edit` needs three things at once**: leader or `manage_roles`, being docked, and a Faction Admin Office (`faction_desk`) at that station. That combination is what `no_faction_admin` is telling you about.
 - **Deposits are open, withdrawals are gated, everything is logged.**
 - **Declaring war removes police protection between the two factions, everywhere.** Peace requires both sides to agree.

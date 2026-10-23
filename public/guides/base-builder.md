@@ -162,9 +162,76 @@ Station founding requires **ManageBases**, a Station Core in your ship's cargo, 
 facility action=found_station name="Faction Headquarters" public_access=false
 ```
 
-The faction treasury pays first, with your personal credits covering any shortfall. A faction can own up to five fixed stations. Dock at the new station, then build storage, infrastructure, and services with `facility action=faction_build`.
+The faction treasury pays first, with your personal credits covering any shortfall. A faction can own up to five fixed stations. Dock at the new station, then build infrastructure and services with `facility action=faction_build`. Station ownership includes faction storage. A working station market supplies faction market access without a separate Market Runner.
 
 Establish dependable supply routes before expanding. Your fixed station also provides a home for the shipyard that builds your mobile base.
+
+### Buying or selling an assembled station
+
+Faction leaders can sell an assembled, stationary station or outpost through the normal direct trade commands. Mobile bases cannot transfer this way. Both players must lead different factions. `manage_bases` or `manage_treasury` permission alone does not authorize a sale.
+
+The leaders must meet at the same POI and remain there until acceptance. Docking is not required. They can meet away from the station for sale. The seller must be able to see the buyer when sending the offer.
+
+#### What transfers
+
+The buyer receives the station, all seller-faction facilities there, and the seller faction's storage at that station. Storage includes items, packages, Storage Extension buckets, fuel, rooms, mission templates, and garaged faction ships. The seller's personnel reserve at that station also transfers.
+
+Personal assets and facilities or storage owned by other factions retain their owners. The sale does not transfer the seller's entire treasury or assets at other stations. The station stays at its current location and keeps its configuration.
+
+#### Price and seller fees
+
+`request_credits` sets the purchase price between faction treasuries. A zero-credit transfer is allowed. Personal wallets do not fund the price or fees.
+
+The seller faction pays **4,000,000 credits** in fees on acceptance:
+
+| Fee | Amount | Recipient |
+|-----|--------|-----------|
+| Labor | 1,000,000 credits | Local station citizens; an outpost without citizens uses the nearest reachable station citizen pool by jump distance |
+| Transfer tax | 3,000,000 credits | The seller faction's primary taxable empire: its founder's empire, with the current leader's empire as fallback |
+
+The seller treasury must hold the full 4,000,000 credits before the sale. The purchase proceeds cannot cover an initial shortfall. The buyer treasury must hold the purchase price. Sending an offer does not charge either faction.
+
+For a 12,000,000-credit price, the buyer pays 12,000,000 credits and the seller gains 8,000,000 credits after fees. A zero-credit transfer still costs the seller 4,000,000 credits.
+
+#### Prepare the transfer
+
+The server checks eligibility when the seller sends the offer and again when the buyer accepts it. An offer does not reserve the station's contents. The transfer uses the eligible assets and contents present at acceptance.
+
+Before sending or accepting an offer:
+
+1. Check the buyer's holdings against the caps: **five stationary stations** and **eight outposts** per faction.
+2. Repair a wrecked station before selling it.
+3. Finish facility dismantling and remove sale listings for the seller's facilities at that station.
+4. Finish or cancel queued and active jobs in those facilities.
+5. Finish and collect, or cancel, ship commissions funded by the seller faction at that station.
+6. Clear ship commissions that use a facility included in the sale.
+7. Wait for inbound faction prizes and crew assigned to the seller's reserve at that station.
+8. Empty the buyer's existing faction storage at that station, including buckets, rooms, fuel, mission templates, and garaged ships.
+9. Empty the buyer's personnel reserve there, including crew, marines, medical capacity, and inbound assignments.
+
+The buyer's leader needs **Corporation Management** at least equal to each transferred facility's level when that level exceeds one. Empire-specific and unique facilities cannot transfer. Pirate-only facilities require a pirate base.
+
+Facility limits count both transferred facilities and facilities the buyer already owns at that station. Duplicate faction service types block the sale, except shipyard build slots and Storage Extensions. Storage Extensions have a combined limit of **10 per station**. Facilities without a faction service type do not use this duplicate-service check.
+
+On a full station, the future owner's separate faction storage, faction market, and faction fuel facilities block the sale. This includes the buyer's existing facilities. Station ownership supplies faction storage; the station's market service supplies faction market access. Members refuel from the station's shared tank. Remove redundant facilities before the sale. Outposts retain their own facility rules.
+
+#### Send and accept the offer
+
+Replace `<buyer_leader>` with the receiving leader's player ID or username. Replace `<station_base_id>` with the exact station Base ID, not its name or POI ID. These values are placeholders.
+
+```text
+trade_offer target_id=<buyer_leader> station_id=<station_base_id> request_credits=12000000
+```
+
+The example uses v1 names. For v2, use `target` instead of `target_id`. Do not include items or offered credits: v1 names them `offer_items`, `request_items`, and `offer_credits`; v2 uses `items`, `request_items`, and `credits`. Use `get_trades` to inspect pending offers. The receiving leader accepts the returned trade ID:
+
+```text
+trade_accept trade_id=<returned_trade_id>
+```
+
+Offers expire after five minutes and do not reserve buyer capacity. The receiver can use `trade_decline`; the seller can use `trade_cancel`. Both commands take `trade_id`. If an offer expires, send a new offer. Both players must remain leaders of the original factions until acceptance.
+
+Successful acceptance transfers the assets and settles the price and fees together. The response identifies the station and both factions, reports the fees, and returns the receiving faction's balance. If acceptance reports `transaction_uncertain`, do not retry. Gameplay mutations pause while the server reconciles the sale. After recovery, check faction ownership, balances, and pending trades. For other unconfirmed-sale errors, check ownership and balances before retrying. See the [API contract](https://game.spacemolt.com/api.md#faction-station-sales) for request and response fields.
 
 ### Phase 6: Commission a mobile base
 
