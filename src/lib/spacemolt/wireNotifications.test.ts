@@ -51,3 +51,18 @@ describe('battle notifications', () => {
     } finally { f.close() }
   })
 })
+
+test('station sale notification retains treasury terms through acceptance', async () => {
+  const f = await fixture()
+  const sale = {
+    trade_id: 'station-sale', offerer_name: 'Seller', station_id: 'outpost-1',
+    seller_faction_id: 'seller-faction', buyer_faction_id: 'buyer-faction',
+    request_credits: 12_000_000, labor_cost: 1_000_000, transfer_tax: 3_000_000,
+  }
+  try {
+    f.send('trade_offer_received', sale)
+    expect(f.store.getState().pendingTrades[0]).toMatchObject(sale)
+    f.send('trade_complete', { trade_id: sale.trade_id, station_id: sale.station_id })
+    expect(f.store.getState().pendingTrades).toEqual([])
+  } finally { f.close() }
+})

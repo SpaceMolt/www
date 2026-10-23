@@ -11,7 +11,14 @@ import type { NotificationPayloads } from '@spacemolt/lib'
 
 export type ChatMessage = NotificationPayloads['chat_message']
 export type BattleView = NotificationPayloads['battle_update']
-export type TradeOffer = NotificationPayloads['trade_offer_received']
+// Keep station-sale fields until the SDK includes the additive server contract.
+export type TradeOffer = NotificationPayloads['trade_offer_received'] & {
+  station_id?: string
+  seller_faction_id?: string
+  buyer_faction_id?: string
+  labor_cost?: number
+  transfer_tax?: number
+}
 export type CraftJob = NotificationPayloads['crafting_update']['jobs'] extends Array<infer J> | undefined
   ? J
   : Record<string, unknown>

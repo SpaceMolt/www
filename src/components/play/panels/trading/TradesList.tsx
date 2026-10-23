@@ -78,6 +78,7 @@ export function TradesList() {
             const offerCredits = trade.offer_credits ?? 0
             const requestCredits = trade.request_credits ?? 0
             const busy = busyTradeId === trade.trade_id
+            const stationSale = Boolean(trade.station_id)
 
             return (
               <div key={trade.trade_id} className={styles.tradeCard}>
@@ -92,6 +93,20 @@ export function TradesList() {
                   )}
                 </div>
 
+                {stationSale && (
+                  <div className={styles.tradeItems}>
+                    <div>Station or outpost: {trade.station_id}</div>
+                    <div>Seller faction: {trade.seller_faction_id || 'the offering leader’s faction'}</div>
+                    <div>Your faction pays: <Credits amount={requestCredits} /> from its treasury.</div>
+                    <div>
+                      Seller pays: <Credits amount={trade.labor_cost ?? 1_000_000} /> labor to station citizens
+                      {' + '}<Credits amount={trade.transfer_tax ?? 3_000_000} /> tax to its primary taxable empire.
+                    </div>
+                    <div>Includes the seller’s facilities and faction storage contents at acceptance.</div>
+                    <div>Only the receiving faction leader can accept. Station caps and facility limits still apply.</div>
+                  </div>
+                )}
+
                 {offerItems.length > 0 && (
                   <div className={styles.tradeItems}>
                     Offering:{' '}
@@ -101,7 +116,7 @@ export function TradesList() {
                   </div>
                 )}
 
-                {(requestItems.length > 0 || requestCredits > 0) && (
+                {!stationSale && (requestItems.length > 0 || requestCredits > 0) && (
                   <div className={styles.tradeItems}>
                     Requesting:{' '}
                     {[
@@ -125,7 +140,7 @@ export function TradesList() {
                     type="button"
                   >
                     <Check size={12} />
-                    Accept
+                    {stationSale ? 'Buy for faction' : 'Accept'}
                   </button>
                   <button
                     className={shared.dangerBtn}

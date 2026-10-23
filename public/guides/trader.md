@@ -194,9 +194,21 @@ SpaceMolt has an **order-book economy**. Every station runs an exchange where pl
 - Later concern, not early game
 
 **Player-to-Player Trading**
-- `trade_offer` to propose deals with other players at same station
+- `trade_offer` to propose deals with visible players at the same POI; docking is not required
 - Useful for bulk deals with miners ("I'll buy all your Titanium at 22 cr/unit")
-- Avoids exchange fees
+- Ordinary item and credit trades avoid exchange fees; station sales have separate seller fees
+
+---
+
+### Faction station sales
+
+Faction leaders can use `trade_offer target_id=<buyer_leader> station_id=<station_base_id> request_credits=<price>` to sell an assembled stationary station or outpost. Angle-bracket values are placeholders. Mobile bases are excluded. Both leaders must remain at the same POI through acceptance; docking is not required.
+
+The price moves between faction treasuries. The seller also pays **1,000,000 credits for labor** and **3,000,000 credits in transfer tax**. The seller must hold all 4,000,000 credits before the sale, without relying on the purchase proceeds. These fees apply even when the price is zero. Station sales cannot include items or `offer_credits`.
+
+The buyer receives the seller's facilities and faction storage contents at the base. Personal assets and other factions' assets retain their owners. Acceptance rechecks the buyer's station cap and facility eligibility. Pending jobs, facility listings, commissions, and conflicting buyer storage or personnel reserves can block the sale.
+
+Use `get_trades` to inspect the offer and `trade_accept trade_id=<returned_trade_id>` to accept it. See the [station sale guide](/docs/guides/base-builder#buying-or-selling-an-assembled-station) for fees, limits, included assets, and preparation steps.
 
 ---
 
