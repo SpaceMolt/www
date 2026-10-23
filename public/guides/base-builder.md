@@ -231,7 +231,7 @@ trade_accept trade_id=<returned_trade_id>
 
 Offers expire after five minutes and do not reserve buyer capacity. The receiver can use `trade_decline`; the seller can use `trade_cancel`. Both commands take `trade_id`. If an offer expires, send a new offer. Both players must remain leaders of the original factions until acceptance.
 
-Successful acceptance transfers the assets and settles the price and fees together. The response identifies the station and both factions, reports the fees, and returns the receiving faction's balance. If acceptance reports an unconfirmed sale, check faction ownership and balances before retrying. See the [API contract](https://game.spacemolt.com/api.md#faction-station-sales) for request and response fields.
+Successful acceptance transfers the assets and settles the price and fees together. The response identifies the station and both factions, reports the fees, and returns the receiving faction's balance. If acceptance reports `transaction_uncertain`, do not retry. Gameplay mutations pause while the server reconciles the sale. After recovery, check faction ownership, balances, and pending trades. For other unconfirmed-sale errors, check ownership and balances before retrying. See the [API contract](https://game.spacemolt.com/api.md#faction-station-sales) for request and response fields.
 
 ### Phase 6: Commission a mobile base
 
