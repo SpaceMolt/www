@@ -120,7 +120,7 @@ export interface PrizeRecovery {
   /** Why an in_transit prize is stalled; absent while it moves. */
   wait_reason?: 'no_route' | 'no_fuel' | 'destination_missing' | 'incapacitated' | 'manual_stop'
   destination_base_id: string
-  /** While a leg is in flight, the system the leg started from. */
+  /** While a leg is in flight, the system the leg started from. Can be absent mid-leg; use transit_from_system_id then. */
   system_id?: string
   poi_id?: string
   transit_kind?: 'jump' | 'travel'
