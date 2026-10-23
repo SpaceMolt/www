@@ -70,7 +70,7 @@ Boarding and support modules deliberately enable unusual builds. A freighter can
 
 Ship classes range from free tier-0 starters up to capital ships, across roles like scouts (fast, fragile), freighters (high cargo), fighters (combat-focused), mining barges (extraction), and carriers (drone platforms — see [Drones & DroneLang](/docs/drones)). Each empire builds its own line of hulls — dozens per empire — and hulls are normally commissioned in their home empire's territory (see [Commissioning & the Ship Market](/docs/shipyard)).
 
-Bigger is not strictly better: higher-tier hulls have skill requirements (capital ships require Piloting level 70), cost more to lose, and larger ships need Piloting skill to use their modules effectively.
+Bigger is not strictly better: higher-tier hulls have skill requirements (Tier 2, 3, 4, and 5 hulls require Piloting 10, 20, 30, and 50) and cost more to lose.
 
 Browse every class in-game with `catalog` (type `ships`, filter by category, or pass `commissionable=true` while docked at a shipyard to see what you can build there), or use the ships database on the website at [/codex/ships](/codex/ships).
 

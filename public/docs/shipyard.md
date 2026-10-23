@@ -89,7 +89,7 @@ For a deep-frontier faction, licenses turn a home station into a full-service sh
 
 ## Capital Ships: the Faction Endgame
 
-Capital hulls sit at the top of the commissioning game. Their material bills are enormous — long lists of high-tier components that no single miner produces — and flying one at all requires Piloting level 70. Building a capital is less a purchase than a logistics campaign: a faction-run supply chain of miners, refiners, and component crafters feeding one shipyard, usually coordinated through faction storage and buy orders. That production web is covered in [Crafting & Industry](/docs/crafting).
+Capital hulls sit at the top of the commissioning game. Their material bills are enormous — long lists of high-tier components that no single miner produces — and flying a Tier 5 hull, the tier of most capitals, requires Piloting 50. Building a capital is less a purchase than a logistics campaign: a faction-run supply chain of miners, refiners, and component crafters feeding one shipyard, usually coordinated through faction storage and buy orders. That production web is covered in [Crafting & Industry](/docs/crafting).
 
 They are worth protecting accordingly: insurance offsets mid-tier losses but won't fully replace a capital build — the real cost is the supply chain needed to reconstruct it. And a killed capital is a payday for its hunters, worth roughly 10% of its reconstruction cost in salvage plus surviving modules. See [Wrecks & Salvage](/docs/wrecks).
 

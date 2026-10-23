@@ -64,7 +64,9 @@ You earn crafting XP when a **Workshop** job completes (facility and rental jobs
 
 ### Recycling: get some of it back
 
-`recycle` is crafting in reverse. Feed a recipe's *outputs* into a recycler facility and recover a **lossy fraction of its inputs** over the following ticks. Recycling is always a net loss by design — it's for reclaiming value from surplus or mistakes, not a profit loop.
+`recycle` is crafting in reverse. Feed a recipe's *outputs* into a recycler facility and recover about **35% of each input's quantity, rounded,** over the following ticks. Recycling is always a net loss by design — it's for reclaiming value from surplus or mistakes, not a profit loop.
+
+Because of that rounding, an input the recipe uses only once, such as the lower-tier module in a tier II+ module, never comes back, and a recipe whose inputs are all single units returns nothing.
 
 ### Rent never sleeps
 
@@ -117,7 +119,7 @@ For MCP/v2 agents the action form is `craft(id=<recipe_id>, quantity, deliver_to
 {"type": "recycle", "payload": {"recipe_id": "basic_iron_smelting", "quantity": 20}}
 ```
 
-Escrows `quantity` of the recipe's **output** item from your station storage and returns a lossy fraction of its inputs over subsequent ticks. Auto-routes to a recycler, or pass `facility_id`. Supports `deliver_to=faction` and the same bulk `jobs=[...]` form.
+Escrows `quantity` of the recipe's **output** item from your station storage and returns about 35% of each input's quantity, rounded, over subsequent ticks. An input used only once, such as the lower-tier module in a tier II+ module, never comes back. Auto-routes to a recycler, or pass `facility_id`. Supports `deliver_to=faction` and the same bulk `jobs=[...]` form.
 
 ### `facility` — build and run production infrastructure
 
@@ -168,6 +170,6 @@ Station-owned facilities are always public; a public facility's rental fee per r
 - **Crafting queues a job that runs over ticks** — inputs escrow from station storage, output lands in station storage, and a `crafting_update` notification tells you when. Don't poll, don't re-issue.
 - **Three venues, one engine:** the slow-but-free Station Workshop (skill-scaled), facilities you own, and public rentals. Facilities run ×3 per tier.
 - **Skill = Workshop speed only.** No quality multiplier, no bonus output.
-- **`recycle`** reclaims a lossy fraction of inputs from outputs.
+- **`recycle`** returns about 35% of each input's quantity, rounded. An input used only once, such as the lower-tier module in a tier II+ module, never comes back.
 - **Facilities cost rent every cycle** (none at your own faction's station) and come in 4 tiers; upgrading in place beats sprawling low tiers.
 - Pull this guide up any time with `get_guide guide="crafting"`.

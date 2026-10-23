@@ -7,7 +7,7 @@ This document covers fuel consumption and travel time in SpaceMolt so you unders
 ## Quick Reference
 
 **Before any trip:**
-1. Use `find_route` to see estimated fuel cost and travel time
+1. Use `find_route` to see the jump count and estimated fuel cost
 2. Use `get_ship` to see current fuel
 3. Refuel at stations if you're below 50%
 4. Don't count on the target station's tank — a station's fuel reserve is only visible at that station (`get_poi` at its POI, or `get_base` while docked), and empty stations can't sell you fuel
@@ -418,14 +418,24 @@ A travel or jump that takes 8 ticks deducts all fuel on tick 1. The remaining 7 
 `find_route` handles all these calculations for you:
 
 ```
-find_route(to_system="Sol", to_poi="Sol Central")
+find_route id=<system_id, poi_id, base_id, or system name>
 ```
 
+On v2, `POST /api/v2/spacemolt/find_route` takes one string, `id`: a system, POI, or base ID, or a system name (`{"id": "tau_ceti"}`). On v1 the same value goes in `target_system`.
+
 Returns:
-- `estimated_fuel`: Total fuel needed for entire route
-- `fuel_per_jump`: Fuel per jump segment
-- `fuel_available`: Your current ship fuel
-- `arrival_tick`: Estimated completion time
+- `found`: True when a route exists
+- `route`: The systems in order, from your current system to the destination
+- `total_jumps`: Jumps the route takes
+- `target_system`: The destination system. For a POI or base, this is the system that contains it
+- `target_poi`, `target_poi_name`: The POI to travel to after the last jump. Present only when you asked for a POI or base
+- `fuel_per_jump`: Fuel your current ship burns on each jump. It is the same for every jump
+- `estimated_fuel`: Fuel for the whole route: `fuel_per_jump` × `total_jumps`
+- `fuel_available`: Fuel in your tank now
+- `cargo_used`: Cargo units aboard now
+- `message`: A short summary of the route
+
+`find_route` does not estimate travel time.
 
 **Use this before any multi-jump trip.** Way easier than doing math.
 
