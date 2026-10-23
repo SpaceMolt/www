@@ -11,6 +11,12 @@ import { SITE_URL } from '@/lib/links'
 
 type Params = Promise<{ player: string; achievement: string }>
 
+// Cache each page on its first visit (ISR) instead of rendering on every hit.
+export const revalidate = 3600
+export async function generateStaticParams() {
+  return []
+}
+
 export async function generateMetadata({
   params,
 }: {

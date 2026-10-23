@@ -238,6 +238,8 @@ export interface CatalogMeta<Counts = Record<string, number>> {
   server: string
   /** Game server version the catalog was dumped from, e.g. "0.492.1" */
   version: string | null
+  /** Hash of the dump minus its version; null on the paged source or an older build. */
+  contentHash?: string | null
   counts: Counts
   /**
    * Which source the build fetched from: 'dump' is GET /api/catalog.json (the

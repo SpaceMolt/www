@@ -22,7 +22,7 @@ const activeSummary: BattleSummary = {
 }
 
 describe('server battle summary', () => {
-  it('does not persistently cache a summary that may still be active', async () => {
+  it('caches a summary that may still be active for 60 s only', async () => {
     let requestInit: RequestInit | undefined
     globalThis.fetch = (async (_input: RequestInfo | URL, init?: RequestInit) => {
       requestInit = init
@@ -30,7 +30,6 @@ describe('server battle summary', () => {
     }) as typeof fetch
 
     expect(await fetchBattleSummary('battle-a')).toEqual(activeSummary)
-    expect(requestInit?.cache).toBe('no-store')
-    expect(requestInit).not.toHaveProperty('next.revalidate')
+    expect(requestInit).toHaveProperty('next.revalidate', 60)
   })
 })

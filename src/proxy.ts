@@ -78,11 +78,18 @@ export default clerkMiddleware((_auth, req) => {
   // Otherwise fall through to Clerk's default handling.
 })
 
+// Runs only where it has work: Clerk's session handshake on the signed-in
+// pages, and the markdown mirrors. Every other request skips the function.
+// No server code calls auth(); the rest of the site uses Clerk client-side.
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files, unless found in search params
-    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    // Always run for API routes
-    '/(api|trpc)(.*)',
+    '/dashboard/:path*',
+    '/play/:path*',
+    '/link/:path*',
+    '/(.*\\.md)',
+    {
+      source: '/((?!api/|_next/).*)',
+      has: [{ type: 'header', key: 'accept', value: '.*text/markdown.*' }],
+    },
   ],
 }
