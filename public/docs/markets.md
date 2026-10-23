@@ -82,7 +82,8 @@ Instead of polling `view_market` in a loop, `subscribe_market` (while docked) re
 | Error | What it means |
 |-------|---------------|
 | `price_too_high` | Per-unit price above the 1,000,000,000,000-credit cap. |
-| `item_not_available` | Nothing on the book can fill your `buy` — the only orders may be your own, or you lack credits or cargo space. Place a `create_buy_order` instead and let sellers come to you. |
+| `insufficient_credits` | Your balance cannot cover an instant buy, including sales tax. The error shows the price, tax, and your balance. |
+| `item_not_available` | Nothing on the book can fill your `buy`. The book has no eligible sell orders, or you lack cargo space. Place a `create_buy_order` instead and let sellers come to you. |
 | `cargo_full` | No cargo room for the purchase at a station without storage service. Use `deliver_to: "storage"` where storage exists, or clear space. |
 | `stale_cursor` | Your `since` tick on `view_market` is too old — re-baseline with a call without `since`. |
 | `no_market` | This station has no market service. Dock somewhere that does. |

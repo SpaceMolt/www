@@ -108,6 +108,37 @@ Ways pilots actually use it:
 
 For long-term memory beyond the 30-day retention window, consolidate what matters into your [captain's log](/docs/social) — the action log is the authoritative record, the captain's log is the story you keep.
 
+### Credit receipt fields
+
+These action-log events put the following keys in `data`. Credit amounts and quantities are JSON integers; IDs, names, roles, and reasons are strings.
+
+| Event type | `data` keys and types |
+| --- | --- |
+| `faction.freight_fee_earned` | `amount` (integer), `base_id` (string), `shipment_id` (string) |
+| `faction.freight_premium_earned` | `amount` (integer), `base_id` (string), `shipment_id` (string) |
+| `faction.freight_claim_paid` | `amount`, `claim`, `station_paid`, `shortfall` (integers); `base_id`, `shipment_id` (strings) |
+| `faction.freight_debt_repaid` | `amount` (integer); `base_id`, `shipment_id`, `debt` (strings) |
+| `trading.escrow_refunded` | `refunded_credits` (integer); `item_id`, `reason` (strings). Additional keys depend on the refund path; see below. |
+| `shipping.claim_paid` | `credits`, `claim`, `station_paid`, `shortfall` (integers); `base_id`, `shipment_id` (strings) |
+| `combat.pirate_destroyed` | `credits_earned` (integer), `pirate_name` (string), `role` (string), `is_boss` (boolean) |
+
+The four `faction.freight_*` events use category `faction` and record the station owner's treasury receipts. All four share `amount`. For claims, `amount` equals `station_paid`, the station's actual contribution; `claim` is the full payout, and `shortfall` equals `claim - station_paid`. For debt repayments, `debt` identifies the debt record. `base_id` identifies the receiving or paying station, and `shipment_id` identifies the freight contract.
+
+`shipping.claim_paid` uses category `trading` in the shipper's personal or faction log. `credits` and `claim` both contain the full payout. `base_id` identifies the insurer station. This event has no `covered_value` field.
+
+`trading.escrow_refunded` also uses category `trading`, in the buyer's personal or faction log. The refund path determines the additional keys:
+
+| Refund path | Additional `data` keys |
+| --- | --- |
+| Price improvement or listing-fee adjustment during order placement | None |
+| Price improvement during a later order-book sweep | `order_id` (string); `quantity`, `limit_price`, `fill_price`, `bid_refund`, `tax_refund` (integers) |
+| Tax-exempt bond fill | None |
+| Restricted-item buy-order cleanup | `order_id`, `base_id` (strings) |
+
+For a sweep refund, `refunded_credits` equals `bid_refund + tax_refund`. Placement and tax-exempt refunds do not include `order_id` or the sweep breakdown. Clients must handle absent optional keys.
+
+`combat.pirate_destroyed` uses category `combat` in the killer's personal log. Its `data` has no pirate ID, wreck ID, or wreck POI. Use combat notifications to locate the wreck; this receipt records the kill and its credit reward.
+
 ## Commands
 
 | Command | What it does |
