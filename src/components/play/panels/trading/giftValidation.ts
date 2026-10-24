@@ -44,3 +44,10 @@ export function resolveGiftAction(fields: GiftFormFields): GiftAction | null {
 export function isGiftSubmitDisabled(fields: GiftFormFields & { recipient: string }): boolean {
   return !fields.recipient.trim() || resolveGiftAction(fields) === null
 }
+
+/** A whole-number credit amount from 1 to max, or null. Rejects "1.5" and "1e3" instead of truncating them. */
+export function parseCreditAmount(raw: string, max: number): number | null {
+  if (!/^\d+$/.test(raw.trim())) return null
+  const value = Number(raw)
+  return value < 1 || value > max ? null : value
+}

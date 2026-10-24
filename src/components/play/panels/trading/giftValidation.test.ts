@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'bun:test'
 import fs from 'fs'
 import path from 'path'
-import { resolveGiftAction, isGiftSubmitDisabled } from './giftValidation'
+import { resolveGiftAction, isGiftSubmitDisabled, parseCreditAmount } from './giftValidation'
 
 /*
  * dc#689374 — "Play UI gift submit fails silently if the quantity is empty".
@@ -152,5 +152,18 @@ describe('StorageView gift submit wiring', () => {
 
   it('drives the Send Gift button from isGiftSubmitDisabled', () => {
     expect(source).toContain('isGiftSubmitDisabled(')
+  })
+})
+
+describe('parseCreditAmount (fr#412789 faction treasury)', () => {
+  it('accepts a whole number from 1 to max', () => {
+    expect(parseCreditAmount('1', 500)).toBe(1)
+    expect(parseCreditAmount(' 500 ', 500)).toBe(500)
+  })
+
+  it('rejects zero, negative, non-integer, blank, and over-max amounts', () => {
+    for (const raw of ['0', '-5', '1.5', '1e3', '', 'abc', '501']) {
+      expect(parseCreditAmount(raw, 500)).toBeNull()
+    }
   })
 })

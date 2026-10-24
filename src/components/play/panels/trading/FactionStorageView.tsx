@@ -7,6 +7,7 @@ import {
   ArrowDownToLine,
   ArrowUpFromLine,
   Box,
+  Coins,
 } from 'lucide-react'
 import {
   useCargo,
@@ -19,7 +20,8 @@ import {
 import type { StorageResponse } from '@spacemolt/lib'
 import { usePlay } from '../../PlayProvider'
 import { ItemName } from '../../ItemTooltip'
-import { shared } from '../../shared'
+import { Credits, shared } from '../../shared'
+import { parseCreditAmount } from './giftValidation'
 import styles from './StorageView.module.css'
 
 // StorageResponse is one generated union across every branch of the unified
@@ -57,6 +59,7 @@ export function FactionStorageView() {
   const dockedAt = location?.docked_at
   const isDocked = Boolean(dockedAt)
   const hasFaction = Boolean(usePlayer()?.faction_id)
+  const walletCredits = usePlayer()?.credits ?? 0
   const rawCargo = useCargo()
   const cargo = useMemo(() => normalizeCargo(rawCargo), [rawCargo])
   const actionPending = usePendingAction() !== null
@@ -127,6 +130,24 @@ export function FactionStorageView() {
     [mutate, depositQtys, actionPending, refetchFaction, refetchPersonal, reportError, setDepositQtys]
   )
 
+  // Treasury credits: wallet <-> faction (withdraw needs manage_treasury; the server returns no_permission otherwise)
+  const [treasuryAmount, setTreasuryAmount] = useState('')
+  const handleTreasury = useCallback(
+    async (kind: 'deposit' | 'withdraw', quantity: number | null) => {
+      if (actionPending || quantity === null) return
+      try {
+        const args = { item_id: 'credits', quantity, target: 'faction' }
+        if (kind === 'deposit') await mutate((c) => c.spacemolt_storage.deposit(args), { label: 'faction_deposit_credits' })
+        else await mutate((c) => c.spacemolt_storage.withdraw(args), { label: 'faction_withdraw_credits' })
+        setTreasuryAmount('')
+        refetchFaction()
+      } catch (err) {
+        reportError(err)
+      }
+    },
+    [mutate, actionPending, refetchFaction, reportError]
+  )
+
   // Move from personal storage to faction storage (source=storage, target=faction)
   const handleMoveFromPersonal = useCallback(
     async (itemId: string, maxQty: number) => {
@@ -192,6 +213,50 @@ export function FactionStorageView() {
           {factionError}
           <div style={{ marginTop: '0.4rem', fontSize: '0.65rem', opacity: 0.75 }}>
             Build a faction lockbox at this base to enable faction storage.
+          </div>
+        </div>
+      )}
+
+      {/* Faction treasury credits */}
+      {factionData && (
+        <div className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <Coins size={12} />
+            Treasury: <Credits amount={factionData.credits} />
+          </div>
+          <div className={styles.itemRow}>
+            <div className={styles.itemInfo}>
+              <span className={styles.itemQty}>Wallet: <Credits amount={walletCredits} /></span>
+            </div>
+            <div className={styles.itemAction}>
+              <input
+                className={styles.qtyInput}
+                type="number"
+                min={1}
+                step={1}
+                placeholder="cr"
+                value={treasuryAmount}
+                onChange={(e) => setTreasuryAmount(e.target.value)}
+              />
+              <button
+                className={shared.confirmBtn}
+                onClick={() => handleTreasury('deposit', parseCreditAmount(treasuryAmount, walletCredits))}
+                disabled={actionPending || parseCreditAmount(treasuryAmount, walletCredits) === null}
+                title="Deposit credits to the faction treasury"
+                type="button"
+              >
+                <ArrowDownToLine size={10} />
+              </button>
+              <button
+                className={shared.accentBtn}
+                onClick={() => handleTreasury('withdraw', parseCreditAmount(treasuryAmount, factionData.credits))}
+                disabled={actionPending || parseCreditAmount(treasuryAmount, factionData.credits) === null}
+                title="Withdraw credits to your wallet (needs manage treasury permission)"
+                type="button"
+              >
+                <ArrowUpFromLine size={10} />
+              </button>
+            </div>
           </div>
         </div>
       )}
