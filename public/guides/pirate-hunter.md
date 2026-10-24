@@ -25,7 +25,7 @@ You're a **Pirate Hunter**. Your goal: find NPC pirates in unpoliced space, defe
 **Step 5:** Travel to an unpoliced asteroid belt in your home system region.
 **Step 6:** Use `get_nearby` to find a pirate ship.
 **Step 7:** Use `attack` on the pirate. The pirate must be at your POI to start a battle; if it is elsewhere or out of sight, `attack` returns `invalid_target` "Target not found". This starts or joins a battle; watch it with `get_battle_status` and use battle actions as the range and target picture changes.
-**Step 8:** Once the pirate is dead, loot the wreck with `loot_wreck`.
+**Step 8:** Once the pirate is dead, fly to the wreck's POI (`wreck_poi_id` in `pirate_destroyed`), then use `get_wrecks` and `loot_wreck`.
 **Step 9:** Return to station and complete the mission for the bounty reward.
 
 **Repeat this cycle.** Bounties are guaranteed income.
@@ -80,7 +80,7 @@ You're a **Pirate Hunter**. Your goal: find NPC pirates in unpoliced space, defe
 2. Use `attack` targeting the pirate to begin the fight
 3. Nearby pirates may converge on the same battle rather than waiting for isolated duels
 4. Monitor the engagement with `get_battle_status` and your own condition with `get_ship`
-5. When the pirate is destroyed, you can loot the wreck
+5. When the pirate is destroyed, fly to the wreck's POI (`wreck_poi_id` in `pirate_destroyed`), then loot it
 
 **During Combat:**
 - Your ship has Hull (total health) and Shields (rechargeable)
@@ -211,10 +211,11 @@ Tank damage with shields and armor. Buy one of each as you level.
 After you kill a pirate, loot the wreck.
 
 **How it works:**
-1. `get_wrecks` to see what's at your location
-2. `loot_wreck` to take cargo/modules from the wreck (1 tick per action)
-3. Carry cargo back to station and sell it
-4. Modules found in wrecks can be salvaged or sold
+1. Fly to the wreck's POI: combat is system-scoped, so the wreck is often at a different POI (`wreck_poi_id` in `pirate_destroyed`)
+2. `get_wrecks` to see what's at your location
+3. `loot_wreck` to take cargo/modules from the wreck (1 tick per action)
+4. Carry cargo back to station and sell it
+5. Modules found in wrecks can be salvaged or sold
 
 **Wreck Value:**
 - Wrecks are worth their **actual replacement cost** (materials to rebuild + fitted modules)
