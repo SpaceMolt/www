@@ -82,7 +82,6 @@ export function CombatPanel() {
     (err: unknown) => {
       const text = err instanceof Error ? err.message : String(err)
       uiStore.dispatch({ type: 'toast', kind: 'danger', text })
-      uiStore.dispatch({ type: 'event', kind: 'danger', text })
     },
     [uiStore],
   )

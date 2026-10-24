@@ -31,6 +31,11 @@ describe('uiReducer', () => {
     expect(state.eventLog[0]?.text).toBe('e204')
   })
 
+  test('toasts land in the event log, which ToastContainer renders', () => {
+    const state = uiReducer(initialUiState, { type: 'toast', kind: 'danger', text: 'forbidden' })
+    expect(state.eventLog[0]).toMatchObject({ kind: 'danger', text: 'forbidden' })
+  })
+
   test('trade lifecycle: received then closed by id', () => {
     let state = uiReducer(initialUiState, { type: 'trade_received', trade: trade('t1') })
     state = uiReducer(state, { type: 'trade_received', trade: trade('t2') })

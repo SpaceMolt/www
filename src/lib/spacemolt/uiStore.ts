@@ -32,17 +32,10 @@ export interface EventLogEntry {
   text: string
 }
 
-export interface Toast {
-  id: number
-  kind: EventKind
-  text: string
-}
-
 export interface UiState {
   eventLog: EventLogEntry[]
   chatMessages: ChatMessage[]
   pendingTrades: TradeOffer[]
-  toasts: Toast[]
   battle: BattleView | null
   inCombat: boolean
   /** Current participation, independent of the replay being displayed. */
@@ -59,7 +52,6 @@ export interface UiState {
 export type UiAction =
   | { type: 'event'; kind: EventKind; text: string; at?: number }
   | { type: 'toast'; kind: EventKind; text: string }
-  | { type: 'dismiss_toast'; id: number }
   | { type: 'chat'; message: ChatMessage }
   | { type: 'seed_chat'; messages: ChatMessage[] }
   | { type: 'trade_received'; trade: TradeOffer }
@@ -80,7 +72,6 @@ export const initialUiState: UiState = {
   eventLog: [],
   chatMessages: [],
   pendingTrades: [],
-  toasts: [],
   battle: null,
   inCombat: false,
   activeBattleId: null,
@@ -103,9 +94,8 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
         ].slice(0, EVENT_LOG_LIMIT),
       }
     case 'toast':
-      return { ...state, toasts: [...state.toasts, { id: nextId++, kind: action.kind, text: action.text }] }
-    case 'dismiss_toast':
-      return { ...state, toasts: state.toasts.filter((t) => t.id !== action.id) }
+      // ToastContainer pops toasts off the event log (danger kind only).
+      return uiReducer(state, { ...action, type: 'event' })
     case 'chat':
       return { ...state, chatMessages: [...state.chatMessages, action.message].slice(-CHAT_LIMIT) }
     case 'seed_chat':
