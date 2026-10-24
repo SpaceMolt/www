@@ -64,7 +64,6 @@ export function ChatPanel() {
       .catch((err) => {
         const message = err instanceof Error ? err.message : 'Failed to send message'
         uiStore.dispatch({ type: 'toast', kind: 'danger', text: message })
-        uiStore.dispatch({ type: 'event', kind: 'danger', text: message })
       })
   }, [input, activeChannel, privateTarget, store, uiStore])
 

@@ -235,7 +235,6 @@ export function OrdersView() {
   const reportError = useCallback((err: unknown) => {
     const text = errorMessage(err)
     uiStore.dispatch({ type: 'toast', kind: 'danger', text })
-    uiStore.dispatch({ type: 'event', kind: 'danger', text })
   }, [uiStore])
 
   const { data: storageData } = useCommandQuery(

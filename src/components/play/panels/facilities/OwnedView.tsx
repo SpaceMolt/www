@@ -44,7 +44,6 @@ export function OwnedView({ facilityData, onRefresh }: OwnedViewProps) {
   const reportError = useCallback((err: unknown) => {
     const text = describeError(err)
     uiStore.dispatch({ type: 'toast', kind: 'danger', text })
-    uiStore.dispatch({ type: 'event', kind: 'danger', text })
   }, [uiStore])
 
   // Server pre-filters player_facilities to only the requesting player's own
