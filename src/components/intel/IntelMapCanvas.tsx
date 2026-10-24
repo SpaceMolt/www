@@ -10,6 +10,7 @@ import type {
   IntelAgent,
   IntelLayerState,
   IntelMapSystem,
+  PrizeRecovery,
   PublicStation,
   TrailSegment,
   TransitMarker,
@@ -27,6 +28,7 @@ import styles from './IntelMapCanvas.module.css'
 const NODE_RADIUS = 6
 const DEFAULT_COLOR = '#5a6a7a'
 const UNKNOWN_COLOR = '#3a4654'
+const PRIZE_COLOR = '#ffd93d' // --warning-yellow
 const LINE_COLOR = 'rgba(140, 170, 200, 0.6)'
 const UNKNOWN_LINE_COLOR = 'rgba(90, 106, 122, 0.08)'
 const INTEL_OUTLINE_COLOR = 'rgba(168, 197, 214, 0.75)'
@@ -139,6 +141,8 @@ interface IntelMapCanvasProps {
   /** Every station in the galaxy, keyed by system. Public knowledge — not fogged. */
   stationsBySystem: Map<string, PublicStation[]>
   agentsBySystem: Map<string, IntelAgent[]>
+  /** Claimed prizes, keyed by the system they are in (or the leg origin mid-jump). */
+  prizesBySystem: Map<string, PrizeRecovery[]>
   trails: TrailSegment[]
   transits: TransitMarker[]
   /** Server tick estimate; read every frame so in-flight agents advance smoothly */
@@ -170,6 +174,7 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
       intelSystems,
       stationsBySystem,
       agentsBySystem,
+      prizesBySystem,
       trails,
       transits,
       tickClock,
@@ -223,6 +228,8 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
     stationsRef.current = stationsBySystem
     const agentsBySystemRef = useRef(agentsBySystem)
     agentsBySystemRef.current = agentsBySystem
+    const prizesBySystemRef = useRef(prizesBySystem)
+    prizesBySystemRef.current = prizesBySystem
     const trailsRef = useRef(trails)
     trailsRef.current = trails
     const transitsRef = useRef(transits)
@@ -780,6 +787,38 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
           // Agent count badge
           if (agentsHere && agentsHere.length > 0) {
             drawAgentBadge(ctx, pos.x, pos.y, agentsHere, nodeScale)
+          }
+
+          // Prize recovery: yellow diamond below-left of the node, plus a dashed
+          // guide to the next system while a jump leg is in flight.
+          const prizesHere = layersRef.current.agents ? prizesBySystemRef.current.get(system.id) : undefined
+          if (prizesHere && prizesHere.length > 0) {
+            ctx.save()
+            ctx.strokeStyle = PRIZE_COLOR
+            ctx.lineWidth = 1.5
+            ctx.setLineDash([4, 6])
+            for (const prize of prizesHere) {
+              const toSys = prize.transit_to_system_id ? systemsByIdRef.current.get(prize.transit_to_system_id) : undefined
+              if (!toSys || toSys.id === system.id) continue
+              const to = worldToScreen(toSys.x, toSys.y)
+              ctx.beginPath()
+              ctx.moveTo(pos.x, pos.y)
+              ctx.lineTo(to.x, to.y)
+              ctx.stroke()
+            }
+            ctx.setLineDash([])
+            const d = 5 * Math.max(nodeScale, 0.6)
+            const px = pos.x - nr - d
+            const py = pos.y + nr + d
+            ctx.fillStyle = PRIZE_COLOR
+            ctx.beginPath()
+            ctx.moveTo(px, py - d)
+            ctx.lineTo(px + d, py)
+            ctx.lineTo(px, py + d)
+            ctx.lineTo(px - d, py)
+            ctx.closePath()
+            ctx.fill()
+            ctx.restore()
           }
 
           // Hover uses the richer DOM tooltip, so it never duplicates the canvas

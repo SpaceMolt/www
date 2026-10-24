@@ -12,6 +12,7 @@ import { useVisiblePoll } from '@/lib/useVisiblePoll'
 import { subscribeToEvents } from '@/lib/sharedEventSource'
 import type {
   IntelAgent,
+  PrizeRecovery,
   IntelMapResponse,
   IntelMapSystem,
   IntelMovement,
@@ -95,6 +96,7 @@ export interface UseIntelDataResult {
   exploredSet: Set<string>
   intelSet: Set<string>
   agentsBySystem: Map<string, IntelAgent[]>
+  prizesBySystem: Map<string, PrizeRecovery[]>
   /** Agent id -> id of an active battle that agent is fighting in. */
   agentBattles: Map<string, string>
   trails: TrailSegment[]
@@ -108,6 +110,19 @@ export interface UseIntelDataResult {
   error: string | null
   rateLimited: boolean
   retry: () => void
+}
+
+/** Buckets claimed prizes by system. Mid-leg prizes can omit system_id, so fall back to the leg origin. */
+export function groupPrizesBySystem(agents: IntelAgent[]): Map<string, PrizeRecovery[]> {
+  const map = new Map<string, PrizeRecovery[]>()
+  for (const prize of agents.flatMap((a) => a.prize_recoveries ?? [])) {
+    const systemId = prize.system_id || prize.transit_from_system_id
+    if (!systemId) continue
+    const list = map.get(systemId)
+    if (list) list.push(prize)
+    else map.set(systemId, [prize])
+  }
+  return map
 }
 
 export function useIntelData({
@@ -510,6 +525,8 @@ export function useIntelData({
     return map
   }, [filteredAgents])
 
+  const prizesBySystem = useMemo(() => groupPrizesBySystem(filteredAgents), [filteredAgents])
+
   // Keyed on every agent, not the filtered list, so a row keeps its badge
   // whatever the sidebar filters are showing.
   const agentBattles = useMemo(
@@ -583,6 +600,7 @@ export function useIntelData({
     exploredSet,
     intelSet,
     agentsBySystem,
+    prizesBySystem,
     agentBattles,
     trails,
     transits,

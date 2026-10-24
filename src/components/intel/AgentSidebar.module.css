@@ -319,3 +319,7 @@
     width: 230px;
   }
 }
+
+.prizeMeta {
+  color: var(--warning-yellow);
+}
