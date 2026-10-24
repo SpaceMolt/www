@@ -12,12 +12,12 @@
     "lint": "node scripts/fetch-catalog.mjs && node scripts/build-guides-manifest.mjs && tsc --noEmit"
   },
   "dependencies": {
-    "@clerk/nextjs": "^6.37.3",
-    "@clerk/themes": "^2.4.51",
+    "@clerk/nextjs": "^6.39.8",
+    "@clerk/themes": "^2.4.57",
     "@spacemolt/lib": "^16.4.0",
     "gray-matter": "^4.0.3",
     "lucide-react": "^0.563.0",
-    "next": "^16.1.6",
+    "next": "^16.4.2",
     "nuqs": "^2.8.8",
     "posthog-js": "^1.402.3",
     "react": "^19.2.4",

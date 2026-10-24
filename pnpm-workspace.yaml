@@ -8,3 +8,6 @@ allowBuilds:
   '@clerk/shared': true
   core-js: false
   sharp: true
+
+overrides:
+  dompurify: ^3.4.17
