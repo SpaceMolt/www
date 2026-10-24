@@ -5,7 +5,7 @@ import { EMPIRE_COLORS, EMPIRE_NAMES } from './empireMeta'
 import Link from 'next/link'
 import { SignInButton, SignOutButton } from '@clerk/nextjs'
 import { Suspense, useEffect, useState, useCallback, useRef } from 'react'
-import { Settings, BookOpen, Rocket, Users, Ship, Wifi, WifiOff, Clock, Coins, BarChart3, Wrench, ScrollText, MapPin, UserCog, KeyRound, Eye, EyeOff, Copy, Check, RefreshCw, MessageSquare, Play, Monitor, AlertTriangle, Heart, X } from 'lucide-react'
+import { Settings, BookOpen, Rocket, Users, Ship, Wifi, WifiOff, Clock, Coins, BarChart3, Wrench, ScrollText, MapPin, UserCog, KeyRound, Eye, EyeOff, Copy, Check, RefreshCw, MessageSquare, Play, Monitor, AlertTriangle, Heart, X, Megaphone } from 'lucide-react'
 import { useQueryState } from 'nuqs'
 import { SetupTabs } from '@/components/SetupTabs'
 import { DashboardChat } from '@/components/DashboardChat'
@@ -20,6 +20,19 @@ const GAME_SERVER = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spac
 // Survey A (active-player research) banner — see www issue #123
 const SURVEY_A_URL = 'https://tally.so/r/0Qk77B'
 const SURVEY_A_ACTIVE_WINDOW_MS = 7 * 24 * 60 * 60 * 1000
+
+// One-time "How did you hear about SpaceMolt?" banner. Keys must match the gameserver's list.
+const ACQUISITION_SOURCES: [string, string][] = [
+  ['reddit', 'Reddit'],
+  ['hacker_news', 'Hacker News'],
+  ['youtube', 'YouTube'],
+  ['x', 'X (Twitter)'],
+  ['friend', 'Friend or colleague'],
+  ['github', 'GitHub'],
+  ['ai_assistant', 'An AI assistant (ChatGPT, Claude, etc.)'],
+  ['newsletter', 'Our newsletter'],
+  ['other', 'Other'],
+]
 
 /** True if the given ISO timestamp is within the last 7 days. */
 function isRecentlyActive(ts?: string): boolean {
@@ -38,6 +51,7 @@ interface LinkedPlayer {
 interface RegistrationCodeResponse {
   registration_code: string
   players: LinkedPlayer[]
+  ask_acquisition_source?: boolean
 }
 
 interface PlayerShipInfo {
@@ -291,6 +305,11 @@ function DashboardContent() {
     return () => clearTimeout(timer)
   }, [])
 
+  // Acquisition-source banner state: shown until answered or dismissed (recorded as a skip)
+  const [askSource, setAskSource] = useState(false)
+  const [sourceChoice, setSourceChoice] = useState('')
+  const [sourceOther, setSourceOther] = useState('')
+
   // Chat tab state
   const [allPlayerInfo, setAllPlayerInfo] = useState<PlayerInfo[]>([])
   const [chatPlayersLoading, setChatPlayersLoading] = useState(false)
@@ -314,6 +333,7 @@ function DashboardContent() {
         const data: RegistrationCodeResponse = await res.json()
         setRegistrationCode(data.registration_code)
         setPlayers(data.players || [])
+        setAskSource(!!data.ask_acquisition_source)
         if (data.players?.length === 1 && !selectedPlayer) {
           setSelectedPlayer(data.players[0].id)
         }
@@ -327,6 +347,21 @@ function DashboardContent() {
       setCodeLoading(false)
     }
   }, [authHeaders, selectedPlayer, setSelectedPlayer])
+
+  // Fire-and-forget: the banner hides at once, and a failed save just asks again next visit.
+  const recordAcquisitionSource = async (source: string) => {
+    setAskSource(false)
+    try {
+      const headers = await authHeaders()
+      await fetch(`${GAME_SERVER}/api/acquisition-source`, {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ source, other: sourceOther }),
+      })
+    } catch {
+      // Never block the dashboard on this.
+    }
+  }
 
   const fetchPlayerInfo = useCallback(async (playerId: string) => {
     setPlayerLoading(true)
@@ -645,6 +680,53 @@ function DashboardContent() {
             <X size={14} />
           </button>
         </div>
+      )}
+
+      {askSource && (
+        <form
+          className={styles.surveyBanner}
+          onSubmit={(e) => {
+            e.preventDefault()
+            if (sourceChoice) recordAcquisitionSource(sourceChoice)
+          }}
+        >
+          <Megaphone size={16} className={styles.surveyBannerIcon} />
+          <label htmlFor="acquisition-source" className={styles.surveyBannerText}>
+            How did you hear about SpaceMolt?
+          </label>
+          <select
+            id="acquisition-source"
+            className={styles.sourceField}
+            value={sourceChoice}
+            onChange={(e) => setSourceChoice(e.target.value)}
+          >
+            <option value="" disabled>Choose one</option>
+            {ACQUISITION_SOURCES.map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
+          {sourceChoice === 'other' && (
+            <input
+              className={styles.sourceField}
+              value={sourceOther}
+              onChange={(e) => setSourceOther(e.target.value)}
+              maxLength={200}
+              placeholder="Where?"
+              aria-label="Where did you hear about SpaceMolt?"
+            />
+          )}
+          <button type="submit" className={styles.sourceSubmit} disabled={!sourceChoice}>
+            Submit
+          </button>
+          <button
+            type="button"
+            className={styles.surveyBannerClose}
+            onClick={() => recordAcquisitionSource('skipped')}
+            aria-label="Dismiss"
+          >
+            <X size={14} />
+          </button>
+        </form>
       )}
 
       {/* Survey A research banner — shown to recently-active players (www issue #123) */}

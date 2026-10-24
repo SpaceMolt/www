@@ -132,6 +132,33 @@
   color: var(--chrome-silver);
 }
 
+.sourceField {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--star-white);
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  border-radius: 0;
+  padding: 0.35rem 0.5rem;
+  max-width: 100%;
+}
+
+.sourceSubmit {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--plasma-cyan);
+  background: none;
+  border: 1px solid rgba(0, 212, 255, 0.4);
+  border-radius: 0;
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+}
+
+.sourceSubmit:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 /* === Header (chrome comes from .console-page-header globals) === */
 .header {
   width: 100%;
