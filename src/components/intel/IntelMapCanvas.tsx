@@ -137,6 +137,12 @@ function fallbackFactionColor(factionId: string) {
   return `hsl(${hue} ${saturation}% ${lightness}%)`
 }
 
+/** Mobile base colour: owner colour, hashed faction colour, capital empire colour, else cyan. */
+function markerColor(base: PublicMobileBase, systems: Map<string, IntelMapSystem>): string {
+  if (base.faction_id && !base.faction_color && !base.wrecked) return fallbackFactionColor(base.faction_id)
+  return mobileBaseColor(base, base.system_id ? systems.get(base.system_id)?.empire_color : undefined)
+}
+
 export function getStationRingStyle(stations: PublicStation[], systemColor: string) {
   const factionStation = stations.find((station) => station.faction_id)
   if (factionStation?.faction_id) {
@@ -635,10 +641,7 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
         s.mobileBaseMarkers = markers
         ctx.save()
         for (const { base, x, y, anchorX, anchorY, jumping, angle } of markers) {
-          const color =
-            base.faction_id && !base.faction_color && !base.wrecked
-              ? fallbackFactionColor(base.faction_id)
-              : mobileBaseColor(base, base.system_id ? byId.get(base.system_id)?.empire_color : undefined)
+          const color = markerColor(base, byId)
           const isHovered = s.hoveredMobileBase?.base_id === base.base_id
           const radius = MOBILE_BASE_RADIUS * scale * (isHovered ? 1.3 : 1)
           ctx.globalAlpha = base.wrecked ? 0.5 : 1
@@ -1046,7 +1049,7 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
       const systemName = (id: string) => systemsByIdRef.current.get(id)?.name || id
       if (tooltipNameRef.current) {
         tooltipNameRef.current.textContent = mobileBaseLabel(base)
-        tooltipNameRef.current.style.color = base.faction_color || '#e8f4f8'
+        tooltipNameRef.current.style.color = markerColor(base, systemsByIdRef.current)
       }
       if (tooltipEmpireRef.current) {
         const empire = base.empire ? EMPIRE_NAMES[base.empire] || base.empire : ''

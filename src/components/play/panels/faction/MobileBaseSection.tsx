@@ -48,11 +48,12 @@ export function MobileBaseSection({
   const progress = mb ? mobileBaseProgress(mb, tick) : null
 
   // Phase changes such as a move arriving or a jump leaving send no
-  // notification, so refresh once the current phase is due to end.
+  // notification, so refresh once the current phase is due to end, and again
+  // each tick until the server reports the next phase.
   const phaseDone = Boolean(progress && progress.ticksLeft === 0)
   useEffect(() => {
     if (phaseDone) onChanged()
-  }, [phaseDone, onChanged])
+  }, [phaseDone, tick, onChanged])
 
   const run = useCallback(
     async (label: string, action: Parameters<typeof mutate>[0]) => {
