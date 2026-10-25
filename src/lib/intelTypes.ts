@@ -145,7 +145,8 @@ export interface KnownWormhole {
   entry_poi: string
   exit_system: string
   exit_poi: string
-  expires_at: string
+  /** RFC3339; absent when the wormhole never expires. */
+  expires_at?: string
 }
 
 export interface FactionIntelSource {
@@ -421,4 +422,5 @@ export interface IntelLayerState {
   trails: boolean
   trailFocus: boolean
   agents: boolean
+  wormholes: boolean
 }

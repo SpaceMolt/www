@@ -52,6 +52,7 @@ function IntelContent() {
     trails: true,
     trailFocus: false,
     agents: true,
+    wormholes: true,
   })
 
   const mapRef = useRef<IntelMapCanvasHandle>(null)
@@ -163,6 +164,7 @@ function IntelContent() {
           prizesBySystem={data.prizesBySystem}
           trails={data.trails}
           transits={data.transits}
+          wormholes={data.knownWormholes}
           tickClock={data.tickClock}
           selectedSystemId={selectedSystem}
           layers={layers}
