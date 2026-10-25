@@ -695,8 +695,10 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
       const systemPosition = (id: string) => s.systemsById.get(id)
       ctx.save()
       ctx.fillStyle = '#67e8f9'
-      ctx.shadowColor = '#22d3ee'
-      ctx.shadowBlur = TRANSIT_GLOW_RADIUS
+      // A wide translucent stroke stands in for shadowBlur, which forces a
+      // full-canvas blur pass per fill and dropped the map to ~2 fps.
+      ctx.strokeStyle = 'rgba(34, 211, 238, 0.3)'
+      ctx.lineWidth = 4
       for (const transit of s.publicTransitPresentation.displayed) {
         const opacity = displayedPublicTransitOpacity(transit, nowMs, tickNow)
         if (opacity <= 0) continue
@@ -746,12 +748,12 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
         ctx.globalAlpha = opacity
         ctx.translate(x, y)
         ctx.rotate(Math.atan2(dy, dx))
+        ctx.stroke(formationPath)
         ctx.fill(formationPath)
         ctx.restore()
         if (formation.overflowCount > 0) {
           ctx.save()
           ctx.globalAlpha = opacity
-          ctx.shadowBlur = 4
           ctx.font = '600 10px monospace'
           ctx.textAlign = 'center'
           ctx.textBaseline = 'top'
@@ -888,29 +890,24 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
       drawStarfield(ctx)
       drawGrid(ctx)
 
-      // Draw connections
-      const drawnConnections = new Set<string>()
+      // Draw connections as one path: each edge once, one stroke call.
+      ctx.strokeStyle = LINE_COLOR
+      ctx.lineWidth = 1.5
+      ctx.beginPath()
       for (const system of s.mapData.systems) {
         const pos1 = worldToScreen(system.x, system.y)
         for (const connId of system.connections) {
-          const connKey = [system.id, connId].sort().join('-')
-          if (drawnConnections.has(connKey)) continue
-          drawnConnections.add(connKey)
-
-          const connSystem = s.mapData.systems.find(
-            (sys) => sys.id === connId,
-          )
+          const connSystem = s.systemsById.get(connId)
           if (!connSystem) continue
+          // Each edge is listed from both ends; draw it from the lower id.
+          if (connId < system.id) continue
 
           const pos2 = worldToScreen(connSystem.x, connSystem.y)
-          ctx.strokeStyle = LINE_COLOR
-          ctx.lineWidth = 1.5
-          ctx.beginPath()
           ctx.moveTo(pos1.x, pos1.y)
           ctx.lineTo(pos2.x, pos2.y)
-          ctx.stroke()
         }
       }
+      ctx.stroke()
 
       // Draw travel paths (above connections, below nodes)
       drawTravelPaths(ctx)
@@ -1990,6 +1987,14 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
 
     // ── Animation Loop ───────────────────────────────────────────
     let animFrameId: number
+    // Skip drawing while the canvas is scrolled offscreen (the homepage embed
+    // sits below the fold), and cap idle redraws at ~30 fps.
+    let onScreen = true
+    let lastRenderTime = 0
+    const visibilityObserver = new IntersectionObserver(([entry]) => {
+      onScreen = entry.isIntersecting
+    })
+    visibilityObserver.observe(canvas)
 
     function animationLoop(timestamp: number) {
       const deltaTime = timestamp - s.lastFrameTime
@@ -2009,7 +2014,11 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
         Math.abs(viewXDiff) <= 0.1 &&
         Math.abs(viewYDiff) <= 0.1
 
-      render(drawingContext)
+      const idle = viewSettled && !s.isDragging
+      if (onScreen && (!idle || timestamp - lastRenderTime >= 33)) {
+        lastRenderTime = timestamp
+        render(drawingContext)
+      }
 
       if (viewSettled && !s.viewWasSettled) {
         s.zoom = s.targetZoom
@@ -2555,6 +2564,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
       canvas.removeEventListener('touchmove', onTouchMove)
       canvas.removeEventListener('touchend', onTouchEnd)
       if (resizeObserver) resizeObserver.disconnect()
+      visibilityObserver.disconnect()
       cancelAnimationFrame(animFrameId)
       clearInterval(activityPollInterval)
       clearInterval(travelSyncInterval)
