@@ -17,6 +17,7 @@ import type {
   IntelMapSystem,
   IntelMovement,
   IntelMovementsResponse,
+  KnownWormhole,
   PublicMapResponse,
   PublicStation,
   PublicStationsResponse,
@@ -101,6 +102,7 @@ export interface UseIntelDataResult {
   agentBattles: Map<string, string>
   trails: TrailSegment[]
   transits: TransitMarker[]
+  knownWormholes: KnownWormhole[]
   trailColors: Map<string, string>
   factionOptions: FactionOption[]
   /** Server tick estimate the canvas draws from. Mutable; never triggers a render. */
@@ -604,6 +606,7 @@ export function useIntelData({
     agentBattles,
     trails,
     transits,
+    knownWormholes: scoped?.known_wormholes ?? [],
     trailColors,
     factionOptions,
     tickClock: tickClockRef.current,

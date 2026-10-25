@@ -10,6 +10,7 @@ import type {
   IntelAgent,
   IntelLayerState,
   IntelMapSystem,
+  KnownWormhole,
   PrizeRecovery,
   PublicStation,
   TrailSegment,
@@ -33,6 +34,7 @@ const LINE_COLOR = 'rgba(140, 170, 200, 0.6)'
 const UNKNOWN_LINE_COLOR = 'rgba(90, 106, 122, 0.08)'
 const INTEL_OUTLINE_COLOR = 'rgba(168, 197, 214, 0.75)'
 const SELECTED_COLOR = 'rgba(0, 212, 255, 0.9)'
+const WORMHOLE_COLOR = 'rgba(190, 120, 255, 0.85)'
 const MIN_ZOOM = 0.001
 const MAX_ZOOM = 50
 const ZOOM_SENSITIVITY = 0.002
@@ -75,6 +77,11 @@ export function buildTrailFocus(trails: TrailSegment[], transits: TransitMarker[
 
 export function isConnectionTrailFocused(connections: Set<string>, from: string, to: string) {
   return connections.has(trailConnectionKey(from, to))
+}
+
+/** The snapshot can outlive a wormhole between refreshes, so re-check expiry at draw time. */
+export function isWormholeActive(wormhole: KnownWormhole, nowMs: number) {
+  return !wormhole.expires_at || Date.parse(wormhole.expires_at) > nowMs
 }
 
 export function shouldDimSystemForTrailFocus(
@@ -145,6 +152,7 @@ interface IntelMapCanvasProps {
   prizesBySystem: Map<string, PrizeRecovery[]>
   trails: TrailSegment[]
   transits: TransitMarker[]
+  wormholes: KnownWormhole[]
   /** Server tick estimate; read every frame so in-flight agents advance smoothly */
   tickClock: TickClock
   selectedSystemId: string | null
@@ -177,6 +185,7 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
       prizesBySystem,
       trails,
       transits,
+      wormholes,
       tickClock,
       selectedSystemId,
       layers,
@@ -234,6 +243,8 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
     trailsRef.current = trails
     const transitsRef = useRef(transits)
     transitsRef.current = transits
+    const wormholesRef = useRef(wormholes)
+    wormholesRef.current = wormholes
     const trailFocus = useMemo(() => buildTrailFocus(trails, transits), [trails, transits])
     const trailFocusRef = useRef(trailFocus)
     trailFocusRef.current = trailFocus
@@ -646,6 +657,38 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
             ctx.lineTo(pos2.x, pos2.y)
             ctx.stroke()
           }
+        }
+
+        // Known wormholes: dashed entry -> exit links. They are one-way, so a
+        // chevron at the midpoint points at the exit.
+        if (layersRef.current.wormholes) {
+          const now = Date.now()
+          ctx.save()
+          ctx.strokeStyle = WORMHOLE_COLOR
+          ctx.lineWidth = 1.5
+          for (const wormhole of wormholesRef.current) {
+            if (!isWormholeActive(wormhole, now)) continue
+            const entry = byId.get(wormhole.entry_system)
+            const exit = byId.get(wormhole.exit_system)
+            if (!entry || !exit) continue
+            const from = worldToScreen(entry.x, entry.y)
+            const to = worldToScreen(exit.x, exit.y)
+            ctx.setLineDash([6, 4])
+            ctx.beginPath()
+            ctx.moveTo(from.x, from.y)
+            ctx.lineTo(to.x, to.y)
+            ctx.stroke()
+            const angle = Math.atan2(to.y - from.y, to.x - from.x)
+            const midX = (from.x + to.x) / 2
+            const midY = (from.y + to.y) / 2
+            ctx.setLineDash([])
+            ctx.beginPath()
+            ctx.moveTo(midX - 7 * Math.cos(angle - 0.5), midY - 7 * Math.sin(angle - 0.5))
+            ctx.lineTo(midX, midY)
+            ctx.lineTo(midX - 7 * Math.cos(angle + 0.5), midY - 7 * Math.sin(angle + 0.5))
+            ctx.stroke()
+          }
+          ctx.restore()
         }
 
         drawTrails(ctx)

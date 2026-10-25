@@ -4,11 +4,12 @@ import {
   buildTrailFocus,
   getStationRingStyle,
   isConnectionTrailFocused,
+  isWormholeActive,
   shouldDimSystemForTrailFocus,
   shouldShowSystemLabel,
 } from './IntelMapCanvas'
 import { CANONICAL_EMPIRE_FULL_NAMES, expectExactEmpireKeys } from '@/test/canonicalEmpires'
-import type { PublicStation, TrailSegment, TransitMarker } from '@/lib/intelTypes'
+import type { KnownWormhole, PublicStation, TrailSegment, TransitMarker } from '@/lib/intelTypes'
 
 describe('IntelMapCanvas EMPIRE_NAMES', () => {
   it('has exactly the 5 canonical empire ids as keys (no stray, typo\'d, or missing keys)', () => {
@@ -129,5 +130,26 @@ describe('IntelMapCanvas station circles', () => {
     expect(Math.min(...generatedHues)).toBeGreaterThanOrEqual(90)
     expect(Math.max(...generatedHues)).toBeLessThanOrEqual(135)
     expect(minimumEmpireDistance).toBeGreaterThanOrEqual(35)
+  })
+})
+
+describe('IntelMapCanvas isWormholeActive', () => {
+  const base: KnownWormhole = {
+    id: 'wh1',
+    entry_system: 'a',
+    entry_poi: 'a-poi',
+    exit_system: 'b',
+    exit_poi: 'b-poi',
+  }
+  const now = Date.parse('2026-10-24T12:00:00Z')
+
+  it('keeps wormholes with no expiry or a future expiry', () => {
+    expect(isWormholeActive(base, now)).toBe(true)
+    expect(isWormholeActive({ ...base, expires_at: '2026-10-24T12:00:01Z' }, now)).toBe(true)
+  })
+
+  it('drops wormholes that expired after the snapshot was fetched', () => {
+    expect(isWormholeActive({ ...base, expires_at: '2026-10-24T12:00:00Z' }, now)).toBe(false)
+    expect(isWormholeActive({ ...base, expires_at: '2026-10-24T11:00:00Z' }, now)).toBe(false)
   })
 })
