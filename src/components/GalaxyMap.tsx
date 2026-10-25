@@ -1323,6 +1323,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
         tooltipOnlineRef.current.textContent = mobileBaseStatus(
           base,
           (id) => s.systemsById.get(id)?.name ?? id,
+          s.tickClock.now(),
         )
         tooltipOnlineRef.current.className = styles.tooltipOnline
       }

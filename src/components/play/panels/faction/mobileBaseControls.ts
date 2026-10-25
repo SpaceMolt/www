@@ -3,8 +3,6 @@ import type { FactionInfoResponse, MobileBaseInfo } from '@spacemolt/lib'
 /** Server limit for in-system moves: distance from the system center. */
 export const MOBILE_BASE_MAX_RADIUS_AU = 10
 
-const TICK_SECONDS = 10
-
 export const LIFECYCLE_LABEL: Record<MobileBaseInfo['lifecycle'], string> = {
   stationary: 'Holding position',
   in_system_transit: 'Moving in-system',
@@ -50,11 +48,4 @@ export function mobileBasePosition(mb: MobileBaseInfo, tick: number): { x: numbe
   const from = mb.origin.position
   const to = mb.destination.position
   return { x: from.x + (to.x - from.x) * p, y: from.y + (to.y - from.y) * p }
-}
-
-/** "~1h 25m" style countdown for a tick count at the default 10 s tick. */
-export function formatTicksLeft(ticks: number): string {
-  const minutes = Math.ceil((ticks * TICK_SECONDS) / 60)
-  if (minutes < 60) return `~${minutes}m`
-  return `~${Math.floor(minutes / 60)}h ${minutes % 60}m`
 }

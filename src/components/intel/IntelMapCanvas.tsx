@@ -1055,7 +1055,7 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
         tooltipEmpireRef.current.style.display = 'block'
       }
       if (tooltipTagsRef.current) {
-        const status = mobileBaseStatus(base, systemName)
+        const status = mobileBaseStatus(base, systemName, tickClockRef.current.now())
         tooltipTagsRef.current.textContent = base.system_id
           ? `${status} · ${systemName(base.system_id)}`
           : status

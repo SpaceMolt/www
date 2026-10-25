@@ -21,6 +21,9 @@ export interface PublicMobileBase {
   to_system?: string
   start_tick?: number
   arrival_tick?: number
+  /** Mobile capital only: its next patrol stop and the tick it switches there. */
+  next_system?: string
+  depart_tick?: number
   wrecked: boolean
 }
 
@@ -57,10 +60,28 @@ export function mobileBasePose(
   return at ? { x: at.x, y: at.y, jumping: false, angle: 0 } : null
 }
 
-/** One-line status for tooltips and panels. */
-export function mobileBaseStatus(base: PublicMobileBase, systemName: (id: string) => string = (id) => id): string {
+/** "~1h 25m" style countdown for a tick count at the default 10 s tick. */
+export function formatTicksLeft(ticks: number): string {
+  const minutes = Math.ceil((Math.max(0, ticks) * 10) / 60)
+  if (minutes < 60) return `~${minutes}m`
+  return `~${Math.floor(minutes / 60)}h ${minutes % 60}m`
+}
+
+/**
+ * One-line status for tooltips and panels. With `tickNow`, the mobile capital
+ * names its next patrol stop and when it switches there.
+ */
+export function mobileBaseStatus(
+  base: PublicMobileBase,
+  systemName: (id: string) => string = (id) => id,
+  tickNow: number | null = null,
+): string {
   if (base.wrecked) return 'Wrecked'
-  if (base.kind === 'capital') return 'On patrol'
+  if (base.kind === 'capital') {
+    if (!base.next_system) return 'On patrol'
+    const when = base.depart_tick && tickNow !== null ? ` in ${formatTicksLeft(base.depart_tick - tickNow)}` : ''
+    return `Next stop: ${systemName(base.next_system)}${when}`
+  }
   switch (base.lifecycle) {
     case 'jumping':
       return base.from_system && base.to_system

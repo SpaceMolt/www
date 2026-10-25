@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Move, Rocket, Trash2, X } from 'lucide-react'
 import type { FactionInfoResponse } from '@spacemolt/lib'
 import { useCommandMutation, useCurrentTick, useMap } from '@/lib/spacemolt'
+import { formatTicksLeft } from '@/lib/mobileBases'
 import { usePlay } from '../../PlayProvider'
 import { ActionButton } from '../../ActionButton'
 import { shared } from '../../shared'
@@ -12,7 +13,6 @@ import {
   LIFECYCLE_LABEL,
   MOBILE_BASE_MAX_RADIUS_AU,
   canManageMobileBase,
-  formatTicksLeft,
   mobileBasePosition,
   mobileBaseProgress,
   parseMoveTarget,

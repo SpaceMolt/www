@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test'
 import type { FactionInfoResponse, MobileBaseInfo } from '@spacemolt/lib'
-import { canManageMobileBase, formatTicksLeft, mobileBasePosition, mobileBaseProgress, parseMoveTarget } from './mobileBaseControls'
+import { formatTicksLeft } from '@/lib/mobileBases'
+import { canManageMobileBase, mobileBasePosition, mobileBaseProgress, parseMoveTarget } from './mobileBaseControls'
 
 const moving: MobileBaseInfo = {
   archetype_id: 'civitas', base_id: 'drft_civitas', poi_id: 'drft_civitas', name: 'Civitas',

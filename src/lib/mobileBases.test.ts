@@ -39,6 +39,16 @@ test('status and label describe the base', () => {
   expect(mobileBaseLabel(parked)).toBe('[DRFT] Civitas')
 })
 
+test('the capital names its next patrol stop and when it leaves', () => {
+  const capital: PublicMobileBase = {
+    base_id: 'frontier_station', name: 'Frontier Station', kind: 'capital', system_id: 'alpha',
+    next_system: 'beta', depart_tick: 1000, wrecked: false,
+  }
+  expect(mobileBaseStatus(capital, (id) => id.toUpperCase(), 100)).toBe('Next stop: BETA in ~2h 30m')
+  expect(mobileBaseStatus(capital)).toBe('Next stop: beta')
+  expect(mobileBasePose(capital, 500, at)).toEqual({ x: 0, y: 0, jumping: false, angle: 0 })
+})
+
 test('maps keep only fixed stations for system rings', () => {
   expect(fixedStations([{ id: 'a' }, { id: 'b', mobile: true }])).toEqual([{ id: 'a' }])
 })
