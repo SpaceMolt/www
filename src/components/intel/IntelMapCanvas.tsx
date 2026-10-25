@@ -22,6 +22,17 @@ import {
   transitProgress,
   type TickClock,
 } from '@/lib/transitMotion'
+import {
+  mobileBaseLabel,
+  mobileBaseStatus,
+  type PublicMobileBase,
+} from '@/lib/mobileBases'
+import {
+  layoutMobileBaseMarkers,
+  mobileBaseColor,
+  mobileBaseMarkerAt,
+  type MobileBaseMarker,
+} from '@/components/mobileBaseMarkers'
 import styles from './IntelMapCanvas.module.css'
 
 // ── Constants ──────────────────────────────────────────────────────────
@@ -35,6 +46,11 @@ const UNKNOWN_LINE_COLOR = 'rgba(90, 106, 122, 0.08)'
 const INTEL_OUTLINE_COLOR = 'rgba(168, 197, 214, 0.75)'
 const SELECTED_COLOR = 'rgba(0, 212, 255, 0.9)'
 const WORMHOLE_COLOR = 'rgba(190, 120, 255, 0.85)'
+/** Screen-space hexagon radius of a mobile base marker; agent transit dots are 3. */
+const MOBILE_BASE_RADIUS = 7
+/** How far a parked mobile base sits from its system node, in screen pixels. */
+const MOBILE_BASE_PARK_DISTANCE = 22
+const MOBILE_BASE_HIT_RADIUS = MOBILE_BASE_RADIUS + 5
 const MIN_ZOOM = 0.001
 const MAX_ZOOM = 50
 const ZOOM_SENSITIVITY = 0.002
@@ -153,6 +169,8 @@ interface IntelMapCanvasProps {
   trails: TrailSegment[]
   transits: TransitMarker[]
   wormholes: KnownWormhole[]
+  /** Faction mobile bases and the mobile capital. Public knowledge — never hidden by fog. */
+  mobileBases: PublicMobileBase[]
   /** Server tick estimate; read every frame so in-flight agents advance smoothly */
   tickClock: TickClock
   selectedSystemId: string | null
@@ -186,6 +204,7 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
       trails,
       transits,
       wormholes,
+      mobileBases,
       tickClock,
       selectedSystemId,
       layers,
@@ -204,6 +223,9 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
     // Mutable canvas state — the RAF loop reads these refs, not React state
     const stateRef = useRef({
       hoveredSystem: null as IntelMapSystem | null,
+      hoveredMobileBase: null as PublicMobileBase | null,
+      /** Where each mobile base was drawn last frame, for hit testing. */
+      mobileBaseMarkers: [] as MobileBaseMarker[],
       viewX: 0,
       viewY: 0,
       zoom: DEFAULT_ZOOM,
@@ -245,6 +267,8 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
     transitsRef.current = transits
     const wormholesRef = useRef(wormholes)
     wormholesRef.current = wormholes
+    const mobileBasesRef = useRef(mobileBases)
+    mobileBasesRef.current = mobileBases
     const trailFocus = useMemo(() => buildTrailFocus(trails, transits), [trails, transits])
     const trailFocusRef = useRef(trailFocus)
     trailFocusRef.current = trailFocus
@@ -588,6 +612,80 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
       [worldToScreen],
     )
 
+    // Mobile bases: a hexagon in the owner's colour. Parked ones sit up-right of
+    // their system on a thin tether; jumping ones ride the lane with a dashed
+    // line to where they are headed. Drawn before transits so an agent docked
+    // aboard a jumping base shows as a dot inside its hexagon.
+    const drawMobileBases = useCallback(
+      (ctx: CanvasRenderingContext2D, nodeScale: number) => {
+        const s = stateRef.current
+        if (!layersRef.current.mobileBases) {
+          s.mobileBaseMarkers = []
+          return
+        }
+        const byId = systemsByIdRef.current
+        const scale = Math.max(nodeScale, 0.7)
+        const markers = layoutMobileBaseMarkers(
+          mobileBasesRef.current,
+          tickClockRef.current.now(),
+          (id) => byId.get(id),
+          worldToScreen,
+          MOBILE_BASE_PARK_DISTANCE * scale,
+        )
+        s.mobileBaseMarkers = markers
+        ctx.save()
+        for (const { base, x, y, anchorX, anchorY, jumping, angle } of markers) {
+          const color =
+            base.faction_id && !base.faction_color && !base.wrecked
+              ? fallbackFactionColor(base.faction_id)
+              : mobileBaseColor(base, base.system_id ? byId.get(base.system_id)?.empire_color : undefined)
+          const isHovered = s.hoveredMobileBase?.base_id === base.base_id
+          const radius = MOBILE_BASE_RADIUS * scale * (isHovered ? 1.3 : 1)
+          ctx.globalAlpha = base.wrecked ? 0.5 : 1
+          // Public info, so shown under fog, but as faint as the system it holds in.
+          if (!jumping && visibilityOf(base.system_id!) === 'unknown' && !isHovered) {
+            ctx.globalAlpha *= 0.55
+          }
+          ctx.strokeStyle = color
+          ctx.lineWidth = 1
+          // Jumping: dashed line on to the destination. Parked: tether to the node.
+          if (jumping) ctx.setLineDash([4, 6])
+          ctx.beginPath()
+          ctx.moveTo(x, y)
+          ctx.lineTo(anchorX, anchorY)
+          ctx.stroke()
+          ctx.setLineDash([])
+
+          ctx.fillStyle = '#0a1420'
+          ctx.lineWidth = 2
+          if (!base.wrecked) {
+            ctx.shadowColor = color
+            ctx.shadowBlur = isHovered ? 14 : 8
+          }
+          ctx.beginPath()
+          for (let i = 0; i < 6; i++) {
+            const a = angle + (i * Math.PI) / 3
+            if (i === 0) ctx.moveTo(x + Math.cos(a) * radius, y + Math.sin(a) * radius)
+            else ctx.lineTo(x + Math.cos(a) * radius, y + Math.sin(a) * radius)
+          }
+          ctx.closePath()
+          ctx.fill()
+          ctx.stroke()
+          ctx.shadowBlur = 0
+
+          if (shouldShowSystemLabel(layersRef.current.names, isHovered, false, 0, s.zoom)) {
+            ctx.font = '11px "Space Grotesk", sans-serif'
+            ctx.textAlign = 'left'
+            ctx.textBaseline = 'middle'
+            ctx.fillStyle = color
+            ctx.fillText(mobileBaseLabel(base), x + radius + 5, y)
+          }
+        }
+        ctx.restore()
+      },
+      [visibilityOf, worldToScreen],
+    )
+
     const drawAgentBadge = useCallback(
       (ctx: CanvasRenderingContext2D, x: number, y: number, agents: IntelAgent[], nodeScale: number) => {
         const count = agents.length
@@ -883,12 +981,14 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
           }
         }
 
+        drawMobileBases(ctx, nodeScale)
         drawTransits(ctx)
       },
       [
         drawStarfield,
         drawGrid,
         drawTrails,
+        drawMobileBases,
         drawTransits,
         drawAgentBadge,
         visibilityOf,
@@ -939,6 +1039,32 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
       },
       [visibilityOf],
     )
+
+    const updateMobileBaseTooltip = useCallback((base: PublicMobileBase, mx: number, my: number) => {
+      const tooltip = tooltipRef.current
+      if (!tooltip) return
+      const systemName = (id: string) => systemsByIdRef.current.get(id)?.name || id
+      if (tooltipNameRef.current) {
+        tooltipNameRef.current.textContent = mobileBaseLabel(base)
+        tooltipNameRef.current.style.color = base.faction_color || '#e8f4f8'
+      }
+      if (tooltipEmpireRef.current) {
+        const empire = base.empire ? EMPIRE_NAMES[base.empire] || base.empire : ''
+        tooltipEmpireRef.current.textContent =
+          base.kind === 'capital' ? `${empire} mobile capital`.trim() : 'Faction mobile base'
+        tooltipEmpireRef.current.style.display = 'block'
+      }
+      if (tooltipTagsRef.current) {
+        const status = mobileBaseStatus(base, systemName)
+        tooltipTagsRef.current.textContent = base.system_id
+          ? `${status} · ${systemName(base.system_id)}`
+          : status
+        tooltipTagsRef.current.style.display = 'block'
+      }
+      tooltip.style.left = mx + 15 + 'px'
+      tooltip.style.top = my + 15 + 'px'
+      tooltip.className = `${styles.tooltip} ${styles.tooltipVisible}`
+    }, [])
 
     // ── View controls ──────────────────────────────────────────────────
 
@@ -1017,6 +1143,13 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
       }
       animFrameId = requestAnimationFrame(animationLoop)
 
+      // A mobile base selects the system it holds in, or is jumping to.
+      function selectAt(x: number, y: number) {
+        const base = mobileBaseMarkerAt(s.mobileBaseMarkers, x, y, MOBILE_BASE_HIT_RADIUS)?.base
+        const id = base ? base.system_id || base.to_system : findSystemAt(x, y)?.id
+        if (id) onSystemSelectRef.current(id)
+      }
+
       // ── Mouse events ─────────────────────────────────────────────
       function onMouseDown(e: MouseEvent) {
         s.isDragging = true
@@ -1034,10 +1167,13 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
           s.targetViewY = s.viewY
         } else {
           const pos = canvasCoords(e.clientX, e.clientY)
-          const system = findSystemAt(pos.x, pos.y)
+          const base = mobileBaseMarkerAt(s.mobileBaseMarkers, pos.x, pos.y, MOBILE_BASE_HIT_RADIUS)?.base ?? null
+          const system = base ? null : findSystemAt(pos.x, pos.y)
+          s.hoveredMobileBase = base
           s.hoveredSystem = system
-          updateTooltip(system, pos.x, pos.y)
-          canvas!.style.cursor = system ? 'pointer' : 'grab'
+          if (base) updateMobileBaseTooltip(base, pos.x, pos.y)
+          else updateTooltip(system, pos.x, pos.y)
+          canvas!.style.cursor = base || system ? 'pointer' : 'grab'
         }
       }
 
@@ -1047,8 +1183,7 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
         const wasDrag = Math.abs(dx) > 5 || Math.abs(dy) > 5
         if (!wasDrag) {
           const pos = canvasCoords(e.clientX, e.clientY)
-          const system = findSystemAt(pos.x, pos.y)
-          if (system) onSystemSelectRef.current(system.id)
+          selectAt(pos.x, pos.y)
         }
         s.isDragging = false
       }
@@ -1056,6 +1191,7 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
       function onMouseLeave() {
         s.isDragging = false
         s.hoveredSystem = null
+        s.hoveredMobileBase = null
         if (tooltipRef.current) tooltipRef.current.className = styles.tooltip
       }
 
@@ -1162,8 +1298,7 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
           const dy = touch.clientY - s.initialTouchPos.y
           if (Math.abs(dx) <= 10 && Math.abs(dy) <= 10) {
             const tpos = canvasCoords(touch.clientX, touch.clientY)
-            const system = findSystemAt(tpos.x, tpos.y)
-            if (system) onSystemSelectRef.current(system.id)
+            selectAt(tpos.x, tpos.y)
           }
         }
         if (e.touches.length === 0) {
@@ -1206,7 +1341,7 @@ export const IntelMapCanvas = forwardRef<IntelMapCanvasHandle, IntelMapCanvasPro
         if (resizeObserver) resizeObserver.disconnect()
         cancelAnimationFrame(animFrameId)
       }
-    }, [render, generateStars, canvasCoords, findSystemAt, updateTooltip])
+    }, [render, generateStars, canvasCoords, findSystemAt, updateTooltip, updateMobileBaseTooltip])
 
     // ── JSX ────────────────────────────────────────────────────────────
 

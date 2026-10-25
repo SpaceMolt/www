@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect, useReducer } from 'react'
-import { Users, Flag, Shield, UserPlus, UserMinus, Swords, RefreshCw, Radar, DoorOpen, Trash2, Plus, Search, BarChart3, Eye, Crown, X, Handshake, LogIn, ChevronDown, ChevronRight } from 'lucide-react'
+import { Users, Flag, Shield, UserPlus, UserMinus, Swords, RefreshCw, Radar, DoorOpen, Trash2, Plus, Search, BarChart3, Eye, Crown, X, Handshake, LogIn, ChevronDown, ChevronRight, Satellite } from 'lucide-react'
 import type {
   FactionGetInvitesResponse,
   FactionInfoResponse,
@@ -17,6 +17,7 @@ import { ActionButton } from '../ActionButton'
 import { Panel, shared } from '../shared'
 import { playerHref } from '@/components/profile/ProfileLink'
 import styles from './FactionPanel.module.css'
+import { MobileBaseSection } from './faction/MobileBaseSection'
 
 // Types derived from the generated command response shapes.
 type FactionListEntry = FactionListResponse['factions'][number]
@@ -160,6 +161,14 @@ export function FactionPanel() {
       set({ factionInfo: null })
     }
   }, [loadFactionInfo, hasFaction])
+
+  // Jump preparation, cancellation and arrival change faction_info.mobile_base.
+  useEffect(() => {
+    if (!hasFaction) return
+    return store.account.on('faction_mobile_base_update', () => {
+      loadFactionInfo()
+    })
+  }, [store, loadFactionInfo, hasFaction])
 
   const handleCreateFaction = useCallback(async () => {
     if (!s.createName.trim() || !s.createTag.trim()) return
@@ -499,6 +508,15 @@ export function FactionPanel() {
                 )}
               </div>
             </div>
+          )}
+
+          {s.factionInfo && (s.factionInfo.mobile_base || s.factionInfo.mobile_base_commission) && (
+            <>
+              <div className={styles.divider} />
+              <Section title="Mobile Base" icon={<Satellite size={12} />}>
+                <MobileBaseSection info={s.factionInfo} playerId={playerId} onChanged={loadFactionInfo} />
+              </Section>
+            </>
           )}
 
           {s.factionInfo && (s.factionInfo.allies?.length || s.factionInfo.enemies?.length) ? (

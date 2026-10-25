@@ -20,7 +20,9 @@ import {
 } from './publicTransit'
 import { TickClock } from '@/lib/transitMotion'
 import { configureHiDPICanvas, logicalCanvasSize } from './canvasResolution'
-import { stationsVisibleOnPublicMap } from '@/lib/stationPresentation'
+import { fixedStations, stationsVisibleOnPublicMap } from '@/lib/stationPresentation'
+import { mobileBaseLabel, mobileBaseStatus, type PublicMobileBase } from '@/lib/mobileBases'
+import { layoutMobileBaseMarkers, mobileBaseColor, mobileBaseMarkerAt } from './mobileBaseMarkers'
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -103,6 +105,7 @@ interface MapActivityData {
   strongholds?: Record<string, boolean>
   current_tick?: number
   transits?: PublicTransit[]
+  mobile_bases?: PublicMobileBase[]
 }
 
 // ── Constants ──────────────────────────────────────────────────────────
@@ -111,6 +114,8 @@ const NODE_RADIUS = 6
 const TRANSIT_DOT_RADIUS = 3
 const TRANSIT_GLOW_RADIUS = 12
 const MAX_TRANSIT_PATH_CACHE_SIZE = 32
+const MOBILE_BASE_RADIUS = 7
+const MOBILE_BASE_OFFSET = NODE_RADIUS * 4
 const DEFAULT_COLOR = '#5a6a7a'
 const LINE_COLOR = 'rgba(140, 170, 200, 0.6)'
 const MIN_ZOOM = 0.001
@@ -257,6 +262,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
     mapData: null as MapData | null,
     systemsById: new Map<string, SystemData>(),
     hoveredSystem: null as SystemData | null,
+    hoveredMobileBase: null as PublicMobileBase | null,
     selectedSystem: null as SystemData | null,
     viewX: 0,
     viewY: 0,
@@ -292,6 +298,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
     // dots move on the server's timeline rather than on when we happened to
     // first see them.
     tickClock: new TickClock(),
+    mobileBases: [] as PublicMobileBase[],
     pendingSystemId: null as string | null,
   })
 
@@ -361,6 +368,23 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
       return closestSystem
     },
     [worldToScreen],
+  )
+
+  const layoutMobileBases = useCallback(() => {
+    const s = stateRef.current
+    return layoutMobileBaseMarkers(
+      s.mobileBases,
+      s.tickClock.now(),
+      (id) => s.systemsById.get(id),
+      worldToScreen,
+      MOBILE_BASE_OFFSET,
+    )
+  }, [worldToScreen])
+
+  const findMobileBaseAt = useCallback(
+    (sx: number, sy: number): PublicMobileBase | null =>
+      mobileBaseMarkerAt(layoutMobileBases(), sx, sy, MOBILE_BASE_RADIUS * 2)?.base ?? null,
+    [layoutMobileBases],
   )
 
   // ── URL State ──────────────────────────────────────────────────────
@@ -744,6 +768,111 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
     [worldToScreen],
   )
 
+  // Faction mobile bases and the Frontier mobile capital: a hexagon tethered
+  // beside its system, or out on the lane with its remaining route dashed.
+  const drawMobileBases = useCallback(
+    (ctx: CanvasRenderingContext2D) => {
+      const s = stateRef.current
+      const canvas = canvasRef.current
+      if (!canvas || s.mobileBases.length === 0) return
+
+      for (const marker of layoutMobileBases()) {
+        const { base, x, y, anchorX, anchorY } = marker
+        const anchorSystem = s.systemsById.get(base.system_id ?? base.from_system ?? '')
+        const color = mobileBaseColor(base, anchorSystem?.empire_color)
+        const isHovered = s.hoveredMobileBase?.base_id === base.base_id
+        const radius = MOBILE_BASE_RADIUS * (isHovered ? 1.3 : 1)
+
+        ctx.save()
+        if (base.wrecked) ctx.globalAlpha = 0.6
+
+        const dx = x - anchorX
+        const dy = y - anchorY
+        const len = Math.hypot(dx, dy)
+        if (marker.jumping) {
+          // Remaining route to the destination, flowing toward it.
+          ctx.strokeStyle = color
+          ctx.globalAlpha *= 0.85
+          ctx.lineWidth = 2
+          ctx.setLineDash([6, 4])
+          ctx.lineDashOffset = -s.animationTime * 0.02
+          ctx.beginPath()
+          ctx.moveTo(x, y)
+          ctx.lineTo(anchorX, anchorY)
+          ctx.stroke()
+          ctx.setLineDash([])
+          ctx.lineWidth = 1
+          ctx.strokeStyle = color + '80'
+          ctx.beginPath()
+          ctx.arc(anchorX, anchorY, NODE_RADIUS * 2, 0, Math.PI * 2)
+          ctx.stroke()
+          ctx.globalAlpha = base.wrecked ? 0.6 : 1
+        } else if (len > NODE_RADIUS + 3 + radius) {
+          // Tether from the node's edge to the glyph's edge.
+          ctx.strokeStyle = color + '99'
+          ctx.lineWidth = 1
+          ctx.beginPath()
+          ctx.moveTo(anchorX + (dx / len) * (NODE_RADIUS + 3), anchorY + (dy / len) * (NODE_RADIUS + 3))
+          ctx.lineTo(x - (dx / len) * radius, y - (dy / len) * radius)
+          ctx.stroke()
+        }
+
+        const cull = radius + 60
+        if (x + cull < 0 || x - cull > canvas.clientWidth || y + cull < 0 || y - cull > canvas.clientHeight) {
+          ctx.restore()
+          continue
+        }
+
+        // Heading chevron ahead of a jumping base.
+        if (marker.jumping) {
+          const tip = radius + 7
+          ctx.fillStyle = color
+          ctx.beginPath()
+          ctx.moveTo(x + Math.cos(marker.angle) * tip, y + Math.sin(marker.angle) * tip)
+          ctx.lineTo(x + Math.cos(marker.angle + 0.5) * (radius + 2), y + Math.sin(marker.angle + 0.5) * (radius + 2))
+          ctx.lineTo(x + Math.cos(marker.angle - 0.5) * (radius + 2), y + Math.sin(marker.angle - 0.5) * (radius + 2))
+          ctx.closePath()
+          ctx.fill()
+        }
+
+        // Station glyph: dark hexagon with a glowing owner-colored rim.
+        ctx.beginPath()
+        for (let i = 0; i < 6; i++) {
+          const a = -Math.PI / 2 + (i * Math.PI) / 3
+          const px = x + Math.cos(a) * radius
+          const py = y + Math.sin(a) * radius
+          if (i === 0) ctx.moveTo(px, py)
+          else ctx.lineTo(px, py)
+        }
+        ctx.closePath()
+        ctx.fillStyle = '#0a1018'
+        ctx.shadowColor = color
+        ctx.shadowBlur = base.wrecked ? 0 : 10
+        ctx.fill()
+        ctx.strokeStyle = color
+        ctx.lineWidth = 2
+        ctx.stroke()
+        ctx.shadowBlur = 0
+        ctx.fillStyle = color
+        ctx.beginPath()
+        ctx.arc(x, y, radius * 0.28, 0, Math.PI * 2)
+        ctx.fill()
+
+        if (s.zoom > 0.15 || isHovered) {
+          ctx.font = isHovered
+            ? 'bold 12px "JetBrains Mono", monospace'
+            : '11px "JetBrains Mono", monospace'
+          ctx.textAlign = 'left'
+          ctx.textBaseline = 'middle'
+          ctx.fillStyle = isHovered ? '#ffffff' : color
+          ctx.fillText(mobileBaseLabel(base), x + radius + (marker.jumping ? 10 : 5), y)
+        }
+        ctx.restore()
+      }
+    },
+    [layoutMobileBases],
+  )
+
   const render = useCallback(
     (ctx?: CanvasRenderingContext2D | null) => {
       const canvas = canvasRef.current
@@ -1100,9 +1229,10 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
       // Draw anonymous live traffic above the systems, then tracked-player
       // arrival pings above everything.
       drawPublicTransits(ctx)
+      drawMobileBases(ctx)
       drawTravelPings(ctx)
     },
-    [drawStarfield, drawGrid, drawTravelPaths, drawPublicTransits, drawTravelPings, worldToScreen],
+    [drawStarfield, drawGrid, drawTravelPaths, drawPublicTransits, drawMobileBases, drawTravelPings, worldToScreen],
   )
 
   // ── Tooltip ────────────────────────────────────────────────────────
@@ -1162,6 +1292,41 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
           tooltipBattleRef.current.style.display = 'none'
         }
       }
+
+      tooltip.style.left = mx + 15 + 'px'
+      tooltip.style.top = my + 15 + 'px'
+      tooltip.className = `${styles.tooltip} ${styles.tooltipVisible}`
+    },
+    [],
+  )
+
+  const updateMobileBaseTooltip = useCallback(
+    (base: PublicMobileBase, mx: number, my: number) => {
+      const tooltip = tooltipRef.current
+      if (!tooltip) return
+      const s = stateRef.current
+      const anchorSystem = s.systemsById.get(base.system_id ?? base.from_system ?? '')
+
+      if (tooltipNameRef.current) {
+        tooltipNameRef.current.textContent = mobileBaseLabel(base)
+        tooltipNameRef.current.style.color = mobileBaseColor(base, anchorSystem?.empire_color)
+      }
+      if (tooltipEmpireRef.current) {
+        tooltipEmpireRef.current.textContent = [
+          base.kind === 'capital' ? 'Mobile Capital' : 'Faction Mobile Base',
+          base.empire && (EMPIRE_NAMES[base.empire] || base.empire),
+        ].filter(Boolean).join(' \u00B7 ')
+        tooltipEmpireRef.current.style.display = 'block'
+        tooltipEmpireRef.current.style.color = ''
+      }
+      if (tooltipOnlineRef.current) {
+        tooltipOnlineRef.current.textContent = mobileBaseStatus(
+          base,
+          (id) => s.systemsById.get(id)?.name ?? id,
+        )
+        tooltipOnlineRef.current.className = styles.tooltipOnline
+      }
+      if (tooltipBattleRef.current) tooltipBattleRef.current.style.display = 'none'
 
       tooltip.style.left = mx + 15 + 'px'
       tooltip.style.top = my + 15 + 'px'
@@ -1312,6 +1477,13 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
         baseBadge.className = styles.poiBaseBadge
         baseBadge.textContent = 'Base'
         meta.appendChild(baseBadge)
+      }
+
+      if (poi.base_id && s.mobileBases.some((base) => base.base_id === poi.base_id)) {
+        const mobileBadge = document.createElement('span')
+        mobileBadge.className = `${styles.poiBaseBadge} ${styles.poiMobileBadge}`
+        mobileBadge.textContent = 'Mobile'
+        meta.appendChild(mobileBadge)
       }
 
       if (poi.station_faction_tag) {
@@ -1902,6 +2074,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
           if (!activeFormationSizes.has(count)) s.publicTransitPaths.delete(count)
         }
       }
+      s.mobileBases = activityData.mobile_bases ?? []
     }
 
     function updateStats(data: MapData) {
@@ -1928,13 +2101,16 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
         // Faction outposts are local holdings, not galaxy-scale landmarks.
         try {
           const stationsData = await stationsResponse.json()
-          const stations = stationsVisibleOnPublicMap((stationsData.stations || []) as Array<{
+          // Mobile bases are drawn live from activity data, not as a ring on
+          // a system they may have left.
+          const stations = stationsVisibleOnPublicMap(fixedStations((stationsData.stations || []) as Array<{
             system_id: string
             type?: string
             faction_id?: string
             faction_tag?: string
             faction_color?: string
-          }>)
+            mobile?: boolean
+          }>))
           stationSystemIds = new Set(stations.map((st) => st.system_id))
           const factionStationBySystem = new Map(
             stations
@@ -2079,6 +2255,14 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
     }, 2000)
 
     // ── Mouse Events ─────────────────────────────────────────────
+    function openMobileBase(base: PublicMobileBase) {
+      if (fullPage) {
+        router.push(`/stations/${base.base_id}`)
+      } else {
+        router.push(base.system_id ? `/map?system=${base.system_id}` : '/map')
+      }
+    }
+
     function onMouseDown(e: MouseEvent) {
       s.isDragging = true
       s.dragStart = { x: e.clientX, y: e.clientY }
@@ -2096,12 +2280,15 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
         render(ctx)
       } else {
         const pos = toCanvas(e.clientX, e.clientY)
-        const system = findSystemAt(pos.x, pos.y)
-        if (system !== s.hoveredSystem) {
+        const base = findMobileBaseAt(pos.x, pos.y)
+        const system = base ? null : findSystemAt(pos.x, pos.y)
+        if (system !== s.hoveredSystem || base?.base_id !== s.hoveredMobileBase?.base_id) {
           s.hoveredSystem = system
+          s.hoveredMobileBase = base
           render(ctx)
         }
-        updateTooltip(system, pos.x, pos.y)
+        if (base) updateMobileBaseTooltip(base, pos.x, pos.y)
+        else updateTooltip(system, pos.x, pos.y)
       }
     }
 
@@ -2112,8 +2299,11 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
 
       if (!wasDrag) {
         const pos = toCanvas(e.clientX, e.clientY)
-        const system = findSystemAt(pos.x, pos.y)
-        if (system) {
+        const base = findMobileBaseAt(pos.x, pos.y)
+        const system = base ? null : findSystemAt(pos.x, pos.y)
+        if (base) {
+          openMobileBase(base)
+        } else if (system) {
           if (fullPage) {
             showPOIPanel(system)
           } else {
@@ -2130,6 +2320,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
     function onMouseLeave() {
       s.isDragging = false
       s.hoveredSystem = null
+      s.hoveredMobileBase = null
       if (tooltipRef.current) {
         tooltipRef.current.className = styles.tooltip
       }
@@ -2294,8 +2485,11 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
 
         if (!wasMove) {
           const pos = toCanvas(touch.clientX, touch.clientY)
-          const system = findSystemAt(pos.x, pos.y)
-          if (system) {
+          const base = findMobileBaseAt(pos.x, pos.y)
+          const system = base ? null : findSystemAt(pos.x, pos.y)
+          if (base) {
+            openMobileBase(base)
+          } else if (system) {
             if (fullPage) {
               showPOIPanel(system)
               // Pan the tapped system into the upper half so the POI sheet
@@ -2368,6 +2562,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
       if (s.activityToastTimeout) clearTimeout(s.activityToastTimeout)
     }
   }, [
+    findMobileBaseAt,
     findSystemAt,
     fullPage,
     generateStars,
@@ -2376,6 +2571,7 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
     render,
     router,
     showPOIPanel,
+    updateMobileBaseTooltip,
     updateTooltip,
     updateUrlState,
   ])
@@ -2484,6 +2680,10 @@ export function GalaxyMap({ fullPage = false }: GalaxyMapProps) {
             style={{ background: 'transparent', border: '1.5px dashed #ffffff' }}
           />
           <span className={styles.legendLabel}>Faction Station</span>
+        </div>
+        <div className={styles.legendItem}>
+          <div className={styles.legendHex} />
+          <span className={styles.legendLabel}>Mobile Base</span>
         </div>
         </div>
         )}

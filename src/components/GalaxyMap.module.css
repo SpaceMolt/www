@@ -248,6 +248,22 @@
   border-radius: 50%;
 }
 
+.legendHex {
+  position: relative;
+  width: 11px;
+  height: 11px;
+  background: #00FFFF;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+}
+
+.legendHex::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  background: #0a1018;
+  clip-path: inherit;
+}
+
 .legendLabel {
   color: var(--chrome-silver);
 }
@@ -634,6 +650,11 @@
   border-radius: 2px;
   text-transform: uppercase;
   letter-spacing: 1px;
+}
+
+.poiMobileBadge {
+  background: rgba(0, 255, 255, 0.12);
+  color: #00FFFF;
 }
 
 .poiStationCondition {

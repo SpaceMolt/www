@@ -6,6 +6,8 @@
 //   GET /api/intel-map/movements      — recent jump history for trail rendering
 // plus the public GET /api/map galaxy topology.
 
+import type { PublicMobileBase } from './mobileBases'
+
 // ── Public galaxy topology (GET /api/map) ──────────────────────────────
 
 export interface IntelMapSystem {
@@ -51,6 +53,8 @@ export interface PublicStation {
   satisfaction_pct?: number
   facility_count?: number
   defense_level?: number
+  /** A mobile base; its live position comes from `mobile_bases` on /api/intel-map. */
+  mobile?: true
 }
 
 export interface PublicStationsResponse {
@@ -178,6 +182,8 @@ export interface IntelMapResponse {
   revealed_pois: string[]
   known_wormholes: KnownWormhole[]
   faction_intel: FactionIntel
+  /** Public list of faction mobile bases and the Frontier mobile capital; absent on older servers. */
+  mobile_bases?: PublicMobileBase[]
 }
 
 // ── System detail (GET /api/intel-map/system/{id}) ─────────────────────
@@ -423,4 +429,5 @@ export interface IntelLayerState {
   trailFocus: boolean
   agents: boolean
   wormholes: boolean
+  mobileBases: boolean
 }

@@ -127,6 +127,12 @@ export function wireNotifications(account: Account, store: UiStore): () => void 
     account.on('faction_war_declared', (payload: Record<string, unknown>) =>
       log('danger', str(payload.message) || 'War declared'),
     ),
+    account.on('faction_mobile_base_update', (payload: Record<string, unknown>) =>
+      log(
+        payload.event === 'jump_cancelled_combat' ? 'warning' : 'info',
+        str(payload.message) || 'Faction mobile base updated',
+      ),
+    ),
   ]
 
   return () => {
