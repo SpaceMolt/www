@@ -240,21 +240,21 @@ export function FactionStorageView() {
               />
               <button
                 className={shared.confirmBtn}
-                onClick={() => handleTreasury('deposit', parseCreditAmount(treasuryAmount, walletCredits))}
-                disabled={actionPending || parseCreditAmount(treasuryAmount, walletCredits) === null}
+                onClick={() => handleTreasury('deposit', parseCreditAmount(treasuryAmount, Infinity))}
+                disabled={actionPending || parseCreditAmount(treasuryAmount, Infinity) === null}
                 title="Deposit credits to the faction treasury"
                 type="button"
               >
-                <ArrowDownToLine size={10} />
+                <ArrowDownToLine size={10} /> Deposit
               </button>
               <button
                 className={shared.accentBtn}
                 onClick={() => handleTreasury('withdraw', parseCreditAmount(treasuryAmount, factionData.credits))}
                 disabled={actionPending || parseCreditAmount(treasuryAmount, factionData.credits) === null}
-                title="Withdraw credits to your wallet (needs manage treasury permission)"
+                title="Withdraw credits to your wallet"
                 type="button"
               >
-                <ArrowUpFromLine size={10} />
+                <ArrowUpFromLine size={10} /> Withdraw
               </button>
             </div>
           </div>
