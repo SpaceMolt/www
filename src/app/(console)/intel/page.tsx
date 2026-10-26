@@ -53,6 +53,7 @@ function IntelContent() {
     trailFocus: false,
     agents: true,
     wormholes: true,
+    mobileBases: true,
   })
 
   const mapRef = useRef<IntelMapCanvasHandle>(null)
@@ -76,8 +77,12 @@ function IntelContent() {
   const handleAgentSelect = useCallback(
     (agent: IntelAgent) => {
       setSelectedAgentId(agent.id)
-      setSelectedSystem(agent.system)
-      mapRef.current?.panToSystem(agent.system)
+      // An agent docked aboard a jumping mobile base has no system; use the
+      // jump destination.
+      const systemId = agent.system || (agent.in_transit?.type === 'jump' ? agent.in_transit.to : '')
+      if (!systemId) return
+      setSelectedSystem(systemId)
+      mapRef.current?.panToSystem(systemId)
     },
     [setSelectedSystem],
   )
@@ -165,6 +170,7 @@ function IntelContent() {
           trails={data.trails}
           transits={data.transits}
           wormholes={data.knownWormholes}
+          mobileBases={data.mobileBases}
           tickClock={data.tickClock}
           selectedSystemId={selectedSystem}
           layers={layers}
@@ -234,6 +240,7 @@ function IntelContent() {
           systemName={selectedSystemName}
           authHeaders={authHeaders}
           agentsInSystem={agentsInSelectedSystem}
+          mobileBases={data.mobileBases}
           onClose={() => setSelectedSystem(null)}
         />
       )}

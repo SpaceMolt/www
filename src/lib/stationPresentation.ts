@@ -27,3 +27,12 @@ export function splitStationRegistry<T extends StationKind>(stations: T[]) {
     outposts: stations.filter(isFactionOutpost),
   }
 }
+
+/**
+ * Fixed stations only. Maps draw mobile stations (`mobile: true`) from the
+ * live `mobile_bases` list instead, so a ring never stays on a system a base
+ * has left.
+ */
+export function fixedStations<T extends { mobile?: boolean }>(stations: T[]): T[] {
+  return stations.filter((station) => !station.mobile)
+}

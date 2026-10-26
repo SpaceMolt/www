@@ -3,6 +3,7 @@
 import { useEffect, useRef, useCallback, useImperativeHandle, forwardRef, useState } from 'react'
 import { Home, Crosshair } from 'lucide-react'
 import { fetchStations, type MapSystem } from '@spacemolt/lib'
+import { fixedStations } from '@/lib/stationPresentation'
 import { useCurrentTick, useLocationState, useMap, usePlayer } from '@/lib/spacemolt'
 import styles from './GalaxyPanel.module.css'
 
@@ -1250,7 +1251,10 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
     async function loadStationOverlay() {
       try {
         const { stations } = await fetchStations(GAMESERVER_URL)
-        stationSystemIdsRef.current = new Set(stations.map((st) => st.system_id))
+        // Mobile bases move, so they get no fixed station marker.
+        stationSystemIdsRef.current = new Set(
+          fixedStations(stations as Array<(typeof stations)[number] & { mobile?: boolean }>).map((st) => st.system_id),
+        )
         applyStationFlags()
       } catch {
         // Stations data is optional -- map still works without it

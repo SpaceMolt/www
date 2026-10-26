@@ -24,7 +24,8 @@ import type {
   TrailSegment,
   TransitMarker,
 } from '@/lib/intelTypes'
-import { stationsVisibleInRecon } from '@/lib/stationPresentation'
+import { fixedStations, stationsVisibleInRecon } from '@/lib/stationPresentation'
+import type { PublicMobileBase } from '@/lib/mobileBases'
 import { activeBattlesByAgent, type ActiveBattleLike } from '@/lib/battle/activeAgentBattles'
 import { TickClock } from '@/lib/transitMotion'
 
@@ -103,6 +104,7 @@ export interface UseIntelDataResult {
   trails: TrailSegment[]
   transits: TransitMarker[]
   knownWormholes: KnownWormhole[]
+  mobileBases: PublicMobileBase[]
   trailColors: Map<string, string>
   factionOptions: FactionOption[]
   /** Server tick estimate the canvas draws from. Mutable; never triggers a render. */
@@ -489,12 +491,13 @@ export function useIntelData({
 
   // Significant stations remain public landmarks. A faction outpost only earns
   // a marker when one of this operator's agents belongs to its owning faction.
+  // Mobile bases are drawn from `mobileBases` instead, at their live position.
   const stationsBySystem = useMemo(() => {
     const map = new Map<string, PublicStation[]>()
     const ownedFactionIds = agents.flatMap((agent) =>
       agent.faction_id ? [agent.faction_id] : [],
     )
-    for (const station of stationsVisibleInRecon(stations, ownedFactionIds)) {
+    for (const station of fixedStations(stationsVisibleInRecon(stations, ownedFactionIds))) {
       const list = map.get(station.system_id)
       if (list) list.push(station)
       else map.set(station.system_id, [station])
@@ -607,6 +610,7 @@ export function useIntelData({
     trails,
     transits,
     knownWormholes: scoped?.known_wormholes ?? [],
+    mobileBases: scoped?.mobile_bases ?? [],
     trailColors,
     factionOptions,
     tickClock: tickClockRef.current,

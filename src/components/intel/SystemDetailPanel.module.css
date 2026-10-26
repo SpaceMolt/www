@@ -264,6 +264,12 @@
   vertical-align: 0.08rem;
 }
 
+.mobileBadge {
+  composes: outpostBadge;
+  border-color: rgba(0, 212, 255, 0.45);
+  color: var(--plasma-cyan);
+}
+
 .stationCondition {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
   font-size: 0.68rem;

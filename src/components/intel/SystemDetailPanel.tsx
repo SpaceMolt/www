@@ -8,6 +8,7 @@ import { useCallback, useEffect, useState } from 'react'
 import {
   AlertTriangle,
   Building2,
+  Hexagon,
   Radar,
   ScanEye,
   Shield,
@@ -23,6 +24,7 @@ import type {
   SystemIntelEntry,
 } from '@/lib/intelTypes'
 import { titleCase } from '@/lib/format'
+import { mobileBaseLabel, mobileBaseStatus, type PublicMobileBase } from '@/lib/mobileBases'
 import { factionHref, playerHref } from '@/components/profile/ProfileLink'
 import { useTranslation } from '@/i18n'
 import styles from './SystemDetailPanel.module.css'
@@ -36,11 +38,20 @@ interface SystemDetailPanelProps {
   authHeaders: () => Promise<Record<string, string>>
   /** Owned agents currently in this system (from the fleet snapshot) */
   agentsInSystem: IntelAgent[]
+  /** Public mobile base list, to badge mobile stations and show bases jumping in or out. */
+  mobileBases: PublicMobileBase[]
   onClose: () => void
 }
 
 function formatCredits(n: number): string {
   return n.toLocaleString()
+}
+
+function MobileBadge({ base }: { base?: PublicMobileBase }) {
+  if (!base) return null
+  return (
+    <span className={styles.mobileBadge}>Mobile · {mobileBaseStatus(base)}</span>
+  )
 }
 
 function ContactsSection({ poiId, contacts }: { poiId: string; contacts: NearbyByPoi }) {
@@ -145,14 +156,17 @@ function ResourceRow({ resource }: { resource: IntelEntryResource }) {
  * standing on the deposit right now or it came second-hand from the faction
  * pool, because a stale "full" reading on a mined-out belt is worse than none.
  */
-function PoiRow({ poi }: { poi: IntelSystemPoi }) {
+function PoiRow({ poi, mobileBase }: { poi: IntelSystemPoi; mobileBase?: PublicMobileBase }) {
   const live = poi.resource_source === 'live'
   const resources = poi.resources ?? []
 
   return (
     <div className={styles.poiItem}>
       <div className={styles.poiRow}>
-        <span className={styles.poiName}>{poi.name}</span>
+        <span className={styles.poiName}>
+          {poi.name}
+          <MobileBadge base={mobileBase} />
+        </span>
         <span className={styles.poiType}>
           {titleCase(poi.type)}
           {poi.hidden ? ' · hidden' : ''}
@@ -279,6 +293,7 @@ export function SystemDetailPanel({
   systemName,
   authHeaders,
   agentsInSystem,
+  mobileBases,
   onClose,
 }: SystemDetailPanelProps) {
   const { t } = useTranslation()
@@ -316,6 +331,10 @@ export function SystemDetailPanel({
   }, [fetchDetail])
 
   const contactEntries = detail ? Object.entries(detail.nearby_by_poi ?? {}) : []
+  const mobileById = new Map(mobileBases.map((base) => [base.base_id, base]))
+  const jumpingHere = mobileBases.filter(
+    (base) => base.lifecycle === 'jumping' && (base.to_system === systemId || base.from_system === systemId),
+  )
 
   return (
     <div className={styles.panel}>
@@ -403,6 +422,24 @@ export function SystemDetailPanel({
               </section>
             )}
 
+            {/* Mobile bases on a jump lane into or out of this system */}
+            {jumpingHere.length > 0 && (
+              <section className={styles.section}>
+                <h3 className={styles.sectionTitle}>
+                  <Hexagon size={13} />
+                  Mobile bases in transit
+                </h3>
+                {jumpingHere.map((base) => (
+                  <div key={base.base_id} className={styles.contactRow}>
+                    <span className={styles.contactName}>{mobileBaseLabel(base)}</span>
+                    <span className={styles.contactMeta}>
+                      {base.to_system === systemId ? 'Inbound' : 'Departing'}
+                    </span>
+                  </div>
+                ))}
+              </section>
+            )}
+
             {/* Docked stations and owned faction outposts */}
             {detail.stations.length > 0 && (
               <section className={styles.section}>
@@ -418,6 +455,7 @@ export function SystemDetailPanel({
                         {station.type === 'outpost' && (
                           <span className={styles.outpostBadge}>{t('stations.outpostBadge')}</span>
                         )}
+                        <MobileBadge base={mobileById.get(station.base_id)} />
                       </span>
                       {station.condition_text && (
                         <span className={styles.stationCondition}>{station.condition_text}</span>
@@ -479,7 +517,11 @@ export function SystemDetailPanel({
                 </h3>
                 <div className={styles.poiList}>
                   {detail.pois.map((poi) => (
-                    <PoiRow key={poi.id} poi={poi} />
+                    <PoiRow
+                      key={poi.id}
+                      poi={poi}
+                      mobileBase={poi.base_id ? mobileById.get(poi.base_id) : undefined}
+                    />
                   ))}
                 </div>
               </section>

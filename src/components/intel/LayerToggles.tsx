@@ -1,7 +1,7 @@
 'use client'
 
 // Floating layer controls for the intel map: fog / intel / trails / agents /
-// wormholes toggles plus the movements window selector.
+// wormholes / mobile bases toggles plus the movements window selector.
 
 import { useState } from 'react'
 import { ChevronDown, Layers } from 'lucide-react'
@@ -33,6 +33,7 @@ const LAYER_LABELS: { key: keyof IntelLayerState; label: string }[] = [
   { key: 'trailFocus', label: 'Focus trails' },
   { key: 'agents', label: 'Agents' },
   { key: 'wormholes', label: 'Wormholes' },
+  { key: 'mobileBases', label: 'Mobile bases' },
 ]
 
 interface LayerTogglesProps {
