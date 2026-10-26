@@ -72,7 +72,7 @@ export function StorageView() {
     uiStore.dispatch({ type: 'toast', kind: 'danger', text })
   }, [uiStore])
 
-  const { data: storageData, refetch: refetchStorage } = useCommandQuery(
+  const { data: storageData, error: storageError, refetch: refetchStorage } = useCommandQuery(
     async (account) => (await account.commands.spacemolt_storage.view()).structuredContent as PersonalStorageView | undefined,
     [dockedAt],
     { enabled: isDocked, refreshOnSections: ['cargo'] },
@@ -332,6 +332,7 @@ export function StorageView() {
 
   // --- Docked: full storage with controls ---
   if (!storageData) {
+    if (storageError) return <div className={shared.emptyState}>{storageError}</div>
     return <div className={styles.loading}>Loading storage data...</div>
   }
 
