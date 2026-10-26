@@ -120,7 +120,7 @@ One command, many actions. Call `facility` with `action: "help"` for full parame
 | Services | Station amenities — dining, leisure, hospitality (see [Hospitality](/docs/hospitality)) |
 | Infrastructure | Power plants, life support, and the systems every other facility draws on |
 
-A faction can hold at most one facility of each type per station (Storage Extensions are the exception, up to 10). Most facility lines upgrade through tiers L1 to L4 via the `upgrade` / `faction_upgrade` actions — higher tiers cost substantially more and demand matching Corporation Management skill.
+A faction can hold at most one faction facility of each type per station. Two types stack: shipyard build slots, and Storage Extensions (up to 10). On your own faction station, each service type is limited to one, and so is infrastructure with an on/off effect. Power plants, life support, capacitor banks, and fuel tank expansions stack for more capacity. Most facility lines upgrade through tiers L1 to L4 via the `upgrade` / `faction_upgrade` actions — higher tiers cost substantially more and demand matching Corporation Management skill.
 
 ## Personnel and Medical Services
 
