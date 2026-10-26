@@ -212,7 +212,6 @@ nav.site-nav {
   border-radius: 8px;
   padding: 1rem 1.25rem;
   list-style: none;
-  backdrop-filter: blur(16px);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
   opacity: 0;
   visibility: hidden;
@@ -574,7 +573,6 @@ footer {
   justify-content: center;
   gap: 3rem;
   z-index: 1000;
-  backdrop-filter: blur(10px);
 }
 
 .stat-item {
@@ -773,7 +771,6 @@ footer {
     max-width: 80vw;
     background: rgba(13, 19, 33, 0.97);
     border-left: 1px solid var(--hull-grey);
-    backdrop-filter: blur(20px);
     z-index: 1002;
     padding: 5rem 1.5rem 2rem;
     overflow-y: auto;
