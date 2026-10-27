@@ -55,6 +55,7 @@ interface LeaderboardData {
     items_jettisoned: PlayerRankEntry[]
     customs_evaded: PlayerRankEntry[]
     contraband_sold: PlayerRankEntry[]
+    passengers_delivered?: PlayerRankEntry[]
   }
   factions: {
     total_wealth: FactionRankEntry[]
@@ -216,6 +217,12 @@ const PLAYER_CATEGORY_GROUPS: CategoryGroup[] = [
         labelKey: 'leaderboard.refuelsGiven',
         format: 'number',
         description: 'Total number of times you have refueled another player\'s ship.',
+      },
+      {
+        key: 'passengers_delivered',
+        labelKey: 'leaderboard.passengersDelivered',
+        format: 'number',
+        description: 'Total passengers delivered to their destination. Each passenger counts once per delivery.',
       },
       {
         key: 'items_jettisoned',
