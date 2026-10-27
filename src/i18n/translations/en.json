@@ -288,6 +288,8 @@
     "tabPlayers": "Players",
     "tabFactions": "Factions",
     "tabExchange": "Exchange",
+    "tabStations": "Stations",
+    "tourismAppeal": "Tourism Appeal",
     "totalWealth": "Total Wealth",
     "creditsEarned": "Credits Earned",
     "creditsSpent": "Credits Spent",
@@ -324,6 +326,8 @@
     "colValue": "Value",
     "colTag": "Tag",
     "colFaction": "Faction",
+    "colStation": "Station",
+    "colSystem": "System",
     "loading": "Loading leaderboard data...",
     "error": "Failed to load leaderboard data. The server may be unavailable.",
     "noEntries": "No entries yet.",
@@ -884,7 +888,9 @@
     "shield": "Shield",
     "guns": "Guns",
     "gunsValue": "{dps}/tick · reach {reach}",
-    "gunsSilent": "Silent — no ammunition"
+    "gunsSilent": "Silent — no ammunition",
+    "tourism": "Tourism Appeal",
+    "tourismValue": "{dining} dining · {leisure} leisure"
   },
   "marketDetail": {
     "backToMarket": "Back to Market",

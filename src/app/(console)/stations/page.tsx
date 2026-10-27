@@ -31,6 +31,8 @@ interface Station {
   facility_count: number
   weapon_dps: number
   wrecked: boolean
+  dining_points?: number // tourism appeal; absent on older servers and at stations with none
+  leisure_points?: number
 }
 
 interface Empire {
@@ -286,6 +288,7 @@ export default function StationsPage() {
                       <th scope="col" className={styles.numCol}>Sat</th>
                       <th scope="col" className={styles.numCol}>Fac</th>
                       <th scope="col" className={styles.numCol}>Guns</th>
+                      <th scope="col" className={styles.numCol} title="Tourism appeal: dining + leisure points">Appeal</th>
                       <th scope="col" aria-hidden className={styles.chevronCol} />
                     </tr>
                   </thead>
@@ -346,6 +349,7 @@ export default function StationsPage() {
                         <td className={styles.numCell}>{station.satisfaction_pct}%</td>
                         <td className={styles.numCell}>{station.facility_count}</td>
                         <td className={styles.numCell}>{station.wrecked ? 'wrecked' : station.weapon_dps.toLocaleString()}</td>
+                        <td className={styles.numCell}>{(station.dining_points ?? 0) + (station.leisure_points ?? 0)}</td>
                         <td className={styles.chevronCell}>
                           <ChevronRight size={13} aria-hidden />
                         </td>

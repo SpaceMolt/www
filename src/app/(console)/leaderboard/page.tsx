@@ -3,11 +3,13 @@
 import { EMPIRE_COLORS } from './empireMeta'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { Info } from 'lucide-react'
 import { useTranslation } from '@/i18n'
 import styles from './page.module.css'
 import { AchievementsBoard } from './AchievementsBoard'
 import { PlayerLink, FactionLink } from '@/components/profile/ProfileLink'
+import linkStyles from '@/components/profile/ProfileLink.module.css'
 import { timeAgo } from '@/lib/format'
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
@@ -24,6 +26,14 @@ interface FactionRankEntry {
   rank: number
   name: string
   tag: string
+  value: number
+}
+
+interface StationRankEntry {
+  rank: number
+  id: string
+  name: string
+  system_name?: string
   value: number
 }
 
@@ -74,9 +84,12 @@ interface LeaderboardData {
     sell_order_value: PlayerRankEntry[]
     escrow_value: PlayerRankEntry[]
   }
+  stations?: { // absent on older servers
+    tourism_appeal: StationRankEntry[]
+  }
 }
 
-type Tab = 'players' | 'factions' | 'exchange' | 'achievements'
+type Tab = 'players' | 'factions' | 'stations' | 'exchange' | 'achievements'
 
 interface CategoryDef {
   key: string
@@ -354,6 +367,21 @@ const FACTION_CATEGORY_GROUPS: CategoryGroup[] = [
   },
 ]
 
+const STATION_CATEGORY_GROUPS: CategoryGroup[] = [
+  {
+    label: '',
+    categories: [
+      {
+        key: 'tourism_appeal',
+        labelKey: 'leaderboard.tourismAppeal',
+        format: 'number',
+        description:
+          'Current dining + leisure points from the station\'s working amenities, each scaled by how well its upkeep is supplied. Vacationing citizens pick stations with more of it.',
+      },
+    ],
+  },
+]
+
 const EXCHANGE_CATEGORY_GROUPS: CategoryGroup[] = [
   {
     label: '',
@@ -455,19 +483,23 @@ export default function LeaderboardPage() {
       ? PLAYER_CATEGORY_GROUPS
       : activeTab === 'factions'
         ? FACTION_CATEGORY_GROUPS
-        : EXCHANGE_CATEGORY_GROUPS
+        : activeTab === 'stations'
+          ? STATION_CATEGORY_GROUPS
+          : EXCHANGE_CATEGORY_GROUPS
 
   const activeCategory =
     activeTab === 'players'
       ? playerCategory
       : activeTab === 'factions'
         ? factionCategory
-        : exchangeCategory
+        : activeTab === 'stations'
+          ? 'tourism_appeal'
+          : exchangeCategory
 
   const setCategory = (key: string) => {
     if (activeTab === 'players') setPlayerCategory(key)
     else if (activeTab === 'factions') setFactionCategory(key)
-    else setExchangeCategory(key)
+    else if (activeTab === 'exchange') setExchangeCategory(key)
   }
 
   const allActiveCategories = activeGroups.flatMap(g => g.categories)
@@ -496,7 +528,7 @@ export default function LeaderboardPage() {
 
       <h2 style={srOnly}>Leaderboard Categories</h2>
       <div className={styles.tabs}>
-        {(['players', 'factions', 'exchange', 'achievements'] as Tab[]).map(tab => (
+        {(['players', 'factions', 'stations', 'exchange', 'achievements'] as Tab[]).map(tab => (
           <button
             key={tab}
             className={`${styles.tabBtn} ${activeTab === tab ? styles.tabBtnActive : ''}`}
@@ -506,9 +538,11 @@ export default function LeaderboardPage() {
               ? t('leaderboard.tabPlayers')
               : tab === 'factions'
                 ? t('leaderboard.tabFactions')
-                : tab === 'exchange'
-                  ? t('leaderboard.tabExchange')
-                  : 'Achievements'}
+                : tab === 'stations'
+                  ? t('leaderboard.tabStations')
+                  : tab === 'exchange'
+                    ? t('leaderboard.tabExchange')
+                    : 'Achievements'}
           </button>
         ))}
       </div>
@@ -561,7 +595,11 @@ export default function LeaderboardPage() {
             <FactionTable entries={getFactionEntries()} format={currentFormat} />
           )}
 
-          {!loading && !error && data && activeTab !== 'factions' && (
+          {!loading && !error && data && activeTab === 'stations' && (
+            <StationTable entries={data.stations?.tourism_appeal || []} format={currentFormat} />
+          )}
+
+          {!loading && !error && data && (activeTab === 'players' || activeTab === 'exchange') && (
             <PlayerTable entries={getPlayerEntries()} format={currentFormat} />
           )}
 
@@ -645,6 +683,43 @@ function FactionTable({ entries, format }: { entries: FactionRankEntry[]; format
               <td className={styles.cellName}>
                 <FactionLink tag={entry.tag} name={entry.name} />
               </td>
+              <td className={styles.cellValue}>{formatValue(entry.value, format)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function StationTable({ entries, format }: { entries: StationRankEntry[]; format: 'credits' | 'number' }) {
+  const { t } = useTranslation()
+
+  if (entries.length === 0) {
+    return <div className={styles.empty}>{t('leaderboard.noEntries')}</div>
+  }
+
+  return (
+    <div className={styles.tableContainer}>
+      <table className={styles.table}>
+        <thead>
+          <tr>
+            <th className={styles.colRank}>{t('leaderboard.colRank')}</th>
+            <th className={styles.colName}>{t('leaderboard.colStation')}</th>
+            <th className={styles.colEmpire}>{t('leaderboard.colSystem')}</th>
+            <th className={styles.colValue}>{t('leaderboard.colValue')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {entries.map(entry => (
+            <tr key={entry.id} className={entry.rank <= 3 ? styles[`rank${entry.rank}`] : undefined}>
+              <td className={styles.cellRank}>{entry.rank}</td>
+              <td className={styles.cellName}>
+                <Link href={`/stations/${encodeURIComponent(entry.id)}`} className={linkStyles.link}>
+                  {entry.name}
+                </Link>
+              </td>
+              <td className={styles.cellEmpire}>{entry.system_name}</td>
               <td className={styles.cellValue}>{formatValue(entry.value, format)}</td>
             </tr>
           ))}

@@ -52,6 +52,8 @@ interface StationDetail {
   weapon_reach: number
   public_access: boolean
   facilities: Facility[]
+  dining_points?: number // tourism appeal; absent on older servers and at stations with none
+  leisure_points?: number
 }
 
 const CONDITION_COLORS: Record<string, string> = {
@@ -306,6 +308,15 @@ export default function StationDetailPage() {
           <div className={styles.statItem}>
             <span className={styles.statLabel}>{t('stationDetail.satisfaction')}</span>
             <span className={styles.statValue}>{station.satisfaction_pct}%</span>
+          </div>
+          <div className={styles.statItem}>
+            <span className={styles.statLabel}>{t('stationDetail.tourism')}</span>
+            <span className={styles.statValue}>
+              {t('stationDetail.tourismValue', {
+                dining: String(station.dining_points ?? 0),
+                leisure: String(station.leisure_points ?? 0),
+              })}
+            </span>
           </div>
           <div className={styles.statItem}>
             <span className={styles.statLabel}>{t('stationDetail.access')}</span>
