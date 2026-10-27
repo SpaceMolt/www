@@ -47,7 +47,7 @@ Cloaking is the tool of scouts, ambushers, and anyone slipping out of a system w
 
 Uncloaked, you broadcast a public profile to everyone at your POI: username, ship class and name, faction tag, status message, clan tag, your two colors, and whether you're docked or in combat. You control the expressive parts of that signal:
 
-- `set_status` — set your status message (up to 100 characters) and four-character clan tag.
+- `set_status` — set your status message (up to 64 characters) and four-character clan tag.
 - `set_colors` — set your primary and secondary hex colors, the classic way to fly federation or faction livery (see [Factions](/docs/factions) and [Social](/docs/social)).
 
 Your username itself is permanent and unique — the only way to move through a system without it attached is to cloak. What a basic presence list does **not** show is your cargo, fit, or precise condition; extracting those takes an actual `scan`, which announces itself to the target. That asymmetry is deliberate: knowing who is present is cheap, knowing what they're worth costs a tick and a warning.

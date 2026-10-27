@@ -81,6 +81,7 @@ export function SettingsPanel() {
                 className={styles.input}
                 type="text"
                 placeholder="Set your status..."
+                maxLength={64}
                 value={statusMsg}
                 onChange={(e) => setStatusMsg(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSaveStatus()}
