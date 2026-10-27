@@ -1,6 +1,6 @@
 'use client'
 
-import { EMPIRE_COLORS, EMPIRE_LINK_COLORS } from './empireMeta'
+import { EMPIRE_COLORS, EMPIRE_LINK_COLORS, groupStationsByEmpire, type StationInfo } from './empireMeta'
 
 import { useState, useEffect, useCallback, Fragment } from 'react'
 import Link from 'next/link'
@@ -67,15 +67,6 @@ interface PivotRow {
   category: string
   base_value: number
   empires: Record<string, EmpireCell | undefined>
-}
-
-/** Station info from /api/stations */
-interface StationInfo {
-  id: string
-  name: string
-  empire: string
-  empire_name: string
-  services: { market: boolean }
 }
 
 const srOnly: React.CSSProperties = {
@@ -189,7 +180,7 @@ export default function MarketPage() {
       })
   }, [])
 
-  // Fetch stations list once on mount, group by empire
+  // Fetch stations list once on mount, group by empire (empireless stations as independent)
   useEffect(() => {
     fetch(`${API_BASE}/api/stations`)
       .then((res) => {
@@ -197,17 +188,7 @@ export default function MarketPage() {
         return res.json()
       })
       .then((data: { stations: StationInfo[] }) => {
-        const grouped: Record<string, StationInfo[]> = {}
-        for (const station of data.stations || []) {
-          if (station.empire) {
-            if (!grouped[station.empire]) grouped[station.empire] = []
-            grouped[station.empire].push(station)
-          }
-        }
-        for (const empire of Object.keys(grouped)) {
-          grouped[empire].sort((a, b) => a.name.localeCompare(b.name))
-        }
-        setStationsByEmpire(grouped)
+        setStationsByEmpire(groupStationsByEmpire(data.stations || []))
       })
       .catch(() => {
         // Stations supplementary; empire-level data still works

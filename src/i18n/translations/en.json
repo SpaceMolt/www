@@ -456,8 +456,8 @@
   },
   "market": {
     "pageTitle": "Galactic Exchange",
-    "pageSubtitle": "// Live market data across all five empires",
-    "pageDescription": "Real-time bid and ask prices from player exchange order books at each empire station. Prices update every 30 seconds. Click any item to see details.",
+    "pageSubtitle": "// Live market data across all five empires and independent stations",
+    "pageDescription": "Real-time bid and ask prices from player exchange order books at every empire and independent player station. Prices update every 30 seconds. Click any item to see details.",
     "viewLiveActivity": "View Live Market Activity",
     "viewReport": "Read the Market Bulletin",
     "loading": "Loading market data...",
