@@ -4,8 +4,8 @@
  * The market API reports several quantity views per side. The raw total spans
  * every price level — including predatory lowball bids (e.g. 100k units at 1cr)
  * that exist only to catch sellers dumping at market. Showing that total next to
- * the best price overstates how much you can actually trade. These helpers pick a
- * trap-resistant headline number and build a breakdown tooltip.
+ * the best price overstates how much you can actually trade. These helpers show
+ * the firm quantity at the best price and build a breakdown tooltip.
  */
 
 export interface DepthQuantities {
@@ -24,14 +24,12 @@ function fmt(n: number): string {
 }
 
 /**
- * The headline depth number: real demand/supply at sensible prices. Prefers the
- * reasonable-band figure, falling back to at-best, then the raw total when the
- * richer fields aren't available (e.g. an older game server).
+ * The headline depth number: the firm quantity at exactly the best price, so it
+ * matches the price shown beside it. Falls back to the raw total when an older
+ * game server omits the richer fields.
  */
 export function firmDepth(d: DepthQuantities): number {
-  if (d.reasonable !== undefined) return d.reasonable
-  if (d.atBest !== undefined) return d.atBest
-  return d.total
+  return d.atBest ?? d.total
 }
 
 /**

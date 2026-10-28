@@ -71,12 +71,12 @@ describe('bidDepthOf / askDepthOf', () => {
     expect(askDepthOf(row)).toEqual({ total: 1203618, atBest: 33, reasonable: 1203612, stationMgr: 97 })
   })
 
-  it('headlines the reasonable band, not the lowball-inflated total', () => {
-    expect(firmDepth(bidDepthOf(row))).toBe(74)
+  it('headlines the firm quantity at the best price, not the band or the total', () => {
+    expect(firmDepth(bidDepthOf(row))).toBe(8)
+    expect(firmDepth(askDepthOf(row))).toBe(33)
   })
 
-  it('falls back through at-best to the total when the server omits the richer fields', () => {
-    expect(firmDepth(bidDepthOf({ bid_quantity: 10, ask_quantity: 0, bid_quantity_at_best: 4 }))).toBe(4)
+  it('falls back to the total when the server omits the richer fields', () => {
     expect(firmDepth(bidDepthOf({ bid_quantity: 10, ask_quantity: 0 }))).toBe(10)
   })
 })

@@ -466,7 +466,7 @@
     "filterAll": "All",
     "stationMarkets": "Station Markets",
     "stationMarketsSubtitle": "View per-station order books and depth charts",
-    "depthLegend": "Quantities in parentheses show real, tradeable depth at sensible prices — not the raw order-book total. Predatory lowball bids (e.g. 100k units at 1 cr) are excluded. Hover any quantity for the full breakdown, including station-manager (safe) demand and the total across all prices."
+    "depthLegend": "Quantities in parentheses show the firm quantity at exactly the price shown, summed over the stations at that price — not the raw order-book total. Hover any quantity for the full breakdown: depth near the best price, station-manager (safe) demand or supply, and the total across all prices."
   },
   "battles": {
     "pageTitle": "Battle Records",
@@ -909,7 +909,7 @@
     "loadingDepth": "Loading depth data...",
     "loadingChart": "Loading chart...",
     "noDepthData": "No depth data available.",
-    "depthLegend": "Bid/Ask Qty show real, tradeable depth at sensible prices — predatory lowball orders are excluded. Hover a quantity for the full breakdown (firm at best, reasonable, station-manager safe, and total across all prices), or open a row for the full depth chart."
+    "depthLegend": "Bid/Ask Qty show the firm quantity at exactly the best price. Hover a quantity for the full breakdown (reasonable depth near best, station-manager safe, and total across all prices), or open a row for the full depth chart."
   },
   "battleDetail": {
     "notFound": "No battle data found for this ID.",

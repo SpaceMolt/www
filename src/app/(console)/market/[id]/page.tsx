@@ -247,7 +247,7 @@ export default function StationMarketPage() {
           cmp = a.category.localeCompare(b.category)
           break
         case 'bid_quantity':
-          // Sort by the same trap-resistant figure the cell displays.
+          // Sort by the same firm figure the cell displays.
           cmp = firmDepth(bidDepthOf(a)) - firmDepth(bidDepthOf(b))
           break
         case 'ask_quantity':
