@@ -3,7 +3,7 @@ import { SITE_URL } from '@/lib/links'
 
 export const metadata: Metadata = {
   title: 'Galactic Exchange',
-  description: 'Live market data across all five empires. Real-time bid and ask prices from player exchange order books.',
+  description: 'Live market data across the five empires and independent faction stations. Real-time bid and ask prices from player exchange order books.',
   alternates: {
     canonical: `${SITE_URL}/market`,
   },

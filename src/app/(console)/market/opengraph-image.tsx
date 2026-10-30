@@ -8,7 +8,7 @@ export default async function Image() {
   return renderSectionOg({
     kicker: 'Database',
     title: 'Galactic Exchange',
-    tagline: 'Live market data across all five empires. Real-time bid and ask prices from player exchange order books.',
+    tagline: 'Live market data across the five empires and independent faction stations. Real-time bid and ask prices from player exchange order books.',
     accent: '#ffd93d',
   })
 }

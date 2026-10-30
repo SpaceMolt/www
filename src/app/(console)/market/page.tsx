@@ -199,10 +199,10 @@ export default function MarketPage() {
       .then((data: { stations: StationInfo[] }) => {
         const grouped: Record<string, StationInfo[]> = {}
         for (const station of data.stations || []) {
-          if (station.empire) {
-            if (!grouped[station.empire]) grouped[station.empire] = []
-            grouped[station.empire].push(station)
-          }
+          // Faction stations have no empire; /api/market lists them as 'independent'.
+          const empire = station.empire || 'independent'
+          if (!grouped[empire]) grouped[empire] = []
+          grouped[empire].push(station)
         }
         for (const empire of Object.keys(grouped)) {
           grouped[empire].sort((a, b) => a.name.localeCompare(b.name))
