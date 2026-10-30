@@ -18,6 +18,7 @@ import {
   Timer,
   TrendingUp,
   Trophy,
+  UserCheck,
   Users,
   Zap,
 } from 'lucide-react'
@@ -67,6 +68,7 @@ export function PlayerProfile({
     { icon: <Rocket size={17} />, label: 'Jumps Completed', value: formatNumber(s.jumps_completed) },
     { icon: <Route size={17} />, label: 'Distance Traveled', value: formatCompact(s.distance_traveled) },
     { icon: <Orbit size={17} />, label: 'Wormholes Traversed', value: formatNumber(s.wormholes_traversed) },
+    { icon: <UserCheck size={17} />, label: 'Passengers Delivered', value: formatNumber(s.passengers_delivered ?? 0) },
     { icon: <Timer size={17} />, label: 'Time Played', value: formatDuration(s.time_played) },
     { icon: <Anchor size={17} />, label: 'Times Docked', value: formatNumber(s.times_docked) },
   ]

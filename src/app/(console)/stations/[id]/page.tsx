@@ -7,6 +7,7 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { AlertTriangle, ArrowLeft, CheckCircle2, FileText, Wrench } from 'lucide-react'
 import { useTranslation } from '@/i18n'
+import { formatNumber } from '@/lib/format'
 import styles from './page.module.css'
 
 const API_BASE = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
@@ -51,6 +52,10 @@ interface StationDetail {
   weapon_dps: number
   weapon_reach: number
   public_access: boolean
+  // The server omits these when zero.
+  dining_points?: number
+  leisure_points?: number
+  tourism_revenue?: number
   facilities: Facility[]
 }
 
@@ -306,6 +311,20 @@ export default function StationDetailPage() {
           <div className={styles.statItem}>
             <span className={styles.statLabel}>{t('stationDetail.satisfaction')}</span>
             <span className={styles.statValue}>{station.satisfaction_pct}%</span>
+          </div>
+          <div className={styles.statItem}>
+            <span className={styles.statLabel}>{t('stationDetail.tourismAppeal')}</span>
+            <span className={styles.statValue}>
+              {t('stationDetail.tourismAppealValue', {
+                total: (station.dining_points ?? 0) + (station.leisure_points ?? 0),
+                dining: station.dining_points ?? 0,
+                leisure: station.leisure_points ?? 0,
+              })}
+            </span>
+          </div>
+          <div className={styles.statItem}>
+            <span className={styles.statLabel}>{t('stationDetail.tourismRevenue')}</span>
+            <span className={styles.statValue}>{formatNumber(station.tourism_revenue ?? 0)} cr</span>
           </div>
           <div className={styles.statItem}>
             <span className={styles.statLabel}>{t('stationDetail.access')}</span>

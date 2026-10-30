@@ -34,6 +34,7 @@ export interface PlayerProfileStats {
   jumps_completed: number
   distance_traveled: number
   wormholes_traversed: number
+  passengers_delivered?: number
   time_played: number
   times_docked: number
 }
