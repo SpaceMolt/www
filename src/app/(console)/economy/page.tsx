@@ -3,7 +3,7 @@ import { formatCompact, formatNumber, titleCase } from '@/lib/format'
 import { ActivityChart, BondFlowChart, BondPriceChart, FlowsChart, FuelChart, Legend, PriceChart, SupplyChart, TradeChart } from './charts'
 import { C } from './chartTheme'
 import {
-  bondHeadline, bondSummary, chartRows, fuelHeadline, fuelSummary, compact, dayLabel, exchangeVolume, flowCaption, holders, inBrief, INDEX_NAME, indexedCategories, lastDays,
+  bondHeadline, bondSummary, chartRows, fuelHeadline, fuelSummary, compact, dayLabel, exchangeVolume, flowCaption, holders, inBrief, INDEX_NAME, indexedCategories, lastDays, netDevTeam,
   playerHeld, priceHeadline, signed, signedPct, summarize, tradeHeadline, type EconomyReport,
 } from './economy'
 import styles from './page.module.css'
@@ -147,7 +147,7 @@ export default async function EconomyPage() {
   const { current, days } = report
   const ms = current.money_supply
   const last = days.at(-1)
-  const recent = lastDays(days, WINDOW)
+  const recent = netDevTeam(lastDays(days, WINDOW))
   const rows = chartRows(recent)
   const s = summarize(recent)
   const span = `${s.days} days`

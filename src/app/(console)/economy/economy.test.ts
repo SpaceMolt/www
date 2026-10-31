@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'bun:test'
 import {
-  avgPrice, bondHeadline, fuelHeadline, fuelSummary, bondSummary, calendar, chartRows, compact, dayLabel, flowCaption, holders, inBrief, indexedCategories, lastDays, niceCeil,
+  avgPrice, bondHeadline, fuelHeadline, fuelSummary, bondSummary, calendar, chartRows, netDevTeam, compact, dayLabel, flowCaption, holders, inBrief, indexedCategories, lastDays, niceCeil,
   playerHeld, priceHeadline, signed, signedPct, summarize, ticksFor, tradeHeadline,
   type EconomyBondDay, type EconomyCurrent, type EconomyDay, type EconomyMoneySupply,
 } from './economy'
@@ -85,6 +85,18 @@ const TWO = [
     taxes_and_fines: 1,
   }),
 ]
+
+describe('netDevTeam', () => {
+  it('cancels same-day dev-team grants against removals', () => {
+    const [d] = netDevTeam([day('2026-09-03', {
+      faucets: { ...F0, missions: 10, dev_team: 500, total: 510 },
+      sinks: { ...S0, labor: 5, dev_team: 480, total: 485 },
+    })])
+    expect(d.faucets).toMatchObject({ dev_team: 20, total: 30 })
+    expect(d.sinks).toMatchObject({ dev_team: 0, total: 5 })
+    expect(netDevTeam(TWO)).toEqual(TWO)
+  })
+})
 
 describe('summarize', () => {
   const s = summarize(TWO)
