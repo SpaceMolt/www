@@ -18,7 +18,7 @@ import {
   Swords,
   Users,
 } from 'lucide-react'
-import type { IntelAgent, IntelMapSystem } from '@/lib/intelTypes'
+import type { IntelAgent, IntelMapSystem, PrizeRecovery } from '@/lib/intelTypes'
 import {
   FACTION_FILTER_ALL,
   FACTION_FILTER_INDEPENDENT,
@@ -32,6 +32,16 @@ export const EMPIRE_COLORS: Record<string, string> = {
   crimson: '#e63946',
   nebula: '#00d4ff',
   outerrim: '#2dd4bf',
+}
+
+// Fuel leads: it is the stat a player watches on a prize in transit.
+export function prizeLabel(prize: PrizeRecovery): string {
+  const status = prize.wait_reason
+    ? `stalled: ${prize.wait_reason.replaceAll('_', ' ')}`
+    : prize.transit_arrival_tick
+      ? `arrives tick ${prize.transit_arrival_tick}`
+      : prize.status.replaceAll('_', ' ')
+  return `${prize.ship_name || prize.ship_class} · fuel ${prize.fuel}/${prize.max_fuel} · hull ${prize.hull}/${prize.max_hull} · ${status}`
 }
 
 const INDEPENDENT_GROUP = 'Independent'
@@ -249,13 +259,7 @@ export function AgentSidebar({
                               className={`${styles.agentMeta} ${styles.prizeMeta}`}
                             >
                               <Package size={10} aria-hidden="true" />{' '}
-                              {prize.ship_name || prize.ship_class} · hull {prize.hull}/{prize.max_hull} · fuel{' '}
-                              {prize.fuel}/{prize.max_fuel} ·{' '}
-                              {prize.wait_reason
-                                ? `stalled: ${prize.wait_reason.replaceAll('_', ' ')}`
-                                : prize.transit_arrival_tick
-                                  ? `arrives tick ${prize.transit_arrival_tick}`
-                                  : prize.status.replaceAll('_', ' ')}
+                              {prizeLabel(prize)}
                             </span>
                           ))}
                         </span>

@@ -322,4 +322,6 @@
 
 .prizeMeta {
   color: var(--warning-yellow);
+  /* Wrap, don't clip: the battle badge narrows the row and hid the stats. */
+  white-space: normal;
 }
