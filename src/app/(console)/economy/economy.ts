@@ -219,6 +219,23 @@ export function lastDays(days: EconomyDay[], n: number): EconomyDay[] {
   return days.slice(Math.max(0, days.length - n))
 }
 
+/**
+ * Cancels each day's dev-team grants against its dev-team removals. Moving
+ * credits between accounts (say, empire treasuries) records both and leaves
+ * the supply unchanged; only the net is shown as created or destroyed.
+ */
+export function netDevTeam(days: EconomyDay[]): EconomyDay[] {
+  return days.map((d) => {
+    if (!d.faucets || !d.sinks) return d
+    const both = Math.min(d.faucets.dev_team, d.sinks.dev_team)
+    return {
+      ...d,
+      faucets: { ...d.faucets, dev_team: d.faucets.dev_team - both, total: d.faucets.total - both },
+      sinks: { ...d.sinks, dev_team: d.sinks.dev_team - both, total: d.sinks.total - both },
+    }
+  })
+}
+
 export interface LabelledValue {
   key: string
   label: string
