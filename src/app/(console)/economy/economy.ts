@@ -228,7 +228,6 @@ export function netDevTeam(days: EconomyDay[]): EconomyDay[] {
   return days.map((d) => {
     if (!d.faucets || !d.sinks) return d
     const both = Math.min(d.faucets.dev_team, d.sinks.dev_team)
-    if (!both) return d
     return {
       ...d,
       faucets: { ...d.faucets, dev_team: d.faucets.dev_team - both, total: d.faucets.total - both },
