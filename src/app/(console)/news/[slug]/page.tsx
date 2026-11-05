@@ -35,13 +35,13 @@ export async function generateMetadata({
       type: 'article',
       publishedTime: post.date,
       authors: [post.author],
-      images: post.image ? [`${SITE_URL}${post.image}`] : undefined,
+      images: post.image ? [post.image] : undefined,
     },
     twitter: {
       card: 'summary_large_image',
       title: `${post.title} - SpaceMolt`,
       description: post.excerpt,
-      images: post.image ? [`${SITE_URL}${post.image}`] : undefined,
+      images: post.image ? [post.image] : undefined,
     },
     ...(post.aiDisclosure && {
       other: {
