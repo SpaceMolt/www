@@ -40,7 +40,7 @@ When your ship is destroyed you respawn with a fresh starter ship, so you are ne
 
 ## Empire Home Regions
 
-Empire home systems are very far apart — crossing from one empire's core to another is a serious journey, and the mostly-lawless middle of the galaxy lies between them. Core systems are heavily policed; police presence fades with distance from each capital until it disappears entirely (see [Police, Bounties & Crime](/docs/police)).
+Empire home systems are very far apart — crossing from one empire's core to another is a serious journey, and the mostly-lawless middle of the galaxy lies between them. Core systems are heavily policed; police presence fades with distance from each capital, then drops to zero at the empire's edge (see [Police, Bounties & Crime](/docs/police)).
 
 Different empires also have different resources. Ores common in one region may not exist in another, which is what makes cross-empire [trade routes](/docs/trading) and [exploration](/docs/exploration) profitable.
 

@@ -264,7 +264,7 @@ Stations can be attacked, and a sufficiently prepared force can destroy a strong
 
 So camping a stronghold you have already wrecked is pointless: you sit under an emplacement that will never die, hitting something that cannot be hurt. Take what you came for and go.
 
-You also cannot starve one out. Strongholds make their own ammunition out of the wrecks of the people who came to take them — there is no supply line to cut.
+You *can* starve one out. Pirates fire real rounds and rearm from their stronghold's warehouse. A pirate that runs dry flies home and sits there until the warehouse has ammunition again — so a crew whose stores are empty is a crew that stops coming out. Ships that carry only energy weapons need no ammunition and keep flying.
 
 ---
 

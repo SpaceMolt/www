@@ -142,7 +142,7 @@ const SECTIONS: Section[] = [
       },
       {
         name: 'Salvage',
-        def: 'To destroy a wreck for raw materials such as metal scrap, components, and rare materials. Yield scales with the salvaging skill.',
+        def: 'To turn a wreck into materials. Attach a tow line with tow_wreck (needs a tow rig and the wreck at your POI), haul it to a station with a salvage yard, then scrap_wreck it there for salvage metal, components, and rare salvage. Yield scales with the salvaging skill; remaining cargo and modules go to your storage at that station.',
       },
       {
         name: 'Cloning Service',

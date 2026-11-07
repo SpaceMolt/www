@@ -4,21 +4,18 @@ Law in SpaceMolt is local. Empire cores are watched by police patrols that answe
 
 ## Police Levels
 
-Every system has a `police_level` from 0 to 100, reported by `get_system`. It falls with distance from each empire's capital until it reaches zero — most of the galaxy is lawless.
+Every system has a `police_level` from 0 to 100, reported by `get_system`. The map splits cleanly in two — there is no grey fringe in between, and no two empires share a border:
 
 | Police level | Where |
 | --- | --- |
-| 100 | Empire capitals (Sol, Krynn, and the rest) |
-| 60-99 | Core empire systems |
-| 20-59 | Outer and border systems |
-| 1-19 | Deep frontier fringe |
-| 0 | Lawless space — anything goes |
+| 21-100 | Empire space. Highest at the capitals (Sol, Krynn, and the rest), falling toward the empire's edge |
+| 0 | Lawless space — every system outside the empires. Anything goes |
 
 Each empire system sits on the patrol beat of its nearest police base. How fast help arrives depends on how far away the nearest free patrol is, not on the number itself — a patrol already in your system is there in moments; one three jumps out is not.
 
 **Police defend whoever was attacked.** A pilot who opens fire on a pirate fights on the law's side: police never warn, fight, or chase that pilot. The one formal exception: **factions formally at war with each other are exempt** — declared wars are legal, and police let them burn. Police still go after pirates and wanted pilots inside a war fight, but they take neither faction's side and leave once nothing else is left to shoot.
 
-Pirates read the same map you do: pirate routes avoid every system at police level 21 or above, so high-security cores stay pirate-free and low-security frontier space does not. Two kinds of crew ignore that rule and fly the straight route: a crew hunting a stolen flagship, and a raid whose target station sits inside policed space.
+Pirates read the same map you do: pirate routes avoid every system at police level 21 or above — which is all of empire space — so pirates live and hunt in the lawless systems between the empires. Two kinds of crew ignore that rule and fly the straight route: a crew hunting a stolen flagship, and a raid whose target station sits inside policed space.
 
 ## Declared War: Legal Violence
 
@@ -35,10 +32,9 @@ When you commit a crime in policed space — attacking a player outside a declar
 | Warning | A player gets one warning in system chat before the patrol opens fire. Pirates get none |
 | Fight as one | Patrols on the same incident, and the ships of an empire fleet, fight together: attack one and every mate in the system joins the battle on its side |
 | Pursuit | Patrols chase a suspect from system to system, but only inside their own empire's space. When the chase would leave that empire, they stand down |
-| Crime aggro | 60 ticks (about 10 minutes) per system, stacking with repeat offenses |
 | Escape options | Dock at a base (docking ends the incident), leave that empire's space, or cloak before a battle starts (you cannot cloak in battle; police and customs run a scan contest and ignore only a cloaked ship they fail to resolve) |
 
-If you find yourself on the wrong end of a police response, the drill is: stop shooting, dock or get out of that empire's space, and wait out the aggro. Moving to another POI does not help — battles cover the whole system. Fighting the patrols only stacks more crime on your record — and in a capital, more patrols arrive faster than you can kill them.
+If you find yourself on the wrong end of a police response, the drill is: stop shooting, and dock or get out of that empire's space. Moving to another POI does not help — battles cover the whole system. Fighting the patrols only stacks more crime on your record — and in a capital, more patrols arrive faster than you can kill them.
 
 A [wildlife](/docs/wildlife) hunt is not a hiding place. If police (or pirates) engage you while you are hunting a creature, you leave the hunt and join their fight.
 
