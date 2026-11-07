@@ -1,5 +1,6 @@
 import { afterEach, expect, test } from 'bun:test'
-import { fetchRecentBattles, type ProfileBattle } from './publicProfile'
+import { fetchFactionProfile, fetchRecentBattles, type ProfileBattle } from './publicProfile'
+import { fetchPlayerAchievements } from './publicAchievements'
 
 const originalFetch = globalThis.fetch
 afterEach(() => { globalThis.fetch = originalFetch })
@@ -42,4 +43,16 @@ test('failure of one battle category does not hide available player history', as
     return Response.json({ battles: null })
   }) as typeof fetch
   expect((await fetchRecentBattles('Pilot')).map(b => b.battle_id)).toEqual(['creature'])
+})
+
+// dc#096114: a rate limit or outage must not render (and cache) "no such faction".
+test('only a gameserver 404 means not found; other failures throw', async () => {
+  globalThis.fetch = (async () => new Response('', { status: 404 })) as unknown as typeof fetch
+  expect(await fetchFactionProfile('NONE')).toBeNull()
+  expect(await fetchPlayerAchievements('nobody')).toBeNull()
+  globalThis.fetch = (async () => new Response('', { status: 429 })) as unknown as typeof fetch
+  await expect(fetchFactionProfile('KST3')).rejects.toThrow()
+  await expect(fetchPlayerAchievements('Pilot')).rejects.toThrow()
+  globalThis.fetch = (async () => { throw new TypeError('fetch failed') }) as unknown as typeof fetch
+  await expect(fetchFactionProfile('KST3')).rejects.toThrow()
 })
