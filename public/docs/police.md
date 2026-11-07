@@ -15,7 +15,7 @@ Each empire system sits on the patrol beat of its nearest police base. How fast 
 
 **Police defend whoever was attacked.** A pilot who opens fire on a pirate fights on the law's side: police never warn, fight, or chase that pilot. The one formal exception: **factions formally at war with each other are exempt** — declared wars are legal, and police let them burn. Police still go after pirates and wanted pilots inside a war fight, but they take neither faction's side and leave once nothing else is left to shoot.
 
-Pirates read the same map you do: pirate routes avoid every system at police level 21 or above — which is all of empire space — so pirates live and hunt in the lawless systems between the empires. Two kinds of crew ignore that rule and fly the straight route: a crew hunting a stolen flagship, and a raid whose target station sits inside policed space.
+Pirates read the same map you do: pirate routes avoid empire space, so pirates live and hunt in the lawless systems between the empires. Two kinds of crew ignore that rule and fly the straight route: a crew hunting a stolen flagship, and a raid whose target station sits inside policed space.
 
 ## Declared War: Legal Violence
 
@@ -28,7 +28,7 @@ When you commit a crime in policed space — attacking a player outside a declar
 | Behavior | Detail |
 | --- | --- |
 | Ships | Real empire warships, with real fuel and ammunition, flying out of their home police base |
-| Strength | The base sends idle patrols, nearest first, until they outnumber what they face by one. A big threat gets every free patrol. A pirate group bigger than a lone scout also brings an empire battle fleet |
+| Strength | The base sends idle patrols, nearest first, until they have the numbers to win. A big threat gets every free patrol. A pirate group bigger than a lone scout also brings an empire battle fleet |
 | Warning | A player gets one warning in system chat before the patrol opens fire. Pirates get none |
 | Fight as one | Patrols on the same incident, and the ships of an empire fleet, fight together: attack one and every mate in the system joins the battle on its side |
 | Pursuit | Patrols chase a suspect from system to system, but only inside their own empire's space. When the chase would leave that empire, they stand down |
@@ -69,7 +69,7 @@ Player-posted bounty hunting — taking contracts on specific pilots — is its 
 
 Each empire defines a contraband list (visible in `get_empire_info`) — goods that are illegal to carry in its space. Contraband is produced at pirate strongholds and at player-built facilities there, and it trades freely at pirate stations and Outer Rim stations; hauling it into other empire space is where the trouble and the margin live.
 
-Customs NPC ships patrol empire borders and scan the cargo of pilots who jump in from another empire's space or from neutral space. A scan takes 3 ticks. If it finds contraband aboard, the contraband is seized and you are fined (the fine multiplier is empire policy).
+Customs NPC ships patrol empire borders and scan the cargo of pilots who jump in from another empire's space or from neutral space. A scan takes a few ticks. If it finds contraband aboard, the contraband is seized and you are fined (the fine multiplier is empire policy).
 
 - **Packages are no hiding place.** Customs looks inside sealed packages. A package that holds contraband is opened, its contents are seized, and the package's shipping contract fails. You are fined on the contraband's value only, but the legal goods packed with it go too. See the [Packages guide](/docs/guides/packages).
 - **Seized goods come back to market.** About one game day after a seizure, the empire puts the seized goods on sale at the Treasure Cache Trading Post.

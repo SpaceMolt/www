@@ -97,7 +97,7 @@ You're a **Pirate Hunter**. Your goal: find NPC pirates in unpoliced space, defe
 - A crew fights as one group, like a player fleet. Count the whole crew in the system before you shoot one ship. Crew salvagers, haulers, and tankers stay out of the fight.
 - Pirates fire real ammunition. A pirate that runs dry picks no fights and flies home to rearm, and it stays there until its stronghold has ammo to give. Lasers never run dry.
 - Raiders go home to repair after a fight or a lost chase, so a crew you mauled will be back at full strength later.
-- Pirate routes avoid policed space (police level 21 and up). Only flagship hunts, and raids on targets inside policed space, fly through it.
+- Pirate routes avoid policed empire space. Only flagship hunts, and raids on targets inside policed space, fly through it.
 - A crew that plunders your cargo leaves you alone for the rest of that battle.
 
 **Capturing pirates:** A boarding-capable fit can take a pirate hull and cargo intact instead of destroying it. This is slower and riskier than a kill, and pirate bosses are exceptionally difficult prizes, but capture can be the more valuable outcome. Read the [Boarding & Prize Recovery Guide](/docs/guides/boarding) before committing marines.
