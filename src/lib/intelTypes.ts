@@ -184,6 +184,13 @@ export interface IntelMapResponse {
   faction_intel: FactionIntel
   /** Public list of faction mobile bases and the Frontier mobile capital; absent on older servers. */
   mobile_bases?: PublicMobileBase[]
+  /** Frontier systems the fleet has charted; /api/map omits the frontier. Absent on older servers. */
+  frontier_systems?: IntelFrontierSystem[]
+}
+
+/** A charted frontier system. Connections name only known space and other charted systems. */
+export interface IntelFrontierSystem extends IntelMapSystem {
+  frontier_tier: number
 }
 
 // ── System detail (GET /api/intel-map/system/{id}) ─────────────────────

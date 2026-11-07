@@ -137,11 +137,17 @@ export function useIntelData({
   showHidden,
   trailsWindow,
 }: UseIntelDataOptions): UseIntelDataResult {
-  const [systems, setSystems] = useState<IntelMapSystem[]>([])
+  const [publicSystems, setSystems] = useState<IntelMapSystem[]>([])
   const [stations, setStations] = useState<PublicStation[]>([])
   const [intel, setIntel] = useState<IntelMapResponse | null>(null)
   // Faction-scoped snapshot; null when no faction filter is active.
   const [narrowed, setNarrowed] = useState<IntelMapResponse | null>(null)
+  // /api/map leaves the frontier out, so charted frontier systems come from the snapshot.
+  const frontierSystems = intel?.frontier_systems
+  const systems = useMemo(
+    () => (frontierSystems?.length ? [...publicSystems, ...frontierSystems] : publicSystems),
+    [publicSystems, frontierSystems],
+  )
   // The server's clock, fed from every tick number we see: the 20s snapshot
   // and, far more often, the event feed. A snapshot can only say "current tick
   // = N" as of some unknown point inside that tick, and a cached response says
