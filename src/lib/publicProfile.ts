@@ -132,9 +132,9 @@ const API_BASE =
 
 async function fetchJSON<T>(path: string): Promise<T | null> {
   try {
-    // Shorter than the achievement window: a player checks their own profile
-    // right after playing, so stats cannot go stale for an hour.
-    const res = await fetch(`${API_BASE}${path}`, { next: { revalidate: 300 } })
+    // Hourly, like the pages that use it: a 5-minute window made every crawled
+    // profile an ISR write 12 times an hour.
+    const res = await fetch(`${API_BASE}${path}`, { next: { revalidate: 3600 } })
     if (!res.ok) return null
     return (await res.json()) as T
   } catch {
