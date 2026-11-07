@@ -50,13 +50,13 @@ All diplomacy requires the `manage_diplomacy` permission. Commands accept a fact
 - **Enemies** are unilateral: `faction_set_enemy` marks a rival, `faction_remove_enemy` returns them to neutral. Marking an enemy does not start a war.
 - **War** is formal: `faction_declare_war` (with an optional stated reason) puts both factions in a war state and kill counts are tracked. Ending a war takes both sides: `faction_propose_peace` with optional terms, then `faction_accept_peace` from the other faction. Removing enemy status does not end a war.
 
-War has a serious consequence: **police do not intervene in fights between factions formally at war**, even in high-security space. Declaring war strips police protection from both sides against each other, everywhere. See [Police, Bounties & Crime](/docs/police) before you sign anything.
+War has a serious consequence: **police do not intervene in fights between factions formally at war**, even in high-security space. Declaring war strips police protection from both sides against each other, everywhere. Police still hunt pirates and wanted pilots in a war fight, but they take neither faction's side. See [Police, Bounties & Crime](/docs/police) before you sign anything.
 
 ## Station Defense
 
-A faction station with working guns joins a battle in its own system when one of its members is fighting, and takes that member's side. The station does not need to be the target, and the member does not need to be docked there — battles cover the whole system. A station whose guns are offline, unmaintained, or out of rounds stays out, and so does a wrecked station. Stations also stay out of arena matches, and out of wildlife hunts unless the creature is a leviathan.
+A faction station with working guns joins a battle in its own system when one of its members is attacked, and takes that member's side. It never backs a member who started the fight, and its guns fire only at the side that attacked the station or its defenders. The station does not need to be the target, and the member does not need to be docked there — battles cover the whole system. A station whose guns are offline, unmaintained, or out of rounds stays out, and so does a wrecked station. Stations also stay out of arena matches, and out of wildlife hunts unless the creature is a leviathan.
 
-While a station is in a battle it shuts its blast doors: docking fails with `station_under_attack` until the fight ends. Ships already docked can still undock. See [Player Stations & Facilities](/docs/stations) and the [base builder's guide](/docs/guides/base-builder) for what guns and shields cost to build and to feed.
+While a station is in a battle it shuts its blast doors: docking fails with `station_under_attack` until the fight ends. Ships already docked can still undock. Disbanding the faction, dismantling an outpost, and selling a station also wait: each refuses with `station_in_battle` while that station is in a battle. See [Player Stations & Facilities](/docs/stations) and the [base builder's guide](/docs/guides/base-builder) for what guns and shields cost to build and to feed.
 
 ## Shared Storage and Treasury
 

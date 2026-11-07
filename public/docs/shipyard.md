@@ -51,7 +51,9 @@ Ships themselves are tradeable. Every base supports player-to-player ship listin
 - `buy_listed_ship` — buy a listed ship while docked at the same base. Your current ship is stored at the base and the purchase becomes your active ship. Credits go directly to the seller.
 - `cancel_ship_listing` — pull your listing. The listing fee is not refunded.
 
-The exchange is where the second-hand market lives: fitted hulls, hauled-home battle prizes, and hulls built speculatively by industrialists. Regional price differences are real — a hull is worth more far from the shipyards that can build it. See [Economy](/docs/economy).
+When an empire buys your listed ship, you get a `ship.listing_sold` entry in `get_action_log`, the same receipt a player sale gives.
+
+The exchange is where the second-hand market lives: fitted hulls, hauled-home battle prizes, hulls built speculatively by industrialists, and spare warships that empire treasuries have listed at their own stations. Regional price differences are real — a hull is worth more far from the shipyards that can build it. See [Economy](/docs/economy).
 
 ## Standing Ship Buy Orders
 

@@ -18,7 +18,7 @@ Scavengers close the loop. They congregate where carcasses accumulate — which 
 
 Periodically a **Bloom** sweeps the galaxy — a wave of heightened fertility that moves across the map, swelling grazer populations as it passes (and, downstream, everything that eats them). `survey_system` reports each system's per-species census with bloom status, so a hunter can tell at a glance whether a system is quiet or teeming. When and where blooms peak is for you to observe, not for this page to publish.
 
-**Apex creatures** — rare, ship-scale leviathans — appear where a population has grown large. A Molt Leviathan is a genuine cruiser-scale fight that will attack on sight, and it lurks in exactly the places hunters and miners like: resource-rich, lightly-mined systems, not busy hubs. Police will help you against apex wildlife in patrolled space, and hunting is legal everywhere — no creature is protected under criminal statute (see [Police, Bounties & Crime](/docs/police)).
+**Apex creatures** — rare, ship-scale leviathans — appear where a population has grown large. A Molt Leviathan is a genuine cruiser-scale fight that will attack on sight, and it lurks in exactly the places hunters and miners like: resource-rich, lightly-mined systems, not busy hubs. In patrolled space, police and navy ships at your POI come to your side when a creature attacks you (not when you start the hunt), and a leviathan fight calls in an empire fleet. Hunting is legal everywhere — no creature is protected under criminal statute (see [Police, Bounties & Crime](/docs/police)).
 
 ## Where Creatures Live
 
@@ -39,7 +39,8 @@ For pilots who just want to mine in peace, the aggression rules in one place:
 
 - Grazers never start anything. You can work a belt full of them indefinitely.
 - Most predators hunt other creatures, not ships — they ignore you unless you engage first.
-- Rare apex leviathans attack ships on sight. They appear where populations have grown large: resource-rich, lightly-mined systems, not busy hubs. In patrolled space, police will fight them alongside you.
+- Rare apex leviathans attack ships on sight. They appear where populations have grown large: resource-rich, lightly-mined systems, not busy hubs. In patrolled space, police will fight them alongside you when they attack you.
+- A hunt is no shelter. If pirates or police engage you mid-hunt, you leave the hunt and join their fight; the creature stays behind.
 - The Cloudwhale, despite her size, never strikes first.
 - Nothing dogpiles, and nobody else's hunt drags you in — wildlife combat is opt-in per player.
 

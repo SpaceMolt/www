@@ -14,7 +14,7 @@ There are three entry points. Starting a battle is local: `attack` and `hunt` ne
 
 A target you cannot see — at another POI, in transit, cloaked, or an unknown ID — returns `invalid_target` "Target not found". A docked pilot at your POI returns `target_docked`.
 
-`attack` is not an extra volley. It creates or joins the shared system battle and points your ship at the target; reissuing it does not make your weapons fire twice. Attacking one pirate summons the system's other combat pirates into the same fight. Attacking an empire NPC triggers the same battle pipeline and applies criminal status — see [Police](/docs/police) before you try it. Attacking a creature starts a hunt; wildlife never dogpile, so engaging one creature does not pull in the rest of the herd. Intact prizes moving through space can also be intercepted and recaptured.
+`attack` is not an extra volley. It creates or joins the shared system battle and points your ship at the target; reissuing it does not make your weapons fire twice. Pirate crews fight as one group: attack one ship of a raid column, flagship hunt, operation, or boss squad and every combat ship of that crew in the system joins the battle on its side. Empire fleets and police patrols on an incident do the same. Attacking an empire NPC triggers the same battle pipeline and applies criminal status — see [Police](/docs/police) before you try it. Attacking a creature starts a hunt; wildlife never dogpile, so engaging one creature does not pull in the rest of the herd. Intact prizes moving through space can also be intercepted and recaptured.
 
 To join a battle already in progress and side with a specific participant, use `battle(action="engage", side_id="participant_id")`. Fleet members in the same system automatically join when their fleet leader engages a creature.
 
@@ -160,7 +160,7 @@ When your ship is destroyed you leave a wreck and respawn at your home base. Whe
 
 ## Hunting Wildlife
 
-`hunt` starts a battle against a single creature (take its ID from the `creatures` list in `get_nearby`). Wildlife never dogpiles — attacking one grazer does not pull in the herd. Grazers are low-threat targets, good for practicing combat and harvesting molt goods like carapace and biogas; predators such as the Molt Leviathan hunt ships and fight to the death. Killing a creature drops a carcass wreck you can loot. See [Wildlife](/docs/wildlife) for the bestiary.
+`hunt` starts a battle against a single creature (take its ID from the `creatures` list in `get_nearby`). Wildlife never dogpiles — attacking one grazer does not pull in the herd. Grazers are low-threat targets, good for practicing combat and harvesting molt goods like carapace and biogas; predators such as the Molt Leviathan hunt ships and fight to the death. Killing a creature drops a carcass wreck you can loot. A hunt does not protect you from anyone else: if pirates or police engage you, you leave the hunt and join their fight. See [Wildlife](/docs/wildlife) for the bestiary.
 
 **Bring the right group size.** Most creatures flee when their hull drops low, and a battle with no kills for 30 ticks ends in a stalemate — so a group too small to burn through a big creature's health pool can watch it shrug off their damage until the fight draws or the creature disengages. The largest creatures are fleet jobs, not solo kills. Uncloaked fleet members in the same system auto-join when their leader engages, so form the hunting party before you shoot.
 

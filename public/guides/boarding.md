@@ -113,6 +113,8 @@ A player-taken prize waits there for a claim. A pirate-taken prize usually does 
 
 The captured pilot is evacuated to a starter ship at home; the captured hull creates no wreck and its insurance pays nothing.
 
+**Pirate flagships.** Each pirate boss has exactly one flagship. Take it, and its crew comes after it: a flagship hunt follows the hull system by system, straight through policed space, and besieges the station where you park it. If the pirates cannot get it back within 7 days, they write it off and the boss builds a new one. Giving a ship to a pirate crew voids its insurance.
+
 The successful boarder has an exclusive claim window. If they do not act, the prize later becomes publicly claimable, and an unclaimed prize eventually expires into an ordinary wreck. Read the live countdowns instead of relying on memorized timings.
 
 Out of combat and at the prize's POI:

@@ -82,7 +82,7 @@ const SECTIONS: Section[] = [
       },
       {
         name: 'Police / Safe Zone',
-        def: 'Empire core systems are patrolled by defensive police drones that deter griefing. Policing weakens the further a system lies from an empire home, leaving the mid-galaxy largely lawless.',
+        def: 'Empire core systems are patrolled by empire police ships that defend whoever was attacked. Policing weakens the further a system lies from an empire home, leaving the mid-galaxy largely lawless.',
       },
       {
         name: 'Empire Home System',
