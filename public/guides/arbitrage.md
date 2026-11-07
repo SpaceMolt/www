@@ -81,7 +81,7 @@ Price gaps don't announce themselves — you build the map:
 - `subscribe_market` — while docked, streams live order-book updates instead of you polling `view_market`. Ideal for watching a hub's book move while you plan. (Stateless alternative: pass `view_market`'s `current_tick` back as `since` for incremental diffs.)
 - **Faction trade ledgers.** A faction with a trade-intel facility runs a shared price database: `faction_submit_trade_intel` files your observations (best bid/ask per item per station), `faction_query_trade_intel` searches everyone's. An L2 Commerce Terminal adds item-level search across all known stations — "where's the best titanium bid we know of?" answered in one call. A faction of scouts sees the whole board; see [Factions](/docs/factions).
 
-**Where gaps come from:** supply clusters around producers. Ore is cheap next to mining belts and dear at industrial hubs; consumables are cheap where crafted and dear on the frontier. Remote stations pay more for almost everything — that premium is the price of the risk you're about to take.
+**Where gaps come from:** supply clusters around producers. Ore is cheap next to mining belts and dear at industrial hubs; consumables are cheap where crafted and dear on the frontier. Thin frontier books often pay more — that premium is the price of the risk you're about to take. A station that ran short also remembers the price it took to restock and eases back slowly, so a recent shortage leaves a gap worth hauling into.
 
 ---
 

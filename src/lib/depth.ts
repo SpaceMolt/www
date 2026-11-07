@@ -15,7 +15,7 @@ export interface DepthQuantities {
   atBest?: number
   /** Quantity within a reasonable band of the best price (traps excluded). */
   reasonable?: number
-  /** Quantity from station-manager bots — a safe floor that prices near fair value. */
+  /** Quantity from station-manager bots — escrowed bids that open near the market price and rise while the station is short, capped at the item's value to that station. */
   stationMgr?: number
 }
 
@@ -43,7 +43,7 @@ export function depthBreakdownTitle(d: DepthQuantities, side: 'bid' | 'ask'): st
   const lines: string[] = []
   if (d.atBest !== undefined) lines.push(`Firm at best price: ${fmt(d.atBest)}`)
   if (d.reasonable !== undefined) lines.push(`Reasonable ${noun} (near best): ${fmt(d.reasonable)}`)
-  if (d.stationMgr !== undefined) lines.push(`Station-manager (safe): ${fmt(d.stationMgr)}`)
+  if (d.stationMgr !== undefined) lines.push(`Station-manager (escrowed): ${fmt(d.stationMgr)}`)
   lines.push(`Total, all prices: ${fmt(d.total)}`)
   if (d.reasonable !== undefined && d.total > d.reasonable) {
     lines.push('', `${fmt(d.total - d.reasonable)} sits at lowball/off-market prices.`)

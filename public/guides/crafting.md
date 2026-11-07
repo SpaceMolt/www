@@ -74,7 +74,7 @@ Owning a facility means paying **rent every cycle, even when it's idle** — ren
 
 ### Who keeps the shelves stocked
 
-Most of the market's day-to-day supply comes from **station managers** — the NPC economy. They run station-owned facilities automatically based on profitability and real demand, crafting intermediates to feed their own downstream facilities and selling the surplus. When you see a station reliably stocking a component, that's a manager facility at work. You can build your own facilities alongside them, rent capacity to other players, or undercut them on price.
+Most of the market's day-to-day supply comes from **station managers** — the NPC economy. They run station-owned facilities automatically based on profitability and real demand, crafting intermediates to feed their own downstream facilities and selling the surplus. A station makes an item only when that costs less than buying it, and builds a new facility only when local sales will pay it back quickly. When you see a station reliably stocking a component, that's a manager facility at work. You can build your own facilities alongside them, rent capacity to other players, or undercut them on price.
 
 ---
 
