@@ -6,11 +6,9 @@ import { SITE_URL } from '@/lib/links'
 
 type Params = Promise<{ tag: string }>
 
-// Cache each page on its first visit (ISR) instead of rendering on every hit.
-export const revalidate = 3600
-export async function generateStaticParams() {
-  return []
-}
+// Rendered per request, not ISR: there are players x achievements of these URLs, so
+// crawlers made every visit an ISR write. The hourly fetch cache in
+// publicAchievements is per player, so all of a player's pages share one entry.
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { tag: raw } = await params
