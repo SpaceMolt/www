@@ -18,6 +18,12 @@ const ARCHETYPES: GlyphArchetype[] = [
   'support',
   'drone',
   'creature',
+  'bug',
+  'lobster',
+  'whale',
+  'jelly',
+  'ray',
+  'eel',
   'station',
 ]
 
@@ -34,6 +40,33 @@ describe('archetypeForShip', () => {
   it('routes drones and creatures by kind, ignoring class', () => {
     expect(archetypeForShip('drone', undefined, undefined, 0)).toBe('drone')
     expect(archetypeForShip('creature', 'Fighter', 'Combat', 3)).toBe('creature')
+  })
+
+  it('gives creatures a body plan from their name, blob when unknown', () => {
+    const cases: Array<[string, GlyphArchetype]> = [
+      ['Molt Leviathan', 'lobster'],
+      ['Juvenile Rainbow Leviathan', 'lobster'],
+      ['Glitterback Crab', 'lobster'],
+      ['Cloudwhale', 'whale'],
+      ['Pilot-Whale', 'whale'],
+      ['[RNCH] Belt-Grazer', 'whale'],
+      ['Ash-Scarab', 'bug'],
+      ['Crusher-Mantis', 'bug'],
+      ['Bell-Jelly', 'jelly'],
+      ['Cobalt Squid', 'jelly'],
+      ['Voltmanta', 'ray'],
+      ['Sift-Ray', 'ray'],
+      ['Tempest-Eel', 'eel'],
+      ['Inkwyrm', 'eel'],
+      ['Molt Leviathan Egg', 'creature'],
+      ['Prism-Drifter', 'jelly'],
+      ['Glimmer-Druse', 'creature'],
+      ['Wormwood', 'creature'],
+      ['Void Kraken', 'creature'],
+    ]
+    for (const [name, archetype] of cases) {
+      expect([name, archetypeForShip('creature', undefined, undefined, 1, name)]).toEqual([name, archetype])
+    }
   })
 
   it('routes stations by kind — they carry no ship class at all', () => {
@@ -111,7 +144,16 @@ function makeRecordingCtx() {
     quadraticCurveTo: (cx: number, cy: number, x: number, y: number) => {
       points.push({ x: cx, y: cy }, { x, y })
     },
-    arc: () => {},
+    bezierCurveTo: (c1x: number, c1y: number, c2x: number, c2y: number, x: number, y: number) => {
+      points.push({ x: c1x, y: c1y }, { x: c2x, y: c2y }, { x, y })
+    },
+    // Arcs and ellipses record their bounding extents.
+    arc: (x: number, y: number, r: number) => {
+      points.push({ x: x + r, y }, { x: x - r, y }, { x, y: y + r }, { x, y: y - r })
+    },
+    ellipse: (x: number, y: number, rx: number, ry: number) => {
+      points.push({ x: x + rx, y }, { x: x - rx, y }, { x, y: y + ry }, { x, y: y - ry })
+    },
   } as unknown as CanvasRenderingContext2D
   return { ctx, points, began: () => began, closed: () => closed }
 }
