@@ -37,16 +37,14 @@ const API_BASE =
 async function fetchAchievements(
   path: string,
 ): Promise<PublicAchievementsResponse | null> {
-  try {
-    // Long window on purpose: this backs the unbounded /a/[player]/[achievement]
-    // share-card space, which crawlers enumerate. An unlocked achievement never
-    // changes, so a 30s window bought nothing and re-rendered on every sweep.
-    const res = await fetch(`${API_BASE}${path}`, { next: { revalidate: 3600 } })
-    if (!res.ok) return null
-    return (await res.json()) as PublicAchievementsResponse
-  } catch {
-    return null
-  }
+  // Long window on purpose: this backs the unbounded /a/[player]/[achievement]
+  // share-card space, which crawlers enumerate. An unlocked achievement never
+  // changes, so a 30s window bought nothing and re-rendered on every sweep.
+  const res = await fetch(`${API_BASE}${path}`, { next: { revalidate: 3600 } })
+  // null only for a real 404; other failures throw (see publicProfile fetchJSON).
+  if (res.status === 404) return null
+  if (!res.ok) throw new Error(`gameserver ${path}: HTTP ${res.status}`)
+  return (await res.json()) as PublicAchievementsResponse
 }
 
 // Route params arrive percent-encoded (Next doesn't decode dynamic segments),

@@ -130,16 +130,15 @@ export interface PublicFactionProfile {
 const API_BASE =
   process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 
+// null only for a real 404. Any other failure throws, so a rate limit or
+// outage shows the error page instead of a cached "not found" (dc#096114).
 async function fetchJSON<T>(path: string): Promise<T | null> {
-  try {
-    // Hourly, like the pages that use it: a 5-minute window made every crawled
-    // profile an ISR write 12 times an hour.
-    const res = await fetch(`${API_BASE}${path}`, { next: { revalidate: 3600 } })
-    if (!res.ok) return null
-    return (await res.json()) as T
-  } catch {
-    return null
-  }
+  // Hourly, like the pages that use it: a 5-minute window made every crawled
+  // profile an ISR write 12 times an hour.
+  const res = await fetch(`${API_BASE}${path}`, { next: { revalidate: 3600 } })
+  if (res.status === 404) return null
+  if (!res.ok) throw new Error(`gameserver ${path}: HTTP ${res.status}`)
+  return (await res.json()) as T
 }
 
 export function fetchPlayerProfile(name: string) {
@@ -173,9 +172,10 @@ export interface ProfileBattle {
 export async function fetchRecentBattles(name: string): Promise<ProfileBattle[]> {
   const search = `/api/battles?search=${encodeURIComponent(name)}&limit=8`
   const [real, arena, wildlife] = await Promise.all([
-    fetchJSON<{ battles: ProfileBattle[] | null }>(search),
-    fetchJSON<{ battles: ProfileBattle[] | null }>(`${search}&category=arena`),
-    fetchJSON<{ battles: ProfileBattle[] | null }>(`${search}&category=wildlife`),
+    // Battles are optional on a profile: a failed category shows as empty.
+    fetchJSON<{ battles: ProfileBattle[] | null }>(search).catch(() => null),
+    fetchJSON<{ battles: ProfileBattle[] | null }>(`${search}&category=arena`).catch(() => null),
+    fetchJSON<{ battles: ProfileBattle[] | null }>(`${search}&category=wildlife`).catch(() => null),
   ])
   const byId = new Map<string, ProfileBattle>()
   for (const b of [...(real?.battles ?? []), ...(arena?.battles ?? []), ...(wildlife?.battles ?? [])]) {
