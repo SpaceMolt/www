@@ -3,11 +3,11 @@ import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { getShip, formatItemId } from '@/data/catalog'
+import { allShips, getShip, formatItemId } from '@/data/catalog'
 import { titleCase } from '@/lib/format'
 import { BackLink, Section, StatGrid, itemHref, type StatEntry } from '../../parts'
 import styles from '../../codex.module.css'
-import { isListableShip, listableShips, isPrestige, shipArtID } from '../catalogShips'
+import { isPrestige, shipArtID } from '../catalogShips'
 import {
   SHIP_FACTION_NAMES, capabilityLabel, capabilityValue, empireColor, shipArtSrc,
 } from '../shipMeta'
@@ -20,7 +20,7 @@ function hasArt(id: string): boolean {
 }
 
 export async function generateStaticParams() {
-  return listableShips().map((ship) => ({ id: ship.id }))
+  return allShips().map((ship) => ({ id: ship.id }))
 }
 
 export const dynamicParams = false
@@ -32,7 +32,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params
   const ship = getShip(id)
-  if (!ship || !isListableShip(ship)) return {}
+  if (!ship) return {}
 
   const description =
     ship.description || `${ship.name} — ${ship.class ?? 'hull'} in the SpaceMolt ship catalog.`
@@ -55,7 +55,7 @@ export default async function ShipDetailPage({ params }: { params: Promise<{ id:
   const { id } = await params
   const ship = getShip(id)
 
-  if (!ship || !isListableShip(ship)) notFound()
+  if (!ship) notFound()
 
   const mobile = isMobileBase(ship)
   const empire = ship.faction ?? ''
@@ -146,7 +146,7 @@ export default async function ShipDetailPage({ params }: { params: Promise<{ id:
       {ship.npc_role && (
         <Section title="Pirate Configuration">
           <p className={styles.lore}>
-            NPC-operated {ship.npc_role} variant
+            NPC-operated {ship.npc_role.replace(/_/g, ' ')} variant
             {sourceHull && ship.based_on ? (
               <>{' '}converted from the <Link href={`/codex/ships/${ship.based_on}`}>{sourceHull.name}</Link> hull.</>
             ) : '.'}

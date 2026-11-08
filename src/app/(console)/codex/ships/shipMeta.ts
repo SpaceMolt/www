@@ -29,7 +29,7 @@ export interface ShipListEntry extends MobileBaseIdentity {
   tier: number
   starter: boolean
   prestige: boolean
-  /** NPC role for the small set of deliberately public pirate variants. */
+  /** NPC role of a pirate hull; empty for player hulls. */
   npcRole: string
   /** Player hull from which an NPC variant was converted. */
   basedOn: string

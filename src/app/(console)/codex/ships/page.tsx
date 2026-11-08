@@ -2,7 +2,8 @@ import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import { BackLink } from '../parts'
 import styles from '../codex.module.css'
-import { listableShips, toListEntry } from './catalogShips'
+import { allShips } from '@/data/catalog'
+import { toListEntry } from './catalogShips'
 import { ShipsBrowser } from './ShipsBrowser'
 import { SHIP_FACTION_NAMES } from './shipMeta'
 import { SITE_URL } from '@/lib/links'
@@ -30,7 +31,7 @@ export const metadata: Metadata = {
 export default function ShipsIndex() {
   // Server component: the catalog is read here and only the list projection
   // crosses into the client browser.
-  const ships = listableShips().map(toListEntry)
+  const ships = allShips().map(toListEntry)
 
   // Filter options come from the entries themselves — no second source to drift.
   const empireIds = [...new Set(ships.map((s) => s.empire))].filter(Boolean).sort()
