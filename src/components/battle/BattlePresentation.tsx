@@ -257,10 +257,10 @@ export default function BattlePresentation({ battleId, data, embedded = false, f
       if (!s.alive) continue
       const p = tf.toScreen(s.pos)
       const d = Math.hypot(p.x - mx, p.y - my)
-      // A ship is a 28px target whatever its glyph. A station is drawn far larger
-      // than that — ring, spars and all — so it takes a target that covers what
-      // is actually on screen, or most of the thing would not be clickable.
-      const reach = s.meta.kind === 'station' ? Math.max(28, shipRadius(s.meta, tf.scale) * 1.45) : 28
+      // A ship is a 28px target whatever its glyph. A station or a grown
+      // leviathan is drawn far larger than that, so it takes a target that covers
+      // what is actually on screen, or most of the thing would not be clickable.
+      const reach = s.meta.kind === 'station' || s.meta.kind === 'creature' ? Math.max(28, shipRadius(s.meta, tf.scale) * 1.45) : 28
       if (d < reach && d < bestDist) {
         bestDist = d
         best = s.meta.id

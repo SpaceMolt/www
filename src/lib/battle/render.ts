@@ -358,17 +358,31 @@ export function makeTransform(width: number, height: number, view: ViewState): S
 /** Glyph radius per ship scale (1 = personal … 5 = capital), in px at zoom 1. */
 const SCALE_RADIUS = [9, 9, 12, 15.5, 20, 25.5]
 
+/**
+ * Creature glyph radius, in px at zoom 1. A grown leviathan outsizes any
+ * capital ship; a juvenile is about half that. Eggs, hatchlings and ordinary
+ * wildlife stay at the smallest ship size. A ranch brand tag ("[TAG] ") is
+ * ignored, as it is for the creature's shape.
+ */
+function creatureRadius(name: string): number {
+  name = name.replace(/^\[[^\]]*\]\s*/, '')
+  if (!/leviathan|cloudwhale/i.test(name) || /\b(egg|hatchling)\b/i.test(name)) return 9
+  if (/\b(juvenile|young|calf)\b/i.test(name)) return 16
+  return 32
+}
+
 export function shipRadius(meta: ParticipantMeta, pxScale: number): number {
   // Glyph size by ship scale, in px at zoom 1 (tf.scale ≈ 360px on a desktop
   // viewport), clamped so extreme zoom or tiny viewports keep glyphs readable.
   // A station outsizes even a capital: nothing else in the arena is a place.
+  // A grown leviathan does too: it is the biggest thing alive out there.
   const base =
     meta.kind === 'station'
       ? 30
       : meta.kind === 'drone'
         ? 5
         : meta.kind === 'creature'
-          ? 9
+          ? creatureRadius(meta.name)
           : SCALE_RADIUS[Math.max(1, Math.min(5, Math.round(meta.scale)))]
   return base * Math.max(0.6, Math.min(1.8, pxScale / 360))
 }
