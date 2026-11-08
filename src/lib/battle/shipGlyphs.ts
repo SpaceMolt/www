@@ -57,8 +57,9 @@ export const GLYPH_NOSE_X: Record<GlyphArchetype, number> = {
 
 /**
  * Creature name → body plan. Battle logs carry the species display name, not
- * its id, so match on the name. First match wins; anything unmatched (eggs,
- * crystal drifters, corals, urchins) keeps the generic blob.
+ * its id, so match on the name, minus any ranch brand tag ("[TAG] "). First
+ * match wins; anything unmatched (eggs, crystal druses, corals, urchins) keeps
+ * the generic blob.
  */
 const CREATURE_BODIES: Array<[RegExp, GlyphArchetype]> = [
   [/\begg\b/, 'creature'],
@@ -154,7 +155,7 @@ export function archetypeForShip(
   scale: number,
   name = '',
 ): GlyphArchetype {
-  if (kind === 'creature') return CREATURE_BODIES.find(([re]) => re.test(name.toLowerCase()))?.[1] ?? 'creature'
+  if (kind === 'creature') return CREATURE_BODIES.find(([re]) => re.test(name.replace(/^\[[^\]]*\]\s*/, '').toLowerCase()))?.[1] ?? 'creature'
   if (kind !== 'ship') return kind
 
   const byClass = CLASS_ARCHETYPES[(shipClass ?? '').toLowerCase().trim()]

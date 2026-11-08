@@ -51,6 +51,8 @@ describe('archetypeForShip', () => {
       ['Cloudwhale', 'whale'],
       ['Pilot-Whale', 'whale'],
       ['[RNCH] Belt-Grazer', 'whale'],
+      ['[CRAB] Belt-Grazer', 'whale'],
+      ['[EGG] Bell-Jelly', 'jelly'],
       ['Ash-Scarab', 'bug'],
       ['Crusher-Mantis', 'bug'],
       ['Bell-Jelly', 'jelly'],
