@@ -345,7 +345,7 @@ export function buildTimeline(entries: BattleLogEntry[], summary: BattleSummary 
           shipClassId: snap.ship_class,
           shipClassName: ship?.name || (kind === 'ship' ? snap.ship_class : kind === 'station' ? 'Station' : kind),
           shipClass: ship?.class ?? '',
-          archetype: archetypeForShip(kind, ship?.class, ship?.category, ship?.scale ?? 1),
+          archetype: archetypeForShip(kind, ship?.class, ship?.category, ship?.scale ?? 1, snap.username),
           armed: resolveArmed(kind, ship),
           scale: ship?.scale ?? (kind === 'drone' ? 0 : 1),
           category: (ship?.category || kind).toLowerCase(),
