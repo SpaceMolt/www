@@ -62,7 +62,7 @@ export const GLYPH_NOSE_X: Record<GlyphArchetype, number> = {
  */
 const CREATURE_BODIES: Array<[RegExp, GlyphArchetype]> = [
   [/\begg\b/, 'creature'],
-  [/molt leviathan|rainbow leviathan|crab|coronid/, 'lobster'],
+  [/leviathan|crab|coronid/, 'lobster'],
   [/whale|grazer/, 'whale'],
   [/moth|scarab|mantis|vulcanid|fluxipede|relict|borer|browser|bulwark|aeonbear|pilgrim/, 'bug'],
   [/jelly|squid|bubble|bloom|etchmaw|halo|prism|blister|chlorophage/, 'jelly'],

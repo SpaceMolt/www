@@ -46,6 +46,7 @@ describe('archetypeForShip', () => {
     const cases: Array<[string, GlyphArchetype]> = [
       ['Molt Leviathan', 'lobster'],
       ['Juvenile Rainbow Leviathan', 'lobster'],
+      ['Hoarfrost Leviathan', 'lobster'],
       ['Glitterback Crab', 'lobster'],
       ['Cloudwhale', 'whale'],
       ['Pilot-Whale', 'whale'],
