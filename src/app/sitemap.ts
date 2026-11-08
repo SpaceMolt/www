@@ -4,11 +4,10 @@ import type { MetadataRoute } from 'next'
 import { getAllGuides } from '@/lib/guides'
 import { getAllReferencePages } from '@/lib/reference'
 import { getAllPosts } from '@/lib/blog'
-import { allModules, allNonModuleItems, allRecipes } from '@/data/catalog'
+import { allModules, allNonModuleItems, allRecipes, allShips } from '@/data/catalog'
 import { allAchievements, allFactionAchievements, allSkills } from '@/data/catalogReference'
 import { catalogMeta, referenceMeta } from '@/data/catalogMeta'
 import { allChains } from '@/app/(console)/codex/facilities/chains'
-import { listableShips } from '@/app/(console)/codex/ships/catalogShips'
 import { SITE_URL } from '@/lib/links'
 
 // Build time — used as the lastModified for static routes.
@@ -132,7 +131,7 @@ function codexRoutes(): MetadataRoute.Sitemap {
     ...detail('/codex/items', allNonModuleItems().map((i) => i.id), catalogFetched),
     ...detail('/codex/modules', allModules().map((m) => m.id), catalogFetched),
     ...detail('/codex/recipes', allRecipes().map((r) => r.id), catalogFetched),
-    ...detail('/codex/ships', listableShips().map((s) => s.id), catalogFetched),
+    ...detail('/codex/ships', allShips().map((s) => s.id), catalogFetched),
     ...detail('/codex/skills', allSkills().map((s) => s.id), referenceFetched),
     ...detail('/codex/facilities', allChains().map((c) => c.root.id), referenceFetched),
     ...detail(

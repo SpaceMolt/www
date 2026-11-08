@@ -6,24 +6,9 @@ import { isMobileBase } from '@/components/MobileBaseDetails'
  * the client browser must never reach it, or catalog.json lands in the bundle.
  */
 
-import { allShips, type RawShip } from '@/data/catalog'
+import type { RawShip } from '@/data/catalog'
 import { hasImage } from '@/data/images'
 import { SHIP_FACTION_NAMES, type ShipListEntry } from './shipMeta'
-
-/**
- * NPC hulls are hidden by default. These four purpose-built boarding-era pirate
- * variants are intentionally public because players can encounter and capture
- * them; keeping the allowlist explicit prevents boss and support hulls from
- * leaking into the player-facing catalog as new NPC roles are added.
- */
-export const PUBLIC_PIRATE_SHIP_IDS = [
-  'insider_trading',
-  'bulk_discount',
-  'flight_risk',
-  'shell_company',
-] as const
-
-const publicPirateShipIDSet = new Set<string>(PUBLIC_PIRATE_SHIP_IDS)
 
 /**
  * Prestige hulls are achievement-gated rather than empire-issued, so most carry
@@ -36,17 +21,6 @@ export function isPrestige(ship: RawShip): boolean {
       ship.required_faction_leader ||
       ship.prestige_lock,
   )
-}
-
-export function isListableShip(ship: RawShip): boolean {
-  return !ship.npc_role || (ship.faction === 'pirate' && publicPirateShipIDSet.has(ship.id))
-}
-
-/** Player hulls plus the deliberately documented pirate boarding variants. */
-let _listable: RawShip[] | null = null
-export function listableShips(): RawShip[] {
-  if (!_listable) _listable = allShips().filter(isListableShip)
-  return _listable
 }
 
 /**

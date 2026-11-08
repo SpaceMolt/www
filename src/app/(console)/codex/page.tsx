@@ -4,8 +4,7 @@ import Link from 'next/link'
 import {
   Boxes, Cpu, Hammer, GraduationCap, Rocket, Factory, Trophy, Download, BookOpen,
 } from 'lucide-react'
-import { allModules, allNonModuleItems } from '@/data/catalog'
-import { listableShips } from './ships/catalogShips'
+import { allModules, allNonModuleItems, allShips } from '@/data/catalog'
 import { allAchievements, allFactionAchievements } from '@/data/catalogReference'
 import { catalogMeta, referenceMeta } from '@/data/catalogMeta'
 import styles from './codex.module.css'
@@ -68,7 +67,7 @@ export default function CodexIndex() {
       icon: Rocket,
       image: `${ASSETS_URL}/images/guides/drones.jpg`,
       title: 'Ships',
-      count: listableShips().length,
+      count: allShips().length,
       desc: 'Hulls by class, empire, and tier — slots, capacities, and build materials.',
     },
     {

@@ -8,7 +8,6 @@ import {
 import { facilitiesForRecipe } from '@/data/catalogReference'
 import { titleCase } from '@/lib/format'
 import { BackLink, Section, ShipRefList, StatGrid, itemHref, type StatEntry } from '../../parts'
-import { isListableShip } from '../../ships/catalogShips'
 import styles from '../../codex.module.css'
 import local from '../recipes.module.css'
 import { SITE_URL } from '@/lib/links'
@@ -80,7 +79,7 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ i
 
   // Hulls and cargo that run this recipe passively, without any crafting action.
   const passiveShips = allShips().filter(
-    (ship) => isListableShip(ship) && ship.passive_recipes?.includes(id),
+    (ship) => ship.passive_recipes?.includes(id),
   )
   const passiveItems = allItems().filter((item) => item.passive_recipe === id)
 
