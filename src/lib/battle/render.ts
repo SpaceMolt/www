@@ -361,9 +361,11 @@ const SCALE_RADIUS = [9, 9, 12, 15.5, 20, 25.5]
 /**
  * Creature glyph radius, in px at zoom 1. A grown leviathan outsizes any
  * capital ship; a juvenile is about half that. Eggs, hatchlings and ordinary
- * wildlife stay at the smallest ship size.
+ * wildlife stay at the smallest ship size. A ranch brand tag ("[TAG] ") is
+ * ignored, as it is for the creature's shape.
  */
 function creatureRadius(name: string): number {
+  name = name.replace(/^\[[^\]]*\]\s*/, '')
   if (!/leviathan|cloudwhale/i.test(name) || /\b(egg|hatchling)\b/i.test(name)) return 9
   if (/\b(juvenile|young|calf)\b/i.test(name)) return 16
   return 32

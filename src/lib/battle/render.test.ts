@@ -289,9 +289,9 @@ describe('shield siphon accounting (dc#998932)', () => {
 
 describe('shipRadius for creatures', () => {
   it('draws grown leviathans bigger than a capital ship, by life stage', () => {
-    const names = ['Belt-Grazer', 'Molt Leviathan Egg', 'Rainbow Leviathan Hatchling', 'Juvenile Hoarfrost Leviathan', 'Young Cloudwhale', 'Molt Leviathan', '[CRAB] Elder Cloudwhale']
+    const names = ['Belt-Grazer', 'Molt Leviathan Egg', 'Rainbow Leviathan Hatchling', 'Juvenile Hoarfrost Leviathan', 'Young Cloudwhale', 'Molt Leviathan', '[CRAB] Elder Cloudwhale', '[EGG] Molt Leviathan', '[LEVIATHAN] Belt-Grazer']
     const t = buildTimeline([entry(names.map((username, i) => snap({ player_id: `c${i}`, username, kind: 'creature' })))], null)
     const radius = names.map((_, i) => shipRadius(t.participants.get(`c${i}`)!, 360))
-    expect(radius).toEqual([9, 9, 9, 16, 16, 32, 32])
+    expect(radius).toEqual([9, 9, 9, 16, 16, 32, 32, 32, 9])
   })
 })
