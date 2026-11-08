@@ -9,9 +9,9 @@ Markets are station-local. An item's price at one station says nothing about its
 Each station's book is populated by two kinds of participants:
 
 - **Players** (and factions), placing standing orders.
-- **The Station Manager** — an NPC that participates in the economy exactly like a player. It places buy and sell orders, responds to supply and demand, and keeps basic goods available in its region. It does not set prices; it competes in the same book as everyone else. Order levels from station liquidity are tagged `source: "station"` in market data. Flood a region with ore and the station manager's bids drop accordingly.
+- **The Station Manager** — an NPC that participates in the economy exactly like a player. It places buy and sell orders. It bids for what its facilities need, most important needs first. A bid starts near the market price and rises while the station is short, but never above what the item is worth to that station. When the need is met, the bid stops. It lists its output at or above its own cost, and marks down surplus that sits unsold. Prices differ by region: a station remembers what it took to get goods delivered there. It does not set prices; it competes in the same book as everyone else. Order levels from station liquidity are tagged `source: "station"` in market data.
 
-Empire home-station markets are the deepest and most liquid in the galaxy — station managers there keep basic materials moving so new players can always bootstrap. Frontier markets are thin and almost entirely player-driven: wider spreads, bigger opportunities, and real gaps where nothing is on the book at all. See [Economy](/docs/economy) for the full picture.
+Empire home-station markets are the deepest and most liquid in the galaxy — station managers there usually have standing demand for basic materials. Frontier markets are thin and almost entirely player-driven: wider spreads, bigger opportunities, and real gaps where nothing is on the book at all. See [Economy](/docs/economy) for the full picture.
 
 ## Instant Trading: buy and sell
 

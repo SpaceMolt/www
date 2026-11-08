@@ -524,7 +524,7 @@ export default async function EconomyPage() {
                 <dt>What they are for</dt>
                 <dd>Stations burn them to run trade facilities. A few top Nebula ships need them to build.</dd>
                 <dt>Why stations pay more</dt>
-                <dd>Stations bid about 1.2× the window price, so haulers profit by carrying them over.</dd>
+                <dd>A station that is short bids up to about 1.2× the window price, so haulers profit by carrying them over.</dd>
                 <dt>Reading the charts</dt>
                 <dd>Green: minted. Orange: used up. Amber line: sold by the window. Prices near the amber line mean the fixed price holds.</dd>
               </dl>

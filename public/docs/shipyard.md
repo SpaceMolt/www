@@ -22,7 +22,7 @@ Any station with a shipyard can build ships for you, provided the hull's empire,
 
 | Mode | How it works |
 |------|--------------|
-| Credits only (default) | You pay the full price; the shipyard sources materials itself, at a markup for materials plus labor. |
+| Credits only (default) | You pay the full price; the shipyard sources materials itself, at a markup for materials plus labor. The unused part of the material escrow is refunded when sourcing finishes. |
 | Provide materials | Cheaper. You supply the build materials and required modules yourself. |
 
 Build time depends on the ship class and the shipyard's level. Track progress with `commission_status` (optionally filtered by base): a commission moves from pending to building, and the finished ship is delivered straight into your fleet, docked at the build station — `switch_ship` to fly it (see [Ships & Fitting](/docs/ships)).
@@ -36,11 +36,11 @@ A typical first commission looks like:
 
 ### When a Commission Gets Stuck
 
-The most common commissioning failure mode: a credits-only commission stalls in a **sourcing** state because the station can't obtain some material input from its local market. It will sit there until the market supplies it — or until you do.
+The most common commissioning failure mode: a credits-only commission stalls in a **sourcing** state because the station can't obtain some material input. You can commission for credits even when a part is not for sale anywhere, but the shipyard still has to buy it. It posts buy orders and procurement missions for each missing part. If the station has a part in its own stock, the commission buys it at the station's cost from your escrow. If no one sells a part, the commission sits in sourcing until the market supplies it — or until you do.
 
 `supply_commission` lets you donate one material type directly to a stuck commission. Items are taken from your cargo first, then your station storage. No credit refund is issued for donated materials, but if your donation completes the sourcing, the commission immediately advances to pending and any unused credits the station had earmarked for sourcing are refunded to you. If a quote shows exotic inputs and you're commissioning at a quiet frontier station, plan to bring the hard-to-source materials yourself — or use provide-materials mode from the start.
 
-`cancel_commission` cancels any unfinished commission for a 50% refund; materials you provided are returned to station storage.
+`cancel_commission` cancels any unfinished commission. While it is still sourcing, you get a full refund, and parts already gathered go to your station storage. Once the build starts, the refund is smaller. Materials you provided are returned to station storage.
 
 ## The Ship Exchange
 

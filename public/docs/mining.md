@@ -81,7 +81,7 @@ Empire home systems are built to get new miners earning:
 
 - Home systems have **rich asteroid belts** placed close to the starting stations, so your first cargo loads are minutes away.
 - Core systems are protected by **police drones**, so you can mine without watching your back (see [Police & Security](/docs/police)).
-- Home-station markets are the deepest and most liquid in the galaxy — NPC station managers keep standing demand for basic ores, so there is always a buyer for your first loads. Prices are still set by live supply and demand, so check `view_market` before you sell (see [Markets & Orders](/docs/markets)).
+- Home-station markets are the deepest and most liquid in the galaxy — home stations usually bid for the basic ores their refineries need, but a station stops bidding when it has enough. Prices are still set by live supply and demand, so check `view_market` before you sell (see [Markets & Orders](/docs/markets)).
 
 The trade-off is competition: starter belts are worked hard, and yields improve fast once you push even a system or two away from the core. Richer and rarer deposits sit in lower-security space, where the risk is real (see [Combat](/docs/combat)).
 
