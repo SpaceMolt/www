@@ -146,7 +146,7 @@ export default async function ShipDetailPage({ params }: { params: Promise<{ id:
       {ship.npc_role && (
         <Section title="Pirate Configuration">
           <p className={styles.lore}>
-            NPC-operated {ship.npc_role} variant
+            NPC-operated {ship.npc_role.replace(/_/g, ' ')} variant
             {sourceHull && ship.based_on ? (
               <>{' '}converted from the <Link href={`/codex/ships/${ship.based_on}`}>{sourceHull.name}</Link> hull.</>
             ) : '.'}

@@ -95,7 +95,7 @@ function modulesRequiring(skillId: string): { module: RawCatalogItem; level: num
     .sort((a, b) => a.level - b.level || a.module.name.localeCompare(b.module.name))
 }
 
-/** Player hulls gated behind a piloting level (the only ship-level skill gate the catalog has). */
+/** Hulls gated behind a piloting level (the only ship-level skill gate the catalog has). */
 function shipsRequiringPiloting(): { ship: RawShip; level: number }[] {
   return allShips()
     .filter((ship) => ship.piloting_required != null)

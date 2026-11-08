@@ -9,6 +9,7 @@ import {
 } from 'nuqs'
 import { Swords, Shield, Cog, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react'
 import { useTranslation } from '@/i18n'
+import { titleCase } from '@/lib/format'
 import { EMPIRE_SHORT_KEYS, empireColor, shipArtSrc, type ShipListEntry } from './shipMeta'
 import styles from './ships.module.css'
 
@@ -534,7 +535,7 @@ export function ShipsBrowser({ ships, empires, classes, categories, tiers }: Shi
                     )}
                     {ship.npcRole && (
                       <span className={styles.npcBadge} title="NPC-operated pirate variant">
-                        Pirate {ship.npcRole}
+                        Pirate {titleCase(ship.npcRole)}
                       </span>
                     )}
                     <span className={styles.classBadge}>{ship.class}</span>
