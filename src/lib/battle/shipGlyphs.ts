@@ -70,11 +70,6 @@ const CREATURE_BODIES: Array<[RegExp, GlyphArchetype]> = [
   [/tempest-eel|wyrm|slug|leech|lurker|skein|snail|sylph/, 'eel'],
 ]
 
-function creatureArchetype(name: string): GlyphArchetype {
-  const n = name.toLowerCase()
-  return CREATURE_BODIES.find(([re]) => re.test(n))?.[1] ?? 'creature'
-}
-
 /** Catalog ship class (lowercase) → silhouette archetype. */
 export const CLASS_ARCHETYPES: Record<string, GlyphArchetype> = {
   // Small, fast combatants
@@ -159,7 +154,7 @@ export function archetypeForShip(
   scale: number,
   name = '',
 ): GlyphArchetype {
-  if (kind === 'creature') return creatureArchetype(name)
+  if (kind === 'creature') return CREATURE_BODIES.find(([re]) => re.test(name.toLowerCase()))?.[1] ?? 'creature'
   if (kind !== 'ship') return kind
 
   const byClass = CLASS_ARCHETYPES[(shipClass ?? '').toLowerCase().trim()]
