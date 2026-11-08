@@ -138,6 +138,7 @@ export interface RawCatalogItem {
   fuel_efficiency?: number
   max_fuel_bonus?: number
   power_bonus?: number
+  generator_output?: number
   cpu_bonus?: number
   drone_capacity?: number
   drone_bandwidth?: number

@@ -99,6 +99,7 @@ const CAPABILITY_LABELS: Record<string, string> = {
   gas_cargo_efficiency: 'Gas Cargo Space',
   ice_cargo_efficiency: 'Ice Cargo Space',
   fuel_efficiency_bonus: 'Fuel Efficiency',
+  generator_output_bonus: 'Generator Output',
   integrated_cloak: 'Integrated Cloak',
   integrated_scanner: 'Integrated Scanner',
   integrated_survey_scanner: 'Integrated Survey Scanner',
@@ -124,6 +125,7 @@ const PERCENT_BONUS_TYPES = new Set([
   'ice_yield_bonus',
   'gas_yield_bonus',
   'fuel_efficiency_bonus',
+  'generator_output_bonus',
 ])
 
 export function capabilityLabel(cap: ShipCapability): string {

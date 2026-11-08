@@ -127,6 +127,7 @@ const MODULE_STAT_LABELS: [keyof RawCatalogItem, string, ((v: number) => string)
   ['fuel_efficiency', 'Fuel Efficiency', (v) => `${v}%`],
   ['max_fuel_bonus', 'Max Fuel', (v) => `+${v}`],
   ['power_bonus', 'Power', (v) => `+${v}`],
+  ['generator_output', 'Station Power Output'],
   ['cpu_bonus', 'CPU', (v) => `+${v}`],
   ['drone_capacity', 'Drone Capacity'],
   ['drone_bandwidth', 'Drone Bandwidth'],
@@ -171,7 +172,7 @@ const HEADLINE_KEYS: (keyof RawCatalogItem)[] = [
   'damage_reduction', 'shield_recharge_bonus', 'armor_repair_rate', 'remote_repair_power',
   'scanner_power', 'survey_power', 'cloak_strength', 'speed_bonus', 'cargo_bonus',
   'drone_capacity', 'webify_strength', 'disruptor_power', 'scramble_power', 'warp_stabilization',
-  'fuel_efficiency', 'power_bonus', 'cpu_bonus', 'max_fuel_bonus', 'signature_bonus',
+  'fuel_efficiency', 'generator_output', 'power_bonus', 'cpu_bonus', 'max_fuel_bonus', 'signature_bonus',
   'passenger_economy_berths', 'accuracy_bonus', 'tracking_bonus',
 ]
 
