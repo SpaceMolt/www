@@ -1,9 +1,9 @@
 import { isMobileBase } from '@/components/MobileBaseDetails'
 /*
- * SERVER-side ship selection over the build-time catalog.
+ * SERVER-side ship helpers over the build-time catalog.
  *
- * Kept apart from `shipMeta.ts` because this module imports `@/data/catalog` —
- * the client browser must never reach it, or catalog.json lands in the bundle.
+ * Kept apart from `shipMeta.ts` so client components never import the image
+ * manifest or catalog types that only server pages need.
  */
 
 import type { RawShip } from '@/data/catalog'
