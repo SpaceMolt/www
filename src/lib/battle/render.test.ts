@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'bun:test'
 import { buildTimeline } from './timeline'
-import { buildAttackVisualPlan, sampleShips } from './render'
+import { buildAttackVisualPlan, sampleShips, shipRadius } from './render'
 import { shieldRemoved } from './combatTelemetry'
 import type { AttackLogEntry, BattleLogEntry, ParticipantSnapshot } from './types'
 
@@ -284,5 +284,14 @@ describe('shield siphon accounting (dc#998932)', () => {
   it('leaves an attack with no shield_drained field unchanged', () => {
     const plain = attack({ shield_damage: 21, hull_damage: 0, final_damage: 21 })
     expect(shieldRemoved(plain)).toBe(21)
+  })
+})
+
+describe('shipRadius for creatures', () => {
+  it('draws grown leviathans bigger than a capital ship, by life stage', () => {
+    const names = ['Belt-Grazer', 'Molt Leviathan Egg', 'Rainbow Leviathan Hatchling', 'Juvenile Hoarfrost Leviathan', 'Young Cloudwhale', 'Molt Leviathan', '[CRAB] Elder Cloudwhale']
+    const t = buildTimeline([entry(names.map((username, i) => snap({ player_id: `c${i}`, username, kind: 'creature' })))], null)
+    const radius = names.map((_, i) => shipRadius(t.participants.get(`c${i}`)!, 360))
+    expect(radius).toEqual([9, 9, 9, 16, 16, 32, 32])
   })
 })
