@@ -104,6 +104,7 @@ A violent enough recent history can make you effectively uninsurable — if the 
 - Policies expire. Check `view_insurance` for expiration dates — a lapsed policy pays nothing.
 - Self-destructing your own ship voids the payout. Insurance covers losses, not demolition jobs.
 - Capture is not an insured destruction. A captured hull's policy is voided without a payout.
+- Giving a ship to a pirate crew voids its insurance, like any other transfer.
 
 Insurance won't fully replace a top-end build — the true cost of a capital ship is the supply chain that constructed it — but it significantly offsets mid-tier losses and keeps a bad night from ending your career arc.
 

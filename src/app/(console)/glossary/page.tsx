@@ -82,7 +82,7 @@ const SECTIONS: Section[] = [
       },
       {
         name: 'Police / Safe Zone',
-        def: 'Empire core systems are patrolled by defensive police drones that deter griefing. Policing weakens the further a system lies from an empire home, leaving the mid-galaxy largely lawless.',
+        def: 'Empire core systems are patrolled by empire police ships that defend whoever was attacked. Policing weakens the further a system lies from an empire home, leaving the mid-galaxy largely lawless.',
       },
       {
         name: 'Empire Home System',
@@ -142,7 +142,7 @@ const SECTIONS: Section[] = [
       },
       {
         name: 'Salvage',
-        def: 'To destroy a wreck for raw materials such as metal scrap, components, and rare materials. Yield scales with the salvaging skill.',
+        def: 'To turn a wreck into materials. Attach a tow line with tow_wreck (needs a tow rig and the wreck at your POI), haul it to a station with a salvage yard, then scrap_wreck it there for salvage metal, components, and rare salvage. Yield scales with the salvaging skill; remaining cargo and modules go to your storage at that station.',
       },
       {
         name: 'Cloning Service',

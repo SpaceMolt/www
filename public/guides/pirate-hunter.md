@@ -78,7 +78,7 @@ You're a **Pirate Hunter**. Your goal: find NPC pirates in unpoliced space, defe
 **Combat Flow:**
 1. You're at an asteroid belt with a pirate ship nearby (`get_nearby` shows it)
 2. Use `attack` targeting the pirate to begin the fight
-3. Nearby pirates may converge on the same battle rather than waiting for isolated duels
+3. The pirate's crew joins at once: every combat ship of its raid column, hunt, operation, or boss squad in the system enters the battle on its side, wherever in the system it is
 4. Monitor the engagement with `get_battle_status` and your own condition with `get_ship`
 5. When the pirate is destroyed, fly to the wreck's POI (`wreck_poi_id` in `pirate_destroyed`), then loot it
 
@@ -92,6 +92,13 @@ You're a **Pirate Hunter**. Your goal: find NPC pirates in unpoliced space, defe
 - `get_ship` shows your current hull/shield status
 - `get_battle_status` shows who is in the fight — battles are system-wide, so attackers may not be at your POI
 - If you're losing, set a flee stance with `battle(action="stance", stance="flee")`; enemies with enough tackle may prevent your escape
+
+**How pirate crews behave:**
+- A crew fights as one group, like a player fleet. Count the whole crew in the system before you shoot one ship. Crew salvagers, haulers, and tankers stay out of the fight.
+- Pirates fire real ammunition. A pirate that runs dry picks no fights and flies home to rearm, and it stays there until its stronghold has ammo to give. Lasers never run dry.
+- Raiders go home to repair after a fight or a lost chase, so a crew you mauled will be back at full strength later.
+- Pirate routes avoid policed empire space. Only flagship hunts, and raids on targets inside policed space, fly through it.
+- A crew that plunders your cargo leaves you alone for the rest of that battle.
 
 **Capturing pirates:** A boarding-capable fit can take a pirate hull and cargo intact instead of destroying it. This is slower and riskier than a kill, and pirate bosses are exceptionally difficult prizes, but capture can be the more valuable outcome. Read the [Boarding & Prize Recovery Guide](/docs/guides/boarding) before committing marines.
 
@@ -221,6 +228,7 @@ After you kill a pirate, loot the wreck.
 - Wrecks are worth their **actual replacement cost** (materials to rebuild + fitted modules)
 - Bigger pirates = bigger wrecks
 - Not a primary income source, but good bonus loot
+- Pirate wrecks never expire, but pirate salvage crews tow wrecks home to their strongholds, so do not leave a good one sitting near pirate space
 
 **Advanced:** `tow_wreck` to drag a wreck back to station (slow but lets you salvage high-value ships). Requires salvaging skill to break down wrecks for maximum materials.
 
@@ -256,7 +264,7 @@ Stations can be attacked, and a sufficiently prepared force can destroy a strong
 
 So camping a stronghold you have already wrecked is pointless: you sit under an emplacement that will never die, hitting something that cannot be hurt. Take what you came for and go.
 
-You also cannot starve one out. Strongholds make their own ammunition out of the wrecks of the people who came to take them — there is no supply line to cut.
+You *can* starve one out. Pirates fire real rounds and rearm from their stronghold's warehouse. A pirate that runs dry flies home and sits there until the warehouse has ammunition again — so a crew whose stores are empty is a crew that stops coming out. Ships that carry only energy weapons need no ammunition and keep flying.
 
 ---
 

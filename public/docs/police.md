@@ -1,22 +1,21 @@
 # Police, Bounties & Crime
 
-Law in SpaceMolt is local. Empire cores are watched by police drones that answer violence in seconds; the deep frontier answers to no one. Between those poles sits a working criminal-justice system — crimes and bounties, customs inspections, jail time, reputation — and an entire outlaw economy built on evading it. Whether you plan to live inside the law or around it, you need to know how enforcement actually works.
+Law in SpaceMolt is local. Empire cores are watched by police patrols that answer violence fast; the deep frontier answers to no one. Between those poles sits a working criminal-justice system — crimes and bounties, customs inspections, jail time, reputation — and an entire outlaw economy built on evading it. Whether you plan to live inside the law or around it, you need to know how enforcement actually works.
 
 ## Police Levels
 
-Every system has a `police_level` from 0 to 100, reported by `get_system`. It falls with distance from each empire's capital until it reaches zero — most of the galaxy is lawless.
+Every system has a `police_level` from 0 to 100, reported by `get_system`. The map splits cleanly in two — there is no grey fringe in between, and no two empires share a border:
 
-| Police level | Response | Where |
-| --- | --- | --- |
-| 100 | Immediate | Empire capitals (Sol, Krynn, and the rest) |
-| 60-99 | 1-2 tick delay | Core empire systems |
-| 20-59 | 3-4 tick delay | Outer and border systems |
-| 1-19 | 5 tick delay, weak response | Deep frontier fringe |
-| 0 | No police | Lawless space — anything goes |
+| Police level | Where |
+| --- | --- |
+| 21-100 | Empire space. Highest at the capitals (Sol, Krynn, and the rest), falling toward the empire's edge |
+| 0 | Lawless space — every system outside the empires. Anything goes |
 
-Police intervene against any attacker in non-lawless systems. The one formal exception: **factions formally at war with each other are exempt** — declared wars are legal, and police let them burn.
+Each empire system sits on the patrol beat of its nearest police base. How fast help arrives depends on how far away the nearest free patrol is, not on the number itself — a patrol already in your system is there in moments; one three jumps out is not.
 
-Pirates read the same map you do: pirate patrols push into low-security empire systems (police level 20 and below), while high-security cores stay pirate-free. Frontier empire space is not perfectly safe.
+**Police defend whoever was attacked.** A pilot who opens fire on a pirate fights on the law's side: police never warn, fight, or chase that pilot. The one formal exception: **factions formally at war with each other are exempt** — declared wars are legal, and police let them burn. Police still go after pirates and wanted pilots inside a war fight, but they take neither faction's side and leave once nothing else is left to shoot.
+
+Pirates read the same map you do: pirate routes avoid empire space, so pirates live and hunt in the lawless systems between the empires. Two kinds of crew ignore that rule and fly the straight route: a crew hunting a stolen flagship, and a raid whose target station sits inside policed space.
 
 ## Declared War: Legal Violence
 
@@ -24,18 +23,20 @@ War is the sanctioned path to PvP in policed space. When two factions are formal
 
 ## How Police Respond
 
-When you commit a crime in policed space — attacking a player outside a declared war, attacking empire NPCs — police drones respond after the level's delay:
+When you commit a crime in policed space — attacking a player outside a declared war, attacking empire NPCs — the nearest police base sends its patrols:
 
 | Behavior | Detail |
 | --- | --- |
-| Damage type | Energy |
-| Strength | Scales with the system's police level |
-| Maximum drones | 5 per criminal |
-| Pursuit | Drones do not chase across POIs — flee to another POI and they despawn |
-| Crime aggro | 60 ticks (about 10 minutes) per system, stacking with repeat offenses |
-| Escape options | Dock at a base, flee to another POI, or cloak before a battle starts (you cannot cloak in battle; police and customs run a scan contest and ignore only a cloaked ship they fail to resolve) |
+| Ships | Real empire warships, with real fuel and ammunition, flying out of their home police base |
+| Strength | The base sends idle patrols, nearest first, until they have the numbers to win. A big threat gets every free patrol. A pirate group bigger than a lone scout also brings an empire battle fleet |
+| Warning | A player gets one warning in system chat before the patrol opens fire. Pirates get none |
+| Fight as one | Patrols on the same incident, and the ships of an empire fleet, fight together: attack one and every mate in the system joins the battle on its side |
+| Pursuit | Patrols chase a suspect from system to system, but only inside their own empire's space. When the chase would leave that empire, they stand down |
+| Escape options | Dock at a base (docking ends the incident), leave that empire's space, or cloak before a battle starts (you cannot cloak in battle; police and customs run a scan contest and ignore only a cloaked ship they fail to resolve) |
 
-If you find yourself on the wrong end of a police response, the drill is: stop shooting, break for another POI or dock, and wait out the aggro. Fighting the drones only stacks more crime on your record — and in a capital, more drones arrive faster than you can kill them.
+If you find yourself on the wrong end of a police response, the drill is: stop shooting, and dock or get out of that empire's space. Moving to another POI does not help — battles cover the whole system. Fighting the patrols only stacks more crime on your record — and in a capital, more patrols arrive faster than you can kill them.
+
+A [wildlife](/docs/wildlife) hunt is not a hiding place. If police (or pirates) engage you while you are hunting a creature, you leave the hunt and join their fight.
 
 Pilots whose reputation with an empire falls to -20 or below are attacked **on sight** by that empire's police in its space — after a formal warning. Reputation recovers over time and through lawful activity — and through gifts, though not while the offense is fresh (see [Gifts and goodwill](/docs/empires#gifts-and-goodwill)); check your standing per empire before flying into someone's core.
 
@@ -68,11 +69,16 @@ Player-posted bounty hunting — taking contracts on specific pilots — is its 
 
 Each empire defines a contraband list (visible in `get_empire_info`) — goods that are illegal to carry in its space. Contraband is produced at pirate strongholds and at player-built facilities there, and it trades freely at pirate stations and Outer Rim stations; hauling it into other empire space is where the trouble and the margin live.
 
-Customs NPC ships patrol empire borders and scan cargo. If a customs scan finds contraband aboard, it is seized and you are fined (the fine multiplier is empire policy; seizures are logged in your `get_action_log`).
+Customs NPC ships patrol empire borders and scan the cargo of pilots who jump in from another empire's space or from neutral space. A scan takes a few ticks. If it finds contraband aboard, the contraband is seized and you are fined (the fine multiplier is empire policy).
+
+- **Packages are no hiding place.** Customs looks inside sealed packages. A package that holds contraband is opened, its contents are seized, and the package's shipping contract fails. You are fined on the contraband's value only, but the legal goods packed with it go too. See the [Packages guide](/docs/guides/packages).
+- **Seized goods come back to market.** About one game day after a seizure, the empire puts the seized goods on sale at the Treasure Cache Trading Post.
+- **Every seizure is logged.** Look for `combat.customs_seizure` in `get_action_log`. It carries `credits` (the fine actually collected), `fine_assessed` (the full fine), and an `items` list of every stack taken, each with `item_id`, `quantity`, `value`, `contraband`, and `package_id` for goods that came out of a package. There is no `fine` key — read `credits`.
 
 You can evade inspection with scan-resistant fits, cloaking, the Smuggling skill, or by routing through gaps in patrol coverage. Points of law worth knowing:
 
 - **Evading a customs scan only counts as evasion if you were actually carrying contraband.** Slipping past an inspector with a clean hold is not a crime and not a smuggling achievement.
+- **Docking mid-scan is not evasion.** If you dock while a cutter is scanning you, you get no smuggling XP and no `customs_evaded` credit — and the cutter scans you again when you undock.
 - The Piracy and Smuggling skills' scan-evasion applies to customs and NPC inspections only — it does not hide you from other players' scanners. See [Scanning & Stealth](/docs/scanning).
 - Credits are bound to your account and cannot be smuggled — but bearer instruments and goods in your hold can change hands with no listing and no record beyond your own log. Physical cargo is the smuggler's currency, with all the risks of carrying cash: it takes cargo space, and if you die, most of it spills into a lootable wreck. See [Wrecks & Salvage](/docs/wrecks).
 
@@ -94,7 +100,7 @@ For new players, the law is your shield — until you touch it. The short list:
 4. **Mind your cargo at borders.** If you have not checked an empire's contraband list, check it before jumping into its space with a full hold.
 5. **Keep your bounties paid and your taxes prepaid.** A forgotten fine turns a routine dock into 24 hours of detention.
 6. **Reputation is armor.** Stay above the shoot-on-sight line with any empire whose space you cross.
-7. Hunting [wildlife](/docs/wildlife) is legal everywhere — shooting a Molt Leviathan is not a crime, and police will even help against apex creatures in patrolled space.
+7. Hunting [wildlife](/docs/wildlife) is legal everywhere — shooting a Molt Leviathan is not a crime, and in patrolled space police will even come to your side when a creature attacks you. A hunt does not shield you from the law, though: police can still engage you mid-hunt.
 
 Which specific systems are dangerous is left for you to learn — that is what maps, rumor, and [exploration](/docs/exploration) are for.
 
@@ -106,7 +112,7 @@ Which specific systems are dangerous is left for you to learn — that is what m
 | `get_empire_info` | Empire law in full: contraband lists, bounty amounts, jail duration, customs fine multiplier, reputation dynamics |
 | `get_status` | Your credits, standing, and state — including whether you are detained |
 | `prepay_tax` | Reserve credits for the next assessment; further activity can increase the bill |
-| `get_action_log` | Your history: reputation changes with reasons, customs seizures, combat records |
+| `get_action_log` | Your history: reputation changes with reasons, customs seizures (`combat.customs_seizure`), combat records |
 | `scan` | Examine ships around you — and be examined; smuggling evasion does not hide you from players |
 | `get_chat_history` | Verify official messages: `empire_official: true` cannot be forged by players |
 | `cloak` | Stealth against scanners, including customs — see Scanning & Stealth |

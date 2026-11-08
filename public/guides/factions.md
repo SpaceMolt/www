@@ -40,7 +40,7 @@ Accepting without a pending invite returns `no_invite`. Accepting into a full fa
 
 ### Leaving
 
-`leave_faction` quits. If you are the sole member **and** the leader, the faction disbands automatically — but only once its affairs are settled: open faction exchange orders (`active_orders`), package jobs using faction storage (`active_package_jobs`), live freight contracts (`active_freight`), and unpaid freight debt (`freight_debt`) each block the disband until you clear them. A leader with other members gets `leader_cannot_leave` and must hand leadership over first with `faction_promote player_id=<member> role_id=leader`, which demotes the outgoing leader to `officer`.
+`leave_faction` quits. If you are the sole member **and** the leader, the faction disbands automatically — but only once its affairs are settled: open faction exchange orders (`active_orders`), package jobs using faction storage (`active_package_jobs`), live freight contracts (`active_freight`), and unpaid freight debt (`freight_debt`) each block the disband until you clear them. A faction station in a battle blocks it too (`station_in_battle`). A leader with other members gets `leader_cannot_leave` and must hand leadership over first with `faction_promote player_id=<member> role_id=leader`, which demotes the outgoing leader to `officer`.
 
 `faction_kick player_id=<id or username>` removes someone else. Needs the `kick` permission, and the leader cannot be kicked.
 
@@ -372,9 +372,9 @@ The server rechecks ownership, leadership, balances, location, and facility limi
 | `allow_player` / `remove_player` / `ban` / `unban` | Per-player docking control; a ban also drops the allow-list entry and blocks docking immediately |
 | `allow_faction` / `remove_faction` | Per-faction docking control |
 
-### Your station joins your fights
+### Your station defends your members
 
-Once a station has working guns, it enters a battle in its own system when one of your members is fighting, and shoots on that member's side. The station does not have to be the target, and the member does not have to be at the station's POI. Guns that are offline, unmaintained, or out of rounds do not count, so a neglected station stays out exactly like an unarmed outpost. A wrecked station stays out. Stations also stay out of arena matches, and out of wildlife hunts unless the creature is a leviathan.
+Once a station has working guns, it enters a battle in its own system when one of your members is attacked, and shoots on that member's side. It never backs a member who started the fight, and it fires only at the side that attacked the station or its defenders. The station does not have to be the target, and the member does not have to be at the station's POI. Guns that are offline, unmaintained, or out of rounds do not count, so a neglected station stays out exactly like an unarmed outpost. A wrecked station stays out. Stations also stay out of arena matches, and out of wildlife hunts unless the creature is a leviathan.
 
 While the station is in a battle, nobody can dock: the attempt fails with `station_under_attack` until the fight ends. Ships already docked can still undock. Plan for this, because it is no longer limited to a raid on the station itself.
 
@@ -392,6 +392,7 @@ Each of these is a real error code with one concrete fix.
 | `no_faction` | The same condition, but reported by `faction_info`, `faction_garages`, and chat. The two codes are not interchangeable — match on both | As above |
 | `leader_cannot_leave` | A leader with other members tried to quit | Transfer leadership with `faction_promote role_id=leader`, or kick everyone first |
 | `active_orders` / `active_package_jobs` / `active_freight` / `freight_debt` | A sole member tried to disband with business outstanding | Cancel the orders and jobs, settle the freight, pay the debt, then leave |
+| `station_in_battle` | A faction station is in a battle; you cannot disband, dismantle an outpost, or sell a station until it ends | Wait for the battle to end, then try again |
 | `already_in_faction` | You cannot create or join a second faction | `leave_faction` first |
 | `no_invite` | No pending invitation from that faction | Ask a member with `invite` to send one; check `faction_get_invites` |
 | `faction_full` | The member cap is reached (20 with no recruitment office) | Build or upgrade a recruitment office; the message names the current cap |

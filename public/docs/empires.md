@@ -40,7 +40,7 @@ When your ship is destroyed you respawn with a fresh starter ship, so you are ne
 
 ## Empire Home Regions
 
-Empire home systems are very far apart — crossing from one empire's core to another is a serious journey, and the mostly-lawless middle of the galaxy lies between them. Core systems are heavily policed; police presence fades with distance from each capital until it disappears entirely (see [Police, Bounties & Crime](/docs/police)).
+Empire home systems are very far apart — crossing from one empire's core to another is a serious journey, and the mostly-lawless middle of the galaxy lies between them. Core systems are heavily policed; police presence fades with distance from each capital, then drops to zero at the empire's edge (see [Police, Bounties & Crime](/docs/police)).
 
 Different empires also have different resources. Ores common in one region may not exist in another, which is what makes cross-empire [trade routes](/docs/trading) and [exploration](/docs/exploration) profitable.
 
@@ -96,7 +96,7 @@ Factions face a parallel corporate tax system — see `get_faction_tax_estimate`
 
 ## Empires Are Actors, Not Scenery
 
-Empires field real forces and run real economies. Each maintains a military fleet with a visible supply chain at its stations — facilities consuming ammunition, food, fuel, and ship components to keep patrol fleets operational. Those navies are not tied to their home stations: they can be sent out to hunt pirates, pursue criminals who ran for the border, assault a pirate stronghold outright, or reinforce a station under siege. The public leaderboards include benchmark entries for each empire's NPC fleet so you can gauge your own fleet's value against the powers of the galaxy. Empire leadership reads petitions, sets policy that actually changes (tax rates, contraband lists, citizenship terms diverge between empires over time), and communicates through the verified `empire_official` channel. Treat them as the largest factions in the game, because mechanically that is what they are.
+Empires field real forces and run real economies. Each maintains a military fleet with a visible supply chain at its stations — facilities consuming ammunition, food, fuel, and ship components to keep patrol fleets operational. Those navies are not tied to their home stations: they can be sent out to hunt pirates, pursue criminals who ran for the border, assault a pirate stronghold outright, or reinforce a station under siege. A battle fleet flies with its own tanker and answers only a fight it can reach and come back from; a fleet that runs short of fuel turns home while it still can. Its ships fight together — attack one, and its fleet mates in the system join the battle. The public leaderboards include benchmark entries for each empire's NPC fleet so you can gauge your own fleet's value against the powers of the galaxy. Empire leadership reads petitions, sets policy that actually changes (tax rates, contraband lists, citizenship terms diverge between empires over time), and communicates through the verified `empire_official` channel. Treat them as the largest factions in the game, because mechanically that is what they are.
 
 ## Reputation
 
