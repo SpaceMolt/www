@@ -7,6 +7,7 @@ import styles from './PlayerSelector.module.css'
 import { extractApiErrorMessage, isSessionAuthError } from '@/lib/apiError'
 import { parseSessionId } from '@/lib/session'
 import { charactersOpenElsewhere } from '@/lib/spacemolt/tabClaim'
+import { groupBy } from '@/data/catalog'
 
 export const EMPIRE_COLORS: Record<string, string> = {
   solarian: '#FFD700',
@@ -31,6 +32,7 @@ interface LinkedPlayer {
 
 interface PlayerInfo {
   empire?: string
+  faction_name?: string
   credits?: number
   online?: boolean
   ship?: { class_id: string }
@@ -43,6 +45,14 @@ interface PlayerSelectorProps {
   authHeaders: () => Promise<Record<string, string>>
   registrationCode: string
   onPlayerCreated: (playerId: string) => void
+}
+
+const NO_FACTION = 'No faction'
+
+/** Characters grouped by faction: biggest faction first, then by name, with no faction last. */
+export function groupByFaction<T extends { id: string }>(players: T[], factionOf: (id: string) => string | undefined): [string, T[]][] {
+  return Object.entries(groupBy(players, (p) => factionOf(p.id) || NO_FACTION)).sort(([a, x], [b, y]) =>
+    Number(a === NO_FACTION) - Number(b === NO_FACTION) || y.length - x.length || a.localeCompare(b))
 }
 
 export function PlayerSelector({ players, onSelect, loading, authHeaders, registrationCode, onPlayerCreated }: PlayerSelectorProps) {
@@ -114,9 +124,12 @@ export function PlayerSelector({ players, onSelect, loading, authHeaders, regist
     return players.filter(p => {
       const info = playerInfo[p.id]
       return p.username.toLowerCase().includes(q) ||
-        (info?.empire && info.empire.toLowerCase().includes(q))
+        (info?.empire && info.empire.toLowerCase().includes(q)) ||
+        (info?.faction_name && info.faction_name.toLowerCase().includes(q))
     })
   }, [players, playerInfo, search])
+
+  const groups = useMemo(() => groupByFaction(filtered, (id) => playerInfo[id]?.faction_name), [filtered, playerInfo])
 
   async function handleCreate() {
     const trimmed = username.trim()
@@ -299,7 +312,7 @@ export function PlayerSelector({ players, onSelect, loading, authHeaders, regist
           <Search size={14} style={{ color: 'var(--chrome-silver)', flexShrink: 0 }} />
           <input
             className={styles.searchInput}
-            placeholder="Filter players..."
+            placeholder="Filter by name, empire or faction..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             autoFocus
@@ -310,7 +323,13 @@ export function PlayerSelector({ players, onSelect, loading, authHeaders, regist
         </div>
       )}
       <div className={styles.playerList}>
-        {filtered.map(p => {
+        {groups.map(([faction, members]) => [
+          groups.length > 1 && (
+            <div key={`group-${faction}`} className={styles.factionHeader}>
+              {faction} <span className={styles.factionCount}>{members.length}</span>
+            </div>
+          ),
+          ...members.map(p => {
           const info = playerInfo[p.id]
           const empireColor = EMPIRE_COLORS[info?.empire || ''] || 'var(--chrome-silver)'
           return (
@@ -346,7 +365,8 @@ export function PlayerSelector({ players, onSelect, loading, authHeaders, regist
               )}
             </button>
           )
-        })}
+        }),
+        ])}
         <button className={styles.newPlayerCard} onClick={() => setCreating(true)}>
           <Plus size={14} />
           <span>New Player</span>

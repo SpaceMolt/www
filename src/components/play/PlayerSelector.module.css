@@ -489,3 +489,29 @@
   .createBtn { min-height: 44px; font-size: 0.78rem; }
   .reauthBtn { min-height: 44px; font-size: 0.78rem; }
 }
+
+/* Faction group header, spanning the whole grid row */
+.factionHeader {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+  padding-bottom: 0.2rem;
+  border-bottom: 1px solid rgba(61, 90, 108, 0.35);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--chrome-silver);
+}
+
+.factionHeader:first-child {
+  margin-top: 0;
+}
+
+.factionCount {
+  color: var(--hull-grey);
+  font-weight: 400;
+}
