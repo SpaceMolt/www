@@ -10,13 +10,12 @@ import {
   ExternalLink,
   ScrollText,
 } from 'lucide-react'
-import { SpacemoltError } from '@spacemolt/lib'
 import type { Commands, GetActionLogResponse, GetNotesResponse } from '@spacemolt/lib'
 import { useAccountStore, usePlayer } from '@/lib/spacemolt'
 import { formatStatValue, timeAgoOrDate } from '@/lib/format'
 import { usePlay } from '../PlayProvider'
 import { ActionButton } from '../ActionButton'
-import { PanelWithTabs, shared } from '../shared'
+import { PanelWithTabs, shared, errorMessage } from '../shared'
 import styles from './InfoPanel.module.css'
 
 type Note = GetNotesResponse['notes'][number]
@@ -32,12 +31,6 @@ interface LogEntry {
 const ACTION_LOG_CATEGORIES = [
   'all', 'combat', 'trading', 'crafting', 'ship', 'faction', 'mission', 'skill', 'salvage', 'mining',
 ] as const
-
-function errorMessage(err: unknown): string {
-  if (err instanceof SpacemoltError) return err.message
-  if (err instanceof Error) return err.message
-  return 'Action failed'
-}
 
 export function InfoPanel() {
   const store = useAccountStore()
