@@ -20,12 +20,13 @@ import {
   Radar,
   FlaskConical,
   Trash2,
+  Hammer,
 } from 'lucide-react'
-import { useShip, useModules, useCargo, useLocationState, usePendingAction, useCommandMutation, useCommandQuery, useCatalog, usePlayer } from '@/lib/spacemolt'
+import { useShip, useModules, useCargo, useLocationState, usePendingAction, useCommandMutation, useCommandQuery, useCatalog } from '@/lib/spacemolt'
 import type { GameState } from '@spacemolt/lib'
 import { usePlay } from '../PlayProvider'
 import { ProgressBar } from '../ProgressBar'
-import { Panel, Modal, ConfirmAction, ItemSelectList, QtyButtons, errorMessage, shared, useStorageMove } from '../shared'
+import { Panel, PanelWithTabs, Modal, ConfirmAction, ItemSelectList, QtyButtons, errorMessage, shared, useStorageMove } from '../shared'
 import { normalizeCargo, selectAll, selectedItems, type SelectableItem, type Selection } from '../shared/itemSelection'
 import { ItemName } from '../ItemTooltip'
 import { getItem as getCatalogRawItem, isModule } from '@/data/catalog'
@@ -34,9 +35,15 @@ import styles from './ShipPanel.module.css'
 import { imageUrl } from '@/data/images'
 import { canRefit, isUsableConsumable, usesQuantity, useItemResultText } from './shipModules'
 import { usePersonalStorage } from './trading/StorageView'
-import { useStationServices } from '../hooks/useGates'
+import { useFactionPermissions, useStationServices } from '../hooks/useGates'
+import { BuilderView } from './ship/BuilderView'
 
 type ModuleEntry = NonNullable<GameState['modules']>[number]
+
+const TABS = [
+  { id: 'loadout', label: 'Loadout', icon: <Rocket size={12} /> },
+  { id: 'builder', label: 'Builder', icon: <Hammer size={12} /> },
+]
 
 type SlotType = 'weapon' | 'defense' | 'utility'
 
@@ -64,6 +71,7 @@ export function ShipPanel() {
   const mutate = useCommandMutation()
   const { uiStore } = usePlay()
   const { data: catalog } = useCatalog()
+  const [tab, setTab] = useState('loadout')
 
   // Install modal
   const [installSlotType, setInstallSlotType] = useState<SlotType | null>(null)
@@ -95,13 +103,14 @@ export function ShipPanel() {
   )
 
   // Modules held at this station: your storage and the faction's main store, fetched while the picker is open.
-  const hasFaction = Boolean(usePlayer()?.faction_id)
   const pickerOpen = installSlotType !== null && hasStorage
+  // Withdrawing from faction storage needs manage_treasury (gameserver storageV2FactionWithdrawItems).
+  const canUseFaction = useFactionPermissions({ enabled: pickerOpen }).can('manage_treasury')
   const { data: personalStorage } = usePersonalStorage({ enabled: pickerOpen })
   const { data: factionStorage } = useCommandQuery(
     async (account) => (await account.commands.spacemolt_storage.view({ target: 'faction' })).structuredContent as { items?: StoredItem[] } | undefined,
     [location?.docked_at, installSlotType],
-    { enabled: pickerOpen && hasFaction },
+    { enabled: pickerOpen && canUseFaction },
   )
 
   const handleInstallModule = useCallback(
@@ -179,7 +188,7 @@ export function ShipPanel() {
     return [
       ...fromSource('cargo', cargo as StoredItem[]),
       ...(hasStorage ? fromSource('storage', personalStorage?.items ?? []) : []),
-      ...(hasStorage ? fromSource('faction', factionStorage?.items ?? []) : []),
+      ...(hasStorage && canUseFaction ? fromSource('faction', factionStorage?.items ?? []) : []),
     ]
   }
 
@@ -267,7 +276,8 @@ export function ShipPanel() {
   )
 
   return (
-    <Panel title="Ship" icon={<Rocket size={16} />}>
+    <PanelWithTabs title="Ship" icon={<Rocket size={16} />} tabs={TABS} activeTab={tab} onTabChange={setTab}>
+      {tab === 'builder' ? <BuilderView /> : (<>
         {/* Ship overview */}
         <div className={styles.shipOverview}>
           <img
@@ -481,7 +491,8 @@ export function ShipPanel() {
           powerAvailable={powerCapacity - powerUsed}
         />
       )}
-    </Panel>
+      </>)}
+    </PanelWithTabs>
   )
 }
 
