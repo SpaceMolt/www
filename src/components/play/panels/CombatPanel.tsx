@@ -260,7 +260,7 @@ export function CombatPanel() {
   // gameserver State.HasCloakDevice; the server refuses to engage a cloak in battle.
   const hasCloak = fittedModules.some((m) => (m.cloak_strength ?? 0) > 0) ||
     Boolean(shipClassId && getShip(shipClassId)?.inherent_capabilities?.some((c) => c.type === 'integrated_cloak' && c.value > 0))
-  const showCloak = hasCloak && (isCloaked || !inCombat)
+  const showCloak = isCloaked || (hasCloak && !inCombat)
   const nearbyPlayers = location?.nearby_players ?? []
   const nearbyPirates = location?.nearby_pirates ?? []
   const nearbyCreatures = nearbyQuery.data?.creatures ?? []

@@ -45,12 +45,7 @@ export function FleetView() {
   const activeShip = useShip() as (ReturnType<typeof useShip> & { refit_available?: boolean }) | undefined
   const modules = useModules()
   const refitAvailable = isDocked && Boolean(activeShip?.refit_available)
-  const { data: base } = useCommandQuery(
-    async (account) => (await account.commands.spacemolt.get_base()).structuredContent,
-    [currentBaseId],
-    { enabled: refitAvailable }
-  )
-  const refit = refitAvailable && activeShip && base?.services.includes('shipyard')
+  const refit = refitAvailable && hasShipyard && activeShip
     ? refitPreview(activeShip.class_id, activeShip, (modules ?? []).map((m) => m.name))
     : undefined
   const cargoAboard = (activeShip?.cargo_used ?? 0) > 0

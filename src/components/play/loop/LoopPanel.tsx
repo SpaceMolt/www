@@ -103,7 +103,7 @@ function StepEditor({ onAdd }: { onAdd: (step: LoopStep) => void }) {
   const [systemId, setSystemId] = useState(location?.system_id ?? '')
   const [poiId, setPoiId] = useState('')
   const [itemIds, setItemIds] = useState<string[]>([])
-  const [target, setTarget] = useState<'storage' | 'faction'>('storage')
+  const [targetChoice, setTarget] = useState<'storage' | 'faction'>('storage')
   const [recipeId, setRecipeId] = useState('')
   const [count, setCount] = useState('1')
   const [seconds, setSeconds] = useState('30')
@@ -114,6 +114,7 @@ function StepEditor({ onAdd }: { onAdd: (step: LoopStep) => void }) {
   const destinations = useDestinations(systemId, here)
   const cargo = useCargo() ?? []
   const hasFaction = Boolean(usePlayer()?.faction_id)
+  const target = hasFaction ? targetChoice : 'storage'
   const canExtract = extractionKinds(useFittedModules(), useShip()?.class_id).length > 0
 
   const build = (): LoopStep | null => {

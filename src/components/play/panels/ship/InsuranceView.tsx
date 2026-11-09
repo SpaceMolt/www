@@ -22,7 +22,7 @@ function Factors({ factors }: { factors?: RiskFactor[] }) {
   )
 }
 
-/** Quote and buy insurance for the active ship while docked; list active policies. Claims pay out automatically on respawn. */
+/** List active policies anywhere; quote and buy insurance for the active ship while docked. Claims pay out automatically on respawn. */
 export function InsuranceView({ isDocked }: { isDocked: boolean }) {
   const store = useAccountStore()
   const mutate = useCommandMutation()
@@ -54,8 +54,8 @@ export function InsuranceView({ isDocked }: { isDocked: boolean }) {
 
   const list = policies?.policies ?? []
   // Starter ships are replaced free on death, so the server refuses to quote them.
-  const quotable = Boolean(classId && !getShip(classId)?.starter_ship)
-  if (!isDocked || (!quotable && list.length === 0)) return null
+  const quotable = isDocked && Boolean(classId && !getShip(classId)?.starter_ship)
+  if (!quotable && list.length === 0) return null
 
   return (
     <div className={styles.insurance}>

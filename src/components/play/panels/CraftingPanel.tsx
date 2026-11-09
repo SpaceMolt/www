@@ -15,7 +15,7 @@ import type {
   StorageResponse,
 } from '@spacemolt/lib'
 import { useAccountStore, useCargo, useCommandMutation, useCommandQuery, useCurrentTick, useLocationState, useSkills } from '@/lib/spacemolt'
-import { usePlay, usePlayUi } from '../PlayProvider'
+import { usePlay } from '../PlayProvider'
 import { ActionButton } from '../ActionButton'
 import { ProgressBar } from '../ProgressBar'
 import { ConfirmAction, Panel, QtyButtons, errorMessage, objectKey, shared } from '../shared'
@@ -51,7 +51,6 @@ export function CraftingPanel() {
   const store = useAccountStore()
   const mutate = useCommandMutation()
   const { uiStore } = usePlay()
-  const pushedJobs = usePlayUi((s) => s.craftJobs)
   const currentTick = useCurrentTick()
   const dockedAt = useLocationState()?.docked_at ?? null
   const isDocked = Boolean(dockedAt)
@@ -72,8 +71,12 @@ export function CraftingPanel() {
   const [quotes, setQuotes] = useState<Record<string, CraftQuote | { error: string }>>({})
   const [confirmRecycleId, setConfirmRecycleId] = useState<string | null>(null)
   const [preset, setPreset] = useState<Preset>('')
-  const [source, setSource] = useState<Store>('')
-  const [deliverTo, setDeliverTo] = useState<Store>('')
+  const [sourceChoice, setSource] = useState<Store>('')
+  const [deliverChoice, setDeliverTo] = useState<Store>('')
+  // A choice whose option is gone (no storage here, lost manage_treasury) falls back to auto.
+  const offered = (store: Store) => (store === 'storage' && hasStorage) || (store === 'faction' && canUseFactionStore)
+  const source: Store = offered(sourceChoice) ? sourceChoice : ''
+  const deliverTo: Store = offered(deliverChoice) ? deliverChoice : ''
   const [batch, setBatch] = useState<BatchJob[]>([])
   const [selectedJobs, setSelectedJobs] = useState<Set<string>>(new Set())
   const [cancelling, setCancelling] = useState(false)
@@ -368,33 +371,14 @@ export function CraftingPanel() {
             <button
               className={shared.refreshBtn}
               onClick={refetchJobs}
-              disabled={jobsLoading || !isDocked}
+              disabled={jobsLoading}
               title="Refresh job queue"
               type="button"
             >
               <RefreshCw size={12} className={jobsLoading ? styles.spinning : undefined} />
             </button>
           </div>
-          {!isDocked ? (
-            // The queue view needs a dock; between docks show the last crafting_update push.
-            pushedJobs && pushedJobs.length > 0 ? (
-              <div className={styles.jobsList}>
-                {pushedJobs.map((job) => (
-                  <div key={job.job_id} className={styles.jobCard}>
-                    <div className={styles.jobMeta}>
-                      <span className={styles.jobName}>{job.recipe}</span>
-                      <span>·</span>
-                      <span>{job.venue}</span>
-                      <span>·</span>
-                      <span>{job.completed ? 'complete' : `${job.runs_remaining} runs left`}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className={styles.jobsEmpty}>Dock to view your job queue.</div>
-            )
-          ) : activeJobs.length === 0 ? (
+          {activeJobs.length === 0 ? (
             <div className={styles.jobsEmpty}>
               {jobsLoading
                 ? 'Loading jobs…'
@@ -519,10 +503,6 @@ export function CraftingPanel() {
               {canUseFactionStore && <option value="faction">Output: faction storage</option>}
             </select>
           </div>
-        )}
-
-        {!isDocked && (
-          <div className={styles.dockedWarning}>Dock at a station with crafting to queue jobs.</div>
         )}
 
         {/* Search + filter */}

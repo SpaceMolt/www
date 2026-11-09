@@ -338,7 +338,7 @@ export function FleetTab() {
           </div>
           <div className={styles.hint}>
             Board a docked faction-mate&apos;s ship as a free passenger (deadheading). Your ship stays parked here, or goes to
-            the faction garage. A fleet is created with the carrier as leader.
+            the faction garage. A fleet is created with the carrier as leader if needed.
           </div>
           <label className={styles.row}>
             <input type="checkbox" checked={boardGarage} onChange={(e) => setBoardGarage(e.target.checked)} />

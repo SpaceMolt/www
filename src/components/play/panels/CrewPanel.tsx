@@ -17,7 +17,9 @@ const TABS = [
 export function CrewPanel() {
   const [tab, setTab] = useState('fleet')
   // The Prizes tab shows only while a prize is here or one of yours is in recovery.
-  const hasPrizes = (useLocationState()?.nearby_prizes?.length ?? 0) > 0 || (useSection('prize_recoveries')?.length ?? 0) > 0
+  const nearbyPrizes = useLocationState()?.nearby_prizes?.length ?? 0
+  const recoveries = useSection('prize_recoveries')?.length ?? 0
+  const hasPrizes = nearbyPrizes > 0 || recoveries > 0
   const tabs = hasPrizes ? TABS : TABS.filter((t) => t.id !== 'prizes')
   const active = tabs.some((t) => t.id === tab) ? tab : 'fleet'
   return (

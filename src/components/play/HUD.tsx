@@ -166,10 +166,11 @@ export function HUD() {
   const isDocked = Boolean(location?.docked_at)
   const towing = Boolean(usePlayer()?.towing_wreck_id)
   const services = useStationServices()
-  // Shipyard and Crafting need the station service. Salvage stays in space (it lists wrecks there)
+  // Shipyard and Crafting show at any station: commissions, listings and the job queue work without
+  // the service, and their controls gate on it. Salvage stays in space (it lists wrecks there)
   // and while towing; docked, it needs a salvage yard.
   const hiddenPanels = useMemo(() => [
-    ...['shipyard', 'crafting'].filter((s) => !services.includes(s)),
+    ...(isDocked ? [] : ['shipyard', 'crafting']),
     ...(isDocked && !towing && !services.includes('salvage_yard') ? ['salvage'] : []),
   ], [services, isDocked, towing])
   const pendingTrades = usePlayUi((s) => s.pendingTrades)

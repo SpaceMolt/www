@@ -53,7 +53,7 @@ const ALL_PANELS: PanelDef[] = [
   // Station tabs: view remotely, mutations disabled in space
   { id: 'trading', icon: TrendingUp, label: 'Market' },
   { id: 'storage', icon: Package, label: 'Storage' },
-  // Only at a station with the matching service (HUD hides them otherwise)
+  // Docked only (HUD hides them in space); controls inside gate on the station service
   { id: 'shipyard', icon: Warehouse, label: 'Shipyard' },
   { id: 'crafting', icon: Hammer, label: 'Crafting' },
   // Always visible: the cross-station facility list and station founding work undocked.

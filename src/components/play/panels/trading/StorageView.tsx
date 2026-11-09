@@ -37,7 +37,7 @@ import { timeAgoOrDate } from '@/lib/format'
 import { formatItemId, getShip } from '@/data/catalog'
 import { giftFromLog } from './tradingLogic'
 import { useFittedModules, useStationServices } from '../../hooks/useGates'
-import { useFactionService } from '../faction/useFactionService'
+import { useFactionServices } from '../faction/useFactionService'
 
 // StorageResponse is one generated union across every branch of the unified
 // storage action (self view, faction view, deposit/withdraw/gift results) —
@@ -74,8 +74,9 @@ export function StorageView() {
   const dockedAt = location?.docked_at
   const isDocked = Boolean(dockedAt)
   const hasStorage = useStationServices().includes('storage')
-  const hasLockbox = useFactionService('faction_storage')
-  const hasFactionGarage = useFactionService('faction_ship_garage')
+  const factionServices = useFactionServices()
+  const hasLockbox = factionServices?.has('faction_storage')
+  const hasFactionGarage = factionServices?.has('faction_ship_garage')
   // gameserver storageV2LoadShip: a carrier bay on the active hull, or a fitted tow rig.
   const shipClassId = useShip()?.class_id
   const hasTowRig = useFittedModules().some((m) => (m.tow_speed_penalty ?? 0) > 0)

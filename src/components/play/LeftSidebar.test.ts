@@ -85,5 +85,7 @@ describe('mine and survey gates mirror the server loadout checks', () => {
     expect(canSurvey(fit('survey_scanner_i'), undefined)).toBe(true)
     expect(canSurvey(fit('anomaly_detector'), undefined)).toBe(true)
     expect(canSurvey([], 'datum')).toBe(true)
+    expect(canSurvey([], undefined, [{ stat: 'survey_power', amount: 10 }])).toBe(true)
+    expect(canSurvey([], undefined, [{ stat: 'weapon_damage', amount: 10 }])).toBe(false)
   })
 })

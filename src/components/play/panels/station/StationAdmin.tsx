@@ -11,16 +11,26 @@ import { GATED_SERVICES, SERVICE_ACCESS, parseAmount, parseItemIds, readableStat
 import styles from './station.module.css'
 
 /** A text input with a Save button; the value resets when `initial` changes. */
-function SaveField({ label, initial, onSave, type = 'text', disabled }: {
+function SaveField({ label, initial, onSave, type = 'text', disabled, readOnly }: {
   label: string
   initial: string
   onSave: (value: string) => void
   type?: 'text' | 'number' | 'textarea'
   disabled: boolean
+  /** Show the value only, without an input. */
+  readOnly?: boolean
 }) {
   const [value, setValue] = useState(initial)
   const [seen, setSeen] = useState(initial)
   if (seen !== initial) { setSeen(initial); setValue(initial) }
+  if (readOnly) {
+    return (
+      <div className={styles.row}>
+        <span className={styles.label}>{label}</span>
+        <span>{initial || <span className={styles.hint}>none</span>}</span>
+      </div>
+    )
+  }
   return (
     <div className={styles.row}>
       <span className={styles.label}>{label}</span>
@@ -35,13 +45,15 @@ function SaveField({ label, initial, onSave, type = 'text', disabled }: {
 }
 
 /** Names on an allow/ban list, each removable, plus an input to add one. */
-function NameList({ label, names, addLabel, onAdd, onRemove, disabled }: {
+function NameList({ label, names, addLabel, onAdd, onRemove, disabled, readOnly }: {
   label: string
   names: string[]
   addLabel: string
   onAdd: (name: string) => void
   onRemove: (name: string) => void
   disabled: boolean
+  /** List the names without remove or add controls. */
+  readOnly?: boolean
 }) {
   const [draft, setDraft] = useState('')
   return (
@@ -53,14 +65,16 @@ function NameList({ label, names, addLabel, onAdd, onRemove, disabled }: {
           {names.map((n) => (
             <span key={n} className={styles.chip}>
               {n}
-              <button className={shared.iconBtn} disabled={disabled} onClick={() => onRemove(n)} type="button" aria-label={`Remove ${n}`}>
-                <X size={10} />
-              </button>
+              {!readOnly && (
+                <button className={shared.iconBtn} disabled={disabled} onClick={() => onRemove(n)} type="button" aria-label={`Remove ${n}`}>
+                  <X size={10} />
+                </button>
+              )}
             </span>
           ))}
         </span>
       </div>
-      <div className={styles.row}>
+      {!readOnly && <div className={styles.row}>
         <span className={styles.label} />
         <input className={shared.textInput} type="text" aria-label={addLabel} placeholder={addLabel} value={draft} onChange={(e) => setDraft(e.target.value)} />
         <button
@@ -72,22 +86,23 @@ function NameList({ label, names, addLabel, onAdd, onRemove, disabled }: {
         >
           <UserPlus size={11} />
         </button>
-      </div>
+      </div>}
     </div>
   )
 }
 
 /**
  * Every `station` admin action for a station or outpost the player's faction
- * owns. Outposts support only rename and description. The parent shows it only
- * with the ManageBases permission.
+ * owns. Outposts support only rename and description. Any member can read the
+ * settings; changing them needs the ManageBases permission (`canManage`).
  */
-export function StationAdmin({ isOutpost, onChanged }: { isOutpost: boolean; onChanged: () => void }) {
+export function StationAdmin({ isOutpost, canManage, onChanged }: { isOutpost: boolean; canManage: boolean; onChanged: () => void }) {
   const store = useAccountStore()
   const mutate = useCommandMutation()
   const { uiStore } = usePlay()
   const { busy: running, run: runAction } = useAction()
-  const busy = running !== null
+  const busy = running !== null || !canManage
+  const readOnly = !canManage
   const [confirmDismantle, setConfirmDismantle] = useState(false)
 
   const { data: cfg, loading, refetch } = useCommandQuery(
@@ -135,17 +150,18 @@ export function StationAdmin({ isOutpost, onChanged }: { isOutpost: boolean; onC
 
   return (
     <div className={styles.form}>
-      <SaveField label="Name" initial={cfg.name} disabled={busy} onSave={rename} />
+      <SaveField label="Name" initial={cfg.name} disabled={busy} readOnly={readOnly} onSave={rename} />
       <SaveField
         label="Description"
         type="textarea"
         initial={cfg.description ?? ''}
         disabled={busy}
+        readOnly={readOnly}
         onSave={(description) => run('station_set_description', (c) => c.spacemolt_facility.set_description({ description }))}
       />
 
       {isOutpost ? (
-        confirmDismantle ? (
+        readOnly ? null : confirmDismantle ? (
           <ConfirmAction
             message="Pack this outpost back into an Outpost Kit? Faction storage must be empty. The founding fee is not refunded."
             confirmLabel="Dismantle"
@@ -193,35 +209,35 @@ export function StationAdmin({ isOutpost, onChanged }: { isOutpost: boolean; onC
           ))}
 
           <div className={fac.sectionHeader}>Prices</div>
-          <SaveField label="Market fee %" type="number" initial={String((cfg.market_fee_bps ?? 0) / 100)} disabled={busy}
+          <SaveField label="Market fee %" type="number" initial={String((cfg.market_fee_bps ?? 0) / 100)} disabled={busy} readOnly={readOnly}
             onSave={(v) => amount('Market fee', v, (fee_percent) => run('station_set_market_fee', (c) => c.spacemolt_facility.set_market_fee({ fee_percent })))} />
-          <SaveField label="Refuel / unit" type="number" initial={String(cfg.refuel_price_each ?? 0)} disabled={busy}
+          <SaveField label="Refuel / unit" type="number" initial={String(cfg.refuel_price_each ?? 0)} disabled={busy} readOnly={readOnly}
             onSave={(v) => amount('Refuel price', v, (price) => run('station_set_refuel_price', (c) => c.spacemolt_facility.set_refuel_price({ price })))} />
-          <SaveField label="Repair / hull" type="number" initial={String(cfg.repair_price_per_hull ?? 0)} disabled={busy}
+          <SaveField label="Repair / hull" type="number" initial={String(cfg.repair_price_per_hull ?? 0)} disabled={busy} readOnly={readOnly}
             onSave={(v) => amount('Repair price', v, (price) => run('station_set_repair_price', (c) => c.spacemolt_facility.set_repair_price({ price })))} />
 
           <div className={fac.sectionHeader}>Contraband ({cfg.contraband_mode})</div>
-          <SaveField label="Item ids" type="textarea" initial={(cfg.contraband_items ?? []).join(', ')} disabled={busy}
+          <SaveField label="Item ids" type="textarea" initial={(cfg.contraband_items ?? []).join(', ')} disabled={busy} readOnly={readOnly}
             onSave={(v) => run('station_set_contraband', (c) => c.spacemolt_facility.set_contraband({ contraband_items: parseItemIds(v) }))} />
-          <div className={styles.row}>
+          {!readOnly && <div className={styles.row}>
             <span className={styles.label} />
             <span className={styles.hint}>Save an empty list to allow every item.</span>
             <button className={shared.subtleBtn} disabled={busy} onClick={() => run('station_reset_contraband', (c) => c.spacemolt_facility.reset_contraband())} type="button">
               <RotateCcw size={11} /> Reset to default
             </button>
-          </div>
+          </div>}
 
           <div className={fac.sectionHeader}><Users size={11} /> Dock lists</div>
-          <NameList label="Allowed players" names={cfg.allowed_players ?? []} addLabel="Allow player (name or id)" disabled={busy}
+          <NameList label="Allowed players" names={cfg.allowed_players ?? []} addLabel="Allow player (name or id)" disabled={busy} readOnly={readOnly}
             onAdd={(player) => run('station_allow_player', (c) => c.spacemolt_facility.allow_player({ player }))}
             onRemove={(player) => run('station_remove_player', (c) => c.spacemolt_facility.remove_player({ player }))} />
-          <NameList label="Allowed factions" names={cfg.allowed_factions ?? []} addLabel="Allow faction (id)" disabled={busy}
+          <NameList label="Allowed factions" names={cfg.allowed_factions ?? []} addLabel="Allow faction (id)" disabled={busy} readOnly={readOnly}
             onAdd={(faction) => run('station_allow_faction', (c) => c.spacemolt_facility.allow_faction({ faction }))}
             onRemove={(faction) => run('station_remove_faction', (c) => c.spacemolt_facility.remove_faction({ faction }))} />
-          <NameList label={'Banned players'} names={cfg.banned_players ?? []} addLabel="Ban player (name or id)" disabled={busy}
+          <NameList label={'Banned players'} names={cfg.banned_players ?? []} addLabel="Ban player (name or id)" disabled={busy} readOnly={readOnly}
             onAdd={(player) => run('station_ban', (c) => c.spacemolt_facility.ban({ player }))}
             onRemove={(player) => run('station_unban', (c) => c.spacemolt_facility.unban({ player }))} />
-          <div className={styles.hint}><Ban size={10} /> A ban also removes the player from the allow list and blocks docking at once.</div>
+          {!readOnly && <div className={styles.hint}><Ban size={10} /> A ban also removes the player from the allow list and blocks docking at once.</div>}
         </>
       )}
     </div>

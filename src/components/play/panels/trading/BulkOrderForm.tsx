@@ -8,7 +8,7 @@ import { getItem, tradeableItems, formatItemId } from '@/data/catalog'
 import type { RawCatalogItem } from '@/data/catalog'
 import { useClickOutside } from '../../hooks/useClickOutside'
 import { useFactionPermissions, useStationServices } from '../../hooks/useGates'
-import { useFactionService } from '../faction/useFactionService'
+import { useFactionServices } from '../faction/useFactionService'
 import { usePlay } from '../../PlayProvider'
 import { ConfirmAction, QtyButtons, errorMessage, shared } from '../../shared'
 import { chunk } from '../../shared/itemSelection'
@@ -102,8 +102,9 @@ export function BulkOrderForm({ inventory, onCreated, onClose }: {
   const player = usePlayer()
   const credits = player?.credits ?? 0
   const hasStorage = useStationServices().includes('storage')
-  const hasFactionMarket = useFactionService('faction_market')
-  const hasCompanyStore = useFactionService('faction_company_store')
+  const factionServices = useFactionServices()
+  const hasFactionMarket = factionServices?.has('faction_market')
+  const hasCompanyStore = factionServices?.has('faction_company_store')
   const { can } = useFactionPermissions({ enabled: Boolean(hasFactionMarket) })
   const canTradeForFaction = Boolean(hasFactionMarket) && hasStorage && can('manage_treasury')
 

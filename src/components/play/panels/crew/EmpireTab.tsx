@@ -37,7 +37,7 @@ export function EmpireTab() {
   const bounties = owedBounties(player?.standings)
   const credits = player?.credits ?? 0
   // Paying from the faction treasury needs manage_treasury; without it the wallet is the only source.
-  const canPayFaction = useFactionPermissions().can('manage_treasury')
+  const canPayFaction = useFactionPermissions({ enabled: bounties.length > 0 }).can('manage_treasury')
   const source = canPayFaction ? paySource : 'self'
 
   const citizenAction = (action: 'apply' | 'renounce' | 'withdraw', target: EmpireId) =>

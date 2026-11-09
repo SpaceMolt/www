@@ -141,9 +141,13 @@ export function mineWarning(itemIds: string[], kinds: DepositKind[]): string | n
   return `Nothing fitted can extract ${names('noun')} here: fit ${names('extractor')}`
 }
 
-/** Survey needs survey power or an anomaly detector, from a module or the hull (gameserver HandleSurveySystem; buffs ignored). */
-export function canSurvey(fitted: RawCatalogItem[], shipClassId: string | undefined): boolean {
+/** Buff stats that grant survey (gameserver CalcSurveyPower and HandleSurveySystem). */
+const SURVEY_BUFFS = ['survey_power', 'navigation_beacon', 'anomaly_detection']
+
+/** Survey needs survey power or an anomaly detector, from a module, the hull, or a consumable buff (gameserver HandleSurveySystem). */
+export function canSurvey(fitted: RawCatalogItem[], shipClassId: string | undefined, buffs: { stat: string; amount: number }[] = []): boolean {
   return fitted.some((m) => (m.survey_power ?? 0) > 0 || m.special === 'anomaly_detection') ||
+    buffs.some((b) => SURVEY_BUFFS.includes(b.stat) && b.amount > 0) ||
     Boolean(getShip(shipClassId ?? '')?.inherent_capabilities?.some((c) => c.type === 'integrated_survey_scanner' && c.value > 0)) ||
     hullHasFlag(shipClassId, 'anomaly_detection')
 }
@@ -379,7 +383,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
   const isTraveling = Boolean(location?.in_transit)
   const actionBusy = pendingAction !== null || autoTravelActive
   const mineIssue = mineWarning((location?.resources ?? []).map((r) => r.item_id), extractionKinds(fitted, ship?.class_id))
-  const surveyable = canSurvey(fitted, ship?.class_id)
+  const surveyable = canSurvey(fitted, ship?.class_id, ship?.active_buffs)
   // Refuel/repair can act only at a station with the service, from cargo supplies,
   // or on a nearby ship with the transfer module (gameserver HandleRefuel / HandleRepair).
   const canTransfer = (kind: SupplyKind) => Boolean(location?.nearby_players?.length) && Boolean(modules?.some((m) => m.type_id === TARGET_MODULE[kind]))

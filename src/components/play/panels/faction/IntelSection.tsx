@@ -31,8 +31,9 @@ const INTEL_FACILITIES = {
 }
 
 /**
- * Each part shows only while the faction runs its facility at any station (faction_owned).
- * `allies` comes from the parent's faction info; any ally can be the intel source.
+ * Submit, status, sensor scan and espionage show only while the faction runs the facility at any
+ * station (faction_owned). Queries also show with allies: any ally can be the intel source.
+ * `allies` comes from the parent's faction info.
  */
 export function IntelSection({ allies }: { allies: NonNullable<FactionInfoResponse['allies']> }) {
   const store = useAccountStore()
@@ -50,6 +51,7 @@ export function IntelSection({ allies }: { allies: NonNullable<FactionInfoRespon
   const running = new Set((owned?.facilities ?? []).filter((f) => !f.under_construction && !f.damaged && !f.dismantling).map((f) => f.type))
   const runs = (types: string[]) => types.some((t) => running.has(t))
   const [hasSystem, hasTrade, hasSensor, hasEspionage] = [runs(INTEL_FACILITIES.system), runs(INTEL_FACILITIES.trade), runs(INTEL_FACILITIES.sensor), runs(INTEL_FACILITIES.espionage)]
+  const hasAllies = allies.length > 0
 
   const { busy, run } = useAction()
   const [systemFilter, setSystemFilter] = useState({ system_name: '', poi_type: '', resource_type: '', source_faction_id: '' })
@@ -72,8 +74,11 @@ export function IntelSection({ allies }: { allies: NonNullable<FactionInfoRespon
     const r = await mutate((c) => c.spacemolt_intel.submit_intel({ systems: [{ system_id: location.system_id, name: location.system_name }] }), { label: 'submit_intel' })
     info(r.delta.details?.message ?? 'Intel submitted')
   })
+  // Without our own facility, "Our faction" is not offered and the first ally is the source.
+  const systemSource = systemFilter.source_faction_id || (hasSystem ? '' : allies[0]?.id ?? '')
+  const tradeSource = tradeFilter.source_faction_id || (hasTrade ? '' : allies[0]?.id ?? '')
   const queryIntel = (offset: number) => run('query', async () => {
-    setIntel((await store.account.commands.spacemolt_intel.query_intel({ ...nonEmpty(systemFilter), limit: PAGE, offset })).structuredContent ?? null)
+    setIntel((await store.account.commands.spacemolt_intel.query_intel({ ...nonEmpty({ ...systemFilter, source_faction_id: systemSource }), limit: PAGE, offset })).structuredContent ?? null)
   })
   const loadIntelStatus = () => run('status', async () => {
     setIntelStatus((await store.account.commands.spacemolt_intel.intel_status()).structuredContent ?? null)
@@ -85,7 +90,7 @@ export function IntelSection({ allies }: { allies: NonNullable<FactionInfoRespon
     info(r.delta.details?.message ?? 'Market prices submitted')
   })
   const queryTrade = (offset: number) => run('queryTrade', async () => {
-    setTrade((await store.account.commands.spacemolt_intel.query_trade_intel({ ...nonEmpty(tradeFilter), limit: PAGE, offset })).structuredContent ?? null)
+    setTrade((await store.account.commands.spacemolt_intel.query_trade_intel({ ...nonEmpty({ ...tradeFilter, source_faction_id: tradeSource }), limit: PAGE, offset })).structuredContent ?? null)
   })
   const loadTradeStatus = () => run('tradeStatus', async () => {
     setTradeStatus((await store.account.commands.spacemolt_intel.trade_intel_status()).structuredContent ?? null)
@@ -102,25 +107,27 @@ export function IntelSection({ allies }: { allies: NonNullable<FactionInfoRespon
     })
   }
 
-  const sourceSelect = (value: string, onChange: (v: string) => void) => allies.length > 0 && (
+  const sourceSelect = (value: string, own: boolean, onChange: (v: string) => void) => hasAllies && (
     <select className={fp.select} value={value} onChange={(e) => onChange(e.target.value)} aria-label="Intel source">
-      <option value="">Our faction</option>
+      {own && <option value="">Our faction</option>}
       {allies.map((a) => <option key={a.id} value={a.id}>[{a.tag}] {a.name}</option>)}
     </select>
   )
 
   if (!owned) return error ? <div className={shared.emptyState}>{error}</div> : <Loading message="Checking intel facilities..." />
-  if (!hasSystem && !hasTrade && !hasSensor && !hasEspionage) {
+  if (!hasSystem && !hasTrade && !hasSensor && !hasEspionage && !hasAllies) {
     return <div className={styles.hint}>Build an Intel Terminal or Trade Ledger from Facilities to share intel.</div>
   }
 
   return (
     <div className={fp.intelSection}>
-      {hasSystem && (
+      {(hasSystem || hasAllies) && (
         <>
           <div className={styles.heading}>System intel</div>
-          <ActionButton label="Submit Current System" icon={<Radar size={12} />} onClick={submitIntel}
-            disabled={!location?.system_id || busy !== null} loading={busy === 'submit'} size="sm" />
+          {hasSystem && (
+            <ActionButton label="Submit Current System" icon={<Radar size={12} />} onClick={submitIntel}
+              disabled={!location?.system_id || busy !== null} loading={busy === 'submit'} size="sm" />
+          )}
           <div className={styles.filters}>
             <input className={fp.inviteInput} placeholder="System name" value={systemFilter.system_name}
               onChange={(e) => setSystemFilter({ ...systemFilter, system_name: e.target.value })}
@@ -129,7 +136,7 @@ export function IntelSection({ allies }: { allies: NonNullable<FactionInfoRespon
               onChange={(e) => setSystemFilter({ ...systemFilter, poi_type: e.target.value })} />
             <input className={fp.inviteInput} placeholder="Resource (e.g. iron_ore)" value={systemFilter.resource_type}
               onChange={(e) => setSystemFilter({ ...systemFilter, resource_type: e.target.value })} />
-            {sourceSelect(systemFilter.source_faction_id, (v) => setSystemFilter({ ...systemFilter, source_faction_id: v }))}
+            {sourceSelect(systemSource, hasSystem, (v) => setSystemFilter({ ...systemFilter, source_faction_id: v }))}
             <ActionButton label="Query" icon={<Search size={12} />} onClick={() => queryIntel(0)}
               disabled={busy !== null} loading={busy === 'query'} size="sm" />
           </div>
@@ -148,9 +155,11 @@ export function IntelSection({ allies }: { allies: NonNullable<FactionInfoRespon
               </div>
             ))}
           {intel && <Pager offset={intel.offset ?? 0} limit={PAGE} total={intel.total} onPage={queryIntel} />}
-          <ActionButton label="Intel Status" icon={<BarChart3 size={12} />} onClick={loadIntelStatus}
-            disabled={busy !== null} loading={busy === 'status'} variant="secondary" size="sm" />
-          {intelStatus && (
+          {hasSystem && (
+            <ActionButton label="Intel Status" icon={<BarChart3 size={12} />} onClick={loadIntelStatus}
+              disabled={busy !== null} loading={busy === 'status'} variant="secondary" size="sm" />
+          )}
+          {hasSystem && intelStatus && (
             <div className={fp.intelStats}>
               <Stat label="Intel Level" value={intelStatus.intel_level} />
               <Stat label="Coverage" value={`${intelStatus.coverage_pct}%`} />
@@ -163,10 +172,10 @@ export function IntelSection({ allies }: { allies: NonNullable<FactionInfoRespon
         </>
       )}
 
-      {hasTrade && (
+      {(hasTrade || hasAllies) && (
         <>
           <div className={styles.heading}>Trade intel</div>
-          {isDocked && (
+          {hasTrade && isDocked && (
             <ActionButton label="Submit This Market" icon={<Store size={12} />} onClick={submitTrade}
               disabled={busy !== null} loading={busy === 'submitTrade'} size="sm" />
           )}
@@ -177,7 +186,7 @@ export function IntelSection({ allies }: { allies: NonNullable<FactionInfoRespon
             <input className={fp.inviteInput} placeholder="Station name" value={tradeFilter.station_name}
               onChange={(e) => setTradeFilter({ ...tradeFilter, station_name: e.target.value })}
               onKeyDown={(e) => e.key === 'Enter' && queryTrade(0)} />
-            {sourceSelect(tradeFilter.source_faction_id, (v) => setTradeFilter({ ...tradeFilter, source_faction_id: v }))}
+            {sourceSelect(tradeSource, hasTrade, (v) => setTradeFilter({ ...tradeFilter, source_faction_id: v }))}
             <ActionButton label="Query" icon={<Search size={12} />} onClick={() => queryTrade(0)}
               disabled={busy !== null} loading={busy === 'queryTrade'} size="sm" />
           </div>
@@ -202,9 +211,11 @@ export function IntelSection({ allies }: { allies: NonNullable<FactionInfoRespon
               </table>
             ))}
           {trade && <Pager offset={trade.offset ?? 0} limit={PAGE} total={trade.total} onPage={queryTrade} />}
-          <ActionButton label="Trade Intel Status" icon={<BarChart3 size={12} />} onClick={loadTradeStatus}
-            disabled={busy !== null} loading={busy === 'tradeStatus'} variant="secondary" size="sm" />
-          {tradeStatus && (
+          {hasTrade && (
+            <ActionButton label="Trade Intel Status" icon={<BarChart3 size={12} />} onClick={loadTradeStatus}
+              disabled={busy !== null} loading={busy === 'tradeStatus'} variant="secondary" size="sm" />
+          )}
+          {hasTrade && tradeStatus && (
             <div className={fp.intelStats}>
               <Stat label="Intel Level" value={tradeStatus.intel_level} />
               <Stat label="Coverage" value={`${tradeStatus.coverage_pct}%`} />

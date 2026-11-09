@@ -46,9 +46,9 @@ export function StationPanel() {
           <StationStatus data={data} />
         </Section>
       )}
-      {ownsBase && canManageBases && (
+      {ownsBase && (
         <Section title="Administration" icon={<Settings2 size={12} />} defaultOpen>
-          <StationAdmin isOutpost={base?.type === 'outpost'} onChanged={refetch} />
+          <StationAdmin isOutpost={base?.type === 'outpost'} canManage={canManageBases} onChanged={refetch} />
         </Section>
       )}
       {!dockedAt && canManageBases && (
