@@ -22,7 +22,7 @@ import { PanelWithTabs, shared, errorMessage } from '../shared'
 import styles from './InfoPanel.module.css'
 import { NotesTab } from './info/NotesTab'
 import { CaptainsLogTab } from './info/CaptainsLogTab'
-import { PilotTab } from './info/PilotTab'
+import { INTERNAL_STAT, PilotTab } from './info/PilotTab'
 import { EmpireTab } from './info/EmpireTab'
 import { EmpireTab as CitizenshipTab } from './crew/EmpireTab'
 import { ReleaseNotes } from './info/ReleaseNotes'
@@ -148,7 +148,7 @@ export function InfoPanel() {
             </div>
             <div className={styles.statsGrid}>
               {Object.entries(player.stats)
-                .filter(([, value]) => typeof value === 'number')
+                .filter(([key, value]) => typeof value === 'number' && !INTERNAL_STAT.test(key))
                 .map(([key, value]) => (
                   <div key={key} className={styles.statItem}>
                     <span className={styles.statLabel}>

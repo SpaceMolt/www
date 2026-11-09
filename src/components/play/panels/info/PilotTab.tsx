@@ -9,7 +9,7 @@ import { Loading, shared } from '../../shared'
 import styles from '../InfoPanel.module.css'
 
 /** Bookkeeping stats the server tracks for taxes; not a lifetime stat to a player. */
-const INTERNAL_STAT = /taxable|_snapshot$/
+export const INTERNAL_STAT = /tax|deductible|_snapshot$/
 
 /** Public profile lookup by username (get_player_profile). */
 export function PilotTab() {
