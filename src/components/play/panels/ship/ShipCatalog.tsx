@@ -396,7 +396,13 @@ export function ShipCatalog() {
                     onClick={() => toggleExpand(catShip.id)}
                     role="button"
                     tabIndex={0}
-                    onKeyDown={(e) => { if (e.key === 'Enter') toggleExpand(catShip.id) }}
+                    onKeyDown={(e) => {
+                      if (e.target !== e.currentTarget) return
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        toggleExpand(catShip.id)
+                      }
+                    }}
                   >
                     <div className={styles.shipCardInfo}>
                       <div className={styles.shipCardNameRow}>

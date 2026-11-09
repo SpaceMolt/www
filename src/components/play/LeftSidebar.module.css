@@ -255,6 +255,10 @@
 }
 
 .poiItem {
+  width: 100%;
+  border: 0;
+  background: none;
+  text-align: left;
   display: flex;
   align-items: center;
   gap: 0.3rem;
@@ -357,6 +361,10 @@
 }
 
 .connectionItem {
+  width: 100%;
+  border: 0;
+  background: none;
+  text-align: left;
   display: flex;
   align-items: center;
   gap: 0.3rem;

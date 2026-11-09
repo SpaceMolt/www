@@ -741,14 +741,10 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
                 const isExpanded = expandedPoi === p.id
                 return (
                   <div key={p.id || `poi-${i}`} className={styles.poiEntry}>
-                    <div
+                    <button
+                      type="button"
                       className={`${styles.poiItem} ${isActive ? styles.poiItemActive : ''}`}
-                      role="button"
-                      tabIndex={0}
                       onClick={() => togglePoiExpand(p.id)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') togglePoiExpand(p.id)
-                      }}
                     >
                       {p.has_base ? <Anchor size={12} className={styles.poiIcon} /> : <MapPin size={12} className={styles.poiIcon} />}
                       <span className={styles.poiName}>{p.name}</span>
@@ -760,7 +756,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
                         size={12}
                         className={`${styles.poiChevron} ${isExpanded ? styles.poiChevronOpen : ''}`}
                       />
-                    </div>
+                    </button>
                     {isExpanded && (
                       <div className={styles.poiDetails}>
                         <div className={styles.poiDetailRow}>
@@ -813,22 +809,18 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
             <div className={styles.sectionLabel}>Connections</div>
             <div className={styles.connectionList}>
               {system.connections.map((conn) => (
-                <div
+                <button
+                  type="button"
                   key={conn.system_id}
                   className={styles.connectionItem}
                   onClick={() => handleJump(conn.system_id, conn.name)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleJump(conn.system_id, conn.name)
-                  }}
                 >
                   <Globe size={12} />
                   <span className={styles.connectionName}>{conn.name}</span>
                   {conn.distance !== undefined && (
                     <span className={styles.connectionDist}>{conn.distance} GU</span>
                   )}
-                </div>
+                </button>
               ))}
             </div>
           </div>
@@ -1012,21 +1004,17 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
                   {exploreSystem.connections.map((connId: string) => {
                     const connSys = galaxyRef.current?.getSystems().find((s) => s.id === connId)
                     return (
-                      <div
+                      <button
+                        type="button"
                         key={connId}
                         className={styles.connectionItem}
                         onClick={() => {
                           if (connSys) handleSearchSelect(connSys)
                         }}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && connSys) handleSearchSelect(connSys)
-                        }}
                       >
                         <Globe size={12} />
                         <span className={styles.connectionName}>{connSys?.name || galaxyMap?.system(connId)?.name || formatLabel(connId)}</span>
-                      </div>
+                      </button>
                     )
                   })}
                 </div>
