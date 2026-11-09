@@ -317,6 +317,8 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
   }, [system, player?.id])
   const poiData = poiQuery.data
   const poi = poiData && 'poi' in poiData ? poiData.poi : undefined
+  // Deposit capacity comes from get_poi; the live stock comes from the location state.
+  const capacityOf = (itemId: string) => poiData?.resources?.find((r) => r.resource_id === itemId)?.max_remaining
 
   const isDocked = Boolean(location?.docked_at)
   const isTraveling = Boolean(location?.in_transit)
@@ -567,7 +569,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
                   {hasMineableResources(location) && (
                     <div className={styles.resourceList}>
                       {location?.resources?.map((r) => (
-                        <div key={r.item_id} className={`${styles.resourceItem} ${r.remaining === 0 ? styles.depleted : ''}`} title={depositTitle(r.item_id, r.richness, r.remaining)}>
+                        <div key={r.item_id} className={`${styles.resourceItem} ${r.remaining === 0 ? styles.depleted : ''}`} title={depositTitle(r.item_id, r.richness, r.remaining, capacityOf(r.item_id))}>
                           <span className={styles.resourceName}>{r.item_name || r.item_id}</span>
                           <DepositRating itemId={r.item_id} richness={r.richness} remaining={r.remaining} />
                         </div>
