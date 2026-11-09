@@ -52,7 +52,7 @@ export function roleCan(info: Pick<FactionInfoResponse, 'roles'> | undefined, ra
 export function useFactionPermissions({ enabled = true } = {}) {
   const player = usePlayer()
   const factionId = player?.faction_id
-  const { data } = useCommandQuery(
+  const { data, refetch } = useCommandQuery(
     async (account) => (await account.commands.spacemolt_faction.info({ limit: 1 })).structuredContent,
     [factionId],
     { enabled: enabled && Boolean(factionId) },
@@ -60,6 +60,8 @@ export function useFactionPermissions({ enabled = true } = {}) {
   const rank = player?.faction_rank
   return useMemo(() => ({
     loaded: Boolean(data),
+    info: data,
+    refetch,
     can: (permission: FactionPermission) => Boolean(factionId && data) && roleCan(data, rank, permission),
-  }), [data, factionId, rank])
+  }), [data, refetch, factionId, rank])
 }
