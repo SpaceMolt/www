@@ -29,6 +29,7 @@ import { selectStorageRevision, usePersonalStorage } from './StorageView'
 import { storageStationOptions } from './storageLocations'
 import { useFactionService } from '../faction/useFactionService'
 import { useFactionPermissions } from '../../hooks/useGates'
+import { treasuryBalance } from './treasuryBalance'
 import styles from './StorageView.module.css'
 
 // StorageResponse is one generated union across every branch of the unified
@@ -84,7 +85,10 @@ export function FactionStorageView() {
 
   const { data: personalData } = usePersonalStorage({ enabled: hasFaction })
   // Taking anything out of faction storage needs manage_treasury.
-  const canWithdraw = useFactionPermissions({ enabled: hasFaction }).can('manage_treasury')
+  const factionPerms = useFactionPermissions({ enabled: hasFaction })
+  const canWithdraw = factionPerms.can('manage_treasury')
+  // Credits move anywhere; undocked with no station picked, the balance comes from faction info.
+  const treasury = treasuryBalance({ view: treasuryData, info: factionPerms.info })
   const personalStorage = isDocked ? personalData?.items ?? [] : []
 
   const [bucket, setBucket] = useState('')
@@ -107,7 +111,7 @@ export function FactionStorageView() {
       if (kind === 'deposit') await mutate((c) => c.spacemolt_storage.deposit(args), { label })
       else await mutate((c) => c.spacemolt_storage.withdraw(args), { label })
       if (item === 'fuel') setFuelAmount('')
-      else setTreasuryAmount('')
+      else { setTreasuryAmount(''); factionPerms.refetch() }
       changed()
     })
   }
@@ -159,11 +163,11 @@ export function FactionStorageView() {
 
       {factionError && !noLockbox && !factionLoading && <div className={shared.emptyState}>{factionError}</div>}
 
-      {treasuryData && isDocked && (
+      {treasury !== undefined && (
         <div className={styles.section}>
           <div className={styles.sectionHeader}>
             <Coins size={12} />
-            Treasury: <Credits amount={treasuryData.credits} />
+            Treasury: <Credits amount={treasury} />
           </div>
           <div className={styles.itemRow}>
             <div className={styles.itemInfo}>
@@ -171,7 +175,7 @@ export function FactionStorageView() {
             </div>
             <div className={styles.itemAction}>
               <input className={styles.qtyInput} type="number" min={1} step={1} placeholder="cr" value={treasuryAmount} onChange={(e) => setTreasuryAmount(e.target.value)} />
-              <QtyButtons max={canWithdraw ? Math.max(walletCredits, treasuryData.credits) : walletCredits} current={treasuryAmount} onChange={setTreasuryAmount} />
+              <QtyButtons max={canWithdraw ? Math.max(walletCredits, treasury) : walletCredits} current={treasuryAmount} onChange={setTreasuryAmount} />
               <button
                 className={shared.confirmBtn}
                 onClick={() => handleTreasury('deposit', parseCreditAmount(treasuryAmount, walletCredits))}
@@ -184,8 +188,8 @@ export function FactionStorageView() {
               {canWithdraw && (
                 <button
                   className={shared.accentBtn}
-                  onClick={() => handleTreasury('withdraw', parseCreditAmount(treasuryAmount, treasuryData.credits))}
-                  disabled={actionPending || parseCreditAmount(treasuryAmount, treasuryData.credits) === null}
+                  onClick={() => handleTreasury('withdraw', parseCreditAmount(treasuryAmount, treasury))}
+                  disabled={actionPending || parseCreditAmount(treasuryAmount, treasury) === null}
                   title="Withdraw credits to your wallet"
                   type="button"
                 >
@@ -194,7 +198,7 @@ export function FactionStorageView() {
               )}
             </div>
           </div>
-          {(treasuryData.faction_fuel_capacity ?? 0) > 0 && (
+          {treasuryData && isDocked && (treasuryData.faction_fuel_capacity ?? 0) > 0 && (
             <div className={styles.itemRow}>
               <div className={styles.itemInfo}>
                 <Fuel size={11} />
