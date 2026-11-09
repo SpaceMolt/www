@@ -69,7 +69,7 @@ export function TreasurySection({ info, onChanged }: { info: FactionInfoResponse
       ) : (
         <div className={styles.inviteRow}>
           <input className={styles.inviteInput} type="number" min={1} placeholder="Prepay amount" value={prepay} onChange={(e) => setPrepay(e.target.value)} />
-          <QtyButtons max={treasury} current={prepay} onChange={setPrepay} steps={[1_000, 10_000, 100_000]} />
+          <QtyButtons max={treasury} current={prepay} onChange={setPrepay} />
           <ActionButton label="Prepay" icon={<Coins size={12} />} onClick={() => setConfirm('prepay')} disabled={!(amount > 0 && amount <= treasury)} loading={busy === 'prepay'} size="sm" />
         </div>
       )}

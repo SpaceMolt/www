@@ -475,9 +475,15 @@
   .modal { width: 95vw; }
 }
 
-/* QtyButtons: +5/+10/+100/MAX beside a quantity input */
+/* QtyButtons: a +/- pair per step, then MAX/CLR, beside a quantity input */
 .qtyButtons {
   display: flex;
+  gap: 1px;
+}
+
+.qtyPair {
+  display: flex;
+  flex-direction: column;
   gap: 1px;
 }
 

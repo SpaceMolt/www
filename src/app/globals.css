@@ -1157,3 +1157,16 @@ body.play-page .live-feed-popup,
 body.play-page .patreon-banner-wrapper {
   display: none !important;
 }
+
+/* Hide the native number spinner: it is unstyled and sits on top of the digits.
+   Quantity fields carry QtyButtons instead; arrow keys still step the value. */
+body.play-page input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+body.play-page input[type='number']::-webkit-outer-spin-button,
+body.play-page input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}

@@ -778,13 +778,6 @@
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
   font-size: 0.75rem;
   color: var(--star-white);
-  -moz-appearance: textfield;
-}
-
-.qtyInput::-webkit-outer-spin-button,
-.qtyInput::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
 }
 
 .quoteBtn {

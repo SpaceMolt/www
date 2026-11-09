@@ -7,6 +7,7 @@ import {
   Coins,
   Pickaxe,
   Info,
+  X,
 } from 'lucide-react'
 import { usePlayUi } from './PlayProvider'
 import type { EventLogEntry } from '@/lib/spacemolt'
@@ -14,6 +15,8 @@ import styles from './ToastContainer.module.css'
 
 const TOAST_DURATION = 4000
 const MAX_TOASTS = 3
+/** Errors and warnings stay up until the player closes them. */
+const isSticky = (entry: EventLogEntry) => entry.kind === 'danger' || entry.kind === 'warning'
 
 const ICON_MAP: Record<string, typeof Info> = {
   danger: AlertTriangle,
@@ -67,7 +70,7 @@ export function ToastContainer() {
     setToasts((prev) =>
       [...fresh.map((entry) => ({ id: `toast-${entry.id}`, entry, exiting: false })), ...prev].slice(0, MAX_TOASTS),
     )
-    for (const entry of fresh) setTimeout(() => dismissToast(`toast-${entry.id}`), TOAST_DURATION)
+    for (const entry of fresh.filter((e) => !isSticky(e))) setTimeout(() => dismissToast(`toast-${entry.id}`), TOAST_DURATION)
   }, [eventLog, dismissToast])
 
   if (toasts.length === 0) return null
@@ -84,6 +87,11 @@ export function ToastContainer() {
           >
             <Icon size={14} className={styles.toastIcon} />
             <span className={styles.toastMessage}>{toast.entry.text}</span>
+            {isSticky(toast.entry) && (
+              <button className={styles.closeBtn} onClick={() => dismissToast(toast.id)} title="Dismiss" aria-label="Dismiss" type="button">
+                <X size={12} />
+              </button>
+            )}
           </div>
         )
       })}

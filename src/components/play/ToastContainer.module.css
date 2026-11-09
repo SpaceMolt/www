@@ -45,6 +45,20 @@
   overflow-wrap: anywhere; /* wrap long messages instead of cutting them off */
 }
 
+.closeBtn {
+  flex-shrink: 0;
+  display: flex;
+  padding: 0.15rem;
+  background: none;
+  border: none;
+  color: var(--chrome-silver);
+  cursor: pointer;
+}
+
+.closeBtn:hover {
+  color: var(--star-white);
+}
+
 /* Color variants */
 .toastError {
   border-left-color: var(--claw-red);

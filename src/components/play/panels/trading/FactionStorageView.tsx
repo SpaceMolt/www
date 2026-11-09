@@ -22,7 +22,7 @@ import {
 } from '@/lib/spacemolt'
 import type { StorageResponse } from '@spacemolt/lib'
 import { usePlay, usePlayUi } from '../../PlayProvider'
-import { Credits, ItemSelectList, shared, useAction, useStorageMove } from '../../shared'
+import { Credits, ItemSelectList, QtyButtons, shared, useAction, useStorageMove } from '../../shared'
 import { normalizeCargo, selectedItems, type Selection } from '../../shared/itemSelection'
 import { parseCreditAmount } from './giftValidation'
 import { selectStorageRevision, usePersonalStorage } from './StorageView'
@@ -73,13 +73,13 @@ export function FactionStorageView() {
     { enabled: hasFaction && (isDocked || Boolean(stationId)), refreshOnSections: ['cargo'] },
   )
 
-  // Docked without a lockbox, the server still answers the view (empty, with an agent-facing hint),
-  // so read the faction's facilities here instead. A dismantling lockbox that still holds items stays usable.
+  // Docked without a lockbox, the server still answers the view (with an agent-facing hint),
+  // so read the faction's facilities here instead. Treasury credits need no lockbox; items do.
   const hasLockbox = useFactionService('faction_storage')
-  const noLockbox = factionErrorCode === 'no_faction_storage' ||
-    (isDocked && hasLockbox === false && !lastFactionData?.items.length && !lastFactionData?.buckets?.length)
+  const noLockbox = factionErrorCode === 'no_faction_storage' || (isDocked && hasLockbox === false)
   // A failed view keeps the last station's data; never offer actions on it.
-  const factionData = factionError || noLockbox ? undefined : lastFactionData
+  const treasuryData = factionError ? undefined : lastFactionData
+  const factionData = noLockbox || (isDocked && hasLockbox === undefined) ? undefined : treasuryData
 
   const { data: personalData } = usePersonalStorage({ enabled: hasFaction })
   const personalStorage = isDocked ? personalData?.items ?? [] : []
@@ -152,22 +152,15 @@ export function FactionStorageView() {
         </div>
       )}
 
-      {factionLoading && !factionData && <div className={styles.loading}>Loading faction storage...</div>}
+      {factionLoading && !treasuryData && <div className={styles.loading}>Loading faction storage...</div>}
 
-      {(factionError || noLockbox) && !factionLoading && !factionData && (
-        <div className={shared.emptyState}>
-          {noLockbox ? 'Your faction needs a Faction Lockbox at this station.' : factionError}
-          <div style={{ marginTop: '0.4rem', fontSize: '0.65rem', opacity: 0.75 }}>
-            Build a faction lockbox here from the Facilities tab to enable faction storage.
-          </div>
-        </div>
-      )}
+      {factionError && !noLockbox && !factionLoading && <div className={shared.emptyState}>{factionError}</div>}
 
-      {factionData && isDocked && (
+      {treasuryData && isDocked && (
         <div className={styles.section}>
           <div className={styles.sectionHeader}>
             <Coins size={12} />
-            Treasury: <Credits amount={factionData.credits} />
+            Treasury: <Credits amount={treasuryData.credits} />
           </div>
           <div className={styles.itemRow}>
             <div className={styles.itemInfo}>
@@ -175,6 +168,7 @@ export function FactionStorageView() {
             </div>
             <div className={styles.itemAction}>
               <input className={styles.qtyInput} type="number" min={1} step={1} placeholder="cr" value={treasuryAmount} onChange={(e) => setTreasuryAmount(e.target.value)} />
+              <QtyButtons max={Math.max(walletCredits, treasuryData.credits)} current={treasuryAmount} onChange={setTreasuryAmount} />
               <button
                 className={shared.confirmBtn}
                 onClick={() => handleTreasury('deposit', parseCreditAmount(treasuryAmount, walletCredits))}
@@ -186,8 +180,8 @@ export function FactionStorageView() {
               </button>
               <button
                 className={shared.accentBtn}
-                onClick={() => handleTreasury('withdraw', parseCreditAmount(treasuryAmount, factionData.credits))}
-                disabled={actionPending || parseCreditAmount(treasuryAmount, factionData.credits) === null}
+                onClick={() => handleTreasury('withdraw', parseCreditAmount(treasuryAmount, treasuryData.credits))}
+                disabled={actionPending || parseCreditAmount(treasuryAmount, treasuryData.credits) === null}
                 title="Withdraw credits to your wallet"
                 type="button"
               >
@@ -195,16 +189,17 @@ export function FactionStorageView() {
               </button>
             </div>
           </div>
-          {(factionData.faction_fuel_capacity ?? 0) > 0 && (
+          {(treasuryData.faction_fuel_capacity ?? 0) > 0 && (
             <div className={styles.itemRow}>
               <div className={styles.itemInfo}>
                 <Fuel size={11} />
                 <span className={styles.itemQty}>
-                  Fuel bunker: {factionData.faction_fuel_reserve ?? 0}/{factionData.faction_fuel_capacity} · Ship tank: {shipFuel}
+                  Fuel bunker: {treasuryData.faction_fuel_reserve ?? 0}/{treasuryData.faction_fuel_capacity} · Ship tank: {shipFuel}
                 </span>
               </div>
               <div className={styles.itemAction}>
                 <input className={styles.qtyInput} type="number" min={1} step={1} placeholder="fuel" value={fuelAmount} onChange={(e) => setFuelAmount(e.target.value)} />
+                <QtyButtons max={shipFuel} current={fuelAmount} onChange={setFuelAmount} />
                 <button
                   className={shared.confirmBtn}
                   onClick={() => handleTreasury('deposit', fuelQty, 'fuel')}
@@ -217,6 +212,15 @@ export function FactionStorageView() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {noLockbox && (
+        <div className={shared.emptyState}>
+          Your faction has no Faction Lockbox at this station, so items cannot be stored here.
+          <div style={{ marginTop: '0.4rem', fontSize: '0.65rem', opacity: 0.75 }}>
+            Build a Faction Lockbox here from the Facilities tab to enable faction item storage.
+          </div>
         </div>
       )}
 
