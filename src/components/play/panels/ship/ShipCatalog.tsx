@@ -16,6 +16,7 @@ import {
   Hammer,
   Loader2,
   ShoppingCart,
+  Users,
 } from 'lucide-react'
 import type { BrowseShipsResponse, StorageResponse } from '@spacemolt/lib'
 import { useCargo, useCatalog, useCommandMutation, useCommandQuery, useLocationState, usePlayer, useShip } from '@/lib/spacemolt'
@@ -295,10 +296,10 @@ export function ShipCatalog() {
   }, [mutate, buyTarget, refetchBrowse, reportError])
 
   const handleCommission = useCallback(
-    (provideMaterials: boolean) => {
+    (funding: { provide_materials?: boolean; fund_from_faction?: boolean }) => {
       if (!commissionShip) return
       setCommissioning(true)
-      mutate((c) => c.spacemolt_ship.commission_ship({ id: commissionShip.id, provide_materials: provideMaterials }), { label: 'commission_ship' })
+      mutate((c) => c.spacemolt_ship.commission_ship({ id: commissionShip.id, ...funding }), { label: 'commission_ship' })
         .then(() => {
           setCommissioning(false)
           setCommissionShip(null)
@@ -408,7 +409,7 @@ export function ShipCatalog() {
                         <span className={styles.shipCardDesc}>{catShip.description}</span>
                       )}
                     </div>
-                    {isDocked && !isMobileBase(catShip) && (isCommissionable || cheapestByClass[catShip.id]) && (
+                    {isDocked && (isCommissionable || cheapestByClass[catShip.id]) && (
                       <div className={styles.cardActions}>
                         {isCommissionable && (
                           <button
@@ -441,10 +442,6 @@ export function ShipCatalog() {
                       </div>
                     )}
                   </div>
-
-                  {isMobileBase(catShip) && (
-                    <p>Commission through your agent at your faction&apos;s licensed tier-4 shipyard: <code>commission_ship ship_class={catShip.id} fund_from_faction=true</code>. Requires ManageBases; uses faction storage and treasury.</p>
-                  )}
 
                   {/* Expanded view */}
                   {isExpanded && (
@@ -584,13 +581,19 @@ export function ShipCatalog() {
                 {/* Materials list with have/need */}
                 {buildMaterials.length > 0 && (
                   <div className={styles.commissionMaterials}>
-                    <span className={styles.commissionLabel}>Required Materials</span>
+                    <span className={styles.commissionLabel}>
+                      Required Materials{quote.faction_funded_only && ' (from faction storage)'}
+                    </span>
                     {materialChecks.map((m) => (
                       <div key={m.item_id} className={styles.commissionMaterialRow}>
                         <span>{m.name}</span>
-                        <span className={m.enough ? styles.materialHave : styles.materialMissing}>
-                          {m.have}/{m.quantity}
-                        </span>
+                        {quote.faction_funded_only ? (
+                          <span>x{m.quantity}</span>
+                        ) : (
+                          <span className={m.enough ? styles.materialHave : styles.materialMissing}>
+                            {m.have}/{m.quantity}
+                          </span>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -607,28 +610,43 @@ export function ShipCatalog() {
 
                 {/* Actions */}
                 <div className={styles.commissionActions}>
-                  {quote.credits_only_available && (
+                  {quote.faction_funded_only ? (
                     <button
                       className={shared.accentBtn}
-                      onClick={() => handleCommission(false)}
-                      disabled={commissioning || !quote.can_afford_credits_only}
-                      title={!quote.can_afford_credits_only ? `Need ${quote.credits_only_total.toLocaleString()} cr` : undefined}
+                      onClick={() => handleCommission({ fund_from_faction: true })}
+                      disabled={commissioning}
+                      title="Materials come from faction storage; the treasury pays labor and any royalty"
+                      type="button"
+                    >
+                      {commissioning ? <Loader2 size={12} className={shared.spinner} /> : <Users size={12} />}
+                      Fund from Faction{quote.labor_cost != null && <> (<Credits amount={quote.labor_cost} /> labor)</>}
+                    </button>
+                  ) : (
+                    <>
+                    {quote.credits_only_available && (
+                      <button
+                        className={shared.accentBtn}
+                        onClick={() => handleCommission({})}
+                        disabled={commissioning || !quote.can_afford_credits_only}
+                        title={!quote.can_afford_credits_only ? `Need ${quote.credits_only_total.toLocaleString()} cr` : undefined}
+                        type="button"
+                      >
+                        {commissioning ? <Loader2 size={12} className={shared.spinner} /> : null}
+                        Pay Credits (<Credits amount={quote.credits_only_total} />)
+                      </button>
+                    )}
+                    <button
+                      className={shared.accentBtn}
+                      onClick={() => handleCommission({ provide_materials: true })}
+                      disabled={commissioning || !canAffordMaterials}
+                      title={!hasAllMaterials ? 'Missing required materials' : !canAffordMaterials ? `Need ${quote.provide_materials_total.toLocaleString()} cr for labor` : undefined}
                       type="button"
                     >
                       {commissioning ? <Loader2 size={12} className={shared.spinner} /> : null}
-                      Pay Credits (<Credits amount={quote.credits_only_total} />)
+                      Provide Materials (<Credits amount={quote.provide_materials_total} /> + materials)
                     </button>
+                    </>
                   )}
-                  <button
-                    className={shared.accentBtn}
-                    onClick={() => handleCommission(true)}
-                    disabled={commissioning || !canAffordMaterials}
-                    title={!hasAllMaterials ? 'Missing required materials' : !canAffordMaterials ? `Need ${quote.provide_materials_total.toLocaleString()} cr for labor` : undefined}
-                    type="button"
-                  >
-                    {commissioning ? <Loader2 size={12} className={shared.spinner} /> : null}
-                    Provide Materials (<Credits amount={quote.provide_materials_total} /> + materials)
-                  </button>
                   <button
                     className={shared.subtleBtn}
                     onClick={() => setCommissionShip(null)}
