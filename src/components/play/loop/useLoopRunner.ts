@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { SpacemoltError } from '@spacemolt/lib'
 import { useAccountStore, useCommandMutation, type AccountStore, type RunMutation } from '@/lib/spacemolt'
 import { errorMessage } from '../shared'
+import { usePlay } from '../PlayProvider'
 import { chunk } from '../shared/itemSelection'
 import { findRoute, walkRoute } from '../routeWalk'
 import { ABORT_CODES, advance, errorOutcome, stepLabel, type LoopPlan, type LoopPosition, type LoopStep } from './loopPlan'
@@ -133,6 +134,7 @@ async function runStep(step: LoopStep, ctx: StepContext): Promise<void> {
 export function useLoopRunner(): LoopRunner {
   const store = useAccountStore()
   const run = useCommandMutation()
+  const { uiStore } = usePlay()
   const [state, setState] = useState<LoopRunState | null>(null)
   const activeRef = useRef(false)
   const haltRef = useRef<string | null>(null)
@@ -161,9 +163,18 @@ export function useLoopRunner(): LoopRunner {
     const { account } = store
     const patch = (p: Partial<LoopRunState>) => setState((s) => s && { ...s, ...p })
     const log = (line: string) => setState((s) => s && { ...s, log: [...s.log, line].slice(-LOG_LIMIT) })
+    // Undocks and arrivals go to the event log, as they do for manual travel.
+    const event = (text: string) => uiStore.dispatch({ type: 'event', kind: 'info', text })
+    const loggedRun: RunMutation = async (call, options) => {
+      const result = await run(call, options)
+      if (result.autoUndocked) event('Undocked from station')
+      if (options?.label === 'travel') event(`Arrived at ${account.location?.poi_name ?? 'destination'}`)
+      if (options?.label === 'jump') event(`Jumped to ${account.location?.system_name ?? options.target ?? 'next system'}`)
+      return result
+    }
     const ctx: StepContext = {
       account,
-      run,
+      run: loggedRun,
       haltReason: () => haltRef.current,
       log,
     }
@@ -191,7 +202,7 @@ export function useLoopRunner(): LoopRunner {
       const reason = haltRef.current
       patch({ status: reason ? 'halted' : 'done', haltReason: reason })
     })()
-  }, [store, run])
+  }, [store, run, uiStore])
 
   const stop = useCallback(() => {
     if (!activeRef.current) return
