@@ -95,12 +95,12 @@ Undocked, every refuel needs fit crew, including fuel cells (`ship_incapacitated
 
 ### Making fuel from gas and ice
 
-Two T4 utility modules turn cargo into tank fuel. They run as Ship Passive processing: every 30 ticks (about 5 minutes), up to 5 batches per cycle, limited by your cargo and free tank space.
+Two T4 utility modules turn cargo into tank fuel. They run as Ship Passive processing: every 30 ticks (about 5 minutes), up to 5 batches per cycle for each module you fit, limited by your cargo and free tank space. Copies stack: two ice refineries make up to +120 fuel per cycle.
 
-- **`onboard_hydrogen_refinery`** — 10 `hydrogen_gas` → +4 fuel. Up to +20 fuel per cycle.
-- **`onboard_h2o2_refinery`** — 8 `water_ice` → +12 fuel. Up to +60 fuel per cycle.
+- **`onboard_hydrogen_refinery`** — 10 `hydrogen_gas` → +4 fuel. Up to +20 fuel per cycle per module.
+- **`onboard_h2o2_refinery`** — 8 `water_ice` → +12 fuel. Up to +60 fuel per cycle per module.
 
-These are slow. They top up a tanker between stops. They do not replace a station refuel for a whole fleet.
+One ice refinery makes about 720 fuel an hour. That is more than one big hull burns, even when it jumps nonstop. A fleet that is always on the move burns much more, so the refinery only stretches its range. Slow hulls with fuel-efficiency modules get the most from it. To fill a 10,000-fuel tanker from empty takes about 14 hours on ice and about 42 hours on hydrogen. Each extra copy of a refinery adds the same output again, if you keep it fed.
 
 ### When someone runs dry
 
@@ -118,7 +118,7 @@ A stranded pilot can call for help with `distress_signal` (undocked only; `distr
 
 Refinery hulls and `compact_*` modules process cargo on their own:
 
-- Every 30 ticks, each recipe runs up to 5 batches.
+- Every 30 ticks, each recipe runs up to 5 batches per source. The hull counts as one source, and each fitted module with that recipe adds one more, so copies stack.
 - Batches are limited by inputs in cargo and by free cargo when the output is larger.
 - You get a `ship_processing` notification.
 - It needs no command, no dock, and no crew.
@@ -290,7 +290,7 @@ A lockbox, a hiring board, and an intel facility at a station on your usual rout
 
 A mobile base is a faction station that jumps between systems. It brings a market, refuelling, a workshop, faction storage, and a 100,000-unit fuel tank.
 
-- **Commission it once.** Use `commission_ship` at **your own faction station** with a tier-4 shipyard, funded by the faction (`fund_from_faction=true`), with `manage_bases`. So a nomad faction must settle once before it can travel with a home. One mobile base per faction.
+- **Commission it once.** You have two ways. At **your empire's capital**, a member with `manage_bases` uses `commission_ship` and pays personally, the same as any empire commission there: credits, their own materials, or `source_missing_materials`. The empire takes its margin, so this is the expensive way, but you need no station first. At **your own faction station** with a tier-4 shipyard, the faction pays (`fund_from_faction=true`). One mobile base per faction. Any `manage_bases` member can cancel a capital order, and the refund goes to the player who placed it.
 - **Offices it can host:** recruitment, intel, trade intel, and admin. It also takes up to 4 production facilities and station weapons.
 - **Limits:**
   - Each jump costs a hull-specific resource from onboard faction storage, and a 90-tick preparation and a 540-tick jump.
@@ -339,10 +339,10 @@ Many nomad factions skip `fleet`. They jump to the same system together, then sp
 A checklist for setting up a nomadic faction:
 
 - **Roles:** one tanker with a `refueling_pump`, one Field Workshop hull, refining (a refinery hull or `compact_*` modules), a large hauler, a carrier for spare hulls, and an escort with a `repair_arm` or remote armor repairers.
-- **Fuel:** `refuel target=<player>` from the tanker at the same POI. Fuel cells as backup. Onboard hydrogen or H2O2 refineries for a slow top-up.
+- **Fuel:** `refuel target=<player>` from the tanker at the same POI. Fuel cells as backup. Onboard hydrogen or H2O2 refineries, which stack, to stretch your range.
 - **Production:** mine, refine passively, and craft hand-craftable recipes undocked with the Field Workshop. Cancel field jobs before you sell or gift that ship.
 - **Sharing:** `trade_offer` in open space, credit `send_gift` from anywhere, the faction treasury from anywhere, and carrier bays for hulls. Never use `jettison` as storage.
 - **Caches:** outposts in lawless space for storage and fuel.
 - **Safety:** `set_home_base` and `buy_insurance` at each stop. Keep a `ship_maintenance_bay` ship and repair kits along.
-- **Faction:** a recruitment office before 20 members, one intel and one trade-intel facility anywhere, and a lockbox-based back office on your route. Later, settle once to commission a mobile base.
+- **Faction:** a recruitment office before 20 members, one intel and one trade-intel facility anywhere, and a lockbox-based back office on your route. When you can afford it, commission a mobile base at your empire's capital.
 - Pull this guide up in-game any time with `get_guide guide="nomad"`.
