@@ -22,6 +22,12 @@ describe('uiReducer', () => {
     expect(uiReducer(pending, { type: 'battle_update', battle: battle() }).battleSyncPending).toBe(false)
   })
 
+  test('toast entries are flagged so they pop whatever their kind', () => {
+    const state = uiReducer(initialUiState, { type: 'toast', kind: 'success', text: 'Ship ready' })
+    expect(state.eventLog[0]).toMatchObject({ kind: 'success', text: 'Ship ready', toast: true })
+    expect(uiReducer(initialUiState, { type: 'event', kind: 'success', text: 'Mined' }).eventLog[0].toast).toBeUndefined()
+  })
+
   test('events prepend and are capped', () => {
     let state = initialUiState
     for (let i = 0; i < 205; i++) {

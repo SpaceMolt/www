@@ -26,6 +26,8 @@ export function wireNotifications(account: Account, store: UiStore): () => void 
   const log = (kind: 'info' | 'success' | 'warning' | 'danger' | 'chat' | 'combat', text: string) =>
     store.dispatch({ type: 'event', kind, text })
 
+  const toast = (kind: 'info' | 'success' | 'warning', text: string) => store.dispatch({ type: 'toast', kind, text })
+
   const unsubscribers = [
     account.on('chat_message', (msg) => {
       store.dispatch({ type: 'chat', message: msg })
@@ -110,7 +112,7 @@ export function wireNotifications(account: Account, store: UiStore): () => void 
 
     account.on('drone_update', () => log('info', 'Drone status updated')),
     account.on('drone_destroyed', () => log('warning', 'A drone was destroyed')),
-    account.on('base_raid_update', () => log('warning', 'Base raid in progress')),
+    account.on('base_raid_update', () => log('info', 'Base raid in progress')),
     account.on('base_destroyed', () => log('danger', 'A base was destroyed')),
     account.on('station_repaired', () => log('info', 'Station repaired')),
     account.on('pirate_radio', (radio) => log('chat', `Pirate radio: ${str(radio.message)}`)),
@@ -131,6 +133,40 @@ export function wireNotifications(account: Account, store: UiStore): () => void 
       log(
         payload.event === 'jump_cancelled_combat' ? 'warning' : 'info',
         str(payload.message) || 'Faction mobile base updated',
+      ),
+    ),
+
+    account.on('ship_commission_complete', (ship) =>
+      toast('success', `Commission complete: ${ship.ship_name || ship.ship_class} is docked at ${ship.base_name || 'the shipyard'}`),
+    ),
+    account.on('refueled_by', (fuel) =>
+      toast('info', `${fuel.source_username || 'A player'} refueled you: +${fuel.fuel} fuel (${fuel.fuel_now}/${fuel.fuel_max})`),
+    ),
+    account.on('repaired_by', (repair) =>
+      toast('info', `${repair.source_username || 'A player'} repaired you: +${repair.repaired} hull (${repair.hull}/${repair.max_hull})`),
+    ),
+    account.on('ranch_poached', (ranch) =>
+      log('warning', ranch.message || `${ranch.killer_name || 'Someone'} poached your ranch ${ranch.ranch_name}`),
+    ),
+    account.on('faction_alliance_proposal', (proposal) =>
+      toast('warning', proposal.message || `${proposal.from_faction_name} proposes an alliance`),
+    ),
+    account.on('faction_alliance_formed', (alliance) =>
+      toast('success', alliance.message || `Alliance formed with ${alliance.with_faction_name}`),
+    ),
+    account.on('faction_alliance_broken', (alliance) =>
+      log('warning', alliance.message || `${alliance.by_faction_name} broke your alliance`),
+    ),
+    account.on('faction_peace_proposal', (proposal) =>
+      toast('warning', proposal.message || `${proposal.from_faction_name} proposes peace`),
+    ),
+    account.on('faction_peace_accepted', (peace) =>
+      toast('success', peace.message || `${peace.faction_name} accepted your peace proposal`),
+    ),
+    account.on('hold_update', (payload: Record<string, unknown>) =>
+      log(
+        payload.event === 'started' ? 'warning' : 'info',
+        str(payload.message) || (payload.event === 'started' ? 'A warp scrambler is holding a ship' : 'Warp hold ended'),
       ),
     ),
   ]

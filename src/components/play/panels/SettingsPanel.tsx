@@ -1,16 +1,17 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { Settings, Palette, Home, LogOut } from 'lucide-react'
-import { useAccountStore, useConnectionPhase, useCurrentTick, useLocationState, usePlayer } from '@/lib/spacemolt'
+import { Settings, Palette, Home, LogOut, Bell } from 'lucide-react'
+import type { NotificationSettingsResponse } from '@spacemolt/lib'
+import { useAccountStore, useCommandQuery, useConnectionPhase, useCurrentTick, useLocationState, usePlayer } from '@/lib/spacemolt'
 import { usePlay } from '../PlayProvider'
 import { ActionButton } from '../ActionButton'
-import { Panel, shared } from '../shared'
+import { Panel, Loading, shared, errorMessage } from '../shared'
 import styles from './SettingsPanel.module.css'
 
 export function SettingsPanel() {
   const store = useAccountStore()
-  const { onSwitchPlayer } = usePlay()
+  const { onSwitchPlayer, uiStore } = usePlay()
   const player = usePlayer()
   const location = useLocationState()
   const { phase } = useConnectionPhase()
@@ -26,6 +27,30 @@ export function SettingsPanel() {
   const [savingColors, setSavingColors] = useState(false)
   const [settingHome, setSettingHome] = useState(false)
 
+  const [notifSettings, setNotifSettings] = useState<NotificationSettingsResponse | null>(null)
+  const [savingChannel, setSavingChannel] = useState<string | null>(null)
+  const notifQuery = useCommandQuery(
+    async (account) => (await account.commands.spacemolt_social.get_notification_settings()).structuredContent,
+    [],
+  )
+  const notifications = notifSettings ?? notifQuery.data
+
+  const reportError = useCallback(
+    (err: unknown) => uiStore.dispatch({ type: 'toast', kind: 'danger', text: errorMessage(err) }),
+    [uiStore],
+  )
+
+  const handleNotifications = useCallback(
+    (channel: string, run: () => Promise<{ structuredContent?: NotificationSettingsResponse }>) => {
+      setSavingChannel(channel)
+      run()
+        .then((resp) => setNotifSettings(resp.structuredContent ?? null))
+        .catch(reportError)
+        .finally(() => setSavingChannel(null))
+    },
+    [reportError],
+  )
+
   const dockedAt = location?.docked_at
   const isDocked = Boolean(dockedAt)
 
@@ -33,34 +58,34 @@ export function SettingsPanel() {
     setSavingStatus(true)
     store.account.commands.spacemolt_social
       .set_status({ content: statusMsg })
-      .catch(() => {})
+      .catch(reportError)
       .finally(() => setSavingStatus(false))
-  }, [store, statusMsg])
+  }, [store, statusMsg, reportError])
 
   const handleSaveTag = useCallback(() => {
     setSavingTag(true)
     store.account.commands.spacemolt_social
       .set_status({ clan_tag: clanTag.toUpperCase() })
-      .catch(() => {})
+      .catch(reportError)
       .finally(() => setSavingTag(false))
-  }, [store, clanTag])
+  }, [store, clanTag, reportError])
 
   const handleSaveColors = useCallback(() => {
     setSavingColors(true)
     store.account.commands.spacemolt_social
       .set_colors({ primary_color: primaryColor, secondary_color: secondaryColor })
-      .catch(() => {})
+      .catch(reportError)
       .finally(() => setSavingColors(false))
-  }, [store, primaryColor, secondaryColor])
+  }, [store, primaryColor, secondaryColor, reportError])
 
   const handleSetHomeBase = useCallback(() => {
     if (!dockedAt) return
     setSettingHome(true)
     store.account.commands.spacemolt_salvage
       .set_home({ id: dockedAt })
-      .catch(() => {})
+      .catch(reportError)
       .finally(() => setSettingHome(false))
-  }, [store, dockedAt])
+  }, [store, dockedAt, reportError])
 
   const handleLogout = useCallback(() => {
     void store.account.logout().catch(() => {})
@@ -197,6 +222,58 @@ export function SettingsPanel() {
             variant="secondary"
             size="sm"
           />
+        </div>
+
+        <div className={styles.divider} />
+
+        {/* Notification channels */}
+        <div>
+          <div className={shared.sectionTitle}>
+            <span className={styles.sectionIcon}><Bell size={12} /></span>
+            Notifications
+          </div>
+          {!notifications ? (
+            notifQuery.error
+              ? <div className={shared.emptyState}>{notifQuery.error}</div>
+              : <Loading message="Loading notification settings..." />
+          ) : (
+            <div className={styles.channelList}>
+              {notifications.channels.map((channel) => (
+                <div key={channel.channel} className={styles.toggleRow}>
+                  <div className={styles.toggleInfo}>
+                    <span className={styles.toggleLabel}>{channel.channel}</span>
+                    <span className={styles.toggleDesc}>{channel.description}</span>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={!channel.muted}
+                    aria-label={`${channel.muted ? 'Unmute' : 'Mute'} ${channel.channel}`}
+                    className={`${styles.toggleSwitch} ${channel.muted ? '' : styles.toggleSwitchOn}`}
+                    disabled={savingChannel !== null}
+                    onClick={() =>
+                      handleNotifications(channel.channel, () =>
+                        channel.muted
+                          ? store.account.commands.spacemolt_social.unmute_notifications({ channels: [channel.channel] })
+                          : store.account.commands.spacemolt_social.mute_notifications({ channels: [channel.channel] }),
+                      )
+                    }
+                  />
+                </div>
+              ))}
+              <ActionButton
+                label="Unmute All"
+                icon={<Bell size={12} />}
+                onClick={() =>
+                  handleNotifications('*', () => store.account.commands.spacemolt_social.unmute_notifications({ all: true }))
+                }
+                disabled={savingChannel !== null || notifications.muted.length === 0}
+                loading={savingChannel === '*'}
+                variant="secondary"
+                size="sm"
+              />
+            </div>
+          )}
         </div>
 
         <div className={styles.divider} />

@@ -92,7 +92,7 @@ export function AchievementsPanel() {
       {pending ? (
         <Loading message="Loading achievements..." />
       ) : !view ? (
-        <div className={shared.emptyState}>Could not load achievements.</div>
+        <div className={shared.emptyState}>{own.error ?? 'Could not load achievements.'}</div>
       ) : (
         <>
           <div className={styles.summary}>

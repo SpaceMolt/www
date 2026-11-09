@@ -5,7 +5,8 @@ import { Star, RefreshCw, ChevronDown, ChevronRight } from 'lucide-react'
 import type { CatalogSkill } from '@spacemolt/lib'
 import { useAccountStore, useCatalog, usePlayer, useSkills } from '@/lib/spacemolt'
 import { ProgressBar } from '../ProgressBar'
-import { Panel, Loading, shared } from '../shared'
+import { usePlay } from '../PlayProvider'
+import { Panel, Loading, shared, errorMessage } from '../shared'
 import styles from './SkillsPanel.module.css'
 
 // Catalog skill entries are fully typed by the lib (SkillDefinition).
@@ -13,6 +14,7 @@ type SkillCatalogEntry = CatalogSkill
 
 export function SkillsPanel() {
   const store = useAccountStore()
+  const { uiStore } = usePlay()
   const player = usePlayer()
   const playerSkills = useSkills()
   const catalog = useCatalog()
@@ -24,8 +26,8 @@ export function SkillsPanel() {
   )
 
   const handleRefresh = useCallback(() => {
-    void store.account.refresh().catch(() => {})
-  }, [store])
+    store.account.refresh().catch((err) => uiStore.dispatch({ type: 'toast', kind: 'danger', text: errorMessage(err) }))
+  }, [store, uiStore])
 
   const playerEmpire = player?.empire
 
@@ -77,7 +79,9 @@ export function SkillsPanel() {
         </button>
       }
     >
-      {catalogSkills.length === 0 ? (
+      {catalog.error ? (
+        <div className={shared.emptyState}>{catalog.error}</div>
+      ) : catalogSkills.length === 0 ? (
         <Loading message="Loading skills..." />
       ) : grouped.length === 0 ? (
         <div className={shared.emptyState}>No skills available.</div>

@@ -30,6 +30,8 @@ export interface EventLogEntry {
   at: number
   kind: EventKind
   text: string
+  /** Set by the 'toast' action: always pops, whatever the kind. */
+  toast?: boolean
 }
 
 export interface UiState {
@@ -50,7 +52,7 @@ export interface UiState {
 }
 
 export type UiAction =
-  | { type: 'event'; kind: EventKind; text: string; at?: number }
+  | { type: 'event'; kind: EventKind; text: string; at?: number; toast?: boolean }
   | { type: 'toast'; kind: EventKind; text: string }
   | { type: 'chat'; message: ChatMessage }
   | { type: 'seed_chat'; messages: ChatMessage[] }
@@ -89,13 +91,13 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
       return {
         ...state,
         eventLog: [
-          { id: nextId++, at: action.at ?? Date.now(), kind: action.kind, text: action.text },
+          { id: nextId++, at: action.at ?? Date.now(), kind: action.kind, text: action.text, ...(action.toast && { toast: true }) },
           ...state.eventLog,
         ].slice(0, EVENT_LOG_LIMIT),
       }
     case 'toast':
-      // ToastContainer pops toasts off the event log (danger kind only).
-      return uiReducer(state, { ...action, type: 'event' })
+      // ToastContainer pops toast-flagged, danger, and warning entries off the event log.
+      return uiReducer(state, { ...action, type: 'event', toast: true })
     case 'chat':
       return { ...state, chatMessages: [...state.chatMessages, action.message].slice(-CHAT_LIMIT) }
     case 'seed_chat':
