@@ -294,6 +294,7 @@ export function isModule(item: RawCatalogItem): boolean {
 
 /** Format an item_id as a display name ("iron_ore" → "Iron Ore") */
 export function formatItemId(itemId: string): string {
+  if (itemId.startsWith('package:')) return 'Sealed package'
   const item = catalog.items[itemId]
   if (item) return item.name
   return titleCase(itemId)

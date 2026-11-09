@@ -117,7 +117,7 @@ function Board({ actor, dockedAt }: { actor: Actor; dockedAt: string | null }) {
     const r = await run(
       'accept',
       () => mutate((c) => c.spacemolt_shipping.accept({ shipment_id: id, carrier: actor }), { label: 'shipping_accept' }),
-      (r) => `Freight accepted. Package ${r.delta.details?.contract.package_id ?? ''} is in your ${actor === 'faction' ? 'faction ' : ''}storage here: withdraw it to haul.`,
+      () => `Freight accepted. The sealed package is in your ${actor === 'faction' ? 'faction ' : ''}storage here: withdraw it to haul.`,
     )
     if (r) q.refetch()
   }

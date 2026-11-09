@@ -61,7 +61,10 @@ describe('summarize', () => {
     expect(summarize('Moved', [
       { item_id: 'a', quantity: 1, success: true },
       { item_id: 'b', quantity: 1, success: false, error: 'cargo_full' },
-    ])).toEqual({ ok: false, text: 'Moved 1 of 2 items. B: cargo_full' })
+    ])).toEqual({ ok: false, text: 'Moved 1 of 2 items. B: Cargo full' })
+    expect(summarize('Withdrew', [
+      { item_id: 'package:3fda0943', quantity: 1, success: false, error: 'cargo_full', message: 'Not enough cargo space.' },
+    ])).toEqual({ ok: false, text: 'Withdrew 0 of 1 item. Sealed package: Not enough cargo space.' })
     expect(summarize('Moved', [{ item_id: 'a', quantity: 1, success: true }], 'to faction storage'))
       .toEqual({ ok: true, text: 'Moved 1 item to faction storage' })
   })

@@ -1,5 +1,5 @@
 import { formatItemId } from '@/data/catalog'
-import { errorMessage } from './errorMessage'
+import { errorMessage, stripErrorCode } from './errorMessage'
 
 /** Rows the multi-select list can show: cargo, personal storage, or faction storage. */
 export interface SelectableItem {
@@ -22,7 +22,10 @@ export interface ItemResult {
   item_id: string
   quantity: number
   success: boolean
+  /** Failure code, e.g. `cargo_full`. */
   error?: string
+  /** Failure sentence written for players, when the server sends one. */
+  message?: string
 }
 
 /** useCargo() rows are all-optional (delta-friendly wire shape); drop incomplete entries and normalize item_name -> name. */
@@ -92,7 +95,7 @@ export function summarize(verb: string, results: ItemResult[], where = ''): { ok
   const failed = results.filter((r) => !r.success)
   const noun = `${results.length === 1 ? 'item' : 'items'}${where ? ` ${where}` : ''}`
   if (failed.length === 0) return { ok: true, text: `${verb} ${results.length} ${noun}` }
-  const reasons = failed.slice(0, 3).map((r) => `${formatItemId(r.item_id)}: ${r.error ?? 'failed'}`).join('; ')
+  const reasons = failed.slice(0, 3).map((r) => `${formatItemId(r.item_id)}: ${stripErrorCode(r.message ?? r.error ?? 'failed')}`).join('; ')
   const more = failed.length > 3 ? ` (+${failed.length - 3} more)` : ''
   return { ok: false, text: `${verb} ${results.length - failed.length} of ${results.length} ${noun}. ${reasons}${more}` }
 }
