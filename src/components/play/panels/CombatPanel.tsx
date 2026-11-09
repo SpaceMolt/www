@@ -107,7 +107,9 @@ export function CombatPanel() {
   const [feed, setFeed] = useState<string[]>([])
   const [captured, setCaptured] = useState<NotificationShipCaptured | null>(null)
 
-  useEffect(() => setFeed([]), [activeBattleId])
+  useEffect(() => {
+    setFeed([])
+  }, [activeBattleId])
 
   useEffect(() => {
     const add = (line: string) => setFeed((lines) => [...lines, line].slice(-FEED_LINES))
@@ -684,6 +686,7 @@ export function CombatPanel() {
                     <select
                       className={shared.selectInput}
                       value={choice ?? ''}
+                      aria-label={`Ammo for ${weapon.name}`}
                       onChange={(e) =>
                         setSelectedAmmo((prev) => ({
                           ...prev,

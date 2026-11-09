@@ -70,6 +70,7 @@ export function ShippingTab() {
             className={shared.selectInput}
             value={actor}
             onChange={(e) => setActor(e.target.value as Actor)}
+            aria-label="Act as"
             title="Who carries or ships: you, or your faction (needs Manage Treasury and a local Market Runner)"
           >
             <option value="player">As me</option>
@@ -133,12 +134,12 @@ function Board({ actor, dockedAt }: { actor: Actor; dockedAt: string | null }) {
   return (
     <>
       <div className={css.row}>
-        <select className={shared.selectInput} value={sort} onChange={(e) => { setPage(1); setSort(e.target.value as typeof sort) }}>
+        <select className={shared.selectInput} value={sort} onChange={(e) => { setPage(1); setSort(e.target.value as typeof sort) }} aria-label="Sort by">
           <option value="reward">Highest reward</option>
           <option value="distance">Fewest jumps</option>
           <option value="age">Oldest first</option>
         </select>
-        <select className={shared.selectInput} value={level} onChange={(e) => { setPage(1); setLevel(e.target.value as typeof level) }}>
+        <select className={shared.selectInput} value={level} onChange={(e) => { setPage(1); setLevel(e.target.value as typeof level) }} aria-label="Service level">
           <option value="">Any service</option>
           <option value="standard">Standard</option>
           <option value="priority">Priority</option>
@@ -146,6 +147,7 @@ function Board({ actor, dockedAt }: { actor: Actor; dockedAt: string | null }) {
         <input
           className={shared.textInput}
           placeholder="Destination station id"
+          aria-label="Destination station id"
           value={destInput}
           onChange={(e) => setDestInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && applyDest()}
@@ -473,7 +475,7 @@ function ShipPackage({ actor, dockedAt }: { actor: Actor; dockedAt: string | nul
       </div>
       <div className={css.form}>
         <span className={css.label}>Package</span>
-        <select className={shared.selectInput} value={form.packageId} onChange={(e) => set('packageId', e.target.value)}>
+        <select className={shared.selectInput} value={form.packageId} onChange={(e) => set('packageId', e.target.value)} aria-label="Package">
           <option value="">{options.length ? 'Pick a sealed package' : 'No sealed packages in cargo or storage'}</option>
           {options.map((o) => (
             <option key={`${o.source}:${o.item_id}`} value={o.item_id}>
@@ -487,6 +489,7 @@ function ShipPackage({ actor, dockedAt }: { actor: Actor; dockedAt: string | nul
           className={shared.textInput}
           list="shipping-stations"
           placeholder="Station base id or POI id"
+          aria-label="Destination"
           value={form.destination}
           onChange={(e) => set('destination', e.target.value)}
         />
@@ -497,19 +500,20 @@ function ShipPackage({ actor, dockedAt }: { actor: Actor; dockedAt: string | nul
         </datalist>
 
         <span className={css.label}>Reward (cr)</span>
-        <input className={shared.textInput} inputMode="numeric" value={form.baseReward} onChange={(e) => set('baseReward', e.target.value)} />
+        <input className={shared.textInput} inputMode="numeric" value={form.baseReward} onChange={(e) => set('baseReward', e.target.value)} aria-label="Reward (cr)" />
 
         <span className={css.label}>Speed bonus (cr)</span>
         <input
           className={shared.textInput}
           inputMode="numeric"
           placeholder="optional"
+          aria-label="Speed bonus (cr)"
           value={form.speedBonus}
           onChange={(e) => set('speedBonus', e.target.value)}
         />
 
         <span className={css.label}>Service</span>
-        <select className={shared.selectInput} value={form.serviceLevel} onChange={(e) => set('serviceLevel', e.target.value as ShipFormState['serviceLevel'])}>
+        <select className={shared.selectInput} value={form.serviceLevel} onChange={(e) => set('serviceLevel', e.target.value as ShipFormState['serviceLevel'])} aria-label="Service">
           <option value="standard">Standard</option>
           <option value="priority">Priority (tighter window)</option>
         </select>
@@ -520,7 +524,7 @@ function ShipPackage({ actor, dockedAt }: { actor: Actor; dockedAt: string | nul
         </label>
 
         <span className={css.label}>Visibility</span>
-        <select className={shared.selectInput} value={form.visibility} onChange={(e) => set('visibility', e.target.value as ShipForm['visibility'])}>
+        <select className={shared.selectInput} value={form.visibility} onChange={(e) => set('visibility', e.target.value as ShipForm['visibility'])} aria-label="Visibility">
           <option value="public">Public</option>
           <option value="faction">Faction</option>
           <option value="allies">Allies</option>
@@ -531,11 +535,11 @@ function ShipPackage({ actor, dockedAt }: { actor: Actor; dockedAt: string | nul
           <>
             <span className={css.label}>Invited carrier</span>
             <div className={css.row}>
-              <select className={shared.selectInput} value={form.invitedType} onChange={(e) => set('invitedType', e.target.value as Actor)}>
+              <select className={shared.selectInput} value={form.invitedType} onChange={(e) => set('invitedType', e.target.value as Actor)} aria-label="Invited carrier type">
                 <option value="player">Player</option>
                 <option value="faction">Faction</option>
               </select>
-              <input className={shared.textInput} placeholder="Player or faction id" value={form.invitedId} onChange={(e) => set('invitedId', e.target.value)} />
+              <input className={shared.textInput} placeholder="Player or faction id" value={form.invitedId} onChange={(e) => set('invitedId', e.target.value)} aria-label="Invited carrier id" />
             </div>
           </>
         )}
@@ -701,6 +705,7 @@ function CarrierRecord({ actor, dockedAt }: { actor: Actor; dockedAt: string | n
               className={shared.textInput}
               inputMode="numeric"
               placeholder={`Amount (blank = all ${owed.toLocaleString()} cr)`}
+              aria-label="Amount to settle"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
             />

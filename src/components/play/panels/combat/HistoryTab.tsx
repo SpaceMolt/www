@@ -62,7 +62,7 @@ export function HistoryTab({ lastBattleId, username }: { lastBattleId: string | 
           if (input.trim()) open(input.trim())
         }}
       >
-        <input className={shared.textInput} placeholder="Battle ID" value={input} onChange={(e) => setInput(e.target.value)} />
+        <input className={shared.textInput} placeholder="Battle ID" aria-label="Battle ID" value={input} onChange={(e) => setInput(e.target.value)} />
         <button className={shared.accentBtn} type="submit" disabled={!input.trim()}>
           <Search size={12} /> Load
         </button>

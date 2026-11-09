@@ -483,6 +483,7 @@ export function MissionsPanel() {
                   className={shared.selectInput}
                   value={distressType}
                   onChange={(e) => setDistressType(e.target.value as DistressType)}
+                  aria-label="Distress signal"
                   disabled={isDocked}
                 >
                   <option value="fuel">Out of fuel</option>

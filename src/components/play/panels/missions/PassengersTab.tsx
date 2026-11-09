@@ -158,6 +158,7 @@ export function PassengersTab() {
             <input
               className={shared.textInput}
               placeholder="Hand-off target: blank, lounge, or ship id/name"
+              aria-label="Hand-off target"
               value={target}
               onChange={(e) => setTarget(e.target.value)}
             />

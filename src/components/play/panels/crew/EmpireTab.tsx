@@ -221,6 +221,7 @@ export function EmpireTab() {
         <textarea
           className={`${shared.textInput} ${styles.textArea}`}
           placeholder="Your petition..."
+          aria-label="Petition text"
           value={petitionText}
           onChange={(e) => setPetitionText(e.target.value)}
         />

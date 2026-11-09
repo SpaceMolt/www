@@ -35,10 +35,14 @@ export function PrizesTab() {
   const [qty, setQty] = useState<Record<string, string>>({})
 
   useEffect(() => {
+    let live = true
     fetchStations(GAMESERVER_URL).then(
-      (list) => setStations(list.stations.filter((s) => !s.wrecked).sort((a, b) => a.name.localeCompare(b.name))),
-      () => setStations([]),
+      (list) => live && setStations(list.stations.filter((s) => !s.wrecked).sort((a, b) => a.name.localeCompare(b.name))),
+      () => live && setStations([]),
     )
+    return () => {
+      live = false
+    }
   }, [])
 
   // Prize pushes carry no state delta; re-read the status blob so prize_recoveries updates.

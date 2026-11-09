@@ -173,6 +173,7 @@ export function ArenaTab({ inCombat }: { inCombat: boolean }) {
             className={shared.textInput}
             list="arena-pilots"
             placeholder="Pilot name"
+            aria-label="Pilot name"
             value={target}
             onChange={(e) => setTarget(e.target.value)}
             disabled={Boolean(challengeBlock)}

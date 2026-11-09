@@ -264,6 +264,7 @@ export function FleetTab() {
               <input
                 className={`${shared.textInput} ${styles.grow}`}
                 placeholder="or player name"
+                aria-label="Player name to invite"
                 value={inviteName}
                 onChange={(e) => setInviteName(e.target.value)}
               />
