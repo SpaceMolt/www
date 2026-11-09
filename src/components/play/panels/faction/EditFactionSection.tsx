@@ -41,7 +41,10 @@ export function EditFactionSection({ info, onChanged }: { info: FactionInfoRespo
 
   const save = async () => {
     const params: EditParams & AllyToggles = {
-      description, charter, primary_color: primary, secondary_color: secondary, ...toggles,
+      description, charter, ...toggles,
+      // Send colors only when edited, so a description save keeps an unset color unset.
+      ...(primary !== (info.primary_color || '#00d4ff') && { primary_color: primary }),
+      ...(secondary !== (info.secondary_color || '#ff6b35') && { secondary_color: secondary }),
     }
     if (await run('edit', () => store.account.commands.spacemolt_faction_admin.edit(params), 'Faction updated')) onChanged()
   }

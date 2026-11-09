@@ -83,6 +83,7 @@ export function MembersSection({ info, playerId, onPage, onChanged }: {
                     disabled={busy === `role:${member.player_id}`}
                     aria-label={`Role for ${member.username}`}
                   >
+                    {!roleIdOf(member.role) && <option value="">{member.role}</option>}
                     {roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
                   </select>
                 ) : (

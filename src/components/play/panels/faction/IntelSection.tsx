@@ -41,7 +41,7 @@ export function IntelSection() {
   const isDocked = Boolean(location?.docked_at)
 
   const { data: factionInfo } = useCommandQuery(
-    async (account) => (await account.commands.spacemolt_faction.info()).structuredContent,
+    async (account) => (await account.commands.spacemolt_faction.info({ limit: 1 })).structuredContent,
     [player?.faction_id],
     { enabled: Boolean(player?.faction_id) },
   )

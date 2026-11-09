@@ -27,8 +27,8 @@ function SaveField({ label, initial, onSave, type = 'text', disabled }: {
     <div className={styles.row}>
       <span className={styles.label}>{label}</span>
       {type === 'textarea'
-        ? <textarea className={shared.textInput} rows={2} value={value} onChange={(e) => setValue(e.target.value)} />
-        : <input className={shared.textInput} type={type} min={0} step="any" value={value} onChange={(e) => setValue(e.target.value)} />}
+        ? <textarea className={shared.textInput} rows={2} aria-label={label} value={value} onChange={(e) => setValue(e.target.value)} />
+        : <input className={shared.textInput} aria-label={label} type={type} min={0} step="any" value={value} onChange={(e) => setValue(e.target.value)} />}
       <button className={shared.actionBtn} disabled={disabled || value === initial} onClick={() => onSave(value)} type="button" aria-label={`Save ${label}`}>
         <Save size={11} />
       </button>
@@ -64,7 +64,7 @@ function NameList({ label, names, addLabel, onAdd, onRemove, disabled }: {
       </div>
       <div className={styles.row}>
         <span className={styles.label} />
-        <input className={shared.textInput} type="text" placeholder={addLabel} value={draft} onChange={(e) => setDraft(e.target.value)} />
+        <input className={shared.textInput} type="text" aria-label={addLabel} placeholder={addLabel} value={draft} onChange={(e) => setDraft(e.target.value)} />
         <button
           className={shared.actionBtn}
           disabled={disabled || !draft.trim()}
@@ -139,6 +139,7 @@ export function StationAdmin({ isOutpost, onChanged }: { isOutpost: boolean; onC
     try {
       await mutate((c) => c.spacemolt_facility.dismantle_outpost(), { label: 'dismantle_outpost' })
       uiStore.dispatch({ type: 'event', kind: 'info', text: 'Outpost packed into an Outpost Kit in your cargo' })
+      onChanged()
     } catch (err) {
       toast(err)
     } finally {

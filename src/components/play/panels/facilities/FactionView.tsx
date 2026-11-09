@@ -34,10 +34,11 @@ export function FactionView({ facilityData, onRefresh }: FactionViewProps) {
   const [ranchId, setRanchId] = useState<string | null>(null)
 
   // faction_list adds the faction's rent and storage summary for this station.
-  const { data: summary } = useCommandQuery(
+  const { data: summary, refetch: refetchSummary } = useCommandQuery(
     async (account) => (await account.commands.spacemolt_facility.faction_list()).structuredContent,
     [facilityData.base_id],
   )
+  const refresh = useCallback(() => { onRefresh(); refetchSummary() }, [onRefresh, refetchSummary])
 
   const reportError = useCallback((err: unknown) => {
     uiStore.dispatch({ type: 'toast', kind: 'danger', text: errorMessage(err) })
@@ -57,23 +58,23 @@ export function FactionView({ facilityData, onRefresh }: FactionViewProps) {
     try {
       await mutate((c) => c.spacemolt_facility.faction_upgrade({ facility_id: facilityId, facility_type: facilityType }), { label: 'facility_faction_upgrade' })
       setUpgradeModal(null)
-      onRefresh()
+      refresh()
     } catch (err) {
       reportError(err)
     }
     setUpgrading(false)
-  }, [mutate, onRefresh, reportError])
+  }, [mutate, refresh, reportError])
 
   const handleTransferToPlayer = useCallback(async (facilityId: string) => {
     setTransferring(facilityId)
     try {
       await mutate((c) => c.spacemolt_facility.transfer({ facility_id: facilityId, direction: 'to_player' }), { label: 'facility_transfer' })
-      onRefresh()
+      refresh()
     } catch (err) {
       reportError(err)
     }
     setTransferring(null)
-  }, [mutate, onRefresh, reportError])
+  }, [mutate, refresh, reportError])
 
   const rent = summary?.faction_rent ?? facilityData.faction_rent
   const storage = summary?.faction_storage
@@ -134,7 +135,7 @@ export function FactionView({ facilityData, onRefresh }: FactionViewProps) {
                   <PawPrint size={11} /> Herd
                 </button>
               )}
-              <FacilityManageActions facility={f} scope="faction" onRefresh={onRefresh} />
+              <FacilityManageActions facility={f} scope="faction" onRefresh={refresh} />
             </FacilityCard>
           ))}
         </div>
