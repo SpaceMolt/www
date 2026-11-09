@@ -217,7 +217,6 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
   const [intelResults, setIntelResults] = useState<IntelEntry[] | null>(null)
   const [intelSearching, setIntelSearching] = useState(false)
   const [selectedSystemIntel, setSelectedSystemIntel] = useState<IntelEntry | null>(null)
-  const intelDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const intelStatusFetched = useRef(false)
 
   // Switch to Explore tab when a system is selected from the map
@@ -253,8 +252,6 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
   // Intel search: debounced query when search changes
   const hasIntel = intelLevel >= 2
   useEffect(() => {
-    if (intelDebounceRef.current) clearTimeout(intelDebounceRef.current)
-
     if (!hasIntel || !searchQuery.trim()) {
       setIntelResults(null)
       setIntelSearching(false)
@@ -266,8 +263,10 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
     const query = searchQuery.trim()
     const resourceId = query.toLowerCase().replace(/\s+/g, '_')
 
-    intelDebounceRef.current = setTimeout(() => {
+    let cancelled = false
+    const timer = setTimeout(() => {
       store.account.commands.spacemolt_intel.query_intel({ resource_type: resourceId, limit: 100 }).then((r) => {
+        if (cancelled) return
         const entries = r.structuredContent?.entries
         if (entries && entries.length > 0) {
           setIntelResults(entries)
@@ -278,15 +277,14 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
         }
         setIntelSearching(false)
       }).catch(() => {
+        if (cancelled) return
         setIntelResults(null)
         setIntelSearching(false)
         onHighlightedSystemsChange?.(null)
       })
     }, 400)
 
-    return () => {
-      if (intelDebounceRef.current) clearTimeout(intelDebounceRef.current)
-    }
+    return () => { cancelled = true; clearTimeout(timer) }
   }, [searchQuery, hasIntel, store, onHighlightedSystemsChange])
 
   const handleIntelResultSelect = useCallback((entry: IntelEntry) => {
