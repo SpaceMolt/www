@@ -19,7 +19,7 @@ A nomad fleet is a set of roles. One pilot can fill several roles, and you can s
 
 ### The tanker
 
-The tanker refuels everyone else. These T4 hulls have a built-in `refueling_pump`:
+The tanker refuels everyone else. These T4 hulls come fitted with a `refueling_pump`:
 
 - **Warbarge** (`warbarge`, Crimson) — 10,000 fuel.
 - **Endowment** (`endowment`, Nebula) — 11,500 fuel.
@@ -27,7 +27,7 @@ The tanker refuels everyone else. These T4 hulls have a built-in `refueling_pump
 - **Sustenance** (`sustenance`, Solarian) — 11,000 fuel.
 - **Plenum** (`plenum`, Voidborn) — 12,000 fuel.
 
-Smaller hulls with a built-in pump: `reserve` (Nebula T3, 4,000 fuel), `last_chance` (Outer Rim T3), and the T2 hulls `morningstar`, `long_haul`, `capacity`, and `last_call` (1,500 fuel each). You can also fit a `refueling_pump` module (T2 utility) on any hull.
+Smaller hulls that come fitted with a pump: `reserve` (Nebula T3, 4,000 fuel), `last_chance` (Outer Rim T3), and the T2 hulls `morningstar`, `long_haul`, `capacity`, and `last_call` (1,500 fuel each). `last_call` is a pirate hull, sold at pirate strongholds. You can also fit a `refueling_pump` module (T2 utility) on any hull.
 
 ### The Field Workshop
 
@@ -48,14 +48,14 @@ Refining tier-1 ores, gases, and ice happens on board, with no station (Part 3).
 
 ### The hauler
 
-The hauler carries the fleet's trade goods and refined stock. The Nebula **Eldorado** (`eldorado`, T5) has 3,600 cargo and a built-in `mining_laser_iv`. Any hull gains space from `cargo_expander_i` (+20), `cargo_expander_ii` (+50), and `cargo_expander_iii` (+100).
+The hauler carries the fleet's trade goods and refined stock. The Nebula **Eldorado** (`eldorado`, T5, needs Nebula reputation 60) has 3,600 cargo and comes fitted with a `mining_laser_iv`. Any hull gains space from `cargo_expander_i` (+20), `cargo_expander_ii` (+50), and `cargo_expander_iii` (+100).
 
 ### The carrier (the faction garage)
 
 A carrier holds other ships in its bay, so the fleet brings its spare hulls along (Part 4). Bay cost per carried ship: scale 1 = 1 slot, scale 2 = 3, scale 3 = 10, scale 4 = 30.
 
 - T3 carriers: `iron_tide` (Crimson, 6), `waystation` (Nebula, 12), `nomad` (Outer Rim, 8), `convoy` (Solarian, 8), `silent_tide` (Voidborn, 6).
-- Larger: `iron_fleet` (Crimson T4, 30), `grand_transit` (Nebula T5, 90).
+- Larger: `iron_fleet` (Crimson T4, 30), `grand_transit` (Nebula T5, 90; needs Nebula reputation 60).
 
 A Field Workshop hull is scale 3, so it needs 10 bay slots. Only the Waystation and larger carriers hold one.
 
@@ -63,7 +63,7 @@ A Field Workshop hull is scale 3, so it needs 10 bay slots. Only the Waystation 
 
 - **Remote armor repairers** (`remote_armor_repairer_i` to `_iii`) heal the most damaged ally in range. They work **only in battle**.
 - **`repair_arm`** (T2 utility) lets you repair another ship's hull with repair kits from your cargo, outside battle (Part 5).
-- **`ship_maintenance_bay`** (T3 utility) lets you and your faction-mates fit and remove modules in space (Part 5). These hulls have one built in: `cudgel`, `executioner`, `franchise`, `swarm_boss`, `last_chance`, `excessive_force`, `postulate`, `pantheon`, `superposition`.
+- **`ship_maintenance_bay`** (T3 utility) lets you and your faction-mates fit and remove modules in space (Part 5). These hulls come fitted with one: `cudgel`, `executioner`, `franchise`, `swarm_boss`, `last_chance`, `excessive_force`, `postulate`, `pantheon`, `superposition`.
 
 ---
 
