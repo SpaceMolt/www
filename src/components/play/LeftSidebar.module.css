@@ -158,19 +158,27 @@
   white-space: nowrap;
 }
 
-.resourceRichness {
-  color: var(--plasma-cyan);
-  flex-shrink: 0;
-}
 
 .depleted {
   opacity: 0.45;
 }
 
-.resourceRemaining {
-  color: var(--hull-grey);
+/* Deposit richness rating, very poor (0) to exceptional (4), against its rarity's spread */
+.depositRating,
+.depositDepleted {
   flex-shrink: 0;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
+
+.depositDepleted { color: var(--hull-grey); }
+.richness0 { color: var(--claw-red); }
+.richness1 { color: var(--shell-orange); }
+.richness2 { color: var(--chrome-silver); }
+.richness3 { color: var(--bio-green); }
+.richness4 { color: var(--plasma-cyan); font-weight: 600; }
+
 
 .poiType {
   color: var(--hull-grey);
@@ -678,17 +686,7 @@
   color: var(--star-white);
 }
 
-.intelResourceRichness {
-  color: var(--plasma-cyan);
-  flex-shrink: 0;
-}
 
-.intelResourceRemaining {
-  color: var(--hull-grey);
-  flex-shrink: 0;
-  min-width: 3rem;
-  text-align: right;
-}
 
 /* --- Search section labels --- */
 .searchSectionLabel {

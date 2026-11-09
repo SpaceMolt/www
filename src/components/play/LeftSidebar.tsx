@@ -45,6 +45,7 @@ import { rememberPois } from './loop/loopPlan'
 import { shortcutKey } from './shortcuts'
 import { titleCase as formatLabel } from '@/lib/format'
 import styles from './LeftSidebar.module.css'
+import { depositTitle, rateRichness } from './richness'
 import { errorMessage, Modal, shared } from './shared'
 
 // Intel query response entries — shaped by the faction intel query, not a
@@ -99,12 +100,12 @@ interface SupplyArgs { id?: string; quantity?: number; target?: string }
 /** Supply items a refuel/repair can burn, matched by id the way the server names them. */
 const SUPPLY_ITEM = { refuel: /fuel_cell/, repair: /repair|hull_patch/ } as const
 
-/** Richness is a yield multiplier, not an amount: each mining action yields beam power x richness / 100. */
-const RICHNESS_TITLE = 'Yield per mining action: beam power x this percentage'
-
-/** Units left at the deposit; a negative count means it never runs out. */
-const remainingLabel = (remaining?: number) =>
-  remaining === undefined ? '' : remaining < 0 ? 'unlimited' : remaining === 0 ? 'depleted' : `${remaining.toLocaleString()} left`
+/** A deposit's rating, colored by level, or 'Depleted'. The numbers are in the row's hover text. */
+function DepositRating({ itemId, richness, remaining }: { itemId: string; richness: number; remaining?: number }) {
+  if (remaining === 0) return <span className={styles.depositDepleted}>Depleted</span>
+  const { level, label } = rateRichness(itemId, richness)
+  return <span className={`${styles.depositRating} ${styles[`richness${level}`]}`}>{label}</span>
+}
 
 /** Options for refuel/repair: quantity, a specific item, and another player or the fleet as target. */
 function SupplyOptions({ kind, nearby, cargo, busy, onSubmit }: {
@@ -566,10 +567,9 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
                   {hasMineableResources(location) && (
                     <div className={styles.resourceList}>
                       {location?.resources?.map((r) => (
-                        <div key={r.item_id} className={`${styles.resourceItem} ${r.remaining === 0 ? styles.depleted : ''}`}>
+                        <div key={r.item_id} className={`${styles.resourceItem} ${r.remaining === 0 ? styles.depleted : ''}`} title={depositTitle(r.item_id, r.richness, r.remaining)}>
                           <span className={styles.resourceName}>{r.item_name || r.item_id}</span>
-                          <span className={styles.resourceRichness} title={RICHNESS_TITLE}>{r.richness}% yield</span>
-                          <span className={styles.resourceRemaining}>{remainingLabel(r.remaining)}</span>
+                          <DepositRating itemId={r.item_id} richness={r.richness} remaining={r.remaining} />
                         </div>
                       ))}
                     </div>
@@ -978,11 +978,10 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
                         {p.resources && p.resources.length > 0 && (
                           <div className={styles.intelResourceList}>
                             {p.resources.map((r) => (
-                              <div key={r.resource_id} className={`${styles.intelResourceItem} ${r.remaining === 0 ? styles.depleted : ''}`}>
+                              <div key={r.resource_id} className={`${styles.intelResourceItem} ${r.remaining === 0 ? styles.depleted : ''}`} title={depositTitle(r.resource_id, r.richness, r.remaining)}>
                                 <Gem size={9} className={styles.intelResourceIcon} />
                                 <span className={styles.intelResourceName}>{formatLabel(r.resource_id)}</span>
-                                <span className={styles.intelResourceRichness} title={RICHNESS_TITLE}>{r.richness}% yield</span>
-                                <span className={styles.intelResourceRemaining}>{remainingLabel(r.remaining)}</span>
+                                <DepositRating itemId={r.resource_id} richness={r.richness} remaining={r.remaining} />
                               </div>
                             ))}
                           </div>
