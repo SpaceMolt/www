@@ -8,6 +8,7 @@ import { EMPIRES } from '../../PlayerSelector'
 import { usePlay } from '../../PlayProvider'
 import styles from '../CrewPanel.module.css'
 import { owedBounties } from './crewLogic'
+import { useFactionPermissions } from '../../hooks/useGates'
 
 type EmpireId = 'solarian' | 'voidborn' | 'crimson' | 'nebula' | 'outerrim'
 
@@ -35,6 +36,9 @@ export function EmpireTab() {
   const data = citizenship.data
   const bounties = owedBounties(player?.standings)
   const credits = player?.credits ?? 0
+  // Paying from the faction treasury needs manage_treasury; without it the wallet is the only source.
+  const canPayFaction = useFactionPermissions().can('manage_treasury')
+  const source = canPayFaction ? paySource : 'self'
 
   const citizenAction = (action: 'apply' | 'renounce' | 'withdraw', target: EmpireId) =>
     run('crew',
@@ -47,7 +51,7 @@ export function EmpireTab() {
 
   const pay = (empire: string) =>
     run('crew',
-      () => mutate((c) => c.spacemolt.pay_bounty({ id: empire, source: paySource }), { label: 'pay_bounty' }),
+      () => mutate((c) => c.spacemolt.pay_bounty({ id: empire, source }), { label: 'pay_bounty' }),
       (r) => r.delta.details?.message ?? `Paid ${empireName(empire)}`,
     ).then(() => setConfirm(null))
 
@@ -151,63 +155,59 @@ export function EmpireTab() {
         )}
       </div>
 
-      <div className={styles.card}>
-        <div className={styles.cardTitle}>
-          <Gavel size={14} /> Bounties and missed taxes
-        </div>
-        {bounties.length === 0 ? (
-          <div className={styles.hint}>You owe no empire anything.</div>
-        ) : (
-          <>
-            <div className={styles.hint}>
-              Paying clears every crime and unpaid tax with that empire and restores the reputation lost, up to its cap. It works anywhere
-              and releases you from detention. All or nothing per empire.
-            </div>
+      {bounties.length > 0 && (
+        <div className={styles.card}>
+          <div className={styles.cardTitle}>
+            <Gavel size={14} /> Bounties and missed taxes
+          </div>
+          <div className={styles.hint}>
+            Paying clears every crime and unpaid tax with that empire and restores the reputation lost, up to its cap. It works anywhere
+            and releases you from detention. All or nothing per empire.
+          </div>
+          {canPayFaction && (
             <select
               className={shared.selectInput}
-              value={paySource}
+              value={source}
               onChange={(e) => setPaySource(e.target.value as typeof paySource)}
               aria-label="Pay from"
             >
               <option value="self">Pay from my wallet</option>
-              <option value="faction" disabled={!player?.faction_id}>
-                Pay from faction treasury (ManageTreasury)
-              </option>
+              <option value="faction">Pay from faction treasury</option>
             </select>
-            {bounties.map((b) => (
-              <div key={b.empire} className={shared.listCard}>
-                <span className={shared.listCardName}>
-                  {empireName(b.empire)}
-                  {b.jailedUntil && <span className={shared.badgeRed}>Detained</span>}
-                </span>
-                <span className={shared.listCardMeta}>
-                  <Credits amount={b.amount} />
-                  {confirm === `pay:${b.empire}` ? (
-                    <ConfirmAction
-                      message={`Pay ${b.amount.toLocaleString()} cr?`}
-                      onConfirm={() => pay(b.empire)}
-                      onCancel={() => setConfirm(null)}
-                      confirmDisabled={busy}
-                      variant="accent"
-                      confirmLabel="Pay"
-                    />
-                  ) : (
-                    <button
-                      className={shared.warningBtn}
-                      disabled={busy || (paySource === 'self' && b.amount > credits)}
-                      title={paySource === 'self' && b.amount > credits ? 'Not enough credits' : undefined}
-                      onClick={() => setConfirm(`pay:${b.empire}`)}
-                      type="button"
-                    >
-                      Pay
-                    </button>
-                  )}
-                </span>
-              </div>
-            ))}
-          </>
-        )}
-      </div>
+          )}
+          {bounties.map((b) => (
+            <div key={b.empire} className={shared.listCard}>
+              <span className={shared.listCardName}>
+                {empireName(b.empire)}
+                {b.jailedUntil && <span className={shared.badgeRed}>Detained</span>}
+              </span>
+              <span className={shared.listCardMeta}>
+                <Credits amount={b.amount} />
+                {confirm === `pay:${b.empire}` ? (
+                  <ConfirmAction
+                    message={`Pay ${b.amount.toLocaleString()} cr?`}
+                    onConfirm={() => pay(b.empire)}
+                    onCancel={() => setConfirm(null)}
+                    confirmDisabled={busy}
+                    variant="accent"
+                    confirmLabel="Pay"
+                  />
+                ) : (
+                  <button
+                    className={shared.warningBtn}
+                    disabled={busy || (source === 'self' && b.amount > credits)}
+                    title={source === 'self' && b.amount > credits ? 'Not enough credits' : undefined}
+                    onClick={() => setConfirm(`pay:${b.empire}`)}
+                    type="button"
+                  >
+                    Pay
+                  </button>
+                )}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className={styles.card}>
         <div className={styles.cardTitle}>

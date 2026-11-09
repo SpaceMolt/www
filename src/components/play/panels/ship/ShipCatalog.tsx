@@ -263,7 +263,8 @@ export function ShipCatalog() {
       if (!matchesTierFilter(s, tier)) return false
       if (category && s.category !== category) return false
       if (shipClass && s.class !== shipClass) return false
-      if (commissionableOnly && !commissionableIds.has(s.id)) return false
+      // The toggle hides when nothing is commissionable here, so the filter lapses with it.
+      if (commissionableOnly && commissionableIds.size > 0 && !commissionableIds.has(s.id)) return false
       if (q && !`${s.name} ${s.description ?? ''}`.toLowerCase().includes(q)) return false
       return true
     })
@@ -333,15 +334,17 @@ export function ShipCatalog() {
               onChange={(e) => { setSearch(e.target.value); resetPage() }}
             />
           </div>
-          <button
-            className={`${styles.toggleBtn} ${commissionableOnly ? styles.toggleBtnActive : ''}`}
-            onClick={() => { setCommissionableOnly(!commissionableOnly); resetPage() }}
-            title="Show only commissionable ships"
-            type="button"
-          >
-            <Hammer size={11} />
-            Commissionable only
-          </button>
+          {commissionableIds.size > 0 && (
+            <button
+              className={`${styles.toggleBtn} ${commissionableOnly ? styles.toggleBtnActive : ''}`}
+              onClick={() => { setCommissionableOnly(!commissionableOnly); resetPage() }}
+              title="Show only commissionable ships"
+              type="button"
+            >
+              <Hammer size={11} />
+              Commissionable only
+            </button>
+          )}
         </div>
         <div className={styles.filterRow}>
           <select className={styles.filterSelect} value={empire} onChange={(e) => { setEmpire(e.target.value); resetPage() }}>

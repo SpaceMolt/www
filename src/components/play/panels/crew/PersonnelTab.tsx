@@ -8,11 +8,12 @@ import {
   useCommandMutation,
   useCommandQuery,
   useLocationState,
-  useModules,
   usePlayer,
   useShip,
 } from '@/lib/spacemolt'
+import type { RawCatalogItem } from '@/data/catalog'
 import { ConfirmAction, Credits, QtyButtons, shared, useAction } from '../../shared'
+import { useFactionPermissions, useFittedModules, useStationServices } from '../../hooks/useGates'
 import styles from '../CrewPanel.module.css'
 import { CREW_RECRUIT_PRICE, MARINE_RECRUIT_PRICE, freeBerths, parseCount, recruitCost, transferableFitCrew } from './crewLogic'
 
@@ -69,7 +70,8 @@ export function PersonnelTab() {
   const ship = useShip()
   const player = usePlayer()
   const location = useLocationState()
-  const modules = useModules()
+  const fitted = useFittedModules()
+  const services = useStationServices()
   const { busy: running, run } = useAction()
   const busy = running !== null
   const [confirm, setConfirm] = useState<string | null>(null)
@@ -93,7 +95,12 @@ export function PersonnelTab() {
   const efficiency = Math.round((ship?.crew_efficiency ?? 0) * 100)
   const credits = player?.credits ?? 0
   const nearby = location?.nearby_players ?? []
-  const hasGenerator = Boolean(modules?.some((m) => m.type_id === 'field_generator'))
+  // Generator output needs an operational generator and fit crew aboard (gameserver ConnectGenerator).
+  const canGenerate = Boolean(docked) && (p?.fit_crew ?? 0) > 0 && fitted.some((m) => (m.generator_output ?? 0) > 0)
+  // medical_treatment_rate is in the catalog data but not yet in RawCatalogItem.
+  const hasFieldMedical = fitted.some((m) => ((m as RawCatalogItem & { medical_treatment_rate?: number }).medical_treatment_rate ?? 0) > 0)
+  const { can } = useFactionPermissions({ enabled: Boolean(docked) && inFaction })
+  const canTreasury = can('manage_treasury')
 
   const facilities = useCommandQuery(
     async (account) => (await account.commands.spacemolt_facility.list()).structuredContent,
@@ -111,6 +118,26 @@ export function PersonnelTab() {
   )
   const { refetch: refetchReserve } = reserve
   const { refetch: refetchFacilities } = facilities
+  const reserveData = reserve.error ? undefined : reserve.data
+
+  // Treatment: only providers that can act here, and only while someone is injured.
+  const shipInjured = (p?.injured_crew ?? 0) + (p?.injured_marines ?? 0)
+  const reserveInjured = canTreasury && reserveData ? reserveData.injured_crew + reserveData.injured_marines : 0
+  const providers = (
+    [
+      ['station', 'Station infirmary (credits)', shipInjured > 0 && Boolean(docked) && (services.includes('medical') || Boolean(pools?.medical))],
+      ['field', 'Field (onboard medical module)', shipInjured > 0 && hasFieldMedical],
+      ['faction', 'Faction hospital', Boolean(docked) && inFaction && (shipInjured > 0 || reserveInjured > 0)],
+    ] as const
+  ).filter(([, , ok]) => ok)
+  const activeProvider = providers.find(([id]) => id === provider)?.[0] ?? providers[0]?.[0]
+  const treatingReserve = activeProvider === 'faction' && reserveInjured > 0 && (treatReserve || shipInjured === 0)
+
+  // Recruiting needs the station's pool for that kind and a free berth.
+  const canRecruitCrew = Boolean(pools?.personnel) && free.crew > 0
+  const canRecruitMarines = Boolean(pools?.marine_training) && free.marines > 0
+  // Withdrawing and treasury recruiting need manage_treasury; anyone can deposit.
+  const reserveMode = canTreasury ? reserveAction : 'deposit'
 
   const n = (counts: Counts, key: string, max = Infinity) => parseCount(counts[key] ?? '', max)
   const blankOr = (counts: Counts, key: string) => (counts[key]?.trim() ? n(counts, key) : undefined)
@@ -138,11 +165,11 @@ export function PersonnelTab() {
         mutate(
           (c) =>
             c.spacemolt_ship.treat_personnel({
-              provider,
+              provider: activeProvider,
               crew: blankOr(treat, 'crew'),
               marines: blankOr(treat, 'marines'),
-              id: provider === 'field' && treatTarget ? treatTarget : undefined,
-              reserve: provider === 'faction' && treatReserve ? true : undefined,
+              id: activeProvider === 'field' && treatTarget ? treatTarget : undefined,
+              reserve: treatingReserve || undefined,
             }),
           { label: 'treat_personnel' },
         ),
@@ -188,18 +215,18 @@ export function PersonnelTab() {
         mutate(
           (c) =>
             c.spacemolt_ship.faction_personnel({
-              personnel_action: reserveAction,
+              personnel_action: reserveMode,
               fit_crew: n(reserveCounts, 'fit_crew'),
               fit_marines: n(reserveCounts, 'fit_marines'),
-              injured_crew: reserveAction === 'recruit' ? undefined : n(reserveCounts, 'injured_crew'),
-              injured_marines: reserveAction === 'recruit' ? undefined : n(reserveCounts, 'injured_marines'),
+              injured_crew: reserveMode === 'recruit' ? undefined : n(reserveCounts, 'injured_crew'),
+              injured_marines: reserveMode === 'recruit' ? undefined : n(reserveCounts, 'injured_marines'),
             }),
           { label: 'faction_personnel' },
         ),
       (r) => {
         const d = r.delta.details
         if (!d) return undefined
-        return `Reserve ${reserveAction}: ${d.crew_moved ?? 0} crew, ${d.marines_moved ?? 0} marines${d.cost ? ` for ${d.cost.toLocaleString()} cr` : ''}`
+        return `Reserve ${reserveMode}: ${d.crew_moved ?? 0} crew, ${d.marines_moved ?? 0} marines${d.cost ? ` for ${d.cost.toLocaleString()} cr` : ''}`
       },
     ).then((r) => {
       setConfirm(null)
@@ -224,7 +251,6 @@ export function PersonnelTab() {
     })
 
   const medical = pools?.medical
-  const reserveData = reserve.data
 
   return (
     <div className={styles.stack}>
@@ -238,7 +264,7 @@ export function PersonnelTab() {
           </span>
         </div>
         <BerthBar label="Crew" fit={p?.fit_crew ?? 0} injured={p?.injured_crew ?? 0} berths={crewCap} minimum={ship?.minimum_crew ?? 0} />
-        <BerthBar label="Marines" fit={p?.fit_marines ?? 0} injured={p?.injured_marines ?? 0} berths={marineCap} />
+        {marineCap > 0 && <BerthBar label="Marines" fit={p?.fit_marines ?? 0} injured={p?.injured_marines ?? 0} berths={marineCap} />}
         {(p?.fit_crew ?? 0) < (ship?.minimum_crew ?? 0) && (
           <div className={styles.berthWarning}>Below minimum crew: this ship runs at reduced efficiency.</div>
         )}
@@ -247,242 +273,222 @@ export function PersonnelTab() {
         )}
       </div>
 
-      <div className={styles.card}>
-        <div className={styles.cardTitle}>
-          <Users size={14} /> Recruit
-        </div>
-        {!docked ? (
-          <div className={styles.hint}>Dock at a station with a personnel service (crew) or marine training (marines) to recruit.</div>
-        ) : (
-          <>
-            <div className={styles.meta}>
-              <span>
-                Crew <b>{CREW_RECRUIT_PRICE} cr</b> each{pools?.personnel ? `, ${pools.personnel.remaining} in pool` : ', no personnel service here'}
-              </span>
-              <span>
-                Marines <b>{MARINE_RECRUIT_PRICE} cr</b> each{pools?.marine_training ? `, ${pools.marine_training.remaining} in pool` : ', no marine training here'}
-              </span>
-            </div>
-            <div className={styles.row}>
-              <CountField label="Crew" value={recruit.crew ?? ''} max={free.crew} onChange={(v) => setRecruit({ ...recruit, crew: v })} />
-              <CountField label="Marines" value={recruit.marines ?? ''} max={free.marines} onChange={(v) => setRecruit({ ...recruit, marines: v })} />
-            </div>
-            {confirm === 'recruit' ? (
-              <ConfirmAction
-                message={`Recruit ${recruitCrew} crew and ${recruitMarines} marines for up to ${cost.toLocaleString()} cr?`}
-                onConfirm={doRecruit}
-                onCancel={() => setConfirm(null)}
-                confirmDisabled={busy}
-                variant="accent"
-                confirmLabel="Recruit"
-              />
-            ) : (
-              <div className={styles.row}>
-                <button
-                  className={shared.accentBtn}
-                  disabled={busy || recruitCrew + recruitMarines === 0 || cost > credits}
-                  onClick={() => setConfirm('recruit')}
-                  type="button"
-                >
-                  Recruit (<Credits amount={cost} />)
-                </button>
-                {cost > credits && <span className={styles.hint}>Not enough credits.</span>}
-              </div>
-            )}
-            <div className={styles.hint}>Partial fills happen when berths, credits or the station pool run short.</div>
-          </>
-        )}
-      </div>
-
-      <div className={styles.card}>
-        <div className={styles.cardTitle}>
-          <HeartPulse size={14} /> Treat injured
-        </div>
-        <div className={styles.row}>
-          <select
-            className={shared.selectInput}
-            value={provider}
-            onChange={(e) => setProvider(e.target.value as typeof provider)}
-            aria-label="Medical provider"
-          >
-            <option value="station">Station infirmary (credits)</option>
-            <option value="field">Field (onboard medical module)</option>
-            <option value="faction" disabled={!inFaction}>Faction hospital</option>
-          </select>
-          {provider === 'field' && (
-            <select className={shared.selectInput} value={treatTarget} onChange={(e) => setTreatTarget(e.target.value)} aria-label="Treat whose ship">
-              <option value="">My ship</option>
-              {nearby.map((pl) => (
-                <option key={pl.player_id} value={pl.username}>
-                  {pl.username}
-                </option>
-              ))}
-            </select>
-          )}
-          {provider === 'faction' && (
-            <label className={styles.row}>
-              <input type="checkbox" checked={treatReserve} onChange={(e) => setTreatReserve(e.target.checked)} />
-              <span className={styles.hint}>Treat the faction reserve (ManageTreasury)</span>
-            </label>
-          )}
-        </div>
-        <div className={styles.row}>
-          <CountField label="Crew" value={treat.crew ?? ''} max={p?.injured_crew ?? 0} onChange={(v) => setTreat({ ...treat, crew: v })} />
-          <CountField label="Marines" value={treat.marines ?? ''} max={p?.injured_marines ?? 0} onChange={(v) => setTreat({ ...treat, marines: v })} />
-        </div>
-        <div className={styles.hint}>
-          Blank counts treat as many as possible.{' '}
-          {provider === 'station' &&
-            (medical
-              ? `Station price: ${medical.crew_treatment_price ?? 25} cr/crew, ${medical.marine_treatment_price ?? 50} cr/marine; ${medical.remaining} treatments left in the pool.`
-              : 'Station treatment costs at least 25 cr/crew and 50 cr/marine. Requires docking at a station with a medical service.')}
-          {provider === 'field' && 'Field treatment uses 1 medical_supplies per 5 patients from cargo and needs a medical module. Allies must be at your POI.'}
-          {provider === 'faction' &&
-            (reserveData ? `Faction hospital here: ${reserveData.medical_available}/${reserveData.medical_capacity} treatments available.` : 'Uses your faction hospital at this station, no personal charge.')}
-        </div>
-        {(provider === 'station' || provider === 'faction') && !docked ? (
-          <div className={styles.hint}>Dock to use this provider.</div>
-        ) : confirm === 'treat' ? (
-          <ConfirmAction
-            message={provider === 'station' ? 'Pay the station infirmary to treat injured personnel?' : 'Treat injured personnel?'}
-            onConfirm={doTreat}
-            onCancel={() => setConfirm(null)}
-            confirmDisabled={busy}
-            variant="accent"
-            confirmLabel="Treat"
-          />
-        ) : (
-          <div className={styles.row}>
-            <button className={shared.accentBtn} disabled={busy} onClick={() => setConfirm('treat')} type="button">
-              <HeartPulse size={12} /> Treat
-            </button>
-          </div>
-        )}
-      </div>
-
-      <div className={styles.card}>
-        <div className={styles.cardTitle}>
-          <ArrowRightLeft size={14} /> Transfer to an allied ship
-        </div>
-        {nearby.length === 0 ? (
-          <div className={styles.hint}>No other ships at your POI.</div>
-        ) : (
-          <>
-            <select className={shared.selectInput} value={transferTarget} onChange={(e) => setTransferTarget(e.target.value)} aria-label="Transfer target">
-              <option value="">Choose a ship...</option>
-              {nearby.map((pl) => (
-                <option key={pl.player_id} value={pl.username}>
-                  {pl.username}
-                  {pl.ship_class ? ` (${pl.ship_class})` : ''}
-                </option>
-              ))}
-            </select>
-            <div className={styles.row}>
-              <CountField label="Fit crew" value={transfer.fit_crew ?? ''} max={transferableFitCrew(p)} onChange={(v) => setTransfer({ ...transfer, fit_crew: v })} />
-              <CountField label="Injured crew" value={transfer.injured_crew ?? ''} max={p?.injured_crew ?? 0} onChange={(v) => setTransfer({ ...transfer, injured_crew: v })} />
-              <CountField label="Fit marines" value={transfer.fit_marines ?? ''} max={p?.fit_marines ?? 0} onChange={(v) => setTransfer({ ...transfer, fit_marines: v })} />
-              <CountField
-                label="Injured marines"
-                value={transfer.injured_marines ?? ''}
-                max={p?.injured_marines ?? 0}
-                onChange={(v) => setTransfer({ ...transfer, injured_marines: v })}
-              />
-            </div>
-            <div className={styles.row}>
-              <button className={shared.actionBtn} disabled={busy || !transferTarget} onClick={doTransfer} type="button">
-                <ArrowRightLeft size={12} /> Transfer
-              </button>
-            </div>
-            <div className={styles.hint}>
-              Both ships must be out of combat. You keep one fit crew. If the target is full, your fit personnel swap places with their injured.
-            </div>
-          </>
-        )}
-      </div>
-
-      {inFaction && (
+      {(canRecruitCrew || canRecruitMarines) && (
         <div className={styles.card}>
           <div className={styles.cardTitle}>
-            <Landmark size={14} /> Faction reserve
+            <Users size={14} /> Recruit
           </div>
-          {!docked ? (
-            <div className={styles.hint}>Dock at a station where your faction keeps a personnel reserve.</div>
-          ) : reserve.error ? (
-            <div className={styles.hint}>{reserve.error}</div>
-          ) : !reserveData ? (
-            <div className={styles.hint}>Loading reserve...</div>
+          <div className={styles.meta}>
+            {canRecruitCrew && (
+              <span>
+                Crew <b>{CREW_RECRUIT_PRICE} cr</b> each, {pools?.personnel?.remaining} in pool
+              </span>
+            )}
+            {canRecruitMarines && (
+              <span>
+                Marines <b>{MARINE_RECRUIT_PRICE} cr</b> each, {pools?.marine_training?.remaining} in pool
+              </span>
+            )}
+          </div>
+          <div className={styles.row}>
+            {canRecruitCrew && <CountField label="Crew" value={recruit.crew ?? ''} max={free.crew} onChange={(v) => setRecruit({ ...recruit, crew: v })} />}
+            {canRecruitMarines && <CountField label="Marines" value={recruit.marines ?? ''} max={free.marines} onChange={(v) => setRecruit({ ...recruit, marines: v })} />}
+          </div>
+          {confirm === 'recruit' ? (
+            <ConfirmAction
+              message={`Recruit ${recruitCrew} crew and ${recruitMarines} marines for up to ${cost.toLocaleString()} cr?`}
+              onConfirm={doRecruit}
+              onCancel={() => setConfirm(null)}
+              confirmDisabled={busy}
+              variant="accent"
+              confirmLabel="Recruit"
+            />
           ) : (
-            <>
-              <BerthBar label="Crew" fit={reserveData.fit_crew} injured={reserveData.injured_crew} berths={reserveData.crew_capacity} />
-              <BerthBar label="Marines" fit={reserveData.fit_marines} injured={reserveData.injured_marines} berths={reserveData.marine_capacity} />
-              {reserveData.inbound_crew > 0 && (
-                <div className={styles.hint}>{reserveData.inbound_crew} crew inbound from {reserveData.inbound_prizes} prizes.</div>
-              )}
-              <select
-                className={shared.selectInput}
-                value={reserveAction}
-                onChange={(e) => setReserveAction(e.target.value as typeof reserveAction)}
-                aria-label="Reserve action"
+            <div className={styles.row}>
+              <button
+                className={shared.accentBtn}
+                disabled={busy || recruitCrew + recruitMarines === 0 || cost > credits}
+                onClick={() => setConfirm('recruit')}
+                type="button"
               >
-                <option value="deposit">Deposit from my ship</option>
-                <option value="withdraw">Withdraw to my ship (ManageTreasury)</option>
-                <option value="recruit">Recruit with treasury (ManageTreasury)</option>
-              </select>
-              <div className={styles.row}>
-                {(reserveAction === 'recruit' ? ['fit_crew', 'fit_marines'] : ['fit_crew', 'injured_crew', 'fit_marines', 'injured_marines']).map((key) => (
-                  <label key={key} className={styles.field}>
-                    {key.replace('_', ' ')}
-                    <input
-                      className={`${shared.textInput} ${styles.numInput}`}
-                      inputMode="numeric"
-                      placeholder="0"
-                      value={reserveCounts[key] ?? ''}
-                      onChange={(e) => setReserveCounts({ ...reserveCounts, [key]: e.target.value })}
-                    />
-                  </label>
+                Recruit (<Credits amount={cost} />)
+              </button>
+              {cost > credits && <span className={styles.hint}>Not enough credits.</span>}
+            </div>
+          )}
+          <div className={styles.hint}>Partial fills happen when berths, credits or the station pool run short.</div>
+        </div>
+      )}
+
+      {activeProvider && (
+        <div className={styles.card}>
+          <div className={styles.cardTitle}>
+            <HeartPulse size={14} /> Treat injured
+          </div>
+          <div className={styles.row}>
+            <select
+              className={shared.selectInput}
+              value={activeProvider}
+              onChange={(e) => setProvider(e.target.value as typeof provider)}
+              aria-label="Medical provider"
+            >
+              {providers.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+            </select>
+            {activeProvider === 'field' && (
+              <select className={shared.selectInput} value={treatTarget} onChange={(e) => setTreatTarget(e.target.value)} aria-label="Treat whose ship">
+                <option value="">My ship</option>
+                {nearby.map((pl) => (
+                  <option key={pl.player_id} value={pl.username}>
+                    {pl.username}
+                  </option>
                 ))}
-              </div>
-              {confirm === 'reserve' ? (
-                <ConfirmAction
-                  message={
-                    reserveAction === 'recruit'
-                      ? `Spend about ${recruitCost(n(reserveCounts, 'fit_crew'), n(reserveCounts, 'fit_marines')).toLocaleString()} cr of faction treasury?`
-                      : `${reserveAction} these personnel?`
-                  }
-                  onConfirm={doReserve}
-                  onCancel={() => setConfirm(null)}
-                  confirmDisabled={busy}
-                  variant="accent"
-                />
-              ) : (
-                <div className={styles.row}>
-                  <button
-                    className={shared.actionBtn}
-                    disabled={busy}
-                    onClick={() => (reserveAction === 'recruit' ? setConfirm('reserve') : doReserve())}
-                    type="button"
-                  >
-                    Apply
-                  </button>
-                </div>
-              )}
-            </>
+              </select>
+            )}
+            {activeProvider === 'faction' && reserveInjured > 0 && shipInjured > 0 && (
+              <label className={styles.row}>
+                <input type="checkbox" checked={treatReserve} onChange={(e) => setTreatReserve(e.target.checked)} />
+                <span className={styles.hint}>Treat the faction reserve</span>
+              </label>
+            )}
+          </div>
+          <div className={styles.row}>
+            <CountField label="Crew" value={treat.crew ?? ''} max={(treatingReserve ? reserveData?.injured_crew : p?.injured_crew) ?? 0} onChange={(v) => setTreat({ ...treat, crew: v })} />
+            <CountField label="Marines" value={treat.marines ?? ''} max={(treatingReserve ? reserveData?.injured_marines : p?.injured_marines) ?? 0} onChange={(v) => setTreat({ ...treat, marines: v })} />
+          </div>
+          <div className={styles.hint}>
+            Blank counts treat as many as possible.{' '}
+            {activeProvider === 'station' &&
+              (medical
+                ? `Station price: ${medical.crew_treatment_price ?? 25} cr/crew, ${medical.marine_treatment_price ?? 50} cr/marine; ${medical.remaining} treatments left in the pool.`
+                : 'Station treatment costs at least 25 cr/crew and 50 cr/marine.')}
+            {activeProvider === 'field' && 'Field treatment uses 1 medical_supplies per 5 patients from cargo. Allies must be at your POI.'}
+            {activeProvider === 'faction' &&
+              (reserveData ? `Faction hospital here: ${reserveData.medical_available}/${reserveData.medical_capacity} treatments available.` : 'Uses your faction hospital at this station, no personal charge.')}
+          </div>
+          {confirm === 'treat' ? (
+            <ConfirmAction
+              message={activeProvider === 'station' ? 'Pay the station infirmary to treat injured personnel?' : 'Treat injured personnel?'}
+              onConfirm={doTreat}
+              onCancel={() => setConfirm(null)}
+              confirmDisabled={busy}
+              variant="accent"
+              confirmLabel="Treat"
+            />
+          ) : (
+            <div className={styles.row}>
+              <button className={shared.accentBtn} disabled={busy} onClick={() => setConfirm('treat')} type="button">
+                <HeartPulse size={12} /> Treat
+              </button>
+            </div>
           )}
         </div>
       )}
 
-      <div className={styles.card}>
-        <div className={styles.cardTitle}>
-          <Zap size={14} /> Field generator
+      {nearby.length > 0 && (
+        <div className={styles.card}>
+          <div className={styles.cardTitle}>
+            <ArrowRightLeft size={14} /> Transfer to an allied ship
+          </div>
+          <select className={shared.selectInput} value={transferTarget} onChange={(e) => setTransferTarget(e.target.value)} aria-label="Transfer target">
+            <option value="">Choose a ship...</option>
+            {nearby.map((pl) => (
+              <option key={pl.player_id} value={pl.username}>
+                {pl.username}
+                {pl.ship_class ? ` (${pl.ship_class})` : ''}
+              </option>
+            ))}
+          </select>
+          <div className={styles.row}>
+            <CountField label="Fit crew" value={transfer.fit_crew ?? ''} max={transferableFitCrew(p)} onChange={(v) => setTransfer({ ...transfer, fit_crew: v })} />
+            <CountField label="Injured crew" value={transfer.injured_crew ?? ''} max={p?.injured_crew ?? 0} onChange={(v) => setTransfer({ ...transfer, injured_crew: v })} />
+            <CountField label="Fit marines" value={transfer.fit_marines ?? ''} max={p?.fit_marines ?? 0} onChange={(v) => setTransfer({ ...transfer, fit_marines: v })} />
+            <CountField
+              label="Injured marines"
+              value={transfer.injured_marines ?? ''}
+              max={p?.injured_marines ?? 0}
+              onChange={(v) => setTransfer({ ...transfer, injured_marines: v })}
+            />
+          </div>
+          <div className={styles.row}>
+            <button className={shared.actionBtn} disabled={busy || !transferTarget} onClick={doTransfer} type="button">
+              <ArrowRightLeft size={12} /> Transfer
+            </button>
+          </div>
+          <div className={styles.hint}>
+            Both ships must be out of combat. You keep one fit crew. If the target is full, your fit personnel swap places with their injured.
+          </div>
         </div>
-        <div className={styles.hint}>
-          Feed the docked station&apos;s power grid. Burns 1 fuel per tick; the link ends on undock, after 360 ticks, or below 10% fuel.
+      )}
+
+      {docked && reserveData && (
+        <div className={styles.card}>
+          <div className={styles.cardTitle}>
+            <Landmark size={14} /> Faction reserve
+          </div>
+          <BerthBar label="Crew" fit={reserveData.fit_crew} injured={reserveData.injured_crew} berths={reserveData.crew_capacity} />
+          <BerthBar label="Marines" fit={reserveData.fit_marines} injured={reserveData.injured_marines} berths={reserveData.marine_capacity} />
+          {reserveData.inbound_crew > 0 && (
+            <div className={styles.hint}>{reserveData.inbound_crew} crew inbound from {reserveData.inbound_prizes} prizes.</div>
+          )}
+          <select
+            className={shared.selectInput}
+            value={reserveMode}
+            onChange={(e) => setReserveAction(e.target.value as typeof reserveAction)}
+            aria-label="Reserve action"
+          >
+            <option value="deposit">Deposit from my ship</option>
+            {canTreasury && <option value="withdraw">Withdraw to my ship</option>}
+            {canTreasury && <option value="recruit">Recruit with treasury</option>}
+          </select>
+          <div className={styles.row}>
+            {(reserveMode === 'recruit' ? ['fit_crew', 'fit_marines'] : ['fit_crew', 'injured_crew', 'fit_marines', 'injured_marines']).map((key) => (
+              <label key={key} className={styles.field}>
+                {key.replace('_', ' ')}
+                <input
+                  className={`${shared.textInput} ${styles.numInput}`}
+                  inputMode="numeric"
+                  placeholder="0"
+                  value={reserveCounts[key] ?? ''}
+                  onChange={(e) => setReserveCounts({ ...reserveCounts, [key]: e.target.value })}
+                />
+              </label>
+            ))}
+          </div>
+          {confirm === 'reserve' ? (
+            <ConfirmAction
+              message={
+                reserveMode === 'recruit'
+                  ? `Spend about ${recruitCost(n(reserveCounts, 'fit_crew'), n(reserveCounts, 'fit_marines')).toLocaleString()} cr of faction treasury?`
+                  : `${reserveMode} these personnel?`
+              }
+              onConfirm={doReserve}
+              onCancel={() => setConfirm(null)}
+              confirmDisabled={busy}
+              variant="accent"
+            />
+          ) : (
+            <div className={styles.row}>
+              <button
+                className={shared.actionBtn}
+                disabled={busy}
+                onClick={() => (reserveMode === 'recruit' ? setConfirm('reserve') : doReserve())}
+                type="button"
+              >
+                Apply
+              </button>
+            </div>
+          )}
         </div>
-        {!docked ? (
-          <div className={styles.hint}>Dock at a station to connect.</div>
-        ) : !hasGenerator ? (
-          <div className={styles.hint}>Fit a field_generator module to use this.</div>
-        ) : (
+      )}
+
+      {canGenerate && (
+        <div className={styles.card}>
+          <div className={styles.cardTitle}>
+            <Zap size={14} /> Field generator
+          </div>
+          <div className={styles.hint}>
+            Feed the docked station&apos;s power grid. Burns 1 fuel per tick; the link ends on undock, after 360 ticks, or below 10% fuel.
+          </div>
           <div className={styles.row}>
             <button className={shared.accentBtn} disabled={busy} onClick={() => doGenerator(false)} type="button">
               <Zap size={12} /> Connect
@@ -492,8 +498,8 @@ export function PersonnelTab() {
             </button>
             {generatorLine && <span className={styles.hint}>{generatorLine}</span>}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }

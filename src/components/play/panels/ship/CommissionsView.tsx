@@ -10,7 +10,7 @@ import {
   Send,
 } from 'lucide-react'
 import type { CommissionStatusResponse } from '@spacemolt/lib'
-import { useCommandMutation, useCommandQuery } from '@/lib/spacemolt'
+import { useCommandMutation, useCommandQuery, useLocationState } from '@/lib/spacemolt'
 import { usePlay } from '../../PlayProvider'
 import { Loading, ConfirmAction, QtyButtons, errorMessage, shared } from '../../shared'
 import { formatItemId } from '@/data/catalog'
@@ -21,6 +21,7 @@ type Commission = CommissionStatusResponse['commissions'][number]
 export function CommissionsView() {
   const mutate = useCommandMutation()
   const { uiStore } = usePlay()
+  const dockedAt = useLocationState()?.docked_at
   const [cancelConfirm, setCancelConfirm] = useState<string | null>(null)
   const [supplyQtys, setSupplyQtys] = useState<Record<string, string>>({})
   const [supplying, setSupplying] = useState<string | null>(null)
@@ -107,6 +108,8 @@ export function CommissionsView() {
           // Paid with credits: the yard buys the materials, so the player has nothing to supply.
           const yardSources = Boolean(c.source_missing_materials) || (!c.materials_provided && (c.credits_paid ?? 0) > 0)
           const ticksRemaining = c.ticks_remaining ?? 0
+          // Taking the helm and supplying both happen at the commission's station.
+          const isHere = Boolean(dockedAt) && dockedAt === c.base_id
 
           const statusLabel = isReady ? 'Ready' : isSourcing ? 'Sourcing' : c.status === 'pending' ? 'Queued' : 'Building'
           const statusClass = isReady
@@ -123,7 +126,7 @@ export function CommissionsView() {
                   <span className={statusClass}>{statusLabel}</span>
                 </div>
                 <div className={styles.commissionActions}>
-                  {isReady && c.built_ship_id && (
+                  {isReady && isHere && c.built_ship_id && (
                     <button
                       className={shared.confirmBtn}
                       onClick={() => handleSwitchTo(c.built_ship_id!)}
@@ -207,7 +210,7 @@ export function CommissionsView() {
                         <span className={have >= need ? styles.materialProgressComplete : styles.materialProgressValue}>
                           {have}/{need}
                         </span>
-                        {remaining > 0 && !yardSources && (
+                        {remaining > 0 && !yardSources && isHere && (
                           <span className={styles.commissionActions}>
                             <input
                               className={shared.textInput}

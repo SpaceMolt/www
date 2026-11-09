@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { ShieldCheck, Calculator } from 'lucide-react'
 import type { InsuranceQuoteData, RiskFactor } from '@spacemolt/lib'
-import { useAccountStore, useCommandMutation, useCommandQuery } from '@/lib/spacemolt'
+import { useAccountStore, useCommandMutation, useCommandQuery, useShip } from '@/lib/spacemolt'
+import { getShip } from '@/data/catalog'
 import { ConfirmAction, Credits, shared, useAction } from '../../shared'
 import styles from './FleetView.module.css'
 
@@ -21,13 +22,14 @@ function Factors({ factors }: { factors?: RiskFactor[] }) {
   )
 }
 
-/** Quote and buy insurance for the active ship; list active policies. Claims pay out automatically on respawn. */
+/** Quote and buy insurance for the active ship while docked; list active policies. Claims pay out automatically on respawn. */
 export function InsuranceView({ isDocked }: { isDocked: boolean }) {
   const store = useAccountStore()
   const mutate = useCommandMutation()
   const { run } = useAction()
   const [quote, setQuote] = useState<InsuranceQuoteData | null>(null)
   const [confirming, setConfirming] = useState(false)
+  const classId = useShip()?.class_id
 
   const { data: policies, refetch } = useCommandQuery(
     async (account) => (await account.commands.spacemolt_salvage.policies()).structuredContent,
@@ -51,36 +53,33 @@ export function InsuranceView({ isDocked }: { isDocked: boolean }) {
   }
 
   const list = policies?.policies ?? []
+  // Starter ships are replaced free on death, so the server refuses to quote them.
+  const quotable = Boolean(classId && !getShip(classId)?.starter_ship)
+  if (!isDocked || (!quotable && list.length === 0)) return null
 
   return (
     <div className={styles.insurance}>
       <div className={shared.sectionTitle}>
         <ShieldCheck size={12} /> Insurance
       </div>
-      {list.length === 0 ? (
-        <div className={styles.insuranceDetail}>No active policies.</div>
-      ) : (
-        list.map((p) => (
-          <div key={p.policy_id} className={styles.insurancePolicy}>
-            <span>{p.ship_class || 'Ship'}</span>
-            <span>
-              Coverage <Credits amount={p.coverage ?? 0} />
-            </span>
-            {p.expires_at && <span className={styles.insuranceDetail}>expires {new Date(p.expires_at).toLocaleString()}</span>}
-            {p.self_destruct_excluded && <span className={styles.insuranceDetail}>self-destruct not covered</span>}
-          </div>
-        ))
-      )}
+      {list.map((p) => (
+        <div key={p.policy_id} className={styles.insurancePolicy}>
+          <span>{p.ship_class || 'Ship'}</span>
+          <span>
+            Coverage <Credits amount={p.coverage ?? 0} />
+          </span>
+          {p.expires_at && <span className={styles.insuranceDetail}>expires {new Date(p.expires_at).toLocaleString()}</span>}
+          {p.self_destruct_excluded && <span className={styles.insuranceDetail}>self-destruct not covered</span>}
+        </div>
+    ))}
 
-      {isDocked ? (
+      {quotable && (
         <button className={shared.actionBtn} onClick={getQuote} type="button">
           <Calculator size={11} /> Quote active ship
         </button>
-      ) : (
-        <div className={styles.insuranceDetail}>Dock at a station to get a quote and buy a policy.</div>
       )}
 
-      {isDocked && quote && (
+      {quotable && quote && (
         <div className={styles.insuranceQuote}>
           {quote.refused ? (
             <div>The insurer refuses to cover this ship (risk score {quote.risk_score}).</div>
@@ -106,7 +105,6 @@ export function InsuranceView({ isDocked }: { isDocked: boolean }) {
             ))}
         </div>
       )}
-      <div className={styles.insuranceDetail}>A policy pays out automatically if this ship is destroyed.</div>
     </div>
   )
 }

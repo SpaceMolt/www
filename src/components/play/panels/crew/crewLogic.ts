@@ -1,4 +1,5 @@
 import type { EmpireStanding, NearbyPlayer, V2Personnel } from '@spacemolt/lib'
+import { getItem } from '@/data/catalog'
 
 /** Server notes: recruit_personnel charges 100 per crew and 250 per marine. */
 export const CREW_RECRUIT_PRICE = 100
@@ -40,4 +41,9 @@ export function owedBounties(standings: Record<string, EmpireStanding> | undefin
     .filter(([, s]) => s.outstanding_bounty > 0)
     .map(([empire, s]) => ({ empire, amount: s.outstanding_bounty, jailedUntil: s.jailed_until }))
     .sort((a, b) => b.amount - a.amount)
+}
+
+/** Whether cargo holds a repair kit: any item with a repair effect (gameserver selectRepairKit). */
+export function hasRepairKit(cargo: { item_id?: string }[] | undefined): boolean {
+  return (cargo ?? []).some((c) => getItem(c.item_id ?? '')?.effect?.type === 'repair')
 }
