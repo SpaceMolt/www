@@ -22,7 +22,6 @@ const roughly = (hours: number) =>
 
 /** How the deposit recovers: deposits refill at a steady rate toward their capacity. */
 export function regenHint(itemId: string, remaining?: number, capacity?: number): string {
-  if (remaining !== undefined && remaining < 0) return 'Never runs out.'
   const rarity = getItem(itemId)?.rarity ?? 'common'
   const refill = REFILL_HOURS[rarity] ?? REFILL_HOURS.common
   if (remaining === 0 || !capacity || remaining === undefined) return `Regenerates steadily; ${rarity} deposits refill from empty ${roughly(refill)}.`
@@ -42,6 +41,6 @@ export function rateRichness(itemId: string, richness: number) {
 /** Hover text with the numbers the row leaves out. Richness is a yield percentage, not an amount. */
 export function depositTitle(itemId: string, richness: number, remaining?: number, capacity?: number): string {
   const { label, rarity } = rateRichness(itemId, richness)
-  const left = remaining === undefined || remaining < 0 ? '' : `, ${remaining.toLocaleString()} units left`
+  const left = remaining === undefined ? '' : `, ${remaining.toLocaleString()} units left`
   return `${label} for a ${rarity} resource: ${richness}% yield per mining action${left}. ${regenHint(itemId, remaining, capacity)}`
 }
