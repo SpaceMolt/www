@@ -4,48 +4,34 @@ import { useState } from 'react'
 import { BarChart3, Eye, Radar, Search, Store } from 'lucide-react'
 import type {
   EspionageResponse,
+  FactionInfoResponse,
   FactionIntelStatusResponse,
   FactionQueryIntelResponse,
   FactionQueryTradeIntelResponse,
   FactionScanPoiResponse,
   FactionTradeIntelStatusResponse,
 } from '@spacemolt/lib'
-import { useAccountStore, useCommandMutation, useCommandQuery, useLocationState, usePlayer, useSystem } from '@/lib/spacemolt'
+import { useAccountStore, useCommandMutation, useLocationState, useSystem } from '@/lib/spacemolt'
 import { usePlay } from '../../PlayProvider'
 import { ActionButton } from '../../ActionButton'
 import { ConfirmAction, shared, useAction } from '../../shared'
 import { tradeIntelStation } from './intelPayload'
 import { Pager } from './MembersSection'
+import { Stat } from './TreasurySection'
 import fp from '../FactionPanel.module.css'
 import styles from './IntelSection.module.css'
 
 const PAGE = 20
 
-function Stat({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className={fp.intelStatItem}>
-      <span className={fp.intelStatLabel}>{label}</span>
-      <span className={fp.intelStatValue}>{value}</span>
-    </div>
-  )
-}
-
-export function IntelSection() {
+/** `allies` comes from the parent's faction info; any ally can be the intel source. */
+export function IntelSection({ allies }: { allies: NonNullable<FactionInfoResponse['allies']> }) {
   const store = useAccountStore()
   const mutate = useCommandMutation()
   const { uiStore } = usePlay()
-  const player = usePlayer()
   const location = useLocationState()
   const systemData = useSystem().data
   const pois = systemData && 'system' in systemData ? systemData.system.pois : []
   const isDocked = Boolean(location?.docked_at)
-
-  const { data: factionInfo } = useCommandQuery(
-    async (account) => (await account.commands.spacemolt_faction.info({ limit: 1 })).structuredContent,
-    [player?.faction_id],
-    { enabled: Boolean(player?.faction_id) },
-  )
-  const allies = factionInfo?.allies ?? []
 
   const { busy, run } = useAction()
   const [systemFilter, setSystemFilter] = useState({ system_name: '', poi_type: '', resource_type: '', source_faction_id: '' })

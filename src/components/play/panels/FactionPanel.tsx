@@ -775,7 +775,7 @@ export function FactionPanel() {
           <div className={styles.divider} />
 
           <Section title="Intel" icon={<Radar size={12} />} defaultOpen={false}>
-            <IntelSection />
+            <IntelSection allies={s.factionInfo?.allies ?? []} />
           </Section>
 
           <div className={styles.divider} />

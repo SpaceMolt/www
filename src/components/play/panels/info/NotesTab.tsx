@@ -1,13 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { FileText, Plus, Save, Trash2, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { FileText, Plus, Save, Trash2, X } from 'lucide-react'
 import { useAccountStore, useCommandQuery } from '@/lib/spacemolt'
 import { timeAgoOrDate } from '@/lib/format'
 import { usePlay } from '../../PlayProvider'
 import { ActionButton } from '../../ActionButton'
 import { ConfirmAction, Loading, shared, errorMessage } from '../../shared'
 import styles from '../InfoPanel.module.css'
+import { Pager } from './ReleaseNotes'
 
 const PAGE_SIZE = 20
 
@@ -147,15 +148,9 @@ export function NotesTab() {
         </div>
       )}
       {data && (page > 1 || data.has_more) && (
-        <div className={styles.pager}>
-          <button type="button" className={shared.subtleBtn} disabled={page <= 1} onClick={() => setPage(page - 1)}>
-            <ChevronLeft size={12} />
-          </button>
-          <span>Page {page} of {Math.max(1, Math.ceil(data.total_count / PAGE_SIZE))}</span>
-          <button type="button" className={shared.subtleBtn} disabled={!data.has_more} onClick={() => setPage(page + 1)}>
-            <ChevronRight size={12} />
-          </button>
-        </div>
+        <Pager canPrev={page > 1} canNext={Boolean(data.has_more)} onPrev={() => setPage(page - 1)} onNext={() => setPage(page + 1)}>
+          Page {page} of {Math.max(1, Math.ceil(data.total_count / PAGE_SIZE))}
+        </Pager>
       )}
     </div>
   )

@@ -6,6 +6,7 @@ import { useCommandMutation, useCommandQuery } from '@/lib/spacemolt'
 import { usePlay } from '../../PlayProvider'
 import { Loading, Modal, shared, useAction } from '../../shared'
 import styles from './facilities.module.css'
+import { Row } from '../station/StationStatus'
 
 /** Herd status and cull target for one faction ranch. */
 export function RanchModal({ facilityId, onClose }: { facilityId: string; onClose: () => void }) {
@@ -46,12 +47,7 @@ export function RanchModal({ facilityId, onClose }: { facilityId: string; onClos
         <>
           <div className={styles.cardDescription}>{ranch.message}</div>
           <div className={styles.costBreakdown}>
-            {rows.map(([k, v]) => (
-              <div key={k} className={styles.costRow}>
-                <span className={styles.costLabel}>{k}</span>
-                <span className={styles.costValue}>{v}</span>
-              </div>
-            ))}
+            {rows.map(([k, v]) => <Row key={k} label={k}>{v}</Row>)}
             {ranch.feed.length > 0 && (
               <div className={styles.costRow}>
                 <span className={styles.costLabel}>Feed</span>

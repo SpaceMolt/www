@@ -8,6 +8,7 @@ import { Credits, Loading, Modal, shared, useAction } from '../../shared'
 import { titleCase } from '@/lib/format'
 import { isOwnListing } from './facilityActions'
 import styles from './facilities.module.css'
+import { Row } from '../station/StationStatus'
 
 /** Facilities listed for sale at the docked station: browse, buy, and cancel your own listings. */
 export function SalesView({ onRefresh }: { onRefresh: () => void }) {
@@ -144,18 +145,9 @@ export function SalesView({ onRefresh }: { onRefresh: () => void }) {
           }
         >
           <div className={styles.costBreakdown}>
-            <div className={styles.costRow}>
-              <span className={styles.costLabel}>Price</span>
-              <span className={styles.costValue}><Credits amount={buying.price} /></span>
-            </div>
-            <div className={styles.costRow}>
-              <span className={styles.costLabel}>Your credits</span>
-              <span className={credits >= buying.price ? styles.costValue : styles.materialMissing}><Credits amount={credits} /></span>
-            </div>
-            <div className={styles.costRow}>
-              <span className={styles.costLabel}>Seller</span>
-              <span className={styles.costValue}>{buying.seller_name ?? buying.seller_type}</span>
-            </div>
+            <Row label="Price"><Credits amount={buying.price} /></Row>
+            <Row label="Your credits" ok={credits >= buying.price}><Credits amount={credits} /></Row>
+            <Row label="Seller">{buying.seller_name ?? buying.seller_type}</Row>
           </div>
           <div className={styles.cardDescription}>The facility becomes yours at this station. You pay its rent from now on.</div>
         </Modal>

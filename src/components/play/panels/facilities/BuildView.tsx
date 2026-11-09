@@ -14,6 +14,7 @@ import { useAccountStore, useCargo, useCommandMutation, useCommandQuery, useLoca
 import { usePlay } from '../../PlayProvider'
 import { Credits, Modal, Loading, errorMessage, shared } from '../../shared'
 import styles from './facilities.module.css'
+import { Row } from '../station/StationStatus'
 
 /**
  * Sum of `itemId` quantities across the inventory pools the gameserver will
@@ -259,8 +260,8 @@ export function BuildView({ onRefresh }: BuildViewProps) {
       {base && (
         <div className={styles.costBreakdown}>
           {/* get_base omits power and life_support while they are all zero, e.g. on a new station. */}
-          {!base.power && <div className={styles.costRow}><span className={styles.costLabel}>Power</span><span className={styles.costValue}>none built yet</span></div>}
-          {!base.life_support && <div className={styles.costRow}><span className={styles.costLabel}>Life Support</span><span className={styles.costValue}>none built yet</span></div>}
+          {!base.power && <Row label="Power">none built yet</Row>}
+          {!base.life_support && <Row label="Life Support">none built yet</Row>}
           {base.power && (
             <div className={styles.costRow} title={base.power.remediation}>
               <span className={styles.costLabel}>Power</span>

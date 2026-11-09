@@ -6,6 +6,7 @@ import { useAccountStore, useCargo, useCommandMutation, useCommandQuery, useLoca
 import { ConfirmAction, Credits, Loading, shared, useAction } from '../../shared'
 import fac from '../facilities/facilities.module.css'
 import styles from './station.module.css'
+import { Row } from './StationStatus'
 
 const OUTPOST_KIT = 'outpost_kit'
 // ponytail: mirrors gameserver OutpostFoundingFee (outpost_founding.go); base_cost reports only the station fee.
@@ -76,16 +77,10 @@ export function FoundingSection() {
                 : outpostOk ? `Outpost eligible. Station: ${cost.reason}` : cost.reason ?? 'Not eligible'}
             </span>
           </div>
-          <div className={fac.costRow}>
-            <span className={fac.costLabel}>Founding fee</span>
-            <span className={fac.costValue}>
-              Station <Credits amount={cost.founding_fee} />, outpost <Credits amount={OUTPOST_FEE} /> (treasury first, then wallet)
-            </span>
-          </div>
-          <div className={fac.costRow}>
-            <span className={fac.costLabel}>Station cap</span>
-            <span className={fac.costValue}>{cost.max_per_faction} per faction</span>
-          </div>
+          <Row label="Founding fee">
+            Station <Credits amount={cost.founding_fee} />, outpost <Credits amount={OUTPOST_FEE} /> (treasury first, then wallet)
+          </Row>
+          <Row label="Station cap">{cost.max_per_faction} per faction</Row>
           <div className={fac.costRow}>
             <span className={fac.costLabel}>In cargo</span>
             <span className={styles.chips}>

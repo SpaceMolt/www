@@ -8,7 +8,7 @@ import { titleCase } from '@/lib/format'
 
 const CONDITION_OK = new Set(['thriving', 'operational'])
 
-function Row({ label, ok = true, title, children }: { label: string; ok?: boolean; title?: string; children: React.ReactNode }) {
+export function Row({ label, ok = true, title, children }: { label: string; ok?: boolean; title?: string; children: React.ReactNode }) {
   return (
     <div className={fac.costRow} title={title}>
       <span className={fac.costLabel}>{label}</span>

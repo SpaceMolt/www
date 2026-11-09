@@ -103,7 +103,7 @@ export function TreasurySection({ info, onChanged }: { info: FactionInfoResponse
   )
 }
 
-function Stat({ label, value }: { label: string; value: React.ReactNode }) {
+export function Stat({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className={styles.intelStatItem}>
       <span className={styles.intelStatLabel}>{label}</span>

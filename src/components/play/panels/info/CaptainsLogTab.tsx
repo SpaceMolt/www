@@ -1,12 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { BookOpen, ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react'
+import { BookOpen, Plus, Trash2 } from 'lucide-react'
 import { useAccountStore, useCommandQuery } from '@/lib/spacemolt'
 import { timeAgoOrDate } from '@/lib/format'
 import { ActionButton } from '../../ActionButton'
 import { ConfirmAction, Loading, shared, useAction } from '../../shared'
 import styles from '../InfoPanel.module.css'
+import { Pager } from './ReleaseNotes'
 
 /**
  * Captain's log. captains_log_list returns one entry per call (index 0 =
@@ -80,18 +81,20 @@ export function CaptainsLogTab() {
               onCancel={() => setConfirmDelete(false)}
             />
           ) : (
-            <div className={styles.pager}>
-              <button type="button" className={shared.subtleBtn} disabled={!data?.has_prev} onClick={() => setIndex(index - 1)}>
-                <ChevronLeft size={12} /> Newer
-              </button>
-              <span>{entry.index + 1} / {data?.total_count} (max {data?.max_entries})</span>
-              <button type="button" className={shared.subtleBtn} disabled={!data?.has_next} onClick={() => setIndex(index + 1)}>
-                Older <ChevronRight size={12} />
-              </button>
-              <button type="button" className={shared.dangerBtn} onClick={() => setConfirmDelete(true)} aria-label="Delete entry">
-                <Trash2 size={12} />
-              </button>
-            </div>
+            <Pager
+              canPrev={Boolean(data?.has_prev)}
+              canNext={Boolean(data?.has_next)}
+              onPrev={() => setIndex(index - 1)}
+              onNext={() => setIndex(index + 1)}
+              labelled
+              extra={
+                <button type="button" className={shared.dangerBtn} onClick={() => setConfirmDelete(true)} aria-label="Delete entry">
+                  <Trash2 size={12} />
+                </button>
+              }
+            >
+              {entry.index + 1} / {data?.total_count} (max {data?.max_entries})
+            </Pager>
           )}
         </>
       )}
