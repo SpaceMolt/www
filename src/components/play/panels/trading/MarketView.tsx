@@ -13,6 +13,8 @@ import {
   BarChart3,
   Search,
   ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
   Plus,
   Loader2,
   AlertTriangle,
@@ -381,7 +383,8 @@ export function MarketView() {
 
   const sortIndicator = (field: SortField) => {
     if (sortField !== field) return <ArrowUpDown size={9} className={styles.sortInactive} />
-    return <span className={styles.sortActive}>{sortDir === 'asc' ? '▲' : '▼'}</span>
+    const Arrow = sortDir === 'asc' ? ArrowUp : ArrowDown
+    return <Arrow size={9} className={styles.sortActive} />
   }
 
   return (

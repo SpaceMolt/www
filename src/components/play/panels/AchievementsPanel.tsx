@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { Trophy, RefreshCw } from 'lucide-react'
+import Image from 'next/image'
+import { Trophy, RefreshCw, Lock, Check } from 'lucide-react'
 import { usePlayer, useCommandQuery } from '@/lib/spacemolt'
 import { Panel, Loading, shared } from '../shared'
 import {
@@ -158,14 +159,13 @@ function AchievementTile({ a }: { a: AchievementTileEntry }) {
     <li className={cls}>
       <div className={styles.tEmblem} aria-hidden>
         {a.earned && hasEmblem(a.id) ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img className={styles.tEmblemImg} src={emblemSrc(a.id)} alt="" />
+          <Image className={styles.tEmblemImg} src={emblemSrc(a.id)} alt="" width={38} height={38} />
         ) : a.earned ? (
           glyph
         ) : a.hidden ? (
           '?'
         ) : (
-          '🔒'
+          <Lock size={16} />
         )}
       </div>
       <div className={styles.tBody}>
@@ -178,7 +178,7 @@ function AchievementTile({ a }: { a: AchievementTileEntry }) {
       <div className={styles.tMeta}>
         <span className={styles.tPoints}>{a.points}</span>
         <span className={styles.srOnly}>{statusText}</span>
-        {a.earned && <span className={styles.tCheck} aria-hidden>✓</span>}
+        {a.earned && <Check className={styles.tCheck} size={12} aria-hidden />}
       </div>
     </li>
   )
