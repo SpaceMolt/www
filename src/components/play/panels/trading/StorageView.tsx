@@ -49,6 +49,9 @@ type PersonalStorageView = Extract<StorageResponse, { hint: string; ships: Array
 }
 type StoredShip = PersonalStorageView['ships'][number] & { custom_name?: string }
 
+/** Carrier bay slots a ship takes, by class scale (gameserver models.ShipBaySlotCost). */
+const BAY_SLOT_COST: Record<number, number> = { 1: 1, 2: 3, 3: 10, 4: 30 }
+
 const shipLabel = (ship: StoredShip): string => {
   const cls = ship.class_name || ship.class_id
   return ship.custom_name ? `${ship.custom_name} (${cls})` : cls
@@ -77,11 +80,15 @@ export function StorageView() {
   const factionServices = useFactionServices()
   const hasLockbox = factionServices?.has('faction_storage')
   const hasFactionGarage = factionServices?.has('faction_ship_garage')
-  // gameserver storageV2LoadShip: a carrier bay on the active hull, or a fitted tow rig.
-  const shipClassId = useShip()?.class_id
+  // Loading a stored ship (gameserver storageV2LoadShipOnCarrier / storageV2LoadShipForTow): a carrier
+  // loads it if it fits the free bay slots; otherwise a tow rig tows it if nothing else is in tow and
+  // it is no larger in scale than the active ship.
+  const activeShip = useShip()
+  const activeClass = activeShip?.class_id ? getShip(activeShip.class_id) : undefined
+  const bayCapacity = activeClass?.inherent_capabilities?.find((c) => c.type === 'ship_bay_capacity')?.value ?? 0
   const hasTowRig = useFittedModules().some((m) => (m.tow_speed_penalty ?? 0) > 0)
-  const canLoadShip = hasTowRig ||
-    Boolean(shipClassId && getShip(shipClassId)?.inherent_capabilities?.some((c) => c.type === 'ship_bay_capacity' && c.value > 0))
+  const player = usePlayer()
+  const towing = Boolean(player?.towing_ship_id || player?.towing_wreck_id)
   const rawCargo = useCargo()
   const cargo = useMemo(() => normalizeCargo(rawCargo), [rawCargo])
   const actionPending = usePendingAction() !== null
@@ -100,6 +107,24 @@ export function StorageView() {
     [selectedStation, revision],
     { enabled: !isDocked && Boolean(selectedStation) },
   )
+
+  // Bay use is only in the get_cargo query, and only for carriers.
+  const { data: bay } = useCommandQuery(
+    async (account) => (await account.commands.spacemolt.get_cargo()).structuredContent,
+    [activeShip?.id, revision],
+    { enabled: isDocked && bayCapacity > 0 },
+  )
+  const bayFree = (bay?.bay_capacity ?? bayCapacity) - (bay?.bay_used ?? 0)
+  const loadAction = (ship: StoredShip): 'Load' | 'Tow' | null => {
+    const scale = getShip(ship.class_id)?.scale ?? 0
+    if (bayCapacity > 0) return bayFree >= (BAY_SLOT_COST[scale] ?? Infinity) ? 'Load' : null
+    return hasTowRig && !towing && scale <= (activeClass?.scale ?? 0) ? 'Tow' : null
+  }
+  // A personal-achievement prestige hull cannot be pooled in the faction garage (gameserver faction_ship_garage.go).
+  const canGarage = (ship: StoredShip) => {
+    const cls = getShip(ship.class_id)
+    return Boolean(hasFactionGarage) && !(cls?.required_achievement && !cls.required_faction_achievement)
+  }
 
   const [storedSel, setStoredSel] = useState<Selection>({})
   const [cargoSel, setCargoSel] = useState<Selection>({})
@@ -288,18 +313,18 @@ export function StorageView() {
         ships={storedShips}
         renderActions={(ship) => (
           <>
-            {canLoadShip && (
+            {loadAction(ship) && (
               <button
                 className={shared.subtleBtn}
                 disabled={actionPending}
                 onClick={() => shipAction('load_ship', { item_id: ship.ship_id })}
-                title="Load into your carrier's bay, or attach to your tow rig"
+                title={loadAction(ship) === 'Load' ? "Load into your carrier's bay" : 'Attach to your tow rig'}
                 type="button"
               >
-                Load / Tow
+                {loadAction(ship)}
               </button>
             )}
-            {hasFactionGarage && (
+            {canGarage(ship) && (
               <button
                 className={shared.subtleBtn}
                 disabled={actionPending}
