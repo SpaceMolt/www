@@ -21,7 +21,7 @@ import {
   FlaskConical,
   Trash2,
 } from 'lucide-react'
-import { useShip, useModules, useCargo, useLocationState, usePendingAction, useCommandMutation, useCatalog } from '@/lib/spacemolt'
+import { useShip, useModules, useCargo, useLocationState, usePendingAction, useCommandMutation, useCommandQuery, useCatalog, usePlayer } from '@/lib/spacemolt'
 import type { GameState } from '@spacemolt/lib'
 import { usePlay } from '../PlayProvider'
 import { ProgressBar } from '../ProgressBar'
@@ -33,10 +33,17 @@ import type { RawCatalogItem } from '@/data/catalog'
 import styles from './ShipPanel.module.css'
 import { imageUrl } from '@/data/images'
 import { canRefit, isUsableConsumable, usesQuantity, useItemResultText } from './shipModules'
+import { usePersonalStorage } from './trading/StorageView'
 
 type ModuleEntry = NonNullable<GameState['modules']>[number]
 
 type SlotType = 'weapon' | 'defense' | 'utility'
+
+/** Where an installable module sits. install_mod takes it from cargo, so the others are withdrawn first. */
+type ModuleSource = 'cargo' | 'storage' | 'faction'
+const SOURCE_LABEL: Record<ModuleSource, string> = { cargo: 'Cargo', storage: 'Your storage', faction: 'Faction storage' }
+type InstallableModule = { item_id: string; name: string; quantity: number; source: ModuleSource; catalogEntry?: RawCatalogItem }
+type StoredItem = { item_id: string; name?: string; item_name?: string; quantity: number }
 
 /** Read a numeric per-type module stat out of the loosely-typed `stats` bag. */
 function statNum(stats: Record<string, unknown> | undefined, key: string): number | undefined {
@@ -85,17 +92,31 @@ export function ShipPanel() {
     [mutate]
   )
 
+  // Modules held at this station: your storage and the faction's main store, fetched while the picker is open.
+  const hasFaction = Boolean(usePlayer()?.faction_id)
+  const pickerOpen = installSlotType !== null && isDocked
+  const { data: personalStorage } = usePersonalStorage({ enabled: pickerOpen })
+  const { data: factionStorage } = useCommandQuery(
+    async (account) => (await account.commands.spacemolt_storage.view({ target: 'faction' })).structuredContent as { items?: StoredItem[] } | undefined,
+    [location?.docked_at, installSlotType],
+    { enabled: pickerOpen && hasFaction },
+  )
+
   const handleInstallModule = useCallback(
-    async (itemId: string) => {
+    async (itemId: string, source: ModuleSource) => {
       setModError(null)
       try {
+        const items = [{ item_id: itemId, quantity: 1 }]
+        if (source === 'storage') await mutate((c) => c.spacemolt_storage.withdraw({ items }), { label: 'Withdrawing' })
+        if (source === 'faction') await mutate((c) => c.spacemolt_storage.withdraw({ items, target: 'faction' }), { label: 'Withdrawing' })
+        if (source !== 'cargo') uiStore.dispatch({ type: 'storage_changed' })
         await mutate((c) => c.spacemolt.install_mod({ id: itemId }), { label: 'install_mod' })
         setInstallSlotType(null)
       } catch (err) {
         setModError(errorMessage(err))
       }
     },
-    [mutate]
+    [mutate, uiStore]
   )
 
   const handleUseItem = useCallback(
@@ -141,8 +162,8 @@ export function ShipPanel() {
   const consumables = cargo.filter((item) => item.item_id && isUsableConsumable(getCatalogRawItem(item.item_id)))
 
   // Get installable modules from cargo for a slot type
-  const getInstallableModules = (slotType: SlotType): Array<{ item_id: string; name: string; quantity: number; catalogEntry?: RawCatalogItem }> =>
-    cargo.flatMap((item) => {
+  const getInstallableModules = (slotType: SlotType): InstallableModule[] => {
+    const fromSource = (source: ModuleSource, items: StoredItem[]) => items.flatMap((item) => {
       const itemId = item.item_id
       if (!itemId) return []
       const entry = getCatalogRawItem(itemId)
@@ -151,8 +172,14 @@ export function ShipPanel() {
       if (slotType === 'weapon' && modType !== 'weapon') return []
       if (slotType === 'defense' && modType !== 'defense') return []
       if (slotType === 'utility' && modType !== 'mining' && modType !== 'utility') return []
-      return [{ item_id: itemId, name: item.item_name ?? itemId, quantity: item.quantity ?? 0, catalogEntry: entry }]
+      return [{ item_id: itemId, name: item.item_name ?? item.name ?? entry.name ?? itemId, quantity: item.quantity ?? 0, source, catalogEntry: entry }]
     })
+    return [
+      ...fromSource('cargo', cargo as StoredItem[]),
+      ...(isDocked ? fromSource('storage', personalStorage?.items ?? []) : []),
+      ...(isDocked ? fromSource('faction', factionStorage?.items ?? []) : []),
+    ]
+  }
 
   const cargoPicked = selectedItems(cargoRows, cargoSel)
 
@@ -446,6 +473,7 @@ export function ShipPanel() {
           modules={getInstallableModules(installSlotType)}
           onInstall={handleInstallModule}
           onClose={() => { setInstallSlotType(null); setModError(null) }}
+          busy={actionPending}
           error={modError}
           cpuAvailable={cpuCapacity - cpuUsed}
           powerAvailable={powerCapacity - powerUsed}
@@ -462,10 +490,11 @@ function CompatBadge({ status }: { status: { ok: boolean; reason?: string } | nu
     : <span className={styles.compatNo} title={status.reason}><AlertTriangle size={10} /> {status.reason}</span>
 }
 
-function InstallModuleModal({ slotType, modules, onInstall, onClose, cpuAvailable, powerAvailable, error }: {
+function InstallModuleModal({ slotType, modules, onInstall, onClose, cpuAvailable, powerAvailable, busy, error }: {
   slotType: SlotType
-  modules: Array<{ item_id: string; name: string; quantity: number; catalogEntry?: RawCatalogItem }>
-  onInstall: (itemId: string) => void
+  busy: boolean
+  modules: InstallableModule[]
+  onInstall: (itemId: string, source: ModuleSource) => void
   onClose: () => void
   cpuAvailable: number
   powerAvailable: number
@@ -486,7 +515,7 @@ function InstallModuleModal({ slotType, modules, onInstall, onClose, cpuAvailabl
       )}
       {modules.length === 0 ? (
         <div className={shared.emptyState}>
-          No compatible modules in cargo
+          No compatible modules in cargo or station storage
         </div>
       ) : (
         <div className={styles.installList}>
@@ -496,11 +525,12 @@ function InstallModuleModal({ slotType, modules, onInstall, onClose, cpuAvailabl
               ? ((cat.cpu_usage ?? 0) <= cpuAvailable && (cat.power_usage ?? 0) <= powerAvailable)
               : true
             return (
-              <div key={mod.item_id} className={styles.installItem}>
+              <div key={`${mod.source}-${mod.item_id}`} className={styles.installItem}>
                 <div className={styles.installInfo}>
                   <span className={styles.installName}>{mod.name}</span>
                   <div className={styles.installMeta}>
                     <span className={styles.installQty}>x{mod.quantity}</span>
+                    <span className={mod.source === 'cargo' ? shared.badgeGreen : mod.source === 'storage' ? shared.badgeCyan : shared.badgePurple}>{SOURCE_LABEL[mod.source]}</span>
                     {cat && (
                       <>
                         <span className={styles.slotStat}><Cpu size={9} /> {cat.cpu_usage}</span>
@@ -517,8 +547,9 @@ function InstallModuleModal({ slotType, modules, onInstall, onClose, cpuAvailabl
                 </div>
                 <button
                   className={shared.actionBtn}
-                  onClick={() => onInstall(mod.item_id)}
-                  disabled={!fitsResources}
+                  onClick={() => onInstall(mod.item_id, mod.source)}
+                  disabled={!fitsResources || busy}
+                  title={mod.source === 'cargo' ? 'Install from cargo' : `Withdraw one from ${SOURCE_LABEL[mod.source].toLowerCase()} to cargo, then install (two actions)`}
                   type="button"
                 >
                   <Plus size={12} /> Install
