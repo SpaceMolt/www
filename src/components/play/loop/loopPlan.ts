@@ -109,6 +109,39 @@ export function savePlans(plans: LoopPlan[], storage: Pick<Storage, 'setItem'> |
   }
 }
 
+/** A POI the player can pick for a goto step: seen in a visited system, a public station, or faction intel. */
+export interface KnownPoi {
+  id: string
+  name: string
+  systemId: string
+  systemName: string
+}
+
+const POIS_KEY = 'spacemolt.play.knownPois'
+
+export function loadKnownPois(storage: Pick<Storage, 'getItem'> | undefined = globalThis.localStorage): KnownPoi[] {
+  try {
+    const parsed: unknown = JSON.parse(storage?.getItem(POIS_KEY) ?? '[]')
+    return Array.isArray(parsed) ? parsed.filter((p) => typeof p?.id === 'string' && typeof p?.systemId === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+/** Merge newly seen POIs into the remembered list (newer entries replace older ones with the same id). */
+export function mergePois(known: KnownPoi[], seen: KnownPoi[]): KnownPoi[] {
+  const ids = new Set(seen.map((p) => p.id))
+  return [...known.filter((p) => !ids.has(p.id)), ...seen]
+}
+
+export function rememberPois(seen: KnownPoi[], storage: Pick<Storage, 'getItem' | 'setItem'> | undefined = globalThis.localStorage): void {
+  try {
+    storage?.setItem(POIS_KEY, JSON.stringify(mergePois(loadKnownPois(storage), seen)))
+  } catch {
+    // Storage unavailable: the picker falls back to stations and intel.
+  }
+}
+
 const STEP_KINDS = new Set<string>(['mine', 'goto', 'sell_all', 'sell', 'deposit', 'refuel', 'repair', 'craft', 'wait'])
 
 function isPlan(value: unknown): value is LoopPlan {

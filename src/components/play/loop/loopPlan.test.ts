@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { advance, errorOutcome, loadPlans, mineSellPreset, savePlans, type LoopPlan } from './loopPlan'
+import { advance, errorOutcome, loadKnownPois, loadPlans, mineSellPreset, rememberPois, savePlans, type LoopPlan } from './loopPlan'
 
 const plan = (repeat: number): LoopPlan => ({ name: 'p', repeat, steps: [{ kind: 'mine' }, { kind: 'sell_all' }] })
 
@@ -45,6 +45,17 @@ describe('mineSellPreset', () => {
     const preset = mineSellPreset({ minePoi: { id: 'belt', name: 'Belt' }, station: { id: 'base', name: 'Base' } })
     expect(preset.steps.map((s) => s.kind)).toEqual(['goto', 'mine', 'goto', 'sell_all', 'refuel'])
     expect(preset.repeat).toBe(0)
+  })
+})
+
+describe('remembered POIs', () => {
+  it('keeps POIs across systems and updates a POI seen again', () => {
+    const store = new Map<string, string>()
+    const storage = { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => void store.set(k, v) }
+    rememberPois([{ id: 'main_belt', name: 'Main Belt', systemId: 'sol', systemName: 'Sol' }], storage)
+    rememberPois([{ id: 'ac_ring', name: 'Ring', systemId: 'alpha_centauri', systemName: 'Alpha Centauri' }], storage)
+    rememberPois([{ id: 'main_belt', name: 'Main Belt (rich)', systemId: 'sol', systemName: 'Sol' }], storage)
+    expect(loadKnownPois(storage).map((p) => p.name)).toEqual(['Ring', 'Main Belt (rich)'])
   })
 })
 

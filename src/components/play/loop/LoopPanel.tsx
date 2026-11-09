@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ArrowDown, ArrowUp, Play, Plus, Repeat, Save, Square, Trash2, X } from 'lucide-react'
-import { useCargo, useLocationState, usePendingAction, usePlayer, useSystem } from '@/lib/spacemolt'
+import { fetchStations } from '@spacemolt/lib'
+import { useAccountStore, useCargo, useLocationState, usePendingAction, usePlayer, useSystem } from '@/lib/spacemolt'
 import { Credits, Panel, shared } from '../shared'
 import { hasMineableResources } from '../LeftSidebar'
-import { loadPlans, mineSellPreset, savePlans, stepLabel, type LoopPlan, type LoopStep } from './loopPlan'
+import { loadKnownPois, loadPlans, mergePois, mineSellPreset, savePlans, stepLabel, type KnownPoi, type LoopPlan, type LoopStep } from './loopPlan'
 import { useLoop } from './useLoopRunner'
 import styles from './Loop.module.css'
 
@@ -24,6 +25,46 @@ const KIND_LABELS: Record<StepKind, string> = {
 }
 
 const EMPTY_PLAN: LoopPlan = { name: 'My loop', steps: [], repeat: 0 }
+
+const GAMESERVER_URL = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
+
+/**
+ * Goto destinations: POIs remembered from visited systems plus the public
+ * station directory, and faction intel for the picked system. The server has
+ * no other way to list POIs outside the current system.
+ */
+function useDestinations(systemId: string, here: KnownPoi[]): { pois: KnownPoi[]; systems: { id: string; name: string }[] } {
+  const store = useAccountStore()
+  const [base, setBase] = useState<KnownPoi[]>(() => loadKnownPois())
+  const [intel, setIntel] = useState<KnownPoi[]>([])
+
+  useEffect(() => {
+    fetchStations(GAMESERVER_URL)
+      .then(({ stations }) => setBase((known) => mergePois(
+        stations.map((s) => ({ id: s.poi_id, name: s.name, systemId: s.system_id, systemName: s.system_name })),
+        known, // remembered names win over directory names
+      )))
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    setIntel([])
+    if (!systemId) return
+    let cancelled = false
+    store.account.commands.spacemolt_intel.query_intel({ system_id: systemId, limit: 1 })
+      .then((r) => {
+        const entry = r.structuredContent?.entries?.[0]
+        if (!cancelled && entry) setIntel((entry.pois ?? []).map((p) => ({ id: p.id, name: p.base_name || p.name, systemId, systemName: entry.name })))
+      })
+      .catch(() => {}) // not in a faction, or no intel yet
+    return () => { cancelled = true }
+  }, [systemId, store])
+
+  const pois = mergePois(mergePois(base, intel), here)
+  const systems = [...new Map(pois.map((p) => [p.systemId, { id: p.systemId, name: p.systemName }])).values()]
+    .sort((a, b) => a.name.localeCompare(b.name))
+  return { pois: pois.filter((p) => p.systemId === systemId), systems }
+}
 
 /** Live progress strip under every panel while a loop runs or after it ends. */
 export function LoopBanner() {
@@ -63,6 +104,8 @@ export function LoopBanner() {
 
 function StepEditor({ onAdd }: { onAdd: (step: LoopStep) => void }) {
   const [kind, setKind] = useState<StepKind>('goto')
+  const location = useLocationState()
+  const [systemId, setSystemId] = useState(location?.system_id ?? '')
   const [poiId, setPoiId] = useState('')
   const [itemIds, setItemIds] = useState<string[]>([])
   const [target, setTarget] = useState<'storage' | 'faction'>('storage')
@@ -70,14 +113,17 @@ function StepEditor({ onAdd }: { onAdd: (step: LoopStep) => void }) {
   const [count, setCount] = useState('1')
   const [seconds, setSeconds] = useState('30')
   const systemData = useSystem().data
-  const pois = systemData && 'system' in systemData ? systemData.system.pois : []
+  const here = systemData && 'system' in systemData
+    ? systemData.system.pois.map((p) => ({ id: p.id, name: p.base_name || p.name, systemId: systemData.system.id, systemName: systemData.system.name }))
+    : []
+  const destinations = useDestinations(systemId, here)
   const cargo = useCargo() ?? []
 
   const build = (): LoopStep | null => {
     switch (kind) {
       case 'goto': {
-        const poi = pois.find((p) => p.id === poiId)
-        return poi ? { kind, poiId: poi.id, label: poi.base_name || poi.name } : null
+        const poi = destinations.pois.find((p) => p.id === poiId)
+        return poi ? { kind, poiId: poi.id, label: poi.systemId === location?.system_id ? poi.name : `${poi.name} (${poi.systemName})` } : null
       }
       case 'sell': return itemIds.length ? { kind, itemIds } : null
       case 'deposit': return { kind, target }
@@ -94,10 +140,16 @@ function StepEditor({ onAdd }: { onAdd: (step: LoopStep) => void }) {
         {Object.entries(KIND_LABELS).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
       </select>
       {kind === 'goto' && (
-        <select className={shared.selectInput} value={poiId} onChange={(e) => setPoiId(e.target.value)} aria-label="Destination">
-          <option value="">Pick a POI in this system</option>
-          {pois.map((p) => <option key={p.id} value={p.id}>{p.base_name || p.name} ({p.type})</option>)}
-        </select>
+        <>
+          <select className={shared.selectInput} value={systemId} onChange={(e) => { setSystemId(e.target.value); setPoiId('') }} aria-label="Destination system">
+            <option value="">Pick a system</option>
+            {destinations.systems.map((s) => <option key={s.id} value={s.id}>{s.name}{s.id === location?.system_id ? ' (here)' : ''}</option>)}
+          </select>
+          <select className={shared.selectInput} value={poiId} onChange={(e) => setPoiId(e.target.value)} aria-label="Destination">
+            <option value="">Pick a POI</option>
+            {destinations.pois.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+        </>
       )}
       {kind === 'sell' && (
         <div className={styles.itemChecks}>

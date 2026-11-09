@@ -39,6 +39,7 @@ import { ProgressBar } from './ProgressBar'
 import type { GalaxyPanelHandle, MapSystemData, PlannedRoute } from './panels/GalaxyPanel'
 import { findRoute } from './routeWalk'
 import { useLoop } from './loop/useLoopRunner'
+import { rememberPois } from './loop/loopPlan'
 import { shortcutKey } from './shortcuts'
 import { titleCase as formatLabel } from '@/lib/format'
 import styles from './LeftSidebar.module.css'
@@ -254,6 +255,11 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
 
   const systemData = systemQuery.data
   const system = systemData && 'system' in systemData ? systemData.system : undefined
+
+  // Remember every visited system's POIs so Autopilot can target them from anywhere.
+  useEffect(() => {
+    if (system) rememberPois(system.pois.map((p) => ({ id: p.id, name: p.base_name || p.name, systemId: system.id, systemName: system.name })))
+  }, [system])
   const poiData = poiQuery.data
   const poi = poiData && 'poi' in poiData ? poiData.poi : undefined
 
