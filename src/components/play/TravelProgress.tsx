@@ -1,6 +1,6 @@
 'use client'
 
-import { useCurrentTick, useLocationState, usePendingAction, useSystem } from '@/lib/spacemolt'
+import { useAccountStore, useCurrentTick, useLocationState, usePendingAction, useSystem } from '@/lib/spacemolt'
 import { Navigation, Zap } from 'lucide-react'
 import styles from './TravelProgress.module.css'
 
@@ -27,6 +27,7 @@ export function TravelProgress() {
   const location = useLocationState()
   const currentTick = useCurrentTick()
   const pending = usePendingAction()
+  const tickSecs = useAccountStore().account.welcome?.tick_rate || 10
   const systemData = useSystem().data
   const pois = systemData && 'system' in systemData ? systemData.system.pois : undefined
 
@@ -63,9 +64,9 @@ export function TravelProgress() {
           {eta !== null && (
             <div className={styles.eta}>
               <span className={styles.etaValue}>
-                {eta * 10 >= 60
-                  ? `${Math.floor((eta * 10) / 60)}m ${(eta * 10) % 60}s`
-                  : `${eta * 10}s`}
+                {eta * tickSecs >= 60
+                  ? `${Math.floor((eta * tickSecs) / 60)}m ${(eta * tickSecs) % 60}s`
+                  : `${eta * tickSecs}s`}
               </span>
             </div>
           )}

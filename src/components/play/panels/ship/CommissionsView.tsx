@@ -10,11 +10,12 @@ import {
   Send,
 } from 'lucide-react'
 import type { CommissionStatusResponse } from '@spacemolt/lib'
-import { useCommandMutation, useCommandQuery, useLocationState } from '@/lib/spacemolt'
+import { useCommandMutation, useCommandQuery, useCurrentTick, useLocationState } from '@/lib/spacemolt'
 import { usePlay } from '../../PlayProvider'
 import { Loading, ConfirmAction, QtyButtons, errorMessage, shared } from '../../shared'
 import { formatItemId } from '@/data/catalog'
 import styles from './CommissionsView.module.css'
+import { buildProgressPct } from './commissionProgress'
 
 type Commission = CommissionStatusResponse['commissions'][number]
 
@@ -22,6 +23,7 @@ export function CommissionsView() {
   const mutate = useCommandMutation()
   const { uiStore } = usePlay()
   const dockedAt = useLocationState()?.docked_at
+  const currentTick = useCurrentTick()
   const [cancelConfirm, setCancelConfirm] = useState<string | null>(null)
   const [supplyQtys, setSupplyQtys] = useState<Record<string, string>>({})
   const [supplying, setSupplying] = useState<string | null>(null)
@@ -175,7 +177,7 @@ export function CommissionsView() {
               {/* Progress bar */}
               {isBuilding && ticksRemaining > 0 && (
                 <div className={styles.progressBarOuter}>
-                  <div className={styles.progressBarInner} style={{ width: `${Math.max(5, 100 - (ticksRemaining * 2))}%` }} />
+                  <div className={styles.progressBarInner} style={{ width: `${Math.max(5, buildProgressPct(c, currentTick))}%` }} />
                 </div>
               )}
               {isReady && (

@@ -126,17 +126,48 @@
 }
 
 /* Empty / placeholder states */
+/* Nothing to show: a quiet dashed box, never used for errors or loading. */
 .emptyState {
-  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
-  font-size: 0.78rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
   color: var(--hull-grey);
   text-align: center;
-  padding: 1.5rem 0.5rem;
+  padding: 0.6rem 0.5rem;
+  border: 1px dashed var(--dim-grey);
+  border-radius: 3px;
+}
+
+.loadingLine {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--hull-grey);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0;
+}
+
+.errorLine {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--claw-red);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.5rem;
+  background: rgba(230, 57, 70, 0.07);
+  border: 1px solid rgba(230, 57, 70, 0.3);
+  border-radius: 3px;
+}
+
+.errorLine > span {
+  flex: 1;
+  min-width: 0;
 }
 
 .dockedOnly {
-  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
-  font-size: 0.78rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
   color: var(--hull-grey);
   text-align: center;
   padding: 1.5rem 0.5rem;
@@ -447,7 +478,7 @@
 }
 
 .confirmText {
-  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
   font-size: 0.75rem;
   color: var(--chrome-silver);
   flex: 1;
@@ -459,6 +490,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.5rem;
   padding: 0.4rem 0.5rem;
   background: rgba(61, 90, 108, 0.08);
   border: 1px solid transparent;
@@ -472,8 +504,9 @@
 }
 
 .listCardName {
-  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
   font-size: 0.75rem;
+  min-width: 0;
   color: var(--star-white);
   white-space: nowrap;
   overflow: hidden;
@@ -487,6 +520,185 @@
   display: flex;
   gap: 0.4rem;
   align-items: center;
+}
+
+/* === Stat list: label left, value right, never wraps === */
+
+.statList {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 0.2rem 0.75rem;
+  margin: 0;
+  padding: 0.35rem 0.5rem;
+  background: rgba(61, 90, 108, 0.06);
+  border-radius: 3px;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.statList > dt {
+  color: var(--hull-grey);
+}
+
+.statList > dd {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  color: var(--chrome-silver);
+  font-weight: 600;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.statSub {
+  color: var(--hull-grey);
+  font-weight: 400;
+}
+
+.toneWarn { color: var(--warning-yellow); }
+.toneBad { color: var(--claw-red); }
+
+.bar {
+  width: 4.5rem;
+  height: 5px;
+  flex-shrink: 0;
+  background: rgba(61, 90, 108, 0.25);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.bar > i {
+  display: block;
+  height: 100%;
+  background: var(--bio-green);
+  border-radius: 3px;
+}
+
+.toneWarn .bar > i { background: var(--warning-yellow); }
+.toneBad .bar > i { background: var(--claw-red); }
+.barOver { outline: 1px solid var(--claw-red); }
+
+/* === Item chips: name + count, wrapping === */
+
+.chipBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.chipTitle {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--hull-grey);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 1px 6px;
+  border: 1px solid rgba(61, 90, 108, 0.45);
+  border-radius: 3px;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--hull-grey);
+  white-space: nowrap;
+}
+
+.chip > b {
+  color: var(--chrome-silver);
+  font-weight: 600;
+}
+
+.chipBad,
+.chipBad > b {
+  border-color: var(--claw-red);
+  color: var(--claw-red);
+}
+
+/* === Notes: one short line of advice with an icon === */
+
+.notes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.note {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  line-height: 1.45;
+  color: var(--chrome-silver);
+}
+
+.note > svg {
+  flex-shrink: 0;
+  position: relative;
+  top: 1px;
+  color: var(--plasma-cyan);
+}
+
+.noteWarn > svg {
+  color: var(--warning-yellow);
+}
+
+/* === Tip: styled hover/focus/tap popover (rendered in a portal) === */
+
+.tip {
+  display: inline-flex;
+  align-items: center;
+  cursor: help;
+}
+
+.tip:focus-visible {
+  outline: 1px dotted var(--plasma-cyan);
+  outline-offset: 2px;
+}
+
+.tipBox {
+  position: fixed;
+  z-index: 200;
+  transform: translate(-50%, -100%);
+  width: max-content;
+  max-width: 240px;
+  padding: 0.35rem 0.5rem;
+  background: var(--nebula-blue);
+  border: 1px solid var(--plasma-cyan);
+  border-radius: 4px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5), 0 0 10px rgba(0, 212, 255, 0.15);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 400;
+  line-height: 1.45;
+  color: var(--chrome-silver);
+  text-transform: none;
+  letter-spacing: 0;
+  white-space: normal;
+  text-align: left;
+  pointer-events: none;
+}
+
+.tipBelow {
+  transform: translate(-50%, 0);
+}
+
+.tipBox b {
+  color: var(--star-white);
+  font-weight: 600;
 }
 
 /* === Mobile === */

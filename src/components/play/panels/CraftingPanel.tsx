@@ -815,9 +815,9 @@ export function CraftingPanel() {
         {venuePickerRecipeId && (
           <FacilityVenuePicker
             recipeName={recipesById[venuePickerRecipeId]?.name || venuePickerRecipeId}
-            ownFacilities={facilities.own.filter(f => f.production?.recipe === venuePickerRecipeId)}
-            factionFacilities={facilities.faction.filter(f => f.production?.recipe === venuePickerRecipeId)}
-            publicFacilities={facilities.public.filter(f => f.production?.recipe === venuePickerRecipeId)}
+            ownFacilities={facilities.own.filter(f => f.recipe_id === venuePickerRecipeId)}
+            factionFacilities={facilities.faction.filter(f => f.recipe_id === venuePickerRecipeId)}
+            publicFacilities={facilities.public.filter(f => f.recipe_id === venuePickerRecipeId)}
             selected={selectedVenue[venuePickerRecipeId]}
             onSelect={(facilityId) => {
               setSelectedVenue(prev => {

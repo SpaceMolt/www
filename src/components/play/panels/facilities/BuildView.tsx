@@ -559,9 +559,9 @@ export function BuildView({ onRefresh }: BuildViewProps) {
             />
           )}
           {buildShort.length > 0 && (
-            <div className={styles.materialMissing}>Short on {buildShort.map((m) => m.name).join(', ')}. Gather them before building.</div>
+            <div className={styles.errorText}>Short on {buildShort.map((m) => m.name).join(', ')}. Gather them before building.</div>
           )}
-          {buildError && <div className={styles.materialMissing}>{buildError}</div>}
+          {buildError && <div className={styles.errorText}>{buildError}</div>}
           <div className={styles.cardActions}>
             <button
               className={shared.confirmBtn}
