@@ -71,12 +71,12 @@ function CharacterMenu({ username }: { username: string }) {
 
   return (
     <div className={styles.charMenu} ref={ref} onKeyDown={(e) => { if (e.key === 'Escape') close() }}>
-      <button className={styles.usernameBtn} onClick={() => (open ? close() : setOpen(true))} aria-expanded={open} aria-haspopup="menu" title="Switch character" type="button">
+      <button className={styles.usernameBtn} onClick={() => (open ? close() : setOpen(true))} aria-expanded={open} aria-haspopup="true" title="Switch character" type="button">
         <span className={styles.username}>{username}</span>
         <ChevronDown size={11} />
       </button>
       {open && (
-        <div className={styles.charMenuPanel} role="menu">
+        <div className={styles.charMenuPanel}>
           {others.length > SEARCH_THRESHOLD && (
             <label className={styles.charMenuSearch}>
               <Search size={11} />
@@ -92,11 +92,11 @@ function CharacterMenu({ username }: { username: string }) {
           )}
           {shown.length === 0 && <span className={styles.charMenuEmpty}>No match</span>}
           {shown.map((p) => (
-            <button key={p.id} className={styles.charMenuItem} role="menuitem" onClick={() => leave(() => onSelectPlayer?.(p.id))} type="button">
+            <button key={p.id} className={styles.charMenuItem} onClick={() => leave(() => onSelectPlayer?.(p.id))} type="button">
               {p.username}
             </button>
           ))}
-          <button className={`${styles.charMenuItem} ${styles.charMenuAll}`} role="menuitem" onClick={() => leave(onSwitchPlayer)} type="button">
+          <button className={`${styles.charMenuItem} ${styles.charMenuAll}`} onClick={() => leave(onSwitchPlayer)} type="button">
             <Users size={11} /> All characters
           </button>
         </div>

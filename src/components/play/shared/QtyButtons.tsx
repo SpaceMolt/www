@@ -23,13 +23,13 @@ export function QtyButtons({ max, current, onChange }: { max: number; current: s
     <div className={shared.qtyButtons}>
       {qtySteps(max).map((n) => (
         <span key={n} className={shared.qtyPair}>
-          <button className={shared.qtyBtn} onClick={press(cur + n)} disabled={cur >= max} type="button">+{formatCompact(n)}</button>
-          <button className={shared.qtyBtn} onClick={press(cur - n)} disabled={cur <= 0} type="button">-{formatCompact(n)}</button>
+          <button className={shared.qtyBtn} onClick={press(cur + n)} disabled={cur >= max} aria-label={`Add ${n}`} type="button">+{formatCompact(n)}</button>
+          <button className={shared.qtyBtn} onClick={press(cur - n)} disabled={cur <= 0} aria-label={`Subtract ${n}`} type="button">-{formatCompact(n)}</button>
         </span>
       ))}
       <span className={shared.qtyPair}>
-        <button className={`${shared.qtyBtn} ${shared.qtyBtnMax}`} onClick={press(max)} disabled={cur >= max} type="button">MAX</button>
-        <button className={shared.qtyBtn} onClick={press(0)} disabled={cur <= 0} type="button">CLR</button>
+        <button className={`${shared.qtyBtn} ${shared.qtyBtnMax}`} onClick={press(max)} disabled={cur >= max} aria-label={`Set to the maximum, ${max}`} type="button">MAX</button>
+        <button className={shared.qtyBtn} onClick={press(0)} disabled={cur <= 0} aria-label="Clear" type="button">CLR</button>
       </span>
     </div>
   )

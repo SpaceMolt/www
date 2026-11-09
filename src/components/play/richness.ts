@@ -30,7 +30,7 @@ export function regenHint(itemId: string, remaining?: number, capacity?: number)
   return `Regenerates steadily; back to full ${roughly(refill * (1 - remaining / capacity))}.`
 }
 
-export const RICHNESS_LEVELS = ['Very poor', 'Poor', 'Average', 'Rich', 'Exceptional'] as const
+const RICHNESS_LEVELS = ['Very poor', 'Poor', 'Average', 'Rich', 'Exceptional'] as const
 
 /** Rate a deposit 0 (very poor) to 4 (exceptional) against deposits of the same rarity. */
 export function rateRichness(itemId: string, richness: number) {

@@ -116,7 +116,7 @@ const DEPOSIT_KIND = {
 function DepositIcon({ itemId }: { itemId: string }) {
   const by = getItem(itemId)?.extracted_by
   const { Icon, label, className } = DEPOSIT_KIND[by as keyof typeof DEPOSIT_KIND] ?? DEPOSIT_KIND.mining
-  return <Icon size={10} className={`${styles.depositIcon} ${className}`} aria-label={label}><title>{label}</title></Icon>
+  return <Icon size={10} className={`${styles.depositIcon} ${className}`}><title>{label}</title></Icon>
 }
 
 /** A deposit's rating, colored by level, or 'Depleted'. The numbers are in the row's hover text. */
