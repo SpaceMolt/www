@@ -201,19 +201,19 @@ export function CombatPanel() {
   const handleStance = useCallback(
     (stance: Stance) => {
       if (store.getPhase() !== 'ready' || !uiStore.getState().inCombat || uiStore.getState().battleSyncPending) return
-      run('stance', () => store.account.commands.spacemolt_battle.stance({ id: stance }))
+      run('stance', () => store.account.commands.spacemolt_battle.stance({ id: stance }), (r) => r.structuredContent?.message ?? `Stance set: ${stance}`)
     },
     [store, uiStore, run],
   )
 
   const handleAdvance = useCallback(() => {
     if (store.getPhase() !== 'ready' || !uiStore.getState().inCombat || uiStore.getState().battleSyncPending) return
-    run('advance', () => store.account.commands.spacemolt_battle.advance())
+    run('advance', () => store.account.commands.spacemolt_battle.advance(), (r) => r.structuredContent?.message ?? 'Advancing')
   }, [store, uiStore, run])
 
   const handleRetreat = useCallback(() => {
     if (store.getPhase() !== 'ready' || !uiStore.getState().inCombat || uiStore.getState().battleSyncPending) return
-    run('retreat', () => store.account.commands.spacemolt_battle.retreat())
+    run('retreat', () => store.account.commands.spacemolt_battle.retreat(), (r) => r.structuredContent?.message ?? 'Retreating')
   }, [store, uiStore, run])
 
   const handleReload = useCallback(
