@@ -123,7 +123,7 @@ Refinery hulls and `compact_*` modules process cargo on their own:
 - You get a `ship_processing` notification.
 - It needs no command, no dock, and no crew.
 
-### The Field Workshop
+### Crafting in the Field Workshop
 
 On a Field Workshop hull, `craft` works undocked, anywhere in space. Use the same command as at a station:
 
