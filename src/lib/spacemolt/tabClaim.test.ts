@@ -46,6 +46,14 @@ describe('claimTab', () => {
     expect(holders.has(tabLockName('p1'))).toBe(false)
   })
 
+  test('a lock API failure still lets the player play', async () => {
+    const locks = { request: () => Promise.reject(new DOMException('no', 'SecurityError')) } as unknown as LockManager
+    const seen: TabClaim[] = []
+    claimTab(locks, 'p1', false, (c) => seen.push(c))
+    await tick()
+    expect(seen).toEqual(['held'])
+  })
+
   test('different players do not conflict', async () => {
     const { locks } = fakeLocks()
     const seen: TabClaim[] = []

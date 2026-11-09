@@ -70,15 +70,15 @@ export function PlayerSelector({ players, onSelect, loading, authHeaders, regist
     }
   }
 
+  useEffect(() => {
+    charactersOpenElsewhere().then(setOpenElsewhere).catch(() => {})
+  }, [])
+
   // One request for the whole fleet. This used to fetch each agent separately;
   // those are charged against a per-Clerk-user budget of 120/min, so an operator
   // with a few hundred agents rate-limited themselves just by opening this page.
   // Pacing them sequentially did not help — the budget is per minute, not per
   // burst.
-  useEffect(() => {
-    charactersOpenElsewhere().then(setOpenElsewhere).catch(() => {})
-  }, [])
-
   useEffect(() => {
     if (players.length === 0) return
     let cancelled = false

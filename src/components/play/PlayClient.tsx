@@ -281,7 +281,7 @@ export function PlayClient() {
 
   // Player selected — launch game
   return (
-    <TabGate playerId={selectedPlayerId} onSwitchPlayer={handleSwitchPlayer}>
+    <TabGate key={selectedPlayerId} playerId={selectedPlayerId} onSwitchPlayer={handleSwitchPlayer}>
       <AccountProvider
         playerId={selectedPlayerId}
         mintToken={mintToken}
@@ -296,7 +296,7 @@ export function PlayClient() {
           </div>
         }
       >
-          <PlayProvider onSwitchPlayer={handleSwitchPlayer}>
+        <PlayProvider onSwitchPlayer={handleSwitchPlayer}>
           <PlayClientInner />
         </PlayProvider>
       </AccountProvider>

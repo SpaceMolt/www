@@ -44,8 +44,9 @@ export function claimTab(
       onClaim('held')
       return held
     })
-    // Rejects with AbortError when another tab steals the lock.
-    .catch(() => { if (active) onClaim('elsewhere') })
+    // AbortError: another tab stole the lock. Any other failure: play as if
+    // Web Locks were missing, so a broken lock API never blocks the game.
+    .catch((err) => { if (active) onClaim(err?.name === 'AbortError' ? 'elsewhere' : 'held') })
   return () => {
     active = false
     release()
