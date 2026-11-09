@@ -74,6 +74,37 @@
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
 }
 
+.charMenuSearch {
+  position: sticky;
+  top: -0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: -0.25rem -0.25rem 0.25rem;
+  padding: 0.4rem 0.5rem;
+  background: rgba(13, 19, 33, 0.98);
+  border-bottom: 1px solid rgba(61, 90, 108, 0.35);
+  color: var(--hull-grey);
+}
+
+.charMenuSearch input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  outline: none;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--star-white);
+}
+
+.charMenuEmpty {
+  padding: 0.35rem 0.5rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--hull-grey);
+}
+
 .charMenuItem {
   display: flex;
   align-items: center;
