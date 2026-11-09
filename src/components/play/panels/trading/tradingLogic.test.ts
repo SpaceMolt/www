@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import type { MarketBook, ViewMarketResponse } from '@spacemolt/lib'
-import { chunk, describeBulk, giftFromLog, mergeLiveBook, sumBulk } from './tradingLogic'
+import { giftFromLog, mergeLiveBook, sumBulk } from './tradingLogic'
 import { mergeTradeSnapshot } from '@/lib/spacemolt/wireNotifications'
 
 type MarketItem = ViewMarketResponse['items'][number]
@@ -48,20 +48,14 @@ describe('mergeLiveBook', () => {
   })
 })
 
-test('chunk splits into server-sized batches', () => {
-  expect(chunk([1, 2, 3, 4, 5], 2)).toEqual([[1, 2], [3, 4], [5]])
-  expect(chunk(Array.from({ length: 51 }, (_, i) => i)).map((c) => c.length)).toEqual([50, 1])
-})
-
 test('sumBulk totals bulk chunks and keeps the first error', () => {
-  const outcome = sumBulk([
+  const outcome = sumBulk('Created', [
     { kind: 'bulk', results: [{ success: true }, { success: false, error: 'not enough items' }] },
     { kind: 'bulk', results: [{ success: false, error: 'later' }, { success: true }] },
     { kind: 'single', message: 'ok' },
   ])
-  expect(outcome).toEqual({ ok: 3, failed: 2, firstError: 'not enough items' })
-  expect(describeBulk('Created', outcome)).toBe('Created 3, 2 failed: not enough items')
-  expect(describeBulk('Cancelled', { ok: 4, failed: 0 })).toBe('Cancelled 4')
+  expect(outcome).toEqual({ failed: 2, text: 'Created 3, 2 failed: not enough items' })
+  expect(sumBulk('Cancelled', [{}, {}, {}, {}])).toEqual({ failed: 0, text: 'Cancelled 4' })
 })
 
 test('mergeTradeSnapshot keeps known trades, adds new ones, drops closed ones', () => {

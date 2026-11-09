@@ -95,23 +95,16 @@ export function FactionStorageView() {
   const changed = () => uiStore.dispatch({ type: 'storage_changed' })
 
   // Treasury credits: wallet <-> faction (withdraw needs manage_treasury; the server returns no_permission otherwise)
-  const handleTreasury = async (kind: 'deposit' | 'withdraw', quantity: number | null) => {
-    if (actionPending || quantity === null) return
-    await run('treasury', async () => {
-      const args = { item_id: 'credits', quantity, target: 'faction' }
-      if (kind === 'deposit') await mutate((c) => c.spacemolt_storage.deposit(args), { label: 'faction_deposit_credits' })
-      else await mutate((c) => c.spacemolt_storage.withdraw(args), { label: 'faction_withdraw_credits' })
-      setTreasuryAmount('')
-      changed()
-    })
-  }
-
   // Fuel comes from the ship's tank, not cargo. The server takes the exact amount or nothing.
-  const handleDepositFuel = async (quantity: number | null) => {
+  const handleTreasury = async (kind: 'deposit' | 'withdraw', quantity: number | null, item: 'credits' | 'fuel' = 'credits') => {
     if (actionPending || quantity === null) return
-    await run('fuel', async () => {
-      await mutate((c) => c.spacemolt_storage.deposit({ item_id: 'fuel', quantity, target: 'faction' }), { label: 'faction_deposit_fuel' })
-      setFuelAmount('')
+    await run(item, async () => {
+      const args = { item_id: item, quantity, target: 'faction' }
+      const label = `faction_${kind}_${item}`
+      if (kind === 'deposit') await mutate((c) => c.spacemolt_storage.deposit(args), { label })
+      else await mutate((c) => c.spacemolt_storage.withdraw(args), { label })
+      if (item === 'fuel') setFuelAmount('')
+      else setTreasuryAmount('')
       changed()
     })
   }
@@ -214,7 +207,7 @@ export function FactionStorageView() {
                 <input className={styles.qtyInput} type="number" min={1} step={1} placeholder="fuel" value={fuelAmount} onChange={(e) => setFuelAmount(e.target.value)} />
                 <button
                   className={shared.confirmBtn}
-                  onClick={() => handleDepositFuel(fuelQty)}
+                  onClick={() => handleTreasury('deposit', fuelQty, 'fuel')}
                   disabled={actionPending || fuelQty === null}
                   title="Move fuel from your ship's tank to the faction bunker"
                   type="button"

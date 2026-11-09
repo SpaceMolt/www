@@ -9,7 +9,8 @@ import type { RawCatalogItem } from '@/data/catalog'
 import { useClickOutside } from '../../hooks/useClickOutside'
 import { usePlay } from '../../PlayProvider'
 import { ConfirmAction, QtyButtons, errorMessage, shared } from '../../shared'
-import { chunk, describeBulk, sumBulk } from './tradingLogic'
+import { chunk } from '../../shared/itemSelection'
+import { BULK_ORDER_LIMIT, sumBulk } from './tradingLogic'
 import styles from './OrdersView.module.css'
 
 type FactionStorageView = Extract<StorageResponse, { hint: string; faction_id: string }>
@@ -151,7 +152,7 @@ export function BulkOrderForm({ inventory, onCreated, onClose }: {
     setSubmitting(true)
     const details: unknown[] = []
     try {
-      for (const batch of chunk(orders)) {
+      for (const batch of chunk(orders, BULK_ORDER_LIMIT)) {
         const factionBatch = batch.map((o) => ({ ...o, private: isPrivate || undefined, bucket: bucket || undefined }))
         const result = await mutate((c): Promise<MutationResult> => {
           if (asFaction) {
@@ -174,10 +175,10 @@ export function BulkOrderForm({ inventory, onCreated, onClose }: {
     }
     setSubmitting(false)
     if (details.length === 0) return
-    const outcome = sumBulk(details)
-    uiStore.dispatch({ type: 'toast', kind: outcome.failed > 0 ? 'warning' : 'success', text: describeBulk(`${side === 'sell' ? 'Sell' : 'Buy'} orders created:`, outcome) })
+    const { failed, text } = sumBulk(`${side === 'sell' ? 'Sell' : 'Buy'} orders created:`, details)
+    uiStore.dispatch({ type: 'toast', kind: failed > 0 ? 'warning' : 'success', text })
     onCreated()
-    if (outcome.failed === 0) onClose()
+    if (failed === 0) onClose()
   }
 
   const confirmText = side === 'sell'

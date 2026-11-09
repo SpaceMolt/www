@@ -30,7 +30,7 @@ import {
   usePlayer,
   type RunMutation,
 } from '@/lib/spacemolt'
-import type { AnalyzeMarketResponse, Commands, EstimatePurchaseResponse, MutationResult, StorageResponse, ViewMarketResponse, ViewOrdersResponse } from '@spacemolt/lib'
+import type { AnalyzeMarketResponse, Commands, EstimatePurchaseResponse, MutationResult, ViewMarketResponse, ViewOrdersResponse } from '@spacemolt/lib'
 import { usePlay } from '../../PlayProvider'
 import { getCatalogItem } from '../../../ItemDetail'
 import { formatItemId } from '@/data/catalog'
@@ -38,31 +38,13 @@ import { ItemName } from '../../ItemTooltip'
 import { ConfirmAction, Credits, Loading, Modal, QtyButtons, errorMessage, shared, useAction } from '../../shared'
 import { useHoverTooltip } from '../../hooks/useHoverTooltip'
 import { titleCase } from '@/lib/format'
-import { mergeLiveBook } from './tradingLogic'
+import { normalizeCargo } from '../../shared/itemSelection'
+import { emptyMarketItem, mergeLiveBook } from './tradingLogic'
+import { usePersonalStorage } from './StorageView'
 import styles from './MarketView.module.css'
 
 type MarketInsight = AnalyzeMarketResponse['insights'][number]
 type MarketItem = ViewMarketResponse['items'][number]
-
-// StorageResponse is one generated union across every branch of the unified
-// storage action (self view, faction view, deposit/withdraw/gift results) —
-// narrow to the branch view({}) actually returns.
-type PersonalStorageView = Extract<StorageResponse, { hint: string; ships: Array<unknown> }>
-
-interface CargoRow {
-  item_id: string
-  name: string
-  quantity: number
-  size?: number
-}
-
-/** useCargo() rows are all-optional (delta-friendly wire shape); drop incomplete entries and normalize item_name -> name. */
-function normalizeCargo(raw: ReturnType<typeof useCargo>): CargoRow[] {
-  return (raw ?? []).flatMap((c) => {
-    if (!c.item_id || !c.quantity) return []
-    return [{ item_id: c.item_id, name: c.item_name ?? c.item_id, quantity: c.quantity, size: c.size }]
-  })
-}
 
 type SortField = 'name' | 'have' | 'buyQty' | 'buyPrice' | 'sellQty' | 'sellPrice' | 'spread'
 type SortDir = 'asc' | 'desc'
@@ -137,11 +119,7 @@ export function MarketView() {
     [marketSnapshot, companyStore, liveBook],
   )
 
-  const { data: storageData } = useCommandQuery(
-    async (account) => (await account.commands.spacemolt_storage.view()).structuredContent as PersonalStorageView | undefined,
-    [dockedAt],
-    { enabled: isDocked, refreshOnSections: ['cargo'] },
-  )
+  const { data: storageData } = usePersonalStorage({ enabled: isDocked })
 
   const { data: ordersData, refetch: refetchOrders } = useCommandQuery(
     async (account) => (await account.commands.spacemolt_market.view_orders()).structuredContent,
@@ -285,14 +263,20 @@ export function MarketView() {
     refetchOrders()
   }, [run, mutate, sellConfirm, autoList, refetchMarket, refetchOrders])
 
-  const haveMap = useMemo(() => {
-    const map = new Map<string, number>()
-    for (const c of cargo) map.set(c.item_id, (map.get(c.item_id) ?? 0) + c.quantity)
-    for (const s of storageItems) map.set(s.item_id, (map.get(s.item_id) ?? 0) + s.quantity)
+  // Owned items from cargo + storage
+  const owned = useMemo(() => {
+    const map = new Map<string, { name: string; quantity: number }>()
+    for (const c of [...cargo, ...storageItems]) {
+      const prev = map.get(c.item_id)
+      map.set(c.item_id, {
+        name: c.name || prev?.name || formatItemId(c.item_id),
+        quantity: (prev?.quantity ?? 0) + c.quantity,
+      })
+    }
     return map
   }, [cargo, storageItems])
 
-  const getAvailable = useCallback((itemId: string) => haveMap.get(itemId) ?? 0, [haveMap])
+  const getAvailable = useCallback((itemId: string) => owned.get(itemId)?.quantity ?? 0, [owned])
 
   // Map insights by item_id for inline display; separate general (non-item) insights
   const { insightsByItem, generalInsights } = useMemo(() => {
@@ -315,16 +299,6 @@ export function MarketView() {
   const { groupedItems, visibleCategories } = useMemo(() => {
     const items = marketData?.items ?? []
     const search = searchQuery.toLowerCase().trim()
-
-    // Owned items from cargo + storage
-    const owned = new Map<string, { name: string; quantity: number }>()
-    for (const c of [...cargo, ...storageItems]) {
-      const prev = owned.get(c.item_id)
-      owned.set(c.item_id, {
-        name: c.name || prev?.name || formatItemId(c.item_id),
-        quantity: (prev?.quantity ?? 0) + c.quantity,
-      })
-    }
 
     // Filter (a copy: owned rows are pushed below)
     let filtered = [...items]
@@ -353,21 +327,7 @@ export function MarketView() {
         if (marketIds.has(itemId)) continue
         if (selectedCategory) continue // synthetic items have no real category
         if (search && !info.name.toLowerCase().includes(search) && !itemId.toLowerCase().includes(search)) continue
-        filtered.push({
-          item_id: itemId,
-          item_name: info.name,
-          category: 'inventory',
-          best_buy: 0,
-          best_buy_qty: 0,
-          best_sell: 0,
-          best_sell_qty: 0,
-          buy_price: 0,
-          buy_quantity: 0,
-          sell_price: 0,
-          sell_quantity: 0,
-          buy_orders: [],
-          sell_orders: [],
-        })
+        filtered.push(emptyMarketItem(itemId, info.name, 'inventory'))
       }
     }
 
@@ -375,7 +335,7 @@ export function MarketView() {
     const getSortValue = (item: MarketItem): number | string => {
       switch (sortField) {
         case 'name': return item.item_name.toLowerCase()
-        case 'have': return haveMap.get(item.item_id) ?? 0
+        case 'have': return getAvailable(item.item_id)
         case 'buyQty': return item.buy_orders.reduce((s, o) => s + o.quantity, 0)
         case 'buyPrice': return item.best_buy
         case 'sellQty': return item.sell_orders.reduce((s, o) => s + o.quantity, 0)
@@ -407,7 +367,7 @@ export function MarketView() {
       groupedItems: sortedCats.map(cat => ({ category: cat, items: groups[cat] })),
       visibleCategories: sortedCats,
     }
-  }, [marketData?.items, selectedCategory, searchQuery, showFilter, sortField, sortDir, haveMap, insightsByItem, cargo, storageItems])
+  }, [marketData?.items, selectedCategory, searchQuery, showFilter, sortField, sortDir, owned, getAvailable, insightsByItem])
 
   if (!isDocked) {
     return (

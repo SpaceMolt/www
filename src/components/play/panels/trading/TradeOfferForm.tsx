@@ -9,14 +9,16 @@ import { normalizeCargo, selectedItems, type Selection } from '../../shared/item
 import { BuyAutocomplete } from './BulkOrderForm'
 import styles from './OrdersView.module.css'
 
-type Picks = Record<string, string>
-
-const toStacks = (picks: Picks) =>
+const toStacks = (picks: Selection) =>
   Object.entries(picks)
     .map(([item_id, qty]) => ({ item_id, quantity: parseInt(qty, 10) || 0 }))
     .filter((s) => s.quantity > 0)
 
 const nameOf = (id: string) => getItem(id)?.name ?? formatItemId(id)
+
+/** "2 Iron Ore, 500 cr" for the confirm summary. */
+const describe = (items: Array<{ item_id: string; quantity: number }>, cr: number) =>
+  [...items.map((s) => `${s.quantity} ${nameOf(s.item_id)}`), cr ? `${cr.toLocaleString()} cr` : ''].filter(Boolean).join(', ')
 
 /** trade_offer: items from your cargo and/or credits, optionally asking for items/credits back. Both pilots must be at the same POI. */
 export function TradeOfferForm({ onSent, onClose }: { onSent: () => void; onClose: () => void }) {
@@ -28,7 +30,7 @@ export function TradeOfferForm({ onSent, onClose }: { onSent: () => void; onClos
   const [target, setTarget] = useState('')
   const [offer, setOffer] = useState<Selection>({})
   const [offerCredits, setOfferCredits] = useState('')
-  const [request, setRequest] = useState<Picks>({})
+  const [request, setRequest] = useState<Selection>({})
   const [requestCredits, setRequestCredits] = useState('')
   const [confirming, setConfirming] = useState(false)
   const { busy, run } = useAction()
@@ -42,8 +44,8 @@ export function TradeOfferForm({ onSent, onClose }: { onSent: () => void; onClos
   const isEmpty = offerItems.length + requestItems.length === 0 && give === 0 && get === 0
 
   const summary = [
-    offerItems.length || give ? `give ${[...offerItems.map((s) => `${s.quantity} ${nameOf(s.item_id)}`), give ? `${give.toLocaleString()} cr` : ''].filter(Boolean).join(', ')}` : '',
-    requestItems.length || get ? `for ${[...requestItems.map((s) => `${s.quantity} ${nameOf(s.item_id)}`), get ? `${get.toLocaleString()} cr` : ''].filter(Boolean).join(', ')}` : '',
+    offerItems.length || give ? `give ${describe(offerItems, give)}` : '',
+    requestItems.length || get ? `for ${describe(requestItems, get)}` : '',
   ].filter(Boolean).join(' ')
 
   const send = async () => {
@@ -63,15 +65,6 @@ export function TradeOfferForm({ onSent, onClose }: { onSent: () => void; onClos
     onSent()
     onClose()
   }
-
-  const toggle = (set: (fn: (p: Picks) => Picks) => void, id: string, initial: string) =>
-    set((prev) => {
-      if (id in prev) {
-        const { [id]: _removed, ...rest } = prev
-        return rest
-      }
-      return { ...prev, [id]: initial }
-    })
 
   return (
     <div className={styles.formContainer}>
@@ -107,7 +100,7 @@ export function TradeOfferForm({ onSent, onClose }: { onSent: () => void; onClos
             <span className={styles.bulkName}>{nameOf(id)}</span>
             <input className={styles.modifyInput} type="number" min={1} value={qty}
               onChange={(e) => setRequest((p) => ({ ...p, [id]: e.target.value }))} />
-            <button className={shared.iconBtn} onClick={() => toggle(setRequest, id, '')} title="Remove" type="button"><X size={11} /></button>
+            <button className={shared.iconBtn} onClick={() => setRequest(({ [id]: _removed, ...rest }) => rest)} title="Remove" type="button"><X size={11} /></button>
           </div>
         ))}
       </div>

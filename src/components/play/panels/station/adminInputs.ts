@@ -3,9 +3,6 @@ export const GATED_SERVICES = ['market', 'refuel', 'repair', 'shipyard', 'crafti
 
 export const SERVICE_ACCESS = ['public', 'allies', 'faction'] as const
 
-/** `market_fee_bps` (basis points) as the percent `set_market_fee` takes. */
-export const feePercent = (bps = 0): number => bps / 100
-
 /** Comma/space/newline separated item ids, trimmed, deduped, empties dropped. */
 export const parseItemIds = (text: string): string[] =>
   [...new Set(text.split(/[\s,]+/).filter(Boolean))]

@@ -15,19 +15,16 @@ import {
   Tags,
 } from 'lucide-react'
 import { useCargo, useCommandMutation, useCommandQuery, useLocationState, usePlayer } from '@/lib/spacemolt'
-import type { Commands, MutationResult, StorageResponse } from '@spacemolt/lib'
+import type { Commands, MutationResult } from '@spacemolt/lib'
 import { ConfirmAction, Credits, errorMessage, shared } from '../../shared'
 import { usePlay } from '../../PlayProvider'
 import { getItem, formatItemId } from '@/data/catalog'
 import { BulkOrderForm, type InventoryRow } from './BulkOrderForm'
-import { chunk, describeBulk, sumBulk } from './tradingLogic'
+import { chunk } from '../../shared/itemSelection'
+import { BULK_ORDER_LIMIT, sumBulk } from './tradingLogic'
+import { usePersonalStorage } from './StorageView'
 import styles from './OrdersView.module.css'
 import { timeAgoOrDate } from '@/lib/format'
-
-// StorageResponse is one generated union across every branch of the unified
-// storage action (self view, faction view, deposit/withdraw/gift results) —
-// narrow to the branch view({}) actually returns.
-type PersonalStorageView = Extract<StorageResponse, { hint: string; ships: Array<unknown> }>
 
 type SortBy = 'newest' | 'oldest' | 'price_asc' | 'price_desc'
 const PAGE_SIZE = 50
@@ -89,11 +86,7 @@ export function OrdersView() {
     order_type: orderType || undefined, search: search || undefined,
   }
 
-  const { data: storageData } = useCommandQuery(
-    async (account) => (await account.commands.spacemolt_storage.view()).structuredContent as PersonalStorageView | undefined,
-    [dockedAt],
-    { enabled: isDocked, refreshOnSections: ['cargo'] },
-  )
+  const { data: storageData } = usePersonalStorage({ enabled: isDocked })
 
   const { data: personalOrdersData, error: ordersError, refetch: refetchPersonalOrders } = useCommandQuery(
     async (account) => (await account.commands.spacemolt_market.view_orders({ scope: 'personal', ...filters })).structuredContent,
@@ -128,8 +121,8 @@ export function OrdersView() {
     }
     setBusy(false)
     if (details.length > 0) {
-      const outcome = sumBulk(details)
-      toast(outcome.failed > 0 ? 'warning' : 'success', describeBulk(verb, outcome))
+      const { failed, text } = sumBulk(verb, details)
+      toast(failed > 0 ? 'warning' : 'success', text)
     }
     setSelected(new Set())
     setRepricing(false)
@@ -154,7 +147,7 @@ export function OrdersView() {
     const ids = [...selected]
     setConfirm({
       message: `Cancel ${ids.length} order${ids.length === 1 ? '' : 's'}? Escrow and items return to you.`,
-      run: () => runBatches('Orders cancelled:', 'cancel_order', chunk(ids).map((order_ids) => (c) => c.spacemolt_market.cancel_order({ order_ids }))),
+      run: () => runBatches('Orders cancelled:', 'cancel_order', chunk(ids, BULK_ORDER_LIMIT).map((order_ids) => (c) => c.spacemolt_market.cancel_order({ order_ids }))),
     })
   }
 
@@ -177,7 +170,7 @@ export function OrdersView() {
 
   const applyReprice = () => changedPrices.length > 0 && setConfirm({
     message: `Change the price of ${changedPrices.length} order${changedPrices.length === 1 ? '' : 's'}? Raising a sell price costs a 1% fee; buy escrow adjusts.`,
-    run: () => runBatches('Orders repriced:', 'modify_order', chunk(changedPrices).map((orders) => (c) => c.spacemolt_market.modify_order({ orders }))),
+    run: () => runBatches('Orders repriced:', 'modify_order', chunk(changedPrices, BULK_ORDER_LIMIT).map((orders) => (c) => c.spacemolt_market.modify_order({ orders }))),
   })
 
   const handleCancelOrder = (orderId: string, name: string) => setConfirm({
@@ -317,9 +310,7 @@ export function OrdersView() {
                   {isDocked && (
                     <input type="checkbox" checked={selected.has(order.order_id)} onChange={() => toggleSelected(order.order_id)} aria-label={`Select ${name} order`} />
                   )}
-                  <span className={`${styles.orderTypeBadge} ${order.order_type === 'sell' ? styles.badgeSell : styles.badgeBuy}`}>
-                    {order.order_type.toUpperCase()}
-                  </span>
+                  <OrderBadge type={order.order_type} />
                   <span className={styles.orderItemName}>{name}</span>
                   {isDocked && (
                     <>
@@ -399,9 +390,7 @@ export function OrdersView() {
             {factionOrders.map((order) => (
               <div key={order.order_id} className={`${styles.orderCard} ${styles.factionCard}`}>
                 <div className={styles.orderTop}>
-                  <span className={`${styles.orderTypeBadge} ${order.order_type === 'sell' ? styles.badgeSell : styles.badgeBuy}`}>
-                    {order.order_type.toUpperCase()}
-                  </span>
+                  <OrderBadge type={order.order_type} />
                   <span className={styles.orderItemName}>{order.item_name ?? formatItemId(order.item_id)}</span>
                   {order.created_by && <span className={styles.createdBy}>by {order.created_by}</span>}
                 </div>
@@ -424,6 +413,10 @@ export function OrdersView() {
     </div>
   )
 }
+
+const OrderBadge = ({ type }: { type: string }) => (
+  <span className={`${styles.orderTypeBadge} ${type === 'sell' ? styles.badgeSell : styles.badgeBuy}`}>{type.toUpperCase()}</span>
+)
 
 /** Exchange fills from the action log (the durable record), refetched on each fill push. */
 function RecentFills() {

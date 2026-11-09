@@ -1,12 +1,7 @@
 import { describe, expect, it } from 'bun:test'
-import { feePercent, parseAmount, parseItemIds, readableStationMessage } from './adminInputs'
+import { parseAmount, parseItemIds, readableStationMessage } from './adminInputs'
 
 describe('station admin input helpers', () => {
-  it('converts basis points to the percent set_market_fee takes', () => {
-    expect(feePercent(250)).toBe(2.5)
-    expect(feePercent()).toBe(0)
-  })
-
   it('parses a contraband list from free text', () => {
     expect(parseItemIds(' spice, narcotics\nspice  weapons_grade_plutonium ')).toEqual([
       'spice',

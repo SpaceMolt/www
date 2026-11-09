@@ -58,12 +58,11 @@ export const selectStorageRevision = (s: UiState) => s.storageRevision
 export function usePersonalStorage({ enabled = true } = {}) {
   const dockedAt = useLocationState()?.docked_at
   const revision = usePlayUi(selectStorageRevision)
-  const query = useCommandQuery(
+  return useCommandQuery(
     async (account) => (await account.commands.spacemolt_storage.view()).structuredContent as PersonalStorageView | undefined,
     [dockedAt, revision],
     { enabled, refreshOnSections: ['cargo'] },
   )
-  return query
 }
 
 export function StorageView() {

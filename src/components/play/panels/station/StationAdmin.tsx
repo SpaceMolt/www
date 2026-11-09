@@ -3,14 +3,12 @@
 import { useState } from 'react'
 import { Save, X, Ban, UserPlus, Users, RotateCcw, PackageOpen } from 'lucide-react'
 import type { StationConfigResponse } from '@spacemolt/lib'
-import { useAccountStore, useCommandMutation, useCommandQuery } from '@/lib/spacemolt'
+import { useAccountStore, useCommandMutation, useCommandQuery, type RunMutation } from '@/lib/spacemolt'
 import { usePlay } from '../../PlayProvider'
 import { ConfirmAction, Loading, shared, useAction } from '../../shared'
 import fac from '../facilities/facilities.module.css'
-import { GATED_SERVICES, SERVICE_ACCESS, feePercent, parseAmount, parseItemIds, readableStationMessage } from './adminInputs'
+import { GATED_SERVICES, SERVICE_ACCESS, parseAmount, parseItemIds, readableStationMessage } from './adminInputs'
 import styles from './station.module.css'
-
-type RunMutation = ReturnType<typeof useCommandMutation>
 
 /** A text input with a Save button; the value resets when `initial` changes. */
 function SaveField({ label, initial, onSave, type = 'text', disabled }: {
@@ -195,7 +193,7 @@ export function StationAdmin({ isOutpost, onChanged }: { isOutpost: boolean; onC
           ))}
 
           <div className={fac.sectionHeader}>Prices</div>
-          <SaveField label="Market fee %" type="number" initial={String(feePercent(cfg.market_fee_bps))} disabled={busy}
+          <SaveField label="Market fee %" type="number" initial={String((cfg.market_fee_bps ?? 0) / 100)} disabled={busy}
             onSave={(v) => amount('Market fee', v, (fee_percent) => run('station_set_market_fee', (c) => c.spacemolt_facility.set_market_fee({ fee_percent })))} />
           <SaveField label="Refuel / unit" type="number" initial={String(cfg.refuel_price_each ?? 0)} disabled={busy}
             onSave={(v) => amount('Refuel price', v, (price) => run('station_set_refuel_price', (c) => c.spacemolt_facility.set_refuel_price({ price })))} />
