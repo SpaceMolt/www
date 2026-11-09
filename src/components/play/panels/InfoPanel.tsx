@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, type ReactNode } from 'react'
 import {
   Info,
   Map,
@@ -9,28 +9,42 @@ import {
   HelpCircle,
   ExternalLink,
   ScrollText,
+  User,
+  Landmark,
+  Trophy,
 } from 'lucide-react'
-import type { Commands, GetActionLogResponse, GetNotesResponse } from '@spacemolt/lib'
+import type { Commands, GetActionLogResponse } from '@spacemolt/lib'
 import { useAccountStore, usePlayer } from '@/lib/spacemolt'
-import { formatStatValue, timeAgoOrDate } from '@/lib/format'
+import { formatStatValue, timeAgoOrDate, titleCase } from '@/lib/format'
 import { usePlay } from '../PlayProvider'
 import { ActionButton } from '../ActionButton'
 import { PanelWithTabs, shared, errorMessage } from '../shared'
 import styles from './InfoPanel.module.css'
+import { NotesTab } from './info/NotesTab'
+import { CaptainsLogTab } from './info/CaptainsLogTab'
+import { PilotTab } from './info/PilotTab'
+import { EmpireTab } from './info/EmpireTab'
+import { ReleaseNotes } from './info/ReleaseNotes'
+import { FactionAchievements } from './info/FactionAchievements'
 
-type Note = GetNotesResponse['notes'][number]
 type ActionLogEntry = GetActionLogResponse['entries'][number]
 type ActionLogCategory = NonNullable<Parameters<Commands['spacemolt_social']['get_action_log']>[0]>['category']
 
-interface LogEntry {
-  id: string
-  message: string
-  timestamp: string
-}
+const ACTION_LOG_CATEGORIES: Array<'all' | NonNullable<ActionLogCategory>> = [
+  'all', 'combat', 'trading', 'ship', 'crafting', 'faction', 'mission', 'skill', 'salvage', 'storage',
+  'achievement', 'mining', 'navigation', 'exploration', 'reputation', 'drone', 'session', 'other',
+]
+const ACTION_LOG_PAGE_SIZE = 20
 
-const ACTION_LOG_CATEGORIES = [
-  'all', 'combat', 'trading', 'crafting', 'ship', 'faction', 'mission', 'skill', 'salvage', 'mining',
-] as const
+type InfoTab = 'info' | 'notes' | 'log' | 'pilots' | 'empire'
+
+const TABS: Array<{ id: InfoTab; label: string; icon: ReactNode }> = [
+  { id: 'info', label: 'Info', icon: <Info size={12} /> },
+  { id: 'notes', label: 'Notes', icon: <FileText size={12} /> },
+  { id: 'log', label: 'Log', icon: <BookOpen size={12} /> },
+  { id: 'pilots', label: 'Pilots', icon: <User size={12} /> },
+  { id: 'empire', label: 'Empire', icon: <Landmark size={12} /> },
+]
 
 export function InfoPanel() {
   const store = useAccountStore()
@@ -38,26 +52,17 @@ export function InfoPanel() {
   const player = usePlayer()
   const welcome = store.account.welcome
 
-  const [notes, setNotes] = useState<Note[]>([])
-  const [notesLoaded, setNotesLoaded] = useState(false)
-  const [loadingNotes, setLoadingNotes] = useState(false)
-  const [logEntries, setLogEntries] = useState<LogEntry[]>([])
-  const [logLoaded, setLogLoaded] = useState(false)
-  const [loadingLog, setLoadingLog] = useState(false)
-  const [activeTab, setActiveTab] = useState<'info' | 'log'>('info')
-
-  // Create note form
-  const [noteTitle, setNoteTitle] = useState('')
-  const [noteContent, setNoteContent] = useState('')
-  const [creatingNote, setCreatingNote] = useState(false)
-  const [showNoteForm, setShowNoteForm] = useState(false)
+  const [activeTab, setActiveTab] = useState<InfoTab>('info')
+  const [showReleases, setShowReleases] = useState(false)
+  const [showFactionAchievements, setShowFactionAchievements] = useState(false)
 
   // Action Log state
-  const [actionLogCategory, setActionLogCategory] = useState<string>('all')
+  const [actionLogCategory, setActionLogCategory] = useState<(typeof ACTION_LOG_CATEGORIES)[number]>('all')
+  const [actionLogEventType, setActionLogEventType] = useState('')
   const [actionLogEntries, setActionLogEntries] = useState<ActionLogEntry[]>([])
   const [actionLogHasMore, setActionLogHasMore] = useState(false)
+  const [actionLogPage, setActionLogPage] = useState(1)
   const [loadingActionLog, setLoadingActionLog] = useState(false)
-  const [loadingMoreActionLog, setLoadingMoreActionLog] = useState(false)
 
   const reportError = useCallback(
     (err: unknown) => {
@@ -82,116 +87,34 @@ export function InfoPanel() {
     }
   }, [store, uiStore, reportError])
 
-  const handleLoadNotes = useCallback(async () => {
-    setLoadingNotes(true)
-    try {
-      const resp = await store.account.commands.spacemolt_social.get_notes()
-      setNotes(resp.structuredContent?.notes ?? [])
-      setNotesLoaded(true)
-    } catch (err) {
-      reportError(err)
-    } finally {
-      setLoadingNotes(false)
-    }
-  }, [store, reportError])
-
-  const handleCreateNote = useCallback(async () => {
-    if (!noteTitle.trim() || !noteContent.trim()) return
-    setCreatingNote(true)
-    try {
-      await store.account.commands.spacemolt_social.create_note({
-        title: noteTitle.trim(),
-        content: noteContent.trim(),
-      })
-      setNoteTitle('')
-      setNoteContent('')
-      setShowNoteForm(false)
-    } catch (err) {
-      reportError(err)
-    } finally {
-      setCreatingNote(false)
-    }
-  }, [store, noteTitle, noteContent, reportError])
-
-  const handleLoadLog = useCallback(async () => {
-    setLoadingLog(true)
-    try {
-      // captains_log_list is paginated: one entry per index (0 = newest).
-      // Fetch index 0 to learn total_count, then pull the rest in parallel.
-      const first = (await store.account.commands.spacemolt_social.captains_log_list({ index: 0 })).structuredContent
-      const total = first?.total_count || 0
-      if (total === 0 || !first?.entry) {
-        setLogEntries([])
-        setLogLoaded(true)
-        return
-      }
-      const rest = await Promise.all(
-        Array.from({ length: total - 1 }, (_, i) =>
-          store.account.commands.spacemolt_social.captains_log_list({ index: i + 1 })
-        )
-      )
-      const entries: LogEntry[] = [first, ...rest.map((r) => r.structuredContent)]
-        .map((r) => r?.entry)
-        .filter((e): e is NonNullable<typeof e> => Boolean(e))
-        .map((e) => ({ id: String(e.index), message: e.entry, timestamp: e.created_at }))
-      setLogEntries(entries)
-      setLogLoaded(true)
-    } catch (err) {
-      reportError(err)
-    } finally {
-      setLoadingLog(false)
-    }
-  }, [store, reportError])
-
-  // Action Log handlers
-  const [actionLogPage, setActionLogPage] = useState(1)
-
-  const handleLoadActionLog = useCallback(async () => {
+  // page 1 replaces the list (new filter); later pages append
+  const loadActionLog = useCallback(async (page: number) => {
     setLoadingActionLog(true)
     try {
-      const category = actionLogCategory === 'all' ? undefined : (actionLogCategory as ActionLogCategory)
-      const resp = await store.account.commands.spacemolt_social.get_action_log({ page: 1, page_size: 20, category })
-      const data = resp.structuredContent
-      setActionLogEntries(data?.entries ?? [])
-      setActionLogHasMore(Boolean(data?.has_more))
-      setActionLogPage(1)
+      const resp = await store.account.commands.spacemolt_social.get_action_log({
+        page,
+        page_size: ACTION_LOG_PAGE_SIZE,
+        category: actionLogCategory === 'all' ? undefined : actionLogCategory,
+        event_type: actionLogEventType.trim() || undefined,
+      })
+      const entries = resp.structuredContent?.entries ?? []
+      setActionLogEntries(prev => (page === 1 ? entries : [...prev, ...entries]))
+      setActionLogHasMore(Boolean(resp.structuredContent?.has_more))
+      setActionLogPage(page)
     } catch (err) {
       reportError(err)
     } finally {
       setLoadingActionLog(false)
     }
-  }, [store, actionLogCategory, reportError])
-
-  const handleLoadMoreActionLog = useCallback(async () => {
-    if (actionLogEntries.length === 0) return
-    setLoadingMoreActionLog(true)
-    try {
-      const nextPage = actionLogPage + 1
-      const category = actionLogCategory === 'all' ? undefined : (actionLogCategory as ActionLogCategory)
-      const resp = await store.account.commands.spacemolt_social.get_action_log({ page: nextPage, page_size: 20, category })
-      const data = resp.structuredContent
-      setActionLogEntries(prev => [...prev, ...(data?.entries ?? [])])
-      setActionLogHasMore(Boolean(data?.has_more))
-      setActionLogPage(nextPage)
-    } catch (err) {
-      reportError(err)
-    } finally {
-      setLoadingMoreActionLog(false)
-    }
-  }, [store, actionLogCategory, actionLogEntries, actionLogPage, reportError])
-
-  const tabs = [
-    { id: 'info', label: 'Info', icon: <Info size={12} /> },
-    { id: 'log', label: "Captain's Log", icon: <BookOpen size={12} /> },
-  ]
+  }, [store, actionLogCategory, actionLogEventType, reportError])
 
   return (
     <PanelWithTabs
       title="Info"
       icon={<Info size={16} />}
-      tabs={tabs}
+      tabs={TABS}
       activeTab={activeTab}
-      onTabChange={(id) => setActiveTab(id as 'info' | 'log')}
+      onTabChange={(id) => setActiveTab(id as InfoTab)}
     >
         {activeTab === 'info' && (<>
         {/* Game Version */}
@@ -208,8 +131,12 @@ export function InfoPanel() {
                 {welcome.motd}
               </div>
             )}
+            <button type="button" className={shared.subtleBtn} onClick={() => setShowReleases(!showReleases)}>
+              {showReleases ? 'Hide release notes' : 'Release notes'}
+            </button>
           </div>
         )}
+        {showReleases && <ReleaseNotes />}
 
         {/* Player Stats */}
         {player?.stats && Object.keys(player.stats).length > 0 && (
@@ -235,6 +162,23 @@ export function InfoPanel() {
           </div>
         )}
 
+        {/* Faction Achievements */}
+        <div className={styles.actionLogSection}>
+          <div className={shared.sectionTitle}>
+            <span className={styles.sectionIcon}><Trophy size={12} /></span>
+            Faction Achievements
+          </div>
+          {showFactionAchievements ? <FactionAchievements /> : (
+            <ActionButton
+              label="Load"
+              icon={<Trophy size={14} />}
+              onClick={() => setShowFactionAchievements(true)}
+              variant="secondary"
+              size="sm"
+            />
+          )}
+        </div>
+
         <div className={styles.divider} />
 
         {/* Action Log */}
@@ -247,18 +191,27 @@ export function InfoPanel() {
             <select
               className={styles.filterSelect}
               value={actionLogCategory}
-              onChange={(e) => setActionLogCategory(e.target.value)}
+              onChange={(e) => setActionLogCategory(e.target.value as typeof actionLogCategory)}
             >
               {ACTION_LOG_CATEGORIES.map((cat) => (
                 <option key={cat} value={cat}>
-                  {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                  {titleCase(cat)}
                 </option>
               ))}
             </select>
+            <input
+              className={styles.noteInput}
+              style={{ flex: 1, minWidth: 0 }}
+              type="text"
+              placeholder="Event type, e.g. tax.prepaid"
+              value={actionLogEventType}
+              onChange={(e) => setActionLogEventType(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && loadActionLog(1)}
+            />
             <ActionButton
               label="Load"
               icon={<ScrollText size={14} />}
-              onClick={handleLoadActionLog}
+              onClick={() => loadActionLog(1)}
               variant="secondary"
               size="sm"
               loading={loadingActionLog}
@@ -269,7 +222,7 @@ export function InfoPanel() {
               {actionLogEntries.map((entry) => (
                 <div key={entry.id} className={styles.logEntry}>
                   <div className={styles.logEntryHeader}>
-                    <span className={styles.logCategory}>{entry.category}</span>
+                    <span className={styles.logCategory} title={entry.event_type}>{entry.category}</span>
                     <span className={styles.logTimestamp}>
                       {timeAgoOrDate(entry.created_at)}
                     </span>
@@ -281,10 +234,10 @@ export function InfoPanel() {
                 <ActionButton
                   label="Load More"
                   icon={<ScrollText size={14} />}
-                  onClick={handleLoadMoreActionLog}
+                  onClick={() => loadActionLog(actionLogPage + 1)}
                   variant="secondary"
                   size="sm"
-                  loading={loadingMoreActionLog}
+                  loading={loadingActionLog}
                 />
               )}
             </div>
@@ -337,116 +290,12 @@ export function InfoPanel() {
           </div>
         </div>
 
-        <div className={styles.divider} />
-
-        {/* Notes */}
-        <div>
-          <div className={shared.sectionTitle}>
-            <span className={styles.sectionIcon}><FileText size={12} /></span>
-            Notes
-          </div>
-          {!notesLoaded && !loadingNotes && (
-            <div className={styles.linkRow}>
-              <ActionButton
-                label="Load Notes"
-                icon={<FileText size={14} />}
-                onClick={handleLoadNotes}
-                variant="secondary"
-                size="sm"
-              />
-              <ActionButton
-                label="New Note"
-                icon={<FileText size={14} />}
-                onClick={() => setShowNoteForm(!showNoteForm)}
-                size="sm"
-              />
-            </div>
-          )}
-          {loadingNotes && (
-            <div className={styles.loading}>
-              <span className={shared.spinner} />
-              Loading notes...
-            </div>
-          )}
-          {notesLoaded && notes.length === 0 && (
-            <div className={shared.emptyState}>
-              No notes yet. Create your first note.
-            </div>
-          )}
-          {notes.length > 0 && (
-            <div className={styles.noteList}>
-              {notes.map((note) => (
-                <div key={note.note_id} className={styles.noteItem}>
-                  <span className={styles.noteIcon}>
-                    <FileText size={12} />
-                  </span>
-                  <span className={styles.noteTitle}>{note.title}</span>
-                </div>
-              ))}
-            </div>
-          )}
-          {showNoteForm && (
-            <div className={styles.noteForm}>
-              <input
-                className={styles.noteInput}
-                type="text"
-                placeholder="Note title"
-                value={noteTitle}
-                onChange={(e) => setNoteTitle(e.target.value)}
-              />
-              <textarea
-                className={styles.noteTextarea}
-                placeholder="Note content..."
-                value={noteContent}
-                onChange={(e) => setNoteContent(e.target.value)}
-              />
-              <ActionButton
-                label="Create Note"
-                icon={<FileText size={12} />}
-                onClick={handleCreateNote}
-                disabled={!noteTitle.trim() || !noteContent.trim() || creatingNote}
-                loading={creatingNote}
-                size="sm"
-              />
-            </div>
-          )}
-        </div>
-
         </>)}
 
-        {activeTab === 'log' && (
-        <div>
-          {!logLoaded && !loadingLog && (
-            <ActionButton
-              label="View Log"
-              icon={<BookOpen size={14} />}
-              onClick={handleLoadLog}
-              variant="secondary"
-              size="sm"
-            />
-          )}
-          {loadingLog && (
-            <div className={styles.loading}>
-              <span className={shared.spinner} />
-              Loading log...
-            </div>
-          )}
-          {logLoaded && logEntries.length === 0 && (
-            <div className={shared.emptyState}>
-              Your captain&apos;s log is empty.
-            </div>
-          )}
-          {logEntries.length > 0 && (
-            <div className={styles.logList}>
-              {logEntries.map((entry) => (
-                <div key={entry.id} className={styles.logItem}>
-                  {entry.message}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-        )}
+        {activeTab === 'notes' && <NotesTab />}
+        {activeTab === 'log' && <CaptainsLogTab />}
+        {activeTab === 'pilots' && <PilotTab />}
+        {activeTab === 'empire' && <EmpireTab />}
     </PanelWithTabs>
   )
 }
