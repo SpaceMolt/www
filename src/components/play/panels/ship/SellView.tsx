@@ -6,7 +6,6 @@ import type { BrowseShipsResponse } from '@spacemolt/lib'
 import { useCommandMutation, useCommandQuery, useLocationState, usePlayer } from '@/lib/spacemolt'
 import { usePlay } from '../../PlayProvider'
 import { Credits, Loading, Modal, ConfirmAction, errorMessage, shared } from '../../shared'
-import { useStationServices } from '../../hooks/useGates'
 import styles from './SellView.module.css'
 
 type ShipBuyOrder = NonNullable<BrowseShipsResponse['buy_orders']>[number]

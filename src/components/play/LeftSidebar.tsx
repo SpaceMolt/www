@@ -103,7 +103,12 @@ type SupplyKind = 'refuel' | 'repair'
 interface SupplyArgs { id?: string; quantity?: number; target?: string }
 
 /** Supply items a refuel/repair can burn, matched by id the way the server names them. */
-const SUPPLY_ITEM = { refuel: /fuel_cell/, repair: /repair|hull_patch/ } as const
+/** Cargo items a refuel/repair burns: the server picks them by effect type, not by name (handlers/ship.go selectConsumable). */
+const SUPPLY_EFFECT = { refuel: 'fuel', repair: 'repair' } as const
+const isSupply = (kind: SupplyKind) => (c: { item_id: string }) => getItem(c.item_id)?.effect?.type === SUPPLY_EFFECT[kind]
+/** The cheapest matching item in cargo, as the server picks when none is named. */
+const cheapestSupply = <T extends { item_id: string }>(kind: SupplyKind, cargo: T[]) =>
+  cargo.filter(isSupply(kind)).sort((a, b) => (getItem(a.item_id)?.base_value ?? 0) - (getItem(b.item_id)?.base_value ?? 0))[0]
 /** The module the server requires to refuel or repair another ship (gameserver handlers/ship.go). */
 const TARGET_MODULE = { refuel: 'refueling_pump', repair: 'repair_arm' } as const
 
@@ -182,7 +187,7 @@ function SupplyOptions({ kind, nearby, cargo, busy, onSubmit }: {
   const [targetChoice, setTarget] = useState('')
   const target = nearby.some((p) => p.player_id === targetChoice) ? targetChoice : nearby[0]?.player_id ?? ''
   // Ship-to-ship refuel pumps from your own tank; ship-to-ship repair burns a kit from cargo.
-  const items = kind === 'repair' ? cargo.filter((c) => SUPPLY_ITEM.repair.test(c.item_id)) : []
+  const items = kind === 'repair' ? cargo.filter(isSupply('repair')) : []
   const qty = parseInt(quantity, 10)
   return (
     <div className={styles.supplyOptions}>
@@ -393,7 +398,9 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
   const surveyable = canSurvey(fitted, ship?.class_id, ship?.active_buffs)
   // Refuel/repair can act only at a station with the service, from cargo supplies,
   // or on a nearby ship with the transfer module (gameserver HandleRefuel / HandleRepair).
-  const canTransfer = (kind: SupplyKind) => Boolean(location?.nearby_players?.length) && Boolean(modules?.some((m) => m.type_id === TARGET_MODULE[kind]))
+  const canTransfer = (kind: SupplyKind) => Boolean(location?.nearby_players?.length) &&
+    Boolean(modules?.some((m) => m.type_id === TARGET_MODULE[kind])) &&
+    (kind === 'refuel' ? (ship?.fuel ?? 0) > 1 : cargo.some(isSupply('repair')))
   /**
    * Ways to top up your own ship, mirroring gameserver handlers/ship.go: docked at a station with the
    * service it uses the station; otherwise it burns cells/kits from cargo. Docked, a named fuel cell
@@ -404,7 +411,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
     if (now >= max) return []
     const verb = kind === 'refuel' ? 'Refuel' : 'Repair'
     const station = isDocked && services.includes(kind)
-    const item = cargo.find((c) => SUPPLY_ITEM[kind].test(c.item_id))
+    const item = cheapestSupply(kind, cargo)
     const itemWord = kind === 'refuel' ? 'fuel cells' : 'repair kits'
     return [
       ...(station ? [{ label: `${verb} at station`, args: {} }] : []),
@@ -813,6 +820,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
                       type="button"
                     >
                       <SlidersHorizontal size={13} />
+                      {selfSupply(kind).length === 0 && <span>{verb} another ship</span>}
                     </button>
                   )}
                 </div>

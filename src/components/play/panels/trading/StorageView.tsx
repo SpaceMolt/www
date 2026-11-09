@@ -117,7 +117,7 @@ export function StorageView() {
   const bayFree = (bay?.bay_capacity ?? bayCapacity) - (bay?.bay_used ?? 0)
   const loadAction = (ship: StoredShip): 'Load' | 'Tow' | null => {
     const scale = getShip(ship.class_id)?.scale ?? 0
-    if (bayCapacity > 0) return bayFree >= (BAY_SLOT_COST[scale] ?? Infinity) ? 'Load' : null
+    if (bayCapacity > 0) return bayFree >= (BAY_SLOT_COST[scale] ?? 100) ? 'Load' : null
     return hasTowRig && !towing && scale <= (activeClass?.scale ?? 0) ? 'Tow' : null
   }
   // A personal-achievement prestige hull cannot be pooled in the faction garage (gameserver faction_ship_garage.go).

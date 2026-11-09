@@ -25,7 +25,7 @@ import {
 } from 'lucide-react'
 import type { BrowseShipsResponse, StorageResponse } from '@spacemolt/lib'
 import { useCargo, useCatalog, useCommandMutation, useCommandQuery, useLocationState, usePlayer, useShip, useSkills } from '@/lib/spacemolt'
-import { groupBy } from '@/data/catalog'
+import { getShip, groupBy } from '@/data/catalog'
 import { usePlay } from '../../PlayProvider'
 import { ConfirmAction, Credits, Loading, Modal, errorMessage, shared } from '../../shared'
 import { useStationServices } from '../../hooks/useGates'
@@ -229,7 +229,7 @@ export function ShipCatalog() {
     return groupBy([...others].sort((a, b) => a.price - b.price), (l) => l.class_id)
   }, [browseData, isDocked, player?.username])
 
-  const [buyTarget, setBuyTarget] = useState<{ ship: CatalogShip; listing: ShipListing } | null>(null)
+  const [buyTarget, setBuyTarget] = useState<{ ship: Pick<CatalogShip, 'name'>; listing: ShipListing } | null>(null)
   const [buying, setBuying] = useState(false)
 
   // Ship buy order for the expanded class
@@ -269,11 +269,19 @@ export function ShipCatalog() {
 
   // The spec's ShipClass omits mobile_base and marks every stat optional; the dump always carries them.
   const allShips = useMemo(() => (catalog?.ships ?? []) as unknown as CatalogShip[], [catalog])
+  // Legacy and other hulls outside the public catalog can still be listed and bought here.
+  const otherListings = useMemo(() => {
+    const known = new Set(allShips.map((s) => s.id))
+    return Object.entries(listingsByClass).filter(([classId]) => !known.has(classId)).flatMap(([, ls]) => ls)
+  }, [allShips, listingsByClass])
 
   const blockReasons = useCallback(
     (s: CatalogShip) => shipBlockReasons(s, { piloting, standings: player?.standings, commissionable: commissionableIds.has(s.id) }),
     [piloting, player?.standings, commissionableIds]
   )
+  // place_ship_buy_order always rejects prestige and starter hulls (gameserver ship_buy_orders.go).
+  const canOrder = (s: CatalogShip) => hasShipyard && blockReasons(s).length === 0 && !getShip(s.id)?.starter_ship &&
+    !(s.prestige_lock || s.required_achievement || s.required_faction_achievement)
 
   const filteredShips = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -573,7 +581,7 @@ export function ShipCatalog() {
                         </div>
                       )}
 
-                      {isDocked && (isCommissionable || (!blocked && hasShipyard)) && (
+                      {isDocked && (isCommissionable || canOrder(catShip)) && (
                         <div className={listingStyles.modalRow}>
                           {isCommissionable && (
                             <button
@@ -586,7 +594,7 @@ export function ShipCatalog() {
                               Commission
                             </button>
                           )}
-                          {!blocked && hasShipyard && (orderConfirm ? (
+                          {canOrder(catShip) && (orderConfirm ? (
                             <ConfirmAction
                               message={`Escrow ${parseInt(orderPrice, 10).toLocaleString()} cr plus sales tax for a ${catShip.name} buy order here?`}
                               variant="accent"
@@ -634,6 +642,32 @@ export function ShipCatalog() {
           )}
         </>
       )}
+      {otherListings.length > 0 && (
+        <div className={listingStyles.listingsList}>
+          <span className={shared.sectionTitle}>Other listings here</span>
+          {otherListings.map((listing) => (
+            <div key={listing.listing_id} className={listingStyles.sellCard}>
+              <div className={listingStyles.listingStatsRow}>
+                <span>{listing.ship_name ?? listing.class_id}</span>
+                <span className={(player?.credits ?? 0) >= listing.price ? listingStyles.listingPrice : listingStyles.listingPriceUnaffordable}>
+                  <Credits amount={listing.price} />
+                </span>
+                <span className={listingStyles.listingStat}><Heart size={10} /> {listing.hull}/{listing.max_hull}</span>
+                <span className={listingStyles.listingStat}><User size={10} /> {listing.seller}</span>
+              </div>
+              <button
+                className={shared.accentBtn}
+                onClick={() => setBuyTarget({ ship: { name: listing.ship_name ?? listing.class_id }, listing })}
+                disabled={(player?.credits ?? 0) < listing.price}
+                type="button"
+              >
+                <ShoppingCart size={12} /> Buy
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Fullscreen image modal */}
       {fullscreenImage && (
         <div className={styles.imageModal} onClick={() => setFullscreenImage(null)} role="dialog" aria-modal="true" aria-label={fullscreenImage.name}>
