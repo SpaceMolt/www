@@ -1,10 +1,11 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowDown, ArrowUp, Play, Plus, Repeat, Save, Square, Trash2, X } from 'lucide-react'
-import { useAccountStore, useCargo, useLocationState, usePendingAction, usePlayer, useStations, useSystem } from '@/lib/spacemolt'
+import { AlertTriangle, ArrowDown, ArrowUp, Play, Plus, Repeat, Save, Square, Trash2, X } from 'lucide-react'
+import { useAccountStore, useCargo, useLocationState, usePendingAction, usePlayer, useShip, useStations, useSystem } from '@/lib/spacemolt'
 import { Credits, Panel, objectKey, shared } from '../shared'
-import { hasMineableResources } from '../LeftSidebar'
+import { extractionKinds, hasMineableResources, mineWarning } from '../LeftSidebar'
+import { useFittedModules } from '../hooks/useGates'
 import { loadKnownPois, loadPlans, mergePois, mineSellPreset, savePlans, stepLabel, type KnownPoi, type LoopPlan, type LoopStep } from './loopPlan'
 import { useLoop } from './useLoopRunner'
 import styles from './Loop.module.css'
@@ -102,7 +103,7 @@ function StepEditor({ onAdd }: { onAdd: (step: LoopStep) => void }) {
   const [systemId, setSystemId] = useState(location?.system_id ?? '')
   const [poiId, setPoiId] = useState('')
   const [itemIds, setItemIds] = useState<string[]>([])
-  const [target, setTarget] = useState<'storage' | 'faction'>('storage')
+  const [targetChoice, setTarget] = useState<'storage' | 'faction'>('storage')
   const [recipeId, setRecipeId] = useState('')
   const [count, setCount] = useState('1')
   const [seconds, setSeconds] = useState('30')
@@ -112,6 +113,9 @@ function StepEditor({ onAdd }: { onAdd: (step: LoopStep) => void }) {
     : []
   const destinations = useDestinations(systemId, here)
   const cargo = useCargo() ?? []
+  const hasFaction = Boolean(usePlayer()?.faction_id)
+  const target = hasFaction ? targetChoice : 'storage'
+  const canExtract = extractionKinds(useFittedModules(), useShip()?.class_id).length > 0
 
   const build = (): LoopStep | null => {
     switch (kind) {
@@ -163,7 +167,7 @@ function StepEditor({ onAdd }: { onAdd: (step: LoopStep) => void }) {
       {kind === 'deposit' && (
         <select className={shared.selectInput} value={target} onChange={(e) => setTarget(e.target.value as 'storage' | 'faction')} aria-label="Deposit to">
           <option value="storage">Personal storage</option>
-          <option value="faction">Faction storage</option>
+          {hasFaction && <option value="faction">Faction storage</option>}
         </select>
       )}
       {kind === 'craft' && (
@@ -171,6 +175,9 @@ function StepEditor({ onAdd }: { onAdd: (step: LoopStep) => void }) {
           <input className={shared.textInput} placeholder="Recipe ID" value={recipeId} onChange={(e) => setRecipeId(e.target.value)} />
           <input className={shared.textInput} type="number" min={1} value={count} onChange={(e) => setCount(e.target.value)} aria-label="Count" />
         </>
+      )}
+      {kind === 'mine' && !canExtract && (
+        <span className={styles.hint}><AlertTriangle size={11} /> Nothing fitted can mine: fit a Mining Laser or a harvester first.</span>
       )}
       {kind === 'wait' && (
         <input className={shared.textInput} type="number" min={1} value={seconds} onChange={(e) => setSeconds(e.target.value)} aria-label="Seconds" />
@@ -196,13 +203,20 @@ export function LoopPanel() {
   const location = useLocationState()
   const systemData = useSystem().data
   const playerId = usePlayer()?.id
+  const directory = useStations().data
+  const mineIssue = mineWarning((location?.resources ?? []).map((r) => r.item_id), extractionKinds(useFittedModules(), useShip()?.class_id))
   const [plans, setPlans] = useState<LoopPlan[]>([])
   useEffect(() => setPlans(loadPlans(playerId)), [playerId])
   const [draft, setDraft] = useState<LoopPlan>(EMPTY_PLAN)
 
   const pois = systemData && 'system' in systemData ? systemData.system.pois : []
-  const base = pois.find((p) => p.has_base)
-  const station = base && { id: base.id, name: base.base_name || base.name }
+  // A station in this system that offers the service the preset needs: market to sell, storage to store.
+  const stationWith = (service: string) => {
+    const base = pois.find((p) => p.has_base && directory?.find((s) => s.poi_id === p.id)?.services?.includes(service))
+    return base && { id: base.id, name: base.base_name || base.name }
+  }
+  const market = stationWith('market')
+  const storage = stationWith('storage')
   const minePoi = hasMineableResources(location) && location ? { id: location.poi_id, name: location.poi_name } : null
   const canRun = !isActive && pending === null // HUD also blocks start() during auto-travel
 
@@ -216,16 +230,21 @@ export function LoopPanel() {
         Loops run in this browser tab and stop when you close it. Docking and undocking happen automatically.
       </p>
 
-      {minePoi && station && (
+      {minePoi && (market || storage) && (
         <>
           <div className={shared.sectionTitle}>Presets</div>
+          {mineIssue && <p className={styles.hint}><AlertTriangle size={11} /> {mineIssue}</p>}
           <div className={styles.row}>
-            <button className={shared.subtleBtn} onClick={() => setDraft(mineSellPreset({ minePoi, station }))} type="button">
-              Mine here, sell at {station.name}
-            </button>
-            <button className={shared.subtleBtn} onClick={() => setDraft(mineSellPreset({ minePoi, station, deposit: true }))} type="button">
-              Mine here, store at {station.name}
-            </button>
+            {market && (
+              <button className={shared.subtleBtn} onClick={() => setDraft(mineSellPreset({ minePoi, station: market }))} type="button">
+                Mine here, sell at {market.name}
+              </button>
+            )}
+            {storage && (
+              <button className={shared.subtleBtn} onClick={() => setDraft(mineSellPreset({ minePoi, station: storage, deposit: true }))} type="button">
+                Mine here, store at {storage.name}
+              </button>
+            )}
           </div>
         </>
       )}

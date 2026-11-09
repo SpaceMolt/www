@@ -34,6 +34,7 @@ import styles from './ShipPanel.module.css'
 import { imageUrl } from '@/data/images'
 import { canRefit, isUsableConsumable, usesQuantity, useItemResultText } from './shipModules'
 import { usePersonalStorage } from './trading/StorageView'
+import { useStationServices } from '../hooks/useGates'
 
 type ModuleEntry = NonNullable<GameState['modules']>[number]
 
@@ -57,6 +58,7 @@ export function ShipPanel() {
   const cargo = useCargo() ?? []
   const location = useLocationState()
   const isDocked = Boolean(location?.docked_at)
+  const hasStorage = useStationServices().includes('storage')
   const pendingAction = usePendingAction()
   const actionPending = pendingAction !== null
   const mutate = useCommandMutation()
@@ -69,7 +71,7 @@ export function ShipPanel() {
   const [modError, setModError] = useState<string | null>(null)
   const [useQtys, setUseQtys] = useState<Record<string, string>>({})
 
-  // Cargo multi-select: deposit to storage when docked, jettison when undocked
+  // Cargo multi-select: deposit when the station has storage, jettison when undocked
   const cargoRows = useMemo(() => normalizeCargo(cargo), [cargo])
   const [cargoSel, setCargoSel] = useState<Selection>({})
   const [confirmJettison, setConfirmJettison] = useState(false)
@@ -94,7 +96,7 @@ export function ShipPanel() {
 
   // Modules held at this station: your storage and the faction's main store, fetched while the picker is open.
   const hasFaction = Boolean(usePlayer()?.faction_id)
-  const pickerOpen = installSlotType !== null && isDocked
+  const pickerOpen = installSlotType !== null && hasStorage
   const { data: personalStorage } = usePersonalStorage({ enabled: pickerOpen })
   const { data: factionStorage } = useCommandQuery(
     async (account) => (await account.commands.spacemolt_storage.view({ target: 'faction' })).structuredContent as { items?: StoredItem[] } | undefined,
@@ -176,8 +178,8 @@ export function ShipPanel() {
     })
     return [
       ...fromSource('cargo', cargo as StoredItem[]),
-      ...(isDocked ? fromSource('storage', personalStorage?.items ?? []) : []),
-      ...(isDocked ? fromSource('faction', factionStorage?.items ?? []) : []),
+      ...(hasStorage ? fromSource('storage', personalStorage?.items ?? []) : []),
+      ...(hasStorage ? fromSource('faction', factionStorage?.items ?? []) : []),
     ]
   }
 
@@ -422,7 +424,7 @@ export function ShipPanel() {
           onChange={setCargoSel}
           empty="Cargo hold is empty"
           renderExtra={(item) => <CompatBadge status={refitOk ? moduleCompat(item) : null} />}
-          actions={isDocked ? (
+          actions={hasStorage ? (
             <>
               <button
                 className={shared.confirmBtn}
@@ -442,7 +444,7 @@ export function ShipPanel() {
                 Deposit All Cargo
               </button>
             </>
-          ) : confirmJettison ? (
+          ) : isDocked ? undefined : confirmJettison ? (
             <ConfirmAction
               message={`Dump ${cargoPicked.length} item${cargoPicked.length === 1 ? '' : 's'} into space?`}
               icon={<AlertTriangle size={12} />}

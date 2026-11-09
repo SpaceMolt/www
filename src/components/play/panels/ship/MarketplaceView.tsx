@@ -16,9 +16,9 @@ import { useCommandMutation, useCommandQuery, useLocationState, usePlayer } from
 import { allShips } from '@/data/catalog'
 import { usePlay } from '../../PlayProvider'
 import { Credits, Loading, Modal, ConfirmAction, errorMessage, shared } from '../../shared'
+import { useStationServices } from '../../hooks/useGates'
 import styles from './MarketplaceView.module.css'
 
-type ShipListing = BrowseShipsResponse['listings'][number]
 type ShipBuyOrder = NonNullable<BrowseShipsResponse['buy_orders']>[number]
 
 export function MarketplaceView() {
@@ -28,6 +28,7 @@ export function MarketplaceView() {
   const credits = player?.credits ?? 0
   const mutate = useCommandMutation()
   const { uiStore } = usePlay()
+  const hasShipyard = useStationServices().includes('shipyard')
 
   const { data: browseData, loading: loadingBrowse, refetch: refetchListings } = useCommandQuery(
     async (account) => (await account.commands.spacemolt_ship.browse_ships({})).structuredContent,
@@ -283,18 +284,19 @@ export function MarketplaceView() {
                     <span className={styles.listingClass}>{order.buyer}</span>
                   </div>
                   <span className={styles.listingPrice}><Credits amount={order.price} /></span>
-                  <button
-                    className={shared.warningBtn}
-                    disabled={!match}
-                    title={match ? 'Sell your stored ship into this order' : 'You have no matching inactive ship docked here'}
-                    onClick={() => match && setShipConfirm({
-                      message: `Sell your ${match.class_name || match.class_id} for ${order.price.toLocaleString()} cr?`,
-                      run: () => mutate((c) => c.spacemolt_ship.sell_ship_to_order({ id: order.order_id, ship_id: match.ship_id }), { label: 'sell_ship_to_order' }),
-                    })}
-                    type="button"
-                  >
-                    <Tag size={12} /> Sell
-                  </button>
+                  {match && (
+                    <button
+                      className={shared.warningBtn}
+                      title="Sell your stored ship into this order"
+                      onClick={() => setShipConfirm({
+                        message: `Sell your ${match.class_name || match.class_id} for ${order.price.toLocaleString()} cr?`,
+                        run: () => mutate((c) => c.spacemolt_ship.sell_ship_to_order({ id: order.order_id, ship_id: match.ship_id }), { label: 'sell_ship_to_order' }),
+                      })}
+                      type="button"
+                    >
+                      <Tag size={12} /> Sell
+                    </button>
+                  )}
                 </div>
               )
             })}
@@ -302,50 +304,52 @@ export function MarketplaceView() {
         </>
       )}
 
-      {/* Sell a ship */}
-      <span className={shared.sectionTitle}>Sell a Ship</span>
-      {availableShips.length === 0 ? (
-        <div className={shared.emptyState}>No ships available to sell. Ships must be inactive and docked here.</div>
-      ) : (
-        <div className={styles.listingsList}>
-          {availableShips.map((ship) => (
-            <div key={ship.ship_id} className={styles.sellCard}>
-              <div className={styles.listingInfo}>
-                <span className={styles.listingName}>{ship.class_name || ship.class_id}</span>
+      {/* Sell a ship: inactive ships docked here */}
+      {availableShips.length > 0 && (
+        <>
+          <span className={shared.sectionTitle}>Sell a Ship</span>
+          <div className={styles.listingsList}>
+            {availableShips.map((ship) => (
+              <div key={ship.ship_id} className={styles.sellCard}>
+                <div className={styles.listingInfo}>
+                  <span className={styles.listingName}>{ship.class_name || ship.class_id}</span>
+                </div>
+                <button
+                  className={shared.warningBtn}
+                  onClick={() => { setSellShipId(ship.ship_id); setSellPrice('') }}
+                  type="button"
+                >
+                  <Tag size={12} /> Sell
+                </button>
               </div>
-              <button
-                className={shared.warningBtn}
-                onClick={() => { setSellShipId(ship.ship_id); setSellPrice('') }}
-                type="button"
-              >
-                <Tag size={12} /> Sell
-              </button>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </>
       )}
 
-      {/* Ship buy orders */}
-      <span className={shared.sectionTitle}>Your Ship Buy Orders</span>
-      <div className={styles.modalRow}>
-        <select className={shared.textInput} value={orderClass} onChange={(e) => setOrderClass(e.target.value)} aria-label="Ship class">
-          <option value="">Choose a ship class...</option>
-          {shipClasses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
-        <input className={shared.textInput} type="number" min="1" placeholder="Offer (cr)" value={orderPrice} onChange={(e) => setOrderPrice(e.target.value)} />
-        <button
-          className={shared.accentBtn}
-          onClick={placeOrder}
-          disabled={!orderClass || !(parseInt(orderPrice, 10) > 0)}
-          title="Place a standing order; a seller here can fill it any time"
-          type="button"
-        >
-          <ClipboardList size={12} /> Place Order
-        </button>
-      </div>
-      {(myBuyOrders?.orders ?? []).length === 0 ? (
-        <div className={shared.emptyState}>No open ship buy orders.</div>
-      ) : (
+      {/* Ship buy orders: placing one needs a shipyard here; your orders anywhere stay listed */}
+      {(hasShipyard || (myBuyOrders?.orders ?? []).length > 0) && (
+        <span className={shared.sectionTitle}>Your Ship Buy Orders</span>
+      )}
+      {hasShipyard && (
+        <div className={styles.modalRow}>
+          <select className={shared.textInput} value={orderClass} onChange={(e) => setOrderClass(e.target.value)} aria-label="Ship class">
+            <option value="">Choose a ship class...</option>
+            {shipClasses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+          <input className={shared.textInput} type="number" min="1" placeholder="Offer (cr)" value={orderPrice} onChange={(e) => setOrderPrice(e.target.value)} />
+          <button
+            className={shared.accentBtn}
+            onClick={placeOrder}
+            disabled={!orderClass || !(parseInt(orderPrice, 10) > 0)}
+            title="Place a standing order; a seller here can fill it any time"
+            type="button"
+          >
+            <ClipboardList size={12} /> Place Order
+          </button>
+        </div>
+      )}
+      {(myBuyOrders?.orders ?? []).length > 0 && (
         <div className={styles.listingsList}>
           {myBuyOrders?.orders.map((order: ShipBuyOrder) => (
             <div key={order.order_id} className={styles.sellCard}>

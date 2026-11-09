@@ -6,10 +6,12 @@ import { Panel, Loading, Section, shared } from '../shared'
 import { FoundingSection } from './station/FoundingSection'
 import { StationStatus } from './station/StationStatus'
 import { StationAdmin } from './station/StationAdmin'
+import { useFactionPermissions } from '../hooks/useGates'
 
 /**
  * Station operations: status of the docked base, admin for a station your
- * faction owns, and founding a new station or outpost while undocked.
+ * faction owns, and founding a new station or outpost while undocked. Admin
+ * and founding both need the manage_bases faction permission.
  */
 export function StationPanel() {
   const player = usePlayer()
@@ -25,6 +27,7 @@ export function StationPanel() {
   // The last get_base survives undocking or a dismantled outpost; only trust it while docked there.
   const base = dockedAt && data?.base?.id === dockedAt ? data.base : undefined
   const ownsBase = Boolean(base?.faction_id && base.faction_id === player?.faction_id)
+  const canManageBases = useFactionPermissions({ enabled: !dockedAt || ownsBase }).can('manage_bases')
 
   return (
     <Panel
@@ -43,14 +46,16 @@ export function StationPanel() {
           <StationStatus data={data} />
         </Section>
       )}
-      {dockedAt && ownsBase && (
+      {ownsBase && (
         <Section title="Administration" icon={<Settings2 size={12} />} defaultOpen>
-          <StationAdmin isOutpost={base?.type === 'outpost'} onChanged={refetch} />
+          <StationAdmin isOutpost={base?.type === 'outpost'} canManage={canManageBases} onChanged={refetch} />
         </Section>
       )}
-      <Section title="Found a Station or Outpost" icon={<Flag size={12} />} defaultOpen={!dockedAt}>
-        <FoundingSection />
-      </Section>
+      {!dockedAt && canManageBases && (
+        <Section title="Found a Station or Outpost" icon={<Flag size={12} />} defaultOpen>
+          <FoundingSection />
+        </Section>
+      )}
     </Panel>
   )
 }

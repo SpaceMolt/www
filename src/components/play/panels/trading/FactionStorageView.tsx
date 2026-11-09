@@ -28,6 +28,7 @@ import { parseCreditAmount } from './giftValidation'
 import { selectStorageRevision, usePersonalStorage } from './StorageView'
 import { storageStationOptions } from './storageLocations'
 import { useFactionService } from '../faction/useFactionService'
+import { useFactionPermissions } from '../../hooks/useGates'
 import styles from './StorageView.module.css'
 
 // StorageResponse is one generated union across every branch of the unified
@@ -82,6 +83,8 @@ export function FactionStorageView() {
   const factionData = noLockbox || (isDocked && hasLockbox === undefined) ? undefined : treasuryData
 
   const { data: personalData } = usePersonalStorage({ enabled: hasFaction })
+  // Taking anything out of faction storage needs manage_treasury.
+  const canWithdraw = useFactionPermissions({ enabled: hasFaction }).can('manage_treasury')
   const personalStorage = isDocked ? personalData?.items ?? [] : []
 
   const [bucket, setBucket] = useState('')
@@ -94,7 +97,7 @@ export function FactionStorageView() {
 
   const changed = () => uiStore.dispatch({ type: 'storage_changed' })
 
-  // Treasury credits: wallet <-> faction (withdraw needs manage_treasury; the server returns no_permission otherwise)
+  // Treasury credits: wallet <-> faction
   // Fuel comes from the ship's tank, not cargo. The server takes the exact amount or nothing.
   const handleTreasury = async (kind: 'deposit' | 'withdraw', quantity: number | null, item: 'credits' | 'fuel' = 'credits') => {
     if (actionPending || quantity === null) return
@@ -178,15 +181,17 @@ export function FactionStorageView() {
               >
                 <ArrowDownToLine size={10} /> Deposit
               </button>
-              <button
-                className={shared.accentBtn}
-                onClick={() => handleTreasury('withdraw', parseCreditAmount(treasuryAmount, treasuryData.credits))}
-                disabled={actionPending || parseCreditAmount(treasuryAmount, treasuryData.credits) === null}
-                title="Withdraw credits to your wallet"
-                type="button"
-              >
-                <ArrowUpFromLine size={10} /> Withdraw
-              </button>
+              {canWithdraw && (
+                <button
+                  className={shared.accentBtn}
+                  onClick={() => handleTreasury('withdraw', parseCreditAmount(treasuryAmount, treasuryData.credits))}
+                  disabled={actionPending || parseCreditAmount(treasuryAmount, treasuryData.credits) === null}
+                  title="Withdraw credits to your wallet"
+                  type="button"
+                >
+                  <ArrowUpFromLine size={10} /> Withdraw
+                </button>
+              )}
             </div>
           </div>
           {(treasuryData.faction_fuel_capacity ?? 0) > 0 && (
@@ -215,14 +220,7 @@ export function FactionStorageView() {
         </div>
       )}
 
-      {noLockbox && (
-        <div className={shared.emptyState}>
-          Your faction has no Faction Lockbox at this station, so items cannot be stored here.
-          <div style={{ marginTop: '0.4rem', fontSize: '0.65rem', opacity: 0.75 }}>
-            Build a Faction Lockbox here from the Facilities tab to enable faction item storage.
-          </div>
-        </div>
-      )}
+      {noLockbox && <div className={shared.emptyState}>No Faction Lockbox here. Build one in the Facilities tab to store items.</div>}
 
       {factionData && (
         <div className={styles.section}>
@@ -240,7 +238,7 @@ export function FactionStorageView() {
             items={factionItems}
             selection={factionSel}
             onChange={setFactionSel}
-            readOnly={!isDocked}
+            readOnly={!isDocked || !canWithdraw}
             empty="No items in this compartment"
             actions={
               <>
@@ -248,7 +246,7 @@ export function FactionStorageView() {
                   className={shared.accentBtn}
                   disabled={actionPending || factionPicked.length === 0}
                   onClick={async () => setFactionSel(await move('Withdrew', factionPicked, (c, items) => c.spacemolt_storage.withdraw({ items, target: 'faction', bucket: bucketArg }), 'from faction storage to cargo'))}
-                  title="Withdraw to your cargo (needs manage_treasury)"
+                  title="Withdraw to your cargo"
                   type="button"
                 >
                   <ArrowUpFromLine size={10} /> To Cargo
@@ -257,7 +255,7 @@ export function FactionStorageView() {
                   className={shared.subtleBtn}
                   disabled={actionPending || factionPicked.length === 0}
                   onClick={async () => setFactionSel(await move('Moved', factionPicked, (c, items) => c.spacemolt_storage.withdraw({ items, source: 'faction', target: 'self', bucket: bucketArg }), 'from faction storage to your storage'))}
-                  title="Move to your personal storage here (needs manage_treasury)"
+                  title="Move to your personal storage here"
                   type="button"
                 >
                   To Personal Storage
@@ -274,7 +272,7 @@ export function FactionStorageView() {
                       disabled={actionPending || factionPicked.length === 0}
                       onClick={async () => setFactionSel(await move('Moved', factionPicked, (c, items) =>
                         c.spacemolt_storage.deposit({ items, source: 'faction', target: 'faction', bucket: bucketArg, dest_bucket: dest || undefined }), `to ${compartmentName(dest)}`))}
-                      title="Move between compartments (needs manage_treasury)"
+                      title="Move between compartments"
                       type="button"
                     >
                       Move to Compartment

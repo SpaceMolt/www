@@ -14,7 +14,7 @@ import { useAccountStore, useCargo, useCommandMutation, useCommandQuery, useLoca
 import { usePlay } from '../../PlayProvider'
 import { Credits, Modal, Loading, errorMessage, shared } from '../../shared'
 import styles from './facilities.module.css'
-import { Row } from '../station/StationStatus'
+import { useFactionPermissions } from '../../hooks/useGates'
 
 /**
  * Sum of `itemId` quantities across the inventory pools the gameserver will
@@ -74,6 +74,8 @@ export function BuildView({ onRefresh }: BuildViewProps) {
   const mutate = useCommandMutation()
   const { uiStore } = usePlay()
   const player = usePlayer()
+  // Faction builds need ManageFacilities (gameserver handlers/facility.go faction_build).
+  const canBuildFaction = useFactionPermissions({ enabled: Boolean(player?.faction_id) }).can('manage_facilities')
   const factionId = player?.faction_id
   const dockedAt = useLocationState()?.docked_at ?? null
 
@@ -257,11 +259,9 @@ export function BuildView({ onRefresh }: BuildViewProps) {
 
   return (
     <>
-      {base && (
+      {/* get_base omits power and life_support while they are all zero, e.g. on a new station. */}
+      {base && (base.power || base.life_support) && (
         <div className={styles.costBreakdown}>
-          {/* get_base omits power and life_support while they are all zero, e.g. on a new station. */}
-          {!base.power && <Row label="Power">none built yet</Row>}
-          {!base.life_support && <Row label="Life Support">none built yet</Row>}
           {base.power && (
             <div className={styles.costRow} title={base.power.remediation}>
               <span className={styles.costLabel}>Power</span>
@@ -457,7 +457,9 @@ export function BuildView({ onRefresh }: BuildViewProps) {
                             </div>
                           )}
 
-                          {typeDetail.buildable ? (
+                          {!typeDetail.buildable ? (
+                            <div className={shared.emptyState}>This facility type cannot be built by players.</div>
+                          ) : (buildActionFor(typeDetail.category) !== 'faction_build' || canBuildFaction) && (
                             <button
                               className={shared.confirmBtn}
                               onClick={() => { setBuildError(null); setBuildConfirm(typeDetail) }}
@@ -465,8 +467,6 @@ export function BuildView({ onRefresh }: BuildViewProps) {
                             >
                               <Hammer size={11} /> Build {typeDetail.name}
                             </button>
-                          ) : (
-                            <div className={shared.emptyState}>This facility type cannot be built by players.</div>
                           )}
                         </>
                       ) : null

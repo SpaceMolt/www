@@ -10,7 +10,6 @@ import {
   Wrench as WrenchIcon,
   MapPin,
   ArrowRightLeft,
-  Trash2,
   Pencil,
   Hammer,
   AlertTriangle,
@@ -21,6 +20,7 @@ import { usePlay } from '../../PlayProvider'
 import { Loading, Modal, Panel, ConfirmAction, shared, errorMessage } from '../../shared'
 import { refitPreview, type RefitPreview } from './refitPreview'
 import { InsuranceView } from './InsuranceView'
+import { useStationServices } from '../../hooks/useGates'
 import styles from './FleetView.module.css'
 import { imageUrl } from '@/data/images'
 
@@ -32,6 +32,7 @@ export function FleetView() {
   const currentBaseId = location?.docked_at ?? undefined
   const mutate = useCommandMutation()
   const { uiStore } = usePlay()
+  const hasShipyard = useStationServices().includes('shipyard')
 
   const { data: fleet, refetch } = useCommandQuery(
     async (account) => (await account.commands.spacemolt_ship.list_ships()).structuredContent,
@@ -44,12 +45,7 @@ export function FleetView() {
   const activeShip = useShip() as (ReturnType<typeof useShip> & { refit_available?: boolean }) | undefined
   const modules = useModules()
   const refitAvailable = isDocked && Boolean(activeShip?.refit_available)
-  const { data: base } = useCommandQuery(
-    async (account) => (await account.commands.spacemolt.get_base()).structuredContent,
-    [currentBaseId],
-    { enabled: refitAvailable }
-  )
-  const refit = refitAvailable && activeShip && base?.services.includes('shipyard')
+  const refit = refitAvailable && hasShipyard && activeShip
     ? refitPreview(activeShip.class_id, activeShip, (modules ?? []).map((m) => m.name))
     : undefined
   const cargoAboard = (activeShip?.cargo_used ?? 0) > 0
@@ -123,11 +119,12 @@ export function FleetView() {
           <div className={shared.emptyState}>You have no ships</div>
         ) : (
           <>
-            {/* Summary */}
-            <div className={styles.summary}>
-              <span className={styles.summaryLabel}>Ships Owned</span>
-              <span className={styles.summaryValue}>{fleet.count}</span>
-            </div>
+            {fleet.count > 1 && (
+              <div className={styles.summary}>
+                <span className={styles.summaryLabel}>Ships Owned</span>
+                <span className={styles.summaryValue}>{fleet.count}</span>
+              </div>
+            )}
 
             {/* Ship list */}
             <div className={styles.fleetList}>
@@ -137,6 +134,7 @@ export function FleetView() {
                   ship={ship}
                   isDocked={isDocked}
                   currentBaseId={currentBaseId}
+                  hasShipyard={hasShipyard}
                   onSwitch={handleSwitch}
                   onScrap={handleScrap}
                   onRename={handleRename}
@@ -156,6 +154,8 @@ interface FleetCardProps {
   ship: FleetShipEntry
   isDocked: boolean
   currentBaseId?: string
+  /** Switching needs a shipyard here (list_ships holds no faction-garage ships, the one exception). */
+  hasShipyard: boolean
   onSwitch: (shipId: string) => void
   onScrap: (shipId: string) => void
   onRename: (name: string) => void
@@ -169,6 +169,7 @@ function FleetCard({
   ship,
   isDocked,
   currentBaseId,
+  hasShipyard,
   onSwitch,
   onScrap,
   onRename,
@@ -237,15 +238,17 @@ function FleetCard({
           )}
           {canManage && (
             <>
-              <button
-                className={shared.actionBtn}
-                onClick={() => onSwitch(ship.ship_id)}
-                title="Switch to this ship"
-                type="button"
-              >
-                <ArrowRightLeft size={11} />
-                Switch
-              </button>
+              {hasShipyard && (
+                <button
+                  className={shared.actionBtn}
+                  onClick={() => onSwitch(ship.ship_id)}
+                  title="Switch to this ship"
+                  type="button"
+                >
+                  <ArrowRightLeft size={11} />
+                  Switch
+                </button>
+              )}
               <button
                 className={shared.dangerBtn}
                 onClick={() => setConfirm('scrap')}

@@ -29,59 +29,61 @@ interface PanelNavProps {
   activePanel: string
   onPanelChange: (panel: string) => void
   badges?: Record<string, number>
-  isDocked?: boolean
+  /** Tab ids to leave out, for services this place lacks (see HUD). */
+  hidden?: string[]
 }
 
 interface PanelDef {
   id: string
   icon: React.ComponentType<{ size?: number; className?: string }>
   label: string
-  visibility: 'always' | 'docked'
   /** Right-justify this tab (pushes to far right) */
   right?: boolean
 }
 
+const NONE: string[] = []
+
 const ALL_PANELS: PanelDef[] = [
-  { id: 'galaxy', icon: Map, label: 'Galaxy', visibility: 'always' },
-  { id: 'ship', icon: Rocket, label: 'Ship', visibility: 'always' },
-  { id: 'faction', icon: Users, label: 'Faction', visibility: 'always' },
-  { id: 'missions', icon: Target, label: 'Missions', visibility: 'always' },
-  { id: 'autopilot', icon: Repeat, label: 'Autopilot', visibility: 'always' },
-  { id: 'crew', icon: UserCog, label: 'Crew', visibility: 'always' },
-  // Station tabs — always visible (view remotely), mutations disabled in space
-  { id: 'trading', icon: TrendingUp, label: 'Market', visibility: 'always' },
-  { id: 'storage', icon: Package, label: 'Storage', visibility: 'always' },
-  // Docked-only tabs
-  { id: 'shipyard', icon: Warehouse, label: 'Shipyard', visibility: 'docked' },
-  { id: 'crafting', icon: Hammer, label: 'Crafting', visibility: 'docked' },
+  { id: 'galaxy', icon: Map, label: 'Galaxy' },
+  { id: 'ship', icon: Rocket, label: 'Ship' },
+  { id: 'faction', icon: Users, label: 'Faction' },
+  { id: 'missions', icon: Target, label: 'Missions' },
+  { id: 'autopilot', icon: Repeat, label: 'Autopilot' },
+  { id: 'crew', icon: UserCog, label: 'Crew' },
+  // Station tabs: view remotely, mutations disabled in space
+  { id: 'trading', icon: TrendingUp, label: 'Market' },
+  { id: 'storage', icon: Package, label: 'Storage' },
+  // Docked only (HUD hides them in space); controls inside gate on the station service
+  { id: 'shipyard', icon: Warehouse, label: 'Shipyard' },
+  { id: 'crafting', icon: Hammer, label: 'Crafting' },
   // Always visible: the cross-station facility list and station founding work undocked.
-  { id: 'facilities', icon: Building2, label: 'Facilities', visibility: 'always' },
-  { id: 'station', icon: Landmark, label: 'Station', visibility: 'always' },
-  { id: 'skills', icon: Star, label: 'Skills', visibility: 'always' },
-  { id: 'achievements', icon: Trophy, label: 'Achievements', visibility: 'always' },
-  // Salvage — always visible (panel itself shows "no wrecks" empty state)
-  { id: 'salvage', icon: Skull, label: 'Salvage', visibility: 'always' },
+  { id: 'facilities', icon: Building2, label: 'Facilities' },
+  { id: 'station', icon: Landmark, label: 'Station' },
+  { id: 'skills', icon: Star, label: 'Skills' },
+  { id: 'achievements', icon: Trophy, label: 'Achievements' },
+  // Salvage: the panel shows a "no wrecks" state in space; HUD hides it docked with nothing to do
+  { id: 'salvage', icon: Skull, label: 'Salvage' },
   // Combat — always visible: arena status and battle history work while docked.
-  { id: 'combat', icon: Swords, label: 'Combat', visibility: 'always' },
+  { id: 'combat', icon: Swords, label: 'Combat' },
   // Right-justified
-  { id: 'info', icon: Info, label: 'Info', visibility: 'always', right: true },
-  { id: 'settings', icon: Settings, label: 'Settings', visibility: 'always', right: true },
+  { id: 'info', icon: Info, label: 'Info', right: true },
+  { id: 'settings', icon: Settings, label: 'Settings', right: true },
 ]
 
-function visiblePanelsFor(isDocked: boolean | undefined): PanelDef[] {
-  return ALL_PANELS.filter((p) => p.visibility === 'always' || isDocked)
+function visiblePanelsFor(hidden: string[]): PanelDef[] {
+  return ALL_PANELS.filter((p) => !hidden.includes(p.id))
 }
 
 /** Keys 1-9 switch to the first nine visible left-hand tabs, in tab-row order. */
-export function panelShortcuts(isDocked: boolean | undefined): PanelDef[] {
-  return visiblePanelsFor(isDocked).filter((p) => !p.right).slice(0, 9)
+export function panelShortcuts(hidden: string[] = []): PanelDef[] {
+  return visiblePanelsFor(hidden).filter((p) => !p.right).slice(0, 9)
 }
 
-export function PanelNav({ activePanel, onPanelChange, badges, isDocked }: PanelNavProps) {
+export function PanelNav({ activePanel, onPanelChange, badges, hidden = NONE }: PanelNavProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  const visiblePanels = useMemo(() => visiblePanelsFor(isDocked), [isDocked])
+  const visiblePanels = useMemo(() => visiblePanelsFor(hidden), [hidden])
 
   const leftPanels = visiblePanels.filter((p) => !p.right)
   const rightPanels = visiblePanels.filter((p) => p.right)
@@ -89,7 +91,7 @@ export function PanelNav({ activePanel, onPanelChange, badges, isDocked }: Panel
   const activeConfig = visiblePanels.find((p) => p.id === activePanel) || visiblePanels[0]
   const ActiveIcon = activeConfig.icon
 
-  // If active panel becomes hidden (e.g. undock hides trading), fall back to galaxy
+  // If the active panel becomes hidden (e.g. undocking hides the shipyard), fall back to galaxy
   useEffect(() => {
     if (!visiblePanels.some((p) => p.id === activePanel)) {
       onPanelChange('galaxy')

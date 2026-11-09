@@ -13,16 +13,18 @@ import type {
 import { useAccountStore, useCargo, useCommandMutation, useCommandQuery, useLocationState, usePendingAction, usePlayer, useStations } from '@/lib/spacemolt'
 import { titleCase } from '@/lib/format'
 import { ConfirmAction, Credits, shared, useAction } from '../../shared'
+import { useStationServices } from '../../hooks/useGates'
 import { packageOptions, settleBlock, shipFormError, type ShipForm } from './logic'
 import css from './missions.module.css'
 
 type Actor = 'player' | 'faction'
 type View = 'board' | 'hauls' | 'ship' | 'record'
 
-const VIEWS: Array<{ id: View; label: string }> = [
-  { id: 'board', label: 'Board' },
+/** `station`: needs a docked station with a mission service (the freight board and posting live there). */
+const VIEWS: Array<{ id: View; label: string; station?: boolean }> = [
+  { id: 'board', label: 'Board', station: true },
   { id: 'hauls', label: 'My hauls' },
-  { id: 'ship', label: 'Ship a package' },
+  { id: 'ship', label: 'Ship a package', station: true },
   { id: 'record', label: 'Carrier record' },
 ]
 
@@ -34,7 +36,10 @@ const ticks = (n: number) => `${n} ticks (~${Math.max(1, Math.round((n * 10) / 6
 export function ShippingTab() {
   const player = usePlayer()
   const dockedAt = useLocationState()?.docked_at ?? null
-  const [view, setView] = useState<View>('board')
+  const hasMissions = useStationServices().includes('missions')
+  const views = VIEWS.filter((v) => hasMissions || !v.station)
+  const [picked, setView] = useState<View>('board')
+  const view = views.some((v) => v.id === picked) ? picked : 'hauls'
   const [actor, setActor] = useState<Actor>('player')
   const hasFaction = Boolean(player?.faction_id)
 
@@ -42,7 +47,7 @@ export function ShippingTab() {
     <>
       <div className={`${css.row} ${css.spread}`}>
         <div className={css.subTabs}>
-          {VIEWS.map((v) => (
+          {views.map((v) => (
             <button
               key={v.id}
               type="button"
@@ -69,7 +74,7 @@ export function ShippingTab() {
       {view === 'board' && <Board actor={actor} dockedAt={dockedAt} />}
       {view === 'hauls' && <Hauls dockedAt={dockedAt} />}
       {view === 'ship' && <ShipPackage actor={actor} dockedAt={dockedAt} />}
-      {view === 'record' && <CarrierRecord actor={actor} dockedAt={dockedAt} />}
+      {view === 'record' && <CarrierRecord actor={actor} canPay={hasMissions} />}
     </>
   )
 }
@@ -105,8 +110,6 @@ function Board({ actor, dockedAt }: { actor: Actor; dockedAt: string | null }) {
     [actor, sort, level, dest, page, dockedAt],
     { enabled: Boolean(dockedAt) },
   )
-
-  if (!dockedAt) return <div className={shared.dockedOnly}>Dock at a station with a mission service to see its freight board.</div>
 
   const pages = Math.max(1, Math.ceil((q.data?.total ?? 0) / PER_PAGE))
   const applyDest = () => {
@@ -279,6 +282,9 @@ function HaulCard({ entry: s, dockedAt, onSettled }: { entry: ShippingActiveCont
   const origin = s.origin_name ?? c.origin_base_id
   const deliverBlock = settleBlock({ station: c.destination_base_id, stationName: destination, dockedAt, hasPackage: s.package_in_your_cargo })
   const returnBlock = settleBlock({ station: c.origin_base_id, stationName: origin, dockedAt, hasPackage: s.package_in_your_cargo })
+  // Deliver and Return settle only at their own station; elsewhere the hint names where to go.
+  const atDestination = isCarrier && dockedAt === c.destination_base_id
+  const atOrigin = isCarrier && dockedAt === c.origin_base_id
   const lateFee = s.late_fee_if_delivered_now ?? 0
   const confirmText: Record<Settle, string> = {
     deliver: `Deliver late? You get no reward and owe a ${lateFee.toLocaleString()} cr late fee (instead of ${s.failure_debt.toLocaleString()} cr on default).`,
@@ -317,7 +323,7 @@ function HaulCard({ entry: s, dockedAt, onSettled }: { entry: ShippingActiveCont
         />
       ) : (
         <div className={css.row}>
-          {isCarrier && (
+          {atDestination && (
             <button
               type="button"
               className={shared.confirmBtn}
@@ -328,7 +334,7 @@ function HaulCard({ entry: s, dockedAt, onSettled }: { entry: ShippingActiveCont
               <PackageCheck size={12} /> Deliver
             </button>
           )}
-          {isCarrier && (
+          {atOrigin && (
             <button
               type="button"
               className={shared.subtleBtn}
@@ -407,8 +413,6 @@ function ShipPackage({ actor, dockedAt }: { actor: Actor; dockedAt: string | nul
   const directory = useStationDirectory()
   const stations = [...new Map([...(storageQ.data?.locations ?? []), ...directory].map((s) => [s.base_id, s])).values()]
     .sort((a, b) => a.base_name.localeCompare(b.base_name))
-
-  if (!dockedAt) return <div className={shared.dockedOnly}>Dock at a station with a mission service to ship a package from it.</div>
 
   const set = <K extends keyof ShipFormState>(k: K, v: ShipFormState[K]) => setForm((f) => ({ ...f, [k]: v }))
   const formError = shipFormError(form)
@@ -601,7 +605,8 @@ function QuoteView({ quote: q }: { quote: ShippingQuote }) {
   )
 }
 
-function CarrierRecord({ actor, dockedAt }: { actor: Actor; dockedAt: string | null }) {
+/** `canPay`: docked at a station with a mission service, where freight debt is settled. */
+function CarrierRecord({ actor, canPay }: { actor: Actor; canPay: boolean }) {
   const mutate = useCommandMutation()
   const { run } = useAction()
   const pending = usePendingAction() !== null
@@ -674,7 +679,8 @@ function CarrierRecord({ actor, dockedAt }: { actor: Actor; dockedAt: string | n
         </div>
       ))}
 
-      {owed > 0 && (
+      {owed > 0 && !canPay && <div className={css.hint}>Pay at any station with a mission service.</div>}
+      {owed > 0 && canPay && (
         <>
           <div className={css.row}>
             <input
@@ -689,14 +695,13 @@ function CarrierRecord({ actor, dockedAt }: { actor: Actor; dockedAt: string | n
               <button
                 type="button"
                 className={shared.warningBtn}
-                disabled={pending || !dockedAt || !amountValid}
+                disabled={pending || !amountValid}
                 onClick={() => setConfirming(true)}
               >
                 Pay debt
               </button>
             )}
           </div>
-          {!dockedAt && <div className={css.hint}>Pay at any station with a mission service.</div>}
           {confirming && (
             <ConfirmAction
               variant="accent"

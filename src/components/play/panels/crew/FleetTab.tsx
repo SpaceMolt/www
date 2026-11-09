@@ -3,10 +3,10 @@
 import { useState } from 'react'
 import { Crown, Fuel, LogOut, Ship, UserMinus, UserPlus, Users, Wrench, X, Check, Armchair } from 'lucide-react'
 import type { Commands, MutationResult, RefuelResponse, RepairResponse } from '@spacemolt/lib'
-import { useCommandMutation, useCommandQuery, useLocationState, useModules, usePlayer } from '@/lib/spacemolt'
+import { useCargo, useCommandMutation, useCommandQuery, useLocationState, useModules, usePlayer } from '@/lib/spacemolt'
 import { ConfirmAction, shared, useAction } from '../../shared'
 import styles from '../CrewPanel.module.css'
-import { invitablePlayers, parseCount } from './crewLogic'
+import { hasRepairKit, invitablePlayers, parseCount } from './crewLogic'
 import { getShip } from '@/data/catalog'
 
 /** Shown when the server result carries no message. */
@@ -27,6 +27,7 @@ export function FleetTab() {
   const player = usePlayer()
   const location = useLocationState()
   const modules = useModules()
+  const cargo = useCargo()
   const { busy: running, run } = useAction()
   const busy = running !== null
   const [confirm, setConfirm] = useState<string | null>(null)
@@ -66,7 +67,7 @@ export function FleetTab() {
   const self = members.find((m) => m.player_id === player?.id)
   const isPassenger = Boolean(self?.passenger)
   const hasPump = Boolean(modules?.some((m) => m.type_id === 'refueling_pump'))
-  const hasArm = Boolean(modules?.some((m) => m.type_id === 'repair_arm'))
+  const canRepair = Boolean(modules?.some((m) => m.type_id === 'repair_arm')) && hasRepairKit(cargo)
   const invitable = invitablePlayers(nearby, members.map((m) => m.player_id))
   const carriers = nearby.filter((p) => p.docked && player?.faction_id && p.faction_id === player.faction_id)
 
@@ -208,49 +209,39 @@ export function FleetTab() {
                   )}
                   {!here && <span>not at your POI</span>}
                 </div>
-                {!isSelf && here && !m.passenger && (
-                  <>
-                    <div className={styles.row}>
-                      <input
-                        className={`${shared.textInput} ${styles.numInput}`}
-                        inputMode="numeric"
-                        placeholder="max"
-                        value={qty[`refuel:${m.username}`] ?? ''}
-                        onChange={(e) => setQty({ ...qty, [`refuel:${m.username}`]: e.target.value })}
-                        aria-label={`Fuel to transfer to ${m.username}`}
-                      />
-                      <button
-                        className={shared.actionBtn}
-                        disabled={busy || !hasPump}
-                        onClick={() => sendSupport('refuel', m.username)}
-                        type="button"
-                      >
-                        <Fuel size={12} /> Refuel
-                      </button>
-                      <input
-                        className={`${shared.textInput} ${styles.numInput}`}
-                        inputMode="numeric"
-                        placeholder="1 kit"
-                        value={qty[`repair:${m.username}`] ?? ''}
-                        onChange={(e) => setQty({ ...qty, [`repair:${m.username}`]: e.target.value })}
-                        aria-label={`Repair kits to use on ${m.username}`}
-                      />
-                      <button
-                        className={shared.actionBtn}
-                        disabled={busy || !hasArm}
-                        onClick={() => sendSupport('repair', m.username)}
-                        type="button"
-                      >
-                        <Wrench size={12} /> Repair
-                      </button>
-                    </div>
-                    {(!hasPump || !hasArm) && (
-                      <div className={styles.hint}>
-                        {!hasPump && 'Refuel needs a Refueling Pump fitted (blank amount sends the most, keeping 1 fuel). '}
-                        {!hasArm && 'Repair needs a Repair Arm fitted and repair kits in cargo.'}
-                      </div>
+                {!isSelf && here && !m.passenger && (hasPump || canRepair) && (
+                  <div className={styles.row}>
+                    {hasPump && (
+                      <>
+                        <input
+                          className={`${shared.textInput} ${styles.numInput}`}
+                          inputMode="numeric"
+                          placeholder="max"
+                          value={qty[`refuel:${m.username}`] ?? ''}
+                          onChange={(e) => setQty({ ...qty, [`refuel:${m.username}`]: e.target.value })}
+                          aria-label={`Fuel to transfer to ${m.username}`}
+                        />
+                        <button className={shared.actionBtn} disabled={busy} onClick={() => sendSupport('refuel', m.username)} type="button">
+                          <Fuel size={12} /> Refuel
+                        </button>
+                      </>
                     )}
-                  </>
+                    {canRepair && (
+                      <>
+                        <input
+                          className={`${shared.textInput} ${styles.numInput}`}
+                          inputMode="numeric"
+                          placeholder="1 kit"
+                          value={qty[`repair:${m.username}`] ?? ''}
+                          onChange={(e) => setQty({ ...qty, [`repair:${m.username}`]: e.target.value })}
+                          aria-label={`Repair kits to use on ${m.username}`}
+                        />
+                        <button className={shared.actionBtn} disabled={busy} onClick={() => sendSupport('repair', m.username)} type="button">
+                          <Wrench size={12} /> Repair
+                        </button>
+                      </>
+                    )}
+                  </div>
                 )}
               </div>
             )
@@ -339,7 +330,8 @@ export function FleetTab() {
         </div>
       )}
 
-      {!isPassenger && (
+      {/* Boarding needs you docked, in a faction, outside a fleet, beside a docked faction-mate. */}
+      {docked && !inFleet && carriers.length > 0 && (
         <div className={styles.card}>
           <div className={styles.cardTitle}>
             <Armchair size={14} /> Ride with a faction-mate
@@ -348,41 +340,31 @@ export function FleetTab() {
             Board a docked faction-mate&apos;s ship as a free passenger (deadheading). Your ship stays parked here, or goes to
             the faction garage. A fleet is created with the carrier as leader if needed.
           </div>
-          {!docked ? (
-            <div className={styles.hint}>Dock at a station to board.</div>
-          ) : !player?.faction_id ? (
-            <div className={styles.hint}>Join a faction to board a faction-mate&apos;s ship.</div>
-          ) : carriers.length === 0 ? (
-            <div className={styles.hint}>No docked faction-mates here.</div>
-          ) : (
-            <>
-              <label className={styles.row}>
-                <input type="checkbox" checked={boardGarage} onChange={(e) => setBoardGarage(e.target.checked)} />
-                <span className={styles.hint}>Stow my ship in the faction garage</span>
-              </label>
-              {carriers.map((p) => (
-                <div key={p.player_id} className={shared.listCard}>
-                  <span className={shared.listCardName}>
-                    {p.username}
-                    {p.ship_class ? ` (${getShip(p.ship_class)?.name ?? p.ship_class})` : ''}
-                  </span>
-                  <button
-                    className={shared.actionBtn}
-                    disabled={busy}
-                    onClick={() =>
-                      act(
-                        (c) => c.spacemolt_fleet.board({ id: p.player_id, garage: boardGarage }),
-                        'fleet_board',
-                      )
-                    }
-                    type="button"
-                  >
-                    Board
-                  </button>
-                </div>
-              ))}
-            </>
-          )}
+          <label className={styles.row}>
+            <input type="checkbox" checked={boardGarage} onChange={(e) => setBoardGarage(e.target.checked)} />
+            <span className={styles.hint}>Stow my ship in the faction garage</span>
+          </label>
+          {carriers.map((p) => (
+            <div key={p.player_id} className={shared.listCard}>
+              <span className={shared.listCardName}>
+                {p.username}
+                {p.ship_class ? ` (${getShip(p.ship_class)?.name ?? p.ship_class})` : ''}
+              </span>
+              <button
+                className={shared.actionBtn}
+                disabled={busy}
+                onClick={() =>
+                  act(
+                    (c) => c.spacemolt_fleet.board({ id: p.player_id, garage: boardGarage }),
+                    'fleet_board',
+                  )
+                }
+                type="button"
+              >
+                Board
+              </button>
+            </div>
+          ))}
         </div>
       )}
     </div>

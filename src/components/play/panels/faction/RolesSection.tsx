@@ -12,8 +12,8 @@ import { NO_PERMISSIONS, PERMISSION_LABELS } from './factionAdmin'
 type Role = NonNullable<FactionInfoResponse['roles']>[number]
 const PERMISSION_KEYS = Object.keys(PERMISSION_LABELS) as (keyof FactionCreateRolePermissions)[]
 
-/** Create, edit and delete custom faction roles. Needs manage_roles; the server enforces it. */
-export function RolesSection({ info, onChanged }: { info: FactionInfoResponse; onChanged: () => void }) {
+/** Faction roles; with manage_roles, also create, edit and delete them. */
+export function RolesSection({ info, canManage, onChanged }: { info: FactionInfoResponse; canManage: boolean; onChanged: () => void }) {
   const store = useAccountStore()
   const { busy, run } = useAction()
   const [editing, setEditing] = useState<Role | null>(null)
@@ -62,52 +62,58 @@ export function RolesSection({ info, onChanged }: { info: FactionInfoResponse; o
                 <span className={styles.intelMeta}>
                   {PERMISSION_KEYS.filter((k) => role.permissions[k]).map((k) => PERMISSION_LABELS[k]).join(', ') || 'no permissions'}
                 </span>
-                <button className={styles.kickBtn} onClick={() => startEdit(role)} title={`Edit ${role.name}`} aria-label={`Edit ${role.name}`} type="button">
-                  <Pencil size={10} />
-                </button>
-                <button className={styles.kickBtn} onClick={() => setDeleting(role.id)} disabled={busy === `delete:${role.id}`} title={`Delete ${role.name}`} aria-label={`Delete ${role.name}`} type="button">
-                  <Trash2 size={10} />
-                </button>
+                {canManage && (
+                  <>
+                    <button className={styles.kickBtn} onClick={() => startEdit(role)} title={`Edit ${role.name}`} aria-label={`Edit ${role.name}`} type="button">
+                      <Pencil size={10} />
+                    </button>
+                    <button className={styles.kickBtn} onClick={() => setDeleting(role.id)} disabled={busy === `delete:${role.id}`} title={`Delete ${role.name}`} aria-label={`Delete ${role.name}`} type="button">
+                      <Trash2 size={10} />
+                    </button>
+                  </>
+                )}
               </div>
             )}
           </div>
         ))}
       </div>
 
-      <div className={styles.roomForm}>
-        <div className={styles.roomFormTitle}>
-          {editing ? <><Pencil size={12} /> Edit {editing.name}</> : <><Plus size={12} /> New Role</>}
-        </div>
-        <div className={styles.field}>
-          <label className={styles.label}>Name</label>
-          <input className={styles.input} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Quartermaster" />
-        </div>
-        {!editing && (
-          <div className={styles.field}>
-            <label className={styles.label}>Priority (higher outranks lower)</label>
-            <input className={styles.input} type="number" min={1} value={priority} onChange={(e) => setPriority(e.target.value)} />
+      {canManage && (
+        <div className={styles.roomForm}>
+          <div className={styles.roomFormTitle}>
+            {editing ? <><Pencil size={12} /> Edit {editing.name}</> : <><Plus size={12} /> New Role</>}
           </div>
-        )}
-        <div className={styles.permissionGrid}>
-          {PERMISSION_KEYS.map((k) => (
-            <label key={k} className={styles.checkLabel}>
-              <input type="checkbox" checked={perms[k]} onChange={(e) => setPerms({ ...perms, [k]: e.target.checked })} />
-              {PERMISSION_LABELS[k]}
-            </label>
-          ))}
+          <div className={styles.field}>
+            <label className={styles.label}>Name</label>
+            <input className={styles.input} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Quartermaster" />
+          </div>
+          {!editing && (
+            <div className={styles.field}>
+              <label className={styles.label}>Priority (higher outranks lower)</label>
+              <input className={styles.input} type="number" min={1} value={priority} onChange={(e) => setPriority(e.target.value)} />
+            </div>
+          )}
+          <div className={styles.permissionGrid}>
+            {PERMISSION_KEYS.map((k) => (
+              <label key={k} className={styles.checkLabel}>
+                <input type="checkbox" checked={perms[k]} onChange={(e) => setPerms({ ...perms, [k]: e.target.checked })} />
+                {PERMISSION_LABELS[k]}
+              </label>
+            ))}
+          </div>
+          <div className={styles.formActions}>
+            <ActionButton
+              label={editing ? 'Save Role' : 'Create Role'}
+              icon={<Save size={12} />}
+              onClick={save}
+              disabled={!name.trim() || (!editing && !(Number(priority) > 0))}
+              loading={busy === 'save'}
+              size="sm"
+            />
+            {editing && <button className={shared.subtleBtn} onClick={() => startEdit(null)} type="button">Cancel</button>}
+          </div>
         </div>
-        <div className={styles.formActions}>
-          <ActionButton
-            label={editing ? 'Save Role' : 'Create Role'}
-            icon={<Save size={12} />}
-            onClick={save}
-            disabled={!name.trim() || (!editing && !(Number(priority) > 0))}
-            loading={busy === 'save'}
-            size="sm"
-          />
-          {editing && <button className={shared.subtleBtn} onClick={() => startEdit(null)} type="button">Cancel</button>}
-        </div>
-      </div>
+      )}
     </div>
   )
 }

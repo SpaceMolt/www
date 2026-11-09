@@ -7,12 +7,15 @@ import { usePlay } from '../../PlayProvider'
 import { Loading, Modal, shared, useAction } from '../../shared'
 import styles from './facilities.module.css'
 import { Row } from '../station/StationStatus'
+import { useFactionPermissions } from '../../hooks/useGates'
 
 /** Herd status and cull target for one faction ranch. */
 export function RanchModal({ facilityId, onClose }: { facilityId: string; onClose: () => void }) {
   const mutate = useCommandMutation()
   const { uiStore } = usePlay()
   const [cull, setCull] = useState('')
+  // Setting the cull policy needs ManageFacilities (gameserver handlers/ranch.go).
+  const canCull = useFactionPermissions().can('manage_facilities')
   const { busy, run } = useAction()
   const saving = busy !== null
   const { data: ranch, loading, refetch } = useCommandQuery(
@@ -61,6 +64,7 @@ export function RanchModal({ facilityId, onClose }: { facilityId: string; onClos
               </div>
             )}
           </div>
+          {canCull && (
           <div className={styles.cardActions}>
             <input
               className={shared.textInput}
@@ -81,6 +85,7 @@ export function RanchModal({ facilityId, onClose }: { facilityId: string; onClos
               {saving ? <Loader2 size={11} className={shared.spinner} /> : <PawPrint size={11} />} Set cull
             </button>
           </div>
+          )}
         </>
       )}
     </Modal>

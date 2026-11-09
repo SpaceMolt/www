@@ -76,13 +76,7 @@ export function ArenaTab({ inCombat }: { inCombat: boolean }) {
   const inArenaBattle = Boolean(s?.battle_id) || inCombat
   const arenas = [...new Set((defs.data?.challenges ?? []).map((d) => d.poi_name))]
   const pilots = (location?.nearby_players ?? []).filter((p) => p.username)
-  const challengeBlock = !atArena
-    ? 'Undock at an arena to challenge a pilot.'
-    : inArenaBattle
-      ? 'Finish your current battle first.'
-      : hasPending
-        ? 'You already have a pending challenge.'
-        : null
+  const canChallenge = atArena && !inArenaBattle && !hasPending
 
   return (
     <>
@@ -147,9 +141,9 @@ export function ArenaTab({ inCombat }: { inCombat: boolean }) {
 
       {s?.incoming && (
         <PendingCard label="Incoming challenge" info={s.incoming}>
-          <button className={shared.confirmBtn} disabled={busy || !atArena} onClick={() => run('arena_accept', (c) => c.spacemolt_arena.accept())} type="button">
+          {atArena && <button className={shared.confirmBtn} disabled={busy} onClick={() => run('arena_accept', (c) => c.spacemolt_arena.accept())} type="button">
             <Check size={12} /> Accept
-          </button>
+          </button>}
           <button className={shared.dangerBtn} disabled={busy} onClick={() => run('arena_decline', (c) => c.spacemolt_arena.decline())} type="button">
             <X size={12} /> Decline
           </button>
@@ -163,7 +157,7 @@ export function ArenaTab({ inCombat }: { inCombat: boolean }) {
         </PendingCard>
       )}
 
-      <div>
+      {canChallenge && <div>
         <div className={shared.sectionTitle}>Challenge a pilot</div>
         <form
           className={styles.formRow}
@@ -180,7 +174,6 @@ export function ArenaTab({ inCombat }: { inCombat: boolean }) {
             aria-label="Pilot name"
             value={target}
             onChange={(e) => setTarget(e.target.value)}
-            disabled={Boolean(challengeBlock)}
           />
           <datalist id="arena-pilots">
             {pilots.map((p) => <option key={p.player_id ?? p.username} value={p.username} />)}
@@ -193,17 +186,16 @@ export function ArenaTab({ inCombat }: { inCombat: boolean }) {
               min={0}
               value={sideSize}
               onChange={(e) => setSideSize(Math.max(0, Math.floor(Number(e.target.value) || 0)))}
-              disabled={Boolean(challengeBlock)}
             />
           </label>
-          <button className={shared.accentBtn} type="submit" disabled={busy || Boolean(challengeBlock) || !target.trim()}>
+          <button className={shared.accentBtn} type="submit" disabled={busy || !target.trim()}>
             <Swords size={12} /> Challenge
           </button>
         </form>
         <small className={styles.hint}>
-          {challengeBlock ?? `1 = solo duel, 0 = every fleet member at the arena. The pilot must be undocked here.${pilots.length ? '' : ' No other pilots in sight.'}`}
+          1 = solo duel, 0 = every fleet member at the arena. The pilot must be undocked here.{pilots.length ? '' : ' No other pilots in sight.'}
         </small>
-      </div>
+      </div>}
 
       <div>
         <div className={shared.sectionTitle}>NPC challenges</div>
@@ -211,13 +203,7 @@ export function ArenaTab({ inCombat }: { inCombat: boolean }) {
         {defs.data && defs.data.challenges.length === 0 && <div className={shared.emptyState}>No arena challenges are defined.</div>}
         <div className={styles.reloadList}>
           {(defs.data?.challenges ?? []).map((d) => {
-            const block = !d.at_this_arena
-              ? `Fought at ${d.poi_name}. Undock there to start.`
-              : d.locked
-                ? `Locked. Win first: ${d.requires.map((id) => defs.data?.challenges.find((c) => c.challenge_id === id)?.name ?? titleCase(id)).join(', ')}`
-                : inArenaBattle
-                  ? 'Finish your current battle first.'
-                  : null
+            const canFight = atArena && d.at_this_arena && !d.locked && !inArenaBattle
             const rules = rulesText(d.rules)
             return (
               <div key={d.challenge_id} className={styles.reloadCard}>
@@ -247,17 +233,23 @@ export function ArenaTab({ inCombat }: { inCombat: boolean }) {
                   {d.waves.length > 0 && ` + ${d.waves.length} wave${d.waves.length === 1 ? '' : 's'} (${d.waves.map((w) => w.name).join(', ')})`}
                 </small>
                 {rules.length > 0 && <small className={styles.hint}>Rules: {rules.join(' · ')}</small>}
-                <div className={styles.reloadControls}>
-                  <button
-                    className={shared.dangerBtn}
-                    disabled={busy || Boolean(block)}
-                    onClick={() => run('arena_fight', (c) => c.spacemolt_arena.fight({ id: d.challenge_id }))}
-                    type="button"
-                  >
-                    <Swords size={12} /> Fight
-                  </button>
-                  {block && <small className={styles.hint}>{block}</small>}
-                </div>
+                {d.locked && (
+                  <small className={styles.hint}>
+                    Locked. Win first: {d.requires.map((id) => defs.data?.challenges.find((c) => c.challenge_id === id)?.name ?? titleCase(id)).join(', ')}
+                  </small>
+                )}
+                {canFight && (
+                  <div className={styles.reloadControls}>
+                    <button
+                      className={shared.dangerBtn}
+                      disabled={busy}
+                      onClick={() => run('arena_fight', (c) => c.spacemolt_arena.fight({ id: d.challenge_id }))}
+                      type="button"
+                    >
+                      <Swords size={12} /> Fight
+                    </button>
+                  </div>
+                )}
               </div>
             )
           })}

@@ -86,7 +86,9 @@ interface HistoryPage { messages: ChatMessage[]; hasMore: boolean }
 export function ChatPanel() {
   const store = useAccountStore()
   const { uiStore } = usePlay()
-  const myId = usePlayer()?.id
+  const player = usePlayer()
+  const myId = player?.id
+  const hasFaction = Boolean(player?.faction_id)
   const chatMessages = usePlayUi((s) => s.chatMessages)
   const [activeChannel, setActiveChannel] = useState<Channel>('local')
   const [input, setInput] = useState('')
@@ -97,6 +99,11 @@ export function ChatPanel() {
   const [historyError, setHistoryError] = useState<string | null>(null)
   const messagesRef = useRef<HTMLDivElement>(null)
   const isAutoScrollRef = useRef(true)
+
+  // The Faction channel exists only inside a faction; leaving one drops back to Local.
+  useEffect(() => {
+    if (!hasFaction) setActiveChannel((ch) => (ch === 'faction' ? 'local' : ch))
+  }, [hasFaction])
 
   const dm = activeChannel === 'private' ? dmPartner : null
   const isInbox = activeChannel === 'private' && !dmPartner
@@ -205,7 +212,7 @@ export function ChatPanel() {
   return (
     <div className={styles.container}>
       <div className={styles.tabs}>
-        {(Object.keys(CHANNEL_CONFIG) as Channel[]).map((ch) => {
+        {(Object.keys(CHANNEL_CONFIG) as Channel[]).filter((ch) => ch !== 'faction' || hasFaction).map((ch) => {
           const config = CHANNEL_CONFIG[ch]
           const Icon = config.icon
           const isActive = activeChannel === ch

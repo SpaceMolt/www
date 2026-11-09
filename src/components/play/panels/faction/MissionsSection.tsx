@@ -24,10 +24,11 @@ const TARGET_HINT: Record<(typeof TARGET_FIELD)[ObjectiveDraft['type']], string>
 }
 
 /**
- * Faction missions posted at the docked station: list, cancel, and post.
- * Needs a faction_missions facility here and manage_treasury; rewards are escrowed from faction storage.
+ * Faction missions posted at the docked station (the parent shows it only docked): list, and with
+ * manage_treasury (`canManage`) cancel, plus post where a faction_missions facility is here.
+ * Rewards are escrowed from faction storage.
  */
-export function MissionsSection() {
+export function MissionsSection({ canManage }: { canManage: boolean }) {
   const mutate = useCommandMutation()
   const dockedAt = useLocationState()?.docked_at ?? null
   const { busy, run } = useAction()
@@ -41,8 +42,6 @@ export function MissionsSection() {
     [dockedAt],
     { enabled: Boolean(dockedAt) },
   )
-
-  if (!dockedAt) return <div className={shared.emptyState}>Dock at a station with your faction mission board to manage missions.</div>
 
   // A filled-in objective row counts even if "Add" was not pressed.
   const objectives = objective.description.trim() || objective.item_id.trim() || objective.target.trim()
@@ -70,7 +69,7 @@ export function MissionsSection() {
       {data && (
         <>
           <div className={styles.intelMeta}>
-            {hasBoard === false
+            {canManage && hasBoard === false
               ? 'Posting missions needs a Notice Board at this station. Build one from Facilities.'
               : `${data.count}/${data.max_posted} posted here`}
           </div>
@@ -83,7 +82,7 @@ export function MissionsSection() {
                     {m.type} -- <Credits amount={m.reward_credits} /> -- {m.active_instances} active{m.posted_by ? ` -- ${m.posted_by}` : ''}
                   </span>
                 </div>
-                {cancelling === m.template_id ? (
+                {!canManage ? null : cancelling === m.template_id ? (
                   <ConfirmAction message="Cancel and refund?" onConfirm={() => cancel(m.template_id)} onCancel={() => setCancelling(null)} />
                 ) : (
                   <ActionButton label="Cancel" icon={<Trash2 size={12} />} onClick={() => setCancelling(m.template_id)} loading={busy === `cancel:${m.template_id}`} variant="danger" size="sm" />
@@ -94,55 +93,57 @@ export function MissionsSection() {
         </>
       )}
 
-      <div className={styles.roomForm}>
-        <div className={styles.roomFormTitle}><Plus size={12} /> Post Mission</div>
-        <input className={styles.input} placeholder="Title" value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
-        <textarea className={styles.textarea} rows={2} placeholder="What does your faction need?" value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
-        <div className={styles.diplomacyRow}>
-          <select className={styles.select} value={draft.type} onChange={(e) => setDraft({ ...draft, type: e.target.value as MissionDraft['type'] })} aria-label="Mission type">
-            {MISSION_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-          </select>
-          <input className={styles.input} type="number" min={0} placeholder="Reward credits" value={draft.credits} onChange={(e) => setDraft({ ...draft, credits: e.target.value })} />
-          <input className={styles.input} type="number" min={1} max={720} placeholder="Hours (72)" value={draft.expirationHours} onChange={(e) => setDraft({ ...draft, expirationHours: e.target.value })} />
-        </div>
-        <label className={styles.checkLabel}>
-          <input type="checkbox" checked={draft.openToAll} onChange={(e) => setDraft({ ...draft, openToAll: e.target.checked })} />
-          Open to non-members
-        </label>
-
-        <div className={styles.label}>Objectives</div>
-        {draft.objectives.map((o, i) => (
-          <div key={objectKey(o)} className={styles.intelItem}>
-            <span className={styles.intelSystemName}>{o.type}</span>
-            <span className={styles.intelMeta}>{[o.description, o.item_id, o.quantity, o.target].filter(Boolean).join(' / ')}</span>
-            <button className={styles.kickBtn} onClick={() => setDraft({ ...draft, objectives: draft.objectives.filter((_, j) => j !== i) })} aria-label="Remove objective" type="button">
-              <X size={10} />
-            </button>
+      {canManage && hasBoard && (
+        <div className={styles.roomForm}>
+          <div className={styles.roomFormTitle}><Plus size={12} /> Post Mission</div>
+          <input className={styles.input} placeholder="Title" value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
+          <textarea className={styles.textarea} rows={2} placeholder="What does your faction need?" value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
+          <div className={styles.diplomacyRow}>
+            <select className={styles.select} value={draft.type} onChange={(e) => setDraft({ ...draft, type: e.target.value as MissionDraft['type'] })} aria-label="Mission type">
+              {MISSION_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+            </select>
+            <input className={styles.input} type="number" min={0} placeholder="Reward credits" value={draft.credits} onChange={(e) => setDraft({ ...draft, credits: e.target.value })} />
+            <input className={styles.input} type="number" min={1} max={720} placeholder="Hours (72)" value={draft.expirationHours} onChange={(e) => setDraft({ ...draft, expirationHours: e.target.value })} />
           </div>
-        ))}
-        <div className={styles.diplomacyRow}>
-          <select className={styles.select} value={objective.type} onChange={(e) => setObjective({ ...objective, type: e.target.value as ObjectiveDraft['type'] })} aria-label="Objective type">
-            {OBJECTIVE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-          </select>
-          <input className={styles.input} placeholder="Objective description" value={objective.description} onChange={(e) => setObjective({ ...objective, description: e.target.value })} />
+          <label className={styles.checkLabel}>
+            <input type="checkbox" checked={draft.openToAll} onChange={(e) => setDraft({ ...draft, openToAll: e.target.checked })} />
+            Open to non-members
+          </label>
+
+          <div className={styles.label}>Objectives</div>
+          {draft.objectives.map((o, i) => (
+            <div key={objectKey(o)} className={styles.intelItem}>
+              <span className={styles.intelSystemName}>{o.type}</span>
+              <span className={styles.intelMeta}>{[o.description, o.item_id, o.quantity, o.target].filter(Boolean).join(' / ')}</span>
+              <button className={styles.kickBtn} onClick={() => setDraft({ ...draft, objectives: draft.objectives.filter((_, j) => j !== i) })} aria-label="Remove objective" type="button">
+                <X size={10} />
+              </button>
+            </div>
+          ))}
+          <div className={styles.diplomacyRow}>
+            <select className={styles.select} value={objective.type} onChange={(e) => setObjective({ ...objective, type: e.target.value as ObjectiveDraft['type'] })} aria-label="Objective type">
+              {OBJECTIVE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+            </select>
+            <input className={styles.input} placeholder="Objective description" value={objective.description} onChange={(e) => setObjective({ ...objective, description: e.target.value })} />
+          </div>
+          <div className={styles.diplomacyRow}>
+            <input className={styles.input} placeholder="Item id" value={objective.item_id} onChange={(e) => setObjective({ ...objective, item_id: e.target.value })} />
+            <input className={styles.input} type="number" min={1} placeholder="Qty" value={objective.quantity} onChange={(e) => setObjective({ ...objective, quantity: e.target.value })} />
+            <input className={styles.input} placeholder={TARGET_HINT[TARGET_FIELD[objective.type]]} value={objective.target} onChange={(e) => setObjective({ ...objective, target: e.target.value })} />
+          </div>
+          <div className={styles.formActions}>
+            <ActionButton label="Add Objective" icon={<Plus size={12} />} onClick={() => { setDraft({ ...draft, objectives }); setObjective(EMPTY_OBJECTIVE) }} variant="secondary" size="sm" />
+            <ActionButton
+              label="Post Mission"
+              icon={<Send size={12} />}
+              onClick={post}
+              disabled={!draft.title.trim() || !draft.description.trim() || objectives.length === 0}
+              loading={busy === 'post'}
+              size="sm"
+            />
+          </div>
         </div>
-        <div className={styles.diplomacyRow}>
-          <input className={styles.input} placeholder="Item id" value={objective.item_id} onChange={(e) => setObjective({ ...objective, item_id: e.target.value })} />
-          <input className={styles.input} type="number" min={1} placeholder="Qty" value={objective.quantity} onChange={(e) => setObjective({ ...objective, quantity: e.target.value })} />
-          <input className={styles.input} placeholder={TARGET_HINT[TARGET_FIELD[objective.type]]} value={objective.target} onChange={(e) => setObjective({ ...objective, target: e.target.value })} />
-        </div>
-        <div className={styles.formActions}>
-          <ActionButton label="Add Objective" icon={<Plus size={12} />} onClick={() => { setDraft({ ...draft, objectives }); setObjective(EMPTY_OBJECTIVE) }} variant="secondary" size="sm" />
-          <ActionButton
-            label="Post Mission"
-            icon={<Send size={12} />}
-            onClick={post}
-            disabled={hasBoard === false || !draft.title.trim() || !draft.description.trim() || objectives.length === 0}
-            loading={busy === 'post'}
-            size="sm"
-          />
-        </div>
-      </div>
+      )}
     </div>
   )
 }

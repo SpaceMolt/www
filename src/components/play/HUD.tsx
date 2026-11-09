@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { AlertTriangle, Compass, Keyboard, X } from 'lucide-react'
-import { useAccountStore, useLocationState, useShip } from '@/lib/spacemolt'
+import { useAccountStore, useLocationState, usePlayer, useShip } from '@/lib/spacemolt'
+import { useStationServices } from './hooks/useGates'
 import { usePlayUi } from './PlayProvider'
 import { TopBar } from './TopBar'
 import { ToastContainer } from './ToastContainer'
@@ -33,7 +34,7 @@ import { findRoute, jumpEstimateMs } from './routeWalk'
 import { LoopRunnerContext, useLoopRunner } from './loop/useLoopRunner'
 import { LoopBanner, LoopPanel } from './loop/LoopPanel'
 import { ACTION_SHORTCUTS, shortcutKey } from './shortcuts'
-import { errorMessage, Modal } from './shared'
+import { ConfirmAction, errorMessage, Modal } from './shared'
 import { usePlay } from './PlayProvider'
 import styles from './HUD.module.css'
 
@@ -57,7 +58,7 @@ const PANELS: Record<string, React.ComponentType> = {
   autopilot: LoopPanel,
 }
 
-function ShortcutHelp({ onClose, isDocked }: { onClose: () => void; isDocked: boolean }) {
+function ShortcutHelp({ onClose, hiddenPanels }: { onClose: () => void; hiddenPanels: string[] }) {
   return (
     <Modal
       title="Keyboard shortcuts"
@@ -69,7 +70,7 @@ function ShortcutHelp({ onClose, isDocked }: { onClose: () => void; isDocked: bo
         {ACTION_SHORTCUTS.map(({ key, label }) => (
           <div key={key}><dt><kbd>{key}</kbd></dt><dd>{label}</dd></div>
         ))}
-        {panelShortcuts(isDocked).map(({ id, label }, i) => (
+        {panelShortcuts(hiddenPanels).map(({ id, label }, i) => (
           <div key={id}><dt><kbd>{i + 1}</kbd></dt><dd>{label} tab</dd></div>
         ))}
       </dl>
@@ -163,6 +164,15 @@ export function HUD() {
   const ship = useShip()
   const location = useLocationState()
   const isDocked = Boolean(location?.docked_at)
+  const towing = Boolean(usePlayer()?.towing_wreck_id)
+  const services = useStationServices()
+  // Shipyard and Crafting show at any station: commissions, listings and the job queue work without
+  // the service, and their controls gate on it. Salvage stays in space (it lists wrecks there)
+  // and while towing; docked, it needs a salvage yard.
+  const hiddenPanels = useMemo(() => [
+    ...(isDocked ? [] : ['shipyard', 'crafting']),
+    ...(isDocked && !towing && !services.includes('salvage_yard') ? ['salvage'] : []),
+  ], [services, isDocked, towing])
   const pendingTrades = usePlayUi((s) => s.pendingTrades)
   const inCombat = usePlayUi((s) => s.inCombat)
   const [activePanel, setActivePanel] = useState('galaxy')
@@ -175,13 +185,22 @@ export function HUD() {
   const [highlightedSystems, setHighlightedSystems] = useState<Set<string> | null>(null)
   const [navOpen, setNavOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
+  // Begin Travel over a running loop: confirm, stop the loop, then travel once it has wound down.
+  const [travelGate, setTravelGate] = useState<'confirm' | 'stopping' | null>(null)
   const pilotBusy = autoTravel.isActive || loop.isActive
 
   const handleBeginTravel = useCallback(() => {
-    if (!plannedRoute || !ship || loop.isActive) return
+    if (!plannedRoute || !ship) return
+    if (loop.isActive) { setTravelGate('confirm'); return }
     autoTravel.start(plannedRoute, { shipSpeed: ship.speed ?? 1 })
     setPlannedRoute(null) // clear the planned route, auto-travel takes over
   }, [plannedRoute, ship, autoTravel, loop.isActive])
+
+  useEffect(() => {
+    if (travelGate !== 'stopping' || loop.isActive) return
+    setTravelGate(null)
+    handleBeginTravel()
+  }, [travelGate, loop.isActive, handleBeginTravel])
 
   // When auto-travel completes a jump, switch to system tab
   const completedJumps = autoTravel.progress?.completedJumps ?? 0
@@ -201,12 +220,12 @@ export function HUD() {
       if (key === '?') { setHelpOpen((v) => !v); return }
       if (document.querySelector('[role="dialog"]')) return // help or another dialog is open
       if (key === 'n') { setNavOpen((v) => !v); return }
-      const panel = panelShortcuts(isDocked)[Number(key) - 1]
+      const panel = panelShortcuts(hiddenPanels)[Number(key) - 1]
       if (panel) setActivePanel(panel.id)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [isDocked])
+  }, [hiddenPanels])
 
   const handleSystemSelect = useCallback((system: MapSystemData) => {
     setExploreSystem(system)
@@ -261,7 +280,7 @@ export function HUD() {
             activePanel={activePanel}
             onPanelChange={setActivePanel}
             badges={badges}
-            isDocked={isDocked}
+            hidden={hiddenPanels}
           />
         </div>
 
@@ -313,14 +332,25 @@ export function HUD() {
                       </span>
                     )}
                   </div>
-                  <div className={styles.routeBannerActions}>
-                    <button className={styles.routeBannerBegin} onClick={handleBeginTravel} disabled={loop.isActive} title={loop.isActive ? 'Stop the running loop first' : undefined}>
-                      Begin Travel
-                    </button>
-                    <button className={styles.routeBannerCancel} onClick={() => setPlannedRoute(null)}>
-                      Cancel
-                    </button>
-                  </div>
+                  {travelGate === 'confirm' ? (
+                    <ConfirmAction
+                      message="This stops the running loop. Travel anyway?"
+                      icon={<AlertTriangle size={14} />}
+                      onConfirm={() => { loop.stop(); setTravelGate('stopping') }}
+                      onCancel={() => setTravelGate(null)}
+                      confirmLabel="Stop loop and travel"
+                      cancelLabel="Keep loop"
+                    />
+                  ) : (
+                    <div className={styles.routeBannerActions}>
+                      <button className={styles.routeBannerBegin} onClick={handleBeginTravel} disabled={travelGate === 'stopping'}>
+                        {travelGate === 'stopping' ? 'Stopping loop...' : 'Begin Travel'}
+                      </button>
+                      <button className={styles.routeBannerCancel} onClick={() => { setPlannedRoute(null); setTravelGate(null) }}>
+                        Cancel
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -342,7 +372,7 @@ export function HUD() {
       {/* Action Toasts (position: fixed, outside grid) */}
       <ToastContainer />
 
-      {helpOpen && <ShortcutHelp onClose={() => setHelpOpen(false)} isDocked={isDocked} />}
+      {helpOpen && <ShortcutHelp onClose={() => setHelpOpen(false)} hiddenPanels={hiddenPanels} />}
 
       {autoTravel.progress && autoTravel.progress.phase === 'aborted' && (
         <div className={styles.abortModalOverlay}>

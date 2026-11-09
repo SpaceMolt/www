@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Save } from 'lucide-react'
 import type { Commands, FactionInfoResponse } from '@spacemolt/lib'
-import { useAccountStore } from '@/lib/spacemolt'
+import { useAccountStore, useLocationState } from '@/lib/spacemolt'
 import { ActionButton } from '../../ActionButton'
 import styles from '../FactionPanel.module.css'
 import { useAction } from '../../shared'
@@ -27,10 +27,11 @@ const TOGGLES: { key: keyof AllyToggles; label: string }[] = [
   { key: 'ally_battle_opt_out', label: 'Do not auto-join allied battles' },
 ]
 
-/** Faction description, charter, colors and ally-sharing toggles. Needs a leader or officer role. */
+/** Faction description, charter, colors and ally-sharing toggles. The parent shows it only with manage_roles; saving also needs a Faction Desk here. */
 export function EditFactionSection({ info, onChanged }: { info: FactionInfoResponse; onChanged: () => void }) {
   const store = useAccountStore()
   const { busy, run } = useAction()
+  const docked = Boolean(useLocationState()?.docked_at)
   const hasDesk = useFactionService('faction_admin')
   const current = info as FactionInfoResponse & AllyToggles
   const [description, setDescription] = useState(info.description ?? '')
@@ -50,6 +51,8 @@ export function EditFactionSection({ info, onChanged }: { info: FactionInfoRespo
     }
     if (await run('edit', () => store.account.commands.spacemolt_faction_admin.edit(params), 'Faction updated', 'toast')) onChanged()
   }
+
+  if (!docked || hasDesk === false) return <div className={styles.label}>Editing needs a Faction Desk at the station you are docked at. Build one from Facilities.</div>
 
   return (
     <div className={styles.form}>
@@ -76,9 +79,8 @@ export function EditFactionSection({ info, onChanged }: { info: FactionInfoRespo
         </label>
       ))}
       <div className={styles.formActions}>
-        <ActionButton label="Save Faction" icon={<Save size={12} />} onClick={save} loading={busy === 'edit'} disabled={hasDesk === false} size="sm" />
+        <ActionButton label="Save Faction" icon={<Save size={12} />} onClick={save} loading={busy === 'edit'} size="sm" />
       </div>
-      {hasDesk === false && <div className={styles.label}>Saving needs a Faction Desk at the station you are docked at. Build one from Facilities.</div>}
     </div>
   )
 }

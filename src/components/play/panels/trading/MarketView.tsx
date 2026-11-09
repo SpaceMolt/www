@@ -43,6 +43,7 @@ import { titleCase } from '@/lib/format'
 import { normalizeCargo } from '../../shared/itemSelection'
 import { emptyMarketItem, mergeLiveBook } from './tradingLogic'
 import { usePersonalStorage } from './StorageView'
+import { useFactionService } from '../faction/useFactionService'
 import styles from './MarketView.module.css'
 
 type MarketInsight = AnalyzeMarketResponse['insights'][number]
@@ -97,7 +98,7 @@ export function MarketView() {
   const isDocked = Boolean(dockedAt)
   const player = usePlayer()
   const credits = player?.credits ?? 0
-  const hasFaction = Boolean(player?.faction_id)
+  const hasCompanyStore = useFactionService('faction_company_store')
   const [companyStore, setCompanyStore] = useState(false)
   const liveBook = useMarket()
   const rawCargo = useCargo()
@@ -443,7 +444,7 @@ export function MarketView() {
             onClick={() => setShowFilter('mine')}
             type="button"
           >Mine</button>
-          {hasFaction && (
+          {hasCompanyStore && (
             <button
               className={`${styles.showToggle} ${companyStore ? styles.showToggleActive : ''}`}
               onClick={() => setCompanyStore((v) => !v)}

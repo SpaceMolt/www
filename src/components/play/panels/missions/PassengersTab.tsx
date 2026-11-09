@@ -127,23 +127,22 @@ export function PassengersTab() {
             {p.connecting && <span className={css.meta}>connecting</span>}
             {p.destination === dockedAt && <span className={`${css.meta} ${css.good}`}>arrived</span>}
           </div>
-          {confirm !== 'all' && confirm?.citizen_id === p.citizen_id ? (
+          {dockedAt && (confirm !== 'all' && confirm?.citizen_id === p.citizen_id ? (
             <ConfirmAction message={confirmText} confirmLabel="Unload" onConfirm={() => unload(p.citizen_id)} onCancel={() => setConfirm(null)} />
           ) : (
             <button
               type="button"
               className={p.destination === dockedAt ? shared.confirmBtn : shared.subtleBtn}
-              disabled={pending || !dockedAt}
-              title={dockedAt ? undefined : DOCK_HINT}
+              disabled={pending}
               onClick={() => (p.destination === dockedAt && !handoff ? unload(p.citizen_id) : setConfirm(p))}
             >
               <LogOut size={12} /> {handoff ? 'Hand off' : p.destination === dockedAt ? 'Deliver' : 'Unload'}
             </button>
-          )}
+          ))}
         </div>
       ))}
 
-      {passengers.length > 0 && (
+      {passengers.length > 0 && dockedAt && (
         <>
           <div className={css.row}>
             <input
@@ -156,8 +155,7 @@ export function PassengersTab() {
             <button
               type="button"
               className={shared.warningBtn}
-              disabled={pending || !dockedAt}
-              title={dockedAt ? undefined : DOCK_HINT}
+              disabled={pending}
               onClick={() => setConfirm('all')}
             >
               <LogOut size={12} /> {handoff ? 'Hand off all' : 'Unload all'}
@@ -172,10 +170,11 @@ export function PassengersTab() {
         </>
       )}
 
-      <div className={shared.sectionTitle}>
-        <LogIn size={12} /> Waiting at this station
-      </div>
-      {!dockedAt && <div className={shared.dockedOnly}>{DOCK_HINT}</div>}
+      {dockedAt ? (
+        <div className={shared.sectionTitle}>
+          <LogIn size={12} /> Waiting at this station
+        </div>
+      ) : <div className={css.hint}>{DOCK_HINT}</div>}
       {dockedAt && station.loading && !station.data && <div className={css.hint}><span className={shared.spinner} /> Loading passengers...</div>}
       {dockedAt && station.error && <div className={css.hint}>{station.error}</div>}
       {dockedAt && station.data && (

@@ -23,6 +23,7 @@ import {
   useLocationState,
   usePendingAction,
   usePlayer,
+  useShip,
 } from '@/lib/spacemolt'
 import type { StorageResponse } from '@spacemolt/lib'
 import type { UiState } from '@/lib/spacemolt'
@@ -35,6 +36,8 @@ import { storageStationOptions, type StorageLocation } from './storageLocations'
 import { timeAgoOrDate } from '@/lib/format'
 import { formatItemId, getShip } from '@/data/catalog'
 import { giftFromLog } from './tradingLogic'
+import { useFittedModules, useStationServices } from '../../hooks/useGates'
+import { useFactionServices } from '../faction/useFactionService'
 
 // StorageResponse is one generated union across every branch of the unified
 // storage action (self view, faction view, deposit/withdraw/gift results) —
@@ -70,7 +73,15 @@ export function StorageView() {
   const location = useLocationState()
   const dockedAt = location?.docked_at
   const isDocked = Boolean(dockedAt)
-  const hasFaction = Boolean(usePlayer()?.faction_id)
+  const hasStorage = useStationServices().includes('storage')
+  const factionServices = useFactionServices()
+  const hasLockbox = factionServices?.has('faction_storage')
+  const hasFactionGarage = factionServices?.has('faction_ship_garage')
+  // gameserver storageV2LoadShip: a carrier bay on the active hull, or a fitted tow rig.
+  const shipClassId = useShip()?.class_id
+  const hasTowRig = useFittedModules().some((m) => (m.tow_speed_penalty ?? 0) > 0)
+  const canLoadShip = hasTowRig ||
+    Boolean(shipClassId && getShip(shipClassId)?.inherent_capabilities?.some((c) => c.type === 'ship_bay_capacity' && c.value > 0))
   const rawCargo = useCargo()
   const cargo = useMemo(() => normalizeCargo(rawCargo), [rawCargo])
   const actionPending = usePendingAction() !== null
@@ -80,7 +91,7 @@ export function StorageView() {
   const revision = usePlayUi(selectStorageRevision)
 
   // Docked it is this station's storage; undocked it lists every station where the player stores something.
-  const { data: storageData, error: storageError, refetch: refetchStorage } = usePersonalStorage()
+  const { data: storageData, error: storageError, refetch: refetchStorage } = usePersonalStorage({ enabled: !isDocked || hasStorage })
   const locationsData = isDocked ? undefined : storageData
   const remoteStations = storageStationOptions(locationsData)
   const [selectedStation, setSelectedStation] = useState('')
@@ -119,7 +130,7 @@ export function StorageView() {
 
         <GiftsReceived />
         <SendGiftSection open={showSendGift} onToggle={() => setShowSendGift(!showSendGift)}>
-          <GiftForm cargo={[]} stored={[]} ships={giftShips(viewShips)} isDocked={false} />
+          <GiftForm cargo={[]} stored={[]} ships={giftShips(viewShips)} hasStorage={false} />
         </SendGiftSection>
 
         {storageError ? (
@@ -155,6 +166,18 @@ export function StorageView() {
     )
   }
 
+  // --- Docked without a storage service: only gifts of credits and ships ---
+  if (!hasStorage) {
+    return (
+      <div className={styles.container}>
+        <GiftsReceived />
+        <SendGiftSection open={showSendGift} onToggle={() => setShowSendGift(!showSendGift)}>
+          <GiftForm cargo={[]} stored={[]} ships={[]} hasStorage={false} />
+        </SendGiftSection>
+      </div>
+    )
+  }
+
   // --- Docked: full storage with controls ---
   if (!storageData) {
     if (storageError) return <div className={shared.emptyState}>{storageError}</div>
@@ -180,7 +203,7 @@ export function StorageView() {
 
       <GiftsReceived />
       <SendGiftSection open={showSendGift} onToggle={() => setShowSendGift(!showSendGift)}>
-        <GiftForm cargo={cargo} stored={storedItems} ships={giftShips(storedShips)} isDocked />
+        <GiftForm cargo={cargo} stored={storedItems} ships={giftShips(storedShips)} hasStorage />
       </SendGiftSection>
 
       <div className={styles.section}>
@@ -203,7 +226,7 @@ export function StorageView() {
               >
                 <ArrowUpFromLine size={10} /> Withdraw to Cargo
               </button>
-              {hasFaction && (
+              {hasLockbox && (
                 <button
                   className={shared.subtleBtn}
                   disabled={actionPending || storedPicked.length === 0}
@@ -246,7 +269,7 @@ export function StorageView() {
               >
                 Deposit All Cargo
               </button>
-              {hasFaction && (
+              {hasLockbox && (
                 <button
                   className={shared.subtleBtn}
                   disabled={actionPending || cargoPicked.length === 0}
@@ -265,16 +288,18 @@ export function StorageView() {
         ships={storedShips}
         renderActions={(ship) => (
           <>
-            <button
-              className={shared.subtleBtn}
-              disabled={actionPending}
-              onClick={() => shipAction('load_ship', { item_id: ship.ship_id })}
-              title="Load into your carrier's bay, or attach to your tow rig"
-              type="button"
-            >
-              Load / Tow
-            </button>
-            {hasFaction && (
+            {canLoadShip && (
+              <button
+                className={shared.subtleBtn}
+                disabled={actionPending}
+                onClick={() => shipAction('load_ship', { item_id: ship.ship_id })}
+                title="Load into your carrier's bay, or attach to your tow rig"
+                type="button"
+              >
+                Load / Tow
+              </button>
+            )}
+            {hasFactionGarage && (
               <button
                 className={shared.subtleBtn}
                 disabled={actionPending}

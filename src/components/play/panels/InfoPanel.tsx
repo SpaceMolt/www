@@ -164,23 +164,27 @@ export function InfoPanel() {
         )}
 
         {/* Faction Achievements */}
-        <div className={styles.actionLogSection}>
-          <div className={shared.sectionTitle}>
-            <span className={styles.sectionIcon}><Trophy size={12} /></span>
-            Faction Achievements
-          </div>
-          {showFactionAchievements ? <FactionAchievements /> : (
-            <ActionButton
-              label="Load"
-              icon={<Trophy size={14} />}
-              onClick={() => setShowFactionAchievements(true)}
-              variant="secondary"
-              size="sm"
-            />
-          )}
-        </div>
+        {player?.faction_id && (
+          <>
+            <div className={styles.actionLogSection}>
+              <div className={shared.sectionTitle}>
+                <span className={styles.sectionIcon}><Trophy size={12} /></span>
+                Faction Achievements
+              </div>
+              {showFactionAchievements ? <FactionAchievements /> : (
+                <ActionButton
+                  label="Load"
+                  icon={<Trophy size={14} />}
+                  onClick={() => setShowFactionAchievements(true)}
+                  variant="secondary"
+                  size="sm"
+                />
+              )}
+            </div>
 
-        <div className={styles.divider} />
+            <div className={styles.divider} />
+          </>
+        )}
 
         {/* Action Log */}
         <div className={styles.actionLogSection}>

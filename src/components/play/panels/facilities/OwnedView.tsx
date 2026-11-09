@@ -9,7 +9,7 @@ import {
   ListOrdered,
   Tag,
 } from 'lucide-react'
-import { useAccountStore, useCommandMutation } from '@/lib/spacemolt'
+import { useAccountStore, useCommandMutation, usePlayer } from '@/lib/spacemolt'
 import { Modal, shared, useAction } from '../../shared'
 import type { FacilityListResponse, Facility } from '../../types'
 import { FacilityCard } from './FacilityCard'
@@ -26,6 +26,7 @@ interface OwnedViewProps {
 export function OwnedView({ facilityData, onRefresh }: OwnedViewProps) {
   const store = useAccountStore()
   const mutate = useCommandMutation()
+  const hasFaction = Boolean(usePlayer()?.faction_id)
 
   const [upgradeModal, setUpgradeModal] = useState<{ facility: Facility; options: UpgradeOption[] } | null>(null)
   const [upgradeLoading, setUpgradeLoading] = useState(false)
@@ -114,7 +115,7 @@ export function OwnedView({ facilityData, onRefresh }: OwnedViewProps) {
               >
                 <ArrowUpCircle size={11} /> Upgrade
               </button>
-              {f.category === 'production' && (
+              {hasFaction && f.category === 'production' && (
                 <button
                   className={shared.subtleBtn}
                   onClick={() => handleTransfer(f.facility_id)}

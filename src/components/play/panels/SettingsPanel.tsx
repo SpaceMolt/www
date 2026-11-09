@@ -53,7 +53,6 @@ export function SettingsPanel() {
   )
 
   const dockedAt = location?.docked_at
-  const isDocked = Boolean(dockedAt)
 
   const handleSaveStatus = useCallback(() => {
     setSavingStatus(true)
@@ -206,23 +205,23 @@ export function SettingsPanel() {
             <span className={styles.sectionIcon}><Home size={12} /></span>
             Home Base
           </div>
-          {player?.home_base && (
-            <div className={styles.connectionCard} style={{ marginBottom: '0.5rem' }}>
-              <div className={styles.connectionRow}>
-                <span className={styles.connectionLabel}>Home Base</span>
-                <span className={styles.connectionValue}>{titleCase(player.home_base)}</span>
-              </div>
+          <div className={styles.connectionCard} style={{ marginBottom: '0.5rem' }}>
+            <div className={styles.connectionRow}>
+              <span className={styles.connectionLabel}>Home Base</span>
+              <span className={styles.connectionValue}>{player?.home_base ? titleCase(player.home_base) : 'Not set'}</span>
             </div>
+          </div>
+          {dockedAt && dockedAt !== player?.home_base && (
+            <ActionButton
+              label="Set Current Base as Home"
+              icon={<Home size={14} />}
+              onClick={handleSetHomeBase}
+              disabled={settingHome}
+              loading={settingHome}
+              variant="secondary"
+              size="sm"
+            />
           )}
-          <ActionButton
-            label="Set Current Base as Home"
-            icon={<Home size={14} />}
-            onClick={handleSetHomeBase}
-            disabled={!isDocked || settingHome}
-            loading={settingHome}
-            variant="secondary"
-            size="sm"
-          />
         </div>
 
         <div className={styles.divider} />

@@ -29,9 +29,11 @@ export function Pager({ offset, limit, total, onPage }: { offset: number; limit?
 }
 
 /** Member roster: role changes (promote/demote), kick with confirmation, and paging past 50. */
-export function MembersSection({ info, playerId, onPage, onChanged }: {
+export function MembersSection({ info, playerId, canPromote, canKick, onPage, onChanged }: {
   info: FactionInfoResponse
   playerId: string | undefined
+  canPromote: boolean
+  canKick: boolean
   onPage: (offset: number) => void
   onChanged: () => void
 }) {
@@ -84,7 +86,7 @@ export function MembersSection({ info, playerId, onPage, onChanged }: {
               <ConfirmAction message={`Kick ${member.username}?`} onConfirm={() => kick(member.player_id, member.username)} onCancel={() => setKicking(null)} />
             ) : (
               <div className={styles.memberRight}>
-                {member.player_id !== playerId && roles.length > 0 && member.player_id !== info.leader_id ? (
+                {canPromote && member.player_id !== playerId && roles.length > 0 && member.player_id !== info.leader_id ? (
                   <select
                     className={styles.roleSelect}
                     value={roleIdOf(member.role)}
@@ -100,7 +102,7 @@ export function MembersSection({ info, playerId, onPage, onChanged }: {
                 ) : (
                   <span className={styles.memberRole}>{member.role}</span>
                 )}
-                {member.player_id !== playerId && (
+                {canKick && member.player_id !== playerId && (
                   <button
                     className={styles.kickBtn}
                     onClick={() => setKicking(member.player_id)}
