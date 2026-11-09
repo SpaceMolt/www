@@ -108,6 +108,25 @@ export function wireNotifications(account: Account, store: UiStore): () => void 
       }
     }),
 
+    // battle_damage is per-tick; the Combat panel shows it as a live feed instead.
+    account.on('battle_joined', (joined) => log('combat', `${joined.username} joined side ${joined.side_id}`)),
+    account.on('ship_captured', (capture) =>
+      log('danger', `${capture.captor_username} captured ${capture.former_owner_username}'s ship${capture.prize_poi_name ? ` at ${capture.prize_poi_name}` : ''}`),
+    ),
+    account.on('prize_update', (prize) => log('info', prize.message)),
+    account.on('personnel_update', (update) =>
+      log('info', `${update.source_username} ${update.action === 'treatment' ? 'treated' : 'transferred'} personnel on your ship`),
+    ),
+    account.on('arena_challenge', (challenge) =>
+      log('info', `Arena challenge ${challenge.event}: ${challenge.challenger_name} vs ${challenge.challenged_name}`),
+    ),
+    account.on('arena_objective', (objective) => log('combat', objective.message)),
+    account.on('fleet', (push) => {
+      const who = 'player_name' in push ? push.player_name : ''
+      const fallback = `Fleet: ${push.action.replace('fleet_', '').replaceAll('_', ' ')}${who ? ` (${who})` : ''}`
+      log('info', ('message' in push && push.message) || fallback)
+    }),
+
     account.on('drone_update', () => log('info', 'Drone status updated')),
     account.on('drone_destroyed', () => log('warning', 'A drone was destroyed')),
     account.on('base_raid_update', () => log('warning', 'Base raid in progress')),
