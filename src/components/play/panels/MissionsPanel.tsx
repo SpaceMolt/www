@@ -10,12 +10,11 @@ import {
   Check,
   X,
 } from 'lucide-react'
-import { SpacemoltError } from '@spacemolt/lib'
 import type { CompleteMissionResponse, CompletedMissionsResponse, GameState, GetMissionsResponse, ViewCompletedMissionResponse } from '@spacemolt/lib'
 import { timeAgoOrDate } from '@/lib/format'
 import { useAccountStore, useCommandMutation, useCommandQuery, useMissions } from '@/lib/spacemolt'
 import { usePlay } from '../PlayProvider'
-import { Credits, PanelWithTabs, shared } from '../shared'
+import { Credits, PanelWithTabs, shared, errorMessage } from '../shared'
 import { BugReportButton } from '../BugReportButton'
 import { buildMissionContext } from '../bugReportContext'
 import type { Mission } from '../types'
@@ -98,12 +97,6 @@ function toMissionContext(m: ActiveMissionEntry): Mission {
     })),
   }
   return context
-}
-
-function errorMessage(err: unknown): string {
-  if (err instanceof SpacemoltError) return err.message
-  if (err instanceof Error) return err.message
-  return 'Action failed'
 }
 
 type TabId = 'available' | 'active' | 'completed'
