@@ -43,7 +43,65 @@
 }
 
 .hint {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
   font-size: 11px;
   color: var(--chrome-silver);
   line-height: 1.4;
+}
+
+/* Status value that needs attention: red text only, no list comma. */
+.bad {
+  color: var(--claw-red);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.notes {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 6px;
+}
+
+.note {
+  composes: hint;
+  display: flex;
+  gap: 5px;
+  align-items: baseline;
+}
+
+.note > svg {
+  flex-shrink: 0;
+  color: var(--plasma-cyan);
+  position: relative;
+  top: 1px;
+}
+
+.chipBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 6px;
+}
+
+.chipTitle {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--hull-grey);
+}
+
+.chip > b {
+  color: var(--chrome-silver);
+  font-weight: 600;
+}
+
+.chipBad {
+  border-color: var(--claw-red);
+  color: var(--claw-red);
+}
+
+.chipBad > b {
+  color: var(--claw-red);
 }

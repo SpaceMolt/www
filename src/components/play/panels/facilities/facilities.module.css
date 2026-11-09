@@ -302,6 +302,7 @@
 .costValue {
   color: var(--chrome-silver);
   font-weight: 600;
+  white-space: nowrap;
 }
 
 /* Build materials have/need list. Each material is colored green when the
