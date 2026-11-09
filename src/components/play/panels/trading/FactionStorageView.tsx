@@ -171,7 +171,7 @@ export function FactionStorageView() {
             </div>
             <div className={styles.itemAction}>
               <input className={styles.qtyInput} type="number" min={1} step={1} placeholder="cr" value={treasuryAmount} onChange={(e) => setTreasuryAmount(e.target.value)} />
-              <QtyButtons max={Math.max(walletCredits, treasuryData.credits)} current={treasuryAmount} onChange={setTreasuryAmount} />
+              <QtyButtons max={canWithdraw ? Math.max(walletCredits, treasuryData.credits) : walletCredits} current={treasuryAmount} onChange={setTreasuryAmount} />
               <button
                 className={shared.confirmBtn}
                 onClick={() => handleTreasury('deposit', parseCreditAmount(treasuryAmount, walletCredits))}

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, type ReactNode } from 'react'
-import { X } from 'lucide-react'
+import { AlertTriangle, X } from 'lucide-react'
 import shared from '../shared.module.css'
 
 interface ModalProps {
@@ -42,5 +42,34 @@ export function Modal({ title, icon, onClose, actions, children }: ModalProps) {
         )}
       </div>
     </div>
+  )
+}
+
+/**
+ * Confirm step for anything costly, destructive or final (decommission, scrap, sell a ship, leave a faction).
+ * Children say what happens, what it costs and what is lost. Cheap undoable steps keep the inline ConfirmAction.
+ */
+export function ConfirmDialog({ title, confirmLabel, onConfirm, onClose, disabled, children }: {
+  title: string
+  confirmLabel: string
+  onConfirm: () => void
+  onClose: () => void
+  disabled?: boolean
+  children: ReactNode
+}) {
+  return (
+    <Modal
+      title={title}
+      icon={<AlertTriangle size={14} />}
+      onClose={onClose}
+      actions={(
+        <>
+          <button className={shared.subtleBtn} onClick={onClose} type="button">Cancel</button>
+          <button className={shared.dangerBtn} onClick={onConfirm} disabled={disabled} type="button">{confirmLabel}</button>
+        </>
+      )}
+    >
+      {children}
+    </Modal>
   )
 }

@@ -20,6 +20,7 @@
 }
 
 .label {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
   min-width: 7rem;
   font-size: 11px;
   color: var(--chrome-silver);
@@ -43,7 +44,26 @@
 }
 
 .hint {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
   font-size: 11px;
   color: var(--chrome-silver);
   line-height: 1.4;
+}
+
+/* Status value that needs attention: red text only, no list comma. */
+.bad {
+  color: var(--claw-red);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sub {
+  color: var(--hull-grey);
+  font-weight: 400;
 }

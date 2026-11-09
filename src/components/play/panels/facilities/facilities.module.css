@@ -302,6 +302,7 @@
 .costValue {
   color: var(--chrome-silver);
   font-weight: 600;
+  white-space: nowrap;
 }
 
 /* Build materials have/need list. Each material is colored green when the
@@ -469,4 +470,8 @@
   .cardHeader { flex-wrap: wrap; }
   .filterBar { gap: 0.2rem; }
   .recipeFlow { font-size: 0.55rem; }
+}
+
+.errorText {
+  color: var(--claw-red);
 }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Loader2 } from 'lucide-react'
-import { usePendingAction } from '@/lib/spacemolt'
+import { useLocationState, usePendingAction } from '@/lib/spacemolt'
 import styles from './ActionBanner.module.css'
 
 /** Human-readable labels for mutation commands */
@@ -49,6 +49,7 @@ export function ActionBanner({ autoTravelActive }: { autoTravelActive?: boolean 
   const [elapsed, setElapsed] = useState(0)
 
   const pending = usePendingAction()
+  const inTransit = useLocationState()?.in_transit
 
   useEffect(() => {
     if (!pending) {
@@ -62,6 +63,8 @@ export function ActionBanner({ autoTravelActive }: { autoTravelActive?: boolean 
   }, [pending])
 
   if (!pending || autoTravelActive) return null
+  // TravelProgress shows this trip with the server's arrival tick.
+  if (inTransit && (pending.command === 'travel' || pending.command === 'jump')) return null
 
   // Use client-side estimate if available, otherwise assume one tick (10s)
   const totalMs = pending.estimatedMs || 10000

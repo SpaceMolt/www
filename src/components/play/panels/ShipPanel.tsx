@@ -222,13 +222,13 @@ export function ShipPanel() {
           <div className={styles.slotModMeta}>
             {(mod.cpu_usage ?? 0) > 0 && <span className={styles.slotStat}><Cpu size={9} /> {mod.cpu_usage}</span>}
             {(mod.power_usage ?? 0) > 0 && <span className={styles.slotStat}><Zap size={9} /> {mod.power_usage}</span>}
-            {damage && <span className={styles.slotStat}><Swords size={9} /> {damage}</span>}
-            {shieldBonus && <span className={styles.slotStat}><ShieldPlus size={9} /> +{shieldBonus}</span>}
-            {miningPower && <span className={styles.slotStat}><Pickaxe size={9} /> {miningPower}</span>}
-            {harvestPower && <span className={styles.slotStat}><Pickaxe size={9} /> {harvestPower}</span>}
-            {scannerPower && <span className={styles.slotStat}><Radar size={9} /> {scannerPower}</span>}
-            {cargoBonus && <span className={styles.slotStat}><Package size={9} /> +{cargoBonus}</span>}
-            {speedBonus && <span className={styles.slotStat}><Gauge size={9} /> +{speedBonus}</span>}
+            {damage ? <span className={styles.slotStat}><Swords size={9} /> {damage}</span> : null}
+            {shieldBonus ? <span className={styles.slotStat}><ShieldPlus size={9} /> +{shieldBonus}</span> : null}
+            {miningPower ? <span className={styles.slotStat}><Pickaxe size={9} /> {miningPower}</span> : null}
+            {harvestPower ? <span className={styles.slotStat}><Pickaxe size={9} /> {harvestPower}</span> : null}
+            {scannerPower ? <span className={styles.slotStat}><Radar size={9} /> {scannerPower}</span> : null}
+            {cargoBonus ? <span className={styles.slotStat}><Package size={9} /> +{cargoBonus}</span> : null}
+            {speedBonus ? <span className={styles.slotStat}><Gauge size={9} /> +{speedBonus}</span> : null}
           </div>
         </div>
         <div className={styles.slotActions}>
@@ -537,9 +537,9 @@ function InstallModuleModal({ slotType, modules, onInstall, onClose, cpuAvailabl
                       <>
                         <span className={styles.slotStat}><Cpu size={9} /> {cat.cpu_usage}</span>
                         <span className={styles.slotStat}><Zap size={9} /> {cat.power_usage}</span>
-                        {cat.damage && <span className={styles.slotStat}><Swords size={9} /> {cat.damage}</span>}
-                        {cat.shield_bonus && <span className={styles.slotStat}><ShieldPlus size={9} /> +{cat.shield_bonus}</span>}
-                        {cat.mining_power && <span className={styles.slotStat}><Pickaxe size={9} /> {cat.mining_power}</span>}
+                        {cat.damage ? <span className={styles.slotStat}><Swords size={9} /> {cat.damage}</span> : null}
+                        {cat.shield_bonus ? <span className={styles.slotStat}><ShieldPlus size={9} /> +{cat.shield_bonus}</span> : null}
+                        {cat.mining_power ? <span className={styles.slotStat}><Pickaxe size={9} /> {cat.mining_power}</span> : null}
                       </>
                     )}
                   </div>
