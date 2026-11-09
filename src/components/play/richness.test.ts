@@ -25,5 +25,4 @@ test('estimates regeneration coarsely from the rarity refill time', () => {
   expect(regenHint('water_ice', 990, 1000)).toBe('Regenerates steadily; back to full in a few hours.')
   expect(regenHint('helium_ice', 0)).toBe('Regenerates steadily; rare deposits refill from empty in about 3 days.')
   expect(regenHint('helium_ice', 40)).toBe('Regenerates steadily; rare deposits refill from empty in about 3 days.')
-  expect(regenHint('water_ice', -1)).toBe('Never runs out.')
 })

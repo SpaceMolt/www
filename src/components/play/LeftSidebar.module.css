@@ -173,6 +173,14 @@
 }
 
 .depositDepleted { color: var(--hull-grey); }
+
+.depositQty {
+  flex-shrink: 0;
+  min-width: 3.5rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--star-white);
+}
 .richness0 { color: var(--claw-red); }
 .richness1 { color: var(--shell-orange); }
 .richness2 { color: var(--chrome-silver); }

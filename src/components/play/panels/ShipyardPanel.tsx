@@ -5,23 +5,23 @@ import {
   Warehouse,
   Layers,
   Hammer,
-  Store,
+  Tag,
 } from 'lucide-react'
 import { PanelWithTabs } from '../shared'
 import { ShipCatalog } from './ship/ShipCatalog'
 import { CommissionsView } from './ship/CommissionsView'
-import { MarketplaceView } from './ship/MarketplaceView'
+import { SellView } from './ship/SellView'
 
-type TabId = 'catalog' | 'commissions' | 'marketplace'
+type TabId = 'ships' | 'sell' | 'commissions'
 
 const tabs = [
-  { id: 'catalog', label: 'Catalog', icon: <Layers size={13} /> },
+  { id: 'ships', label: 'Ships', icon: <Layers size={13} /> },
+  { id: 'sell', label: 'Sell', icon: <Tag size={13} /> },
   { id: 'commissions', label: 'Commissions', icon: <Hammer size={13} /> },
-  { id: 'marketplace', label: 'Marketplace', icon: <Store size={13} /> },
 ]
 
 export function ShipyardPanel() {
-  const [activeTab, setActiveTab] = useState<TabId>('catalog')
+  const [activeTab, setActiveTab] = useState<TabId>('ships')
 
   return (
     <PanelWithTabs
@@ -31,9 +31,9 @@ export function ShipyardPanel() {
       activeTab={activeTab}
       onTabChange={(id) => setActiveTab(id as TabId)}
     >
-      {activeTab === 'catalog' && <ShipCatalog />}
+      {activeTab === 'ships' && <ShipCatalog />}
+      {activeTab === 'sell' && <SellView />}
       {activeTab === 'commissions' && <CommissionsView />}
-      {activeTab === 'marketplace' && <MarketplaceView />}
     </PanelWithTabs>
   )
 }

@@ -181,37 +181,13 @@
   white-space: nowrap;
 }
 
-.cardActions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  flex-shrink: 0;
-  align-items: flex-end;
-}
-
-.buyListingBtn {
-  display: flex;
+.blockReason {
+  display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  flex-shrink: 0;
-  padding: 0.25rem 0.5rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.58rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--energy-green);
-  background: rgba(0, 200, 83, 0.08);
-  border: 1px solid rgba(0, 200, 83, 0.3);
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
-  white-space: nowrap;
-}
-
-.buyListingBtn:hover {
-  background: rgba(0, 200, 83, 0.18);
-  border-color: var(--energy-green);
+  font-size: 0.6rem;
+  color: var(--claw-red);
 }
 
 .commissionBtn:hover {

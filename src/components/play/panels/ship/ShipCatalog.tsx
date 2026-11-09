@@ -18,14 +18,22 @@ import {
   Loader2,
   ShoppingCart,
   Users,
+  User,
+  ClipboardList,
+  Lock,
+  Check,
 } from 'lucide-react'
 import type { BrowseShipsResponse, StorageResponse } from '@spacemolt/lib'
-import { useCargo, useCatalog, useCommandMutation, useCommandQuery, useLocationState, usePlayer, useShip } from '@/lib/spacemolt'
+import { useCargo, useCatalog, useCommandMutation, useCommandQuery, useLocationState, usePlayer, useShip, useSkills } from '@/lib/spacemolt'
+import { getShip, groupBy } from '@/data/catalog'
 import { usePlay } from '../../PlayProvider'
-import { Credits, Loading, Modal, errorMessage, shared } from '../../shared'
+import { ConfirmAction, Credits, Loading, Modal, errorMessage, shared } from '../../shared'
+import { useStationServices } from '../../hooks/useGates'
 import { BugReportButton } from '../../BugReportButton'
 import { buildShipCatalogContext } from '../../bugReportContext'
 import styles from './ShipCatalog.module.css'
+import listingStyles from './SellView.module.css'
+import { shipBlockReasons, type GatedShip } from './shipAccess'
 import { imageUrl } from '@/data/images'
 
 export const EMPIRES = ['solarian', 'voidborn', 'crimson', 'nebula', 'outerrim']
@@ -34,7 +42,7 @@ const CATEGORIES = ['Civilian', 'Combat', 'Commercial', 'Exploration', 'Industri
 const CLASSES = ['Assault', 'Courier', 'Explorer', 'Fighter', 'Freighter', 'Gas Harvester', 'Ice Harvester', 'Miner', 'Mobile Base', 'Raider', 'Salvager', 'Scout', 'Shuttle']
 const PAGE_SIZE = 20
 
-export interface CatalogShip extends MobileBaseIdentity {
+export interface CatalogShip extends MobileBaseIdentity, GatedShip {
   base_shield_recharge?: number
   id: string
   name: string
@@ -56,7 +64,6 @@ export interface CatalogShip extends MobileBaseIdentity {
   utility_slots: number
   build_materials?: { item_id: string; quantity: number }[]
   build_time?: number
-  faction?: string
 }
 
 type ShipListing = BrowseShipsResponse['listings'][number]
@@ -167,8 +174,13 @@ export function ShipCatalog() {
   const ship = useShip()
   const cargo = useCargo() ?? []
   const player = usePlayer()
+  const credits = player?.credits ?? 0
+  // Undefined until skills load, so no class shows a false Piloting block meanwhile.
+  const skills = useSkills()
+  const piloting = skills ? skills.piloting?.level ?? 0 : undefined
   const location = useLocationState()
   const isDocked = Boolean(location?.docked_at)
+  const hasShipyard = useStationServices().includes('shipyard')
   const mutate = useCommandMutation()
   const { uiStore } = usePlay()
   const { data: catalog, error: catalogError } = useCatalog()
@@ -205,24 +217,24 @@ export function ShipCatalog() {
     [isDocked, commissionableFromServer]
   )
 
-  // Ship market listings (cheapest per class)
+  // Other pilots' listings at this station, cheapest first per class. Your own are on the Sell tab.
   const { data: browseData, refetch: refetchBrowse } = useCommandQuery(
     async (account) => (await account.commands.spacemolt_ship.browse_ships({})).structuredContent,
     [],
     { enabled: isDocked }
   )
-  const cheapestByClass = useMemo(() => {
-    const cheapest: Record<string, ShipListing> = {}
-    for (const l of browseData?.listings ?? []) {
-      if (!cheapest[l.class_id] || l.price < cheapest[l.class_id].price) {
-        cheapest[l.class_id] = l
-      }
-    }
-    return isDocked ? cheapest : {}
-  }, [browseData, isDocked])
+  const listingsByClass = useMemo(() => {
+    if (!isDocked) return {}
+    const others = (browseData?.listings ?? []).filter((l) => l.seller !== player?.username)
+    return groupBy([...others].sort((a, b) => a.price - b.price), (l) => l.class_id)
+  }, [browseData, isDocked, player?.username])
 
-  const [buyTarget, setBuyTarget] = useState<{ ship: CatalogShip; listing: ShipListing } | null>(null)
+  const [buyTarget, setBuyTarget] = useState<{ ship: Pick<CatalogShip, 'name'>; listing: ShipListing } | null>(null)
   const [buying, setBuying] = useState(false)
+
+  // Ship buy order for the expanded class
+  const [orderPrice, setOrderPrice] = useState('')
+  const [orderConfirm, setOrderConfirm] = useState(false)
 
   // Commission modal
   const [commissionShip, setCommissionShip] = useState<CatalogShip | null>(null)
@@ -251,10 +263,25 @@ export function ShipCatalog() {
   const [category, setCategory] = useState('')
   const [shipClass, setShipClass] = useState('')
   const [search, setSearch] = useState('')
-  const [commissionableOnly, setCommissionableOnly] = useState(false)
+  const [buyHereOnly, setBuyHereOnly] = useState(false)
+  const [commissionHereOnly, setCommissionHereOnly] = useState(false)
+  const [canFlyOnly, setCanFlyOnly] = useState(false)
 
   // The spec's ShipClass omits mobile_base and marks every stat optional; the dump always carries them.
   const allShips = useMemo(() => (catalog?.ships ?? []) as unknown as CatalogShip[], [catalog])
+  // Legacy and other hulls outside the public catalog can still be listed and bought here.
+  const otherListings = useMemo(() => {
+    const known = new Set(allShips.map((s) => s.id))
+    return Object.entries(listingsByClass).filter(([classId]) => !known.has(classId)).flatMap(([, ls]) => ls)
+  }, [allShips, listingsByClass])
+
+  const blockReasons = useCallback(
+    (s: CatalogShip) => shipBlockReasons(s, { piloting, standings: player?.standings, commissionable: commissionableIds.has(s.id) }),
+    [piloting, player?.standings, commissionableIds]
+  )
+  // place_ship_buy_order always rejects prestige and starter hulls (gameserver ship_buy_orders.go).
+  const canOrder = (s: CatalogShip) => hasShipyard && blockReasons(s).length === 0 && !getShip(s.id)?.starter_ship &&
+    !(s.prestige_lock || s.required_achievement || s.required_faction_achievement)
 
   const filteredShips = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -263,12 +290,13 @@ export function ShipCatalog() {
       if (!matchesTierFilter(s, tier)) return false
       if (category && s.category !== category) return false
       if (shipClass && s.class !== shipClass) return false
-      // The toggle hides when nothing is commissionable here, so the filter lapses with it.
-      if (commissionableOnly && commissionableIds.size > 0 && !commissionableIds.has(s.id)) return false
+      if (buyHereOnly && !listingsByClass[s.id]) return false
+      if (commissionHereOnly && !commissionableIds.has(s.id)) return false
+      if (canFlyOnly && blockReasons(s).length > 0) return false
       if (q && !`${s.name} ${s.description ?? ''}`.toLowerCase().includes(q)) return false
       return true
     })
-  }, [allShips, empire, tier, category, shipClass, commissionableOnly, commissionableIds, search])
+  }, [allShips, empire, tier, category, shipClass, buyHereOnly, listingsByClass, commissionHereOnly, commissionableIds, canFlyOnly, blockReasons, search])
 
   const total = filteredShips.length
   const pageStart = (page - 1) * PAGE_SIZE
@@ -278,11 +306,8 @@ export function ShipCatalog() {
 
   const toggleExpand = useCallback((id: string) => {
     setExpandedShip((prev) => (prev === id ? null : id))
-  }, [])
-
-  // Commission modal
-  const openCommission = useCallback((ship: CatalogShip) => {
-    setCommissionShip(ship)
+    setOrderPrice('')
+    setOrderConfirm(false)
   }, [])
 
   const handleBuyListing = useCallback(() => {
@@ -299,6 +324,16 @@ export function ShipCatalog() {
         reportError(err)
       })
   }, [mutate, buyTarget, refetchBrowse, reportError])
+
+  const placeOrder = (catShip: CatalogShip) => {
+    setOrderConfirm(false)
+    mutate((c) => c.spacemolt_ship.place_ship_buy_order({ id: catShip.id, price: parseInt(orderPrice, 10) }), { label: 'place_ship_buy_order' })
+      .then(() => {
+        setOrderPrice('')
+        uiStore.dispatch({ type: 'toast', kind: 'success', text: `Placed a buy order for a ${catShip.name}` })
+      })
+      .catch(reportError)
+  }
 
   const handleCommission = useCallback(
     (funding: { provide_materials?: boolean; fund_from_faction?: boolean }) => {
@@ -319,6 +354,12 @@ export function ShipCatalog() {
     [mutate, commissionShip, reportError, uiStore]
   )
 
+  const toggles = [
+    { label: 'Buy now here', title: 'Show only ships listed for sale at this station', on: buyHereOnly, set: setBuyHereOnly, icon: <ShoppingCart size={11} /> },
+    { label: 'Commission here', title: 'Show only ships you can commission at this shipyard', on: commissionHereOnly, set: setCommissionHereOnly, icon: <Hammer size={11} /> },
+    { label: 'Can fly', title: 'Hide ships your piloting, reputation, or a prestige lock blocks', on: canFlyOnly, set: setCanFlyOnly, icon: <Check size={11} /> },
+  ]
+
   return (
     <>
       {/* Filters */}
@@ -334,17 +375,21 @@ export function ShipCatalog() {
               onChange={(e) => { setSearch(e.target.value); resetPage() }}
             />
           </div>
-          {commissionableIds.size > 0 && (
+        </div>
+        <div className={styles.filterRow}>
+          {toggles.map((t) => (
             <button
-              className={`${styles.toggleBtn} ${commissionableOnly ? styles.toggleBtnActive : ''}`}
-              onClick={() => { setCommissionableOnly(!commissionableOnly); resetPage() }}
-              title="Show only commissionable ships"
+              key={t.label}
+              className={`${styles.toggleBtn} ${t.on ? styles.toggleBtnActive : ''}`}
+              onClick={() => { t.set(!t.on); resetPage() }}
+              title={t.title}
+              aria-pressed={t.on}
               type="button"
             >
-              <Hammer size={11} />
-              Commissionable only
+              {t.icon}
+              {t.label}
             </button>
-          )}
+          ))}
         </div>
         <div className={styles.filterRow}>
           <select className={styles.filterSelect} value={empire} onChange={(e) => { setEmpire(e.target.value); resetPage() }}>
@@ -392,6 +437,9 @@ export function ShipCatalog() {
               const imgName = catShip.id.toLowerCase().replace(/\s+/g, '_')
               const imgSrc = imageUrl(`ships/catalog/${imgName}.webp`)
               const isCommissionable = commissionableIds.has(catShip.id)
+              const listings = listingsByClass[catShip.id] ?? []
+              const reasons = blockReasons(catShip)
+              const blocked = reasons.length > 0
               return (
                 <div key={catShip.id} className={styles.shipCard}>
                   {/* Collapsed view */}
@@ -415,48 +463,28 @@ export function ShipCatalog() {
                         <span className={styles.shipCardBadges}>
                           {catShip.tier > 0 && <span className={shared.badgeOrange}>T{catShip.tier}</span>}
                           {catShip.faction && <span className={shared.badgeCyan}>{catShip.faction}</span>}
+                          {catShip.category && <span className={shared.badgeGreen}>{catShip.category}</span>}
                         </span>
                         <BugReportButton contextType="ship" entityName={catShip.name} entityContext={buildShipCatalogContext(catShip)} />
                       </div>
                       <span className={styles.shipCardClass}>
                         {catShip.category} · {catShip.class}
                       </span>
+                      <span className={styles.shipCardBadges}>
+                        {listings.length > 0 && (
+                          <span className={shared.badgePurple}>
+                            {listings.length} for sale from <Credits amount={listings[0].price} />
+                          </span>
+                        )}
+                        {isCommissionable && <span className={shared.badgeCyan} title="You can commission this ship here">Commission</span>}
+                        {blocked
+                          ? <span className={styles.blockReason}><Lock size={10} /> {reasons.join(' · ')}</span>
+                          : <span className={shared.badgeGreen}>Can fly</span>}
+                      </span>
                       {catShip.description && (
                         <span className={styles.shipCardDesc}>{catShip.description}</span>
                       )}
                     </div>
-                    {isDocked && (isCommissionable || cheapestByClass[catShip.id]) && (
-                      <div className={styles.cardActions}>
-                        {isCommissionable && (
-                          <button
-                            className={styles.commissionBtn}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              openCommission(catShip)
-                            }}
-                            title="Commission this ship"
-                            type="button"
-                          >
-                            <Hammer size={12} />
-                            Commission
-                          </button>
-                        )}
-                        {cheapestByClass[catShip.id] && (
-                          <button
-                            className={styles.buyListingBtn}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setBuyTarget({ ship: catShip, listing: cheapestByClass[catShip.id] })
-                            }}
-                            title={`Buy from ${cheapestByClass[catShip.id].seller}`}
-                            type="button"
-                          >
-                            <ShoppingCart size={12} />
-                            Buy <Credits amount={cheapestByClass[catShip.id].price} />
-                          </button>
-                        )}
-                      </div>
-                    )}
                   </div>
 
                   {/* Expanded view */}
@@ -519,6 +547,84 @@ export function ShipCatalog() {
                         {catShip.lore && (
                           <div className={styles.shipLore}>{catShip.lore}</div>
                         )}
+
+                      {/* Get one: listings here, commission, buy order. A blocked class shows none of these. */}
+                      {listings.length > 0 && (
+                        <div className={listingStyles.listingsList}>
+                          <span className={shared.sectionTitle}>For Sale Here</span>
+                          {listings.map((listing) => {
+                            const canAfford = credits >= listing.price
+                            return (
+                              <div key={listing.listing_id} className={listingStyles.sellCard}>
+                                <div className={listingStyles.listingStatsRow}>
+                                  <span className={canAfford ? listingStyles.listingPrice : listingStyles.listingPriceUnaffordable}>
+                                    <Credits amount={listing.price} />
+                                  </span>
+                                  <span className={listingStyles.listingStat}><Heart size={10} /> {listing.hull}/{listing.max_hull}</span>
+                                  <span className={listingStyles.listingStat}><CircuitBoard size={10} /> {listing.modules_count ?? 0} modules</span>
+                                  <span className={listingStyles.listingStat}><User size={10} /> {listing.seller}</span>
+                                </div>
+                                {!blocked && (
+                                  <button
+                                    className={shared.accentBtn}
+                                    onClick={() => setBuyTarget({ ship: catShip, listing })}
+                                    disabled={!canAfford}
+                                    title={canAfford ? `Buy from ${listing.seller}` : `Need ${(listing.price - credits).toLocaleString()} more credits`}
+                                    type="button"
+                                  >
+                                    <ShoppingCart size={12} /> Buy
+                                  </button>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+
+                      {isDocked && (isCommissionable || canOrder(catShip)) && (
+                        <div className={listingStyles.modalRow}>
+                          {isCommissionable && (
+                            <button
+                              className={styles.commissionBtn}
+                              onClick={() => setCommissionShip(catShip)}
+                              title="Commission this ship"
+                              type="button"
+                            >
+                              <Hammer size={12} />
+                              Commission
+                            </button>
+                          )}
+                          {canOrder(catShip) && (orderConfirm ? (
+                            <ConfirmAction
+                              message={`Escrow ${parseInt(orderPrice, 10).toLocaleString()} cr plus sales tax for a ${catShip.name} buy order here?`}
+                              variant="accent"
+                              onConfirm={() => placeOrder(catShip)}
+                              onCancel={() => setOrderConfirm(false)}
+                            />
+                          ) : (
+                            <>
+                              <input
+                                className={shared.textInput}
+                                type="number"
+                                min="1"
+                                placeholder="Offer (cr)"
+                                aria-label={`Buy order offer for ${catShip.name}`}
+                                value={orderPrice}
+                                onChange={(e) => setOrderPrice(e.target.value)}
+                              />
+                              <button
+                                className={shared.accentBtn}
+                                onClick={() => setOrderConfirm(true)}
+                                disabled={!(parseInt(orderPrice, 10) > 0)}
+                                title="Place a standing order; a seller here can fill it any time"
+                                type="button"
+                              >
+                                <ClipboardList size={12} /> Place Buy Order
+                              </button>
+                            </>
+                          ))}
+                        </div>
+                      )}
                       </div>
                     </div>
                   )}
@@ -535,6 +641,31 @@ export function ShipCatalog() {
             </div>
           )}
         </>
+      )}
+      {otherListings.length > 0 && (
+        <div className={listingStyles.listingsList}>
+          <span className={shared.sectionTitle}>Other listings here</span>
+          {otherListings.map((listing) => (
+            <div key={listing.listing_id} className={listingStyles.sellCard}>
+              <div className={listingStyles.listingStatsRow}>
+                <span>{listing.ship_name ?? listing.class_id}</span>
+                <span className={(player?.credits ?? 0) >= listing.price ? listingStyles.listingPrice : listingStyles.listingPriceUnaffordable}>
+                  <Credits amount={listing.price} />
+                </span>
+                <span className={listingStyles.listingStat}><Heart size={10} /> {listing.hull}/{listing.max_hull}</span>
+                <span className={listingStyles.listingStat}><User size={10} /> {listing.seller}</span>
+              </div>
+              <button
+                className={shared.accentBtn}
+                onClick={() => setBuyTarget({ ship: { name: listing.ship_name ?? listing.class_id }, listing })}
+                disabled={(player?.credits ?? 0) < listing.price}
+                type="button"
+              >
+                <ShoppingCart size={12} /> Buy
+              </button>
+            </div>
+          ))}
+        </div>
       )}
 
       {/* Fullscreen image modal */}

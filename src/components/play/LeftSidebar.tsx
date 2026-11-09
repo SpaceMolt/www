@@ -103,7 +103,12 @@ type SupplyKind = 'refuel' | 'repair'
 interface SupplyArgs { id?: string; quantity?: number; target?: string }
 
 /** Supply items a refuel/repair can burn, matched by id the way the server names them. */
-const SUPPLY_ITEM = { refuel: /fuel_cell/, repair: /repair|hull_patch/ } as const
+/** Cargo items a refuel/repair burns: the server picks them by effect type, not by name (handlers/ship.go selectConsumable). */
+const SUPPLY_EFFECT = { refuel: 'fuel', repair: 'repair' } as const
+const isSupply = (kind: SupplyKind) => (c: { item_id: string }) => getItem(c.item_id)?.effect?.type === SUPPLY_EFFECT[kind]
+/** The cheapest matching item in cargo, as the server picks when none is named. */
+const cheapestSupply = <T extends { item_id: string }>(kind: SupplyKind, cargo: T[]) =>
+  cargo.filter(isSupply(kind)).sort((a, b) => (getItem(a.item_id)?.base_value ?? 0) - (getItem(b.item_id)?.base_value ?? 0))[0]
 /** The module the server requires to refuel or repair another ship (gameserver handlers/ship.go). */
 const TARGET_MODULE = { refuel: 'refueling_pump', repair: 'repair_arm' } as const
 
@@ -157,14 +162,19 @@ function DepositIcon({ itemId }: { itemId: string }) {
   return <Icon size={10} className={`${styles.depositIcon} ${className}`}><title>{label}</title></Icon>
 }
 
-/** A deposit's rating, colored by level, or 'Depleted'. The numbers are in the row's hover text. */
+/** A deposit's rating, colored by level, and the units left ('Depleted' when empty). Yield and refill are in the hover text. */
 function DepositRating({ itemId, richness, remaining }: { itemId: string; richness: number; remaining?: number }) {
   if (remaining === 0) return <span className={styles.depositDepleted}>Depleted</span>
   const { level, label } = rateRichness(itemId, richness)
-  return <span className={`${styles.depositRating} ${styles[`richness${level}`]}`}>{label}</span>
+  return (
+    <>
+      <span className={`${styles.depositRating} ${styles[`richness${level}`]}`}>{label}</span>
+      {remaining !== undefined && <span className={styles.depositQty}>{remaining.toLocaleString()}</span>}
+    </>
+  )
 }
 
-/** Options for refuel/repair: quantity, a specific item, and another player or the fleet as target. */
+/** Refuel or repair another ship (needs a Refueling Pump / Repair Arm): target, quantity and, for repair, which kit. */
 function SupplyOptions({ kind, nearby, cargo, busy, onSubmit }: {
   kind: SupplyKind
   nearby: { player_id: string; username: string }[]
@@ -174,29 +184,31 @@ function SupplyOptions({ kind, nearby, cargo, busy, onSubmit }: {
 }) {
   const [itemId, setItemId] = useState('')
   const [quantity, setQuantity] = useState('')
-  const [target, setTarget] = useState('')
-  const items = cargo.filter((c) => SUPPLY_ITEM[kind].test(c.item_id))
+  const [targetChoice, setTarget] = useState('')
+  const target = nearby.some((p) => p.player_id === targetChoice) ? targetChoice : nearby[0]?.player_id ?? ''
+  // Ship-to-ship refuel pumps from your own tank; ship-to-ship repair burns a kit from cargo.
+  const items = kind === 'repair' ? cargo.filter(isSupply('repair')) : []
   const qty = parseInt(quantity, 10)
   return (
     <div className={styles.supplyOptions}>
-      <select className={styles.supplyInput} value={itemId} onChange={(e) => setItemId(e.target.value)} aria-label={`${kind} item`}>
-        <option value="">{kind === 'refuel' ? 'Station or cheapest fuel cell' : 'Station or cheapest kit'}</option>
-        {items.map((c) => <option key={c.item_id} value={c.item_id}>{c.item_name} ({c.quantity})</option>)}
-      </select>
-      <input className={styles.supplyInput} type="number" min={1} placeholder="Quantity" value={quantity} onChange={(e) => setQuantity(e.target.value)} aria-label="Quantity" />
       <select className={styles.supplyInput} value={target} onChange={(e) => setTarget(e.target.value)} aria-label={`${kind} target`}>
-        <option value="">My ship</option>
         {nearby.map((p) => <option key={p.player_id} value={p.player_id}>{p.username}</option>)}
-        <option value="fleet">{kind === 'refuel' ? 'Check fleet fuel (no transfer)' : 'Check fleet hull (no repair)'}</option>
       </select>
+      {items.length > 1 && (
+        <select className={styles.supplyInput} value={itemId} onChange={(e) => setItemId(e.target.value)} aria-label="Repair kit">
+          <option value="">Cheapest kit</option>
+          {items.map((c) => <option key={c.item_id} value={c.item_id}>{c.item_name} ({c.quantity})</option>)}
+        </select>
+      )}
+      <input className={styles.supplyInput} type="number" min={1} placeholder="Quantity" value={quantity} onChange={(e) => setQuantity(e.target.value)} aria-label="Quantity" />
       <button
         className={styles.actionBtn}
-        disabled={busy}
-        onClick={() => onSubmit({ ...(itemId && { id: itemId }), ...(qty > 0 && { quantity: qty }), ...(target && { target }) })}
+        disabled={busy || !target}
+        onClick={() => onSubmit({ target, ...(itemId && { id: itemId }), ...(qty > 0 && { quantity: qty }) })}
         type="button"
       >
         {kind === 'refuel' ? <Fuel size={13} /> : <Wrench size={13} />}
-        <span>{kind === 'refuel' ? 'Refuel' : 'Repair'} with options</span>
+        <span>{kind === 'refuel' ? 'Refuel' : 'Repair'} them</span>
       </button>
     </div>
   )
@@ -386,9 +398,29 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
   const surveyable = canSurvey(fitted, ship?.class_id, ship?.active_buffs)
   // Refuel/repair can act only at a station with the service, from cargo supplies,
   // or on a nearby ship with the transfer module (gameserver HandleRefuel / HandleRepair).
-  const canTransfer = (kind: SupplyKind) => Boolean(location?.nearby_players?.length) && Boolean(modules?.some((m) => m.type_id === TARGET_MODULE[kind]))
-  const supplyKinds = (['refuel', 'repair'] as const).filter((kind) =>
-    services.includes(kind) || cargo.some((c) => SUPPLY_ITEM[kind].test(c.item_id)) || canTransfer(kind))
+  const canTransfer = (kind: SupplyKind) => Boolean(location?.nearby_players?.length) &&
+    Boolean(modules?.some((m) => m.type_id === TARGET_MODULE[kind])) &&
+    (kind === 'refuel' ? (ship?.fuel ?? 0) > 1 : cargo.some(isSupply('repair')))
+  /**
+   * Ways to top up your own ship, mirroring gameserver handlers/ship.go: docked at a station with the
+   * service it uses the station; otherwise it burns cells/kits from cargo. Docked, a named fuel cell
+   * overrides the station, but station repair ignores a named kit, so no kit button where the station repairs.
+   */
+  const selfSupply = (kind: SupplyKind): { label: string; args: SupplyArgs }[] => {
+    const [now, max] = kind === 'refuel' ? [ship?.fuel ?? 0, ship?.max_fuel ?? 0] : [ship?.hull ?? 0, ship?.max_hull ?? 0]
+    if (now >= max) return []
+    const verb = kind === 'refuel' ? 'Refuel' : 'Repair'
+    const station = isDocked && services.includes(kind)
+    const item = cheapestSupply(kind, cargo)
+    const itemWord = kind === 'refuel' ? 'fuel cells' : 'repair kits'
+    return [
+      ...(station ? [{ label: `${verb} at station`, args: {} }] : []),
+      ...(item && !(station && kind === 'repair')
+        ? [{ label: station ? `${verb} with ${itemWord}` : verb, args: station ? { id: item.item_id } : {} }]
+        : []),
+    ]
+  }
+  const supplyKinds = (['refuel', 'repair'] as const).filter((kind) => selfSupply(kind).length > 0 || canTransfer(kind))
 
   const travelDestination = transitDestination(location, pendingAction?.target, system?.pois)
   const transitElapsed = location?.transit_ticks_elapsed ?? 0
@@ -521,8 +553,8 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
   shortcutsRef.current = actionBusy ? {} : {
     d: () => { if (poi?.base_id) void (isDocked ? handleUndock() : handleDock()) },
     m: () => { if (!isDocked && hasMineableResources(location)) void handleMine() },
-    f: () => { if (supplyKinds.includes('refuel')) void handleRefuel() },
-    r: () => { if (supplyKinds.includes('repair')) void handleRepair() },
+    f: () => { const [first] = selfSupply('refuel'); if (first) void handleRefuel(first.args) },
+    r: () => { const [first] = selfSupply('repair'); if (first) void handleRepair(first.args) },
   }
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -763,36 +795,39 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
             </button>
           )}
 
-          {/* Refuel / Repair — quick button plus options (item, quantity, target player or fleet) */}
+          {/* Refuel / Repair: one button per way to top up your own ship; the options menu services other ships. */}
           {ship && supplyKinds.map((kind) => {
             const [now, max] = kind === 'refuel' ? [ship.fuel, ship.max_fuel] : [ship.hull, ship.max_hull]
             const Icon = kind === 'refuel' ? Fuel : Wrench
+            const handle = kind === 'refuel' ? handleRefuel : handleRepair
+            const verb = kind === 'refuel' ? 'Refuel' : 'Repair'
             return (
               <div key={kind}>
                 <div className={styles.supplyRow}>
-                  <button
-                    className={styles.actionBtn}
-                    onClick={() => void (kind === 'refuel' ? handleRefuel() : handleRepair())}
-                    disabled={actionBusy || now >= max}
-                    type="button"
-                  >
-                    <Icon size={13} />
-                    <span>{kind === 'refuel' ? 'Refuel' : 'Repair'} ({now}/{max})</span>
-                  </button>
-                  <button
-                    className={styles.supplyToggle}
-                    onClick={() => setSupplyOpen((open) => (open === kind ? null : kind))}
-                    aria-expanded={supplyOpen === kind}
-                    aria-label={`${kind === 'refuel' ? 'Refuel' : 'Repair'} options`}
-                    type="button"
-                  >
-                    <SlidersHorizontal size={13} />
-                  </button>
+                  {selfSupply(kind).map((opt) => (
+                    <button key={opt.label} className={styles.actionBtn} onClick={() => void handle(opt.args)} disabled={actionBusy} type="button">
+                      <Icon size={13} />
+                      <span>{opt.label} ({now}/{max})</span>
+                    </button>
+                  ))}
+                  {canTransfer(kind) && (
+                    <button
+                      className={styles.supplyToggle}
+                      onClick={() => setSupplyOpen((open) => (open === kind ? null : kind))}
+                      aria-expanded={supplyOpen === kind}
+                      aria-label={`${verb} another ship`}
+                      title={`${verb} another ship`}
+                      type="button"
+                    >
+                      <SlidersHorizontal size={13} />
+                      {selfSupply(kind).length === 0 && <span>{verb} another ship</span>}
+                    </button>
+                  )}
                 </div>
-                {supplyOpen === kind && (
+                {supplyOpen === kind && canTransfer(kind) && (
                   <SupplyOptions
                     kind={kind}
-                    nearby={canTransfer(kind) ? location?.nearby_players ?? [] : []}
+                    nearby={location?.nearby_players ?? []}
                     cargo={cargo}
                     busy={actionBusy}
                     onSubmit={(args) => void (kind === 'refuel' ? handleRefuel(args) : handleRepair(args))}
