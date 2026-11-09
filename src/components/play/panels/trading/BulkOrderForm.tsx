@@ -164,6 +164,10 @@ export function BulkOrderForm({ inventory, onCreated, onClose }: {
             : c.spacemolt_market.create_buy_order({ orders: batch.map((o) => ({ ...o, deliver_to: toStorage ? 'storage' as const : 'cargo' as const })) })
         }, { label: side === 'sell' ? 'create_sell_order' : 'create_buy_order' })
         details.push(result.delta.details)
+        // Drop placed orders from the form so a retry cannot place them twice.
+        const results = (result.delta.details as { results?: Array<{ index: number; success: boolean }> } | undefined)?.results
+        const placed = results ? results.filter((r) => r.success).map((r) => batch[r.index]?.item_id) : batch.map((o) => o.item_id)
+        setDrafts((prev) => Object.fromEntries(Object.entries(prev).filter(([id]) => !placed.includes(id))))
       }
     } catch (err) {
       uiStore.dispatch({ type: 'toast', kind: 'danger', text: errorMessage(err) })

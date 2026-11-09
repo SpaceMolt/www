@@ -77,7 +77,11 @@ export function OrdersView() {
   const [sortBy, setSortBy] = useState<SortBy>('newest')
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
-  useEffect(() => { setPage(1) }, [orderType, sortBy, search, stationId, dockedAt])
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [repricing, setRepricing] = useState(false)
+  /** A new page, filter, or station shows different orders: start over at page 1 with nothing selected. */
+  const resetView = (nextPage = 1) => { setPage(nextPage); setSelected(new Set()); setRepricing(false) }
+  useEffect(() => { resetView() }, [dockedAt])
 
   const filters = {
     page, page_size: PAGE_SIZE, sort_by: sortBy, station_id: stationId,
@@ -108,12 +112,9 @@ export function OrdersView() {
   )
 
   const [showForm, setShowForm] = useState(false)
-  const [selected, setSelected] = useState<Set<string>>(new Set())
-  const [repricing, setRepricing] = useState(false)
   const [prices, setPrices] = useState<Record<string, string>>({})
   const [confirm, setConfirm] = useState<{ message: string; run: () => void } | null>(null)
   const [busy, setBusy] = useState(false)
-  useEffect(() => { setSelected(new Set()); setRepricing(false) }, [personalOrdersData])
 
   /** Runs each call in turn (the lib serializes mutations anyway), then reports one combined result. */
   const runBatches = useCallback(async (verb: string, label: string, calls: Array<(c: Commands) => Promise<MutationResult>>) => {
@@ -129,6 +130,8 @@ export function OrdersView() {
       const outcome = sumBulk(details)
       toast(outcome.failed > 0 ? 'warning' : 'success', describeBulk(verb, outcome))
     }
+    setSelected(new Set())
+    setRepricing(false)
     refetchPersonalOrders()
   }, [mutate, toast, refetchPersonalOrders])
 
@@ -155,7 +158,7 @@ export function OrdersView() {
   }
 
   const cancelAll = () => setConfirm({
-    message: `Cancel all ${personalOrdersData?.total ?? ''} of your orders at this station?`,
+    message: 'Cancel all your orders at this station?',
     run: () => runBatches('Orders cancelled:', 'cancel_order', [(c) => c.spacemolt_market.cancel_order({ order_id: 'all' })]),
   })
 
@@ -171,7 +174,7 @@ export function OrdersView() {
     .filter((o) => o.new_price > 0 && o.new_price !== o.old)
     .map(({ order_id, new_price }) => ({ order_id, new_price }))
 
-  const applyReprice = () => setConfirm({
+  const applyReprice = () => changedPrices.length > 0 && setConfirm({
     message: `Change the price of ${changedPrices.length} order${changedPrices.length === 1 ? '' : 's'}? Raising a sell price costs a 1% fee; buy escrow adjusts.`,
     run: () => runBatches('Orders repriced:', 'modify_order', chunk(changedPrices).map((orders) => (c) => c.spacemolt_market.modify_order({ orders }))),
   })
@@ -216,7 +219,7 @@ export function OrdersView() {
             type="text"
             placeholder="Station id, e.g. nexus_base"
             value={stationInput}
-            onChange={(e) => setStationInput(e.target.value)}
+            onChange={(e) => { setStationInput(e.target.value); resetView() }}
             title="View your orders at another station"
           />
           <span className={styles.formHint}>Dock to cancel or change orders.</span>
@@ -237,16 +240,16 @@ export function OrdersView() {
             placeholder="Search item name..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') setSearch(searchInput.trim()) }}
-            onBlur={() => setSearch(searchInput.trim())}
+            onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }}
+            onBlur={() => { if (searchInput.trim() !== search) { setSearch(searchInput.trim()); resetView() } }}
           />
         </div>
-        <select className={styles.formInput} value={orderType} onChange={(e) => setOrderType(e.target.value as '' | 'buy' | 'sell')}>
+        <select className={styles.formInput} value={orderType} onChange={(e) => { setOrderType(e.target.value as '' | 'buy' | 'sell'); resetView() }}>
           <option value="">Buy and sell</option>
           <option value="sell">Sell only</option>
           <option value="buy">Buy only</option>
         </select>
-        <select className={styles.formInput} value={sortBy} onChange={(e) => setSortBy(e.target.value as SortBy)}>
+        <select className={styles.formInput} value={sortBy} onChange={(e) => { setSortBy(e.target.value as SortBy); resetView() }}>
           <option value="newest">Newest</option>
           <option value="oldest">Oldest</option>
           <option value="price_desc">Price high-low</option>
@@ -372,11 +375,11 @@ export function OrdersView() {
 
       {totalPages > 1 && (
         <div className={styles.optionRow}>
-          <button className={shared.subtleBtn} onClick={() => setPage((p) => p - 1)} disabled={page <= 1} type="button">
+          <button className={shared.subtleBtn} onClick={() => resetView(page - 1)} disabled={page <= 1} type="button">
             <ChevronLeft size={11} /> Prev
           </button>
           <span className={styles.formHint}>Page {personalOrdersData?.page ?? page} of {totalPages}</span>
-          <button className={shared.subtleBtn} onClick={() => setPage((p) => p + 1)} disabled={!personalOrdersData?.has_more} type="button">
+          <button className={shared.subtleBtn} onClick={() => resetView(page + 1)} disabled={!personalOrdersData?.has_more} type="button">
             Next <ChevronRight size={11} />
           </button>
         </div>

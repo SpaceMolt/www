@@ -224,7 +224,11 @@ export function MarketView() {
       setEstimating(true)
       try {
         const result = await store.account.commands.spacemolt_market.estimate_purchase({ item_id: itemId, quantity })
-        if (result.structuredContent) setBuyEstimate({ itemId, itemName, data: result.structuredContent })
+        if (result.structuredContent) {
+          setDeliverToStorage(false)
+          setAutoList(false)
+          setBuyEstimate({ itemId, itemName, data: result.structuredContent })
+        }
       } catch (err) {
         reportError(err)
       } finally {
@@ -267,6 +271,7 @@ export function MarketView() {
   // Sell confirmation: show modal with price check
   const handleQuickSell = useCallback(
     (itemId: string, itemName: string, quantity: number, priceEach: number, baseValue: number) => {
+      setAutoList(false)
       setSellConfirm({ itemId, itemName, quantity, priceEach, total: quantity * priceEach, baseValue })
     },
     []

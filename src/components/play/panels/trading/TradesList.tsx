@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { Check, Plus, RefreshCw, X } from 'lucide-react'
-import { resyncTrades, useAccountStore, useCommandMutation, useCommandQuery, type TradeOffer } from '@/lib/spacemolt'
+import { mergeTradeSnapshot, useAccountStore, useCommandMutation, useCommandQuery, type TradeOffer } from '@/lib/spacemolt'
 import { usePlay, usePlayUi } from '../../PlayProvider'
 import { ConfirmAction, Credits, errorMessage, shared } from '../../shared'
 import { TradeOfferForm } from './TradeOfferForm'
@@ -37,14 +37,14 @@ export function TradesList() {
 
   const { data: trades, refetch: refetchTrades } = useCommandQuery(
     async (account) => (await account.commands.spacemolt_transfer.get_trades()).structuredContent,
-    [pendingTrades.length],
+    [],
   )
   const outgoing = trades?.outgoing ?? []
 
-  // Pushes sent while this tab was closed or offline never arrive; resync once on open.
+  // Pushes sent while this tab was closed or offline never arrive; each fetch also resyncs incoming offers.
   useEffect(() => {
-    resyncTrades(store.account, uiStore).catch(() => {})
-  }, [store, uiStore])
+    if (trades) uiStore.dispatch({ type: 'seed_trades', trades: mergeTradeSnapshot(uiStore.getState().pendingTrades, trades.incoming) })
+  }, [trades, uiStore])
 
   const reportError = useCallback((err: unknown) => {
     const text = errorMessage(err)
