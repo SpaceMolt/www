@@ -672,10 +672,14 @@
   padding: 0.1rem 0.2rem 0.1rem 0.2rem;
 }
 
-.intelResourceIcon {
-  color: var(--shell-orange, #f59e0b);
+.depositIcon {
   flex-shrink: 0;
 }
+
+.kindOre { color: var(--shell-orange); }
+.kindIce { color: var(--plasma-cyan); }
+.kindGas { color: var(--bio-green); }
+.kindRad { color: var(--warning-yellow); }
 
 .intelResourceName {
   flex: 1;

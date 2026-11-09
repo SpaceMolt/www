@@ -16,7 +16,9 @@ import {
   Search,
   Compass,
   Database,
-  Gem,
+  Radiation,
+  Snowflake,
+  Wind,
   SlidersHorizontal,
   X,
 } from 'lucide-react'
@@ -46,6 +48,7 @@ import { shortcutKey } from './shortcuts'
 import { titleCase as formatLabel } from '@/lib/format'
 import styles from './LeftSidebar.module.css'
 import { depositTitle, rateRichness } from './richness'
+import { getItem } from '@/data/catalog'
 import { errorMessage, Modal, shared } from './shared'
 
 // Intel query response entries — shaped by the faction intel query, not a
@@ -101,6 +104,20 @@ interface SupplyArgs { id?: string; quantity?: number; target?: string }
 const SUPPLY_ITEM = { refuel: /fuel_cell/, repair: /repair|hull_patch/ } as const
 /** The module the server requires to refuel or repair another ship (gameserver handlers/ship.go). */
 const TARGET_MODULE = { refuel: 'refueling_pump', repair: 'repair_arm' } as const
+
+/** Icon and extractor for each kind of deposit, by the catalog's extracted_by. */
+const DEPOSIT_KIND = {
+  mining: { Icon: Pickaxe, label: 'Ore: mined with a mining laser', className: styles.kindOre },
+  ice: { Icon: Snowflake, label: 'Ice: needs an Ice Harvester', className: styles.kindIce },
+  gas: { Icon: Wind, label: 'Gas: needs a Gas Harvester', className: styles.kindGas },
+  rad: { Icon: Radiation, label: 'Radioactive: needs a Rad Harvester', className: styles.kindRad },
+} as const
+
+function DepositIcon({ itemId }: { itemId: string }) {
+  const by = getItem(itemId)?.extracted_by
+  const { Icon, label, className } = DEPOSIT_KIND[by as keyof typeof DEPOSIT_KIND] ?? DEPOSIT_KIND.mining
+  return <Icon size={10} className={`${styles.depositIcon} ${className}`} aria-label={label}><title>{label}</title></Icon>
+}
 
 /** A deposit's rating, colored by level, or 'Depleted'. The numbers are in the row's hover text. */
 function DepositRating({ itemId, richness, remaining }: { itemId: string; richness: number; remaining?: number }) {
@@ -572,6 +589,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
                     <div className={styles.resourceList}>
                       {location?.resources?.map((r) => (
                         <div key={r.item_id} className={`${styles.resourceItem} ${r.remaining === 0 ? styles.depleted : ''}`} title={depositTitle(r.item_id, r.richness, r.remaining, capacityOf(r.item_id))}>
+                          <DepositIcon itemId={r.item_id} />
                           <span className={styles.resourceName}>{r.item_name || r.item_id}</span>
                           <DepositRating itemId={r.item_id} richness={r.richness} remaining={r.remaining} />
                         </div>
@@ -983,7 +1001,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
                           <div className={styles.intelResourceList}>
                             {p.resources.map((r) => (
                               <div key={r.resource_id} className={`${styles.intelResourceItem} ${r.remaining === 0 ? styles.depleted : ''}`} title={depositTitle(r.resource_id, r.richness, r.remaining, r.max_remaining)}>
-                                <Gem size={9} className={styles.intelResourceIcon} />
+                                <DepositIcon itemId={r.resource_id} />
                                 <span className={styles.intelResourceName}>{formatLabel(r.resource_id)}</span>
                                 <DepositRating itemId={r.resource_id} richness={r.richness} remaining={r.remaining} />
                               </div>
