@@ -72,12 +72,6 @@
   color: var(--chrome-silver);
 }
 
-.routeBannerWarning {
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.75rem;
-  color: var(--claw-red);
-  font-weight: 600;
-}
 
 .routeBannerCaution {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
@@ -366,29 +360,9 @@
 }
 
 /* === Keyboard shortcut help === */
-.helpModal {
-  background: var(--space-black);
-  border: 1px solid rgba(0, 212, 255, 0.4);
-  border-radius: 6px;
-  padding: 1.25rem;
-  width: min(420px, calc(100vw - 2rem));
-  max-height: 85vh;
-  overflow-y: auto;
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.8rem;
-}
 
-.helpTitle {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: var(--plasma-cyan);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-bottom: 0.75rem;
-}
 
-.helpList { margin: 0 0 1rem; }
+.helpList { margin: 0; font-family: var(--font-jetbrains), 'JetBrains Mono', monospace; font-size: 0.8rem; }
 
 .helpList > div {
   display: flex;

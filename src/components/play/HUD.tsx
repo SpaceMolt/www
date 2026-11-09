@@ -33,7 +33,7 @@ import { findRoute, jumpEstimateMs } from './routeWalk'
 import { LoopRunnerContext, useLoopRunner } from './loop/useLoopRunner'
 import { LoopBanner, LoopPanel } from './loop/LoopPanel'
 import { ACTION_SHORTCUTS, shortcutKey } from './shortcuts'
-import { errorMessage } from './shared'
+import { errorMessage, Modal } from './shared'
 import { usePlay } from './PlayProvider'
 import styles from './HUD.module.css'
 
@@ -59,20 +59,21 @@ const PANELS: Record<string, React.ComponentType> = {
 
 function ShortcutHelp({ onClose, isDocked }: { onClose: () => void; isDocked: boolean }) {
   return (
-    <div className={styles.abortModalOverlay} onClick={onClose}>
-      <div className={styles.helpModal} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
-        <div className={styles.helpTitle}><Keyboard size={14} /> Keyboard shortcuts</div>
-        <dl className={styles.helpList}>
-          {ACTION_SHORTCUTS.map(({ key, label }) => (
-            <div key={key}><dt><kbd>{key}</kbd></dt><dd>{label}</dd></div>
-          ))}
-          {panelShortcuts(isDocked).map(({ id, label }, i) => (
-            <div key={id}><dt><kbd>{i + 1}</kbd></dt><dd>{label} tab</dd></div>
-          ))}
-        </dl>
-        <button className={styles.abortModalOk} onClick={onClose} type="button">Close</button>
-      </div>
-    </div>
+    <Modal
+      title="Keyboard shortcuts"
+      icon={<Keyboard size={14} />}
+      onClose={onClose}
+      actions={<button className={styles.abortModalOk} onClick={onClose} type="button">Close</button>}
+    >
+      <dl className={styles.helpList}>
+        {ACTION_SHORTCUTS.map(({ key, label }) => (
+          <div key={key}><dt><kbd>{key}</kbd></dt><dd>{label}</dd></div>
+        ))}
+        {panelShortcuts(isDocked).map(({ id, label }, i) => (
+          <div key={id}><dt><kbd>{i + 1}</kbd></dt><dd>{label} tab</dd></div>
+        ))}
+      </dl>
+    </Modal>
   )
 }
 
@@ -196,7 +197,7 @@ export function HUD() {
     const onKey = (e: KeyboardEvent) => {
       const key = shortcutKey(e)
       if (key === null) return
-      if (key === 'escape') { setHelpOpen(false); setNavOpen(false); return }
+      if (key === 'escape') { setNavOpen(false); return } // Modal closes help on Escape
       if (key === '?') { setHelpOpen((v) => !v); return }
       if (document.querySelector('[role="dialog"]')) return // help or another dialog is open
       if (key === 'n') { setNavOpen((v) => !v); return }
