@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ArrowDown, ArrowUp, Play, Plus, Repeat, Save, Square, Trash2, X } from 'lucide-react'
 import { useAccountStore, useCargo, useLocationState, usePendingAction, usePlayer, useStations, useSystem } from '@/lib/spacemolt'
-import { Credits, Panel, shared } from '../shared'
+import { Credits, Panel, objectKey, shared } from '../shared'
 import { hasMineableResources } from '../LeftSidebar'
 import { loadKnownPois, loadPlans, mergePois, mineSellPreset, savePlans, stepLabel, type KnownPoi, type LoopPlan, type LoopStep } from './loopPlan'
 import { useLoop } from './useLoopRunner'
@@ -259,7 +259,7 @@ export function LoopPanel() {
       </div>
       <ol className={styles.steps}>
         {draft.steps.map((step, i) => (
-          <li key={i} className={styles.step}>
+          <li key={objectKey(step)} className={styles.step}>
             <span className={styles.stepLabel}>{stepLabel(step)}</span>
             <button className={shared.iconBtn} onClick={() => setSteps(move(draft.steps, i, i - 1))} type="button" aria-label="Move up"><ArrowUp size={12} /></button>
             <button className={shared.iconBtn} onClick={() => setSteps(move(draft.steps, i, i + 1))} type="button" aria-label="Move down"><ArrowDown size={12} /></button>

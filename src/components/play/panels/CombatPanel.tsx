@@ -54,6 +54,7 @@ const TABS = [
   { id: 'history', label: 'History', icon: <History size={12} /> },
 ]
 const FEED_LINES = 20
+let feedSeq = 0
 
 const STANCES: { id: Stance; icon: typeof Swords }[] = [
   { id: 'fire', icon: Flame },
@@ -104,7 +105,7 @@ export function CombatPanel() {
   const [confirmSelfDestruct, setConfirmSelfDestruct] = useState(false)
   const [selectedAmmo, setSelectedAmmo] = useState<Record<string, string>>({})
   const [engageSide, setEngageSide] = useState<number | null>(null)
-  const [feed, setFeed] = useState<string[]>([])
+  const [feed, setFeed] = useState<{ id: number; line: string }[]>([])
   const [captured, setCaptured] = useState<NotificationShipCaptured | null>(null)
 
   useEffect(() => {
@@ -112,7 +113,7 @@ export function CombatPanel() {
   }, [activeBattleId])
 
   useEffect(() => {
-    const add = (line: string) => setFeed((lines) => [...lines, line].slice(-FEED_LINES))
+    const add = (line: string) => setFeed((lines) => [...lines, { id: feedSeq++, line }].slice(-FEED_LINES))
     const offDamage = store.account.on('battle_damage', (d) => add(formatDamage(d)))
     const offJoined = store.account.on('battle_joined', (j) => add(`${j.username} joined side ${j.side_id}`))
     const offCaptured = store.account.on('ship_captured', setCaptured)
@@ -383,7 +384,7 @@ export function CombatPanel() {
         <div>
           <div className={shared.sectionTitle}>Damage feed</div>
           <ol className={styles.feed}>
-            {feed.map((line, i) => <li key={i}>{line}</li>)}
+            {feed.map(({ id, line }) => <li key={id}>{line}</li>)}
           </ol>
         </div>
       )}

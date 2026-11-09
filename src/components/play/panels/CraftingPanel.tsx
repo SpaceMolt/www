@@ -18,7 +18,7 @@ import { useAccountStore, useCargo, useCommandMutation, useCommandQuery, useCurr
 import { usePlay, usePlayUi } from '../PlayProvider'
 import { ActionButton } from '../ActionButton'
 import { ProgressBar } from '../ProgressBar'
-import { ConfirmAction, Panel, QtyButtons, errorMessage, shared } from '../shared'
+import { ConfirmAction, Panel, QtyButtons, errorMessage, objectKey, shared } from '../shared'
 import { BugReportButton } from '../BugReportButton'
 import { buildRecipeContext } from '../bugReportContext'
 import type { Recipe, CraftJobView, CraftQuote, Facility } from '../types'
@@ -457,7 +457,7 @@ export function CraftingPanel() {
             </div>
             <div className={styles.jobsList}>
               {batch.map((job, i) => (
-                <div key={`${job.recipe_id}-${i}`} className={styles.jobTop}>
+                <div key={objectKey(job)} className={styles.jobTop}>
                   <span className={styles.jobName}>
                     {recipesById[job.recipe_id]?.name ?? job.recipe_id} x{job.quantity}
                   </span>

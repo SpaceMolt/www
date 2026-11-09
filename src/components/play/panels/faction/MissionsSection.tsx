@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Plus, Send, Trash2, X } from 'lucide-react'
 import { useCommandMutation, useCommandQuery, useLocationState } from '@/lib/spacemolt'
 import { ActionButton } from '../../ActionButton'
-import { ConfirmAction, Credits, Loading, shared, useAction } from '../../shared'
+import { ConfirmAction, Credits, Loading, objectKey, shared, useAction } from '../../shared'
 import styles from '../FactionPanel.module.css'
 import {
   MISSION_TYPES, OBJECTIVE_TYPES, TARGET_FIELD, buildMissionParams,
@@ -112,7 +112,7 @@ export function MissionsSection() {
 
         <div className={styles.label}>Objectives</div>
         {draft.objectives.map((o, i) => (
-          <div key={i} className={styles.intelItem}>
+          <div key={objectKey(o)} className={styles.intelItem}>
             <span className={styles.intelSystemName}>{o.type}</span>
             <span className={styles.intelMeta}>{[o.description, o.item_id, o.quantity, o.target].filter(Boolean).join(' / ')}</span>
             <button className={styles.kickBtn} onClick={() => setDraft({ ...draft, objectives: draft.objectives.filter((_, j) => j !== i) })} aria-label="Remove objective" type="button">
