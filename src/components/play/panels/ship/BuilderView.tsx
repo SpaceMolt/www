@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { AlertTriangle, CircuitBoard, Cpu, Crosshair, Plus, RotateCcw, Search, Shield, ShoppingCart, Wrench, X, Zap } from 'lucide-react'
 import type { Account } from '@spacemolt/lib'
 import {
@@ -56,25 +56,38 @@ const slotOf = (item: RawCatalogItem | undefined): Slot | undefined =>
 const fetchPreview = async (account: Account, modules: string[]) =>
   (await account.query('spacemolt_ship', 'fit_preview', { modules })).structuredContent as unknown as FitPreview
 
+const typeIds = (modules: ReturnType<typeof useModules>) => (modules ?? []).flatMap((m) => (m.type_id ? [m.type_id] : []))
+
+/** Where Apply is: running, finished, or stopped on an error. */
+type ApplyState = 'running' | 'done' | 'failed'
+
 /** Plan a full fit for the active ship, see its stats from the server's own math, then apply it. */
 export function BuilderView() {
+  const store = useAccountStore()
   const ship = useShip()
-  const fittedModules = useModules() ?? []
-  const fitted = useMemo(() => fittedModules.flatMap((m) => (m.type_id ? [m.type_id] : [])), [fittedModules])
+  const modules = useModules()
+  const fitted = useMemo(() => typeIds(modules), [modules])
   const fittedKey = fitted.join(',')
   const [plan, setPlan] = useState<string[]>(fitted)
   const [applying, setApplying] = useState(false)
-  // A refit made elsewhere, or a finished Apply, restarts the plan from the new fit.
+  const applyingRef = useRef(false)
+  // A refit made elsewhere restarts the plan from the new fit. Apply's own steps do not.
   useEffect(() => {
-    if (!applying) setPlan(fittedKey ? fittedKey.split(',') : [])
-  }, [fittedKey, applying])
+    if (!applyingRef.current) setPlan(fittedKey ? fittedKey.split(',') : [])
+  }, [fittedKey])
+  // A finished Apply starts over from the new fit; a stopped one keeps the plan, so Apply can resume it.
+  const trackApply = (state: ApplyState) => {
+    applyingRef.current = state === 'running'
+    setApplying(state === 'running')
+    if (state === 'done') setPlan(typeIds(store.getSection('modules')))
+  }
 
   const [debouncedPlan, setDebouncedPlan] = useState(plan)
   useEffect(() => {
     const t = setTimeout(() => setDebouncedPlan(plan), 300)
     return () => clearTimeout(t)
   }, [plan])
-  const { data: preview, errorCode, error: previewError } = useCommandQuery(
+  const { data: preview, errorCode, error: previewError, loading } = useCommandQuery(
     (account) => fetchPreview(account, debouncedPlan),
     [debouncedPlan.join(','), fittedKey],
   )
@@ -94,7 +107,7 @@ export function BuilderView() {
     <div className={styles.builder}>
       <div className={styles.toolbar}>
         <span className={styles.hint}>Start from your current fit. Add modules from the list below, or remove them from a slot.</span>
-        <button className={shared.subtleBtn} onClick={() => setPlan(fitted)} disabled={plan.join(',') === fittedKey} type="button">
+        <button className={shared.subtleBtn} onClick={() => setPlan(fitted)} disabled={applying || plan.join(',') === fittedKey} type="button">
           <RotateCcw size={10} /> Reset to current fit
         </button>
       </div>
@@ -103,18 +116,25 @@ export function BuilderView() {
       {preview && <StatsTable preview={preview.stats} />}
       {preview && preview.issues.length > 0 && (
         <ul className={styles.issues}>
-          {preview.issues.map((issue) => <li key={issue.code + issue.message}><AlertTriangle size={11} /> {issue.message}</li>)}
+          {preview.issues.map((issue, i) => <li key={i}><AlertTriangle size={11} /> {issue.message}</li>)}
         </ul>
       )}
 
-      <PlannedSlots plan={plan} fitted={fitted} stats={preview?.stats} sourced={sourced} onRemove={(i) => setPlan(plan.filter((_, j) => j !== i))} />
+      <PlannedSlots plan={plan} fitted={fitted} stats={preview?.stats} sourced={sourced} locked={applying} onRemove={(i) => setPlan(plan.filter((_, j) => j !== i))} />
 
       {preview && (
-        <ApplyPlan plan={plan} fitted={fitted} preview={preview} sourced={sourced} stale={debouncedPlan.join(',') !== plan.join(',')} onApplying={setApplying} />
+        <ApplyPlan
+          plan={plan}
+          fitted={fitted}
+          preview={preview}
+          sourced={sourced}
+          stale={loading || Boolean(previewError) || debouncedPlan.join(',') !== plan.join(',')}
+          onApply={trackApply}
+        />
       )}
       {missing.length > 0 && <MissingOrders missing={missing} bids={holdings.bids} />}
 
-      <ModulePicker stats={preview?.stats} plan={plan} holdings={holdings} onAdd={(id) => setPlan([...plan, id])} />
+      <ModulePicker stats={preview?.stats} plan={plan} holdings={holdings} locked={applying} onAdd={(id) => setPlan([...plan, id])} />
     </div>
   )
 }
@@ -137,7 +157,7 @@ function useHoldings(): Holdings & { bids: Record<string, number> } {
   const { data: market } = useCommandQuery(
     async (account) => (await account.commands.spacemolt_market.view_market()).structuredContent,
     [docked, revision],
-    { enabled: hasMarket, refreshOnSections: ['cargo'] },
+    { enabled: hasMarket },
   )
   return useMemo(() => ({
     cargo: quantities(cargo ?? []),
@@ -201,11 +221,12 @@ function StatsTable({ preview }: { preview: FitPreviewStats }) {
 }
 
 /** The planned fit by slot. Modules already fitted say so; added ones show where Apply gets them. */
-function PlannedSlots({ plan, fitted, stats, sourced, onRemove }: {
+function PlannedSlots({ plan, fitted, stats, sourced, locked, onRemove }: {
   plan: string[]
   fitted: string[]
   stats?: FitPreviewStats
   sourced: Sourced[]
+  locked: boolean
   onRemove: (index: number) => void
 }) {
   const kept = keptFlags(plan, fitted)
@@ -228,7 +249,7 @@ function PlannedSlots({ plan, fitted, stats, sourced, onRemove }: {
                 <div key={i} className={shipStyles.slotFilled}>
                   <div className={styles.plannedRow}>
                     <span className={shipStyles.slotModName}><ItemName itemId={id}>{getItem(id)?.name ?? id}</ItemName></span>
-                    <button className={shared.iconBtn} onClick={() => onRemove(i)} title="Remove from the plan" type="button"><X size={11} /></button>
+                    <button className={shared.iconBtn} onClick={() => onRemove(i)} disabled={locked} title="Remove from the plan" aria-label={`Remove ${getItem(id)?.name ?? id} from the plan`} type="button"><X size={11} /></button>
                   </div>
                   <div className={shipStyles.slotModMeta}>
                     {kept[i] ? <span className={shared.badgeGrey}>Fitted</span>
@@ -249,13 +270,13 @@ function PlannedSlots({ plan, fitted, stats, sourced, onRemove }: {
  * Apply runs the server's step order, one action per tick: before each install it takes the module from cargo,
  * else withdraws or buys it. Modules the plan removes go to station storage at the end. It stops on the first error.
  */
-function ApplyPlan({ plan, fitted, preview, sourced, stale, onApplying }: {
+function ApplyPlan({ plan, fitted, preview, sourced, stale, onApply }: {
   plan: string[]
   fitted: string[]
   preview: FitPreview
   sourced: Sourced[]
   stale: boolean
-  onApplying: (applying: boolean) => void
+  onApply: (state: ApplyState) => void
 }) {
   const store = useAccountStore()
   const mutate = useCommandMutation()
@@ -276,11 +297,12 @@ function ApplyPlan({ plan, fitted, preview, sourced, stale, onApplying }: {
   const apply = async () => {
     setConfirming(false)
     setError(null)
-    onApplying(true)
+    onApply('running')
+    let state: ApplyState = 'failed'
     try {
-      const target = missing > 0 ? withoutMissing(plan, fitted, sourced) : plan
-      const { valid, issues, steps } = missing > 0 ? await fetchPreview(store.account, target) : preview
-      if (!valid) throw new Error(`Without the missing modules the fit is refused: ${issues.map((i) => i.message).join(' ')}`)
+      // Fetch the steps now, for exactly this plan and the ship as it is.
+      const { valid, issues, steps } = await fetchPreview(store.account, missing > 0 ? withoutMissing(plan, fitted, sourced) : plan)
+      if (!valid) throw new Error(`The fit is refused: ${issues.map((i) => i.message).join(' ')}`)
       const queue = sourced.filter((s) => s.source && s.source !== 'cargo')
       const inCargo = (id: string) => quantities(store.getSection('cargo') ?? [])[id] ?? 0
       const items = (id: string) => [{ item_id: id, quantity: 1 }]
@@ -308,11 +330,12 @@ function ApplyPlan({ plan, fitted, preview, sourced, stale, onApplying }: {
         uiStore.dispatch({ type: 'storage_changed' })
       }
       uiStore.dispatch({ type: 'toast', kind: 'success', text: 'Loadout applied' })
+      state = 'done'
     } catch (err) {
       setError(errorMessage(err))
     } finally {
       setProgress(null)
-      onApplying(false)
+      onApply(state)
     }
   }
 
@@ -400,7 +423,7 @@ function BuyOrderRow({ itemId, quantity, bid, station }: { itemId: string; quant
       <span className={shipStyles.cargoName}><ItemName itemId={itemId}>{getItem(itemId)?.name ?? itemId}</ItemName> x{quantity}</span>
       {station && !placed && (
         <span className={shipStyles.cargoMeta}>
-          <input className={shipStyles.cargoQtyInput} type="number" min={1} value={price} onChange={(e) => setPrice(e.target.value)} title="Price each" placeholder="cr each" />
+          <input className={shipStyles.cargoQtyInput} type="number" min={1} value={price} onChange={(e) => setPrice(e.target.value)} title="Price each" aria-label={`Price each for ${getItem(itemId)?.name ?? itemId}`} placeholder="cr each" />
           {confirming ? (
             <ConfirmAction
               message={`Post a buy order: ${quantity} at ${priceEach.toLocaleString()} cr each?`}
@@ -423,7 +446,7 @@ function BuyOrderRow({ itemId, quantity, bid, station }: { itemId: string; quant
 type SourceFilter = 'any' | FitSource
 
 /** The full module catalog, searchable and filtered by slot, what still fits, and where it can come from. */
-function ModulePicker({ stats, plan, holdings, onAdd }: { stats?: FitPreviewStats; plan: string[]; holdings: Holdings; onAdd: (id: string) => void }) {
+function ModulePicker({ stats, plan, holdings, locked, onAdd }: { stats?: FitPreviewStats; plan: string[]; holdings: Holdings; locked: boolean; onAdd: (id: string) => void }) {
   const [search, setSearch] = useState('')
   const [slot, setSlot] = useState<'all' | Slot>('all')
   const [fitsOnly, setFitsOnly] = useState(false)
@@ -453,12 +476,12 @@ function ModulePicker({ stats, plan, holdings, onAdd }: { stats?: FitPreviewStat
     <div className={styles.picker}>
       <div className={shared.sectionTitle}>Modules</div>
       <div className={styles.filters}>
-        <span className={styles.search}><Search size={11} /><input className={shared.textInput} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search modules" /></span>
-        <select className={shared.selectInput} value={slot} onChange={(e) => setSlot(e.target.value as 'all' | Slot)} title="Slot">
+        <span className={styles.search}><Search size={11} /><input className={shared.textInput} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search modules" aria-label="Search modules" /></span>
+        <select className={shared.selectInput} value={slot} onChange={(e) => setSlot(e.target.value as 'all' | Slot)} title="Slot" aria-label="Slot">
           <option value="all">All slots</option>
           {SLOTS.map(({ slot: s, label }) => <option key={s} value={s}>{label}</option>)}
         </select>
-        <select className={shared.selectInput} value={source} onChange={(e) => setSource(e.target.value as SourceFilter)} title="Where it comes from">
+        <select className={shared.selectInput} value={source} onChange={(e) => setSource(e.target.value as SourceFilter)} title="Where it comes from" aria-label="Where it comes from">
           <option value="any">Any source</option>
           <option value="cargo">In cargo</option>
           <option value="storage">Your storage here</option>
@@ -487,7 +510,7 @@ function ModulePicker({ stats, plan, holdings, onAdd }: { stats?: FitPreviewStat
                   {planned[m.id] > 0 && <span className={shared.badgeGrey}>Planned x{planned[m.id]}</span>}
                 </div>
               </div>
-              <button className={shared.actionBtn} onClick={() => onAdd(m.id)} type="button" title="Add to the plan">
+              <button className={shared.actionBtn} onClick={() => onAdd(m.id)} disabled={locked} type="button" title="Add to the plan" aria-label={`Add ${m.name} to the plan`}>
                 <Plus size={12} /> Add
               </button>
             </div>

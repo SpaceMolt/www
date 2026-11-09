@@ -72,6 +72,8 @@ export function ShipPanel() {
   const { uiStore } = usePlay()
   const { data: catalog } = useCatalog()
   const [tab, setTab] = useState('loadout')
+  // Once opened, the Builder stays mounted so a running Apply keeps going while you look at the Loadout tab.
+  const [builderOpened, setBuilderOpened] = useState(false)
 
   // Install modal
   const [installSlotType, setInstallSlotType] = useState<SlotType | null>(null)
@@ -276,8 +278,9 @@ export function ShipPanel() {
   )
 
   return (
-    <PanelWithTabs title="Ship" icon={<Rocket size={16} />} tabs={TABS} activeTab={tab} onTabChange={setTab}>
-      {tab === 'builder' ? <BuilderView /> : (<>
+    <PanelWithTabs title="Ship" icon={<Rocket size={16} />} tabs={TABS} activeTab={tab} onTabChange={(t) => { setTab(t); if (t === 'builder') setBuilderOpened(true) }}>
+      {builderOpened && <div hidden={tab !== 'builder'}><BuilderView /></div>}
+      {tab !== 'builder' && (<>
         {/* Ship overview */}
         <div className={styles.shipOverview}>
           <img
