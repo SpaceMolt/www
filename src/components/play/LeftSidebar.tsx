@@ -18,7 +18,6 @@ import {
   Database,
   Gem,
 } from 'lucide-react'
-import { SpacemoltError } from '@spacemolt/lib'
 import type { FactionQueryIntelResponse } from '@spacemolt/lib'
 import {
   useAccountStore,
@@ -38,6 +37,7 @@ import { MiningModal } from './MiningModal'
 import type { GalaxyPanelHandle, MapSystemData, PlannedRoute } from './panels/GalaxyPanel'
 import { titleCase as formatLabel } from '@/lib/format'
 import styles from './LeftSidebar.module.css'
+import { errorMessage } from './shared'
 
 // Intel query response entries — shaped by the faction intel query, not a
 // cached state section.
@@ -80,12 +80,6 @@ interface LeftSidebarProps {
   onTabChange: (tab: SidebarTab) => void
   autoTravelActive: boolean
   onHighlightedSystemsChange?: (systems: Set<string> | null) => void
-}
-
-function errorMessage(err: unknown): string {
-  if (err instanceof SpacemoltError) return err.message
-  if (err instanceof Error) return err.message
-  return 'Action failed'
 }
 
 // useCommandMutation's runner returns the generic MutationResult shape
