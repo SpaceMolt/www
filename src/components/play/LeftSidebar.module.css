@@ -722,9 +722,85 @@
   opacity: 0.2;
 }
 
+/* Refuel / repair / scan options */
+.supplyRow {
+  display: flex;
+  gap: 0.3rem;
+  align-items: flex-start;
+}
+
+.supplyRow .actionBtn { flex: 1; }
+
+.supplyToggle,
+.drawerClose {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem;
+  border: 1px solid rgba(61, 90, 108, 0.3);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--chrome-silver);
+  cursor: pointer;
+}
+
+.supplyToggle:hover,
+.drawerClose:hover { color: var(--plasma-cyan); }
+
+.drawerClose {
+  display: none;
+  border: none;
+}
+
+.supplyOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.4rem;
+  margin-bottom: 0.4rem;
+  border: 1px dashed rgba(61, 90, 108, 0.5);
+  border-radius: 4px;
+}
+
+.supplyInput {
+  min-width: 0;
+  flex: 1;
+  padding: 0.35rem 0.4rem;
+  margin-bottom: 0.2rem;
+  border: 1px solid rgba(61, 90, 108, 0.4);
+  border-radius: 4px;
+  background: rgba(10, 14, 23, 0.9);
+  color: var(--star-white);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+}
+
 /* === Responsive === */
 @media (max-width: 768px) {
   .sidebar {
     display: none;
+  }
+
+  /* Opened from the HUD Nav button as a drawer over the panel */
+  .sidebarOpen {
+    display: flex;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: min(320px, 88vw);
+    z-index: 900;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.6);
+  }
+
+  .drawerClose {
+    display: flex;
+  }
+
+  /* Touch-sized actions */
+  .actionBtn,
+  .poiItem,
+  .connectionItem {
+    min-height: 40px;
   }
 }

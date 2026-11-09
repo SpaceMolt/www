@@ -10,6 +10,7 @@ import {
   Anchor,
   LogOut,
   AlertTriangle,
+  Keyboard,
 } from 'lucide-react'
 import { useAccountStore, useConnectionPhase, useLocationState, usePlayer, useShip } from '@/lib/spacemolt'
 import { usePlay } from './PlayProvider'
@@ -42,7 +43,7 @@ function formatCountdown(isoDate: string): string {
   return `${minutes}m`
 }
 
-export function TopBar() {
+export function TopBar({ onShowShortcuts }: { onShowShortcuts?: () => void }) {
   const store = useAccountStore()
   const { onSwitchPlayer } = usePlay()
   const player = usePlayer()
@@ -129,6 +130,11 @@ export function TopBar() {
         )}
         {player && (
           <BugReportButton contextType="generic" />
+        )}
+        {onShowShortcuts && (
+          <button className={styles.logoutBtn} onClick={onShowShortcuts} title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts" type="button">
+            <Keyboard size={12} />
+          </button>
         )}
         {player && (
           <button

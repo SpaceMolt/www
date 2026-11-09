@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useCallback, useImperativeHandle, forwardRef, useState } from 'react'
 import { Home, Crosshair } from 'lucide-react'
-import { fetchStations, type MapSystem } from '@spacemolt/lib'
+import { fetchStations, type MapSystem, type RouteStep } from '@spacemolt/lib'
 import { fixedStations } from '@/lib/stationPresentation'
 import { useCurrentTick, useLocationState, useMap, usePlayer } from '@/lib/spacemolt'
 import styles from './GalaxyPanel.module.css'
@@ -58,13 +58,15 @@ export interface MapSystemData {
 }
 
 export interface PlannedRoute {
-  route: { system_id: string; name: string; jumps: number }[]
+  /** find_route steps; wormhole hops keep via_wormhole/entrance_poi. */
+  route: RouteStep[]
   totalJumps: number
   targetSystem: string
   fuelPerJump: number
   estimatedFuel: number
   fuelAvailable: number
   viaWaypoints?: string[] // user-added intermediate system IDs
+  targetPoi?: string // POI to travel to after the last jump
 }
 
 interface MapData {
@@ -161,8 +163,12 @@ function buildRouteFromPath(path: string[], systems: MapSystemData[], fuelPerJum
   }
 }
 
-/** Build a full route through a sequence of via-points using BFS for each leg */
-function buildRouteViaWaypoints(systems: MapSystemData[], startId: string, destId: string, via: string[], fuelPerJump: number, fuelAvailable: number): PlannedRoute | null {
+/**
+ * Build a full route through via-points using BFS over map connections for
+ * each leg. Map connections exclude wormholes, so this is only for routes the
+ * player has edited; an unedited route comes from the server's find_route.
+ */
+export function buildRouteViaWaypoints(systems: MapSystemData[], startId: string, destId: string, via: string[], fuelPerJump: number, fuelAvailable: number): PlannedRoute | null {
   const stops = [startId, ...via, destId]
   const fullPath: string[] = []
   for (let i = 0; i < stops.length - 1; i++) {

@@ -19,6 +19,7 @@ import {
   Skull,
   ChevronDown,
   Menu,
+  Repeat,
 } from 'lucide-react'
 import styles from './PanelNav.module.css'
 
@@ -41,11 +42,12 @@ interface PanelDef {
   right?: boolean
 }
 
-const ALL_PANELS: PanelDef[] = [
+export const ALL_PANELS: PanelDef[] = [
   { id: 'galaxy', icon: Map, label: 'Galaxy', visibility: 'always' },
   { id: 'ship', icon: Rocket, label: 'Ship', visibility: 'always' },
   { id: 'faction', icon: Users, label: 'Faction', visibility: 'always' },
   { id: 'missions', icon: Target, label: 'Missions', visibility: 'always' },
+  { id: 'autopilot', icon: Repeat, label: 'Autopilot', visibility: 'always' },
   // Station tabs — always visible (view remotely), mutations disabled in space
   { id: 'trading', icon: TrendingUp, label: 'Market', visibility: 'always' },
   { id: 'storage', icon: Package, label: 'Storage', visibility: 'always' },

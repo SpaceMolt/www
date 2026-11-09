@@ -17,10 +17,13 @@ import {
   Compass,
   Database,
   Gem,
+  SlidersHorizontal,
+  X,
 } from 'lucide-react'
-import type { FactionQueryIntelResponse } from '@spacemolt/lib'
+import type { FactionQueryIntelResponse, MapSystemInfo } from '@spacemolt/lib'
 import {
   useAccountStore,
+  useCargo,
   useCommandMutation,
   useCurrentTick,
   useLocationState,
@@ -33,8 +36,10 @@ import {
 } from '@/lib/spacemolt'
 import { usePlay } from './PlayProvider'
 import { ProgressBar } from './ProgressBar'
-import { MiningModal } from './MiningModal'
 import type { GalaxyPanelHandle, MapSystemData, PlannedRoute } from './panels/GalaxyPanel'
+import { findRoute } from './routeWalk'
+import { useLoop } from './loop/useLoopRunner'
+import { shortcutKey } from './shortcuts'
 import { titleCase as formatLabel } from '@/lib/format'
 import styles from './LeftSidebar.module.css'
 import { errorMessage } from './shared'
@@ -80,6 +85,53 @@ interface LeftSidebarProps {
   onTabChange: (tab: SidebarTab) => void
   autoTravelActive: boolean
   onHighlightedSystemsChange?: (systems: Set<string> | null) => void
+  /** Phone only: show the sidebar as a drawer. */
+  mobileOpen?: boolean
+  onMobileClose?: () => void
+}
+
+type SupplyKind = 'refuel' | 'repair'
+interface SupplyArgs { id?: string; quantity?: number; target?: string }
+
+/** Supply items a refuel/repair can burn, matched by id the way the server names them. */
+const SUPPLY_ITEM = { refuel: /fuel_cell/, repair: /repair|hull_patch/ } as const
+
+/** Options for refuel/repair: quantity, a specific item, and another player or the fleet as target. */
+function SupplyOptions({ kind, nearby, cargo, busy, onSubmit }: {
+  kind: SupplyKind
+  nearby: { player_id: string; username: string }[]
+  cargo: { item_id: string; item_name: string; quantity: number }[]
+  busy: boolean
+  onSubmit: (args: SupplyArgs) => void
+}) {
+  const [itemId, setItemId] = useState('')
+  const [quantity, setQuantity] = useState('')
+  const [target, setTarget] = useState('')
+  const items = cargo.filter((c) => SUPPLY_ITEM[kind].test(c.item_id))
+  const qty = parseInt(quantity, 10)
+  return (
+    <div className={styles.supplyOptions}>
+      <select className={styles.supplyInput} value={itemId} onChange={(e) => setItemId(e.target.value)} aria-label={`${kind} item`}>
+        <option value="">{kind === 'refuel' ? 'Station or cheapest fuel cell' : 'Station or cheapest kit'}</option>
+        {items.map((c) => <option key={c.item_id} value={c.item_id}>{c.item_name} ({c.quantity})</option>)}
+      </select>
+      <input className={styles.supplyInput} type="number" min={1} placeholder="Quantity" value={quantity} onChange={(e) => setQuantity(e.target.value)} aria-label="Quantity" />
+      <select className={styles.supplyInput} value={target} onChange={(e) => setTarget(e.target.value)} aria-label={`${kind} target`}>
+        <option value="">My ship</option>
+        {nearby.map((p) => <option key={p.player_id} value={p.player_id}>{p.username}</option>)}
+        <option value="fleet">Fleet status</option>
+      </select>
+      <button
+        className={styles.actionBtn}
+        disabled={busy}
+        onClick={() => onSubmit({ ...(itemId && { id: itemId }), ...(qty > 0 && { quantity: qty }), ...(target && { target }) })}
+        type="button"
+      >
+        {kind === 'refuel' ? <Fuel size={13} /> : <Wrench size={13} />}
+        <span>{kind === 'refuel' ? 'Refuel' : 'Repair'} with options</span>
+      </button>
+    </div>
+  )
 }
 
 // useCommandMutation's runner returns the generic MutationResult shape
@@ -90,7 +142,7 @@ function detailMessage(details: unknown): string | undefined {
   return typeof message === 'string' ? message : undefined
 }
 
-export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, plannedRoute, onPlannedRouteChange, activeTab, onTabChange, autoTravelActive, onHighlightedSystemsChange }: LeftSidebarProps) {
+export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, plannedRoute, onPlannedRouteChange, activeTab, onTabChange, autoTravelActive, onHighlightedSystemsChange, mobileOpen = false, onMobileClose }: LeftSidebarProps) {
   const store = useAccountStore()
   const { uiStore } = usePlay()
   const mutate = useCommandMutation()
@@ -104,7 +156,11 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
   const poiQuery = usePoi()
   const [expandedPoi, setExpandedPoi] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
-  const [showMiningModal, setShowMiningModal] = useState(false)
+  const [searchResults, setSearchResults] = useState<MapSystemInfo[]>([])
+  const [supplyOpen, setSupplyOpen] = useState<SupplyKind | null>(null)
+  const [scanTarget, setScanTarget] = useState('')
+  const cargo = useCargo() ?? []
+  const loop = useLoop()
 
   // Intel state
   const [intelLevel, setIntelLevel] = useState<number>(0)
@@ -299,26 +355,26 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
     }
   }, [mutate, logEvent, reportError])
 
-  const handleRefuel = useCallback(async () => {
+  const handleRefuel = useCallback(async (args: SupplyArgs = {}) => {
     try {
-      const result = await mutate((c) => c.spacemolt.refuel(), { label: 'refuel' })
+      const result = await mutate((c) => c.spacemolt.refuel(args), { label: 'refuel' })
       logEvent(detailMessage(result.delta.details) || 'Refueled')
     } catch (err) {
       reportError(err)
     }
   }, [mutate, logEvent, reportError])
 
-  const handleRepair = useCallback(async () => {
+  const handleRepair = useCallback(async (args: SupplyArgs = {}) => {
     try {
-      const result = await mutate((c) => c.spacemolt.repair(), { label: 'repair' })
+      const result = await mutate((c) => c.spacemolt.repair(args), { label: 'repair' })
       logEvent(detailMessage(result.delta.details) || 'Repaired')
     } catch (err) {
       reportError(err)
     }
   }, [mutate, logEvent, reportError])
 
-  const handleScanNearest = useCallback(async () => {
-    const targetId = location?.nearby_players?.[0]?.player_id
+  const handleScan = useCallback(async () => {
+    const targetId = scanTarget || location?.nearby_players?.[0]?.player_id
     if (!targetId) return
     try {
       const result = await mutate((c) => c.spacemolt.scan({ id: targetId }), { label: 'scan' })
@@ -326,23 +382,35 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
     } catch (err) {
       reportError(err)
     }
-  }, [mutate, location, logEvent, reportError])
+  }, [mutate, scanTarget, location, logEvent, reportError])
+
+  const handleMineUntilFull = useCallback(() => {
+    loop.start({ name: 'Mine until full', steps: [{ kind: 'mine' }], repeat: 1 })
+  }, [loop])
+
+  // Ship-action shortcuts; panel keys and help live in HUD.
+  const shortcutsRef = useRef<Record<string, () => void>>({})
+  shortcutsRef.current = actionBusy ? {} : {
+    d: () => { if (poi?.base_id) void (isDocked ? handleUndock() : handleDock()) },
+    m: () => { if (!isDocked && hasMineableResources(location)) void handleMine() },
+    f: () => void handleRefuel(),
+    r: () => void handleRepair(),
+  }
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const key = shortcutKey(e)
+      if (key) shortcutsRef.current[key]?.()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   const handlePlotCourse = useCallback(async () => {
     if (!exploreSystem) return
     try {
-      const result = await store.account.commands.spacemolt.find_route({ id: exploreSystem.id })
-      const data = result.structuredContent
-      if (data?.found) {
-        onPlannedRouteChange({
-          route: data.route.map((r) => ({ system_id: r.system_id, name: r.name, jumps: r.jumps })),
-          totalJumps: data.total_jumps,
-          targetSystem: data.target_system,
-          fuelPerJump: data.fuel_per_jump,
-          estimatedFuel: data.estimated_fuel,
-          fuelAvailable: data.fuel_available,
-        })
-      }
+      const route = await findRoute(store.account, exploreSystem.id)
+      if (route) onPlannedRouteChange(route)
+      else reportError(new Error(`No known route to ${exploreSystem.name}`))
     } catch (err) {
       reportError(err)
     }
@@ -362,25 +430,34 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
     [galaxyRef, onExploreSystemChange, onTabChange],
   )
 
-  // Fuzzy filter systems
-  const searchResults = searchQuery
-    ? (galaxyRef.current?.getSystems() ?? [])
-        .filter((sys) => {
-          const query = searchQuery.toLowerCase()
-          const name = sys.name.toLowerCase()
-          let qi = 0
-          for (let ni = 0; ni < name.length && qi < query.length; ni++) {
-            if (name[ni] === query[qi]) qi++
-          }
-          return qi === query.length
-        })
-        .slice(0, 20)
-    : []
+  // Server-side name search (search_systems), debounced; map data gives the pan target.
+  useEffect(() => {
+    const text = searchQuery.trim()
+    if (!text) { setSearchResults([]); return }
+    let cancelled = false
+    const timer = setTimeout(() => {
+      store.account.commands.spacemolt.search_systems({ text })
+        .then((r) => { if (!cancelled) setSearchResults(r.structuredContent?.systems ?? []) })
+        .catch(() => { if (!cancelled) setSearchResults([]) })
+    }, 250)
+    return () => { cancelled = true; clearTimeout(timer) }
+  }, [searchQuery, store])
+
+  const selectSearchResult = (result: MapSystemInfo) => {
+    const sys = galaxyRef.current?.getSystems().find((s) => s.id === result.system_id)
+    handleSearchSelect(sys ?? {
+      id: result.system_id, name: result.name, x: result.position.x, y: result.position.y,
+      empire: result.empire, is_stronghold: result.is_stronghold, connections: result.connections,
+    })
+  }
 
   return (
-    <div className={styles.sidebar}>
+    <div className={`${styles.sidebar} ${mobileOpen ? styles.sidebarOpen : ''}`}>
       {/* Tab Bar */}
       <div className={styles.tabBar}>
+        <button className={styles.drawerClose} onClick={onMobileClose} type="button" aria-label="Close navigation">
+          <X size={14} />
+        </button>
         <button
           className={`${styles.tab} ${activeTab === 'current' ? styles.tabActive : ''}`}
           onClick={() => onTabChange('current')}
@@ -512,7 +589,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
               </button>
               <button
                 className={styles.actionBtn}
-                onClick={() => setShowMiningModal(true)}
+                onClick={handleMineUntilFull}
                 disabled={actionBusy}
                 type="button"
               >
@@ -522,17 +599,29 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
             </>
           )}
 
-          {/* Attack — only when undocked and there are nearby targets */}
+          {/* Scan — only when undocked and there are nearby targets */}
           {!isDocked && location?.nearby_players && location.nearby_players.length > 0 && (
-            <button
-              className={styles.actionBtn}
-              onClick={handleScanNearest}
-              disabled={actionBusy}
-              type="button"
-            >
-              <Swords size={13} />
-              <span>Scan Nearest</span>
-            </button>
+            <div className={styles.supplyRow}>
+              <select
+                className={styles.supplyInput}
+                value={scanTarget || location.nearby_players[0].player_id}
+                onChange={(e) => setScanTarget(e.target.value)}
+                aria-label="Scan target"
+              >
+                {location.nearby_players.map((p) => (
+                  <option key={p.player_id} value={p.player_id}>{p.username}</option>
+                ))}
+              </select>
+              <button
+                className={styles.actionBtn}
+                onClick={handleScan}
+                disabled={actionBusy}
+                type="button"
+              >
+                <Swords size={13} />
+                <span>Scan</span>
+              </button>
+            </div>
           )}
 
           {/* Survey */}
@@ -548,31 +637,44 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
             </button>
           )}
 
-          {/* Refuel — docked and below max fuel */}
-          {isDocked && ship && (ship.fuel ?? 0) < (ship.max_fuel ?? 0) && (
-            <button
-              className={styles.actionBtn}
-              onClick={handleRefuel}
-              disabled={actionBusy}
-              type="button"
-            >
-              <Fuel size={13} />
-              <span>Refuel ({ship.fuel}/{ship.max_fuel})</span>
-            </button>
-          )}
-
-          {/* Repair — docked and below max hull */}
-          {isDocked && ship && (ship.hull ?? 0) < (ship.max_hull ?? 0) && (
-            <button
-              className={styles.actionBtn}
-              onClick={handleRepair}
-              disabled={actionBusy}
-              type="button"
-            >
-              <Wrench size={13} />
-              <span>Repair ({ship.hull}/{ship.max_hull})</span>
-            </button>
-          )}
+          {/* Refuel / Repair — quick button plus options (item, quantity, target player or fleet) */}
+          {ship && (['refuel', 'repair'] as const).map((kind) => {
+            const [now, max] = kind === 'refuel' ? [ship.fuel, ship.max_fuel] : [ship.hull, ship.max_hull]
+            const Icon = kind === 'refuel' ? Fuel : Wrench
+            return (
+              <div key={kind}>
+                <div className={styles.supplyRow}>
+                  <button
+                    className={styles.actionBtn}
+                    onClick={() => void (kind === 'refuel' ? handleRefuel() : handleRepair())}
+                    disabled={actionBusy || now >= max}
+                    type="button"
+                  >
+                    <Icon size={13} />
+                    <span>{kind === 'refuel' ? 'Refuel' : 'Repair'} ({now}/{max})</span>
+                  </button>
+                  <button
+                    className={styles.supplyToggle}
+                    onClick={() => setSupplyOpen((open) => (open === kind ? null : kind))}
+                    aria-expanded={supplyOpen === kind}
+                    aria-label={`${kind === 'refuel' ? 'Refuel' : 'Repair'} options`}
+                    type="button"
+                  >
+                    <SlidersHorizontal size={13} />
+                  </button>
+                </div>
+                {supplyOpen === kind && (
+                  <SupplyOptions
+                    kind={kind}
+                    nearby={location?.nearby_players ?? []}
+                    cargo={cargo}
+                    busy={actionBusy}
+                    onSubmit={(args) => void (kind === 'refuel' ? handleRefuel(args) : handleRepair(args))}
+                  />
+                )}
+              </div>
+            )
+          })}
         </div>
 
         {/* POIs */}
@@ -706,11 +808,12 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
                   {hasIntel && <div className={styles.searchSectionLabel}>Systems</div>}
                   {searchResults.map((sys) => (
                     <button
-                      key={sys.id}
+                      key={sys.system_id}
                       className={styles.searchResultItem}
-                      onClick={() => handleSearchSelect(sys)}
+                      onClick={() => selectSearchResult(sys)}
                     >
                       <span className={styles.searchResultName}>{sys.name}</span>
+                      {sys.visited && <span className={styles.searchResultEmpire}>visited</span>}
                       {sys.empire && (
                         <span className={styles.searchResultEmpire}>
                           {EMPIRE_NAMES[sys.empire] || sys.empire}
@@ -888,10 +991,6 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
           </div>
         )}
       </div>
-
-      {showMiningModal && (
-        <MiningModal onClose={() => setShowMiningModal(false)} />
-      )}
     </div>
   )
 }
