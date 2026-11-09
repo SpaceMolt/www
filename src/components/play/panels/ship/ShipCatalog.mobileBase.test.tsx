@@ -4,7 +4,7 @@ import * as bindings from '@/lib/spacemolt'
 import * as play from '../../PlayProvider'
 import { ShipCatalog } from './ShipCatalog'
 
-test('mobile bases show faction commission guidance instead of the personal commission button', () => {
+test('mobile bases open the commission flow instead of agent-only guidance', () => {
   const ships = [
     { id: 'siege_foundry', name: 'Siege Foundry', class: 'Mobile Base', tier: 5 },
     { id: 'viper', name: 'Viper', class: 'Fighter', tier: 1 },
@@ -25,10 +25,8 @@ test('mobile bases show faction commission guidance instead of the personal comm
 
     const html = renderToStaticMarkup(<ShipCatalog />)
     expect(html).not.toContain('Commission this faction station')
-    expect(html.match(/title="Commission this ship"/g)).toHaveLength(1)
-    expect(html).toContain('commission_ship')
-    expect(html).toContain('ship_class=siege_foundry fund_from_faction=true')
-    expect(html).toContain('faction storage and treasury')
+    expect(html.match(/title="Commission this ship"/g)).toHaveLength(2)
+    expect(html).not.toContain('Commission through your agent')
   } finally {
     mock.restore()
   }

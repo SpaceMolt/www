@@ -286,6 +286,8 @@
 
 .costRow {
   display: flex;
+  flex-wrap: wrap; /* long power/life-support read-outs drop under the label instead of squeezing it */
+  gap: 0 0.5rem;
   align-items: center;
   justify-content: space-between;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;

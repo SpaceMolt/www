@@ -1,0 +1,49 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 6px 0;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.row > input[type='text'],
+.row > input[type='number'],
+.row > textarea {
+  flex: 1;
+  min-width: 8rem;
+}
+
+.label {
+  min-width: 7rem;
+  font-size: 11px;
+  color: var(--chrome-silver);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  border: 1px solid var(--hull-grey);
+  border-radius: 3px;
+  font-family: var(--font-jetbrains);
+  font-size: 11px;
+}
+
+.hint {
+  font-size: 11px;
+  color: var(--chrome-silver);
+  line-height: 1.4;
+}

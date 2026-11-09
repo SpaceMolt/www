@@ -146,3 +146,10 @@
   .tradeItems { font-size: 0.72rem; }
   .tradeCredits { font-size: 0.78rem; }
 }
+
+.tradesToolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}

@@ -1,22 +1,24 @@
 'use client'
 
-import { useState, useCallback, useMemo, useEffect } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import {
   Hammer, RefreshCw, AlertTriangle, Lock, Check, ChevronDown, ChevronRight,
   Search, Filter, Clock, RotateCcw, Trash2, Coins, Calculator, Package, Factory,
+  ArrowDownToLine, ListPlus, X,
 } from 'lucide-react'
 import type {
+  BulkCraftResponse,
+  BulkJobCancelResponse,
   CraftJobResponse,
   CraftQueueResponse,
-  CraftQuoteResponse,
   FacilityResponse,
   StorageResponse,
 } from '@spacemolt/lib'
-import { useAccountStore, useCommandMutation, useCommandQuery, useCurrentTick, useLocationState, useSkills } from '@/lib/spacemolt'
-import { usePlay } from '../PlayProvider'
+import { useAccountStore, useCargo, useCommandMutation, useCommandQuery, useCurrentTick, useLocationState, useSkills } from '@/lib/spacemolt'
+import { usePlay, usePlayUi } from '../PlayProvider'
 import { ActionButton } from '../ActionButton'
 import { ProgressBar } from '../ProgressBar'
-import { Panel, shared } from '../shared'
+import { ConfirmAction, Panel, QtyButtons, errorMessage, objectKey, shared } from '../shared'
 import { BugReportButton } from '../BugReportButton'
 import { buildRecipeContext } from '../bugReportContext'
 import type { Recipe, CraftJobView, CraftQuote, Facility } from '../types'
@@ -24,6 +26,7 @@ import { recipesById, formatItemId } from '@/data/catalog'
 import { titleCase } from '@/lib/format'
 import { canCraftRecipe, availableQuantity, type SkillEntry } from '@/lib/crafting'
 import { estimateJobProgress } from './craftProgress'
+import { combineItems, isRecyclable, maxCraftable, missingFromCargo, runsFor } from './craftPlan'
 import { FacilityVenuePicker } from './facilities/FacilityVenuePicker'
 import styles from './CraftingPanel.module.css'
 
@@ -31,28 +34,27 @@ const HIDDEN_CATEGORIES = new Set(['facility only', 'ship passive'])
 
 // Quote / craft / recycle direction for a recipe card.
 type CraftMode = 'craft' | 'recycle'
-
-const describeError = (err: unknown): string => (err instanceof Error ? err.message : String(err))
-
-// craft()/recycle() share the same response-shape family (create-single,
-// bulk-create, dry-run quote, queue-list, single-cancel, bulk-cancel); the
-// spec publishes each variant as a named component, discriminated by `kind`.
-type JobQueueVariant = CraftQueueResponse
-type JobCreateVariant = CraftJobResponse
-type JobQuoteVariant = CraftQuoteResponse
+type Preset = '' | 'fast' | 'cheap' | 'prefer_own' | 'workshop'
+type Store = '' | 'storage' | 'faction'
+type BatchJob = { recipe_id: string; quantity: number; facility_id?: string }
 
 // `{ station_facilities: unknown }` uniquely identifies the facility-list
 // variant within the FacilityResponse union.
 type FacilityListResponse = Extract<FacilityResponse, { station_facilities: unknown }>
 type ViewStorageResponse = Extract<StorageResponse, { items: unknown }>
 
+const bulkFailures = (results: { success: boolean; error?: string }[]) =>
+  results.filter((r) => !r.success).map((r) => r.error ?? 'failed').join('; ')
+
 export function CraftingPanel() {
   const store = useAccountStore()
   const mutate = useCommandMutation()
   const { uiStore } = usePlay()
+  const pushedJobs = usePlayUi((s) => s.craftJobs)
   const currentTick = useCurrentTick()
   const dockedAt = useLocationState()?.docked_at ?? null
   const isDocked = Boolean(dockedAt)
+  const cargo = useCargo()
 
   const [busyId, setBusyId] = useState<string | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -62,6 +64,13 @@ export function CraftingPanel() {
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set())
   const [quantities, setQuantities] = useState<Record<string, number>>({})
   const [quotes, setQuotes] = useState<Record<string, CraftQuote | { error: string }>>({})
+  const [confirmRecycleId, setConfirmRecycleId] = useState<string | null>(null)
+  const [preset, setPreset] = useState<Preset>('')
+  const [source, setSource] = useState<Store>('')
+  const [deliverTo, setDeliverTo] = useState<Store>('')
+  const [batch, setBatch] = useState<BatchJob[]>([])
+  const [selectedJobs, setSelectedJobs] = useState<Set<string>>(new Set())
+  const [cancelling, setCancelling] = useState(false)
 
   // Venue (facility) selection per recipe — undefined = auto-route (Station
   // Workshop unless a facility is a better fit). Facility list is fetched
@@ -69,10 +78,17 @@ export function CraftingPanel() {
   const [selectedVenue, setSelectedVenue] = useState<Record<string, string>>({})
   const [venuePickerRecipeId, setVenuePickerRecipeId] = useState<string | null>(null)
 
-  const reportError = useCallback((err: unknown) => {
-    const text = describeError(err)
-    uiStore.dispatch({ type: 'toast', kind: 'danger', text })
+  const toast = useCallback((kind: 'danger' | 'success', text: string) => {
+    uiStore.dispatch({ type: 'toast', kind, text })
   }, [uiStore])
+  const reportError = useCallback((err: unknown) => toast('danger', errorMessage(err)), [toast])
+
+  // Routing options shared by quote, craft, and batch. Empty = server default.
+  const route = useMemo(() => ({
+    ...(preset && { preset }),
+    ...(source && { source }),
+    ...(deliverTo && { deliver_to: deliverTo }),
+  }), [preset, source, deliverTo])
 
   // Facility list (own/faction/public) — needed for the venue picker's
   // backlog/pricing info. Read-only, docked-scoped panel-local query.
@@ -93,15 +109,18 @@ export function CraftingPanel() {
   // When docked, fetch station storage — crafting escrows inputs from station
   // storage (NOT cargo), so the craftable filter and material counts read from
   // there. See gameserver crafting.go ("station-storage-centric, no cargo path").
+  // Deposits change cargo; finished runs deposit outputs into storage.
   const { data: storageResp, refetch: refetchStorage } = useCommandQuery(
     async (account) => {
       const resp = await account.commands.spacemolt_storage.view({})
       return resp.structuredContent as ViewStorageResponse | undefined
     },
     [dockedAt],
-    { enabled: isDocked },
+    { enabled: isDocked, refreshOnSections: ['cargo'], refreshOnEvents: ['crafting_update'] },
   )
   const storageItems = useMemo(() => (isDocked ? storageResp?.items ?? [] : []), [isDocked, storageResp])
+  const cargoItems = useMemo(() => cargo ?? [], [cargo])
+  const heldItems = useMemo(() => combineItems(storageItems, cargoItems), [storageItems, cargoItems])
 
   const skillsRaw = useSkills()
   const skillsMap = useMemo(() => {
@@ -113,34 +132,17 @@ export function CraftingPanel() {
     return result
   }, [skillsRaw])
 
-  // Queued jobs across all venues (craft action=queue). Panel-local — not
-  // shared game state, since crafting_update pushes only carry a sparse
-  // per-tick completion delta (no position/status/produces/facility_id), not
-  // a full queue snapshot, so there's nothing to live-patch from. null = not
-  // yet loaded.
-  const [jobs, setJobs] = useState<CraftJobView[] | null>(null)
-  const [jobsLoading, setJobsLoading] = useState(false)
-  const [cancellingId, setCancellingId] = useState<string | null>(null)
-
-  // Crafting is queued, not instant. `craft` with no recipe returns the
-  // player's job queue. It costs a mutation (1/tick), so we load it once on
-  // mount and otherwise update optimistically + via an explicit refresh.
-  const fetchQueue = useCallback(async () => {
-    setJobsLoading(true)
-    try {
-      const result = await mutate((c) => c.spacemolt.craft({}), { label: 'craft_queue' })
-      const details = result.delta.details as JobQueueVariant | undefined
-      setJobs((details?.jobs ?? []).map((j): CraftJobView => ({ ...j, last_sync_tick: result.tick })))
-    } catch (err) {
-      reportError(err)
-      setJobs([])
-    }
-    setJobsLoading(false)
-  }, [mutate, reportError])
-
-  useEffect(() => {
-    if (jobs === null) fetchQueue()
-  }, [jobs, fetchQueue])
+  // The job queue: `craft` with no recipe is a read on the server, so send it
+  // as a query (no action slot) and re-read on every crafting_update push.
+  const { data: jobs, loading: jobsLoading, error: jobsError, refetch: refetchJobs } = useCommandQuery(
+    async (account) => {
+      const resp = await account.query('spacemolt', 'craft', {})
+      const data = resp.structuredContent as CraftQueueResponse | undefined
+      return (data?.jobs ?? []).map((j): CraftJobView => ({ ...j, last_sync_tick: account.currentTick }))
+    },
+    [dockedAt],
+    { enabled: isDocked, refreshOnEvents: ['crafting_update'] },
+  )
 
   const getQty = useCallback((id: string) => Math.max(1, quantities[id] ?? 1), [quantities])
   const setQty = useCallback((id: string, q: number) => {
@@ -148,76 +150,97 @@ export function CraftingPanel() {
   }, [])
 
   const handleCraft = useCallback(async (recipeId: string, mode: CraftMode) => {
-    const quantity = getQty(recipeId)
-    const facilityId = selectedVenue[recipeId]
+    const args = { id: recipeId, quantity: getQty(recipeId), facility_id: selectedVenue[recipeId], ...route }
     setBusyId(recipeId)
     try {
       const result = mode === 'recycle'
-        ? await mutate((c) => c.spacemolt.recycle({ id: recipeId, quantity, facility_id: facilityId }), { label: 'recycle' })
-        : await mutate((c) => c.spacemolt.craft({ id: recipeId, quantity, facility_id: facilityId }), { label: 'craft' })
-      const details = result.delta.details as JobCreateVariant | undefined
-      if (details) {
-        // Optimistically add the queued job (re-fetching would be rate-limited).
-        const job: CraftJobView = {
-          job_id: details.job_id,
-          venue: details.venue,
-          recipe: details.recipe,
-          mode: details.mode,
-          produces: details.produces,
-          runs_total: details.runs,
-          runs_done: 0,
-          runs_remaining: details.runs,
-          progress: 0,
-          eta_ticks: Math.max(0, details.est_completion_tick - result.tick),
-          position: (jobs?.length ?? 0) + 1,
-          orderer: 'self',
-          external: details.external,
-          status: 'queued',
-          facility_id: details.facility_id,
-        }
-        setJobs(prev => [...(prev ?? []), job])
-        // Clear any stale quote for this recipe.
-        setQuotes(prev => {
-          const next = { ...prev }
-          delete next[recipeId]
-          return next
-        })
-      }
+        // Recycling has no workshop route; fall back to the server default.
+        ? await mutate((c) => c.spacemolt.recycle({ ...args, preset: args.preset === 'workshop' ? undefined : args.preset }), { label: 'recycle' })
+        : await mutate((c) => c.spacemolt.craft(args), { label: 'craft' })
+      const details = result.delta.details as CraftJobResponse | undefined
+      if (details?.message) toast('success', details.message)
+      setQuotes(prev => {
+        const next = { ...prev }
+        delete next[recipeId]
+        return next
+      })
+      refetchJobs()
     } catch (err) {
       reportError(err)
     }
     setBusyId(null)
-  }, [getQty, selectedVenue, mutate, jobs, reportError])
+  }, [getQty, selectedVenue, route, mutate, toast, refetchJobs, reportError])
 
+  // dry_run is a read on the server: a query, not a queued mutation.
   const handleQuote = useCallback(async (recipeId: string, mode: CraftMode) => {
-    const quantity = getQty(recipeId)
-    const facilityId = selectedVenue[recipeId]
     setBusyId(recipeId)
     try {
-      const result = mode === 'recycle'
-        ? await mutate((c) => c.spacemolt.recycle({ id: recipeId, quantity, dry_run: true, facility_id: facilityId }), { label: 'recycle_quote' })
-        : await mutate((c) => c.spacemolt.craft({ id: recipeId, quantity, dry_run: true, facility_id: facilityId }), { label: 'craft_quote' })
-      const details = result.delta.details as JobQuoteVariant | undefined
-      setQuotes(prev => ({
-        ...prev,
-        [recipeId]: details ?? { error: 'Quote failed' },
-      }))
+      const resp = await store.account.query('spacemolt', mode, {
+        id: recipeId, quantity: getQty(recipeId), dry_run: true, facility_id: selectedVenue[recipeId], ...route,
+      })
+      setQuotes(prev => ({ ...prev, [recipeId]: (resp.structuredContent as CraftQuote | undefined) ?? { error: 'Quote failed' } }))
     } catch (err) {
-      setQuotes(prev => ({ ...prev, [recipeId]: { error: describeError(err) } }))
+      setQuotes(prev => ({ ...prev, [recipeId]: { error: errorMessage(err) } }))
     }
     setBusyId(null)
-  }, [getQty, selectedVenue, mutate])
+  }, [store, getQty, selectedVenue, route])
 
-  const handleCancel = useCallback(async (jobId: string) => {
-    setCancellingId(jobId)
+  const handleMoveInputs = useCallback(async (recipe: Recipe) => {
+    const items = missingFromCargo(recipe, runsFor(recipe, getQty(recipe.id)), storageItems, cargoItems)
+    setBusyId(recipe.id)
     try {
-      await mutate((c) => c.spacemolt.craft({ job_id: jobId }), { label: 'craft_cancel' })
-      setJobs(prev => (prev ?? []).filter(j => j.job_id !== jobId))
+      await mutate((c) => c.spacemolt_storage.deposit({ items }), { label: 'deposit' })
+      toast('success', `Moved ${items.map((i) => `${i.quantity}x ${formatItemId(i.item_id)}`).join(', ')} to storage`)
     } catch (err) {
       reportError(err)
     }
-    setCancellingId(null)
-  }, [mutate, reportError])
+    setBusyId(null)
+  }, [getQty, storageItems, cargoItems, mutate, toast, reportError])
+
+  const handleQueueBatch = useCallback(async () => {
+    setBusyId('batch')
+    try {
+      const result = await mutate((c) => c.spacemolt.craft({ jobs: batch.map((j) => ({ ...j, ...route })) }), { label: 'craft_batch' })
+      const details = result.delta.details as BulkCraftResponse | undefined
+      const results = details?.results ?? []
+      const failed = details?.summary.failed ?? 0
+      toast(failed ? 'danger' : 'success',
+        `Queued ${details?.summary.succeeded ?? 0} of ${batch.length} jobs${failed ? `: ${bulkFailures(results)}` : ''}`)
+      // Keep failed entries so the player can fix and retry them.
+      setBatch(prev => prev.filter((_, i) => results.some((r) => r.index === i && !r.success)))
+      refetchJobs()
+    } catch (err) {
+      reportError(err)
+    }
+    setBusyId(null)
+  }, [batch, route, mutate, toast, refetchJobs, reportError])
+
+  const handleCancel = useCallback(async (jobIds: string[]) => {
+    setCancelling(true)
+    try {
+      if (jobIds.length === 1) {
+        await mutate((c) => c.spacemolt.craft({ job_id: jobIds[0] }), { label: 'craft_cancel' })
+      } else {
+        const result = await mutate((c) => c.spacemolt.craft({ job_ids: jobIds }), { label: 'craft_cancel' })
+        const details = result.delta.details as BulkJobCancelResponse | undefined
+        if (details?.summary.failed) toast('danger', `Could not cancel ${details.summary.failed} jobs: ${bulkFailures(details.results)}`)
+      }
+      setSelectedJobs(new Set())
+      refetchJobs()
+    } catch (err) {
+      reportError(err)
+    }
+    setCancelling(false)
+  }, [mutate, toast, refetchJobs, reportError])
+
+  const toggleJob = useCallback((jobId: string) => {
+    setSelectedJobs(prev => {
+      const next = new Set(prev)
+      if (next.has(jobId)) next.delete(jobId)
+      else next.add(jobId)
+      return next
+    })
+  }, [])
 
   const recipes = useMemo((): Recipe[] => {
     return Object.values(recipesById)
@@ -296,6 +319,10 @@ export function CraftingPanel() {
   }, [])
 
   const activeJobs = jobs ?? []
+  const refreshAll = () => {
+    store.account.refresh().catch(reportError)
+    if (isDocked) { refetchStorage(); refetchJobs() }
+  }
 
   return (
     <Panel
@@ -305,8 +332,8 @@ export function CraftingPanel() {
         <div className={styles.headerActions}>
           <button
             className={shared.refreshBtn}
-            onClick={() => { store.account.refresh().catch(() => {}); if (isDocked) refetchStorage() }}
-            title="Refresh skills & storage"
+            onClick={refreshAll}
+            title="Refresh skills, storage & jobs"
             type="button"
           >
             <RefreshCw size={14} />
@@ -321,21 +348,51 @@ export function CraftingPanel() {
               <Clock size={12} /> Active Jobs
               {activeJobs.length > 0 && <span className={styles.jobsCount}>{activeJobs.length}</span>}
             </span>
+            {selectedJobs.size > 0 && (
+              <button
+                className={styles.quoteBtn}
+                onClick={() => handleCancel([...selectedJobs])}
+                disabled={cancelling}
+                title="Cancel the selected jobs (refunds unconsumed materials, labor, and fees)"
+                type="button"
+              >
+                <Trash2 size={11} /> Cancel {selectedJobs.size}
+              </button>
+            )}
             <button
               className={shared.refreshBtn}
-              onClick={fetchQueue}
-              disabled={jobsLoading}
+              onClick={refetchJobs}
+              disabled={jobsLoading || !isDocked}
               title="Refresh job queue"
               type="button"
             >
               <RefreshCw size={12} className={jobsLoading ? styles.spinning : undefined} />
             </button>
           </div>
-          {activeJobs.length === 0 ? (
+          {!isDocked ? (
+            // The queue view needs a dock; between docks show the last crafting_update push.
+            pushedJobs && pushedJobs.length > 0 ? (
+              <div className={styles.jobsList}>
+                {pushedJobs.map((job) => (
+                  <div key={job.job_id} className={styles.jobCard}>
+                    <div className={styles.jobMeta}>
+                      <span className={styles.jobName}>{job.recipe}</span>
+                      <span>·</span>
+                      <span>{job.venue}</span>
+                      <span>·</span>
+                      <span>{job.completed ? 'complete' : `${job.runs_remaining} runs left`}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className={styles.jobsEmpty}>Dock to view your job queue.</div>
+            )
+          ) : activeJobs.length === 0 ? (
             <div className={styles.jobsEmpty}>
-              {jobs === null
-                ? (jobsLoading ? 'Loading jobs…' : 'Could not load jobs — tap refresh.')
-                : 'No jobs queued. Crafting runs over several ticks once queued.'}
+              {jobsLoading
+                ? 'Loading jobs…'
+                : jobsError ?? 'No jobs queued. Crafting runs over several ticks once queued.'}
             </div>
           ) : (
             <div className={styles.jobsList}>
@@ -346,13 +403,19 @@ export function CraftingPanel() {
                   <div key={job.job_id} className={styles.jobCard}>
                     <div className={styles.jobTop}>
                       <span className={styles.jobName}>
+                        <input
+                          type="checkbox"
+                          checked={selectedJobs.has(job.job_id)}
+                          onChange={() => toggleJob(job.job_id)}
+                          aria-label={`Select ${job.recipe}`}
+                        />
                         {job.mode === 'recycle' && <RotateCcw size={11} className={styles.jobModeIcon} />}
                         {job.recipe}
                       </span>
                       <button
                         className={styles.jobCancel}
-                        onClick={() => handleCancel(job.job_id)}
-                        disabled={cancellingId === job.job_id}
+                        onClick={() => handleCancel([job.job_id])}
+                        disabled={cancelling}
                         title="Cancel job (refunds unconsumed materials, labor, and fees)"
                         type="button"
                       >
@@ -373,6 +436,82 @@ export function CraftingPanel() {
             </div>
           )}
         </div>
+
+        {/* Batch: queue many crafts in one action */}
+        {batch.length > 0 && (
+          <div className={styles.jobsSection}>
+            <div className={styles.jobsHeader}>
+              <span className={styles.jobsTitle}>
+                <ListPlus size={12} /> Batch
+                <span className={styles.jobsCount}>{batch.length}</span>
+              </span>
+              <button className={styles.quoteBtn} onClick={() => setBatch([])} type="button">Clear</button>
+              <ActionButton
+                label={`Queue ${batch.length}`}
+                icon={<Hammer size={12} />}
+                onClick={handleQueueBatch}
+                disabled={!isDocked || busyId === 'batch'}
+                loading={busyId === 'batch'}
+                size="sm"
+              />
+            </div>
+            <div className={styles.jobsList}>
+              {batch.map((job, i) => (
+                <div key={objectKey(job)} className={styles.jobTop}>
+                  <span className={styles.jobName}>
+                    {recipesById[job.recipe_id]?.name ?? job.recipe_id} x{job.quantity}
+                  </span>
+                  <button
+                    className={styles.jobCancel}
+                    onClick={() => setBatch(prev => prev.filter((_, j) => j !== i))}
+                    title="Remove from batch"
+                    type="button"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Routing options for quotes, crafts, and batches */}
+        {isDocked && (
+          <div className={styles.filterBar}>
+            <select
+              className={styles.categoryDropdown}
+              value={preset}
+              onChange={(e) => setPreset(e.target.value as Preset)}
+              aria-label="Venue preset"
+              title="How auto-routing picks a venue when no facility is chosen"
+            >
+              <option value="">Route: fastest</option>
+              <option value="prefer_own">Route: prefer own</option>
+              <option value="cheap">Route: cheapest</option>
+              <option value="workshop">Route: workshop only</option>
+            </select>
+            <select
+              className={styles.categoryDropdown}
+              value={source}
+              onChange={(e) => setSource(e.target.value as Store)}
+              aria-label="Input source"
+            >
+              <option value="">Inputs: auto</option>
+              <option value="storage">Inputs: my storage</option>
+              <option value="faction">Inputs: faction storage</option>
+            </select>
+            <select
+              className={styles.categoryDropdown}
+              value={deliverTo}
+              onChange={(e) => setDeliverTo(e.target.value as Store)}
+              aria-label="Output destination"
+            >
+              <option value="">Output: auto</option>
+              <option value="storage">Output: my storage</option>
+              <option value="faction">Output: faction storage</option>
+            </select>
+          </div>
+        )}
 
         {!isDocked && (
           <div className={styles.dockedWarning}>
@@ -463,6 +602,9 @@ export function CraftingPanel() {
                     const qty = getQty(recipe.id)
                     const quote = quotes[recipe.id]
                     const busy = busyId === recipe.id
+                    // MAX plans with cargo too: "Move inputs from cargo" deposits the gap before crafting.
+                    const maxQty = isExpanded ? Math.max(1, maxCraftable(recipe, heldItems)) : 1
+                    const missing = isExpanded ? missingFromCargo(recipe, runsFor(recipe, qty), storageItems, cargoItems) : []
                     return (
                       <div
                         key={recipe.id}
@@ -495,11 +637,14 @@ export function CraftingPanel() {
                               <span className={styles.recipeInputs}>
                                 {(recipe.inputs ?? []).map((i) => {
                                   const name = formatItemId(i.item_id)
+                                  // The server takes inputs from station storage only (crafting.go craftStoreRef);
+                                  // cargo counts once "Move inputs from cargo" deposits it.
                                   const have = availableQuantity(i.item_id, storageItems)
+                                  const inCargo = availableQuantity(i.item_id, cargoItems)
                                   const enough = have >= i.quantity
                                   return (
                                     <span key={i.item_id} className={enough ? styles.inputOk : styles.inputMissing}>
-                                      {name} x{i.quantity}{!enough && ` (${have})`}
+                                      {name} x{i.quantity}{(!enough || inCargo > 0) && ` (${have} in storage${inCargo > 0 ? `, ${inCargo} in cargo` : ''})`}
                                     </span>
                                   )
                                 })}
@@ -539,6 +684,9 @@ export function CraftingPanel() {
                                 {reasons.map((r, i) => (
                                   <span key={i} className={styles.reasonItem}>{r}</span>
                                 ))}
+                                {missing.length > 0 && (
+                                  <span className={styles.reasonItem}>Crafting uses station storage: press &quot;Move inputs from cargo&quot; first.</span>
+                                )}
                               </div>
                             )}
 
@@ -607,32 +755,63 @@ export function CraftingPanel() {
                                   aria-label="Increase quantity"
                                 >+</button>
                               </div>
+                              <QtyButtons max={maxQty} current={String(qty)} onChange={(v) => setQty(recipe.id, Number(v))} />
                               <button
                                 type="button"
                                 className={styles.quoteBtn}
                                 onClick={() => handleQuote(recipe.id, 'craft')}
-                                disabled={busy}
+                                disabled={!isDocked || busy}
                                 title="Get a cost & time estimate without queuing"
                               >
                                 <Calculator size={11} /> Quote
                               </button>
-                              <ActionButton
-                                label="Recycle"
-                                icon={<RotateCcw size={12} />}
-                                onClick={() => handleCraft(recipe.id, 'recycle')}
-                                disabled={!isDocked || busy}
-                                variant="secondary"
-                                size="sm"
-                              />
+                              {missing.length > 0 && (
+                                <button
+                                  type="button"
+                                  className={styles.quoteBtn}
+                                  onClick={() => handleMoveInputs(recipe)}
+                                  disabled={busy}
+                                  title={`Deposit ${missing.map((i) => `${i.quantity}x ${formatItemId(i.item_id)}`).join(', ')} from cargo to storage`}
+                                >
+                                  <ArrowDownToLine size={11} /> Move inputs from cargo
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                className={styles.quoteBtn}
+                                onClick={() => setBatch(prev => [...prev, { recipe_id: recipe.id, quantity: qty, facility_id: selectedVenue[recipe.id] }])}
+                                title="Add to a batch and queue many crafts in one action"
+                              >
+                                <ListPlus size={11} /> Batch
+                              </button>
+                              {isRecyclable({ category: recipe.category, no_recycle: recipesById[recipe.id]?.no_recycle }) && (
+                                <ActionButton
+                                  label="Recycle"
+                                  icon={<RotateCcw size={12} />}
+                                  onClick={() => setConfirmRecycleId(recipe.id)}
+                                  disabled={!isDocked || busy}
+                                  variant="secondary"
+                                  size="sm"
+                                />
+                              )}
                               <ActionButton
                                 label="Craft"
                                 icon={<Hammer size={12} />}
                                 onClick={() => handleCraft(recipe.id, 'craft')}
-                                disabled={!isDocked || !craftable || busy}
+                                disabled={!isDocked || (!craftable && source !== 'faction') || busy}
                                 loading={busy}
                                 size="sm"
                               />
                             </div>
+                            {confirmRecycleId === recipe.id && (
+                              <ConfirmAction
+                                message={`Recycle ${qty}x ${formatItemId(recipe.outputs?.[0]?.item_id ?? recipe.id)}? Items are destroyed and only part of the inputs come back.`}
+                                icon={<RotateCcw size={12} />}
+                                confirmLabel="Recycle"
+                                onConfirm={() => { setConfirmRecycleId(null); handleCraft(recipe.id, 'recycle') }}
+                                onCancel={() => setConfirmRecycleId(null)}
+                              />
+                            )}
                           </div>
                         )}
                       </div>

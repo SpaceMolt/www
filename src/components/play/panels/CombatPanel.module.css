@@ -593,6 +593,80 @@
   cursor: not-allowed;
 }
 
+/* Combat tabs: feeds, arena and history */
+.feed {
+  list-style: none;
+  margin: 0;
+  padding: 0.35rem 0.5rem;
+  max-height: 12rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--chrome-silver);
+  background: rgba(10, 14, 20, 0.5);
+  border: 1px solid rgba(61, 90, 108, 0.2);
+  border-radius: 4px;
+}
+
+.feedTick {
+  color: var(--plasma-cyan);
+}
+
+.notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  padding: 0.4rem 0.5rem;
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.75rem;
+  color: var(--star-white);
+  background: rgba(255, 107, 53, 0.08);
+  border: 1px solid rgba(255, 107, 53, 0.3);
+  border-radius: 4px;
+}
+
+.hint {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.7rem;
+  color: var(--hull-grey);
+}
+
+.statRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--chrome-silver);
+}
+
+.formRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+.formRow > input:first-child {
+  flex: 1;
+  min-width: 8rem;
+}
+
+.numberInput {
+  width: 4rem;
+}
+
+.listButton {
+  width: 100%;
+  cursor: pointer;
+  text-align: left;
+  gap: 0.5rem;
+}
+
 /* Mobile */
 @media (max-width: 768px) {
   .combatBadge { font-size: 0.68rem; }

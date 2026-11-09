@@ -12,15 +12,11 @@ import {
 import type { CommissionStatusResponse } from '@spacemolt/lib'
 import { useCommandMutation, useCommandQuery } from '@/lib/spacemolt'
 import { usePlay } from '../../PlayProvider'
-import { Loading, ConfirmAction, shared } from '../../shared'
+import { Loading, ConfirmAction, errorMessage, shared } from '../../shared'
 import { formatItemId } from '@/data/catalog'
 import styles from './CommissionsView.module.css'
 
 type Commission = CommissionStatusResponse['commissions'][number]
-
-function errorText(err: unknown): string {
-  return err instanceof Error ? err.message : String(err)
-}
 
 export function CommissionsView() {
   const mutate = useCommandMutation()
@@ -37,7 +33,7 @@ export function CommissionsView() {
 
   const reportError = useCallback(
     (err: unknown) => {
-      const text = errorText(err)
+      const text = errorMessage(err)
       uiStore.dispatch({ type: 'toast', kind: 'danger', text })
     },
     [uiStore]
@@ -108,6 +104,8 @@ export function CommissionsView() {
           const isReady = c.status === 'ready'
           const isBuilding = c.status === 'building'
           const isSourcing = c.status === 'sourcing'
+          // Paid with credits: the yard buys the materials, so the player has nothing to supply.
+          const yardSources = Boolean(c.source_missing_materials) || (!c.materials_provided && (c.credits_paid ?? 0) > 0)
           const ticksRemaining = c.ticks_remaining ?? 0
 
           const statusLabel = isReady ? 'Ready' : isSourcing ? 'Sourcing' : c.status === 'pending' ? 'Queued' : 'Building'
@@ -195,6 +193,7 @@ export function CommissionsView() {
                   materials directly to unstick a commission that's short on supply. */}
               {isSourcing && c.required_materials && Object.keys(c.required_materials).length > 0 && (
                 <div className={styles.materialsProgress}>
+                  {yardSources && <span className={styles.materialProgressName}>The yard is buying these materials with your payment.</span>}
                   {Object.entries(c.required_materials).map(([itemId, need]) => {
                     const have = c.materials_gathered?.[itemId] ?? 0
                     const remaining = Math.max(0, need - have)
@@ -208,7 +207,7 @@ export function CommissionsView() {
                         <span className={have >= need ? styles.materialProgressComplete : styles.materialProgressValue}>
                           {have}/{need}
                         </span>
-                        {remaining > 0 && (
+                        {remaining > 0 && !yardSources && (
                           <span className={styles.commissionActions}>
                             <input
                               className={shared.textInput}

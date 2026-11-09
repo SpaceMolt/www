@@ -30,6 +30,8 @@ export interface PendingAction {
   command: string
   startedAt: number
   estimatedMs?: number
+  /** Display name of the destination the player picked (travel/jump); the server's in-system transit omits it. */
+  target?: string
 }
 
 export interface AccountStore {

@@ -9,7 +9,6 @@ import {
   RefreshCw,
   Trash2,
   Check,
-  X,
   AlertTriangle,
   Clock,
   User,
@@ -17,9 +16,9 @@ import {
   Coins,
   Unlink,
 } from 'lucide-react'
-import { SpacemoltError } from '@spacemolt/lib'
-import type { GetWrecksResponse, ScrapWreckResponse } from '@spacemolt/lib'
+import type { GetWrecksResponse, MutationResult, ScrapWreckResponse } from '@spacemolt/lib'
 import {
+  useAccountStore,
   useCommandMutation,
   useCommandQuery,
   useLocationState,
@@ -27,16 +26,12 @@ import {
   useShip,
 } from '@/lib/spacemolt'
 import { usePlay } from '../PlayProvider'
-import { Panel, shared, ConfirmAction } from '../shared'
+import { Panel, Modal, shared, ConfirmAction, errorMessage } from '../shared'
 import styles from './SalvagePanel.module.css'
+import { formatItemId, getItem, getShip } from '@/data/catalog'
+import { titleCase } from '@/lib/format'
 
 type Wreck = GetWrecksResponse['wrecks'][number]
-
-function errorMessage(err: unknown): string {
-  if (err instanceof SpacemoltError) return err.message
-  if (err instanceof Error) return err.message
-  return 'Action failed'
-}
 
 function formatTimeRemaining(expiresAt?: string, expireTick?: number): string | null {
   // expire_tick === 0 means "never expires" (ship/pirate/abandoned wrecks)
@@ -62,10 +57,11 @@ function persistsForever(expireTick?: number): boolean {
 }
 
 function describeWreck(w: Wreck): string {
+  if (w.type === 'jettison') return w.victim_name ? `${w.victim_name}'s jettisoned cargo` : 'Jettisoned cargo'
   if (w.ship_name) return w.ship_name
-  if (w.victim_name) return `${w.victim_name}'s ${w.ship_class || 'wreck'}`
-  if (w.ship_class) return w.ship_class.replace(/_/g, ' ')
-  return 'Unknown wreck'
+  const shipClass = w.ship_class && (getShip(w.ship_class)?.name ?? titleCase(w.ship_class))
+  if (w.victim_name) return `${w.victim_name}'s ${shipClass || 'wreck'}`
+  return shipClass || 'Unknown wreck'
 }
 
 function describeTowedWreck(w: Wreck | undefined): string {
@@ -75,6 +71,7 @@ function describeTowedWreck(w: Wreck | undefined): string {
 export function SalvagePanel() {
   const { uiStore } = usePlay()
   const mutate = useCommandMutation()
+  const store = useAccountStore()
   const player = usePlayer()
   const ship = useShip()
   const location = useLocationState()
@@ -88,6 +85,8 @@ export function SalvagePanel() {
   const [actionBusy, setActionBusy] = useState<string | null>(null)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [confirmAction, setConfirmAction] = useState<'scrap' | 'sell' | null>(null)
+  // Wreck id awaiting confirmation of a field scrap
+  const [confirmField, setConfirmField] = useState<string | null>(null)
   const [scrapResult, setScrapResult] = useState<ScrapWreckResponse | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   // Tick state purely to refresh countdown displays
@@ -156,6 +155,49 @@ export function SalvagePanel() {
       }
     },
     [mutate, wrecksQuery, reportError],
+  )
+
+  // Omitting item_id and module_id loots everything that fits.
+  const handleLootAll = useCallback(
+    async (wreckId: string) => {
+      setActionBusy(`lootall:${wreckId}`)
+      setErrorMsg(null)
+      try {
+        const result = await mutate((c) => c.spacemolt_salvage.loot({ id: wreckId }), { label: 'loot' })
+        const details = result.delta.details
+        const text = details && 'message' in details ? details.message : 'Wreck looted'
+        uiStore.dispatch({ type: 'event', kind: 'success', text })
+        wrecksQuery.refetch()
+      } catch (err) {
+        reportError(err)
+      } finally {
+        setActionBusy(null)
+      }
+    },
+    [mutate, uiStore, wrecksQuery, reportError],
+  )
+
+  // Field scrap (Outer Rim Salvage Array) breaks a wreck down where it lies. The pinned lib
+  // types do not declare `mode` yet, so this goes through the untyped mutate.
+  const handleFieldScrap = useCallback(
+    async (wreckId: string) => {
+      setActionBusy(`field:${wreckId}`)
+      setErrorMsg(null)
+      setConfirmField(null)
+      try {
+        const result = await mutate(
+          () => store.account.mutate('spacemolt_salvage', 'scrap', { id: wreckId, mode: 'field' }) as Promise<MutationResult<ScrapWreckResponse>>,
+          { label: 'scrap' },
+        )
+        setScrapResult(result.delta.details ?? null)
+        wrecksQuery.refetch()
+      } catch (err) {
+        reportError(err)
+      } finally {
+        setActionBusy(null)
+      }
+    },
+    [mutate, store, wrecksQuery, reportError],
   )
 
   const handleTow = useCallback(
@@ -421,7 +463,7 @@ export function SalvagePanel() {
                   <span>
                     <Cpu size={11} /> Modules: <b>{modules.length}</b>
                   </span>
-                  {typeof w.salvage_value === 'number' && (
+                  {w.salvage_value > 0 && (
                     <span>
                       <Hammer size={11} /> Value: <b>{w.salvage_value.toLocaleString()}c</b>
                     </span>
@@ -443,7 +485,7 @@ export function SalvagePanel() {
                             return (
                               <div key={item.item_id} className={shared.listCard}>
                                 <span className={shared.listCardName}>
-                                  {item.name || item.item_id.replace(/_/g, ' ')}
+                                  {getItem(item.item_id)?.name || item.name || formatItemId(item.item_id)}
                                 </span>
                                 <span className={shared.listCardMeta}>
                                   <span>x{item.quantity}</span>
@@ -477,7 +519,7 @@ export function SalvagePanel() {
                             return (
                               <div key={m.id} className={shared.listCard}>
                                 <span className={shared.listCardName}>
-                                  {m.name || m.type_id || m.id}
+                                  {(m.type_id && getItem(m.type_id)?.name) || m.name || (m.type_id ? formatItemId(m.type_id) : m.id)}
                                 </span>
                                 <span className={shared.listCardMeta}>
                                   {m.type && <span>{m.type}</span>}
@@ -508,6 +550,39 @@ export function SalvagePanel() {
 
                     {/* Tow action */}
                     <div className={styles.salvageRow}>
+                      {(cargoEntries.length > 0 || modules.length > 0) && (
+                        <button
+                          className={shared.actionBtn}
+                          onClick={() => handleLootAll(w.id)}
+                          disabled={Boolean(actionBusy) || isDocked}
+                          type="button"
+                          title={isDocked ? 'Undock to loot wrecks' : 'Loot every item and module that fits'}
+                        >
+                          <Package size={12} /> {actionBusy === `lootall:${w.id}` ? 'Looting...' : 'Loot All'}
+                        </button>
+                      )}
+                      {confirmField === w.id ? (
+                        <ConfirmAction
+                          message="Field scrap destroys the wreck and half its materials. Continue?"
+                          icon={<AlertTriangle size={12} />}
+                          onConfirm={() => handleFieldScrap(w.id)}
+                          onCancel={() => setConfirmField(null)}
+                          confirmLabel="Scrap"
+                          cancelLabel="Cancel"
+                        />
+                      ) : (
+                        !towedByOther && (
+                          <button
+                            className={shared.dangerBtn}
+                            onClick={() => setConfirmField(w.id)}
+                            disabled={Boolean(actionBusy) || isDocked}
+                            type="button"
+                            title="Scrap here with an Outer Rim Salvage Array: half the materials are lost, the rest go to cargo"
+                          >
+                            <Trash2 size={12} /> {actionBusy === `field:${w.id}` ? 'Scrapping...' : 'Field Scrap'}
+                          </button>
+                        )
+                      )}
                       {towedBySelf ? (
                         <span className={styles.wreckSub}>Use the towing controls above to scrap, sell, or release.</span>
                       ) : towedByOther ? (
@@ -540,49 +615,32 @@ export function SalvagePanel() {
 
       {/* Scrap result modal */}
       {scrapResult && (
-        <div className={shared.modalBackdrop} onClick={() => setScrapResult(null)}>
-          <div className={shared.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={shared.modalHeader}>
-              <span className={shared.modalTitle}>
-                <Hammer size={14} /> Scrap Complete
-              </span>
-              <button
-                className={shared.modalClose}
-                onClick={() => setScrapResult(null)}
-                aria-label="Close"
-                type="button"
-              >
-                <X size={14} />
-              </button>
-            </div>
-            <div className={shared.modalBody}>
-              <div className={styles.salvageResultIntro}>{scrapResult.message}</div>
-              <div className={styles.salvageResults}>
-                {scrapResult.materials.map((mat) => (
-                  <div key={mat.item} className={styles.salvageResultRow}>
-                    <span>{mat.name}</span>
-                    <b>{mat.quantity}</b>
-                  </div>
-                ))}
-                {typeof scrapResult.total_value === 'number' && (
-                  <div className={styles.salvageResultRow}>
-                    <span>Total value</span>
-                    <b>{scrapResult.total_value.toLocaleString()}c</b>
-                  </div>
-                )}
+        <Modal
+          title="Scrap Complete"
+          icon={<Hammer size={14} />}
+          onClose={() => setScrapResult(null)}
+          actions={
+            <button className={shared.confirmBtn} onClick={() => setScrapResult(null)} type="button">
+              <Check size={12} /> OK
+            </button>
+          }
+        >
+          <div className={styles.salvageResultIntro}>{scrapResult.message}</div>
+          <div className={styles.salvageResults}>
+            {scrapResult.materials.map((mat) => (
+              <div key={mat.item} className={styles.salvageResultRow}>
+                <span>{mat.name}</span>
+                <b>{mat.quantity}</b>
               </div>
-            </div>
-            <div className={shared.modalActions}>
-              <button
-                className={shared.confirmBtn}
-                onClick={() => setScrapResult(null)}
-                type="button"
-              >
-                <Check size={12} /> OK
-              </button>
-            </div>
+            ))}
+            {typeof scrapResult.total_value === 'number' && (
+              <div className={styles.salvageResultRow}>
+                <span>Total value</span>
+                <b>{scrapResult.total_value.toLocaleString()}c</b>
+              </div>
+            )}
           </div>
-        </div>
+        </Modal>
       )}
     </Panel>
   )

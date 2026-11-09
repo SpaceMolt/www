@@ -136,10 +136,11 @@ export async function fetchBattleData(
   let status: BattleLogResponse['status']
   while (true) {
     const response = await request(`${apiBase}/api/battle/log?battle_id=${id}&tick_start=${cursor}&limit=200`)
-    if (!response.ok) throw new Error(`Battle log: HTTP ${response.status}`)
-    const data = await response.json() as BattleLogResponse & { error?: string }
+    // Error responses may carry a player-readable { error } body; prefer it to the status code.
+    const data = await response.json().catch(() => ({})) as BattleLogResponse & { error?: string }
     signal.throwIfAborted()
     if (data.error) throw new Error(data.error)
+    if (!response.ok) throw new Error(`Battle log: HTTP ${response.status}`)
     if (data.battle_id !== battleId) throw new Error('Battle log response did not match the requested battle')
     if (data.entries != null && !Array.isArray(data.entries)) throw new Error('Invalid battle log entries')
     const page = data.entries ?? []

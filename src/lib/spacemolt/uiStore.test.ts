@@ -22,6 +22,12 @@ describe('uiReducer', () => {
     expect(uiReducer(pending, { type: 'battle_update', battle: battle() }).battleSyncPending).toBe(false)
   })
 
+  test('toast entries are flagged so they pop whatever their kind', () => {
+    const state = uiReducer(initialUiState, { type: 'toast', kind: 'success', text: 'Ship ready' })
+    expect(state.eventLog[0]).toMatchObject({ kind: 'success', text: 'Ship ready', toast: true })
+    expect(uiReducer(initialUiState, { type: 'event', kind: 'success', text: 'Mined' }).eventLog[0].toast).toBeUndefined()
+  })
+
   test('events prepend and are capped', () => {
     let state = initialUiState
     for (let i = 0; i < 205; i++) {
@@ -94,5 +100,11 @@ describe('uiReducer', () => {
     const state = uiReducer(initialUiState, { type: 'seed_chat', messages })
     expect(state.chatMessages.length).toBe(200)
     expect(state.chatMessages.at(-1)?.content).toBe('m249')
+  })
+})
+
+describe('storage refresh', () => {
+  test('bumps the storage revision', () => {
+    expect(uiReducer(initialUiState, { type: 'storage_changed' }).storageRevision).toBe(1)
   })
 })

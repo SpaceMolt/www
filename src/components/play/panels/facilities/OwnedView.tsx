@@ -10,15 +10,13 @@ import {
   Tag,
 } from 'lucide-react'
 import { useAccountStore, useCommandMutation } from '@/lib/spacemolt'
-import { usePlay } from '../../PlayProvider'
-import { Modal, shared } from '../../shared'
+import { Modal, shared, useAction } from '../../shared'
 import type { FacilityListResponse, Facility } from '../../types'
 import { FacilityCard } from './FacilityCard'
 import { UpgradeModal, fetchUpgradeOptions, type UpgradeOption } from './UpgradeModal'
 import { FacilityQueueModal } from './FacilityQueueModal'
+import { FacilityManageActions } from './FacilityManageActions'
 import styles from './facilities.module.css'
-
-const describeError = (err: unknown): string => (err instanceof Error ? err.message : String(err))
 
 interface OwnedViewProps {
   facilityData: FacilityListResponse
@@ -28,23 +26,19 @@ interface OwnedViewProps {
 export function OwnedView({ facilityData, onRefresh }: OwnedViewProps) {
   const store = useAccountStore()
   const mutate = useCommandMutation()
-  const { uiStore } = usePlay()
 
   const [upgradeModal, setUpgradeModal] = useState<{ facility: Facility; options: UpgradeOption[] } | null>(null)
   const [upgradeLoading, setUpgradeLoading] = useState(false)
-  const [upgrading, setUpgrading] = useState(false)
-  const [transferring, setTransferring] = useState<string | null>(null)
   const [decorateModal, setDecorateModal] = useState<Facility | null>(null)
   const [decorateDesc, setDecorateDesc] = useState('')
   const [decorateAccess, setDecorateAccess] = useState<'private' | 'public'>('private')
-  const [decorating, setDecorating] = useState(false)
   const [queueModal, setQueueModal] = useState<Facility | null>(null)
   const [pricingId, setPricingId] = useState<string | null>(null)
 
-  const reportError = useCallback((err: unknown) => {
-    const text = describeError(err)
-    uiStore.dispatch({ type: 'toast', kind: 'danger', text })
-  }, [uiStore])
+  const { busy, run } = useAction()
+  const upgrading = busy === 'upgrade'
+  const decorating = busy === 'decorate'
+  const transferring = busy?.startsWith('transfer:') ? busy.slice('transfer:'.length) : null
 
   // Server pre-filters player_facilities to only the requesting player's own
   // facilities, so we can render the list directly without further filtering.
@@ -58,65 +52,39 @@ export function OwnedView({ facilityData, onRefresh }: OwnedViewProps) {
   }, [store])
 
   const handleUpgrade = useCallback(async (facilityId: string, facilityType: string) => {
-    setUpgrading(true)
-    try {
-      await mutate((c) => c.spacemolt_facility.upgrade({ facility_id: facilityId, facility_type: facilityType }), { label: 'facility_upgrade' })
+    if (await run('upgrade', () => mutate((c) => c.spacemolt_facility.upgrade({ facility_id: facilityId, facility_type: facilityType }), { label: 'facility_upgrade' }))) {
       setUpgradeModal(null)
       onRefresh()
-    } catch (err) {
-      reportError(err)
     }
-    setUpgrading(false)
-  }, [mutate, onRefresh, reportError])
+  }, [mutate, onRefresh, run])
 
   const handleTransfer = useCallback(async (facilityId: string) => {
-    setTransferring(facilityId)
-    try {
-      await mutate((c) => c.spacemolt_facility.transfer({ facility_id: facilityId, direction: 'to_faction' }), { label: 'facility_transfer' })
-      onRefresh()
-    } catch (err) {
-      reportError(err)
-    }
-    setTransferring(null)
-  }, [mutate, onRefresh, reportError])
+    if (await run(`transfer:${facilityId}`, () => mutate((c) => c.spacemolt_facility.transfer({ facility_id: facilityId, direction: 'to_faction' }), { label: 'facility_transfer' }))) onRefresh()
+  }, [mutate, onRefresh, run])
 
   const handleToggleAccess = useCallback(async (facility: Facility) => {
     const nextAccess = facility.production?.public ? 'private' : 'public'
-    try {
-      await mutate((c) => c.spacemolt_facility.set_access({ facility_id: facility.facility_id, access: nextAccess }), { label: 'facility_set_access' })
-      onRefresh()
-    } catch (err) {
-      reportError(err)
-    }
-  }, [mutate, onRefresh, reportError])
+    if (await run('access', () => mutate((c) => c.spacemolt_facility.set_access({ facility_id: facility.facility_id, access: nextAccess }), { label: 'facility_set_access' }))) onRefresh()
+  }, [mutate, onRefresh, run])
 
   const handleSetOutputPrice = useCallback(async (facilityId: string, price: string) => {
     const parsed = Number(price)
     if (!Number.isFinite(parsed) || parsed < 0) return
-    try {
-      await mutate((c) => c.spacemolt_facility.set_output_price({ facility_id: facilityId, price: parsed }), { label: 'facility_set_output_price' })
-      onRefresh()
-    } catch (err) {
-      reportError(err)
-    }
+    if (await run('price', () => mutate((c) => c.spacemolt_facility.set_output_price({ facility_id: facilityId, price: parsed }), { label: 'facility_set_output_price' }))) onRefresh()
     setPricingId(null)
-  }, [mutate, onRefresh, reportError])
+  }, [mutate, onRefresh, run])
 
   const handleDecorate = useCallback(async () => {
     if (!decorateModal) return
-    setDecorating(true)
-    try {
-      await mutate((c) => c.spacemolt_facility.personal_decorate({
-        description: decorateDesc,
-        access: decorateAccess,
-      }), { label: 'facility_personal_decorate' })
+    const ok = await run('decorate', () => mutate((c) => c.spacemolt_facility.personal_decorate({
+      description: decorateDesc,
+      access: decorateAccess,
+    }), { label: 'facility_personal_decorate' }))
+    if (ok) {
       setDecorateModal(null)
       onRefresh()
-    } catch (err) {
-      reportError(err)
     }
-    setDecorating(false)
-  }, [mutate, decorateModal, decorateDesc, decorateAccess, onRefresh, reportError])
+  }, [mutate, decorateModal, decorateDesc, decorateAccess, onRefresh, run])
 
   const openDecorate = useCallback((facility: Facility) => {
     setDecorateDesc('')
@@ -213,6 +181,7 @@ export function OwnedView({ facilityData, onRefresh }: OwnedViewProps) {
                   <Paintbrush size={11} /> Decorate
                 </button>
               )}
+              <FacilityManageActions facility={f} scope="player" onRefresh={onRefresh} />
             </FacilityCard>
           ))}
         </div>

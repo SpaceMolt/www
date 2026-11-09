@@ -66,3 +66,29 @@ test('station sale notification retains treasury terms through acceptance', asyn
     expect(f.store.getState().pendingTrades).toEqual([])
   } finally { f.close() }
 })
+
+describe('ignored pushes now reach the event log', () => {
+  test('commission complete names the ship and base', async () => {
+    const f = await fixture()
+    try {
+      f.send('ship_commission_complete', {
+        tick: 1, commission_id: 'c1', ship_id: 's1', ship_class: 'hauler', ship_name: 'Mule', base_id: 'b1', base_name: 'Sol Yard',
+      })
+      expect(f.store.getState().eventLog[0]).toMatchObject({ kind: 'success', text: 'Commission complete: Mule is docked at Sol Yard', toast: true })
+    } finally { f.close() }
+  })
+
+  test('alliance proposal (own wording, not the agent-facing message) and hold start warn', async () => {
+    const f = await fixture()
+    try {
+      f.send('faction_alliance_proposal', {
+        from_faction_id: 'f1', from_faction_name: 'Red', from_faction_tag: 'RED', message: 'Red [RED] proposes an alliance. Use faction_accept_ally to ratify.',
+      })
+      expect(f.store.getState().eventLog[0]).toMatchObject({ kind: 'warning', text: 'Red proposes an alliance. Accept it in the Faction tab.' })
+      f.send('hold_update', { event: 'started', holder_name: 'Pirate', message: 'Pirate is holding you' })
+      expect(f.store.getState().eventLog[0]).toMatchObject({ kind: 'warning', text: 'Pirate is holding you' })
+      f.send('hold_update', { event: 'ended', reason: 'paid', message: '' })
+      expect(f.store.getState().eventLog[0]).toMatchObject({ kind: 'info', text: 'Warp hold ended' })
+    } finally { f.close() }
+  })
+})

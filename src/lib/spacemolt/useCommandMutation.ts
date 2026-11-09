@@ -15,6 +15,8 @@ export interface MutationOptions {
   label?: string
   /** Progress-bar estimate for multi-tick actions (travel/jump). */
   estimatedMs?: number
+  /** Destination name for travel/jump, shown while in transit. */
+  target?: string
 }
 
 // Generic so each call site keeps the specific `TDetails` of the command it
@@ -38,9 +40,9 @@ export function useCommandMutation(): RunMutation {
   return useCallback(
     async <TDetails,>(
       run: (commands: Commands) => Promise<MutationResult<TDetails>>,
-      { label = 'action', estimatedMs }: MutationOptions = {},
+      { label = 'action', estimatedMs, target }: MutationOptions = {},
     ) => {
-      store.setPendingAction({ command: label, startedAt: Date.now(), estimatedMs })
+      store.setPendingAction({ command: label, startedAt: Date.now(), estimatedMs, target })
       try {
         return await run(store.account.commands)
       } finally {

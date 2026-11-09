@@ -72,12 +72,6 @@
   color: var(--chrome-silver);
 }
 
-.routeBannerWarning {
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.75rem;
-  color: var(--claw-red);
-  font-weight: 600;
-}
 
 .routeBannerCaution {
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
@@ -288,7 +282,7 @@
 }
 
 .abortModalIcon {
-  font-size: 2.5rem;
+  color: var(--claw-red);
   margin-bottom: 0.75rem;
 }
 
@@ -365,10 +359,68 @@
   margin-bottom: 1.25rem;
 }
 
+/* === Keyboard shortcut help === */
+
+
+.helpList { margin: 0; font-family: var(--font-jetbrains), 'JetBrains Mono', monospace; font-size: 0.8rem; }
+
+.helpList > div {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.2rem 0;
+}
+
+.helpList dt { min-width: 3rem; }
+.helpList dd { margin: 0; color: var(--chrome-silver); }
+
+.helpList kbd {
+  border: 1px solid var(--hull-grey);
+  border-radius: 3px;
+  padding: 0 0.35rem;
+  color: var(--star-white);
+}
+
+/* === Phone navigation drawer === */
+.navRow { display: contents; }
+
+.navButton,
+.navBackdrop {
+  display: none;
+}
+
 /* === Responsive === */
 @media (max-width: 768px) {
   .main {
     grid-template-columns: 1fr;
+  }
+
+  .navRow {
+    display: flex;
+    align-items: stretch;
+  }
+
+  .navRow > nav { flex: 1; min-width: 0; }
+
+  .navButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0 0.75rem;
+    border: none;
+    border-right: 1px solid rgba(0, 212, 255, 0.3);
+    background: rgba(0, 212, 255, 0.08);
+    color: var(--plasma-cyan);
+    font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+  }
+
+  .navBackdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 850;
+    background: rgba(0, 0, 0, 0.55);
   }
 
   .panelContent {

@@ -265,3 +265,55 @@
     gap: 0.35rem;
   }
 }
+
+/* History, DM inbox, read-only channels */
+.dmHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.4rem;
+  border-bottom: 1px solid rgba(61, 90, 108, 0.4);
+  flex-shrink: 0;
+}
+
+.loadOlder {
+  align-self: center;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.historyError,
+.readOnly {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  text-align: center;
+  padding: 0.3rem;
+}
+
+.historyError {
+  color: var(--claw-red);
+}
+
+.readOnly {
+  color: var(--hull-grey);
+}
+
+.conversation {
+  width: 100%;
+  gap: 0.4rem;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+}
+
+.conversationPreview {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--chrome-silver);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

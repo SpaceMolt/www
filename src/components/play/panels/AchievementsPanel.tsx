@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { Trophy, RefreshCw } from 'lucide-react'
+import Image from 'next/image'
+import { Trophy, RefreshCw, Lock, Check } from 'lucide-react'
 import { usePlayer, useCommandQuery } from '@/lib/spacemolt'
 import { Panel, Loading, shared } from '../shared'
 import {
@@ -92,7 +93,7 @@ export function AchievementsPanel() {
       {pending ? (
         <Loading message="Loading achievements..." />
       ) : !view ? (
-        <div className={shared.emptyState}>Could not load achievements.</div>
+        <div className={shared.emptyState}>{own.error ?? 'Could not load achievements.'}</div>
       ) : (
         <>
           <div className={styles.summary}>
@@ -121,7 +122,7 @@ export function AchievementsPanel() {
             {(['all', 'earned', 'locked'] as FilterMode[]).map((mode) => (
               <button
                 key={mode}
-                className={filter === mode ? shared.tabActive : shared.tab}
+                className={filter === mode ? `${shared.tab} ${shared.tabActive}` : shared.tab}
                 aria-pressed={filter === mode}
                 onClick={() => setFilter(mode)}
                 type="button"
@@ -158,14 +159,13 @@ function AchievementTile({ a }: { a: AchievementTileEntry }) {
     <li className={cls}>
       <div className={styles.tEmblem} aria-hidden>
         {a.earned && hasEmblem(a.id) ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img className={styles.tEmblemImg} src={emblemSrc(a.id)} alt="" />
+          <Image className={styles.tEmblemImg} src={emblemSrc(a.id)} alt="" width={38} height={38} />
         ) : a.earned ? (
           glyph
         ) : a.hidden ? (
           '?'
         ) : (
-          '🔒'
+          <Lock size={16} />
         )}
       </div>
       <div className={styles.tBody}>
@@ -178,7 +178,7 @@ function AchievementTile({ a }: { a: AchievementTileEntry }) {
       <div className={styles.tMeta}>
         <span className={styles.tPoints}>{a.points}</span>
         <span className={styles.srOnly}>{statusText}</span>
-        {a.earned && <span className={styles.tCheck} aria-hidden>✓</span>}
+        {a.earned && <Check className={styles.tCheck} size={12} aria-hidden />}
       </div>
     </li>
   )

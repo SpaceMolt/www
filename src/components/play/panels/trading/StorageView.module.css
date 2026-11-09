@@ -24,7 +24,6 @@
   letter-spacing: 0.04em;
 }
 
-
 .loading {
   font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
   font-size: 0.75rem;
@@ -32,7 +31,6 @@
   text-align: center;
   padding: 1rem 0.5rem;
 }
-
 
 /* Gifts */
 .giftsSection {
@@ -111,14 +109,6 @@
   color: var(--hull-grey);
 }
 
-.giftMessage {
-  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
-  font-size: 0.7rem;
-  color: var(--chrome-silver);
-  font-style: italic;
-  padding: 0.15rem 0;
-}
-
 .giftContents {
   display: flex;
   gap: 0.5rem;
@@ -168,50 +158,6 @@
   border-bottom: 1px solid rgba(42, 58, 74, 0.4);
 }
 
-/* Credits */
-.creditsDisplay {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.creditRow {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  padding: 0.3rem 0.4rem;
-  background: rgba(10, 14, 23, 0.4);
-  border-radius: 3px;
-}
-
-.creditLabel {
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.55rem;
-  font-weight: 600;
-  color: var(--hull-grey);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.creditValue {
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: var(--warning-yellow);
-}
-
-.creditActions {
-  display: flex;
-  gap: 0.35rem;
-}
-
-.creditForm {
-  flex: 1;
-  display: flex;
-  gap: 0.25rem;
-}
-
-
 /* Item list */
 .itemList {
   display: flex;
@@ -257,13 +203,6 @@
   font-size: 0.63rem;
   color: var(--chrome-silver);
   flex-shrink: 0;
-}
-
-.itemSize {
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
-  color: var(--hull-grey);
-  margin-left: 0.25rem;
 }
 
 .itemAction {

@@ -1,11 +1,12 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
-import { Loader2, Users, Coins, Wifi, WifiOff, Search, Plus, ArrowLeft, AlertCircle, LogIn } from 'lucide-react'
+import { Loader2, Users, Coins, Wifi, WifiOff, Search, Plus, ArrowLeft, AlertCircle, LogIn, MonitorSmartphone } from 'lucide-react'
 import { useClerk } from '@clerk/nextjs'
 import styles from './PlayerSelector.module.css'
 import { extractApiErrorMessage, isSessionAuthError } from '@/lib/apiError'
 import { parseSessionId } from '@/lib/session'
+import { charactersOpenElsewhere } from '@/lib/spacemolt/tabClaim'
 
 export const EMPIRE_COLORS: Record<string, string> = {
   solarian: '#FFD700',
@@ -53,6 +54,7 @@ export function PlayerSelector({ players, onSelect, loading, authHeaders, regist
   const [createError, setCreateError] = useState('')
   const [authExpired, setAuthExpired] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [openElsewhere, setOpenElsewhere] = useState<Set<string>>(new Set())
   const { signOut } = useClerk()
 
   const GAME_SERVER = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
@@ -67,6 +69,10 @@ export function PlayerSelector({ players, onSelect, loading, authHeaders, regist
       window.location.href = '/play'
     }
   }
+
+  useEffect(() => {
+    charactersOpenElsewhere().then(setOpenElsewhere).catch(() => {})
+  }, [])
 
   // One request for the whole fleet. This used to fetch each agent separately;
   // those are charged against a per-Clerk-user budget of 120/min, so an operator
@@ -162,7 +168,7 @@ export function PlayerSelector({ players, onSelect, loading, authHeaders, regist
       }
 
       const regData = await regRes.json()
-      const playerId = regData.player_id || regData.id
+      const playerId = regData.result?.player_id || regData.player_id || regData.id
 
       // Reset form and notify parent
       setCreating(false)
@@ -318,6 +324,12 @@ export function PlayerSelector({ players, onSelect, loading, authHeaders, regist
               <div className={styles.playerName} style={{ color: empireColor }}>
                 {p.username}
               </div>
+              {openElsewhere.has(p.id) && (
+                <span className={styles.openElsewhere} title="Connected in another tab of this browser">
+                  <MonitorSmartphone size={9} />
+                  other tab
+                </span>
+              )}
               {info && (
                 <div className={styles.playerMeta}>
                   {info.online

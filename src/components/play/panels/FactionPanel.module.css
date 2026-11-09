@@ -842,3 +842,56 @@ a.memberName:hover {
   .roomContentFooter { font-size: 0.68rem; }
   .roomFormCount { font-size: 0.68rem; }
 }
+
+/* Faction management */
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--chrome-silver);
+}
+
+.permissionGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: 0.25rem 0.75rem;
+}
+
+.checkLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--star-white);
+  cursor: pointer;
+}
+
+.roleSelect {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--chrome-silver);
+  background: rgba(10, 14, 23, 0.8);
+  border: 1px solid var(--hull-grey);
+  border-radius: 3px;
+  padding: 0.1rem 0.25rem;
+}
+
+.badgeBtn {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.3rem;
+  padding: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+}
+
+.badgeBtn:hover:not(:disabled) {
+  opacity: 1;
+}

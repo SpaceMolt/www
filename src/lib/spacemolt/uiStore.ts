@@ -30,6 +30,8 @@ export interface EventLogEntry {
   at: number
   kind: EventKind
   text: string
+  /** Set by the 'toast' action: always pops, whatever the kind. */
+  toast?: boolean
 }
 
 export interface UiState {
@@ -47,10 +49,12 @@ export interface UiState {
   /** Last-known participation is not command authority while reconnecting. */
   battleSyncPending: boolean
   craftJobs: CraftJob[] | null
+  /** Bumped after any storage change; every storage view refetches on it. */
+  storageRevision: number
 }
 
 export type UiAction =
-  | { type: 'event'; kind: EventKind; text: string; at?: number }
+  | { type: 'event'; kind: EventKind; text: string; at?: number; toast?: boolean }
   | { type: 'toast'; kind: EventKind; text: string }
   | { type: 'chat'; message: ChatMessage }
   | { type: 'seed_chat'; messages: ChatMessage[] }
@@ -63,6 +67,7 @@ export type UiAction =
   | { type: 'battle_left' }
   | { type: 'battle_sync_pending' }
   | { type: 'set_craft_jobs'; jobs: CraftJob[] }
+  | { type: 'storage_changed' }
   | { type: 'reset' }
 
 const EVENT_LOG_LIMIT = 200
@@ -79,6 +84,7 @@ export const initialUiState: UiState = {
   battleRevision: 0,
   battleSyncPending: false,
   craftJobs: null,
+  storageRevision: 0,
 }
 
 let nextId = 1
@@ -89,13 +95,13 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
       return {
         ...state,
         eventLog: [
-          { id: nextId++, at: action.at ?? Date.now(), kind: action.kind, text: action.text },
+          { id: nextId++, at: action.at ?? Date.now(), kind: action.kind, text: action.text, ...(action.toast && { toast: true }) },
           ...state.eventLog,
         ].slice(0, EVENT_LOG_LIMIT),
       }
     case 'toast':
-      // ToastContainer pops toasts off the event log (danger kind only).
-      return uiReducer(state, { ...action, type: 'event' })
+      // ToastContainer pops toast-flagged, danger, and warning entries off the event log.
+      return uiReducer(state, { ...action, type: 'event', toast: true })
     case 'chat':
       return { ...state, chatMessages: [...state.chatMessages, action.message].slice(-CHAT_LIMIT) }
     case 'seed_chat':
@@ -141,6 +147,8 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
       return { ...state, battleSyncPending: true }
     case 'set_craft_jobs':
       return { ...state, craftJobs: action.jobs }
+    case 'storage_changed':
+      return { ...state, storageRevision: state.storageRevision + 1 }
     case 'reset':
       return initialUiState
   }

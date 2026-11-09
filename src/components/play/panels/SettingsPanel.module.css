@@ -268,3 +268,9 @@
   .toggleDesc { font-size: 0.68rem; }
   .connectionLabel { font-size: 0.68rem; }
 }
+
+.channelList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}

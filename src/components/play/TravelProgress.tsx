@@ -1,22 +1,39 @@
 'use client'
 
-import { useCurrentTick, useLocationState } from '@/lib/spacemolt'
+import { useCurrentTick, useLocationState, usePendingAction, useSystem } from '@/lib/spacemolt'
 import { Navigation, Zap } from 'lucide-react'
 import styles from './TravelProgress.module.css'
+
+type TransitLocation = Pick<NonNullable<ReturnType<typeof useLocationState>>,
+  'transit_type' | 'transit_dest_poi_id' | 'transit_dest_poi_name' | 'transit_dest_system_name'>
+
+/**
+ * Where the ship is headed. In-system travel leaves the server's transit_dest_*
+ * fields empty, so fall back to the system's POI list, then to the name the
+ * player picked when the action started.
+ */
+export function transitDestination(
+  location: TransitLocation | undefined | null,
+  pickedTarget?: string,
+  pois: { id: string; name: string; base_name?: string }[] = [],
+): string {
+  const poi = pois.find((p) => p.id === location?.transit_dest_poi_id)
+  const poiName = location?.transit_dest_poi_name || poi?.base_name || poi?.name
+  const systemName = location?.transit_dest_system_name
+  return (location?.transit_type === 'jump' ? systemName || poiName : poiName || systemName) || pickedTarget || 'destination'
+}
 
 export function TravelProgress() {
   const location = useLocationState()
   const currentTick = useCurrentTick()
+  const pending = usePendingAction()
+  const systemData = useSystem().data
+  const pois = systemData && 'system' in systemData ? systemData.system.pois : undefined
 
   if (!location?.in_transit) return null
 
-  const travelType = location.transit_type || 'travel'
-  const isJump = travelType === 'jump'
-  const destination =
-    (isJump ? location.transit_dest_system_name : location.transit_dest_poi_name) ||
-    location.transit_dest_poi_name ||
-    location.transit_dest_system_name ||
-    'Unknown'
+  const isJump = location.transit_type === 'jump'
+  const destination = transitDestination(location, pending?.target, pois)
 
   const arrivalTick = location.transit_arrival_tick
   const elapsed = location.transit_ticks_elapsed ?? 0

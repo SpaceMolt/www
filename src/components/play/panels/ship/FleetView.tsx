@@ -18,15 +18,12 @@ import {
 import type { ListShipsResponse } from '@spacemolt/lib'
 import { useCommandMutation, useCommandQuery, useLocationState } from '@/lib/spacemolt'
 import { usePlay } from '../../PlayProvider'
-import { Loading, Panel, ConfirmAction, shared } from '../../shared'
+import { Loading, Panel, ConfirmAction, shared, errorMessage } from '../../shared'
+import { InsuranceView } from './InsuranceView'
 import styles from './FleetView.module.css'
 import { imageUrl } from '@/data/images'
 
 type FleetShipEntry = ListShipsResponse['ships'][number]
-
-function errorText(err: unknown): string {
-  return err instanceof Error ? err.message : String(err)
-}
 
 export function FleetView() {
   const location = useLocationState()
@@ -43,7 +40,7 @@ export function FleetView() {
 
   const reportError = useCallback(
     (err: unknown) => {
-      const text = errorText(err)
+      const text = errorMessage(err)
       uiStore.dispatch({ type: 'toast', kind: 'danger', text })
     },
     [uiStore]
@@ -103,6 +100,7 @@ export function FleetView() {
 
   return (
     <Panel title="Fleet" icon={<Ship size={16} />} headerRight={refreshButton}>
+        <InsuranceView isDocked={isDocked} />
         {!fleet ? (
           <Loading message="Loading fleet data..." />
         ) : fleet.ships.length === 0 ? (
@@ -114,14 +112,6 @@ export function FleetView() {
               <span className={styles.summaryLabel}>Ships Owned</span>
               <span className={styles.summaryValue}>{fleet.count}</span>
             </div>
-            {fleet.active_ship_class && (
-              <div className={styles.summary}>
-                <span className={styles.summaryLabel}>Active Ship</span>
-                <span className={styles.summaryActiveShip}>
-                  {fleet.active_ship_class}
-                </span>
-              </div>
-            )}
 
             {/* Ship list */}
             <div className={styles.fleetList}>

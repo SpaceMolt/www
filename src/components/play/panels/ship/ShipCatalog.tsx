@@ -1,7 +1,8 @@
 'use client'
 
 import { isMobileBase, MobileBaseDetails, type MobileBaseIdentity } from '@/components/MobileBaseDetails'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import Image from 'next/image'
 import {
   Heart,
   Shield,
@@ -16,11 +17,12 @@ import {
   Hammer,
   Loader2,
   ShoppingCart,
+  Users,
 } from 'lucide-react'
 import type { BrowseShipsResponse, StorageResponse } from '@spacemolt/lib'
 import { useCargo, useCatalog, useCommandMutation, useCommandQuery, useLocationState, usePlayer, useShip } from '@/lib/spacemolt'
 import { usePlay } from '../../PlayProvider'
-import { Credits, Loading, Modal, shared } from '../../shared'
+import { Credits, Loading, Modal, errorMessage, shared } from '../../shared'
 import { BugReportButton } from '../../BugReportButton'
 import { buildShipCatalogContext } from '../../bugReportContext'
 import styles from './ShipCatalog.module.css'
@@ -75,10 +77,6 @@ export function matchesTierFilter(ship: { tier: number }, tier: string): boolean
 export const COMMISSIONABLE_PAGE_SIZE = 50
 /** Hard ceiling on catalog requests, so a bad `total_pages` cannot loop. */
 export const MAX_COMMISSIONABLE_PAGES = 20
-
-function errorText(err: unknown): string {
-  return err instanceof Error ? err.message : String(err)
-}
 
 /** IDs from a `spacemolt_catalog` bare-tool query response (loosely typed). */
 function idsFromCatalogPayload(payload: Record<string, unknown> | undefined): Set<string> {
@@ -177,7 +175,7 @@ export function ShipCatalog() {
 
   const reportError = useCallback(
     (err: unknown) => {
-      const text = errorText(err)
+      const text = errorMessage(err)
       uiStore.dispatch({ type: 'toast', kind: 'danger', text })
     },
     [uiStore]
@@ -185,6 +183,12 @@ export function ShipCatalog() {
 
   const [expandedShip, setExpandedShip] = useState<string | null>(null)
   const [fullscreenImage, setFullscreenImage] = useState<{ src: string; name: string } | null>(null)
+  useEffect(() => {
+    if (!fullscreenImage) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setFullscreenImage(null) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [fullscreenImage])
   const [page, setPage] = useState(1)
 
   // Commissionable ship IDs at this station (server-checked, station-specific)
@@ -249,6 +253,7 @@ export function ShipCatalog() {
   const [search, setSearch] = useState('')
   const [commissionableOnly, setCommissionableOnly] = useState(false)
 
+  // The spec's ShipClass omits mobile_base and marks every stat optional; the dump always carries them.
   const allShips = useMemo(() => (catalog?.ships ?? []) as unknown as CatalogShip[], [catalog])
 
   const filteredShips = useMemo(() => {
@@ -295,20 +300,22 @@ export function ShipCatalog() {
   }, [mutate, buyTarget, refetchBrowse, reportError])
 
   const handleCommission = useCallback(
-    (provideMaterials: boolean) => {
+    (funding: { provide_materials?: boolean; fund_from_faction?: boolean }) => {
       if (!commissionShip) return
       setCommissioning(true)
-      mutate((c) => c.spacemolt_ship.commission_ship({ id: commissionShip.id, provide_materials: provideMaterials }), { label: 'commission_ship' })
-        .then(() => {
+      mutate((c) => c.spacemolt_ship.commission_ship({ id: commissionShip.id, ...funding }), { label: 'commission_ship' })
+        .then((result) => {
           setCommissioning(false)
           setCommissionShip(null)
+          const message = (result.delta.details as { message?: string } | undefined)?.message
+          uiStore.dispatch({ type: 'toast', kind: 'success', text: message ?? `Commissioned ${commissionShip.name}` })
         })
         .catch((err) => {
           setCommissioning(false)
           reportError(err)
         })
     },
-    [mutate, commissionShip, reportError]
+    [mutate, commissionShip, reportError, uiStore]
   )
 
   return (
@@ -389,8 +396,15 @@ export function ShipCatalog() {
                     className={styles.shipCardTop}
                     onClick={() => toggleExpand(catShip.id)}
                     role="button"
+                    aria-expanded={isExpanded}
                     tabIndex={0}
-                    onKeyDown={(e) => { if (e.key === 'Enter') toggleExpand(catShip.id) }}
+                    onKeyDown={(e) => {
+                      if (e.target !== e.currentTarget) return
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        toggleExpand(catShip.id)
+                      }
+                    }}
                   >
                     <div className={styles.shipCardInfo}>
                       <div className={styles.shipCardNameRow}>
@@ -408,7 +422,7 @@ export function ShipCatalog() {
                         <span className={styles.shipCardDesc}>{catShip.description}</span>
                       )}
                     </div>
-                    {isDocked && !isMobileBase(catShip) && (isCommissionable || cheapestByClass[catShip.id]) && (
+                    {isDocked && (isCommissionable || cheapestByClass[catShip.id]) && (
                       <div className={styles.cardActions}>
                         {isCommissionable && (
                           <button
@@ -442,17 +456,15 @@ export function ShipCatalog() {
                     )}
                   </div>
 
-                  {isMobileBase(catShip) && (
-                    <p>Commission through your agent at your faction&apos;s licensed tier-4 shipyard: <code>commission_ship ship_class={catShip.id} fund_from_faction=true</code>. Requires ManageBases; uses faction storage and treasury.</p>
-                  )}
-
                   {/* Expanded view */}
                   {isExpanded && (
                     <div className={styles.shipDetails}>
                       <div className={styles.shipImageWrap}>
-                        <img
+                        <Image
                           src={imgSrc}
                           alt={catShip.name}
+                          width={600}
+                          height={450}
                           className={styles.shipImageExpanded}
                           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                         />
@@ -524,9 +536,9 @@ export function ShipCatalog() {
 
       {/* Fullscreen image modal */}
       {fullscreenImage && (
-        <div className={styles.imageModal} onClick={() => setFullscreenImage(null)} role="dialog" aria-modal="true">
-          <button className={styles.imageModalClose} onClick={() => setFullscreenImage(null)} type="button"><X size={20} /></button>
-          <img src={fullscreenImage.src} alt={fullscreenImage.name} className={styles.imageModalImg} onClick={(e) => e.stopPropagation()} />
+        <div className={styles.imageModal} onClick={() => setFullscreenImage(null)} role="dialog" aria-modal="true" aria-label={fullscreenImage.name}>
+          <button className={styles.imageModalClose} onClick={() => setFullscreenImage(null)} type="button" aria-label="Close"><X size={20} /></button>
+          <Image src={fullscreenImage.src} alt={fullscreenImage.name} width={1600} height={1200} className={styles.imageModalImg} onClick={(e) => e.stopPropagation()} />
           <div className={styles.imageModalName}>{fullscreenImage.name}</div>
         </div>
       )}
@@ -584,13 +596,19 @@ export function ShipCatalog() {
                 {/* Materials list with have/need */}
                 {buildMaterials.length > 0 && (
                   <div className={styles.commissionMaterials}>
-                    <span className={styles.commissionLabel}>Required Materials</span>
+                    <span className={styles.commissionLabel}>
+                      Required Materials{quote.faction_funded_only && ' (from faction storage)'}
+                    </span>
                     {materialChecks.map((m) => (
                       <div key={m.item_id} className={styles.commissionMaterialRow}>
                         <span>{m.name}</span>
-                        <span className={m.enough ? styles.materialHave : styles.materialMissing}>
-                          {m.have}/{m.quantity}
-                        </span>
+                        {quote.faction_funded_only ? (
+                          <span>x{m.quantity}</span>
+                        ) : (
+                          <span className={m.enough ? styles.materialHave : styles.materialMissing}>
+                            {m.have}/{m.quantity}
+                          </span>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -607,28 +625,43 @@ export function ShipCatalog() {
 
                 {/* Actions */}
                 <div className={styles.commissionActions}>
-                  {quote.credits_only_available && (
+                  {quote.faction_funded_only ? (
                     <button
                       className={shared.accentBtn}
-                      onClick={() => handleCommission(false)}
-                      disabled={commissioning || !quote.can_afford_credits_only}
-                      title={!quote.can_afford_credits_only ? `Need ${quote.credits_only_total.toLocaleString()} cr` : undefined}
+                      onClick={() => handleCommission({ fund_from_faction: true })}
+                      disabled={commissioning}
+                      title="Materials come from faction storage; the treasury pays labor and any royalty"
+                      type="button"
+                    >
+                      {commissioning ? <Loader2 size={12} className={shared.spinner} /> : <Users size={12} />}
+                      Fund from Faction{quote.labor_cost != null && <> (<Credits amount={quote.labor_cost} /> labor)</>}
+                    </button>
+                  ) : (
+                    <>
+                    {quote.credits_only_available && (
+                      <button
+                        className={shared.accentBtn}
+                        onClick={() => handleCommission({})}
+                        disabled={commissioning || !quote.can_afford_credits_only}
+                        title={!quote.can_afford_credits_only ? `Need ${quote.credits_only_total.toLocaleString()} cr` : undefined}
+                        type="button"
+                      >
+                        {commissioning ? <Loader2 size={12} className={shared.spinner} /> : null}
+                        Pay Credits (<Credits amount={quote.credits_only_total} />)
+                      </button>
+                    )}
+                    <button
+                      className={shared.accentBtn}
+                      onClick={() => handleCommission({ provide_materials: true })}
+                      disabled={commissioning || !canAffordMaterials}
+                      title={!hasAllMaterials ? 'Missing required materials' : !canAffordMaterials ? `Need ${quote.provide_materials_total.toLocaleString()} cr for labor` : undefined}
                       type="button"
                     >
                       {commissioning ? <Loader2 size={12} className={shared.spinner} /> : null}
-                      Pay Credits (<Credits amount={quote.credits_only_total} />)
+                      Provide Materials (<Credits amount={quote.provide_materials_total} /> + materials)
                     </button>
+                    </>
                   )}
-                  <button
-                    className={shared.accentBtn}
-                    onClick={() => handleCommission(true)}
-                    disabled={commissioning || !canAffordMaterials}
-                    title={!hasAllMaterials ? 'Missing required materials' : !canAffordMaterials ? `Need ${quote.provide_materials_total.toLocaleString()} cr for labor` : undefined}
-                    type="button"
-                  >
-                    {commissioning ? <Loader2 size={12} className={shared.spinner} /> : null}
-                    Provide Materials (<Credits amount={quote.provide_materials_total} /> + materials)
-                  </button>
                   <button
                     className={shared.subtleBtn}
                     onClick={() => setCommissionShip(null)}

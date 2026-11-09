@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useRef, useCallback, useState } from 'react'
+import { useEffect, useRef, useCallback, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Loader2, RefreshCw, WifiOff, LogIn, MonitorSmartphone } from 'lucide-react'
+import { Loader2, RefreshCw, WifiOff, LogIn, MonitorSmartphone, Users } from 'lucide-react'
 import { SignInButton } from '@clerk/nextjs'
 import { mintWsToken } from '@spacemolt/lib'
 import { AccountProvider, useAccountStore, useConnectionPhase } from '@/lib/spacemolt'
@@ -10,6 +10,7 @@ import { PlayProvider } from './PlayProvider'
 import { PlayerSelector } from './PlayerSelector'
 import { HUD } from './HUD'
 import { useGameAuth } from '@/lib/useGameAuth'
+import { useTabClaim } from '@/lib/spacemolt/tabClaim'
 import styles from './PlayClient.module.css'
 
 const GAME_SERVER = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
@@ -52,7 +53,9 @@ function PlayClientInner() {
         <div className={styles.loadingContent}>
           <MonitorSmartphone size={32} />
           <div className={styles.loadingTitle}>Session Replaced</div>
-          <div className={styles.loadingText}>Another session connected as this player.</div>
+          <div className={styles.loadingText}>
+            Another browser, device, or agent connected as this player.
+          </div>
           <button className={styles.signInBtn} onClick={reconnectHere}>
             Reconnect Here
           </button>
@@ -79,17 +82,7 @@ function PlayClientInner() {
 
   // Initial connect/auth — nothing to show behind the loader yet
   if (!wasReady.current) {
-    return (
-      <div className={styles.loadingScreen}>
-        <div className={styles.loadingContent}>
-          <Loader2 size={32} className={styles.spinner} />
-          <div className={styles.loadingTitle}>SpaceMolt</div>
-          <div className={styles.loadingText}>
-            {phase === 'authenticating' ? 'Authenticating...' : 'Connecting to game server...'}
-          </div>
-        </div>
-      </div>
-    )
+    return <LoadingScreen text={phase === 'authenticating' ? 'Authenticating...' : 'Connecting to game server...'} />
   }
 
   // Ready before (HUD has state to show); overlay while the lib reconnects
@@ -120,6 +113,61 @@ function PlayClientInner() {
   )
 }
 
+/**
+ * Connects only while this tab holds the character's tab lock. If another tab
+ * of this browser plays the character, ask before taking over instead of
+ * kicking it to a "Session Replaced" screen.
+ */
+function TabGate({ playerId, onSwitchPlayer, children }: { playerId: string; onSwitchPlayer: () => void; children: ReactNode }) {
+  const { claim, takeOver } = useTabClaim(playerId)
+  if (claim === 'held') return <>{children}</>
+  if (claim === 'pending') {
+    return (
+      <div className={styles.loadingScreen}>
+        <div className={styles.loadingContent}>
+          <Loader2 size={32} className={styles.spinner} />
+          <div className={styles.loadingTitle}>SpaceMolt</div>
+        </div>
+      </div>
+    )
+  }
+  return (
+    <div className={styles.loadingScreen}>
+      <div className={styles.loadingContent}>
+        <MonitorSmartphone size={32} />
+        <div className={styles.loadingTitle}>Open in Another Tab</div>
+        <div className={styles.loadingText}>This player is connected in another tab of this browser.</div>
+        <button className={styles.signInBtn} onClick={takeOver}>
+          Play Here
+        </button>
+        <button className={styles.signInBtn} onClick={onSwitchPlayer}>
+          <Users size={16} />
+          Switch Player
+        </button>
+      </div>
+    </div>
+  )
+}
+
+const LAST_PLAYER_KEY = 'spacemolt.play.lastPlayer'
+
+function LoadingScreen({ text }: { text: string }) {
+  return (
+    <div className={styles.loadingScreen}>
+      <div className={styles.loadingContent}>
+        <Loader2 size={32} className={styles.spinner} />
+        <div className={styles.loadingTitle}>SpaceMolt</div>
+        <div className={styles.loadingText}>{text}</div>
+      </div>
+    </div>
+  )
+}
+
+/** System accounts like `[Pirate Fleet]` are bracketed; they are not playable characters. */
+function playable(players: LinkedPlayer[] | undefined): LinkedPlayer[] {
+  return (players ?? []).filter(p => !/^\[.*\]$/.test(p.username))
+}
+
 export function PlayClient() {
   const { user, isLoaded, authHeaders } = useGameAuth()
   const searchParams = useSearchParams()
@@ -128,9 +176,16 @@ export function PlayClient() {
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null)
   const [loadingPlayers, setLoadingPlayers] = useState(true)
 
-  const handleSwitchPlayer = useCallback(() => {
-    setSelectedPlayerId(null)
+  // Remember the pick per browser so a reload returns to the same player.
+  const selectPlayer = useCallback((playerId: string | null) => {
+    try {
+      if (playerId) localStorage.setItem(LAST_PLAYER_KEY, playerId)
+      else localStorage.removeItem(LAST_PLAYER_KEY)
+    } catch { /* storage blocked */ }
+    setSelectedPlayerId(playerId)
   }, [])
+
+  const handleSwitchPlayer = useCallback(() => selectPlayer(null), [selectPlayer])
 
   const handlePlayerCreated = useCallback(async (playerId: string) => {
     // Re-fetch player list then auto-select the new player
@@ -139,14 +194,14 @@ export function PlayClient() {
       const res = await fetch(`${GAME_SERVER}/api/registration-code`, { headers })
       if (res.ok) {
         const data = await res.json()
-        setPlayers(data.players || [])
+        setPlayers(playable(data.players))
         if (data.registration_code) setRegistrationCode(data.registration_code)
       }
     } catch {
       // Non-critical — we still select the player
     }
-    setSelectedPlayerId(playerId)
-  }, [authHeaders])
+    selectPlayer(playerId)
+  }, [authHeaders, selectPlayer])
 
   // A fresh single-use ws-token per (re)connect; short-lived Clerk JWTs (or
   // the dev-mode header) are resolved per request by the headers factory.
@@ -172,14 +227,18 @@ export function PlayClient() {
         const res = await fetch(`${GAME_SERVER}/api/registration-code`, { headers })
         if (res.ok && !cancelled) {
           const data = await res.json()
-          const linked: LinkedPlayer[] = data.players || []
+          const linked = playable(data.players)
           setPlayers(linked)
           if (data.registration_code) setRegistrationCode(data.registration_code)
 
-          // Auto-select from query param or if only one player
+          // Auto-select from query param, the last pick, or if only one player
           const queryPlayer = searchParams.get('player')
+          let lastPlayer: string | null = null
+          try { lastPlayer = localStorage.getItem(LAST_PLAYER_KEY) } catch { /* storage blocked */ }
           if (queryPlayer && linked.some(p => p.id === queryPlayer)) {
             setSelectedPlayerId(queryPlayer)
+          } else if (lastPlayer && linked.some(p => p.id === lastPlayer)) {
+            setSelectedPlayerId(lastPlayer)
           } else if (linked.length === 1) {
             setSelectedPlayerId(linked[0].id)
           }
@@ -197,15 +256,7 @@ export function PlayClient() {
 
   // Not loaded yet
   if (!isLoaded) {
-    return (
-      <div className={styles.loadingScreen}>
-        <div className={styles.loadingContent}>
-          <Loader2 size={32} className={styles.spinner} />
-          <div className={styles.loadingTitle}>SpaceMolt</div>
-          <div className={styles.loadingText}>Loading...</div>
-        </div>
-      </div>
-    )
+    return <LoadingScreen text="Loading..." />
   }
 
   // Not signed in — prompt Clerk sign-in
@@ -231,7 +282,7 @@ export function PlayClient() {
     return (
       <PlayerSelector
         players={players}
-        onSelect={setSelectedPlayerId}
+        onSelect={selectPlayer}
         loading={loadingPlayers}
         authHeaders={authHeaders}
         registrationCode={registrationCode}
@@ -242,23 +293,17 @@ export function PlayClient() {
 
   // Player selected — launch game
   return (
-    <AccountProvider
-      playerId={selectedPlayerId}
-      mintToken={mintToken}
-      gameserverUrl={GAME_SERVER}
-      fallback={
-        <div className={styles.loadingScreen}>
-          <div className={styles.loadingContent}>
-            <Loader2 size={32} className={styles.spinner} />
-            <div className={styles.loadingTitle}>SpaceMolt</div>
-            <div className={styles.loadingText}>Connecting to game server...</div>
-          </div>
-        </div>
-      }
-    >
-      <PlayProvider onSwitchPlayer={handleSwitchPlayer}>
-        <PlayClientInner />
-      </PlayProvider>
-    </AccountProvider>
+    <TabGate key={selectedPlayerId} playerId={selectedPlayerId} onSwitchPlayer={handleSwitchPlayer}>
+      <AccountProvider
+        playerId={selectedPlayerId}
+        mintToken={mintToken}
+        gameserverUrl={GAME_SERVER}
+        fallback={<LoadingScreen text="Connecting to game server..." />}
+      >
+        <PlayProvider onSwitchPlayer={handleSwitchPlayer}>
+          <PlayClientInner />
+        </PlayProvider>
+      </AccountProvider>
+    </TabGate>
   )
 }

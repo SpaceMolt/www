@@ -1,0 +1,121 @@
+/* === CrewPanel (fleet, personnel, prizes, empire) === */
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.55rem 0.6rem;
+  background: rgba(61, 90, 108, 0.06);
+  border: 1px solid rgba(0, 212, 255, 0.12);
+  border-radius: 5px;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.cardTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--star-white);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meta {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  align-items: center;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--hull-grey);
+}
+
+.meta b {
+  color: var(--chrome-silver);
+  font-weight: 600;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.hint {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.66rem;
+  color: var(--hull-grey);
+  line-height: 1.4;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.66rem;
+  color: var(--hull-grey);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.numInput {
+  width: 4.5rem;
+}
+
+.grow {
+  flex: 1;
+  min-width: 8rem;
+}
+
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
+  gap: 0.4rem;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.35rem 0.45rem;
+  border: 1px solid rgba(61, 90, 108, 0.25);
+  border-radius: 4px;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+}
+
+.statLabel {
+  font-size: 0.6rem;
+  color: var(--hull-grey);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.statValue {
+  font-size: 0.8rem;
+  color: var(--star-white);
+}
+
+.textArea {
+  min-height: 5rem;
+  resize: vertical;
+  font-family: inherit;
+}

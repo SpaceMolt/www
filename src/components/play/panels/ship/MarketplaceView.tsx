@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import {
   Heart,
   ShoppingCart,
@@ -9,18 +9,17 @@ import {
   X,
   Tag,
   Loader2,
+  ClipboardList,
 } from 'lucide-react'
 import type { BrowseShipsResponse } from '@spacemolt/lib'
 import { useCommandMutation, useCommandQuery, useLocationState, usePlayer } from '@/lib/spacemolt'
+import { allShips } from '@/data/catalog'
 import { usePlay } from '../../PlayProvider'
-import { Credits, Loading, Modal, ConfirmAction, shared } from '../../shared'
+import { Credits, Loading, Modal, ConfirmAction, errorMessage, shared } from '../../shared'
 import styles from './MarketplaceView.module.css'
 
 type ShipListing = BrowseShipsResponse['listings'][number]
-
-function errorText(err: unknown): string {
-  return err instanceof Error ? err.message : String(err)
-}
+type ShipBuyOrder = NonNullable<BrowseShipsResponse['buy_orders']>[number]
 
 export function MarketplaceView() {
   const location = useLocationState()
@@ -54,11 +53,43 @@ export function MarketplaceView() {
 
   const reportError = useCallback(
     (err: unknown) => {
-      const text = errorText(err)
+      const text = errorMessage(err)
       uiStore.dispatch({ type: 'toast', kind: 'danger', text })
     },
     [uiStore]
   )
+
+  // Ship buy orders: mine across all bases, plus a form to place one here.
+  const { data: myBuyOrders, refetch: refetchMyBuyOrders } = useCommandQuery(
+    async (account) => (await account.commands.spacemolt_ship.view_ship_buy_orders()).structuredContent,
+    [],
+  )
+  const [orderClass, setOrderClass] = useState('')
+  const [orderPrice, setOrderPrice] = useState('')
+  const [shipConfirm, setShipConfirm] = useState<{ message: string; run: () => Promise<unknown> } | null>(null)
+  const shipClasses = useMemo(() => [...allShips()].sort((a, b) => a.name.localeCompare(b.name)), [])
+
+  const runShipOrder = useCallback(async (run: () => Promise<unknown>) => {
+    setShipConfirm(null)
+    try {
+      await run()
+      refetchListings()
+      refetchFleet()
+      refetchMyBuyOrders()
+    } catch (err) {
+      reportError(err)
+    }
+  }, [refetchListings, refetchFleet, refetchMyBuyOrders, reportError])
+
+  const placeOrder = () => {
+    const price = parseInt(orderPrice, 10)
+    const name = shipClasses.find((c) => c.id === orderClass)?.name ?? orderClass
+    setShipConfirm({
+      message: `Escrow ${price.toLocaleString()} cr plus sales tax for a ${name} buy order here?`,
+      run: () => mutate((c) => c.spacemolt_ship.place_ship_buy_order({ id: orderClass, price }), { label: 'place_ship_buy_order' })
+        .then(() => { setOrderClass(''); setOrderPrice('') }),
+    })
+  }
 
   const handleBuy = useCallback(
     (listingId: string) => {
@@ -126,6 +157,8 @@ export function MarketplaceView() {
   const availableShips = fleet?.ships.filter(
     (s) => !s.is_active && s.location_base_id === dockedAt
   ) ?? []
+
+  const otherBuyOrders = (browseData?.buy_orders ?? []).filter((o) => o.buyer !== playerName)
 
   // Ship being sold (for modal)
   const sellShipInfo = availableShips.find((s) => s.ship_id === sellShipId)
@@ -227,6 +260,48 @@ export function MarketplaceView() {
         </>
       )}
 
+      {shipConfirm && (
+        <ConfirmAction
+          message={shipConfirm.message}
+          variant="accent"
+          onConfirm={() => runShipOrder(shipConfirm.run)}
+          onCancel={() => setShipConfirm(null)}
+        />
+      )}
+
+      {/* Other pilots' standing ship buy orders at this base */}
+      {otherBuyOrders.length > 0 && (
+        <>
+          <span className={shared.sectionTitle}>Wanted Here</span>
+          <div className={styles.listingsList}>
+            {otherBuyOrders.map((order) => {
+              const match = availableShips.find((s) => s.class_id === order.class_id)
+              return (
+                <div key={order.order_id} className={styles.sellCard}>
+                  <div className={styles.listingInfo}>
+                    <span className={styles.listingName}>{order.class_name || order.class_id}</span>
+                    <span className={styles.listingClass}>{order.buyer}</span>
+                  </div>
+                  <span className={styles.listingPrice}><Credits amount={order.price} /></span>
+                  <button
+                    className={shared.warningBtn}
+                    disabled={!match}
+                    title={match ? 'Sell your stored ship into this order' : 'You have no matching inactive ship docked here'}
+                    onClick={() => match && setShipConfirm({
+                      message: `Sell your ${match.class_name || match.class_id} for ${order.price.toLocaleString()} cr?`,
+                      run: () => mutate((c) => c.spacemolt_ship.sell_ship_to_order({ id: order.order_id, ship_id: match.ship_id }), { label: 'sell_ship_to_order' }),
+                    })}
+                    type="button"
+                  >
+                    <Tag size={12} /> Sell
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        </>
+      )}
+
       {/* Sell a ship */}
       <span className={shared.sectionTitle}>Sell a Ship</span>
       {availableShips.length === 0 ? (
@@ -244,6 +319,50 @@ export function MarketplaceView() {
                 type="button"
               >
                 <Tag size={12} /> Sell
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Ship buy orders */}
+      <span className={shared.sectionTitle}>Your Ship Buy Orders</span>
+      <div className={styles.modalRow}>
+        <select className={shared.textInput} value={orderClass} onChange={(e) => setOrderClass(e.target.value)} aria-label="Ship class">
+          <option value="">Choose a ship class...</option>
+          {shipClasses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
+        <input className={shared.textInput} type="number" min="1" placeholder="Offer (cr)" value={orderPrice} onChange={(e) => setOrderPrice(e.target.value)} />
+        <button
+          className={shared.accentBtn}
+          onClick={placeOrder}
+          disabled={!orderClass || !(parseInt(orderPrice, 10) > 0)}
+          title="Place a standing order; a seller here can fill it any time"
+          type="button"
+        >
+          <ClipboardList size={12} /> Place Order
+        </button>
+      </div>
+      {(myBuyOrders?.orders ?? []).length === 0 ? (
+        <div className={shared.emptyState}>No open ship buy orders.</div>
+      ) : (
+        <div className={styles.listingsList}>
+          {myBuyOrders?.orders.map((order: ShipBuyOrder) => (
+            <div key={order.order_id} className={styles.sellCard}>
+              <div className={styles.listingInfo}>
+                <span className={styles.listingName}>{order.class_name || order.class_id}</span>
+                <span className={styles.listingClass}>{order.base_name || order.base_id}{order.being_built ? ' (being built)' : ''}</span>
+              </div>
+              <span className={styles.listingPrice}><Credits amount={order.price} /></span>
+              <button
+                className={shared.dangerBtn}
+                onClick={() => setShipConfirm({
+                  message: `Cancel your ${order.class_name || order.class_id} buy order and refund the escrow?`,
+                  run: () => mutate((c) => c.spacemolt_ship.cancel_ship_buy_order({ id: order.order_id }), { label: 'cancel_ship_buy_order' }),
+                })}
+                type="button"
+              >
+                <X size={12} /> Cancel
               </button>
             </div>
           ))}
