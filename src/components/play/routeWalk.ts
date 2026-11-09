@@ -10,11 +10,6 @@ export function jumpTarget(step: Pick<RouteStep, 'system_id' | 'via_wormhole' | 
   return step.via_wormhole && step.entrance_poi ? step.entrance_poi : step.system_id
 }
 
-/** True when the tank cannot cover the remaining jumps. */
-export function isShortOfFuel({ fuel, fuelPerJump, remainingJumps }: { fuel: number; fuelPerJump: number; remainingJumps: number }): boolean {
-  return fuel < fuelPerJump * remainingJumps
-}
-
 /** Server route (includes known wormholes) to a system, POI, or base ID; null when none exists. */
 export async function findRoute(account: Account, id: string): Promise<PlannedRoute | null> {
   const data = (await account.commands.spacemolt.find_route({ id })).structuredContent
@@ -72,7 +67,7 @@ export async function walkRoute(
     if (stop) return stop
 
     const fuel = account.ship?.fuel ?? 0
-    if (isShortOfFuel({ fuel, fuelPerJump, remainingJumps: route.length - i })) {
+    if (fuel < fuelPerJump * (route.length - i)) { // tank cannot cover the rest
       try {
         const station = await refuelAtStation(account, run)
         if (station) onRefuel?.(station)

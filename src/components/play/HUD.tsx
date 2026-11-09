@@ -107,8 +107,7 @@ function AutoTravelBanner({ progress, onAbort }: { progress: AutoTravelProgress;
     <div className={styles.autoTravelBanner}>
       <div className={styles.atbTop}>
         <div className={styles.atbPhase}>
-          {phase === 'undocking' ? 'UNDOCKING'
-            : phase === 'traveling_to_station' ? `TRAVELING TO ${progress.stationName?.toUpperCase() || 'STATION'}`
+          {phase === 'traveling_to_station' ? `TRAVELING TO ${progress.stationName?.toUpperCase() || 'STATION'}`
             : `JUMPING ${completedJumps + 1} / ${totalJumps}`}
         </div>
         <div className={styles.atbCountdown}>
@@ -178,12 +177,9 @@ export function HUD() {
 
   const handleBeginTravel = useCallback(() => {
     if (!plannedRoute || !ship || loop.isActive) return
-    autoTravel.start(plannedRoute, {
-      shipSpeed: ship.speed ?? 1,
-      isDocked,
-    })
+    autoTravel.start(plannedRoute, { shipSpeed: ship.speed ?? 1 })
     setPlannedRoute(null) // clear the planned route, auto-travel takes over
-  }, [plannedRoute, ship, isDocked, autoTravel, loop.isActive])
+  }, [plannedRoute, ship, autoTravel, loop.isActive])
 
   // When auto-travel completes a jump, switch to system tab
   const completedJumps = autoTravel.progress?.completedJumps ?? 0

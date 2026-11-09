@@ -510,7 +510,7 @@ export const GalaxyPanel = forwardRef<GalaxyPanelHandle, GalaxyPanelProps>(funct
 
       const systemMap = new Map(s.mapData.systems.map((sys) => [sys.id, sys]))
       const completedJumps = atp ? atp.completedJumps : 0
-      const isAutoTravel = !!atp && (atp.phase === 'jumping' || atp.phase === 'undocking')
+      const isAutoTravel = !!atp && atp.phase === 'jumping'
 
       ctx.save()
 

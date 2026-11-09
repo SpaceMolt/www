@@ -4,9 +4,9 @@ import type { PlannedRoute } from './panels/GalaxyPanel'
 import { jumpEstimateMs, walkRoute } from './routeWalk'
 
 export interface AutoTravelProgress {
-  currentJumpIndex: number    // 0-based, which jump we're on (-1 = undocking)
+  currentJumpIndex: number    // 0-based, which jump we're on (-1 = not started)
   totalJumps: number
-  phase: 'undocking' | 'jumping' | 'traveling_to_station' | 'arrived' | 'aborted'
+  phase: 'jumping' | 'traveling_to_station' | 'arrived' | 'aborted'
   jumpStartTime: number       // Date.now() when current jump started
   estimatedSecsPerJump: number // refined from actual timing
   totalElapsedMs: number
@@ -23,7 +23,7 @@ export interface AutoTravelProgress {
 export interface UseAutoTravelReturn {
   isActive: boolean
   progress: AutoTravelProgress | null
-  start: (route: PlannedRoute, options: { shipSpeed: number; isDocked: boolean }) => void
+  start: (route: PlannedRoute, options: { shipSpeed: number }) => void
   requestAbort: () => void
   dismissAbort: () => void
 }
@@ -47,13 +47,12 @@ export function useAutoTravel(): UseAutoTravelReturn {
     })
   }, [store])
 
-  const start = useCallback((route: PlannedRoute, options: { shipSpeed: number; isDocked: boolean }) => {
+  const start = useCallback((route: PlannedRoute, { shipSpeed }: { shipSpeed: number }) => {
     if (activeRef.current) return
     activeRef.current = true
     abortRequestedRef.current = false
     pulledIntoCombatRef.current = false
 
-    const { shipSpeed, isDocked } = options
     const { account } = store
     const fuelNow = () => account.ship?.fuel ?? 0
 
@@ -78,7 +77,7 @@ export function useAutoTravel(): UseAutoTravelReturn {
       setProgress({
         currentJumpIndex: -1,
         totalJumps: route.totalJumps,
-        phase: isDocked ? 'undocking' : 'jumping',
+        phase: 'jumping',
         jumpStartTime: startTime,
         estimatedSecsPerJump: avgSecsPerJump(),
         totalElapsedMs: 0,
@@ -92,17 +91,7 @@ export function useAutoTravel(): UseAutoTravelReturn {
       // Yield to let React render the initial state before starting
       await new Promise((r) => setTimeout(r, 0))
 
-      // Jumps auto-undock server-side; undock explicitly only so the banner
-      // shows the step and a failed undock reads clearly.
-      if (isDocked) {
-        try {
-          await run((c) => c.spacemolt.undock(), { label: 'undock' })
-        } catch (err) {
-          abort(`Failed to undock: ${err instanceof Error ? err.message : 'unknown error'}`)
-          return
-        }
-      }
-
+      // The first jump undocks server-side, so no explicit undock step.
       const walkStop = await walkRoute(account, run, route.route, {
         fuelPerJump: route.fuelPerJump,
         shipSpeed,
