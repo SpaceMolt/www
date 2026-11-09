@@ -132,7 +132,7 @@ export function TopBar({ onShowShortcuts }: { onShowShortcuts?: () => void }) {
           <BugReportButton contextType="generic" />
         )}
         {onShowShortcuts && (
-          <button className={styles.logoutBtn} onClick={onShowShortcuts} title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts" type="button">
+          <button className={`${styles.logoutBtn} ${styles.shortcutsBtn}`} onClick={onShowShortcuts} title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts" type="button">
             <Keyboard size={12} />
           </button>
         )}

@@ -249,22 +249,27 @@ export function HUD() {
         {/* Top Bar */}
         <TopBar onShowShortcuts={() => setHelpOpen(true)} />
 
-        {/* Tab Bar */}
-        <PanelNav
-          activePanel={activePanel}
-          onPanelChange={setActivePanel}
-          badges={badges}
-          isDocked={isDocked}
-          inCombat={inCombat}
-          hasBattleReplay={hasBattleReplay}
-        />
+        {/* Tab Bar; on phones the Nav button opens the left sidebar as a drawer */}
+        <div className={styles.navRow}>
+          <button className={styles.navButton} onClick={() => setNavOpen(true)} type="button" aria-label="Open navigation and ship actions">
+            <Compass size={16} />
+            <span>Nav</span>
+          </button>
+          <PanelNav
+            activePanel={activePanel}
+            onPanelChange={setActivePanel}
+            badges={badges}
+            isDocked={isDocked}
+            inCombat={inCombat}
+            hasBattleReplay={hasBattleReplay}
+          />
+        </div>
 
         {/* Main Content: Left Sidebar + Panel + Right Pane */}
         <div className={styles.main}>
           <LeftSidebar galaxyRef={galaxyRef} exploreSystem={exploreSystem} onExploreSystemChange={setExploreSystem} plannedRoute={plannedRoute} onPlannedRouteChange={setPlannedRoute} activeTab={sidebarTab} onTabChange={setSidebarTab} autoTravelActive={pilotBusy} onHighlightedSystemsChange={setHighlightedSystems} mobileOpen={navOpen} onMobileClose={() => setNavOpen(false)} />
           <div className={styles.panel}>
             <ActionBanner autoTravelActive={autoTravel.isActive} />
-            <LoopBanner />
             {!autoTravel.isActive && <TravelProgress />}
             {plannedRoute && !autoTravel.isActive && (
               <div className={styles.routeBanner}>
@@ -325,17 +330,14 @@ export function HUD() {
             <div className={styles.panelContent}>
               {ActivePanelComponent ? <ActivePanelComponent /> : galaxy}
             </div>
+            <LoopBanner />
           </div>
           <RightPane />
         </div>
-      </div>
 
-      {/* Phone: the left sidebar is a drawer opened from this button */}
-      <button className={styles.navFab} onClick={() => setNavOpen(true)} type="button" aria-label="Open navigation and ship actions">
-        <Compass size={18} />
-        <span>Nav</span>
-      </button>
-      {navOpen && <div className={styles.navBackdrop} onClick={() => setNavOpen(false)} />}
+        {/* Inside .hud so the drawer stacks above the backdrop */}
+        {navOpen && <div className={styles.navBackdrop} onClick={() => setNavOpen(false)} />}
+      </div>
 
       {/* Action Toasts (position: fixed, outside grid) */}
       <ToastContainer />

@@ -1,9 +1,8 @@
 'use client'
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
-import { SpacemoltError, type MineResponse } from '@spacemolt/lib'
+import { SpacemoltError } from '@spacemolt/lib'
 import { useAccountStore, useCommandMutation, type AccountStore, type RunMutation } from '@/lib/spacemolt'
-import { formatItemId } from '@/data/catalog'
 import { errorMessage } from '../shared'
 import { findRoute, walkRoute } from '../routeWalk'
 import { ABORT_CODES, advance, errorOutcome, stepLabel, type LoopPlan, type LoopPosition, type LoopStep } from './loopPlan'
@@ -53,18 +52,12 @@ interface StepContext {
   run: RunMutation
   haltReason: () => string | null
   log: (line: string) => void
-  onMined: (itemId: string, quantity: number) => void
 }
 
-async function mineUntilFull({ account, run, haltReason, log, onMined }: StepContext) {
+// Yields are counted from the mining_yield push (see useLoopRunner).
+async function mineUntilFull({ account, run, haltReason }: StepContext) {
   while (!haltReason() && !isCargoFull(account)) {
-    const result = await run((c) => c.spacemolt.mine(), { label: 'mine' })
-    const details = result.delta.details as MineResponse | undefined
-    if (details && 'resource_id' in details) {
-      onMined(details.resource_name || formatItemId(details.resource_id), details.quantity)
-    } else if (details?.message) {
-      log(details.message)
-    }
+    await run((c) => c.spacemolt.mine(), { label: 'mine' })
   }
 }
 
@@ -145,7 +138,12 @@ export function useLoopRunner(): LoopRunner {
         if (activeRef.current && !haltRef.current) haltRef.current = reason
       }),
     )
-    return () => offs.forEach((off) => off())
+    const offYield = store.account.on('mining_yield', ({ resource_name, resource_id, quantity }) => {
+      if (!activeRef.current) return
+      const name = resource_name || resource_id
+      setState((s) => s && { ...s, mined: { ...s.mined, [name]: (s.mined[name] ?? 0) + quantity } })
+    })
+    return () => [...offs, offYield].forEach((off) => off())
   }, [store])
 
   const start = useCallback((plan: LoopPlan) => {
@@ -160,7 +158,6 @@ export function useLoopRunner(): LoopRunner {
       run,
       haltReason: () => haltRef.current,
       log,
-      onMined: (name, quantity) => setState((s) => s && { ...s, mined: { ...s.mined, [name]: (s.mined[name] ?? 0) + quantity } }),
     }
 
     setState({

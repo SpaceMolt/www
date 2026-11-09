@@ -1,14 +1,14 @@
 .banner {
   flex-shrink: 0;
   background: linear-gradient(180deg, rgba(45, 212, 191, 0.08) 0%, rgba(45, 212, 191, 0.02) 100%);
-  border-bottom: 1px solid rgba(45, 212, 191, 0.3);
+  border-top: 1px solid rgba(45, 212, 191, 0.3);
   padding: 0.45rem 0.75rem;
   font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
   font-size: 0.75rem;
 }
 
-.bannerDone { border-bottom-color: rgba(0, 212, 255, 0.3); }
-.bannerHalted { border-bottom-color: rgba(255, 107, 53, 0.5); background: rgba(255, 107, 53, 0.05); }
+.bannerDone { border-top-color: rgba(0, 212, 255, 0.3); }
+.bannerHalted { border-top-color: rgba(255, 107, 53, 0.5); background: rgba(255, 107, 53, 0.05); }
 
 .bannerTop {
   display: flex;

@@ -25,7 +25,7 @@ const KIND_LABELS: Record<StepKind, string> = {
 
 const EMPTY_PLAN: LoopPlan = { name: 'My loop', steps: [], repeat: 0 }
 
-/** Live progress strip shown above every panel while a loop runs or after it ends. */
+/** Live progress strip under every panel while a loop runs or after it ends. */
 export function LoopBanner() {
   const { state, stop, dismiss } = useLoop()
   const player = usePlayer()
