@@ -13,4 +13,5 @@ it('ignores presses while typing or with a modifier', () => {
   expect(key('d', { target: { tagName: 'INPUT' } as unknown as EventTarget })).toBeNull()
   expect(key('d', { target: { isContentEditable: true } as unknown as EventTarget })).toBeNull()
   expect(key('r', { ctrlKey: true })).toBeNull()
+  expect(key('m', { repeat: true })).toBeNull()
 })

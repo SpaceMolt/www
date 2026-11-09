@@ -155,7 +155,7 @@ export function LoopPanel() {
   const pois = systemData && 'system' in systemData ? systemData.system.pois : []
   const station = pois.find((p) => p.has_base)
   const minePoi = hasMineableResources(location) && location ? { id: location.poi_id, name: location.poi_name } : null
-  const canRun = !isActive && pending === null
+  const canRun = !isActive && pending === null // HUD also blocks start() during auto-travel
 
   const persist = (next: LoopPlan[]) => { setPlans(next); savePlans(next) }
   const saveDraft = () => persist([...plans.filter((p) => p.name !== draft.name), draft])

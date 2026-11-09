@@ -9,14 +9,14 @@ export const ACTION_SHORTCUTS = [
   { key: 'Esc', label: 'Close help or drawer' },
 ] as const
 
-type KeyEventLike = Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'metaKey' | 'altKey' | 'target'>
+type KeyEventLike = Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'metaKey' | 'altKey' | 'target'> & { repeat?: boolean }
 
 /**
  * The shortcut key for an event, lowercased, or null when the player is typing
- * or holding a modifier (browser shortcuts must keep working).
+ * holding a modifier (browser shortcuts must keep working), or holding the key down.
  */
-export function shortcutKey({ key, ctrlKey, metaKey, altKey, target }: KeyEventLike): string | null {
-  if (ctrlKey || metaKey || altKey) return null
+export function shortcutKey({ key, ctrlKey, metaKey, altKey, target, repeat = false }: KeyEventLike): string | null {
+  if (ctrlKey || metaKey || altKey || repeat) return null
   const el = target as { tagName?: string; isContentEditable?: boolean } | null
   if (el?.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el?.tagName ?? '')) return null
   return key.toLowerCase()

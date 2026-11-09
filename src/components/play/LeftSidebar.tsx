@@ -399,7 +399,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const key = shortcutKey(e)
-      if (key) shortcutsRef.current[key]?.()
+      if (key && !document.querySelector('[role="dialog"]')) shortcutsRef.current[key]?.()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)

@@ -109,7 +109,10 @@ export function savePlans(plans: LoopPlan[], storage: Pick<Storage, 'setItem'> |
   }
 }
 
+const STEP_KINDS = new Set<string>(['mine', 'goto', 'sell_all', 'sell', 'deposit', 'refuel', 'repair', 'craft', 'wait'])
+
 function isPlan(value: unknown): value is LoopPlan {
   const plan = value as LoopPlan
-  return typeof plan?.name === 'string' && Array.isArray(plan.steps) && typeof plan.repeat === 'number'
+  return typeof plan?.name === 'string' && typeof plan.repeat === 'number' &&
+    Array.isArray(plan.steps) && plan.steps.every((s) => STEP_KINDS.has(s?.kind))
 }

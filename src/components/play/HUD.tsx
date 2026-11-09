@@ -59,7 +59,7 @@ const PANEL_SHORTCUTS = ALL_PANELS.filter((p) => !p.right).slice(0, 9)
 function ShortcutHelp({ onClose }: { onClose: () => void }) {
   return (
     <div className={styles.abortModalOverlay} onClick={onClose}>
-      <div className={styles.helpModal} onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Keyboard shortcuts">
+      <div className={styles.helpModal} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
         <div className={styles.helpTitle}><Keyboard size={14} /> Keyboard shortcuts</div>
         <dl className={styles.helpList}>
           {ACTION_SHORTCUTS.map(({ key, label }) => (
@@ -197,6 +197,7 @@ export function HUD() {
       if (key === null) return
       if (key === 'escape') { setHelpOpen(false); setNavOpen(false); return }
       if (key === '?') { setHelpOpen((v) => !v); return }
+      if (document.querySelector('[role="dialog"]')) return // help or another dialog is open
       if (key === 'n') { setNavOpen((v) => !v); return }
       const panel = PANEL_SHORTCUTS[Number(key) - 1]
       if (panel) setActivePanel(panel.id)
@@ -239,8 +240,11 @@ export function HUD() {
     <GalaxyPanel ref={galaxyRef} onSystemSelect={handleSystemSelect} plannedRoute={plannedRoute} onPlannedRouteChange={handleRouteEdit} autoTravelProgress={autoTravel.progress} highlightedSystems={highlightedSystems} />
   )
 
+  // One pilot at a time: no loop starts while auto-travel runs.
+  const loopContext = autoTravel.isActive ? { ...loop, start: () => {} } : loop
+
   return (
-    <LoopRunnerContext.Provider value={loop}>
+    <LoopRunnerContext.Provider value={loopContext}>
       <div className={styles.hud}>
         {/* Top Bar */}
         <TopBar onShowShortcuts={() => setHelpOpen(true)} />

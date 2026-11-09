@@ -54,7 +54,7 @@ describe('plan storage', () => {
     const storage = { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => void store.set(k, v) }
     savePlans([plan(3)], storage)
     expect(loadPlans(storage)).toEqual([plan(3)])
-    store.set('spacemolt.play.loopPlans', JSON.stringify([{ bogus: true }, plan(1)]))
+    store.set('spacemolt.play.loopPlans', JSON.stringify([{ bogus: true }, { ...plan(2), steps: [{ kind: 'warp' }] }, plan(1)]))
     expect(loadPlans(storage)).toEqual([plan(1)])
     store.set('spacemolt.play.loopPlans', '{not json')
     expect(loadPlans(storage)).toEqual([])

@@ -54,10 +54,16 @@ interface StepContext {
   log: (line: string) => void
 }
 
+const IDLE_MINES = 5 // successful mines in a row that add nothing before giving up
+
 // Yields are counted from the mining_yield push (see useLoopRunner).
 async function mineUntilFull({ account, run, haltReason }: StepContext) {
+  let idle = 0
   while (!haltReason() && !isCargoFull(account)) {
+    const before = account.ship?.cargo_used ?? 0
     await run((c) => c.spacemolt.mine(), { label: 'mine' })
+    idle = (account.ship?.cargo_used ?? 0) > before ? 0 : idle + 1
+    if (idle >= IDLE_MINES) throw new Error(`No ore collected in ${IDLE_MINES} tries`)
   }
 }
 
@@ -143,7 +149,10 @@ export function useLoopRunner(): LoopRunner {
       const name = resource_name || resource_id
       setState((s) => s && { ...s, mined: { ...s.mined, [name]: (s.mined[name] ?? 0) + quantity } })
     })
-    return () => [...offs, offYield].forEach((off) => off())
+    return () => {
+      [...offs, offYield].forEach((off) => off())
+      haltRef.current ??= 'Play closed' // stop a running loop when the HUD unmounts
+    }
   }, [store])
 
   const start = useCallback((plan: LoopPlan) => {
