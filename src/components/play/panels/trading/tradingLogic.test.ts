@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import type { MarketBook, ViewMarketResponse } from '@spacemolt/lib'
-import { giftFromLog, mergeLiveBook, sumBulk } from './tradingLogic'
+import { giftFromLog, mergeLiveBook, stationsInOrdersHint, sumBulk } from './tradingLogic'
 import { mergeTradeSnapshot } from '@/lib/spacemolt/wireNotifications'
 
 type MarketItem = ViewMarketResponse['items'][number]
@@ -98,5 +98,17 @@ describe('giftFromLog with production receipt shapes', () => {
   test('ship gift (ship.gift_received)', () => {
     expect(giftFromLog({ id: 13, created_at: at, data: { sender: 'Alpha Test', base_id: 'grand_exchange_station', ship_id: 'abc123', class_id: 'frost_dividend', recipient: 'Bravo Test' } }))
       .toEqual({ id: 13, at, sender: 'Alpha Test', items: [], credits: 0, shipClass: 'frost_dividend' })
+  })
+})
+
+describe('stationsInOrdersHint', () => {
+  test('lists the stations named in the view_orders hint', () => {
+    expect(stationsInOrdersHint('2 buy orders and 3 sell orders on the market at nexus_base, sol_central (1,200 credits and 40 items in escrow)'))
+      .toEqual(['nexus_base', 'sol_central'])
+  })
+
+  test('returns nothing when there are no orders or the wording changes', () => {
+    expect(stationsInOrdersHint('No active orders on any market.')).toEqual([])
+    expect(stationsInOrdersHint(undefined)).toEqual([])
   })
 })
