@@ -99,6 +99,8 @@ interface SupplyArgs { id?: string; quantity?: number; target?: string }
 
 /** Supply items a refuel/repair can burn, matched by id the way the server names them. */
 const SUPPLY_ITEM = { refuel: /fuel_cell/, repair: /repair|hull_patch/ } as const
+/** The module the server requires to refuel or repair another ship (gameserver handlers/ship.go). */
+const TARGET_MODULE = { refuel: 'refueling_pump', repair: 'repair_arm' } as const
 
 /** A deposit's rating, colored by level, or 'Depleted'. The numbers are in the row's hover text. */
 function DepositRating({ itemId, richness, remaining }: { itemId: string; richness: number; remaining?: number }) {
@@ -721,7 +723,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
                 {supplyOpen === kind && (
                   <SupplyOptions
                     kind={kind}
-                    nearby={location?.nearby_players ?? []}
+                    nearby={modules?.some((m) => m.type_id === TARGET_MODULE[kind]) ? location?.nearby_players ?? [] : []}
                     cargo={cargo}
                     busy={actionBusy}
                     onSubmit={(args) => void (kind === 'refuel' ? handleRefuel(args) : handleRepair(args))}
