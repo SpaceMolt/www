@@ -4,9 +4,8 @@ import { useState } from 'react'
 import { DoorOpen, Loader2 } from 'lucide-react'
 import type { FacilityPersonalVisitResponse } from '@spacemolt/lib'
 import { useAccountStore } from '@/lib/spacemolt'
-import { usePlay } from '../../PlayProvider'
 import type { FacilityListResponse } from '../../types'
-import { errorMessage, shared } from '../../shared'
+import { shared, useAction } from '../../shared'
 import { FacilityCard } from './FacilityCard'
 import styles from './facilities.module.css'
 
@@ -16,20 +15,14 @@ interface PublicViewProps {
 
 function VisitQuarters() {
   const store = useAccountStore()
-  const { uiStore } = usePlay()
   const [username, setUsername] = useState('')
   const [visit, setVisit] = useState<FacilityPersonalVisitResponse | null>(null)
-  const [loading, setLoading] = useState(false)
+  const { busy, run } = useAction()
+  const loading = busy !== null
 
   const handleVisit = async () => {
-    setLoading(true)
-    try {
-      const resp = await store.account.commands.spacemolt_facility.personal_visit({ username: username.trim() || undefined })
-      setVisit(resp.structuredContent ?? null)
-    } catch (err) {
-      uiStore.dispatch({ type: 'toast', kind: 'danger', text: errorMessage(err) })
-    }
-    setLoading(false)
+    const resp = await run('visit', () => store.account.commands.spacemolt_facility.personal_visit({ username: username.trim() || undefined }))
+    if (resp) setVisit(resp.structuredContent ?? null)
   }
 
   return (

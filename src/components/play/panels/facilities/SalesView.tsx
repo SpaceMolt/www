@@ -4,8 +4,7 @@ import { useState } from 'react'
 import { Search, ShoppingCart, X, Loader2 } from 'lucide-react'
 import type { FacilityListingEntry } from '@spacemolt/lib'
 import { useCommandMutation, useCommandQuery, usePlayer } from '@/lib/spacemolt'
-import { usePlay } from '../../PlayProvider'
-import { Credits, Loading, Modal, errorMessage, shared } from '../../shared'
+import { Credits, Loading, Modal, shared, useAction } from '../../shared'
 import { titleCase } from '@/lib/format'
 import { isOwnListing } from './facilityActions'
 import styles from './facilities.module.css'
@@ -14,12 +13,11 @@ import styles from './facilities.module.css'
 export function SalesView({ onRefresh }: { onRefresh: () => void }) {
   const player = usePlayer()
   const mutate = useCommandMutation()
-  const { uiStore } = usePlay()
   const [typeFilter, setTypeFilter] = useState('')
   const [maxPrice, setMaxPrice] = useState('')
   const [filters, setFilters] = useState<{ facility_type?: string; max_price?: number }>({})
   const [buying, setBuying] = useState<FacilityListingEntry | null>(null)
-  const [busy, setBusy] = useState<string | null>(null)
+  const { busy, run } = useAction()
 
   const { data, loading, refetch } = useCommandQuery(
     async (account) => (await account.commands.spacemolt_facility.browse_for_sale(filters)).structuredContent,
@@ -39,20 +37,17 @@ export function SalesView({ onRefresh }: { onRefresh: () => void }) {
   })
 
   const act = async (listing: FacilityListingEntry, kind: 'buy' | 'cancel') => {
-    setBusy(listing.listing_id)
-    try {
-      const r = kind === 'buy'
+    const r = await run(
+      listing.listing_id,
+      async () => kind === 'buy'
         ? await mutate((c) => c.spacemolt_facility.buy_listing({ listing_id: listing.listing_id }), { label: 'facility_buy_listing' })
-        : await mutate((c) => c.spacemolt_facility.cancel_listing({ listing_id: listing.listing_id }), { label: 'facility_cancel_listing' })
-      const details = r.delta.details as { message?: string } | undefined
-      uiStore.dispatch({ type: 'event', kind: 'success', text: details?.message ?? `${kind === 'buy' ? 'Bought' : 'Cancelled listing for'} ${listing.facility_name ?? listing.definition_id}` })
-      setBuying(null)
-      refetch()
-      onRefresh()
-    } catch (err) {
-      uiStore.dispatch({ type: 'toast', kind: 'danger', text: errorMessage(err) })
-    }
-    setBusy(null)
+        : await mutate((c) => c.spacemolt_facility.cancel_listing({ listing_id: listing.listing_id }), { label: 'facility_cancel_listing' }),
+      (res) => (res.delta.details as { message?: string } | undefined)?.message ?? `${kind === 'buy' ? 'Bought' : 'Cancelled listing for'} ${listing.facility_name ?? listing.definition_id}`,
+    )
+    if (!r) return
+    setBuying(null)
+    refetch()
+    onRefresh()
   }
 
   const credits = player?.credits ?? 0

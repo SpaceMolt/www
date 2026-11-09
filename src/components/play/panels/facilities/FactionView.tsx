@@ -8,8 +8,7 @@ import {
   PawPrint,
 } from 'lucide-react'
 import { useAccountStore, useCommandMutation, useCommandQuery } from '@/lib/spacemolt'
-import { usePlay } from '../../PlayProvider'
-import { Credits, errorMessage, shared } from '../../shared'
+import { Credits, shared, useAction } from '../../shared'
 import type { FacilityListResponse, Facility } from '../../types'
 import { FacilityCard } from './FacilityCard'
 import { FacilityManageActions } from './FacilityManageActions'
@@ -25,12 +24,9 @@ interface FactionViewProps {
 export function FactionView({ facilityData, onRefresh }: FactionViewProps) {
   const store = useAccountStore()
   const mutate = useCommandMutation()
-  const { uiStore } = usePlay()
 
   const [upgradeModal, setUpgradeModal] = useState<{ facility: Facility; options: UpgradeOption[] } | null>(null)
   const [upgradeLoading, setUpgradeLoading] = useState(false)
-  const [upgrading, setUpgrading] = useState(false)
-  const [transferring, setTransferring] = useState<string | null>(null)
   const [ranchId, setRanchId] = useState<string | null>(null)
 
   // faction_list adds the faction's rent and storage summary for this station.
@@ -40,9 +36,9 @@ export function FactionView({ facilityData, onRefresh }: FactionViewProps) {
   )
   const refresh = useCallback(() => { onRefresh(); refetchSummary() }, [onRefresh, refetchSummary])
 
-  const reportError = useCallback((err: unknown) => {
-    uiStore.dispatch({ type: 'toast', kind: 'danger', text: errorMessage(err) })
-  }, [uiStore])
+  const { busy, run } = useAction()
+  const upgrading = busy === 'upgrade'
+  const transferring = busy?.startsWith('transfer:') ? busy.slice('transfer:'.length) : null
 
   const factionFacilities = facilityData.faction_facilities
 
@@ -54,27 +50,15 @@ export function FactionView({ facilityData, onRefresh }: FactionViewProps) {
   }, [store])
 
   const handleUpgrade = useCallback(async (facilityId: string, facilityType: string) => {
-    setUpgrading(true)
-    try {
-      await mutate((c) => c.spacemolt_facility.faction_upgrade({ facility_id: facilityId, facility_type: facilityType }), { label: 'facility_faction_upgrade' })
+    if (await run('upgrade', () => mutate((c) => c.spacemolt_facility.faction_upgrade({ facility_id: facilityId, facility_type: facilityType }), { label: 'facility_faction_upgrade' }))) {
       setUpgradeModal(null)
       refresh()
-    } catch (err) {
-      reportError(err)
     }
-    setUpgrading(false)
-  }, [mutate, refresh, reportError])
+  }, [mutate, refresh, run])
 
   const handleTransferToPlayer = useCallback(async (facilityId: string) => {
-    setTransferring(facilityId)
-    try {
-      await mutate((c) => c.spacemolt_facility.transfer({ facility_id: facilityId, direction: 'to_player' }), { label: 'facility_transfer' })
-      refresh()
-    } catch (err) {
-      reportError(err)
-    }
-    setTransferring(null)
-  }, [mutate, refresh, reportError])
+    if (await run(`transfer:${facilityId}`, () => mutate((c) => c.spacemolt_facility.transfer({ facility_id: facilityId, direction: 'to_player' }), { label: 'facility_transfer' }))) refresh()
+  }, [mutate, refresh, run])
 
   const rent = summary?.faction_rent ?? facilityData.faction_rent
   const storage = summary?.faction_storage

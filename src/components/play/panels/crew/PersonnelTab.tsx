@@ -12,10 +12,9 @@ import {
   usePlayer,
   useShip,
 } from '@/lib/spacemolt'
-import { ConfirmAction, Credits, QtyButtons, shared } from '../../shared'
+import { ConfirmAction, Credits, QtyButtons, shared, useAction } from '../../shared'
 import styles from '../CrewPanel.module.css'
 import { CREW_RECRUIT_PRICE, MARINE_RECRUIT_PRICE, freeBerths, parseCount, recruitCost, transferableFitCrew } from './crewLogic'
-import { useCrewAction } from './useCrewAction'
 
 type Counts = Record<string, string>
 
@@ -53,7 +52,8 @@ export function PersonnelTab() {
   const player = usePlayer()
   const location = useLocationState()
   const modules = useModules()
-  const { busy, run } = useCrewAction()
+  const { busy: running, run } = useAction()
+  const busy = running !== null
   const [confirm, setConfirm] = useState<string | null>(null)
   const [recruit, setRecruit] = useState<Counts>({})
   const [treat, setTreat] = useState<Counts>({})
@@ -101,7 +101,7 @@ export function PersonnelTab() {
   const cost = recruitCost(recruitCrew, recruitMarines)
 
   const doRecruit = () =>
-    run(
+    run('crew',
       () => mutate((c) => c.spacemolt_ship.recruit_personnel({ crew: recruitCrew, marines: recruitMarines }), { label: 'recruit_personnel' }),
       (r) => {
         const d = r.delta.details
@@ -114,7 +114,7 @@ export function PersonnelTab() {
     })
 
   const doTreat = () =>
-    run(
+    run('crew',
       () =>
         mutate(
           (c) =>
@@ -140,7 +140,7 @@ export function PersonnelTab() {
     })
 
   const doTransfer = () =>
-    run(
+    run('crew',
       () =>
         mutate(
           (c) =>
@@ -164,7 +164,7 @@ export function PersonnelTab() {
     ).then((r) => r && setTransfer({}))
 
   const doReserve = () =>
-    run(
+    run('crew',
       () =>
         mutate(
           (c) =>
@@ -189,7 +189,7 @@ export function PersonnelTab() {
     })
 
   const doGenerator = (disconnect: boolean) =>
-    run(
+    run('crew',
       () =>
         mutate(
           () =>

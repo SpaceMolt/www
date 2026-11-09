@@ -3,12 +3,11 @@
 import { useState } from 'react'
 import { Flag, Gavel, Landmark, Send } from 'lucide-react'
 import { useAccountStore, useCommandMutation, useCommandQuery, usePlayer } from '@/lib/spacemolt'
-import { ConfirmAction, Credits, shared } from '../../shared'
+import { ConfirmAction, Credits, shared, useAction } from '../../shared'
 import { EMPIRES } from '../../PlayerSelector'
 import { usePlay } from '../../PlayProvider'
 import styles from '../CrewPanel.module.css'
 import { owedBounties } from './crewLogic'
-import { useCrewAction } from './useCrewAction'
 
 type EmpireId = 'solarian' | 'voidborn' | 'crimson' | 'nebula' | 'outerrim'
 
@@ -20,7 +19,8 @@ export function EmpireTab() {
   const store = useAccountStore()
   const mutate = useCommandMutation()
   const player = usePlayer()
-  const { busy, run } = useCrewAction()
+  const { busy: running, run } = useAction()
+  const busy = running !== null
   const { uiStore } = usePlay()
   const [confirm, setConfirm] = useState<string | null>(null)
   const [paySource, setPaySource] = useState<'self' | 'faction'>('self')
@@ -37,7 +37,7 @@ export function EmpireTab() {
   const credits = player?.credits ?? 0
 
   const citizenAction = (action: 'apply' | 'renounce' | 'withdraw', target: EmpireId) =>
-    run(
+    run('crew',
       () => mutate((c) => c.spacemolt_citizenship[action]({ target }), { label: `citizenship_${action}` }),
       (r) => r.delta.details?.message ?? `${CITIZEN_DONE[action]} ${empireName(target)}`,
     ).then(() => {
@@ -46,13 +46,13 @@ export function EmpireTab() {
     })
 
   const pay = (empire: string) =>
-    run(
+    run('crew',
       () => mutate((c) => c.spacemolt.pay_bounty({ id: empire, source: paySource }), { label: 'pay_bounty' }),
       (r) => r.delta.details?.message ?? `Paid ${empireName(empire)}`,
     ).then(() => setConfirm(null))
 
   const petition = () =>
-    run(
+    run('crew',
       async () => (await store.account.commands.spacemolt_social.petition({ target: petitionTarget, content: petitionText.trim() })).structuredContent,
       (r) => r?.message ?? `Petition sent to ${empireName(petitionTarget)}`,
     ).then((r) => {

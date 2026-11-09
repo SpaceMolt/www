@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { PawPrint, Loader2 } from 'lucide-react'
 import { useCommandMutation, useCommandQuery } from '@/lib/spacemolt'
 import { usePlay } from '../../PlayProvider'
-import { Loading, Modal, errorMessage, shared } from '../../shared'
+import { Loading, Modal, shared, useAction } from '../../shared'
 import styles from './facilities.module.css'
 
 /** Herd status and cull target for one faction ranch. */
@@ -12,7 +12,8 @@ export function RanchModal({ facilityId, onClose }: { facilityId: string; onClos
   const mutate = useCommandMutation()
   const { uiStore } = usePlay()
   const [cull, setCull] = useState('')
-  const [saving, setSaving] = useState(false)
+  const { busy, run } = useAction()
+  const saving = busy !== null
   const { data: ranch, loading, refetch } = useCommandQuery(
     async (account) => (await account.commands.spacemolt_facility.ranch_status({ facility_id: facilityId })).structuredContent,
     [facilityId],
@@ -20,16 +21,11 @@ export function RanchModal({ facilityId, onClose }: { facilityId: string; onClos
 
   const cullValue = Number(cull)
   const handleSetCull = async () => {
-    setSaving(true)
-    try {
-      const r = await mutate((c) => c.spacemolt_facility.ranch_set_cull({ facility_id: facilityId, cull_target: cullValue }), { label: 'ranch_set_cull' })
-      uiStore.dispatch({ type: 'event', kind: 'info', text: r.delta.details?.message ?? `Cull target set to ${cullValue}` })
-      setCull('')
-      refetch()
-    } catch (err) {
-      uiStore.dispatch({ type: 'toast', kind: 'danger', text: errorMessage(err) })
-    }
-    setSaving(false)
+    const r = await run('cull', () => mutate((c) => c.spacemolt_facility.ranch_set_cull({ facility_id: facilityId, cull_target: cullValue }), { label: 'ranch_set_cull' }))
+    if (!r) return
+    uiStore.dispatch({ type: 'event', kind: 'info', text: r.delta.details?.message ?? `Cull target set to ${cullValue}` })
+    setCull('')
+    refetch()
   }
 
   const rows: [string, string][] = ranch ? [

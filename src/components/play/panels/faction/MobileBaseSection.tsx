@@ -5,9 +5,8 @@ import { Move, Rocket, Trash2, X } from 'lucide-react'
 import type { FactionInfoResponse } from '@spacemolt/lib'
 import { useCommandMutation, useCurrentTick, useMap } from '@/lib/spacemolt'
 import { formatTicksLeft } from '@/lib/mobileBases'
-import { usePlay } from '../../PlayProvider'
 import { ActionButton } from '../../ActionButton'
-import { errorMessage, shared } from '../../shared'
+import { shared, useAction } from '../../shared'
 import styles from '../FactionPanel.module.css'
 import {
   LIFECYCLE_LABEL,
@@ -35,13 +34,13 @@ export function MobileBaseSection({
   onChanged: () => void
 }) {
   const mutate = useCommandMutation()
-  const { uiStore } = usePlay()
   const tick = useCurrentTick()
   const { data: map } = useMap()
   const [moveX, setMoveX] = useState('')
   const [moveY, setMoveY] = useState('')
   const [jumpTarget, setJumpTarget] = useState('')
-  const [busy, setBusy] = useState(false)
+  const { busy: running, run: runAction } = useAction()
+  const busy = running !== null
   const [confirmDecommission, setConfirmDecommission] = useState(false)
 
   const mb = info.mobile_base
@@ -57,19 +56,11 @@ export function MobileBaseSection({
 
   const run = useCallback(
     async (label: string, action: Parameters<typeof mutate>[0]) => {
-      setBusy(true)
-      try {
-        await mutate(action, { label })
-        onChanged()
-        return true
-      } catch (err) {
-        uiStore.dispatch({ type: 'toast', kind: 'danger', text: errorMessage(err) })
-        return false
-      } finally {
-        setBusy(false)
-      }
+      const result = await runAction(label, () => mutate(action, { label }))
+      if (result) onChanged()
+      return Boolean(result)
     },
-    [mutate, onChanged, uiStore],
+    [mutate, onChanged, runAction],
   )
 
   if (!mb) {

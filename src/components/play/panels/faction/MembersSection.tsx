@@ -5,10 +5,9 @@ import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import type { Commands, FactionInfoResponse } from '@spacemolt/lib'
 import { useCommandMutation } from '@/lib/spacemolt'
 import { playerHref } from '@/components/profile/ProfileLink'
-import { ConfirmAction, shared } from '../../shared'
+import { ConfirmAction, shared, useAction } from '../../shared'
 import styles from '../FactionPanel.module.css'
 import { pageState } from './factionAdmin'
-import { useRun } from './useRun'
 
 type PromoteRole = Parameters<Commands['spacemolt_faction_admin']['promote']>[0]['role_id']
 
@@ -37,7 +36,7 @@ export function MembersSection({ info, playerId, onPage, onChanged }: {
   onChanged: () => void
 }) {
   const mutate = useCommandMutation()
-  const { busy, run } = useRun()
+  const { busy, run } = useAction()
   const [kicking, setKicking] = useState<string | null>(null)
   // Making someone leader hands over the faction; it waits for a confirm.
   const [crowning, setCrowning] = useState<{ id: string; username: string } | null>(null)
@@ -52,13 +51,14 @@ export function MembersSection({ info, playerId, onPage, onChanged }: {
       // Custom role ids are valid server-side; the lib enum lists only the built-in ones.
       () => mutate((c) => c.spacemolt_faction_admin.promote({ player_id: memberId, role_id: roleId as PromoteRole }), { label: 'faction_promote' }),
       `${username} is now ${role?.name ?? roleId}`,
+      'toast',
     )
     if (ok) onChanged()
   }
 
   const kick = async (memberId: string, username: string) => {
     setKicking(null)
-    if (await run(`kick:${memberId}`, () => mutate((c) => c.spacemolt_faction.kick({ id: memberId }), { label: 'faction_kick' }), `Kicked ${username}`)) onChanged()
+    if (await run(`kick:${memberId}`, () => mutate((c) => c.spacemolt_faction.kick({ id: memberId }), { label: 'faction_kick' }), `Kicked ${username}`, 'toast')) onChanged()
   }
 
   return (

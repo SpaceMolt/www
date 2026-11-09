@@ -4,10 +4,9 @@ import { useEffect, useState } from 'react'
 import { Anchor, Flag, Fuel, Navigation, Pause, Play, Wrench } from 'lucide-react'
 import { fetchStations, type StationSummary } from '@spacemolt/lib'
 import { useAccountStore, useCommandMutation, useLocationState, usePlayer, useSection } from '@/lib/spacemolt'
-import { shared } from '../../shared'
+import { shared, useAction } from '../../shared'
 import styles from '../CrewPanel.module.css'
 import { parseCount } from './crewLogic'
-import { useCrewAction } from './useCrewAction'
 
 const GAMESERVER_URL = process.env.NEXT_PUBLIC_GAMESERVER_URL || 'https://game.spacemolt.com'
 
@@ -27,7 +26,8 @@ export function PrizesTab() {
   const location = useLocationState()
   const player = usePlayer()
   const recoveries = useSection('prize_recoveries') ?? []
-  const { busy, run } = useCrewAction()
+  const { busy: running, run } = useAction()
+  const busy = running !== null
   const [stations, setStations] = useState<StationSummary[]>([])
   const [destination, setDestination] = useState('')
   const [disposition, setDisposition] = useState<'aboard' | 'faction_reserve'>('aboard')
@@ -64,7 +64,7 @@ export function PrizesTab() {
   ))
 
   const claim = (id: string) =>
-    run(
+    run('crew',
       () => mutate((c) => c.spacemolt_salvage.claim_prize({ id, target: dest, crew_disposition: disposition }), { label: 'claim_prize' }),
       (r) => {
         const d = r.delta.details
@@ -73,7 +73,7 @@ export function PrizesTab() {
     )
 
   const service = (id: string, service_action: 'stop' | 'resume' | 'redirect' | 'refuel' | 'repair') =>
-    run(
+    run('crew',
       () =>
         mutate(
           (c) =>

@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { Fragment, useEffect, useState, type ReactNode } from 'react'
 import { ChevronLeft, ChevronRight, MapPin, PackageCheck, RotateCcw, Send, Truck, Undo2, X } from 'lucide-react'
 import type {
   ShippingActiveContract,
@@ -12,8 +12,7 @@ import type {
 } from '@spacemolt/lib'
 import { fetchStations } from '@spacemolt/lib'
 import { useAccountStore, useCargo, useCommandMutation, useCommandQuery, useLocationState, usePendingAction, usePlayer } from '@/lib/spacemolt'
-import { usePlay } from '../../PlayProvider'
-import { ConfirmAction, Credits, errorMessage, shared } from '../../shared'
+import { ConfirmAction, Credits, shared, useAction } from '../../shared'
 import { packageOptions, settleBlock, shipFormError, type ShipForm } from './logic'
 import css from './missions.module.css'
 
@@ -31,18 +30,6 @@ const PER_PAGE = 10
 
 /** "42 ticks (~7m)" at the default 10 s tick. */
 const ticks = (n: number) => `${n} ticks (~${Math.max(1, Math.round((n * 10) / 60))}m)`
-
-/** Success event + danger toast dispatchers for the Missions sub-tabs. */
-export function useNotify() {
-  const { uiStore } = usePlay()
-  return useMemo(
-    () => ({
-      ok: (text: string) => uiStore.dispatch({ type: 'event', kind: 'success', text }),
-      fail: (err: unknown) => uiStore.dispatch({ type: 'toast', kind: 'danger', text: errorMessage(err) }),
-    }),
-    [uiStore],
-  )
-}
 
 export function ShippingTab() {
   const player = usePlayer()
@@ -100,7 +87,7 @@ function useStationDirectory() {
 
 function Board({ actor, dockedAt }: { actor: Actor; dockedAt: string | null }) {
   const mutate = useCommandMutation()
-  const notify = useNotify()
+  const { run } = useAction()
   const pending = usePendingAction() !== null
   const [sort, setSort] = useState<'reward' | 'distance' | 'age'>('reward')
   const [level, setLevel] = useState<'' | 'standard' | 'priority'>('')
@@ -134,14 +121,12 @@ function Board({ actor, dockedAt }: { actor: Actor; dockedAt: string | null }) {
   }
 
   const accept = async (id: string) => {
-    try {
-      const r = await mutate((c) => c.spacemolt_shipping.accept({ shipment_id: id, carrier: actor }), { label: 'shipping_accept' })
-      const pkg = r.delta.details?.contract.package_id
-      notify.ok(`Freight accepted. Package ${pkg ?? ''} is in your ${actor === 'faction' ? 'faction ' : ''}storage here: withdraw it to haul.`)
-      q.refetch()
-    } catch (err) {
-      notify.fail(err)
-    }
+    const r = await run(
+      'accept',
+      () => mutate((c) => c.spacemolt_shipping.accept({ shipment_id: id, carrier: actor }), { label: 'shipping_accept' }),
+      (r) => `Freight accepted. Package ${r.delta.details?.contract.package_id ?? ''} is in your ${actor === 'faction' ? 'faction ' : ''}storage here: withdraw it to haul.`,
+    )
+    if (r) q.refetch()
   }
 
   return (
@@ -275,30 +260,23 @@ function Hauls({ dockedAt }: { dockedAt: string | null }) {
 function HaulCard({ entry: s, dockedAt, onSettled }: { entry: ShippingActiveContract; dockedAt: string | null; onSettled: () => void }) {
   const store = useAccountStore()
   const mutate = useCommandMutation()
-  const notify = useNotify()
+  const { run } = useAction()
   const pending = usePendingAction() !== null
   const [confirmKind, setConfirmKind] = useState<Settle | null>(null)
   const [tracked, setTracked] = useState<ShippingTrackResponse | null>(null)
 
   const settle = async (kind: Settle) => {
     setConfirmKind(null)
-    try {
-      const r = await mutate((c) => c.spacemolt_shipping[kind]({ shipment_id: s.contract.id }), { label: `shipping_${kind}` })
-      notify.ok(settlementText(kind, r.delta.details))
-      onSettled()
-    } catch (err) {
-      notify.fail(err)
-    }
+    const r = await run(
+      kind,
+      () => mutate((c) => c.spacemolt_shipping[kind]({ shipment_id: s.contract.id }), { label: `shipping_${kind}` }),
+      (r) => settlementText(kind, r.delta.details),
+    )
+    if (r) onSettled()
   }
 
-  const track = async () => {
-    try {
-      const r = await store.account.commands.spacemolt_shipping.track({ shipment_id: s.contract.id, limit: 20 })
-      setTracked(r.structuredContent ?? null)
-    } catch (err) {
-      notify.fail(err)
-    }
-  }
+  const track = () =>
+    run('track', async () => setTracked((await store.account.commands.spacemolt_shipping.track({ shipment_id: s.contract.id, limit: 20 })).structuredContent ?? null))
 
   const c = s.contract
   const isCarrier = s.role === 'carrier' && c.status === 'in_transit'
@@ -419,12 +397,12 @@ const EMPTY_FORM: ShipFormState = {
 function ShipPackage({ actor, dockedAt }: { actor: Actor; dockedAt: string | null }) {
   const store = useAccountStore()
   const mutate = useCommandMutation()
-  const notify = useNotify()
   const pending = usePendingAction() !== null
   const cargo = useCargo()
   const [form, setForm] = useState<ShipFormState>(EMPTY_FORM)
   const [quote, setQuote] = useState<{ key: string; quote: ShippingQuote } | null>(null)
-  const [quoting, setQuoting] = useState(false)
+  const { busy, run } = useAction()
+  const quoting = busy === 'quote'
   const [confirming, setConfirming] = useState(false)
 
   const storageQ = useCommandQuery(
@@ -458,29 +436,23 @@ function ShipPackage({ actor, dockedAt }: { actor: Actor; dockedAt: string | nul
   const key = JSON.stringify(params)
   const current = quote?.key === key ? quote.quote : null
 
-  const getQuote = async () => {
-    setQuoting(true)
-    try {
+  const getQuote = () =>
+    run('quote', async () => {
       const r = await store.account.commands.spacemolt_shipping.quote(params)
       if (r.structuredContent) setQuote({ key, quote: r.structuredContent.quote })
-    } catch (err) {
-      notify.fail(err)
-    } finally {
-      setQuoting(false)
-    }
-  }
+    })
 
   const post = async (total: number) => {
     setConfirming(false)
-    try {
-      const r = await mutate((c) => c.spacemolt_shipping.post({ ...params, max_total_cost: total }), { label: 'shipping_post' })
-      notify.ok(`Shipment posted (${r.delta.details?.contract.id ?? 'ok'}). Track it under My hauls.`)
-      setForm(EMPTY_FORM)
-      setQuote(null)
-      storageQ.refetch()
-    } catch (err) {
-      notify.fail(err)
-    }
+    const r = await run(
+      'post',
+      () => mutate((c) => c.spacemolt_shipping.post({ ...params, max_total_cost: total }), { label: 'shipping_post' }),
+      (r) => `Shipment posted (${r.delta.details?.contract.id ?? 'ok'}). Track it under My hauls.`,
+    )
+    if (!r) return
+    setForm(EMPTY_FORM)
+    setQuote(null)
+    storageQ.refetch()
   }
 
   return (
@@ -639,7 +611,7 @@ function QuoteView({ quote: q }: { quote: ShippingQuote }) {
 
 function CarrierRecord({ actor, dockedAt }: { actor: Actor; dockedAt: string | null }) {
   const mutate = useCommandMutation()
-  const notify = useNotify()
+  const { run } = useAction()
   const pending = usePendingAction() !== null
   const [amount, setAmount] = useState('')
   const [confirming, setConfirming] = useState(false)
@@ -659,17 +631,14 @@ function CarrierRecord({ actor, dockedAt }: { actor: Actor; dockedAt: string | n
 
   const pay = async () => {
     setConfirming(false)
-    try {
-      const r = await mutate(
-        (c) => c.spacemolt_shipping.pay_debt({ carrier: actor, ...(amount.trim() ? { amount: Number(amount) } : {}) }),
-        { label: 'shipping_pay_debt' },
-      )
-      notify.ok(`Paid ${(r.delta.details?.amount_paid ?? 0).toLocaleString()} cr of freight debt.`)
-      setAmount('')
-      q.refetch()
-    } catch (err) {
-      notify.fail(err)
-    }
+    const r = await run(
+      'pay',
+      () => mutate((c) => c.spacemolt_shipping.pay_debt({ carrier: actor, ...(amount.trim() ? { amount: Number(amount) } : {}) }), { label: 'shipping_pay_debt' }),
+      (r) => `Paid ${(r.delta.details?.amount_paid ?? 0).toLocaleString()} cr of freight debt.`,
+    )
+    if (!r) return
+    setAmount('')
+    q.refetch()
   }
 
   const rows: Array<[string, ReactNode]> = [

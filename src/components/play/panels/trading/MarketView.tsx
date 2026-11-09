@@ -35,7 +35,7 @@ import { usePlay } from '../../PlayProvider'
 import { getCatalogItem } from '../../../ItemDetail'
 import { formatItemId } from '@/data/catalog'
 import { ItemName } from '../../ItemTooltip'
-import { ConfirmAction, Credits, Loading, Modal, QtyButtons, errorMessage, shared } from '../../shared'
+import { ConfirmAction, Credits, Loading, Modal, QtyButtons, errorMessage, shared, useAction } from '../../shared'
 import { useHoverTooltip } from '../../hooks/useHoverTooltip'
 import { titleCase } from '@/lib/format'
 import { mergeLiveBook } from './tradingLogic'
@@ -124,7 +124,7 @@ export function MarketView() {
     const text = errorMessage(err)
     uiStore.dispatch({ type: 'toast', kind: 'danger', text })
   }, [uiStore])
-  const reportDone = useCallback((text: string) => uiStore.dispatch({ type: 'toast', kind: 'success', text }), [uiStore])
+  const { busy, run } = useAction()
 
   const { data: marketSnapshot, error: marketError, refetch: refetchMarket } = useCommandQuery(
     async (account) => (await account.commands.spacemolt_market.view_market(companyStore ? { company_store: true } : {})).structuredContent,
@@ -157,8 +157,8 @@ export function MarketView() {
 
   // Buy confirmation modal
   const [buyEstimate, setBuyEstimate] = useState<{ itemId: string; itemName: string; data: EstimatePurchaseResponse } | null>(null)
-  const [estimating, setEstimating] = useState(false)
-  const [buying, setBuying] = useState(false)
+  const estimating = busy === 'estimate'
+  const buying = busy === 'buy'
   const [deliverToStorage, setDeliverToStorage] = useState(false)
   const [autoList, setAutoList] = useState(false)
 
@@ -175,7 +175,7 @@ export function MarketView() {
   const [sellConfirm, setSellConfirm] = useState<{
     itemId: string; itemName: string; quantity: number; priceEach: number; total: number; baseValue: number
   } | null>(null)
-  const [selling, setSelling] = useState(false)
+  const selling = busy === 'sell'
 
   // Track whether we've auto-analyzed for the current market data
   const analyzedRef = useRef(false)
@@ -223,42 +223,32 @@ export function MarketView() {
   // Buy at market: estimate first, then show modal
   const handleBuyEstimate = useCallback(
     async (itemId: string, itemName: string, quantity: number) => {
-      setEstimating(true)
-      try {
-        const result = await store.account.commands.spacemolt_market.estimate_purchase({ item_id: itemId, quantity })
-        if (result.structuredContent) {
-          setDeliverToStorage(false)
-          setAutoList(false)
-          setBuyEstimate({ itemId, itemName, data: result.structuredContent })
-        }
-      } catch (err) {
-        reportError(err)
-      } finally {
-        setEstimating(false)
+      const result = await run('estimate', () => store.account.commands.spacemolt_market.estimate_purchase({ item_id: itemId, quantity }))
+      if (result?.structuredContent) {
+        setDeliverToStorage(false)
+        setAutoList(false)
+        setBuyEstimate({ itemId, itemName, data: result.structuredContent })
       }
     },
-    [store, reportError]
+    [store, run]
   )
 
   const handleConfirmBuy = useCallback(async () => {
     if (!buyEstimate) return
-    setBuying(true)
-    try {
-      const result = await mutate((c) => c.spacemolt.buy({
+    const result = await run(
+      'buy',
+      () => mutate((c) => c.spacemolt.buy({
         id: buyEstimate.itemId, quantity: buyEstimate.data.quantity_requested,
         deliver_to: deliverToStorage ? 'storage' : 'cargo', auto_list: autoList,
-      }), { label: 'buy' })
-      const bought = result.delta.details
-      reportDone(bought?.message ?? `Bought ${bought?.quantity ?? ''} ${buyEstimate.itemName} for ${(bought?.total_cost ?? 0).toLocaleString()} cr`)
-      setBuyEstimate(null)
-      refetchMarket()
-      refetchOrders()
-    } catch (err) {
-      reportError(err)
-    } finally {
-      setBuying(false)
-    }
-  }, [mutate, buyEstimate, deliverToStorage, autoList, refetchMarket, refetchOrders, reportError, reportDone])
+      }), { label: 'buy' }),
+      ({ delta: { details: bought } }) => bought?.message ?? `Bought ${bought?.quantity ?? ''} ${buyEstimate.itemName} for ${(bought?.total_cost ?? 0).toLocaleString()} cr`,
+      'toast',
+    )
+    if (!result) return
+    setBuyEstimate(null)
+    refetchMarket()
+    refetchOrders()
+  }, [run, mutate, buyEstimate, deliverToStorage, autoList, refetchMarket, refetchOrders])
 
   const handleAnalyzeMarket = useCallback(async () => {
     setAnalysisLoading(true)
@@ -283,20 +273,17 @@ export function MarketView() {
 
   const handleConfirmSell = useCallback(async () => {
     if (!sellConfirm) return
-    setSelling(true)
-    try {
-      const result = await mutate((c) => c.spacemolt.sell({ id: sellConfirm.itemId, quantity: sellConfirm.quantity, auto_list: autoList }), { label: 'sell' })
-      const sold = result.delta.details
-      reportDone(sold?.message ?? `Sold ${sold?.quantity_sold ?? sellConfirm.quantity} ${sellConfirm.itemName}`)
-      setSellConfirm(null)
-      refetchMarket()
-      refetchOrders()
-    } catch (err) {
-      reportError(err)
-    } finally {
-      setSelling(false)
-    }
-  }, [mutate, sellConfirm, autoList, refetchMarket, refetchOrders, reportError, reportDone])
+    const result = await run(
+      'sell',
+      () => mutate((c) => c.spacemolt.sell({ id: sellConfirm.itemId, quantity: sellConfirm.quantity, auto_list: autoList }), { label: 'sell' }),
+      ({ delta: { details: sold } }) => sold?.message ?? `Sold ${sold?.quantity_sold ?? sellConfirm.quantity} ${sellConfirm.itemName}`,
+      'toast',
+    )
+    if (!result) return
+    setSellConfirm(null)
+    refetchMarket()
+    refetchOrders()
+  }, [run, mutate, sellConfirm, autoList, refetchMarket, refetchOrders])
 
   const haveMap = useMemo(() => {
     const map = new Map<string, number>()

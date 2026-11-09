@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react'
 import { Check, Crown, Lock, RefreshCw, Swords, Trophy, Wind, X } from 'lucide-react'
 import type { ArenaChallengeInfo } from '@spacemolt/lib'
 import { useAccountStore, useCommandMutation, useCommandQuery, useLocationState } from '@/lib/spacemolt'
-import { usePlay } from '../../PlayProvider'
-import { errorMessage, shared } from '../../shared'
+import { shared, useAction } from '../../shared'
 import { objectiveText, rulesText } from './combatLogic'
 import { titleCase } from '@/lib/format'
 import styles from '../CombatPanel.module.css'
@@ -21,12 +20,12 @@ const ARENA_DONE: Record<string, string> = {
 
 export function ArenaTab({ inCombat }: { inCombat: boolean }) {
   const store = useAccountStore()
-  const { uiStore } = usePlay()
   const mutate = useCommandMutation()
   const location = useLocationState()
   const isDocked = Boolean(location?.docked_at)
   const [notice, setNotice] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
+  const { busy: running, run: runAction } = useAction()
+  const busy = running !== null
   const [target, setTarget] = useState('')
   const [sideSize, setSideSize] = useState(1)
 
@@ -64,17 +63,12 @@ export function ArenaTab({ inCombat }: { inCombat: boolean }) {
   }, [store])
 
   const run = async (label: string, call: Parameters<typeof mutate>[0]) => {
-    setBusy(true)
-    try {
-      const result = await mutate(call, { label })
-      const details = result.delta.details as { message?: string } | undefined
-      uiStore.dispatch({ type: 'event', kind: 'success', text: details?.message ?? ARENA_DONE[label] ?? 'Done' })
-      status.refetch()
-    } catch (err) {
-      uiStore.dispatch({ type: 'toast', kind: 'danger', text: errorMessage(err) })
-    } finally {
-      setBusy(false)
-    }
+    const result = await runAction(
+      label,
+      () => mutate(call, { label }),
+      (r) => (r.delta.details as { message?: string } | undefined)?.message ?? ARENA_DONE[label] ?? 'Done',
+    )
+    if (result) status.refetch()
   }
 
   const atArena = Boolean(s?.at_arena) && !isDocked

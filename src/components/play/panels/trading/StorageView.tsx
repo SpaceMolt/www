@@ -27,7 +27,7 @@ import {
 import type { StorageResponse } from '@spacemolt/lib'
 import type { UiState } from '@/lib/spacemolt'
 import { usePlay, usePlayUi } from '../../PlayProvider'
-import { Credits, ItemSelectList, errorMessage, shared, useStorageMove } from '../../shared'
+import { Credits, ItemSelectList, shared, useAction, useStorageMove } from '../../shared'
 import { normalizeCargo, selectAll, selectedItems, type Selection } from '../../shared/itemSelection'
 import styles from './StorageView.module.css'
 import { GiftForm, type GiftShip } from './GiftForm'
@@ -76,6 +76,7 @@ export function StorageView() {
   const cargo = useMemo(() => normalizeCargo(rawCargo), [rawCargo])
   const actionPending = usePendingAction() !== null
   const mutate = useCommandMutation()
+  const { run } = useAction()
   const move = useStorageMove()
   const revision = usePlayUi(selectStorageRevision)
 
@@ -94,14 +95,11 @@ export function StorageView() {
   const [cargoSel, setCargoSel] = useState<Selection>({})
   const [showSendGift, setShowSendGift] = useState(false)
 
-  const shipAction = async (label: string, args: { item_id: string; target?: string }) => {
-    try {
+  const shipAction = (label: string, args: { item_id: string; target?: string }) =>
+    run(label, async () => {
       await mutate((c) => c.spacemolt_storage.deposit(args), { label })
       uiStore.dispatch({ type: 'storage_changed' })
-    } catch (err) {
-      uiStore.dispatch({ type: 'toast', kind: 'danger', text: errorMessage(err) })
-    }
-  }
+    })
 
   // --- Undocked: remote station viewer ---
   if (!isDocked) {

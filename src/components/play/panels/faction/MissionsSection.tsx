@@ -4,13 +4,12 @@ import { useState } from 'react'
 import { Plus, Send, Trash2, X } from 'lucide-react'
 import { useCommandMutation, useCommandQuery, useLocationState } from '@/lib/spacemolt'
 import { ActionButton } from '../../ActionButton'
-import { ConfirmAction, Credits, Loading, shared } from '../../shared'
+import { ConfirmAction, Credits, Loading, shared, useAction } from '../../shared'
 import styles from '../FactionPanel.module.css'
 import {
   MISSION_TYPES, OBJECTIVE_TYPES, TARGET_FIELD, buildMissionParams,
   type MissionDraft, type ObjectiveDraft,
 } from './factionAdmin'
-import { useRun } from './useRun'
 import { useFactionService } from './useFactionService'
 
 const EMPTY_OBJECTIVE: ObjectiveDraft = { type: 'deliver_item', description: '', item_id: '', quantity: '', target: '' }
@@ -31,7 +30,7 @@ const TARGET_HINT: Record<(typeof TARGET_FIELD)[ObjectiveDraft['type']], string>
 export function MissionsSection() {
   const mutate = useCommandMutation()
   const dockedAt = useLocationState()?.docked_at ?? null
-  const { busy, run } = useRun()
+  const { busy, run } = useAction()
   const hasBoard = useFactionService('faction_missions')
   const [draft, setDraft] = useState<MissionDraft>(EMPTY_DRAFT)
   const [objective, setObjective] = useState<ObjectiveDraft>(EMPTY_OBJECTIVE)
@@ -52,12 +51,12 @@ export function MissionsSection() {
 
   const cancel = async (templateId: string) => {
     setCancelling(null)
-    if (await run(`cancel:${templateId}`, () => mutate((c) => c.spacemolt_faction.cancel_mission({ id: templateId }), { label: 'faction_cancel_mission' }), 'Mission cancelled; escrow refunded')) refetch()
+    if (await run(`cancel:${templateId}`, () => mutate((c) => c.spacemolt_faction.cancel_mission({ id: templateId }), { label: 'faction_cancel_mission' }), 'Mission cancelled; escrow refunded', 'toast')) refetch()
   }
 
   const post = async () => {
     const params = buildMissionParams({ ...draft, objectives })
-    if (await run('post', () => mutate((c) => c.spacemolt_faction_admin.post_mission(params), { label: 'faction_post_mission' }), `Posted ${params.title}`)) {
+    if (await run('post', () => mutate((c) => c.spacemolt_faction_admin.post_mission(params), { label: 'faction_post_mission' }), `Posted ${params.title}`, 'toast')) {
       setDraft(EMPTY_DRAFT)
       setObjective(EMPTY_OBJECTIVE)
       refetch()

@@ -6,7 +6,7 @@ import type { Commands, FactionInfoResponse } from '@spacemolt/lib'
 import { useAccountStore } from '@/lib/spacemolt'
 import { ActionButton } from '../../ActionButton'
 import styles from '../FactionPanel.module.css'
-import { useRun } from './useRun'
+import { useAction } from '../../shared'
 import { useFactionService } from './useFactionService'
 
 type EditParams = Parameters<Commands['spacemolt_faction_admin']['edit']>[0]
@@ -30,7 +30,7 @@ const TOGGLES: { key: keyof AllyToggles; label: string }[] = [
 /** Faction description, charter, colors and ally-sharing toggles. Needs a leader or officer role. */
 export function EditFactionSection({ info, onChanged }: { info: FactionInfoResponse; onChanged: () => void }) {
   const store = useAccountStore()
-  const { busy, run } = useRun()
+  const { busy, run } = useAction()
   const hasDesk = useFactionService('faction_admin')
   const current = info as FactionInfoResponse & AllyToggles
   const [description, setDescription] = useState(info.description ?? '')
@@ -48,7 +48,7 @@ export function EditFactionSection({ info, onChanged }: { info: FactionInfoRespo
       ...(primary !== (info.primary_color || '#00d4ff') && { primary_color: primary }),
       ...(secondary !== (info.secondary_color || '#ff6b35') && { secondary_color: secondary }),
     }
-    if (await run('edit', () => store.account.commands.spacemolt_faction_admin.edit(params), 'Faction updated')) onChanged()
+    if (await run('edit', () => store.account.commands.spacemolt_faction_admin.edit(params), 'Faction updated', 'toast')) onChanged()
   }
 
   return (

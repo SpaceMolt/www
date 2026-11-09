@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   Users,
   RefreshCw,
@@ -22,7 +22,7 @@ import {
 } from '@/lib/spacemolt'
 import type { StorageResponse } from '@spacemolt/lib'
 import { usePlay, usePlayUi } from '../../PlayProvider'
-import { Credits, ItemSelectList, errorMessage, shared, useStorageMove } from '../../shared'
+import { Credits, ItemSelectList, shared, useAction, useStorageMove } from '../../shared'
 import { normalizeCargo, selectedItems, type Selection } from '../../shared/itemSelection'
 import { parseCreditAmount } from './giftValidation'
 import { selectStorageRevision, usePersonalStorage } from './StorageView'
@@ -55,9 +55,7 @@ export function FactionStorageView() {
   const move = useStorageMove()
   const revision = usePlayUi(selectStorageRevision)
 
-  const reportError = useCallback((err: unknown) => {
-    uiStore.dispatch({ type: 'toast', kind: 'danger', text: errorMessage(err) })
-  }, [uiStore])
+  const { run } = useAction()
 
   // Undocked: pick a station from the personal storage locations and view the faction store there.
   const [remoteStation, setRemoteStation] = useState('')
@@ -99,27 +97,23 @@ export function FactionStorageView() {
   // Treasury credits: wallet <-> faction (withdraw needs manage_treasury; the server returns no_permission otherwise)
   const handleTreasury = async (kind: 'deposit' | 'withdraw', quantity: number | null) => {
     if (actionPending || quantity === null) return
-    try {
+    await run('treasury', async () => {
       const args = { item_id: 'credits', quantity, target: 'faction' }
       if (kind === 'deposit') await mutate((c) => c.spacemolt_storage.deposit(args), { label: 'faction_deposit_credits' })
       else await mutate((c) => c.spacemolt_storage.withdraw(args), { label: 'faction_withdraw_credits' })
       setTreasuryAmount('')
       changed()
-    } catch (err) {
-      reportError(err)
-    }
+    })
   }
 
   // Fuel comes from the ship's tank, not cargo. The server takes the exact amount or nothing.
   const handleDepositFuel = async (quantity: number | null) => {
     if (actionPending || quantity === null) return
-    try {
+    await run('fuel', async () => {
       await mutate((c) => c.spacemolt_storage.deposit({ item_id: 'fuel', quantity, target: 'faction' }), { label: 'faction_deposit_fuel' })
       setFuelAmount('')
       changed()
-    } catch (err) {
-      reportError(err)
-    }
+    })
   }
 
   if (!hasFaction) {

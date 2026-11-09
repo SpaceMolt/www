@@ -5,7 +5,7 @@ import { ListOrdered, ArrowUp, ArrowDown, Trash2, Loader2, User, Globe, RefreshC
 import type { BulkJobCancelResponse, FacilityResponse } from '@spacemolt/lib'
 import { useAccountStore, useCommandMutation, useCommandQuery, useCurrentTick } from '@/lib/spacemolt'
 import { usePlay } from '../../PlayProvider'
-import { ConfirmAction, Modal, errorMessage, shared } from '../../shared'
+import { ConfirmAction, Modal, shared, useAction } from '../../shared'
 import { ProgressBar } from '../../ProgressBar'
 import { estimateJobProgress } from '../craftProgress'
 import { getRecipe, recipesById } from '@/data/catalog'
@@ -26,7 +26,7 @@ export function FacilityQueueModal({ facility, onClose }: FacilityQueueModalProp
   const currentTick = useCurrentTick()
   const mutate = useCommandMutation()
   const { uiStore } = usePlay()
-  const [busyId, setBusyId] = useState<string | null>(null)
+  const { busy: busyId, run } = useAction()
   const [recipeId, setRecipeId] = useState(facility.recipe_id ?? '')
   const [items, setItems] = useState('1')
   const [direction, setDirection] = useState<'forward' | 'reverse'>('forward')
@@ -59,56 +59,32 @@ export function FacilityQueueModal({ facility, onClose }: FacilityQueueModalProp
     return () => clearInterval(timer)
   }, [hasOthersJobs, refetch])
 
-  const reportError = useCallback((err: unknown) => {
-    uiStore.dispatch({ type: 'toast', kind: 'danger', text: errorMessage(err) })
-  }, [uiStore])
-
   const handleReorder = useCallback(async (jobId: string, position: number) => {
-    setBusyId(jobId)
-    try {
-      await mutate(
-        (c) => c.spacemolt_facility.job_reorder({ facility_id: facility.facility_id, job_id: jobId, position }),
-        { label: 'facility_job_reorder' },
-      )
-      refetch()
-    } catch (err) {
-      reportError(err)
-    }
-    setBusyId(null)
-  }, [mutate, facility.facility_id, refetch, reportError])
+    const ok = await run(jobId, () => mutate(
+      (c) => c.spacemolt_facility.job_reorder({ facility_id: facility.facility_id, job_id: jobId, position }),
+      { label: 'facility_job_reorder' },
+    ))
+    if (ok) refetch()
+  }, [mutate, facility.facility_id, refetch, run])
 
   const handleCancel = useCallback(async (jobId: string) => {
-    setBusyId(jobId)
-    try {
-      await mutate((c) => c.spacemolt_facility.job_cancel({ job_id: jobId }), { label: 'facility_job_cancel' })
-      refetch()
-    } catch (err) {
-      reportError(err)
-    }
-    setBusyId(null)
-  }, [mutate, refetch, reportError])
+    if (await run(jobId, () => mutate((c) => c.spacemolt_facility.job_cancel({ job_id: jobId }), { label: 'facility_job_cancel' }))) refetch()
+  }, [mutate, refetch, run])
 
   // job_add's quantity counts output items (the server rounds up to whole runs), as in CraftingPanel.
   const itemCount = Number(items)
   const perRun = getRecipe(recipeId.trim())?.outputs?.[0]?.quantity ?? 1
   const handleAdd = useCallback(async () => {
-    setBusyId('add')
-    try {
-      await mutate(
-        (c) => c.spacemolt_facility.job_add({ facility_id: facility.facility_id, recipe_id: recipeId.trim(), quantity: itemCount, direction }),
-        { label: 'facility_job_add' },
-      )
-      refetch()
-    } catch (err) {
-      reportError(err)
-    }
-    setBusyId(null)
-  }, [mutate, facility.facility_id, recipeId, itemCount, direction, refetch, reportError])
+    const ok = await run('add', () => mutate(
+      (c) => c.spacemolt_facility.job_add({ facility_id: facility.facility_id, recipe_id: recipeId.trim(), quantity: itemCount, direction }),
+      { label: 'facility_job_add' },
+    ))
+    if (ok) refetch()
+  }, [mutate, facility.facility_id, recipeId, itemCount, direction, refetch, run])
 
   const handleCancelSelected = useCallback(async () => {
     setConfirmBulk(false)
-    setBusyId('bulk')
-    try {
+    await run('bulk', async () => {
       const result = await mutate(
         (c) => c.spacemolt_facility.job_cancel({ job_ids: [...selected] }),
         { label: 'facility_job_cancel' },
@@ -122,11 +98,8 @@ export function FacilityQueueModal({ facility, onClose }: FacilityQueueModalProp
       if (cancelled > 0) uiStore.dispatch({ type: 'toast', kind: 'success', text: `Cancelled ${cancelled} job${cancelled === 1 ? '' : 's'}` })
       setSelected(new Set())
       refetch()
-    } catch (err) {
-      reportError(err)
-    }
-    setBusyId(null)
-  }, [mutate, selected, uiStore, refetch, reportError])
+    })
+  }, [mutate, selected, uiStore, refetch, run])
 
   const toggle = (jobId: string) => setSelected((prev) => {
     const next = new Set(prev)

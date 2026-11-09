@@ -76,10 +76,6 @@ export function BuildView({ onRefresh }: BuildViewProps) {
   const factionId = player?.faction_id
   const dockedAt = useLocationState()?.docked_at ?? null
 
-  const reportError = useCallback((err: unknown) => {
-    uiStore.dispatch({ type: 'toast', kind: 'danger', text: errorMessage(err) })
-  }, [uiStore])
-
   // Inventory pools for the have/need indicator on build materials. Cargo +
   // station storage cover personal/station builds; faction storage (fetched
   // below) covers faction builds.
@@ -247,12 +243,12 @@ export function BuildView({ onRefresh }: BuildViewProps) {
     } catch (err) {
       // Keep the modal open with the reason and fresh have/need counts.
       setBuildError(errorMessage(err))
-      reportError(err)
+      uiStore.dispatch({ type: 'toast', kind: 'danger', text: errorMessage(err) })
       refetchStorage()
       if (factionId) refetchFactionStorage()
     }
     setBuilding(false)
-  }, [mutate, onRefresh, uiStore, factionId, refetchFactionStorage, refetchBase, refetchStorage, reportError, species])
+  }, [mutate, onRefresh, uiStore, factionId, refetchFactionStorage, refetchBase, refetchStorage, species])
 
   if (discoveryLoading) return <Loading message="Loading facility catalog..." />
 

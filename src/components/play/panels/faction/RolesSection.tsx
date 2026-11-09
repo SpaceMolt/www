@@ -5,10 +5,9 @@ import { Pencil, Plus, Save, Trash2 } from 'lucide-react'
 import type { FactionCreateRolePermissions, FactionInfoResponse } from '@spacemolt/lib'
 import { useAccountStore } from '@/lib/spacemolt'
 import { ActionButton } from '../../ActionButton'
-import { ConfirmAction, shared } from '../../shared'
+import { ConfirmAction, shared, useAction } from '../../shared'
 import styles from '../FactionPanel.module.css'
 import { NO_PERMISSIONS, PERMISSION_LABELS } from './factionAdmin'
-import { useRun } from './useRun'
 
 type Role = NonNullable<FactionInfoResponse['roles']>[number]
 const PERMISSION_KEYS = Object.keys(PERMISSION_LABELS) as (keyof FactionCreateRolePermissions)[]
@@ -16,7 +15,7 @@ const PERMISSION_KEYS = Object.keys(PERMISSION_LABELS) as (keyof FactionCreateRo
 /** Create, edit and delete custom faction roles. Needs manage_roles; the server enforces it. */
 export function RolesSection({ info, onChanged }: { info: FactionInfoResponse; onChanged: () => void }) {
   const store = useAccountStore()
-  const { busy, run } = useRun()
+  const { busy, run } = useAction()
   const [editing, setEditing] = useState<Role | null>(null)
   const [name, setName] = useState('')
   const [priority, setPriority] = useState('10')
@@ -34,8 +33,8 @@ export function RolesSection({ info, onChanged }: { info: FactionInfoResponse; o
 
   const save = async () => {
     const ok = editing
-      ? await run('save', () => admin.edit_role({ role_id: editing.id, name: name.trim(), permissions: perms }), `Role ${name.trim()} updated`)
-      : await run('save', () => admin.create_role({ name: name.trim(), priority: Number(priority), permissions: perms }), `Role ${name.trim()} created`)
+      ? await run('save', () => admin.edit_role({ role_id: editing.id, name: name.trim(), permissions: perms }), `Role ${name.trim()} updated`, 'toast')
+      : await run('save', () => admin.create_role({ name: name.trim(), priority: Number(priority), permissions: perms }), `Role ${name.trim()} created`, 'toast')
     if (ok) {
       startEdit(null)
       onChanged()
@@ -44,7 +43,7 @@ export function RolesSection({ info, onChanged }: { info: FactionInfoResponse; o
 
   const remove = async (role: Role) => {
     setDeleting(null)
-    if (await run(`delete:${role.id}`, () => store.account.commands.spacemolt_faction.delete_role({ id: role.id }), `Role ${role.name} deleted`)) onChanged()
+    if (await run(`delete:${role.id}`, () => store.account.commands.spacemolt_faction.delete_role({ id: role.id }), `Role ${role.name} deleted`, 'toast')) onChanged()
   }
 
   return (

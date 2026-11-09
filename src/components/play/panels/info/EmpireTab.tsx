@@ -5,16 +5,14 @@ import { Landmark, Coins, Shield } from 'lucide-react'
 import { useCommandMutation, useCommandQuery, usePlayer } from '@/lib/spacemolt'
 import { formatDuration, titleCase } from '@/lib/format'
 import { formatItemId } from '@/data/catalog'
-import { usePlay } from '../../PlayProvider'
 import { ActionButton } from '../../ActionButton'
-import { ConfirmAction, Credits, Loading, shared, errorMessage } from '../../shared'
+import { ConfirmAction, Credits, Loading, shared, useAction } from '../../shared'
 import styles from '../InfoPanel.module.css'
 
 const pct = (bps: number) => `${bps / 100}%`
 
 /** Tax estimate + prepay, and the live policy snapshot of every empire. */
 export function EmpireTab() {
-  const { uiStore } = usePlay()
   const player = usePlayer()
   const mutate = useCommandMutation()
   const tax = useCommandQuery(
@@ -27,23 +25,23 @@ export function EmpireTab() {
   )
   const [amount, setAmount] = useState('')
   const [confirming, setConfirming] = useState(false)
-  const [paying, setPaying] = useState(false)
+  const { busy, run } = useAction()
+  const paying = busy !== null
   const quantity = Math.floor(Number(amount))
   const validAmount = quantity > 0
 
   const prepay = async () => {
-    setPaying(true)
-    try {
-      const result = await mutate((c) => c.spacemolt.prepay_tax({ quantity }), { label: 'prepay_tax' })
-      uiStore.dispatch({ type: 'toast', kind: 'success', text: result.delta.details?.message ?? `Prepaid ${quantity} cr` })
+    const result = await run(
+      'prepay',
+      () => mutate((c) => c.spacemolt.prepay_tax({ quantity }), { label: 'prepay_tax' }),
+      (r) => r.delta.details?.message ?? `Prepaid ${quantity} cr`,
+      'toast',
+    )
+    if (result) {
       setAmount('')
       tax.refetch()
-    } catch (err) {
-      uiStore.dispatch({ type: 'toast', kind: 'danger', text: errorMessage(err) })
-    } finally {
-      setPaying(false)
-      setConfirming(false)
     }
+    setConfirming(false)
   }
 
   const t = tax.data

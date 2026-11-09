@@ -13,7 +13,7 @@ import type {
 import { useAccountStore, useCommandMutation, useCommandQuery, useLocationState, usePlayer, useSystem } from '@/lib/spacemolt'
 import { usePlay } from '../../PlayProvider'
 import { ActionButton } from '../../ActionButton'
-import { ConfirmAction, errorMessage, shared } from '../../shared'
+import { ConfirmAction, shared, useAction } from '../../shared'
 import { tradeIntelStation } from './intelPayload'
 import { Pager } from './MembersSection'
 import fp from '../FactionPanel.module.css'
@@ -47,7 +47,7 @@ export function IntelSection() {
   )
   const allies = factionInfo?.allies ?? []
 
-  const [busy, setBusy] = useState<string | null>(null)
+  const { busy, run } = useAction()
   const [systemFilter, setSystemFilter] = useState({ system_name: '', poi_type: '', resource_type: '', source_faction_id: '' })
   const [intel, setIntel] = useState<FactionQueryIntelResponse | null>(null)
   const [intelStatus, setIntelStatus] = useState<FactionIntelStatusResponse | null>(null)
@@ -59,16 +59,6 @@ export function IntelSection() {
   const [confirmSpy, setConfirmSpy] = useState(false)
   const [spy, setSpy] = useState<EspionageResponse | null>(null)
 
-  const run = async (key: string, fn: () => Promise<unknown>) => {
-    setBusy(key)
-    try {
-      await fn()
-    } catch (err) {
-      uiStore.dispatch({ type: 'toast', kind: 'danger', text: errorMessage(err) })
-    } finally {
-      setBusy(null)
-    }
-  }
   const info = (text: string) => uiStore.dispatch({ type: 'toast', kind: 'success', text })
   // Drop empty filters so the server sees only what the player set.
   const nonEmpty = <T extends Record<string, string>>(f: T) => Object.fromEntries(Object.entries(f).filter(([, v]) => v.trim()))

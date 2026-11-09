@@ -4,8 +4,7 @@ import { useMemo, useState } from 'react'
 import { Send, X } from 'lucide-react'
 import { useCargo, useCommandMutation, useLocationState, usePlayer } from '@/lib/spacemolt'
 import { getItem, formatItemId } from '@/data/catalog'
-import { usePlay } from '../../PlayProvider'
-import { ConfirmAction, ItemSelectList, QtyButtons, errorMessage, shared } from '../../shared'
+import { ConfirmAction, ItemSelectList, QtyButtons, shared, useAction } from '../../shared'
 import { normalizeCargo, selectedItems, type Selection } from '../../shared/itemSelection'
 import { BuyAutocomplete } from './BulkOrderForm'
 import styles from './OrdersView.module.css'
@@ -21,7 +20,6 @@ const nameOf = (id: string) => getItem(id)?.name ?? formatItemId(id)
 
 /** trade_offer: items from your cargo and/or credits, optionally asking for items/credits back. Both pilots must be at the same POI. */
 export function TradeOfferForm({ onSent, onClose }: { onSent: () => void; onClose: () => void }) {
-  const { uiStore } = usePlay()
   const mutate = useCommandMutation()
   const credits = usePlayer()?.credits ?? 0
   const nearby = useLocationState()?.nearby_players ?? []
@@ -33,7 +31,7 @@ export function TradeOfferForm({ onSent, onClose }: { onSent: () => void; onClos
   const [request, setRequest] = useState<Picks>({})
   const [requestCredits, setRequestCredits] = useState('')
   const [confirming, setConfirming] = useState(false)
-  const [sending, setSending] = useState(false)
+  const { busy, run } = useAction()
 
   const cargoRows = useMemo(() => normalizeCargo(cargo), [cargo])
 
@@ -50,23 +48,20 @@ export function TradeOfferForm({ onSent, onClose }: { onSent: () => void; onClos
 
   const send = async () => {
     setConfirming(false)
-    setSending(true)
-    try {
-      await mutate((c) => c.spacemolt_transfer.trade_offer({
+    const sent = await run(
+      'send',
+      () => mutate((c) => c.spacemolt_transfer.trade_offer({
         target: target.trim(),
         offer_items: offerItems.length ? offerItems : undefined,
         offer_credits: give || undefined,
         request_items: requestItems.length ? requestItems : undefined,
         request_credits: get || undefined,
-      }), { label: 'trade_offer' })
-      uiStore.dispatch({ type: 'event', kind: 'success', text: `Trade offer sent to ${target.trim()}` })
-      onSent()
-      onClose()
-    } catch (err) {
-      uiStore.dispatch({ type: 'toast', kind: 'danger', text: errorMessage(err) })
-    } finally {
-      setSending(false)
-    }
+      }), { label: 'trade_offer' }),
+      `Trade offer sent to ${target.trim()}`,
+    )
+    if (!sent) return
+    onSent()
+    onClose()
   }
 
   const toggle = (set: (fn: (p: Picks) => Picks) => void, id: string, initial: string) =>
@@ -129,7 +124,7 @@ export function TradeOfferForm({ onSent, onClose }: { onSent: () => void; onClos
           <button
             className={shared.confirmBtn}
             onClick={() => setConfirming(true)}
-            disabled={!target.trim() || isEmpty || sending || give > credits}
+            disabled={!target.trim() || isEmpty || busy !== null || give > credits}
             type="button"
           >
             <Send size={11} /> Send Offer

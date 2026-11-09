@@ -4,9 +4,9 @@ import { useState } from 'react'
 import { LogIn, LogOut, RotateCcw, Users } from 'lucide-react'
 import type { PassengerView, UnloadPassengerCommandResponse } from '@spacemolt/lib'
 import { useCommandMutation, useCommandQuery, useLocationState, usePendingAction } from '@/lib/spacemolt'
-import { ConfirmAction, Credits, shared } from '../../shared'
+import { usePlay } from '../../PlayProvider'
+import { ConfirmAction, Credits, shared, useAction } from '../../shared'
 import { groupByDestination } from './logic'
-import { useNotify } from './ShippingTab'
 import css from './missions.module.css'
 
 const DOCK_HINT = 'Dock at a station to load or unload passengers.'
@@ -18,12 +18,13 @@ function unloadText(d?: UnloadPassengerCommandResponse): string {
 
 export function PassengersTab() {
   const mutate = useCommandMutation()
-  const notify = useNotify()
+  const { uiStore } = usePlay()
+  const { busy, run } = useAction()
   const pending = usePendingAction() !== null
   const dockedAt = useLocationState()?.docked_at ?? null
   const [target, setTarget] = useState('')
   const [confirm, setConfirm] = useState<PassengerView | 'all' | null>(null)
-  const [loadingAll, setLoadingAll] = useState(false)
+  const loadingAll = busy === 'all'
 
   const aboard = useCommandQuery(
     async (a) => (await a.commands.spacemolt.list_passengers()).structuredContent,
@@ -47,41 +48,31 @@ export function PassengersTab() {
 
   const unload = async (id: string) => {
     setConfirm(null)
-    try {
-      const r = await mutate((c) => c.spacemolt.unload_passenger({ id, ...(handoff ? { target: handoff } : {}) }), { label: 'unload_passenger' })
-      notify.ok(unloadText(r.delta.details))
-      refreshAll()
-    } catch (err) {
-      notify.fail(err)
-    }
+    const r = await run(
+      'unload',
+      () => mutate((c) => c.spacemolt.unload_passenger({ id, ...(handoff ? { target: handoff } : {}) }), { label: 'unload_passenger' }),
+      (r) => unloadText(r.delta.details),
+    )
+    if (r) refreshAll()
   }
 
   const load = async (destination: string) => {
     const r = await mutate((c) => c.spacemolt.load_passenger({ id: destination }), { label: 'load_passenger' })
     const d = r.delta.details
-    notify.ok(d ? `${d.message}${d.skipped_unfunded ? ` (${d.skipped_unfunded} could not board: station cannot fund the fare)` : ''}` : 'Passengers loaded.')
+    uiStore.dispatch({ type: 'event', kind: 'success', text: d ? `${d.message}${d.skipped_unfunded ? ` (${d.skipped_unfunded} could not board: station cannot fund the fare)` : ''}` : 'Passengers loaded.' })
   }
 
   const loadOne = async (destination: string) => {
-    try {
-      await load(destination)
-    } catch (err) {
-      notify.fail(err)
-    }
+    await run('load', () => load(destination))
     refreshAll()
   }
 
   // load_passenger takes one destination per call; walk the groups richest-first until berths run out.
   const loadAll = async () => {
-    setLoadingAll(true)
-    try {
+    await run('all', async () => {
       for (const g of groups) await load(g.destination)
-    } catch (err) {
-      notify.fail(err)
-    } finally {
-      setLoadingAll(false)
-      refreshAll()
-    }
+    })
+    refreshAll()
   }
 
   const who = confirm === 'all' ? 'everyone' : confirm?.name

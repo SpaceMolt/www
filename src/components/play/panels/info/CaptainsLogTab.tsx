@@ -4,9 +4,8 @@ import { useState } from 'react'
 import { BookOpen, ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react'
 import { useAccountStore, useCommandQuery } from '@/lib/spacemolt'
 import { timeAgoOrDate } from '@/lib/format'
-import { usePlay } from '../../PlayProvider'
 import { ActionButton } from '../../ActionButton'
-import { ConfirmAction, Loading, shared, errorMessage } from '../../shared'
+import { ConfirmAction, Loading, shared, useAction } from '../../shared'
 import styles from '../InfoPanel.module.css'
 
 /**
@@ -16,30 +15,23 @@ import styles from '../InfoPanel.module.css'
  */
 export function CaptainsLogTab() {
   const store = useAccountStore()
-  const { uiStore } = usePlay()
   const [index, setIndex] = useState(0)
   const log = useCommandQuery(
     async (account) => (await account.commands.spacemolt_social.captains_log_list({ index })).structuredContent,
     [index],
   )
   const [draft, setDraft] = useState('')
-  const [busy, setBusy] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const { busy: running, run: runAction } = useAction()
+  const busy = running !== null
 
   const run = async (fn: () => Promise<unknown>, success: string) => {
-    setBusy(true)
-    try {
-      await fn()
-      uiStore.dispatch({ type: 'toast', kind: 'success', text: success })
-      setConfirmDelete(false)
-      // Both add and delete shift indices; go back to the newest entry.
-      if (index === 0) log.refetch()
-      else setIndex(0)
-    } catch (err) {
-      uiStore.dispatch({ type: 'toast', kind: 'danger', text: errorMessage(err) })
-    } finally {
-      setBusy(false)
-    }
+    const ok = await runAction('log', async () => { await fn(); return true }, success, 'toast')
+    if (!ok) return
+    setConfirmDelete(false)
+    // Both add and delete shift indices; go back to the newest entry.
+    if (index === 0) log.refetch()
+    else setIndex(0)
   }
 
   const social = store.account.commands.spacemolt_social

@@ -5,10 +5,9 @@ import { BadgeCheck, Coins } from 'lucide-react'
 import type { FactionInfoResponse } from '@spacemolt/lib'
 import { useCatalog, useCommandMutation, useCommandQuery } from '@/lib/spacemolt'
 import { ActionButton } from '../../ActionButton'
-import { ConfirmAction, Credits, Loading, QtyButtons, shared } from '../../shared'
+import { ConfirmAction, Credits, Loading, QtyButtons, shared, useAction } from '../../shared'
 import styles from '../FactionPanel.module.css'
 import { LICENSE_COST_BY_TIER } from './factionAdmin'
-import { useRun } from './useRun'
 import { EMPIRES } from '../../PlayerSelector'
 import { titleCase } from '@/lib/format'
 
@@ -16,7 +15,7 @@ import { titleCase } from '@/lib/format'
 export function TreasurySection({ info, onChanged }: { info: FactionInfoResponse; onChanged: () => void }) {
   const mutate = useCommandMutation()
   const { data: catalog } = useCatalog()
-  const { busy, run } = useRun()
+  const { busy, run } = useAction()
   const [prepay, setPrepay] = useState('')
   const [shipClass, setShipClass] = useState('')
   const [confirm, setConfirm] = useState<'prepay' | 'license' | null>(null)
@@ -33,7 +32,7 @@ export function TreasurySection({ info, onChanged }: { info: FactionInfoResponse
 
   const doPrepay = async () => {
     setConfirm(null)
-    if (await run('prepay', () => mutate((c) => c.spacemolt_faction.prepay_tax({ amount }), { label: 'faction_prepay_tax' }), `Prepaid ${amount.toLocaleString()} cr of corporate tax`)) {
+    if (await run('prepay', () => mutate((c) => c.spacemolt_faction.prepay_tax({ amount }), { label: 'faction_prepay_tax' }), `Prepaid ${amount.toLocaleString()} cr of corporate tax`, 'toast')) {
       setPrepay('')
       refetch()
       onChanged()
@@ -42,7 +41,7 @@ export function TreasurySection({ info, onChanged }: { info: FactionInfoResponse
 
   const doLicense = async () => {
     setConfirm(null)
-    if (await run('license', () => mutate((c) => c.spacemolt_facility.buy_ship_license({ ship_class: shipClass.trim() }), { label: 'buy_ship_license' }), `Licensed ${ship?.name ?? shipClass}`)) {
+    if (await run('license', () => mutate((c) => c.spacemolt_facility.buy_ship_license({ ship_class: shipClass.trim() }), { label: 'buy_ship_license' }), `Licensed ${ship?.name ?? shipClass}`, 'toast')) {
       setShipClass('')
       onChanged()
     }

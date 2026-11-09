@@ -4,8 +4,7 @@ import { useState } from 'react'
 import { ShieldCheck, Calculator } from 'lucide-react'
 import type { InsuranceQuoteData, RiskFactor } from '@spacemolt/lib'
 import { useAccountStore, useCommandMutation, useCommandQuery } from '@/lib/spacemolt'
-import { usePlay } from '../../PlayProvider'
-import { ConfirmAction, Credits, shared, errorMessage } from '../../shared'
+import { ConfirmAction, Credits, shared, useAction } from '../../shared'
 import styles from './FleetView.module.css'
 
 function Factors({ factors }: { factors?: RiskFactor[] }) {
@@ -26,7 +25,7 @@ function Factors({ factors }: { factors?: RiskFactor[] }) {
 export function InsuranceView({ isDocked }: { isDocked: boolean }) {
   const store = useAccountStore()
   const mutate = useCommandMutation()
-  const { uiStore } = usePlay()
+  const { run } = useAction()
   const [quote, setQuote] = useState<InsuranceQuoteData | null>(null)
   const [confirming, setConfirming] = useState(false)
 
@@ -36,24 +35,19 @@ export function InsuranceView({ isDocked }: { isDocked: boolean }) {
     { refreshOnSections: ['ship'] },
   )
 
-  const fail = (err: unknown) => uiStore.dispatch({ type: 'toast', kind: 'danger', text: errorMessage(err) })
+  const getQuote = () =>
+    run('quote', async () => setQuote((await store.account.commands.spacemolt_salvage.quote()).structuredContent?.quote ?? null))
 
-  const getQuote = () => {
-    store.account.commands.spacemolt_salvage
-      .quote()
-      .then((r) => setQuote(r.structuredContent?.quote ?? null))
-      .catch(fail)
-  }
-
-  const buy = () => {
+  const buy = async () => {
     setConfirming(false)
-    mutate((c) => c.spacemolt_salvage.insure(), { label: 'buy_insurance' })
-      .then((r) => {
-        uiStore.dispatch({ type: 'event', kind: 'success', text: r.delta.details?.message || 'Insurance purchased' })
-        setQuote(null)
-        refetch()
-      })
-      .catch(fail)
+    const r = await run(
+      'buy',
+      () => mutate((c) => c.spacemolt_salvage.insure(), { label: 'buy_insurance' }),
+      (r) => r.delta.details?.message || 'Insurance purchased',
+    )
+    if (!r) return
+    setQuote(null)
+    refetch()
   }
 
   const list = policies?.policies ?? []

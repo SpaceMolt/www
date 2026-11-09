@@ -5,7 +5,7 @@ import { Save, X, Ban, UserPlus, Users, RotateCcw, PackageOpen } from 'lucide-re
 import type { StationConfigResponse } from '@spacemolt/lib'
 import { useAccountStore, useCommandMutation, useCommandQuery } from '@/lib/spacemolt'
 import { usePlay } from '../../PlayProvider'
-import { ConfirmAction, Loading, errorMessage, shared } from '../../shared'
+import { ConfirmAction, Loading, shared, useAction } from '../../shared'
 import fac from '../facilities/facilities.module.css'
 import { GATED_SERVICES, SERVICE_ACCESS, feePercent, parseAmount, parseItemIds, readableStationMessage } from './adminInputs'
 import styles from './station.module.css'
@@ -88,7 +88,8 @@ export function StationAdmin({ isOutpost, onChanged }: { isOutpost: boolean; onC
   const store = useAccountStore()
   const mutate = useCommandMutation()
   const { uiStore } = usePlay()
-  const [busy, setBusy] = useState(false)
+  const { busy: running, run: runAction } = useAction()
+  const busy = running !== null
   const [confirmDismantle, setConfirmDismantle] = useState(false)
 
   const { data: cfg, loading, refetch } = useCommandQuery(
@@ -96,36 +97,22 @@ export function StationAdmin({ isOutpost, onChanged }: { isOutpost: boolean; onC
     [],
   )
 
-  const toast = (err: unknown) => uiStore.dispatch({ type: 'toast', kind: 'danger', text: errorMessage(err) })
-
   const run = async (label: string, fn: Parameters<RunMutation>[0]) => {
-    setBusy(true)
-    try {
-      const result = await mutate(fn, { label })
-      const message = (result.delta.details as StationConfigResponse | undefined)?.message
-      if (message) uiStore.dispatch({ type: 'toast', kind: 'success', text: readableStationMessage(message) })
-      refetch()
-      onChanged()
-    } catch (err) {
-      toast(err)
-    } finally {
-      setBusy(false)
-    }
+    const result = await runAction(label, () => mutate(fn, { label }), (r) => {
+      const message = (r.delta.details as StationConfigResponse | undefined)?.message
+      return message && readableStationMessage(message)
+    }, 'toast')
+    if (!result) return
+    refetch()
+    onChanged()
   }
 
   // station_set_name runs as a query on the server, not a queued mutation.
   const rename = async (name: string) => {
-    setBusy(true)
-    try {
-      await store.account.commands.spacemolt_facility.station_set_name({ name })
-      uiStore.dispatch({ type: 'toast', kind: 'success', text: `Station renamed to ${name}` })
-      refetch()
-      onChanged()
-    } catch (err) {
-      toast(err)
-    } finally {
-      setBusy(false)
-    }
+    const result = await runAction('rename', () => store.account.commands.spacemolt_facility.station_set_name({ name }), `Station renamed to ${name}`, 'toast')
+    if (!result) return
+    refetch()
+    onChanged()
   }
 
   const amount = (label: string, text: string, send: (n: number) => void) => {
@@ -136,18 +123,13 @@ export function StationAdmin({ isOutpost, onChanged }: { isOutpost: boolean; onC
 
   const dismantleOutpost = async () => {
     setConfirmDismantle(false)
-    setBusy(true)
-    try {
-      await mutate((c) => c.spacemolt_facility.dismantle_outpost(), { label: 'dismantle_outpost' })
+    const result = await runAction('dismantle', async () => {
+      const r = await mutate((c) => c.spacemolt_facility.dismantle_outpost(), { label: 'dismantle_outpost' })
       // The delta omits the ship section, so cargo_used (header) would stay stale; re-read state.
       void store.account.refresh().catch(() => {})
-      uiStore.dispatch({ type: 'toast', kind: 'success', text: 'Outpost packed into an Outpost Kit in your cargo' })
-      onChanged()
-    } catch (err) {
-      toast(err)
-    } finally {
-      setBusy(false)
-    }
+      return r
+    }, 'Outpost packed into an Outpost Kit in your cargo', 'toast')
+    if (result) onChanged()
   }
 
   if (loading && !cfg) return <Loading message="Loading station settings..." />

@@ -3,8 +3,7 @@
 import { useState } from 'react'
 import { Flag, Tent, Loader2 } from 'lucide-react'
 import { useAccountStore, useCargo, useCommandMutation, useCommandQuery, useLocationState, usePlayer } from '@/lib/spacemolt'
-import { usePlay } from '../../PlayProvider'
-import { ConfirmAction, Credits, Loading, errorMessage, shared } from '../../shared'
+import { ConfirmAction, Credits, Loading, shared, useAction } from '../../shared'
 import fac from '../facilities/facilities.module.css'
 import styles from './station.module.css'
 
@@ -22,7 +21,6 @@ const STATION_ONLY_REASON = /only one station may be founded per system|need a S
 export function FoundingSection() {
   const mutate = useCommandMutation()
   const store = useAccountStore()
-  const { uiStore } = usePlay()
   const player = usePlayer()
   const location = useLocationState()
   const cargo = useCargo() ?? []
@@ -36,7 +34,8 @@ export function FoundingSection() {
   const [name, setName] = useState('')
   const [publicAccess, setPublicAccess] = useState(false)
   const [confirm, setConfirm] = useState<'station' | 'outpost' | null>(null)
-  const [busy, setBusy] = useState(false)
+  const { busy: running, run } = useAction()
+  const busy = running !== null
 
   const has = (itemId: string) => cargo.some((c) => c.item_id === itemId && (c.quantity ?? 0) > 0)
   const coreItem = cost?.station_core_item ?? 'station_core'
@@ -47,24 +46,20 @@ export function FoundingSection() {
 
   const found = async (kind: 'station' | 'outpost') => {
     setConfirm(null)
-    setBusy(true)
-    try {
-      await (kind === 'station'
-        ? mutate((c) => c.spacemolt_facility.found_station({ name: name.trim(), public_access: publicAccess }), { label: 'found_station' })
-        : mutate((c) => c.spacemolt_facility.deploy_outpost({ name: name.trim() }), { label: 'deploy_outpost' }))
-      // The delta omits the ship section (cargo_used for the header) after the core/kit is spent; re-read state.
-      void store.account.refresh().catch(() => {})
-      uiStore.dispatch({
-        type: 'toast',
-        kind: 'success',
-        text: `${kind === 'station' ? 'Station' : 'Outpost'} founded: ${name.trim()}`,
-      })
-      setName('')
-    } catch (err) {
-      uiStore.dispatch({ type: 'toast', kind: 'danger', text: errorMessage(err) })
-    } finally {
-      setBusy(false)
-    }
+    const result = await run(
+      kind,
+      async () => {
+        const r = await (kind === 'station'
+          ? mutate((c) => c.spacemolt_facility.found_station({ name: name.trim(), public_access: publicAccess }), { label: 'found_station' })
+          : mutate((c) => c.spacemolt_facility.deploy_outpost({ name: name.trim() }), { label: 'deploy_outpost' }))
+        // The delta omits the ship section (cargo_used for the header) after the core/kit is spent; re-read state.
+        void store.account.refresh().catch(() => {})
+        return r
+      },
+      `${kind === 'station' ? 'Station' : 'Outpost'} founded: ${name.trim()}`,
+      'toast',
+    )
+    if (result) setName('')
   }
 
   if (loading && !cost) return <Loading message="Checking founding requirements..." />

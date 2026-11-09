@@ -42,7 +42,7 @@ import { ArenaTab } from './combat/ArenaTab'
 import { HistoryTab } from './combat/HistoryTab'
 import { compatibleAmmo, enemiesOf, formatDamage, reloadPlan } from './combat/combatLogic'
 import { usePlay, usePlayUi } from '../PlayProvider'
-import { PanelWithTabs, Modal, ConfirmAction, shared, errorMessage } from '../shared'
+import { PanelWithTabs, Modal, ConfirmAction, shared, useAction } from '../shared'
 import styles from './CombatPanel.module.css'
 
 type Stance = 'fire' | 'evade' | 'brace' | 'flee'
@@ -127,107 +127,100 @@ export function CombatPanel() {
     if (isDocked) setConfirmSelfDestruct(false)
   }, [isDocked])
 
-  const reportError = useCallback(
-    (err: unknown) => uiStore.dispatch({ type: 'toast', kind: 'danger', text: errorMessage(err) }),
-    [uiStore],
-  )
+  const { run } = useAction()
 
   const handleAttack = useCallback(
     (id: string) => {
-      mutate((c) => c.spacemolt.attack({ id }), { label: 'attack' }).catch(reportError)
+      run('attack', () => mutate((c) => c.spacemolt.attack({ id }), { label: 'attack' }))
     },
-    [mutate, reportError],
+    [mutate, run],
   )
 
   const handleScan = useCallback(
     (id: string) => {
-      mutate((c) => c.spacemolt.scan({ id }), { label: 'scan' }).catch(reportError)
+      run('scan', () => mutate((c) => c.spacemolt.scan({ id }), { label: 'scan' }))
     },
-    [mutate, reportError],
+    [mutate, run],
   )
 
   const handleHunt = useCallback(
     (id: string) => {
-      mutate((c) => c.spacemolt.hunt({ id }), { label: 'hunt' }).catch(reportError)
+      run('hunt', () => mutate((c) => c.spacemolt.hunt({ id }), { label: 'hunt' }))
     },
-    [mutate, reportError],
+    [mutate, run],
   )
 
   const handleCloak = useCallback(() => {
-    mutate((c) => c.spacemolt.cloak({ enable: !player?.is_cloaked }), { label: 'cloak' }).catch(reportError)
-  }, [mutate, reportError, player?.is_cloaked])
+    run('cloak', () => mutate((c) => c.spacemolt.cloak({ enable: !player?.is_cloaked }), { label: 'cloak' }))
+  }, [mutate, run, player?.is_cloaked])
 
   // In battle, self-destruct is a free countdown query; the standalone command
   // is immediate, has an escalating fee, and the server refuses it mid-battle.
   const handleSelfDestruct = useCallback(() => {
     setConfirmSelfDestruct(false)
     if (inCombat) {
-      store.account.commands.spacemolt_battle
-        .self_destruct()
-        .then(({ structuredContent: r }) => uiStore.dispatch({ type: 'event', kind: 'warning', text: r?.message ?? 'Self-destruct countdown requested' }))
-        .catch(reportError)
+      run('self_destruct', async () => {
+        const { structuredContent: r } = await store.account.commands.spacemolt_battle.self_destruct()
+        uiStore.dispatch({ type: 'event', kind: 'warning', text: r?.message ?? 'Self-destruct countdown requested' })
+      })
       return
     }
-    mutate((c) => c.spacemolt.self_destruct(), { label: 'self_destruct' }).catch(reportError)
-  }, [inCombat, store, uiStore, mutate, reportError])
+    run('self_destruct', () => mutate((c) => c.spacemolt.self_destruct(), { label: 'self_destruct' }))
+  }, [inCombat, store, uiStore, mutate, run])
 
   const handleTarget = useCallback(
     (id: string) => {
-      store.account.commands.spacemolt_battle
-        .target({ id })
-        .then(({ structuredContent: r }) => uiStore.dispatch({ type: 'event', kind: 'info', text: r?.message ?? 'Target set' }))
-        .catch(reportError)
+      run('target', async () => {
+        const { structuredContent: r } = await store.account.commands.spacemolt_battle.target({ id })
+        uiStore.dispatch({ type: 'event', kind: 'info', text: r?.message ?? 'Target set' })
+      })
     },
-    [store, uiStore, reportError],
+    [store, uiStore, run],
   )
 
   const handleEngage = useCallback(
     (sideId: number) => {
       setEngageSide(null)
-      store.account.commands.spacemolt_battle
-        .engage(sideId ? { side_id: sideId } : {})
-        .then(({ structuredContent: r }) => {
-          uiStore.dispatch({ type: 'event', kind: 'success', text: r?.message ?? 'Joining the battle' })
-          systemBattle.refetch()
-        })
-        .catch(reportError)
+      run(
+        'engage',
+        () => store.account.commands.spacemolt_battle.engage(sideId ? { side_id: sideId } : {}),
+        ({ structuredContent: r }) => r?.message ?? 'Joining the battle',
+      ).then((r) => r && systemBattle.refetch())
     },
-    [store, uiStore, reportError, systemBattle.refetch],
+    [store, run, systemBattle.refetch],
   )
 
   const handleRefresh = useCallback(() => {
-    store.account.refresh().catch(reportError)
+    run('refresh', () => store.account.refresh())
     nearbyQuery.refetch()
-  }, [store, reportError, nearbyQuery.refetch])
+  }, [store, run, nearbyQuery.refetch])
 
   // Tactical controls — battle stance/movement resolve synchronously
   // (query commands), not queued to the next tick, so they bypass mutate().
   const handleStance = useCallback(
     (stance: Stance) => {
       if (store.getPhase() !== 'ready' || !uiStore.getState().inCombat || uiStore.getState().battleSyncPending) return
-      store.account.commands.spacemolt_battle.stance({ id: stance }).catch(reportError)
+      run('stance', () => store.account.commands.spacemolt_battle.stance({ id: stance }))
     },
-    [store, uiStore, reportError],
+    [store, uiStore, run],
   )
 
   const handleAdvance = useCallback(() => {
     if (store.getPhase() !== 'ready' || !uiStore.getState().inCombat || uiStore.getState().battleSyncPending) return
-    store.account.commands.spacemolt_battle.advance().catch(reportError)
-  }, [store, uiStore, reportError])
+    run('advance', () => store.account.commands.spacemolt_battle.advance())
+  }, [store, uiStore, run])
 
   const handleRetreat = useCallback(() => {
     if (store.getPhase() !== 'ready' || !uiStore.getState().inCombat || uiStore.getState().battleSyncPending) return
-    store.account.commands.spacemolt_battle.retreat().catch(reportError)
-  }, [store, uiStore, reportError])
+    run('retreat', () => store.account.commands.spacemolt_battle.retreat())
+  }, [store, uiStore, run])
 
   const handleReload = useCallback(
     (instanceId: string, ammoId?: string) => {
       if (!ammoId) return
-      mutate((c) => c.spacemolt_battle.reload({ id: instanceId, target: ammoId }), { label: 'reload' }).catch(
-        reportError,
-      )
+      run('reload', () => mutate((c) => c.spacemolt_battle.reload({ id: instanceId, target: ammoId }), { label: 'reload' }))
     },
-    [mutate, reportError],
+    [mutate, run],
   )
 
   const weapons = (modules ?? []).filter((m) => m.type === 'weapon' && m.magazine_size !== undefined)
@@ -253,13 +246,9 @@ export function CombatPanel() {
   const handleReloadAll = () => {
     // ponytail: the lib types `weapons` as string[], but the server takes {weapon_instance_id, ammo_item_id} entries.
     const entries = reloadAll as unknown as string[]
-    mutate((c) => c.spacemolt_battle.reload({ weapons: entries }), { label: 'reload' })
-      .then((result) => {
-        const details = result.delta.details
-        const text = details && 'summary' in details ? (details.message ?? `Reloaded ${details.results.filter((r) => r.success).length} weapons`) : 'Reloaded'
-        uiStore.dispatch({ type: 'event', kind: 'success', text })
-      })
-      .catch(reportError)
+    run('reload', () => mutate((c) => c.spacemolt_battle.reload({ weapons: entries }), { label: 'reload' }), ({ delta: { details } }) =>
+      details && 'summary' in details ? (details.message ?? `Reloaded ${details.results.filter((r) => r.success).length} weapons`) : 'Reloaded',
+    )
   }
 
   const isCloaked = player?.is_cloaked ?? false

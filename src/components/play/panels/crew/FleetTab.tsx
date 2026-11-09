@@ -4,11 +4,10 @@ import { useState } from 'react'
 import { Crown, Fuel, LogOut, Ship, UserMinus, UserPlus, Users, Wrench, X, Check, Armchair } from 'lucide-react'
 import type { Commands, MutationResult, RefuelResponse, RepairResponse } from '@spacemolt/lib'
 import { useCommandMutation, useCommandQuery, useLocationState, useModules, usePlayer } from '@/lib/spacemolt'
-import { ConfirmAction, shared } from '../../shared'
+import { ConfirmAction, shared, useAction } from '../../shared'
 import styles from '../CrewPanel.module.css'
 import { invitablePlayers, parseCount } from './crewLogic'
 import { getShip } from '@/data/catalog'
-import { useCrewAction } from './useCrewAction'
 
 /** Shown when the server result carries no message. */
 const DONE: Record<string, string> = {
@@ -28,7 +27,8 @@ export function FleetTab() {
   const player = usePlayer()
   const location = useLocationState()
   const modules = useModules()
-  const { busy, run } = useCrewAction()
+  const { busy: running, run } = useAction()
+  const busy = running !== null
   const [confirm, setConfirm] = useState<string | null>(null)
   const [inviteName, setInviteName] = useState('')
   const [boardGarage, setBoardGarage] = useState(false)
@@ -71,7 +71,7 @@ export function FleetTab() {
   const carriers = nearby.filter((p) => p.docked && player?.faction_id && p.faction_id === player.faction_id)
 
   const act = <T extends { message?: string }>(call: (c: Commands) => Promise<MutationResult<T>>, label: string) =>
-    run(() => mutate(call, { label }), (r) => r.delta.details?.message ?? DONE[label] ?? 'Done').then((r) => {
+    run('crew', () => mutate(call, { label }), (r) => r.delta.details?.message ?? DONE[label] ?? 'Done').then((r) => {
       setConfirm(null)
       refetch()
       return r
@@ -81,7 +81,7 @@ export function FleetTab() {
 
   const sendSupport = (kind: 'refuel' | 'repair', target: string) => {
     const quantity = parseCount(qty[`${kind}:${target}`] ?? '') || undefined
-    return run(
+    return run('crew',
       async () =>
         (kind === 'refuel'
           ? await mutate((c) => c.spacemolt.refuel({ target, quantity }), { label: 'refuel' })
