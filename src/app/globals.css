@@ -1179,3 +1179,19 @@ body.play-page input[type='number']::-webkit-inner-spin-button {
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 212, 255, 0.3) transparent;
 }
+
+/* Checkbox labels on /play follow the client's small mono type instead of the browser default.
+   :where() keeps this at zero specificity, so a label with its own styles wins. */
+:where(body.play-page) label:where(:has(> input[type='checkbox'])) {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--chrome-silver);
+  cursor: pointer;
+}
+
+:where(body.play-page) input[type='checkbox'] {
+  accent-color: var(--plasma-cyan);
+}
