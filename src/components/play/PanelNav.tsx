@@ -19,6 +19,7 @@ import {
   Skull,
   ChevronDown,
   Menu,
+  UserCog,
 } from 'lucide-react'
 import styles from './PanelNav.module.css'
 
@@ -27,16 +28,13 @@ interface PanelNavProps {
   onPanelChange: (panel: string) => void
   badges?: Record<string, number>
   isDocked?: boolean
-  inCombat?: boolean
-  hasBattleReplay?: boolean
 }
 
 interface PanelDef {
   id: string
   icon: React.ComponentType<{ size?: number; className?: string }>
   label: string
-  /** 'always' | 'docked' | 'undocked' | 'combat' */
-  visibility: 'always' | 'docked' | 'undocked' | 'combat'
+  visibility: 'always' | 'docked'
   /** Right-justify this tab (pushes to far right) */
   right?: boolean
 }
@@ -46,6 +44,7 @@ const ALL_PANELS: PanelDef[] = [
   { id: 'ship', icon: Rocket, label: 'Ship', visibility: 'always' },
   { id: 'faction', icon: Users, label: 'Faction', visibility: 'always' },
   { id: 'missions', icon: Target, label: 'Missions', visibility: 'always' },
+  { id: 'crew', icon: UserCog, label: 'Crew', visibility: 'always' },
   // Station tabs — always visible (view remotely), mutations disabled in space
   { id: 'trading', icon: TrendingUp, label: 'Market', visibility: 'always' },
   { id: 'storage', icon: Package, label: 'Storage', visibility: 'always' },
@@ -57,29 +56,18 @@ const ALL_PANELS: PanelDef[] = [
   { id: 'achievements', icon: Trophy, label: 'Achievements', visibility: 'always' },
   // Salvage — always visible (panel itself shows "no wrecks" empty state)
   { id: 'salvage', icon: Skull, label: 'Salvage', visibility: 'always' },
-  // Combat tab — available whenever undocked (so you can scan/attack to start a
-  // fight, not just once a battle is already underway). Retained replay history
-  // also keeps this tab reachable after docking or respawning at a station.
-  { id: 'combat', icon: Swords, label: 'Combat', visibility: 'undocked' },
+  // Combat — always visible: arena status and battle history work while docked.
+  { id: 'combat', icon: Swords, label: 'Combat', visibility: 'always' },
   // Right-justified
   { id: 'info', icon: Info, label: 'Info', visibility: 'always', right: true },
   { id: 'settings', icon: Settings, label: 'Settings', visibility: 'always', right: true },
 ]
 
-export function PanelNav({ activePanel, onPanelChange, badges, isDocked, inCombat, hasBattleReplay }: PanelNavProps) {
+export function PanelNav({ activePanel, onPanelChange, badges, isDocked }: PanelNavProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  const visiblePanels = useMemo(() => {
-    return ALL_PANELS.filter((p) => {
-      if (p.id === 'combat' && hasBattleReplay) return true
-      if (p.visibility === 'always') return true
-      if (p.visibility === 'docked') return isDocked
-      if (p.visibility === 'undocked') return !isDocked
-      if (p.visibility === 'combat') return inCombat
-      return false
-    })
-  }, [isDocked, inCombat, hasBattleReplay])
+  const visiblePanels = useMemo(() => ALL_PANELS.filter((p) => p.visibility === 'always' || isDocked), [isDocked])
 
   const leftPanels = visiblePanels.filter((p) => !p.right)
   const rightPanels = visiblePanels.filter((p) => p.right)

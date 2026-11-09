@@ -3,23 +3,19 @@ import { expect, test } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { PanelNav } from './PanelNav'
 
-function hasCombat(isDocked: boolean, hasBattleReplay = false) {
-  return renderToStaticMarkup(<PanelNav activePanel="combat" onPanelChange={() => {}} isDocked={isDocked} hasBattleReplay={hasBattleReplay} />)
+function hasCombat(isDocked: boolean) {
+  return renderToStaticMarkup(<PanelNav activePanel="combat" onPanelChange={() => {}} isDocked={isDocked} />)
     .includes('aria-label="Combat"')
 }
 
-test('retained replay stays reachable after docking or a docked respawn', () => {
-  expect(hasCombat(true, true)).toBe(true)
-})
-
-test('normal combat navigation remains available in space, hidden at a station without history', () => {
+test('combat stays reachable docked and in space (arena status and battle history work anywhere)', () => {
+  expect(hasCombat(true)).toBe(true)
   expect(hasCombat(false)).toBe(true)
-  expect(hasCombat(true)).toBe(false)
 })
 
 test('docked replay remains the active navigation entry without live combat membership', () => {
   const markup = renderToStaticMarkup(
-    <PanelNav activePanel="combat" onPanelChange={() => {}} isDocked inCombat={false} hasBattleReplay />,
+    <PanelNav activePanel="combat" onPanelChange={() => {}} isDocked />,
   )
   expect(markup).toContain('aria-label="Combat" aria-current="page"')
   // Desktop and mobile share the same visible panel definitions. The closed
