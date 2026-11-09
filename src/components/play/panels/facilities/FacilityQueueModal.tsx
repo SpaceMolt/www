@@ -1,11 +1,11 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { ListOrdered, ArrowUp, ArrowDown, Trash2, Loader2, User, Globe, RefreshCw } from 'lucide-react'
+import { ListOrdered, ArrowUp, ArrowDown, Trash2, Loader2, User, Globe, RefreshCw, Plus } from 'lucide-react'
 import type { FacilityResponse } from '@spacemolt/lib'
 import { useCommandMutation, useCommandQuery, useCurrentTick } from '@/lib/spacemolt'
 import { usePlay } from '../../PlayProvider'
-import { Modal, shared } from '../../shared'
+import { Modal, errorMessage, shared } from '../../shared'
 import { ProgressBar } from '../../ProgressBar'
 import { estimateJobProgress } from '../craftProgress'
 import type { Facility, CraftJobView } from '../../types'
@@ -14,8 +14,6 @@ import styles from './facilities.module.css'
 // `{ jobs: unknown }` uniquely identifies the job-list variant within the
 // FacilityResponse union (see UpgradeModal.tsx for the discriminator pattern).
 type FacilityJobListResponse = Extract<FacilityResponse, { jobs: unknown }>
-
-const describeError = (err: unknown): string => (err instanceof Error ? err.message : String(err))
 
 interface FacilityQueueModalProps {
   facility: Facility
@@ -27,6 +25,9 @@ export function FacilityQueueModal({ facility, onClose }: FacilityQueueModalProp
   const mutate = useCommandMutation()
   const { uiStore } = usePlay()
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [recipeId, setRecipeId] = useState(facility.recipe_id ?? '')
+  const [runs, setRuns] = useState('1')
+  const [direction, setDirection] = useState<'forward' | 'reverse'>('forward')
 
   // This component keeps its own local job state rather than the shared
   // craftJobs slice (crafting_update pushes only reach a job's own orderer,
@@ -45,7 +46,7 @@ export function FacilityQueueModal({ facility, onClose }: FacilityQueueModalProp
   const jobs = rawJobs ?? (error ? [] : null)
 
   const reportError = useCallback((err: unknown) => {
-    uiStore.dispatch({ type: 'toast', kind: 'danger', text: describeError(err) })
+    uiStore.dispatch({ type: 'toast', kind: 'danger', text: errorMessage(err) })
   }, [uiStore])
 
   const handleReorder = useCallback(async (jobId: string, position: number) => {
@@ -73,6 +74,21 @@ export function FacilityQueueModal({ facility, onClose }: FacilityQueueModalProp
     setBusyId(null)
   }, [mutate, refetch, reportError])
 
+  const runCount = Number(runs)
+  const handleAdd = useCallback(async () => {
+    setBusyId('add')
+    try {
+      await mutate(
+        (c) => c.spacemolt_facility.job_add({ facility_id: facility.facility_id, recipe_id: recipeId.trim(), quantity: runCount, direction }),
+        { label: 'facility_job_add' },
+      )
+      refetch()
+    } catch (err) {
+      reportError(err)
+    }
+    setBusyId(null)
+  }, [mutate, facility.facility_id, recipeId, runCount, direction, refetch, reportError])
+
   return (
     <Modal
       title={`Queue — ${facility.custom_name || facility.name}`}
@@ -84,6 +100,43 @@ export function FacilityQueueModal({ facility, onClose }: FacilityQueueModalProp
         </button>
       }
     >
+      <div className={styles.cardActions}>
+        <input
+          className={shared.textInput}
+          placeholder="Recipe id"
+          value={recipeId}
+          onChange={(e) => setRecipeId(e.target.value)}
+          style={{ width: '10rem' }}
+        />
+        <input
+          className={shared.textInput}
+          type="number"
+          min={1}
+          step={1}
+          value={runs}
+          onChange={(e) => setRuns(e.target.value)}
+          aria-label="Runs"
+          style={{ width: '4.5rem' }}
+        />
+        <select
+          className={shared.selectInput}
+          value={direction}
+          onChange={(e) => setDirection(e.target.value === 'reverse' ? 'reverse' : 'forward')}
+          aria-label="Direction"
+        >
+          <option value="forward">Craft</option>
+          <option value="reverse">Recycle</option>
+        </select>
+        <button
+          className={shared.confirmBtn}
+          onClick={handleAdd}
+          disabled={busyId === 'add' || !recipeId.trim() || !Number.isInteger(runCount) || runCount < 1}
+          type="button"
+          title="Queue runs on this facility. Inputs and labor are escrowed now."
+        >
+          {busyId === 'add' ? <Loader2 size={11} className={shared.spinner} /> : <Plus size={11} />} Add job
+        </button>
+      </div>
       {loading && jobs === null && (
         <div className={shared.emptyState}><Loader2 size={12} className={shared.spinner} /> Loading queue...</div>
       )}

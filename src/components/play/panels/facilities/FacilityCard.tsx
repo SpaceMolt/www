@@ -26,6 +26,8 @@ const CATEGORY_BADGE: Record<string, string> = {
   production: shared.badgeOrange,
   faction: shared.badgePurple,
   personal: shared.badgeCyan,
+  defense: shared.badgeRed,
+  ranch: shared.badgeGreen,
 }
 
 interface FacilityCardProps {
@@ -73,10 +75,12 @@ export function FacilityCard({ facility, children }: FacilityCardProps) {
     <div className={styles.card}>
       <div className={styles.cardHeader}>
         <span className={`${styles.statusDot} ${facility.under_construction ? styles.statusInactive : styles.statusActive}`} />
-        <span className={styles.cardName}>{facility.name}</span>
+        <span className={styles.cardName} title={facility.custom_name ? facility.name : undefined}>{facility.custom_name || facility.name}</span>
         <span className={CATEGORY_BADGE[facility.category] || shared.badgeGrey}>
           {formatLabel(facility.category)}
         </span>
+        {facility.dismantling && <span className={shared.badgeRed}>Dismantling</span>}
+        {facility.damaged && <span className={shared.badgeRed}>{facility.repair_complete_tick ? 'Repairing' : 'Damaged'}</span>}
         {serviceLabel && (
           <span className={shared.badgeGrey}>
             {formatLabel(serviceLabel)}

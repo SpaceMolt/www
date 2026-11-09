@@ -53,7 +53,7 @@ const ALL_PANELS: PanelDef[] = [
   // Docked-only tabs
   { id: 'shipyard', icon: Warehouse, label: 'Shipyard', visibility: 'docked' },
   { id: 'crafting', icon: Hammer, label: 'Crafting', visibility: 'docked' },
-  { id: 'facilities', icon: Building2, label: 'Facilities', visibility: 'docked' },
+  { id: 'facilities', icon: Building2, label: 'Facilities', visibility: 'always' },
   // Always visible: founding a station needs an undocked ship.
   { id: 'station', icon: Landmark, label: 'Station', visibility: 'always' },
   { id: 'skills', icon: Star, label: 'Skills', visibility: 'always' },
