@@ -110,9 +110,25 @@ export function wireNotifications(account: Account, store: UiStore): () => void 
 
     account.on('drone_update', () => log('info', 'Drone status updated')),
     account.on('drone_destroyed', () => log('warning', 'A drone was destroyed')),
-    account.on('base_raid_update', () => log('warning', 'Base raid in progress')),
-    account.on('base_destroyed', () => log('danger', 'A base was destroyed')),
-    account.on('station_repaired', () => log('info', 'Station repaired')),
+    account.on('base_raid_update', (raid) => {
+      const text = `${raid.base_name} under attack by ${raid.attacker_name}: ${raid.damage} damage, ${raid.current_health}/${raid.max_health} left`
+      log('warning', text)
+      store.dispatch({ type: 'toast', kind: 'warning', text })
+    }),
+    account.on('base_destroyed', (base) => {
+      const text = `${base.base_name} was destroyed by ${base.attacker_name}`
+      log('danger', text)
+      store.dispatch({ type: 'toast', kind: 'danger', text })
+    }),
+    account.on('station_repaired', (base) => log('success', `${base.base_name} is fully repaired`)),
+    account.on('facility_rent_warning', (warning) => {
+      log('warning', warning.message)
+      store.dispatch({ type: 'toast', kind: 'warning', text: warning.message })
+    }),
+    account.on('facility_reclaimed', (reclaimed) => {
+      log('danger', reclaimed.message)
+      store.dispatch({ type: 'toast', kind: 'danger', text: reclaimed.message })
+    }),
     account.on('pirate_radio', (radio) => log('chat', `Pirate radio: ${str(radio.message)}`)),
     account.on('pirate_destroyed', () => log('combat', 'Pirate destroyed')),
     account.on('reconnected', () => log('info', 'Reconnected to the server')),

@@ -13,6 +13,7 @@ import {
   Package,
   Warehouse,
   Building2,
+  Landmark,
   Hammer,
   Star,
   Trophy,
@@ -53,6 +54,8 @@ const ALL_PANELS: PanelDef[] = [
   { id: 'shipyard', icon: Warehouse, label: 'Shipyard', visibility: 'docked' },
   { id: 'crafting', icon: Hammer, label: 'Crafting', visibility: 'docked' },
   { id: 'facilities', icon: Building2, label: 'Facilities', visibility: 'docked' },
+  // Always visible: founding a station needs an undocked ship.
+  { id: 'station', icon: Landmark, label: 'Station', visibility: 'always' },
   { id: 'skills', icon: Star, label: 'Skills', visibility: 'always' },
   { id: 'achievements', icon: Trophy, label: 'Achievements', visibility: 'always' },
   // Salvage — always visible (panel itself shows "no wrecks" empty state)

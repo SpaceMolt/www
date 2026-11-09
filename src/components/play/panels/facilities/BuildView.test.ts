@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'bun:test'
-import { combinedQuantity } from './BuildView'
+import { buildActionFor, combinedQuantity } from './BuildView'
 
 // `combinedQuantity` is the inventory-aggregation helper behind the
 // have/need indicator on facility build materials. It must mirror the
@@ -64,5 +64,21 @@ describe('combinedQuantity', () => {
     const storage = [{ item_id: 'plates', quantity: 2_000_000 }]
     const faction = [{ item_id: 'plates', quantity: 3_000_000 }]
     expect(combinedQuantity('plates', cargo, storage, faction)).toBe(6_000_000)
+  })
+})
+
+// The server's plain `build` accepts only production; everything a faction
+// builds at its station (services, power, life support, defense, ranch) must
+// go through `faction_build`, and personal facilities through `personal_build`.
+describe('buildActionFor', () => {
+  it('routes production to build and personal to personal_build', () => {
+    expect(buildActionFor('production')).toBe('build')
+    expect(buildActionFor('personal')).toBe('personal_build')
+  })
+
+  it('routes every station category to faction_build', () => {
+    for (const cat of ['service', 'infrastructure', 'defense', 'faction', 'ranch']) {
+      expect(buildActionFor(cat)).toBe('faction_build')
+    }
   })
 })

@@ -9,10 +9,10 @@ import {
   Loader2,
   Hammer,
 } from 'lucide-react'
-import type { FacilityResponse, StorageResponse } from '@spacemolt/lib'
+import type { Account, FacilityResponse, StorageResponse } from '@spacemolt/lib'
 import { useAccountStore, useCargo, useCommandMutation, useCommandQuery, useLocationState, usePlayer } from '@/lib/spacemolt'
 import { usePlay } from '../../PlayProvider'
-import { Credits, Modal, Loading, shared } from '../../shared'
+import { Credits, Modal, Loading, errorMessage, shared } from '../../shared'
 import styles from './facilities.module.css'
 
 /**
@@ -53,9 +53,20 @@ interface BuildViewProps {
   onRefresh: () => void
 }
 
-const BUILDABLE_CATEGORIES = ['production', 'personal', 'faction']
+type BuildAction = 'build' | 'personal_build' | 'faction_build'
 
-const describeError = (err: unknown): string => (err instanceof Error ? err.message : String(err))
+/**
+ * The facility action a build of `category` must use. The server's `build`
+ * only accepts production; personal has its own action; service,
+ * infrastructure, defense, faction and ranch are all faction-built.
+ */
+export function buildActionFor(category: string): BuildAction {
+  if (category === 'production') return 'build'
+  if (category === 'personal') return 'personal_build'
+  return 'faction_build'
+}
+
+type FacilityCategory = NonNullable<Parameters<Account['commands']['spacemolt_facility']['types']>[0]>['category']
 
 export function BuildView({ onRefresh }: BuildViewProps) {
   const store = useAccountStore()
@@ -66,7 +77,7 @@ export function BuildView({ onRefresh }: BuildViewProps) {
   const dockedAt = useLocationState()?.docked_at ?? null
 
   const reportError = useCallback((err: unknown) => {
-    uiStore.dispatch({ type: 'toast', kind: 'danger', text: describeError(err) })
+    uiStore.dispatch({ type: 'toast', kind: 'danger', text: errorMessage(err) })
   }, [uiStore])
 
   // Inventory pools for the have/need indicator on build materials. Cargo +
@@ -105,6 +116,15 @@ export function BuildView({ onRefresh }: BuildViewProps) {
 
   const [buildConfirm, setBuildConfirm] = useState<FacilityTypeDetail | null>(null)
   const [building, setBuilding] = useState(false)
+  const [species, setSpecies] = useState('')
+
+  // Power and life-support headroom decide whether a new service or infra
+  // facility will run, so show the station's capacity up front.
+  const { data: base, refetch: refetchBase } = useCommandQuery(
+    async (account) => (await account.commands.spacemolt.get_base()).structuredContent,
+    [dockedAt],
+    { enabled: Boolean(dockedAt) },
+  )
 
   // The category-discovery view (types() with no params) loads once on mount.
   // The filtered list / single-type detail below it are driven by explicit
@@ -132,7 +152,7 @@ export function BuildView({ onRefresh }: BuildViewProps) {
   // lockbox) is paid personally from cargo + station storage; every other
   // faction facility draws from faction storage + cargo, never station storage.
   const materialHave = useCallback((detail: FacilityTypeDetail, itemId: string): number => {
-    const factionPaid = detail.category === 'faction' && detail.faction_service !== 'faction_storage'
+    const factionPaid = buildActionFor(detail.category) === 'faction_build' && detail.faction_service !== 'faction_storage'
     return factionPaid
       ? combinedQuantity(itemId, cargoItems, null, factionStorage?.items)
       : combinedQuantity(itemId, cargoItems, stationStorageItems, null)
@@ -141,14 +161,14 @@ export function BuildView({ onRefresh }: BuildViewProps) {
   const fetchFiltered = useCallback(async (category: string, name: string, page: number) => {
     setFilteredLoading(true)
     try {
-      const params: {
-        category?: 'infrastructure' | 'service' | 'production' | 'faction' | 'personal'
-        name?: string
-        page: number
-        per_page: number
-      } = { per_page: 20, page }
-      if (category) params.category = category as 'infrastructure' | 'service' | 'production' | 'faction' | 'personal'
-      if (name) params.name = name
+      // The server filters on any category string (defense, ranch too); the
+      // lib enum lists only five, so widen it here.
+      const params = {
+        per_page: 20,
+        page,
+        ...(category ? { category: category as FacilityCategory } : {}),
+        ...(name ? { name } : {}),
+      }
       const resp = await store.account.commands.spacemolt_facility.types(params)
       const data = resp.structuredContent as FacilityTypesFiltered | undefined
       if (data) setFilteredData(data)
@@ -205,33 +225,57 @@ export function BuildView({ onRefresh }: BuildViewProps) {
   const handleBuild = useCallback(async (detail: FacilityTypeDetail) => {
     setBuilding(true)
     try {
-      const result = detail.category === 'personal'
-        ? await mutate((c) => c.spacemolt_facility.personal_build({ facility_type: detail.type_id }), { label: 'facility_personal_build' })
-        : detail.category === 'faction'
-          ? await mutate((c) => c.spacemolt_facility.faction_build({ facility_type: detail.type_id }), { label: 'facility_faction_build' })
-          : await mutate((c) => c.spacemolt_facility.build({ facility_type: detail.type_id }), { label: 'facility_build' })
-      const owner = detail.category === 'faction' ? 'faction' : 'station'
+      const action = buildActionFor(detail.category)
+      const facility_type = detail.type_id
+      const result = action === 'personal_build'
+        ? await mutate((c) => c.spacemolt_facility.personal_build({ facility_type }), { label: 'facility_personal_build' })
+        : action === 'faction_build'
+          ? await mutate((c) => c.spacemolt_facility.faction_build({ facility_type, ...(species.trim() ? { species: species.trim() } : {}) }), { label: 'facility_faction_build' })
+          : await mutate((c) => c.spacemolt_facility.build({ facility_type }), { label: 'facility_build' })
+      const owner = { build: 'station', personal_build: 'personal', faction_build: 'faction' }[action]
       const detailsRecord = (result.delta.details ?? {}) as Record<string, unknown>
       const message = (typeof detailsRecord.message === 'string' ? detailsRecord.message : undefined)
         || `Construction started: ${detail.name} (${owner}) — ${detail.build_time} ticks`
       uiStore.dispatch({ type: 'event', kind: 'info', text: message })
       setBuildConfirm(null)
       // Refresh faction resources so subsequent build evaluations are accurate
-      if (detail.category === 'faction' && factionId) refetchFactionStorage()
+      if (action === 'faction_build' && factionId) refetchFactionStorage()
+      refetchBase()
       onRefresh()
     } catch (err) {
       reportError(err)
     }
     setBuilding(false)
-  }, [mutate, onRefresh, uiStore, factionId, refetchFactionStorage, reportError])
+  }, [mutate, onRefresh, uiStore, factionId, refetchFactionStorage, refetchBase, reportError, species])
 
   if (discoveryLoading) return <Loading message="Loading facility catalog..." />
 
   return (
     <>
+      {(base?.power || base?.life_support) && (
+        <div className={styles.costBreakdown}>
+          {base.power && (
+            <div className={styles.costRow} title={base.power.remediation}>
+              <span className={styles.costLabel}>Power</span>
+              <span className={base.power.supply >= base.power.current_draw ? styles.materialOk : styles.materialMissing}>
+                draw {base.power.current_draw}/{base.power.supply}, battery {base.power.battery_stored}/{base.power.battery_capacity}
+              </span>
+            </div>
+          )}
+          {base.life_support && (
+            <div className={styles.costRow} title={base.life_support.remediation}>
+              <span className={styles.costLabel}>Life Support</span>
+              <span className={base.life_support.supply >= base.life_support.demand ? styles.materialOk : styles.materialMissing}>
+                demand {base.life_support.demand}/{base.life_support.supply}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
       {discovery && (
         <div className={styles.filterBar}>
-          {BUILDABLE_CATEGORIES.filter(cat => discovery.categories[cat]).map(cat => {
+          {Object.keys(discovery.categories).sort().map(cat => {
             const info = discovery.categories[cat]
             return (
               <button
@@ -347,6 +391,20 @@ export function BuildView({ onRefresh }: BuildViewProps) {
                                 </span>
                               </div>
                             )}
+                            {typeDetail.maintenance_per_cycle && typeDetail.maintenance_per_cycle.length > 0 && (
+                              <div className={styles.costRow}>
+                                <span className={styles.costLabel}>Upkeep</span>
+                                <span className={styles.costValue}>
+                                  {typeDetail.maintenance_per_cycle.map(m => `${m.name} x${m.quantity}`).join(', ')} /cycle
+                                </span>
+                              </div>
+                            )}
+                            {typeDetail.requires_service_name && (
+                              <div className={styles.costRow}>
+                                <span className={styles.costLabel}>Requires</span>
+                                <span className={styles.costValue}>{typeDetail.requires_service_name}</span>
+                              </div>
+                            )}
                             {typeDetail.bonus_type && typeDetail.bonus_value != null && (
                               <div className={styles.costRow}>
                                 <span className={styles.costLabel}>Bonus</span>
@@ -356,6 +414,8 @@ export function BuildView({ onRefresh }: BuildViewProps) {
                               </div>
                             )}
                           </div>
+
+                          {typeDetail.hint && <div className={styles.cardDescription}>{typeDetail.hint}</div>}
 
                           {typeDetail.recipe && (
                             <div className={styles.recipeBox}>
@@ -482,6 +542,15 @@ export function BuildView({ onRefresh }: BuildViewProps) {
               </div>
             )}
           </div>
+          {buildConfirm.category === 'ranch' && (
+            <input
+              className={shared.textInput}
+              type="text"
+              placeholder="Species id (optional)"
+              value={species}
+              onChange={e => setSpecies(e.target.value)}
+            />
+          )}
           <div className={styles.cardActions}>
             <button
               className={shared.confirmBtn}

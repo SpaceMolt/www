@@ -24,6 +24,7 @@ import { SkillsPanel } from './panels/SkillsPanel'
 import { AchievementsPanel } from './panels/AchievementsPanel'
 import { SettingsPanel } from './panels/SettingsPanel'
 import { FacilitiesPanel } from './panels/FacilitiesPanel'
+import { StationPanel } from './panels/StationPanel'
 import { SalvagePanel } from './panels/SalvagePanel'
 import { useAutoTravel, type AutoTravelProgress } from './useAutoTravel'
 import styles from './HUD.module.css'
@@ -38,6 +39,7 @@ const PANELS: Record<string, React.ComponentType> = {
   skills: SkillsPanel,
   achievements: AchievementsPanel,
   facilities: FacilitiesPanel,
+  station: StationPanel,
   faction: FactionPanel,
   missions: MissionsPanel,
   salvage: SalvagePanel,
