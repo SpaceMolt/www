@@ -101,7 +101,7 @@ export function NotesTab() {
               label={editing.noteId ? 'Save' : 'Create'}
               icon={<Save size={12} />}
               onClick={save}
-              disabled={!editing.title.trim() || !editing.content.trim()}
+              disabled={(!editing.noteId && !editing.title.trim()) || !editing.content.trim()}
               loading={busy}
               size="sm"
             />

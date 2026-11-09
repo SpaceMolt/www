@@ -42,7 +42,8 @@ interface ToastItem {
 export function ToastContainer() {
   const eventLog = usePlayUi((s) => s.eventLog)
   const [toasts, setToasts] = useState<ToastItem[]>([])
-  const lastEventIdRef = useRef(0)
+  // Start at the newest existing entry so a remount does not replay old toasts.
+  const lastEventIdRef = useRef(eventLog[0]?.id ?? 0)
 
   const dismissToast = useCallback((id: string) => {
     setToasts((prev) => prev.map((t) => (t.id === id ? { ...t, exiting: true } : t)))

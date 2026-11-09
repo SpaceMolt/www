@@ -602,7 +602,7 @@ export function CraftingPanel() {
                     const qty = getQty(recipe.id)
                     const quote = quotes[recipe.id]
                     const busy = busyId === recipe.id
-                    const maxQty = Math.max(1, maxCraftable(recipe, heldItems))
+                    const maxQty = isExpanded ? Math.max(1, maxCraftable(recipe, heldItems)) : 1
                     const missing = isExpanded ? missingFromCargo(recipe, runsFor(recipe, qty), storageItems, cargoItems) : []
                     return (
                       <div

@@ -163,7 +163,7 @@ export function ChatPanel() {
 
   const handleLoadOlder = useCallback(() => {
     isAutoScrollRef.current = false
-    void loadHistory(page?.messages[0]?.timestamp)
+    void loadHistory(page?.messages.find((m) => m.timestamp)?.timestamp)
   }, [loadHistory, page])
 
   const openDm = useCallback((partner: Partner | null) => {
