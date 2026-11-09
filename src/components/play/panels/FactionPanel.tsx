@@ -3,11 +3,13 @@
 import { useState, useCallback, useEffect, useReducer } from 'react'
 import { Users, Flag, Shield, UserPlus, UserMinus, Swords, RefreshCw, Radar, DoorOpen, Trash2, Plus, Eye, Crown, X, Handshake, LogIn, ChevronDown, ChevronRight, Satellite, Undo2, KeyRound, Settings2, Warehouse, Target, Landmark } from 'lucide-react'
 import type {
+  Commands,
   FactionGetInvitesResponse,
   FactionInfoResponse,
   FactionListResponse,
   FactionRoomsResponse,
   FactionVisitRoomResponse,
+  MutationResult,
 } from '@spacemolt/lib'
 import { useAccountStore, useCommandMutation, usePlayer } from '@/lib/spacemolt'
 import { usePlay } from '../PlayProvider'
@@ -231,12 +233,19 @@ export function FactionPanel() {
     }
   }, [mutate, reportError, s.inviteTarget])
 
-  /** One-shot diplomacy action by faction id, then refresh. `done` is the success toast. */
-  const runDiplomacy = useCallback(async (label: string, action: Parameters<typeof mutate>[0], done?: string) => {
-    set({ diplomacyLoading: true, confirming: null })
+  /** One-shot diplomacy action by faction id, then refresh. `done` is the success toast; `reset` clears form fields on success. */
+  const runDiplomacy = useCallback(async <T,>(
+    label: string,
+    action: (c: Commands) => Promise<MutationResult<T>>,
+    done?: string | ((result: MutationResult<T>) => string),
+    { reset = {}, closeConfirm = true }: { reset?: Partial<PanelState>; closeConfirm?: boolean } = {},
+  ) => {
+    set({ diplomacyLoading: true, ...(closeConfirm ? { confirming: null } : {}) })
     try {
-      await mutate(action, { label })
-      if (done) reportDone(done)
+      const result = await mutate(action, { label })
+      const text = typeof done === 'function' ? done(result) : done
+      if (text) reportDone(text)
+      set(reset)
       await loadFactionInfo()
     } catch (err) {
       reportError(err)
@@ -310,69 +319,35 @@ export function FactionPanel() {
     }
   }, [mutate, reportError])
 
-  const handleProposeAlly = useCallback(async () => {
+  const handleProposeAlly = useCallback(() => {
     if (!s.diplomacyTarget) return
-    set({ diplomacyLoading: true })
-    try {
-      await mutate((c) => c.spacemolt_faction.propose_ally({ id: s.diplomacyTarget }), { label: 'propose_ally' })
-      reportDone('Alliance proposed')
-      set({ diplomacyTarget: '' })
-      await loadFactionInfo()
-    } catch (err) {
-      reportError(err)
-    } finally {
-      set({ diplomacyLoading: false })
-    }
-  }, [mutate, reportError, reportDone, s.diplomacyTarget, loadFactionInfo])
+    return runDiplomacy('propose_ally', (c) => c.spacemolt_faction.propose_ally({ id: s.diplomacyTarget }), 'Alliance proposed', { reset: { diplomacyTarget: '' }, closeConfirm: false })
+  }, [runDiplomacy, s.diplomacyTarget])
 
-  const handleSetEnemy = useCallback(async () => {
+  const handleSetEnemy = useCallback(() => {
     if (!s.diplomacyTarget) return
-    set({ diplomacyLoading: true })
-    try {
-      await mutate((c) => c.spacemolt_faction.set_enemy({ id: s.diplomacyTarget }), { label: 'set_enemy' })
-      reportDone('Marked as enemy')
-      set({ diplomacyTarget: '' })
-      await loadFactionInfo()
-    } catch (err) {
-      reportError(err)
-    } finally {
-      set({ diplomacyLoading: false })
-    }
-  }, [mutate, reportError, reportDone, s.diplomacyTarget, loadFactionInfo])
+    return runDiplomacy('set_enemy', (c) => c.spacemolt_faction.set_enemy({ id: s.diplomacyTarget }), 'Marked as enemy', { reset: { diplomacyTarget: '' }, closeConfirm: false })
+  }, [runDiplomacy, s.diplomacyTarget])
 
-  const handleDeclareWar = useCallback(async () => {
+  const handleDeclareWar = useCallback(() => {
     if (!s.diplomacyTarget) return
-    set({ diplomacyLoading: true, confirming: null })
-    try {
-      const result = await mutate((c) => c.spacemolt_faction.declare_war({ id: s.diplomacyTarget, text: s.warReason || undefined }), {
-        label: 'declare_war',
-      })
-      reportDone(result.delta.details?.message ?? 'War declared')
-      set({ diplomacyTarget: '', warReason: '' })
-      await loadFactionInfo()
-    } catch (err) {
-      reportError(err)
-    } finally {
-      set({ diplomacyLoading: false })
-    }
-  }, [mutate, reportError, reportDone, s.diplomacyTarget, s.warReason, loadFactionInfo])
+    return runDiplomacy(
+      'declare_war',
+      (c) => c.spacemolt_faction.declare_war({ id: s.diplomacyTarget, text: s.warReason || undefined }),
+      (r) => r.delta.details?.message ?? 'War declared',
+      { reset: { diplomacyTarget: '', warReason: '' } },
+    )
+  }, [runDiplomacy, s.diplomacyTarget, s.warReason])
 
-  const handleProposePeace = useCallback(async () => {
+  const handleProposePeace = useCallback(() => {
     if (!s.diplomacyTarget) return
-    set({ diplomacyLoading: true })
-    try {
-      await mutate((c) => c.spacemolt_faction.propose_peace({ id: s.diplomacyTarget, text: s.peaceTerms || undefined }), {
-        label: 'propose_peace',
-      })
-      reportDone('Peace proposed')
-      set({ diplomacyTarget: '', peaceTerms: '' })
-      await loadFactionInfo()
-    } catch (err) {
-      reportError(err)
-    } finally {
-      set({ diplomacyLoading: false })
-    }
-  }, [mutate, reportError, reportDone, s.diplomacyTarget, s.peaceTerms, loadFactionInfo])
+    return runDiplomacy(
+      'propose_peace',
+      (c) => c.spacemolt_faction.propose_peace({ id: s.diplomacyTarget, text: s.peaceTerms || undefined }),
+      'Peace proposed',
+      { reset: { diplomacyTarget: '', peaceTerms: '' }, closeConfirm: false },
+    )
+  }, [runDiplomacy, s.diplomacyTarget, s.peaceTerms])
 
   const handleAcceptPeace = useCallback(async (factionId: string) => {
     set({ diplomacyLoading: true })
