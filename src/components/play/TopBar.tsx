@@ -10,7 +10,7 @@ import {
   Anchor,
   LogOut,
   AlertTriangle,
-  Keyboard,
+  CircleHelp,
   ChevronDown,
   Users,
   Search,
@@ -194,8 +194,8 @@ export function TopBar({ onShowShortcuts }: { onShowShortcuts?: () => void }) {
           <BugReportButton contextType="generic" />
         )}
         {onShowShortcuts && (
-          <button className={`${styles.logoutBtn} ${styles.shortcutsBtn}`} onClick={onShowShortcuts} title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts" type="button">
-            <Keyboard size={12} />
+          <button className={`${styles.logoutBtn} ${styles.shortcutsBtn}`} onClick={onShowShortcuts} title="Help and shortcuts (?)" aria-label="Help and shortcuts" type="button">
+            <CircleHelp size={12} />
           </button>
         )}
         {player && (
