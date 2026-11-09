@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { BarChart3, ChevronLeft, ChevronRight, Eye, Radar, Search, Store } from 'lucide-react'
+import { BarChart3, Eye, Radar, Search, Store } from 'lucide-react'
 import type {
   EspionageResponse,
   FactionIntelStatusResponse,
@@ -15,25 +15,11 @@ import { usePlay } from '../../PlayProvider'
 import { ActionButton } from '../../ActionButton'
 import { ConfirmAction, errorMessage, shared } from '../../shared'
 import { tradeIntelStation } from './intelPayload'
+import { Pager } from './MembersSection'
 import fp from '../FactionPanel.module.css'
 import styles from './IntelSection.module.css'
 
 const PAGE = 20
-
-function Pager({ offset, total, onPage }: { offset: number; total: number; onPage: (offset: number) => void }) {
-  if (total <= PAGE) return null
-  return (
-    <div className={styles.pager}>
-      <button className={shared.subtleBtn} onClick={() => onPage(offset - PAGE)} disabled={offset === 0} type="button" aria-label="Previous page">
-        <ChevronLeft size={12} />
-      </button>
-      <span>{offset + 1}-{Math.min(offset + PAGE, total)} of {total}</span>
-      <button className={shared.subtleBtn} onClick={() => onPage(offset + PAGE)} disabled={offset + PAGE >= total} type="button" aria-label="Next page">
-        <ChevronRight size={12} />
-      </button>
-    </div>
-  )
-}
 
 function Stat({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -160,7 +146,7 @@ export function IntelSection() {
             ))}
           </div>
         ))}
-      {intel && <Pager offset={intel.offset ?? 0} total={intel.total} onPage={queryIntel} />}
+      {intel && <Pager offset={intel.offset ?? 0} limit={PAGE} total={intel.total} onPage={queryIntel} />}
       <ActionButton label="Intel Status" icon={<BarChart3 size={12} />} onClick={loadIntelStatus}
         disabled={busy !== null} loading={busy === 'status'} variant="secondary" size="sm" />
       {intelStatus && (
@@ -208,7 +194,7 @@ export function IntelSection() {
             </tbody>
           </table>
         ))}
-      {trade && <Pager offset={trade.offset ?? 0} total={trade.total} onPage={queryTrade} />}
+      {trade && <Pager offset={trade.offset ?? 0} limit={PAGE} total={trade.total} onPage={queryTrade} />}
       <ActionButton label="Trade Intel Status" icon={<BarChart3 size={12} />} onClick={loadTradeStatus}
         disabled={busy !== null} loading={busy === 'tradeStatus'} variant="secondary" size="sm" />
       {tradeStatus && (
