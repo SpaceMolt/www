@@ -29,9 +29,18 @@ export const PERMISSION_LABELS: Record<keyof FactionCreateRolePermissions, strin
   officer_room_access: 'Officer rooms',
 }
 
-export const NO_PERMISSIONS = Object.fromEntries(
-  Object.keys(PERMISSION_LABELS).map((k) => [k, false]),
-) as unknown as FactionCreateRolePermissions
+export const NO_PERMISSIONS: FactionCreateRolePermissions = {
+  invite: false,
+  kick: false,
+  promote: false,
+  broadcast: false,
+  manage_roles: false,
+  manage_diplomacy: false,
+  manage_treasury: false,
+  manage_bases: false,
+  manage_facilities: false,
+  officer_room_access: false,
+}
 
 /** License cost (credits) by hull tier, from the buy_ship_license notes. */
 export const LICENSE_COST_BY_TIER: Record<number, number> = {

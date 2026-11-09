@@ -253,6 +253,7 @@ export function ShipCatalog() {
   const [search, setSearch] = useState('')
   const [commissionableOnly, setCommissionableOnly] = useState(false)
 
+  // The spec's ShipClass omits mobile_base and marks every stat optional; the dump always carries them.
   const allShips = useMemo(() => (catalog?.ships ?? []) as unknown as CatalogShip[], [catalog])
 
   const filteredShips = useMemo(() => {

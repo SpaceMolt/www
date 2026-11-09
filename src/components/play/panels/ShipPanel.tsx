@@ -36,16 +36,6 @@ import { canRefit, isUsableConsumable, usesQuantity, useItemResultText } from '.
 
 type ModuleEntry = NonNullable<GameState['modules']>[number]
 
-interface ShipClassDetail {
-  name: string
-  description: string
-  lore: string
-  category: string
-  class: string
-  tier: number
-  faction: string
-}
-
 type SlotType = 'weapon' | 'defense' | 'utility'
 
 /** Read a numeric per-type module stat out of the loosely-typed `stats` bag. */
@@ -80,8 +70,7 @@ export function ShipPanel() {
   const deposit = async (items: Parameters<typeof move>[1]) =>
     setCargoSel(await move('Deposited', items, (c, picked) => c.spacemolt_storage.deposit({ items: picked }), 'from cargo to storage'))
 
-  const classDetail: ShipClassDetail | null =
-    ship?.class_id && catalog ? ((catalog.ship(ship.class_id) as unknown as ShipClassDetail) ?? null) : null
+  const classDetail = ship?.class_id ? catalog?.ship(ship.class_id) : undefined
 
   const handleUninstallModule = useCallback(
     async (moduleId: string) => {
@@ -267,7 +256,7 @@ export function ShipPanel() {
               {classDetail && (
                 <>
                   {classDetail.faction && <span className={shared.badgePurple}>{classDetail.faction}</span>}
-                  {classDetail.tier > 0 && <span className={shared.badgeCyan}>T{classDetail.tier}</span>}
+                  {(classDetail.tier ?? 0) > 0 && <span className={shared.badgeCyan}>T{classDetail.tier}</span>}
                   {classDetail.category && <span className={shared.badgeGreen}>{classDetail.category}</span>}
                   {classDetail.class && <span className={shared.badgeGrey}>{classDetail.class}</span>}
                 </>
