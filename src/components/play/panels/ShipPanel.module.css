@@ -302,6 +302,4 @@
 @media (max-width: 768px) {
   .statsGrid { grid-template-columns: 1fr; }
   .slotGrid { grid-template-columns: 1fr; }
-  .cargoItem { padding: 0.55rem 0.6rem; min-height: 44px; }
-  .cargoName { font-size: 0.85rem; }
 }

@@ -112,3 +112,8 @@
   font-size: 0.68rem;
   color: var(--hull-grey);
 }
+
+@media (max-width: 768px) {
+  .row { padding: 0.55rem 0.6rem; min-height: 44px; }
+  .name { font-size: 0.85rem; }
+}
