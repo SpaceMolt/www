@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
-import { AlertTriangle, Compass, Keyboard, X } from 'lucide-react'
+import { AlertTriangle, CircleHelp, Compass, Keyboard, LockOpen, X } from 'lucide-react'
 import { useAccountStore, useLocationState, usePlayer, useShip } from '@/lib/spacemolt'
 import { useStationServices } from './hooks/useGates'
 import { usePlayUi } from './PlayProvider'
@@ -36,6 +36,8 @@ import { LoopBanner, LoopPanel } from './loop/LoopPanel'
 import { ACTION_SHORTCUTS, shortcutKey } from './shortcuts'
 import { ConfirmAction, errorMessage, Modal } from './shared'
 import { usePlay } from './PlayProvider'
+import { FeatureHelp } from './FeatureHelp'
+import shared from './shared.module.css'
 import styles from './HUD.module.css'
 
 const PANELS: Record<string, React.ComponentType> = {
@@ -59,21 +61,31 @@ const PANELS: Record<string, React.ComponentType> = {
 }
 
 function ShortcutHelp({ onClose, hiddenPanels }: { onClose: () => void; hiddenPanels: string[] }) {
+  const [tab, setTab] = useState<'keys' | 'unlocks'>('keys')
   return (
     <Modal
-      title="Keyboard shortcuts"
-      icon={<Keyboard size={14} />}
+      title="Help"
+      icon={<CircleHelp size={14} />}
       onClose={onClose}
       actions={<button className={styles.abortModalOk} onClick={onClose} type="button">Close</button>}
     >
-      <dl className={styles.helpList}>
-        {ACTION_SHORTCUTS.map(({ key, label }) => (
-          <div key={key}><dt><kbd>{key}</kbd></dt><dd>{label}</dd></div>
+      <div className={shared.tabs} role="group" aria-label="Help topic">
+        {([['keys', 'Shortcuts', Keyboard], ['unlocks', 'Hidden features', LockOpen]] as const).map(([id, label, Icon]) => (
+          <button key={id} className={`${shared.tab} ${tab === id ? shared.tabActive : ''}`} aria-pressed={tab === id} onClick={() => setTab(id)} type="button">
+            <Icon size={12} /> {label}
+          </button>
         ))}
-        {panelShortcuts(hiddenPanels).map(({ id, label }, i) => (
-          <div key={id}><dt><kbd>{i + 1}</kbd></dt><dd>{label} tab</dd></div>
-        ))}
-      </dl>
+      </div>
+      {tab === 'unlocks' ? <FeatureHelp /> : (
+        <dl className={styles.helpList}>
+          {ACTION_SHORTCUTS.map(({ key, label }) => (
+            <div key={key}><dt><kbd>{key}</kbd></dt><dd>{label}</dd></div>
+          ))}
+          {panelShortcuts(hiddenPanels).map(({ id, label }, i) => (
+            <div key={id}><dt><kbd>{i + 1}</kbd></dt><dd>{label} tab</dd></div>
+          ))}
+        </dl>
+      )}
     </Modal>
   )
 }

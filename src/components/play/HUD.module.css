@@ -380,6 +380,10 @@
   color: var(--star-white);
 }
 
+/* Hidden features tab: feature names get their own column. */
+.unlockNote { margin: 0.5rem 0 0.25rem; font-size: 0.75rem; color: var(--hull-grey); }
+.helpList dt.unlockFeature { min-width: 9rem; max-width: 9rem; color: var(--star-white); }
+
 /* === Phone navigation drawer === */
 .navRow { display: contents; }
 
