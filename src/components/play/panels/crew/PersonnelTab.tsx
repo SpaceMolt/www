@@ -36,14 +36,32 @@ function CountField({ label, value, max, onChange }: { label: string; value: str
   )
 }
 
-function Stat({ label, value }: { label: string; value: string | number }) {
+/** One bar per berth type: fit, then injured, then empty berths, with an optional minimum marker. */
+function BerthBar({ label, fit, injured, berths, minimum = 0 }: { label: string; fit: number; injured: number; berths: number; minimum?: number }) {
+  const pct = (n: number) => `${Math.min(100, (n / berths) * 100)}%`
   return (
-    <div className={styles.stat}>
-      <span className={styles.statLabel}>{label}</span>
-      <span className={styles.statValue}>{value}</span>
+    <div className={styles.berthRow}>
+      <span className={styles.berthLabel}>{label}</span>
+      {berths > 0 ? (
+        <div className={styles.berthBar}>
+          <span className={styles.berthFit} style={{ width: pct(fit) }} />
+          <span className={styles.berthInjured} style={{ width: pct(injured) }} />
+          {minimum > 0 && <span className={styles.berthMin} style={{ left: pct(minimum) }} title={`Minimum crew: ${minimum}`} />}
+        </div>
+      ) : (
+        <span className={styles.berthNone}>No berths</span>
+      )}
+      <span className={styles.berthCount}>
+        <b>{fit}</b> fit
+        {injured > 0 && <span className={styles.berthInjuredText}> + {injured} injured</span>}
+        {' '}/ {berths}
+        {minimum > 0 && <span className={styles.berthMinText}> (min {minimum})</span>}
+      </span>
     </div>
   )
 }
+
+const efficiencyClass = (pct: number) => (pct >= 100 ? styles.effGood : pct >= 50 ? styles.effWarn : styles.effBad)
 
 export function PersonnelTab() {
   const store = useAccountStore()
@@ -72,6 +90,7 @@ export function PersonnelTab() {
   const crewCap = ship?.effective_crew_capacity ?? 0
   const marineCap = ship?.effective_marine_capacity ?? 0
   const free = freeBerths(p, crewCap, marineCap)
+  const efficiency = Math.round((ship?.crew_efficiency ?? 0) * 100)
   const credits = player?.credits ?? 0
   const nearby = location?.nearby_players ?? []
   const hasGenerator = Boolean(modules?.some((m) => m.type_id === 'field_generator'))
@@ -210,19 +229,19 @@ export function PersonnelTab() {
   return (
     <div className={styles.stack}>
       <div className={styles.card}>
-        <div className={styles.cardTitle}>
-          <Users size={14} /> Ship complement
+        <div className={styles.complementHeader}>
+          <div className={styles.cardTitle}>
+            <Users size={14} /> Ship complement
+          </div>
+          <span className={`${styles.effBadge} ${efficiencyClass(efficiency)}`} title="Crew efficiency">
+            {efficiency}% efficiency
+          </span>
         </div>
-        <div className={styles.statGrid}>
-          <Stat label="Fit crew" value={p?.fit_crew ?? 0} />
-          <Stat label="Injured crew" value={p?.injured_crew ?? 0} />
-          <Stat label="Crew berths" value={crewCap} />
-          <Stat label="Fit marines" value={p?.fit_marines ?? 0} />
-          <Stat label="Injured marines" value={p?.injured_marines ?? 0} />
-          <Stat label="Marine berths" value={marineCap} />
-          <Stat label="Minimum crew" value={ship?.minimum_crew ?? 0} />
-          <Stat label="Crew efficiency" value={`${Math.round((ship?.crew_efficiency ?? 0) * 100)}%`} />
-        </div>
+        <BerthBar label="Crew" fit={p?.fit_crew ?? 0} injured={p?.injured_crew ?? 0} berths={crewCap} minimum={ship?.minimum_crew ?? 0} />
+        <BerthBar label="Marines" fit={p?.fit_marines ?? 0} injured={p?.injured_marines ?? 0} berths={marineCap} />
+        {(p?.fit_crew ?? 0) < (ship?.minimum_crew ?? 0) && (
+          <div className={styles.berthWarning}>Below minimum crew: this ship runs at reduced efficiency.</div>
+        )}
         {(ship?.personnel_recovery_ticks_remaining ?? 0) > 0 && (
           <div className={styles.hint}>Injured personnel recover on their own in {ship?.personnel_recovery_ticks_remaining} ticks.</div>
         )}
@@ -394,15 +413,11 @@ export function PersonnelTab() {
             <div className={styles.hint}>Loading reserve...</div>
           ) : (
             <>
-              <div className={styles.statGrid}>
-                <Stat label="Fit crew" value={reserveData.fit_crew} />
-                <Stat label="Injured crew" value={reserveData.injured_crew} />
-                <Stat label="Crew berths" value={reserveData.crew_capacity} />
-                <Stat label="Fit marines" value={reserveData.fit_marines} />
-                <Stat label="Injured marines" value={reserveData.injured_marines} />
-                <Stat label="Marine berths" value={reserveData.marine_capacity} />
-                <Stat label="Inbound crew" value={`${reserveData.inbound_crew} (${reserveData.inbound_prizes} prizes)`} />
-              </div>
+              <BerthBar label="Crew" fit={reserveData.fit_crew} injured={reserveData.injured_crew} berths={reserveData.crew_capacity} />
+              <BerthBar label="Marines" fit={reserveData.fit_marines} injured={reserveData.injured_marines} berths={reserveData.marine_capacity} />
+              {reserveData.inbound_crew > 0 && (
+                <div className={styles.hint}>{reserveData.inbound_crew} crew inbound from {reserveData.inbound_prizes} prizes.</div>
+              )}
               <select
                 className={shared.selectInput}
                 value={reserveAction}

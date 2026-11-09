@@ -86,32 +86,83 @@
   min-width: 8rem;
 }
 
-.statGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
-  gap: 0.4rem;
-}
-
-.stat {
+.complementHeader {
   display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  padding: 0.35rem 0.45rem;
-  border: 1px solid rgba(61, 90, 108, 0.25);
-  border-radius: 4px;
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
 
-.statLabel {
-  font-size: 0.6rem;
+.effBadge {
+  padding: 0.1rem 0.45rem;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.effGood { color: var(--bio-green); }
+.effWarn { color: var(--warning-yellow); }
+.effBad { color: var(--claw-red); }
+
+.berthRow {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(6rem, 1fr) auto;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+}
+
+.berthLabel {
   color: var(--hull-grey);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  font-size: 0.62rem;
 }
 
-.statValue {
-  font-size: 0.8rem;
-  color: var(--star-white);
+.berthBar {
+  position: relative;
+  display: flex;
+  height: 0.6rem;
+  background: rgba(61, 90, 108, 0.2);
+  border: 1px solid rgba(61, 90, 108, 0.35);
+  border-radius: 2px;
+}
+
+.berthFit { background: var(--plasma-cyan); }
+.berthInjured { background: var(--shell-orange); }
+
+.berthMin {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--warning-yellow);
+}
+
+.berthNone {
+  color: var(--hull-grey);
+  font-size: 0.62rem;
+}
+
+.berthCount {
+  color: var(--chrome-silver);
+  white-space: nowrap;
+}
+
+.berthCount b { color: var(--star-white); }
+.berthInjuredText { color: var(--shell-orange); }
+.berthMinText { color: var(--hull-grey); }
+
+.berthWarning {
+  color: var(--claw-red);
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
 }
 
 .textArea {
