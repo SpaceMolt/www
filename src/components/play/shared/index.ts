@@ -1,4 +1,5 @@
 export { Panel, PanelWithTabs } from './Panel'
+export { Section } from './Section'
 export { Modal } from './Modal'
 export { Credits } from './Credits'
 export { Loading } from './Loading'

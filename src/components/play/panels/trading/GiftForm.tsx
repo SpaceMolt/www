@@ -4,7 +4,7 @@ import { useId, useMemo, useState } from 'react'
 import { Send } from 'lucide-react'
 import { useCommandMutation, usePlayer } from '@/lib/spacemolt'
 import { usePlay, usePlayUi } from '../../PlayProvider'
-import { Credits, ItemSelectList, errorMessage, shared, useStorageMove } from '../../shared'
+import { Credits, ItemSelectList, QtyButtons, errorMessage, shared, useStorageMove } from '../../shared'
 import type { SelectableItem, Selection } from '../../shared/itemSelection'
 import type { UiState } from '@/lib/spacemolt'
 import { planGift } from './giftValidation'
@@ -134,6 +134,7 @@ export function GiftForm({ cargo, stored, ships, isDocked }: {
           value={credits}
           onChange={(e) => setCredits(e.target.value)}
         />
+        <QtyButtons max={wallet} current={credits} onChange={setCredits} />
         <span className={styles.itemQty}>Wallet: <Credits amount={wallet} /></span>
       </div>
 

@@ -14,14 +14,14 @@ import {
   ChevronRight,
   Tags,
 } from 'lucide-react'
-import { useCargo, useCommandMutation, useCommandQuery, useLocationState, usePlayer } from '@/lib/spacemolt'
+import { useCargo, useCommandMutation, useCommandQuery, useLocationState, usePlayer, useStations } from '@/lib/spacemolt'
 import type { Commands, MutationResult } from '@spacemolt/lib'
 import { ConfirmAction, Credits, errorMessage, shared } from '../../shared'
 import { usePlay } from '../../PlayProvider'
 import { getItem, formatItemId } from '@/data/catalog'
 import { BulkOrderForm, type InventoryRow } from './BulkOrderForm'
 import { chunk } from '../../shared/itemSelection'
-import { BULK_ORDER_LIMIT, sumBulk } from './tradingLogic'
+import { BULK_ORDER_LIMIT, stationsInOrdersHint, sumBulk } from './tradingLogic'
 import { usePersonalStorage } from './StorageView'
 import styles from './OrdersView.module.css'
 import { timeAgoOrDate } from '@/lib/format'
@@ -67,8 +67,14 @@ export function OrdersView() {
   // Undocked, view any station's orders by id; defaults to the last station we docked at.
   const [stationInput, setStationInput] = useState(dockedAt)
   useEffect(() => { if (dockedAt) setStationInput(dockedAt) }, [dockedAt])
-  const stationId = isDocked ? undefined : stationInput.trim() || undefined
+  // Docked, another station picked from the chips below; managing orders is for the docked station only.
+  const [otherStation, setOtherStation] = useState('')
+  useEffect(() => { setOtherStation('') }, [dockedAt])
+  const stationId = isDocked ? otherStation || undefined : stationInput.trim() || undefined
   const canView = isDocked || Boolean(stationId)
+  const isHere = isDocked && !otherStation
+  const stationNames = useStations().data
+  const stationName = (id: string) => stationNames?.find((s) => s.id === id)?.name ?? formatItemId(id)
 
   const [page, setPage] = useState(1)
   const [orderType, setOrderType] = useState<'' | 'buy' | 'sell'>('')
@@ -179,6 +185,14 @@ export function OrdersView() {
   })
 
   const total = personalOrdersData?.total ?? 0
+  // Every station with your orders, read from the hint view_orders sends with any station's orders.
+  const ordersAt = stationsInOrdersHint(personalOrdersData?.hint)
+  const viewing = stationId ?? dockedAt
+  const pickStation = (id: string) => {
+    if (isDocked) setOtherStation(id === dockedAt ? '' : id)
+    else setStationInput(id)
+    resetView()
+  }
   const totalPages = personalOrdersData?.total_pages ?? 1
 
   return (
@@ -205,6 +219,22 @@ export function OrdersView() {
           </button>
         </div>
       </div>
+
+      {ordersAt.length > 0 && (
+        <div className={styles.optionRow}>
+          <span>Orders at:</span>
+          {ordersAt.map((id) => (
+            <button
+              key={id}
+              className={id === viewing ? shared.accentBtn : shared.subtleBtn}
+              onClick={() => pickStation(id)}
+              type="button"
+            >
+              {stationName(id)}{id === dockedAt ? ' (here)' : ''}
+            </button>
+          ))}
+        </div>
+      )}
 
       {!isDocked && (
         <div className={styles.optionRow}>
@@ -252,7 +282,7 @@ export function OrdersView() {
       </div>
 
       {/* Bulk actions */}
-      {isDocked && personalOrders.length > 0 && (
+      {isHere && personalOrders.length > 0 && (
         <div className={styles.optionRow}>
           <label>
             <input
@@ -307,12 +337,12 @@ export function OrdersView() {
             return (
               <div key={order.order_id} className={styles.orderCard}>
                 <div className={styles.orderTop}>
-                  {isDocked && (
+                  {isHere && (
                     <input type="checkbox" checked={selected.has(order.order_id)} onChange={() => toggleSelected(order.order_id)} aria-label={`Select ${name} order`} />
                   )}
                   <OrderBadge type={order.order_type} />
                   <span className={styles.orderItemName}>{name}</span>
-                  {isDocked && (
+                  {isHere && (
                     <>
                       <button
                         className={shared.iconBtn}

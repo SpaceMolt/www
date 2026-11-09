@@ -35,6 +35,106 @@
   white-space: nowrap;
 }
 
+.charMenu {
+  position: relative;
+}
+
+.usernameBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.1rem 0.3rem;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  color: var(--hull-grey);
+  cursor: pointer;
+}
+
+.usernameBtn:hover,
+.usernameBtn[aria-expanded='true'] {
+  border-color: rgba(0, 212, 255, 0.3);
+  color: var(--plasma-cyan);
+}
+
+.charMenuPanel {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  z-index: 960; /* above toasts (950), below modals (1000) */
+  display: flex;
+  flex-direction: column;
+  min-width: 12rem;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 0.25rem;
+  background: rgba(13, 19, 33, 0.98);
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  border-radius: 4px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+}
+
+.charMenuSearch {
+  position: sticky;
+  top: -0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: -0.25rem -0.25rem 0.25rem;
+  padding: 0.4rem 0.5rem;
+  background: rgba(13, 19, 33, 0.98);
+  border-bottom: 1px solid rgba(61, 90, 108, 0.35);
+  color: var(--hull-grey);
+}
+
+.charMenuSearch input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  outline: none;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--star-white);
+}
+
+.charMenuEmpty {
+  padding: 0.35rem 0.5rem;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--hull-grey);
+}
+
+.charMenuItem {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.5rem;
+  background: none;
+  border: none;
+  border-radius: 3px;
+  text-align: left;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--star-white);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.charMenuItem:hover,
+.charMenuItem:focus-visible {
+  background: rgba(0, 212, 255, 0.1);
+  color: var(--plasma-cyan);
+  outline: none;
+}
+
+.charMenuAll {
+  margin-top: 0.2rem;
+  border-top: 1px solid rgba(61, 90, 108, 0.35);
+  border-radius: 0 0 3px 3px;
+  color: var(--chrome-silver);
+}
+
 .credits {
   display: flex;
   align-items: center;

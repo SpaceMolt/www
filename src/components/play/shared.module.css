@@ -100,6 +100,31 @@
   margin-bottom: 0.25rem;
 }
 
+/* Collapsible section toggle (shared/Section) */
+.sectionIcon {
+  display: flex;
+  align-items: center;
+  color: var(--hull-grey);
+}
+
+.sectionToggle {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0.25rem 0;
+  cursor: pointer;
+  color: var(--chrome-silver);
+  transition: color 0.15s ease;
+}
+
+.sectionToggle:hover,
+.sectionToggle:focus-visible {
+  color: var(--star-white);
+}
+
 /* Empty / placeholder states */
 .emptyState {
   font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
@@ -475,9 +500,15 @@
   .modal { width: 95vw; }
 }
 
-/* QtyButtons: +5/+10/+100/MAX beside a quantity input */
+/* QtyButtons: a +/- pair per step, then MAX/CLR, beside a quantity input */
 .qtyButtons {
   display: flex;
+  gap: 1px;
+}
+
+.qtyPair {
+  display: flex;
+  flex-direction: column;
   gap: 1px;
 }
 

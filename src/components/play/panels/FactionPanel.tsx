@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useCallback, useEffect, useReducer } from 'react'
-import { Users, Flag, Shield, UserPlus, UserMinus, Swords, RefreshCw, Radar, DoorOpen, Trash2, Plus, Eye, Crown, X, Handshake, LogIn, ChevronDown, ChevronRight, Satellite, Undo2, KeyRound, Settings2, Warehouse, Target, Landmark } from 'lucide-react'
+import { useCallback, useEffect, useReducer } from 'react'
+import { Users, Flag, Shield, UserPlus, UserMinus, Swords, RefreshCw, Radar, DoorOpen, Trash2, Plus, Eye, Crown, X, Handshake, LogIn, Satellite, Undo2, KeyRound, Settings2, Warehouse, Target, Landmark } from 'lucide-react'
 import type {
   Commands,
   FactionGetInvitesResponse,
@@ -14,7 +14,7 @@ import type {
 import { useAccountStore, useCommandMutation, usePlayer } from '@/lib/spacemolt'
 import { usePlay } from '../PlayProvider'
 import { ActionButton } from '../ActionButton'
-import { ConfirmAction, Panel, errorMessage, shared } from '../shared'
+import { ConfirmAction, Panel, Section, errorMessage, shared } from '../shared'
 import styles from './FactionPanel.module.css'
 import { MobileBaseSection } from './faction/MobileBaseSection'
 import { IntelSection } from './faction/IntelSection'
@@ -93,31 +93,6 @@ type PanelAction = Partial<PanelState> | ((prev: PanelState) => Partial<PanelSta
 function merge(prev: PanelState, action: PanelAction): PanelState {
   const next = typeof action === 'function' ? action(prev) : action
   return { ...prev, ...next }
-}
-
-// Collapsible Section
-function Section({ title, icon, children, defaultOpen = true }: {
-  title: string
-  icon: React.ReactNode
-  children: React.ReactNode
-  defaultOpen?: boolean
-}) {
-  const [open, setOpen] = useState(defaultOpen)
-  return (
-    <div>
-      <button
-        className={styles.sectionToggle}
-        onClick={() => setOpen(!open)}
-        type="button"
-        aria-expanded={open}
-      >
-        <span className={styles.sectionIcon}>{icon}</span>
-        <span className={shared.sectionTitle}>{title}</span>
-        {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-      </button>
-      {open && children}
-    </div>
-  )
 }
 
 // FactionPanel
@@ -658,7 +633,7 @@ export function FactionPanel() {
 
           <div>
             <div className={shared.sectionTitle}>
-              <span className={styles.sectionIcon}><UserPlus size={12} /></span>
+              <span className={shared.sectionIcon}><UserPlus size={12} /></span>
               Invite Player
             </div>
             <div className={styles.inviteRow}>
@@ -1038,7 +1013,7 @@ export function FactionPanel() {
 
           <div>
             <div className={shared.sectionTitle}>
-              <span className={styles.sectionIcon}><Flag size={12} /></span>
+              <span className={shared.sectionIcon}><Flag size={12} /></span>
               Create Faction
             </div>
             <div className={styles.form}>

@@ -6,7 +6,7 @@ import { useCommandMutation, useCommandQuery, usePlayer } from '@/lib/spacemolt'
 import { formatDuration, titleCase } from '@/lib/format'
 import { formatItemId } from '@/data/catalog'
 import { ActionButton } from '../../ActionButton'
-import { ConfirmAction, Credits, Loading, shared, useAction } from '../../shared'
+import { ConfirmAction, Credits, Loading, QtyButtons, shared, useAction } from '../../shared'
 import styles from '../InfoPanel.module.css'
 
 const pct = (bps: number) => `${bps / 100}%`
@@ -104,6 +104,7 @@ export function EmpireTab() {
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
           />
+          <QtyButtons max={player?.credits ?? 0} current={amount} onChange={setAmount} />
           <ActionButton label="Prepay Tax" icon={<Coins size={12} />} onClick={() => setConfirming(true)} disabled={!validAmount} loading={paying} size="sm" />
         </div>
       )}

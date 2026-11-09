@@ -321,3 +321,47 @@
   .expandedHeader { font-size: 0.68rem; }
   .expandedItemMeta { font-size: 0.68rem; }
 }
+
+/* Refit confirmation */
+.refitTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+}
+
+.refitTable th {
+  text-align: left;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--hull-grey);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0.4rem;
+  border-bottom: 1px solid rgba(61, 90, 108, 0.35);
+}
+
+.refitTable td {
+  padding: 0.2rem 0.4rem;
+  color: var(--chrome-silver);
+}
+
+.refitTable td.refitUp { color: var(--bio-green); }
+.refitTable td.refitDown { color: var(--claw-red); }
+
+.refitNote {
+  margin: 0.5rem 0 0;
+  font-size: 0.72rem;
+  color: var(--chrome-silver);
+}
+
+.refitNote b { color: var(--star-white); }
+
+.refitWarn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0.6rem 0 0;
+  font-size: 0.68rem;
+  color: var(--warning-yellow);
+}

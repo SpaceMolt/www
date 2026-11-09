@@ -591,7 +591,7 @@
 }
 
 .orderQtyInput {
-  width: 48px;
+  width: 4.5rem;
   background: rgba(10, 14, 20, 0.6);
   border: 1px solid var(--dim-grey);
   border-radius: 3px;
@@ -601,17 +601,6 @@
   color: var(--star-white);
   outline: none;
   text-align: right;
-  -moz-appearance: textfield;
-}
-
-/* The native number stepper is painted inside the right edge of the field and sits on
-   top of the right-aligned quantity. The order row already has explicit +5/+10/+100/MAX
-   buttons (QtyButtons) immediately before this input, so the stepper is redundant here
-   and is hidden outright — cross-browser, and no extra field width needed. */
-.orderQtyInput::-webkit-outer-spin-button,
-.orderQtyInput::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
 }
 
 .orderQtyInput:focus {

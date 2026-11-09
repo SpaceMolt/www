@@ -96,3 +96,12 @@ export function giftFromLog(entry: { id: number; created_at: string; data?: obje
     ...(typeof d.class_id === 'string' && { shipClass: d.class_id }),
   }
 }
+
+/**
+ * Station ids with active orders, from view_orders' hint ("2 buy orders and 1 sell orders on the
+ * market at sol_central, nexus_base (...)"). The hint is prose; this returns [] if its wording changes.
+ */
+export function stationsInOrdersHint(hint?: string): string[] {
+  const list = hint?.match(/on the market at (.+?) \(/)?.[1]
+  return list ? list.split(', ').filter(Boolean) : []
+}

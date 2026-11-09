@@ -1157,3 +1157,25 @@ body.play-page .live-feed-popup,
 body.play-page .patreon-banner-wrapper {
   display: none !important;
 }
+
+/* Hide the native number spinner: it is unstyled and sits on top of the digits.
+   Quantity fields carry QtyButtons instead; arrow keys still step the value. */
+body.play-page input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+body.play-page input[type='number']::-webkit-outer-spin-button,
+body.play-page input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Thin dark scrollbars on every /play scroll area. :where() keeps this at zero specificity, so a
+   panel's own rule (such as scrollbar-width: none) still wins. Setting the standard properties
+   makes current Chrome ignore ::-webkit-scrollbar, so the colors live here. */
+:where(body.play-page),
+:where(body.play-page) * {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 212, 255, 0.3) transparent;
+}

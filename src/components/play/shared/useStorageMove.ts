@@ -12,6 +12,15 @@ type BulkCall = (c: Commands, items: ItemQty[]) => Promise<MutationResult<unknow
 const resultsOf = (details: unknown): ItemResult[] | undefined =>
   (details as { results?: ItemResult[] } | undefined)?.results
 
+/** The in-progress banner label for each past-tense toast verb. */
+const IN_PROGRESS: Record<string, string> = {
+  Deposited: 'Depositing',
+  Withdrew: 'Withdrawing',
+  Moved: 'Moving',
+  Gifted: 'Gifting',
+  Jettisoned: 'Jettisoning',
+}
+
 /**
  * Run one bulk items[] storage call (split at 100 items), toast the outcome, refresh every storage view,
  * and return the selection to keep: the rows that failed.
@@ -22,7 +31,7 @@ export function useStorageMove() {
   return useCallback(
     async (verb: string, items: ItemQty[], call: BulkCall, where = ''): Promise<Selection> => {
       const results = await sendInBatches(items, async (batch) =>
-        resultsOf((await mutate((c) => call(c, batch), { label: verb.toLowerCase() })).delta.details),
+        resultsOf((await mutate((c) => call(c, batch), { label: IN_PROGRESS[verb] ?? verb })).delta.details),
       )
       const { ok, text } = summarize(verb, results, where)
       uiStore.dispatch({ type: ok ? 'event' : 'toast', kind: ok ? 'success' : 'danger', text })

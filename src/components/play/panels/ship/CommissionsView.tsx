@@ -12,7 +12,7 @@ import {
 import type { CommissionStatusResponse } from '@spacemolt/lib'
 import { useCommandMutation, useCommandQuery } from '@/lib/spacemolt'
 import { usePlay } from '../../PlayProvider'
-import { Loading, ConfirmAction, errorMessage, shared } from '../../shared'
+import { Loading, ConfirmAction, QtyButtons, errorMessage, shared } from '../../shared'
 import { formatItemId } from '@/data/catalog'
 import styles from './CommissionsView.module.css'
 
@@ -220,6 +220,7 @@ export function CommissionsView() {
                               }
                               title="Quantity to supply"
                             />
+                            <QtyButtons max={remaining} current={qtyStr} onChange={(v) => setSupplyQtys((prev) => ({ ...prev, [key]: v }))} />
                             <button
                               className={shared.confirmBtn}
                               onClick={() => handleSupply(c.commission_id, itemId, remaining)}

@@ -16,7 +16,9 @@ import {
   Search,
   Compass,
   Database,
-  Gem,
+  Radiation,
+  Snowflake,
+  Wind,
   SlidersHorizontal,
   X,
 } from 'lucide-react'
@@ -45,6 +47,8 @@ import { rememberPois } from './loop/loopPlan'
 import { shortcutKey } from './shortcuts'
 import { titleCase as formatLabel } from '@/lib/format'
 import styles from './LeftSidebar.module.css'
+import { depositTitle, rateRichness } from './richness'
+import { getItem } from '@/data/catalog'
 import { errorMessage, Modal, shared } from './shared'
 
 // Intel query response entries — shaped by the faction intel query, not a
@@ -98,6 +102,29 @@ interface SupplyArgs { id?: string; quantity?: number; target?: string }
 
 /** Supply items a refuel/repair can burn, matched by id the way the server names them. */
 const SUPPLY_ITEM = { refuel: /fuel_cell/, repair: /repair|hull_patch/ } as const
+/** The module the server requires to refuel or repair another ship (gameserver handlers/ship.go). */
+const TARGET_MODULE = { refuel: 'refueling_pump', repair: 'repair_arm' } as const
+
+/** Icon and extractor for each kind of deposit, by the catalog's extracted_by. */
+const DEPOSIT_KIND = {
+  mining: { Icon: Pickaxe, label: 'Ore: mined with a mining laser', className: styles.kindOre },
+  ice: { Icon: Snowflake, label: 'Ice: needs an Ice Harvester', className: styles.kindIce },
+  gas: { Icon: Wind, label: 'Gas: needs a Gas Harvester', className: styles.kindGas },
+  rad: { Icon: Radiation, label: 'Radioactive: needs a Rad Harvester', className: styles.kindRad },
+} as const
+
+function DepositIcon({ itemId }: { itemId: string }) {
+  const by = getItem(itemId)?.extracted_by
+  const { Icon, label, className } = DEPOSIT_KIND[by as keyof typeof DEPOSIT_KIND] ?? DEPOSIT_KIND.mining
+  return <Icon size={10} className={`${styles.depositIcon} ${className}`}><title>{label}</title></Icon>
+}
+
+/** A deposit's rating, colored by level, or 'Depleted'. The numbers are in the row's hover text. */
+function DepositRating({ itemId, richness, remaining }: { itemId: string; richness: number; remaining?: number }) {
+  if (remaining === 0) return <span className={styles.depositDepleted}>Depleted</span>
+  const { level, label } = rateRichness(itemId, richness)
+  return <span className={`${styles.depositRating} ${styles[`richness${level}`]}`}>{label}</span>
+}
 
 /** Options for refuel/repair: quantity, a specific item, and another player or the fleet as target. */
 function SupplyOptions({ kind, nearby, cargo, busy, onSubmit }: {
@@ -309,6 +336,8 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
   }, [system, player?.id])
   const poiData = poiQuery.data
   const poi = poiData && 'poi' in poiData ? poiData.poi : undefined
+  // Deposit capacity comes from get_poi; the live stock comes from the location state.
+  const capacityOf = (itemId: string) => poiData?.resources?.find((r) => r.resource_id === itemId)?.max_remaining
 
   const isDocked = Boolean(location?.docked_at)
   const isTraveling = Boolean(location?.in_transit)
@@ -559,18 +588,10 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
                   {hasMineableResources(location) && (
                     <div className={styles.resourceList}>
                       {location?.resources?.map((r) => (
-                        <div key={r.item_id} className={styles.resourceItem}>
+                        <div key={r.item_id} className={`${styles.resourceItem} ${r.remaining === 0 ? styles.depleted : ''}`} title={depositTitle(r.item_id, r.richness, r.remaining, capacityOf(r.item_id))}>
+                          <DepositIcon itemId={r.item_id} />
                           <span className={styles.resourceName}>{r.item_name || r.item_id}</span>
-                          <span className={styles.resourceRichness}>{r.richness}</span>
-                          <span className={styles.resourceRemaining}>
-                            {r.remaining === undefined
-                              ? ''
-                              : r.remaining < 0
-                                ? '∞'
-                                : r.remaining === 0
-                                  ? 'depleted'
-                                  : r.remaining.toLocaleString()}
-                          </span>
+                          <DepositRating itemId={r.item_id} richness={r.richness} remaining={r.remaining} />
                         </div>
                       ))}
                     </div>
@@ -720,7 +741,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
                 {supplyOpen === kind && (
                   <SupplyOptions
                     kind={kind}
-                    nearby={location?.nearby_players ?? []}
+                    nearby={modules?.some((m) => m.type_id === TARGET_MODULE[kind]) ? location?.nearby_players ?? [] : []}
                     cargo={cargo}
                     busy={actionBusy}
                     onSubmit={(args) => void (kind === 'refuel' ? handleRefuel(args) : handleRepair(args))}
@@ -979,13 +1000,10 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
                         {p.resources && p.resources.length > 0 && (
                           <div className={styles.intelResourceList}>
                             {p.resources.map((r) => (
-                              <div key={r.resource_id} className={styles.intelResourceItem}>
-                                <Gem size={9} className={styles.intelResourceIcon} />
+                              <div key={r.resource_id} className={`${styles.intelResourceItem} ${r.remaining === 0 ? styles.depleted : ''}`} title={depositTitle(r.resource_id, r.richness, r.remaining, r.max_remaining)}>
+                                <DepositIcon itemId={r.resource_id} />
                                 <span className={styles.intelResourceName}>{formatLabel(r.resource_id)}</span>
-                                <span className={styles.intelResourceRichness}>×{r.richness}</span>
-                                <span className={styles.intelResourceRemaining}>
-                                  {r.remaining < 0 ? '∞' : r.remaining === 0 ? 'depleted' : r.remaining.toLocaleString()}
-                                </span>
+                                <DepositRating itemId={r.resource_id} richness={r.richness} remaining={r.remaining} />
                               </div>
                             ))}
                           </div>

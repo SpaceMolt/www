@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import {
   Wifi,
   WifiOff,
@@ -11,11 +11,15 @@ import {
   LogOut,
   AlertTriangle,
   Keyboard,
+  ChevronDown,
+  Users,
+  Search,
 } from 'lucide-react'
 import { useAccountStore, useConnectionPhase, useLocationState, usePlayer, useShip } from '@/lib/spacemolt'
 import { usePlay } from './PlayProvider'
 import { BugReportButton } from './BugReportButton'
 import { TickCooldown } from './TickCooldown'
+import { useClickOutside } from './hooks/useClickOutside'
 import styles from './TopBar.module.css'
 
 function StatusBar({ value, max, color, label }: { value: number; max: number; color: string; label: string }) {
@@ -41,6 +45,64 @@ function formatCountdown(isoDate: string): string {
   const minutes = Math.floor((remaining % 3600000) / 60000)
   if (hours > 0) return `${hours}h ${minutes}m`
   return `${minutes}m`
+}
+
+/** Show a search field once the character list is longer than this. */
+const SEARCH_THRESHOLD = 6
+
+/** The username, as a menu that switches to another character on the account without the picker. */
+function CharacterMenu({ username }: { username: string }) {
+  const store = useAccountStore()
+  const { players = [], onSelectPlayer, onSwitchPlayer } = usePlay()
+  const myId = usePlayer()?.id
+  const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const ref = useRef<HTMLDivElement>(null)
+  const close = useCallback(() => { setOpen(false); setQuery('') }, [])
+  useClickOutside(ref, open, close)
+  const others = players.filter((p) => p.id !== myId).sort((a, b) => a.username.localeCompare(b.username))
+  const shown = others.filter((p) => p.username.toLowerCase().includes(query.trim().toLowerCase()))
+  // Same teardown as the log-out button: end this session, then mount the next character.
+  const leave = (next?: () => void) => {
+    close()
+    void store.account.logout().catch(() => {})
+    next?.()
+  }
+
+  return (
+    <div className={styles.charMenu} ref={ref} onKeyDown={(e) => { if (e.key === 'Escape') close() }}>
+      <button className={styles.usernameBtn} onClick={() => (open ? close() : setOpen(true))} aria-expanded={open} aria-haspopup="true" title="Switch character" type="button">
+        <span className={styles.username}>{username}</span>
+        <ChevronDown size={11} />
+      </button>
+      {open && (
+        <div className={styles.charMenuPanel}>
+          {others.length > SEARCH_THRESHOLD && (
+            <label className={styles.charMenuSearch}>
+              <Search size={11} />
+              <input
+                autoFocus
+                placeholder={`Search ${others.length} characters`}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter' && shown[0]) leave(() => onSelectPlayer?.(shown[0].id)) }}
+                aria-label="Search characters"
+              />
+            </label>
+          )}
+          {shown.length === 0 && <span className={styles.charMenuEmpty}>No match</span>}
+          {shown.map((p) => (
+            <button key={p.id} className={styles.charMenuItem} onClick={() => leave(() => onSelectPlayer?.(p.id))} type="button">
+              {p.username}
+            </button>
+          ))}
+          <button className={`${styles.charMenuItem} ${styles.charMenuAll}`} onClick={() => leave(onSwitchPlayer)} type="button">
+            <Users size={11} /> All characters
+          </button>
+        </div>
+      )}
+    </div>
+  )
 }
 
 export function TopBar({ onShowShortcuts }: { onShowShortcuts?: () => void }) {
@@ -76,7 +138,7 @@ export function TopBar({ onShowShortcuts }: { onShowShortcuts?: () => void }) {
           )}
           {player ? (
             <>
-              <span className={styles.username}>{player.username}</span>
+              <CharacterMenu username={player.username} />
               <span className={styles.credits}>
                 <Coins size={11} className={styles.creditsIcon} />
                 {(player.credits ?? 0).toLocaleString()}

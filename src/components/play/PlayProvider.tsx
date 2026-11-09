@@ -21,9 +21,16 @@ import { wireBattleRecovery } from '@/lib/spacemolt/battleRecovery'
 
 const REFRESH_INTERVAL_MS = 30_000
 
+interface Character { id: string; username: string }
+
 interface PlayContextValue {
   uiStore: UiStore
+  /** Leave this character for the character picker. */
   onSwitchPlayer?: () => void
+  /** Every character on the signed-in account, for the top bar's switch menu. */
+  players?: Character[]
+  /** Switch straight to another character. */
+  onSelectPlayer?: (playerId: string) => void
 }
 
 const PlayContext = createContext<PlayContextValue | null>(null)
@@ -40,7 +47,7 @@ export function usePlayUi<T>(select: (state: UiState) => T): T {
   return useUiSlice(uiStore, select)
 }
 
-export function PlayProvider({ onSwitchPlayer, children }: { onSwitchPlayer?: () => void; children: ReactNode }) {
+export function PlayProvider({ onSwitchPlayer, players, onSelectPlayer, children }: Omit<PlayContextValue, 'uiStore'> & { children: ReactNode }) {
   const store = useAccountStore()
   const uiStore = useMemo(() => createUiStore(), [])
   const player = usePlayer()
@@ -65,6 +72,6 @@ export function PlayProvider({ onSwitchPlayer, children }: { onSwitchPlayer?: ()
     if (store.getPhase() === 'ready') void store.account.refresh().catch(() => {})
   }, REFRESH_INTERVAL_MS)
 
-  const value = useMemo(() => ({ uiStore, onSwitchPlayer }), [uiStore, onSwitchPlayer])
+  const value = useMemo(() => ({ uiStore, onSwitchPlayer, players, onSelectPlayer }), [uiStore, onSwitchPlayer, players, onSelectPlayer])
   return <PlayContext.Provider value={value}>{children}</PlayContext.Provider>
 }
