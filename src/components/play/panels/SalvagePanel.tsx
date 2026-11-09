@@ -9,7 +9,6 @@ import {
   RefreshCw,
   Trash2,
   Check,
-  X,
   AlertTriangle,
   Clock,
   User,
@@ -27,7 +26,7 @@ import {
   useShip,
 } from '@/lib/spacemolt'
 import { usePlay } from '../PlayProvider'
-import { Panel, shared, ConfirmAction, errorMessage } from '../shared'
+import { Panel, Modal, shared, ConfirmAction, errorMessage } from '../shared'
 import styles from './SalvagePanel.module.css'
 import { formatItemId, getItem, getShip } from '@/data/catalog'
 import { titleCase } from '@/lib/format'
@@ -616,49 +615,32 @@ export function SalvagePanel() {
 
       {/* Scrap result modal */}
       {scrapResult && (
-        <div className={shared.modalBackdrop} onClick={() => setScrapResult(null)}>
-          <div className={shared.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={shared.modalHeader}>
-              <span className={shared.modalTitle}>
-                <Hammer size={14} /> Scrap Complete
-              </span>
-              <button
-                className={shared.modalClose}
-                onClick={() => setScrapResult(null)}
-                aria-label="Close"
-                type="button"
-              >
-                <X size={14} />
-              </button>
-            </div>
-            <div className={shared.modalBody}>
-              <div className={styles.salvageResultIntro}>{scrapResult.message}</div>
-              <div className={styles.salvageResults}>
-                {scrapResult.materials.map((mat) => (
-                  <div key={mat.item} className={styles.salvageResultRow}>
-                    <span>{mat.name}</span>
-                    <b>{mat.quantity}</b>
-                  </div>
-                ))}
-                {typeof scrapResult.total_value === 'number' && (
-                  <div className={styles.salvageResultRow}>
-                    <span>Total value</span>
-                    <b>{scrapResult.total_value.toLocaleString()}c</b>
-                  </div>
-                )}
+        <Modal
+          title="Scrap Complete"
+          icon={<Hammer size={14} />}
+          onClose={() => setScrapResult(null)}
+          actions={
+            <button className={shared.confirmBtn} onClick={() => setScrapResult(null)} type="button">
+              <Check size={12} /> OK
+            </button>
+          }
+        >
+          <div className={styles.salvageResultIntro}>{scrapResult.message}</div>
+          <div className={styles.salvageResults}>
+            {scrapResult.materials.map((mat) => (
+              <div key={mat.item} className={styles.salvageResultRow}>
+                <span>{mat.name}</span>
+                <b>{mat.quantity}</b>
               </div>
-            </div>
-            <div className={shared.modalActions}>
-              <button
-                className={shared.confirmBtn}
-                onClick={() => setScrapResult(null)}
-                type="button"
-              >
-                <Check size={12} /> OK
-              </button>
-            </div>
+            ))}
+            {typeof scrapResult.total_value === 'number' && (
+              <div className={styles.salvageResultRow}>
+                <span>Total value</span>
+                <b>{scrapResult.total_value.toLocaleString()}c</b>
+              </div>
+            )}
           </div>
-        </div>
+        </Modal>
       )}
     </Panel>
   )
