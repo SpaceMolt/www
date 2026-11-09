@@ -33,7 +33,7 @@ import type { AnalyzeMarketResponse, Commands, EstimatePurchaseResponse, Mutatio
 import { usePlay } from '../../PlayProvider'
 import { getCatalogItem } from '../../../ItemDetail'
 import { ItemName } from '../../ItemTooltip'
-import { Credits, Loading, Modal, shared } from '../../shared'
+import { Credits, Loading, Modal, QtyButtons, shared } from '../../shared'
 import { useHoverTooltip } from '../../hooks/useHoverTooltip'
 import { titleCase } from '@/lib/format'
 import styles from './MarketView.module.css'
@@ -739,19 +739,6 @@ export function MarketView() {
 }
 
 /** Quick-fill qty buttons */
-function QtyButtons({ max, current, onChange }: { max: number; current: string; onChange: (v: string) => void }) {
-  const cur = parseInt(current, 10) || 0
-  const add = (n: number) => onChange(String(Math.min(max, cur + n)))
-  return (
-    <div className={styles.qtyButtons}>
-      <button className={styles.qtyBtn} onClick={(e) => { e.stopPropagation(); add(5) }} disabled={cur >= max} type="button">+5</button>
-      <button className={styles.qtyBtn} onClick={(e) => { e.stopPropagation(); add(10) }} disabled={cur >= max} type="button">+10</button>
-      <button className={styles.qtyBtn} onClick={(e) => { e.stopPropagation(); add(100) }} disabled={cur >= max} type="button">+100</button>
-      <button className={`${styles.qtyBtn} ${styles.qtyBtnMax}`} onClick={(e) => { e.stopPropagation(); onChange(String(max)) }} disabled={cur >= max} type="button">MAX</button>
-    </div>
-  )
-}
-
 /** Expanded panel for a single market item — order book + actions */
 function ExpandedItemPanel({ item, credits, getAvailable, mutate, ordersData, onBuyEstimate, estimating, onQuickSell, onRefreshMarket, onRefreshOrders, onError }: {
   item: MarketItem
