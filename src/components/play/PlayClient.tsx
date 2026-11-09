@@ -300,7 +300,7 @@ export function PlayClient() {
         gameserverUrl={GAME_SERVER}
         fallback={<LoadingScreen text="Connecting to game server..." />}
       >
-        <PlayProvider onSwitchPlayer={handleSwitchPlayer}>
+        <PlayProvider onSwitchPlayer={handleSwitchPlayer} players={players} onSelectPlayer={selectPlayer}>
           <PlayClientInner />
         </PlayProvider>
       </AccountProvider>

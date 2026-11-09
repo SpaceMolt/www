@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import {
   Wifi,
   WifiOff,
@@ -11,11 +11,14 @@ import {
   LogOut,
   AlertTriangle,
   Keyboard,
+  ChevronDown,
+  Users,
 } from 'lucide-react'
 import { useAccountStore, useConnectionPhase, useLocationState, usePlayer, useShip } from '@/lib/spacemolt'
 import { usePlay } from './PlayProvider'
 import { BugReportButton } from './BugReportButton'
 import { TickCooldown } from './TickCooldown'
+import { useClickOutside } from './hooks/useClickOutside'
 import styles from './TopBar.module.css'
 
 function StatusBar({ value, max, color, label }: { value: number; max: number; color: string; label: string }) {
@@ -41,6 +44,45 @@ function formatCountdown(isoDate: string): string {
   const minutes = Math.floor((remaining % 3600000) / 60000)
   if (hours > 0) return `${hours}h ${minutes}m`
   return `${minutes}m`
+}
+
+/** The username, as a menu that switches to another character on the account without the picker. */
+function CharacterMenu({ username }: { username: string }) {
+  const store = useAccountStore()
+  const { players = [], onSelectPlayer, onSwitchPlayer } = usePlay()
+  const myId = usePlayer()?.id
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const close = useCallback(() => setOpen(false), [])
+  useClickOutside(ref, open, close)
+  const others = players.filter((p) => p.id !== myId).sort((a, b) => a.username.localeCompare(b.username))
+  // Same teardown as the log-out button: end this session, then mount the next character.
+  const leave = (next?: () => void) => {
+    setOpen(false)
+    void store.account.logout().catch(() => {})
+    next?.()
+  }
+
+  return (
+    <div className={styles.charMenu} ref={ref} onKeyDown={(e) => { if (e.key === 'Escape') close() }}>
+      <button className={styles.usernameBtn} onClick={() => setOpen(!open)} aria-expanded={open} aria-haspopup="menu" title="Switch character" type="button">
+        <span className={styles.username}>{username}</span>
+        <ChevronDown size={11} />
+      </button>
+      {open && (
+        <div className={styles.charMenuPanel} role="menu">
+          {others.map((p) => (
+            <button key={p.id} className={styles.charMenuItem} role="menuitem" onClick={() => leave(() => onSelectPlayer?.(p.id))} type="button">
+              {p.username}
+            </button>
+          ))}
+          <button className={`${styles.charMenuItem} ${styles.charMenuAll}`} role="menuitem" onClick={() => leave(onSwitchPlayer)} type="button">
+            <Users size={11} /> All characters
+          </button>
+        </div>
+      )}
+    </div>
+  )
 }
 
 export function TopBar({ onShowShortcuts }: { onShowShortcuts?: () => void }) {
@@ -76,7 +118,7 @@ export function TopBar({ onShowShortcuts }: { onShowShortcuts?: () => void }) {
           )}
           {player ? (
             <>
-              <span className={styles.username}>{player.username}</span>
+              <CharacterMenu username={player.username} />
               <span className={styles.credits}>
                 <Coins size={11} className={styles.creditsIcon} />
                 {(player.credits ?? 0).toLocaleString()}
