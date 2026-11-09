@@ -7,7 +7,6 @@ import {
   Coins,
   Pickaxe,
   Info,
-  Cpu,
 } from 'lucide-react'
 import { usePlayUi } from './PlayProvider'
 import type { EventLogEntry } from '@/lib/spacemolt'
@@ -43,7 +42,8 @@ interface ToastItem {
 export function ToastContainer() {
   const eventLog = usePlayUi((s) => s.eventLog)
   const [toasts, setToasts] = useState<ToastItem[]>([])
-  const lastEventIdRef = useRef<number | null>(null)
+  // Start at the newest existing entry so a remount does not replay old toasts.
+  const lastEventIdRef = useRef(eventLog[0]?.id ?? 0)
 
   const dismissToast = useCallback((id: string) => {
     setToasts((prev) => prev.map((t) => (t.id === id ? { ...t, exiting: true } : t)))
@@ -54,20 +54,20 @@ export function ToastContainer() {
 
   useEffect(() => {
     if (eventLog.length === 0) return
-    const latest = eventLog[0]
-    if (latest.id === lastEventIdRef.current) return
-    lastEventIdRef.current = latest.id
+    const lastSeen = lastEventIdRef.current
+    lastEventIdRef.current = eventLog[0].id
+    // Toast only what needs attention; per-tick mining/crafting/combat stays in the log.
+    // Several entries can land between renders, so take every unseen one.
+    const fresh = eventLog
+      .filter((entry) => entry.id > lastSeen)
+      .filter((entry) => entry.toast || entry.kind === 'danger' || entry.kind === 'warning')
+      .slice(0, MAX_TOASTS)
+    if (fresh.length === 0) return
 
-    // Only surface urgent events as toasts
-    if (latest.kind !== 'danger') return
-
-    const toastId = `toast-${latest.id}`
-    setToasts((prev) => {
-      const next = [{ id: toastId, entry: latest, exiting: false }, ...prev]
-      return next.slice(0, MAX_TOASTS)
-    })
-
-    setTimeout(() => dismissToast(toastId), TOAST_DURATION)
+    setToasts((prev) =>
+      [...fresh.map((entry) => ({ id: `toast-${entry.id}`, entry, exiting: false })), ...prev].slice(0, MAX_TOASTS),
+    )
+    for (const entry of fresh) setTimeout(() => dismissToast(`toast-${entry.id}`), TOAST_DURATION)
   }, [eventLog, dismissToast])
 
   if (toasts.length === 0) return null

@@ -4,8 +4,8 @@
  * composite unsubscribe. Formatting is intentionally terse here; panels that
  * need richer presentation read the typed payloads themselves.
  */
-import type { Account, LoggedInPayload } from '@spacemolt/lib'
-import type { UiStore } from './uiStore'
+import type { Account, GetTradesResponse, LoggedInPayload } from '@spacemolt/lib'
+import type { TradeOffer, UiStore } from './uiStore'
 
 const str = (value: unknown): string => (typeof value === 'string' ? value : '')
 
@@ -22,9 +22,25 @@ export function seedFromLogin(store: UiStore, login: LoggedInPayload | null): vo
   }
 }
 
+/**
+ * Replace pending incoming trades with a get_trades snapshot. Trades we already hold keep their
+ * richer push/login payload (station-sale fields); trades the server no longer lists drop out.
+ */
+export function mergeTradeSnapshot(current: TradeOffer[], incoming: GetTradesResponse['incoming']): TradeOffer[] {
+  return incoming.map((entry) => current.find((t) => t.trade_id === entry.trade_id) ?? { offerer_id: '', ...entry })
+}
+
+/** Resync pending trades after a reconnect (pushes sent while offline are lost). */
+export async function resyncTrades(account: Account, store: UiStore): Promise<void> {
+  const snapshot = (await account.commands.spacemolt_transfer.get_trades()).structuredContent
+  if (snapshot) store.dispatch({ type: 'seed_trades', trades: mergeTradeSnapshot(store.getState().pendingTrades, snapshot.incoming) })
+}
+
 export function wireNotifications(account: Account, store: UiStore): () => void {
   const log = (kind: 'info' | 'success' | 'warning' | 'danger' | 'chat' | 'combat', text: string) =>
     store.dispatch({ type: 'event', kind, text })
+
+  const toast = (kind: 'info' | 'success' | 'warning', text: string) => store.dispatch({ type: 'toast', kind, text })
 
   const unsubscribers = [
     account.on('chat_message', (msg) => {
@@ -33,11 +49,13 @@ export function wireNotifications(account: Account, store: UiStore): () => void 
 
     account.on('trade_offer_received', (trade) => {
       store.dispatch({ type: 'trade_received', trade })
-      log('info', `Trade offer received from ${str(trade.offerer_name) || 'another player'}`)
+      store.dispatch({ type: 'toast', kind: 'chat', text: `Trade offer received from ${str(trade.offerer_name) || 'another player'}` })
     }),
     account.on('trade_complete', (trade) => {
       store.dispatch({ type: 'trade_closed', tradeId: str(trade.trade_id) })
       log('success', 'Trade completed')
+      // The push carries no state delta: re-read credits and cargo the trade moved.
+      account.refresh().catch(() => {})
     }),
     account.on('trade_declined', (trade) => {
       store.dispatch({ type: 'trade_closed', tradeId: str(trade.trade_id) })
@@ -108,14 +126,52 @@ export function wireNotifications(account: Account, store: UiStore): () => void 
       }
     }),
 
+    account.on('gift_received', (gift) => {
+      store.dispatch({ type: 'storage_changed' })
+      log('success', `Gift received from ${gift.sender}`)
+    }),
+    // battle_damage is per-tick; the Combat panel shows it as a live feed instead.
+    account.on('battle_joined', (joined) => log('combat', `${joined.username} joined side ${joined.side_id}`)),
+    account.on('ship_captured', (capture) =>
+      log('danger', `${capture.captor_username} captured ${capture.former_owner_username}'s ship${capture.prize_poi_name ? ` at ${capture.prize_poi_name}` : ''}`),
+    ),
+    account.on('prize_update', (prize) => log('info', prize.message)),
+    account.on('personnel_update', (update) =>
+      log('info', `${update.source_username} ${update.action === 'treatment' ? 'treated' : 'transferred'} personnel on your ship`),
+    ),
+    account.on('arena_challenge', (challenge) =>
+      log('info', `Arena challenge ${challenge.event}: ${challenge.challenger_name} vs ${challenge.challenged_name}`),
+    ),
+    account.on('arena_objective', (objective) => log('combat', objective.message)),
+    account.on('fleet', (push) => {
+      const who = 'player_name' in push ? push.player_name : ''
+      const fallback = `Fleet: ${push.action.replace('fleet_', '').replaceAll('_', ' ')}${who ? ` (${who})` : ''}`
+      log('info', ('message' in push && push.message) || fallback)
+    }),
+
     account.on('drone_update', () => log('info', 'Drone status updated')),
     account.on('drone_destroyed', () => log('warning', 'A drone was destroyed')),
-    account.on('base_raid_update', () => log('warning', 'Base raid in progress')),
-    account.on('base_destroyed', () => log('danger', 'A base was destroyed')),
-    account.on('station_repaired', () => log('info', 'Station repaired')),
+    // Sent every tick of a raid, so it stays 'info' (warning/danger entries toast).
+    account.on('base_raid_update', (raid) =>
+      log('info', `${raid.base_name} under attack by ${raid.attacker_name}: ${raid.damage} damage, ${raid.current_health}/${raid.max_health} left`),
+    ),
+    account.on('base_destroyed', (base) => log('danger', `${base.base_name} was destroyed by ${base.attacker_name}`)),
+    account.on('station_repaired', (base) => log('success', `${base.base_name} is fully repaired`)),
+    account.on('facility_rent_warning', (warning) => log('warning', warning.message)),
+    account.on('facility_reclaimed', (reclaimed) => log('danger', reclaimed.message)),
     account.on('pirate_radio', (radio) => log('chat', `Pirate radio: ${str(radio.message)}`)),
     account.on('pirate_destroyed', () => log('combat', 'Pirate destroyed')),
-    account.on('reconnected', () => log('info', 'Reconnected to the server')),
+    account.on('reconnected', () => {
+      log('info', 'Reconnected to the server')
+      resyncTrades(account, store).catch(() => {})
+    }),
+    account.on('exchange_fill', (fill) => {
+      const verb = fill.type === 'buy_filled' ? 'Bought' : 'Sold'
+      store.dispatch({
+        type: 'toast', kind: 'chat',
+        text: `Order filled: ${verb} ${fill.quantity.toLocaleString()} ${fill.item_name} for ${fill.total.toLocaleString()} cr`,
+      })
+    }),
 
     // Untyped pushes (no published schema yet — see spacemolt-lib docs/gameserver-todo.md).
     account.on('server_restart_warning', (payload: Record<string, unknown>) =>
@@ -131,6 +187,41 @@ export function wireNotifications(account: Account, store: UiStore): () => void 
       log(
         payload.event === 'jump_cancelled_combat' ? 'warning' : 'info',
         str(payload.message) || 'Faction mobile base updated',
+      ),
+    ),
+
+    account.on('ship_commission_complete', (ship) =>
+      toast('success', `Commission complete: ${ship.ship_name || ship.ship_class} is docked at ${ship.base_name || 'the shipyard'}`),
+    ),
+    account.on('refueled_by', (fuel) =>
+      toast('info', `${fuel.source_username || 'A player'} refueled you: +${fuel.fuel} fuel (${fuel.fuel_now}/${fuel.fuel_max})`),
+    ),
+    account.on('repaired_by', (repair) =>
+      toast('info', `${repair.source_username || 'A player'} repaired you: +${repair.repaired} hull (${repair.hull}/${repair.max_hull})`),
+    ),
+    account.on('ranch_poached', (ranch) =>
+      log('warning', ranch.message || `${ranch.killer_name || 'Someone'} poached your ranch ${ranch.ranch_name}`),
+    ),
+    account.on('faction_alliance_proposal', (proposal) =>
+      // The server message tells agents which command ratifies it (faction.go); players use the Faction tab.
+      toast('warning', `${proposal.from_faction_name} proposes an alliance. Accept it in the Faction tab.`),
+    ),
+    account.on('faction_alliance_formed', (alliance) =>
+      toast('success', alliance.message || `Alliance formed with ${alliance.with_faction_name}`),
+    ),
+    account.on('faction_alliance_broken', (alliance) =>
+      log('warning', alliance.message || `${alliance.by_faction_name} broke your alliance`),
+    ),
+    account.on('faction_peace_proposal', (proposal) =>
+      toast('warning', proposal.message || `${proposal.from_faction_name} proposes peace`),
+    ),
+    account.on('faction_peace_accepted', (peace) =>
+      toast('success', peace.message || `${peace.faction_name} accepted your peace proposal`),
+    ),
+    account.on('hold_update', (payload: Record<string, unknown>) =>
+      log(
+        payload.event === 'started' ? 'warning' : 'info',
+        str(payload.message) || (payload.event === 'started' ? 'A warp scrambler is holding a ship' : 'Warp hold ended'),
       ),
     ),
   ]

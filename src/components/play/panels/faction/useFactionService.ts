@@ -1,0 +1,18 @@
+'use client'
+
+import { useCommandQuery, useLocationState } from '@/lib/spacemolt'
+
+/**
+ * Whether the faction has an active facility with this service at the docked station
+ * (e.g. 'faction_admin' from a Faction Desk, 'faction_missions' from a Notice Board).
+ * Undefined until known.
+ */
+export function useFactionService(service: string): boolean | undefined {
+  const dockedAt = useLocationState()?.docked_at
+  const { data } = useCommandQuery(
+    async (account) => (await account.commands.spacemolt_facility.faction_list()).structuredContent,
+    [dockedAt],
+    { enabled: Boolean(dockedAt) },
+  )
+  return data && data.faction_facilities.some((f) => f.faction_service === service && f.status === 'active')
+}

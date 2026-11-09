@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { useClickOutside } from '../../hooks/useClickOutside'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   ClipboardList,
   RefreshCw,
@@ -11,647 +10,350 @@ import {
   Pencil,
   Check,
   Search,
-  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Tags,
 } from 'lucide-react'
 import { useCargo, useCommandMutation, useCommandQuery, useLocationState, usePlayer } from '@/lib/spacemolt'
-import type { StorageResponse } from '@spacemolt/lib'
-import { Credits, shared } from '../../shared'
+import type { Commands, MutationResult, StorageResponse } from '@spacemolt/lib'
+import { ConfirmAction, Credits, errorMessage, shared } from '../../shared'
 import { usePlay } from '../../PlayProvider'
-import { getItem, tradeableItems, formatItemId } from '@/data/catalog'
-import type { RawCatalogItem } from '@/data/catalog'
+import { getItem, formatItemId } from '@/data/catalog'
+import { BulkOrderForm, type InventoryRow } from './BulkOrderForm'
+import { chunk, describeBulk, sumBulk } from './tradingLogic'
 import styles from './OrdersView.module.css'
+import { timeAgoOrDate } from '@/lib/format'
 
 // StorageResponse is one generated union across every branch of the unified
 // storage action (self view, faction view, deposit/withdraw/gift results) —
 // narrow to the branch view({}) actually returns.
 type PersonalStorageView = Extract<StorageResponse, { hint: string; ships: Array<unknown> }>
 
-interface CargoRow {
-  item_id: string
-  name: string
-  quantity: number
-  size?: number
+type SortBy = 'newest' | 'oldest' | 'price_asc' | 'price_desc'
+const PAGE_SIZE = 50
+
+const formatDate = (iso: string) => {
+  const d = new Date(iso)
+  return Number.isNaN(d.getTime())
+    ? iso
+    : `${d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} ${d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`
 }
 
-/** useCargo() rows are all-optional (delta-friendly wire shape); drop incomplete entries and normalize item_name -> name. */
-function normalizeCargo(raw: ReturnType<typeof useCargo>): CargoRow[] {
-  return (raw ?? []).flatMap((c) => {
-    if (!c.item_id || !c.quantity) return []
-    return [{ item_id: c.item_id, name: c.item_name ?? c.item_id, quantity: c.quantity, size: c.size }]
-  })
-}
-
-const errorMessage = (err: unknown): string => (err instanceof Error ? err.message : String(err))
-
-// ── Sell Item Dropdown ──────────────────────────────────────────────────
-
-interface SellDropdownProps {
-  items: Array<{ item_id: string; name: string; quantity: number }>
-  value: string
-  onChange: (itemId: string) => void
-}
-
-function SellDropdown({ items, value, onChange }: SellDropdownProps) {
-  const [open, setOpen] = useState(false)
-  const [search, setSearch] = useState('')
-  const ref = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  const filtered = useMemo(() => {
-    if (!search) return items
-    const q = search.toLowerCase()
-    return items.filter(i => i.name.toLowerCase().includes(q) || i.item_id.toLowerCase().includes(q))
-  }, [items, search])
-
-  const handleClose = useCallback(() => setOpen(false), [])
-  useClickOutside(ref, open, handleClose)
-
-  const selectedItem = items.find(i => i.item_id === value)
-
-  return (
-    <div className={styles.dropdown} ref={ref}>
-      <button
-        className={styles.dropdownTrigger}
-        onClick={() => { setOpen(!open); if (!open) setTimeout(() => inputRef.current?.focus(), 0) }}
-        type="button"
-        aria-expanded={open}
-        aria-haspopup="listbox"
-      >
-        <span className={styles.dropdownValue}>
-          {selectedItem ? `${selectedItem.name} (${selectedItem.quantity})` : 'Select item...'}
-        </span>
-        <ChevronDown size={12} />
-      </button>
-      {open && (
-        <div className={styles.dropdownPanel}>
-          <div className={styles.dropdownSearch}>
-            <Search size={11} />
-            <input
-              ref={inputRef}
-              className={styles.dropdownSearchInput}
-              type="text"
-              placeholder="Search inventory..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Escape') { setOpen(false); setSearch('') } }}
-            />
-          </div>
-          <div className={styles.dropdownList} role="listbox">
-            {filtered.length === 0 ? (
-              <div className={styles.dropdownEmpty}>No matching items</div>
-            ) : filtered.map(item => (
-              <button
-                key={item.item_id}
-                className={`${styles.dropdownItem} ${item.item_id === value ? styles.dropdownItemActive : ''}`}
-                onClick={() => { onChange(item.item_id); setOpen(false); setSearch('') }}
-                type="button"
-                role="option"
-                aria-selected={item.item_id === value}
-              >
-                <span className={styles.dropdownItemName}>{item.name}</span>
-                <span className={styles.dropdownItemQty}>{item.quantity}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ── Buy Item Autocomplete ───────────────────────────────────────────────
-
-interface BuyAutocompleteProps {
-  value: string
-  onChange: (itemId: string) => void
-}
-
-function BuyAutocomplete({ value, onChange }: BuyAutocompleteProps) {
-  const [inputText, setInputText] = useState('')
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  const suggestions = useMemo(() => {
-    if (!inputText || inputText.length < 2) return []
-    const q = inputText.toLowerCase()
-    return tradeableItems()
-      .filter(i => i.name.toLowerCase().includes(q) || i.id.toLowerCase().includes(q))
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .slice(0, 20)
-  }, [inputText])
-
-  const handleClose = useCallback(() => setOpen(false), [])
-  useClickOutside(ref, open, handleClose)
-
-  // Sync display text when value changes externally
-  useEffect(() => {
-    if (value) {
-      const item = getItem(value)
-      if (item) setInputText(item.name)
-    } else {
-      setInputText('')
-    }
-  }, [value])
-
-  const handleSelect = (item: RawCatalogItem) => {
-    onChange(item.id)
-    setInputText(item.name)
-    setOpen(false)
+/** Tradeable cargo + station storage, merged per item. */
+function mergeInventory(stacks: Array<{ item_id?: string; quantity?: number }>): InventoryRow[] {
+  const map = new Map<string, InventoryRow>()
+  for (const { item_id, quantity } of stacks) {
+    if (!item_id || !quantity || quantity <= 0) continue
+    const cat = getItem(item_id)
+    if (cat?.tradeable === false) continue
+    const prev = map.get(item_id)
+    map.set(item_id, { item_id, name: cat?.name ?? formatItemId(item_id), quantity: (prev?.quantity ?? 0) + quantity })
   }
-
-  const handleInputChange = (text: string) => {
-    setInputText(text)
-    setOpen(text.length >= 2)
-    // Clear selection only when the text no longer matches the selected item
-    if (value) {
-      const selected = getItem(value)
-      if (!selected || selected.name !== text) onChange('')
-    }
-  }
-
-  return (
-    <div className={styles.autocomplete} ref={ref}>
-      <div className={styles.autocompleteInputWrap}>
-        <Search size={11} />
-        <input
-          className={styles.autocompleteInput}
-          type="text"
-          placeholder="Search all items..."
-          value={inputText}
-          onChange={(e) => handleInputChange(e.target.value)}
-          onFocus={() => { if (inputText.length >= 2) setOpen(true) }}
-          onKeyDown={(e) => { if (e.key === 'Escape') setOpen(false) }}
-          role="combobox"
-          aria-expanded={open && suggestions.length > 0}
-          aria-autocomplete="list"
-        />
-        {value && (
-          <button
-            className={styles.autocompleteClear}
-            onClick={() => { onChange(''); setInputText(''); setOpen(false) }}
-            type="button"
-          >
-            <X size={10} />
-          </button>
-        )}
-      </div>
-      {open && suggestions.length > 0 && (
-        <div className={styles.autocompletePanel} role="listbox">
-          {suggestions.map(item => (
-            <button
-              key={item.id}
-              className={`${styles.dropdownItem} ${item.id === value ? styles.dropdownItemActive : ''}`}
-              onClick={() => handleSelect(item)}
-              type="button"
-              role="option"
-              aria-selected={item.id === value}
-            >
-              <span className={styles.dropdownItemName}>{item.name}</span>
-              <span className={styles.dropdownItemCategory}>{item.category || item.type || ''}</span>
-              {item.base_value != null && item.base_value > 0 && (
-                <span className={styles.dropdownItemPrice}>{item.base_value.toLocaleString()} cr</span>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  )
+  return [...map.values()].sort((a, b) => a.name.localeCompare(b.name))
 }
-
-// ── Main OrdersView ─────────────────────────────────────────────────────
 
 export function OrdersView() {
   const { uiStore } = usePlay()
   const location = useLocationState()
-  const dockedAt = location?.docked_at
+  const dockedAt = location?.docked_at ?? ''
   const isDocked = Boolean(dockedAt)
   const player = usePlayer()
   const hasFaction = Boolean(player?.faction_id)
-  const rawCargo = useCargo()
-  const cargo = useMemo(() => normalizeCargo(rawCargo), [rawCargo])
+  const cargo = useCargo()
   const mutate = useCommandMutation()
 
-  const reportError = useCallback((err: unknown) => {
-    const text = errorMessage(err)
-    uiStore.dispatch({ type: 'toast', kind: 'danger', text })
-  }, [uiStore])
+  const toast = useCallback(
+    (kind: 'danger' | 'warning' | 'success', text: string) => uiStore.dispatch({ type: 'toast', kind, text }),
+    [uiStore],
+  )
+
+  // Undocked, view any station's orders by id; defaults to the last station we docked at.
+  const [stationInput, setStationInput] = useState(dockedAt)
+  useEffect(() => { if (dockedAt) setStationInput(dockedAt) }, [dockedAt])
+  const stationId = isDocked ? undefined : stationInput.trim() || undefined
+  const canView = isDocked || Boolean(stationId)
+
+  const [page, setPage] = useState(1)
+  const [orderType, setOrderType] = useState<'' | 'buy' | 'sell'>('')
+  const [sortBy, setSortBy] = useState<SortBy>('newest')
+  const [searchInput, setSearchInput] = useState('')
+  const [search, setSearch] = useState('')
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [repricing, setRepricing] = useState(false)
+  /** A new page, filter, or station shows different orders: start over at page 1 with nothing selected. */
+  const resetView = (nextPage = 1) => { setPage(nextPage); setSelected(new Set()); setRepricing(false) }
+  useEffect(() => { resetView() }, [dockedAt])
+
+  const filters = {
+    page, page_size: PAGE_SIZE, sort_by: sortBy, station_id: stationId,
+    order_type: orderType || undefined, search: search || undefined,
+  }
 
   const { data: storageData } = useCommandQuery(
     async (account) => (await account.commands.spacemolt_storage.view()).structuredContent as PersonalStorageView | undefined,
     [dockedAt],
     { enabled: isDocked, refreshOnSections: ['cargo'] },
   )
-  const storageItems = storageData?.items ?? []
 
-  const { data: personalOrdersData, refetch: refetchPersonalOrders } = useCommandQuery(
-    async (account) => (await account.commands.spacemolt_market.view_orders({ scope: 'personal', page_size: 50 })).structuredContent,
-    [dockedAt],
-    { enabled: isDocked },
+  const { data: personalOrdersData, error: ordersError, refetch: refetchPersonalOrders } = useCommandQuery(
+    async (account) => (await account.commands.spacemolt_market.view_orders({ scope: 'personal', ...filters })).structuredContent,
+    [dockedAt, stationId, page, orderType, sortBy, search],
+    { enabled: canView },
   )
 
   const { data: factionOrdersData } = useCommandQuery(
-    async (account) => (await account.commands.spacemolt_market.view_orders({ scope: 'faction', page_size: 50 })).structuredContent,
-    [dockedAt, hasFaction],
-    { enabled: isDocked && hasFaction },
+    async (account) => (await account.commands.spacemolt_market.view_orders({ scope: 'faction', page_size: PAGE_SIZE, station_id: stationId })).structuredContent,
+    [dockedAt, stationId, hasFaction],
+    { enabled: canView && hasFaction },
   )
 
-  // Build inventory list for sell dropdown: tradeable items in cargo + storage
-  const inventoryItems = useMemo(() => {
-    const map = new Map<string, { item_id: string; name: string; quantity: number }>()
-    for (const c of cargo) {
-      if (!c.item_id || c.quantity <= 0) continue
-      const cat = getItem(c.item_id)
-      if (cat && cat.tradeable === false) continue
-      const existing = map.get(c.item_id)
-      if (existing) {
-        existing.quantity += c.quantity
-      } else {
-        map.set(c.item_id, {
-          item_id: c.item_id,
-          name: cat?.name ?? formatItemId(c.item_id),
-          quantity: c.quantity,
-        })
-      }
-    }
-    for (const s of storageItems) {
-      if (!s.item_id || s.quantity <= 0) continue
-      const cat = getItem(s.item_id)
-      if (cat && cat.tradeable === false) continue
-      const existing = map.get(s.item_id)
-      if (existing) {
-        existing.quantity += s.quantity
-      } else {
-        map.set(s.item_id, {
-          item_id: s.item_id,
-          name: cat?.name ?? formatItemId(s.item_id),
-          quantity: s.quantity,
-        })
-      }
-    }
-    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name))
-  }, [cargo, storageItems])
+  const inventory = useMemo(
+    () => mergeInventory([...(cargo ?? []), ...(storageData?.items ?? [])]),
+    [cargo, storageData],
+  )
 
-  // New order form state
-  const [orderType, setOrderType] = useState<'buy' | 'sell'>('sell')
-  const [orderItemId, setOrderItemId] = useState('')
-  const [orderQty, setOrderQty] = useState('')
-  const [orderPrice, setOrderPrice] = useState('')
   const [showForm, setShowForm] = useState(false)
+  const [prices, setPrices] = useState<Record<string, string>>({})
+  const [confirm, setConfirm] = useState<{ message: string; run: () => void } | null>(null)
+  const [busy, setBusy] = useState(false)
 
-  // When item changes, set default qty and price
-  const handleSellItemChange = useCallback((itemId: string) => {
-    setOrderItemId(itemId)
-    if (itemId) {
-      const inv = inventoryItems.find(i => i.item_id === itemId)
-      if (inv) setOrderQty(inv.quantity.toString())
-      const catalogItem = getItem(itemId)
-      if (catalogItem?.base_value) setOrderPrice(catalogItem.base_value.toString())
-    } else {
-      setOrderQty('')
-      setOrderPrice('')
-    }
-  }, [inventoryItems])
-
-  const handleBuyItemChange = useCallback((itemId: string) => {
-    setOrderItemId(itemId)
-    if (itemId) {
-      setOrderQty('')
-      const catalogItem = getItem(itemId)
-      if (catalogItem?.base_value) setOrderPrice(catalogItem.base_value.toString())
-      else setOrderPrice('')
-    } else {
-      setOrderQty('')
-      setOrderPrice('')
-    }
-  }, [])
-
-  // Reset form fields when switching type
-  const handleTypeChange = useCallback((type: 'buy' | 'sell') => {
-    setOrderType(type)
-    setOrderItemId('')
-    setOrderQty('')
-    setOrderPrice('')
-  }, [])
-
-  // Modify order state
-  const [editingOrderId, setEditingOrderId] = useState<string | null>(null)
-  const [editPrice, setEditPrice] = useState('')
-  const [modifyResult, setModifyResult] = useState<Record<string, { message: string; listing_fee?: number }>>({})
-
-  const handleRefresh = useCallback(() => {
-    refetchPersonalOrders()
-  }, [refetchPersonalOrders])
-
-  const handleCancelOrder = useCallback(
-    async (orderId: string) => {
-      try {
-        await mutate((c) => c.spacemolt_market.cancel_order({ order_id: orderId }), { label: 'cancel_order' })
-        refetchPersonalOrders()
-      } catch (err) {
-        reportError(err)
-      }
-    },
-    [mutate, refetchPersonalOrders, reportError]
-  )
-
-  const handleCreateOrder = useCallback(async () => {
-    const quantity = parseInt(orderQty, 10)
-    const priceEach = parseInt(orderPrice, 10)
-    if (!orderItemId.trim() || isNaN(quantity) || quantity < 1 || isNaN(priceEach) || priceEach < 1) return
-
+  /** Runs each call in turn (the lib serializes mutations anyway), then reports one combined result. */
+  const runBatches = useCallback(async (verb: string, label: string, calls: Array<(c: Commands) => Promise<MutationResult>>) => {
+    setBusy(true)
+    const details: unknown[] = []
     try {
-      if (orderType === 'sell') {
-        await mutate((c) => c.spacemolt_market.create_sell_order({ item_id: orderItemId.trim(), quantity, price_each: priceEach }), { label: 'create_sell_order' })
-      } else {
-        await mutate((c) => c.spacemolt_market.create_buy_order({ item_id: orderItemId.trim(), quantity, price_each: priceEach }), { label: 'create_buy_order' })
-      }
-      setOrderItemId('')
-      setOrderQty('')
-      setOrderPrice('')
-      setShowForm(false)
-      refetchPersonalOrders()
+      for (const call of calls) details.push((await mutate(call, { label })).delta.details)
     } catch (err) {
-      reportError(err)
+      toast('danger', errorMessage(err))
     }
-  }, [mutate, orderType, orderItemId, orderQty, orderPrice, refetchPersonalOrders, reportError])
-
-  const handleStartModify = useCallback((orderId: string, currentPrice: number) => {
-    setEditingOrderId(orderId)
-    setEditPrice(currentPrice.toString())
-    setModifyResult((prev) => {
-      const next = { ...prev }
-      delete next[orderId]
-      return next
-    })
-  }, [])
-
-  const handleCancelModify = useCallback(() => {
-    setEditingOrderId(null)
-    setEditPrice('')
-  }, [])
-
-  const handleSubmitModify = useCallback(
-    async (orderId: string) => {
-      const newPrice = parseInt(editPrice, 10)
-      if (isNaN(newPrice) || newPrice < 1) return
-      try {
-        const result = await mutate((c) => c.spacemolt_market.modify_order({ order_id: orderId, price_each: newPrice }), { label: 'modify_order' })
-        // modify_order's response type also covers bulk mode; single-order calls always return the branch with a top-level message.
-        const details = result.delta.details as { message: string; listing_fee?: number } | undefined
-        if (details?.message) {
-          setModifyResult((prev) => ({
-            ...prev,
-            [orderId]: { message: details.message, listing_fee: details.listing_fee },
-          }))
-        }
-        refetchPersonalOrders()
-      } catch (err) {
-        reportError(err)
-      } finally {
-        setEditingOrderId(null)
-        setEditPrice('')
-      }
-    },
-    [mutate, editPrice, refetchPersonalOrders, reportError]
-  )
-
-  if (!isDocked) {
-    return (
-      <div className={shared.dockedOnly}>
-        Dock at a base to manage your orders
-      </div>
-    )
-  }
+    setBusy(false)
+    if (details.length > 0) {
+      const outcome = sumBulk(details)
+      toast(outcome.failed > 0 ? 'warning' : 'success', describeBulk(verb, outcome))
+    }
+    setSelected(new Set())
+    setRepricing(false)
+    refetchPersonalOrders()
+  }, [mutate, toast, refetchPersonalOrders])
 
   // scope:'personal' returns every order this player placed, including ones
   // placed under the faction (Company Store); exclude those here since the
   // scope:'faction' query below already lists them (with the placing member's name).
   const personalOrders = (personalOrdersData?.orders ?? []).filter((o) => !o.faction_order)
   const factionOrders = factionOrdersData?.orders ?? []
+  const allSelected = personalOrders.length > 0 && personalOrders.every((o) => selected.has(o.order_id))
 
-  const formatDate = (iso: string) => {
-    try {
-      const d = new Date(iso)
-      return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) +
-        ' ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
-    } catch {
-      return iso
-    }
+  const toggleSelected = (orderId: string) => setSelected((prev) => {
+    const next = new Set(prev)
+    if (next.has(orderId)) next.delete(orderId)
+    else next.add(orderId)
+    return next
+  })
+
+  const cancelSelected = () => {
+    const ids = [...selected]
+    setConfirm({
+      message: `Cancel ${ids.length} order${ids.length === 1 ? '' : 's'}? Escrow and items return to you.`,
+      run: () => runBatches('Orders cancelled:', 'cancel_order', chunk(ids).map((order_ids) => (c) => c.spacemolt_market.cancel_order({ order_ids }))),
+    })
   }
 
-  const maxQty = orderType === 'sell'
-    ? (inventoryItems.find(i => i.item_id === orderItemId)?.quantity ?? 0)
-    : undefined
+  const cancelAll = () => setConfirm({
+    message: 'Cancel all your orders at this station?',
+    run: () => runBatches('Orders cancelled:', 'cancel_order', [(c) => c.spacemolt_market.cancel_order({ order_id: 'all' })]),
+  })
+
+  const startReprice = (ids: Set<string>) => {
+    setSelected(ids)
+    setPrices(Object.fromEntries(personalOrders.filter((o) => ids.has(o.order_id)).map((o) => [o.order_id, String(o.price_each)])))
+    setRepricing(true)
+  }
+
+  const changedPrices = personalOrders
+    .filter((o) => selected.has(o.order_id))
+    .map((o) => ({ order_id: o.order_id, new_price: parseInt(prices[o.order_id] ?? '', 10) || 0, old: o.price_each }))
+    .filter((o) => o.new_price > 0 && o.new_price !== o.old)
+    .map(({ order_id, new_price }) => ({ order_id, new_price }))
+
+  const applyReprice = () => changedPrices.length > 0 && setConfirm({
+    message: `Change the price of ${changedPrices.length} order${changedPrices.length === 1 ? '' : 's'}? Raising a sell price costs a 1% fee; buy escrow adjusts.`,
+    run: () => runBatches('Orders repriced:', 'modify_order', chunk(changedPrices).map((orders) => (c) => c.spacemolt_market.modify_order({ orders }))),
+  })
+
+  const handleCancelOrder = (orderId: string, name: string) => setConfirm({
+    message: `Cancel your ${name} order?`,
+    run: () => runBatches('Orders cancelled:', 'cancel_order', [(c) => c.spacemolt_market.cancel_order({ order_id: orderId })]),
+  })
+
+  const total = personalOrdersData?.total ?? 0
+  const totalPages = personalOrdersData?.total_pages ?? 1
 
   return (
     <div className={styles.container}>
       <div className={styles.toolbar}>
         <span className={styles.sectionLabel}>
           <ClipboardList size={12} />
-          Your Orders ({personalOrders.length})
+          Your Orders ({total})
+          {personalOrdersData?.base && <span className={styles.formHint}> at {personalOrdersData.base}</span>}
         </span>
         <div className={styles.toolbarActions}>
           <button
             className={shared.actionBtn}
             onClick={() => setShowForm(!showForm)}
-            title="Create new order"
+            disabled={!isDocked}
+            title={isDocked ? 'Create new orders' : 'Dock to create orders'}
             type="button"
           >
             <Plus size={13} />
             New
           </button>
-          <button
-            className={shared.refreshBtn}
-            onClick={handleRefresh}
-            title="Refresh orders"
-            type="button"
-          >
+          <button className={shared.refreshBtn} onClick={refetchPersonalOrders} title="Refresh orders" type="button">
             <RefreshCw size={13} />
           </button>
         </div>
       </div>
 
-      {/* New order form */}
-      {showForm && (
-        <div className={styles.formContainer}>
-          <div className={styles.formTitle}>Create Order</div>
-          <div className={styles.typeToggle}>
-            <button
-              className={`${styles.typeBtn} ${orderType === 'sell' ? styles.typeBtnActiveSell : ''}`}
-              onClick={() => handleTypeChange('sell')}
-              type="button"
-            >
-              Sell
-            </button>
-            <button
-              className={`${styles.typeBtn} ${orderType === 'buy' ? styles.typeBtnActiveBuy : ''}`}
-              onClick={() => handleTypeChange('buy')}
-              type="button"
-            >
-              Buy
-            </button>
-          </div>
-
-          {/* Item selection */}
-          <div className={styles.formFieldStack}>
-            <label className={styles.formLabel}>Item</label>
-            {orderType === 'sell' ? (
-              <SellDropdown
-                items={inventoryItems}
-                value={orderItemId}
-                onChange={handleSellItemChange}
-              />
-            ) : (
-              <BuyAutocomplete
-                value={orderItemId}
-                onChange={handleBuyItemChange}
-              />
-            )}
-          </div>
-
-          {/* Qty + Price side by side */}
-          <div className={styles.formRow}>
-            <div className={styles.formFieldStack}>
-              <label className={styles.formLabel}>
-                Quantity
-                {orderType === 'sell' && maxQty != null && maxQty > 0 && (
-                  <span className={styles.formHint}> (have {maxQty})</span>
-                )}
-              </label>
-              <input
-                className={styles.formInput}
-                type="number"
-                placeholder={orderType === 'sell' ? 'Max' : 'Quantity'}
-                min={1}
-                max={maxQty}
-                value={orderQty}
-                onChange={(e) => setOrderQty(e.target.value)}
-              />
-            </div>
-            <div className={styles.formFieldStack}>
-              <label className={styles.formLabel}>
-                Price each
-                {orderItemId && (
-                  <span className={styles.formHint}> (base: {getItem(orderItemId)?.base_value?.toLocaleString() ?? '?'})</span>
-                )}
-              </label>
-              <input
-                className={styles.formInput}
-                type="number"
-                placeholder="Credits"
-                min={1}
-                value={orderPrice}
-                onChange={(e) => setOrderPrice(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className={styles.formActions}>
-            <button
-              className={shared.subtleBtn}
-              onClick={() => setShowForm(false)}
-              type="button"
-            >
-              Cancel
-            </button>
-            <button
-              className={orderType === 'sell' ? shared.warningBtn : shared.actionBtn}
-              onClick={handleCreateOrder}
-              disabled={
-                !orderItemId.trim() ||
-                !orderQty ||
-                parseInt(orderQty, 10) < 1 ||
-                !orderPrice ||
-                parseInt(orderPrice, 10) < 1
-              }
-              type="button"
-            >
-              <Plus size={11} />
-              {orderType === 'sell' ? 'Create Sell Order' : 'Create Buy Order'}
-            </button>
-          </div>
+      {!isDocked && (
+        <div className={styles.optionRow}>
+          <input
+            className={styles.formInput}
+            type="text"
+            placeholder="Station id, e.g. nexus_base"
+            value={stationInput}
+            onChange={(e) => { setStationInput(e.target.value); resetView() }}
+            title="View your orders at another station"
+          />
+          <span className={styles.formHint}>Dock to cancel or change orders.</span>
         </div>
       )}
 
+      {showForm && isDocked && (
+        <BulkOrderForm inventory={inventory} onCreated={refetchPersonalOrders} onClose={() => setShowForm(false)} />
+      )}
+
+      {/* Filters */}
+      <div className={styles.optionRow}>
+        <div className={styles.autocompleteInputWrap}>
+          <Search size={11} />
+          <input
+            className={styles.autocompleteInput}
+            type="text"
+            placeholder="Search item name..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }}
+            onBlur={() => { if (searchInput.trim() !== search) { setSearch(searchInput.trim()); resetView() } }}
+          />
+        </div>
+        <select className={styles.formInput} value={orderType} onChange={(e) => { setOrderType(e.target.value as '' | 'buy' | 'sell'); resetView() }}>
+          <option value="">Buy and sell</option>
+          <option value="sell">Sell only</option>
+          <option value="buy">Buy only</option>
+        </select>
+        <select className={styles.formInput} value={sortBy} onChange={(e) => { setSortBy(e.target.value as SortBy); resetView() }}>
+          <option value="newest">Newest</option>
+          <option value="oldest">Oldest</option>
+          <option value="price_desc">Price high-low</option>
+          <option value="price_asc">Price low-high</option>
+        </select>
+      </div>
+
+      {/* Bulk actions */}
+      {isDocked && personalOrders.length > 0 && (
+        <div className={styles.optionRow}>
+          <label>
+            <input
+              type="checkbox"
+              checked={allSelected}
+              onChange={() => setSelected(allSelected ? new Set() : new Set(personalOrders.map((o) => o.order_id)))}
+            /> Select page
+          </label>
+          {repricing ? (
+            <>
+              <button className={shared.confirmBtn} onClick={applyReprice} disabled={busy || changedPrices.length === 0} type="button">
+                <Check size={11} /> Apply {changedPrices.length} price{changedPrices.length === 1 ? '' : 's'}
+              </button>
+              <button className={shared.subtleBtn} onClick={() => setRepricing(false)} type="button">Stop repricing</button>
+            </>
+          ) : (
+            <>
+              <button className={shared.actionBtn} onClick={() => startReprice(selected)} disabled={busy || selected.size === 0} type="button">
+                <Tags size={11} /> Reprice ({selected.size})
+              </button>
+              <button className={shared.dangerBtn} onClick={cancelSelected} disabled={busy || selected.size === 0} type="button">
+                <X size={11} /> Cancel ({selected.size})
+              </button>
+            </>
+          )}
+          <button className={shared.dangerBtn} onClick={cancelAll} disabled={busy} type="button" title="Cancel every order you have at this station">
+            <X size={11} /> Cancel all here
+          </button>
+        </div>
+      )}
+
+      {confirm && (
+        <ConfirmAction
+          message={confirm.message}
+          onConfirm={() => { confirm.run(); setConfirm(null) }}
+          onCancel={() => setConfirm(null)}
+        />
+      )}
+
       {/* Personal orders list */}
-      {!personalOrdersData ? (
-        <div className={styles.loading}>Loading orders...</div>
+      {!canView ? (
+        <div className={shared.dockedOnly}>Dock at a base, or enter a station id, to see your orders</div>
+      ) : !personalOrdersData ? (
+        <div className={styles.loading}>{ordersError || 'Loading orders...'}</div>
       ) : personalOrders.length === 0 ? (
-        <div className={shared.emptyState}>No active orders</div>
+        <div className={shared.emptyState}>{search || orderType ? 'No orders match your filters' : 'No active orders'}</div>
       ) : (
         <div className={styles.orderList}>
           {personalOrders.map((order) => {
-            const isEditing = editingOrderId === order.order_id
-            const result = modifyResult[order.order_id]
+            const isRepricing = repricing && selected.has(order.order_id)
+            const name = order.item_name ?? formatItemId(order.item_id)
             return (
               <div key={order.order_id} className={styles.orderCard}>
                 <div className={styles.orderTop}>
-                  <span
-                    className={`${styles.orderTypeBadge} ${
-                      order.order_type === 'sell' ? styles.badgeSell : styles.badgeBuy
-                    }`}
-                  >
+                  {isDocked && (
+                    <input type="checkbox" checked={selected.has(order.order_id)} onChange={() => toggleSelected(order.order_id)} aria-label={`Select ${name} order`} />
+                  )}
+                  <span className={`${styles.orderTypeBadge} ${order.order_type === 'sell' ? styles.badgeSell : styles.badgeBuy}`}>
                     {order.order_type.toUpperCase()}
                   </span>
-                  <span className={styles.orderItemName}>{order.item_name}</span>
-                  <button
-                    className={shared.iconBtn}
-                    onClick={() => handleStartModify(order.order_id, order.price_each)}
-                    title="Modify price"
-                    type="button"
-                  >
-                    <Pencil size={11} />
-                  </button>
-                  <button
-                    className={shared.dangerBtn}
-                    onClick={() => handleCancelOrder(order.order_id)}
-                    title="Cancel order"
-                    type="button"
-                  >
-                    <X size={12} />
-                  </button>
+                  <span className={styles.orderItemName}>{name}</span>
+                  {isDocked && (
+                    <>
+                      <button
+                        className={shared.iconBtn}
+                        onClick={() => startReprice(new Set([order.order_id]))}
+                        title="Modify price"
+                        type="button"
+                      >
+                        <Pencil size={11} />
+                      </button>
+                      <button className={shared.dangerBtn} onClick={() => handleCancelOrder(order.order_id, name)} title="Cancel order" type="button">
+                        <X size={12} />
+                      </button>
+                    </>
+                  )}
                 </div>
                 <div className={styles.orderDetails}>
                   <span className={styles.orderDetail}>
                     Qty: {order.remaining}/{order.quantity}
                   </span>
-                  {isEditing ? (
+                  {isRepricing ? (
                     <span className={styles.modifyInline}>
-                      <span className={styles.modifyLabel}>Price:</span>
+                      <span className={styles.modifyLabel}>New price:</span>
                       <input
                         className={styles.modifyInput}
                         type="number"
                         min={1}
-                        value={editPrice}
-                        onChange={(e) => setEditPrice(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') handleSubmitModify(order.order_id)
-                          if (e.key === 'Escape') handleCancelModify()
-                        }}
-                        autoFocus
+                        value={prices[order.order_id] ?? ''}
+                        onChange={(e) => setPrices((prev) => ({ ...prev, [order.order_id]: e.target.value }))}
+                        onKeyDown={(e) => { if (e.key === 'Enter') applyReprice() }}
                       />
-                      <button
-                        className={shared.confirmBtn}
-                        onClick={() => handleSubmitModify(order.order_id)}
-                        disabled={!editPrice || parseInt(editPrice, 10) < 1}
-                        title="Save new price"
-                        type="button"
-                      >
-                        <Check size={11} />
-                      </button>
-                      <button
-                        className={shared.dangerBtn}
-                        onClick={handleCancelModify}
-                        title="Cancel editing"
-                        type="button"
-                      >
-                        <X size={11} />
-                      </button>
-                      {order.order_type === 'sell' && parseInt(editPrice, 10) > order.price_each && (
-                        <span className={styles.modifyFeeNote}>
-                          1% fee on price increase
-                        </span>
+                      {order.order_type === 'sell' && parseInt(prices[order.order_id] ?? '', 10) > order.price_each && (
+                        <span className={styles.modifyFeeNote}>1% fee on price increase</span>
                       )}
                     </span>
                   ) : (
@@ -665,22 +367,22 @@ export function OrdersView() {
                     </span>
                   )}
                 </div>
-                {result && (
-                  <div className={styles.modifyResult}>
-                    <span className={styles.modifyMessage}>{result.message}</span>
-                    {result.listing_fee != null && result.listing_fee > 0 && (
-                      <span className={styles.modifyFeeWarning}>
-                        Listing fee: <Credits amount={result.listing_fee} />
-                      </span>
-                    )}
-                  </div>
-                )}
-                <div className={styles.orderMeta}>
-                  {formatDate(order.created_at)}
-                </div>
+                <div className={styles.orderMeta}>{formatDate(order.created_at)}</div>
               </div>
             )
           })}
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className={styles.optionRow}>
+          <button className={shared.subtleBtn} onClick={() => resetView(page - 1)} disabled={page <= 1} type="button">
+            <ChevronLeft size={11} /> Prev
+          </button>
+          <span className={styles.formHint}>Page {personalOrdersData?.page ?? page} of {totalPages}</span>
+          <button className={shared.subtleBtn} onClick={() => resetView(page + 1)} disabled={!personalOrdersData?.has_more} type="button">
+            Next <ChevronRight size={11} />
+          </button>
         </div>
       )}
 
@@ -690,23 +392,18 @@ export function OrdersView() {
           <div className={styles.divider} />
           <div className={styles.sectionLabel}>
             <Users size={12} />
-            Faction Orders ({factionOrders.length})
+            Faction Orders ({factionOrdersData?.total ?? factionOrders.length})
+            {factionOrdersData?.has_more && <span className={styles.formHint}> showing first {factionOrders.length}</span>}
           </div>
           <div className={styles.orderList}>
             {factionOrders.map((order) => (
               <div key={order.order_id} className={`${styles.orderCard} ${styles.factionCard}`}>
                 <div className={styles.orderTop}>
-                  <span
-                    className={`${styles.orderTypeBadge} ${
-                      order.order_type === 'sell' ? styles.badgeSell : styles.badgeBuy
-                    }`}
-                  >
+                  <span className={`${styles.orderTypeBadge} ${order.order_type === 'sell' ? styles.badgeSell : styles.badgeBuy}`}>
                     {order.order_type.toUpperCase()}
                   </span>
-                  <span className={styles.orderItemName}>{order.item_name}</span>
-                  {order.created_by && (
-                    <span className={styles.createdBy}>by {order.created_by}</span>
-                  )}
+                  <span className={styles.orderItemName}>{order.item_name ?? formatItemId(order.item_id)}</span>
+                  {order.created_by && <span className={styles.createdBy}>by {order.created_by}</span>}
                 </div>
                 <div className={styles.orderDetails}>
                   <span className={styles.orderDetail}>
@@ -716,14 +413,38 @@ export function OrdersView() {
                     Price: <Credits amount={order.price_each} />
                   </span>
                 </div>
-                <div className={styles.orderMeta}>
-                  {formatDate(order.created_at)}
-                </div>
+                <div className={styles.orderMeta}>{formatDate(order.created_at)}</div>
               </div>
             ))}
           </div>
         </>
       )}
+
+      <RecentFills />
     </div>
+  )
+}
+
+/** Exchange fills from the action log (the durable record), refetched on each fill push. */
+function RecentFills() {
+  const { data } = useCommandQuery(
+    async (account) => (await account.commands.spacemolt_social.get_action_log({ event_type: 'trading.exchange_fill', page_size: 10 })).structuredContent,
+    [],
+    { refreshOnEvents: ['exchange_fill'] },
+  )
+  const fills = data?.entries ?? []
+  if (fills.length === 0) return null
+  return (
+    <>
+      <div className={styles.sectionLabel}>Recent Fills</div>
+      <div className={styles.orderList}>
+        {fills.map((f) => (
+          <div key={f.id} className={styles.orderCard}>
+            <div className={styles.orderTop}><span className={styles.orderItemName}>{f.summary}</span></div>
+            <div className={styles.orderMeta} title={f.created_at}>{timeAgoOrDate(f.created_at)}</div>
+          </div>
+        ))}
+      </div>
+    </>
   )
 }

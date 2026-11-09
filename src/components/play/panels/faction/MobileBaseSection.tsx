@@ -7,7 +7,7 @@ import { useCommandMutation, useCurrentTick, useMap } from '@/lib/spacemolt'
 import { formatTicksLeft } from '@/lib/mobileBases'
 import { usePlay } from '../../PlayProvider'
 import { ActionButton } from '../../ActionButton'
-import { shared } from '../../shared'
+import { errorMessage, shared } from '../../shared'
 import styles from '../FactionPanel.module.css'
 import {
   LIFECYCLE_LABEL,
@@ -63,7 +63,7 @@ export function MobileBaseSection({
         onChanged()
         return true
       } catch (err) {
-        uiStore.dispatch({ type: 'toast', kind: 'danger', text: err instanceof Error ? err.message : String(err) })
+        uiStore.dispatch({ type: 'toast', kind: 'danger', text: errorMessage(err) })
         return false
       } finally {
         setBusy(false)

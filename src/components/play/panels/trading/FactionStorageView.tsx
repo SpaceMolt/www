@@ -8,6 +8,8 @@ import {
   ArrowUpFromLine,
   Box,
   Coins,
+  Fuel,
+  MapPin,
 } from 'lucide-react'
 import {
   useCargo,
@@ -16,209 +18,165 @@ import {
   useLocationState,
   usePendingAction,
   usePlayer,
+  useShip,
 } from '@/lib/spacemolt'
 import type { StorageResponse } from '@spacemolt/lib'
-import { usePlay } from '../../PlayProvider'
-import { ItemName } from '../../ItemTooltip'
-import { Credits, shared } from '../../shared'
+import { usePlay, usePlayUi } from '../../PlayProvider'
+import { Credits, ItemSelectList, errorMessage, shared, useStorageMove } from '../../shared'
+import { normalizeCargo, selectedItems, type Selection } from '../../shared/itemSelection'
 import { parseCreditAmount } from './giftValidation'
+import { selectStorageRevision, usePersonalStorage } from './StorageView'
+import { storageStationOptions } from './storageLocations'
+import { useFactionService } from '../faction/useFactionService'
 import styles from './StorageView.module.css'
 
 // StorageResponse is one generated union across every branch of the unified
 // storage action (self view, faction view, deposit/withdraw/gift results) —
 // narrow to the branch each view() call here actually returns.
-type PersonalStorageView = Extract<StorageResponse, { hint: string; ships: Array<unknown> }>
 type FactionStorageResponse = Extract<StorageResponse, { hint: string; faction_id: string }>
 
-interface CargoRow {
-  item_id: string
-  name: string
-  quantity: number
-  size?: number
-}
-
-/** useCargo() rows are all-optional (delta-friendly wire shape); drop incomplete entries and normalize item_name -> name. */
-function normalizeCargo(raw: ReturnType<typeof useCargo>): CargoRow[] {
-  return (raw ?? []).flatMap((c) => {
-    if (!c.item_id || !c.quantity) return []
-    return [{ item_id: c.item_id, name: c.item_name ?? c.item_id, quantity: c.quantity, size: c.size }]
-  })
-}
-
-const errorMessage = (err: unknown): string => (err instanceof Error ? err.message : String(err))
-
 /**
- * FactionStorageView shows the contents of the faction lockbox at the current
- * base. Visible only when the player is docked AND a member of a faction. If
- * the base does not have a faction lockbox the gameserver returns an error,
- * which we surface as an empty-state hint.
+ * FactionStorageView shows the faction lockbox at the current base (or, undocked, at a chosen
+ * station, read-only). The main store and each Storage Extension bucket are separate compartments.
  */
 export function FactionStorageView() {
   const { uiStore } = usePlay()
   const location = useLocationState()
   const dockedAt = location?.docked_at
   const isDocked = Boolean(dockedAt)
-  const hasFaction = Boolean(usePlayer()?.faction_id)
-  const walletCredits = usePlayer()?.credits ?? 0
+  const player = usePlayer()
+  const hasFaction = Boolean(player?.faction_id)
+  const walletCredits = player?.credits ?? 0
+  const shipFuel = useShip()?.fuel ?? 0
   const rawCargo = useCargo()
   const cargo = useMemo(() => normalizeCargo(rawCargo), [rawCargo])
   const actionPending = usePendingAction() !== null
   const mutate = useCommandMutation()
+  const move = useStorageMove()
+  const revision = usePlayUi(selectStorageRevision)
 
   const reportError = useCallback((err: unknown) => {
-    const text = errorMessage(err)
-    uiStore.dispatch({ type: 'toast', kind: 'danger', text })
+    uiStore.dispatch({ type: 'toast', kind: 'danger', text: errorMessage(err) })
   }, [uiStore])
 
+  // Undocked: pick a station from the personal storage locations and view the faction store there.
+  const [remoteStation, setRemoteStation] = useState('')
+  const stationId = isDocked ? undefined : remoteStation || undefined
+
   const {
-    data: factionData,
+    data: lastFactionData,
     loading: factionLoading,
     error: factionError,
+    errorCode: factionErrorCode,
     refetch: refetchFaction,
   } = useCommandQuery(
-    async (account) => (await account.commands.spacemolt_storage.view({ target: 'faction' })).structuredContent as FactionStorageResponse | undefined,
-    [dockedAt, hasFaction],
-    { enabled: isDocked && hasFaction, refreshOnSections: ['cargo'] },
+    async (account) => (await account.commands.spacemolt_storage.view({ target: 'faction', station_id: stationId })).structuredContent as FactionStorageResponse | undefined,
+    [dockedAt, hasFaction, stationId, revision],
+    { enabled: hasFaction && (isDocked || Boolean(stationId)), refreshOnSections: ['cargo'] },
   )
 
-  const { data: personalData, refetch: refetchPersonal } = useCommandQuery(
-    async (account) => (await account.commands.spacemolt_storage.view()).structuredContent as PersonalStorageView | undefined,
-    [dockedAt, hasFaction],
-    { enabled: isDocked && hasFaction, refreshOnSections: ['cargo'] },
-  )
-  const personalStorage = personalData?.items ?? []
+  // Docked without a lockbox, the server still answers the view (empty, with an agent-facing hint),
+  // so read the faction's facilities here instead. A dismantling lockbox that still holds items stays usable.
+  const hasLockbox = useFactionService('faction_storage')
+  const noLockbox = factionErrorCode === 'no_faction_storage' ||
+    (isDocked && hasLockbox === false && !lastFactionData?.items.length && !lastFactionData?.buckets?.length)
+  // A failed view keeps the last station's data; never offer actions on it.
+  const factionData = factionError || noLockbox ? undefined : lastFactionData
 
-  // Per-row qty inputs
-  const [withdrawQtys, setWithdrawQtys] = useState<Record<string, string>>({})
-  const [depositQtys, setDepositQtys] = useState<Record<string, string>>({})
+  const { data: personalData } = usePersonalStorage({ enabled: hasFaction })
+  const personalStorage = isDocked ? personalData?.items ?? [] : []
 
-  // Withdraw from faction storage to personal cargo (source=faction)
-  const handleWithdrawItem = useCallback(
-    async (itemId: string, maxQty: number) => {
-      if (actionPending) return
-      const qtyStr = withdrawQtys[itemId] ?? String(maxQty)
-      const quantity = parseInt(qtyStr, 10)
-      if (isNaN(quantity) || quantity < 1 || quantity > maxQty) return
-      try {
-        await mutate((c) => c.spacemolt_storage.withdraw({ item_id: itemId, quantity, source: 'faction' }), { label: 'faction_withdraw' })
-        setWithdrawQtys((prev) => ({ ...prev, [itemId]: '' }))
-        refetchFaction()
-        refetchPersonal()
-      } catch (err) {
-        reportError(err)
-      }
-    },
-    [mutate, withdrawQtys, actionPending, refetchFaction, refetchPersonal, reportError, setWithdrawQtys]
-  )
+  const [bucket, setBucket] = useState('')
+  const [destBucket, setDestBucket] = useState('')
+  const [factionSel, setFactionSel] = useState<Selection>({})
+  const [cargoSel, setCargoSel] = useState<Selection>({})
+  const [personalSel, setPersonalSel] = useState<Selection>({})
+  const [treasuryAmount, setTreasuryAmount] = useState('')
+  const [fuelAmount, setFuelAmount] = useState('')
 
-  // Deposit from cargo to faction storage (target=faction)
-  const handleDepositFromCargo = useCallback(
-    async (itemId: string, maxQty: number) => {
-      if (actionPending) return
-      const qtyStr = depositQtys[itemId] ?? String(maxQty)
-      const quantity = parseInt(qtyStr, 10)
-      if (isNaN(quantity) || quantity < 1 || quantity > maxQty) return
-      try {
-        await mutate((c) => c.spacemolt_storage.deposit({ item_id: itemId, quantity, target: 'faction' }), { label: 'faction_deposit' })
-        setDepositQtys((prev) => ({ ...prev, [itemId]: '' }))
-        refetchFaction()
-        refetchPersonal()
-      } catch (err) {
-        reportError(err)
-      }
-    },
-    [mutate, depositQtys, actionPending, refetchFaction, refetchPersonal, reportError, setDepositQtys]
-  )
+  const changed = () => uiStore.dispatch({ type: 'storage_changed' })
 
   // Treasury credits: wallet <-> faction (withdraw needs manage_treasury; the server returns no_permission otherwise)
-  const [treasuryAmount, setTreasuryAmount] = useState('')
-  const handleTreasury = useCallback(
-    async (kind: 'deposit' | 'withdraw', quantity: number | null) => {
-      if (actionPending || quantity === null) return
-      try {
-        const args = { item_id: 'credits', quantity, target: 'faction' }
-        if (kind === 'deposit') await mutate((c) => c.spacemolt_storage.deposit(args), { label: 'faction_deposit_credits' })
-        else await mutate((c) => c.spacemolt_storage.withdraw(args), { label: 'faction_withdraw_credits' })
-        setTreasuryAmount('')
-        refetchFaction()
-      } catch (err) {
-        reportError(err)
-      }
-    },
-    [mutate, actionPending, refetchFaction, reportError]
-  )
+  const handleTreasury = async (kind: 'deposit' | 'withdraw', quantity: number | null) => {
+    if (actionPending || quantity === null) return
+    try {
+      const args = { item_id: 'credits', quantity, target: 'faction' }
+      if (kind === 'deposit') await mutate((c) => c.spacemolt_storage.deposit(args), { label: 'faction_deposit_credits' })
+      else await mutate((c) => c.spacemolt_storage.withdraw(args), { label: 'faction_withdraw_credits' })
+      setTreasuryAmount('')
+      changed()
+    } catch (err) {
+      reportError(err)
+    }
+  }
 
-  // Move from personal storage to faction storage (source=storage, target=faction)
-  const handleMoveFromPersonal = useCallback(
-    async (itemId: string, maxQty: number) => {
-      if (actionPending) return
-      const key = `personal:${itemId}`
-      const qtyStr = depositQtys[key] ?? String(maxQty)
-      const quantity = parseInt(qtyStr, 10)
-      if (isNaN(quantity) || quantity < 1 || quantity > maxQty) return
-      try {
-        await mutate((c) => c.spacemolt_storage.deposit({ item_id: itemId, quantity, source: 'storage', target: 'faction' }), { label: 'faction_deposit' })
-        setDepositQtys((prev) => ({ ...prev, [key]: '' }))
-        refetchFaction()
-        refetchPersonal()
-      } catch (err) {
-        reportError(err)
-      }
-    },
-    [mutate, depositQtys, actionPending, refetchFaction, refetchPersonal, reportError, setDepositQtys]
-  )
-
-  if (!isDocked) {
-    return (
-      <div className={shared.dockedOnly}>
-        Dock at a base to view faction storage
-      </div>
-    )
+  // Fuel comes from the ship's tank, not cargo. The server takes the exact amount or nothing.
+  const handleDepositFuel = async (quantity: number | null) => {
+    if (actionPending || quantity === null) return
+    try {
+      await mutate((c) => c.spacemolt_storage.deposit({ item_id: 'fuel', quantity, target: 'faction' }), { label: 'faction_deposit_fuel' })
+      setFuelAmount('')
+      changed()
+    } catch (err) {
+      reportError(err)
+    }
   }
 
   if (!hasFaction) {
-    return (
-      <div className={shared.emptyState}>
-        Join a faction to access faction storage.
-      </div>
-    )
+    return <div className={shared.emptyState}>Join a faction to access faction storage.</div>
   }
 
-  const factionItems = factionData?.items || []
+  const stations = storageStationOptions(personalData)
+  const buckets = factionData?.buckets ?? []
+  const compartment = buckets.find((b) => b.id === bucket)
+  const factionItems = (compartment ? compartment.items : factionData?.items) ?? []
+  const bucketArg = bucket || undefined
+  const factionPicked = selectedItems(factionItems, factionSel)
+  const cargoPicked = selectedItems(cargo, cargoSel)
+  const personalPicked = selectedItems(personalStorage, personalSel)
+  const fuelQty = parseCreditAmount(fuelAmount, shipFuel)
+  const compartmentName = (id: string) => buckets.find((b) => b.id === id)?.name ?? 'Main store'
+  const pickBucket = (id: string) => { setBucket(id); setFactionSel({}) }
+  const destOptions = ['', ...buckets.map((b) => b.id)].filter((id) => id !== bucket)
+  const dest = destOptions.includes(destBucket) ? destBucket : destOptions[0]
 
   return (
     <div className={styles.container}>
       <div className={styles.toolbar}>
         <span className={styles.sectionLabel}>
-          <Users size={12} />
-          Faction Storage
+          {isDocked ? <Users size={12} /> : <MapPin size={12} />}
+          {isDocked ? 'Faction Storage' : 'Remote Faction Storage'}
         </span>
-        <button
-          className={shared.refreshBtn}
-          onClick={refetchFaction}
-          title="Refresh faction storage"
-          type="button"
-          disabled={factionLoading}
-        >
+        <button className={shared.refreshBtn} onClick={refetchFaction} title="Refresh faction storage" type="button" disabled={factionLoading}>
           <RefreshCw size={13} />
         </button>
       </div>
 
-      {factionLoading && !factionData && (
-        <div className={styles.loading}>Loading faction storage...</div>
+      {!isDocked && (
+        <div className={styles.section}>
+          {stations.length > 0 ? (
+            <select className={shared.selectInput} value={remoteStation} onChange={(e) => { setRemoteStation(e.target.value); pickBucket('') }}>
+              <option value="">Select a station...</option>
+              {stations.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
+            </select>
+          ) : (
+            <div className={shared.dockedOnly}>Dock at a base to use faction storage</div>
+          )}
+        </div>
       )}
 
-      {factionError && !factionLoading && !factionData && (
+      {factionLoading && !factionData && <div className={styles.loading}>Loading faction storage...</div>}
+
+      {(factionError || noLockbox) && !factionLoading && !factionData && (
         <div className={shared.emptyState}>
-          {factionError}
+          {noLockbox ? 'Your faction needs a Faction Lockbox at this station.' : factionError}
           <div style={{ marginTop: '0.4rem', fontSize: '0.65rem', opacity: 0.75 }}>
-            Build a faction lockbox at this base to enable faction storage.
+            Build a faction lockbox here from the Facilities tab to enable faction storage.
           </div>
         </div>
       )}
 
-      {/* Faction treasury credits */}
-      {factionData && (
+      {factionData && isDocked && (
         <div className={styles.section}>
           <div className={styles.sectionHeader}>
             <Coins size={12} />
@@ -229,19 +187,11 @@ export function FactionStorageView() {
               <span className={styles.itemQty}>Wallet: <Credits amount={walletCredits} /></span>
             </div>
             <div className={styles.itemAction}>
-              <input
-                className={styles.qtyInput}
-                type="number"
-                min={1}
-                step={1}
-                placeholder="cr"
-                value={treasuryAmount}
-                onChange={(e) => setTreasuryAmount(e.target.value)}
-              />
+              <input className={styles.qtyInput} type="number" min={1} step={1} placeholder="cr" value={treasuryAmount} onChange={(e) => setTreasuryAmount(e.target.value)} />
               <button
                 className={shared.confirmBtn}
-                onClick={() => handleTreasury('deposit', parseCreditAmount(treasuryAmount, Infinity))}
-                disabled={actionPending || parseCreditAmount(treasuryAmount, Infinity) === null}
+                onClick={() => handleTreasury('deposit', parseCreditAmount(treasuryAmount, walletCredits))}
+                disabled={actionPending || parseCreditAmount(treasuryAmount, walletCredits) === null}
                 title="Deposit credits to the faction treasury"
                 type="button"
               >
@@ -258,198 +208,140 @@ export function FactionStorageView() {
               </button>
             </div>
           </div>
+          {(factionData.faction_fuel_capacity ?? 0) > 0 && (
+            <div className={styles.itemRow}>
+              <div className={styles.itemInfo}>
+                <Fuel size={11} />
+                <span className={styles.itemQty}>
+                  Fuel bunker: {factionData.faction_fuel_reserve ?? 0}/{factionData.faction_fuel_capacity} · Ship tank: {shipFuel}
+                </span>
+              </div>
+              <div className={styles.itemAction}>
+                <input className={styles.qtyInput} type="number" min={1} step={1} placeholder="fuel" value={fuelAmount} onChange={(e) => setFuelAmount(e.target.value)} />
+                <button
+                  className={shared.confirmBtn}
+                  onClick={() => handleDepositFuel(fuelQty)}
+                  disabled={actionPending || fuelQty === null}
+                  title="Move fuel from your ship's tank to the faction bunker"
+                  type="button"
+                >
+                  <ArrowDownToLine size={10} /> Deposit Fuel
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Faction stored items */}
       {factionData && (
         <div className={styles.section}>
           <div className={styles.sectionHeader}>
             <Box size={12} />
             Faction Items ({factionItems.length})
+            {buckets.length > 0 && (
+              <select className={shared.selectInput} value={bucket} onChange={(e) => pickBucket(e.target.value)} title="Storage compartment">
+                <option value="">Main store</option>
+                {buckets.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+              </select>
+            )}
           </div>
-          {factionItems.length > 0 ? (
-            <div className={styles.itemList}>
-              {factionItems.map((item) => {
-                const qtyStr = withdrawQtys[item.item_id] ?? String(item.quantity)
-                return (
-                  <div key={item.item_id} className={styles.itemRow}>
-                    <div className={styles.itemInfo}>
-                      <span className={styles.itemName}>
-                        <ItemName itemId={item.item_id}>{item.name}</ItemName>
-                      </span>
-                      <span className={styles.itemQty}>x{item.quantity}</span>
-                      {item.size != null && item.size > 0 && (
-                        <span className={styles.itemSize}>{item.size}u</span>
-                      )}
-                    </div>
-                    <div className={styles.itemAction}>
-                      <input
-                        className={styles.qtyInput}
-                        type="number"
-                        min={1}
-                        max={item.quantity}
-                        value={qtyStr}
-                        onChange={(e) =>
-                          setWithdrawQtys((prev) => ({
-                            ...prev,
-                            [item.item_id]: e.target.value,
-                          }))
-                        }
-                      />
-                      <button
-                        className={shared.accentBtn}
-                        onClick={() => handleWithdrawItem(item.item_id, item.quantity)}
-                        disabled={
-                          actionPending ||
-                          !qtyStr ||
-                          parseInt(qtyStr, 10) < 1 ||
-                          parseInt(qtyStr, 10) > item.quantity
-                        }
-                        title={
-                          actionPending
-                            ? 'Another action is pending'
-                            : 'Withdraw to your cargo'
-                        }
-                        type="button"
-                      >
-                        <ArrowUpFromLine size={10} />
-                      </button>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          ) : (
-            <div className={shared.emptyState}>No items in faction storage</div>
-          )}
+          <ItemSelectList
+            items={factionItems}
+            selection={factionSel}
+            onChange={setFactionSel}
+            readOnly={!isDocked}
+            empty="No items in this compartment"
+            actions={
+              <>
+                <button
+                  className={shared.accentBtn}
+                  disabled={actionPending || factionPicked.length === 0}
+                  onClick={async () => setFactionSel(await move('Withdrew', factionPicked, (c, items) => c.spacemolt_storage.withdraw({ items, target: 'faction', bucket: bucketArg }), 'from faction storage to cargo'))}
+                  title="Withdraw to your cargo (needs manage_treasury)"
+                  type="button"
+                >
+                  <ArrowUpFromLine size={10} /> To Cargo
+                </button>
+                <button
+                  className={shared.subtleBtn}
+                  disabled={actionPending || factionPicked.length === 0}
+                  onClick={async () => setFactionSel(await move('Moved', factionPicked, (c, items) => c.spacemolt_storage.withdraw({ items, source: 'faction', target: 'self', bucket: bucketArg }), 'from faction storage to your storage'))}
+                  title="Move to your personal storage here (needs manage_treasury)"
+                  type="button"
+                >
+                  To Personal Storage
+                </button>
+                {buckets.length > 0 && (
+                  <>
+                    <select className={shared.selectInput} value={dest} onChange={(e) => setDestBucket(e.target.value)} title="Destination compartment">
+                      {destOptions.map((id) => (
+                        <option key={id} value={id}>{compartmentName(id)}</option>
+                      ))}
+                    </select>
+                    <button
+                      className={shared.subtleBtn}
+                      disabled={actionPending || factionPicked.length === 0}
+                      onClick={async () => setFactionSel(await move('Moved', factionPicked, (c, items) =>
+                        c.spacemolt_storage.deposit({ items, source: 'faction', target: 'faction', bucket: bucketArg, dest_bucket: dest || undefined }), `to ${compartmentName(dest)}`))}
+                      title="Move between compartments (needs manage_treasury)"
+                      type="button"
+                    >
+                      Move to Compartment
+                    </button>
+                  </>
+                )}
+              </>
+            }
+          />
         </div>
       )}
 
-      {/* Deposit from ship cargo */}
-      {factionData && (
+      {factionData && isDocked && (
         <div className={styles.section}>
           <div className={styles.sectionHeader}>
             <Box size={12} />
-            Deposit from Cargo ({cargo.length})
+            Deposit from Cargo to {compartmentName(bucket)} ({cargo.length})
           </div>
-          {cargo.length > 0 ? (
-            <div className={styles.itemList}>
-              {cargo.map((item) => {
-                const qtyStr = depositQtys[item.item_id] ?? String(item.quantity)
-                return (
-                  <div key={item.item_id} className={styles.itemRow}>
-                    <div className={styles.itemInfo}>
-                      <span className={styles.itemName}>
-                        <ItemName itemId={item.item_id}>{item.name ?? item.item_id}</ItemName>
-                      </span>
-                      <span className={styles.itemQty}>x{item.quantity}</span>
-                      {item.size != null && item.size > 0 && (
-                        <span className={styles.itemSize}>{item.size}u</span>
-                      )}
-                    </div>
-                    <div className={styles.itemAction}>
-                      <input
-                        className={styles.qtyInput}
-                        type="number"
-                        min={1}
-                        max={item.quantity}
-                        value={qtyStr}
-                        onChange={(e) =>
-                          setDepositQtys((prev) => ({
-                            ...prev,
-                            [item.item_id]: e.target.value,
-                          }))
-                        }
-                      />
-                      <button
-                        className={shared.confirmBtn}
-                        onClick={() => handleDepositFromCargo(item.item_id, item.quantity)}
-                        disabled={
-                          actionPending ||
-                          !qtyStr ||
-                          parseInt(qtyStr, 10) < 1 ||
-                          parseInt(qtyStr, 10) > item.quantity
-                        }
-                        title={
-                          actionPending
-                            ? 'Another action is pending'
-                            : 'Deposit to faction storage'
-                        }
-                        type="button"
-                      >
-                        <ArrowDownToLine size={10} />
-                      </button>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          ) : (
-            <div className={shared.emptyState}>Cargo hold is empty</div>
-          )}
+          <ItemSelectList
+            items={cargo}
+            selection={cargoSel}
+            onChange={setCargoSel}
+            empty="Cargo hold is empty"
+            actions={
+              <button
+                className={shared.confirmBtn}
+                disabled={actionPending || cargoPicked.length === 0}
+                onClick={async () => setCargoSel(await move('Deposited', cargoPicked, (c, items) => c.spacemolt_storage.deposit({ items, target: 'faction', bucket: bucketArg }), 'from cargo to faction storage'))}
+                type="button"
+              >
+                <ArrowDownToLine size={10} /> Deposit to Faction
+              </button>
+            }
+          />
         </div>
       )}
 
-      {/* Move from personal storage */}
       {factionData && personalStorage.length > 0 && (
         <div className={styles.section}>
           <div className={styles.sectionHeader}>
             <Box size={12} />
-            Move from Personal Storage ({personalStorage.length})
+            Move from Personal Storage to {compartmentName(bucket)} ({personalStorage.length})
           </div>
-          <div className={styles.itemList}>
-            {personalStorage.map((item) => {
-              const key = `personal:${item.item_id}`
-              const qtyStr = depositQtys[key] ?? String(item.quantity)
-              return (
-                <div key={item.item_id} className={styles.itemRow}>
-                  <div className={styles.itemInfo}>
-                    <span className={styles.itemName}>
-                      <ItemName itemId={item.item_id}>{item.name}</ItemName>
-                    </span>
-                    <span className={styles.itemQty}>x{item.quantity}</span>
-                    {item.size != null && item.size > 0 && (
-                      <span className={styles.itemSize}>{item.size}u</span>
-                    )}
-                  </div>
-                  <div className={styles.itemAction}>
-                    <input
-                      className={styles.qtyInput}
-                      type="number"
-                      min={1}
-                      max={item.quantity}
-                      value={qtyStr}
-                      onChange={(e) =>
-                        setDepositQtys((prev) => ({
-                          ...prev,
-                          [key]: e.target.value,
-                        }))
-                      }
-                    />
-                    <button
-                      className={shared.confirmBtn}
-                      onClick={() => handleMoveFromPersonal(item.item_id, item.quantity)}
-                      disabled={
-                        actionPending ||
-                        !qtyStr ||
-                        parseInt(qtyStr, 10) < 1 ||
-                        parseInt(qtyStr, 10) > item.quantity
-                      }
-                      title={
-                        actionPending
-                          ? 'Another action is pending'
-                          : 'Move to faction storage'
-                      }
-                      type="button"
-                    >
-                      <ArrowDownToLine size={10} />
-                    </button>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+          <ItemSelectList
+            items={personalStorage}
+            selection={personalSel}
+            onChange={setPersonalSel}
+            actions={
+              <button
+                className={shared.confirmBtn}
+                disabled={actionPending || personalPicked.length === 0}
+                onClick={async () => setPersonalSel(await move('Moved', personalPicked, (c, items) => c.spacemolt_storage.deposit({ items, source: 'storage', target: 'faction', bucket: bucketArg }), 'from your storage to faction storage'))}
+                type="button"
+              >
+                <ArrowDownToLine size={10} /> Move to Faction
+              </button>
+            }
+          />
         </div>
       )}
     </div>

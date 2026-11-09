@@ -11,14 +11,13 @@ import {
 } from 'lucide-react'
 import { useAccountStore, useCommandMutation } from '@/lib/spacemolt'
 import { usePlay } from '../../PlayProvider'
-import { Modal, shared } from '../../shared'
+import { Modal, errorMessage, shared } from '../../shared'
 import type { FacilityListResponse, Facility } from '../../types'
 import { FacilityCard } from './FacilityCard'
 import { UpgradeModal, fetchUpgradeOptions, type UpgradeOption } from './UpgradeModal'
 import { FacilityQueueModal } from './FacilityQueueModal'
+import { FacilityManageActions } from './FacilityManageActions'
 import styles from './facilities.module.css'
-
-const describeError = (err: unknown): string => (err instanceof Error ? err.message : String(err))
 
 interface OwnedViewProps {
   facilityData: FacilityListResponse
@@ -42,8 +41,7 @@ export function OwnedView({ facilityData, onRefresh }: OwnedViewProps) {
   const [pricingId, setPricingId] = useState<string | null>(null)
 
   const reportError = useCallback((err: unknown) => {
-    const text = describeError(err)
-    uiStore.dispatch({ type: 'toast', kind: 'danger', text })
+    uiStore.dispatch({ type: 'toast', kind: 'danger', text: errorMessage(err) })
   }, [uiStore])
 
   // Server pre-filters player_facilities to only the requesting player's own
@@ -213,6 +211,7 @@ export function OwnedView({ facilityData, onRefresh }: OwnedViewProps) {
                   <Paintbrush size={11} /> Decorate
                 </button>
               )}
+              <FacilityManageActions facility={f} scope="player" onRefresh={onRefresh} />
             </FacilityCard>
           ))}
         </div>

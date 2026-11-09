@@ -8,17 +8,21 @@ import {
   Hammer,
   Users,
   Globe,
+  Network,
+  Tag,
 } from 'lucide-react'
 import type { FacilityResponse } from '@spacemolt/lib'
 import { useCommandQuery, useLocationState, usePlayer } from '@/lib/spacemolt'
-import { PanelWithTabs, Loading, shared } from '../shared'
+import { Panel, PanelWithTabs, Loading } from '../shared'
 import { StationView } from './facilities/StationView'
 import { OwnedView } from './facilities/OwnedView'
 import { BuildView } from './facilities/BuildView'
 import { FactionView } from './facilities/FactionView'
 import { PublicView } from './facilities/PublicView'
+import { EverywhereView } from './facilities/EverywhereView'
+import { SalesView } from './facilities/SalesView'
 
-type TabId = 'station' | 'owned' | 'build' | 'faction' | 'public'
+type TabId = 'station' | 'owned' | 'build' | 'faction' | 'public' | 'market' | 'everywhere'
 
 // `{ station_facilities: unknown }` uniquely identifies the facility-list
 // variant within the FacilityResponse union (see UpgradeModal.tsx for the
@@ -40,6 +44,8 @@ export function FacilitiesPanel() {
     { id: 'build', label: 'Build', icon: <Hammer size={13} /> },
     { id: 'faction', label: 'Faction', icon: <Users size={13} />, hidden: !hasFaction },
     { id: 'public', label: 'Public', icon: <Globe size={13} /> },
+    { id: 'market', label: 'For Sale', icon: <Tag size={13} /> },
+    { id: 'everywhere', label: 'All Stations', icon: <Network size={13} /> },
   ], [hasFaction])
 
   const { data: facilityData, loading, refetch: refreshFacilities } = useCommandQuery(
@@ -51,11 +57,12 @@ export function FacilitiesPanel() {
     { enabled: isDocked },
   )
 
+  // owned/faction_owned work anywhere, so undocked players still see their holdings.
   if (!isDocked) {
     return (
-      <div className={shared.dockedOnly}>
-        Dock at a base to access facilities
-      </div>
+      <Panel title="Facilities" icon={<Building2 size={16} />} color="var(--shell-orange)">
+        <EverywhereView />
+      </Panel>
     )
   }
 
@@ -74,6 +81,8 @@ export function FacilitiesPanel() {
       {activeTab === 'build' && <BuildView onRefresh={refreshFacilities} />}
       {facilityData && activeTab === 'faction' && <FactionView facilityData={facilityData} onRefresh={refreshFacilities} />}
       {facilityData && activeTab === 'public' && <PublicView facilityData={facilityData} />}
+      {activeTab === 'market' && <SalesView onRefresh={refreshFacilities} />}
+      {activeTab === 'everywhere' && <EverywhereView />}
     </PanelWithTabs>
   )
 }

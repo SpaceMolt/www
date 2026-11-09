@@ -1,32 +1,34 @@
 'use client'
 
 import { useState, useCallback, useEffect, useReducer } from 'react'
-import { Users, Flag, Shield, UserPlus, UserMinus, Swords, RefreshCw, Radar, DoorOpen, Trash2, Plus, Search, BarChart3, Eye, Crown, X, Handshake, LogIn, ChevronDown, ChevronRight, Satellite } from 'lucide-react'
+import { Users, Flag, Shield, UserPlus, UserMinus, Swords, RefreshCw, Radar, DoorOpen, Trash2, Plus, Eye, Crown, X, Handshake, LogIn, ChevronDown, ChevronRight, Satellite, Undo2, KeyRound, Settings2, Warehouse, Target, Landmark } from 'lucide-react'
 import type {
   FactionGetInvitesResponse,
   FactionInfoResponse,
-  FactionIntelStatusResponse,
   FactionListResponse,
-  FactionQueryIntelResponse,
   FactionRoomsResponse,
   FactionVisitRoomResponse,
 } from '@spacemolt/lib'
-import { useAccountStore, useCommandMutation, useLocationState, usePlayer } from '@/lib/spacemolt'
+import { useAccountStore, useCommandMutation, usePlayer } from '@/lib/spacemolt'
 import { usePlay } from '../PlayProvider'
 import { ActionButton } from '../ActionButton'
-import { Panel, shared } from '../shared'
-import { playerHref } from '@/components/profile/ProfileLink'
+import { ConfirmAction, Panel, errorMessage, shared } from '../shared'
 import styles from './FactionPanel.module.css'
 import { MobileBaseSection } from './faction/MobileBaseSection'
+import { IntelSection } from './faction/IntelSection'
+import { MembersSection, Pager } from './faction/MembersSection'
+import { RolesSection } from './faction/RolesSection'
+import { EditFactionSection } from './faction/EditFactionSection'
+import { GaragesSection } from './faction/GaragesSection'
+import { MissionsSection } from './faction/MissionsSection'
+import { TreasurySection } from './faction/TreasurySection'
+import { FACTION_PAGE_SIZE } from './faction/factionAdmin'
 
 // Types derived from the generated command response shapes.
 type FactionListEntry = FactionListResponse['factions'][number]
 type FactionInvite = FactionGetInvitesResponse['invites'][number]
-type IntelEntry = FactionQueryIntelResponse['entries'][number]
-type IntelStatus = FactionIntelStatusResponse
 type FactionRoom = FactionRoomsResponse['rooms'][number]
 type FactionRoomDetail = FactionVisitRoomResponse
-type FactionMember = NonNullable<FactionInfoResponse['members']>[number]
 type FactionWar = NonNullable<FactionInfoResponse['wars']>[number]
 type PeaceProposal = NonNullable<FactionInfoResponse['peace_proposals']>[number]
 type FactionRelation = NonNullable<FactionInfoResponse['allies']>[number]
@@ -36,6 +38,11 @@ interface PanelState {
   factionInfo: FactionInfoResponse | null
   loadingInfo: boolean
   factionList: FactionListEntry[]
+  listOffset: number
+  listTotal: number
+  membersOffset: number
+  /** Which destructive action is awaiting confirmation: 'leave', 'war', 'ally:<id>', 'room:<id>'. */
+  confirming: string | null
   listLoaded: boolean
   loadingList: boolean
   createName: string
@@ -52,12 +59,6 @@ interface PanelState {
   warReason: string
   peaceTerms: string
   diplomacyLoading: boolean
-  intelQuery: string
-  intelEntries: IntelEntry[]
-  intelStatus: IntelStatus | null
-  submittingIntel: boolean
-  queryingIntel: boolean
-  loadingIntelStatus: boolean
   rooms: FactionRoom[]
   maxRooms: number
   roomsLoaded: boolean
@@ -69,24 +70,20 @@ interface PanelState {
   roomFormAccess: string
   creatingRoom: boolean
   deletingRoomId: string | null
-  kickingPlayer: string | null
 }
 
 const INITIAL_STATE: PanelState = {
   factionInfo: null, loadingInfo: false,
-  factionList: [], listLoaded: false, loadingList: false,
+  factionList: [], listOffset: 0, listTotal: 0, membersOffset: 0, confirming: null, listLoaded: false, loadingList: false,
   createName: '', createTag: '', creating: false,
   inviteTarget: '', inviting: false,
   pendingInvites: [], invitesLoaded: false, loadingInvites: false,
   joiningFaction: null, decliningInvite: null,
   diplomacyTarget: '', warReason: '', peaceTerms: '', diplomacyLoading: false,
-  intelQuery: '', intelEntries: [], intelStatus: null,
-  submittingIntel: false, queryingIntel: false, loadingIntelStatus: false,
   rooms: [], maxRooms: 5, roomsLoaded: false, loadingRooms: false,
   selectedRoom: null, loadingRoom: false,
   roomFormName: '', roomFormDesc: '', roomFormAccess: 'members',
   creatingRoom: false, deletingRoomId: null,
-  kickingPlayer: null,
 }
 
 type PanelAction = Partial<PanelState> | ((prev: PanelState) => Partial<PanelState>)
@@ -122,12 +119,16 @@ function Section({ title, icon, children, defaultOpen = true }: {
 }
 
 // FactionPanel
+const FACTION_PUSHES = [
+  'faction_mobile_base_update', 'faction_alliance_proposal', 'faction_alliance_formed', 'faction_alliance_broken',
+  'faction_peace_proposal', 'faction_peace_accepted', 'faction_war_declared', 'faction_promote',
+] as const
+
 export function FactionPanel() {
   const store = useAccountStore()
   const mutate = useCommandMutation()
   const { uiStore } = usePlay()
   const player = usePlayer()
-  const location = useLocationState()
   const [s, set] = useReducer(merge, INITIAL_STATE)
 
   const hasFaction = Boolean(player?.faction_id)
@@ -135,24 +136,26 @@ export function FactionPanel() {
 
   const reportError = useCallback(
     (err: unknown) => {
-      const text = err instanceof Error ? err.message : String(err)
+      const text = errorMessage(err)
       uiStore.dispatch({ type: 'toast', kind: 'danger', text })
     },
     [uiStore],
   )
 
+  const reportDone = useCallback((text: string) => uiStore.dispatch({ type: 'toast', kind: 'success', text }), [uiStore])
+
   const loadFactionInfo = useCallback(async () => {
     if (!hasFaction) return
     set({ loadingInfo: true })
     try {
-      const res = await store.account.commands.spacemolt_faction.info()
+      const res = await store.account.commands.spacemolt_faction.info({ limit: FACTION_PAGE_SIZE, offset: s.membersOffset })
       set({ factionInfo: res.structuredContent ?? null })
     } catch (err) {
       reportError(err)
     } finally {
       set({ loadingInfo: false })
     }
-  }, [store, reportError, hasFaction])
+  }, [store, reportError, hasFaction, s.membersOffset])
 
   useEffect(() => {
     if (hasFaction) {
@@ -162,12 +165,18 @@ export function FactionPanel() {
     }
   }, [loadFactionInfo, hasFaction])
 
-  // Jump preparation, cancellation and arrival change faction_info.mobile_base.
+  // Other players' diplomacy and mobile-base moves change faction_info. The server sends no push
+  // when a member joins or leaves, so the roster also reloads when the panel opens (mount) and
+  // when the browser tab becomes visible again.
   useEffect(() => {
     if (!hasFaction) return
-    return store.account.on('faction_mobile_base_update', () => {
-      loadFactionInfo()
-    })
+    const offs = FACTION_PUSHES.map((push) => store.account.on(push, () => { void loadFactionInfo() }))
+    const onVisible = () => { if (document.visibilityState === 'visible') void loadFactionInfo() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      offs.forEach((off) => off())
+      document.removeEventListener('visibilitychange', onVisible)
+    }
   }, [store, loadFactionInfo, hasFaction])
 
   const handleCreateFaction = useCallback(async () => {
@@ -186,12 +195,10 @@ export function FactionPanel() {
   }, [mutate, reportError, s.createName, s.createTag])
 
   const handleLeaveFaction = useCallback(async () => {
+    set({ confirming: null })
     try {
       await mutate((c) => c.spacemolt_faction.leave(), { label: 'leave_faction' })
-      set({
-        factionInfo: null, rooms: [], roomsLoaded: false,
-        intelEntries: [], intelStatus: null,
-      })
+      set({ factionInfo: null, rooms: [], roomsLoaded: false, membersOffset: 0 })
     } catch (err) {
       reportError(err)
     }
@@ -202,6 +209,20 @@ export function FactionPanel() {
     set({ inviting: true })
     try {
       await mutate((c) => c.spacemolt_faction.invite({ id: s.inviteTarget.trim() }), { label: 'faction_invite' })
+      reportDone(`Invited ${s.inviteTarget.trim()}`)
+      set({ inviteTarget: '' })
+    } catch (err) {
+      reportError(err)
+    } finally {
+      set({ inviting: false })
+    }
+  }, [mutate, reportError, reportDone, s.inviteTarget])
+
+  const handleWithdrawInvite = useCallback(async () => {
+    if (!s.inviteTarget.trim()) return
+    set({ inviting: true })
+    try {
+      await mutate((c) => c.spacemolt_faction.withdraw_invite({ id: s.inviteTarget.trim() }), { label: 'faction_withdraw_invite' })
       set({ inviteTarget: '' })
     } catch (err) {
       reportError(err)
@@ -210,17 +231,19 @@ export function FactionPanel() {
     }
   }, [mutate, reportError, s.inviteTarget])
 
-  const handleKick = useCallback(async (memberId: string) => {
-    set({ kickingPlayer: memberId })
+  /** One-shot diplomacy action by faction id, then refresh. `done` is the success toast. */
+  const runDiplomacy = useCallback(async (label: string, action: Parameters<typeof mutate>[0], done?: string) => {
+    set({ diplomacyLoading: true, confirming: null })
     try {
-      await mutate((c) => c.spacemolt_faction.kick({ id: memberId }), { label: 'faction_kick' })
+      await mutate(action, { label })
+      if (done) reportDone(done)
       await loadFactionInfo()
     } catch (err) {
       reportError(err)
     } finally {
-      set({ kickingPlayer: null })
+      set({ diplomacyLoading: false })
     }
-  }, [mutate, reportError, loadFactionInfo])
+  }, [mutate, reportError, reportDone, loadFactionInfo])
 
   const handleLoadInvites = useCallback(async () => {
     set({ loadingInvites: true })
@@ -258,11 +281,16 @@ export function FactionPanel() {
     }
   }, [store, reportError])
 
-  const handleLoadFactions = useCallback(async () => {
+  const handleLoadFactions = useCallback(async (offset = 0) => {
     set({ loadingList: true })
     try {
-      const res = await store.account.commands.spacemolt_faction.list()
-      set({ factionList: res.structuredContent?.factions ?? [], listLoaded: true })
+      const res = await store.account.commands.spacemolt_faction.list({ limit: FACTION_PAGE_SIZE, offset })
+      set({
+        factionList: res.structuredContent?.factions ?? [],
+        listOffset: offset,
+        listTotal: res.structuredContent?.total_count ?? 0,
+        listLoaded: true,
+      })
     } catch (err) {
       reportError(err)
     } finally {
@@ -287,6 +315,7 @@ export function FactionPanel() {
     set({ diplomacyLoading: true })
     try {
       await mutate((c) => c.spacemolt_faction.propose_ally({ id: s.diplomacyTarget }), { label: 'propose_ally' })
+      reportDone('Alliance proposed')
       set({ diplomacyTarget: '' })
       await loadFactionInfo()
     } catch (err) {
@@ -294,13 +323,14 @@ export function FactionPanel() {
     } finally {
       set({ diplomacyLoading: false })
     }
-  }, [mutate, reportError, s.diplomacyTarget, loadFactionInfo])
+  }, [mutate, reportError, reportDone, s.diplomacyTarget, loadFactionInfo])
 
   const handleSetEnemy = useCallback(async () => {
     if (!s.diplomacyTarget) return
     set({ diplomacyLoading: true })
     try {
       await mutate((c) => c.spacemolt_faction.set_enemy({ id: s.diplomacyTarget }), { label: 'set_enemy' })
+      reportDone('Marked as enemy')
       set({ diplomacyTarget: '' })
       await loadFactionInfo()
     } catch (err) {
@@ -308,15 +338,16 @@ export function FactionPanel() {
     } finally {
       set({ diplomacyLoading: false })
     }
-  }, [mutate, reportError, s.diplomacyTarget, loadFactionInfo])
+  }, [mutate, reportError, reportDone, s.diplomacyTarget, loadFactionInfo])
 
   const handleDeclareWar = useCallback(async () => {
     if (!s.diplomacyTarget) return
-    set({ diplomacyLoading: true })
+    set({ diplomacyLoading: true, confirming: null })
     try {
-      await mutate((c) => c.spacemolt_faction.declare_war({ id: s.diplomacyTarget, text: s.warReason || undefined }), {
+      const result = await mutate((c) => c.spacemolt_faction.declare_war({ id: s.diplomacyTarget, text: s.warReason || undefined }), {
         label: 'declare_war',
       })
+      reportDone(result.delta.details?.message ?? 'War declared')
       set({ diplomacyTarget: '', warReason: '' })
       await loadFactionInfo()
     } catch (err) {
@@ -324,7 +355,7 @@ export function FactionPanel() {
     } finally {
       set({ diplomacyLoading: false })
     }
-  }, [mutate, reportError, s.diplomacyTarget, s.warReason, loadFactionInfo])
+  }, [mutate, reportError, reportDone, s.diplomacyTarget, s.warReason, loadFactionInfo])
 
   const handleProposePeace = useCallback(async () => {
     if (!s.diplomacyTarget) return
@@ -333,6 +364,7 @@ export function FactionPanel() {
       await mutate((c) => c.spacemolt_faction.propose_peace({ id: s.diplomacyTarget, text: s.peaceTerms || undefined }), {
         label: 'propose_peace',
       })
+      reportDone('Peace proposed')
       set({ diplomacyTarget: '', peaceTerms: '' })
       await loadFactionInfo()
     } catch (err) {
@@ -340,7 +372,7 @@ export function FactionPanel() {
     } finally {
       set({ diplomacyLoading: false })
     }
-  }, [mutate, reportError, s.diplomacyTarget, s.peaceTerms, loadFactionInfo])
+  }, [mutate, reportError, reportDone, s.diplomacyTarget, s.peaceTerms, loadFactionInfo])
 
   const handleAcceptPeace = useCallback(async (factionId: string) => {
     set({ diplomacyLoading: true })
@@ -353,47 +385,6 @@ export function FactionPanel() {
       set({ diplomacyLoading: false })
     }
   }, [mutate, reportError, loadFactionInfo])
-
-  const handleSubmitIntel = useCallback(async () => {
-    const systemId = location?.system_id
-    if (!systemId) return
-    set({ submittingIntel: true })
-    try {
-      await mutate(
-        (c) => c.spacemolt_intel.submit_intel({ systems: [{ system_id: systemId, name: location?.system_name }] }),
-        { label: 'submit_intel' },
-      )
-    } catch (err) {
-      reportError(err)
-    } finally {
-      set({ submittingIntel: false })
-    }
-  }, [mutate, reportError, location?.system_id, location?.system_name])
-
-  const handleQueryIntel = useCallback(async () => {
-    set({ queryingIntel: true })
-    try {
-      const params = s.intelQuery.trim() ? { system_name: s.intelQuery.trim() } : {}
-      const res = await store.account.commands.spacemolt_intel.query_intel(params)
-      set({ intelEntries: res.structuredContent?.entries ?? [] })
-    } catch (err) {
-      reportError(err)
-    } finally {
-      set({ queryingIntel: false })
-    }
-  }, [store, reportError, s.intelQuery])
-
-  const handleIntelStatus = useCallback(async () => {
-    set({ loadingIntelStatus: true })
-    try {
-      const res = await store.account.commands.spacemolt_intel.intel_status()
-      set({ intelStatus: res.structuredContent ?? null })
-    } catch (err) {
-      reportError(err)
-    } finally {
-      set({ loadingIntelStatus: false })
-    }
-  }, [store, reportError])
 
   const handleLoadRooms = useCallback(async () => {
     set({ loadingRooms: true })
@@ -442,8 +433,7 @@ export function FactionPanel() {
   }, [store, reportError, s.roomFormName, s.roomFormDesc, s.roomFormAccess, handleLoadRooms])
 
   const handleDeleteRoom = useCallback(async (roomId: string) => {
-    if (!confirm('Delete this room? This cannot be undone.')) return
-    set({ deletingRoomId: roomId })
+    set({ deletingRoomId: roomId, confirming: null })
     try {
       await store.account.commands.spacemolt_faction.delete_room({ id: roomId })
       set(prev => ({
@@ -529,9 +519,21 @@ export function FactionPanel() {
                       <Shield size={10} /> Allies
                     </div>
                     {s.factionInfo.allies.map((ally: FactionRelation) => (
-                      <span key={ally.id} className={styles.allyBadge}>
-                        [{ally.tag}] {ally.name}
-                      </span>
+                      s.confirming === `ally:${ally.id}` ? (
+                        <ConfirmAction
+                          key={ally.id}
+                          message={`End alliance with [${ally.tag}]?`}
+                          onConfirm={() => runDiplomacy('remove_ally', (c) => c.spacemolt_faction.remove_ally({ id: ally.id }))}
+                          onCancel={() => set({ confirming: null })}
+                        />
+                      ) : (
+                        <span key={ally.id} className={styles.allyBadge}>
+                          [{ally.tag}] {ally.name}
+                          <button className={styles.badgeBtn} onClick={() => set({ confirming: `ally:${ally.id}` })} disabled={s.diplomacyLoading} title="End alliance" aria-label={`End alliance with ${ally.name}`} type="button">
+                            <X size={9} />
+                          </button>
+                        </span>
+                      )
                     ))}
                   </div>
                 )}
@@ -543,6 +545,9 @@ export function FactionPanel() {
                     {s.factionInfo.enemies.map((enemy: FactionRelation) => (
                       <span key={enemy.id} className={styles.enemyBadge}>
                         [{enemy.tag}] {enemy.name}
+                        <button className={styles.badgeBtn} onClick={() => runDiplomacy('remove_enemy', (c) => c.spacemolt_faction.remove_enemy({ id: enemy.id }))} disabled={s.diplomacyLoading} title="Return to neutral" aria-label={`Return ${enemy.name} to neutral`} type="button">
+                          <X size={9} />
+                        </button>
                       </span>
                     ))}
                   </div>
@@ -550,6 +555,30 @@ export function FactionPanel() {
               </div>
             </>
           ) : null}
+
+          {s.factionInfo?.alliance_proposals && s.factionInfo.alliance_proposals.length > 0 && (
+            <>
+              <div className={styles.divider} />
+              <Section title="Alliance Proposals" icon={<Shield size={12} />}>
+                <div className={styles.proposalList}>
+                  {s.factionInfo.alliance_proposals.map((p) => (
+                    <div key={p.from_faction_id} className={styles.proposalItem}>
+                      <div className={styles.proposalInfo}>
+                        <span className={styles.proposalFrom}>From: [{p.from_faction_tag}] {p.from_faction_name}</span>
+                      </div>
+                      <ActionButton
+                        label="Accept"
+                        icon={<Shield size={12} />}
+                        onClick={() => runDiplomacy('accept_ally', (c) => c.spacemolt_faction.accept_ally({ id: p.from_faction_id }), `Allied with ${p.from_faction_name}`)}
+                        loading={s.diplomacyLoading}
+                        size="sm"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </Section>
+            </>
+          )}
 
           {s.factionInfo?.wars && s.factionInfo.wars.length > 0 && (
             <>
@@ -574,13 +603,34 @@ export function FactionPanel() {
                           <span className={styles.warReason}>Reason: {war.reason}</span>
                         )}
                       </div>
-                      <ActionButton
-                        label="Propose Peace"
-                        icon={<Handshake size={12} />}
-                        onClick={() => set({ diplomacyTarget: war.target_faction_id, peaceTerms: '' })}
-                        size="sm"
-                        variant="secondary"
-                      />
+                      {s.confirming === `peace:${war.target_faction_id}` ? (
+                        <>
+                          <input
+                            className={styles.input}
+                            type="text"
+                            placeholder="Terms of peace (optional)"
+                            aria-label="Peace terms"
+                            value={s.peaceTerms}
+                            onChange={(e) => set({ peaceTerms: e.target.value })}
+                          />
+                          <ConfirmAction
+                            message={`Propose peace to ${war.target_faction_name}?`}
+                            variant="confirm"
+                            confirmLabel="Propose"
+                            confirmDisabled={s.diplomacyLoading}
+                            onConfirm={() => runDiplomacy('propose_peace', (c) => c.spacemolt_faction.propose_peace({ id: war.target_faction_id, text: s.peaceTerms || undefined }), `Peace proposed to ${war.target_faction_name}`)}
+                            onCancel={() => set({ confirming: null })}
+                          />
+                        </>
+                      ) : (
+                        <ActionButton
+                          label="Propose Peace"
+                          icon={<Handshake size={12} />}
+                          onClick={() => set({ confirming: `peace:${war.target_faction_id}`, peaceTerms: '' })}
+                          size="sm"
+                          variant="secondary"
+                        />
+                      )}
                     </div>
                   ))}
                 </div>
@@ -620,39 +670,12 @@ export function FactionPanel() {
 
           {s.factionInfo?.members && s.factionInfo.members.length > 0 && (
             <Section title="Members" icon={<Users size={12} />}>
-              <div className={styles.memberList}>
-                {s.factionInfo.members.map((member: FactionMember) => (
-                  <div key={member.player_id} className={styles.memberItem}>
-                    <div className={styles.memberLeft}>
-                      <span className={`${styles.onlineDot} ${member.is_online ? styles.online : ''}`} />
-                      {/* New tab so the live play session isn't navigated away. */}
-                      <a
-                        href={playerHref(member.username)}
-                        className={styles.memberName}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        {member.username}
-                      </a>
-                    </div>
-                    <div className={styles.memberRight}>
-                      <span className={styles.memberRole}>{member.role}</span>
-                      {member.player_id !== playerId && (
-                        <button
-                          className={styles.kickBtn}
-                          onClick={() => handleKick(member.player_id)}
-                          disabled={s.kickingPlayer === member.player_id}
-                          title={`Kick ${member.username}`}
-                          aria-label={`Kick ${member.username}`}
-                          type="button"
-                        >
-                          <X size={10} />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <MembersSection
+                info={s.factionInfo}
+                playerId={playerId}
+                onPage={(offset) => set({ membersOffset: offset })}
+                onChanged={loadFactionInfo}
+              />
             </Section>
           )}
 
@@ -680,6 +703,14 @@ export function FactionPanel() {
                 loading={s.inviting}
                 size="sm"
               />
+              <ActionButton
+                label="Withdraw"
+                icon={<Undo2 size={12} />}
+                onClick={handleWithdrawInvite}
+                disabled={!s.inviteTarget.trim() || s.inviting}
+                variant="secondary"
+                size="sm"
+              />
             </div>
           </div>
 
@@ -688,14 +719,15 @@ export function FactionPanel() {
           <Section title="Diplomacy" icon={<Shield size={12} />} defaultOpen={false}>
             <div className={styles.diplomacySection}>
               <div className={styles.field}>
-                <label className={styles.label}>Target Faction ID</label>
-                <input
-                  className={styles.input}
-                  type="text"
-                  placeholder="Faction ID (from browser below)"
-                  value={s.diplomacyTarget}
-                  onChange={(e) => set({ diplomacyTarget: e.target.value })}
-                />
+                <label className={styles.label}>Target Faction</label>
+                {s.factionList.length > 0 ? (
+                  <select className={styles.input} aria-label="Target faction" value={s.diplomacyTarget} onChange={(e) => set({ diplomacyTarget: e.target.value })}>
+                    <option value="">Pick a faction</option>
+                    {s.factionList.filter((f) => f.id !== player?.faction_id).map((f) => <option key={f.id} value={f.id}>[{f.tag}] {f.name}</option>)}
+                  </select>
+                ) : (
+                  <span className={styles.label}>Open the faction browser below and pick a faction.</span>
+                )}
               </div>
               <div className={styles.diplomacyRow}>
                 <ActionButton
@@ -725,15 +757,23 @@ export function FactionPanel() {
                   onChange={(e) => set({ warReason: e.target.value })}
                 />
               </div>
-              <ActionButton
-                label="Declare War"
-                icon={<Flag size={12} />}
-                onClick={handleDeclareWar}
-                disabled={!s.diplomacyTarget || s.diplomacyLoading}
-                loading={s.diplomacyLoading}
-                variant="danger"
-                size="sm"
-              />
+              {s.confirming === 'war' ? (
+                <ConfirmAction
+                  message="Declare war? Members of both factions can attack each other anywhere."
+                  onConfirm={handleDeclareWar}
+                  onCancel={() => set({ confirming: null })}
+                />
+              ) : (
+                <ActionButton
+                  label="Declare War"
+                  icon={<Flag size={12} />}
+                  onClick={() => set({ confirming: 'war' })}
+                  disabled={!s.diplomacyTarget || s.diplomacyLoading}
+                  loading={s.diplomacyLoading}
+                  variant="danger"
+                  size="sm"
+                />
+              )}
               <div className={styles.divider} />
               <div className={styles.field}>
                 <label className={styles.label}>Peace Terms</label>
@@ -760,99 +800,36 @@ export function FactionPanel() {
           <div className={styles.divider} />
 
           <Section title="Intel" icon={<Radar size={12} />} defaultOpen={false}>
-            <div className={styles.intelSection}>
-              <ActionButton
-                label="Submit Intel"
-                icon={<Radar size={12} />}
-                onClick={handleSubmitIntel}
-                disabled={!location?.system_id || s.submittingIntel}
-                loading={s.submittingIntel}
-                size="sm"
-              />
+            <IntelSection />
+          </Section>
 
-              <div className={styles.intelQueryRow}>
-                <input
-                  className={styles.inviteInput}
-                  type="text"
-                  placeholder="System name filter..."
-                  value={s.intelQuery}
-                  onChange={(e) => set({ intelQuery: e.target.value })}
-                  onKeyDown={(e) => e.key === 'Enter' && handleQueryIntel()}
-                />
-                <ActionButton
-                  label="Query"
-                  icon={<Search size={12} />}
-                  onClick={handleQueryIntel}
-                  disabled={s.queryingIntel}
-                  loading={s.queryingIntel}
-                  size="sm"
-                />
-              </div>
+          <div className={styles.divider} />
 
-              {s.intelEntries.length > 0 && (
-                <div className={styles.intelList}>
-                  {s.intelEntries.map((entry) => (
-                    <div key={entry.system_id} className={styles.intelItem}>
-                      <span className={styles.intelSystemName}>{entry.name}</span>
-                      {entry.submitter_name && (
-                        <span className={styles.intelMeta}>by {entry.submitter_name}</span>
-                      )}
-                      {entry.police_level !== undefined && (
-                        <span className={styles.intelMeta}>police: {entry.police_level}</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
+          {s.factionInfo && (
+            <>
+              <Section title="Roles" icon={<KeyRound size={12} />} defaultOpen={false}>
+                <RolesSection info={s.factionInfo} onChanged={loadFactionInfo} />
+              </Section>
+              <div className={styles.divider} />
+              <Section title="Faction Settings" icon={<Settings2 size={12} />} defaultOpen={false}>
+                <EditFactionSection key={s.factionInfo.id} info={s.factionInfo} onChanged={loadFactionInfo} />
+              </Section>
+              <div className={styles.divider} />
+              <Section title="Treasury & Licenses" icon={<Landmark size={12} />} defaultOpen={false}>
+                <TreasurySection info={s.factionInfo} onChanged={loadFactionInfo} />
+              </Section>
+              <div className={styles.divider} />
+            </>
+          )}
 
-              <ActionButton
-                label="Intel Status"
-                icon={<BarChart3 size={12} />}
-                onClick={handleIntelStatus}
-                disabled={s.loadingIntelStatus}
-                loading={s.loadingIntelStatus}
-                variant="secondary"
-                size="sm"
-              />
+          <Section title="Garages" icon={<Warehouse size={12} />} defaultOpen={false}>
+            <GaragesSection />
+          </Section>
 
-              {s.intelStatus && (
-                <div className={styles.intelStats}>
-                  <div className={styles.intelStatItem}>
-                    <span className={styles.intelStatLabel}>Intel Level</span>
-                    <span className={styles.intelStatValue}>{s.intelStatus.intel_level}</span>
-                  </div>
-                  <div className={styles.intelStatItem}>
-                    <span className={styles.intelStatLabel}>Coverage</span>
-                    <span className={styles.intelStatValue}>{s.intelStatus.coverage_pct}%</span>
-                  </div>
-                  <div className={styles.intelStatItem}>
-                    <span className={styles.intelStatLabel}>Systems Known</span>
-                    <span className={styles.intelStatValue}>
-                      {s.intelStatus.systems_known}
-                      {s.intelStatus.total_systems !== undefined ? ` / ${s.intelStatus.total_systems}` : ''}
-                    </span>
-                  </div>
-                  <div className={styles.intelStatItem}>
-                    <span className={styles.intelStatLabel}>POIs Known</span>
-                    <span className={styles.intelStatValue}>{s.intelStatus.pois_known}</span>
-                  </div>
-                  {s.intelStatus.contributors !== undefined && (
-                    <div className={styles.intelStatItem}>
-                      <span className={styles.intelStatLabel}>Contributors</span>
-                      <span className={styles.intelStatValue}>{s.intelStatus.contributors}</span>
-                    </div>
-                  )}
-                  {s.intelStatus.top_contributor && (
-                    <div className={styles.intelStatItem}>
-                      <span className={styles.intelStatLabel}>Top Contributor</span>
-                      <span className={styles.intelStatValue}>
-                        {s.intelStatus.top_contributor} ({s.intelStatus.top_contributions ?? 0})
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+          <div className={styles.divider} />
+
+          <Section title="Faction Missions" icon={<Target size={12} />} defaultOpen={false}>
+            <MissionsSection />
           </Section>
 
           <div className={styles.divider} />
@@ -900,15 +877,23 @@ export function FactionPanel() {
                           disabled={s.loadingRoom}
                           size="sm"
                         />
-                        <ActionButton
-                          label="Delete"
-                          icon={<Trash2 size={12} />}
-                          onClick={() => handleDeleteRoom(room.room_id)}
-                          disabled={s.deletingRoomId === room.room_id}
-                          loading={s.deletingRoomId === room.room_id}
-                          variant="danger"
-                          size="sm"
-                        />
+                        {s.confirming === `room:${room.room_id}` ? (
+                          <ConfirmAction
+                            message="Delete this room? This cannot be undone."
+                            onConfirm={() => handleDeleteRoom(room.room_id)}
+                            onCancel={() => set({ confirming: null })}
+                          />
+                        ) : (
+                          <ActionButton
+                            label="Delete"
+                            icon={<Trash2 size={12} />}
+                            onClick={() => set({ confirming: `room:${room.room_id}` })}
+                            disabled={s.deletingRoomId === room.room_id}
+                            loading={s.deletingRoomId === room.room_id}
+                            variant="danger"
+                            size="sm"
+                          />
+                        )}
                       </div>
                     </div>
                   ))}
@@ -996,13 +981,21 @@ export function FactionPanel() {
 
           <div className={styles.divider} />
 
-          <ActionButton
-            label="Leave Faction"
-            icon={<UserMinus size={14} />}
-            onClick={handleLeaveFaction}
-            variant="danger"
-            size="sm"
-          />
+          {s.confirming === 'leave' ? (
+            <ConfirmAction
+              message="Leave your faction?"
+              onConfirm={handleLeaveFaction}
+              onCancel={() => set({ confirming: null })}
+            />
+          ) : (
+            <ActionButton
+              label="Leave Faction"
+              icon={<UserMinus size={14} />}
+              onClick={() => set({ confirming: 'leave' })}
+              variant="danger"
+              size="sm"
+            />
+          )}
         </>
       ) : (
         <>
@@ -1085,7 +1078,7 @@ export function FactionPanel() {
                 />
               </div>
               <div className={styles.field}>
-                <label className={styles.label}>Tag (4 chars max)</label>
+                <label className={styles.label}>Tag (exactly 4 characters)</label>
                 <input
                   className={styles.input}
                   type="text"
@@ -1100,7 +1093,7 @@ export function FactionPanel() {
                   label="Create Faction"
                   icon={<Flag size={14} />}
                   onClick={handleCreateFaction}
-                  disabled={!s.createName.trim() || !s.createTag.trim() || s.creating}
+                  disabled={!s.createName.trim() || s.createTag.trim().length !== 4 || s.creating}
                   loading={s.creating}
                   size="sm"
                 />
@@ -1117,7 +1110,7 @@ export function FactionPanel() {
           <ActionButton
             label="Browse Factions"
             icon={<Users size={14} />}
-            onClick={handleLoadFactions}
+            onClick={() => handleLoadFactions()}
             variant="secondary"
             size="sm"
           />
@@ -1138,7 +1131,11 @@ export function FactionPanel() {
             {s.factionList.map((f) => (
               <div key={f.id} className={styles.factionListItem}>
                 <div className={styles.factionListInfo}>
-                  <span className={styles.factionListName}>{f.name}</span>
+                  {hasFaction ? (
+                    <button className={`${styles.factionListName} ${styles.diplomacyTargetBtn}`} onClick={() => set({ diplomacyTarget: f.id })} title="Set as diplomacy target" type="button">
+                      {f.name}
+                    </button>
+                  ) : <span className={styles.factionListName}>{f.name}</span>}
                   <span className={styles.factionListTag}>[{f.tag}]</span>
                 </div>
                 <div className={styles.factionListRight}>
@@ -1150,9 +1147,10 @@ export function FactionPanel() {
                       className={styles.diplomacyTargetBtn}
                       onClick={() => set({ diplomacyTarget: f.id })}
                       title="Set as diplomacy target"
+                      aria-label={`Set ${f.name} as diplomacy target`}
                       type="button"
                     >
-                      <Shield size={10} />
+                      <Shield size={10} /> {s.diplomacyTarget === f.id ? 'Target' : 'Set target'}
                     </button>
                   ) : (
                     <ActionButton
@@ -1170,10 +1168,13 @@ export function FactionPanel() {
           </div>
         )}
         {s.listLoaded && (
+          <Pager offset={s.listOffset} total={s.listTotal} onPage={handleLoadFactions} />
+        )}
+        {s.listLoaded && (
           <ActionButton
             label="Refresh"
             icon={<RefreshCw size={12} />}
-            onClick={handleLoadFactions}
+            onClick={() => handleLoadFactions(s.listOffset)}
             disabled={s.loadingList}
             loading={s.loadingList}
             variant="secondary"

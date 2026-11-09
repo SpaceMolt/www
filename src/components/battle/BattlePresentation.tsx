@@ -402,7 +402,7 @@ export default function BattlePresentation({ battleId, data, embedded = false, f
   if (entries.length === 0) {
     return (
       <div className={styles.stateScreen}>
-        <p>{error ? t('battles.error') : t(`battles.stream.${data.phase === 'live' ? 'waiting' : data.phase}`)}</p>
+        <p>{error || t(`battles.stream.${data.phase === 'live' ? 'waiting' : data.phase}`)}</p>
         <button type="button" onClick={data.retry} className={styles.replayBtn} disabled={data.refreshing}>
           <RotateCcw size={12} aria-hidden /> {t('battles.stream.retry')}
         </button>

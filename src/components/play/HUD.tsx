@@ -1,16 +1,17 @@
 'use client'
 
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { useLocationState, useShip } from '@/lib/spacemolt'
+import { AlertTriangle, Compass, Keyboard, X } from 'lucide-react'
+import { useAccountStore, useLocationState, useShip } from '@/lib/spacemolt'
 import { usePlayUi } from './PlayProvider'
 import { TopBar } from './TopBar'
 import { ToastContainer } from './ToastContainer'
 import { TravelProgress } from './TravelProgress'
-import { PanelNav } from './PanelNav'
+import { PanelNav, panelShortcuts } from './PanelNav'
 import { LeftSidebar, type SidebarTab } from './LeftSidebar'
 import { RightPane } from './RightPane'
 import { ActionBanner } from './ActionBanner'
-import { GalaxyPanel, type GalaxyPanelHandle, type MapSystemData, type PlannedRoute } from './panels/GalaxyPanel'
+import { buildRouteViaWaypoints, GalaxyPanel, type GalaxyPanelHandle, type MapSystemData, type PlannedRoute } from './panels/GalaxyPanel'
 import { CombatPanel } from './panels/CombatPanel'
 import { TradingPanel } from './panels/TradingPanel'
 import { StoragePanel } from './panels/StoragePanel'
@@ -24,8 +25,16 @@ import { SkillsPanel } from './panels/SkillsPanel'
 import { AchievementsPanel } from './panels/AchievementsPanel'
 import { SettingsPanel } from './panels/SettingsPanel'
 import { FacilitiesPanel } from './panels/FacilitiesPanel'
+import { StationPanel } from './panels/StationPanel'
 import { SalvagePanel } from './panels/SalvagePanel'
+import { CrewPanel } from './panels/CrewPanel'
 import { useAutoTravel, type AutoTravelProgress } from './useAutoTravel'
+import { findRoute, jumpEstimateMs } from './routeWalk'
+import { LoopRunnerContext, useLoopRunner } from './loop/useLoopRunner'
+import { LoopBanner, LoopPanel } from './loop/LoopPanel'
+import { ACTION_SHORTCUTS, shortcutKey } from './shortcuts'
+import { errorMessage } from './shared'
+import { usePlay } from './PlayProvider'
 import styles from './HUD.module.css'
 
 const PANELS: Record<string, React.ComponentType> = {
@@ -38,15 +47,38 @@ const PANELS: Record<string, React.ComponentType> = {
   skills: SkillsPanel,
   achievements: AchievementsPanel,
   facilities: FacilitiesPanel,
+  station: StationPanel,
   faction: FactionPanel,
   missions: MissionsPanel,
   salvage: SalvagePanel,
+  crew: CrewPanel,
   info: InfoPanel,
   settings: SettingsPanel,
+  autopilot: LoopPanel,
+}
+
+function ShortcutHelp({ onClose, isDocked }: { onClose: () => void; isDocked: boolean }) {
+  return (
+    <div className={styles.abortModalOverlay} onClick={onClose}>
+      <div className={styles.helpModal} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
+        <div className={styles.helpTitle}><Keyboard size={14} /> Keyboard shortcuts</div>
+        <dl className={styles.helpList}>
+          {ACTION_SHORTCUTS.map(({ key, label }) => (
+            <div key={key}><dt><kbd>{key}</kbd></dt><dd>{label}</dd></div>
+          ))}
+          {panelShortcuts(isDocked).map(({ id, label }, i) => (
+            <div key={id}><dt><kbd>{i + 1}</kbd></dt><dd>{label} tab</dd></div>
+          ))}
+        </dl>
+        <button className={styles.abortModalOk} onClick={onClose} type="button">Close</button>
+      </div>
+    </div>
+  )
 }
 
 function AutoTravelBanner({ progress, onAbort }: { progress: AutoTravelProgress; onAbort: () => void }) {
   const [now, setNow] = useState(Date.now())
+  const liveFuel = useShip()?.fuel // progress.currentFuel only updates between jumps
 
   // Tick every 100ms for smooth countdown
   useEffect(() => {
@@ -77,15 +109,14 @@ function AutoTravelBanner({ progress, onAbort }: { progress: AutoTravelProgress;
     <div className={styles.autoTravelBanner}>
       <div className={styles.atbTop}>
         <div className={styles.atbPhase}>
-          {phase === 'undocking' ? 'UNDOCKING'
-            : phase === 'traveling_to_station' ? `TRAVELING TO ${progress.stationName?.toUpperCase() || 'STATION'}`
+          {phase === 'traveling_to_station' ? `TRAVELING TO ${progress.stationName?.toUpperCase() || 'STATION'}`
             : `JUMPING ${completedJumps + 1} / ${totalJumps}`}
         </div>
         <div className={styles.atbCountdown}>
           {etaMins > 0 ? `${etaMins}m ` : ''}{etaRemSecs}s
         </div>
         <div className={styles.atbFuel}>
-          FUEL {currentFuel}
+          FUEL {liveFuel ?? currentFuel}{progress.refuelStops.length > 0 && ` · REFUELED x${progress.refuelStops.length}`}
         </div>
         <button className={styles.atbAbort} onClick={onAbort}>
           EMERGENCY ABORT
@@ -126,28 +157,30 @@ function AutoTravelBanner({ progress, onAbort }: { progress: AutoTravelProgress;
 }
 
 export function HUD() {
+  const store = useAccountStore()
+  const { uiStore } = usePlay()
   const ship = useShip()
   const location = useLocationState()
   const isDocked = Boolean(location?.docked_at)
   const pendingTrades = usePlayUi((s) => s.pendingTrades)
   const inCombat = usePlayUi((s) => s.inCombat)
-  const hasBattleReplay = usePlayUi((s) => Boolean(s.lastBattleId))
   const [activePanel, setActivePanel] = useState('galaxy')
   const galaxyRef = useRef<GalaxyPanelHandle>(null)
   const [exploreSystem, setExploreSystem] = useState<MapSystemData | null>(null)
   const [plannedRoute, setPlannedRoute] = useState<PlannedRoute | null>(null)
   const autoTravel = useAutoTravel()
+  const loop = useLoopRunner()
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>('current')
   const [highlightedSystems, setHighlightedSystems] = useState<Set<string> | null>(null)
+  const [navOpen, setNavOpen] = useState(false)
+  const [helpOpen, setHelpOpen] = useState(false)
+  const pilotBusy = autoTravel.isActive || loop.isActive
 
   const handleBeginTravel = useCallback(() => {
-    if (!plannedRoute || !ship) return
-    autoTravel.start(plannedRoute, {
-      shipSpeed: ship.speed ?? 1,
-      isDocked,
-    })
+    if (!plannedRoute || !ship || loop.isActive) return
+    autoTravel.start(plannedRoute, { shipSpeed: ship.speed ?? 1 })
     setPlannedRoute(null) // clear the planned route, auto-travel takes over
-  }, [plannedRoute, ship, isDocked, autoTravel])
+  }, [plannedRoute, ship, autoTravel, loop.isActive])
 
   // When auto-travel completes a jump, switch to system tab
   const completedJumps = autoTravel.progress?.completedJumps ?? 0
@@ -158,87 +191,82 @@ export function HUD() {
     }
   }, [completedJumps, travelPhase])
 
+  // Panel switching and help. Ship actions (d/m/f/r) live in LeftSidebar.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const key = shortcutKey(e)
+      if (key === null) return
+      if (key === 'escape') { setHelpOpen(false); setNavOpen(false); return }
+      if (key === '?') { setHelpOpen((v) => !v); return }
+      if (document.querySelector('[role="dialog"]')) return // help or another dialog is open
+      if (key === 'n') { setNavOpen((v) => !v); return }
+      const panel = panelShortcuts(isDocked)[Number(key) - 1]
+      if (panel) setActivePanel(panel.id)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [isDocked])
+
   const handleSystemSelect = useCallback((system: MapSystemData) => {
     setExploreSystem(system)
   }, [])
 
+  // An edited route keeps the player's via-points (map BFS legs). With none
+  // left, ask the server again so known wormholes are back in the route.
+  const handleRouteEdit = useCallback((route: PlannedRoute | null) => {
+    if (!route || route.viaWaypoints?.length) { setPlannedRoute(route); return }
+    findRoute(store.account, route.targetSystem)
+      .then((serverRoute) => setPlannedRoute(serverRoute ?? route))
+      .catch((err) => uiStore.dispatch({ type: 'toast', kind: 'danger', text: errorMessage(err) }))
+  }, [store, uiStore])
+
   const handleRemoveViaWaypoint = useCallback((waypointId: string) => {
     if (!plannedRoute) return
-    const systems = galaxyRef.current?.getSystems()
-    if (!systems) return
-    const newVia = (plannedRoute.viaWaypoints || []).filter((id) => id !== waypointId)
-    const startId = plannedRoute.route[0].system_id
-    const endId = plannedRoute.targetSystem
-    // Re-import buildRouteViaWaypoints isn't available here, so do inline BFS chain
-    // Actually, we need to call the utility. Let's expose it via the ref.
-    // Simpler: reconstruct via the same logic
-    const adj = new Map<string, string[]>()
-    for (const sys of systems) adj.set(sys.id, [...sys.connections])
-    function bfs(from: string, to: string): string[] | null {
-      if (from === to) return [from]
-      const queue = [from]
-      const visited = new Set([from])
-      const parent = new Map<string, string>()
-      while (queue.length > 0) {
-        const cur = queue.shift()!
-        if (cur === to) {
-          const path: string[] = []
-          let n: string | undefined = to
-          while (n && n !== from) { path.unshift(n); n = parent.get(n) }
-          path.unshift(from)
-          return path
-        }
-        for (const nb of adj.get(cur) || []) {
-          if (!visited.has(nb)) { visited.add(nb); parent.set(nb, cur); queue.push(nb) }
-        }
-      }
-      return null
-    }
-    const stops = [startId, ...newVia, endId]
-    const fullPath: string[] = []
-    for (let i = 0; i < stops.length - 1; i++) {
-      const leg = bfs(stops[i], stops[i + 1])
-      if (!leg) return
-      if (i === 0) fullPath.push(...leg)
-      else fullPath.push(...leg.slice(1))
-    }
-    const sysMap = new Map(systems.map((s) => [s.id, s]))
-    setPlannedRoute({
-      route: fullPath.map((id, i) => ({ system_id: id, name: sysMap.get(id)?.name || id, jumps: i })),
-      totalJumps: fullPath.length - 1,
-      targetSystem: endId,
-      fuelPerJump: plannedRoute.fuelPerJump,
-      estimatedFuel: plannedRoute.fuelPerJump * (fullPath.length - 1),
-      fuelAvailable: plannedRoute.fuelAvailable,
-      viaWaypoints: newVia.length ? newVia : undefined,
-    })
-  }, [plannedRoute])
+    const via = (plannedRoute.viaWaypoints ?? []).filter((id) => id !== waypointId)
+    const systems = galaxyRef.current?.getSystems() ?? []
+    const route = via.length
+      ? buildRouteViaWaypoints(systems, plannedRoute.route[0].system_id, plannedRoute.targetSystem, via, plannedRoute.fuelPerJump, plannedRoute.fuelAvailable)
+      : { ...plannedRoute, viaWaypoints: undefined }
+    if (route) handleRouteEdit(route)
+  }, [plannedRoute, handleRouteEdit])
 
   const ActivePanelComponent = PANELS[activePanel]
 
   const badges: Record<string, number> = {}
   if (pendingTrades.length > 0) badges.trading = pendingTrades.length
   if (inCombat) badges.combat = 1
+  if (loop.isActive) badges.autopilot = 1
+
+  const galaxy = (
+    <GalaxyPanel ref={galaxyRef} onSystemSelect={handleSystemSelect} plannedRoute={plannedRoute} onPlannedRouteChange={handleRouteEdit} autoTravelProgress={autoTravel.progress} highlightedSystems={highlightedSystems} />
+  )
+
+  // One pilot at a time: no loop starts while auto-travel runs.
+  const loopContext = autoTravel.isActive ? { ...loop, start: () => {} } : loop
 
   return (
-    <>
+    <LoopRunnerContext.Provider value={loopContext}>
       <div className={styles.hud}>
         {/* Top Bar */}
-        <TopBar />
+        <TopBar onShowShortcuts={() => setHelpOpen(true)} />
 
-        {/* Tab Bar */}
-        <PanelNav
-          activePanel={activePanel}
-          onPanelChange={setActivePanel}
-          badges={badges}
-          isDocked={isDocked}
-          inCombat={inCombat}
-          hasBattleReplay={hasBattleReplay}
-        />
+        {/* Tab Bar; on phones the Nav button opens the left sidebar as a drawer */}
+        <div className={styles.navRow}>
+          <button className={styles.navButton} onClick={() => setNavOpen(true)} type="button" aria-label="Open navigation and ship actions">
+            <Compass size={16} />
+            <span>Nav</span>
+          </button>
+          <PanelNav
+            activePanel={activePanel}
+            onPanelChange={setActivePanel}
+            badges={badges}
+            isDocked={isDocked}
+          />
+        </div>
 
         {/* Main Content: Left Sidebar + Panel + Right Pane */}
         <div className={styles.main}>
-          <LeftSidebar galaxyRef={galaxyRef} exploreSystem={exploreSystem} onExploreSystemChange={setExploreSystem} plannedRoute={plannedRoute} onPlannedRouteChange={setPlannedRoute} activeTab={sidebarTab} onTabChange={setSidebarTab} autoTravelActive={autoTravel.isActive} onHighlightedSystemsChange={setHighlightedSystems} />
+          <LeftSidebar galaxyRef={galaxyRef} exploreSystem={exploreSystem} onExploreSystemChange={setExploreSystem} plannedRoute={plannedRoute} onPlannedRouteChange={setPlannedRoute} activeTab={sidebarTab} onTabChange={setSidebarTab} autoTravelActive={pilotBusy} onHighlightedSystemsChange={setHighlightedSystems} mobileOpen={navOpen} onMobileClose={() => setNavOpen(false)} />
           <div className={styles.panel}>
             <ActionBanner autoTravelActive={autoTravel.isActive} />
             {!autoTravel.isActive && <TravelProgress />}
@@ -250,12 +278,12 @@ export function HUD() {
                     <span className={styles.routeBannerStats}>
                       {plannedRoute.totalJumps} jump{plannedRoute.totalJumps !== 1 ? 's' : ''} · {plannedRoute.estimatedFuel} fuel
                       {ship && (() => {
-                        const secsPerJump = Math.max(10, 70 - 10 * (ship.speed ?? 1))
-                        const totalSecs = secsPerJump * plannedRoute.totalJumps
+                        const totalSecs = (jumpEstimateMs(ship.speed ?? 1) / 1000) * plannedRoute.totalJumps
                         const mins = Math.floor(totalSecs / 60)
                         const secs = totalSecs % 60
                         return ` · ${mins > 0 ? `${mins}m ` : ''}${secs}s`
                       })()}
+                      {plannedRoute.route.some((r) => r.via_wormhole) && ' · via wormhole'}
                     </span>
                     {plannedRoute.viaWaypoints && plannedRoute.viaWaypoints.length > 0 && (
                       <span className={styles.routeBannerVia}>
@@ -269,27 +297,23 @@ export function HUD() {
                                 className={styles.viaWaypointRemove}
                                 onClick={() => handleRemoveViaWaypoint(wpId)}
                                 title="Remove waypoint"
+                                aria-label={`Remove waypoint ${wp?.name || wpId}`}
                               >
-                                ×
+                                <X size={10} />
                               </button>
                             </span>
                           )
                         })}
                       </span>
                     )}
-                    {plannedRoute.estimatedFuel >= plannedRoute.fuelAvailable && (
-                      <span className={styles.routeBannerWarning}>
-                        ⚠ Insufficient fuel ({plannedRoute.fuelAvailable} available)
-                      </span>
-                    )}
-                    {plannedRoute.estimatedFuel >= plannedRoute.fuelAvailable * 0.8 && plannedRoute.estimatedFuel < plannedRoute.fuelAvailable && (
+                    {plannedRoute.estimatedFuel > plannedRoute.fuelAvailable && (
                       <span className={styles.routeBannerCaution}>
-                        ⚠ Low fuel margin ({plannedRoute.fuelAvailable - plannedRoute.estimatedFuel} remaining)
+                        <AlertTriangle size={11} /> Needs {plannedRoute.estimatedFuel - plannedRoute.fuelAvailable} more fuel. Autopilot refuels at stations on the way, or burns fuel cells.
                       </span>
                     )}
                   </div>
                   <div className={styles.routeBannerActions}>
-                    <button className={styles.routeBannerBegin} onClick={handleBeginTravel}>
+                    <button className={styles.routeBannerBegin} onClick={handleBeginTravel} disabled={loop.isActive} title={loop.isActive ? 'Stop the running loop first' : undefined}>
                       Begin Travel
                     </button>
                     <button className={styles.routeBannerCancel} onClick={() => setPlannedRoute(null)}>
@@ -299,30 +323,30 @@ export function HUD() {
                 </div>
               </div>
             )}
-            {autoTravel.progress && (autoTravel.progress.phase === 'undocking' || autoTravel.progress.phase === 'jumping' || autoTravel.progress.phase === 'traveling_to_station') && (
+            {autoTravel.isActive && autoTravel.progress && (
               <AutoTravelBanner progress={autoTravel.progress} onAbort={autoTravel.requestAbort} />
             )}
             <div className={styles.panelContent}>
-              {activePanel === 'galaxy' ? (
-                <GalaxyPanel ref={galaxyRef} onSystemSelect={handleSystemSelect} plannedRoute={plannedRoute} onPlannedRouteChange={setPlannedRoute} autoTravelProgress={autoTravel.progress} highlightedSystems={highlightedSystems} />
-              ) : ActivePanelComponent ? (
-                <ActivePanelComponent />
-              ) : (
-                <GalaxyPanel ref={galaxyRef} onSystemSelect={handleSystemSelect} plannedRoute={plannedRoute} onPlannedRouteChange={setPlannedRoute} autoTravelProgress={autoTravel.progress} highlightedSystems={highlightedSystems} />
-              )}
+              {ActivePanelComponent ? <ActivePanelComponent /> : galaxy}
             </div>
+            <LoopBanner />
           </div>
           <RightPane />
         </div>
+
+        {/* Inside .hud so the drawer stacks above the backdrop */}
+        {navOpen && <div className={styles.navBackdrop} onClick={() => setNavOpen(false)} />}
       </div>
 
       {/* Action Toasts (position: fixed, outside grid) */}
       <ToastContainer />
 
+      {helpOpen && <ShortcutHelp onClose={() => setHelpOpen(false)} isDocked={isDocked} />}
+
       {autoTravel.progress && autoTravel.progress.phase === 'aborted' && (
         <div className={styles.abortModalOverlay}>
           <div className={styles.abortModal}>
-            <div className={styles.abortModalIcon}>⚠</div>
+            <AlertTriangle size={36} className={styles.abortModalIcon} />
             <div className={styles.abortModalTitle}>JUMP SEQUENCE ABORTED</div>
             <div className={styles.abortModalReason}>{autoTravel.progress.abortReason}</div>
             <div className={styles.abortModalDetail}>
@@ -342,6 +366,7 @@ export function HUD() {
             <div className={styles.arrivedModalDetail}>
               {autoTravel.progress.totalJumps} jumps completed in {Math.round(autoTravel.progress.totalElapsedMs / 1000)}s
               {autoTravel.progress.stationName && ` · Arrived at ${autoTravel.progress.stationName}`}
+              {autoTravel.progress.refuelStops.length > 0 && ` · Refueled at ${autoTravel.progress.refuelStops.join(', ')}`}
               {' · '}Fuel remaining: {autoTravel.progress.currentFuel}
             </div>
             <button className={styles.abortModalOk} onClick={autoTravel.dismissAbort}>
@@ -350,6 +375,6 @@ export function HUD() {
           </div>
         </div>
       )}
-    </>
+    </LoopRunnerContext.Provider>
   )
 }

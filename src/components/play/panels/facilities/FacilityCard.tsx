@@ -26,6 +26,8 @@ const CATEGORY_BADGE: Record<string, string> = {
   production: shared.badgeOrange,
   faction: shared.badgePurple,
   personal: shared.badgeCyan,
+  defense: shared.badgeRed,
+  ranch: shared.badgeGreen,
 }
 
 interface FacilityCardProps {
@@ -73,10 +75,12 @@ export function FacilityCard({ facility, children }: FacilityCardProps) {
     <div className={styles.card}>
       <div className={styles.cardHeader}>
         <span className={`${styles.statusDot} ${facility.under_construction ? styles.statusInactive : styles.statusActive}`} />
-        <span className={styles.cardName}>{facility.name}</span>
+        <span className={styles.cardName} title={facility.custom_name ? facility.name : undefined}>{facility.custom_name || facility.name}</span>
         <span className={CATEGORY_BADGE[facility.category] || shared.badgeGrey}>
           {formatLabel(facility.category)}
         </span>
+        {facility.dismantling && <span className={shared.badgeRed}>Dismantling</span>}
+        {facility.damaged && <span className={shared.badgeRed}>{facility.repair_complete_tick ? 'Repairing' : 'Damaged'}</span>}
         {serviceLabel && (
           <span className={shared.badgeGrey}>
             {formatLabel(serviceLabel)}
@@ -87,14 +91,14 @@ export function FacilityCard({ facility, children }: FacilityCardProps) {
 
       <div className={styles.cardDescription}>{facility.description}</div>
 
-      {(facility.under_construction || !facility.maintenance_satisfied || facility.bonus_type || facility.recipe_id) && (
+      {(facility.under_construction || facility.maintenance_satisfied === false || facility.bonus_type || facility.recipe_id) && (
         <div className={styles.cardMeta}>
           {facility.under_construction && (
             <span className={`${styles.metaItem} ${styles.maintenanceWarning}`}>
               <AlertTriangle size={10} /> Under construction
             </span>
           )}
-          {!facility.maintenance_satisfied && (
+          {facility.maintenance_satisfied === false && (
             <button
               type="button"
               className={`${styles.metaItem} ${styles.maintenanceWarning} ${styles.maintenanceToggle}`}

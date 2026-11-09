@@ -4,7 +4,7 @@
   top: 0.75rem;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 200;
+  z-index: 950; /* above the mobile nav drawer (900), below modals (1000) */
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
@@ -42,9 +42,7 @@
   color: var(--star-white);
   flex: 1;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere; /* wrap long messages instead of cutting them off */
 }
 
 /* Color variants */

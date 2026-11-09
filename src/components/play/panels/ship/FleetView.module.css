@@ -53,12 +53,6 @@
   margin-left: auto;
 }
 
-.summaryActiveShip {
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.62rem;
-  color: var(--hull-grey);
-}
-
 /* Fleet ship list */
 .fleetList {
   display: flex;
@@ -278,6 +272,44 @@
   color: var(--plasma-cyan);
   border-color: rgba(0, 212, 255, 0.3);
   background: rgba(0, 212, 255, 0.08);
+}
+
+/* Insurance */
+.insurance {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.6rem;
+  margin-bottom: 0.75rem;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(61, 90, 108, 0.25);
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+
+.insurancePolicy {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  color: var(--star-white);
+}
+
+.insuranceQuote {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: var(--star-white);
+}
+
+.insuranceFactors {
+  margin: 0;
+  padding-left: 1rem;
+  color: var(--chrome-silver);
+}
+
+.insuranceDetail {
+  color: var(--chrome-silver);
+  font-size: 0.7rem;
 }
 
 /* Mobile */

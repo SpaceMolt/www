@@ -64,9 +64,6 @@
 }
 
 .badge {
-  position: absolute;
-  top: 4px;
-  right: 4px;
   min-width: 16px;
   height: 16px;
   padding: 0 4px;
@@ -81,6 +78,13 @@
   justify-content: center;
   line-height: 1;
   box-shadow: 0 0 6px rgba(230, 57, 70, 0.5);
+}
+
+/* Narrow desktops: all tabs with labels need ~1675px, so only the active tab keeps its label. */
+@media (max-width: 1700px) {
+  .tab:not(.tabActive) .tabLabel {
+    display: none;
+  }
 }
 
 /* Mobile dropdown — hidden on desktop */

@@ -148,6 +148,12 @@ describe('battle loader requests', () => {
     }
   })
 
+  it('surfaces the server error message from a non-OK response', async () => {
+    const fetcher = (async (input: RequestInfo | URL) => String(input).includes('/summary')
+      ? new Response('', { status: 404 }) : Response.json({ error: 'Battle not found' }, { status: 404 })) as typeof fetch
+    await expect(fetchBattleData('battle-a', 0, new AbortController().signal, fetcher, '')).rejects.toThrow('Battle not found')
+  })
+
   it('does not return stale data after an abort even if fetch ignores the signal', async () => {
     const controller = new AbortController()
     let finish: (response: Response) => void = () => {}

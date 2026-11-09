@@ -618,40 +618,6 @@
   border-color: var(--plasma-cyan);
 }
 
-.qtyButtons {
-  display: flex;
-  gap: 1px;
-}
-
-.qtyBtn {
-  padding: 0.1rem 0.25rem;
-  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  font-size: 0.5rem;
-  background: rgba(61, 90, 108, 0.2);
-  border: 1px solid rgba(61, 90, 108, 0.3);
-  border-radius: 2px;
-  color: var(--chrome-silver);
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-  white-space: nowrap;
-}
-
-.qtyBtn:hover:not(:disabled) {
-  background: rgba(0, 212, 255, 0.12);
-  color: var(--plasma-cyan);
-  border-color: rgba(0, 212, 255, 0.3);
-}
-
-.qtyBtn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-.qtyBtnMax {
-  color: var(--plasma-cyan);
-  font-weight: 600;
-}
-
 .modalBuyActions {
   display: flex;
   gap: 0.35rem;
@@ -777,4 +743,20 @@
   .cargoHint { font-size: 0.68rem; }
   .categoryToggle { font-size: 0.65rem; padding: 0.25rem 0.5rem; }
   .showToggle { font-size: 0.65rem; padding: 0.3rem 0.5rem; }
+}
+
+.tradeOptions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 0.5rem 0;
+  font-size: 0.75rem;
+  color: var(--chrome-silver);
+}
+
+.tradeOptions label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
 }

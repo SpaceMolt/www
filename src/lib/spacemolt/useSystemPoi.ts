@@ -26,7 +26,7 @@ export function useSystem(): CommandQueryResult<GetSystemResponse | undefined> {
 
 export function usePoi(): CommandQueryResult<GetPoiResponse | undefined> {
   const location = useLocationState()
-  return useCommandQuery(
+  const query = useCommandQuery(
     async (account) => {
       const response = (await account.commands.spacemolt.get_poi()).structuredContent
       return response?.kind === 'normal' ? response : undefined
@@ -34,4 +34,6 @@ export function usePoi(): CommandQueryResult<GetPoiResponse | undefined> {
     [location?.poi_id],
     { enabled: Boolean(location?.poi_id), refreshOnSections: ['location'] },
   )
+  // Adrift (no POI, e.g. after an outpost is dismantled) the last POI's data would linger; drop it.
+  return location?.poi_id ? query : { ...query, data: undefined }
 }

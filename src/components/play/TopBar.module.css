@@ -252,7 +252,8 @@
 
   .username { font-size: 0.65rem; }
   .credits { font-size: 0.6rem; }
-  .poiName { display: none; }
+  /* The POI says more than the system on a phone; show it alone. */
+  .systemName:has(+ .poiSep) { display: none; }
   .poiSep { display: none; }
 
   .barsRow {
@@ -273,6 +274,8 @@
   .shipClass { font-size: 0.7rem; }
   .dockedBadge { font-size: 0.65rem; }
   .tradingRestricted { font-size: 0.65rem; }
-  .logoutBtn { padding: 0.4rem; min-width: 44px; min-height: 44px; }
-  .infoRow { min-height: 44px; }
+  .logoutBtn { padding: 0.4rem; min-width: 36px; min-height: 44px; }
+  .shortcutsBtn { display: none; } /* no keyboard on a phone */
+  .infoRow { min-height: 44px; flex-wrap: wrap; }
+  .shipSection { display: none; } /* ship name lives in the Ship tab; keeps the row inside 375px */
 }

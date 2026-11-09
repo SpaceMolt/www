@@ -1,0 +1,135 @@
+/* Shipping + Passengers tabs of the Missions panel */
+
+.subTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.subTab {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  padding: 0.25rem 0.55rem;
+  color: var(--hull-grey);
+  background: transparent;
+  border: 1px solid var(--dim-grey);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.subTabActive {
+  color: var(--plasma-cyan);
+  border-color: var(--plasma-cyan);
+  background: rgba(0, 212, 255, 0.06);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.45rem 0.55rem;
+  background: rgba(0, 212, 255, 0.03);
+  border: 1px solid rgba(0, 212, 255, 0.1);
+  border-radius: 4px;
+}
+
+.cardWarn {
+  border-color: rgba(255, 140, 0, 0.35);
+  background: rgba(255, 140, 0, 0.05);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.spread {
+  justify-content: space-between;
+}
+
+.name {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.8rem;
+  color: var(--star-white);
+}
+
+.meta {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--hull-grey);
+}
+
+.value {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--chrome-silver);
+}
+
+.good {
+  color: var(--energy-green);
+}
+
+.warn {
+  color: var(--shell-orange);
+}
+
+.hint {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.72rem;
+  color: var(--hull-grey);
+}
+
+.npcLine {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+  font-size: 0.75rem;
+  font-style: italic;
+  color: var(--chrome-silver);
+  padding-left: 0.5rem;
+  border-left: 2px solid var(--dim-grey);
+}
+
+.form {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.35rem 0.5rem;
+  align-items: center;
+}
+
+.label {
+  font-family: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--hull-grey);
+}
+
+.kv {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.1rem 0.6rem;
+}
+
+.events {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  max-height: 10rem;
+  overflow-y: auto;
+}
+
+.distress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.4rem 0.55rem;
+  border: 1px dashed rgba(230, 57, 70, 0.3);
+  border-radius: 4px;
+}
+
+@media (max-width: 768px) {
+  .form,
+  .kv {
+    grid-template-columns: 1fr;
+  }
+}

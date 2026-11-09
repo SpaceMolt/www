@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'bun:test'
 import { EMPIRE_NAMES, hasMineableResources } from './LeftSidebar'
 import { CANONICAL_EMPIRE_FULL_NAMES, expectExactEmpireKeys } from '@/test/canonicalEmpires'
+import { transitDestination } from './TravelProgress'
 
 describe('LeftSidebar EMPIRE_NAMES', () => {
   it('has exactly the 5 canonical empire ids as keys (no stray, typo\'d, or missing keys)', () => {
@@ -47,5 +48,19 @@ describe('hasMineableResources (Mine / Mine Until Full gate, dc#457858)', () => 
     // The pre-fix gate read `poi.resources`; passing only a POI-shaped object
     // with no location resources must not light the buttons up.
     expect(hasMineableResources({} as { resources?: unknown[] })).toBe(false)
+  })
+})
+
+describe('transitDestination', () => {
+  const pois = [{ id: 'belt', name: 'Main Belt' }, { id: 'stn', name: 'Orbit', base_name: 'Sol Station' }]
+
+  it('in-system travel with empty transit fields uses the POI list, then the picked name', () => {
+    expect(transitDestination({ transit_type: 'travel', transit_dest_poi_id: 'stn' }, undefined, pois)).toBe('Sol Station')
+    expect(transitDestination({ transit_type: 'travel' }, 'Main Belt', pois)).toBe('Main Belt')
+    expect(transitDestination({ transit_type: 'travel' })).toBe('destination')
+  })
+
+  it('a jump prefers the system name', () => {
+    expect(transitDestination({ transit_type: 'jump', transit_dest_system_name: 'Sol', transit_dest_poi_name: 'Gate' })).toBe('Sol')
   })
 })
