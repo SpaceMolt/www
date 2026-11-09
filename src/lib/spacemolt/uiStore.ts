@@ -7,7 +7,7 @@
  * accountStore pattern.
  */
 import { useCallback, useSyncExternalStore } from 'react'
-import type { NotificationPayloads } from '@spacemolt/lib'
+import type { NotificationPayloads, StorageGift } from '@spacemolt/lib'
 
 export type ChatMessage = NotificationPayloads['chat_message']
 export type BattleView = NotificationPayloads['battle_update']
@@ -47,6 +47,10 @@ export interface UiState {
   /** Last-known participation is not command authority while reconnecting. */
   battleSyncPending: boolean
   craftJobs: CraftJob[] | null
+  /** Bumped after any storage change; every storage view refetches on it. */
+  storageRevision: number
+  /** Gifts seen this session. The server clears its pending list on dock or any docked storage view, so the client keeps them. */
+  gifts: StorageGift[]
 }
 
 export type UiAction =
@@ -63,6 +67,9 @@ export type UiAction =
   | { type: 'battle_left' }
   | { type: 'battle_sync_pending' }
   | { type: 'set_craft_jobs'; jobs: CraftJob[] }
+  | { type: 'storage_changed' }
+  | { type: 'gifts_received'; gifts: StorageGift[] }
+  | { type: 'gifts_dismissed' }
   | { type: 'reset' }
 
 const EVENT_LOG_LIMIT = 200
@@ -79,6 +86,8 @@ export const initialUiState: UiState = {
   battleRevision: 0,
   battleSyncPending: false,
   craftJobs: null,
+  storageRevision: 0,
+  gifts: [],
 }
 
 let nextId = 1
@@ -141,6 +150,16 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
       return { ...state, battleSyncPending: true }
     case 'set_craft_jobs':
       return { ...state, craftJobs: action.jobs }
+    case 'storage_changed':
+      return { ...state, storageRevision: state.storageRevision + 1 }
+    case 'gifts_received': {
+      const key = (g: StorageGift) => `${g.sender_id}|${g.timestamp}`
+      const seen = new Set(state.gifts.map(key))
+      const fresh = action.gifts.filter((g) => !seen.has(key(g)))
+      return fresh.length === 0 ? state : { ...state, gifts: [...fresh, ...state.gifts] }
+    }
+    case 'gifts_dismissed':
+      return { ...state, gifts: [] }
     case 'reset':
       return initialUiState
   }

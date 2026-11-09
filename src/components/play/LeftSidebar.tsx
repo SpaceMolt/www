@@ -267,10 +267,14 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
     try {
       const result = await mutate((c) => c.spacemolt.dock(), { label: 'dock' })
       logEvent(`Docked at ${result.delta.details?.base || 'base'}`)
+      // Docking clears the server's pending gift list; keep the gifts it returns.
+      const gifts = result.delta.details?.gifts ?? []
+      if (gifts.length > 0) uiStore.dispatch({ type: 'gifts_received', gifts })
+      if (result.delta.details?.gifts_note) logEvent(result.delta.details.gifts_note)
     } catch (err) {
       reportError(err)
     }
-  }, [mutate, logEvent, reportError])
+  }, [mutate, logEvent, reportError, uiStore])
 
   const handleUndock = useCallback(async () => {
     try {

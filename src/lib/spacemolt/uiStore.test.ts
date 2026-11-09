@@ -96,3 +96,18 @@ describe('uiReducer', () => {
     expect(state.chatMessages.at(-1)?.content).toBe('m249')
   })
 })
+
+describe('storage gifts and refresh', () => {
+  const gift = { sender: 'hiver', sender_id: 'p1', timestamp: '2026-11-08T10:00:00Z', credits: 5 }
+
+  test('keeps gifts once each, newest first, until dismissed', () => {
+    let state = uiReducer(initialUiState, { type: 'gifts_received', gifts: [gift] })
+    state = uiReducer(state, { type: 'gifts_received', gifts: [gift, { ...gift, timestamp: 'later' }] })
+    expect(state.gifts.map((g) => g.timestamp)).toEqual(['later', gift.timestamp])
+    expect(uiReducer(state, { type: 'gifts_dismissed' }).gifts).toEqual([])
+  })
+
+  test('bumps the storage revision', () => {
+    expect(uiReducer(initialUiState, { type: 'storage_changed' }).storageRevision).toBe(1)
+  })
+})

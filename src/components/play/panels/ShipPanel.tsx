@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import {
   Rocket,
   Gauge,
@@ -16,12 +16,14 @@ import {
   ArrowDownToLine,
   Check,
   AlertTriangle,
+  Trash2,
 } from 'lucide-react'
 import { useShip, useModules, useCargo, useLocationState, usePendingAction, useCommandMutation, useCatalog } from '@/lib/spacemolt'
 import type { GameState } from '@spacemolt/lib'
 import { usePlay } from '../PlayProvider'
 import { ProgressBar } from '../ProgressBar'
-import { Panel, Modal, shared } from '../shared'
+import { Panel, Modal, ConfirmAction, ItemSelectList, shared, useStorageMove } from '../shared'
+import { normalizeCargo, selectAll, selectedItems, type SelectableItem, type Selection } from '../shared/itemSelection'
 import { ItemName } from '../ItemTooltip'
 import { getItem as getCatalogRawItem, isModule } from '@/data/catalog'
 import type { RawCatalogItem } from '@/data/catalog'
@@ -29,7 +31,6 @@ import styles from './ShipPanel.module.css'
 import { imageUrl } from '@/data/images'
 
 type ModuleEntry = NonNullable<GameState['modules']>[number]
-type CargoEntry = NonNullable<GameState['cargo']>[number]
 
 interface ShipClassDetail {
   name: string
@@ -68,9 +69,11 @@ export function ShipPanel() {
   // Install modal
   const [installSlotType, setInstallSlotType] = useState<SlotType | null>(null)
 
-  // Deposit controls (docked only) — per-item quantity + multi-select
-  const [depositQtys, setDepositQtys] = useState<Record<string, string>>({})
-  const [selectedCargo, setSelectedCargo] = useState<Record<string, boolean>>({})
+  // Cargo multi-select: deposit to storage when docked, jettison when undocked
+  const cargoRows = useMemo(() => normalizeCargo(cargo), [cargo])
+  const [cargoSel, setCargoSel] = useState<Selection>({})
+  const [confirmJettison, setConfirmJettison] = useState(false)
+  const move = useStorageMove()
 
   const classDetail: ShipClassDetail | null =
     ship?.class_id && catalog ? ((catalog.ship(ship.class_id) as unknown as ShipClassDetail) ?? null) : null
@@ -98,40 +101,6 @@ export function ShipPanel() {
     },
     [mutate, reportError]
   )
-
-  const handleDepositItem = useCallback(
-    (itemId: string, maxQty: number) => {
-      if (actionPending) return
-      const qtyStr = depositQtys[itemId] ?? String(maxQty)
-      const quantity = parseInt(qtyStr, 10)
-      if (isNaN(quantity) || quantity < 1 || quantity > maxQty) return
-      mutate((c) => c.spacemolt_storage.deposit({ item_id: itemId, quantity }), { label: 'deposit' }).catch(reportError)
-      setDepositQtys((prev) => ({ ...prev, [itemId]: '' }))
-      setSelectedCargo((prev) => {
-        const next = { ...prev }
-        delete next[itemId]
-        return next
-      })
-    },
-    [mutate, depositQtys, actionPending, reportError]
-  )
-
-  const handleDepositSelected = useCallback(() => {
-    if (actionPending) return
-    const items = cargo.flatMap((item) => {
-      const itemId = item.item_id
-      if (!itemId || !selectedCargo[itemId]) return []
-      const maxQty = item.quantity ?? 0
-      const qtyStr = depositQtys[itemId] ?? String(maxQty)
-      const quantity = parseInt(qtyStr, 10)
-      if (isNaN(quantity) || quantity < 1 || quantity > maxQty) return []
-      return [{ item_id: itemId, quantity }]
-    })
-    if (items.length === 0) return
-    mutate((c) => c.spacemolt_storage.deposit({ items }), { label: 'deposit' }).catch(reportError)
-    setDepositQtys({})
-    setSelectedCargo({})
-  }, [mutate, cargo, selectedCargo, depositQtys, actionPending, reportError])
 
   if (!ship) {
     return (
@@ -172,6 +141,29 @@ export function ShipPanel() {
       if (slotType === 'utility' && modType !== 'mining' && modType !== 'utility') return []
       return [{ item_id: itemId, name: item.item_name ?? itemId, quantity: item.quantity ?? 0, catalogEntry: entry }]
     })
+
+  const cargoPicked = selectedItems(cargoRows, cargoSel)
+
+  /** Whether a module in cargo fits a free slot, CPU and power. Null for non-modules. */
+  const moduleCompat = (item: SelectableItem): { ok: boolean; reason?: string } | null => {
+    const rawItem = getCatalogRawItem(item.item_id)
+    const modEntry = rawItem && isModule(rawItem) ? rawItem : null
+    if (!modEntry) return null
+    const slotType = modEntry.type
+    const [slotsUsed, slotsTotal] = slotType === 'weapon'
+      ? [weaponMods.length, weaponSlots]
+      : slotType === 'defense'
+        ? [defenseMods.length, defenseSlots]
+        : [utilityMods.length, utilitySlots]
+    const cpu = modEntry.cpu_usage ?? 0
+    const power = modEntry.power_usage ?? 0
+    const cpuFree = cpuCapacity - cpuUsed
+    const powerFree = powerCapacity - powerUsed
+    if (cpu > cpuFree) return { ok: false, reason: `Needs ${cpu} CPU, ${cpuFree} free` }
+    if (power > powerFree) return { ok: false, reason: `Needs ${power} power, ${powerFree} free` }
+    if (slotsUsed >= slotsTotal) return { ok: false, reason: `No ${slotType === 'mining' || slotType === 'utility' ? 'utility' : slotType} slots free` }
+    return { ok: true }
+  }
 
   const renderModuleSlot = (mod: ModuleEntry, idx: number) => {
     const modInstanceId = mod.module_id ?? ''
@@ -322,138 +314,55 @@ export function ShipPanel() {
           <Package size={12} />
           Cargo Hold ({ship.cargo_used ?? 0}/{ship.cargo_capacity ?? 0})
         </div>
-        {cargo.length > 0 ? (
-          <>
-            <div className={styles.cargoList}>
-              {cargo.map((item: CargoEntry, idx) => {
-                const itemId = item.item_id ?? `cargo-${idx}`
-                const quantity = item.quantity ?? 0
-                const rawItem = item.item_id ? getCatalogRawItem(item.item_id) : undefined
-                const modEntry = rawItem && isModule(rawItem) ? rawItem : null
-                let compatStatus: { ok: boolean; reason?: string } | null = null
-                if (modEntry && isDocked) {
-                  const cpuFree = cpuCapacity - cpuUsed
-                  const powerFree = powerCapacity - powerUsed
-                  const slotType = modEntry.type
-                  let slotsUsed = 0
-                  let slotsTotal = 0
-                  if (slotType === 'weapon') {
-                    slotsUsed = weaponMods.length
-                    slotsTotal = weaponSlots
-                  } else if (slotType === 'defense') {
-                    slotsUsed = defenseMods.length
-                    slotsTotal = defenseSlots
-                  } else {
-                    slotsUsed = utilityMods.length
-                    slotsTotal = utilitySlots
-                  }
-                  const cpu = modEntry.cpu_usage ?? 0
-                  const power = modEntry.power_usage ?? 0
-                  if (cpu > cpuFree) {
-                    compatStatus = { ok: false, reason: `Needs ${cpu} CPU, ${cpuFree} free` }
-                  } else if (power > powerFree) {
-                    compatStatus = { ok: false, reason: `Needs ${power} power, ${powerFree} free` }
-                  } else if (slotsUsed >= slotsTotal) {
-                    const label = slotType === 'mining' || slotType === 'utility' ? 'utility' : slotType
-                    compatStatus = { ok: false, reason: `No ${label} slots free` }
-                  } else {
-                    compatStatus = { ok: true }
-                  }
-                }
-                const qtyStr = depositQtys[itemId] ?? String(quantity)
-                const qtyNum = parseInt(qtyStr, 10)
-                const qtyValid = !isNaN(qtyNum) && qtyNum >= 1 && qtyNum <= quantity
-                const checked = !!selectedCargo[itemId]
-                return (
-                  <div key={itemId} className={styles.cargoItem}>
-                    <div className={styles.cargoNameWrap}>
-                      {isDocked && (
-                        <input
-                          type="checkbox"
-                          className={styles.cargoSelect}
-                          checked={checked}
-                          onChange={(e) =>
-                            setSelectedCargo((prev) => ({
-                              ...prev,
-                              [itemId]: e.target.checked,
-                            }))
-                          }
-                          title="Select for Move Selected"
-                        />
-                      )}
-                      <span className={styles.cargoName}>
-                        <ItemName itemId={item.item_id ?? ''}>{item.item_name ?? item.item_id ?? ''}</ItemName>
-                      </span>
-                    </div>
-                    <span className={styles.cargoMeta}>
-                      {compatStatus && (
-                        compatStatus.ok ? (
-                          <span className={styles.compatOk} title="Can install"><Check size={10} /></span>
-                        ) : (
-                          <span className={styles.compatNo} title={compatStatus.reason}><AlertTriangle size={10} /> {compatStatus.reason}</span>
-                        )
-                      )}
-                      <span className={styles.cargoQty}>x{quantity}</span>
-                      <span className={styles.cargoSize}>{quantity * (item.size ?? 0)}u</span>
-                      {isDocked && (
-                        <span className={styles.cargoDepositAction}>
-                          <input
-                            className={styles.cargoQtyInput}
-                            type="number"
-                            min={1}
-                            max={quantity}
-                            value={qtyStr}
-                            onChange={(e) =>
-                              setDepositQtys((prev) => ({
-                                ...prev,
-                                [itemId]: e.target.value,
-                              }))
-                            }
-                            title="Quantity to move to storage"
-                          />
-                          <button
-                            className={shared.confirmBtn}
-                            onClick={() => handleDepositItem(itemId, quantity)}
-                            disabled={actionPending || !qtyValid}
-                            title={actionPending ? 'Another action is pending' : 'Move to station storage'}
-                            type="button"
-                          >
-                            <ArrowDownToLine size={10} />
-                          </button>
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-            {isDocked && (
-              <div className={styles.cargoBulkRow}>
-                <span className={styles.cargoBulkHint}>
-                  {Object.values(selectedCargo).filter(Boolean).length} selected
-                </span>
-                <button
-                  className={shared.confirmBtn}
-                  onClick={handleDepositSelected}
-                  disabled={
-                    actionPending ||
-                    Object.values(selectedCargo).filter(Boolean).length === 0
-                  }
-                  title={
-                    actionPending
-                      ? 'Another action is pending'
-                      : 'Move all selected items to station storage'
-                  }
-                  type="button"
-                >
-                  <ArrowDownToLine size={10} /> Move Selected to Storage
-                </button>
-              </div>
-            )}
-          </>
-        ) : (
-          <div className={shared.emptyState}>Cargo hold is empty</div>
-        )}
+        <ItemSelectList
+          items={cargoRows}
+          selection={cargoSel}
+          onChange={setCargoSel}
+          empty="Cargo hold is empty"
+          renderExtra={(item) => <CompatBadge status={isDocked ? moduleCompat(item) : null} />}
+          actions={isDocked ? (
+            <>
+              <button
+                className={shared.confirmBtn}
+                onClick={async () => setCargoSel(await move('Deposited', cargoPicked, (c, items) => c.spacemolt_storage.deposit({ items })))}
+                disabled={actionPending || cargoPicked.length === 0}
+                title={actionPending ? 'Another action is pending' : 'Move the selected items to station storage'}
+                type="button"
+              >
+                <ArrowDownToLine size={10} /> Move Selected to Storage
+              </button>
+              <button
+                className={shared.subtleBtn}
+                onClick={async () => setCargoSel(await move('Deposited', selectedItems(cargoRows, selectAll(cargoRows)), (c, items) => c.spacemolt_storage.deposit({ items })))}
+                disabled={actionPending}
+                type="button"
+              >
+                Deposit All Cargo
+              </button>
+            </>
+          ) : confirmJettison ? (
+            <ConfirmAction
+              message={`Dump ${cargoPicked.length} item${cargoPicked.length === 1 ? '' : 's'} into space?`}
+              icon={<AlertTriangle size={12} />}
+              onConfirm={async () => {
+                setConfirmJettison(false)
+                setCargoSel(await move('Jettisoned', cargoPicked, (c, items) => c.spacemolt_storage.jettison({ items })))
+              }}
+              onCancel={() => setConfirmJettison(false)}
+              confirmLabel="Jettison"
+            />
+          ) : (
+            <button
+              className={shared.dangerBtn}
+              onClick={() => setConfirmJettison(true)}
+              disabled={actionPending || cargoPicked.length === 0}
+              title="Dump the selected items into a container in space"
+              type="button"
+            >
+              <Trash2 size={10} /> Jettison Selected
+            </button>
+          )}
+        />
 
       {/* Install module modal */}
       {installSlotType && (
@@ -468,6 +377,13 @@ export function ShipPanel() {
       )}
     </Panel>
   )
+}
+
+function CompatBadge({ status }: { status: { ok: boolean; reason?: string } | null }) {
+  if (!status) return null
+  return status.ok
+    ? <span className={styles.compatOk} title="Can install"><Check size={10} /></span>
+    : <span className={styles.compatNo} title={status.reason}><AlertTriangle size={10} /> {status.reason}</span>
 }
 
 function InstallModuleModal({ slotType, modules, onInstall, onClose, cpuAvailable, powerAvailable }: {

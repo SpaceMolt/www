@@ -14,15 +14,15 @@ import path from 'path'
  * There are two correct answers, and which one applies depends on whether the field has
  * another way to change the value:
  *
- *   - MarketView's order rows already render explicit +5/+10/+100/MAX buttons
+ *   - MarketView's order rows and the shared ItemSelectList rows already render explicit +5/+10/+100/MAX buttons
  *     (QtyButtons) immediately before the input, so the native stepper is redundant and
  *     is hidden outright. That works in both engines and needs no extra field width.
  *
- *   - StorageView (also used by FactionStorageView) and ShipPanel have no such buttons:
+ *   - FactionStorageView's treasury and fuel fields have no such buttons:
  *     the stepper is the only increment affordance, so hiding it would be a functional
  *     regression. Those keep the stepper and reserve a gutter beside it instead.
  *     Firefox has no equivalent of ::-webkit-inner-spin-button, so it keeps some
- *     overlap on those two fields; that is a known, documented residual.
+ *     overlap on those fields; that is a known, documented residual.
  *
  * There is no React render harness in this repo, so these tests guard the invariants at
  * the stylesheet level, plus the one component-level fact the MarketView decision rests
@@ -150,6 +150,24 @@ describe('MarketView order quantity hides the native stepper in both engines', (
   })
 })
 
+describe('ItemSelectList row quantity hides the native stepper in both engines', () => {
+  const css = fs.readFileSync(path.join(PANELS_DIR, '..', 'shared', 'ItemSelectList.module.css'), 'utf8')
+  const field = declsFor(css, '.qtyInput')
+  const inner = declsFor(css, '.qtyInput::-webkit-inner-spin-button')
+
+  it('opts out of the spinner in Gecko and WebKit', () => {
+    expect(hidesStepperInGecko(field!)).toBe(true)
+    expect(hidesStepperInWebkit(inner!)).toBe(true)
+  })
+
+  it('renders QtyButtons right after the input, which is what makes hiding it safe', () => {
+    const tsx = fs.readFileSync(path.join(PANELS_DIR, '..', 'shared', 'ItemSelectList.tsx'), 'utf8')
+    const use = tsx.indexOf('styles.qtyInput')
+    expect(use).toBeGreaterThan(-1)
+    expect(tsx.slice(use, use + 600)).toContain('<QtyButtons')
+  })
+})
+
 // --- fields that keep the stepper (it is the only increment affordance) -----------
 
 const GUTTER_FIELDS = [
@@ -157,16 +175,7 @@ const GUTTER_FIELDS = [
     label: 'StorageView .qtyInput',
     cssFile: ['trading', 'StorageView.module.css'],
     className: 'qtyInput',
-    components: [
-      ['trading', 'StorageView.tsx'],
-      ['trading', 'FactionStorageView.tsx'],
-    ],
-  },
-  {
-    label: 'ShipPanel .cargoQtyInput',
-    cssFile: ['ShipPanel.module.css'],
-    className: 'cargoQtyInput',
-    components: [['ShipPanel.tsx']],
+    components: [['trading', 'FactionStorageView.tsx']],
   },
 ]
 

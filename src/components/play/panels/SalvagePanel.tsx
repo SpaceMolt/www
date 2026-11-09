@@ -17,8 +17,9 @@ import {
   Coins,
   Unlink,
 } from 'lucide-react'
-import type { GetWrecksResponse, ScrapWreckResponse } from '@spacemolt/lib'
+import type { GetWrecksResponse, MutationResult, ScrapWreckResponse } from '@spacemolt/lib'
 import {
+  useAccountStore,
   useCommandMutation,
   useCommandQuery,
   useLocationState,
@@ -68,6 +69,7 @@ function describeTowedWreck(w: Wreck | undefined): string {
 export function SalvagePanel() {
   const { uiStore } = usePlay()
   const mutate = useCommandMutation()
+  const store = useAccountStore()
   const player = usePlayer()
   const ship = useShip()
   const location = useLocationState()
@@ -81,6 +83,8 @@ export function SalvagePanel() {
   const [actionBusy, setActionBusy] = useState<string | null>(null)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [confirmAction, setConfirmAction] = useState<'scrap' | 'sell' | null>(null)
+  // Wreck id awaiting confirmation of a field scrap
+  const [confirmField, setConfirmField] = useState<string | null>(null)
   const [scrapResult, setScrapResult] = useState<ScrapWreckResponse | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   // Tick state purely to refresh countdown displays
@@ -149,6 +153,49 @@ export function SalvagePanel() {
       }
     },
     [mutate, wrecksQuery, reportError],
+  )
+
+  // Omitting item_id and module_id loots everything that fits.
+  const handleLootAll = useCallback(
+    async (wreckId: string) => {
+      setActionBusy(`lootall:${wreckId}`)
+      setErrorMsg(null)
+      try {
+        const result = await mutate((c) => c.spacemolt_salvage.loot({ id: wreckId }), { label: 'loot' })
+        const details = result.delta.details
+        const text = details && 'message' in details ? details.message : 'Wreck looted'
+        uiStore.dispatch({ type: 'event', kind: 'success', text })
+        wrecksQuery.refetch()
+      } catch (err) {
+        reportError(err)
+      } finally {
+        setActionBusy(null)
+      }
+    },
+    [mutate, uiStore, wrecksQuery, reportError],
+  )
+
+  // Field scrap (Outer Rim Salvage Array) breaks a wreck down where it lies. The pinned lib
+  // types do not declare `mode` yet, so this goes through the untyped mutate.
+  const handleFieldScrap = useCallback(
+    async (wreckId: string) => {
+      setActionBusy(`field:${wreckId}`)
+      setErrorMsg(null)
+      setConfirmField(null)
+      try {
+        const result = await mutate(
+          () => store.account.mutate('spacemolt_salvage', 'scrap', { id: wreckId, mode: 'field' }) as Promise<MutationResult<ScrapWreckResponse>>,
+          { label: 'scrap' },
+        )
+        setScrapResult(result.delta.details ?? null)
+        wrecksQuery.refetch()
+      } catch (err) {
+        reportError(err)
+      } finally {
+        setActionBusy(null)
+      }
+    },
+    [mutate, store, wrecksQuery, reportError],
   )
 
   const handleTow = useCallback(
@@ -501,6 +548,39 @@ export function SalvagePanel() {
 
                     {/* Tow action */}
                     <div className={styles.salvageRow}>
+                      {(cargoEntries.length > 0 || modules.length > 0) && (
+                        <button
+                          className={shared.actionBtn}
+                          onClick={() => handleLootAll(w.id)}
+                          disabled={Boolean(actionBusy) || isDocked}
+                          type="button"
+                          title={isDocked ? 'Undock to loot wrecks' : 'Loot every item and module that fits'}
+                        >
+                          <Package size={12} /> {actionBusy === `lootall:${w.id}` ? 'Looting...' : 'Loot All'}
+                        </button>
+                      )}
+                      {confirmField === w.id ? (
+                        <ConfirmAction
+                          message="Field scrap destroys the wreck and half its materials. Continue?"
+                          icon={<AlertTriangle size={12} />}
+                          onConfirm={() => handleFieldScrap(w.id)}
+                          onCancel={() => setConfirmField(null)}
+                          confirmLabel="Scrap"
+                          cancelLabel="Cancel"
+                        />
+                      ) : (
+                        !towedByOther && (
+                          <button
+                            className={shared.dangerBtn}
+                            onClick={() => setConfirmField(w.id)}
+                            disabled={Boolean(actionBusy) || isDocked}
+                            type="button"
+                            title="Scrap here with an Outer Rim Salvage Array: half the materials are lost, the rest go to cargo"
+                          >
+                            <Trash2 size={12} /> {actionBusy === `field:${w.id}` ? 'Scrapping...' : 'Field Scrap'}
+                          </button>
+                        )
+                      )}
                       {towedBySelf ? (
                         <span className={styles.wreckSub}>Use the towing controls above to scrap, sell, or release.</span>
                       ) : towedByOther ? (

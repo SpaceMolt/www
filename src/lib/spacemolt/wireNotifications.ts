@@ -108,6 +108,12 @@ export function wireNotifications(account: Account, store: UiStore): () => void 
       }
     }),
 
+    account.on('gift_received', (gift) => {
+      store.dispatch({ type: 'gifts_received', gifts: [gift] })
+      store.dispatch({ type: 'storage_changed' })
+      log('success', `Gift received from ${gift.sender}`)
+    }),
+
     account.on('drone_update', () => log('info', 'Drone status updated')),
     account.on('drone_destroyed', () => log('warning', 'A drone was destroyed')),
     account.on('base_raid_update', () => log('warning', 'Base raid in progress')),

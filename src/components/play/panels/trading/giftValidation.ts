@@ -1,48 +1,21 @@
-export interface GiftFormFields {
+import { selectedItems, type ItemQty, type SelectableItem, type Selection } from '../../shared/itemSelection'
+
+export interface GiftForm {
+  recipient: string
   credits: string
-  itemId: string
-  itemQty: string
-  shipId: string
+  /** The rows the item selection was made from (cargo or storage). */
+  items: SelectableItem[]
+  selection: Selection
+  shipIds: string[]
+  wallet: number
 }
 
-export type GiftAction =
-  | { kind: 'ship'; shipId: string }
-  | { kind: 'item'; itemId: string; quantity: number }
-  | { kind: 'credits'; credits: number }
-
-const positiveInt = (raw: string): number | null => {
-  const value = parseInt(raw, 10)
-  return isNaN(value) || value < 1 ? null : value
-}
-
-/**
- * Decide the single transfer the Send Gift form describes, or null if it describes
- * none. One send_gift call moves one of a ship, an item stack, or credits, so the
- * fields are ranked ship > item > credits.
- *
- * A selected item always claims the send: if its quantity is blank, zero, or negative
- * the result is null, never a fall-through to the credits field. Returning null must
- * keep the caller from sending and from clearing the form (dc#689374).
- *
- * Both fields come from <input type="number">, and parsing stays parseInt-lenient to
- * match the deposit and withdraw handlers in StorageView. The server is still the
- * authority on the amount: this function does not know the stack size in storage.
- */
-export function resolveGiftAction(fields: GiftFormFields): GiftAction | null {
-  if (fields.shipId) return { kind: 'ship', shipId: fields.shipId }
-
-  if (fields.itemId) {
-    const quantity = positiveInt(fields.itemQty)
-    return quantity === null ? null : { kind: 'item', itemId: fields.itemId, quantity }
-  }
-
-  const credits = positiveInt(fields.credits)
-  return credits === null ? null : { kind: 'credits', credits }
-}
-
-/** The Send Gift button is live only with a recipient and a resolvable transfer. */
-export function isGiftSubmitDisabled(fields: GiftFormFields & { recipient: string }): boolean {
-  return !fields.recipient.trim() || resolveGiftAction(fields) === null
+/** Everything one Send press transfers: one bulk item call, one credit call, one call per ship. */
+export interface GiftPlan {
+  recipient: string
+  items: ItemQty[]
+  credits: number
+  shipIds: string[]
 }
 
 /** A whole-number credit amount from 1 to max, or null. Rejects "1.5" and "1e3" instead of truncating them. */
@@ -50,4 +23,23 @@ export function parseCreditAmount(raw: string, max: number): number | null {
   if (!/^\d+$/.test(raw.trim())) return null
   const value = Number(raw)
   return value < 1 || value > max ? null : value
+}
+
+/**
+ * Turn the gift form into a plan, or into the one problem that blocks it. Every filled field is either
+ * sent or reported: a bad credit amount or a bad item quantity blocks the whole send, so nothing the
+ * player entered is dropped without a word (dc#689374).
+ */
+export function planGift(form: GiftForm): { plan: GiftPlan } | { problem: string } {
+  const recipient = form.recipient.trim()
+  if (!recipient) return { problem: 'Enter a recipient' }
+  const credits = form.credits.trim() ? parseCreditAmount(form.credits, form.wallet) : 0
+  if (credits === null) return { problem: 'Credits must be a whole number from 1 to your balance' }
+  const items = selectedItems(form.items, form.selection)
+  const badRows = form.items.filter((item) => item.item_id in form.selection).length - items.length
+  if (badRows > 0) return { problem: `Fix the quantity on ${badRows} selected item${badRows === 1 ? '' : 's'}` }
+  if (items.length === 0 && credits === 0 && form.shipIds.length === 0) {
+    return { problem: 'Choose items, credits or ships to send' }
+  }
+  return { plan: { recipient, items, credits, shipIds: form.shipIds } }
 }
