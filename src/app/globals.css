@@ -1170,3 +1170,12 @@ body.play-page input[type='number']::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
+
+/* Thin dark scrollbars on every /play scroll area. :where() keeps this at zero specificity, so a
+   panel's own rule (such as scrollbar-width: none) still wins. Setting the standard properties
+   makes current Chrome ignore ::-webkit-scrollbar, so the colors live here. */
+:where(body.play-page),
+:where(body.play-page) * {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 212, 255, 0.3) transparent;
+}
