@@ -16,17 +16,21 @@ import {
   ArrowDownToLine,
   Check,
   AlertTriangle,
+  Pickaxe,
+  Radar,
+  FlaskConical,
 } from 'lucide-react'
 import { useShip, useModules, useCargo, useLocationState, usePendingAction, useCommandMutation, useCatalog } from '@/lib/spacemolt'
 import type { GameState } from '@spacemolt/lib'
 import { usePlay } from '../PlayProvider'
 import { ProgressBar } from '../ProgressBar'
-import { Panel, Modal, shared } from '../shared'
+import { Panel, Modal, shared, ConfirmAction, QtyButtons, errorMessage } from '../shared'
 import { ItemName } from '../ItemTooltip'
 import { getItem as getCatalogRawItem, isModule } from '@/data/catalog'
 import type { RawCatalogItem } from '@/data/catalog'
 import styles from './ShipPanel.module.css'
 import { imageUrl } from '@/data/images'
+import { canRefit, isUsableConsumable, usesQuantity, useItemResultText } from './shipModules'
 
 type ModuleEntry = NonNullable<GameState['modules']>[number]
 type CargoEntry = NonNullable<GameState['cargo']>[number]
@@ -67,6 +71,9 @@ export function ShipPanel() {
 
   // Install modal
   const [installSlotType, setInstallSlotType] = useState<SlotType | null>(null)
+  const [confirmUninstall, setConfirmUninstall] = useState<string | null>(null)
+  const [modError, setModError] = useState<string | null>(null)
+  const [useQtys, setUseQtys] = useState<Record<string, string>>({})
 
   // Deposit controls (docked only) — per-item quantity + multi-select
   const [depositQtys, setDepositQtys] = useState<Record<string, string>>({})
@@ -84,19 +91,43 @@ export function ShipPanel() {
   )
 
   const handleUninstallModule = useCallback(
-    (moduleId: string) => {
-      mutate((c) => c.spacemolt.uninstall_mod({ id: moduleId }), { label: 'uninstall_mod' }).catch(reportError)
+    async (moduleId: string) => {
+      setConfirmUninstall(null)
+      setModError(null)
+      try {
+        await mutate((c) => c.spacemolt.uninstall_mod({ id: moduleId }), { label: 'uninstall_mod' })
+      } catch (err) {
+        setModError(errorMessage(err))
+      }
     },
-    [mutate, reportError]
+    [mutate]
   )
 
   const handleInstallModule = useCallback(
-    (itemId: string) => {
-      mutate((c) => c.spacemolt.install_mod({ id: itemId }), { label: 'install_mod' })
-        .then(() => setInstallSlotType(null))
-        .catch(reportError)
+    async (itemId: string) => {
+      setModError(null)
+      try {
+        await mutate((c) => c.spacemolt.install_mod({ id: itemId }), { label: 'install_mod' })
+        setInstallSlotType(null)
+      } catch (err) {
+        setModError(errorMessage(err))
+      }
     },
-    [mutate, reportError]
+    [mutate]
+  )
+
+  const handleUseItem = useCallback(
+    async (itemId: string, quantity: number) => {
+      setModError(null)
+      try {
+        const res = await mutate((c) => c.spacemolt.use_item({ id: itemId, quantity }), { label: 'use_item' })
+        setUseQtys((prev) => ({ ...prev, [itemId]: '' }))
+        if (res.delta.details) uiStore.dispatch({ type: 'toast', kind: 'success', text: useItemResultText(res.delta.details) })
+      } catch (err) {
+        setModError(errorMessage(err))
+      }
+    },
+    [mutate, uiStore]
   )
 
   const handleDepositItem = useCallback(
@@ -158,6 +189,8 @@ export function ShipPanel() {
   const cpuUsed = ship.cpu_used ?? 0
   const powerCapacity = ship.power_capacity ?? 0
   const powerUsed = ship.power_used ?? 0
+  const refitOk = canRefit(isDocked, modules)
+  const consumables = cargo.filter((item) => item.item_id && isUsableConsumable(getCatalogRawItem(item.item_id)))
 
   // Get installable modules from cargo for a slot type
   const getInstallableModules = (slotType: SlotType): Array<{ item_id: string; name: string; quantity: number; catalogEntry?: RawCatalogItem }> =>
@@ -191,24 +224,32 @@ export function ShipPanel() {
             {(mod.power_usage ?? 0) > 0 && <span className={styles.slotStat}><Zap size={9} /> {mod.power_usage}</span>}
             {damage && <span className={styles.slotStat}><Swords size={9} /> {damage}</span>}
             {shieldBonus && <span className={styles.slotStat}><ShieldPlus size={9} /> +{shieldBonus}</span>}
-            {miningPower && <span className={styles.slotStat}>⛏ {miningPower}</span>}
-            {harvestPower && <span className={styles.slotStat}>⛏ {harvestPower}</span>}
-            {scannerPower && <span className={styles.slotStat}>📡 {scannerPower}</span>}
+            {miningPower && <span className={styles.slotStat}><Pickaxe size={9} /> {miningPower}</span>}
+            {harvestPower && <span className={styles.slotStat}><Pickaxe size={9} /> {harvestPower}</span>}
+            {scannerPower && <span className={styles.slotStat}><Radar size={9} /> {scannerPower}</span>}
             {cargoBonus && <span className={styles.slotStat}><Package size={9} /> +{cargoBonus}</span>}
             {speedBonus && <span className={styles.slotStat}><Gauge size={9} /> +{speedBonus}</span>}
           </div>
         </div>
         <div className={styles.slotActions}>
-          {isDocked && (
+          {refitOk && (confirmUninstall === modInstanceId ? (
+            <ConfirmAction
+              message={`Uninstall ${mod.name ?? 'module'} to cargo?`}
+              onConfirm={() => handleUninstallModule(modInstanceId)}
+              onCancel={() => setConfirmUninstall(null)}
+              confirmDisabled={actionPending}
+            />
+          ) : (
             <button
               className={shared.dangerBtn}
-              onClick={() => handleUninstallModule(modInstanceId)}
+              onClick={() => setConfirmUninstall(modInstanceId)}
+              disabled={actionPending}
               title="Uninstall to cargo"
               type="button"
             >
               Uninstall
             </button>
-          )}
+          ))}
         </div>
       </div>
     )
@@ -217,9 +258,9 @@ export function ShipPanel() {
   const renderEmptySlot = (slotType: SlotType, idx: number) => (
     <div
       key={`empty-${slotType}-${idx}`}
-      className={`${styles.slotEmpty} ${isDocked ? styles.slotClickable : ''}`}
-      onClick={isDocked ? () => setInstallSlotType(slotType) : undefined}
-      title={isDocked ? 'Click to install a module' : 'Dock to install modules'}
+      className={`${styles.slotEmpty} ${refitOk ? styles.slotClickable : ''}`}
+      onClick={refitOk ? () => setInstallSlotType(slotType) : undefined}
+      title={refitOk ? 'Click to install a module' : 'Dock or fit a Ship Maintenance Bay to install modules'}
     >
       <Plus size={14} className={styles.slotEmptyIcon} />
     </div>
@@ -316,6 +357,61 @@ export function ShipPanel() {
             {Array.from({ length: emptyUtility }, (_, i) => renderEmptySlot('utility', i))}
           </div>
         </div>
+        {modError && !installSlotType && (
+          <div className={styles.modError}>
+            <AlertTriangle size={12} /> {modError}
+          </div>
+        )}
+
+        {/* Consumables: use_item works docked or undocked */}
+        {consumables.length > 0 && (
+          <>
+            <div className={shared.sectionTitle}>
+              <FlaskConical size={12} /> Consumables
+            </div>
+            <div className={styles.cargoList}>
+              {consumables.map((item) => {
+                const itemId = item.item_id ?? ''
+                const held = item.quantity ?? 0
+                const hasQty = usesQuantity(getCatalogRawItem(itemId))
+                const qtyStr = useQtys[itemId] || '1'
+                const qty = parseInt(qtyStr, 10)
+                const qtyValid = !hasQty || (qty >= 1 && qty <= held)
+                return (
+                  <div key={itemId} className={styles.cargoItem}>
+                    <span className={styles.cargoName}><ItemName itemId={itemId}>{item.item_name ?? itemId}</ItemName></span>
+                    <span className={styles.cargoMeta}>
+                      <span className={styles.cargoQty}>x{held}</span>
+                      {hasQty && (
+                        <>
+                          <input
+                            className={styles.cargoQtyInput}
+                            type="number"
+                            min={1}
+                            max={held}
+                            value={qtyStr}
+                            onChange={(e) => setUseQtys((prev) => ({ ...prev, [itemId]: e.target.value }))}
+                            title="Quantity to use"
+                          />
+                          <QtyButtons max={held} current={qtyStr} onChange={(v) => setUseQtys((prev) => ({ ...prev, [itemId]: v }))} />
+                        </>
+                      )}
+                      <button
+                        className={shared.confirmBtn}
+                        onClick={() => handleUseItem(itemId, hasQty ? qty : 1)}
+                        disabled={actionPending || !qtyValid}
+                        title={actionPending ? 'Another action is pending' : 'Use item'}
+                        type="button"
+                      >
+                        Use
+                      </button>
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          </>
+        )}
 
         {/* Cargo Hold */}
         <div className={shared.sectionTitle}>
@@ -461,7 +557,8 @@ export function ShipPanel() {
           slotType={installSlotType}
           modules={getInstallableModules(installSlotType)}
           onInstall={handleInstallModule}
-          onClose={() => setInstallSlotType(null)}
+          onClose={() => { setInstallSlotType(null); setModError(null) }}
+          error={modError}
           cpuAvailable={cpuCapacity - cpuUsed}
           powerAvailable={powerCapacity - powerUsed}
         />
@@ -470,13 +567,14 @@ export function ShipPanel() {
   )
 }
 
-function InstallModuleModal({ slotType, modules, onInstall, onClose, cpuAvailable, powerAvailable }: {
+function InstallModuleModal({ slotType, modules, onInstall, onClose, cpuAvailable, powerAvailable, error }: {
   slotType: SlotType
   modules: Array<{ item_id: string; name: string; quantity: number; catalogEntry?: RawCatalogItem }>
   onInstall: (itemId: string) => void
   onClose: () => void
   cpuAvailable: number
   powerAvailable: number
+  error: string | null
 }) {
   const slotLabel = slotType === 'utility' ? 'Utility / Mining' : slotType.charAt(0).toUpperCase() + slotType.slice(1)
 
@@ -486,6 +584,11 @@ function InstallModuleModal({ slotType, modules, onInstall, onClose, cpuAvailabl
         <span><Cpu size={11} /> CPU: {cpuAvailable} free</span>
         <span><Zap size={11} /> Power: {powerAvailable} free</span>
       </div>
+      {error && (
+        <div className={styles.modError}>
+          <AlertTriangle size={12} /> {error}
+        </div>
+      )}
       {modules.length === 0 ? (
         <div className={shared.emptyState}>
           No compatible modules in cargo
@@ -509,7 +612,7 @@ function InstallModuleModal({ slotType, modules, onInstall, onClose, cpuAvailabl
                         <span className={styles.slotStat}><Zap size={9} /> {cat.power_usage}</span>
                         {cat.damage && <span className={styles.slotStat}><Swords size={9} /> {cat.damage}</span>}
                         {cat.shield_bonus && <span className={styles.slotStat}><ShieldPlus size={9} /> +{cat.shield_bonus}</span>}
-                        {cat.mining_power && <span className={styles.slotStat}>⛏ {cat.mining_power}</span>}
+                        {cat.mining_power && <span className={styles.slotStat}><Pickaxe size={9} /> {cat.mining_power}</span>}
                       </>
                     )}
                   </div>
