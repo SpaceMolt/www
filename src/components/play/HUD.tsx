@@ -25,6 +25,7 @@ import { AchievementsPanel } from './panels/AchievementsPanel'
 import { SettingsPanel } from './panels/SettingsPanel'
 import { FacilitiesPanel } from './panels/FacilitiesPanel'
 import { SalvagePanel } from './panels/SalvagePanel'
+import { CrewPanel } from './panels/CrewPanel'
 import { useAutoTravel, type AutoTravelProgress } from './useAutoTravel'
 import styles from './HUD.module.css'
 
@@ -41,6 +42,7 @@ const PANELS: Record<string, React.ComponentType> = {
   faction: FactionPanel,
   missions: MissionsPanel,
   salvage: SalvagePanel,
+  crew: CrewPanel,
   info: InfoPanel,
   settings: SettingsPanel,
 }
@@ -131,7 +133,6 @@ export function HUD() {
   const isDocked = Boolean(location?.docked_at)
   const pendingTrades = usePlayUi((s) => s.pendingTrades)
   const inCombat = usePlayUi((s) => s.inCombat)
-  const hasBattleReplay = usePlayUi((s) => Boolean(s.lastBattleId))
   const [activePanel, setActivePanel] = useState('galaxy')
   const galaxyRef = useRef<GalaxyPanelHandle>(null)
   const [exploreSystem, setExploreSystem] = useState<MapSystemData | null>(null)
@@ -232,8 +233,6 @@ export function HUD() {
           onPanelChange={setActivePanel}
           badges={badges}
           isDocked={isDocked}
-          inCombat={inCombat}
-          hasBattleReplay={hasBattleReplay}
         />
 
         {/* Main Content: Left Sidebar + Panel + Right Pane */}
