@@ -1,34 +1,23 @@
 'use client'
 
-import { useState, useCallback, useMemo } from 'react'
-import {
-  Heart,
-  ShoppingCart,
-  AlertTriangle,
-  User,
-  X,
-  Tag,
-  Loader2,
-  ClipboardList,
-} from 'lucide-react'
+import { useState, useCallback } from 'react'
+import { AlertTriangle, X, Tag, Loader2 } from 'lucide-react'
 import type { BrowseShipsResponse } from '@spacemolt/lib'
 import { useCommandMutation, useCommandQuery, useLocationState, usePlayer } from '@/lib/spacemolt'
-import { allShips } from '@/data/catalog'
 import { usePlay } from '../../PlayProvider'
 import { Credits, Loading, Modal, ConfirmAction, errorMessage, shared } from '../../shared'
 import { useStationServices } from '../../hooks/useGates'
-import styles from './MarketplaceView.module.css'
+import styles from './SellView.module.css'
 
 type ShipBuyOrder = NonNullable<BrowseShipsResponse['buy_orders']>[number]
 
-export function MarketplaceView() {
+/** Your side of the ship exchange: your listings, selling a stored ship, other pilots' buy orders here, and your buy orders anywhere. */
+export function SellView() {
   const location = useLocationState()
   const isDocked = Boolean(location?.docked_at)
   const player = usePlayer()
-  const credits = player?.credits ?? 0
   const mutate = useCommandMutation()
   const { uiStore } = usePlay()
-  const hasShipyard = useStationServices().includes('shipyard')
 
   const { data: browseData, loading: loadingBrowse, refetch: refetchListings } = useCommandQuery(
     async (account) => (await account.commands.spacemolt_ship.browse_ships({})).structuredContent,
@@ -43,9 +32,7 @@ export function MarketplaceView() {
     { enabled: isDocked, refreshOnSections: ['ship'] }
   )
 
-  const [buyConfirm, setBuyConfirm] = useState<string | null>(null)
   const [cancelConfirm, setCancelConfirm] = useState<string | null>(null)
-  const [buying, setBuying] = useState(false)
 
   // Sell modal
   const [sellShipId, setSellShipId] = useState<string | null>(null)
@@ -60,15 +47,12 @@ export function MarketplaceView() {
     [uiStore]
   )
 
-  // Ship buy orders: mine across all bases, plus a form to place one here.
+  // Your ship buy orders across all bases; cancel works anywhere. Place them from the Ships tab.
   const { data: myBuyOrders, refetch: refetchMyBuyOrders } = useCommandQuery(
     async (account) => (await account.commands.spacemolt_ship.view_ship_buy_orders()).structuredContent,
     [],
   )
-  const [orderClass, setOrderClass] = useState('')
-  const [orderPrice, setOrderPrice] = useState('')
   const [shipConfirm, setShipConfirm] = useState<{ message: string; run: () => Promise<unknown> } | null>(null)
-  const shipClasses = useMemo(() => [...allShips()].sort((a, b) => a.name.localeCompare(b.name)), [])
 
   const runShipOrder = useCallback(async (run: () => Promise<unknown>) => {
     setShipConfirm(null)
@@ -81,34 +65,6 @@ export function MarketplaceView() {
       reportError(err)
     }
   }, [refetchListings, refetchFleet, refetchMyBuyOrders, reportError])
-
-  const placeOrder = () => {
-    const price = parseInt(orderPrice, 10)
-    const name = shipClasses.find((c) => c.id === orderClass)?.name ?? orderClass
-    setShipConfirm({
-      message: `Escrow ${price.toLocaleString()} cr plus sales tax for a ${name} buy order here?`,
-      run: () => mutate((c) => c.spacemolt_ship.place_ship_buy_order({ id: orderClass, price }), { label: 'place_ship_buy_order' })
-        .then(() => { setOrderClass(''); setOrderPrice('') }),
-    })
-  }
-
-  const handleBuy = useCallback(
-    (listingId: string) => {
-      setBuying(true)
-      mutate((c) => c.spacemolt_ship.buy_listed_ship({ id: listingId }), { label: 'buy_listed_ship' })
-        .then(() => {
-          setBuying(false)
-          setBuyConfirm(null)
-          refetchListings()
-          refetchFleet()
-        })
-        .catch((err) => {
-          setBuying(false)
-          reportError(err)
-        })
-    },
-    [mutate, refetchListings, refetchFleet, reportError]
-  )
 
   const handleCancelListing = useCallback(
     (listingId: string) => {
@@ -151,7 +107,6 @@ export function MarketplaceView() {
 
   const playerName = player?.username
   const ownListings = listings.filter((l) => l.seller === playerName)
-  const otherListings = listings.filter((l) => l.seller !== playerName)
 
   // Ships available to sell: inactive, docked at this base
   const dockedAt = location?.docked_at ?? undefined
@@ -166,71 +121,19 @@ export function MarketplaceView() {
 
   return (
     <>
-      {/* Ships for sale */}
+      {/* Your listings */}
       {loadingBrowse && listings.length === 0 && (
         <Loading message="Loading listings..." />
       )}
 
-      {!loadingBrowse && otherListings.length === 0 && ownListings.length === 0 && (
-        <div className={shared.emptyState}>No ships currently for sale at this base.</div>
+      {!loadingBrowse && ownListings.length === 0 && availableShips.length === 0 && otherBuyOrders.length === 0 && !myBuyOrders?.orders?.length && (
+        <div className={shared.emptyState}>No listings, stored ships, or buy orders here. Store a ship at this base to sell it.</div>
       )}
 
-      {(otherListings.length > 0 || ownListings.length > 0) && (
+      {ownListings.length > 0 && (
         <>
-          <span className={shared.sectionTitle}>Ships For Sale</span>
+          <span className={shared.sectionTitle}>Your Listings</span>
           <div className={styles.listingsList}>
-            {/* Other players' listings */}
-            {otherListings.map((listing) => {
-              const canAfford = credits >= listing.price
-              return (
-                <div key={listing.listing_id} className={styles.listingCard}>
-                  <div className={styles.listingTop}>
-                    <div className={styles.listingInfo}>
-                      <span className={styles.listingName}>{listing.ship_name}</span>
-                      <span className={styles.listingClass}>{listing.class_id}</span>
-                    </div>
-                    <span className={canAfford ? styles.listingPrice : styles.listingPriceUnaffordable}>
-                      <Credits amount={listing.price} />
-                    </span>
-                  </div>
-                  <div className={styles.listingBadges}>
-                    {listing.category && <span className={shared.badgeGreen}>{listing.category}</span>}
-                    {(listing.tier ?? 0) > 0 && <span className={shared.badgeCyan}>T{listing.tier}</span>}
-                  </div>
-                  <div className={styles.listingStatsRow}>
-                    <div className={styles.listingStat}>
-                      <Heart size={10} /> Hull {listing.hull}/{listing.max_hull}
-                    </div>
-                    <div className={styles.listingStat}>
-                      <User size={10} /> {listing.seller}
-                    </div>
-                  </div>
-
-                  {buyConfirm === listing.listing_id ? (
-                    <ConfirmAction
-                      message={`Buy for ${listing.price.toLocaleString()} cr?`}
-                      icon={<ShoppingCart size={14} style={{ color: 'var(--void-purple)', flexShrink: 0 }} />}
-                      onConfirm={() => handleBuy(listing.listing_id)}
-                      onCancel={() => setBuyConfirm(null)}
-                      confirmDisabled={buying || !canAfford}
-                      variant="accent"
-                    />
-                  ) : (
-                    <button
-                      className={shared.accentBtn}
-                      onClick={() => setBuyConfirm(listing.listing_id)}
-                      disabled={!canAfford}
-                      title={!canAfford ? `Need ${(listing.price - credits).toLocaleString()} more credits` : undefined}
-                      type="button"
-                    >
-                      <ShoppingCart size={12} /> Buy
-                    </button>
-                  )}
-                </div>
-              )
-            })}
-
-            {/* Own listings */}
             {ownListings.map((listing) => (
               <div key={listing.listing_id} className={styles.listingCardOwn}>
                 <div className={styles.listingTop}>
@@ -327,27 +230,9 @@ export function MarketplaceView() {
         </>
       )}
 
-      {/* Ship buy orders: placing one needs a shipyard here; your orders anywhere stay listed */}
-      {(hasShipyard || (myBuyOrders?.orders ?? []).length > 0) && (
+      {/* Your buy orders at every base */}
+      {(myBuyOrders?.orders ?? []).length > 0 && (
         <span className={shared.sectionTitle}>Your Ship Buy Orders</span>
-      )}
-      {hasShipyard && (
-        <div className={styles.modalRow}>
-          <select className={shared.textInput} value={orderClass} onChange={(e) => setOrderClass(e.target.value)} aria-label="Ship class">
-            <option value="">Choose a ship class...</option>
-            {shipClasses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-          <input className={shared.textInput} type="number" min="1" placeholder="Offer (cr)" value={orderPrice} onChange={(e) => setOrderPrice(e.target.value)} />
-          <button
-            className={shared.accentBtn}
-            onClick={placeOrder}
-            disabled={!orderClass || !(parseInt(orderPrice, 10) > 0)}
-            title="Place a standing order; a seller here can fill it any time"
-            type="button"
-          >
-            <ClipboardList size={12} /> Place Order
-          </button>
-        </div>
       )}
       {(myBuyOrders?.orders ?? []).length > 0 && (
         <div className={styles.listingsList}>
