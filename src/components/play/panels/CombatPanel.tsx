@@ -34,9 +34,11 @@ import {
   useLocationState,
   useModules,
   usePlayer,
+  useShip,
   useConnectionPhase,
 } from '@/lib/spacemolt'
-import { getItem } from '@/data/catalog'
+import { getItem, getShip } from '@/data/catalog'
+import { useFittedModules } from '../hooks/useGates'
 import { CombatBattleView } from './CombatBattleView'
 import { ArenaTab } from './combat/ArenaTab'
 import { HistoryTab } from './combat/HistoryTab'
@@ -74,6 +76,8 @@ export function CombatPanel() {
   const isDocked = Boolean(location?.docked_at)
   const modules = useModules()
   const cargo = useCargo()
+  const shipClassId = useShip()?.class_id
+  const fittedModules = useFittedModules()
   const battle = usePlayUi((s) => s.battle)
   const inCombat = usePlayUi((s) => s.inCombat)
   const battleSyncPending = usePlayUi((s) => s.battleSyncPending)
@@ -253,6 +257,10 @@ export function CombatPanel() {
   }
 
   const isCloaked = player?.is_cloaked ?? false
+  // gameserver State.HasCloakDevice; the server refuses to engage a cloak in battle.
+  const hasCloak = fittedModules.some((m) => (m.cloak_strength ?? 0) > 0) ||
+    Boolean(shipClassId && getShip(shipClassId)?.inherent_capabilities?.some((c) => c.type === 'integrated_cloak' && c.value > 0))
+  const showCloak = hasCloak && (isCloaked || !inCombat)
   const nearbyPlayers = location?.nearby_players ?? []
   const nearbyPirates = location?.nearby_pirates ?? []
   const nearbyCreatures = nearbyQuery.data?.creatures ?? []
@@ -310,17 +318,19 @@ export function CombatPanel() {
       {tab === 'battle' && !isDocked && <>
       {/* Controls */}
       <div className={styles.controlsRow}>
-        <button
-          className={`${styles.cloakBtn} ${
-            isCloaked ? styles.cloakActive : ''
-          }`}
-          onClick={handleCloak}
-          title={isCloaked ? 'Disable cloak' : 'Enable cloak'}
-          type="button"
-        >
-          {isCloaked ? <EyeOff size={14} /> : <Eye size={14} />}
-          {isCloaked ? 'Cloaked' : 'Cloak'}
-        </button>
+        {showCloak && (
+          <button
+            className={`${styles.cloakBtn} ${
+              isCloaked ? styles.cloakActive : ''
+            }`}
+            onClick={handleCloak}
+            title={isCloaked ? 'Disable cloak' : 'Enable cloak'}
+            type="button"
+          >
+            {isCloaked ? <EyeOff size={14} /> : <Eye size={14} />}
+            {isCloaked ? 'Cloaked' : 'Cloak'}
+          </button>
+        )}
 
         <button
           className={styles.selfDestructBtn}
@@ -649,15 +659,16 @@ export function CombatPanel() {
             <div className={shared.sectionTitle}>
               <RotateCw size={12} /> Weapon Reload
             </div>
-            <button
-              className={styles.reloadBtn}
-              onClick={handleReloadAll}
-              disabled={reloadAll.length === 0}
-              title={reloadAll.length ? `Reload ${reloadAll.length} weapons in one tick` : 'Every magazine is full or has no ammo in cargo'}
-              type="button"
-            >
-              <RotateCw size={12} /> Reload all
-            </button>
+            {reloadAll.length > 0 && (
+              <button
+                className={styles.reloadBtn}
+                onClick={handleReloadAll}
+                title={`Reload ${reloadAll.length} weapons in one tick`}
+                type="button"
+              >
+                <RotateCw size={12} /> Reload all
+              </button>
+            )}
           </div>
           <div className={styles.reloadList}>
             {weapons.map((weapon) => {
@@ -672,7 +683,7 @@ export function CombatPanel() {
                       {' '}{weapon.current_ammo ?? 0}/{weapon.magazine_size}{weapon.loaded_ammo_name ? ` · ${weapon.loaded_ammo_name}` : ''}
                     </span>
                   </div>
-                  <div className={styles.reloadControls}>
+                  {options.length > 0 && <div className={styles.reloadControls}>
                     <select
                       className={shared.selectInput}
                       value={choice ?? ''}
@@ -684,7 +695,7 @@ export function CombatPanel() {
                         }))
                       }
                     >
-                      <option value="">{options.length ? 'Select ammo' : 'No compatible ammo in cargo'}</option>
+                      <option value="">Select ammo</option>
                       {options.map((item) => (
                         <option key={item.item_id} value={item.item_id}>
                           {item.item_name} (x{item.quantity})
@@ -701,7 +712,7 @@ export function CombatPanel() {
                       <RotateCw size={12} />
                       Reload
                     </button>
-                  </div>
+                  </div>}
                 </div>
               )
             })}

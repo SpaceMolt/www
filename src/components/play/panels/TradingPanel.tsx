@@ -1,14 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import {
   TrendingUp,
   ShoppingCart,
   ClipboardList,
   ArrowLeftRight,
 } from 'lucide-react'
-import { useLocationState } from '@/lib/spacemolt'
 import { usePlayUi } from '../PlayProvider'
+import { useStationServices } from '../hooks/useGates'
 import { PanelWithTabs } from '../shared'
 import { MarketView } from './trading/MarketView'
 import { OrdersView } from './trading/OrdersView'
@@ -18,20 +18,15 @@ import styles from './TradingPanel.module.css'
 type TabId = 'market' | 'orders' | 'trades'
 
 export function TradingPanel() {
-  const location = useLocationState()
-  const isDocked = Boolean(location?.docked_at)
+  const hasMarket = useStationServices().includes('market')
   const pendingTrades = usePlayUi((s) => s.pendingTrades)
   const [activeTab, setActiveTab] = useState<TabId>('market')
 
-  // If undocked and on market tab, switch to orders
-  useEffect(() => {
-    if (!isDocked && activeTab === 'market') {
-      setActiveTab('orders')
-    }
-  }, [isDocked, activeTab])
+  // Without a market here, show orders; the market tab returns once the station's services load.
+  const shownTab = activeTab === 'market' && !hasMarket ? 'orders' : activeTab
 
   const tabs = [
-    { id: 'market', label: 'Market', icon: <ShoppingCart size={13} />, hidden: !isDocked },
+    { id: 'market', label: 'Market', icon: <ShoppingCart size={13} />, hidden: !hasMarket },
     { id: 'orders', label: 'Orders', icon: <ClipboardList size={13} /> },
     {
       id: 'trades',
@@ -48,12 +43,12 @@ export function TradingPanel() {
       icon={<TrendingUp size={16} />}
       color="var(--bio-green)"
       tabs={tabs}
-      activeTab={activeTab}
+      activeTab={shownTab}
       onTabChange={(id) => setActiveTab(id as TabId)}
     >
-      {activeTab === 'market' && isDocked && <MarketView />}
-      {activeTab === 'orders' && <OrdersView />}
-      {activeTab === 'trades' && <TradesList />}
+      {shownTab === 'market' && <MarketView />}
+      {shownTab === 'orders' && <OrdersView />}
+      {shownTab === 'trades' && <TradesList />}
     </PanelWithTabs>
   )
 }

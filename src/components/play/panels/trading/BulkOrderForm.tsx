@@ -7,6 +7,8 @@ import type { MutationResult, StorageResponse } from '@spacemolt/lib'
 import { getItem, tradeableItems, formatItemId } from '@/data/catalog'
 import type { RawCatalogItem } from '@/data/catalog'
 import { useClickOutside } from '../../hooks/useClickOutside'
+import { useFactionPermissions, useStationServices } from '../../hooks/useGates'
+import { useFactionService } from '../faction/useFactionService'
 import { usePlay } from '../../PlayProvider'
 import { ConfirmAction, QtyButtons, errorMessage, shared } from '../../shared'
 import { chunk } from '../../shared/itemSelection'
@@ -99,7 +101,11 @@ export function BulkOrderForm({ inventory, onCreated, onClose }: {
   const mutate = useCommandMutation()
   const player = usePlayer()
   const credits = player?.credits ?? 0
-  const hasFaction = Boolean(player?.faction_id)
+  const hasStorage = useStationServices().includes('storage')
+  const hasFactionMarket = useFactionService('faction_market')
+  const hasCompanyStore = useFactionService('faction_company_store')
+  const { can } = useFactionPermissions({ enabled: Boolean(hasFactionMarket) })
+  const canTradeForFaction = Boolean(hasFactionMarket) && hasStorage && can('manage_treasury')
 
   const [side, setSide] = useState<'sell' | 'buy'>('sell')
   const [asFaction, setAsFaction] = useState(false)
@@ -194,11 +200,11 @@ export function BulkOrderForm({ inventory, onCreated, onClose }: {
       </div>
 
       <div className={styles.optionRow}>
-        {hasFaction && (
+        {canTradeForFaction && (
           <label><input type="checkbox" checked={asFaction} onChange={(e) => { setAsFaction(e.target.checked); setBucket('') }} /> For my faction</label>
         )}
-        {asFaction && (
-          <label title="Only faction members see these orders (needs a Company Store facility)">
+        {asFaction && hasCompanyStore && (
+          <label title="Only faction members see these orders">
             <input type="checkbox" checked={isPrivate} onChange={(e) => setIsPrivate(e.target.checked)} /> Company Store only
           </label>
         )}
@@ -208,7 +214,7 @@ export function BulkOrderForm({ inventory, onCreated, onClose }: {
             {buckets.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
           </select>
         )}
-        {side === 'buy' && !asFaction && (
+        {side === 'buy' && !asFaction && hasStorage && (
           <label><input type="checkbox" checked={toStorage} onChange={(e) => setToStorage(e.target.checked)} /> Deliver to storage</label>
         )}
       </div>

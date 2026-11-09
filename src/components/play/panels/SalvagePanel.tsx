@@ -26,6 +26,7 @@ import {
   useShip,
 } from '@/lib/spacemolt'
 import { usePlay } from '../PlayProvider'
+import { useFittedModules, useStationServices } from '../hooks/useGates'
 import { Panel, Modal, shared, ConfirmAction, errorMessage } from '../shared'
 import styles from './SalvagePanel.module.css'
 import { formatItemId, getItem, getShip } from '@/data/catalog'
@@ -75,6 +76,8 @@ export function SalvagePanel() {
   const player = usePlayer()
   const ship = useShip()
   const location = useLocationState()
+  const fittedModules = useFittedModules()
+  const atSalvageYard = useStationServices().includes('salvage_yard')
 
   const wrecksQuery = useCommandQuery(
     async (account) => (await account.commands.spacemolt_salvage.wrecks()).structuredContent,
@@ -95,6 +98,9 @@ export function SalvagePanel() {
   const isDocked = Boolean(location?.docked_at)
   const currentPoiName = location?.poi_name
   const towingWreckId = player?.towing_wreck_id
+  // gameserver handlers HasTowRig and fieldScrapWreck's salvage array check.
+  const hasTowRig = fittedModules.some((m) => (m.tow_speed_penalty ?? 0) > 0)
+  const hasSalvageArray = fittedModules.some((m) => m.id === 'outer_rim_salvage_array')
   const wrecks = wrecksQuery.data?.wrecks ?? []
   const loading = wrecksQuery.loading
   const loaded = wrecksQuery.data !== undefined
@@ -353,24 +359,28 @@ export function SalvagePanel() {
               />
             ) : (
               <>
-                <button
-                  className={shared.dangerBtn}
-                  onClick={() => setConfirmAction('scrap')}
-                  disabled={Boolean(actionBusy)}
-                  type="button"
-                  title="Destroy the towed wreck for salvage materials"
-                >
-                  <Trash2 size={12} /> Scrap
-                </button>
-                <button
-                  className={shared.actionBtn}
-                  onClick={() => setConfirmAction('sell')}
-                  disabled={Boolean(actionBusy)}
-                  type="button"
-                  title="Sell the towed wreck to the salvage yard"
-                >
-                  <Coins size={12} /> Sell
-                </button>
+                {atSalvageYard && (
+                  <>
+                    <button
+                      className={shared.dangerBtn}
+                      onClick={() => setConfirmAction('scrap')}
+                      disabled={Boolean(actionBusy)}
+                      type="button"
+                      title="Destroy the towed wreck for salvage materials"
+                    >
+                      <Trash2 size={12} /> Scrap
+                    </button>
+                    <button
+                      className={shared.actionBtn}
+                      onClick={() => setConfirmAction('sell')}
+                      disabled={Boolean(actionBusy)}
+                      type="button"
+                      title="Sell the towed wreck to the salvage yard"
+                    >
+                      <Coins size={12} /> Sell
+                    </button>
+                  </>
+                )}
                 <button
                   className={shared.actionBtn}
                   onClick={handleRelease}
@@ -489,15 +499,17 @@ export function SalvagePanel() {
                                 </span>
                                 <span className={shared.listCardMeta}>
                                   <span>x{item.quantity}</span>
-                                  <button
-                                    className={shared.actionBtn}
-                                    onClick={() => handleLootItem(w.id, item.item_id)}
-                                    disabled={lootBusy || isDocked}
-                                    type="button"
-                                    title={isDocked ? 'Undock to loot wrecks' : 'Loot all'}
-                                  >
-                                    {lootBusy ? '...' : 'Loot'}
-                                  </button>
+                                  {!isDocked && (
+                                    <button
+                                      className={shared.actionBtn}
+                                      onClick={() => handleLootItem(w.id, item.item_id)}
+                                      disabled={lootBusy}
+                                      type="button"
+                                      title="Loot all"
+                                    >
+                                      {lootBusy ? '...' : 'Loot'}
+                                    </button>
+                                  )}
                                 </span>
                               </div>
                             )
@@ -523,19 +535,17 @@ export function SalvagePanel() {
                                 </span>
                                 <span className={shared.listCardMeta}>
                                   {m.type && <span>{m.type}</span>}
-                                  <button
-                                    className={shared.actionBtn}
-                                    onClick={() => handleLootModule(w.id, m.id)}
-                                    disabled={modBusy || isDocked}
-                                    type="button"
-                                    title={
-                                      isDocked
-                                        ? 'Undock to loot wrecks'
-                                        : 'Loot module to cargo'
-                                    }
-                                  >
-                                    {modBusy ? '...' : 'Loot'}
-                                  </button>
+                                  {!isDocked && (
+                                    <button
+                                      className={shared.actionBtn}
+                                      onClick={() => handleLootModule(w.id, m.id)}
+                                      disabled={modBusy}
+                                      type="button"
+                                      title="Loot module to cargo"
+                                    >
+                                      {modBusy ? '...' : 'Loot'}
+                                    </button>
+                                  )}
                                 </span>
                               </div>
                             )
@@ -550,13 +560,13 @@ export function SalvagePanel() {
 
                     {/* Tow action */}
                     <div className={styles.salvageRow}>
-                      {(cargoEntries.length > 0 || modules.length > 0) && (
+                      {!isDocked && (cargoEntries.length > 0 || modules.length > 0) && (
                         <button
                           className={shared.actionBtn}
                           onClick={() => handleLootAll(w.id)}
-                          disabled={Boolean(actionBusy) || isDocked}
+                          disabled={Boolean(actionBusy)}
                           type="button"
-                          title={isDocked ? 'Undock to loot wrecks' : 'Loot every item and module that fits'}
+                          title="Loot every item and module that fits"
                         >
                           <Package size={12} /> {actionBusy === `lootall:${w.id}` ? 'Looting...' : 'Loot All'}
                         </button>
@@ -571,11 +581,11 @@ export function SalvagePanel() {
                           cancelLabel="Cancel"
                         />
                       ) : (
-                        !towedByOther && (
+                        hasSalvageArray && !isDocked && w.type !== 'jettison' && !towedByOther && (
                           <button
                             className={shared.dangerBtn}
                             onClick={() => setConfirmField(w.id)}
-                            disabled={Boolean(actionBusy) || isDocked}
+                            disabled={Boolean(actionBusy)}
                             type="button"
                             title="Scrap here with an Outer Rim Salvage Array: half the materials are lost, the rest go to cargo"
                           >
@@ -585,24 +595,18 @@ export function SalvagePanel() {
                       )}
                       {towedBySelf ? (
                         <span className={styles.wreckSub}>Use the towing controls above to scrap, sell, or release.</span>
-                      ) : towedByOther ? (
-                        <span className={styles.wreckSub}>Already under tow by another player.</span>
                       ) : (
-                        <button
-                          className={shared.actionBtn}
-                          onClick={() => handleTow(w.id)}
-                          disabled={towBusy || isDocked || Boolean(towingWreckId)}
-                          type="button"
-                          title={
-                            isDocked
-                              ? 'Undock before towing'
-                              : towingWreckId
-                                ? 'Release your current tow before attaching a new one'
-                                : 'Attach a tow line to this wreck'
-                          }
-                        >
-                          <Anchor size={12} /> {towBusy ? 'Towing...' : 'Tow'}
-                        </button>
+                        hasTowRig && !isDocked && w.type !== 'jettison' && !towedByOther && !towingWreckId && (
+                          <button
+                            className={shared.actionBtn}
+                            onClick={() => handleTow(w.id)}
+                            disabled={towBusy}
+                            type="button"
+                            title="Attach a tow line to this wreck"
+                          >
+                            <Anchor size={12} /> {towBusy ? 'Towing...' : 'Tow'}
+                          </button>
+                        )
                       )}
                     </div>
                   </div>

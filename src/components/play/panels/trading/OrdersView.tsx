@@ -23,6 +23,7 @@ import { BulkOrderForm, type InventoryRow } from './BulkOrderForm'
 import { chunk } from '../../shared/itemSelection'
 import { BULK_ORDER_LIMIT, stationsInOrdersHint, sumBulk } from './tradingLogic'
 import { usePersonalStorage } from './StorageView'
+import { useStationServices } from '../../hooks/useGates'
 import styles from './OrdersView.module.css'
 import { timeAgoOrDate } from '@/lib/format'
 
@@ -58,6 +59,7 @@ export function OrdersView() {
   const hasFaction = Boolean(player?.faction_id)
   const cargo = useCargo()
   const mutate = useCommandMutation()
+  const hasMarket = useStationServices().includes('market')
 
   const toast = useCallback(
     (kind: 'danger' | 'warning' | 'success', text: string) => uiStore.dispatch({ type: 'toast', kind, text }),
@@ -74,7 +76,7 @@ export function OrdersView() {
   const canView = isDocked || Boolean(stationId)
   const isHere = isDocked && !otherStation
   const stationNames = useStations().data
-  const stationName = (id: string) => stationNames?.find((s) => s.id === id)?.name ?? formatItemId(id)
+  const stationName = (id: string) => stationNames?.find((s) => s.base_id === id)?.name ?? formatItemId(id)
 
   const [page, setPage] = useState(1)
   const [orderType, setOrderType] = useState<'' | 'buy' | 'sell'>('')
@@ -204,16 +206,17 @@ export function OrdersView() {
           {personalOrdersData?.base && <span className={styles.formHint}> at {personalOrdersData.base}</span>}
         </span>
         <div className={styles.toolbarActions}>
-          <button
-            className={shared.actionBtn}
-            onClick={() => setShowForm(!showForm)}
-            disabled={!isDocked}
-            title={isDocked ? 'Create new orders' : 'Dock to create orders'}
-            type="button"
-          >
-            <Plus size={13} />
-            New
-          </button>
+          {hasMarket && (
+            <button
+              className={shared.actionBtn}
+              onClick={() => setShowForm(!showForm)}
+              title="Create new orders"
+              type="button"
+            >
+              <Plus size={13} />
+              New
+            </button>
+          )}
           <button className={shared.refreshBtn} onClick={refetchPersonalOrders} title="Refresh orders" type="button">
             <RefreshCw size={13} />
           </button>
@@ -246,11 +249,10 @@ export function OrdersView() {
             onChange={(e) => { setStationInput(e.target.value); resetView() }}
             title="View your orders at another station"
           />
-          <span className={styles.formHint}>Dock to cancel or change orders.</span>
         </div>
       )}
 
-      {showForm && isDocked && (
+      {showForm && hasMarket && (
         <BulkOrderForm inventory={inventory} onCreated={refetchPersonalOrders} onClose={() => setShowForm(false)} />
       )}
 

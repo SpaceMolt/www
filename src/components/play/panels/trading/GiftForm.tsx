@@ -20,13 +20,13 @@ const selectChat = (s: UiState) => s.chatMessages
 /**
  * Gift any mix of items (from cargo or storage), credits and ships to one player. Items go in bulk
  * calls, credits in one call, and each ship in its own call (one tick each). Credits and ships work
- * undocked; items need a station.
+ * anywhere; items need a station with storage.
  */
-export function GiftForm({ cargo, stored, ships, isDocked }: {
+export function GiftForm({ cargo, stored, ships, hasStorage }: {
   cargo: SelectableItem[]
   stored: SelectableItem[]
   ships: GiftShip[]
-  isDocked: boolean
+  hasStorage: boolean
 }) {
   const { uiStore } = usePlay()
   const mutate = useCommandMutation()
@@ -49,7 +49,7 @@ export function GiftForm({ cargo, stored, ships, isDocked }: {
     [chat],
   )
 
-  const items = isDocked ? (source === 'cargo' ? cargo : stored) : []
+  const items = hasStorage ? (source === 'cargo' ? cargo : stored) : []
   const liveShipIds = shipIds.filter((id) => ships.some((s) => s.ship_id === id))
   const result = planGift({ recipient, credits, items, selection, shipIds: liveShipIds, wallet })
   const problem = 'problem' in result ? result.problem : null
@@ -138,7 +138,7 @@ export function GiftForm({ cargo, stored, ships, isDocked }: {
         <span className={styles.itemQty}>Wallet: <Credits amount={wallet} /></span>
       </div>
 
-      {isDocked ? (
+      {hasStorage && (
         <>
           <div className={styles.giftSendRow}>
             <span className={styles.itemQty}>Items from</span>
@@ -160,8 +160,6 @@ export function GiftForm({ cargo, stored, ships, isDocked }: {
             empty={source === 'cargo' ? 'Cargo hold is empty' : 'No items in storage'}
           />
         </>
-      ) : (
-        <div className={shared.emptyState}>Dock at a station to gift items. Credits and ships can be sent from anywhere.</div>
       )}
 
       {ships.length > 0 && (
