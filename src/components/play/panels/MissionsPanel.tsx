@@ -9,16 +9,23 @@ import {
   AlertTriangle,
   Check,
   X,
+  Truck,
+  Users,
+  Radio,
+  MessageSquare,
 } from 'lucide-react'
-import type { CompleteMissionResponse, CompletedMissionsResponse, GameState, GetMissionsResponse, ViewCompletedMissionResponse } from '@spacemolt/lib'
+import type { CompleteMissionResponse, DistressSignalResponse, CompletedMissionsResponse, GameState, GetMissionsResponse, ViewCompletedMissionResponse } from '@spacemolt/lib'
 import { timeAgoOrDate } from '@/lib/format'
-import { useAccountStore, useCommandMutation, useCommandQuery, useMissions } from '@/lib/spacemolt'
+import { useAccountStore, useCommandMutation, useCommandQuery, useLocationState, useMissions, usePendingAction } from '@/lib/spacemolt'
 import { usePlay } from '../PlayProvider'
-import { Credits, PanelWithTabs, shared, errorMessage } from '../shared'
+import { ConfirmAction, Credits, PanelWithTabs, shared, errorMessage } from '../shared'
 import { BugReportButton } from '../BugReportButton'
 import { buildMissionContext } from '../bugReportContext'
 import type { Mission } from '../types'
 import styles from './MissionsPanel.module.css'
+import { ShippingTab } from './missions/ShippingTab'
+import { PassengersTab } from './missions/PassengersTab'
+import missionsCss from './missions/missions.module.css'
 
 type AvailableMission = GetMissionsResponse['missions'][number]
 type ActiveMissionEntry = NonNullable<NonNullable<GameState['missions']>['active']>[number]
@@ -99,7 +106,8 @@ function toMissionContext(m: ActiveMissionEntry): Mission {
   return context
 }
 
-type TabId = 'available' | 'active' | 'completed'
+type TabId = 'available' | 'active' | 'completed' | 'shipping' | 'passengers'
+type DistressType = 'fuel' | 'repair' | 'combat'
 
 export type MissionsTabView = 'loading' | 'error' | 'empty' | 'list'
 
@@ -150,6 +158,15 @@ export function MissionsPanel() {
   const mutate = useCommandMutation()
   const { uiStore } = usePlay()
   const [activeTab, setActiveTab] = useState<TabId>('available')
+  const isDocked = Boolean(useLocationState()?.docked_at)
+  const actionPending = usePendingAction() !== null
+
+  // Decline replies keyed by mission_id; abandon confirm target; distress call.
+  const [declineReplies, setDeclineReplies] = useState<Record<string, string>>({})
+  const [confirmAbandonId, setConfirmAbandonId] = useState<string | null>(null)
+  const [distressType, setDistressType] = useState<DistressType>('fuel')
+  const [confirmDistress, setConfirmDistress] = useState(false)
+  const [distressResult, setDistressResult] = useState<DistressSignalResponse | null>(null)
 
   const reportError = useCallback(
     (err: unknown) => {
@@ -240,6 +257,7 @@ export function MissionsPanel() {
   }, [mutate, completedQuery, reportError])
 
   const handleAbandonMission = useCallback(async (missionId: string) => {
+    setConfirmAbandonId(null)
     try {
       const result = await mutate((c) => c.spacemolt.abandon_mission({ id: missionId }), { label: 'abandon_mission' })
       uiStore.dispatch({ type: 'event', kind: 'info', text: result.delta.details?.message || 'Mission abandoned' })
@@ -247,6 +265,32 @@ export function MissionsPanel() {
       reportError(err)
     }
   }, [mutate, uiStore, reportError])
+
+  const handleDeclineMission = useCallback(async (m: AvailableMission) => {
+    try {
+      const resp = await store.account.commands.spacemolt.decline_mission({ id: m.template_id ?? m.mission_id })
+      const message = resp.structuredContent?.message
+      if (message) setDeclineReplies((prev) => ({ ...prev, [m.mission_id]: message }))
+    } catch (err) {
+      reportError(err)
+    }
+  }, [store, reportError])
+
+  const handleDistress = useCallback(async () => {
+    setConfirmDistress(false)
+    try {
+      const result = await mutate((c) => c.spacemolt.distress_signal({ distress_type: distressType }), { label: 'distress_signal' })
+      const details = result.delta.details
+      if (details) setDistressResult(details)
+      uiStore.dispatch({
+        type: 'event',
+        kind: details?.responders_reached ? 'success' : 'info',
+        text: details ? `Distress sent: ${details.responders_reached} pilots in range heard it.` : 'Distress signal sent.',
+      })
+    } catch (err) {
+      reportError(err)
+    }
+  }, [mutate, distressType, uiStore, reportError])
 
   const handleViewCompletedMission = useCallback(async (templateId: string) => {
     setLoadingMissionDetail(true)
@@ -319,6 +363,8 @@ export function MissionsPanel() {
     { id: 'available', label: 'Available', icon: <Target size={13} /> },
     { id: 'active', label: 'Active', icon: <AlertTriangle size={13} /> },
     { id: 'completed', label: 'Completed', icon: <Award size={13} /> },
+    { id: 'shipping', label: 'Shipping', icon: <Truck size={13} /> },
+    { id: 'passengers', label: 'Passengers', icon: <Users size={13} /> },
   ]
 
   return (
@@ -393,14 +439,31 @@ export function MissionsPanel() {
                         </div>
                       )}
 
-                      <button
-                        className={styles.acceptBtn}
-                        onClick={() => handleAcceptMission(m.mission_id)}
-                        type="button"
-                      >
-                        <Check size={12} />
-                        Accept Mission
-                      </button>
+                      {declineReplies[m.mission_id] && (
+                        <div className={styles.missionDialog}>
+                          &ldquo;{declineReplies[m.mission_id]}&rdquo;
+                        </div>
+                      )}
+
+                      <div className={missionsCss.row}>
+                        <button
+                          className={styles.acceptBtn}
+                          onClick={() => handleAcceptMission(m.mission_id)}
+                          type="button"
+                        >
+                          <Check size={12} />
+                          Accept Mission
+                        </button>
+                        <button
+                          className={shared.subtleBtn}
+                          onClick={() => handleDeclineMission(m)}
+                          type="button"
+                          title="Hear the giver's reply. The mission stays on the board."
+                        >
+                          <MessageSquare size={12} />
+                          Decline
+                        </button>
+                      </div>
                     </div>
                   )
                 })}
@@ -412,6 +475,51 @@ export function MissionsPanel() {
         {/* Active Missions Tab */}
         {activeTab === 'active' && (
           <>
+            <div className={missionsCss.distress}>
+              <div className={missionsCss.row}>
+                <Radio size={12} />
+                <span className={missionsCss.label}>Distress signal</span>
+                <select
+                  className={shared.selectInput}
+                  value={distressType}
+                  onChange={(e) => setDistressType(e.target.value as DistressType)}
+                  disabled={isDocked}
+                >
+                  <option value="fuel">Out of fuel</option>
+                  <option value="repair">Hull critical</option>
+                  <option value="combat">Under attack</option>
+                </select>
+                {!confirmDistress && (
+                  <button
+                    className={shared.dangerBtn}
+                    disabled={isDocked || actionPending}
+                    onClick={() => setConfirmDistress(true)}
+                    type="button"
+                  >
+                    Broadcast
+                  </button>
+                )}
+              </div>
+              <div className={missionsCss.hint}>
+                {isDocked
+                  ? 'Undock to call for help.'
+                  : 'Free. Pilots within 5 jumps can claim a rescue mission for 3 hours. One signal at a time, 1-hour cooldown.'}
+              </div>
+              {confirmDistress && (
+                <ConfirmAction
+                  message="Broadcast a MAYDAY to nearby pilots? You cannot send another for 1 hour."
+                  confirmLabel="Broadcast"
+                  onConfirm={handleDistress}
+                  onCancel={() => setConfirmDistress(false)}
+                />
+              )}
+              {distressResult && (
+                <div className={missionsCss.npcLine}>
+                  {distressResult.message} ({distressResult.responders_reached} pilots reached
+                  {distressResult.mission_id ? `, rescue mission ${distressResult.mission_id}` : ', no rescue mission posted'})
+                </div>
+              )}
+            </div>
             {!activeLoaded && (
               <div className={styles.loading}>
                 <span className={shared.spinner} />
@@ -499,10 +607,18 @@ export function MissionsPanel() {
                       )}
 
                       {/* Abandon (expanded only) */}
-                      {isExpanded && (
+                      {isExpanded && confirmAbandonId === missionId && (
+                        <ConfirmAction
+                          message="Abandon this mission? Provided courier goods are reclaimed; missing ones may be charged or become fixer debt."
+                          confirmLabel="Abandon"
+                          onConfirm={() => handleAbandonMission(missionId)}
+                          onCancel={() => setConfirmAbandonId(null)}
+                        />
+                      )}
+                      {isExpanded && confirmAbandonId !== missionId && (
                         <button
                           className={styles.abandonBtn}
-                          onClick={() => handleAbandonMission(missionId)}
+                          onClick={() => setConfirmAbandonId(missionId)}
                           type="button"
                         >
                           <X size={12} />
@@ -648,6 +764,8 @@ export function MissionsPanel() {
             )}
           </>
         )}
+        {activeTab === 'shipping' && <ShippingTab />}
+        {activeTab === 'passengers' && <PassengersTab />}
     </PanelWithTabs>
       {/* Mission Completion Modal */}
       {completionResult && (
