@@ -1,7 +1,8 @@
 'use client'
 
 import { isMobileBase, MobileBaseDetails, type MobileBaseIdentity } from '@/components/MobileBaseDetails'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import Image from 'next/image'
 import {
   Heart,
   Shield,
@@ -182,6 +183,12 @@ export function ShipCatalog() {
 
   const [expandedShip, setExpandedShip] = useState<string | null>(null)
   const [fullscreenImage, setFullscreenImage] = useState<{ src: string; name: string } | null>(null)
+  useEffect(() => {
+    if (!fullscreenImage) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setFullscreenImage(null) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [fullscreenImage])
   const [page, setPage] = useState(1)
 
   // Commissionable ship IDs at this station (server-checked, station-specific)
@@ -445,9 +452,11 @@ export function ShipCatalog() {
                   {isExpanded && (
                     <div className={styles.shipDetails}>
                       <div className={styles.shipImageWrap}>
-                        <img
+                        <Image
                           src={imgSrc}
                           alt={catShip.name}
+                          width={600}
+                          height={450}
                           className={styles.shipImageExpanded}
                           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                         />
@@ -519,9 +528,9 @@ export function ShipCatalog() {
 
       {/* Fullscreen image modal */}
       {fullscreenImage && (
-        <div className={styles.imageModal} onClick={() => setFullscreenImage(null)} role="dialog" aria-modal="true">
-          <button className={styles.imageModalClose} onClick={() => setFullscreenImage(null)} type="button"><X size={20} /></button>
-          <img src={fullscreenImage.src} alt={fullscreenImage.name} className={styles.imageModalImg} onClick={(e) => e.stopPropagation()} />
+        <div className={styles.imageModal} onClick={() => setFullscreenImage(null)} role="dialog" aria-modal="true" aria-label={fullscreenImage.name}>
+          <button className={styles.imageModalClose} onClick={() => setFullscreenImage(null)} type="button" aria-label="Close"><X size={20} /></button>
+          <Image src={fullscreenImage.src} alt={fullscreenImage.name} width={1600} height={1200} className={styles.imageModalImg} onClick={(e) => e.stopPropagation()} />
           <div className={styles.imageModalName}>{fullscreenImage.name}</div>
         </div>
       )}
