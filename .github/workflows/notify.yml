@@ -4,25 +4,53 @@ on:
   pull_request_target:
     types: [closed]
     branches: [main]
+  # Re-post a merged PR's notes by hand. GitHub cannot retry a run that failed
+  # at startup, so this is the only way to resend one.
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Number of the merged PR to announce
+        required: true
+        type: number
 
 jobs:
   notify:
-    # Only run on merged PRs
-    if: github.event.pull_request.merged == true
+    # Only run on merged PRs (a manual run checks that in its first step)
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     # This job only posts to a Discord webhook; it needs no repo write.
     # pull_request_target defaults GITHUB_TOKEN to read/write, so scope it down.
     permissions:
       contents: read
+      pull-requests: read
 
     steps:
+      - name: Load the pull request
+        # Both triggers end with the PR as JSON in /tmp/pr.json; later steps read only that file.
+        env:
+          EVENT_PR: ${{ toJSON(github.event.pull_request) }}
+          PR_NUMBER_INPUT: ${{ inputs.pr_number }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ -n "$PR_NUMBER_INPUT" ]; then
+            gh api "repos/$REPO/pulls/$PR_NUMBER_INPUT" > /tmp/pr.json
+            if [ "$(jq -r .merged /tmp/pr.json)" != "true" ]; then
+              echo "PR #$PR_NUMBER_INPUT is not merged; nothing to announce."
+              exit 1
+            fi
+          else
+            printf '%s' "$EVENT_PR" > /tmp/pr.json
+          fi
+
       - name: Extract release notes from PR body
         id: notes
         run: |
           cat > /tmp/parse_notes.py << 'PYEOF'
           import re, json, os
 
-          body = os.environ.get('PR_BODY', '')
+          with open('/tmp/pr.json') as f:
+              body = json.load(f).get('body') or ''
 
           # Extract content under "## User-Facing Changes" heading
           match = re.search(
@@ -57,21 +85,19 @@ jobs:
           PYEOF
 
           python3 /tmp/parse_notes.py
-        env:
-          PR_BODY: ${{ github.event.pull_request.body }}
 
       - name: Send Discord notification
-        # All PR-controlled and secret values are passed via env (below) and
-        # referenced as "$VAR" so attacker-controlled text (PR title/body) is
-        # never interpolated into the script — prevents shell injection.
+        # PR-controlled values come from /tmp/pr.json into quoted "$VAR"s and
+        # secrets via env, so attacker-controlled text (PR title/body) is never
+        # interpolated into the script — prevents shell injection.
         env:
-          PR_TITLE: ${{ github.event.pull_request.title }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_URL: ${{ github.event.pull_request.html_url }}
           HAS_NOTES: ${{ steps.notes.outputs.HAS_NOTES }}
           NOTES_JSON: ${{ steps.notes.outputs.NOTES_JSON }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
+          PR_TITLE=$(jq -r .title /tmp/pr.json)
+          PR_NUMBER=$(jq -r .number /tmp/pr.json)
+          PR_URL=$(jq -r .html_url /tmp/pr.json)
           if [ "$HAS_NOTES" = "true" ]; then
             # Format notes as bullet points
             NOTES_TEXT=$(echo "$NOTES_JSON" | python3 -c "
