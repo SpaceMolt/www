@@ -978,7 +978,7 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
                         {p.resources && p.resources.length > 0 && (
                           <div className={styles.intelResourceList}>
                             {p.resources.map((r) => (
-                              <div key={r.resource_id} className={`${styles.intelResourceItem} ${r.remaining === 0 ? styles.depleted : ''}`} title={depositTitle(r.resource_id, r.richness, r.remaining)}>
+                              <div key={r.resource_id} className={`${styles.intelResourceItem} ${r.remaining === 0 ? styles.depleted : ''}`} title={depositTitle(r.resource_id, r.richness, r.remaining, r.max_remaining)}>
                                 <Gem size={9} className={styles.intelResourceIcon} />
                                 <span className={styles.intelResourceName}>{formatLabel(r.resource_id)}</span>
                                 <DepositRating itemId={r.resource_id} richness={r.richness} remaining={r.remaining} />
