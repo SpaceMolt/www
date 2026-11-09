@@ -2,7 +2,7 @@
 
 import { AlertTriangle, RefreshCw } from 'lucide-react'
 import type { FacilityRentSummary, OwnedFacilityEntry } from '@spacemolt/lib'
-import { useCommandQuery, useLocationState, usePlayer } from '@/lib/spacemolt'
+import { useCommandQuery, usePlayer } from '@/lib/spacemolt'
 import { Credits, Loading, shared } from '../../shared'
 import { facilityWarnings } from './facilityActions'
 import styles from './facilities.module.css'
@@ -50,7 +50,6 @@ function FacilityRows({ title, facilities, rent }: { title: string; facilities: 
 
 /** Every facility the player and their faction own, at every station. Works undocked. */
 export function EverywhereView() {
-  const docked = Boolean(useLocationState()?.docked_at)
   const hasFaction = Boolean(usePlayer()?.faction_id)
   const { data: owned, loading, refetch } = useCommandQuery(
     async (account) => (await account.commands.spacemolt_facility.owned()).structuredContent,
@@ -73,9 +72,6 @@ export function EverywhereView() {
       </div>
       {owned && <FacilityRows title="Your facilities, all stations" facilities={owned.facilities} rent={owned.rent} />}
       {factionOwned && <FacilityRows title="Faction facilities, all stations" facilities={factionOwned.facilities} rent={factionOwned.faction_rent} />}
-      <div className={shared.emptyState}>
-        {docked ? 'Manage, repair, or sell the facilities at this station from its own tabs.' : 'Dock at a station to manage, repair, or sell its facilities.'}
-      </div>
     </>
   )
 }

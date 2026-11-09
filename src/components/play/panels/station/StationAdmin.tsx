@@ -79,8 +79,8 @@ function NameList({ label, names, addLabel, onAdd, onRemove, disabled }: {
 
 /**
  * Every `station` admin action for a station or outpost the player's faction
- * owns. Outposts support only rename and description. The server enforces the
- * ManageBases permission and returns a readable error without it.
+ * owns. Outposts support only rename and description. The parent shows it only
+ * with the ManageBases permission.
  */
 export function StationAdmin({ isOutpost, onChanged }: { isOutpost: boolean; onChanged: () => void }) {
   const store = useAccountStore()

@@ -10,6 +10,7 @@ import {
 import { useAccountStore, useCommandMutation, useCommandQuery } from '@/lib/spacemolt'
 import { Credits, shared, useAction } from '../../shared'
 import type { FacilityListResponse, Facility } from '../../types'
+import { useFactionPermissions } from '../../hooks/useGates'
 import { FacilityCard } from './FacilityCard'
 import { FacilityManageActions } from './FacilityManageActions'
 import { RanchModal } from './RanchModal'
@@ -24,6 +25,8 @@ interface FactionViewProps {
 export function FactionView({ facilityData, onRefresh }: FactionViewProps) {
   const store = useAccountStore()
   const mutate = useCommandMutation()
+  // Loaded when this tab opens; upgrade, transfer and manage actions all need manage_facilities.
+  const canManage = useFactionPermissions().can('manage_facilities')
 
   const [upgradeModal, setUpgradeModal] = useState<{ facility: Facility; options: UpgradeOption[] } | null>(null)
   const [upgradeLoading, setUpgradeLoading] = useState(false)
@@ -97,15 +100,17 @@ export function FactionView({ facilityData, onRefresh }: FactionViewProps) {
           </div>
           {factionFacilities.map(f => (
             <FacilityCard key={f.facility_id} facility={f}>
-              <button
-                className={shared.actionBtn}
-                onClick={() => handleShowUpgrades(f)}
-                disabled={upgradeLoading}
-                type="button"
-              >
-                <ArrowUpCircle size={11} /> Upgrade
-              </button>
-              {f.category === 'production' && (
+              {canManage && (
+                <button
+                  className={shared.actionBtn}
+                  onClick={() => handleShowUpgrades(f)}
+                  disabled={upgradeLoading}
+                  type="button"
+                >
+                  <ArrowUpCircle size={11} /> Upgrade
+                </button>
+              )}
+              {canManage && f.category === 'production' && (
                 <button
                   className={shared.subtleBtn}
                   onClick={() => handleTransferToPlayer(f.facility_id)}
@@ -124,7 +129,7 @@ export function FactionView({ facilityData, onRefresh }: FactionViewProps) {
                 </button>
               )}
               {buildTicks(f.facility_id)}
-              <FacilityManageActions facility={f} scope="faction" onRefresh={refresh} />
+              {canManage && <FacilityManageActions facility={f} scope="faction" onRefresh={refresh} />}
             </FacilityCard>
           ))}
         </div>

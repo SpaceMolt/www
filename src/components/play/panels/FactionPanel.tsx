@@ -11,7 +11,7 @@ import type {
   FactionVisitRoomResponse,
   MutationResult,
 } from '@spacemolt/lib'
-import { useAccountStore, useCommandMutation, usePlayer } from '@/lib/spacemolt'
+import { useAccountStore, useCommandMutation, useLocationState, usePlayer } from '@/lib/spacemolt'
 import { usePlay } from '../PlayProvider'
 import { ActionButton } from '../ActionButton'
 import { ConfirmAction, Panel, Section, errorMessage, shared } from '../shared'
@@ -25,6 +25,8 @@ import { GaragesSection } from './faction/GaragesSection'
 import { MissionsSection } from './faction/MissionsSection'
 import { TreasurySection } from './faction/TreasurySection'
 import { FACTION_PAGE_SIZE } from './faction/factionAdmin'
+import { useFactionService } from './faction/useFactionService'
+import { roleCan, type FactionPermission } from '../hooks/useGates'
 
 // Types derived from the generated command response shapes.
 type FactionListEntry = FactionListResponse['factions'][number]
@@ -110,6 +112,12 @@ export function FactionPanel() {
 
   const hasFaction = Boolean(player?.faction_id)
   const playerId = player?.id
+  const isDocked = Boolean(useLocationState()?.docked_at)
+  const hasCommons = useFactionService('faction_commons')
+  // Reuses this panel's faction info; false until it loads.
+  const can = (permission: FactionPermission) => s.factionInfo !== null && roleCan(s.factionInfo, player?.faction_rank, permission)
+  const canDiplomacy = can('manage_diplomacy')
+  const canWriteRooms = can('manage_facilities')
 
   const reportError = useCallback(
     (err: unknown) => {
@@ -469,7 +477,7 @@ export function FactionPanel() {
                       <Shield size={10} /> Allies
                     </div>
                     {s.factionInfo.allies.map((ally: FactionRelation) => (
-                      s.confirming === `ally:${ally.id}` ? (
+                      canDiplomacy && s.confirming === `ally:${ally.id}` ? (
                         <ConfirmAction
                           key={ally.id}
                           message={`End alliance with [${ally.tag}]?`}
@@ -479,9 +487,11 @@ export function FactionPanel() {
                       ) : (
                         <span key={ally.id} className={styles.allyBadge}>
                           [{ally.tag}] {ally.name}
-                          <button className={styles.badgeBtn} onClick={() => set({ confirming: `ally:${ally.id}` })} disabled={s.diplomacyLoading} title="End alliance" aria-label={`End alliance with ${ally.name}`} type="button">
-                            <X size={9} />
-                          </button>
+                          {canDiplomacy && (
+                            <button className={styles.badgeBtn} onClick={() => set({ confirming: `ally:${ally.id}` })} disabled={s.diplomacyLoading} title="End alliance" aria-label={`End alliance with ${ally.name}`} type="button">
+                              <X size={9} />
+                            </button>
+                          )}
                         </span>
                       )
                     ))}
@@ -495,9 +505,11 @@ export function FactionPanel() {
                     {s.factionInfo.enemies.map((enemy: FactionRelation) => (
                       <span key={enemy.id} className={styles.enemyBadge}>
                         [{enemy.tag}] {enemy.name}
-                        <button className={styles.badgeBtn} onClick={() => runDiplomacy('remove_enemy', (c) => c.spacemolt_faction.remove_enemy({ id: enemy.id }))} disabled={s.diplomacyLoading} title="Return to neutral" aria-label={`Return ${enemy.name} to neutral`} type="button">
-                          <X size={9} />
-                        </button>
+                        {canDiplomacy && (
+                          <button className={styles.badgeBtn} onClick={() => runDiplomacy('remove_enemy', (c) => c.spacemolt_faction.remove_enemy({ id: enemy.id }))} disabled={s.diplomacyLoading} title="Return to neutral" aria-label={`Return ${enemy.name} to neutral`} type="button">
+                            <X size={9} />
+                          </button>
+                        )}
                       </span>
                     ))}
                   </div>
@@ -516,13 +528,15 @@ export function FactionPanel() {
                       <div className={styles.proposalInfo}>
                         <span className={styles.proposalFrom}>From: [{p.from_faction_tag}] {p.from_faction_name}</span>
                       </div>
-                      <ActionButton
-                        label="Accept"
-                        icon={<Shield size={12} />}
-                        onClick={() => runDiplomacy('accept_ally', (c) => c.spacemolt_faction.accept_ally({ id: p.from_faction_id }), `Allied with ${p.from_faction_name}`)}
-                        loading={s.diplomacyLoading}
-                        size="sm"
-                      />
+                      {canDiplomacy && (
+                        <ActionButton
+                          label="Accept"
+                          icon={<Shield size={12} />}
+                          onClick={() => runDiplomacy('accept_ally', (c) => c.spacemolt_faction.accept_ally({ id: p.from_faction_id }), `Allied with ${p.from_faction_name}`)}
+                          loading={s.diplomacyLoading}
+                          size="sm"
+                        />
+                      )}
                     </div>
                   ))}
                 </div>
@@ -553,7 +567,7 @@ export function FactionPanel() {
                           <span className={styles.warReason}>Reason: {war.reason}</span>
                         )}
                       </div>
-                      {s.confirming === `peace:${war.target_faction_id}` ? (
+                      {!canDiplomacy ? null : s.confirming === `peace:${war.target_faction_id}` ? (
                         <>
                           <input
                             className={styles.input}
@@ -601,14 +615,16 @@ export function FactionPanel() {
                           <span className={styles.proposalTerms}>Terms: {proposal.terms}</span>
                         )}
                       </div>
-                      <ActionButton
-                        label="Accept"
-                        icon={<Handshake size={12} />}
-                        onClick={() => handleAcceptPeace(proposal.from_faction_id)}
-                        disabled={s.diplomacyLoading}
-                        loading={s.diplomacyLoading}
-                        size="sm"
-                      />
+                      {canDiplomacy && (
+                        <ActionButton
+                          label="Accept"
+                          icon={<Handshake size={12} />}
+                          onClick={() => handleAcceptPeace(proposal.from_faction_id)}
+                          disabled={s.diplomacyLoading}
+                          loading={s.diplomacyLoading}
+                          size="sm"
+                        />
+                      )}
                     </div>
                   ))}
                 </div>
@@ -623,6 +639,8 @@ export function FactionPanel() {
               <MembersSection
                 info={s.factionInfo}
                 playerId={playerId}
+                canPromote={can('promote')}
+                canKick={can('kick')}
                 onPage={(offset) => set({ membersOffset: offset })}
                 onChanged={loadFactionInfo}
               />
@@ -631,123 +649,129 @@ export function FactionPanel() {
 
           <div className={styles.divider} />
 
-          <div>
-            <div className={shared.sectionTitle}>
-              <span className={shared.sectionIcon}><UserPlus size={12} /></span>
-              Invite Player
-            </div>
-            <div className={styles.inviteRow}>
-              <input
-                className={styles.inviteInput}
-                type="text"
-                placeholder="Player name"
-                value={s.inviteTarget}
-                onChange={(e) => set({ inviteTarget: e.target.value })}
-                onKeyDown={(e) => e.key === 'Enter' && handleInvite()}
-              />
-              <ActionButton
-                label="Invite"
-                icon={<UserPlus size={12} />}
-                onClick={handleInvite}
-                disabled={!s.inviteTarget.trim() || s.inviting}
-                loading={s.inviting}
-                size="sm"
-              />
-              <ActionButton
-                label="Withdraw"
-                icon={<Undo2 size={12} />}
-                onClick={handleWithdrawInvite}
-                disabled={!s.inviteTarget.trim() || s.inviting}
-                variant="secondary"
-                size="sm"
-              />
-            </div>
-          </div>
-
-          <div className={styles.divider} />
-
-          <Section title="Diplomacy" icon={<Shield size={12} />} defaultOpen={false}>
-            <div className={styles.diplomacySection}>
-              <div className={styles.field}>
-                <label className={styles.label}>Target Faction</label>
-                {s.factionList.length > 0 ? (
-                  <select className={styles.input} aria-label="Target faction" value={s.diplomacyTarget} onChange={(e) => set({ diplomacyTarget: e.target.value })}>
-                    <option value="">Pick a faction</option>
-                    {s.factionList.filter((f) => f.id !== player?.faction_id).map((f) => <option key={f.id} value={f.id}>[{f.tag}] {f.name}</option>)}
-                  </select>
-                ) : (
-                  <span className={styles.label}>Open the faction browser below and pick a faction.</span>
-                )}
+          {can('invite') && (
+            <>
+              <div>
+                <div className={shared.sectionTitle}>
+                  <span className={shared.sectionIcon}><UserPlus size={12} /></span>
+                  Invite Player
+                </div>
+                <div className={styles.inviteRow}>
+                  <input
+                    className={styles.inviteInput}
+                    type="text"
+                    placeholder="Player name"
+                    value={s.inviteTarget}
+                    onChange={(e) => set({ inviteTarget: e.target.value })}
+                    onKeyDown={(e) => e.key === 'Enter' && handleInvite()}
+                  />
+                  <ActionButton
+                    label="Invite"
+                    icon={<UserPlus size={12} />}
+                    onClick={handleInvite}
+                    disabled={!s.inviteTarget.trim() || s.inviting}
+                    loading={s.inviting}
+                    size="sm"
+                  />
+                  <ActionButton
+                    label="Withdraw"
+                    icon={<Undo2 size={12} />}
+                    onClick={handleWithdrawInvite}
+                    disabled={!s.inviteTarget.trim() || s.inviting}
+                    variant="secondary"
+                    size="sm"
+                  />
+                </div>
               </div>
-              <div className={styles.diplomacyRow}>
-                <ActionButton
-                  label="Propose Ally"
-                  icon={<Shield size={12} />}
-                  onClick={handleProposeAlly}
-                  disabled={!s.diplomacyTarget || s.diplomacyLoading}
-                  loading={s.diplomacyLoading}
-                  size="sm"
-                />
-                <ActionButton
-                  label="Set Enemy"
-                  icon={<Swords size={12} />}
-                  onClick={handleSetEnemy}
-                  disabled={!s.diplomacyTarget || s.diplomacyLoading}
-                  variant="danger"
-                  size="sm"
-                />
-              </div>
-              <div className={styles.field}>
-                <label className={styles.label}>War Reason</label>
-                <input
-                  className={styles.input}
-                  type="text"
-                  placeholder="Reason for declaration..."
-                  value={s.warReason}
-                  onChange={(e) => set({ warReason: e.target.value })}
-                />
-              </div>
-              {s.confirming === 'war' ? (
-                <ConfirmAction
-                  message="Declare war? Members of both factions can attack each other anywhere."
-                  onConfirm={handleDeclareWar}
-                  onCancel={() => set({ confirming: null })}
-                />
-              ) : (
-                <ActionButton
-                  label="Declare War"
-                  icon={<Flag size={12} />}
-                  onClick={() => set({ confirming: 'war' })}
-                  disabled={!s.diplomacyTarget || s.diplomacyLoading}
-                  loading={s.diplomacyLoading}
-                  variant="danger"
-                  size="sm"
-                />
-              )}
               <div className={styles.divider} />
-              <div className={styles.field}>
-                <label className={styles.label}>Peace Terms</label>
-                <input
-                  className={styles.input}
-                  type="text"
-                  placeholder="Terms of peace..."
-                  value={s.peaceTerms}
-                  onChange={(e) => set({ peaceTerms: e.target.value })}
-                />
-              </div>
-              <ActionButton
-                label="Propose Peace"
-                icon={<Handshake size={12} />}
-                onClick={handleProposePeace}
-                disabled={!s.diplomacyTarget || s.diplomacyLoading}
-                loading={s.diplomacyLoading}
-                variant="secondary"
-                size="sm"
-              />
-            </div>
-          </Section>
+            </>
+          )}
 
-          <div className={styles.divider} />
+          {canDiplomacy && (
+            <>
+              <Section title="Diplomacy" icon={<Shield size={12} />} defaultOpen={false}>
+                <div className={styles.diplomacySection}>
+                  <div className={styles.field}>
+                    <label className={styles.label}>Target Faction</label>
+                    {s.factionList.length > 0 ? (
+                      <select className={styles.input} aria-label="Target faction" value={s.diplomacyTarget} onChange={(e) => set({ diplomacyTarget: e.target.value })}>
+                        <option value="">Pick a faction</option>
+                        {s.factionList.filter((f) => f.id !== player?.faction_id).map((f) => <option key={f.id} value={f.id}>[{f.tag}] {f.name}</option>)}
+                      </select>
+                    ) : (
+                      <span className={styles.label}>Open the faction browser below and pick a faction.</span>
+                    )}
+                  </div>
+                  <div className={styles.diplomacyRow}>
+                    <ActionButton
+                      label="Propose Ally"
+                      icon={<Shield size={12} />}
+                      onClick={handleProposeAlly}
+                      disabled={!s.diplomacyTarget || s.diplomacyLoading}
+                      loading={s.diplomacyLoading}
+                      size="sm"
+                    />
+                    <ActionButton
+                      label="Set Enemy"
+                      icon={<Swords size={12} />}
+                      onClick={handleSetEnemy}
+                      disabled={!s.diplomacyTarget || s.diplomacyLoading}
+                      variant="danger"
+                      size="sm"
+                    />
+                  </div>
+                  <div className={styles.field}>
+                    <label className={styles.label}>War Reason</label>
+                    <input
+                      className={styles.input}
+                      type="text"
+                      placeholder="Reason for declaration..."
+                      value={s.warReason}
+                      onChange={(e) => set({ warReason: e.target.value })}
+                    />
+                  </div>
+                  {s.confirming === 'war' ? (
+                    <ConfirmAction
+                      message="Declare war? Members of both factions can attack each other anywhere."
+                      onConfirm={handleDeclareWar}
+                      onCancel={() => set({ confirming: null })}
+                    />
+                  ) : (
+                    <ActionButton
+                      label="Declare War"
+                      icon={<Flag size={12} />}
+                      onClick={() => set({ confirming: 'war' })}
+                      disabled={!s.diplomacyTarget || s.diplomacyLoading}
+                      loading={s.diplomacyLoading}
+                      variant="danger"
+                      size="sm"
+                    />
+                  )}
+                  <div className={styles.divider} />
+                  <div className={styles.field}>
+                    <label className={styles.label}>Peace Terms</label>
+                    <input
+                      className={styles.input}
+                      type="text"
+                      placeholder="Terms of peace..."
+                      value={s.peaceTerms}
+                      onChange={(e) => set({ peaceTerms: e.target.value })}
+                    />
+                  </div>
+                  <ActionButton
+                    label="Propose Peace"
+                    icon={<Handshake size={12} />}
+                    onClick={handleProposePeace}
+                    disabled={!s.diplomacyTarget || s.diplomacyLoading}
+                    loading={s.diplomacyLoading}
+                    variant="secondary"
+                    size="sm"
+                  />
+                </div>
+              </Section>
+              <div className={styles.divider} />
+            </>
+          )}
 
           <Section title="Intel" icon={<Radar size={12} />} defaultOpen={false}>
             <IntelSection allies={s.factionInfo?.allies ?? []} />
@@ -758,15 +782,19 @@ export function FactionPanel() {
           {s.factionInfo && (
             <>
               <Section title="Roles" icon={<KeyRound size={12} />} defaultOpen={false}>
-                <RolesSection info={s.factionInfo} onChanged={loadFactionInfo} />
+                <RolesSection info={s.factionInfo} canManage={can('manage_roles')} onChanged={loadFactionInfo} />
               </Section>
-              <div className={styles.divider} />
-              <Section title="Faction Settings" icon={<Settings2 size={12} />} defaultOpen={false}>
-                <EditFactionSection key={s.factionInfo.id} info={s.factionInfo} onChanged={loadFactionInfo} />
-              </Section>
+              {can('manage_roles') && (
+                <>
+                  <div className={styles.divider} />
+                  <Section title="Faction Settings" icon={<Settings2 size={12} />} defaultOpen={false}>
+                    <EditFactionSection key={s.factionInfo.id} info={s.factionInfo} onChanged={loadFactionInfo} />
+                  </Section>
+                </>
+              )}
               <div className={styles.divider} />
               <Section title="Treasury & Licenses" icon={<Landmark size={12} />} defaultOpen={false}>
-                <TreasurySection info={s.factionInfo} onChanged={loadFactionInfo} />
+                <TreasurySection info={s.factionInfo} canSpend={can('manage_treasury')} onChanged={loadFactionInfo} />
               </Section>
               <div className={styles.divider} />
             </>
@@ -778,158 +806,163 @@ export function FactionPanel() {
 
           <div className={styles.divider} />
 
-          <Section title="Faction Missions" icon={<Target size={12} />} defaultOpen={false}>
-            <MissionsSection />
-          </Section>
+          {isDocked && (
+            <>
+              <Section title="Faction Missions" icon={<Target size={12} />} defaultOpen={false}>
+                <MissionsSection canManage={can('manage_treasury')} />
+              </Section>
+              <div className={styles.divider} />
+            </>
+          )}
 
-          <div className={styles.divider} />
+          {hasCommons && (
+            <Section title="Rooms" icon={<DoorOpen size={12} />} defaultOpen={false}>
+              <div className={styles.roomSection}>
+                {!s.roomsLoaded && !s.loadingRooms && (
+                  <ActionButton
+                    label="Load Rooms"
+                    icon={<DoorOpen size={12} />}
+                    onClick={handleLoadRooms}
+                    variant="secondary"
+                    size="sm"
+                  />
+                )}
 
-          <Section title="Rooms" icon={<DoorOpen size={12} />} defaultOpen={false}>
-            <div className={styles.roomSection}>
-              {!s.roomsLoaded && !s.loadingRooms && (
-                <ActionButton
-                  label="Load Rooms"
-                  icon={<DoorOpen size={12} />}
-                  onClick={handleLoadRooms}
-                  variant="secondary"
-                  size="sm"
-                />
-              )}
+                {s.loadingRooms && (
+                  <div className={styles.loading}>
+                    <span className={shared.spinner} />
+                    Loading rooms...
+                  </div>
+                )}
 
-              {s.loadingRooms && (
-                <div className={styles.loading}>
-                  <span className={shared.spinner} />
-                  Loading rooms...
-                </div>
-              )}
+                {s.roomsLoaded && s.rooms.length === 0 && (
+                  <div className={shared.emptyState}>
+                    No faction rooms yet.
+                  </div>
+                )}
 
-              {s.roomsLoaded && s.rooms.length === 0 && (
-                <div className={shared.emptyState}>
-                  No faction rooms yet.
-                </div>
-              )}
-
-              {s.rooms.length > 0 && (
-                <div className={styles.roomList}>
-                  {s.rooms.map((room) => (
-                    <div key={room.room_id} className={styles.roomItem}>
-                      <div className={styles.roomItemInfo}>
-                        <span className={styles.roomItemName}>{room.name}</span>
-                        <span className={styles.roomItemMeta}>
-                          {room.access || 'members'} -- {room.author || 'unknown'}
-                        </span>
-                      </div>
-                      <div className={styles.roomItemActions}>
-                        <ActionButton
-                          label="Visit"
-                          icon={<Eye size={12} />}
-                          onClick={() => handleVisitRoom(room.room_id)}
-                          disabled={s.loadingRoom}
-                          size="sm"
-                        />
-                        {s.confirming === `room:${room.room_id}` ? (
-                          <ConfirmAction
-                            message="Delete this room? This cannot be undone."
-                            onConfirm={() => handleDeleteRoom(room.room_id)}
-                            onCancel={() => set({ confirming: null })}
-                          />
-                        ) : (
+                {s.rooms.length > 0 && (
+                  <div className={styles.roomList}>
+                    {s.rooms.map((room) => (
+                      <div key={room.room_id} className={styles.roomItem}>
+                        <div className={styles.roomItemInfo}>
+                          <span className={styles.roomItemName}>{room.name}</span>
+                          <span className={styles.roomItemMeta}>
+                            {room.access || 'members'} -- {room.author || 'unknown'}
+                          </span>
+                        </div>
+                        <div className={styles.roomItemActions}>
                           <ActionButton
-                            label="Delete"
-                            icon={<Trash2 size={12} />}
-                            onClick={() => set({ confirming: `room:${room.room_id}` })}
-                            disabled={s.deletingRoomId === room.room_id}
-                            loading={s.deletingRoomId === room.room_id}
-                            variant="danger"
+                            label="Visit"
+                            icon={<Eye size={12} />}
+                            onClick={() => handleVisitRoom(room.room_id)}
+                            disabled={s.loadingRoom}
                             size="sm"
                           />
-                        )}
+                          {!canWriteRooms ? null : s.confirming === `room:${room.room_id}` ? (
+                            <ConfirmAction
+                              message="Delete this room? This cannot be undone."
+                              onConfirm={() => handleDeleteRoom(room.room_id)}
+                              onCancel={() => set({ confirming: null })}
+                            />
+                          ) : (
+                            <ActionButton
+                              label="Delete"
+                              icon={<Trash2 size={12} />}
+                              onClick={() => set({ confirming: `room:${room.room_id}` })}
+                              disabled={s.deletingRoomId === room.room_id}
+                              loading={s.deletingRoomId === room.room_id}
+                              variant="danger"
+                              size="sm"
+                            />
+                          )}
+                        </div>
                       </div>
+                    ))}
+                  </div>
+                )}
+
+                {s.selectedRoom && (
+                  <div className={styles.roomContent}>
+                    <div className={styles.roomContentHeader}>
+                      <span className={styles.roomContentTitle}>{s.selectedRoom.name}</span>
+                      <span className={styles.roomContentMeta}>
+                        {s.selectedRoom.access} -- by {s.selectedRoom.author}
+                      </span>
                     </div>
-                  ))}
-                </div>
-              )}
+                    <div className={styles.roomContentBody}>
+                      {s.selectedRoom.description || 'No description.'}
+                    </div>
+                    <div className={styles.roomContentFooter}>
+                      Created: {s.selectedRoom.created_at} -- Updated: {s.selectedRoom.updated_at}
+                    </div>
+                  </div>
+                )}
 
-              {s.selectedRoom && (
-                <div className={styles.roomContent}>
-                  <div className={styles.roomContentHeader}>
-                    <span className={styles.roomContentTitle}>{s.selectedRoom.name}</span>
-                    <span className={styles.roomContentMeta}>
-                      {s.selectedRoom.access} -- by {s.selectedRoom.author}
-                    </span>
+                {s.loadingRoom && (
+                  <div className={styles.loading}>
+                    <span className={shared.spinner} />
+                    Loading room...
                   </div>
-                  <div className={styles.roomContentBody}>
-                    {s.selectedRoom.description || 'No description.'}
-                  </div>
-                  <div className={styles.roomContentFooter}>
-                    Created: {s.selectedRoom.created_at} -- Updated: {s.selectedRoom.updated_at}
-                  </div>
-                </div>
-              )}
+                )}
 
-              {s.loadingRoom && (
-                <div className={styles.loading}>
-                  <span className={shared.spinner} />
-                  Loading room...
-                </div>
-              )}
+                {s.roomsLoaded && canWriteRooms && (
+                  <div className={styles.roomForm}>
+                    <div className={styles.roomFormTitle}>
+                      <Plus size={12} /> Create Room
+                      <span className={styles.roomFormCount}>
+                        {s.rooms.length}/{s.maxRooms}
+                      </span>
+                    </div>
+                    <div className={styles.field}>
+                      <label className={styles.label}>Name</label>
+                      <input
+                        className={styles.input}
+                        type="text"
+                        placeholder="Room name"
+                        value={s.roomFormName}
+                        onChange={(e) => set({ roomFormName: e.target.value })}
+                      />
+                    </div>
+                    <div className={styles.field}>
+                      <label className={styles.label}>Description</label>
+                      <textarea
+                        className={styles.textarea}
+                        placeholder="Room description..."
+                        value={s.roomFormDesc}
+                        onChange={(e) => set({ roomFormDesc: e.target.value })}
+                        rows={3}
+                      />
+                    </div>
+                    <div className={styles.field}>
+                      <label className={styles.label}>Access</label>
+                      <select
+                        className={styles.select}
+                        value={s.roomFormAccess}
+                        onChange={(e) => set({ roomFormAccess: e.target.value })}
+                      >
+                        <option value="public">Public</option>
+                        <option value="members">Members</option>
+                        <option value="officers">Officers</option>
+                      </select>
+                    </div>
+                    <div className={styles.formActions}>
+                      <ActionButton
+                        label="Create Room"
+                        icon={<Plus size={12} />}
+                        onClick={handleCreateRoom}
+                        disabled={!s.roomFormName.trim() || s.creatingRoom || s.rooms.length >= s.maxRooms}
+                        loading={s.creatingRoom}
+                        size="sm"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Section>
+          )}
 
-              {s.roomsLoaded && (
-                <div className={styles.roomForm}>
-                  <div className={styles.roomFormTitle}>
-                    <Plus size={12} /> Create Room
-                    <span className={styles.roomFormCount}>
-                      {s.rooms.length}/{s.maxRooms}
-                    </span>
-                  </div>
-                  <div className={styles.field}>
-                    <label className={styles.label}>Name</label>
-                    <input
-                      className={styles.input}
-                      type="text"
-                      placeholder="Room name"
-                      value={s.roomFormName}
-                      onChange={(e) => set({ roomFormName: e.target.value })}
-                    />
-                  </div>
-                  <div className={styles.field}>
-                    <label className={styles.label}>Description</label>
-                    <textarea
-                      className={styles.textarea}
-                      placeholder="Room description..."
-                      value={s.roomFormDesc}
-                      onChange={(e) => set({ roomFormDesc: e.target.value })}
-                      rows={3}
-                    />
-                  </div>
-                  <div className={styles.field}>
-                    <label className={styles.label}>Access</label>
-                    <select
-                      className={styles.select}
-                      value={s.roomFormAccess}
-                      onChange={(e) => set({ roomFormAccess: e.target.value })}
-                    >
-                      <option value="public">Public</option>
-                      <option value="members">Members</option>
-                      <option value="officers">Officers</option>
-                    </select>
-                  </div>
-                  <div className={styles.formActions}>
-                    <ActionButton
-                      label="Create Room"
-                      icon={<Plus size={12} />}
-                      onClick={handleCreateRoom}
-                      disabled={!s.roomFormName.trim() || s.creatingRoom || s.rooms.length >= s.maxRooms}
-                      loading={s.creatingRoom}
-                      size="sm"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-          </Section>
-
-          <div className={styles.divider} />
+          {hasCommons && <div className={styles.divider} />}
 
           {s.confirming === 'leave' ? (
             <ConfirmAction
@@ -1081,7 +1114,7 @@ export function FactionPanel() {
             {s.factionList.map((f) => (
               <div key={f.id} className={styles.factionListItem}>
                 <div className={styles.factionListInfo}>
-                  {hasFaction ? (
+                  {canDiplomacy ? (
                     <button className={`${styles.factionListName} ${styles.diplomacyTargetBtn}`} onClick={() => set({ diplomacyTarget: f.id })} title="Set as diplomacy target" type="button">
                       {f.name}
                     </button>
@@ -1092,7 +1125,7 @@ export function FactionPanel() {
                   <span className={styles.factionListMembers}>
                     {f.member_count ?? '?'} members
                   </span>
-                  {hasFaction ? (
+                  {canDiplomacy ? (
                     <button
                       className={styles.diplomacyTargetBtn}
                       onClick={() => set({ diplomacyTarget: f.id })}
@@ -1102,7 +1135,7 @@ export function FactionPanel() {
                     >
                       <Shield size={10} /> {s.diplomacyTarget === f.id ? 'Target' : 'Set target'}
                     </button>
-                  ) : (
+                  ) : !hasFaction && (
                     <ActionButton
                       label="Join"
                       icon={<LogIn size={12} />}

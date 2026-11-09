@@ -28,6 +28,7 @@ import { canCraftRecipe, availableQuantity, type SkillEntry } from '@/lib/crafti
 import { estimateJobProgress } from './craftProgress'
 import { combineItems, isRecyclable, maxCraftable, missingFromCargo, runsFor } from './craftPlan'
 import { FacilityVenuePicker } from './facilities/FacilityVenuePicker'
+import { useFactionPermissions, useStationServices } from '../hooks/useGates'
 import styles from './CraftingPanel.module.css'
 
 const HIDDEN_CATEGORIES = new Set(['facility only', 'ship passive'])
@@ -55,6 +56,11 @@ export function CraftingPanel() {
   const dockedAt = useLocationState()?.docked_at ?? null
   const isDocked = Boolean(dockedAt)
   const cargo = useCargo()
+  const services = useStationServices()
+  const canCraft = services.includes('crafting')
+  const hasStorage = services.includes('storage')
+  // Crafting with or into faction storage needs manage_treasury (gameserver crafting.go).
+  const canUseFactionStore = useFactionPermissions({ enabled: isDocked }).can('manage_treasury')
 
   const [busyId, setBusyId] = useState<string | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -446,14 +452,16 @@ export function CraftingPanel() {
                 <span className={styles.jobsCount}>{batch.length}</span>
               </span>
               <button className={styles.quoteBtn} onClick={() => setBatch([])} type="button">Clear</button>
-              <ActionButton
-                label={`Queue ${batch.length}`}
-                icon={<Hammer size={12} />}
-                onClick={handleQueueBatch}
-                disabled={!isDocked || busyId === 'batch'}
-                loading={busyId === 'batch'}
-                size="sm"
-              />
+              {canCraft && (
+                <ActionButton
+                  label={`Queue ${batch.length}`}
+                  icon={<Hammer size={12} />}
+                  onClick={handleQueueBatch}
+                  disabled={busyId === 'batch'}
+                  loading={busyId === 'batch'}
+                  size="sm"
+                />
+              )}
             </div>
             <div className={styles.jobsList}>
               {batch.map((job, i) => (
@@ -497,8 +505,8 @@ export function CraftingPanel() {
               aria-label="Input source"
             >
               <option value="">Inputs: auto</option>
-              <option value="storage">Inputs: my storage</option>
-              <option value="faction">Inputs: faction storage</option>
+              {hasStorage && <option value="storage">Inputs: my storage</option>}
+              {canUseFactionStore && <option value="faction">Inputs: faction storage</option>}
             </select>
             <select
               className={styles.categoryDropdown}
@@ -507,19 +515,14 @@ export function CraftingPanel() {
               aria-label="Output destination"
             >
               <option value="">Output: auto</option>
-              <option value="storage">Output: my storage</option>
-              <option value="faction">Output: faction storage</option>
+              {hasStorage && <option value="storage">Output: my storage</option>}
+              {canUseFactionStore && <option value="faction">Output: faction storage</option>}
             </select>
           </div>
         )}
 
         {!isDocked && (
-          <div className={styles.dockedWarning}>
-            <span className={styles.dockedWarningIcon}>
-              <AlertTriangle size={14} />
-            </span>
-            Dock at a base with crafting &amp; storage service to queue jobs. Materials are drawn from station storage.
-          </div>
+          <div className={styles.dockedWarning}>Dock at a station with crafting to queue jobs.</div>
         )}
 
         {/* Search + filter */}
@@ -756,16 +759,18 @@ export function CraftingPanel() {
                                 >+</button>
                               </div>
                               <QtyButtons max={maxQty} current={String(qty)} onChange={(v) => setQty(recipe.id, Number(v))} />
-                              <button
-                                type="button"
-                                className={styles.quoteBtn}
-                                onClick={() => handleQuote(recipe.id, 'craft')}
-                                disabled={!isDocked || busy}
-                                title="Get a cost & time estimate without queuing"
-                              >
-                                <Calculator size={11} /> Quote
-                              </button>
-                              {missing.length > 0 && (
+                              {canCraft && (
+                                <button
+                                  type="button"
+                                  className={styles.quoteBtn}
+                                  onClick={() => handleQuote(recipe.id, 'craft')}
+                                  disabled={busy}
+                                  title="Get a cost & time estimate without queuing"
+                                >
+                                  <Calculator size={11} /> Quote
+                                </button>
+                              )}
+                              {hasStorage && missing.length > 0 && (
                                 <button
                                   type="button"
                                   className={styles.quoteBtn}
@@ -776,32 +781,36 @@ export function CraftingPanel() {
                                   <ArrowDownToLine size={11} /> Move inputs from cargo
                                 </button>
                               )}
-                              <button
-                                type="button"
-                                className={styles.quoteBtn}
-                                onClick={() => setBatch(prev => [...prev, { recipe_id: recipe.id, quantity: qty, facility_id: selectedVenue[recipe.id] }])}
-                                title="Add to a batch and queue many crafts in one action"
-                              >
-                                <ListPlus size={11} /> Batch
-                              </button>
-                              {isRecyclable({ category: recipe.category, no_recycle: recipesById[recipe.id]?.no_recycle }) && (
+                              {canCraft && (
+                                <button
+                                  type="button"
+                                  className={styles.quoteBtn}
+                                  onClick={() => setBatch(prev => [...prev, { recipe_id: recipe.id, quantity: qty, facility_id: selectedVenue[recipe.id] }])}
+                                  title="Add to a batch and queue many crafts in one action"
+                                >
+                                  <ListPlus size={11} /> Batch
+                                </button>
+                              )}
+                              {canCraft && isRecyclable({ category: recipe.category, no_recycle: recipesById[recipe.id]?.no_recycle }) && (
                                 <ActionButton
                                   label="Recycle"
                                   icon={<RotateCcw size={12} />}
                                   onClick={() => setConfirmRecycleId(recipe.id)}
-                                  disabled={!isDocked || busy}
+                                  disabled={busy}
                                   variant="secondary"
                                   size="sm"
                                 />
                               )}
-                              <ActionButton
-                                label="Craft"
-                                icon={<Hammer size={12} />}
-                                onClick={() => handleCraft(recipe.id, 'craft')}
-                                disabled={!isDocked || (!craftable && source !== 'faction') || busy}
-                                loading={busy}
-                                size="sm"
-                              />
+                              {canCraft && (
+                                <ActionButton
+                                  label="Craft"
+                                  icon={<Hammer size={12} />}
+                                  onClick={() => handleCraft(recipe.id, 'craft')}
+                                  disabled={(!craftable && source !== 'faction') || busy}
+                                  loading={busy}
+                                  size="sm"
+                                />
+                              )}
                             </div>
                             {confirmRecycleId === recipe.id && (
                               <ConfirmAction

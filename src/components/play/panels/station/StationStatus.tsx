@@ -48,16 +48,16 @@ export function StationStatus({ data }: { data: GetBaseResponse }) {
           {condition.condition} ({condition.satisfied_count}/{condition.total_service_infra} supplied, {condition.satisfaction_pct}%)
         </Row>
         {/* get_base omits power and life_support while they are all zero, e.g. on a new station. */}
-        {power ? (
+        {power && (
           <Row label="Power" ok={power.supply >= power.current_draw} title={power.remediation}>
             draw {power.current_draw}/{power.supply}, battery {power.battery_stored}/{power.battery_capacity}, {Math.round(power.efficiency * 100)}% efficiency
           </Row>
-        ) : <Row label="Power">none built yet</Row>}
-        {life ? (
+        )}
+        {life && (
           <Row label="Life Support" ok={life.supply >= life.demand && !life.starved?.length} title={life.remediation}>
             demand {life.demand}/{life.supply}, {life.plants} plant{life.plants === 1 ? '' : 's'}
           </Row>
-        ) : <Row label="Life Support">none built yet</Row>}
+        )}
         {data.faction_fuel_capacity != null && (
           <Row label="Fuel bunker">{data.faction_fuel_reserve ?? 0}/{data.faction_fuel_capacity}</Row>
         )}

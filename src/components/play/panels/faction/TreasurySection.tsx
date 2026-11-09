@@ -11,8 +11,8 @@ import { LICENSE_COST_BY_TIER } from './factionAdmin'
 import { EMPIRES } from '../../PlayerSelector'
 import { titleCase } from '@/lib/format'
 
-/** Corporate tax estimate and prepay, plus shipbuilding licenses. Both spend the faction treasury (manage_treasury). */
-export function TreasurySection({ info, onChanged }: { info: FactionInfoResponse; onChanged: () => void }) {
+/** Corporate tax estimate; with manage_treasury (`canSpend`), also tax prepay and shipbuilding licenses. */
+export function TreasurySection({ info, canSpend, onChanged }: { info: FactionInfoResponse; canSpend: boolean; onChanged: () => void }) {
   const mutate = useCommandMutation()
   const { data: catalog } = useCatalog()
   const { busy, run } = useAction()
@@ -64,7 +64,7 @@ export function TreasurySection({ info, onChanged }: { info: FactionInfoResponse
           {tax.note && <div className={styles.intelMeta}>{tax.note}</div>}
         </div>
       )}
-      {confirm === 'prepay' ? (
+      {!canSpend ? null : confirm === 'prepay' ? (
         <ConfirmAction message={`Prepay ${amount.toLocaleString()} cr from the treasury?`} onConfirm={doPrepay} onCancel={() => setConfirm(null)} variant="confirm" />
       ) : (
         <div className={styles.inviteRow}>
@@ -74,30 +74,34 @@ export function TreasurySection({ info, onChanged }: { info: FactionInfoResponse
         </div>
       )}
 
-      <div className={styles.divider} />
-      <div className={styles.label}>Shipbuilding License</div>
-      <div className={styles.intelMeta}>
-        Lets your faction build one hull design at its own stations (commission with faction funding). Tier cost: T1 1M, T2 5M, T3 10M, T4 20M, T5 50M.
-      </div>
-      {confirm === 'license' ? (
-        <ConfirmAction
-          message={`License ${ship?.name ?? shipClass} for ${licenseCost !== undefined ? `${licenseCost.toLocaleString()} cr` : 'its tier cost'}?`}
-          onConfirm={doLicense}
-          onCancel={() => setConfirm(null)}
-          variant="confirm"
-        />
-      ) : (
-        <div className={styles.inviteRow}>
-          <input className={styles.inviteInput} list="faction-license-ships" placeholder="Ship class id" value={shipClass} onChange={(e) => setShipClass(e.target.value)} />
-          <datalist id="faction-license-ships">
-            {catalog?.ships.map((s) => <option key={s.id} value={s.id}>{s.name} (T{s.tier})</option>)}
-          </datalist>
-          {licenseCost !== undefined && <Credits amount={licenseCost} />}
-          <ActionButton label="Buy License" icon={<BadgeCheck size={12} />} onClick={() => setConfirm('license')} disabled={!shipClass.trim() || shortForLicense} loading={busy === 'license'} size="sm" />
-        </div>
-      )}
-      {shortForLicense && confirm !== 'license' && (
-        <div className={styles.intelMeta}>The treasury holds {treasury.toLocaleString()} cr; this license costs {licenseCost?.toLocaleString()} cr.</div>
+      {canSpend && (
+        <>
+          <div className={styles.divider} />
+          <div className={styles.label}>Shipbuilding License</div>
+          <div className={styles.intelMeta}>
+            Lets your faction build one hull design at its own stations (commission with faction funding). Tier cost: T1 1M, T2 5M, T3 10M, T4 20M, T5 50M.
+          </div>
+          {confirm === 'license' ? (
+            <ConfirmAction
+              message={`License ${ship?.name ?? shipClass} for ${licenseCost !== undefined ? `${licenseCost.toLocaleString()} cr` : 'its tier cost'}?`}
+              onConfirm={doLicense}
+              onCancel={() => setConfirm(null)}
+              variant="confirm"
+            />
+          ) : (
+            <div className={styles.inviteRow}>
+              <input className={styles.inviteInput} list="faction-license-ships" placeholder="Ship class id" value={shipClass} onChange={(e) => setShipClass(e.target.value)} />
+              <datalist id="faction-license-ships">
+                {catalog?.ships.map((s) => <option key={s.id} value={s.id}>{s.name} (T{s.tier})</option>)}
+              </datalist>
+              {licenseCost !== undefined && <Credits amount={licenseCost} />}
+              <ActionButton label="Buy License" icon={<BadgeCheck size={12} />} onClick={() => setConfirm('license')} disabled={!shipClass.trim() || shortForLicense} loading={busy === 'license'} size="sm" />
+            </div>
+          )}
+          {shortForLicense && confirm !== 'license' && (
+            <div className={styles.intelMeta}>The treasury holds {treasury.toLocaleString()} cr; this license costs {licenseCost?.toLocaleString()} cr.</div>
+          )}
+        </>
       )}
     </div>
   )
