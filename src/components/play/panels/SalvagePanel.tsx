@@ -17,7 +17,6 @@ import {
   Coins,
   Unlink,
 } from 'lucide-react'
-import { SpacemoltError } from '@spacemolt/lib'
 import type { GetWrecksResponse, ScrapWreckResponse } from '@spacemolt/lib'
 import {
   useCommandMutation,
@@ -27,16 +26,10 @@ import {
   useShip,
 } from '@/lib/spacemolt'
 import { usePlay } from '../PlayProvider'
-import { Panel, shared, ConfirmAction } from '../shared'
+import { Panel, shared, ConfirmAction, errorMessage } from '../shared'
 import styles from './SalvagePanel.module.css'
 
 type Wreck = GetWrecksResponse['wrecks'][number]
-
-function errorMessage(err: unknown): string {
-  if (err instanceof SpacemoltError) return err.message
-  if (err instanceof Error) return err.message
-  return 'Action failed'
-}
 
 function formatTimeRemaining(expiresAt?: string, expireTick?: number): string | null {
   // expire_tick === 0 means "never expires" (ship/pirate/abandoned wrecks)
