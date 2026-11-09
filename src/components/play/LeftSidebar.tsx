@@ -99,6 +99,13 @@ interface SupplyArgs { id?: string; quantity?: number; target?: string }
 /** Supply items a refuel/repair can burn, matched by id the way the server names them. */
 const SUPPLY_ITEM = { refuel: /fuel_cell/, repair: /repair|hull_patch/ } as const
 
+/** Richness is a yield multiplier, not an amount: each mining action yields beam power x richness / 100. */
+const RICHNESS_TITLE = 'Yield per mining action: beam power x this percentage'
+
+/** Units left at the deposit; a negative count means it never runs out. */
+const remainingLabel = (remaining?: number) =>
+  remaining === undefined ? '' : remaining < 0 ? 'unlimited' : remaining === 0 ? 'depleted' : `${remaining.toLocaleString()} left`
+
 /** Options for refuel/repair: quantity, a specific item, and another player or the fleet as target. */
 function SupplyOptions({ kind, nearby, cargo, busy, onSubmit }: {
   kind: SupplyKind
@@ -559,18 +566,10 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
                   {hasMineableResources(location) && (
                     <div className={styles.resourceList}>
                       {location?.resources?.map((r) => (
-                        <div key={r.item_id} className={styles.resourceItem}>
+                        <div key={r.item_id} className={`${styles.resourceItem} ${r.remaining === 0 ? styles.depleted : ''}`}>
                           <span className={styles.resourceName}>{r.item_name || r.item_id}</span>
-                          <span className={styles.resourceRichness}>{r.richness}</span>
-                          <span className={styles.resourceRemaining}>
-                            {r.remaining === undefined
-                              ? ''
-                              : r.remaining < 0
-                                ? '∞'
-                                : r.remaining === 0
-                                  ? 'depleted'
-                                  : r.remaining.toLocaleString()}
-                          </span>
+                          <span className={styles.resourceRichness} title={RICHNESS_TITLE}>{r.richness}% yield</span>
+                          <span className={styles.resourceRemaining}>{remainingLabel(r.remaining)}</span>
                         </div>
                       ))}
                     </div>
@@ -979,13 +978,11 @@ export function LeftSidebar({ galaxyRef, exploreSystem, onExploreSystemChange, p
                         {p.resources && p.resources.length > 0 && (
                           <div className={styles.intelResourceList}>
                             {p.resources.map((r) => (
-                              <div key={r.resource_id} className={styles.intelResourceItem}>
+                              <div key={r.resource_id} className={`${styles.intelResourceItem} ${r.remaining === 0 ? styles.depleted : ''}`}>
                                 <Gem size={9} className={styles.intelResourceIcon} />
                                 <span className={styles.intelResourceName}>{formatLabel(r.resource_id)}</span>
-                                <span className={styles.intelResourceRichness}>×{r.richness}</span>
-                                <span className={styles.intelResourceRemaining}>
-                                  {r.remaining < 0 ? '∞' : r.remaining === 0 ? 'depleted' : r.remaining.toLocaleString()}
-                                </span>
+                                <span className={styles.intelResourceRichness} title={RICHNESS_TITLE}>{r.richness}% yield</span>
+                                <span className={styles.intelResourceRemaining}>{remainingLabel(r.remaining)}</span>
                               </div>
                             ))}
                           </div>

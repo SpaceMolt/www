@@ -163,6 +163,10 @@
   flex-shrink: 0;
 }
 
+.depleted {
+  opacity: 0.45;
+}
+
 .resourceRemaining {
   color: var(--hull-grey);
   flex-shrink: 0;
